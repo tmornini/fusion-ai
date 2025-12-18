@@ -31,7 +31,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/onboarding');
+      navigate('/dashboard');
     }
   }, [user, loading, navigate]);
 

@@ -88,7 +88,7 @@ export default function Onboarding() {
           .maybeSingle();
         
         if (data?.onboarding_completed) {
-          navigate('/');
+          navigate('/dashboard');
         }
       } catch (err) {
         console.error('Error checking onboarding status:', err);
@@ -169,7 +169,7 @@ export default function Onboarding() {
         description: "Your profile is all set up.",
       });
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       toast({
         title: "Failed to save profile",
@@ -190,9 +190,9 @@ export default function Onboarding() {
         .update({ onboarding_completed: true })
         .eq('user_id', user?.id);
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
-      navigate('/');
+      navigate('/dashboard');
     }
   };
 
