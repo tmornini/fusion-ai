@@ -222,7 +222,7 @@ export default function Ideas() {
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">Ideas</h1>
             <p className="text-muted-foreground">Explore and prioritize innovation opportunities</p>
           </div>
-          <Button variant="hero" className="gap-2">
+          <Button variant="hero" className="gap-2" onClick={() => navigate('/ideas/new')}>
             <Plus className="w-4 h-4" />
             Create or Generate Idea
             <Wand2 className="w-4 h-4" />
