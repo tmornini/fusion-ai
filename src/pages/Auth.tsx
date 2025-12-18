@@ -64,6 +64,12 @@ export default function Auth() {
               description: "Invalid email or password. Please try again.",
               variant: "destructive",
             });
+          } else if (error.message.toLowerCase().includes('email not confirmed')) {
+            toast({
+              title: "Email not confirmed",
+              description: "Please check your inbox and click the confirmation link before logging in.",
+              variant: "destructive",
+            });
           } else {
             toast({
               title: "Login failed",
@@ -81,6 +87,12 @@ export default function Auth() {
               description: "An account with this email already exists. Try logging in instead.",
               variant: "destructive",
             });
+          } else if (error.message.includes('security purposes')) {
+            toast({
+              title: "Please wait",
+              description: "For security, please wait a moment before trying again.",
+              variant: "destructive",
+            });
           } else {
             toast({
               title: "Sign up failed",
@@ -91,7 +103,7 @@ export default function Auth() {
         } else {
           toast({
             title: "Welcome to Fusion AI!",
-            description: "Your account has been created successfully.",
+            description: "Your account has been created. Please check your email to confirm.",
           });
         }
       }
