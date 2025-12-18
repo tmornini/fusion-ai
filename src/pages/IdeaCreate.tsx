@@ -97,7 +97,7 @@ export default function IdeaCreate() {
     } else {
       // Submit and go to scoring
       console.log('Submitting idea:', formData);
-      navigate('/ideas');
+      navigate('/ideas/new/score');
     }
   };
 

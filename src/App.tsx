@@ -10,6 +10,8 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Ideas from "./pages/Ideas";
 import IdeaCreate from "./pages/IdeaCreate";
+import IdeaScoring from "./pages/IdeaScoring";
+import IdeaConvert from "./pages/IdeaConvert";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/ideas" element={<Ideas />} />
             <Route path="/ideas/new" element={<IdeaCreate />} />
+            <Route path="/ideas/:ideaId/score" element={<IdeaScoring />} />
+            <Route path="/ideas/:ideaId/convert" element={<IdeaConvert />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
