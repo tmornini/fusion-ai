@@ -137,7 +137,7 @@ export default function Dashboard() {
           {navItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => item.href === '/dashboard' ? null : null}
+              onClick={() => navigate(item.href)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 item.active 
                   ? 'bg-primary/10 text-primary' 
