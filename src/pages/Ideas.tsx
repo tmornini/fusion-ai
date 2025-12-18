@@ -51,7 +51,7 @@ const navItems = [
   { label: 'Account', icon: User, href: '/account', active: false },
 ];
 
-function IdeaCard({ idea, view }: { idea: Idea; view: 'priority' | 'performance' }) {
+function IdeaCard({ idea, view, onScore }: { idea: Idea; view: 'priority' | 'performance'; onScore: (id: string) => void }) {
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-green-600 bg-green-50';
     if (score >= 70) return 'text-amber-600 bg-amber-50';
@@ -59,9 +59,9 @@ function IdeaCard({ idea, view }: { idea: Idea; view: 'priority' | 'performance'
   };
 
   return (
-    <div className="fusion-card p-5 hover:shadow-lg transition-all group cursor-grab active:cursor-grabbing">
+    <div className="fusion-card p-5 hover:shadow-lg transition-all group">
       <div className="flex items-start gap-4">
-        <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors mt-1">
+        <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors mt-1 cursor-grab active:cursor-grabbing">
           <GripVertical className="w-5 h-5" />
         </div>
         
@@ -81,34 +81,46 @@ function IdeaCard({ idea, view }: { idea: Idea; view: 'priority' | 'performance'
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-primary" />
+          <div className="flex items-end justify-between gap-4">
+            <div className="grid grid-cols-3 gap-4 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Impact</p>
+                  <p className="text-sm font-medium text-foreground">{idea.estimatedImpact}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Impact</p>
-                <p className="text-sm font-medium text-foreground">{idea.estimatedImpact}</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Time</p>
+                  <p className="text-sm font-medium text-foreground">{idea.estimatedTime}h</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Cost</p>
+                  <p className="text-sm font-medium text-foreground">${(idea.estimatedCost / 1000).toFixed(0)}k</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Time</p>
-                <p className="text-sm font-medium text-foreground">{idea.estimatedTime}h</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Cost</p>
-                <p className="text-sm font-medium text-foreground">${(idea.estimatedCost / 1000).toFixed(0)}k</p>
-              </div>
-            </div>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onScore(idea.id)}
+              className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <BarChart3 className="w-4 h-4" />
+              View Score
+            </Button>
           </div>
         </div>
       </div>
@@ -263,7 +275,12 @@ export default function Ideas() {
         {/* Ideas Grid */}
         <div className="space-y-4">
           {sortedIdeas.map((idea) => (
-            <IdeaCard key={idea.id} idea={idea} view={view} />
+            <IdeaCard 
+              key={idea.id} 
+              idea={idea} 
+              view={view} 
+              onScore={(id) => navigate(`/ideas/${id}/score`)}
+            />
           ))}
         </div>
       </main>
