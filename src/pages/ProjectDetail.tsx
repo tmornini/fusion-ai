@@ -20,7 +20,8 @@ import {
   Plus,
   ArrowUpRight,
   ArrowDownRight,
-  Minus
+  Minus,
+  ListTodo
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +32,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import TaskAssignment from '@/components/TaskAssignment';
 
 // Mock project data
 const mockProject = {
@@ -299,8 +301,12 @@ export default function ProjectDetail() {
             </div>
 
             {/* Tabs for Discussion, History, Linked Data */}
-            <Tabs defaultValue="discussion" className="fusion-card p-6">
+            <Tabs defaultValue="tasks" className="fusion-card p-6">
               <TabsList className="mb-6">
+                <TabsTrigger value="tasks" className="gap-2">
+                  <ListTodo className="w-4 h-4" />
+                  Tasks
+                </TabsTrigger>
                 <TabsTrigger value="discussion" className="gap-2">
                   <MessageSquare className="w-4 h-4" />
                   Discussion
@@ -314,6 +320,10 @@ export default function ProjectDetail() {
                   Linked Data
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="tasks">
+                <TaskAssignment projectId={projectId || ''} />
+              </TabsContent>
 
               <TabsContent value="discussion" className="space-y-4">
                 {/* New Comment */}
