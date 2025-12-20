@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Sparkles, 
   ArrowLeft,
@@ -10,8 +9,7 @@ import {
   AlertCircle,
   TrendingUp,
   Wand2,
-  Check,
-  Loader2
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +47,6 @@ const steps = [
 ];
 
 export default function IdeaCreate() {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<IdeaFormData>({
@@ -60,19 +57,6 @@ export default function IdeaCreate() {
     targetUsers: '',
     successMetrics: '',
   });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const updateField = (field: keyof IdeaFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));

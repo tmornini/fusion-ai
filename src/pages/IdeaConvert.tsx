@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowLeft,
   ArrowRight,
@@ -53,7 +52,6 @@ interface ProjectDetails {
 }
 
 export default function IdeaConvert() {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { ideaId } = useParams();
   const [isConverting, setIsConverting] = useState(false);
@@ -68,19 +66,6 @@ export default function IdeaConvert() {
     firstMilestone: '',
     successCriteria: '',
   });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const updateField = (field: keyof ProjectDetails, value: string | string[]) => {
     setProjectDetails(prev => ({ ...prev, [field]: value }));

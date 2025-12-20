@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   GitBranch,
   Plus,
@@ -8,7 +7,6 @@ import {
   ArrowRight,
   ArrowDown,
   Check,
-  Loader2,
   Zap,
   Users,
   Wrench,
@@ -152,25 +150,10 @@ const mockProcess: Process = {
 };
 
 export default function Flow() {
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [process, setProcess] = useState<Process>(mockProcess);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
-  const [isAddingStep, setIsAddingStep] = useState(false);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const addStep = () => {
     const newStep: ProcessStep = {
@@ -274,7 +257,7 @@ export default function Flow() {
                 ))}
               </nav>
             </div>
-            <Button variant="outline" size="sm" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
               Sign Out
             </Button>
           </div>
@@ -478,13 +461,14 @@ export default function Flow() {
                                 placeholder="Explain what actions are taken, what inputs are needed, and what the output is..."
                                 value={step.description}
                                 onChange={(e) => updateStep(step.id, { description: e.target.value })}
-                                className="min-h-[80px] resize-none"
+                                className="resize-none"
+                                rows={2}
                               />
                             </div>
 
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Who is responsible?
+                                Who owns this step?
                               </label>
                               <Input
                                 placeholder="e.g., Customer Success Team"
@@ -495,10 +479,10 @@ export default function Flow() {
 
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Specific role
+                                Role responsible
                               </label>
                               <Input
-                                placeholder="e.g., Account Manager"
+                                placeholder="e.g., CS Manager"
                                 value={step.role}
                                 onChange={(e) => updateStep(step.id, { role: e.target.value })}
                               />
@@ -509,7 +493,7 @@ export default function Flow() {
                                 How long does this take?
                               </label>
                               <Input
-                                placeholder="e.g., 30 minutes, 1 day"
+                                placeholder="e.g., 30 minutes, 2 days"
                                 value={step.duration}
                                 onChange={(e) => updateStep(step.id, { duration: e.target.value })}
                               />
@@ -521,39 +505,37 @@ export default function Flow() {
                               </label>
                               <Select
                                 value={step.type}
-                                onValueChange={(value: 'action' | 'decision' | 'start' | 'end') => 
-                                  updateStep(step.id, { type: value })
-                                }
+                                onValueChange={(value: ProcessStep['type']) => updateStep(step.id, { type: value })}
                               >
                                 <SelectTrigger>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="start">Start Point</SelectItem>
+                                  <SelectItem value="start">Start</SelectItem>
                                   <SelectItem value="action">Action</SelectItem>
                                   <SelectItem value="decision">Decision</SelectItem>
-                                  <SelectItem value="end">End Point</SelectItem>
+                                  <SelectItem value="end">End</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div className="col-span-2">
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                What tools are used?
+                                Tools used
                               </label>
                               <div className="flex flex-wrap gap-2">
                                 {Object.entries(toolIcons).map(([tool, Icon]) => (
                                   <button
                                     key={tool}
                                     onClick={() => toggleTool(step.id, tool)}
-                                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
                                       step.tools.includes(tool)
-                                        ? 'bg-primary/10 border-primary text-primary'
-                                        : 'bg-muted/30 border-border text-muted-foreground hover:border-primary/50'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:text-foreground'
                                     }`}
                                   >
-                                    <Icon className="w-4 h-4" />
-                                    <span className="text-sm">{tool}</span>
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {tool}
                                   </button>
                                 ))}
                               </div>
@@ -567,138 +549,103 @@ export default function Flow() {
               })}
             </div>
 
-            {/* Add Step */}
+            {/* Add Step Button */}
             <button
               onClick={addStep}
-              className="w-full p-4 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+              className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
             >
               <Plus className="w-5 h-5" />
               <span className="font-medium">Add Step</span>
             </button>
-          </div>
-        )}
 
-        {/* Preview Mode - Workflow Diagram */}
-        {viewMode === 'preview' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-display font-semibold text-foreground">Workflow Diagram</h2>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Export
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-              </div>
-            </div>
-
-            {/* Visual Workflow */}
-            <div className="fusion-card p-8 overflow-x-auto">
-              <div className="flex flex-col items-center gap-4 min-w-[600px]">
-                {process.steps.map((step, index) => (
-                  <div key={step.id} className="flex flex-col items-center">
-                    {/* Step Box */}
-                    <div className={`relative p-6 rounded-xl border-2 min-w-[400px] ${
-                      step.type === 'start' 
-                        ? 'bg-green-50 border-green-300' 
-                        : step.type === 'end'
-                          ? 'bg-red-50 border-red-300'
-                          : step.type === 'decision'
-                            ? 'bg-amber-50 border-amber-300 transform rotate-0'
-                            : 'bg-card border-border'
-                    }`}>
-                      {/* Step Number Badge */}
-                      <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        step.type === 'start' 
-                          ? 'bg-green-500 text-white' 
-                          : step.type === 'end'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-primary text-primary-foreground'
-                      }`}>
-                        {index + 1}
-                      </div>
-
-                      <h3 className="font-semibold text-foreground mb-2">{step.title || 'Untitled Step'}</h3>
-                      {step.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
-                      )}
-                      
-                      <div className="flex items-center gap-4 text-xs">
-                        {step.owner && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{step.owner}</span>
-                          </div>
-                        )}
-                        {step.duration && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{step.duration}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {step.tools.length > 0 && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-                          <Wrench className="w-3.5 h-3.5 text-muted-foreground" />
-                          <div className="flex flex-wrap gap-1">
-                            {step.tools.map(tool => {
-                              const Icon = toolIcons[tool] || Wrench;
-                              return (
-                                <span key={tool} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
-                                  <Icon className="w-3 h-3" />
-                                  {tool}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Arrow */}
-                    {index < process.steps.length - 1 && (
-                      <div className="flex flex-col items-center py-2">
-                        <div className="w-0.5 h-6 bg-border" />
-                        <ArrowDown className="w-5 h-5 text-muted-foreground -mt-1" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Sharing Info */}
-            <div className="fusion-card p-4 bg-blue-50/50 border-blue-200">
-              <div className="flex items-start gap-3">
-                <Share2 className="w-5 h-5 text-blue-600 mt-0.5" />
+            {/* Share Section */}
+            <div className="fusion-card p-6 mt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-900">Shared with teams</p>
-                  <p className="text-sm text-blue-700">
-                    This process is shared with: {process.sharedWith.join(', ')}
+                  <h3 className="font-medium text-foreground mb-1">Share this process</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Share with teams to ensure everyone follows the same workflow
                   </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export
+                  </Button>
+                  <Button size="sm" className="gap-2">
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* AI Suggestion */}
-        <div className="fusion-card p-4 bg-primary/5 border-primary/20 mt-6">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-primary mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-foreground">AI Analysis</p>
-              <p className="text-sm text-muted-foreground">
-                This process has {process.steps.length} steps with an estimated total duration of 3+ days. 
-                Consider adding decision points to handle edge cases like missing customer information or contract disputes.
-              </p>
+        {/* Preview Mode */}
+        {viewMode === 'preview' && (
+          <div className="fusion-card p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-display font-bold text-foreground mb-2">{process.name}</h2>
+              <p className="text-muted-foreground">{process.description}</p>
+              <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
+                <span>Department: {process.department}</span>
+                <span>•</span>
+                <span>{process.steps.length} steps</span>
+              </div>
+            </div>
+
+            {/* Visual Flow */}
+            <div className="flex flex-col items-center gap-2">
+              {process.steps.map((step, index) => (
+                <div key={step.id} className="flex flex-col items-center">
+                  <div className={`w-full max-w-md p-4 rounded-xl border-2 ${getStepTypeColor(step.type)}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold">{index + 1}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-1">{step.title || 'Untitled Step'}</h4>
+                        <p className="text-sm opacity-80">{step.description}</p>
+                        {(step.owner || step.duration) && (
+                          <div className="flex items-center gap-3 mt-2 text-xs opacity-70">
+                            {step.owner && (
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {step.owner}
+                              </span>
+                            )}
+                            {step.duration && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {step.duration}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {step.tools.length > 0 && (
+                          <div className="flex items-center gap-1 mt-2">
+                            {step.tools.map(tool => {
+                              const Icon = toolIcons[tool];
+                              return Icon ? (
+                                <div key={tool} className="w-6 h-6 rounded bg-white/30 flex items-center justify-center">
+                                  <Icon className="w-3 h-3" />
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {index < process.steps.length - 1 && (
+                    <ArrowDown className="w-6 h-6 text-muted-foreground my-1" />
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

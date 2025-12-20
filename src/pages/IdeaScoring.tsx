@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowLeft,
   ArrowRight,
@@ -85,7 +84,6 @@ const mockScore: IdeaScore = {
 };
 
 export default function IdeaScoring() {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { ideaId } = useParams();
   const [isScoring, setIsScoring] = useState(true);
@@ -100,19 +98,6 @@ export default function IdeaScoring() {
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600';

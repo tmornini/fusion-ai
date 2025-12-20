@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowLeft,
   TrendingUp,
@@ -15,7 +14,6 @@ import {
   MessageSquare,
   FileText,
   History,
-  Loader2,
   MoreVertical,
   Plus,
   ArrowUpRight,
@@ -85,23 +83,9 @@ const mockProject = {
 };
 
 export default function ProjectDetail() {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { projectId } = useParams();
   const [newComment, setNewComment] = useState('');
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const getVarianceIcon = (baseline: number, current: number, isLowerBetter: boolean) => {
     const variance = current - baseline;
@@ -329,9 +313,7 @@ export default function ProjectDetail() {
                 {/* New Comment */}
                 <div className="flex gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-primary">
-                      {user?.email?.charAt(0).toUpperCase()}
-                    </span>
+                    <span className="text-sm font-bold text-primary">D</span>
                   </div>
                   <div className="flex-1">
                     <Textarea
@@ -378,49 +360,42 @@ export default function ProjectDetail() {
                       {version.version}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground mb-1">{version.changes}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{version.author}</span>
-                        <span>•</span>
-                        <span>{version.date}</span>
-                      </div>
+                      <p className="font-medium text-foreground">{version.changes}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {version.author} • {version.date}
+                      </p>
                     </div>
-                    {index === 0 && (
-                      <span className="text-xs font-medium text-primary">Current</span>
-                    )}
                   </div>
                 ))}
               </TabsContent>
 
-              <TabsContent value="linked">
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">No linked data sources yet</p>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Link Data Source
-                  </Button>
-                </div>
+              <TabsContent value="linked" className="text-center py-8">
+                <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">No linked data yet</p>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Link Data Source
+                </Button>
               </TabsContent>
             </Tabs>
           </div>
 
-          {/* Right Sidebar */}
+          {/* Sidebar */}
           <div className="space-y-6">
             {/* Team */}
             <div className="fusion-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display font-semibold text-foreground">Team</h3>
-                <Button variant="ghost" size="sm" className="gap-1 text-primary">
-                  <Plus className="w-4 h-4" />
+                <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
+                  <Plus className="w-3 h-3" />
                   Add
                 </Button>
               </div>
               <div className="space-y-3">
                 {mockProject.team.map((member) => (
                   <div key={member.id} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary">
                         {member.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
@@ -436,25 +411,23 @@ export default function ProjectDetail() {
             {/* Milestones */}
             <div className="fusion-card p-6">
               <h3 className="font-display font-semibold text-foreground mb-4">Milestones</h3>
-              <div className="space-y-4">
+              <div className="relative">
                 {mockProject.milestones.map((milestone, index) => {
-                  const statusConfig = getMilestoneStatus(milestone.status);
-                  const StatusIcon = statusConfig.icon;
+                  const statusInfo = getMilestoneStatus(milestone.status);
+                  const StatusIcon = statusInfo.icon;
                   
                   return (
-                    <div key={milestone.id} className="flex gap-3">
+                    <div key={milestone.id} className="flex gap-3 pb-4 last:pb-0">
                       <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${statusConfig.bg}`}>
-                          <StatusIcon className={`w-4 h-4 ${milestone.status === 'pending' ? 'text-muted-foreground' : 'text-white'}`} />
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusInfo.bg}`}>
+                          <StatusIcon className="w-3 h-3 text-white" />
                         </div>
                         {index < mockProject.milestones.length - 1 && (
-                          <div className={`w-0.5 flex-1 mt-2 ${milestone.status === 'completed' ? 'bg-green-500' : 'bg-muted'}`} />
+                          <div className="w-0.5 flex-1 bg-border mt-1" />
                         )}
                       </div>
-                      <div className="flex-1 pb-4">
-                        <p className={`text-sm font-medium ${milestone.status === 'pending' ? 'text-muted-foreground' : 'text-foreground'}`}>
-                          {milestone.title}
-                        </p>
+                      <div className="flex-1 pb-2">
+                        <p className={`text-sm font-medium ${statusInfo.color}`}>{milestone.title}</p>
                         <p className="text-xs text-muted-foreground">{milestone.date}</p>
                       </div>
                     </div>

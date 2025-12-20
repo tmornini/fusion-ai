@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Upload,
   FileSpreadsheet,
@@ -83,7 +82,6 @@ const mockUploadedFile: UploadedFile = {
 };
 
 export default function Crunch() {
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
@@ -92,19 +90,6 @@ export default function Crunch() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [businessContext, setBusinessContext] = useState('');
   const [step, setStep] = useState<'upload' | 'label' | 'review'>('upload');
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -193,7 +178,7 @@ export default function Crunch() {
                 ))}
               </nav>
             </div>
-            <Button variant="outline" size="sm" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
               Sign Out
             </Button>
           </div>
@@ -434,10 +419,10 @@ export default function Crunch() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium text-foreground mb-2 block">
-                              What should we call this column?
+                              What would you call this column?
                             </label>
                             <Input
-                              placeholder="e.g., Customer ID, Transaction Date..."
+                              placeholder="e.g., Customer ID"
                               value={column.friendlyName}
                               onChange={(e) => updateColumn(column.id, { friendlyName: e.target.value })}
                             />
@@ -469,7 +454,7 @@ export default function Crunch() {
                               What does "{column.originalName}" stand for?
                             </label>
                             <Input
-                              placeholder="e.g., CUST_ID = Customer Identifier"
+                              placeholder="e.g., Customer Identifier"
                               value={column.acronymExpansion}
                               onChange={(e) => updateColumn(column.id, { acronymExpansion: e.target.value })}
                             />
@@ -478,27 +463,15 @@ export default function Crunch() {
 
                         <div className="mt-4">
                           <label className="text-sm font-medium text-foreground mb-2 block">
-                            Describe this column in plain language
+                            Describe what this column contains
                           </label>
                           <Textarea
-                            placeholder="e.g., This is the unique ID we assign to each customer when they first make a purchase..."
+                            placeholder="e.g., A unique identifier assigned to each customer in our CRM system..."
                             value={column.description}
                             onChange={(e) => updateColumn(column.id, { description: e.target.value })}
-                            className="min-h-[80px] resize-none"
+                            className="resize-none"
+                            rows={2}
                           />
-                        </div>
-
-                        <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                          <div className="flex items-start gap-2">
-                            <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">AI Suggestion</p>
-                              <p className="text-sm text-blue-700">
-                                Based on the sample values, this appears to be a unique identifier. 
-                                Common uses include customer lookups, report filtering, and data joins.
-                              </p>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     )}
@@ -509,63 +482,38 @@ export default function Crunch() {
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-4">
-              <Button variant="outline" onClick={() => setStep('upload')}>
+              <Button variant="ghost" onClick={() => setStep('upload')}>
                 Upload Different File
               </Button>
               <Button 
                 onClick={() => setStep('review')}
-                disabled={getCompletionPercentage() < 50}
-                className="gap-2"
+                disabled={getCompletionPercentage() < 100}
               >
                 Continue to Review
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </div>
         )}
 
         {/* Review Step */}
-        {step === 'review' && uploadedFile && (
-          <div className="space-y-6">
-            <div className="fusion-card p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                  <Check className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-display font-semibold text-foreground">Data Translation Complete</h2>
-                  <p className="text-muted-foreground">Your business data is now ready to be used across projects</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {columns.map((column) => (
-                  <div key={column.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/30">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">
-                          {column.originalName}
-                        </code>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-foreground">{column.friendlyName || column.originalName}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{column.description || 'No description provided'}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {step === 'review' && (
+          <div className="fusion-card p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mx-auto mb-6">
+              <Check className="w-8 h-8 text-green-600" />
             </div>
-
-            <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-display font-bold text-foreground mb-3">
+              Data Translation Complete
+            </h2>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              Your data has been processed and is ready to use. All columns have been labeled and documented.
+            </p>
+            <div className="flex items-center justify-center gap-4">
               <Button variant="outline" onClick={() => setStep('label')}>
                 Edit Labels
               </Button>
-              <Button className="gap-2" onClick={() => navigate('/projects')}>
-                Use in Projects
-                <ChevronRight className="w-4 h-4" />
+              <Button onClick={() => navigate('/dashboard')}>
+                Continue to Dashboard
               </Button>
             </div>
           </div>
