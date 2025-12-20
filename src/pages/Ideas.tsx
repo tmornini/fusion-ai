@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Sparkles, 
   Home, 
@@ -17,12 +16,9 @@ import {
   Star,
   LayoutGrid,
   BarChart3,
-  LogOut,
-  Loader2
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Idea {
   id: string;
@@ -129,47 +125,12 @@ function IdeaCard({ idea, view, onScore }: { idea: Idea; view: 'priority' | 'per
 }
 
 export default function Ideas() {
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState<'priority' | 'performance'>('priority');
   const [ideas] = useState<Idea[]>(mockIdeas);
 
-  const { data: userProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*, companies(*)')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  if (loading || profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
-
-  const companyName = userProfile?.companies?.name || 'Your Company';
-  const userName = user?.email?.split('@')[0] || 'User';
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
+  const userName = 'Demo User';
+  const companyName = 'Demo Company';
 
   const sortedIdeas = [...ideas].sort((a, b) => {
     if (view === 'priority') return a.priority - b.priority;
@@ -217,7 +178,7 @@ export default function Ideas() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={handleSignOut}
+            onClick={() => navigate('/')}
             className="w-full justify-start text-muted-foreground hover:text-foreground"
           >
             <LogOut className="w-4 h-4 mr-2" />

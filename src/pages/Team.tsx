@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
 import { 
   Users,
   Search,
@@ -11,7 +10,6 @@ import {
   Award,
   Briefcase,
   ChevronRight,
-  Loader2,
   Plus,
   BarChart3,
   CheckCircle2,
@@ -163,23 +161,9 @@ const navItems = [
 ];
 
 export default function Team() {
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   const filteredMembers = mockTeamMembers.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -253,7 +237,7 @@ export default function Team() {
               </nav>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={signOut}>
+              <Button variant="outline" size="sm" onClick={() => navigate('/')}>
                 Sign Out
               </Button>
             </div>

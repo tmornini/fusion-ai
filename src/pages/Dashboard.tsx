@@ -1,8 +1,4 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 import { 
   Sparkles, 
   Home, 
@@ -15,7 +11,6 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  Loader2,
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -73,52 +68,9 @@ const navItems = [
 ];
 
 export default function Dashboard() {
-  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const { data: userProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*, companies(*)')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
-    if (userProfile && !userProfile.onboarding_completed) {
-      navigate('/onboarding');
-    }
-  }, [userProfile, navigate]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
-  if (loading || profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const companyName = userProfile?.companies?.name || 'Your Company';
-  const userName = user?.email?.split('@')[0] || 'User';
+  const userName = 'Demo User';
+  const companyName = 'Demo Company';
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -164,7 +116,7 @@ export default function Dashboard() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={handleSignOut}
+            onClick={() => navigate('/')}
             className="w-full justify-start text-muted-foreground hover:text-foreground"
           >
             <LogOut className="w-4 h-4 mr-2" />
@@ -218,13 +170,14 @@ export default function Dashboard() {
           <h2 className="text-lg font-display font-semibold text-foreground mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'New Idea', icon: Lightbulb },
-              { label: 'Create Project', icon: FolderKanban },
-              { label: 'Invite Team', icon: Users },
-              { label: 'View Reports', icon: TrendingUp },
+              { label: 'New Idea', icon: Lightbulb, href: '/ideas/new' },
+              { label: 'Create Project', icon: FolderKanban, href: '/projects' },
+              { label: 'Invite Team', icon: Users, href: '/teams' },
+              { label: 'View Reports', icon: TrendingUp, href: '/dashboard' },
             ].map((action) => (
               <button
                 key={action.label}
+                onClick={() => navigate(action.href)}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
               >
                 <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
