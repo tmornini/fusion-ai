@@ -24,9 +24,9 @@ function MetricCard({ title, estimated, actual, variance, icon, unit }: MetricCa
   const isPositive = variance >= 0;
   
   return (
-    <div className="fusion-card p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+    <div className="fusion-card p-4 sm:p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-3 sm:mb-4">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
           {icon}
         </div>
         <div className={`flex items-center gap-1 text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
@@ -34,15 +34,15 @@ function MetricCard({ title, estimated, actual, variance, icon, unit }: MetricCa
           {Math.abs(variance)}%
         </div>
       </div>
-      <h3 className="text-lg font-display font-semibold text-foreground mb-4">{title}</h3>
-      <div className="space-y-3">
+      <h3 className="text-base sm:text-lg font-display font-semibold text-foreground mb-3 sm:mb-4">{title}</h3>
+      <div className="space-y-2 sm:space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Estimated</span>
-          <span className="text-sm font-medium text-foreground">{estimated} {unit}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">Estimated</span>
+          <span className="text-xs sm:text-sm font-medium text-foreground">{estimated} {unit}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Actual</span>
-          <span className="text-sm font-medium text-foreground">{actual} {unit}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">Actual</span>
+          <span className="text-xs sm:text-sm font-medium text-foreground">{actual} {unit}</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div 
@@ -63,23 +63,23 @@ export default function Dashboard() {
   return (
     <DashboardLayout userName={userName} companyName={companyName}>
       {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-foreground mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
           Welcome back, {userName}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Here's an overview of your work in progress at {companyName}
         </p>
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <MetricCard
           title="Estimated vs Actual Time"
           estimated="120"
           actual="98"
           variance={18}
-          icon={<Clock className="w-6 h-6 text-primary" />}
+          icon={<Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
           unit="hours"
         />
         <MetricCard
@@ -87,7 +87,7 @@ export default function Dashboard() {
           estimated="45,000"
           actual="42,300"
           variance={6}
-          icon={<DollarSign className="w-6 h-6 text-primary" />}
+          icon={<DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
           unit="USD"
         />
         <MetricCard
@@ -95,15 +95,15 @@ export default function Dashboard() {
           estimated="85"
           actual="92"
           variance={8}
-          icon={<TrendingUp className="w-6 h-6 text-primary" />}
+          icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
           unit="score"
         />
       </div>
 
       {/* Quick Actions */}
-      <div className="fusion-card p-6">
-        <h2 className="text-lg font-display font-semibold text-foreground mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="fusion-card p-4 sm:p-6">
+        <h2 className="text-base sm:text-lg font-display font-semibold text-foreground mb-3 sm:mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: 'New Idea', icon: Lightbulb, href: '/ideas/new' },
             { label: 'Create Project', icon: FolderKanban, href: '/projects' },
@@ -113,12 +113,12 @@ export default function Dashboard() {
             <button
               key={action.label}
               onClick={() => navigate(action.href)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
+              className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors group"
             >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <action.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <action.icon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <span className="text-sm font-medium text-foreground">{action.label}</span>
+              <span className="text-xs sm:text-sm font-medium text-foreground text-center">{action.label}</span>
             </button>
           ))}
         </div>

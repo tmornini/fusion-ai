@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus,
   Wand2,
@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Idea {
   id: string;
@@ -56,6 +57,7 @@ function IdeaCard({ idea, view, onScore, onReview }: {
   onReview: (id: string) => void;
 }) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-emerald-600 bg-emerald-50';
@@ -68,22 +70,24 @@ function IdeaCard({ idea, view, onScore, onReview }: {
 
   return (
     <div 
-      className="fusion-card p-5 hover:shadow-lg transition-all group cursor-pointer"
+      className="fusion-card p-4 sm:p-5 hover:shadow-lg transition-all group cursor-pointer"
       onClick={() => onScore(idea.id)}
     >
-      <div className="flex items-start gap-4">
-        <div className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors mt-1 cursor-grab active:cursor-grabbing">
+      <div className="flex items-start gap-2 sm:gap-4">
+        {/* Hide drag handle on mobile */}
+        <div className="hidden sm:block text-muted-foreground/50 group-hover:text-muted-foreground transition-colors mt-1 cursor-grab active:cursor-grabbing">
           <GripVertical className="w-5 h-5" />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <h3 className="font-display font-semibold text-foreground text-lg truncate group-hover:text-primary transition-colors">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                <h3 className="font-display font-semibold text-foreground text-base sm:text-lg truncate group-hover:text-primary transition-colors">
                   {idea.title}
                 </h3>
-                <Badge variant="outline" className={statusConfig[idea.status].className}>
+                <Badge variant="outline" className={`text-xs ${statusConfig[idea.status].className}`}>
                   {statusConfig[idea.status].label}
                 </Badge>
               </div>
@@ -93,72 +97,74 @@ function IdeaCard({ idea, view, onScore, onReview }: {
                 <span>by {idea.submittedBy}</span>
               </div>
             </div>
-            <div className={`px-3 py-1.5 rounded-lg font-semibold text-sm ${getScoreColor(idea.score)}`}>
-              <Star className="w-3.5 h-3.5 inline mr-1" />
+            <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-semibold text-xs sm:text-sm ${getScoreColor(idea.score)}`}>
+              <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 inline mr-1" />
               {idea.score}
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-4">
-            <div className="grid grid-cols-3 gap-4 flex-1">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-primary" />
+          {/* Metrics - Stack on mobile */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Impact</p>
-                  <p className="text-sm font-medium text-foreground">{idea.estimatedImpact}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Impact</p>
+                  <p className="text-xs sm:text-sm font-medium text-foreground">{idea.estimatedImpact}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Time</p>
-                  <p className="text-sm font-medium text-foreground">{idea.estimatedTime}h</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Time</p>
+                  <p className="text-xs sm:text-sm font-medium text-foreground">{idea.estimatedTime}h</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Cost</p>
-                  <p className="text-sm font-medium text-foreground">${(idea.estimatedCost / 1000).toFixed(0)}k</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Cost</p>
+                  <p className="text-xs sm:text-sm font-medium text-foreground">${(idea.estimatedCost / 1000).toFixed(0)}k</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            {/* Actions - Always visible on mobile */}
+            <div className={`flex items-center gap-2 ${isMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} onClick={(e) => e.stopPropagation()}>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => onScore(idea.id)}
-                className="gap-2"
+                className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
               >
-                <Eye className="w-4 h-4" />
-                View
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">View</span>
               </Button>
               {canReview && (
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => onReview(idea.id)}
-                  className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                  className="gap-1.5 sm:gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 text-xs sm:text-sm h-8 sm:h-9"
                 >
-                  <ClipboardCheck className="w-4 h-4" />
-                  Review
+                  <ClipboardCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Review</span>
                 </Button>
               )}
               {canConvert && (
                 <Button 
                   size="sm" 
                   onClick={() => navigate(`/ideas/${idea.id}/convert`)}
-                  className="gap-2"
+                  className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9"
                 >
-                  <ArrowRight className="w-4 h-4" />
-                  Convert
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Convert</span>
                 </Button>
               )}
             </div>
@@ -171,6 +177,7 @@ function IdeaCard({ idea, view, onScore, onReview }: {
 
 export default function Ideas() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [view, setView] = useState<'priority' | 'performance'>('priority');
   const [ideas] = useState<Idea[]>(mockIdeas);
 
@@ -184,73 +191,75 @@ export default function Ideas() {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground mb-2">Ideas</h1>
-          <p className="text-muted-foreground">Explore and prioritize innovation opportunities</p>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">Ideas</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Explore and prioritize innovation opportunities</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {pendingReviewCount > 0 && (
             <Button 
               variant="outline" 
+              size={isMobile ? "sm" : "default"}
               className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
               onClick={() => navigate('/review')}
             >
               <ClipboardCheck className="w-4 h-4" />
-              Review Queue ({pendingReviewCount})
+              <span className="hidden sm:inline">Review Queue</span> ({pendingReviewCount})
             </Button>
           )}
-          <Button variant="hero" className="gap-2" onClick={() => navigate('/ideas/new')}>
+          <Button variant="hero" size={isMobile ? "sm" : "default"} className="gap-2" onClick={() => navigate('/ideas/new')}>
             <Plus className="w-4 h-4" />
-            Create or Generate Idea
+            <span className="hidden sm:inline">Create or Generate Idea</span>
+            <span className="sm:hidden">New Idea</span>
             <Wand2 className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Flow Indicator */}
-      <div className="flex items-center gap-2 mb-6 p-3 rounded-lg bg-muted/30 border border-border">
-        <Lightbulb className="w-4 h-4 text-primary" />
-        <span className="text-sm text-muted-foreground">
+      {/* Flow Indicator - Scrollable on mobile */}
+      <div className="flex items-center gap-2 mb-4 sm:mb-6 p-3 rounded-lg bg-muted/30 border border-border overflow-x-auto">
+        <Lightbulb className="w-4 h-4 text-primary flex-shrink-0" />
+        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
           <span className="font-medium text-foreground">Idea Flow:</span>
-          {' '}Create → Score & Prioritize → Review & Approve → Convert to Project
+          {' '}Create → Score → Review → Convert
         </span>
-        <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto flex-shrink-0" />
       </div>
 
       {/* View Toggle */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50 self-start">
           <button
             onClick={() => setView('priority')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               view === 'priority'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <LayoutGrid className="w-4 h-4" />
-            Priority View
+            <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Priority
           </button>
           <button
             onClick={() => setView('performance')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               view === 'performance'
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
-            Performance View
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Performance
           </button>
         </div>
-        <span className="text-sm text-muted-foreground ml-4">
-          {sortedIdeas.length} ideas • Sorted by {view === 'priority' ? 'priority rank' : 'highest score'}
+        <span className="text-xs sm:text-sm text-muted-foreground">
+          {sortedIdeas.length} ideas • {view === 'priority' ? 'by priority' : 'by score'}
         </span>
       </div>
 
       {/* Ideas Grid */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {sortedIdeas.map((idea) => (
           <IdeaCard 
             key={idea.id} 
@@ -264,12 +273,12 @@ export default function Ideas() {
 
       {/* Empty State */}
       {sortedIdeas.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Lightbulb className="w-8 h-8 text-primary" />
+        <div className="text-center py-12 sm:py-16">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Lightbulb className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">No ideas yet</h3>
-          <p className="text-muted-foreground mb-6">Start by creating your first idea or generating one with AI</p>
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">No ideas yet</h3>
+          <p className="text-sm text-muted-foreground mb-6">Start by creating your first idea or generating one with AI</p>
           <Button variant="hero" onClick={() => navigate('/ideas/new')}>
             <Plus className="w-4 h-4 mr-2" />
             Create Your First Idea
