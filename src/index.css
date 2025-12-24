@@ -393,6 +393,19 @@
     background: var(--gradient-subtle);
   }
 
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-700)) 100%);
+  }
+
+  /* Brand color background utilities */
+  .bg-fusion-blue-lightest {
+    background-color: hsl(var(--blue-50));
+  }
+
+  .bg-fusion-yellow-soft {
+    background-color: hsl(var(--yellow-50));
+  }
+
   /* Shadow utilities */
   .shadow-fusion-xs {
     box-shadow: var(--shadow-xs);
