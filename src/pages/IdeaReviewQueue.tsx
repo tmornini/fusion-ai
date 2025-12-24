@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
-  ArrowLeft, 
   Clock, 
   TrendingUp, 
   AlertCircle, 
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 interface ReviewIdea {
   id: string;
