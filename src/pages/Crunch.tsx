@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Upload,
   FileSpreadsheet,
@@ -15,15 +14,7 @@ import {
   Hash,
   Calendar,
   Type,
-  ToggleLeft,
-  Home,
-  Lightbulb,
-  FolderKanban,
-  Users,
-  User,
-  LogOut,
-  Database,
-  GitBranch
+  ToggleLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,16 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
-  { label: 'Projects', icon: FolderKanban, href: '/projects' },
-  { label: 'Teams', icon: Users, href: '/teams' },
-  { label: 'Crunch', icon: Database, href: '/crunch', active: true },
-  { label: 'Flow', icon: GitBranch, href: '/flow' },
-  { label: 'Account', icon: User, href: '/account' },
-];
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface Column {
   id: string;
@@ -68,7 +50,6 @@ interface UploadedFile {
   uploadedAt: string;
 }
 
-// Mock uploaded file data
 const mockUploadedFile: UploadedFile = {
   id: '1',
   name: 'Q4_Sales_Report.xlsx',
@@ -87,7 +68,6 @@ const mockUploadedFile: UploadedFile = {
 };
 
 export default function Crunch() {
-  const navigate = useNavigate();
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
@@ -99,8 +79,6 @@ export default function Crunch() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    // Simulate file processing
     setIsProcessing(true);
     setTimeout(() => {
       setUploadedFile(mockUploadedFile);
@@ -111,7 +89,6 @@ export default function Crunch() {
   }, []);
 
   const handleFileSelect = () => {
-    // Simulate file selection and processing
     setIsProcessing(true);
     setTimeout(() => {
       setUploadedFile(mockUploadedFile);
@@ -137,14 +114,10 @@ export default function Crunch() {
 
   const getDataTypeIcon = (type: string) => {
     switch (type) {
-      case 'number':
-        return Hash;
-      case 'date':
-        return Calendar;
-      case 'boolean':
-        return ToggleLeft;
-      default:
-        return Type;
+      case 'number': return Hash;
+      case 'date': return Calendar;
+      case 'boolean': return ToggleLeft;
+      default: return Type;
     }
   };
 
@@ -155,61 +128,8 @@ export default function Crunch() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col">
-        {/* Logo */}
-        <div className="flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.href)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                item.active 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Account Section */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Demo User</p>
-              <p className="text-xs text-muted-foreground truncate">Demo Company</p>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
-          </Button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-4xl mx-auto">
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto">
         {/* Page Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">

@@ -5,37 +5,20 @@ import {
   Users,
   FolderKanban,
   CreditCard,
-  Shield,
   TrendingUp,
   CheckCircle2,
-  AlertCircle,
   Crown,
-  Sparkles,
-  Home,
   Lightbulb,
   User,
-  LogOut,
-  Database,
-  GitBranch,
   Settings,
-  UserPlus,
   ExternalLink,
   Calendar,
   Activity,
-  Bell
+  Bell,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
-  { label: 'Projects', icon: FolderKanban, href: '/projects' },
-  { label: 'Teams', icon: Users, href: '/teams' },
-  { label: 'Crunch', icon: Database, href: '/crunch' },
-  { label: 'Flow', icon: GitBranch, href: '/flow' },
-  { label: 'Account', icon: User, href: '/account', active: true },
-];
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 // Mock account data
 const accountData = {
@@ -51,7 +34,7 @@ const accountData = {
   usage: {
     projects: { current: 12, limit: 50 },
     ideas: { current: 47, limit: 200 },
-    storage: { current: 2.4, limit: 10 }, // GB
+    storage: { current: 2.4, limit: 10 },
     aiCredits: { current: 850, limit: 1000 },
   },
   health: {
@@ -87,297 +70,242 @@ export default function Account() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col">
-        {/* Logo */}
-        <div className="flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-display font-bold text-foreground mb-2">Account Overview</h1>
+          <p className="text-muted-foreground">
+            Manage your organization, users, and billing settings
+          </p>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.href)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                item.active 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Account Section */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 flex items-center gap-4 justify-start"
+            onClick={() => navigate('/account/profile')}
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <User className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Demo User</p>
-              <p className="text-xs text-muted-foreground truncate">Demo Company</p>
+            <div className="text-left">
+              <p className="font-medium text-foreground">My Profile</p>
+              <p className="text-xs text-muted-foreground">Personal settings</p>
             </div>
-          </div>
+          </Button>
+          
           <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            variant="outline" 
+            className="h-auto p-4 flex items-center gap-4 justify-start"
+            onClick={() => navigate('/account/company')}
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
+            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <Settings className="w-5 h-5 text-purple-600" />
+            </div>
+            <div className="text-left">
+              <p className="font-medium text-foreground">Company Settings</p>
+              <p className="text-xs text-muted-foreground">Organization config</p>
+            </div>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 flex items-center gap-4 justify-start"
+          >
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-left">
+              <p className="font-medium text-foreground">Billing</p>
+              <p className="text-xs text-muted-foreground">Plans & invoices</p>
+            </div>
           </Button>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-display font-bold text-foreground mb-2">Account Overview</h1>
-            <p className="text-muted-foreground">
-              Manage your organization, users, and billing settings
-            </p>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex items-center gap-4 justify-start"
-              onClick={() => navigate('/account/profile')}
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
+        {/* Company Overview Card */}
+        <div className="fusion-card p-6 mb-6">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                <Building2 className="w-7 h-7 text-primary" />
               </div>
-              <div className="text-left">
-                <p className="font-medium text-foreground">My Profile</p>
-                <p className="text-xs text-muted-foreground">Personal settings</p>
-              </div>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex items-center gap-4 justify-start"
-              onClick={() => navigate('/account/company')}
-            >
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-foreground">Company Settings</p>
-                <p className="text-xs text-muted-foreground">Organization config</p>
-              </div>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="h-auto p-4 flex items-center gap-4 justify-start"
-            >
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-foreground">Billing</p>
-                <p className="text-xs text-muted-foreground">Plans & invoices</p>
-              </div>
-            </Button>
-          </div>
-
-          {/* Company Overview Card */}
-          <div className="fusion-card p-6 mb-6">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  <Building2 className="w-7 h-7 text-primary" />
+              <div>
+                <h2 className="text-xl font-display font-semibold text-foreground">
+                  {accountData.company.name}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Crown className="w-3 h-3" />
+                    {accountData.company.plan} Plan
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium border border-green-200">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Active
+                  </span>
                 </div>
-                <div>
-                  <h2 className="text-xl font-display font-semibold text-foreground">
-                    {accountData.company.name}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      <Crown className="w-3 h-3" />
-                      {accountData.company.plan} Plan
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium border border-green-200">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Active
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className={`px-4 py-2 rounded-lg border ${getHealthColor(accountData.health.status)}`}>
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  <span className="text-sm font-medium capitalize">{accountData.health.status}</span>
-                </div>
-                <p className="text-xs mt-1">Health Score: {accountData.health.score}%</p>
               </div>
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Users className="w-4 h-4" />
-                  <span className="text-xs">Active Users</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {accountData.company.usedSeats}
-                  <span className="text-sm font-normal text-muted-foreground">/{accountData.company.seats}</span>
-                </p>
+            <div className={`px-4 py-2 rounded-lg border ${getHealthColor(accountData.health.status)}`}>
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                <span className="text-sm font-medium capitalize">{accountData.health.status}</span>
               </div>
-              <div className="p-4 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <FolderKanban className="w-4 h-4" />
-                  <span className="text-xs">Projects</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {accountData.usage.projects.current}
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Lightbulb className="w-4 h-4" />
-                  <span className="text-xs">Ideas</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">
-                  {accountData.usage.ideas.current}
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-xs">Next Billing</span>
-                </div>
-                <p className="text-lg font-bold text-foreground">
-                  {new Date(accountData.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
-              </div>
+              <p className="text-xs mt-1">Health Score: {accountData.health.score}%</p>
             </div>
           </div>
 
-          {/* Usage & Activity Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Usage Meters */}
-            <div className="fusion-card p-6">
-              <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Usage Overview
-              </h3>
-              <div className="space-y-4">
-                {[
-                  { label: 'User Seats', ...{ current: accountData.company.usedSeats, limit: accountData.company.seats } },
-                  { label: 'Projects', ...accountData.usage.projects },
-                  { label: 'Ideas', ...accountData.usage.ideas },
-                  { label: 'AI Credits', ...accountData.usage.aiCredits },
-                  { label: 'Storage (GB)', ...accountData.usage.storage },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-medium text-foreground">
-                        {item.current} / {item.limit}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all ${getUsageColor(item.current, item.limit)}`}
-                        style={{ width: `${Math.min(100, (item.current / item.limit) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <Users className="w-4 h-4" />
+                <span className="text-xs">Active Users</span>
               </div>
+              <p className="text-2xl font-bold text-foreground">
+                {accountData.company.usedSeats}
+                <span className="text-sm font-normal text-muted-foreground">/{accountData.company.seats}</span>
+              </p>
             </div>
-
-            {/* Recent Activity */}
-            <div className="fusion-card p-6">
-              <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
-                Recent Activity
-              </h3>
-              <div className="space-y-4">
-                {accountData.recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      activity.type === 'user_added' ? 'bg-blue-100' :
-                      activity.type === 'project_created' ? 'bg-purple-100' : 'bg-green-100'
-                    }`}>
-                      {activity.type === 'user_added' && <UserPlus className="w-4 h-4 text-blue-600" />}
-                      {activity.type === 'project_created' && <FolderKanban className="w-4 h-4 text-purple-600" />}
-                      {activity.type === 'billing' && <CreditCard className="w-4 h-4 text-green-600" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <FolderKanban className="w-4 h-4" />
+                <span className="text-xs">Projects</span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="w-full mt-4"
-                onClick={() => navigate('/account/activity')}
-              >
-                View All Activity
-              </Button>
+              <p className="text-2xl font-bold text-foreground">
+                {accountData.usage.projects.current}
+              </p>
             </div>
-          </div>
-
-          {/* Security & Quick Links */}
-          <div className="mt-6 fusion-card p-6">
-            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
-              Security & Administration
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button 
-                onClick={() => navigate('/account/users')}
-                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
-              >
-                <Users className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-foreground">Manage Users</p>
-                  <p className="text-xs text-muted-foreground">Add, edit, or remove team members</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
-              </button>
-              <button 
-                onClick={() => navigate('/account/notifications')}
-                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
-              >
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-foreground">Notifications</p>
-                  <p className="text-xs text-muted-foreground">Email & push preferences</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
-              </button>
-              <button className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left">
-                <CreditCard className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-foreground">Billing History</p>
-                  <p className="text-xs text-muted-foreground">View invoices and payments</p>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
-              </button>
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <Lightbulb className="w-4 h-4" />
+                <span className="text-xs">Ideas</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">
+                {accountData.usage.ideas.current}
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs">Next Billing</span>
+              </div>
+              <p className="text-lg font-bold text-foreground">
+                {new Date(accountData.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
             </div>
           </div>
         </div>
-      </main>
-    </div>
+
+        {/* Usage & Activity Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Usage Meters */}
+          <div className="fusion-card p-6">
+            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Usage Overview
+            </h3>
+            <div className="space-y-4">
+              {[
+                { label: 'User Seats', ...{ current: accountData.company.usedSeats, limit: accountData.company.seats } },
+                { label: 'Projects', ...accountData.usage.projects },
+                { label: 'Ideas', ...accountData.usage.ideas },
+                { label: 'AI Credits', ...accountData.usage.aiCredits },
+                { label: 'Storage (GB)', ...accountData.usage.storage },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-medium text-foreground">
+                      {item.current} / {item.limit}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${getUsageColor(item.current, item.limit)}`}
+                      style={{ width: `${Math.min(100, (item.current / item.limit) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="fusion-card p-6">
+            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              Recent Activity
+            </h3>
+            <div className="space-y-4">
+              {accountData.recentActivity.map((activity, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    activity.type === 'user_added' ? 'bg-blue-100' :
+                    activity.type === 'project_created' ? 'bg-purple-100' : 'bg-green-100'
+                  }`}>
+                    {activity.type === 'user_added' && <UserPlus className="w-4 h-4 text-blue-600" />}
+                    {activity.type === 'project_created' && <FolderKanban className="w-4 h-4 text-purple-600" />}
+                    {activity.type === 'billing' && <CreditCard className="w-4 h-4 text-green-600" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground">{activity.description}</p>
+                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full mt-4"
+              onClick={() => navigate('/account/activity')}
+            >
+              View All Activity
+            </Button>
+          </div>
+        </div>
+
+        {/* Security & Quick Links */}
+        <div className="mt-6 fusion-card p-6">
+          <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+            Security & Administration
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button 
+              onClick={() => navigate('/account/users')}
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
+            >
+              <Users className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-foreground">Manage Users</p>
+                <p className="text-xs text-muted-foreground">Add, edit, or remove team members</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
+            </button>
+            <button 
+              onClick={() => navigate('/account/notifications')}
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
+            >
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-foreground">Notifications</p>
+                <p className="text-xs text-muted-foreground">Email & push preferences</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
+            </button>
+            <button className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left">
+              <CreditCard className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-foreground">Billing History</p>
+                <p className="text-xs text-muted-foreground">View invoices and payments</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
