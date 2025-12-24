@@ -9,19 +9,36 @@ import {
   LogOut,
   Database,
   GitBranch,
-  ClipboardCheck
+  Wrench,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
-  { label: 'Review', icon: ClipboardCheck, href: '/review' },
-  { label: 'Projects', icon: FolderKanban, href: '/projects' },
-  { label: 'Teams', icon: Users, href: '/teams' },
-  { label: 'Crunch', icon: Database, href: '/crunch' },
-  { label: 'Flow', icon: GitBranch, href: '/flow' },
-  { label: 'Account', icon: User, href: '/account' },
+// Navigation reflects the user journey, not features
+const navSections = [
+  {
+    label: 'Journey',
+    items: [
+      { label: 'Home', icon: Home, href: '/dashboard' },
+      { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
+      { label: 'Projects', icon: FolderKanban, href: '/projects' },
+      { label: 'Teams', icon: Users, href: '/teams' },
+    ]
+  },
+  {
+    label: 'Tools',
+    items: [
+      { label: 'Flow', icon: GitBranch, href: '/flow' },
+      { label: 'Crunch', icon: Database, href: '/crunch' },
+    ]
+  },
+  {
+    label: 'Settings',
+    items: [
+      { label: 'Account', icon: User, href: '/account' },
+    ]
+  }
 ];
 
 interface AppSidebarProps {
@@ -32,21 +49,30 @@ interface AppSidebarProps {
 export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company' }: AppSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Journey', 'Tools', 'Settings']);
 
   const isActive = (href: string) => {
     if (href === '/account') {
       return location.pathname.startsWith('/account');
     }
     if (href === '/ideas') {
-      return location.pathname.startsWith('/ideas');
+      return location.pathname.startsWith('/ideas') || location.pathname.startsWith('/review');
     }
     if (href === '/projects') {
-      return location.pathname.startsWith('/projects');
+      return location.pathname.startsWith('/projects') || location.pathname.startsWith('/engineering');
     }
-    if (href === '/review') {
-      return location.pathname.startsWith('/review');
+    if (href === '/teams') {
+      return location.pathname === '/teams' || location.pathname === '/team';
     }
     return location.pathname === href;
+  };
+
+  const toggleSection = (label: string) => {
+    setExpandedSections(prev => 
+      prev.includes(label) 
+        ? prev.filter(s => s !== label) 
+        : [...prev, label]
+    );
   };
 
   return (
@@ -60,20 +86,36 @@ export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => navigate(item.href)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              isActive(item.href)
-                ? 'bg-primary/10 text-primary' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            }`}
-          >
-            <item.icon className="w-5 h-5" />
-            {item.label}
-          </button>
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {navSections.map((section) => (
+          <div key={section.label}>
+            <button
+              onClick={() => toggleSection(section.label)}
+              className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+            >
+              {section.label}
+              <ChevronDown className={`w-3 h-3 transition-transform ${expandedSections.includes(section.label) ? '' : '-rotate-90'}`} />
+            </button>
+            
+            {expandedSections.includes(section.label) && (
+              <div className="mt-1 space-y-1">
+                {section.items.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.href)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive(item.href)
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
 

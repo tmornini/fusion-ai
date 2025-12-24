@@ -14,6 +14,7 @@ import IdeaScoring from "./pages/IdeaScoring";
 import IdeaConvert from "./pages/IdeaConvert";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import EngineeringRequirements from "./pages/EngineeringRequirements";
 import Team from "./pages/Team";
 import Crunch from "./pages/Crunch";
 import Flow from "./pages/Flow";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/ideas/:ideaId/convert" element={<IdeaConvert />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route path="/projects/:projectId/engineering" element={<EngineeringRequirements />} />
             <Route path="/team" element={<Team />} />
             <Route path="/teams" element={<Team />} />
             <Route path="/crunch" element={<Crunch />} />

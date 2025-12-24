@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft,
   TrendingUp,
@@ -19,7 +19,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  ListTodo
+  ListTodo,
+  GitBranch,
+  Database,
+  Code2,
+  ChevronRight,
+  Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +36,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import TaskAssignment from '@/components/TaskAssignment';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 // Mock project data
 const mockProject = {
@@ -123,41 +129,94 @@ export default function ProjectDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/projects')}
-                className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-xl font-display font-bold text-foreground">{mockProject.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Led by {mockProject.projectLead}</span>
-                  <span>•</span>
-                  <span>{mockProject.progress}% complete</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-50 border border-green-200">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span className="text-green-600">Approved</span>
-              </div>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link to="/projects" className="hover:text-foreground transition-colors">Projects</Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-foreground">{mockProject.title}</span>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-display font-bold text-foreground">{mockProject.title}</h1>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-emerald-600">Approved</span>
+              </div>
+            </div>
+            <p className="text-muted-foreground">
+              Led by {mockProject.projectLead} • {mockProject.progress}% complete
+            </p>
+          </div>
+          <Button variant="outline" size="icon">
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Quick Actions - Tool Links */}
+        <div className="grid grid-cols-4 gap-3 mb-8">
+          <Link 
+            to={`/projects/${projectId}/engineering`}
+            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Code2 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Engineering</p>
+                <p className="text-xs text-muted-foreground">Requirements & clarifications</p>
+              </div>
+            </div>
+          </Link>
+          <Link 
+            to="/teams"
+            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Team</p>
+                <p className="text-xs text-muted-foreground">Manage assignments</p>
+              </div>
+            </div>
+          </Link>
+          <Link 
+            to="/flow"
+            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <GitBranch className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Flow</p>
+                <p className="text-xs text-muted-foreground">Document processes</p>
+              </div>
+            </div>
+          </Link>
+          <Link 
+            to="/crunch"
+            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Database className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Crunch</p>
+                <p className="text-xs text-muted-foreground">Data inputs</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -438,6 +497,6 @@ export default function ProjectDetail() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
