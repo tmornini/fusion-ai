@@ -34,13 +34,13 @@ const navSections = [
     items: [
       { label: 'Flow', icon: GitBranch, href: '/flow' },
       { label: 'Crunch', icon: Database, href: '/crunch' },
-      { label: 'Design System', icon: Palette, href: '/design-system' },
     ]
   },
   {
     label: 'Settings',
     items: [
       { label: 'Account', icon: User, href: '/account' },
+      { label: 'Design System', icon: Palette, href: '/design-system' },
     ]
   }
 ];
