@@ -19,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -30,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface IdeaDetail {
   id: string;
@@ -126,6 +126,7 @@ const severityConfig = {
 export default function ApprovalDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showClarificationDialog, setShowClarificationDialog] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -159,76 +160,76 @@ export default function ApprovalDetail() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" asChild>
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
                 <Link to="/review">
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
               </Button>
-              <div>
-                <p className="text-sm text-muted-foreground">Reviewing Idea</p>
-                <h1 className="text-lg font-bold text-foreground">{idea.title}</h1>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Reviewing Idea</p>
+                <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">{idea.title}</h1>
               </div>
             </div>
             <Badge 
               variant="outline" 
-              className="bg-destructive/10 text-destructive border-destructive/20"
+              className="bg-destructive/10 text-destructive border-destructive/20 text-xs flex-shrink-0"
             >
-              High Priority
+              High
             </Badge>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 sm:pb-32">
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground mb-8">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span>Submitted by <span className="text-foreground font-medium">{idea.submittedBy}</span></span>
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="text-foreground font-medium">{idea.submittedBy}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{idea.submittedAt}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4" />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{idea.category}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span>{idea.attachments} attachments</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             <span>{idea.comments} comments</span>
           </div>
         </div>
 
         {/* Score Banner */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 mb-6 sm:mb-8">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Innovation Score</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Innovation Score</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-primary">{idea.score}</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-primary">{idea.score}</span>
                   <span className="text-muted-foreground">/100</span>
                 </div>
               </div>
-              <div className="flex gap-8">
+              <div className="grid grid-cols-3 gap-4 sm:gap-8">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Impact</p>
-                  <p className="text-xl font-semibold text-foreground">{idea.impact.level}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Impact</p>
+                  <p className="text-base sm:text-xl font-semibold text-foreground">{idea.impact.level}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Effort</p>
-                  <p className="text-xl font-semibold text-foreground">{idea.effort.level}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Effort</p>
+                  <p className="text-base sm:text-xl font-semibold text-foreground">{idea.effort.level}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Timeline</p>
-                  <p className="text-xl font-semibold text-foreground">{idea.effort.timeEstimate}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Timeline</p>
+                  <p className="text-base sm:text-xl font-semibold text-foreground">{idea.effort.timeEstimate}</p>
                 </div>
               </div>
             </div>
@@ -236,83 +237,83 @@ export default function ApprovalDetail() {
         </Card>
 
         {/* Description */}
-        <Card className="bg-card border-border mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Lightbulb className="h-5 w-5 text-primary" />
+        <Card className="bg-card border-border mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Idea Overview
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-foreground leading-relaxed">{idea.description}</p>
+            <p className="text-sm sm:text-base text-foreground leading-relaxed">{idea.description}</p>
           </CardContent>
         </Card>
 
         {/* Impact & Effort */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
                 Expected Impact
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-foreground">{idea.impact.description}</p>
+              <p className="text-sm sm:text-base text-foreground">{idea.impact.description}</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Clock className="h-5 w-5 text-amber-600" />
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 Effort Required
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Timeline</span>
-                <span className="text-foreground font-medium">{idea.effort.timeEstimate}</span>
+                <span className="text-sm text-muted-foreground">Timeline</span>
+                <span className="text-sm text-foreground font-medium">{idea.effort.timeEstimate}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Team Size</span>
-                <span className="text-foreground font-medium">{idea.effort.teamSize}</span>
+                <span className="text-sm text-muted-foreground">Team Size</span>
+                <span className="text-sm text-foreground font-medium">{idea.effort.teamSize}</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Cost */}
-        <Card className="bg-card border-border mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <DollarSign className="h-5 w-5 text-primary" />
+        <Card className="bg-card border-border mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Cost Estimate
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-foreground mb-2">{idea.cost.estimate}</p>
-            <p className="text-sm text-muted-foreground">{idea.cost.breakdown}</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">{idea.cost.estimate}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{idea.cost.breakdown}</p>
           </CardContent>
         </Card>
 
         {/* Risks */}
-        <Card className="bg-card border-border mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+        <Card className="bg-card border-border mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
               Identified Risks
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4">
             {idea.risks.map((risk, index) => (
-              <div key={index} className="p-4 rounded-lg bg-muted/30 border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-foreground">{risk.title}</h4>
-                  <Badge variant="outline" className={severityConfig[risk.severity].className}>
-                    {risk.severity} risk
+              <div key={index} className="p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <h4 className="font-medium text-sm sm:text-base text-foreground">{risk.title}</h4>
+                  <Badge variant="outline" className={`text-xs ${severityConfig[risk.severity].className}`}>
+                    {risk.severity}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   <span className="font-medium">Mitigation:</span> {risk.mitigation}
                 </p>
               </div>
@@ -321,14 +322,14 @@ export default function ApprovalDetail() {
         </Card>
 
         {/* Assumptions */}
-        <Card className="bg-card border-border mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Key Assumptions</CardTitle>
+        <Card className="bg-card border-border mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">Key Assumptions</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
               {idea.assumptions.map((assumption, index) => (
-                <li key={index} className="flex items-start gap-2 text-foreground">
+                <li key={index} className="flex items-start gap-2 text-sm sm:text-base text-foreground">
                   <span className="text-primary mt-1">•</span>
                   {assumption}
                 </li>
@@ -338,17 +339,17 @@ export default function ApprovalDetail() {
         </Card>
 
         {/* Strategic Alignment */}
-        <Card className="bg-card border-border mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5 text-primary" />
+        <Card className="bg-card border-border mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Strategic Alignment
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {idea.alignments.map((alignment, index) => (
-                <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0">
+                <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-0 text-xs">
                   {alignment}
                 </Badge>
               ))}
@@ -359,31 +360,36 @@ export default function ApprovalDetail() {
 
       {/* Fixed Decision Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             <Button 
               variant="outline" 
+              size={isMobile ? "sm" : "default"}
               onClick={() => setShowClarificationDialog(true)}
-              className="gap-2"
+              className="gap-2 order-2 sm:order-1"
             >
               <MessageSquare className="h-4 w-4" />
-              Request Clarification
+              <span className="hidden sm:inline">Request Clarification</span>
+              <span className="sm:hidden">Clarify</span>
             </Button>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 order-1 sm:order-2">
               <Button 
                 variant="outline" 
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setShowRejectDialog(true)}
-                className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="gap-2 flex-1 sm:flex-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <XCircle className="h-4 w-4" />
-                Send Back
+                <span className="hidden sm:inline">Send Back</span>
+                <span className="sm:hidden">Reject</span>
               </Button>
               <Button 
+                size={isMobile ? "sm" : "default"}
                 onClick={handleApprove}
-                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="gap-2 flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 <CheckCircle className="h-4 w-4" />
-                Approve Idea
+                Approve
               </Button>
             </div>
           </div>
@@ -392,7 +398,7 @@ export default function ApprovalDetail() {
 
       {/* Reject Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[90vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Send Back for Revision</DialogTitle>
             <DialogDescription>
@@ -403,9 +409,9 @@ export default function ApprovalDetail() {
             placeholder="Explain what changes or additional information is needed..."
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[100px] sm:min-h-[120px]"
           />
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
               Cancel
             </Button>
@@ -418,7 +424,7 @@ export default function ApprovalDetail() {
 
       {/* Clarification Dialog */}
       <Dialog open={showClarificationDialog} onOpenChange={setShowClarificationDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[90vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Request Clarification</DialogTitle>
             <DialogDescription>
@@ -429,9 +435,9 @@ export default function ApprovalDetail() {
             placeholder="What additional information do you need?"
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            className="min-h-[120px]"
+            className="min-h-[100px] sm:min-h-[120px]"
           />
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowClarificationDialog(false)}>
               Cancel
             </Button>

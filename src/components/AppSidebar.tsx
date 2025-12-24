@@ -9,7 +9,6 @@ import {
   LogOut,
   Database,
   GitBranch,
-  Wrench,
   ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,9 +43,11 @@ const navSections = [
 interface AppSidebarProps {
   userName?: string;
   companyName?: string;
+  onNavigate?: () => void;
+  isMobile?: boolean;
 }
 
-export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company' }: AppSidebarProps) {
+export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company', onNavigate, isMobile }: AppSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState<string[]>(['Journey', 'Tools', 'Settings']);
@@ -75,15 +76,32 @@ export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company
     );
   };
 
+  const handleNavigate = (href: string) => {
+    navigate(href);
+    onNavigate?.();
+  };
+
   return (
-    <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col z-40">
-      {/* Logo */}
-      <div className="flex items-center gap-3 p-6 border-b border-border">
-        <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-          <Sparkles className="w-5 h-5 text-primary-foreground" />
+    <aside className={`${isMobile ? 'w-full h-full' : 'w-64 fixed left-0 top-0 bottom-0'} border-r border-border bg-card/50 backdrop-blur-sm flex flex-col z-40`}>
+      {/* Logo - Hide on mobile since header shows it */}
+      {!isMobile && (
+        <div className="flex items-center gap-3 p-6 border-b border-border">
+          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
         </div>
-        <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
-      </div>
+      )}
+
+      {/* Mobile logo header */}
+      {isMobile && (
+        <div className="flex items-center gap-3 p-4 border-b border-border">
+          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
@@ -102,7 +120,7 @@ export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company
                 {section.items.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => navigate(item.href)}
+                    onClick={() => handleNavigate(item.href)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.href)
                         ? 'bg-primary/10 text-primary' 
@@ -133,7 +151,7 @@ export function AppSidebar({ userName = 'Demo User', companyName = 'Demo Company
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => navigate('/')}
+          onClick={() => handleNavigate('/')}
           className="w-full justify-start text-muted-foreground hover:text-foreground"
         >
           <LogOut className="w-4 h-4 mr-2" />
