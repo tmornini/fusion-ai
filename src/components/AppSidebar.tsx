@@ -11,7 +11,8 @@ import {
   GitBranch,
   ChevronDown,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -33,6 +34,7 @@ const navSections = [
     items: [
       { label: 'Flow', icon: GitBranch, href: '/flow' },
       { label: 'Crunch', icon: Database, href: '/crunch' },
+      { label: 'Design System', icon: Palette, href: '/design-system' },
     ]
   },
   {
