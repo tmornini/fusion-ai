@@ -20,6 +20,7 @@ import Flow from "./pages/Flow";
 import Account from "./pages/Account";
 import Profile from "./pages/Profile";
 import CompanySettings from "./pages/CompanySettings";
+import ManageUsers from "./pages/ManageUsers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/account" element={<Account />} />
             <Route path="/account/profile" element={<Profile />} />
             <Route path="/account/company" element={<CompanySettings />} />
+            <Route path="/account/users" element={<ManageUsers />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

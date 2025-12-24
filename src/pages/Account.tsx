@@ -338,7 +338,10 @@ export default function Account() {
               Security & Administration
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left">
+              <button 
+                onClick={() => navigate('/account/users')}
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
+              >
                 <Users className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium text-foreground">Manage Users</p>
