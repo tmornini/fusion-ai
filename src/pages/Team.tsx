@@ -28,8 +28,25 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 
 // Mock team data
 const mockTeamMembers = [
@@ -206,6 +223,31 @@ export default function Team() {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    role: '',
+    department: '',
+  });
+
+  const handleAddMember = () => {
+    if (!newMember.name || !newMember.email || !newMember.role || !newMember.department) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Member invited",
+      description: `An invitation has been sent to ${newMember.email}`,
+    });
+    setAddMemberOpen(false);
+    setNewMember({ name: '', email: '', role: '', department: '' });
+  };
 
   const filteredMembers = mockTeamMembers.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -240,7 +282,7 @@ export default function Team() {
             {mockTeamMembers.length} members • Manage roles, strengths, and availability
           </p>
         </div>
-        <Button size={isMobile ? "sm" : "default"} className="gap-2 self-start sm:self-auto">
+        <Button size={isMobile ? "sm" : "default"} className="gap-2 self-start sm:self-auto" onClick={() => setAddMemberOpen(true)}>
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Add Member</span>
           <span className="sm:hidden">Add</span>
@@ -354,6 +396,75 @@ export default function Team() {
           </div>
         )}
       </div>
+
+      {/* Add Member Dialog */}
+      <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Invite a new member to join your team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter full name"
+                value={newMember.name}
+                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@company.com"
+                value={newMember.email}
+                onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Input
+                id="role"
+                placeholder="e.g. Software Engineer"
+                value={newMember.role}
+                onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Select
+                value={newMember.department}
+                onValueChange={(value) => setNewMember({ ...newMember, department: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Design">Design</SelectItem>
+                  <SelectItem value="Product">Product</SelectItem>
+                  <SelectItem value="Operations">Operations</SelectItem>
+                  <SelectItem value="Analytics">Analytics</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setAddMemberOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddMember}>
+              Send Invitation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
