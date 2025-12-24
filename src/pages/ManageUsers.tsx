@@ -1,34 +1,21 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Users,
   UserPlus,
   Search,
-  Filter,
   MoreHorizontal,
   Mail,
-  Shield,
   Crown,
   UserCheck,
   Eye,
   UserX,
-  Pencil,
-  Trash2,
   CheckCircle2,
   Clock,
   XCircle,
-  Sparkles,
-  Home,
-  Lightbulb,
-  FolderKanban,
   User,
-  LogOut,
-  Database,
-  GitBranch,
-  X,
-  AlertCircle,
   Send,
-  Info
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,16 +42,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
-
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
-  { label: 'Projects', icon: FolderKanban, href: '/projects' },
-  { label: 'Teams', icon: Users, href: '/teams' },
-  { label: 'Crunch', icon: Database, href: '/crunch' },
-  { label: 'Flow', icon: GitBranch, href: '/flow' },
-  { label: 'Account', icon: User, href: '/account', active: true },
-];
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface UserData {
   id: string;
@@ -87,14 +65,14 @@ const mockUsers: UserData[] = [
 ];
 
 const roleInfo = {
-  admin: { label: 'Admin', icon: Crown, color: 'bg-purple-100 text-purple-700 border-purple-200', description: 'Full access to all settings, users, and data' },
-  manager: { label: 'Manager', icon: UserCheck, color: 'bg-blue-100 text-blue-700 border-blue-200', description: 'Can create and manage projects, view team data' },
-  member: { label: 'Member', icon: User, color: 'bg-green-100 text-green-700 border-green-200', description: 'Can view and contribute to assigned projects' },
-  viewer: { label: 'Viewer', icon: Eye, color: 'bg-muted text-muted-foreground border-border', description: 'Read-only access to shared content' },
+  admin: { label: 'Admin', icon: Crown, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  manager: { label: 'Manager', icon: UserCheck, color: 'bg-primary/10 text-primary border-primary/20' },
+  member: { label: 'Member', icon: User, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  viewer: { label: 'Viewer', icon: Eye, color: 'bg-muted text-muted-foreground border-border' },
 };
 
 const statusInfo = {
-  active: { label: 'Active', icon: CheckCircle2, color: 'text-green-600' },
+  active: { label: 'Active', icon: CheckCircle2, color: 'text-emerald-600' },
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-600' },
   deactivated: { label: 'Deactivated', icon: XCircle, color: 'text-muted-foreground' },
 };
@@ -164,233 +142,179 @@ export default function ManageUsers() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col">
-        <div className="flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-foreground">Manage Users</span>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.href)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                item.active 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Demo User</p>
-              <p className="text-xs text-muted-foreground truncate">Admin</p>
-            </div>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground mb-2">Manage Users</h1>
+            <p className="text-muted-foreground">
+              {users.filter(u => u.status === 'active').length} active users • {users.filter(u => u.status === 'pending').length} pending invitations
+            </p>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
+          <Button onClick={() => setIsInviteOpen(true)} className="gap-2">
+            <UserPlus className="w-4 h-4" />
+            Invite User
           </Button>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/account')} className="text-muted-foreground">
-                  ← Back to Account
-                </Button>
-              </div>
-              <h1 className="text-3xl font-display font-bold text-foreground mb-2">Manage Users</h1>
-              <p className="text-muted-foreground">
-                {users.filter(u => u.status === 'active').length} active users • {users.filter(u => u.status === 'pending').length} pending invitations
-              </p>
-            </div>
-            <Button onClick={() => setIsInviteOpen(true)} className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Invite User
-            </Button>
+        {/* Filters */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="deactivated">Deactivated</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Users List */}
+        <div className="fusion-card overflow-hidden">
+          <div className="grid grid-cols-12 gap-4 p-4 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="col-span-4">User</div>
+            <div className="col-span-2">Role</div>
+            <div className="col-span-2">Department</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-2 text-right">Actions</div>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="All Roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="member">Member</SelectItem>
-                <SelectItem value="viewer">Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="deactivated">Deactivated</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="divide-y divide-border">
+            {filteredUsers.map((user) => {
+              const role = roleInfo[user.role];
+              const status = statusInfo[user.status];
+              const RoleIcon = role.icon;
+              const StatusIcon = status.icon;
 
-          {/* Users List */}
-          <div className="fusion-card overflow-hidden">
-            <div className="grid grid-cols-12 gap-4 p-4 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              <div className="col-span-4">User</div>
-              <div className="col-span-2">Role</div>
-              <div className="col-span-2">Department</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-2 text-right">Actions</div>
-            </div>
-
-            <div className="divide-y divide-border">
-              {filteredUsers.map((user) => {
-                const role = roleInfo[user.role];
-                const status = statusInfo[user.status];
-                const RoleIcon = role.icon;
-                const StatusIcon = status.icon;
-
-                return (
-                  <div key={user.id} className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/20 transition-colors ${
-                    user.status === 'deactivated' ? 'opacity-60' : ''
-                  }`}>
-                    {/* User Info */}
-                    <div className="col-span-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-primary">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{user.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </div>
-                    </div>
-
-                    {/* Role */}
-                    <div className="col-span-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${role.color}`}>
-                        <RoleIcon className="w-3 h-3" />
-                        {role.label}
+              return (
+                <div key={user.id} className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/20 transition-colors ${
+                  user.status === 'deactivated' ? 'opacity-60' : ''
+                }`}>
+                  <div className="col-span-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-primary">
+                        {user.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
-
-                    {/* Department */}
-                    <div className="col-span-2">
-                      <span className="text-sm text-muted-foreground">{user.department}</span>
-                    </div>
-
-                    {/* Status */}
-                    <div className="col-span-2">
-                      <div className={`flex items-center gap-1.5 text-sm ${status.color}`}>
-                        <StatusIcon className="w-4 h-4" />
-                        <span>{status.label}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {user.status === 'pending' ? 'Invite sent' : `Last active ${user.lastActive}`}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="col-span-2 flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'admin')}>
-                            <Crown className="w-4 h-4 mr-2" />
-                            Make Admin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'manager')}>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Make Manager
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'member')}>
-                            <User className="w-4 h-4 mr-2" />
-                            Make Member
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'viewer')}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Make Viewer
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {user.status === 'pending' && (
-                            <DropdownMenuItem onClick={() => handleResendInvite(user.email)}>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Resend Invite
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
-                            {user.status === 'active' ? (
-                              <>
-                                <UserX className="w-4 h-4 mr-2" />
-                                Deactivate User
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Reactivate User
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </div>
-                );
-              })}
 
-              {filteredUsers.length === 0 && (
-                <div className="p-12 text-center">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No users found matching your filters.</p>
+                  <div className="col-span-2">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${role.color}`}>
+                      <RoleIcon className="w-3 h-3" />
+                      {role.label}
+                    </span>
+                  </div>
+
+                  <div className="col-span-2">
+                    <span className="text-sm text-muted-foreground">{user.department}</span>
+                  </div>
+
+                  <div className="col-span-2">
+                    <div className={`flex items-center gap-1.5 text-sm ${status.color}`}>
+                      <StatusIcon className="w-4 h-4" />
+                      <span>{status.label}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {user.status === 'pending' ? 'Invite sent' : `Last active ${user.lastActive}`}
+                    </p>
+                  </div>
+
+                  <div className="col-span-2 flex justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'admin')}>
+                          <Crown className="w-4 h-4 mr-2" />
+                          Make Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'manager')}>
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Make Manager
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'member')}>
+                          <User className="w-4 h-4 mr-2" />
+                          Make Member
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleChangeRole(user.id, 'viewer')}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Make Viewer
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {user.status === 'pending' && (
+                          <DropdownMenuItem onClick={() => handleResendInvite(user.email)}>
+                            <Mail className="w-4 h-4 mr-2" />
+                            Resend Invite
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                          {user.status === 'active' ? (
+                            <>
+                              <UserX className="w-4 h-4 mr-2" />
+                              Deactivate User
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 mr-2" />
+                              Reactivate User
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-              )}
-            </div>
+              );
+            })}
+
+            {filteredUsers.length === 0 && (
+              <div className="p-12 text-center">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No users found matching your filters.</p>
+              </div>
+            )}
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Invite User Modal */}
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
@@ -401,16 +325,13 @@ export default function ManageUsers() {
               Invite New User
             </DialogTitle>
             <DialogDescription>
-              Send an invitation to join your organization. They'll receive an email to set up their account.
+              Send an invitation to join your organization.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Email */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Email Address
-              </label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Email Address</label>
               <Input
                 type="email"
                 placeholder="colleague@company.com"
@@ -418,12 +339,8 @@ export default function ManageUsers() {
                 onChange={(e) => setInviteData(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
-
-            {/* Role Selection */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Role
-              </label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Role</label>
               <Select
                 value={inviteData.role}
                 onValueChange={(value: UserData['role']) => setInviteData(prev => ({ ...prev, role: value }))}
@@ -432,42 +349,21 @@ export default function ManageUsers() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(roleInfo).map(([key, info]) => {
-                    const Icon = info.icon;
-                    return (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4" />
-                          {info.label}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
-              
-              {/* Role Description */}
-              <div className="mt-2 p-3 rounded-lg bg-muted/50 border border-border">
-                <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    {roleInfo[inviteData.role].description}
-                  </p>
-                </div>
-              </div>
             </div>
-
-            {/* Department */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Team / Department
-              </label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Department</label>
               <Select
                 value={inviteData.department}
                 onValueChange={(value) => setInviteData(prev => ({ ...prev, department: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a team" />
+                  <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Engineering">Engineering</SelectItem>
@@ -475,64 +371,20 @@ export default function ManageUsers() {
                   <SelectItem value="Design">Design</SelectItem>
                   <SelectItem value="Sales">Sales</SelectItem>
                   <SelectItem value="Operations">Operations</SelectItem>
-                  <SelectItem value="Analytics">Analytics</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Access Summary */}
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm font-medium text-foreground mb-2">What they'll be able to do:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                {inviteData.role === 'admin' && (
-                  <>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Manage all users and settings</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Create and delete projects</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Access billing and security</li>
-                  </>
-                )}
-                {inviteData.role === 'manager' && (
-                  <>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Create and manage projects</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Assign tasks to team members</li>
-                    <li className="flex items-center gap-2"><XCircle className="w-3 h-3 text-muted-foreground" /> Cannot access admin settings</li>
-                  </>
-                )}
-                {inviteData.role === 'member' && (
-                  <>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> View and contribute to assigned projects</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> Create and submit ideas</li>
-                    <li className="flex items-center gap-2"><XCircle className="w-3 h-3 text-muted-foreground" /> Cannot create new projects</li>
-                  </>
-                )}
-                {inviteData.role === 'viewer' && (
-                  <>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-green-600" /> View shared projects and reports</li>
-                    <li className="flex items-center gap-2"><XCircle className="w-3 h-3 text-muted-foreground" /> Cannot edit or create content</li>
-                    <li className="flex items-center gap-2"><XCircle className="w-3 h-3 text-muted-foreground" /> Limited dashboard access</li>
-                  </>
-                )}
-              </ul>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
             <Button onClick={handleInvite} disabled={isSubmitting} className="gap-2">
-              {isSubmitting ? (
-                'Sending...'
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Send Invitation
-                </>
-              )}
+              <Send className="w-4 h-4" />
+              {isSubmitting ? 'Sending...' : 'Send Invite'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 }

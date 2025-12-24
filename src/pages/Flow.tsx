@@ -4,10 +4,8 @@ import {
   GitBranch,
   Plus,
   Trash2,
-  ArrowDown,
   Check,
   Users,
-  Wrench,
   Clock,
   ChevronRight,
   ChevronDown,
@@ -17,19 +15,13 @@ import {
   Download,
   Eye,
   Edit3,
-  Sparkles,
   FileText,
   Mail,
   Database,
   Globe,
   Phone,
   MessageSquare,
-  FolderOpen,
-  Home,
-  Lightbulb,
-  FolderKanban,
-  User,
-  LogOut
+  FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,16 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard' },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
-  { label: 'Projects', icon: FolderKanban, href: '/projects' },
-  { label: 'Teams', icon: Users, href: '/teams' },
-  { label: 'Crunch', icon: Database, href: '/crunch' },
-  { label: 'Flow', icon: GitBranch, href: '/flow', active: true },
-  { label: 'Account', icon: User, href: '/account' },
-];
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface ProcessStep {
   id: string;
@@ -221,72 +204,19 @@ export default function Flow() {
   const getStepTypeColor = (type: string) => {
     switch (type) {
       case 'start':
-        return 'bg-green-100 border-green-300 text-green-700';
+        return 'bg-emerald-100 border-emerald-300 text-emerald-700';
       case 'end':
-        return 'bg-red-100 border-red-300 text-red-700';
+        return 'bg-destructive/10 border-destructive/30 text-destructive';
       case 'decision':
         return 'bg-amber-100 border-amber-300 text-amber-700';
       default:
-        return 'bg-blue-100 border-blue-300 text-blue-700';
+        return 'bg-primary/10 border-primary/30 text-primary';
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col">
-        {/* Logo */}
-        <div className="flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.href)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                item.active 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Account Section */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Demo User</p>
-              <p className="text-xs text-muted-foreground truncate">Demo Company</p>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
-          </Button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-5xl mx-auto">
+    <DashboardLayout>
+      <div className="max-w-5xl mx-auto">
         {/* Page Header */}
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -380,13 +310,11 @@ export default function Flow() {
                 
                 return (
                   <div key={step.id} className="relative">
-                    {/* Connector Line */}
                     {index < process.steps.length - 1 && (
                       <div className="absolute left-6 top-full w-0.5 h-3 bg-border z-0" />
                     )}
                     
                     <div className={`fusion-card overflow-hidden ${isExpanded ? 'ring-2 ring-primary' : ''}`}>
-                      {/* Step Header */}
                       <div
                         className="p-4 cursor-pointer"
                         onClick={() => setExpandedStep(isExpanded ? null : step.id)}
@@ -447,7 +375,7 @@ export default function Flow() {
                               variant="ghost"
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); removeStep(step.id); }}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -460,7 +388,6 @@ export default function Flow() {
                         </div>
                       </div>
 
-                      {/* Expanded Form */}
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t border-border pt-4 bg-muted/20">
                           <div className="grid grid-cols-2 gap-4">
@@ -480,17 +407,16 @@ export default function Flow() {
                                 Describe this step in detail
                               </label>
                               <Textarea
-                                placeholder="Explain what actions are taken, what inputs are needed, and what the output is..."
+                                placeholder="Explain what needs to happen, any special considerations..."
                                 value={step.description}
                                 onChange={(e) => updateStep(step.id, { description: e.target.value })}
                                 className="resize-none"
-                                rows={2}
                               />
                             </div>
-
+                            
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Who owns this step?
+                                Who is responsible?
                               </label>
                               <Input
                                 placeholder="e.g., Customer Success Team"
@@ -498,32 +424,32 @@ export default function Flow() {
                                 onChange={(e) => updateStep(step.id, { owner: e.target.value })}
                               />
                             </div>
-
+                            
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Role responsible
+                                Specific Role
                               </label>
                               <Input
-                                placeholder="e.g., CS Manager"
+                                placeholder="e.g., Account Manager"
                                 value={step.role}
                                 onChange={(e) => updateStep(step.id, { role: e.target.value })}
                               />
                             </div>
-
+                            
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
                                 How long does this take?
                               </label>
                               <Input
-                                placeholder="e.g., 30 minutes, 2 days"
+                                placeholder="e.g., 30 minutes"
                                 value={step.duration}
                                 onChange={(e) => updateStep(step.id, { duration: e.target.value })}
                               />
                             </div>
-
+                            
                             <div>
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Step type
+                                Step Type
                               </label>
                               <Select
                                 value={step.type}
@@ -543,23 +469,26 @@ export default function Flow() {
 
                             <div className="col-span-2">
                               <label className="text-sm font-medium text-foreground mb-2 block">
-                                Tools used
+                                Tools Used
                               </label>
                               <div className="flex flex-wrap gap-2">
-                                {Object.entries(toolIcons).map(([tool, Icon]) => (
-                                  <button
-                                    key={tool}
-                                    onClick={() => toggleTool(step.id, tool)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                                      step.tools.includes(tool)
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                                    }`}
-                                  >
-                                    <Icon className="w-3.5 h-3.5" />
-                                    {tool}
-                                  </button>
-                                ))}
+                                {Object.entries(toolIcons).map(([toolName, Icon]) => {
+                                  const isSelected = step.tools.includes(toolName);
+                                  return (
+                                    <button
+                                      key={toolName}
+                                      onClick={() => toggleTool(step.id, toolName)}
+                                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                                        isSelected
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                      }`}
+                                    >
+                                      <Icon className="w-4 h-4" />
+                                      {toolName}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
@@ -571,105 +500,76 @@ export default function Flow() {
               })}
             </div>
 
-            {/* Add Step Button */}
-            <button
-              onClick={addStep}
-              className="w-full p-4 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="font-medium">Add Step</span>
-            </button>
-
-            {/* Share Section */}
-            <div className="fusion-card p-6 mt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-foreground mb-1">Share this process</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Share with teams to ensure everyone follows the same workflow
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Export
-                  </Button>
-                  <Button size="sm" className="gap-2">
-                    <Share2 className="w-4 h-4" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <Button onClick={addStep} variant="outline" className="w-full gap-2 border-dashed">
+              <Plus className="w-4 h-4" />
+              Add Step
+            </Button>
           </div>
         )}
 
         {/* Preview Mode */}
         {viewMode === 'preview' && (
-          <div className="fusion-card p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-display font-bold text-foreground mb-2">{process.name}</h2>
-              <p className="text-muted-foreground">{process.description}</p>
-              <div className="flex items-center justify-center gap-4 mt-4 text-sm text-muted-foreground">
-                <span>Department: {process.department}</span>
-                <span>•</span>
-                <span>{process.steps.length} steps</span>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-display font-semibold text-foreground">{process.name}</h2>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
               </div>
             </div>
 
-            {/* Visual Flow */}
-            <div className="flex flex-col items-center gap-2">
+            <p className="text-muted-foreground">{process.description}</p>
+
+            <div className="relative pl-6">
+              <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
+              
               {process.steps.map((step, index) => (
-                <div key={step.id} className="flex flex-col items-center">
-                  <div className={`w-full max-w-md p-4 rounded-xl border-2 ${getStepTypeColor(step.type)}`}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold">{index + 1}</span>
+                <div key={step.id} className="relative pb-8 last:pb-0">
+                  <div className={`absolute left-0 w-6 h-6 rounded-full border-2 -translate-x-[calc(50%+0.5px)] flex items-center justify-center ${getStepTypeColor(step.type)} bg-background`}>
+                    <span className="text-xs font-bold">{index + 1}</span>
+                  </div>
+                  
+                  <div className="ml-6 fusion-card p-4">
+                    <h4 className="font-medium text-foreground mb-1">{step.title}</h4>
+                    <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
+                    
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {step.owner} ({step.role})
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{step.title || 'Untitled Step'}</h4>
-                        <p className="text-sm opacity-80">{step.description}</p>
-                        {(step.owner || step.duration) && (
-                          <div className="flex items-center gap-3 mt-2 text-xs opacity-70">
-                            {step.owner && (
-                              <span className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {step.owner}
-                              </span>
-                            )}
-                            {step.duration && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {step.duration}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {step.tools.length > 0 && (
-                          <div className="flex items-center gap-1 mt-2">
-                            {step.tools.map(tool => {
-                              const Icon = toolIcons[tool];
-                              return Icon ? (
-                                <div key={tool} className="w-6 h-6 rounded bg-white/30 flex items-center justify-center">
-                                  <Icon className="w-3 h-3" />
-                                </div>
-                              ) : null;
-                            })}
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {step.duration}
                       </div>
                     </div>
+                    
+                    {step.tools.length > 0 && (
+                      <div className="flex items-center gap-2 mt-3">
+                        {step.tools.map(tool => {
+                          const Icon = toolIcons[tool];
+                          return (
+                            <div key={tool} className="flex items-center gap-1 px-2 py-1 rounded bg-muted text-muted-foreground text-xs">
+                              <Icon className="w-3 h-3" />
+                              {tool}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  {index < process.steps.length - 1 && (
-                    <ArrowDown className="w-6 h-6 text-muted-foreground my-1" />
-                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
