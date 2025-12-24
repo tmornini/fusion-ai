@@ -17,6 +17,9 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Team from "./pages/Team";
 import Crunch from "./pages/Crunch";
 import Flow from "./pages/Flow";
+import Account from "./pages/Account";
+import Profile from "./pages/Profile";
+import CompanySettings from "./pages/CompanySettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +46,9 @@ const App = () => (
             <Route path="/teams" element={<Team />} />
             <Route path="/crunch" element={<Crunch />} />
             <Route path="/flow" element={<Flow />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/account/profile" element={<Profile />} />
+            <Route path="/account/company" element={<CompanySettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
