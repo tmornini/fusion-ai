@@ -18,6 +18,12 @@ const buttonVariants = cva(
         hero: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl hover:-translate-y-0.5",
         accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-md hover:shadow-lg font-bold",
         "outline-hero": "border-2 border-primary/30 bg-transparent text-primary hover:bg-primary/5 hover:border-primary/50",
+        success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
+        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm",
+        "soft-primary": "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20",
+        "soft-success": "bg-success-soft text-success-text hover:bg-success-soft/80 border border-success-border",
+        "soft-warning": "bg-warning-soft text-warning-text hover:bg-warning-soft/80 border border-warning-border",
+        "soft-destructive": "bg-error-soft text-error-text hover:bg-error-soft/80 border border-error-border",
       },
       size: {
         default: "h-10 px-4 py-2",
