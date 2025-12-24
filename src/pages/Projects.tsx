@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Sparkles, 
-  Home, 
-  Lightbulb, 
-  FolderKanban, 
-  Users, 
-  User,
   GripVertical,
   TrendingUp,
   Clock,
@@ -16,11 +10,11 @@ import {
   XCircle,
   LayoutGrid,
   BarChart3,
-  LogOut,
   Eye,
   Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 interface Project {
   id: string;
@@ -44,14 +38,6 @@ const mockProjects: Project[] = [
   { id: '4', title: 'Real-time Analytics Dashboard', status: 'approved', priorityScore: 81, estimatedTime: 60, actualTime: 55, estimatedCost: 28000, actualCost: 26000, estimatedImpact: 72, actualImpact: 70, progress: 95, priority: 4 },
   { id: '5', title: 'Smart Inventory Optimization', status: 'sent_back', priorityScore: 78, estimatedTime: 100, actualTime: 30, estimatedCost: 38000, actualCost: 12000, estimatedImpact: 68, actualImpact: 0, progress: 15, priority: 5 },
   { id: '6', title: 'Employee Training Assistant', status: 'under_review', priorityScore: 74, estimatedTime: 90, actualTime: 20, estimatedCost: 35000, actualCost: 8000, estimatedImpact: 65, actualImpact: 0, progress: 18, priority: 6 },
-];
-
-const navItems = [
-  { label: 'Home', icon: Home, href: '/dashboard', active: false },
-  { label: 'Ideas', icon: Lightbulb, href: '/ideas', active: false },
-  { label: 'Projects', icon: FolderKanban, href: '/projects', active: true },
-  { label: 'Teams', icon: Users, href: '/teams', active: false },
-  { label: 'Account', icon: User, href: '/account', active: false },
 ];
 
 function ProjectCard({ project, view, onView }: { project: Project; view: 'priority' | 'performance'; onView: (id: string) => void }) {
@@ -198,9 +184,6 @@ export default function Projects() {
   const [view, setView] = useState<'priority' | 'performance'>('priority');
   const [projects] = useState<Project[]>(mockProjects);
 
-  const userName = 'Demo User';
-  const companyName = 'Demo Company';
-
   const sortedProjects = [...projects].sort((a, b) => {
     if (view === 'priority') return a.priority - b.priority;
     return b.priorityScore - a.priorityScore;
@@ -213,124 +196,73 @@ export default function Projects() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm fixed left-0 top-0 bottom-0 flex flex-col">
-        <div className="flex items-center gap-3 p-6 border-b border-border">
-          <div className="w-9 h-9 rounded-lg gradient-hero flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-display font-bold text-foreground">Fusion AI</span>
+    <DashboardLayout>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground mb-2">Projects</h1>
+          <p className="text-muted-foreground">Track and manage active projects</p>
         </div>
-
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.href)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                item.active 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-              <p className="text-xs text-muted-foreground truncate">{companyName}</p>
-            </div>
+        
+        {/* Status Summary */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-600">{statusCounts.approved} Approved</span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-medium text-amber-600">{statusCounts.under_review} Under Review</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200">
+            <XCircle className="w-4 h-4 text-red-500" />
+            <span className="text-sm font-medium text-red-500">{statusCounts.sent_back} Sent Back</span>
+          </div>
+        </div>
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex items-center gap-2 mb-6">
+        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50">
+          <button
+            onClick={() => setView('priority')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              view === 'priority'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign out
-          </Button>
+            <LayoutGrid className="w-4 h-4" />
+            Priority View
+          </button>
+          <button
+            onClick={() => setView('performance')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              view === 'performance'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Performance View
+          </button>
         </div>
-      </aside>
+        <span className="text-sm text-muted-foreground ml-4">
+          {sortedProjects.length} projects • Sorted by {view === 'priority' ? 'priority rank' : 'highest score'}
+        </span>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-display font-bold text-foreground mb-2">Projects</h1>
-            <p className="text-muted-foreground">Track and manage active projects</p>
-          </div>
-          
-          {/* Status Summary */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-600">{statusCounts.approved} Approved</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span className="text-sm font-medium text-amber-600">{statusCounts.under_review} Under Review</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200">
-              <XCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium text-red-500">{statusCounts.sent_back} Sent Back</span>
-            </div>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="inline-flex rounded-lg border border-border p-1 bg-muted/50">
-            <button
-              onClick={() => setView('priority')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                view === 'priority'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="w-4 h-4" />
-              Priority View
-            </button>
-            <button
-              onClick={() => setView('performance')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                view === 'performance'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Performance View
-            </button>
-          </div>
-          <span className="text-sm text-muted-foreground ml-4">
-            {sortedProjects.length} projects • Sorted by {view === 'priority' ? 'priority rank' : 'highest score'}
-          </span>
-        </div>
-
-        {/* Projects Grid */}
-        <div className="space-y-4">
-          {sortedProjects.map((project) => (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
-              view={view}
-              onView={(id) => navigate(`/projects/${id}`)}
-            />
-          ))}
-        </div>
-      </main>
-    </div>
+      {/* Projects Grid */}
+      <div className="space-y-4">
+        {sortedProjects.map((project) => (
+          <ProjectCard 
+            key={project.id} 
+            project={project} 
+            view={view}
+            onView={(id) => navigate(`/projects/${id}`)}
+          />
+        ))}
+      </div>
+    </DashboardLayout>
   );
 }
