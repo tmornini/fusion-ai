@@ -31,7 +31,7 @@ const CTASection = () => {
             <Button 
               variant="outline" 
               size="xl"
-              className="w-full sm:w-auto border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="w-full sm:w-auto border-white/30 text-white bg-white/10 hover:bg-white/20 hover:text-white"
             >
               Talk to Sales
             </Button>
