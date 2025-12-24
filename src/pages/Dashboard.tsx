@@ -11,7 +11,9 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  LogOut
+  LogOut,
+  Database,
+  GitBranch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -64,6 +66,8 @@ const navItems = [
   { label: 'Ideas', icon: Lightbulb, href: '/ideas' },
   { label: 'Projects', icon: FolderKanban, href: '/projects' },
   { label: 'Teams', icon: Users, href: '/teams' },
+  { label: 'Crunch', icon: Database, href: '/crunch' },
+  { label: 'Flow', icon: GitBranch, href: '/flow' },
   { label: 'Account', icon: User, href: '/account' },
 ];
 
