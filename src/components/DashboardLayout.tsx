@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { AppSidebar } from './AppSidebar';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,12 +14,18 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, userName, companyName }: DashboardLayoutProps) {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       {!isMobile && (
-        <AppSidebar userName={userName} companyName={companyName} />
+        <AppSidebar 
+          userName={userName} 
+          companyName={companyName} 
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed(!collapsed)}
+        />
       )}
 
       {/* Mobile Header & Sidebar */}
@@ -45,7 +51,7 @@ export function DashboardLayout({ children, userName, companyName }: DashboardLa
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 ${isMobile ? 'pt-14 px-4 pb-6' : 'ml-64 p-8'}`}>
+      <main className={`flex-1 ${isMobile ? 'pt-14 px-4 pb-6' : collapsed ? 'ml-16 p-8' : 'ml-64 p-8'} transition-all duration-300`}>
         {children}
       </main>
     </div>
