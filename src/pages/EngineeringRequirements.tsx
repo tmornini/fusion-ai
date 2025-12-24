@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { toast } from 'sonner';
 
 interface Clarification {
@@ -135,13 +136,11 @@ export default function EngineeringRequirements() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/projects" className="hover:text-foreground transition-colors">Projects</Link>
-          <ChevronRight className="w-4 h-4" />
-          <Link to={`/projects/${projectId}`} className="hover:text-foreground transition-colors">{mockProject.title}</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Engineering Requirements</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Projects', href: '/projects' },
+          { label: mockProject.title, href: `/projects/${projectId}` },
+          { label: 'Engineering Requirements' }
+        ]} />
 
         {/* Header */}
         <div className="flex items-start justify-between mb-8">

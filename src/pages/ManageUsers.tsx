@@ -14,8 +14,7 @@ import {
   Clock,
   XCircle,
   User,
-  Send,
-  ChevronRight
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 interface UserData {
   id: string;
@@ -145,11 +145,10 @@ export default function ManageUsers() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Manage Users</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Account', href: '/account' },
+          { label: 'Manage Users' }
+        ]} />
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
