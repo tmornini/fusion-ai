@@ -21,6 +21,8 @@ import Account from "./pages/Account";
 import Profile from "./pages/Profile";
 import CompanySettings from "./pages/CompanySettings";
 import ManageUsers from "./pages/ManageUsers";
+import ActivityFeed from "./pages/ActivityFeed";
+import NotificationSettings from "./pages/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,8 @@ const App = () => (
             <Route path="/account/profile" element={<Profile />} />
             <Route path="/account/company" element={<CompanySettings />} />
             <Route path="/account/users" element={<ManageUsers />} />
+            <Route path="/account/activity" element={<ActivityFeed />} />
+            <Route path="/account/notifications" element={<NotificationSettings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

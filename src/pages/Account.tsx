@@ -21,7 +21,8 @@ import {
   UserPlus,
   ExternalLink,
   Calendar,
-  Activity
+  Activity,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -325,7 +326,12 @@ export default function Account() {
                   </div>
                 ))}
               </div>
-              <Button variant="ghost" size="sm" className="w-full mt-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-4"
+                onClick={() => navigate('/account/activity')}
+              >
                 View All Activity
               </Button>
             </div>
@@ -349,11 +355,14 @@ export default function Account() {
                 </div>
                 <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
               </button>
-              <button className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left">
-                <Shield className="w-5 h-5 text-muted-foreground" />
+              <button 
+                onClick={() => navigate('/account/notifications')}
+                className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors text-left"
+              >
+                <Bell className="w-5 h-5 text-muted-foreground" />
                 <div>
-                  <p className="font-medium text-foreground">Security Settings</p>
-                  <p className="text-xs text-muted-foreground">SSO, 2FA, and permissions</p>
+                  <p className="font-medium text-foreground">Notifications</p>
+                  <p className="text-xs text-muted-foreground">Email & push preferences</p>
                 </div>
                 <ExternalLink className="w-4 h-4 text-muted-foreground ml-auto" />
               </button>
