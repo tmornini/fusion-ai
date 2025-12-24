@@ -7,13 +7,13 @@ import {
   Lightbulb,
   FolderKanban,
   Users,
-  User,
-  ChevronRight
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 interface NotificationPreference {
   id: string;
@@ -144,11 +144,10 @@ export default function NotificationSettings() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Notification Settings</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Account', href: '/account' },
+          { label: 'Notification Settings' }
+        ]} />
 
         {/* Page Header */}
         <div className="mb-8">

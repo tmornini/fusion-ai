@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const mockCompanySettings = {
   name: 'Acme Corporation', industry: 'Technology', size: '51-200', website: 'https://acmecorp.com',
@@ -45,11 +46,10 @@ export default function CompanySettings() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Company Settings</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Account', href: '/account' },
+          { label: 'Company Settings' }
+        ]} />
 
         <div className="flex items-center justify-between mb-8">
           <div>

@@ -11,8 +11,7 @@ import {
   Filter,
   Search,
   Lightbulb,
-  FolderKanban,
-  ChevronRight
+  FolderKanban
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 interface ActivityItem {
   id: string;
@@ -86,11 +86,10 @@ export default function ActivityFeed() {
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Activity Feed</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Account', href: '/account' },
+          { label: 'Activity Feed' }
+        ]} />
 
         {/* Page Header */}
         <div className="mb-8">

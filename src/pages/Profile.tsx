@@ -14,8 +14,7 @@ import {
   Heart,
   Save,
   CheckCircle2,
-  Camera,
-  ChevronRight
+  Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const mockProfile = {
   firstName: 'Alex',
@@ -67,11 +67,10 @@ export default function Profile() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/account" className="hover:text-foreground transition-colors">Account</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">Profile</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Account', href: '/account' },
+          { label: 'Profile' }
+        ]} />
 
         <div className="flex items-center justify-between mb-8">
           <div>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
-  ArrowLeft,
   TrendingUp,
   TrendingDown,
   Clock,
@@ -23,7 +22,6 @@ import {
   GitBranch,
   Database,
   Code2,
-  ChevronRight,
   Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,6 +35,7 @@ import {
 } from "@/components/ui/tabs";
 import TaskAssignment from '@/components/TaskAssignment';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 // Mock project data
 const mockProject = {
@@ -132,11 +131,10 @@ export default function ProjectDetail() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/projects" className="hover:text-foreground transition-colors">Projects</Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-foreground">{mockProject.title}</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: 'Projects', href: '/projects' },
+          { label: mockProject.title }
+        ]} />
 
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
