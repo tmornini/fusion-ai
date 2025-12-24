@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
+import { useTheme } from 'next-themes';
 import { AppSidebar } from './AppSidebar';
-import { Menu, Search, Bell, X } from 'lucide-react';
+import { Menu, Search, Bell, X, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -14,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -30,6 +32,7 @@ const mockNotifications = [
 ];
 
 export function DashboardLayout({ children, userName, companyName }: DashboardLayoutProps) {
+  const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -75,6 +78,7 @@ export function DashboardLayout({ children, userName, companyName }: DashboardLa
             <Button variant="ghost" size="icon" onClick={() => setSearchOpen(!searchOpen)}>
               <Search className="w-5 h-5" />
             </Button>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
             <NotificationDropdown notifications={mockNotifications} unreadCount={unreadCount} />
           </div>
         </div>
@@ -119,6 +123,7 @@ export function DashboardLayout({ children, userName, companyName }: DashboardLa
               />
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle theme={theme} setTheme={setTheme} />
               <NotificationDropdown notifications={mockNotifications} unreadCount={unreadCount} />
             </div>
           </header>
@@ -180,6 +185,43 @@ function NotificationDropdown({ notifications, unreadCount }: NotificationDropdo
         <DropdownMenuSeparator />
         <DropdownMenuItem className="justify-center text-primary cursor-pointer">
           View all notifications
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+interface ThemeToggleProps {
+  theme: string | undefined;
+  setTheme: (theme: string) => void;
+}
+
+function ThemeToggle({ theme, setTheme }: ThemeToggleProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          {theme === 'dark' ? (
+            <Moon className="w-5 h-5" />
+          ) : theme === 'light' ? (
+            <Sun className="w-5 h-5" />
+          ) : (
+            <Monitor className="w-5 h-5" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme('light')} className="gap-2">
+          <Sun className="w-4 h-4" />
+          Light
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark')} className="gap-2">
+          <Moon className="w-4 h-4" />
+          Dark
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('system')} className="gap-2">
+          <Monitor className="w-4 h-4" />
+          System
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
