@@ -25,6 +25,7 @@ import ActivityFeed from "./pages/ActivityFeed";
 import NotificationSettings from "./pages/NotificationSettings";
 import IdeaReviewQueue from "./pages/IdeaReviewQueue";
 import ApprovalDetail from "./pages/ApprovalDetail";
+import ErrorStatesDemo from "./pages/ErrorStatesDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/account/notifications" element={<NotificationSettings />} />
             <Route path="/review" element={<IdeaReviewQueue />} />
             <Route path="/review/:id" element={<ApprovalDetail />} />
+            <Route path="/error-states" element={<ErrorStatesDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
