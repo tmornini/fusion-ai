@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X, AlertTriangle, Info, Search, Plus, ArrowRight, Trash2 } from "lucide-react";
+import { Check, X, AlertTriangle, Info, Search, Plus, ArrowRight, Trash2, Sun, Moon, Monitor } from "lucide-react";
 import { FormField } from "@/components/FormError";
 import { 
   SystemError, 
@@ -14,6 +15,12 @@ import {
   SaveError, 
   ConnectionError 
 } from "@/components/SystemError";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ColorSwatch = ({ name, variable, className }: { name: string; variable: string; className: string }) => (
   <div className="flex flex-col gap-2">
@@ -31,6 +38,7 @@ const TypographyRow = ({ label, className, sample }: { label: string; className:
 );
 
 export default function DesignSystem() {
+  const { theme, setTheme } = useTheme();
   const [isRetrying, setIsRetrying] = useState(false);
   const [formErrors, setFormErrors] = useState({
     title: 'Please enter a title for your idea',
@@ -47,11 +55,45 @@ export default function DesignSystem() {
     <DashboardLayout>
       <div className="space-y-12 pb-16">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">Fusion AI Design System</h1>
-          <p className="text-muted-foreground mt-2">
-            A production-ready design system for enterprise applications prioritizing clarity, trust, focus, and calm decision-making.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground font-display">Fusion AI Design System</h1>
+            <p className="text-muted-foreground mt-2">
+              A production-ready design system for enterprise applications prioritizing clarity, trust, focus, and calm decision-making.
+            </p>
+          </div>
+          
+          {/* Theme Toggle */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                {theme === 'dark' ? (
+                  <Moon className="w-4 h-4" />
+                ) : theme === 'light' ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Monitor className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setTheme('light')} className="gap-2">
+                <Sun className="w-4 h-4" />
+                Light
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('dark')} className="gap-2">
+                <Moon className="w-4 h-4" />
+                Dark
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('system')} className="gap-2">
+                <Monitor className="w-4 h-4" />
+                System
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <Separator />
