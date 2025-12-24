@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Upload,
   FileSpreadsheet,
@@ -68,6 +69,7 @@ const mockUploadedFile: UploadedFile = {
 };
 
 export default function Crunch() {
+  const navigate = useNavigate();
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
   const [expandedColumn, setExpandedColumn] = useState<string | null>(null);
@@ -463,7 +465,6 @@ export default function Crunch() {
           </div>
         )}
         </div>
-      </main>
-    </div>
+      </DashboardLayout>
   );
 }
