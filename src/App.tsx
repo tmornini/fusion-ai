@@ -13,6 +13,7 @@ import IdeaCreate from "./pages/IdeaCreate";
 import IdeaScoring from "./pages/IdeaScoring";
 import IdeaConvert from "./pages/IdeaConvert";
 import Edge from "./pages/Edge";
+import EdgeList from "./pages/EdgeList";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import EngineeringRequirements from "./pages/EngineeringRequirements";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/projects/:projectId/engineering" element={<EngineeringRequirements />} />
             <Route path="/team" element={<Team />} />
             <Route path="/teams" element={<Team />} />
+            <Route path="/edge" element={<EdgeList />} />
             <Route path="/crunch" element={<Crunch />} />
             <Route path="/flow" element={<Flow />} />
             <Route path="/account" element={<Account />} />
