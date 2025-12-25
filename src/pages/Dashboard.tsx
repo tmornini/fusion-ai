@@ -122,150 +122,105 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
   const uniqueId = title.replace(/\s+/g, '-').toLowerCase();
 
   return (
-    <div className={`relative fusion-card p-6 sm:p-8 hover:shadow-xl transition-all duration-300 group border-2 ${colors.border}`}>
+    <div className={`relative fusion-card p-6 hover:shadow-xl transition-all duration-300 group border-2 ${colors.border}`}>
       {/* Subtle gradient background */}
       <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} rounded-lg`} />
       
       <div className="relative z-10">
-        <div className="flex items-center gap-4 mb-6">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.iconBg} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300`}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colors.iconBg} flex items-center justify-center shadow-sm`}>
             {icon}
           </div>
-          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         </div>
         
-        <div className="flex items-center gap-6">
-          {/* Dual Arc Gauge - Larger */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="relative flex-shrink-0 cursor-pointer">
-                <svg width="160" height="85" viewBox="0 0 160 85" className="overflow-visible">
-                  <defs>
-                    <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={colors.inner} stopOpacity="0.4" />
-                      <stop offset="100%" stopColor={colors.inner} stopOpacity="1" />
-                    </linearGradient>
-                    <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor={colors.outer} stopOpacity="0.4" />
-                      <stop offset="100%" stopColor={colors.outer} stopOpacity="1" />
-                    </linearGradient>
-                    <filter id={`glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                      <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <filter id={`shadow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
-                    </filter>
-                  </defs>
-                  
-                  {/* Outer arc background */}
-                  <path
-                    d={`M ${80 - 58} ${75} A 58 58 0 0 1 ${80 + 58} ${75}`}
-                    fill="none"
-                    stroke="hsl(var(--muted))"
-                    strokeWidth={12}
-                    strokeLinecap="round"
-                    opacity="0.4"
-                  />
-                  {/* Outer arc foreground */}
-                  <path
-                    d={`M ${80 - 58} ${75} A 58 58 0 0 1 ${80 + 58} ${75}`}
-                    fill="none"
-                    stroke={`url(#outer-grad-${uniqueId})`}
-                    strokeWidth={12}
-                    strokeLinecap="round"
-                    strokeDasharray={Math.PI * 58}
-                    strokeDashoffset={Math.PI * 58 - (outerPercentage / 100) * Math.PI * 58}
-                    filter={`url(#shadow-${uniqueId})`}
-                    className="transition-all duration-700 ease-out"
-                    style={{ filter: `url(#glow-${uniqueId})` }}
-                  />
-                  
-                  {/* Inner arc background */}
-                  <path
-                    d={`M ${80 - 40} ${75} A 40 40 0 0 1 ${80 + 40} ${75}`}
-                    fill="none"
-                    stroke="hsl(var(--muted))"
-                    strokeWidth={12}
-                    strokeLinecap="round"
-                    opacity="0.4"
-                  />
-                  {/* Inner arc foreground */}
-                  <path
-                    d={`M ${80 - 40} ${75} A 40 40 0 0 1 ${80 + 40} ${75}`}
-                    fill="none"
-                    stroke={`url(#inner-grad-${uniqueId})`}
-                    strokeWidth={12}
-                    strokeLinecap="round"
-                    strokeDasharray={Math.PI * 40}
-                    strokeDashoffset={Math.PI * 40 - (innerPercentage / 100) * Math.PI * 40}
-                    filter={`url(#shadow-${uniqueId})`}
-                    className="transition-all duration-700 ease-out"
-                    style={{ filter: `url(#glow-${uniqueId})` }}
-                  />
-                </svg>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="center" sideOffset={8} className="z-50">
-              <div className="space-y-2 text-sm">
-                <p className="font-semibold">{title}</p>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${colors.dotOuter}`} />
-                  <span>{outerMetric.label}: {outerMetric.displayValue}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${colors.dotInner}`} />
-                  <span>{innerMetric.label}: {innerMetric.displayValue}</span>
-                </div>
-                {(outerMetric.tooltipDetail || innerMetric.tooltipDetail) && (
-                  <p className="text-muted-foreground text-xs pt-1 border-t border-border">
-                    {outerMetric.tooltipDetail || innerMetric.tooltipDetail}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-          
-          {/* Legend - Enhanced */}
-          <div className="flex flex-col gap-4 flex-1 min-w-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-xl p-2 -m-2 transition-colors">
-                  <div className={`w-3 h-3 rounded-full ${colors.dotOuter} flex-shrink-0 shadow-sm`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium truncate">{outerMetric.label}</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {formatValue(animatedOuter, outerMetric.displayValue)}
-                    </p>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8} className="z-50">
-                <p className="font-medium">{outerMetric.label}</p>
-                <p className="text-muted-foreground text-xs">{outerMetric.tooltipDetail || `${outerMetric.displayValue} of ${outerMetric.max.toLocaleString()} max`}</p>
-              </TooltipContent>
-            </Tooltip>
+        {/* Gauge centered */}
+        <div className="flex justify-center mb-5">
+          <svg width="180" height="95" viewBox="0 0 180 95" className="overflow-visible">
+            <defs>
+              <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={colors.inner} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={colors.inner} stopOpacity="1" />
+              </linearGradient>
+              <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor={colors.outer} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={colors.outer} stopOpacity="1" />
+              </linearGradient>
+              <filter id={`glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
             
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-xl p-2 -m-2 transition-colors">
-                  <div className={`w-3 h-3 rounded-full ${colors.dotInner} flex-shrink-0 shadow-sm`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium truncate">{innerMetric.label}</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {formatValue(animatedInner, innerMetric.displayValue)}
-                    </p>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8} className="z-50">
-                <p className="font-medium">{innerMetric.label}</p>
-                <p className="text-muted-foreground text-xs">{innerMetric.tooltipDetail || `${innerMetric.displayValue} of ${innerMetric.max.toLocaleString()} max`}</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Outer arc background */}
+            <path
+              d={`M ${90 - 65} ${85} A 65 65 0 0 1 ${90 + 65} ${85}`}
+              fill="none"
+              stroke="hsl(var(--muted))"
+              strokeWidth={14}
+              strokeLinecap="round"
+              opacity="0.3"
+            />
+            {/* Outer arc foreground */}
+            <path
+              d={`M ${90 - 65} ${85} A 65 65 0 0 1 ${90 + 65} ${85}`}
+              fill="none"
+              stroke={`url(#outer-grad-${uniqueId})`}
+              strokeWidth={14}
+              strokeLinecap="round"
+              strokeDasharray={Math.PI * 65}
+              strokeDashoffset={Math.PI * 65 - (outerPercentage / 100) * Math.PI * 65}
+              className="transition-all duration-700 ease-out"
+              style={{ filter: `url(#glow-${uniqueId})` }}
+            />
+            
+            {/* Inner arc background */}
+            <path
+              d={`M ${90 - 45} ${85} A 45 45 0 0 1 ${90 + 45} ${85}`}
+              fill="none"
+              stroke="hsl(var(--muted))"
+              strokeWidth={14}
+              strokeLinecap="round"
+              opacity="0.3"
+            />
+            {/* Inner arc foreground */}
+            <path
+              d={`M ${90 - 45} ${85} A 45 45 0 0 1 ${90 + 45} ${85}`}
+              fill="none"
+              stroke={`url(#inner-grad-${uniqueId})`}
+              strokeWidth={14}
+              strokeLinecap="round"
+              strokeDasharray={Math.PI * 45}
+              strokeDashoffset={Math.PI * 45 - (innerPercentage / 100) * Math.PI * 45}
+              className="transition-all duration-700 ease-out"
+              style={{ filter: `url(#glow-${uniqueId})` }}
+            />
+          </svg>
+        </div>
+        
+        {/* Metrics - Side by side, full text */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center p-3 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <div className={`w-2.5 h-2.5 rounded-full ${colors.dotOuter}`} />
+              <span className="text-xs text-muted-foreground font-medium">{outerMetric.label}</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {formatValue(animatedOuter, outerMetric.displayValue)}
+            </p>
+          </div>
+          <div className="text-center p-3 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <div className={`w-2.5 h-2.5 rounded-full ${colors.dotInner}`} />
+              <span className="text-xs text-muted-foreground font-medium">{innerMetric.label}</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">
+              {formatValue(animatedInner, innerMetric.displayValue)}
+            </p>
           </div>
         </div>
       </div>
