@@ -7,7 +7,11 @@ import {
   TrendingUp,
   DollarSign,
   Clock,
-  Zap
+  Zap,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  ArrowUpRight
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import {
@@ -255,14 +259,61 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout userName={userName} companyName={companyName}>
-      {/* Welcome Section */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
-          Welcome back, {userName}
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Here's an overview of your work in progress at {companyName}
-        </p>
+      {/* Welcome Section - Enhanced Hero Card */}
+      <div className="relative overflow-hidden fusion-card p-6 sm:p-8 mb-6 sm:mb-8 border-2 border-primary/10">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-accent/[0.06]" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-accent/10 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
+        
+        <div className="relative z-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Greeting */}
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 items-center justify-center shadow-lg">
+                <Sparkles className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-primary mb-1">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}</p>
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">
+                  Welcome back, {userName}
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground max-w-md">
+                  Here's an overview of your work in progress at <span className="font-medium text-foreground">{companyName}</span>
+                </p>
+              </div>
+            </div>
+            
+            {/* Key Stats Summary */}
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              {[
+                { label: 'Active Ideas', value: 12, icon: Lightbulb, trend: '+3', color: 'bg-warning-soft text-warning-text border-warning-border' },
+                { label: 'Projects', value: 5, icon: FolderKanban, trend: '+1', color: 'bg-info-soft text-info-text border-info-border' },
+                { label: 'Completed', value: 8, icon: CheckCircle2, trend: null, color: 'bg-success-soft text-success-text border-success-border' },
+                { label: 'Pending Review', value: 3, icon: AlertCircle, trend: null, color: 'bg-error-soft text-error-text border-error-border' },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border ${stat.color} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-default`}
+                >
+                  <stat.icon className="w-5 h-5 flex-shrink-0" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider font-medium opacity-80">{stat.label}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg font-bold">{stat.value}</span>
+                      {stat.trend && (
+                        <span className="flex items-center text-xs font-medium text-success">
+                          <ArrowUpRight className="w-3 h-3" />
+                          {stat.trend}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Metrics Grid - Dual Gauge Style */}
