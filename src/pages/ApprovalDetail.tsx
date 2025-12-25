@@ -14,7 +14,10 @@ import {
   MessageSquare,
   FileText,
   DollarSign,
-  Users
+  Users,
+  Shield,
+  BarChart3,
+  Gauge
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +118,41 @@ const mockIdea: IdeaDetail = {
   ],
   attachments: 3,
   comments: 7
+};
+
+// Edge data for the idea
+const mockEdge = {
+  outcomes: [
+    {
+      id: '1',
+      description: 'Reduce support ticket volume',
+      metrics: [
+        { id: '1', name: 'Ticket Reduction', target: '40', unit: '%' },
+        { id: '2', name: 'First Response Time', target: '1', unit: 'min' },
+      ]
+    },
+    {
+      id: '2',
+      description: 'Improve customer satisfaction',
+      metrics: [
+        { id: '3', name: 'CSAT Score', target: '4.5', unit: '/5' },
+        { id: '4', name: 'Resolution Rate', target: '85', unit: '%' },
+      ]
+    }
+  ],
+  impact: {
+    shortTerm: 'Handle 60% of tier-1 inquiries automatically. Reduce agent workload significantly.',
+    midTerm: '40% reduction in support costs. Improved 24/7 availability for customers.',
+    longTerm: 'Full self-service capability for common issues. Agents focus on complex cases only.'
+  },
+  confidence: 'high' as const,
+  owner: 'Sarah Chen'
+};
+
+const confidenceConfig = {
+  high: { label: 'High Confidence', className: 'bg-success-soft text-success' },
+  medium: { label: 'Medium Confidence', className: 'bg-warning-soft text-warning' },
+  low: { label: 'Low Confidence', className: 'bg-error-soft text-error' }
 };
 
 const severityConfig = {
@@ -293,6 +331,76 @@ export default function ApprovalDetail() {
           <CardContent>
             <p className="text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">{idea.cost.estimate}</p>
             <p className="text-xs sm:text-sm text-muted-foreground">{idea.cost.breakdown}</p>
+          </CardContent>
+        </Card>
+
+        {/* Edge Summary - Business Outcomes & Success Criteria */}
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 mb-4 sm:mb-6">
+          <CardHeader className="pb-2 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Edge: Business Outcomes & Success Criteria
+              </CardTitle>
+              <Badge variant="outline" className={`text-xs ${confidenceConfig[mockEdge.confidence].className}`}>
+                <Shield className="w-3 h-3 mr-1" />
+                {confidenceConfig[mockEdge.confidence].label}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Outcomes with Metrics */}
+            {mockEdge.outcomes.map((outcome, index) => (
+              <div key={outcome.id} className="p-3 sm:p-4 rounded-lg bg-background border border-border">
+                <div className="flex items-start gap-2 mb-3">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                    {index + 1}
+                  </div>
+                  <p className="font-medium text-sm sm:text-base text-foreground">{outcome.description}</p>
+                </div>
+                <div className="pl-7 flex flex-wrap gap-2">
+                  {outcome.metrics.map((metric) => (
+                    <div key={metric.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border">
+                      <Gauge className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs sm:text-sm text-foreground">
+                        {metric.name}: <span className="font-semibold text-primary">{metric.target}{metric.unit}</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Impact Timeline */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="p-3 rounded-lg bg-success-soft border border-success/20">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-success" />
+                  <span className="text-xs font-medium text-success">Short-term (0-3mo)</span>
+                </div>
+                <p className="text-xs text-foreground">{mockEdge.impact.shortTerm}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-warning-soft border border-warning/20">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-warning" />
+                  <span className="text-xs font-medium text-warning">Mid-term (3-12mo)</span>
+                </div>
+                <p className="text-xs text-foreground">{mockEdge.impact.midTerm}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-info-soft border border-primary/20">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium text-primary">Long-term (12+mo)</span>
+                </div>
+                <p className="text-xs text-foreground">{mockEdge.impact.longTerm}</p>
+              </div>
+            </div>
+
+            {/* Owner */}
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <span className="text-xs text-muted-foreground">Edge Owner</span>
+              <span className="text-sm font-medium text-foreground">{mockEdge.owner}</span>
+            </div>
           </CardContent>
         </Card>
 
