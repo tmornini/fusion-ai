@@ -111,7 +111,7 @@ export default function IdeaConvert() {
                 <span className="text-xl font-display font-bold text-foreground">Convert to Project</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="hidden sm:flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">{completedFields.length}/{requiredFields.length} required fields</span>
               <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
                 <div 
@@ -128,7 +128,7 @@ export default function IdeaConvert() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Left Side - Idea Summary */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="fusion-card p-6 sticky top-24">
+            <div className="fusion-card p-6 lg:sticky lg:top-24">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-4">
                 <FolderKanban className="w-4 h-4" />
                 Idea Summary
@@ -225,7 +225,7 @@ export default function IdeaConvert() {
                 </div>
 
                 {/* Dates */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="startDate" className="text-foreground font-medium flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -360,10 +360,11 @@ export default function IdeaConvert() {
                       : `${requiredFields.length - completedFields.length} required field${requiredFields.length - completedFields.length > 1 ? 's' : ''} remaining`
                     }
                   </p>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                       variant="ghost"
                       onClick={() => navigate(`/ideas/${ideaId || '1'}/score`)}
+                      className="w-full sm:w-auto"
                     >
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       Back to Scoring
@@ -372,7 +373,7 @@ export default function IdeaConvert() {
                       variant="hero"
                       onClick={handleConvert}
                       disabled={!canConvert || isConverting}
-                      className="gap-2"
+                      className="gap-2 w-full sm:w-auto"
                     >
                       {isConverting ? (
                         <>

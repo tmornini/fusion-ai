@@ -146,7 +146,7 @@ export default function IdeaScoring() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isScoring ? (
           /* Scoring Animation */
-          <div className="fusion-card p-12 text-center">
+          <div className="fusion-card p-6 sm:p-12 text-center">
             <div className="w-20 h-20 mx-auto rounded-2xl gradient-hero flex items-center justify-center mb-6 animate-pulse">
               <Sparkles className="w-10 h-10 text-primary-foreground" />
             </div>
@@ -215,7 +215,7 @@ export default function IdeaScoring() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                     <div className="p-4 rounded-xl bg-muted/50">
                       <div className="flex items-center gap-2 text-muted-foreground mb-2">
                         <Clock className="w-4 h-4" />
@@ -243,12 +243,12 @@ export default function IdeaScoring() {
               </p>
 
               {/* Tab Navigation */}
-              <div className="flex gap-2 mb-6 border-b border-border pb-4">
+              <div className="flex gap-2 mb-6 border-b border-border pb-3 overflow-x-auto">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors flex-shrink-0 whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80'
@@ -290,24 +290,24 @@ export default function IdeaScoring() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate('/ideas')}
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto justify-center sm:justify-start"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Ideas
               </Button>
 
-              <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={() => navigate('/ideas')}>
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3">
+                <Button variant="outline" onClick={() => navigate('/ideas')} className="w-full sm:w-auto">
                   Save as Draft
                 </Button>
                 <Button
                   variant="hero"
                   onClick={() => navigate(`/ideas/${ideaId || '1'}/convert`)}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   Convert to Project
                   <ArrowRight className="w-4 h-4" />

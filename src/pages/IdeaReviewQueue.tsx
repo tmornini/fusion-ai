@@ -232,8 +232,8 @@ export default function IdeaReviewQueue() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search ideas or submitters..."
@@ -242,9 +242,9 @@ export default function IdeaReviewQueue() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
@@ -256,7 +256,7 @@ export default function IdeaReviewQueue() {
               </SelectContent>
             </Select>
             <Select value={readinessFilter} onValueChange={setReadinessFilter}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Readiness" />
               </SelectTrigger>
               <SelectContent>

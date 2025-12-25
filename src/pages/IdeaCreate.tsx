@@ -115,7 +115,8 @@ export default function IdeaCreate() {
             </div>
             <Button variant="ghost" size="sm" className="gap-2 text-primary">
               <Wand2 className="w-4 h-4" />
-              Generate with AI
+              <span className="hidden sm:inline">Generate with AI</span>
+              <span className="sm:hidden">AI</span>
             </Button>
           </div>
         </div>
@@ -123,12 +124,12 @@ export default function IdeaCreate() {
 
       {/* Progress Steps */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center gap-6 sm:gap-0 sm:justify-between mb-8 sm:mb-12 overflow-x-auto pb-2">
           {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className="flex items-center flex-shrink-0 sm:flex-1">
               <div className="flex flex-col items-center">
                 <div 
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors ${
                     currentStep > step.id 
                       ? 'bg-green-500 text-white'
                       : currentStep === step.id 
@@ -142,31 +143,33 @@ export default function IdeaCreate() {
                     <step.icon className="w-5 h-5" />
                   )}
                 </div>
-                <span className={`mt-2 text-sm font-medium ${
+                <span className={`mt-2 text-xs sm:text-sm font-medium whitespace-nowrap ${
                   currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
                 }`}>
                   {step.title}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-4 rounded-full transition-colors ${
-                  currentStep > step.id ? 'bg-green-500' : 'bg-muted'
-                }`} />
+                <div className="hidden sm:block flex-1 h-1 mx-4 rounded-full transition-colors">
+                  <div className={`h-1 rounded-full transition-colors ${
+                    currentStep > step.id ? 'bg-green-500' : 'bg-muted'
+                  }`} />
+                </div>
               )}
             </div>
           ))}
         </div>
 
         {/* Step Content */}
-        <div className="fusion-card p-8 animate-fade-in">
-          <div className="mb-8">
-            <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-              {steps[currentStep - 1].title}
-            </h2>
-            <p className="text-muted-foreground">
-              {steps[currentStep - 1].description}
-            </p>
-          </div>
+        <div className="fusion-card p-4 sm:p-8 animate-fade-in">
+            <div className="mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-2">
+                {steps[currentStep - 1].title}
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {steps[currentStep - 1].description}
+              </p>
+            </div>
 
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -179,7 +182,7 @@ export default function IdeaCreate() {
                   placeholder="e.g., AI-Powered Customer Segmentation"
                   value={formData.title}
                   onChange={(e) => updateField('title', e.target.value)}
-                  className="text-lg py-6"
+                  className="text-base sm:text-lg py-4 sm:py-6"
                 />
                 <p className="text-xs text-muted-foreground">
                   Keep it short and descriptive – think of what you would search for
@@ -294,17 +297,17 @@ export default function IdeaCreate() {
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-10 pt-6 border-t border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 sm:mt-10 pt-6 border-t border-border">
             <Button
               variant="ghost"
               onClick={handleBack}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto justify-center sm:justify-start"
             >
               <ArrowLeft className="w-4 h-4" />
               {currentStep === 1 ? 'Cancel' : 'Back'}
             </Button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <span className="text-sm text-muted-foreground">
                 Step {currentStep} of {steps.length}
               </span>
@@ -314,7 +317,7 @@ export default function IdeaCreate() {
               variant="hero"
               onClick={handleNext}
               disabled={!canProceed()}
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               {currentStep === 3 ? (
                 <>
