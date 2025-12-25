@@ -175,93 +175,93 @@ export default function ProjectDetail() {
         ]} />
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-display font-bold text-foreground">{mockProject.title}</h1>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-500/10 border border-emerald-500/20">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">{mockProject.title}</h1>
+              <div className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600" />
                 <span className="text-emerald-600">Approved</span>
               </div>
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Led by {mockProject.projectLead} • {mockProject.progress}% complete
             </p>
           </div>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" className="self-start">
             <MoreVertical className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Quick Actions - Tool Links */}
-        <div className="grid grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6 sm:mb-8">
           <Link 
             to={`/projects/${projectId}/engineering`}
-            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+            className="fusion-card p-3 sm:p-4 hover:border-primary/30 transition-all group"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Code2 className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Engineering</p>
-                <p className="text-xs text-muted-foreground">Requirements & clarifications</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base text-foreground group-hover:text-primary transition-colors truncate">Engineering</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Requirements & clarifications</p>
               </div>
             </div>
           </Link>
           <Link 
             to="/teams"
-            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+            className="fusion-card p-3 sm:p-4 hover:border-primary/30 transition-all group"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Team</p>
-                <p className="text-xs text-muted-foreground">Manage assignments</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base text-foreground group-hover:text-primary transition-colors truncate">Team</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Manage assignments</p>
               </div>
             </div>
           </Link>
           <Link 
             to="/flow"
-            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+            className="fusion-card p-3 sm:p-4 hover:border-primary/30 transition-all group"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <GitBranch className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <GitBranch className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Flow</p>
-                <p className="text-xs text-muted-foreground">Document processes</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base text-foreground group-hover:text-primary transition-colors truncate">Flow</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Document processes</p>
               </div>
             </div>
           </Link>
           <Link 
             to="/crunch"
-            className="fusion-card p-4 hover:border-primary/30 transition-all group"
+            className="fusion-card p-3 sm:p-4 hover:border-primary/30 transition-all group"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Database className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <Database className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <p className="font-medium text-foreground group-hover:text-primary transition-colors">Crunch</p>
-                <p className="text-xs text-muted-foreground">Data inputs</p>
+              <div className="min-w-0">
+                <p className="font-medium text-sm sm:text-base text-foreground group-hover:text-primary transition-colors truncate">Crunch</p>
+                <p className="text-xs text-muted-foreground hidden sm:block">Data inputs</p>
               </div>
             </div>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Summary Card */}
-            <div className="fusion-card p-6">
-              <h2 className="text-lg font-display font-semibold text-foreground mb-4">Project Summary</h2>
-              <p className="text-muted-foreground mb-6">{mockProject.description}</p>
+            <div className="fusion-card p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-display font-semibold text-foreground mb-3 sm:mb-4">Project Summary</h2>
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">{mockProject.description}</p>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                   <Calendar className="w-5 h-5 text-primary" />
                   <div>
@@ -289,13 +289,13 @@ export default function ProjectDetail() {
             </div>
 
             {/* Baseline vs Current Performance */}
-            <div className="fusion-card p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-display font-semibold text-foreground">Baseline vs Current</h2>
+            <div className="fusion-card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-lg font-display font-semibold text-foreground">Baseline vs Current</h2>
                 <span className="text-xs text-muted-foreground">Real-time comparison</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {/* Time */}
                 <div className="p-4 rounded-xl bg-muted/30 border border-border">
                   <div className="flex items-center gap-2 mb-3">
@@ -380,18 +380,18 @@ export default function ProjectDetail() {
             </div>
 
             {/* Edge Baseline KPIs */}
-            <div className="fusion-card p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="fusion-card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10">
-                    <Target className="w-5 h-5 text-primary" />
+                    <Target className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-display font-semibold text-foreground">Edge Baseline KPIs</h2>
+                    <h2 className="text-base sm:text-lg font-display font-semibold text-foreground">Edge Baseline KPIs</h2>
                     <p className="text-xs text-muted-foreground">Original success criteria from idea approval</p>
                   </div>
                 </div>
-                <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${confidenceConfig[mockProject.edge.confidence].className}`}>
+                <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium self-start sm:self-auto ${confidenceConfig[mockProject.edge.confidence].className}`}>
                   <Shield className="w-3 h-3 inline mr-1" />
                   {confidenceConfig[mockProject.edge.confidence].label}
                 </div>
@@ -420,25 +420,25 @@ export default function ProjectDetail() {
                           : current >= target * 0.9;
                         
                         return (
-                          <div key={metric.id} className="flex items-center justify-between p-2 rounded bg-background border border-border">
+                          <div key={metric.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded bg-background border border-border">
                             <div className="flex items-center gap-2">
-                              <Gauge className="w-4 h-4 text-muted-foreground" />
+                              <Gauge className="w-4 h-4 text-muted-foreground shrink-0" />
                               <span className="text-sm text-foreground">{metric.name}</span>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
+                            <div className="flex items-center gap-3 sm:gap-4 ml-6 sm:ml-0">
+                              <div className="text-left sm:text-right">
                                 <p className="text-xs text-muted-foreground">Target</p>
                                 <p className="text-sm font-medium text-foreground">
                                   {metric.unit === '$' ? `$${metric.target}` : `${metric.target}${metric.unit}`}
                                 </p>
                               </div>
-                              <div className="text-right">
+                              <div className="text-left sm:text-right">
                                 <p className="text-xs text-muted-foreground">Current</p>
                                 <p className={`text-sm font-medium ${isOnTrack ? 'text-success' : 'text-warning'}`}>
                                   {metric.unit === '$' ? `$${metric.current}` : `${metric.current}${metric.unit}`}
                                 </p>
                               </div>
-                              <div className={`w-2 h-2 rounded-full ${isOnTrack ? 'bg-success' : 'bg-warning'}`} />
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${isOnTrack ? 'bg-success' : 'bg-warning'}`} />
                             </div>
                           </div>
                         );
@@ -454,7 +454,7 @@ export default function ProjectDetail() {
                   <TrendingUp className="w-4 h-4 text-primary" />
                   Expected Impact Timeline
                 </h3>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-lg bg-success-soft border border-success/20">
                     <div className="flex items-center gap-1.5 mb-2">
                       <Clock className="w-3.5 h-3.5 text-success" />
@@ -487,23 +487,27 @@ export default function ProjectDetail() {
             </div>
 
             {/* Tabs for Discussion, History, Linked Data */}
-            <Tabs defaultValue="tasks" className="fusion-card p-6">
-              <TabsList className="mb-6">
-                <TabsTrigger value="tasks" className="gap-2">
-                  <ListTodo className="w-4 h-4" />
-                  Tasks
+            <Tabs defaultValue="tasks" className="fusion-card p-4 sm:p-6">
+              <TabsList className="mb-4 sm:mb-6 w-full flex overflow-x-auto">
+                <TabsTrigger value="tasks" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <ListTodo className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Tasks</span>
+                  <span className="sm:hidden">Tasks</span>
                 </TabsTrigger>
-                <TabsTrigger value="discussion" className="gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Discussion
+                <TabsTrigger value="discussion" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Discussion</span>
+                  <span className="sm:hidden">Chat</span>
                 </TabsTrigger>
-                <TabsTrigger value="history" className="gap-2">
-                  <History className="w-4 h-4" />
-                  Version History
+                <TabsTrigger value="history" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <History className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Version History</span>
+                  <span className="sm:hidden">History</span>
                 </TabsTrigger>
-                <TabsTrigger value="linked" className="gap-2">
-                  <FileText className="w-4 h-4" />
-                  Linked Data
+                <TabsTrigger value="linked" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Linked Data</span>
+                  <span className="sm:hidden">Data</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -583,27 +587,27 @@ export default function ProjectDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Team */}
-            <div className="fusion-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-display font-semibold text-foreground">Team</h3>
+            <div className="fusion-card p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="font-display font-semibold text-foreground text-sm sm:text-base">Team</h3>
                 <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
                   <Plus className="w-3 h-3" />
                   Add
                 </Button>
               </div>
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-1 gap-3">
                 {mockProject.team.map((member) => (
-                  <div key={member.id} className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <div key={member.id} className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-primary">
                         {member.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground">{member.role}</p>
+                      <p className="text-xs sm:text-sm font-medium text-foreground truncate">{member.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.role}</p>
                     </div>
                   </div>
                 ))}
@@ -611,8 +615,8 @@ export default function ProjectDetail() {
             </div>
 
             {/* Milestones */}
-            <div className="fusion-card p-6">
-              <h3 className="font-display font-semibold text-foreground mb-4">Milestones</h3>
+            <div className="fusion-card p-4 sm:p-6">
+              <h3 className="font-display font-semibold text-foreground text-sm sm:text-base mb-3 sm:mb-4">Milestones</h3>
               <div className="relative">
                 {mockProject.milestones.map((milestone, index) => {
                   const statusInfo = getMilestoneStatus(milestone.status);
