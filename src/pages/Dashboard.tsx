@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Lightbulb, 
   FolderKanban, 
@@ -10,6 +11,38 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
+// Custom hook for animated counting
+function useCountUp(end: number, duration: number = 1500, delay: number = 0) {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const animate = (timestamp: number) => {
+        if (!startTimeRef.current) startTimeRef.current = timestamp;
+        const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        countRef.current = Math.floor(easeOutQuart * end);
+        setCount(countRef.current);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setCount(end);
+        }
+      };
+      requestAnimationFrame(animate);
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [end, duration, delay]);
+
+  return count;
+}
+
 interface RadialGaugeProps {
   value: number;
   max: number;
@@ -17,14 +50,33 @@ interface RadialGaugeProps {
   displayValue: string;
   color: string;
   gradientId: string;
+  animationDelay?: number;
 }
 
-function RadialGauge({ value, max, label, displayValue, color, gradientId }: RadialGaugeProps) {
-  const percentage = Math.min((value / max) * 100, 100);
+function RadialGauge({ value, max, label, displayValue, color, gradientId, animationDelay = 0 }: RadialGaugeProps) {
+  const animatedValue = useCountUp(value, 1500, animationDelay);
+  const percentage = Math.min((animatedValue / max) * 100, 100);
   const radius = 50;
   const strokeWidth = 10;
   const circumference = Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  // Format animated display value based on the format of displayValue
+  const formatAnimatedValue = () => {
+    if (displayValue.startsWith('$')) {
+      if (displayValue.includes('K')) {
+        return `$${(animatedValue / 1000).toFixed(animatedValue >= 1000 ? 1 : 0)}K`;
+      }
+      return `$${animatedValue.toLocaleString()}`;
+    }
+    if (displayValue.endsWith('%')) {
+      return `${animatedValue}%`;
+    }
+    if (displayValue.endsWith('d')) {
+      return `${animatedValue}d`;
+    }
+    return animatedValue.toLocaleString();
+  };
   
   return (
     <div className="flex flex-col items-center group">
@@ -62,7 +114,6 @@ function RadialGauge({ value, max, label, displayValue, color, gradientId }: Rad
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             filter={`url(#glow-${gradientId})`}
-            className="transition-all duration-700 ease-out"
           />
         </svg>
         {/* Center value */}
@@ -71,7 +122,7 @@ function RadialGauge({ value, max, label, displayValue, color, gradientId }: Rad
             className="text-xl font-bold transition-all duration-300 group-hover:scale-110"
             style={{ color }}
           >
-            {displayValue}
+            {formatAnimatedValue()}
           </span>
         </div>
       </div>
