@@ -65,26 +65,47 @@ interface DualGaugeCardProps {
   innerMetric: DualGaugeMetric;
   outerMetric: DualGaugeMetric;
   animationDelay?: number;
+  theme: 'blue' | 'green' | 'amber';
 }
 
-function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay = 0 }: DualGaugeCardProps) {
+function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay = 0, theme }: DualGaugeCardProps) {
   const animatedInner = useCountUp(innerMetric.value, 1500, animationDelay);
   const animatedOuter = useCountUp(outerMetric.value, 1500, animationDelay + 200);
   
   const innerPercentage = Math.min((animatedInner / innerMetric.max) * 100, 100);
   const outerPercentage = Math.min((animatedOuter / outerMetric.max) * 100, 100);
-  
-  const innerRadius = 36;
-  const outerRadius = 52;
-  const strokeWidth = 10;
-  const centerX = 70;
-  const centerY = 65;
-  
-  const innerCircumference = Math.PI * innerRadius;
-  const outerCircumference = Math.PI * outerRadius;
-  
-  const innerOffset = innerCircumference - (innerPercentage / 100) * innerCircumference;
-  const outerOffset = outerCircumference - (outerPercentage / 100) * outerCircumference;
+
+  const themeConfig = {
+    blue: {
+      outer: 'hsl(var(--primary))',
+      inner: 'hsl(var(--success))',
+      bg: 'from-primary/[0.03] to-primary/[0.01]',
+      iconBg: 'from-primary/20 to-primary/10',
+      border: 'border-primary/10 hover:border-primary/30',
+      dotOuter: 'bg-primary',
+      dotInner: 'bg-success',
+    },
+    green: {
+      outer: 'hsl(var(--success))',
+      inner: 'hsl(var(--primary))',
+      bg: 'from-success/[0.03] to-success/[0.01]',
+      iconBg: 'from-success/20 to-success/10',
+      border: 'border-success/10 hover:border-success/30',
+      dotOuter: 'bg-success',
+      dotInner: 'bg-primary',
+    },
+    amber: {
+      outer: 'hsl(var(--warning))',
+      inner: 'hsl(var(--success))',
+      bg: 'from-warning/[0.03] to-warning/[0.01]',
+      iconBg: 'from-warning/20 to-warning/10',
+      border: 'border-warning/10 hover:border-warning/30',
+      dotOuter: 'bg-warning',
+      dotInner: 'bg-success',
+    },
+  };
+
+  const colors = themeConfig[theme];
 
   const formatValue = (value: number, displayValue: string) => {
     if (displayValue.startsWith('$')) {
@@ -101,13 +122,13 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
   const uniqueId = title.replace(/\s+/g, '-').toLowerCase();
 
   return (
-    <div className="relative overflow-hidden fusion-card p-6 sm:p-8 hover:shadow-xl transition-all duration-300 group border-2 border-transparent hover:border-primary/20">
+    <div className={`relative fusion-card p-6 sm:p-8 hover:shadow-xl transition-all duration-300 group border-2 ${colors.border}`}>
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-accent/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} rounded-lg`} />
       
       <div className="relative z-10">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300">
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.iconBg} flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-300`}>
             {icon}
           </div>
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -121,12 +142,12 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
                 <svg width="160" height="85" viewBox="0 0 160 85" className="overflow-visible">
                   <defs>
                     <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity="1" />
+                      <stop offset="0%" stopColor={colors.inner} stopOpacity="0.4" />
+                      <stop offset="100%" stopColor={colors.inner} stopOpacity="1" />
                     </linearGradient>
                     <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                      <stop offset="0%" stopColor={colors.outer} stopOpacity="0.4" />
+                      <stop offset="100%" stopColor={colors.outer} stopOpacity="1" />
                     </linearGradient>
                     <filter id={`glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
                       <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -159,7 +180,7 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
                     strokeDasharray={Math.PI * 58}
                     strokeDashoffset={Math.PI * 58 - (outerPercentage / 100) * Math.PI * 58}
                     filter={`url(#shadow-${uniqueId})`}
-                    className="transition-all duration-700 ease-out group-hover:filter-none"
+                    className="transition-all duration-700 ease-out"
                     style={{ filter: `url(#glow-${uniqueId})` }}
                   />
                   
@@ -188,15 +209,15 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
                 </svg>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs">
+            <TooltipContent side="bottom" align="center" sideOffset={8} className="z-50">
               <div className="space-y-2 text-sm">
                 <p className="font-semibold">{title}</p>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                  <span className={`w-2.5 h-2.5 rounded-full ${colors.dotOuter}`} />
                   <span>{outerMetric.label}: {outerMetric.displayValue}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-success" />
+                  <span className={`w-2.5 h-2.5 rounded-full ${colors.dotInner}`} />
                   <span>{innerMetric.label}: {innerMetric.displayValue}</span>
                 </div>
                 {(outerMetric.tooltipDetail || innerMetric.tooltipDetail) && (
@@ -213,7 +234,7 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-xl p-2 -m-2 transition-colors">
-                  <div className="w-3 h-3 rounded-full bg-primary flex-shrink-0 shadow-sm" />
+                  <div className={`w-3 h-3 rounded-full ${colors.dotOuter} flex-shrink-0 shadow-sm`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium truncate">{outerMetric.label}</p>
                     <p className="text-xl font-bold text-foreground">
@@ -222,7 +243,7 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
                   </div>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" sideOffset={8} className="z-50">
                 <p className="font-medium">{outerMetric.label}</p>
                 <p className="text-muted-foreground text-xs">{outerMetric.tooltipDetail || `${outerMetric.displayValue} of ${outerMetric.max.toLocaleString()} max`}</p>
               </TooltipContent>
@@ -231,7 +252,7 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-xl p-2 -m-2 transition-colors">
-                  <div className="w-3 h-3 rounded-full bg-success flex-shrink-0 shadow-sm" />
+                  <div className={`w-3 h-3 rounded-full ${colors.dotInner} flex-shrink-0 shadow-sm`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium truncate">{innerMetric.label}</p>
                     <p className="text-xl font-bold text-foreground">
@@ -240,7 +261,7 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
                   </div>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" sideOffset={8} className="z-50">
                 <p className="font-medium">{innerMetric.label}</p>
                 <p className="text-muted-foreground text-xs">{innerMetric.tooltipDetail || `${innerMetric.displayValue} of ${innerMetric.max.toLocaleString()} max`}</p>
               </TooltipContent>
@@ -317,6 +338,7 @@ export default function Dashboard() {
         <DualGaugeCard
           title="Cost Overview"
           icon={<DollarSign className="w-5 h-5 text-primary" />}
+          theme="blue"
           outerMetric={{
             value: 42300,
             max: 50000,
@@ -335,7 +357,8 @@ export default function Dashboard() {
         />
         <DualGaugeCard
           title="Time Tracking"
-          icon={<Clock className="w-5 h-5 text-primary" />}
+          icon={<Clock className="w-5 h-5 text-success" />}
+          theme="green"
           outerMetric={{
             value: 25,
             max: 30,
@@ -354,7 +377,8 @@ export default function Dashboard() {
         />
         <DualGaugeCard
           title="Project Impact"
-          icon={<Zap className="w-5 h-5 text-primary" />}
+          icon={<Zap className="w-5 h-5 text-warning" />}
+          theme="amber"
           outerMetric={{
             value: 92,
             max: 100,
