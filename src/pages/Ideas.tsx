@@ -14,7 +14,8 @@ import {
   ClipboardCheck,
   ChevronRight,
   ArrowRight,
-  Lightbulb
+  Lightbulb,
+  Target
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -31,15 +32,16 @@ interface Idea {
   priority: number;
   status: 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
   submittedBy: string;
+  edgeStatus: 'incomplete' | 'draft' | 'complete';
 }
 
 const mockIdeas: Idea[] = [
-  { id: '1', title: 'AI-Powered Customer Segmentation', score: 92, estimatedImpact: 85, estimatedTime: 120, estimatedCost: 45000, priority: 1, status: 'pending_review', submittedBy: 'Sarah Chen' },
-  { id: '2', title: 'Automated Report Generation', score: 87, estimatedImpact: 78, estimatedTime: 80, estimatedCost: 32000, priority: 2, status: 'approved', submittedBy: 'Mike Thompson' },
-  { id: '3', title: 'Predictive Maintenance System', score: 84, estimatedImpact: 90, estimatedTime: 200, estimatedCost: 75000, priority: 3, status: 'scored', submittedBy: 'Emily Rodriguez' },
-  { id: '4', title: 'Real-time Analytics Dashboard', score: 81, estimatedImpact: 72, estimatedTime: 60, estimatedCost: 28000, priority: 4, status: 'pending_review', submittedBy: 'David Kim' },
-  { id: '5', title: 'Smart Inventory Optimization', score: 78, estimatedImpact: 68, estimatedTime: 100, estimatedCost: 38000, priority: 5, status: 'draft', submittedBy: 'Lisa Wang' },
-  { id: '6', title: 'Employee Training Assistant', score: 74, estimatedImpact: 65, estimatedTime: 90, estimatedCost: 35000, priority: 6, status: 'rejected', submittedBy: 'Jessica Park' },
+  { id: '1', title: 'AI-Powered Customer Segmentation', score: 92, estimatedImpact: 85, estimatedTime: 120, estimatedCost: 45000, priority: 1, status: 'pending_review', submittedBy: 'Sarah Chen', edgeStatus: 'complete' },
+  { id: '2', title: 'Automated Report Generation', score: 87, estimatedImpact: 78, estimatedTime: 80, estimatedCost: 32000, priority: 2, status: 'approved', submittedBy: 'Mike Thompson', edgeStatus: 'complete' },
+  { id: '3', title: 'Predictive Maintenance System', score: 84, estimatedImpact: 90, estimatedTime: 200, estimatedCost: 75000, priority: 3, status: 'scored', submittedBy: 'Emily Rodriguez', edgeStatus: 'draft' },
+  { id: '4', title: 'Real-time Analytics Dashboard', score: 81, estimatedImpact: 72, estimatedTime: 60, estimatedCost: 28000, priority: 4, status: 'pending_review', submittedBy: 'David Kim', edgeStatus: 'complete' },
+  { id: '5', title: 'Smart Inventory Optimization', score: 78, estimatedImpact: 68, estimatedTime: 100, estimatedCost: 38000, priority: 5, status: 'draft', submittedBy: 'Lisa Wang', edgeStatus: 'incomplete' },
+  { id: '6', title: 'Employee Training Assistant', score: 74, estimatedImpact: 65, estimatedTime: 90, estimatedCost: 35000, priority: 6, status: 'rejected', submittedBy: 'Jessica Park', edgeStatus: 'incomplete' },
 ];
 
 const statusConfig = {
@@ -50,11 +52,18 @@ const statusConfig = {
   rejected: { label: 'Sent Back', className: 'bg-destructive/10 text-destructive' },
 };
 
-function IdeaCard({ idea, view, onScore, onReview }: { 
+const edgeStatusConfig = {
+  incomplete: { label: 'Edge Missing', className: 'bg-error-soft text-error border-error/30', icon: '🔴' },
+  draft: { label: 'Edge Draft', className: 'bg-warning-soft text-warning border-warning/30', icon: '🟡' },
+  complete: { label: 'Edge Complete', className: 'bg-success-soft text-success border-success/30', icon: '🟢' },
+};
+
+function IdeaCard({ idea, view, onScore, onReview, onEdge }: { 
   idea: Idea; 
   view: 'priority' | 'performance'; 
   onScore: (id: string) => void;
   onReview: (id: string) => void;
+  onEdge: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -65,8 +74,9 @@ function IdeaCard({ idea, view, onScore, onReview }: {
     return 'text-destructive bg-destructive/10';
   };
 
-  const canReview = idea.status === 'pending_review';
+  const canReview = idea.status === 'pending_review' && idea.edgeStatus === 'complete';
   const canConvert = idea.status === 'approved';
+  const needsEdge = idea.edgeStatus !== 'complete' && idea.status !== 'draft';
 
   return (
     <div 
@@ -89,6 +99,10 @@ function IdeaCard({ idea, view, onScore, onReview }: {
                 </h3>
                 <Badge variant="outline" className={`text-xs ${statusConfig[idea.status].className}`}>
                   {statusConfig[idea.status].label}
+                </Badge>
+                <Badge variant="outline" className={`text-xs ${edgeStatusConfig[idea.edgeStatus].className}`}>
+                  <Target className="w-3 h-3 mr-1" />
+                  {edgeStatusConfig[idea.edgeStatus].label}
                 </Badge>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -146,6 +160,17 @@ function IdeaCard({ idea, view, onScore, onReview }: {
                 <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">View</span>
               </Button>
+              {needsEdge && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onEdge(idea.id)}
+                  className="gap-1.5 sm:gap-2 border-primary/30 text-primary hover:bg-primary/10 text-xs sm:text-sm h-8 sm:h-9"
+                >
+                  <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Define Edge</span>
+                </Button>
+              )}
               {canReview && (
                 <Button 
                   variant="outline" 
@@ -222,7 +247,7 @@ export default function Ideas() {
         <Lightbulb className="w-4 h-4 text-primary flex-shrink-0" />
         <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
           <span className="font-medium text-foreground">Idea Flow:</span>
-          {' '}Create → Score → Review → Convert
+          {' '}Create → Score → <span className="text-primary font-medium">Edge</span> → Review → Convert
         </span>
         <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto flex-shrink-0" />
       </div>
@@ -267,6 +292,7 @@ export default function Ideas() {
             view={view} 
             onScore={(id) => navigate(`/ideas/${id}/score`)}
             onReview={(id) => navigate(`/review/${id}`)}
+            onEdge={(id) => navigate(`/ideas/${id}/edge`)}
           />
         ))}
       </div>
