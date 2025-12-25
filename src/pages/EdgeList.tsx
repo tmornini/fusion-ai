@@ -132,6 +132,10 @@ export default function EdgeList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-3">
+            <Target className="w-4 h-4" />
+            Business Case Definition
+          </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">Edge</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Define outcomes, metrics, and expected impact for ideas</p>
         </div>
