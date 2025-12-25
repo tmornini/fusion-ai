@@ -218,54 +218,54 @@ export default function Flow() {
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
         {/* Page Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <GitBranch className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium mb-3 sm:mb-4">
+              <GitBranch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Process Documentation
             </div>
-            <h1 className="text-3xl font-display font-bold text-foreground mb-2">Flow</h1>
-            <p className="text-muted-foreground max-w-xl">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">Flow</h1>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl">
               Document your business processes step by step. We'll help you create clear workflows 
               that everyone can understand and follow.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button 
               variant={viewMode === 'edit' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setViewMode('edit')}
-              className="gap-2"
+              className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Edit
             </Button>
             <Button 
               variant={viewMode === 'preview' ? 'default' : 'outline'} 
               size="sm"
               onClick={() => setViewMode('preview')}
-              className="gap-2"
+              className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Preview
             </Button>
           </div>
         </div>
 
         {/* Process Info */}
-        <div className="fusion-card p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="fusion-card p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Process Name</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">Process Name</label>
               <Input
                 value={process.name}
                 onChange={(e) => setProcess(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g., Customer Onboarding"
-                className="text-lg font-medium"
+                className="text-base sm:text-lg font-medium"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Department</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">Department</label>
               <Select
                 value={process.department}
                 onValueChange={(value) => setProcess(prev => ({ ...prev, department: value }))}
@@ -284,12 +284,12 @@ export default function Flow() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">Description</label>
               <Textarea
                 value={process.description}
                 onChange={(e) => setProcess(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Briefly describe what this process accomplishes..."
-                className="resize-none"
+                className="resize-none text-sm"
               />
             </div>
           </div>
@@ -297,10 +297,10 @@ export default function Flow() {
 
         {/* Edit Mode */}
         {viewMode === 'edit' && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-display font-semibold text-foreground">Process Steps</h2>
-              <span className="text-sm text-muted-foreground">{process.steps.length} steps</span>
+              <h2 className="text-base sm:text-lg font-display font-semibold text-foreground">Process Steps</h2>
+              <span className="text-xs sm:text-sm text-muted-foreground">{process.steps.length} steps</span>
             </div>
 
             {/* Steps */}
@@ -316,139 +316,145 @@ export default function Flow() {
                     
                     <div className={`fusion-card overflow-hidden ${isExpanded ? 'ring-2 ring-primary' : ''}`}>
                       <div
-                        className="p-4 cursor-pointer"
+                        className="p-3 sm:p-4 cursor-pointer"
                         onClick={() => setExpandedStep(isExpanded ? null : step.id)}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="cursor-grab text-muted-foreground hover:text-foreground">
+                        <div className="flex items-center gap-2 sm:gap-4">
+                          <div className="cursor-grab text-muted-foreground hover:text-foreground hidden sm:block">
                             <GripVertical className="w-4 h-4" />
                           </div>
                           
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center border-2 ${getStepTypeColor(step.type)}`}>
-                            <span className="text-sm font-bold">{index + 1}</span>
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center border-2 flex-shrink-0 ${getStepTypeColor(step.type)}`}>
+                            <span className="text-xs sm:text-sm font-bold">{index + 1}</span>
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-foreground">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                              <span className="font-medium text-foreground text-sm sm:text-base truncate">
                                 {step.title || 'Untitled Step'}
                               </span>
                               {!step.title && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
                                   Needs info
                                 </span>
                               )}
                             </div>
                             {step.owner && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Users className="w-3.5 h-3.5" />
-                                <span>{step.owner}</span>
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                <span className="truncate">{step.owner}</span>
                                 {step.duration && (
                                   <>
-                                    <span>•</span>
-                                    <Clock className="w-3.5 h-3.5" />
-                                    <span>{step.duration}</span>
+                                    <span className="hidden sm:inline">•</span>
+                                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:block" />
+                                    <span className="hidden sm:inline">{step.duration}</span>
                                   </>
                                 )}
                               </div>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); moveStep(step.id, 'up'); }}
                               disabled={index === 0}
+                              className="h-7 w-7 sm:h-8 sm:w-8"
                             >
-                              <ChevronUp className="w-4 h-4" />
+                              <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); moveStep(step.id, 'down'); }}
                               disabled={index === process.steps.length - 1}
+                              className="h-7 w-7 sm:h-8 sm:w-8"
                             >
-                              <ChevronDown className="w-4 h-4" />
+                              <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={(e) => { e.stopPropagation(); removeStep(step.id); }}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 w-7 sm:h-8 sm:w-8"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             {isExpanded ? (
-                              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                             ) : (
-                              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                             )}
                           </div>
                         </div>
                       </div>
 
                       {isExpanded && (
-                        <div className="px-4 pb-4 border-t border-border pt-4 bg-muted/20">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-border pt-3 sm:pt-4 bg-muted/20">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="col-span-1 sm:col-span-2">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 What happens in this step?
                               </label>
                               <Input
                                 placeholder="e.g., Review and approve customer application"
                                 value={step.title}
                                 onChange={(e) => updateStep(step.id, { title: e.target.value })}
+                                className="text-sm"
                               />
                             </div>
                             
-                            <div className="col-span-2">
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                            <div className="col-span-1 sm:col-span-2">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 Describe this step in detail
                               </label>
                               <Textarea
                                 placeholder="Explain what needs to happen, any special considerations..."
                                 value={step.description}
                                 onChange={(e) => updateStep(step.id, { description: e.target.value })}
-                                className="resize-none"
+                                className="resize-none text-sm"
                               />
                             </div>
                             
                             <div>
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 Who is responsible?
                               </label>
                               <Input
                                 placeholder="e.g., Customer Success Team"
                                 value={step.owner}
                                 onChange={(e) => updateStep(step.id, { owner: e.target.value })}
+                                className="text-sm"
                               />
                             </div>
                             
                             <div>
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 Specific Role
                               </label>
                               <Input
                                 placeholder="e.g., Account Manager"
                                 value={step.role}
                                 onChange={(e) => updateStep(step.id, { role: e.target.value })}
+                                className="text-sm"
                               />
                             </div>
                             
                             <div>
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 How long does this take?
                               </label>
                               <Input
                                 placeholder="e.g., 30 minutes"
                                 value={step.duration}
                                 onChange={(e) => updateStep(step.id, { duration: e.target.value })}
+                                className="text-sm"
                               />
                             </div>
                             
                             <div>
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 Step Type
                               </label>
                               <Select
@@ -467,24 +473,24 @@ export default function Flow() {
                               </Select>
                             </div>
 
-                            <div className="col-span-2">
-                              <label className="text-sm font-medium text-foreground mb-2 block">
+                            <div className="col-span-1 sm:col-span-2">
+                              <label className="text-xs sm:text-sm font-medium text-foreground mb-1.5 sm:mb-2 block">
                                 Tools Used
                               </label>
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                 {Object.entries(toolIcons).map(([toolName, Icon]) => {
                                   const isSelected = step.tools.includes(toolName);
                                   return (
                                     <button
                                       key={toolName}
                                       onClick={() => toggleTool(step.id, toolName)}
-                                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                                      className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-all ${
                                         isSelected
                                           ? 'bg-primary text-primary-foreground'
                                           : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                       }`}
                                     >
-                                      <Icon className="w-4 h-4" />
+                                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                       {toolName}
                                     </button>
                                   );
@@ -509,54 +515,54 @@ export default function Flow() {
 
         {/* Preview Mode */}
         {viewMode === 'preview' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-display font-semibold text-foreground">{process.name}</h2>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h2 className="text-base sm:text-lg font-display font-semibold text-foreground">{process.name}</h2>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Share2 className="w-4 h-4" />
+                <Button variant="outline" size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   Share
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="w-4 h-4" />
+                <Button variant="outline" size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                  <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   Export
                 </Button>
               </div>
             </div>
 
-            <p className="text-muted-foreground">{process.description}</p>
+            <p className="text-sm sm:text-base text-muted-foreground">{process.description}</p>
 
-            <div className="relative pl-6">
-              <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
+            <div className="relative pl-4 sm:pl-6">
+              <div className="absolute left-2 sm:left-3 top-0 bottom-0 w-0.5 bg-border" />
               
               {process.steps.map((step, index) => (
-                <div key={step.id} className="relative pb-8 last:pb-0">
-                  <div className={`absolute left-0 w-6 h-6 rounded-full border-2 -translate-x-[calc(50%+0.5px)] flex items-center justify-center ${getStepTypeColor(step.type)} bg-background`}>
-                    <span className="text-xs font-bold">{index + 1}</span>
+                <div key={step.id} className="relative pb-6 sm:pb-8 last:pb-0">
+                  <div className={`absolute left-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 -translate-x-[calc(50%+0.5px)] flex items-center justify-center ${getStepTypeColor(step.type)} bg-background`}>
+                    <span className="text-[10px] sm:text-xs font-bold">{index + 1}</span>
                   </div>
                   
-                  <div className="ml-6 fusion-card p-4">
-                    <h4 className="font-medium text-foreground mb-1">{step.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-3">{step.description}</p>
+                  <div className="ml-4 sm:ml-6 fusion-card p-3 sm:p-4">
+                    <h4 className="font-medium text-foreground text-sm sm:text-base mb-1">{step.title}</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">{step.description}</p>
                     
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5" />
-                        {step.owner} ({step.role})
+                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <span className="truncate">{step.owner} ({step.role})</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
+                        <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         {step.duration}
                       </div>
                     </div>
                     
                     {step.tools.length > 0 && (
-                      <div className="flex items-center gap-2 mt-3">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2 sm:mt-3">
                         {step.tools.map(tool => {
                           const Icon = toolIcons[tool];
                           return (
-                            <div key={tool} className="flex items-center gap-1 px-2 py-1 rounded bg-muted text-muted-foreground text-xs">
-                              <Icon className="w-3 h-3" />
+                            <div key={tool} className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-muted text-muted-foreground text-[10px] sm:text-xs">
+                              <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               {tool}
                             </div>
                           );
