@@ -22,7 +22,10 @@ import {
   GitBranch,
   Database,
   Code2,
-  Lightbulb
+  Lightbulb,
+  Shield,
+  BarChart3,
+  Gauge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -55,6 +58,35 @@ const mockProject = {
     impact: { baseline: 85, current: 78, unit: 'pts' },
   },
 
+  // Edge Baseline KPIs (from idea conversion)
+  edge: {
+    outcomes: [
+      {
+        id: '1',
+        description: 'Reduce customer churn rate',
+        metrics: [
+          { id: '1', name: 'Churn Rate Reduction', target: '15', unit: '%', current: '12' },
+          { id: '2', name: 'Customer Retention', target: '85', unit: '%', current: '82' },
+        ]
+      },
+      {
+        id: '2',
+        description: 'Increase marketing ROI',
+        metrics: [
+          { id: '3', name: 'Campaign Conversion', target: '25', unit: '%', current: '28' },
+          { id: '4', name: 'Cost per Acquisition', target: '45', unit: '$', current: '42' },
+        ]
+      }
+    ],
+    impact: {
+      shortTerm: 'Automated segmentation reduces manual effort by 80%. Initial customer insights available within 2 weeks.',
+      midTerm: 'Expected 15% reduction in churn through targeted campaigns. Marketing ROI improvement of 25%.',
+      longTerm: 'Full personalization pipeline enabling real-time customer journey optimization across all channels.'
+    },
+    confidence: 'high' as const,
+    owner: 'Sarah Chen'
+  },
+
   // Team
   team: [
     { id: '1', name: 'Sarah Chen', role: 'Project Lead', avatar: null },
@@ -85,6 +117,12 @@ const mockProject = {
     { id: '2', author: 'Mike Thompson', date: '2024-02-25', message: 'Segmentation accuracy is now at 94%. Exceeding our initial target of 90%.' },
     { id: '3', author: 'David Martinez', date: '2024-02-20', message: 'API endpoints are ready for frontend integration.' },
   ],
+};
+
+const confidenceConfig = {
+  high: { label: 'High Confidence', className: 'bg-success-soft text-success' },
+  medium: { label: 'Medium Confidence', className: 'bg-warning-soft text-warning' },
+  low: { label: 'Low Confidence', className: 'bg-error-soft text-error' }
 };
 
 export default function ProjectDetail() {
@@ -338,6 +376,113 @@ export default function ProjectDetail() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Edge Baseline KPIs */}
+            <div className="fusion-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Target className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-display font-semibold text-foreground">Edge Baseline KPIs</h2>
+                    <p className="text-xs text-muted-foreground">Original success criteria from idea approval</p>
+                  </div>
+                </div>
+                <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${confidenceConfig[mockProject.edge.confidence].className}`}>
+                  <Shield className="w-3 h-3 inline mr-1" />
+                  {confidenceConfig[mockProject.edge.confidence].label}
+                </div>
+              </div>
+
+              {/* Outcomes with Metrics */}
+              <div className="space-y-4 mb-6">
+                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  Business Outcomes & Metrics
+                </h3>
+                {mockProject.edge.outcomes.map((outcome, index) => (
+                  <div key={outcome.id} className="p-4 rounded-lg bg-muted/30 border border-border">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                        {index + 1}
+                      </div>
+                      <p className="font-medium text-foreground">{outcome.description}</p>
+                    </div>
+                    <div className="pl-9 space-y-2">
+                      {outcome.metrics.map((metric) => {
+                        const target = parseFloat(metric.target);
+                        const current = parseFloat(metric.current);
+                        const isOnTrack = metric.unit === '$' 
+                          ? current <= target 
+                          : current >= target * 0.9;
+                        
+                        return (
+                          <div key={metric.id} className="flex items-center justify-between p-2 rounded bg-background border border-border">
+                            <div className="flex items-center gap-2">
+                              <Gauge className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm text-foreground">{metric.name}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Target</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {metric.unit === '$' ? `$${metric.target}` : `${metric.target}${metric.unit}`}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Current</p>
+                                <p className={`text-sm font-medium ${isOnTrack ? 'text-success' : 'text-warning'}`}>
+                                  {metric.unit === '$' ? `$${metric.current}` : `${metric.current}${metric.unit}`}
+                                </p>
+                              </div>
+                              <div className={`w-2 h-2 rounded-full ${isOnTrack ? 'bg-success' : 'bg-warning'}`} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Expected Impact Timeline */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Expected Impact Timeline
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-success-soft border border-success/20">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock className="w-3.5 h-3.5 text-success" />
+                      <span className="text-xs font-medium text-success">Short-term (0-3mo)</span>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed">{mockProject.edge.impact.shortTerm}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-warning-soft border border-warning/20">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock className="w-3.5 h-3.5 text-warning" />
+                      <span className="text-xs font-medium text-warning">Mid-term (3-12mo)</span>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed">{mockProject.edge.impact.midTerm}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-info-soft border border-primary/20">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs font-medium text-primary">Long-term (12+mo)</span>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed">{mockProject.edge.impact.longTerm}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Owner */}
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Edge Owner</span>
+                <span className="text-sm font-medium text-foreground">{mockProject.edge.owner}</span>
               </div>
             </div>
 
