@@ -3,103 +3,116 @@ import {
   Lightbulb, 
   FolderKanban, 
   Users,
-  TrendingUp
+  TrendingUp,
+  DollarSign,
+  Clock,
+  Zap
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
-interface GaugeProps {
+interface RadialGaugeProps {
   value: number;
   max: number;
   label: string;
-  subLabel: string;
+  displayValue: string;
   color: string;
-  size?: 'sm' | 'lg';
+  gradientId: string;
 }
 
-function Gauge({ value, max, label, subLabel, color, size = 'sm' }: GaugeProps) {
+function RadialGauge({ value, max, label, displayValue, color, gradientId }: RadialGaugeProps) {
   const percentage = Math.min((value / max) * 100, 100);
-  const strokeWidth = size === 'lg' ? 12 : 8;
-  const radius = size === 'lg' ? 60 : 45;
+  const radius = 50;
+  const strokeWidth = 10;
   const circumference = Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
   
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: radius * 2 + 20, height: radius + 30 }}>
-        <svg 
-          width={radius * 2 + 20} 
-          height={radius + 30} 
-          className="overflow-visible"
-        >
+    <div className="flex flex-col items-center group">
+      <div className="relative w-32 h-20">
+        <svg width="128" height="80" viewBox="0 0 128 80" className="overflow-visible">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={color} stopOpacity="1" />
+            </linearGradient>
+            <filter id={`glow-${gradientId}`}>
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
           {/* Background arc */}
           <path
-            d={`M ${10} ${radius + 10} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius + 10}`}
+            d="M 14 70 A 50 50 0 0 1 114 70"
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-muted/30"
+            className="text-muted/20"
             strokeLinecap="round"
           />
-          {/* Foreground arc */}
+          {/* Foreground arc with gradient */}
           <path
-            d={`M ${10} ${radius + 10} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius + 10}`}
+            d="M 14 70 A 50 50 0 0 1 114 70"
             fill="none"
-            stroke={color}
+            stroke={`url(#${gradientId})`}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+            filter={`url(#glow-${gradientId})`}
+            className="transition-all duration-700 ease-out"
           />
         </svg>
-        {/* Center circle with value */}
-        <div 
-          className="absolute flex items-center justify-center rounded-full"
-          style={{ 
-            width: radius * 1.1, 
-            height: radius * 1.1, 
-            backgroundColor: color,
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -30%)'
-          }}
-        >
-          <span className="text-white font-bold text-sm sm:text-base">
-            {value.toLocaleString()}
+        {/* Center value */}
+        <div className="absolute inset-0 flex items-end justify-center pb-1">
+          <span 
+            className="text-xl font-bold transition-all duration-300 group-hover:scale-110"
+            style={{ color }}
+          >
+            {displayValue}
           </span>
         </div>
       </div>
-      <div className="text-center mt-2">
-        <p className="text-xs sm:text-sm font-medium" style={{ color }}>{label}</p>
-        <p className="text-xs sm:text-sm text-muted-foreground">{subLabel}</p>
-      </div>
+      <p className="text-xs text-muted-foreground mt-2 font-medium uppercase tracking-wider">{label}</p>
     </div>
   );
 }
 
-interface MetricGaugeCardProps {
+interface MetricCardProps {
+  title: string;
+  icon: React.ReactNode;
   leftGauge: {
     value: number;
     max: number;
     label: string;
-    subLabel: string;
+    displayValue: string;
     color: string;
+    gradientId: string;
   };
   rightGauge: {
     value: number;
     max: number;
     label: string;
-    subLabel: string;
+    displayValue: string;
     color: string;
+    gradientId: string;
   };
 }
 
-function MetricGaugeCard({ leftGauge, rightGauge }: MetricGaugeCardProps) {
+function MetricCard({ title, icon, leftGauge, rightGauge }: MetricCardProps) {
   return (
-    <div className="rounded-2xl p-6 sm:p-8" style={{ backgroundColor: 'hsl(232, 70%, 25%)' }}>
-      <div className="flex justify-around items-end gap-4">
-        <Gauge {...leftGauge} />
-        <Gauge {...rightGauge} />
+    <div className="fusion-card p-5 sm:p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+      <div className="flex justify-around items-end">
+        <RadialGauge {...leftGauge} />
+        <RadialGauge {...rightGauge} />
       </div>
     </div>
   );
@@ -123,37 +136,65 @@ export default function Dashboard() {
       </div>
 
       {/* Metrics Grid - Gauge Style */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <MetricGaugeCard
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <MetricCard
+          title="Cost Overview"
+          icon={<DollarSign className="w-5 h-5 text-primary" />}
           leftGauge={{
             value: 25000,
-            max: 300000,
-            label: "Return on Investment",
-            subLabel: "25,000",
-            color: "#22c55e"
+            max: 50000,
+            label: "ROI",
+            displayValue: "$25K",
+            color: "#22c55e",
+            gradientId: "roi-gradient"
           }}
           rightGauge={{
-            value: 275000,
-            max: 300000,
-            label: "Investment",
-            subLabel: "300,000",
-            color: "#ea580c"
+            value: 42300,
+            max: 50000,
+            label: "Spent",
+            displayValue: "$42.3K",
+            color: "#f97316",
+            gradientId: "spent-gradient"
           }}
         />
-        <MetricGaugeCard
+        <MetricCard
+          title="Time Tracking"
+          icon={<Clock className="w-5 h-5 text-primary" />}
           leftGauge={{
             value: 12,
-            max: 270,
-            label: "Elapsed Time",
-            subLabel: "12 days",
-            color: "#38bdf8"
+            max: 30,
+            label: "Elapsed",
+            displayValue: "12d",
+            color: "#38bdf8",
+            gradientId: "elapsed-gradient"
           }}
           rightGauge={{
-            value: 258,
-            max: 270,
-            label: "Project Time",
-            subLabel: "270 days",
-            color: "#22c55e"
+            value: 25,
+            max: 30,
+            label: "Remaining",
+            displayValue: "18d",
+            color: "#a78bfa",
+            gradientId: "remaining-gradient"
+          }}
+        />
+        <MetricCard
+          title="Project Impact"
+          icon={<Zap className="w-5 h-5 text-primary" />}
+          leftGauge={{
+            value: 85,
+            max: 100,
+            label: "Score",
+            displayValue: "85%",
+            color: "#10b981",
+            gradientId: "score-gradient"
+          }}
+          rightGauge={{
+            value: 92,
+            max: 100,
+            label: "Target",
+            displayValue: "92%",
+            color: "#06b6d4",
+            gradientId: "target-gradient"
           }}
         />
       </div>
