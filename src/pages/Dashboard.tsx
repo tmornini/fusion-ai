@@ -10,6 +10,11 @@ import {
   Zap
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Custom hook for animated counting
 function useCountUp(end: number, duration: number = 1500, delay: number = 0) {
@@ -23,7 +28,6 @@ function useCountUp(end: number, duration: number = 1500, delay: number = 0) {
         if (!startTimeRef.current) startTimeRef.current = timestamp;
         const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
         
-        // Easing function for smooth animation
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
         countRef.current = Math.floor(easeOutQuart * end);
         setCount(countRef.current);
@@ -48,7 +52,7 @@ interface DualGaugeMetric {
   max: number;
   label: string;
   displayValue: string;
-  color: string;
+  tooltipDetail?: string;
 }
 
 interface DualGaugeCardProps {
@@ -66,9 +70,11 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
   const innerPercentage = Math.min((animatedInner / innerMetric.max) * 100, 100);
   const outerPercentage = Math.min((animatedOuter / outerMetric.max) * 100, 100);
   
-  const innerRadius = 40;
-  const outerRadius = 58;
-  const strokeWidth = 12;
+  const innerRadius = 36;
+  const outerRadius = 52;
+  const strokeWidth = 10;
+  const centerX = 70;
+  const centerY = 65;
   
   const innerCircumference = Math.PI * innerRadius;
   const outerCircumference = Math.PI * outerRadius;
@@ -88,114 +94,140 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
     return value.toLocaleString();
   };
 
+  const uniqueId = title.replace(/\s+/g, '-').toLowerCase();
+
   return (
-    <div className="fusion-card p-5 sm:p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+    <div className="fusion-card p-5 sm:p-6 hover:shadow-lg transition-all duration-300 group">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
           {icon}
         </div>
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
       
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
         {/* Dual Arc Gauge */}
-        <div className="relative flex-shrink-0">
-          <svg width="140" height="85" viewBox="0 0 140 85" className="overflow-visible">
-            <defs>
-              <linearGradient id={`inner-${title}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={innerMetric.color} stopOpacity="0.4" />
-                <stop offset="100%" stopColor={innerMetric.color} stopOpacity="1" />
-              </linearGradient>
-              <linearGradient id={`outer-${title}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={outerMetric.color} stopOpacity="0.4" />
-                <stop offset="100%" stopColor={outerMetric.color} stopOpacity="1" />
-              </linearGradient>
-              <filter id={`glow-inner-${title}`}>
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-              <filter id={`glow-outer-${title}`}>
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-            
-            {/* Outer arc background */}
-            <path
-              d={`M ${70 - outerRadius} 75 A ${outerRadius} ${outerRadius} 0 0 1 ${70 + outerRadius} 75`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={strokeWidth}
-              className="text-muted/15"
-              strokeLinecap="round"
-            />
-            {/* Outer arc foreground */}
-            <path
-              d={`M ${70 - outerRadius} 75 A ${outerRadius} ${outerRadius} 0 0 1 ${70 + outerRadius} 75`}
-              fill="none"
-              stroke={`url(#outer-${title})`}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={outerCircumference}
-              strokeDashoffset={outerOffset}
-              filter={`url(#glow-outer-${title})`}
-            />
-            
-            {/* Inner arc background */}
-            <path
-              d={`M ${70 - innerRadius} 75 A ${innerRadius} ${innerRadius} 0 0 1 ${70 + innerRadius} 75`}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={strokeWidth}
-              className="text-muted/15"
-              strokeLinecap="round"
-            />
-            {/* Inner arc foreground */}
-            <path
-              d={`M ${70 - innerRadius} 75 A ${innerRadius} ${innerRadius} 0 0 1 ${70 + innerRadius} 75`}
-              fill="none"
-              stroke={`url(#inner-${title})`}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={innerCircumference}
-              strokeDashoffset={innerOffset}
-              filter={`url(#glow-inner-${title})`}
-            />
-          </svg>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="relative flex-shrink-0 cursor-pointer">
+              <svg width="140" height="75" viewBox="0 0 140 75" className="overflow-visible">
+                <defs>
+                  <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(152, 60%, 40%)" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="hsl(152, 60%, 40%)" stopOpacity="1" />
+                  </linearGradient>
+                  <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(217, 36%, 46%)" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="hsl(217, 36%, 46%)" stopOpacity="1" />
+                  </linearGradient>
+                  <filter id={`shadow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.15"/>
+                  </filter>
+                </defs>
+                
+                {/* Outer arc background */}
+                <path
+                  d={`M ${centerX - outerRadius} ${centerY} A ${outerRadius} ${outerRadius} 0 0 1 ${centerX + outerRadius} ${centerY}`}
+                  fill="none"
+                  stroke="hsl(217, 14%, 82%)"
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  opacity="0.5"
+                />
+                {/* Outer arc foreground */}
+                <path
+                  d={`M ${centerX - outerRadius} ${centerY} A ${outerRadius} ${outerRadius} 0 0 1 ${centerX + outerRadius} ${centerY}`}
+                  fill="none"
+                  stroke={`url(#outer-grad-${uniqueId})`}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  strokeDasharray={outerCircumference}
+                  strokeDashoffset={outerOffset}
+                  filter={`url(#shadow-${uniqueId})`}
+                  className="transition-all duration-700 ease-out"
+                />
+                
+                {/* Inner arc background */}
+                <path
+                  d={`M ${centerX - innerRadius} ${centerY} A ${innerRadius} ${innerRadius} 0 0 1 ${centerX + innerRadius} ${centerY}`}
+                  fill="none"
+                  stroke="hsl(217, 14%, 82%)"
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  opacity="0.5"
+                />
+                {/* Inner arc foreground */}
+                <path
+                  d={`M ${centerX - innerRadius} ${centerY} A ${innerRadius} ${innerRadius} 0 0 1 ${centerX + innerRadius} ${centerY}`}
+                  fill="none"
+                  stroke={`url(#inner-grad-${uniqueId})`}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  strokeDasharray={innerCircumference}
+                  strokeDashoffset={innerOffset}
+                  filter={`url(#shadow-${uniqueId})`}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="space-y-2 text-sm">
+              <p className="font-semibold">{title}</p>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary" />
+                <span>{outerMetric.label}: {outerMetric.displayValue}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success" />
+                <span>{innerMetric.label}: {innerMetric.displayValue}</span>
+              </div>
+              {(outerMetric.tooltipDetail || innerMetric.tooltipDetail) && (
+                <p className="text-muted-foreground text-xs pt-1 border-t border-border">
+                  {outerMetric.tooltipDetail || innerMetric.tooltipDetail}
+                </p>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
         
         {/* Legend */}
         <div className="flex flex-col gap-3 flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full flex-shrink-0" 
-              style={{ backgroundColor: outerMetric.color }}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{outerMetric.label}</p>
-              <p className="text-lg font-bold" style={{ color: outerMetric.color }}>
-                {formatValue(animatedOuter, outerMetric.displayValue)}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full flex-shrink-0" 
-              style={{ backgroundColor: innerMetric.color }}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{innerMetric.label}</p>
-              <p className="text-lg font-bold" style={{ color: innerMetric.color }}>
-                {formatValue(animatedInner, innerMetric.displayValue)}
-              </p>
-            </div>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2.5 cursor-pointer hover:bg-muted/50 rounded-lg p-1.5 -m-1.5 transition-colors">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{outerMetric.label}</p>
+                  <p className="text-base font-bold text-foreground">
+                    {formatValue(animatedOuter, outerMetric.displayValue)}
+                  </p>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="font-medium">{outerMetric.label}</p>
+              <p className="text-muted-foreground text-xs">{outerMetric.tooltipDetail || `${outerMetric.displayValue} of ${outerMetric.max.toLocaleString()} max`}</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2.5 cursor-pointer hover:bg-muted/50 rounded-lg p-1.5 -m-1.5 transition-colors">
+                <div className="w-2.5 h-2.5 rounded-full bg-success flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{innerMetric.label}</p>
+                  <p className="text-base font-bold text-foreground">
+                    {formatValue(animatedInner, innerMetric.displayValue)}
+                  </p>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="font-medium">{innerMetric.label}</p>
+              <p className="text-muted-foreground text-xs">{innerMetric.tooltipDetail || `${innerMetric.displayValue} of ${innerMetric.max.toLocaleString()} max`}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -227,16 +259,16 @@ export default function Dashboard() {
           outerMetric={{
             value: 42300,
             max: 50000,
-            label: "Spent",
+            label: "Budget Spent",
             displayValue: "$42.3K",
-            color: "#f97316"
+            tooltipDetail: "84.6% of total budget utilized"
           }}
           innerMetric={{
             value: 25000,
             max: 50000,
-            label: "ROI",
+            label: "ROI Generated",
             displayValue: "$25K",
-            color: "#22c55e"
+            tooltipDetail: "50% return on investment achieved"
           }}
           animationDelay={0}
         />
@@ -246,16 +278,16 @@ export default function Dashboard() {
           outerMetric={{
             value: 25,
             max: 30,
-            label: "Remaining",
-            displayValue: "18d",
-            color: "#a78bfa"
+            label: "Total Duration",
+            displayValue: "25d",
+            tooltipDetail: "Project timeline: 30 days total"
           }}
           innerMetric={{
             value: 12,
             max: 30,
-            label: "Elapsed",
+            label: "Days Elapsed",
             displayValue: "12d",
-            color: "#38bdf8"
+            tooltipDetail: "40% of timeline completed"
           }}
           animationDelay={150}
         />
@@ -265,16 +297,16 @@ export default function Dashboard() {
           outerMetric={{
             value: 92,
             max: 100,
-            label: "Target",
+            label: "Target Score",
             displayValue: "92%",
-            color: "#06b6d4"
+            tooltipDetail: "Goal: 92% impact score"
           }}
           innerMetric={{
             value: 85,
             max: 100,
-            label: "Score",
+            label: "Current Score",
             displayValue: "85%",
-            color: "#10b981"
+            tooltipDetail: "7 points below target"
           }}
           animationDelay={300}
         />
