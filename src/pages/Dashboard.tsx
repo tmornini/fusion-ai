@@ -1,55 +1,105 @@
 import { useNavigate } from 'react-router-dom';
 import { 
-  Clock,
-  DollarSign,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   Lightbulb, 
   FolderKanban, 
-  Users
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
-interface MetricCardProps {
-  title: string;
-  estimated: string;
-  actual: string;
-  variance: number;
-  icon: React.ReactNode;
-  unit: string;
+interface GaugeProps {
+  value: number;
+  max: number;
+  label: string;
+  subLabel: string;
+  color: string;
+  size?: 'sm' | 'lg';
 }
 
-function MetricCard({ title, estimated, actual, variance, icon, unit }: MetricCardProps) {
-  const isPositive = variance >= 0;
+function Gauge({ value, max, label, subLabel, color, size = 'sm' }: GaugeProps) {
+  const percentage = Math.min((value / max) * 100, 100);
+  const strokeWidth = size === 'lg' ? 12 : 8;
+  const radius = size === 'lg' ? 60 : 45;
+  const circumference = Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
   
   return (
-    <div className="fusion-card p-4 sm:p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-3 sm:mb-4">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-          {icon}
-        </div>
-        <div className={`flex items-center gap-1 text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-          {isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-          {Math.abs(variance)}%
+    <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: radius * 2 + 20, height: radius + 30 }}>
+        <svg 
+          width={radius * 2 + 20} 
+          height={radius + 30} 
+          className="overflow-visible"
+        >
+          {/* Background arc */}
+          <path
+            d={`M ${10} ${radius + 10} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius + 10}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            className="text-muted/30"
+            strokeLinecap="round"
+          />
+          {/* Foreground arc */}
+          <path
+            d={`M ${10} ${radius + 10} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius + 10}`}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+          />
+        </svg>
+        {/* Center circle with value */}
+        <div 
+          className="absolute flex items-center justify-center rounded-full"
+          style={{ 
+            width: radius * 1.1, 
+            height: radius * 1.1, 
+            backgroundColor: color,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -30%)'
+          }}
+        >
+          <span className="text-white font-bold text-sm sm:text-base">
+            {value.toLocaleString()}
+          </span>
         </div>
       </div>
-      <h3 className="text-base sm:text-lg font-display font-semibold text-foreground mb-3 sm:mb-4">{title}</h3>
-      <div className="space-y-2 sm:space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-xs sm:text-sm text-muted-foreground">Estimated</span>
-          <span className="text-xs sm:text-sm font-medium text-foreground">{estimated} {unit}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-xs sm:text-sm text-muted-foreground">Actual</span>
-          <span className="text-xs sm:text-sm font-medium text-foreground">{actual} {unit}</span>
-        </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div 
-            className={`h-full rounded-full transition-all ${isPositive ? 'bg-green-500' : 'bg-red-500'}`}
-            style={{ width: `${Math.min(100, (parseFloat(actual) / parseFloat(estimated)) * 100)}%` }}
-          />
-        </div>
+      <div className="text-center mt-2">
+        <p className="text-xs sm:text-sm font-medium" style={{ color }}>{label}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground">{subLabel}</p>
+      </div>
+    </div>
+  );
+}
+
+interface MetricGaugeCardProps {
+  leftGauge: {
+    value: number;
+    max: number;
+    label: string;
+    subLabel: string;
+    color: string;
+  };
+  rightGauge: {
+    value: number;
+    max: number;
+    label: string;
+    subLabel: string;
+    color: string;
+  };
+}
+
+function MetricGaugeCard({ leftGauge, rightGauge }: MetricGaugeCardProps) {
+  return (
+    <div className="rounded-2xl p-6 sm:p-8" style={{ backgroundColor: 'hsl(232, 70%, 25%)' }}>
+      <div className="flex justify-around items-end gap-4">
+        <Gauge {...leftGauge} />
+        <Gauge {...rightGauge} />
       </div>
     </div>
   );
@@ -72,31 +122,39 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <MetricCard
-          title="Estimated vs Actual Time"
-          estimated="120"
-          actual="98"
-          variance={18}
-          icon={<Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
-          unit="hours"
+      {/* Metrics Grid - Gauge Style */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <MetricGaugeCard
+          leftGauge={{
+            value: 25000,
+            max: 300000,
+            label: "Return on Investment",
+            subLabel: "25,000",
+            color: "#22c55e"
+          }}
+          rightGauge={{
+            value: 275000,
+            max: 300000,
+            label: "Investment",
+            subLabel: "300,000",
+            color: "#ea580c"
+          }}
         />
-        <MetricCard
-          title="Estimated vs Actual Cost"
-          estimated="45,000"
-          actual="42,300"
-          variance={6}
-          icon={<DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
-          unit="USD"
-        />
-        <MetricCard
-          title="Estimated vs Actual Impact"
-          estimated="85"
-          actual="92"
-          variance={8}
-          icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />}
-          unit="score"
+        <MetricGaugeCard
+          leftGauge={{
+            value: 12,
+            max: 270,
+            label: "Elapsed Time",
+            subLabel: "12 days",
+            color: "#38bdf8"
+          }}
+          rightGauge={{
+            value: 258,
+            max: 270,
+            label: "Project Time",
+            subLabel: "270 days",
+            color: "#22c55e"
+          }}
         />
       </div>
 
