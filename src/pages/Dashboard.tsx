@@ -75,37 +75,34 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
   const innerPercentage = Math.min((animatedInner / innerMetric.max) * 100, 100);
   const outerPercentage = Math.min((animatedOuter / outerMetric.max) * 100, 100);
 
-  const themeConfig = {
+  // Card background themes - different for each card
+  const cardThemes = {
     blue: {
-      outer: 'hsl(var(--primary))',
-      inner: 'hsl(var(--success))',
-      bg: 'from-primary/[0.03] to-primary/[0.01]',
+      bg: 'bg-blue-50/50 dark:bg-blue-950/20',
       iconBg: 'from-primary/20 to-primary/10',
-      border: 'border-primary/10 hover:border-primary/30',
-      dotOuter: 'bg-primary',
-      dotInner: 'bg-success',
+      border: 'border-primary/15 hover:border-primary/30',
     },
     green: {
-      outer: 'hsl(var(--success))',
-      inner: 'hsl(var(--primary))',
-      bg: 'from-success/[0.03] to-success/[0.01]',
+      bg: 'bg-emerald-50/50 dark:bg-emerald-950/20',
       iconBg: 'from-success/20 to-success/10',
-      border: 'border-success/10 hover:border-success/30',
-      dotOuter: 'bg-success',
-      dotInner: 'bg-primary',
+      border: 'border-success/15 hover:border-success/30',
     },
     amber: {
-      outer: 'hsl(var(--warning))',
-      inner: 'hsl(var(--success))',
-      bg: 'from-warning/[0.03] to-warning/[0.01]',
+      bg: 'bg-amber-50/50 dark:bg-amber-950/20',
       iconBg: 'from-warning/20 to-warning/10',
-      border: 'border-warning/10 hover:border-warning/30',
-      dotOuter: 'bg-warning',
-      dotInner: 'bg-success',
+      border: 'border-warning/15 hover:border-warning/30',
     },
   };
 
-  const colors = themeConfig[theme];
+  // Same gauge colors for all cards
+  const gaugeColors = {
+    outer: 'hsl(var(--primary))',
+    inner: 'hsl(var(--success))',
+    dotOuter: 'bg-primary',
+    dotInner: 'bg-success',
+  };
+
+  const cardStyle = cardThemes[theme];
 
   const formatValue = (value: number, displayValue: string) => {
     if (displayValue.startsWith('$')) {
@@ -122,14 +119,11 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
   const uniqueId = title.replace(/\s+/g, '-').toLowerCase();
 
   return (
-    <div className={`relative fusion-card p-6 hover:shadow-xl transition-all duration-300 group border-2 ${colors.border}`}>
-      {/* Subtle gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} rounded-lg`} />
-      
+    <div className={`relative rounded-xl p-6 hover:shadow-xl transition-all duration-300 group border-2 ${cardStyle.border} ${cardStyle.bg}`}>
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colors.iconBg} flex items-center justify-center shadow-sm`}>
+          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${cardStyle.iconBg} flex items-center justify-center shadow-sm`}>
             {icon}
           </div>
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
@@ -139,14 +133,14 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
         <div className="flex justify-center mb-5">
           <svg width="180" height="95" viewBox="0 0 180 95" className="overflow-visible">
             <defs>
-              <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={colors.inner} stopOpacity="0.4" />
-                <stop offset="100%" stopColor={colors.inner} stopOpacity="1" />
-              </linearGradient>
-              <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={colors.outer} stopOpacity="0.4" />
-                <stop offset="100%" stopColor={colors.outer} stopOpacity="1" />
-              </linearGradient>
+            <linearGradient id={`inner-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={gaugeColors.inner} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={gaugeColors.inner} stopOpacity="1" />
+            </linearGradient>
+            <linearGradient id={`outer-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={gaugeColors.outer} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={gaugeColors.outer} stopOpacity="1" />
+            </linearGradient>
               <filter id={`glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
                 <feMerge>
@@ -204,18 +198,18 @@ function DualGaugeCard({ title, icon, innerMetric, outerMetric, animationDelay =
         
         {/* Metrics - Side by side, full text */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 rounded-lg bg-muted/30">
+          <div className="text-center p-3 rounded-lg bg-card/80 border border-border/50">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${colors.dotOuter}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${gaugeColors.dotOuter}`} />
               <span className="text-xs text-muted-foreground font-medium">{outerMetric.label}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {formatValue(animatedOuter, outerMetric.displayValue)}
             </p>
           </div>
-          <div className="text-center p-3 rounded-lg bg-muted/30">
+          <div className="text-center p-3 rounded-lg bg-card/80 border border-border/50">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${colors.dotInner}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${gaugeColors.dotInner}`} />
               <span className="text-xs text-muted-foreground font-medium">{innerMetric.label}</span>
             </div>
             <p className="text-2xl font-bold text-foreground">
