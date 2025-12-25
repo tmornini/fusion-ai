@@ -12,6 +12,7 @@ import Ideas from "./pages/Ideas";
 import IdeaCreate from "./pages/IdeaCreate";
 import IdeaScoring from "./pages/IdeaScoring";
 import IdeaConvert from "./pages/IdeaConvert";
+import Edge from "./pages/Edge";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import EngineeringRequirements from "./pages/EngineeringRequirements";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/ideas" element={<Ideas />} />
             <Route path="/ideas/new" element={<IdeaCreate />} />
             <Route path="/ideas/:ideaId/score" element={<IdeaScoring />} />
+            <Route path="/ideas/:ideaId/edge" element={<Edge />} />
             <Route path="/ideas/:ideaId/convert" element={<IdeaConvert />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
