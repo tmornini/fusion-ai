@@ -287,7 +287,7 @@ export default function Edge() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Idea Summary */}
         <div className="lg:col-span-1">
-          <div className="fusion-card p-5 sticky top-6">
+          <div className="fusion-card p-5 lg:sticky lg:top-6">
             <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
               Linked Idea
@@ -392,33 +392,37 @@ export default function Edge() {
                       ) : (
                         <div className="space-y-2">
                           {outcome.metrics.map((metric) => (
-                            <div key={metric.id} className="flex items-center gap-2 p-2 rounded bg-background border border-border">
-                              <Input 
-                                value={metric.name}
-                                onChange={(e) => updateMetric(outcome.id, metric.id, 'name', e.target.value)}
-                                placeholder="Metric name"
-                                className="flex-1 h-8 text-sm"
-                              />
-                              <Input 
-                                value={metric.target}
-                                onChange={(e) => updateMetric(outcome.id, metric.id, 'target', e.target.value)}
-                                placeholder="Target"
-                                className="w-24 h-8 text-sm"
-                              />
-                              <Input 
-                                value={metric.unit}
-                                onChange={(e) => updateMetric(outcome.id, metric.id, 'unit', e.target.value)}
-                                placeholder="Unit"
-                                className="w-20 h-8 text-sm"
-                              />
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => removeMetric(outcome.id, metric.id)}
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                            <div key={metric.id} className="p-2 rounded bg-background border border-border">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <Input 
+                                  value={metric.name}
+                                  onChange={(e) => updateMetric(outcome.id, metric.id, 'name', e.target.value)}
+                                  placeholder="Metric name"
+                                  className="h-8 text-sm w-full sm:flex-1"
+                                />
+                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                  <Input 
+                                    value={metric.target}
+                                    onChange={(e) => updateMetric(outcome.id, metric.id, 'target', e.target.value)}
+                                    placeholder="Target"
+                                    className="h-8 text-sm w-full sm:w-24"
+                                  />
+                                  <Input 
+                                    value={metric.unit}
+                                    onChange={(e) => updateMetric(outcome.id, metric.id, 'unit', e.target.value)}
+                                    placeholder="Unit"
+                                    className="h-8 text-sm w-full sm:w-20"
+                                  />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => removeMetric(outcome.id, metric.id)}
+                                    className="h-8 w-full sm:w-8 text-muted-foreground hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
