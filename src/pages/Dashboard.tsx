@@ -285,25 +285,25 @@ export default function Dashboard() {
             </div>
             
             {/* Key Stats Summary */}
-            <div className="flex flex-wrap gap-3 sm:gap-4">
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mb-2 scrollbar-hide">
               {[
-                { label: 'Active Ideas', value: 12, icon: Lightbulb, trend: '+3', color: 'bg-warning-soft text-warning-text border-warning-border' },
+                { label: 'Ideas', value: 12, icon: Lightbulb, trend: '+3', color: 'bg-warning-soft text-warning-text border-warning-border' },
                 { label: 'Projects', value: 5, icon: FolderKanban, trend: '+1', color: 'bg-info-soft text-info-text border-info-border' },
-                { label: 'Completed', value: 8, icon: CheckCircle2, trend: null, color: 'bg-success-soft text-success-text border-success-border' },
-                { label: 'Pending Review', value: 3, icon: AlertCircle, trend: null, color: 'bg-error-soft text-error-text border-error-border' },
+                { label: 'Done', value: 8, icon: CheckCircle2, trend: null, color: 'bg-success-soft text-success-text border-success-border' },
+                { label: 'Review', value: 3, icon: AlertCircle, trend: null, color: 'bg-error-soft text-error-text border-error-border' },
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className={`relative flex items-center gap-3 px-4 py-3 rounded-xl border ${stat.color} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-default`}
+                  className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl border flex-shrink-0 ${stat.color} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-default`}
                 >
-                  <stat.icon className="w-5 h-5 flex-shrink-0" />
+                  <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider font-medium opacity-80">{stat.label}</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-lg font-bold">{stat.value}</span>
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium opacity-80 whitespace-nowrap">{stat.label}</p>
+                    <div className="flex items-center gap-1">
+                      <span className="text-base sm:text-lg font-bold">{stat.value}</span>
                       {stat.trend && (
-                        <span className="flex items-center text-xs font-medium text-success">
-                          <ArrowUpRight className="w-3 h-3" />
+                        <span className="flex items-center text-[10px] sm:text-xs font-medium text-success">
+                          <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           {stat.trend}
                         </span>
                       )}
