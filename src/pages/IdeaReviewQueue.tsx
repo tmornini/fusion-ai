@@ -9,7 +9,9 @@ import {
   MessageSquare,
   Filter,
   Search,
-  ChevronRight
+  ChevronRight,
+  Target,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,7 @@ interface ReviewIdea {
   submittedAt: string;
   priority: "high" | "medium" | "low";
   readiness: "ready" | "needs-info" | "incomplete";
+  edgeStatus: "complete" | "draft" | "missing";
   score: number;
   impact: string;
   effort: string;
@@ -46,6 +49,7 @@ const mockIdeas: ReviewIdea[] = [
     submittedAt: "2024-01-15",
     priority: "high",
     readiness: "ready",
+    edgeStatus: "complete",
     score: 87,
     impact: "High",
     effort: "Medium",
@@ -59,6 +63,7 @@ const mockIdeas: ReviewIdea[] = [
     submittedAt: "2024-01-14",
     priority: "high",
     readiness: "needs-info",
+    edgeStatus: "draft",
     score: 72,
     impact: "Medium",
     effort: "Low",
@@ -72,6 +77,7 @@ const mockIdeas: ReviewIdea[] = [
     submittedAt: "2024-01-12",
     priority: "medium",
     readiness: "ready",
+    edgeStatus: "complete",
     score: 81,
     impact: "High",
     effort: "High",
@@ -85,6 +91,7 @@ const mockIdeas: ReviewIdea[] = [
     submittedAt: "2024-01-10",
     priority: "low",
     readiness: "incomplete",
+    edgeStatus: "missing",
     score: 45,
     impact: "Medium",
     effort: "Medium",
@@ -98,6 +105,7 @@ const mockIdeas: ReviewIdea[] = [
     submittedAt: "2024-01-13",
     priority: "high",
     readiness: "ready",
+    edgeStatus: "complete",
     score: 91,
     impact: "High",
     effort: "Medium",
@@ -116,6 +124,12 @@ const readinessConfig = {
   ready: { label: "Ready for Review", icon: CheckCircle2, className: "text-emerald-600" },
   "needs-info": { label: "Needs Info", icon: MessageSquare, className: "text-amber-600" },
   incomplete: { label: "Incomplete", icon: AlertCircle, className: "text-destructive" }
+};
+
+const edgeStatusConfig = {
+  complete: { label: "Edge Complete", className: "bg-success-soft text-success border-success/30" },
+  draft: { label: "Edge Draft", className: "bg-warning-soft text-warning border-warning/30" },
+  missing: { label: "Edge Missing", className: "bg-error-soft text-error border-error/30" }
 };
 
 export default function IdeaReviewQueue() {
@@ -268,7 +282,7 @@ export default function IdeaReviewQueue() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
                         <Badge 
                           variant="outline" 
                           className={priorityConfig[idea.priority].className}
@@ -279,6 +293,13 @@ export default function IdeaReviewQueue() {
                           <ReadinessIcon className="h-4 w-4" />
                           <span>{readinessConfig[idea.readiness].label}</span>
                         </div>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${edgeStatusConfig[idea.edgeStatus].className}`}
+                        >
+                          <Target className="h-3 w-3 mr-1" />
+                          {edgeStatusConfig[idea.edgeStatus].label}
+                        </Badge>
                       </div>
                       <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
                         {idea.title}
