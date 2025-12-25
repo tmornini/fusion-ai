@@ -133,13 +133,13 @@ export default function Crunch() {
     <DashboardLayout>
       <div className="max-w-4xl mx-auto">
         {/* Page Header */}
-        <div className="text-center mb-8">
+        <div className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             <Table className="w-4 h-4" />
             Data Translation Tool
           </div>
           <h1 className="text-3xl font-display font-bold text-foreground mb-2">Crunch</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">
+          <p className="text-muted-foreground max-w-xl">
             Upload your business data and help us understand it. We'll guide you through labeling columns, 
             explaining acronyms, and defining what everything means in plain language.
           </p>
