@@ -284,31 +284,27 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Key Stats Summary */}
-            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mb-2 scrollbar-hide">
+            {/* Key Stats Summary - Minimal */}
+            <div className="flex items-center gap-6 sm:gap-8">
               {[
-                { label: 'Ideas', value: 12, icon: Lightbulb, trend: '+3', color: 'bg-warning-soft text-warning-text border-warning-border' },
-                { label: 'Projects', value: 5, icon: FolderKanban, trend: '+1', color: 'bg-info-soft text-info-text border-info-border' },
-                { label: 'Done', value: 8, icon: CheckCircle2, trend: null, color: 'bg-success-soft text-success-text border-success-border' },
-                { label: 'Review', value: 3, icon: AlertCircle, trend: null, color: 'bg-error-soft text-error-text border-error-border' },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-xl border flex-shrink-0 ${stat.color} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-default`}
-                >
-                  <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <div>
-                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium opacity-80 whitespace-nowrap">{stat.label}</p>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base sm:text-lg font-bold">{stat.value}</span>
+                { label: 'Ideas', value: 12, trend: '+3' },
+                { label: 'Projects', value: 5, trend: '+1' },
+                { label: 'Done', value: 8, trend: null },
+                { label: 'Review', value: 3, trend: null },
+              ].map((stat, index) => (
+                <div key={stat.label} className="flex items-center gap-6 sm:gap-8">
+                  <div className="text-center">
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-2xl sm:text-3xl font-bold text-foreground">{stat.value}</span>
                       {stat.trend && (
-                        <span className="flex items-center text-[10px] sm:text-xs font-medium text-success">
-                          <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          {stat.trend}
-                        </span>
+                        <span className="text-xs font-semibold text-success">{stat.trend}</span>
                       )}
                     </div>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">{stat.label}</p>
                   </div>
+                  {index < 3 && (
+                    <div className="h-8 w-px bg-border" />
+                  )}
                 </div>
               ))}
             </div>
