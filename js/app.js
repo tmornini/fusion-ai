@@ -361,6 +361,7 @@
     { pattern: '/projects/:projectId' },
     { pattern: '/projects/:projectId/engineering' },
     { pattern: '/team' },
+    { pattern: '/teams', page: '/team' },
     { pattern: '/edge' },
     { pattern: '/crunch' },
     { pattern: '/flow' },
