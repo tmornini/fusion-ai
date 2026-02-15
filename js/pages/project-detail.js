@@ -119,8 +119,8 @@
     html += '<div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">' + icon('dollarSign', 16) + '</div>';
     html += '<span class="text-sm font-medium">Budget</span>';
     html += '</div>';
-    html += '<div class="text-2xl font-bold">$' + formatBudget(project.spent) + '</div>';
-    html += '<div class="text-xs text-muted-foreground mb-2">of $' + formatBudget(project.budget) + ' (' + budgetPct + '% used)</div>';
+    html += '<div class="text-2xl font-bold">$' + App.formatNumber(project.spent) + '</div>';
+    html += '<div class="text-xs text-muted-foreground mb-2">of $' + App.formatNumber(project.budget) + ' (' + budgetPct + '% used)</div>';
     html += App.renderProgress(project.spent, project.budget);
     html += '</div>';
 
@@ -320,13 +320,6 @@
     activeTab = 'discussion';
     App.render();
   };
-
-  function formatBudget(n) {
-    if (n >= 1000) {
-      return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
-    }
-    return String(n);
-  }
 
   function daysBetween(dateStr1, dateStr2) {
     var d1 = new Date(dateStr1);

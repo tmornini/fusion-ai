@@ -84,7 +84,7 @@
       { label: 'Home', icon: 'home', href: '/dashboard' },
       { label: 'Ideas', icon: 'lightbulb', href: '/ideas' },
       { label: 'Projects', icon: 'folderKanban', href: '/projects' },
-      { label: 'Teams', icon: 'users', href: '/teams' },
+      { label: 'Teams', icon: 'users', href: '/team' },
     ]},
     { label: 'Tools', items: [
       { label: 'Edge', icon: 'target', href: '/edge' },
@@ -101,7 +101,7 @@
     if (href === '/account') return currentPath.indexOf('/account') === 0;
     if (href === '/ideas') return currentPath.indexOf('/ideas') === 0 || currentPath.indexOf('/review') === 0;
     if (href === '/projects') return currentPath.indexOf('/projects') === 0 || currentPath.indexOf('/engineering') === 0;
-    if (href === '/teams') return currentPath === '/teams' || currentPath === '/team';
+    if (href === '/team') return currentPath === '/team';
     return currentPath === href;
   }
 
@@ -346,53 +346,40 @@
     window.location.hash = '#' + path;
   };
 
-  // Route patterns
+  // Route patterns (page defaults to pattern; only specify page for aliases)
   var routeTable = [
-    { pattern: '/', page: '/' },
-    { pattern: '/auth', page: '/auth' },
-    { pattern: '/onboarding', page: '/onboarding' },
-    { pattern: '/dashboard', page: '/dashboard' },
-    { pattern: '/ideas', page: '/ideas' },
-    { pattern: '/ideas/new', page: '/ideas/new' },
-    { pattern: '/ideas/:ideaId/score', page: '/ideas/:ideaId/score' },
-    { pattern: '/ideas/:ideaId/edge', page: '/ideas/:ideaId/edge' },
-    { pattern: '/ideas/:ideaId/convert', page: '/ideas/:ideaId/convert' },
-    { pattern: '/projects', page: '/projects' },
-    { pattern: '/projects/:projectId', page: '/projects/:projectId' },
-    { pattern: '/projects/:projectId/engineering', page: '/projects/:projectId/engineering' },
-    { pattern: '/team', page: '/team' },
-    { pattern: '/teams', page: '/team' },
-    { pattern: '/edge', page: '/edge' },
-    { pattern: '/crunch', page: '/crunch' },
-    { pattern: '/flow', page: '/flow' },
-    { pattern: '/account', page: '/account' },
-    { pattern: '/account/profile', page: '/account/profile' },
-    { pattern: '/account/company', page: '/account/company' },
-    { pattern: '/account/users', page: '/account/users' },
-    { pattern: '/account/activity', page: '/account/activity' },
-    { pattern: '/account/notifications', page: '/account/notifications' },
-    { pattern: '/review', page: '/review' },
-    { pattern: '/review/:id', page: '/review/:id' },
-    { pattern: '/design-system', page: '/design-system' },
+    { pattern: '/' },
+    { pattern: '/auth' },
+    { pattern: '/onboarding' },
+    { pattern: '/dashboard' },
+    { pattern: '/ideas' },
+    { pattern: '/ideas/new' },
+    { pattern: '/ideas/:ideaId/score' },
+    { pattern: '/ideas/:ideaId/edge' },
+    { pattern: '/ideas/:ideaId/convert' },
+    { pattern: '/projects' },
+    { pattern: '/projects/:projectId' },
+    { pattern: '/projects/:projectId/engineering' },
+    { pattern: '/team' },
+    { pattern: '/edge' },
+    { pattern: '/crunch' },
+    { pattern: '/flow' },
+    { pattern: '/account' },
+    { pattern: '/account/profile' },
+    { pattern: '/account/company' },
+    { pattern: '/account/users' },
+    { pattern: '/account/activity' },
+    { pattern: '/account/notifications' },
+    { pattern: '/review' },
+    { pattern: '/review/:id' },
+    { pattern: '/design-system' },
   ];
 
   function matchPath(path) {
     for (var i = 0; i < routeTable.length; i++) {
       var route = routeTable[i];
-      var parts = route.pattern.split('/');
-      var pathParts = path.split('/');
-      if (parts.length !== pathParts.length) continue;
-      var params = {};
-      var match = true;
-      for (var j = 0; j < parts.length; j++) {
-        if (parts[j].charAt(0) === ':') {
-          params[parts[j].slice(1)] = pathParts[j];
-        } else if (parts[j] !== pathParts[j]) {
-          match = false;
-          break;
-        }
-      }
-      if (match) return { page: route.page, params: params };
+      var params = App.matchSegments(route.pattern, path);
+      if (params !== null) return { page: route.page || route.pattern, params: params };
     }
     return null;
   }

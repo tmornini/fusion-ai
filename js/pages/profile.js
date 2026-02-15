@@ -16,13 +16,11 @@
       return;
     }
 
-    App.store.profile.name = name;
-    App.store.profile.email = email;
-    App.store.profile.phone = phone;
-    App.store.profile.location = location;
-    App.store.profile.bio = bio;
     App.store.user.name = name;
     App.store.user.email = email;
+    App.store.user.phone = phone;
+    App.store.user.location = location;
+    App.store.user.bio = bio;
 
     App.showToast({ title: 'Profile updated', description: 'Your changes have been saved.' });
   };
@@ -31,7 +29,7 @@
     layout: 'dashboard',
 
     render: function() {
-      var profile = App.store.profile;
+      var profile = App.store.user;
       var html = '';
 
       // Breadcrumb

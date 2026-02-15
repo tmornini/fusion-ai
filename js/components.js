@@ -255,4 +255,63 @@
       timer = setTimeout(function() { fn.apply(ctx, args); }, ms);
     };
   };
+
+  // Format number with k suffix (e.g. 32500 → "32.5k")
+  App.formatNumber = function(n) {
+    if (n >= 1000) {
+      return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+    }
+    return String(n);
+  };
+
+  // ==========================================
+  // INVITE MODAL (shared by team + manage-users pages)
+  // ==========================================
+  App.showInviteModal = function(opts) {
+    opts = opts || {};
+    var title = opts.title || 'Invite Team Member';
+    var html = '<h2 class="text-lg font-semibold mb-4">' + escapeHtml(title) + '</h2>';
+    html += '<div class="space-y-4">';
+    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Name</label>';
+    html += '<input class="input w-full" id="invite-modal-name" placeholder="Full name" /></div>';
+    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Email</label>';
+    html += '<input class="input w-full" id="invite-modal-email" type="email" placeholder="email@example.com" /></div>';
+    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Role</label>';
+    html += '<input class="input w-full" id="invite-modal-role" placeholder="e.g. Engineer" /></div>';
+    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Department</label>';
+    html += App.renderSelect(
+      [{ value: 'Engineering', label: 'Engineering' }, { value: 'Product', label: 'Product' }, { value: 'Design', label: 'Design' }, { value: 'Data', label: 'Data' }, { value: 'Marketing', label: 'Marketing' }, { value: 'General', label: 'General' }],
+      'Engineering', 'invite-modal-dept', ''
+    );
+    html += '</div>';
+    html += '<div class="flex gap-2 justify-end mt-4">';
+    html += '<button class="btn btn-ghost" onclick="FusionApp.closeModal()">Cancel</button>';
+    html += '<button class="btn btn-primary" onclick="FusionApp._inviteModalSubmit()">Send Invite</button>';
+    html += '</div></div>';
+    App.showModal({ content: html });
+  };
+
+  App._inviteModalSubmit = function() {
+    var name = document.getElementById('invite-modal-name').value.trim();
+    var email = document.getElementById('invite-modal-email').value.trim();
+    var role = document.getElementById('invite-modal-role').value.trim();
+    var dept = document.getElementById('invite-modal-dept').value;
+    if (!name || !email) {
+      App.showToast({ title: 'Error', description: 'Name and email are required.', variant: 'destructive' });
+      return;
+    }
+    App.store.team.push({
+      id: String(App.store.team.length + 1),
+      name: name,
+      email: email,
+      role: role || 'Member',
+      department: dept,
+      status: 'active',
+      avatar: null,
+      joinedAt: new Date().toISOString().split('T')[0]
+    });
+    App.closeModal();
+    App.showToast({ title: 'Invitation sent', description: name + ' has been invited.' });
+    App.render();
+  };
 })();

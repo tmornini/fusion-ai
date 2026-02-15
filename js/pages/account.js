@@ -44,9 +44,9 @@
       html += '<h3 class="text-lg font-semibold mb-4">Account Overview</h3>';
       html += '<div class="space-y-3">';
       var fields = [
-        { label: 'Name', value: store.profile.name },
-        { label: 'Email', value: store.profile.email },
-        { label: 'Role', value: store.profile.role },
+        { label: 'Name', value: store.user.name },
+        { label: 'Email', value: store.user.email },
+        { label: 'Role', value: store.user.role },
         { label: 'Company', value: store.company.name },
         { label: 'Plan', value: store.company.plan },
       ];

@@ -132,7 +132,7 @@
       var actions = [
         { label: 'New Idea', icon: 'lightbulb', href: '/ideas/new', cls: 'btn-primary' },
         { label: 'Create Project', icon: 'folderKanban', href: '/projects', cls: 'btn-outline' },
-        { label: 'Invite Team', icon: 'userPlus', href: '/teams', cls: 'btn-outline' },
+        { label: 'Invite Team', icon: 'userPlus', href: '/team', cls: 'btn-outline' },
         { label: 'View Reports', icon: 'barChart3', href: '/dashboard', cls: 'btn-outline' },
       ];
 

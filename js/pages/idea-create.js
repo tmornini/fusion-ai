@@ -209,12 +209,18 @@
   };
 
   App._ideaCreateSubmit = function() {
-    // Reset step for next time
-    currentStep = 0;
-    var savedTitle = formData.title;
-    formData = { title: '', problem: '', targetUsers: '', solution: '', expectedOutcome: '', successMetrics: '' };
+    var title = formData.title;
+    var description = formData.problem + '\n\n' + formData.solution;
 
-    App.showToast({ title: 'Idea submitted!', description: 'Redirecting to AI scoring...' });
-    App.navigate('/ideas/1/score');
+    fetch('/api/ideas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, description: description })
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      currentStep = 0;
+      formData = { title: '', problem: '', targetUsers: '', solution: '', expectedOutcome: '', successMetrics: '' };
+      App.showToast({ title: 'Idea submitted!', description: 'Redirecting to AI scoring...' });
+      App.navigate('/ideas/' + data.idea.id + '/score');
+    });
   };
 })();

@@ -51,8 +51,8 @@
 
       html += '<div class="fusion-card" style="padding:1rem">';
       html += '<div class="flex items-center gap-2 text-sm text-muted-foreground">' + icon('dollarSign', 14) + ' Budget Used</div>';
-      html += '<div class="text-2xl font-bold mt-1">$' + formatNumber(totalSpent) + '</div>';
-      html += '<div class="text-xs text-muted-foreground">of $' + formatNumber(totalBudget) + '</div>';
+      html += '<div class="text-2xl font-bold mt-1">$' + App.formatNumber(totalSpent) + '</div>';
+      html += '<div class="text-xs text-muted-foreground">of $' + App.formatNumber(totalBudget) + '</div>';
       html += '</div>';
 
       html += '</div>';
@@ -118,7 +118,7 @@
         html += '<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center;flex-shrink:0">' + icon('dollarSign', 12) + '</div>';
         html += '<div>';
         html += '<div class="text-xs text-muted-foreground">Budget</div>';
-        html += '<div class="text-sm font-medium">$' + formatNumber(project.spent) + ' / $' + formatNumber(project.budget) + ' (' + budgetPct + '%)</div>';
+        html += '<div class="text-sm font-medium">$' + App.formatNumber(project.spent) + ' / $' + App.formatNumber(project.budget) + ' (' + budgetPct + '%)</div>';
         html += '</div>';
         html += '</div>';
 
@@ -133,10 +133,4 @@
     }
   };
 
-  function formatNumber(n) {
-    if (n >= 1000) {
-      return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
-    }
-    return String(n);
-  }
 })();

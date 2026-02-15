@@ -6,7 +6,7 @@
   // MOCK DATA STORE
   // ==========================================
   var store = {
-    user: { email: 'demo@example.com', name: 'Demo User', role: 'admin', avatar: null },
+    user: { email: 'demo@example.com', name: 'Demo User', role: 'Admin', avatar: null, phone: '+1 (555) 123-4567', location: 'San Francisco, CA', bio: 'Product innovation enthusiast. Building the future of enterprise AI.' },
     company: { name: 'Demo Company', industry: 'Technology', size: '50-200', plan: 'Pro' },
 
     ideas: [
@@ -97,16 +97,6 @@
       email: { ideas: true, projects: true, reviews: true, team: false, weekly_digest: true },
       inApp: { ideas: true, projects: true, reviews: true, team: true, mentions: true },
     },
-
-    profile: {
-      name: 'Demo User',
-      email: 'demo@example.com',
-      role: 'Admin',
-      phone: '+1 (555) 123-4567',
-      location: 'San Francisco, CA',
-      bio: 'Product innovation enthusiast. Building the future of enterprise AI.',
-      avatar: null,
-    },
   };
 
   App.store = store;
@@ -129,21 +119,40 @@
     return new Promise(function(resolve) { setTimeout(resolve, ms); });
   }
 
-  // Route matching
-  function matchRoute(method, url, routeMethod, pattern) {
-    if (method.toUpperCase() !== routeMethod.toUpperCase()) return null;
+  // Segment-based path matching (shared with router in app.js)
+  App.matchSegments = function(pattern, path) {
     var parts = pattern.split('/').filter(Boolean);
-    var urlParts = url.split('/').filter(Boolean);
-    if (parts.length !== urlParts.length) return null;
+    var pathParts = path.split('/').filter(Boolean);
+    if (parts.length !== pathParts.length) return null;
     var params = {};
     for (var i = 0; i < parts.length; i++) {
       if (parts[i].charAt(0) === ':') {
-        params[parts[i].slice(1)] = urlParts[i];
-      } else if (parts[i] !== urlParts[i]) {
+        params[parts[i].slice(1)] = pathParts[i];
+      } else if (parts[i] !== pathParts[i]) {
         return null;
       }
     }
     return params;
+  };
+
+  function matchRoute(method, url, routeMethod, pattern) {
+    if (method.toUpperCase() !== routeMethod.toUpperCase()) return null;
+    return App.matchSegments(pattern, url);
+  }
+
+  function addTeamMember(body) {
+    var member = {
+      id: String(store.team.length + 1),
+      name: body.name || 'New Member',
+      email: body.email,
+      role: body.role || 'Member',
+      department: body.department || 'General',
+      status: 'active',
+      avatar: null,
+      joinedAt: new Date().toISOString().split('T')[0],
+    };
+    store.team.push(member);
+    return member;
   }
 
   var routes = [
@@ -329,18 +338,7 @@
       return jsonResponse({ team: store.team });
     }},
     { method: 'POST', pattern: '/api/team/invite', handler: function(params, body) {
-      var member = {
-        id: String(store.team.length + 1),
-        name: body.name || 'New Member',
-        email: body.email,
-        role: body.role || 'Member',
-        department: body.department || 'General',
-        status: 'active',
-        avatar: null,
-        joinedAt: new Date().toISOString().split('T')[0],
-      };
-      store.team.push(member);
-      return jsonResponse({ member: member }, 201);
+      return jsonResponse({ member: addTeamMember(body) }, 201);
     }},
     { method: 'PUT', pattern: '/api/team/:userId/role', handler: function(params, body) {
       var member = store.team.find(function(m) { return m.id === params.userId; });
@@ -358,11 +356,11 @@
       return jsonResponse({ user: store.user, company: store.company });
     }},
     { method: 'GET', pattern: '/api/account/profile', handler: function() {
-      return jsonResponse({ profile: store.profile });
+      return jsonResponse({ profile: store.user });
     }},
     { method: 'PUT', pattern: '/api/account/profile', handler: function(params, body) {
-      Object.assign(store.profile, body);
-      return jsonResponse({ profile: store.profile });
+      Object.assign(store.user, body);
+      return jsonResponse({ profile: store.user });
     }},
     { method: 'GET', pattern: '/api/account/company', handler: function() {
       return jsonResponse({ company: store.company });
@@ -375,18 +373,7 @@
       return jsonResponse({ users: store.team });
     }},
     { method: 'POST', pattern: '/api/account/users/invite', handler: function(params, body) {
-      var member = {
-        id: String(store.team.length + 1),
-        name: body.name || 'New User',
-        email: body.email,
-        role: body.role || 'Member',
-        department: body.department || 'General',
-        status: 'active',
-        avatar: null,
-        joinedAt: new Date().toISOString().split('T')[0],
-      };
-      store.team.push(member);
-      return jsonResponse({ user: member }, 201);
+      return jsonResponse({ user: addTeamMember(body) }, 201);
     }},
     { method: 'PUT', pattern: '/api/account/users/:id', handler: function(params, body) {
       var member = store.team.find(function(m) { return m.id === params.id; });

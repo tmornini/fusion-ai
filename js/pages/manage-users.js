@@ -21,54 +21,8 @@
     return users;
   }
 
-  function openInviteModal() {
-    var html = '<h2 class="text-lg font-semibold mb-4">Invite User</h2>';
-    html += '<div class="space-y-4">';
-    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Name</label>';
-    html += '<input class="input w-full" id="mu-invite-name" placeholder="Full name" /></div>';
-    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Email</label>';
-    html += '<input class="input w-full" id="mu-invite-email" type="email" placeholder="email@example.com" /></div>';
-    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Role</label>';
-    html += '<input class="input w-full" id="mu-invite-role" placeholder="e.g. Engineer" /></div>';
-    html += '<div><label class="text-sm font-medium text-foreground block mb-1">Department</label>';
-    html += App.renderSelect(
-      [{ value: 'Engineering', label: 'Engineering' }, { value: 'Product', label: 'Product' }, { value: 'Design', label: 'Design' }, { value: 'Data', label: 'Data' }, { value: 'Marketing', label: 'Marketing' }, { value: 'General', label: 'General' }],
-      'Engineering', 'mu-invite-dept', ''
-    );
-    html += '</div>';
-    html += '<div class="flex gap-2 justify-end mt-4">';
-    html += '<button class="btn btn-ghost" onclick="FusionApp.closeModal()">Cancel</button>';
-    html += '<button class="btn btn-primary" onclick="FusionApp._muInviteSubmit()">Send Invite</button>';
-    html += '</div></div>';
-    App.showModal({ content: html });
-  }
-
-  App._muInviteSubmit = function() {
-    var name = document.getElementById('mu-invite-name').value.trim();
-    var email = document.getElementById('mu-invite-email').value.trim();
-    var role = document.getElementById('mu-invite-role').value.trim();
-    var dept = document.getElementById('mu-invite-dept').value;
-    if (!name || !email) {
-      App.showToast({ title: 'Error', description: 'Name and email are required.', variant: 'destructive' });
-      return;
-    }
-    App.store.team.push({
-      id: String(App.store.team.length + 1),
-      name: name,
-      email: email,
-      role: role || 'Member',
-      department: dept,
-      status: 'active',
-      avatar: null,
-      joinedAt: new Date().toISOString().split('T')[0]
-    });
-    App.closeModal();
-    App.showToast({ title: 'Invitation sent', description: name + ' has been invited.' });
-    App.render();
-  };
-
   App._muOpenInvite = function() {
-    openInviteModal();
+    App.showInviteModal({ title: 'Invite User' });
   };
 
   App._muFilterRole = function(val) {
