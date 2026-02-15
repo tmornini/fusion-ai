@@ -265,6 +265,39 @@
   };
 
   // ==========================================
+  // TOGGLE SWITCH
+  // ==========================================
+  App.renderToggleSwitch = function(id, checked, onchangeAttr) {
+    return '<label class="toggle-switch" for="' + id + '">' +
+      '<input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') +
+      ' onchange="' + onchangeAttr + '" />' +
+      '<span class="toggle-slider"></span>' +
+    '</label>';
+  };
+
+  // ==========================================
+  // DROPDOWN ACTION MENU
+  // ==========================================
+  App.renderDropdownMenu = function(triggerId, items) {
+    var menuId = triggerId + '-menu';
+    var html = '<div style="position:relative;display:inline-block">';
+    html += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();FusionApp.toggleDropdown(\'' + menuId + '\')">' + icon('more-vertical', 16) + '</button>';
+    html += '<div id="' + menuId + '" class="dropdown-content hidden" style="position:absolute;right:0;top:100%;z-index:50;min-width:12rem;background:var(--background);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 12px rgba(0,0,0,0.1);padding:0.25rem 0">';
+    items.forEach(function(item) {
+      if (item.separator) {
+        html += '<div style="height:1px;background:var(--border);margin:0.25rem 0"></div>';
+      } else {
+        var cls = item.destructive ? 'color:var(--destructive)' : '';
+        html += '<button style="display:block;width:100%;text-align:left;padding:0.5rem 0.75rem;font-size:0.875rem;background:none;border:none;cursor:pointer;' + cls + '" ' +
+          'onmouseover="this.style.background=\'var(--accent)\'" onmouseout="this.style.background=\'none\'" ' +
+          'onclick="' + item.onclick + '">' + escapeHtml(item.label) + '</button>';
+      }
+    });
+    html += '</div></div>';
+    return html;
+  };
+
+  // ==========================================
   // INVITE MODAL (shared by team + manage-users pages)
   // ==========================================
   App.showInviteModal = function(opts) {
