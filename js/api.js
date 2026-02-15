@@ -6,8 +6,8 @@
   // MOCK DATA STORE
   // ==========================================
   var store = {
-    user: { email: 'demo@example.com', name: 'Demo User', role: 'Admin', avatar: null, phone: '+1 (555) 123-4567', location: 'San Francisco, CA', bio: 'Product innovation enthusiast. Building the future of enterprise AI.' },
-    company: { name: 'Demo Company', industry: 'Technology', size: '50-200', plan: 'Pro' },
+    user: { email: 'demo@example.com', name: 'Demo User', firstName: 'Demo', lastName: 'User', role: 'Admin', department: 'Product', avatar: null, phone: '+1 (555) 123-4567', location: 'San Francisco, CA', bio: 'Product innovation enthusiast. Building the future of enterprise AI.', strengths: ['Strategic Planning', 'Data Analysis', 'Team Leadership'] },
+    company: { name: 'Acme Corporation', industry: 'Technology', size: '51-200', plan: 'Business', description: 'We build innovative software solutions for enterprise clients.', departments: ['Engineering', 'Product', 'Design', 'Sales', 'Operations', 'Finance', 'HR'], requireApprovalForProjects: true, allowGuestAccess: false, healthScore: 92, nextBilling: '2025-03-15', activeUsers: 18, maxUsers: 25, usage: { projects: { current: 12, limit: 50 }, ideas: { current: 47, limit: 200 }, storage: { current: 2.4, limit: 10 }, aiCredits: { current: 850, limit: 1000 } } },
 
     ideas: [
       { id: '1', title: 'AI-Powered Customer Support Chatbot', description: 'Implement an AI chatbot that can handle tier-1 support tickets automatically, reducing response time and support costs.', status: 'approved', category: 'AI/ML', priority: 'high', author: 'Sarah Chen', createdAt: '2025-01-15', score: 87, tags: ['ai', 'support', 'automation'], problemStatement: 'Support team spends 20+ hours weekly on repetitive tier-1 tickets, leading to slow response times and high costs.', proposedSolution: 'Implement an AI chatbot using GPT-4 to handle tier-1 inquiries automatically, integrating with existing helpdesk.', expectedOutcome: 'Reduce support ticket volume by 40% and improve first-response time from 4 hours to under 1 minute.', estimatedTime: '3-4 months', estimatedCost: '$120,000 - $150,000' },

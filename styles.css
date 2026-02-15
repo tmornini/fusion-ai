@@ -1150,6 +1150,14 @@ textarea.input {
 .toggle-switch input:checked + .toggle-slider { background: hsl(var(--primary)); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(1.25rem); }
 
+/* Strength / Tag Toggle Buttons */
+.strength-btn { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.75rem; font-size: var(--text-sm); font-weight: 500; border-radius: 0.5rem; border: none; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); cursor: pointer; transition: all 0.15s ease; }
+.strength-btn:hover { background: hsl(var(--muted) / 0.8); }
+.strength-btn.active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+
+/* Divide-Y utility */
+.divide-y > * + * { border-top: 1px solid hsl(var(--border)); }
+
 /* ==========================================
    7. ANIMATIONS
    ========================================== */
