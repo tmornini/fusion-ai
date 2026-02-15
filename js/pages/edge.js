@@ -1,35 +1,301 @@
-// Fusion AI — Edge (Business Outcomes) Detail Page
+// Fusion AI — Edge (Business Case Definition) Page
 (function() {
   var App = window.FusionApp;
   var icon = App.icon;
   var escapeHtml = App.escapeHtml;
   var store = App.store;
 
-  var edgeState = {
+  var edgeData = {
     outcomes: [],
-    loading: true
+    impact: { shortTerm: '', midTerm: '', longTerm: '' },
+    confidence: '',
+    owner: ''
   };
+  var loading = true;
+  var ideaCache = null;
 
-  var statusOptions = [
-    { value: 'not_started', label: 'Not Started' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'on_track', label: 'On Track' },
-    { value: 'at_risk', label: 'At Risk' },
-    { value: 'achieved', label: 'Achieved' }
+  var outcomeTemplates = [
+    'Reduce operational cost',
+    'Increase customer retention',
+    'Improve delivery speed',
+    'Reduce errors or risk',
+    'Increase revenue',
+    'Improve customer satisfaction'
   ];
 
+  function getCompletionPct() {
+    var total = 4;
+    var done = 0;
+    if (edgeData.outcomes.length > 0 && edgeData.outcomes.some(function(o) { return o.description; })) done++;
+    if (edgeData.outcomes.some(function(o) { return o.metrics && o.metrics.length > 0 && o.metrics.some(function(m) { return m.name && m.target; }); })) done++;
+    if (edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm) done++;
+    if (edgeData.confidence && edgeData.owner) done++;
+    return Math.round((done / total) * 100);
+  }
+
+  function getStatusLabel() {
+    var pct = getCompletionPct();
+    if (pct === 100) return { label: 'Complete', variant: 'success' };
+    if (pct > 0) return { label: 'In Progress', variant: 'warning' };
+    return { label: 'Incomplete', variant: 'secondary' };
+  }
+
+  function genId() { return 'id_' + Math.random().toString(36).slice(2, 8); }
+
+  // --- Render sidebar ---
+  function renderSidebar(idea) {
+    var pct = getCompletionPct();
+    var status = getStatusLabel();
+    var html = '';
+
+    // Progress card
+    html += '<div class="fusion-card p-4 mb-4">';
+    html += '<div class="flex items-center justify-between mb-2">';
+    html += '<span class="text-sm font-semibold">Completion</span>';
+    html += App.renderBadge(status.label, status.variant);
+    html += '</div>';
+    html += App.renderProgress(pct, 100);
+    html += '<div class="text-xs text-muted-foreground mt-2">' + pct + '% complete</div>';
+
+    // Checklist
+    html += '<div class="mt-3 space-y-1">';
+    var checks = [
+      { done: edgeData.outcomes.length > 0 && edgeData.outcomes.some(function(o) { return o.description; }), label: 'Outcomes defined' },
+      { done: edgeData.outcomes.some(function(o) { return o.metrics && o.metrics.length > 0; }), label: 'Metrics added' },
+      { done: edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm, label: 'Impact timeline' },
+      { done: edgeData.confidence && edgeData.owner, label: 'Owner & confidence' }
+    ];
+    checks.forEach(function(c) {
+      html += '<div class="flex items-center gap-2 text-xs">';
+      html += '<span class="' + (c.done ? 'text-success' : 'text-muted-foreground') + '">' + (c.done ? icon('checkCircle2', 14) : icon('circle', 14)) + '</span>';
+      html += '<span class="' + (c.done ? '' : 'text-muted-foreground') + '">' + c.label + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+
+    // Linked idea
+    if (idea) {
+      html += '<div class="fusion-card p-4">';
+      html += '<div class="flex items-center gap-2 mb-3">';
+      html += '<span class="text-primary">' + icon('lightbulb', 16) + '</span>';
+      html += '<span class="text-sm font-semibold">Linked Idea</span>';
+      html += '</div>';
+      html += '<h4 class="text-sm font-medium">' + escapeHtml(idea.title) + '</h4>';
+      if (idea.score) html += '<div class="flex items-center gap-2 mt-2"><span class="badge badge-success">' + idea.score + '/100</span></div>';
+      if (idea.problemStatement) {
+        html += '<p class="text-xs text-muted-foreground mt-2">' + escapeHtml(idea.problemStatement).substring(0, 120) + '...</p>';
+      }
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  // --- Render outcomes ---
+  function renderOutcomesSection(ideaId) {
+    var html = '';
+    html += '<div class="flex items-center justify-between mb-4">';
+    html += '<h2 class="text-lg font-semibold">' + icon('target', 20) + ' Outcomes</h2>';
+    html += '<button class="btn btn-outline btn-sm" onclick="FusionApp._edgeAddOutcome(\'' + ideaId + '\')">' + icon('plus', 14) + ' Add Outcome</button>';
+    html += '</div>';
+
+    if (edgeData.outcomes.length === 0) {
+      html += '<div class="text-center py-6 text-muted-foreground">';
+      html += '<p class="text-sm mb-3">No outcomes defined. Start with a template:</p>';
+      html += '<div class="flex flex-wrap gap-2 justify-center">';
+      outcomeTemplates.forEach(function(t) {
+        html += '<button class="btn btn-ghost btn-sm" onclick="FusionApp._edgeAddFromTemplate(\'' + ideaId + '\',\'' + escapeHtml(t) + '\')">' + icon('plus', 12) + ' ' + escapeHtml(t) + '</button>';
+      });
+      html += '</div></div>';
+      return html;
+    }
+
+    edgeData.outcomes.forEach(function(outcome, oi) {
+      html += '<div class="fusion-card p-4 mb-3">';
+      html += '<div class="flex items-center gap-2 mb-3">';
+      html += '<span class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">' + (oi + 1) + '</span>';
+      html += '<input class="input flex-1" value="' + escapeHtml(outcome.description) + '" placeholder="Describe this outcome" onchange="FusionApp._edgeUpdateOutcome(' + oi + ',\'description\',this.value)" />';
+      html += '<button class="btn btn-ghost btn-sm" style="color:hsl(var(--destructive))" onclick="FusionApp._edgeRemoveOutcome(' + oi + ',\'' + ideaId + '\')">' + icon('trash2', 14) + '</button>';
+      html += '</div>';
+
+      // Metrics
+      html += '<div class="ml-8">';
+      html += '<div class="text-xs font-semibold text-muted-foreground mb-2">METRICS</div>';
+      if (outcome.metrics && outcome.metrics.length) {
+        outcome.metrics.forEach(function(m, mi) {
+          html += '<div class="flex items-center gap-2 mb-2">';
+          html += '<input class="input flex-1" value="' + escapeHtml(m.name) + '" placeholder="Metric name" style="font-size:0.8125rem" onchange="FusionApp._edgeUpdateMetric(' + oi + ',' + mi + ',\'name\',this.value)" />';
+          html += '<input class="input" style="width:5rem;font-size:0.8125rem" value="' + escapeHtml(m.target) + '" placeholder="Target" onchange="FusionApp._edgeUpdateMetric(' + oi + ',' + mi + ',\'target\',this.value)" />';
+          html += '<input class="input" style="width:4rem;font-size:0.8125rem" value="' + escapeHtml(m.unit) + '" placeholder="Unit" onchange="FusionApp._edgeUpdateMetric(' + oi + ',' + mi + ',\'unit\',this.value)" />';
+          html += '<button class="btn btn-ghost btn-sm" onclick="FusionApp._edgeRemoveMetric(' + oi + ',' + mi + ',\'' + ideaId + '\')">' + icon('x', 12) + '</button>';
+          html += '</div>';
+        });
+      }
+      html += '<button class="btn btn-ghost btn-sm text-xs" onclick="FusionApp._edgeAddMetric(' + oi + ',\'' + ideaId + '\')">' + icon('plus', 12) + ' Add Metric</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+
+    return html;
+  }
+
+  // --- Render impact ---
+  function renderImpactSection() {
+    var html = '<h2 class="text-lg font-semibold mb-4">' + icon('clock', 20) + ' Impact Timeline</h2>';
+    html += '<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">';
+
+    var timelines = [
+      { key: 'shortTerm', label: 'Short-term', sub: '0-3 months', color: 'success' },
+      { key: 'midTerm', label: 'Mid-term', sub: '3-12 months', color: 'warning' },
+      { key: 'longTerm', label: 'Long-term', sub: '12+ months', color: 'info' }
+    ];
+    timelines.forEach(function(t) {
+      html += '<div class="fusion-card p-4" style="border-left:3px solid hsl(var(--' + t.color + '))">';
+      html += '<div class="flex items-center gap-2 mb-2">';
+      html += '<span class="text-' + t.color + '">' + icon('clock', 14) + '</span>';
+      html += '<span class="text-sm font-semibold">' + t.label + '</span>';
+      html += '</div>';
+      html += '<span class="text-xs text-muted-foreground">' + t.sub + '</span>';
+      html += '<textarea class="input w-full mt-2" rows="3" placeholder="Describe expected impact..." onchange="FusionApp._edgeUpdateImpact(\'' + t.key + '\',this.value)">' + escapeHtml(edgeData.impact[t.key] || '') + '</textarea>';
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // --- Render confidence & owner ---
+  function renderConfidenceSection() {
+    var html = '<h2 class="text-lg font-semibold mb-4">' + icon('shield', 20) + ' Confidence & Ownership</h2>';
+    html += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">';
+
+    // Confidence
+    html += '<div>';
+    html += '<label class="text-sm font-medium block mb-1">Confidence Level</label>';
+    html += App.renderSelect([
+      { value: '', label: 'Select...' },
+      { value: 'high', label: 'High' },
+      { value: 'medium', label: 'Medium' },
+      { value: 'low', label: 'Low' }
+    ], edgeData.confidence, 'edge-confidence', 'FusionApp._edgeSetConfidence(this.value)');
+    html += '</div>';
+
+    // Owner
+    html += '<div>';
+    html += '<label class="text-sm font-medium block mb-1">Edge Owner</label>';
+    html += '<input class="input w-full" value="' + escapeHtml(edgeData.owner) + '" placeholder="Who owns this business case?" onchange="FusionApp._edgeSetOwner(this.value)" />';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // --- Event handlers ---
+  App._edgeAddOutcome = function(ideaId) {
+    edgeData.outcomes.push({ id: genId(), description: '', metrics: [] });
+    var c = document.getElementById('edge-main');
+    if (c) c.innerHTML = renderMainContent(ideaId);
+    updateSidebar(ideaId);
+  };
+
+  App._edgeAddFromTemplate = function(ideaId, desc) {
+    edgeData.outcomes.push({ id: genId(), description: desc, metrics: [{ id: genId(), name: '', target: '', unit: '' }] });
+    var c = document.getElementById('edge-main');
+    if (c) c.innerHTML = renderMainContent(ideaId);
+    updateSidebar(ideaId);
+  };
+
+  App._edgeRemoveOutcome = function(oi, ideaId) {
+    edgeData.outcomes.splice(oi, 1);
+    var c = document.getElementById('edge-main');
+    if (c) c.innerHTML = renderMainContent(ideaId);
+    updateSidebar(ideaId);
+  };
+
+  App._edgeUpdateOutcome = function(oi, field, value) {
+    if (edgeData.outcomes[oi]) edgeData.outcomes[oi][field] = value;
+    updateSidebar(null);
+  };
+
+  App._edgeAddMetric = function(oi, ideaId) {
+    if (edgeData.outcomes[oi]) {
+      if (!edgeData.outcomes[oi].metrics) edgeData.outcomes[oi].metrics = [];
+      edgeData.outcomes[oi].metrics.push({ id: genId(), name: '', target: '', unit: '' });
+      var c = document.getElementById('edge-main');
+      if (c) c.innerHTML = renderMainContent(ideaId);
+    }
+  };
+
+  App._edgeUpdateMetric = function(oi, mi, field, value) {
+    if (edgeData.outcomes[oi] && edgeData.outcomes[oi].metrics[mi]) {
+      edgeData.outcomes[oi].metrics[mi][field] = value;
+    }
+    updateSidebar(null);
+  };
+
+  App._edgeRemoveMetric = function(oi, mi, ideaId) {
+    if (edgeData.outcomes[oi] && edgeData.outcomes[oi].metrics) {
+      edgeData.outcomes[oi].metrics.splice(mi, 1);
+      var c = document.getElementById('edge-main');
+      if (c) c.innerHTML = renderMainContent(ideaId);
+    }
+  };
+
+  App._edgeUpdateImpact = function(key, value) {
+    edgeData.impact[key] = value;
+    updateSidebar(null);
+  };
+
+  App._edgeSetConfidence = function(val) { edgeData.confidence = val; updateSidebar(null); };
+  App._edgeSetOwner = function(val) { edgeData.owner = val; updateSidebar(null); };
+
+  App._edgeSave = function(ideaId) {
+    var btn = document.getElementById('edge-save-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = icon('loader2', 16) + ' Saving...'; }
+    fetch('/api/ideas/' + ideaId + '/edge', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(edgeData)
+    }).then(function() {
+      App.showToast({ title: 'Edge Saved', description: 'Business case has been saved successfully.' });
+      if (btn) { btn.disabled = false; btn.innerHTML = icon('save', 16) + ' Save & Continue'; }
+    }).catch(function() {
+      App.showToast({ title: 'Error', description: 'Failed to save. Please try again.', variant: 'destructive' });
+      if (btn) { btn.disabled = false; btn.innerHTML = icon('save', 16) + ' Save & Continue'; }
+    });
+  };
+
+  function updateSidebar(ideaId) {
+    var el = document.getElementById('edge-sidebar');
+    if (el && ideaCache) el.innerHTML = renderSidebar(ideaCache);
+  }
+
+  function renderMainContent(ideaId) {
+    var html = '';
+    html += renderOutcomesSection(ideaId);
+    html += '<div class="my-6">' + renderImpactSection() + '</div>';
+    html += renderConfidenceSection();
+
+    // Save bar
+    var pct = getCompletionPct();
+    html += '<div class="flex items-center justify-between mt-6 pt-4" style="border-top:1px solid hsl(var(--border))">';
+    html += '<button class="btn btn-ghost" onclick="FusionApp.navigate(\'/ideas\')">' + icon('arrowLeft', 16) + ' Back</button>';
+    html += '<button class="btn btn-primary' + (pct < 100 ? ' opacity-60' : '') + '" id="edge-save-btn" onclick="FusionApp._edgeSave(\'' + ideaId + '\')">' + icon('save', 16) + ' Save & Continue</button>';
+    html += '</div>';
+    return html;
+  }
+
+  // --- Page ---
   App.pages['/ideas/:ideaId/edge'] = {
     layout: 'none',
 
     render: function(params) {
       var idea = store.ideas.find(function(i) { return i.id === params.ideaId; });
+      ideaCache = idea;
       if (!idea) {
-        return '<div class="min-h-screen flex items-center justify-center">' +
-          '<div class="text-center">' +
+        return '<div class="min-h-screen flex items-center justify-center"><div class="text-center">' +
           '<h2 class="text-xl font-semibold mb-2">Idea Not Found</h2>' +
-          '<p class="text-muted-foreground mb-4">The idea you are looking for does not exist.</p>' +
           '<button class="btn btn-primary" onclick="FusionApp.navigate(\'/ideas\')">Back to Ideas</button>' +
-          '</div></div>';
+        '</div></div>';
       }
 
       var html = '<div class="min-h-screen" style="background:hsl(var(--background))">';
@@ -38,192 +304,59 @@
       html += '<div style="border-bottom:1px solid hsl(var(--border));padding:1rem 1.5rem;display:flex;align-items:center;gap:0.75rem">';
       html += '<button class="btn btn-ghost btn-icon" onclick="FusionApp.navigate(\'/ideas\')">' + icon('arrowLeft', 20) + '</button>';
       html += '<div style="flex:1">';
-      html += '<h1 class="text-xl font-display font-bold">Business Edge</h1>';
-      html += '<p class="text-sm text-muted-foreground">Define and track business outcomes</p>';
+      html += '<div class="flex items-center gap-2">';
+      html += '<h1 class="text-xl font-display font-bold">Edge</h1>';
+      html += '<span class="badge badge-info">Business Case Definition</span>';
+      html += App.renderBadge(getStatusLabel().label, getStatusLabel().variant);
       html += '</div>';
       html += '</div>';
-
-      // Content
-      html += '<div style="max-width:48rem;margin:0 auto;padding:1.5rem">';
-
-      // Idea info
-      html += '<div class="fusion-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem">';
-      html += '<div style="width:2.25rem;height:2.25rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--primary));flex-shrink:0">' + icon('target', 18) + '</div>';
-      html += '<div style="flex:1;min-width:0">';
-      html += '<h3 class="text-base font-semibold">' + escapeHtml(idea.title) + '</h3>';
-      html += '<p class="text-xs text-muted-foreground">' + escapeHtml(idea.category) + ' &middot; ' + escapeHtml(idea.author) + '</p>';
-      html += '</div>';
-      html += App.renderStatusBadge(idea.status);
       html += '</div>';
 
-      // Outcomes section
-      html += '<div class="fusion-card" style="padding:1.5rem" id="edge-outcomes-container">';
+      // Content — 1/3 + 2/3 layout
+      html += '<div style="max-width:72rem;margin:0 auto;padding:1.5rem">';
+      html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
 
-      if (edgeState.loading) {
-        html += App.renderSpinner();
-      } else {
-        html += renderOutcomes(params.ideaId);
-      }
+      // Sidebar (1/3)
+      html += '<div class="lg:col-span-1 order-2 lg:order-1"><div id="edge-sidebar" class="lg:sticky" style="top:5rem">';
+      html += loading ? App.renderSpinner() : renderSidebar(idea);
+      html += '</div></div>';
 
+      // Main (2/3)
+      html += '<div class="lg:col-span-2 order-1 lg:order-2" id="edge-main">';
+      html += loading ? App.renderSpinner() : renderMainContent(params.ideaId);
       html += '</div>';
 
-      html += '</div>'; // container
-      html += '</div>'; // page
-
+      html += '</div></div></div>';
       return html;
     },
 
     init: function(params) {
-      edgeState.loading = true;
-      edgeState.outcomes = [];
+      loading = true;
+      edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: '' };
 
       fetch('/api/ideas/' + params.ideaId + '/edge')
         .then(function(res) { return res.json(); })
         .then(function(data) {
-          edgeState.loading = false;
-          edgeState.outcomes = data.edge && data.edge.outcomes ? data.edge.outcomes.map(function(o, idx) {
-            return { id: idx, label: o.label, target: o.target, current: o.current, status: o.status };
-          }) : [];
-          var container = document.getElementById('edge-outcomes-container');
-          if (container) {
-            container.innerHTML = renderOutcomes(params.ideaId);
-          }
-        })
-        .catch(function() {
-          edgeState.loading = false;
-          var container = document.getElementById('edge-outcomes-container');
-          if (container) {
-            container.innerHTML = '<p class="text-sm text-muted-foreground">Failed to load edge data.</p>';
-          }
+          loading = false;
+          var edge = data.edge || {};
+          edgeData.outcomes = (edge.outcomes || []).map(function(o) {
+            return {
+              id: o.id || genId(),
+              description: o.description || o.label || '',
+              metrics: (o.metrics || []).map(function(m) {
+                return { id: m.id || genId(), name: m.name || '', target: m.target || '', unit: m.unit || '' };
+              })
+            };
+          });
+          edgeData.impact = edge.impact || { shortTerm: '', midTerm: '', longTerm: '' };
+          edgeData.confidence = edge.confidence || '';
+          edgeData.owner = edge.owner || '';
+
+          var main = document.getElementById('edge-main');
+          var sidebar = document.getElementById('edge-sidebar');
+          if (main) main.innerHTML = renderMainContent(params.ideaId);
+          if (sidebar) sidebar.innerHTML = renderSidebar(ideaCache);
         });
     }
-  };
-
-  function renderOutcomes(ideaId) {
-    var html = '';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">';
-    html += '<h2 class="text-lg font-semibold">Outcomes</h2>';
-    html += '<button class="btn btn-outline btn-sm" onclick="FusionApp._edgeAddOutcome(\'' + ideaId + '\')">' + icon('plus', 14) + ' Add Outcome</button>';
-    html += '</div>';
-
-    if (edgeState.outcomes.length === 0) {
-      html += '<div class="flex flex-col items-center justify-center py-8 text-center">';
-      html += '<div style="width:3rem;height:3rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;color:hsl(var(--muted-foreground))">' + icon('target', 24) + '</div>';
-      html += '<p class="text-sm text-muted-foreground">No outcomes defined yet. Add your first outcome to start tracking.</p>';
-      html += '</div>';
-      return html;
-    }
-
-    edgeState.outcomes.forEach(function(outcome, idx) {
-      html += '<div style="border:1px solid hsl(var(--border));border-radius:0.5rem;padding:1rem;margin-bottom:0.75rem" id="outcome-row-' + idx + '">';
-
-      // Label
-      html += '<div style="margin-bottom:0.75rem">';
-      html += '<label class="text-xs font-medium text-muted-foreground" style="display:block;margin-bottom:0.25rem">Outcome Label</label>';
-      html += '<input class="input" type="text" value="' + escapeHtml(outcome.label) + '" style="width:100%" onchange="FusionApp._edgeUpdateField(' + idx + ',\'label\',this.value)" />';
-      html += '</div>';
-
-      // Target, current, status row
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem">';
-
-      // Target value
-      html += '<div>';
-      html += '<label class="text-xs font-medium text-muted-foreground" style="display:block;margin-bottom:0.25rem">Target Value</label>';
-      html += '<input class="input" type="text" value="' + escapeHtml(outcome.target) + '" style="width:100%" onchange="FusionApp._edgeUpdateField(' + idx + ',\'target\',this.value)" />';
-      html += '</div>';
-
-      // Current value
-      html += '<div>';
-      html += '<label class="text-xs font-medium text-muted-foreground" style="display:block;margin-bottom:0.25rem">Current Value</label>';
-      html += '<input class="input" type="text" value="' + escapeHtml(outcome.current) + '" style="width:100%" onchange="FusionApp._edgeUpdateField(' + idx + ',\'current\',this.value)" />';
-      html += '</div>';
-
-      // Status dropdown
-      html += '<div>';
-      html += '<label class="text-xs font-medium text-muted-foreground" style="display:block;margin-bottom:0.25rem">Status</label>';
-      html += '<select class="input" style="width:100%" onchange="FusionApp._edgeUpdateField(' + idx + ',\'status\',this.value)">';
-      statusOptions.forEach(function(opt) {
-        html += '<option value="' + opt.value + '"' + (outcome.status === opt.value ? ' selected' : '') + '>' + escapeHtml(opt.label) + '</option>';
-      });
-      html += '</select>';
-      html += '</div>';
-
-      html += '</div>'; // grid
-
-      // Delete button
-      html += '<div style="margin-top:0.5rem;text-align:right">';
-      html += '<button class="btn btn-ghost btn-sm" style="color:hsl(var(--destructive))" onclick="FusionApp._edgeRemoveOutcome(' + idx + ',\'' + ideaId + '\')">' + icon('trash2', 14) + ' Remove</button>';
-      html += '</div>';
-
-      html += '</div>'; // outcome row
-    });
-
-    // Save button
-    html += '<div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:1rem;border-top:1px solid hsl(var(--border))">';
-    html += '<button class="btn btn-primary" id="edge-save-btn" onclick="FusionApp._edgeSave(\'' + ideaId + '\')">' + icon('save', 16) + ' Save Outcomes</button>';
-    html += '</div>';
-
-    return html;
-  }
-
-  App._edgeUpdateField = function(idx, field, value) {
-    if (edgeState.outcomes[idx]) {
-      edgeState.outcomes[idx][field] = value;
-    }
-  };
-
-  App._edgeAddOutcome = function(ideaId) {
-    edgeState.outcomes.push({
-      id: edgeState.outcomes.length,
-      label: '',
-      target: '',
-      current: '',
-      status: 'not_started'
-    });
-    var container = document.getElementById('edge-outcomes-container');
-    if (container) {
-      container.innerHTML = renderOutcomes(ideaId);
-    }
-  };
-
-  App._edgeRemoveOutcome = function(idx, ideaId) {
-    edgeState.outcomes.splice(idx, 1);
-    var container = document.getElementById('edge-outcomes-container');
-    if (container) {
-      container.innerHTML = renderOutcomes(ideaId);
-    }
-  };
-
-  App._edgeSave = function(ideaId) {
-    var btn = document.getElementById('edge-save-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = icon('loader2', 16) + ' Saving...';
-    }
-
-    var outcomes = edgeState.outcomes.map(function(o) {
-      return { label: o.label, target: o.target, current: o.current, status: o.status };
-    });
-
-    fetch('/api/ideas/' + ideaId + '/edge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outcomes: outcomes })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function() {
-      App.showToast({ title: 'Outcomes Saved', description: 'Business outcomes have been saved successfully.' });
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = icon('save', 16) + ' Save Outcomes';
-      }
-    })
-    .catch(function() {
-      App.showToast({ title: 'Error', description: 'Failed to save outcomes. Please try again.', variant: 'destructive' });
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = icon('save', 16) + ' Save Outcomes';
-      }
-    });
   };
 })();
