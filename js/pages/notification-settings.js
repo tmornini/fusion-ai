@@ -4,62 +4,80 @@
   var icon = App.icon;
   var escapeHtml = App.escapeHtml;
 
-  // Local state for toggles
-  var settings = null;
+  var categories = null;
+  var hasChanges = false;
+  var originalJson = '';
 
-  function getSettings() {
-    if (!settings) {
-      // Deep clone from store
-      var n = App.store.notifications;
-      settings = {
-        ideas:    { email: n.email.ideas,    push: n.inApp.ideas },
-        projects: { email: n.email.projects, push: n.inApp.projects },
-        teams:    { email: n.email.team,     push: n.inApp.team },
-        account:  { email: n.email.weekly_digest, push: n.inApp.mentions },
-      };
+  function getCategories() {
+    if (!categories) {
+      categories = JSON.parse(JSON.stringify(App.store.notifications));
+      originalJson = JSON.stringify(categories);
     }
-    return settings;
+    return categories;
   }
 
-  function renderToggle(id, checked) {
-    var bg = checked ? 'background:hsl(var(--primary))' : 'background:hsl(var(--muted))';
-    var translate = checked ? 'translateX(1.25rem)' : 'translateX(0.125rem)';
-    return '<button id="' + id + '" class="toggle-btn" style="width:2.75rem;height:1.5rem;border-radius:9999px;' + bg + ';position:relative;border:none;cursor:pointer;transition:background 0.2s" onclick="FusionApp._notifToggle(\'' + id + '\')">' +
-      '<span style="display:block;width:1.125rem;height:1.125rem;border-radius:9999px;background:white;position:absolute;top:0.1875rem;left:0;transform:' + translate + ';transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></span>' +
-    '</button>';
+  function checkChanges() {
+    hasChanges = JSON.stringify(categories) !== originalJson;
+    var bar = document.getElementById('notif-save-bar');
+    if (bar) bar.style.display = hasChanges ? 'flex' : 'none';
   }
 
-  App._notifToggle = function(id) {
-    // Parse id: "notif-{category}-{type}"
-    var parts = id.replace('notif-', '').split('-');
-    var category = parts[0];
-    var type = parts[1]; // email or push
-    var s = getSettings();
-    if (s[category]) {
-      s[category][type] = !s[category][type];
+  var iconMap = { ideas: 'lightbulb', projects: 'folder', teams: 'users', account: 'user' };
+  var colorMap = { ideas: 'amber', projects: 'primary', teams: 'indigo', account: 'purple' };
+
+  App._notifToggle = function(catId, prefId, type) {
+    var cats = getCategories();
+    var cat = cats.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    var pref = cat.preferences.find(function(p) { return p.id === prefId; });
+    if (!pref) return;
+    pref[type] = !pref[type];
+    checkChanges();
+    // Update just the toggle UI
+    var el = document.getElementById('toggle-' + prefId + '-' + type);
+    if (el) {
+      el.checked = pref[type];
     }
+  };
+
+  App._notifEnableAll = function(catId) {
+    var cats = getCategories();
+    var cat = cats.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    cat.preferences.forEach(function(p) { p.email = true; p.push = true; });
+    checkChanges();
+    App.render();
+  };
+
+  App._notifDisableAll = function(catId) {
+    var cats = getCategories();
+    var cat = cats.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    cat.preferences.forEach(function(p) { p.email = false; p.push = false; });
+    checkChanges();
     App.render();
   };
 
   App._notifSave = function() {
-    var s = getSettings();
-    App.store.notifications.email.ideas = s.ideas.email;
-    App.store.notifications.email.projects = s.projects.email;
-    App.store.notifications.email.team = s.teams.email;
-    App.store.notifications.email.weekly_digest = s.account.email;
-    App.store.notifications.inApp.ideas = s.ideas.push;
-    App.store.notifications.inApp.projects = s.projects.push;
-    App.store.notifications.inApp.team = s.teams.push;
-    App.store.notifications.inApp.mentions = s.account.push;
+    App.store.notifications = JSON.parse(JSON.stringify(categories));
+    originalJson = JSON.stringify(categories);
+    hasChanges = false;
+    var bar = document.getElementById('notif-save-bar');
+    if (bar) bar.style.display = 'none';
+    App.showToast({ title: 'Settings saved', description: 'Your notification preferences have been updated.' });
+  };
 
-    App.showToast({ title: 'Notifications saved', description: 'Your notification preferences have been updated.' });
+  App._notifReset = function() {
+    categories = JSON.parse(originalJson);
+    hasChanges = false;
+    App.render();
   };
 
   App.pages['/account/notifications'] = {
     layout: 'dashboard',
 
     render: function() {
-      var s = getSettings();
+      var cats = getCategories();
       var html = '';
 
       // Breadcrumb
@@ -69,55 +87,77 @@
       html += '<span class="text-foreground font-medium">Notifications</span>';
       html += '</div>';
 
-      html += '<h1 class="text-2xl font-display font-bold tracking-tight mb-6">Notification Settings</h1>';
-
-      html += '<div class="fusion-card p-6" style="max-width:40rem">';
-
-      // Table header
-      html += '<div class="flex items-center gap-4 pb-3 mb-4 border-b text-sm font-medium text-muted-foreground">';
-      html += '<div class="flex-1">Category</div>';
-      html += '<div style="width:5rem;text-align:center">Email</div>';
-      html += '<div style="width:5rem;text-align:center">Push</div>';
+      // Header
+      html += '<div class="flex items-center gap-3 mb-6">';
+      html += '<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">' + icon('bell', 20) + '</div>';
+      html += '<div>';
+      html += '<h1 class="text-2xl font-display font-bold tracking-tight">Notification Settings</h1>';
+      html += '<p class="text-sm text-muted-foreground">Choose how and when you want to be notified</p>';
+      html += '</div>';
       html += '</div>';
 
-      var categories = [
-        { key: 'ideas',    label: 'Ideas',    desc: 'New ideas, scoring results, status changes', icon: 'lightbulb' },
-        { key: 'projects', label: 'Projects', desc: 'Project updates, milestones, assignments', icon: 'folderKanban' },
-        { key: 'teams',    label: 'Teams',    desc: 'Team invites, member changes, mentions', icon: 'users' },
-        { key: 'account',  label: 'Account',  desc: 'Weekly digest, security alerts, billing', icon: 'shield' },
-      ];
+      // Legend
+      html += '<div class="flex items-center gap-6 mb-4 text-xs text-muted-foreground">';
+      html += '<span class="flex items-center gap-1">' + icon('mail', 12) + ' Email</span>';
+      html += '<span class="flex items-center gap-1">' + icon('smartphone', 12) + ' Push</span>';
+      html += '</div>';
 
-      html += '<div class="space-y-4">';
-      categories.forEach(function(cat) {
-        html += '<div class="flex items-center gap-4 py-2">';
-        // Label
-        html += '<div class="flex-1">';
-        html += '<div class="flex items-center gap-2">';
-        html += '<span class="text-muted-foreground">' + icon(cat.icon, 16) + '</span>';
-        html += '<span class="text-sm font-medium">' + escapeHtml(cat.label) + '</span>';
+      // Categories
+      html += '<div class="space-y-6" style="max-width:48rem">';
+      cats.forEach(function(cat) {
+        var colorClass = colorMap[cat.id] || 'primary';
+        html += '<div class="fusion-card overflow-hidden">';
+
+        // Category header
+        html += '<div class="flex items-center gap-3 p-4" style="border-bottom:1px solid hsl(var(--border))">';
+        html += '<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:hsl(var(--' + colorClass + ') / 0.1);color:hsl(var(--' + colorClass + '))">' + icon(iconMap[cat.id] || 'bell', 16) + '</div>';
+        html += '<span class="text-sm font-semibold flex-1">' + escapeHtml(cat.label) + '</span>';
+        html += '<button class="btn btn-ghost btn-sm text-xs" onclick="FusionApp._notifEnableAll(\'' + cat.id + '\')">Enable all</button>';
+        html += '<button class="btn btn-ghost btn-sm text-xs" onclick="FusionApp._notifDisableAll(\'' + cat.id + '\')">Disable all</button>';
         html += '</div>';
-        html += '<p class="text-xs text-muted-foreground mt-0.5 ml-6">' + escapeHtml(cat.desc) + '</p>';
-        html += '</div>';
-        // Email toggle
-        html += '<div style="width:5rem;display:flex;justify-content:center">';
-        html += renderToggle('notif-' + cat.key + '-email', s[cat.key].email);
-        html += '</div>';
-        // Push toggle
-        html += '<div style="width:5rem;display:flex;justify-content:center">';
-        html += renderToggle('notif-' + cat.key + '-push', s[cat.key].push);
+
+        // Preferences
+        html += '<div class="divide-y">';
+        cat.preferences.forEach(function(pref) {
+          html += '<div class="flex items-center gap-4 px-4 py-3">';
+          // Label + description
+          html += '<div class="flex-1 min-w-0">';
+          html += '<div class="text-sm font-medium">' + escapeHtml(pref.label) + '</div>';
+          html += '<div class="text-xs text-muted-foreground">' + escapeHtml(pref.description) + '</div>';
+          html += '</div>';
+          // Email toggle
+          html += '<div class="flex items-center gap-1">';
+          html += '<span class="text-muted-foreground">' + icon('mail', 12) + '</span>';
+          html += App.renderToggleSwitch('toggle-' + pref.id + '-email', pref.email, 'FusionApp._notifToggle(\\\'' + cat.id + '\\\',\\\'' + pref.id + '\\\',\\\'email\\\')');
+          html += '</div>';
+          // Push toggle
+          html += '<div class="flex items-center gap-1">';
+          html += '<span class="text-muted-foreground">' + icon('smartphone', 12) + '</span>';
+          html += App.renderToggleSwitch('toggle-' + pref.id + '-push', pref.push, 'FusionApp._notifToggle(\\\'' + cat.id + '\\\',\\\'' + pref.id + '\\\',\\\'push\\\')');
+          html += '</div>';
+          html += '</div>';
+        });
         html += '</div>';
         html += '</div>';
       });
       html += '</div>';
 
-      // Save button
-      html += '<div class="flex justify-end pt-6 mt-4 border-t">';
-      html += '<button class="btn btn-primary" onclick="FusionApp._notifSave()">' + icon('save', 16) + ' <span>Save Preferences</span></button>';
+      // Sticky save bar
+      html += '<div id="notif-save-bar" class="flex items-center justify-between p-4 mt-6 fusion-card" style="display:' + (hasChanges ? 'flex' : 'none') + ';position:sticky;bottom:1rem;max-width:48rem">';
+      html += '<span class="text-sm text-muted-foreground">You have unsaved changes</span>';
+      html += '<div class="flex gap-2">';
+      html += '<button class="btn btn-ghost" onclick="FusionApp._notifReset()">Reset</button>';
+      html += '<button class="btn btn-primary" onclick="FusionApp._notifSave()">' + icon('save', 16) + ' Save Changes</button>';
       html += '</div>';
-
       html += '</div>';
 
       return html;
+    },
+
+    init: function() {
+      categories = null;
+      hasChanges = false;
+      originalJson = '';
     }
   };
 })();
