@@ -17,28 +17,25 @@
       impact: {
         score: 88,
         dimensions: [
-          { label: 'Revenue Potential', value: 85 },
-          { label: 'Customer Satisfaction', value: 92 },
-          { label: 'Market Differentiation', value: 87 },
-          { label: 'Strategic Alignment', value: 88 },
+          { label: 'Business Value', value: 90, reason: 'Direct revenue impact through improved conversions' },
+          { label: 'Strategic Alignment', value: 80, reason: 'Supports digital transformation goals' },
+          { label: 'User Benefit', value: 90, reason: 'Saves significant time for marketing team' },
         ]
       },
       feasibility: {
         score: 75,
         dimensions: [
-          { label: 'Technical Complexity', value: 68 },
-          { label: 'Resource Availability', value: 80 },
-          { label: 'Timeline Realism', value: 72 },
-          { label: 'Risk Level', value: 78 },
+          { label: 'Technical Complexity', value: 70, reason: 'Requires ML expertise and data pipeline' },
+          { label: 'Resource Availability', value: 80, reason: 'Team has relevant skills' },
+          { label: 'Integration Effort', value: 80, reason: 'Works with existing CRM' },
         ]
       },
       efficiency: {
         score: 85,
         dimensions: [
-          { label: 'Cost Efficiency', value: 82 },
-          { label: 'Time to Value', value: 88 },
-          { label: 'Scalability', value: 90 },
-          { label: 'Maintainability', value: 80 },
+          { label: 'Time to Value', value: 90, reason: 'MVP deliverable in 6-8 weeks' },
+          { label: 'Cost Efficiency', value: 80, reason: 'Reasonable investment for expected returns' },
+          { label: 'Scalability', value: 90, reason: 'Can expand to other use cases' },
         ]
       }
     }
@@ -179,10 +176,13 @@
           var color = dim.value >= 85 ? 'text-success' : dim.value >= 70 ? 'text-primary' : 'text-warning';
           html += '<div>';
           html += '<div class="flex items-center justify-between mb-1">';
-          html += '<span class="text-sm">' + escapeHtml(dim.label) + '</span>';
-          html += '<span class="text-sm font-semibold ' + color + '">' + dim.value + '</span>';
+          html += '<span class="text-sm font-medium">' + escapeHtml(dim.label) + '</span>';
+          html += '<span class="text-sm font-semibold ' + color + '">' + dim.value + '/100</span>';
           html += '</div>';
           html += App.renderProgress(dim.value, 100);
+          if (dim.reason) {
+            html += '<p class="text-xs text-muted-foreground mt-1">' + escapeHtml(dim.reason) + '</p>';
+          }
           html += '</div>';
         });
         html += '</div>';
