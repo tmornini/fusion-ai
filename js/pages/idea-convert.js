@@ -7,7 +7,8 @@
 
   var formState = {
     projectName: '', projectLead: '', startDate: '', targetEndDate: '',
-    budget: '', priority: '', firstMilestone: '', successCriteria: ''
+    budget: '', priority: '', firstMilestone: '', successCriteria: '',
+    teamMembers: []
   };
 
   var requiredFields = ['projectName', 'projectLead', 'startDate', 'targetEndDate', 'budget', 'priority'];
@@ -165,6 +166,20 @@
       html += '<div class="fusion-card p-5 mb-4">';
       html += '<h3 class="text-sm font-semibold text-muted-foreground mb-3">OPTIONAL DETAILS</h3>';
       html += '<div class="space-y-4">';
+      // Team Members
+      html += '<div><label class="text-sm font-medium block mb-2">' + icon('users', 14) + ' Team Members</label>';
+      html += '<div class="space-y-2">';
+      store.team.forEach(function(m) {
+        if (m.status !== 'active') return;
+        var checked = formState.teamMembers.indexOf(m.id) >= 0;
+        html += '<label class="flex items-center gap-3 p-2 rounded-lg cursor-pointer" style="background:hsl(var(--muted) / ' + (checked ? '0.3' : '0') + ')">';
+        html += '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="FusionApp._convertToggleTeam(\'' + m.id + '\')" style="accent-color:hsl(var(--primary))" />';
+        html += '<div class="flex-1 min-w-0"><span class="text-sm font-medium">' + escapeHtml(m.name) + '</span>';
+        html += '<span class="text-xs text-muted-foreground ml-2">' + escapeHtml(m.role) + '</span></div>';
+        html += '</label>';
+      });
+      html += '</div></div>';
+
       html += '<div><label class="text-sm font-medium block mb-1">First Milestone</label>';
       html += '<input class="input w-full" value="' + escapeHtml(formState.firstMilestone) + '" placeholder="e.g. Complete requirements gathering" onchange="FusionApp._convertUpdate(\'firstMilestone\',this.value)" /></div>';
       html += '<div><label class="text-sm font-medium block mb-1">Success Criteria</label>';
@@ -181,9 +196,16 @@
 
     init: function(params) {
       var idea = store.ideas.find(function(i) { return i.id === params.ideaId; });
-      formState = { projectName: idea ? idea.title : '', projectLead: '', startDate: '', targetEndDate: '', budget: '', priority: '', firstMilestone: '', successCriteria: '' };
+      formState = { projectName: idea ? idea.title : '', projectLead: '', startDate: '', targetEndDate: '', budget: '', priority: '', firstMilestone: '', successCriteria: '', teamMembers: [] };
       formState._ideaId = params.ideaId;
     }
+  };
+
+  App._convertToggleTeam = function(memberId) {
+    var idx = formState.teamMembers.indexOf(memberId);
+    if (idx >= 0) formState.teamMembers.splice(idx, 1);
+    else formState.teamMembers.push(memberId);
+    App.render();
   };
 
   App._convertSubmit = function() {
