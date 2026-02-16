@@ -128,6 +128,6 @@ The `build` script requires a clean git working directory (no uncommitted change
 2. Copies 8 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
 4. Copies static assets (`site/style.css`, `fonts/`, `index.html`) to the build directory
-5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) from the build directory
+5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.

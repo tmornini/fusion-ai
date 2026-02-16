@@ -34,10 +34,12 @@ cp index.html "$BUILD_DIR/"
 SHA=$(git rev-parse --short=7 HEAD)
 ZIPNAME="fusion-ai-${SHA}.zip"
 
+ZIPDEST="$HOME/Desktop/$ZIPNAME"
+
 OLDPWD="$PWD"
 cd "$BUILD_DIR"
-zip -r "$OLDPWD/$ZIPNAME" .
+zip -r "$ZIPDEST" .
 cd "$OLDPWD"
 
-echo "Distribution: $ZIPNAME ($(wc -c < "$ZIPNAME" | tr -d ' ') bytes)"
+echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | tr -d ' ') bytes)"
 echo "Done."
