@@ -46,7 +46,7 @@ All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS clas
 
 ### Design System
 
-Full spec in `docs/DESIGN_SYSTEM.md`. Key constraints:
+Full spec in `DESIGN_SYSTEM.md`. Key constraints:
 
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `fonts/`.
@@ -98,7 +98,7 @@ not-found/index.ts            # 404
 fonts/                        # Self-hosted woff2 files
 build                         # Executable build script (esbuild)
 tsconfig.json                 # TypeScript config
-docs/                         # Design system documentation
+DESIGN_SYSTEM.md              # Design system specification
 ```
 
 ## Build
