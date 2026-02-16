@@ -46,7 +46,7 @@ All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS clas
 Full spec in `DESIGN_SYSTEM.md`. Key constraints:
 
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
-- **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `fonts/`.
+- **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `site/fonts/`.
 - **Spacing**: 8px grid system.
 - **Icons**: ~80+ inline SVG functions in `site/script.ts` (replaces Lucide React). Each returns an SVG string: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
@@ -68,6 +68,7 @@ site/
   script.ts                   # Page dispatch, state, icons, navigation, layout behavior
   data.ts                     # ~27 async mock data functions + all interfaces
   charts.ts                   # SVG chart rendering (bar, line, donut, area)
+  fonts/                      # Self-hosted woff2 files
 
 # Core pages — ideas, projects, and related workflows
 core/
@@ -113,7 +114,6 @@ entry/
 system/
   not-found/                  # 404 page (standalone)
 
-fonts/                        # Self-hosted woff2 files
 build                         # Executable build script
 tsconfig.json                 # TypeScript config
 DESIGN_SYSTEM.md              # Design system specification
@@ -127,7 +127,7 @@ The `build` script requires a clean git working directory (no uncommitted change
 1. Composes HTML pages: runs `site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 18 composed files in a temp build directory
 2. Copies 8 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
-4. Copies static assets (`site/style.css`, `fonts/`, `index.html`) to the build directory
+4. Copies static assets (`site/style.css`, `site/fonts/`, `index.html`) to the build directory
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.
