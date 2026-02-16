@@ -24,7 +24,7 @@ No test framework is configured.
 
 - **Routing**: Hash-based (`#/dashboard`, `#/ideas/123/edge`). All routes defined in `site/script.ts` via `route()` calls. A `matchRoute()` function handles static paths and `:param` segments.
 - **Layout**: Most pages use `renderDashboardLayout(content)` which provides sidebar, top header, search, notifications, and theme toggle. Mobile uses a Sheet-based drawer sidebar.
-- **Auth**: Mock auth returning `demo@example.com`. Real auth will use Supabase.
+- **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: All mock data is in `site/data.ts` with async functions returning Promises — ready for API replacement.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
