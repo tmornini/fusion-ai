@@ -1,33 +1,14 @@
 import {
-  $, navigate, escapeHtml, showToast,
+  $, escapeHtml, showToast, navigateTo, getParams,
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
 } from '../site/script';
-
-const mockIdea = {
-  id: '1',
-  title: 'AI-Powered Customer Segmentation',
-  problemStatement: 'Marketing team spends 20+ hours weekly manually segmenting customers.',
-  proposedSolution: 'Implement machine learning model to automatically segment customers.',
-  expectedOutcome: 'Reduce segmentation time by 80% and increase conversion rates by 25%.',
-  score: 82,
-  estimatedTime: '6-8 weeks',
-  estimatedCost: '$45,000 - $65,000',
-};
-
-const projectDetails: Record<string, string> = {
-  projectName: mockIdea.title,
-  projectLead: '',
-  startDate: '',
-  targetEndDate: '',
-  budget: '',
-  priority: '',
-  firstMilestone: '',
-  successCriteria: '',
-};
+import { getIdeaForConversion, type ConvertIdea } from '../site/data';
 
 const requiredFields = ['projectName', 'projectLead', 'startDate', 'targetEndDate', 'budget', 'priority'];
+
+let projectDetails: Record<string, string> = {};
 
 function completedCount(): number {
   return requiredFields.filter(f => projectDetails[f]?.trim()).length;
@@ -41,8 +22,7 @@ function fieldCheck(field: string): string {
   return projectDetails[field]?.trim() ? `<span style="color:hsl(142 71% 45%)">${iconCheckCircle2(16)}</span>` : '';
 }
 
-export function render(params?: Record<string, string>): string {
-  const ideaId = params?.ideaId || '1';
+function renderPage(idea: ConvertIdea, ideaId: string): string {
   const done = completedCount();
   const pct = (done / requiredFields.length) * 100;
 
@@ -52,7 +32,7 @@ export function render(params?: Record<string, string>): string {
         <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem">
             <div class="flex items-center gap-4">
-              <button class="btn btn-ghost btn-icon" data-nav="#/ideas/${ideaId}/score">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="back-to-scoring">${iconArrowLeft(20)}</button>
               <div class="flex items-center gap-3">
                 <div class="gradient-hero rounded-lg flex items-center justify-center" style="width:2.25rem;height:2.25rem;color:hsl(var(--primary-foreground))">${iconRocket(20)}</div>
                 <span class="text-xl font-display font-bold">Convert to Project</span>
@@ -70,41 +50,39 @@ export function render(params?: Record<string, string>): string {
 
       <div style="max-width:72rem;margin:0 auto;padding:2rem 1.5rem">
         <div class="convert-grid" style="display:grid;grid-template-columns:2fr 3fr;gap:2rem">
-          <!-- Left: Idea Summary -->
           <div>
             <div class="card p-6" style="position:sticky;top:6rem">
               <div class="flex items-center gap-2 text-sm font-medium text-muted mb-4">${iconFolderKanban(16)} Idea Summary</div>
-              <h2 class="text-xl font-display font-bold mb-4">${escapeHtml(mockIdea.title)}</h2>
+              <h2 class="text-xl font-display font-bold mb-4">${escapeHtml(idea.title)}</h2>
               <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem">
-                <div><h4 class="text-sm font-medium text-muted mb-1">Problem</h4><p class="text-sm">${escapeHtml(mockIdea.problemStatement)}</p></div>
-                <div><h4 class="text-sm font-medium text-muted mb-1">Solution</h4><p class="text-sm">${escapeHtml(mockIdea.proposedSolution)}</p></div>
-                <div><h4 class="text-sm font-medium text-muted mb-1">Expected Outcome</h4><p class="text-sm">${escapeHtml(mockIdea.expectedOutcome)}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Problem</h4><p class="text-sm">${escapeHtml(idea.problemStatement)}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Solution</h4><p class="text-sm">${escapeHtml(idea.proposedSolution)}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Expected Outcome</h4><p class="text-sm">${escapeHtml(idea.expectedOutcome)}</p></div>
               </div>
               <div style="border-top:1px solid hsl(var(--border));padding-top:1rem;display:flex;flex-direction:column;gap:0.75rem">
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconTrendingUp(16)} <span class="text-sm">Priority Score</span></span>
-                  <span class="font-bold" style="color:hsl(142 71% 45%)">${mockIdea.score}/100</span>
+                  <span class="font-bold" style="color:hsl(142 71% 45%)">${idea.score}/100</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconClock(16)} <span class="text-sm">Est. Time</span></span>
-                  <span class="font-medium">${mockIdea.estimatedTime}</span>
+                  <span class="font-medium">${idea.estimatedTime}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconDollarSign(16)} <span class="text-sm">Est. Cost</span></span>
-                  <span class="font-medium">${mockIdea.estimatedCost}</span>
+                  <span class="font-medium">${idea.estimatedCost}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Right: Form -->
           <div style="display:flex;flex-direction:column;gap:1.5rem">
             <div class="card p-6">
               <div class="flex items-center gap-2 mb-6">${iconAlertCircle(20, 'text-warning')} <span class="font-medium">Complete these details to create a project</span></div>
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheck('projectName')}</label>
-                  <input class="input" id="f-projectName" value="${escapeHtml(projectDetails.projectName)}" placeholder="Give your project a clear name" />
+                  <input class="input" id="f-projectName" value="${escapeHtml(projectDetails.projectName || '')}" placeholder="Give your project a clear name" />
                 </div>
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheck('projectLead')}</label>
@@ -119,11 +97,11 @@ export function render(params?: Record<string, string>): string {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
                   <div>
                     <label class="label mb-2 font-medium flex items-center gap-2">${iconCalendar(16, 'text-muted')} Start Date ${fieldCheck('startDate')}</label>
-                    <input class="input" type="date" id="f-startDate" value="${projectDetails.startDate}" />
+                    <input class="input" type="date" id="f-startDate" value="${projectDetails.startDate || ''}" />
                   </div>
                   <div>
                     <label class="label mb-2 font-medium flex items-center gap-2">${iconTarget(16, 'text-muted')} Target End Date ${fieldCheck('targetEndDate')}</label>
-                    <input class="input" type="date" id="f-targetEndDate" value="${projectDetails.targetEndDate}" />
+                    <input class="input" type="date" id="f-targetEndDate" value="${projectDetails.targetEndDate || ''}" />
                   </div>
                 </div>
                 <div>
@@ -136,7 +114,7 @@ export function render(params?: Record<string, string>): string {
                     <option value="100-250k">$100,000 - $250,000</option>
                     <option value="250k+">$250,000+</option>
                   </select>
-                  <p class="text-xs text-muted mt-1">AI estimate: ${mockIdea.estimatedCost}</p>
+                  <p class="text-xs text-muted mt-1">AI estimate: ${idea.estimatedCost}</p>
                 </div>
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Priority Level ${fieldCheck('priority')}</label>
@@ -156,17 +134,16 @@ export function render(params?: Record<string, string>): string {
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
                   <label class="label mb-2 font-medium">First Milestone</label>
-                  <input class="input" id="f-firstMilestone" placeholder="e.g., Complete data pipeline setup" value="${escapeHtml(projectDetails.firstMilestone)}" />
+                  <input class="input" id="f-firstMilestone" placeholder="e.g., Complete data pipeline setup" value="${escapeHtml(projectDetails.firstMilestone || '')}" />
                   <p class="text-xs text-muted mt-1">What is the first measurable goal for this project?</p>
                 </div>
                 <div>
                   <label class="label mb-2 font-medium">Success Criteria</label>
-                  <textarea class="textarea" id="f-successCriteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${escapeHtml(projectDetails.successCriteria)}</textarea>
+                  <textarea class="textarea" id="f-successCriteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${escapeHtml(projectDetails.successCriteria || '')}</textarea>
                 </div>
               </div>
             </div>
 
-            <!-- Confirmation -->
             <div class="card p-6" id="convert-confirm" style="border:2px solid ${canConvert() ? 'hsl(142 71% 45%/0.3)' : 'transparent'};${canConvert() ? 'background:hsl(142 71% 45%/0.05)' : ''}">
               <div class="flex items-start gap-4">
                 <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${canConvert() ? 'background:hsl(142 71% 45%);color:white' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
@@ -178,7 +155,7 @@ export function render(params?: Record<string, string>): string {
                       : `${requiredFields.length - completedCount()} required field${requiredFields.length - completedCount() > 1 ? 's' : ''} remaining`}
                   </p>
                   <div class="flex gap-3">
-                    <button class="btn btn-ghost" data-nav="#/ideas/${params?.ideaId || '1'}/score">${iconArrowLeft(16)} Back to Scoring</button>
+                    <button class="btn btn-ghost" id="back-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
                     <button class="btn btn-hero gap-2" id="convert-btn" ${canConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
                   </div>
                 </div>
@@ -190,7 +167,27 @@ export function render(params?: Record<string, string>): string {
     </div>`;
 }
 
-export function init(params?: Record<string, string>): void {
+export async function init(): Promise<void> {
+  const params = getParams();
+  const ideaId = params.get('ideaId') || '1';
+
+  const idea = await getIdeaForConversion(ideaId);
+
+  projectDetails = {
+    projectName: idea.title,
+    projectLead: '',
+    startDate: '',
+    targetEndDate: '',
+    budget: '',
+    priority: '',
+    firstMilestone: '',
+    successCriteria: '',
+  };
+
+  const root = $('#page-root');
+  if (!root) return;
+  root.innerHTML = renderPage(idea, ideaId);
+
   const syncFields = () => {
     requiredFields.concat(['firstMilestone', 'successCriteria']).forEach(f => {
       const el = $(`#f-${f}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
@@ -198,7 +195,6 @@ export function init(params?: Record<string, string>): void {
     });
   };
 
-  // Listen for changes on all form fields
   document.querySelectorAll<HTMLElement>('.card input, .card select, .card textarea').forEach(el => {
     el.addEventListener('input', () => {
       syncFields();
@@ -220,7 +216,10 @@ export function init(params?: Record<string, string>): void {
     (btn as HTMLButtonElement).disabled = true;
     setTimeout(() => {
       showToast('Project created successfully!', 'success');
-      navigate('#/dashboard');
+      navigateTo('dashboard');
     }, 2000);
   });
+
+  $('#back-to-scoring')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
+  $('#back-scoring-2')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
 }

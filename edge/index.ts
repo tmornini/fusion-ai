@@ -1,21 +1,14 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml, navigate, showToast,
+  $, escapeHtml, showToast, navigateTo,
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
 } from '../site/script';
+import { getEdgeIdea, type EdgeIdea } from '../site/data';
 
 interface Metric { id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }
 interface Impact { shortTerm: string; midTerm: string; longTerm: string; }
 interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string; owner: string; }
-
-const mockIdea = {
-  title: 'AI-Powered Customer Segmentation',
-  problem: 'Manual customer segmentation is time-consuming and often inaccurate, leading to misaligned marketing efforts.',
-  solution: 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
-  submittedBy: 'Sarah Chen',
-  score: 92,
-};
 
 const outcomeTemplates = ['Reduce operational cost', 'Increase customer retention', 'Improve delivery speed'];
 
@@ -26,8 +19,9 @@ let edgeData: EdgeData = {
   owner: 'Sarah Chen',
 };
 let nextId = 1;
+let currentIdea: EdgeIdea | null = null;
 
-function getCompletion(): { hasOutcomes: boolean; allMetrics: boolean; hasImpact: boolean; hasOwner: boolean; hasConfidence: boolean; percent: number; valid: boolean } {
+function getCompletion() {
   const hasOutcomes = edgeData.outcomes.length > 0;
   const allMetrics = hasOutcomes && edgeData.outcomes.every(o => o.metrics.length > 0);
   const hasImpact = !!(edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm);
@@ -45,6 +39,7 @@ function checkIcon(ok: boolean): string {
 }
 
 function renderEdgePage(ideaId: string): string {
+  const idea = currentIdea!;
   const c = getCompletion();
   const statusLabel = c.valid ? 'Complete' : c.percent > 0 ? 'In Progress' : 'Incomplete';
   const statusCls = c.valid ? 'badge-success' : c.percent > 0 ? 'badge-warning' : 'badge-error';
@@ -83,11 +78,11 @@ function renderEdgePage(ideaId: string): string {
         </div>
       </div>`).join('');
 
-  const content = `
+  return `
     <div>
       <div class="flex items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-4">
-          <button class="btn btn-ghost btn-icon" data-nav="#/ideas">${iconArrowLeft(20)}</button>
+          <button class="btn btn-ghost btn-icon" id="back-btn">${iconArrowLeft(20)}</button>
           <div>
             <div class="badge badge-primary text-sm mb-2">${iconTarget(14)} Business Case Definition</div>
             <div class="flex items-center gap-3 mb-1">
@@ -122,15 +117,15 @@ function renderEdgePage(ideaId: string): string {
         <div>
           <div class="card p-5" style="position:sticky;top:1.5rem">
             <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconTarget(20, 'text-primary')} Linked Idea</h3>
-            <h4 class="font-medium mb-1">${escapeHtml(mockIdea.title)}</h4>
-            <p class="text-xs text-muted mb-4">Score: ${mockIdea.score}</p>
+            <h4 class="font-medium mb-1">${escapeHtml(idea.title)}</h4>
+            <p class="text-xs text-muted mb-4">Score: ${idea.score}</p>
             <p class="text-xs text-muted mb-1">Problem</p>
-            <p class="text-sm mb-3">${escapeHtml(mockIdea.problem)}</p>
+            <p class="text-sm mb-3">${escapeHtml(idea.problem)}</p>
             <p class="text-xs text-muted mb-1">Solution</p>
-            <p class="text-sm mb-3">${escapeHtml(mockIdea.solution)}</p>
+            <p class="text-sm mb-3">${escapeHtml(idea.solution)}</p>
             <div style="padding-top:0.75rem;border-top:1px solid hsl(var(--border))">
               <p class="text-xs text-muted mb-1">Submitted by</p>
-              <p class="text-sm">${escapeHtml(mockIdea.submittedBy)}</p>
+              <p class="text-sm">${escapeHtml(idea.submittedBy)}</p>
             </div>
           </div>
         </div>
@@ -173,8 +168,8 @@ function renderEdgePage(ideaId: string): string {
                 <label class="label text-xs text-muted mb-2 block">Confidence Level</label>
                 <select class="input" id="confidence-select">
                   <option value="">Select confidence level</option>
-                  <option value="high" ${edgeData.confidence === 'high' ? 'selected' : ''}>High - Strong evidence and clear path</option>
-                  <option value="medium" ${edgeData.confidence === 'medium' ? 'selected' : ''}>Medium - Some uncertainty exists</option>
+                  <option value="high" ${edgeData.confidence === 'high' ? 'selected' : ''}>High - Strong evidence</option>
+                  <option value="medium" ${edgeData.confidence === 'medium' ? 'selected' : ''}>Medium - Some uncertainty</option>
                   <option value="low" ${edgeData.confidence === 'low' ? 'selected' : ''}>Low - Significant unknowns</option>
                 </select>
               </div>
@@ -194,7 +189,7 @@ function renderEdgePage(ideaId: string): string {
                 <ul class="text-sm mt-1" style="color:hsl(var(--warning)/0.8)">
                   ${!c.hasOutcomes ? '<li>• Add at least one business outcome</li>' : ''}
                   ${c.hasOutcomes && !c.allMetrics ? '<li>• Add at least one metric to each outcome</li>' : ''}
-                  ${!c.hasImpact ? '<li>• Describe expected impact (at least one timeframe)</li>' : ''}
+                  ${!c.hasImpact ? '<li>• Describe expected impact</li>' : ''}
                   ${!c.hasOwner ? '<li>• Assign an owner</li>' : ''}
                 </ul>
               </div>
@@ -203,20 +198,6 @@ function renderEdgePage(ideaId: string): string {
         </div>
       </div>
     </div>`;
-
-  return renderDashboardLayout(content);
-}
-
-export function render(params?: Record<string, string>): string {
-  const ideaId = params?.ideaId || '1';
-  edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
-  nextId = 1;
-  return renderEdgePage(ideaId);
-}
-
-function rerender(ideaId: string) {
-  const app = $('#app');
-  if (app) { app.innerHTML = renderEdgePage(ideaId); bindEdgeEvents(ideaId); }
 }
 
 function syncFormData() {
@@ -225,13 +206,11 @@ function syncFormData() {
   edgeData.impact.longTerm = ($('#impact-long') as HTMLTextAreaElement)?.value || '';
   edgeData.confidence = ($('#confidence-select') as HTMLSelectElement)?.value || '';
   edgeData.owner = ($('#owner-input') as HTMLInputElement)?.value || '';
-
   document.querySelectorAll<HTMLInputElement>('[data-outcome-desc]').forEach(inp => {
     const oId = inp.getAttribute('data-outcome-desc')!;
     const outcome = edgeData.outcomes.find(o => o.id === oId);
     if (outcome) outcome.description = inp.value;
   });
-
   document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(inp => {
     const [oId, mId, field] = (inp.getAttribute('data-metric') || '').split('|');
     const outcome = edgeData.outcomes.find(o => o.id === oId);
@@ -240,8 +219,13 @@ function syncFormData() {
   });
 }
 
+function rerender(ideaId: string) {
+  const container = $('#edge-content');
+  if (container) { container.innerHTML = renderEdgePage(ideaId); bindEdgeEvents(ideaId); }
+}
+
 function bindEdgeEvents(ideaId: string) {
-  initDashboardLayout();
+  $('#back-btn')?.addEventListener('click', () => navigateTo('ideas'));
 
   $('#add-outcome')?.addEventListener('click', () => {
     syncFormData();
@@ -289,11 +273,14 @@ function bindEdgeEvents(ideaId: string) {
     syncFormData();
     if (!getCompletion().valid) { showToast('Please complete all required fields', 'error'); return; }
     showToast('Edge data saved successfully', 'success');
-    navigate(`#/review/${ideaId}`);
+    navigateTo('approval-detail', { id: ideaId });
   });
 }
 
-export function init(params?: Record<string, string>): void {
+export async function init(params?: Record<string, string>): Promise<void> {
   const ideaId = params?.ideaId || '1';
-  bindEdgeEvents(ideaId);
+  currentIdea = await getEdgeIdea(ideaId);
+  edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
+  nextId = 1;
+  rerender(ideaId);
 }

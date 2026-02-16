@@ -1,33 +1,10 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml, showToast,
+  $, escapeHtml, showToast,
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
 } from '../site/script';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  department: string;
-  email: string;
-  availability: number;
-  performanceScore: number;
-  projectsCompleted: number;
-  currentProjects: number;
-  strengths: string[];
-  teamDimensions: Record<string, number>;
-  status: string;
-}
-
-const mockTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Sarah Chen', role: 'Project Lead', department: 'Operations', email: 'sarah.chen@company.com', availability: 85, performanceScore: 94, projectsCompleted: 12, currentProjects: 3, strengths: ['Strategic Planning', 'Team Leadership', 'Risk Management'], teamDimensions: { driver: 78, analytical: 85, expressive: 62, amiable: 70 }, status: 'available' },
-  { id: '2', name: 'Mike Thompson', role: 'ML Engineer', department: 'Engineering', email: 'mike.thompson@company.com', availability: 60, performanceScore: 91, projectsCompleted: 8, currentProjects: 2, strengths: ['Machine Learning', 'Python', 'Data Architecture'], teamDimensions: { driver: 55, analytical: 95, expressive: 40, amiable: 58 }, status: 'busy' },
-  { id: '3', name: 'Jessica Park', role: 'Data Scientist', department: 'Analytics', email: 'jessica.park@company.com', availability: 70, performanceScore: 88, projectsCompleted: 6, currentProjects: 2, strengths: ['Statistical Analysis', 'Visualization', 'Predictive Modeling'], teamDimensions: { driver: 45, analytical: 92, expressive: 68, amiable: 75 }, status: 'available' },
-  { id: '4', name: 'David Martinez', role: 'Backend Developer', department: 'Engineering', email: 'david.martinez@company.com', availability: 40, performanceScore: 86, projectsCompleted: 10, currentProjects: 4, strengths: ['API Development', 'Database Design', 'System Integration'], teamDimensions: { driver: 70, analytical: 82, expressive: 35, amiable: 55 }, status: 'limited' },
-  { id: '5', name: 'Emily Rodriguez', role: 'UX Designer', department: 'Design', email: 'emily.rodriguez@company.com', availability: 90, performanceScore: 92, projectsCompleted: 15, currentProjects: 1, strengths: ['User Research', 'Prototyping', 'Design Systems'], teamDimensions: { driver: 50, analytical: 72, expressive: 88, amiable: 85 }, status: 'available' },
-  { id: '6', name: 'Alex Kim', role: 'Product Manager', department: 'Product', email: 'alex.kim@company.com', availability: 55, performanceScore: 89, projectsCompleted: 7, currentProjects: 3, strengths: ['Roadmap Planning', 'Stakeholder Management', 'Agile Methods'], teamDimensions: { driver: 85, analytical: 70, expressive: 78, amiable: 65 }, status: 'busy' },
-];
+import { getTeamMembers, type TeamMember } from '../site/data';
 
 function initials(name: string): string { return name.split(' ').map(n => n[0]).join(''); }
 
@@ -46,6 +23,7 @@ const dimensionIcons: Record<string, (s?: number, c?: string) => string> = {
   driver: iconTarget, analytical: iconBrain, expressive: iconZap, amiable: iconHeart,
 };
 
+let members: TeamMember[] = [];
 let selectedMemberId: string | null = null;
 
 function renderMemberDetail(member: TeamMember): string {
@@ -134,14 +112,14 @@ function renderMemberCard(m: TeamMember): string {
 
 function rerenderList(): void {
   const search = (($('#team-search') as HTMLInputElement)?.value || '').toLowerCase();
-  const filtered = mockTeamMembers.filter(m =>
+  const filtered = members.filter(m =>
     m.name.toLowerCase().includes(search) || m.role.toLowerCase().includes(search) || m.department.toLowerCase().includes(search)
   );
   const list = $('#team-list');
   if (list) list.innerHTML = filtered.map(renderMemberCard).join('');
 
   const panel = $('#team-detail-panel');
-  const member = selectedMemberId ? mockTeamMembers.find(m => m.id === selectedMemberId) : null;
+  const member = selectedMemberId ? members.find(m => m.id === selectedMemberId) : null;
   if (panel) {
     panel.innerHTML = member ? renderMemberDetail(member) : `
       <div style="padding:1.5rem;text-align:center">
@@ -174,70 +152,31 @@ function bindDetailTabs(): void {
   });
 }
 
-export function render(): string {
-  const content = `
-    <div>
-      <div class="flex items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 class="text-2xl font-display font-bold">Team</h1>
-          <p class="text-sm text-muted mt-1">${mockTeamMembers.length} members • Manage roles, strengths, and availability</p>
-        </div>
-        <button class="btn btn-primary gap-2" id="team-add-btn">${iconPlus(16)} <span class="hidden-mobile">Add Member</span><span class="visible-mobile">Add</span></button>
-      </div>
+export async function init(): Promise<void> {
+  members = await getTeamMembers();
 
-      <div class="flex items-center gap-4 mb-6">
-        <div class="search-wrapper" style="flex:1;max-width:28rem">
-          <span class="search-icon">${iconSearch(16)}</span>
-          <input class="input search-input" placeholder="Search by name, role..." id="team-search" />
-        </div>
-      </div>
+  // Populate icons
+  const iconPlusEl = $('#icon-plus');
+  if (iconPlusEl) iconPlusEl.innerHTML = iconPlus(16);
+  const iconSearchEl = $('#icon-search');
+  if (iconSearchEl) iconSearchEl.innerHTML = iconSearch(16);
 
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem" class="detail-grid">
-        <div id="team-list" style="display:flex;flex-direction:column;gap:0.75rem">
-          ${mockTeamMembers.map(renderMemberCard).join('')}
-        </div>
-        <div id="team-detail-panel" class="card" style="position:sticky;top:6rem;align-self:start">
-          <div style="padding:1.5rem;text-align:center">
-            ${iconUsers(48, 'text-muted')}
-            <p class="text-muted" style="margin-top:1rem">Select a team member to view details</p>
-          </div>
-        </div>
-      </div>
-    </div>
+  // Summary
+  const summaryEl = $('#team-summary');
+  if (summaryEl) summaryEl.textContent = `${members.length} members • Manage roles, strengths, and availability`;
 
-    <!-- Add Member Dialog -->
-    <div class="dialog-backdrop" id="add-member-dialog" style="display:none">
-      <div class="dialog" style="max-width:28rem">
-        <div style="padding:1.5rem;border-bottom:1px solid hsl(var(--border))">
-          <h3 class="text-lg font-semibold">Add Team Member</h3>
-          <p class="text-sm text-muted">Invite a new member to join your team.</p>
-        </div>
-        <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
-          <div><label class="label mb-1">Full Name</label><input class="input" id="am-name" placeholder="Enter full name"/></div>
-          <div><label class="label mb-1">Email Address</label><input class="input" id="am-email" type="email" placeholder="email@company.com"/></div>
-          <div><label class="label mb-1">Role</label><input class="input" id="am-role" placeholder="e.g. Software Engineer"/></div>
-          <div><label class="label mb-1">Department</label>
-            <select class="input" id="am-dept">
-              <option value="">Select department</option>
-              <option>Engineering</option><option>Design</option><option>Product</option>
-              <option>Operations</option><option>Analytics</option><option>Marketing</option>
-            </select>
-          </div>
-        </div>
-        <div style="padding:1rem 1.5rem;border-top:1px solid hsl(var(--border));display:flex;justify-content:flex-end;gap:0.75rem">
-          <button class="btn btn-outline" id="am-cancel">Cancel</button>
-          <button class="btn btn-primary" id="am-send">Send Invitation</button>
-        </div>
-      </div>
-    </div>`;
-  return renderDashboardLayout(content);
-}
+  // Detail placeholder
+  const placeholderEl = $('#detail-placeholder');
+  if (placeholderEl) {
+    placeholderEl.innerHTML = `
+      ${iconUsers(48, 'text-muted')}
+      <p class="text-muted" style="margin-top:1rem">Select a team member to view details</p>`;
+  }
 
-export function init(): void {
-  initDashboardLayout();
+  // Search
   $('#team-search')?.addEventListener('input', rerenderList);
-  bindCards();
 
+  // Add member dialog
   const dialog = $('#add-member-dialog')!;
   $('#team-add-btn')?.addEventListener('click', () => { dialog.style.display = ''; });
   $('#am-cancel')?.addEventListener('click', () => { dialog.style.display = 'none'; });
@@ -248,4 +187,6 @@ export function init(): void {
     showToast(email ? `Invitation sent to ${email}` : 'Member invited', 'success');
     dialog.style.display = 'none';
   });
+
+  rerenderList();
 }

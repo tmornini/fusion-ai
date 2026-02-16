@@ -265,359 +265,180 @@ const icons: Record<string, (s?: number, c?: string) => string> = {
 };
 
 // ------------------------------------
-// Router
+// Navigation
 // ------------------------------------
 
-interface PageModule {
-  render(params: Record<string, string>): string;
-  init?(params: Record<string, string>): void;
+function getPageName(): string {
+  return document.documentElement.getAttribute('data-page') || '';
 }
 
-interface RouteEntry {
-  pattern: string;
-  load: () => Promise<PageModule>;
+function getParams(): Record<string, string> {
+  const params: Record<string, string> = {};
+  new URLSearchParams(window.location.search).forEach((v, k) => { params[k] = v; });
+  return params;
 }
 
-const routes: RouteEntry[] = [];
-
-function route(pattern: string, load: () => Promise<PageModule>): void {
-  routes.push({ pattern, load });
+function navigateTo(page: string, params?: Record<string, string>): void {
+  let url = '../' + page + '/index.html';
+  if (params && Object.keys(params).length > 0) {
+    url += '?' + new URLSearchParams(params).toString();
+  }
+  window.location.href = url;
 }
 
-function matchRoute(path: string): { entry: RouteEntry; params: Record<string, string> } | null {
-  for (const entry of routes) {
-    const patternParts = entry.pattern.split('/').filter(Boolean);
-    const pathParts = path.split('/').filter(Boolean);
-    if (patternParts.length !== pathParts.length) continue;
-    const params: Record<string, string> = {};
-    let match = true;
-    for (let i = 0; i < patternParts.length; i++) {
-      if (patternParts[i].startsWith(':')) {
-        params[patternParts[i].slice(1)] = decodeURIComponent(pathParts[i]);
-      } else if (patternParts[i] !== pathParts[i]) {
-        match = false;
-        break;
-      }
+// ------------------------------------
+// Theme Toggle Icon Update
+// ------------------------------------
+
+function updateThemeToggleIcon(): void {
+  const iconHtml = state.theme === 'dark'
+    ? iconMoon(20)
+    : state.theme === 'light'
+    ? iconSun(20)
+    : iconMonitor(20);
+  ['theme-toggle', 'mobile-theme-toggle'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.innerHTML = iconHtml;
+  });
+}
+
+// ------------------------------------
+// Notification Population
+// ------------------------------------
+
+async function populateNotifications(): Promise<void> {
+  const { getNotifications } = await import('./data');
+  const notifications = await getNotifications();
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  function renderItems(containerId: string, countId: string, badgeId: string) {
+    const list = document.getElementById(containerId);
+    const countEl = document.getElementById(countId);
+    const badge = document.getElementById(badgeId);
+
+    if (list) {
+      list.innerHTML = notifications.map(n => `
+        <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
+          <div class="flex items-start gap-2 w-full">
+            ${n.unread ? '<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>' : ''}
+            <div style="flex:1;${!n.unread ? 'margin-left:1rem' : ''}">
+              <p class="text-sm ${n.unread ? 'font-medium' : 'text-muted'}">${escapeHtml(n.title)}</p>
+              <p class="text-xs text-muted line-clamp-2">${escapeHtml(n.message)}</p>
+              <p class="text-xs text-muted mt-1">${n.time}</p>
+            </div>
+          </div>
+        </button>`).join('');
     }
-    if (match) return { entry, params };
+    if (countEl && unreadCount > 0) {
+      countEl.textContent = String(unreadCount);
+      countEl.style.display = '';
+    }
+    if (badge && unreadCount > 0) {
+      badge.textContent = `${unreadCount} new`;
+      badge.style.display = '';
+    }
   }
-  return null;
-}
 
-function getHashPath(): string {
-  return window.location.hash.slice(1) || '/';
-}
-
-function navigate(path: string): void {
-  window.location.hash = path;
-}
-
-function isActive(href: string): boolean {
-  const path = getHashPath();
-  if (href === '/account') return path.startsWith('/account');
-  if (href === '/ideas') return (path.startsWith('/ideas') || path.startsWith('/review')) && !path.includes('/edge');
-  if (href === '/projects') return path.startsWith('/projects');
-  if (href === '/teams') return path === '/teams' || path === '/team';
-  return path === href;
-}
-
-async function handleRoute(): Promise<void> {
-  const path = getHashPath();
-  const app = document.getElementById('app');
-  if (!app) return;
-
-  const matched = matchRoute(path);
-  if (matched) {
-    const mod = await matched.entry.load();
-    app.innerHTML = mod.render(matched.params);
-    mod.init?.(matched.params);
-  } else {
-    const notFound = await import('../not-found/index');
-    app.innerHTML = notFound.render();
-  }
+  renderItems('notif-list', 'notif-count', 'notif-badge');
+  renderItems('mobile-notif-list', 'mobile-notif-count', 'mobile-notif-badge');
 }
 
 // ------------------------------------
-// Route Registration
+// Page Module Dispatch
 // ------------------------------------
 
-route('/', () => import('../landing/index'));
-route('/auth', () => import('../auth/index'));
-route('/onboarding', () => import('../onboarding/index'));
-route('/dashboard', () => import('../dashboard/index'));
-route('/ideas', () => import('../ideas/index'));
-route('/ideas/new', () => import('../idea-create/index'));
-route('/ideas/:ideaId/score', () => import('../idea-scoring/index'));
-route('/ideas/:ideaId/edge', () => import('../edge/index'));
-route('/ideas/:ideaId/convert', () => import('../idea-convert/index'));
-route('/projects', () => import('../projects/index'));
-route('/projects/:projectId', () => import('../project-detail/index'));
-route('/projects/:projectId/engineering', () => import('../engineering-requirements/index'));
-route('/team', () => import('../team/index'));
-route('/teams', () => import('../team/index'));
-route('/edge', () => import('../edge-list/index'));
-route('/crunch', () => import('../crunch/index'));
-route('/flow', () => import('../flow/index'));
-route('/account', () => import('../account/index'));
-route('/account/profile', () => import('../profile/index'));
-route('/account/company', () => import('../company-settings/index'));
-route('/account/users', () => import('../manage-users/index'));
-route('/account/activity', () => import('../activity-feed/index'));
-route('/account/notifications', () => import('../notification-settings/index'));
-route('/review', () => import('../idea-review-queue/index'));
-route('/review/:id', () => import('../approval-detail/index'));
-route('/design-system', () => import('../design-system/index'));
+const pageModules: Record<string, () => Promise<{ init: (params?: Record<string, string>) => void | Promise<void> }>> = {
+  dashboard: () => import('../dashboard/index'),
+  ideas: () => import('../ideas/index'),
+  projects: () => import('../projects/index'),
+  team: () => import('../team/index'),
+  edge: () => import('../edge/index'),
+  'edge-list': () => import('../edge-list/index'),
+  'project-detail': () => import('../project-detail/index'),
+  account: () => import('../account/index'),
+  profile: () => import('../profile/index'),
+  'company-settings': () => import('../company-settings/index'),
+  'manage-users': () => import('../manage-users/index'),
+  'activity-feed': () => import('../activity-feed/index'),
+  'notification-settings': () => import('../notification-settings/index'),
+  'engineering-requirements': () => import('../engineering-requirements/index'),
+  crunch: () => import('../crunch/index'),
+  flow: () => import('../flow/index'),
+  'design-system': () => import('../design-system/index'),
+  'idea-review-queue': () => import('../idea-review-queue/index'),
+  landing: () => import('../landing/index'),
+  auth: () => import('../auth/index'),
+  onboarding: () => import('../onboarding/index'),
+  'idea-create': () => import('../idea-create/index'),
+  'idea-scoring': () => import('../idea-scoring/index'),
+  'idea-convert': () => import('../idea-convert/index'),
+  'approval-detail': () => import('../approval-detail/index'),
+  'not-found': () => import('../not-found/index'),
+};
 
 // ------------------------------------
 // Initialize
 // ------------------------------------
 
-window.addEventListener('hashchange', handleRoute);
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   applyTheme();
-  // Default to landing if no hash
-  if (!window.location.hash) {
-    window.location.hash = '#/';
+
+  const pageName = getPageName();
+
+  // For pages with dashboard layout, init layout behavior
+  if (document.querySelector('.dashboard-layout')) {
+    initDashboardLayout();
   }
-  handleRoute();
+
+  // Load and init the page module
+  const loader = pageModules[pageName];
+  if (loader) {
+    const mod = await loader();
+    await mod.init(getParams());
+  }
 });
 
 // ------------------------------------
-// Dashboard Layout
+// Dashboard Layout Behavior
 // ------------------------------------
 
-interface NavItem {
-  label: string;
-  icon: (s?: number) => string;
-  href: string;
-}
-
-interface NavSection {
-  label: string;
-  items: NavItem[];
-}
-
-const navSections: NavSection[] = [
-  {
-    label: 'Journey',
-    items: [
-      { label: 'Home', icon: iconHome, href: '/dashboard' },
-      { label: 'Ideas', icon: iconLightbulb, href: '/ideas' },
-      { label: 'Projects', icon: iconFolderKanban, href: '/projects' },
-      { label: 'Teams', icon: iconUsers, href: '/teams' },
-    ],
-  },
-  {
-    label: 'Tools',
-    items: [
-      { label: 'Edge', icon: iconTarget, href: '/edge' },
-      { label: 'Crunch', icon: iconDatabase, href: '/crunch' },
-      { label: 'Flow', icon: iconGitBranch, href: '/flow' },
-    ],
-  },
-  {
-    label: 'Settings',
-    items: [
-      { label: 'Account', icon: iconUser, href: '/account' },
-      { label: 'Design System', icon: iconPalette, href: '/design-system' },
-    ],
-  },
-];
-
-const mockNotifications = [
-  { id: 1, title: 'New idea submitted', message: 'Marketing team submitted "AI Chatbot Integration"', time: '5 min ago', unread: true },
-  { id: 2, title: 'Project approved', message: 'Your project "Mobile App Redesign" was approved', time: '1 hour ago', unread: true },
-  { id: 3, title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', unread: false },
-  { id: 4, title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', unread: false },
-];
-
-function renderSidebar(collapsed: boolean, isMobile: boolean): string {
-  const user = state.user;
-  const width = isMobile ? 'w-full h-full' : collapsed ? 'sidebar sidebar-collapsed' : 'sidebar';
-
-  function renderNavItem(item: NavItem): string {
-    const active = isActive(item.href);
-    const cls = collapsed && !isMobile ? 'sidebar-nav-item' : 'sidebar-nav-item';
-    const ariaCurrent = active ? ' aria-current="page"' : '';
-    const label = collapsed && !isMobile ? '' : item.label;
-    return `<button class="${cls}" data-nav="${item.href}"${ariaCurrent}>${item.icon(20)} ${label}</button>`;
-  }
-
-  function renderSection(section: NavSection): string {
-    const sectionLabel = collapsed && !isMobile
-      ? ''
-      : `<button class="sidebar-section-label" data-section="${section.label}">
-           ${section.label} ${iconChevronDown(12)}
-         </button>`;
-    const items = section.items.map(renderNavItem).join('');
-    return `<div class="sidebar-section">${sectionLabel}<div class="mt-1" data-section-items="${section.label}">${items}</div></div>`;
-  }
-
-  const logoSection = isMobile
-    ? `<div class="sidebar-header">
-         <div class="sidebar-logo">
-           <div class="sidebar-logo-icon">${iconSparkles(20)}</div>
-           <span class="sidebar-logo-text">Fusion AI</span>
-         </div>
-       </div>`
-    : collapsed
-    ? `<div class="sidebar-header" style="justify-content:center">
-         <div class="sidebar-logo"><div class="sidebar-logo-icon">${iconSparkles(20)}</div></div>
-       </div>
-       <div style="display:flex;justify-content:center;padding:0.5rem;border-bottom:1px solid hsl(var(--border))">
-         <button class="btn btn-ghost btn-icon btn-sm" id="sidebar-expand">${iconPanelLeft(16)}</button>
-       </div>`
-    : `<div class="sidebar-header">
-         <div class="sidebar-logo">
-           <div class="sidebar-logo-icon">${iconSparkles(20)}</div>
-           <span class="sidebar-logo-text">Fusion AI</span>
-         </div>
-         <button class="btn btn-ghost btn-icon btn-sm" id="sidebar-collapse" style="color:hsl(var(--muted-foreground))">${iconPanelLeftClose(16)}</button>
-       </div>`;
-
-  const userSection = collapsed && !isMobile
-    ? `<button class="btn btn-ghost btn-icon w-full" data-nav="/" style="color:hsl(var(--muted-foreground))">${iconLogOut(16)}</button>`
-    : `<div class="sidebar-user">
-         <div class="sidebar-avatar">${iconUser(20)}</div>
-         <div style="flex:1;min-width:0">
-           <p class="text-sm font-medium truncate">${escapeHtml(user?.name ?? 'User')}</p>
-           <p class="text-xs text-muted truncate">${escapeHtml(user?.company ?? '')}</p>
-         </div>
-       </div>
-       <button class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start;color:hsl(var(--muted-foreground))" data-nav="/">
-         ${iconLogOut(16)} <span class="mr-2"></span>Sign out
-       </button>`;
-
-  return `
-    <aside class="${width}">
-      ${logoSection}
-      <nav class="sidebar-nav">${navSections.map(renderSection).join('')}</nav>
-      <div class="sidebar-footer">${userSection}</div>
-    </aside>`;
-}
-
-function renderNotificationDropdown(): string {
-  const unreadCount = mockNotifications.filter(n => n.unread).length;
-  const items = mockNotifications.map(n => `
-    <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
-      <div class="flex items-start gap-2 w-full">
-        ${n.unread ? '<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>' : ''}
-        <div style="flex:1;${!n.unread ? 'margin-left:1rem' : ''}">
-          <p class="text-sm ${n.unread ? 'font-medium' : 'text-muted'}">${escapeHtml(n.title)}</p>
-          <p class="text-xs text-muted line-clamp-2">${escapeHtml(n.message)}</p>
-          <p class="text-xs text-muted mt-1">${n.time}</p>
-        </div>
-      </div>
-    </button>`).join('');
-
-  return `
-    <div class="dropdown">
-      <button class="btn btn-ghost btn-icon" id="notif-toggle" aria-label="Notifications" style="position:relative">
-        ${iconBell(20)}
-        ${unreadCount > 0 ? `<span class="notification-dot">${unreadCount}</span>` : ''}
-      </button>
-      <div class="dropdown-content hidden" id="notif-dropdown" data-align="end" style="width:20rem;right:0">
-        <div class="dropdown-label flex justify-between items-center">
-          <span>Notifications</span>
-          ${unreadCount > 0 ? `<span class="badge badge-secondary text-xs">${unreadCount} new</span>` : ''}
-        </div>
-        <div class="dropdown-separator"></div>
-        <div style="max-height:20rem;overflow-y:auto">${items}</div>
-        <div class="dropdown-separator"></div>
-        <button class="dropdown-item justify-center text-primary">View all notifications</button>
-      </div>
-    </div>`;
-}
-
-function renderThemeDropdown(): string {
-  const currentIcon = state.theme === 'dark' ? iconMoon(20) : state.theme === 'light' ? iconSun(20) : iconMonitor(20);
-  return `
-    <div class="dropdown">
-      <button class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Toggle theme">${currentIcon}</button>
-      <div class="dropdown-content hidden" id="theme-dropdown" data-align="end" style="right:0">
-        <button class="dropdown-item" data-theme-set="light">${iconSun(16)} Light</button>
-        <button class="dropdown-item" data-theme-set="dark">${iconMoon(16)} Dark</button>
-        <button class="dropdown-item" data-theme-set="system">${iconMonitor(16)} System</button>
-      </div>
-    </div>`;
-}
-
-function renderDesktopHeader(): string {
-  return `
-    <header class="top-header">
-      <div class="search-wrapper">
-        <span class="search-icon">${iconSearch(16)}</span>
-        <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." id="search-input" />
-      </div>
-      <div class="header-actions">
-        ${renderThemeDropdown()}
-        ${renderNotificationDropdown()}
-      </div>
-    </header>`;
-}
-
-function renderMobileHeader(): string {
-  return `
-    <div class="mobile-header">
-      <button class="btn btn-ghost btn-icon" id="mobile-sidebar-open">${iconMenu(20)}</button>
-      <span class="mobile-header-title">Fusion AI</span>
-      <div class="header-actions">
-        <button class="btn btn-ghost btn-icon" id="mobile-search-toggle">${iconSearch(20)}</button>
-        ${renderThemeDropdown()}
-        ${renderNotificationDropdown()}
-      </div>
-    </div>
-    <div class="hidden" id="mobile-search-bar" style="position:fixed;top:3.5rem;left:0;right:0;background:hsl(var(--background));border-bottom:1px solid hsl(var(--border));z-index:40;padding:0.75rem">
-      <div class="search-wrapper">
-        <span class="search-icon">${iconSearch(16)}</span>
-        <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." />
-        <button class="btn btn-ghost btn-icon btn-sm" id="mobile-search-close" style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%)">${iconX(16)}</button>
-      </div>
-    </div>`;
-}
-
-function renderDashboardLayout(content: string): string {
-  if (state.isMobile) {
-    return `
-      <div class="dashboard-layout">
-        ${renderMobileHeader()}
-        <div id="mobile-sheet-backdrop" class="hidden sheet-backdrop"></div>
-        <div id="mobile-sheet" class="sheet sheet-left hidden">${renderSidebar(false, true)}</div>
-        <div class="main-content mobile-main">
-          <div class="page-content">${content}</div>
-        </div>
-      </div>`;
-  }
-
-  const collapsed = state.sidebarCollapsed;
-  return `
-    <div class="dashboard-layout">
-      ${renderSidebar(collapsed, false)}
-      <div class="main-content${collapsed ? ' sidebar-collapsed' : ''}">
-        ${renderDesktopHeader()}
-        <div class="page-content">${content}</div>
-      </div>
-    </div>`;
-}
-
 function initDashboardLayout(): void {
-  // Navigation buttons
-  document.querySelectorAll<HTMLElement>('[data-nav]').forEach(el => {
-    el.addEventListener('click', () => {
-      const target = el.getAttribute('data-nav');
-      if (target) navigate(target);
-    });
+  // Mark active nav item
+  const pageName = getPageName();
+  document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(el => {
+    const linkPage = el.getAttribute('data-page-link') || '';
+    let active = linkPage === pageName;
+    if (!active) {
+      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings'].includes(pageName)) active = true;
+      else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) active = true;
+      else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) active = true;
+      else if (linkPage === 'edge-list' && pageName === 'edge') active = true;
+    }
+    if (active) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
   });
 
   // Sidebar collapse/expand (desktop)
+  const sidebar = document.getElementById('desktop-sidebar');
+  const mainContent = document.querySelector('.main-content') as HTMLElement;
+
+  if (localStorage.getItem('fusion-sidebar-collapsed') === 'true') {
+    sidebar?.classList.add('sidebar-collapsed');
+    mainContent?.classList.add('sidebar-collapsed');
+    state.sidebarCollapsed = true;
+  }
+
   document.getElementById('sidebar-collapse')?.addEventListener('click', () => {
-    setState({ sidebarCollapsed: true });
-    handleRoute();
+    sidebar?.classList.add('sidebar-collapsed');
+    mainContent?.classList.add('sidebar-collapsed');
+    state.sidebarCollapsed = true;
+    localStorage.setItem('fusion-sidebar-collapsed', 'true');
   });
   document.getElementById('sidebar-expand')?.addEventListener('click', () => {
-    setState({ sidebarCollapsed: false });
-    handleRoute();
+    sidebar?.classList.remove('sidebar-collapsed');
+    mainContent?.classList.remove('sidebar-collapsed');
+    state.sidebarCollapsed = false;
+    localStorage.setItem('fusion-sidebar-collapsed', 'false');
   });
 
   // Section toggle
@@ -634,9 +455,11 @@ function initDashboardLayout(): void {
     });
   });
 
-  // Dropdown toggles (theme, notifications)
+  // Dropdown toggles (theme, notifications — desktop + mobile)
   setupDropdown('theme-toggle', 'theme-dropdown');
   setupDropdown('notif-toggle', 'notif-dropdown');
+  setupDropdown('mobile-theme-toggle', 'mobile-theme-dropdown');
+  setupDropdown('mobile-notif-toggle', 'mobile-notif-dropdown');
 
   // Theme selection
   document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
@@ -644,7 +467,8 @@ function initDashboardLayout(): void {
       const theme = el.getAttribute('data-theme-set') as AppState['theme'];
       if (theme) {
         setTheme(theme);
-        handleRoute();
+        updateThemeToggleIcon();
+        document.querySelectorAll('.dropdown-content').forEach(d => d.classList.add('hidden'));
       }
     });
   });
@@ -666,6 +490,10 @@ function initDashboardLayout(): void {
   document.getElementById('mobile-search-close')?.addEventListener('click', () => {
     document.getElementById('mobile-search-bar')?.classList.add('hidden');
   });
+
+  // Update theme icon and populate notifications
+  updateThemeToggleIcon();
+  populateNotifications();
 }
 
 function setupDropdown(toggleId: string, contentId: string): void {
@@ -701,10 +529,10 @@ export {
   applyTheme, setTheme,
   // DOM
   $, $$, escapeHtml,
-  // Router
-  navigate, isActive, getHashPath, handleRoute,
+  // Navigation
+  getPageName, getParams, navigateTo,
   // Layout
-  renderDashboardLayout, initDashboardLayout,
+  initDashboardLayout,
   // Toast
   showToast,
   // Icons

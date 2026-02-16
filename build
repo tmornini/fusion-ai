@@ -8,6 +8,9 @@ fi
 
 echo "Building Fusion AI..."
 
+# Compose HTML pages: combine layout.html with per-page page.html
+npx tsx site/compose.ts
+
 # Bundle TypeScript into a single JS file
 npx esbuild site/script.ts \
   --bundle \
@@ -24,10 +27,11 @@ ZIPNAME="fusion-ai-${SHA}.zip"
 
 zip -r "$ZIPNAME" \
   index.html \
+  */index.html \
   site/style.css \
   site/app.js \
   fonts/ \
-  -x "*.ts" "*.map"
+  -x "*.ts" "*.map" "node_modules/*"
 
 echo "Distribution: $ZIPNAME ($(wc -c < "$ZIPNAME" | tr -d ' ') bytes)"
 echo "Done."

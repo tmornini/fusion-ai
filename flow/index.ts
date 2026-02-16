@@ -1,39 +1,21 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml, showToast,
+  $, escapeHtml, showToast, navigateTo,
   iconGitBranch, iconPlus, iconTrash, iconCheck, iconUsers, iconClock,
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
 } from '../site/script';
-
-interface ProcessStep {
-  id: string;
-  title: string;
-  description: string;
-  owner: string;
-  role: string;
-  tools: string[];
-  duration: string;
-  order: number;
-  type: 'action' | 'decision' | 'start' | 'end';
-}
+import { getFlowData, type ProcessStep } from '../site/data';
 
 const toolIcons: Record<string, (s?: number, c?: string) => string> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
   Phone: iconPhone, Chat: iconMessageSquare, Files: iconFolderOpen, Document: iconFileText,
 };
 
-let processSteps: ProcessStep[] = [
-  { id: '1', title: 'Receive signed contract', description: 'Sales team sends signed contract to customer success inbox', owner: 'Sales Team', role: 'Account Executive', tools: ['Email', 'Document'], duration: 'Immediate', order: 1, type: 'start' },
-  { id: '2', title: 'Create customer record', description: 'Enter customer details in CRM and create project folder', owner: 'Customer Success', role: 'CS Manager', tools: ['Database', 'Files'], duration: '15 minutes', order: 2, type: 'action' },
-  { id: '3', title: 'Schedule kickoff call', description: 'Reach out to customer to schedule implementation kickoff', owner: 'Customer Success', role: 'Implementation Specialist', tools: ['Email', 'Phone'], duration: '1 day', order: 3, type: 'action' },
-  { id: '4', title: 'Conduct kickoff meeting', description: 'Review goals, timeline, and assign customer contacts', owner: 'Customer Success', role: 'Implementation Specialist', tools: ['Chat', 'Document'], duration: '1 hour', order: 4, type: 'action' },
-  { id: '5', title: 'Technical setup complete', description: 'Engineering confirms environment is ready for customer use', owner: 'Engineering', role: 'Solutions Engineer', tools: ['Database', 'Website'], duration: '2 days', order: 5, type: 'action' },
-];
-
-let processName = 'Customer Onboarding';
-let processDescription = 'End-to-end process for onboarding new enterprise customers';
-let processDepartment = 'Customer Success';
+let processSteps: ProcessStep[] = [];
+let processName = '';
+let processDescription = '';
+let processDepartment = '';
 let viewMode: 'edit' | 'preview' = 'edit';
 let expandedStepId: string | null = null;
 
@@ -68,13 +50,6 @@ function syncFormFields(): void {
     if (dur) step.duration = dur.value;
     if (type) step.type = type.value as ProcessStep['type'];
   });
-}
-
-function rerender(): void {
-  const app = document.getElementById('app');
-  if (!app) return;
-  app.innerHTML = render();
-  init();
 }
 
 function renderEditMode(): string {
@@ -183,9 +158,9 @@ function renderPreviewMode(): string {
     </div>`;
 }
 
-export function render(): string {
+function renderPage(): string {
   const deptOptions = ['Sales', 'Customer Success', 'Engineering', 'Operations', 'Finance', 'HR'];
-  const content = `
+  return `
     <div style="max-width:64rem;margin:0 auto">
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
@@ -213,13 +188,16 @@ export function render(): string {
 
       ${viewMode === 'edit' ? renderEditMode() : renderPreviewMode()}
     </div>`;
-  return renderDashboardLayout(content);
 }
 
-export function init(): void {
-  initDashboardLayout();
+function rerender(): void {
+  const root = $('#flow-root');
+  if (!root) return;
+  root.innerHTML = renderPage();
+  bindEvents();
+}
 
-  // View mode toggle
+function bindEvents(): void {
   document.querySelectorAll<HTMLElement>('[data-flow-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
@@ -228,7 +206,6 @@ export function init(): void {
     });
   });
 
-  // Step headers
   document.querySelectorAll<HTMLElement>('[data-step-header]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
@@ -238,7 +215,6 @@ export function init(): void {
     });
   });
 
-  // Move steps
   document.querySelectorAll<HTMLElement>('[data-move-step]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -253,7 +229,6 @@ export function init(): void {
     });
   });
 
-  // Remove steps
   document.querySelectorAll<HTMLElement>('[data-remove-step]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -263,7 +238,6 @@ export function init(): void {
     });
   });
 
-  // Toggle tools
   document.querySelectorAll<HTMLElement>('[data-toggle-tool]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
@@ -275,7 +249,6 @@ export function init(): void {
     });
   });
 
-  // Add step
   $('#flow-add-step')?.addEventListener('click', () => {
     syncFormFields();
     processSteps.push({
@@ -285,4 +258,15 @@ export function init(): void {
     expandedStepId = processSteps[processSteps.length - 1].id;
     rerender();
   });
+}
+
+export async function init(): Promise<void> {
+  const flowData = await getFlowData();
+  processName = flowData.processName;
+  processDescription = flowData.processDescription;
+  processDepartment = flowData.processDepartment;
+  processSteps = flowData.steps;
+  viewMode = 'edit';
+  expandedStepId = null;
+  rerender();
 }

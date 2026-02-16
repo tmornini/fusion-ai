@@ -1,69 +1,12 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, $$, navigate, escapeHtml, showToast,
-  iconArrowLeft, iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
+  $, escapeHtml, showToast, navigateTo,
+  iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
   iconCalendar, iconTarget, iconCheckCircle2, iconAlertCircle, iconMessageSquare,
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
   iconArrowDownRight, iconMinus, iconListTodo, iconGitBranch, iconDatabase,
-  iconCode, iconLightbulb, iconShield, iconBarChart, iconGauge,
+  iconCode, iconShield, iconBarChart, iconGauge,
 } from '../site/script';
-
-const mockProject = {
-  id: '1',
-  title: 'AI-Powered Customer Segmentation',
-  description: 'Implement machine learning model to automatically segment customers based on behavior, purchase history, and engagement patterns.',
-  status: 'approved',
-  progress: 72,
-  startDate: '2024-01-15',
-  targetEndDate: '2024-04-15',
-  projectLead: 'Sarah Chen',
-  metrics: {
-    time: { baseline: 120, current: 85 },
-    cost: { baseline: 45000, current: 38000 },
-    impact: { baseline: 85, current: 78 },
-  },
-  edge: {
-    outcomes: [
-      { id: '1', description: 'Reduce customer churn rate', metrics: [
-        { id: '1', name: 'Churn Rate Reduction', target: '15', unit: '%', current: '12' },
-        { id: '2', name: 'Customer Retention', target: '85', unit: '%', current: '82' },
-      ]},
-      { id: '2', description: 'Increase marketing ROI', metrics: [
-        { id: '3', name: 'Campaign Conversion', target: '25', unit: '%', current: '28' },
-        { id: '4', name: 'Cost per Acquisition', target: '45', unit: '$', current: '42' },
-      ]},
-    ],
-    impact: {
-      shortTerm: 'Automated segmentation reduces manual effort by 80%. Initial customer insights available within 2 weeks.',
-      midTerm: 'Expected 15% reduction in churn through targeted campaigns. Marketing ROI improvement of 25%.',
-      longTerm: 'Full personalization pipeline enabling real-time customer journey optimization across all channels.',
-    },
-    confidence: 'high' as const,
-    owner: 'Sarah Chen',
-  },
-  team: [
-    { id: '1', name: 'Sarah Chen', role: 'Project Lead' },
-    { id: '2', name: 'Mike Thompson', role: 'ML Engineer' },
-    { id: '3', name: 'Jessica Park', role: 'Data Scientist' },
-    { id: '4', name: 'David Martinez', role: 'Backend Developer' },
-  ],
-  milestones: [
-    { id: '1', title: 'Data Pipeline Setup', status: 'completed', date: '2024-01-30' },
-    { id: '2', title: 'Model Training Complete', status: 'completed', date: '2024-02-15' },
-    { id: '3', title: 'Integration Testing', status: 'in_progress', date: '2024-03-01' },
-    { id: '4', title: 'User Acceptance Testing', status: 'pending', date: '2024-03-20' },
-    { id: '5', title: 'Production Deployment', status: 'pending', date: '2024-04-01' },
-  ],
-  versions: [
-    { id: '1', version: 'v1.2', date: '2024-02-28', changes: 'Added real-time segmentation capability', author: 'Mike Thompson' },
-    { id: '2', version: 'v1.1', date: '2024-02-15', changes: 'Improved model accuracy by 12%', author: 'Jessica Park' },
-    { id: '3', version: 'v1.0', date: '2024-01-30', changes: 'Initial model deployment', author: 'Sarah Chen' },
-  ],
-  discussions: [
-    { id: '1', author: 'Sarah Chen', date: '2024-02-28', message: 'Great progress on the integration testing. We should be ready for UAT next week.' },
-    { id: '2', author: 'Mike Thompson', date: '2024-02-25', message: 'Segmentation accuracy is now at 94%. Exceeding our initial target of 90%.' },
-    { id: '3', author: 'David Martinez', date: '2024-02-20', message: 'API endpoints are ready for frontend integration.' },
-  ],
-};
+import { getProjectById, type ProjectDetail } from '../site/data';
 
 function initials(name: string): string {
   return name.split(' ').map(n => n[0]).join('');
@@ -94,15 +37,12 @@ function milestoneColor(status: string): string {
   }
 }
 
-export function render(params?: Record<string, string>): string {
-  const projectId = params?.projectId || '1';
-  const p = mockProject;
-
-  const content = `
+function renderProjectDetail(p: ProjectDetail, projectId: string): string {
+  return `
     <div style="max-width:64rem;margin:0 auto">
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 text-sm text-muted mb-4">
-        <a href="#/projects" class="hover-link">Projects</a>
+        <a href="../projects/index.html" class="hover-link">Projects</a>
         <span>/</span>
         <span>${escapeHtml(p.title)}</span>
       </div>
@@ -121,19 +61,30 @@ export function render(params?: Record<string, string>): string {
 
       <!-- Quick Action Links -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:2rem" class="actions-grid">
-        ${[
-          { label: 'Engineering', desc: 'Requirements & clarifications', icon: iconCode, href: `#/projects/${projectId}/engineering` },
-          { label: 'Team', desc: 'Manage assignments', icon: iconUsers, href: '#/teams' },
-          { label: 'Flow', desc: 'Document processes', icon: iconGitBranch, href: '#/flow' },
-          { label: 'Crunch', desc: 'Data inputs', icon: iconDatabase, href: '#/crunch' },
-        ].map(a => `
-          <a href="${a.href}" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
-            <div class="flex items-center gap-3">
-              <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${a.icon(20, 'text-primary')}</div>
-              <div style="min-width:0"><p class="font-medium text-sm">${a.label}</p><p class="text-xs text-muted hidden-mobile">${a.desc}</p></div>
-            </div>
-          </a>
-        `).join('')}
+        <a href="#" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit" data-nav-eng>
+          <div class="flex items-center gap-3">
+            <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconCode(20, 'text-primary')}</div>
+            <div style="min-width:0"><p class="font-medium text-sm">Engineering</p><p class="text-xs text-muted hidden-mobile">Requirements & clarifications</p></div>
+          </div>
+        </a>
+        <a href="../team/index.html" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
+          <div class="flex items-center gap-3">
+            <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconUsers(20, 'text-primary')}</div>
+            <div style="min-width:0"><p class="font-medium text-sm">Team</p><p class="text-xs text-muted hidden-mobile">Manage assignments</p></div>
+          </div>
+        </a>
+        <a href="../flow/index.html" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
+          <div class="flex items-center gap-3">
+            <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconGitBranch(20, 'text-primary')}</div>
+            <div style="min-width:0"><p class="font-medium text-sm">Flow</p><p class="text-xs text-muted hidden-mobile">Document processes</p></div>
+          </div>
+        </a>
+        <a href="../crunch/index.html" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
+          <div class="flex items-center gap-3">
+            <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconDatabase(20, 'text-primary')}</div>
+            <div style="min-width:0"><p class="font-medium text-sm">Crunch</p><p class="text-xs text-muted hidden-mobile">Data inputs</p></div>
+          </div>
+        </a>
       </div>
 
       <div class="detail-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:2rem">
@@ -270,13 +221,7 @@ export function render(params?: Record<string, string>): string {
 
             <div id="tab-tasks" class="tab-panel">
               <div style="display:flex;flex-direction:column;gap:0.75rem">
-                ${[
-                  { name: 'Set up data pipeline', priority: 'High', desc: 'Configure ETL pipeline for customer data ingestion', skills: ['Python', 'Apache Airflow', 'SQL'], hours: 24, assigned: 'Mike Thompson' },
-                  { name: 'Train ML model', priority: 'High', desc: 'Develop and train clustering model using customer behavior data', skills: ['Machine Learning', 'Python', 'scikit-learn'], hours: 40, assigned: '' },
-                  { name: 'Design dashboard UI', priority: 'Medium', desc: 'Create visual interface for segment exploration and management', skills: ['React', 'D3.js', 'CSS'], hours: 32, assigned: '' },
-                  { name: 'Build API endpoints', priority: 'Medium', desc: 'RESTful API for segment data access and management', skills: ['Node.js', 'REST API', 'PostgreSQL'], hours: 20, assigned: '' },
-                  { name: 'Create documentation', priority: 'Low', desc: 'Technical documentation and user guides for the segmentation system', skills: ['Technical Writing', 'Markdown'], hours: 12, assigned: '' },
-                ].map(task => {
+                ${p.tasks.map(task => {
                   const prioColor = task.priority === 'High' ? 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))' : task.priority === 'Medium' ? 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))' : 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
                   return `
                   <div class="card" style="padding:1rem">
@@ -401,11 +346,19 @@ export function render(params?: Record<string, string>): string {
         </div>
       </div>
     </div>`;
-  return renderDashboardLayout(content);
 }
 
-export function init(): void {
-  initDashboardLayout();
+export async function init(params?: Record<string, string>): Promise<void> {
+  const projectId = params?.projectId || '1';
+  const project = await getProjectById(projectId);
+
+  const container = $('#project-detail-content');
+  if (container) container.innerHTML = renderProjectDetail(project, projectId);
+
+  // Engineering nav
+  document.querySelectorAll<HTMLElement>('[data-nav-eng]').forEach(el => {
+    el.addEventListener('click', (e) => { e.preventDefault(); navigateTo('engineering-requirements', { projectId }); });
+  });
 
   // Tabs
   document.querySelectorAll<HTMLElement>('.tab[data-tab]').forEach(tab => {
@@ -421,9 +374,7 @@ export function init(): void {
   // Comment box
   const comment = $('#pd-comment') as HTMLTextAreaElement;
   const postBtn = $('#pd-post-btn') as HTMLButtonElement;
-  comment?.addEventListener('input', () => {
-    if (postBtn) postBtn.disabled = !comment.value.trim();
-  });
+  comment?.addEventListener('input', () => { if (postBtn) postBtn.disabled = !comment.value.trim(); });
   postBtn?.addEventListener('click', () => {
     showToast('Comment posted', 'success');
     if (comment) comment.value = '';

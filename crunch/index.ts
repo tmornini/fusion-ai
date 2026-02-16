@@ -1,33 +1,14 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml, navigate,
+  $, escapeHtml, navigateTo,
   iconUpload, iconFileSpreadsheet, iconFileText, iconHelpCircle,
-  iconCheck, iconLoader, iconChevronRight, iconChevronDown,
+  iconCheck, iconChevronRight, iconChevronDown,
   iconSparkles, iconMessageSquare, iconTable, iconHash, iconCalendar,
   iconType, iconToggleLeft,
 } from '../site/script';
-
-interface Column {
-  id: string;
-  originalName: string;
-  friendlyName: string;
-  dataType: string;
-  description: string;
-  sampleValues: string[];
-  isAcronym: boolean;
-  acronymExpansion: string;
-}
-
-const mockColumns: Column[] = [
-  { id: '1', originalName: 'CUST_ID', friendlyName: '', dataType: 'text', description: '', sampleValues: ['C001', 'C002', 'C003'], isAcronym: true, acronymExpansion: '' },
-  { id: '2', originalName: 'TXN_DT', friendlyName: '', dataType: 'date', description: '', sampleValues: ['2024-01-15', '2024-01-16', '2024-01-17'], isAcronym: true, acronymExpansion: '' },
-  { id: '3', originalName: 'AMT', friendlyName: '', dataType: 'number', description: '', sampleValues: ['150.00', '299.99', '75.50'], isAcronym: true, acronymExpansion: '' },
-  { id: '4', originalName: 'PROD_CAT', friendlyName: '', dataType: 'text', description: '', sampleValues: ['Electronics', 'Apparel', 'Home'], isAcronym: true, acronymExpansion: '' },
-  { id: '5', originalName: 'REP_ID', friendlyName: '', dataType: 'text', description: '', sampleValues: ['R101', 'R102', 'R103'], isAcronym: true, acronymExpansion: '' },
-  { id: '6', originalName: 'STATUS', friendlyName: '', dataType: 'text', description: '', sampleValues: ['COMP', 'PEND', 'CANC'], isAcronym: false, acronymExpansion: '' },
-];
+import { getCrunchColumns, type CrunchColumn } from '../site/data';
 
 let step: 'upload' | 'label' | 'review' = 'upload';
-let columns: Column[] = [];
+let columns: CrunchColumn[] = [];
 let expandedColumnId: string | null = null;
 let businessContext = '';
 
@@ -193,15 +174,8 @@ function syncColumnFields(): void {
   if (ctx) businessContext = ctx.value;
 }
 
-function rerender(): void {
-  const app = document.getElementById('app');
-  if (!app) return;
-  app.innerHTML = render();
-  init();
-}
-
-export function render(): string {
-  const content = `
+function renderPage(): string {
+  return `
     <div style="max-width:56rem;margin:0 auto">
       <div style="margin-bottom:2rem">
         <div class="badge badge-primary text-sm mb-3">${iconTable(14)} Data Translation Tool</div>
@@ -215,15 +189,20 @@ export function render(): string {
 
       ${step === 'upload' ? renderUploadStep() : step === 'label' ? renderLabelStep() : renderReviewStep()}
     </div>`;
-  return renderDashboardLayout(content);
 }
 
-export function init(): void {
-  initDashboardLayout();
+let mockColumns: CrunchColumn[] = [];
 
+function rerender(): void {
+  const root = $('#crunch-root');
+  if (!root) return;
+  root.innerHTML = renderPage();
+  bindEvents();
+}
+
+function bindEvents(): void {
   if (step === 'upload') {
-    const dropzone = $('#crunch-dropzone');
-    dropzone?.addEventListener('click', () => {
+    $('#crunch-dropzone')?.addEventListener('click', () => {
       columns = mockColumns.map(c => ({ ...c }));
       step = 'label';
       rerender();
@@ -254,6 +233,15 @@ export function init(): void {
 
   if (step === 'review') {
     $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; rerender(); });
-    $('#crunch-to-dashboard')?.addEventListener('click', () => navigate('#/dashboard'));
+    $('#crunch-to-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
   }
+}
+
+export async function init(): Promise<void> {
+  mockColumns = await getCrunchColumns();
+  step = 'upload';
+  columns = [];
+  expandedColumnId = null;
+  businessContext = '';
+  rerender();
 }

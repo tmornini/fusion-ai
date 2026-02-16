@@ -1,7 +1,10 @@
-import { navigate, iconSparkles, iconArrowRight } from '../site/script';
+import { $, navigateTo, iconSparkles, iconArrowRight } from '../site/script';
 
-export function render(): string {
-  return `
+export async function init(): Promise<void> {
+  const root = $('#page-root');
+  if (!root) return;
+
+  root.innerHTML = `
     <div class="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       <div class="text-center" style="max-width:28rem">
         <div class="gradient-hero rounded-xl flex items-center justify-center mx-auto mb-6" style="width:4rem;height:4rem;box-shadow:var(--shadow-lg)">
@@ -18,8 +21,6 @@ export function render(): string {
         </button>
       </div>
     </div>`;
-}
 
-export function init(): void {
-  document.getElementById('go-dashboard')?.addEventListener('click', () => navigate('/dashboard'));
+  $('#go-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
 }

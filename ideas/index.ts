@@ -1,31 +1,10 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml, navigate,
+  $, escapeHtml, navigateTo,
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
 } from '../site/script';
-
-interface Idea {
-  id: string;
-  title: string;
-  score: number;
-  estimatedImpact: number;
-  estimatedTime: number;
-  estimatedCost: number;
-  priority: number;
-  status: 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
-  submittedBy: string;
-  edgeStatus: 'incomplete' | 'draft' | 'complete';
-}
-
-const mockIdeas: Idea[] = [
-  { id: '1', title: 'AI-Powered Customer Segmentation', score: 92, estimatedImpact: 85, estimatedTime: 120, estimatedCost: 45000, priority: 1, status: 'pending_review', submittedBy: 'Sarah Chen', edgeStatus: 'complete' },
-  { id: '2', title: 'Automated Report Generation', score: 87, estimatedImpact: 78, estimatedTime: 80, estimatedCost: 32000, priority: 2, status: 'approved', submittedBy: 'Mike Thompson', edgeStatus: 'complete' },
-  { id: '3', title: 'Predictive Maintenance System', score: 84, estimatedImpact: 90, estimatedTime: 200, estimatedCost: 75000, priority: 3, status: 'scored', submittedBy: 'Emily Rodriguez', edgeStatus: 'draft' },
-  { id: '4', title: 'Real-time Analytics Dashboard', score: 81, estimatedImpact: 72, estimatedTime: 60, estimatedCost: 28000, priority: 4, status: 'pending_review', submittedBy: 'David Kim', edgeStatus: 'complete' },
-  { id: '5', title: 'Smart Inventory Optimization', score: 78, estimatedImpact: 68, estimatedTime: 100, estimatedCost: 38000, priority: 5, status: 'draft', submittedBy: 'Lisa Wang', edgeStatus: 'incomplete' },
-  { id: '6', title: 'Employee Training Assistant', score: 74, estimatedImpact: 65, estimatedTime: 90, estimatedCost: 35000, priority: 6, status: 'rejected', submittedBy: 'Jessica Park', edgeStatus: 'incomplete' },
-];
+import { getIdeas, type Idea } from '../site/data';
 
 const statusConfig: Record<string, { label: string; cls: string }> = {
   draft: { label: 'Draft', cls: 'badge-default' },
@@ -130,70 +109,50 @@ function renderIdeaCard(idea: Idea, view: string): string {
     </div>`;
 }
 
-export function render(): string {
-  const pendingReviewCount = mockIdeas.filter(i => i.status === 'pending_review').length;
-  const sortedByPriority = [...mockIdeas].sort((a, b) => a.priority - b.priority);
-
-  const content = `
-    <div>
-      <div class="flex items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 class="text-3xl font-display font-bold mb-1">Ideas</h1>
-          <p class="text-muted">Explore and prioritize innovation opportunities</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          ${pendingReviewCount > 0 ? `
-            <button class="btn btn-outline gap-2" style="border-color:hsl(var(--warning)/0.3);color:hsl(var(--warning))" data-nav="#/review">
-              ${iconClipboardCheck(16)} <span class="hidden-mobile">Review Queue</span> (${pendingReviewCount})
-            </button>` : ''}
-          <button class="btn btn-hero gap-2" data-nav="#/ideas/new">
-            ${iconPlus(16)} <span class="hidden-mobile">Create or Generate Idea</span><span class="visible-mobile">New Idea</span>
-            ${iconWand(16)}
-          </button>
-        </div>
-      </div>
-
-      <!-- Flow Indicator -->
-      <div class="flex items-center gap-2 mb-4 p-3 rounded-lg" style="background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border));overflow-x:auto">
-        ${iconLightbulb(16, 'text-primary')}
-        <span class="text-sm text-muted" style="white-space:nowrap">
-          <span class="font-medium" style="color:hsl(var(--foreground))">Idea Flow:</span>
-          Create → Score → <span class="text-primary font-medium">Edge</span> → Review → Convert
-        </span>
-        ${iconChevronRight(16, 'text-muted')}
-      </div>
-
-      <!-- View Toggle -->
-      <div class="flex items-center gap-4 mb-4">
-        <div style="display:inline-flex;border-radius:var(--radius-lg);border:1px solid hsl(var(--border));padding:0.25rem;background:hsl(var(--muted)/0.5)">
-          <button class="view-toggle-btn active" data-view="priority" style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 1rem;border-radius:var(--radius);font-size:0.875rem;font-weight:500;border:none;cursor:pointer;transition:all var(--duration-fast);background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:var(--shadow-sm)">
-            ${iconLayoutGrid(16)} Priority
-          </button>
-          <button class="view-toggle-btn" data-view="performance" style="display:flex;align-items:center;gap:0.5rem;padding:0.375rem 1rem;border-radius:var(--radius);font-size:0.875rem;font-weight:500;border:none;cursor:pointer;transition:all var(--duration-fast);background:transparent;color:hsl(var(--muted-foreground))">
-            ${iconBarChart(16)} Performance
-          </button>
-        </div>
-        <span class="text-sm text-muted" id="ideas-count">${sortedByPriority.length} ideas • by priority</span>
-      </div>
-
-      <!-- Ideas Grid -->
-      <div id="ideas-list" style="display:flex;flex-direction:column;gap:0.75rem">
-        ${sortedByPriority.map(idea => renderIdeaCard(idea, 'priority')).join('')}
-      </div>
-    </div>`;
-
-  return renderDashboardLayout(content);
-}
-
-export function init(): void {
-  initDashboardLayout();
-
+export async function init(): Promise<void> {
+  const ideas = await getIdeas();
   let currentView = 'priority';
+
+  // Populate icons in static elements
+  const iconPlusEl = $('#icon-plus');
+  if (iconPlusEl) iconPlusEl.innerHTML = iconPlus(16);
+  const iconWandEl = $('#icon-wand');
+  if (iconWandEl) iconWandEl.innerHTML = iconWand(16);
+  const iconLayoutGridEl = $('#icon-layout-grid');
+  if (iconLayoutGridEl) iconLayoutGridEl.innerHTML = iconLayoutGrid(16);
+  const iconBarChartEl = $('#icon-bar-chart');
+  if (iconBarChartEl) iconBarChartEl.innerHTML = iconBarChart(16);
+
+  // Flow indicator
+  const flowEl = $('#flow-indicator');
+  if (flowEl) {
+    flowEl.innerHTML = `
+      ${iconLightbulb(16, 'text-primary')}
+      <span class="text-sm text-muted" style="white-space:nowrap">
+        <span class="font-medium" style="color:hsl(var(--foreground))">Idea Flow:</span>
+        Create → Score → <span class="text-primary font-medium">Edge</span> → Review → Convert
+      </span>
+      ${iconChevronRight(16, 'text-muted')}`;
+  }
+
+  // Review queue button
+  const pendingReviewCount = ideas.filter(i => i.status === 'pending_review').length;
+  const reviewBtnEl = $('#review-queue-btn');
+  if (reviewBtnEl && pendingReviewCount > 0) {
+    reviewBtnEl.innerHTML = `
+      <button class="btn btn-outline gap-2" style="border-color:hsl(var(--warning)/0.3);color:hsl(var(--warning))" id="review-queue-nav">
+        ${iconClipboardCheck(16)} <span class="hidden-mobile">Review Queue</span> (${pendingReviewCount})
+      </button>`;
+    $('#review-queue-nav')?.addEventListener('click', () => navigateTo('idea-review-queue'));
+  }
+
+  // Create button
+  $('#create-idea-btn')?.addEventListener('click', () => navigateTo('idea-create'));
 
   function rerenderList() {
     const sorted = currentView === 'priority'
-      ? [...mockIdeas].sort((a, b) => a.priority - b.priority)
-      : [...mockIdeas].sort((a, b) => b.score - a.score);
+      ? [...ideas].sort((a, b) => a.priority - b.priority)
+      : [...ideas].sort((a, b) => b.score - a.score);
 
     const list = $('#ideas-list');
     if (list) list.innerHTML = sorted.map(idea => renderIdeaCard(idea, currentView)).join('');
@@ -222,22 +181,22 @@ export function init(): void {
     document.querySelectorAll<HTMLElement>('[data-idea-card]').forEach(card => {
       card.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('button')) return;
-        navigate(`#/ideas/${card.getAttribute('data-idea-card')}/score`);
+        navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
       });
     });
     document.querySelectorAll<HTMLElement>('[data-idea-view]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/ideas/${btn.getAttribute('data-idea-view')}/score`); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('idea-scoring', { ideaId: btn.getAttribute('data-idea-view')! }); });
     });
     document.querySelectorAll<HTMLElement>('[data-idea-edge]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/ideas/${btn.getAttribute('data-idea-edge')}/edge`); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('edge', { ideaId: btn.getAttribute('data-idea-edge')! }); });
     });
     document.querySelectorAll<HTMLElement>('[data-idea-review]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/review/${btn.getAttribute('data-idea-review')}`); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('approval-detail', { id: btn.getAttribute('data-idea-review')! }); });
     });
     document.querySelectorAll<HTMLElement>('[data-idea-convert]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigate(`#/ideas/${btn.getAttribute('data-idea-convert')}/convert`); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('idea-convert', { ideaId: btn.getAttribute('data-idea-convert')! }); });
     });
   }
 
-  bindCardActions();
+  rerenderList();
 }

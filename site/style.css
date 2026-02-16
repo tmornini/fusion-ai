@@ -1300,6 +1300,26 @@ p { line-height: var(--leading-normal); }
   padding: 1rem;
 }
 
+/* Responsive layout: desktop/mobile element visibility */
+@media (min-width: 768px) {
+  .mobile-header { display: none !important; }
+  #mobile-sheet { display: none !important; }
+  #mobile-sheet-backdrop { display: none !important; }
+  #mobile-search-bar { display: none !important; }
+}
+
+@media (max-width: 767px) {
+  .sidebar { display: none !important; }
+  .top-header { display: none !important; }
+  .main-content {
+    margin-left: 0 !important;
+    padding-top: 3.5rem;
+  }
+  .main-content .page-content {
+    padding: 1rem;
+  }
+}
+
 /* Notification dot */
 .notification-dot {
   position: absolute;

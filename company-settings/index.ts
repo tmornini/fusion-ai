@@ -1,20 +1,8 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, showToast, escapeHtml,
-  iconBuilding, iconGlobe, iconShield, iconSave, iconCheckCircle2, iconChevronRight,
+  $, showToast, escapeHtml,
+  iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight,
 } from '../site/script';
-
-const mockCompany = {
-  name: 'Acme Corporation',
-  domain: 'acmecorp.com',
-  industry: 'Technology',
-  size: '51-200',
-  timezone: 'America/New_York',
-  language: 'English',
-  enforceSSO: false,
-  twoFactor: true,
-  ipWhitelist: false,
-  dataRetention: '12 months',
-};
+import { getCompanySettings } from '../site/data';
 
 function selectField(id: string, label: string, value: string, options: string[]): string {
   return `<div>
@@ -38,12 +26,15 @@ function toggleRow(id: string, label: string, description: string, checked: bool
     </div>`;
 }
 
-export function render(): string {
-  const c = mockCompany;
-  const content = `
+export async function init(): Promise<void> {
+  const c = await getCompanySettings();
+  const container = $('#company-settings-content');
+  if (!container) return;
+
+  container.innerHTML = `
     <div style="max-width:48rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
-        <a href="#/account" class="text-primary">Account</a>
+        <a href="../account/index.html" class="text-primary">Account</a>
         ${iconChevronRight(14)} <span>Company Settings</span>
       </nav>
 
@@ -55,7 +46,6 @@ export function render(): string {
         <button class="btn btn-primary gap-2" id="save-btn">${iconSave(16)} Save Changes</button>
       </div>
 
-      <!-- General -->
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconBuilding(20)} General Information</h3>
         <div class="grid grid-cols-2 gap-4 mb-4">
@@ -74,7 +64,6 @@ export function render(): string {
         </div>
       </div>
 
-      <!-- Regional -->
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4">Regional Settings</h3>
         <div class="grid grid-cols-2 gap-4">
@@ -83,7 +72,6 @@ export function render(): string {
         </div>
       </div>
 
-      <!-- Security -->
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconShield(20)} Security</h3>
         ${toggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', c.enforceSSO)}
@@ -94,12 +82,6 @@ export function render(): string {
         </div>
       </div>
     </div>`;
-
-  return renderDashboardLayout(content);
-}
-
-export function init(): void {
-  initDashboardLayout();
 
   // Switch toggles
   document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {

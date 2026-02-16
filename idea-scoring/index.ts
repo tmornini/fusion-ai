@@ -1,62 +1,10 @@
 import {
-  $, navigate, escapeHtml,
+  $, escapeHtml, navigateTo, getParams,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
   iconCheckCircle2, iconLoader, iconSparkles,
 } from '../site/script';
-
-interface ScoreBreakdown {
-  label: string;
-  score: number;
-  maxScore: number;
-  reason: string;
-}
-
-interface IdeaScore {
-  overall: number;
-  impact: { score: number; breakdown: ScoreBreakdown[] };
-  feasibility: { score: number; breakdown: ScoreBreakdown[] };
-  efficiency: { score: number; breakdown: ScoreBreakdown[] };
-  estimatedTime: string;
-  estimatedCost: string;
-  recommendation: string;
-}
-
-const mockIdea = {
-  title: 'AI-Powered Customer Segmentation',
-  problemStatement: 'Marketing team spends 20+ hours weekly manually segmenting customers, leading to delayed campaigns and missed opportunities.',
-};
-
-const mockScore: IdeaScore = {
-  overall: 82,
-  impact: {
-    score: 88,
-    breakdown: [
-      { label: 'Business Value', score: 9, maxScore: 10, reason: 'Direct revenue impact through improved conversions' },
-      { label: 'Strategic Alignment', score: 8, maxScore: 10, reason: 'Supports digital transformation goals' },
-      { label: 'User Benefit', score: 9, maxScore: 10, reason: 'Saves significant time for marketing team' },
-    ]
-  },
-  feasibility: {
-    score: 75,
-    breakdown: [
-      { label: 'Technical Complexity', score: 7, maxScore: 10, reason: 'Requires ML expertise and data pipeline' },
-      { label: 'Resource Availability', score: 8, maxScore: 10, reason: 'Team has relevant skills' },
-      { label: 'Integration Effort', score: 8, maxScore: 10, reason: 'Works with existing CRM' },
-    ]
-  },
-  efficiency: {
-    score: 85,
-    breakdown: [
-      { label: 'Time to Value', score: 9, maxScore: 10, reason: 'MVP deliverable in 6-8 weeks' },
-      { label: 'Cost Efficiency', score: 8, maxScore: 10, reason: 'Reasonable investment for expected returns' },
-      { label: 'Scalability', score: 9, maxScore: 10, reason: 'Can expand to other use cases' },
-    ]
-  },
-  estimatedTime: '6-8 weeks',
-  estimatedCost: '$45,000 - $65,000',
-  recommendation: 'Strong candidate for immediate prioritization. High impact with manageable complexity. Recommend starting with a focused pilot on top customer segment.'
-};
+import { getIdeaForScoring, getIdeaScore, type ScoreBreakdown, type IdeaScore } from '../site/data';
 
 function scoreColor(score: number): string {
   if (score >= 80) return 'hsl(142 71% 45%)';
@@ -90,13 +38,12 @@ function renderBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): 
     </div>`).join('');
 }
 
-function renderScoreResults(ideaId: string): string {
-  const score = mockScore;
+function renderScoreResults(ideaId: string, idea: { title: string; problemStatement: string }, score: IdeaScore): string {
   return `
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="card p-6">
-        <h2 class="text-xl font-display font-bold mb-2">${escapeHtml(mockIdea.title)}</h2>
-        <p class="text-muted text-sm">${escapeHtml(mockIdea.problemStatement)}</p>
+        <h2 class="text-xl font-display font-bold mb-2">${escapeHtml(idea.title)}</h2>
+        <p class="text-muted text-sm">${escapeHtml(idea.problemStatement)}</p>
       </div>
 
       <div class="score-grid" style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem">
@@ -149,24 +96,46 @@ function renderScoreResults(ideaId: string): string {
       </div>
 
       <div class="flex items-center justify-between gap-3 pt-4">
-        <button class="btn btn-ghost gap-2" data-nav="#/ideas">${iconArrowLeft(16)} Back to Ideas</button>
+        <button class="btn btn-ghost gap-2" id="back-to-ideas">${iconArrowLeft(16)} Back to Ideas</button>
         <div class="flex gap-3">
-          <button class="btn btn-outline" data-nav="#/ideas">Save as Draft</button>
-          <button class="btn btn-hero gap-2" data-nav="#/ideas/${ideaId}/convert">Convert to Project ${iconArrowRight(16)}</button>
+          <button class="btn btn-outline" id="save-draft">Save as Draft</button>
+          <button class="btn btn-hero gap-2" id="convert-btn">Convert to Project ${iconArrowRight(16)}</button>
         </div>
       </div>
     </div>`;
 }
 
-export function render(params?: Record<string, string>): string {
-  const ideaId = params?.ideaId || '1';
-  return `
+function bindTabs(score: IdeaScore) {
+  document.querySelectorAll<HTMLElement>('.score-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabId = tab.getAttribute('data-score-tab') as 'impact' | 'feasibility' | 'efficiency';
+      const data = score[tabId];
+      document.querySelectorAll<HTMLElement>('.score-tab').forEach(t => {
+        const isActive = t.getAttribute('data-score-tab') === tabId;
+        t.style.background = isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))';
+        t.style.color = isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))';
+      });
+      const content = $('#tab-content');
+      if (content) content.innerHTML = renderBreakdown(data);
+    });
+  });
+}
+
+export async function init(): Promise<void> {
+  const params = getParams();
+  const ideaId = params.get('ideaId') || '1';
+
+  const root = $('#page-root');
+  if (!root) return;
+
+  // Show loading state first
+  root.innerHTML = `
     <div style="min-height:100vh;background:hsl(var(--background))">
       <header style="border-bottom:1px solid hsl(var(--border));background:hsl(var(--card)/0.5);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50">
         <div style="max-width:60rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem">
             <div class="flex items-center gap-4">
-              <button class="btn btn-ghost btn-icon" data-nav="#/ideas">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="loading-back">${iconArrowLeft(20)}</button>
               <div class="flex items-center gap-3">
                 <div class="gradient-hero rounded-lg flex items-center justify-center" style="width:2.25rem;height:2.25rem;color:hsl(var(--primary-foreground))">${iconBarChart(20)}</div>
                 <span class="text-xl font-display font-bold">Idea Scoring</span>
@@ -199,31 +168,24 @@ export function render(params?: Record<string, string>): string {
         </div>
       </div>
     </div>`;
-}
 
-export function init(params?: Record<string, string>): void {
-  const ideaId = params?.ideaId || '1';
+  $('#loading-back')?.addEventListener('click', () => navigateTo('ideas'));
+
+  // Simulate AI processing delay, then show results
+  const [idea, score] = await Promise.all([
+    getIdeaForScoring(ideaId),
+    getIdeaScore(ideaId),
+  ]);
+
   setTimeout(() => {
     const body = $('#scoring-body');
     if (body) {
-      body.innerHTML = renderScoreResults(ideaId);
-      bindTabs();
+      body.innerHTML = renderScoreResults(ideaId, idea, score);
+      bindTabs(score);
+
+      $('#back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
+      $('#save-draft')?.addEventListener('click', () => navigateTo('ideas'));
+      $('#convert-btn')?.addEventListener('click', () => navigateTo('idea-convert', { ideaId }));
     }
   }, 2500);
-}
-
-function bindTabs() {
-  document.querySelectorAll<HTMLElement>('.score-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const tabId = tab.getAttribute('data-score-tab') as 'impact' | 'feasibility' | 'efficiency';
-      const data = mockScore[tabId];
-      document.querySelectorAll<HTMLElement>('.score-tab').forEach(t => {
-        const isActive = t.getAttribute('data-score-tab') === tabId;
-        t.style.background = isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))';
-        t.style.color = isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))';
-      });
-      const content = $('#tab-content');
-      if (content) content.innerHTML = renderBreakdown(data);
-    });
-  });
 }

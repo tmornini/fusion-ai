@@ -1,33 +1,11 @@
 import {
-  renderDashboardLayout, initDashboardLayout, navigate, escapeHtml,
+  $, escapeHtml, navigateTo,
   iconUser, iconSettings, iconCreditCard, iconBuilding, iconCrown,
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
   iconExternalLink, iconBell,
 } from '../site/script';
-
-const accountData = {
-  company: {
-    name: 'Acme Corporation',
-    plan: 'Business',
-    planStatus: 'active',
-    nextBilling: '2025-01-15',
-    seats: 25,
-    usedSeats: 18,
-  },
-  usage: {
-    projects: { current: 12, limit: 50 },
-    ideas: { current: 47, limit: 200 },
-    storage: { current: 2.4, limit: 10 },
-    aiCredits: { current: 850, limit: 1000 },
-  },
-  health: { score: 92, status: 'excellent', lastActivity: '2 hours ago', activeUsers: 14 },
-  recentActivity: [
-    { type: 'user_added', description: 'Sarah Chen joined the team', time: '2 hours ago' },
-    { type: 'project_created', description: 'New project "Q1 Analytics Dashboard" created', time: '5 hours ago' },
-    { type: 'billing', description: 'Invoice #2024-089 paid successfully', time: '2 days ago' },
-  ],
-};
+import { getAccountData } from '../site/data';
 
 function usageBarColor(current: number, limit: number): string {
   const pct = (current / limit) * 100;
@@ -54,34 +32,14 @@ function activityIcon(type: string): string {
   return `<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(16)}</div>`;
 }
 
-function quickAction(icon: string, title: string, subtitle: string, href?: string): string {
-  return `
-    <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem" ${href ? `data-nav="${href}"` : ''}>
-      ${icon}
-      <div class="text-left">
-        <p class="font-medium text-sm">${title}</p>
-        <p class="text-xs text-muted">${subtitle}</p>
-      </div>
-    </button>`;
-}
-
-function linkCard(iconHtml: string, title: string, subtitle: string, href?: string): string {
-  return `
-    <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" ${href ? `data-nav="${href}"` : ''} onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
-      ${iconHtml}
-      <div style="flex:1;min-width:0">
-        <p class="font-medium text-sm">${title}</p>
-        <p class="text-xs text-muted truncate">${subtitle}</p>
-      </div>
-      ${iconExternalLink(16)}
-    </button>`;
-}
-
-export function render(): string {
-  const d = accountData;
+export async function init(): Promise<void> {
+  const d = await getAccountData();
   const billingDate = new Date(d.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  const content = `
+  const container = $('#account-content');
+  if (!container) return;
+
+  container.innerHTML = `
     <div style="max-width:64rem;margin:0 auto">
       <div class="mb-8">
         <h1 class="text-3xl font-display font-bold mb-2">Account Overview</h1>
@@ -90,9 +48,27 @@ export function render(): string {
 
       <!-- Quick Actions -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        ${quickAction(`<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--primary) / 0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconUser(20)}</div>`, 'My Profile', 'Personal settings', '/account/profile')}
-        ${quickAction(`<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconSettings(20)}</div>`, 'Company Settings', 'Organization config', '/account/company')}
-        ${quickAction(`<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(20)}</div>`, 'Billing', 'Plans & invoices')}
+        <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem" data-nav-to="profile">
+          <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--primary) / 0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconUser(20)}</div>
+          <div class="text-left">
+            <p class="font-medium text-sm">My Profile</p>
+            <p class="text-xs text-muted">Personal settings</p>
+          </div>
+        </button>
+        <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem" data-nav-to="company-settings">
+          <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconSettings(20)}</div>
+          <div class="text-left">
+            <p class="font-medium text-sm">Company Settings</p>
+            <p class="text-xs text-muted">Organization config</p>
+          </div>
+        </button>
+        <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem">
+          <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(20)}</div>
+          <div class="text-left">
+            <p class="font-medium text-sm">Billing</p>
+            <p class="text-xs text-muted">Plans & invoices</p>
+          </div>
+        </button>
       </div>
 
       <!-- Company Overview -->
@@ -162,7 +138,7 @@ export function render(): string {
                 </div>
               </div>`).join('')}
           </div>
-          <button class="btn btn-ghost btn-sm w-full mt-4" data-nav="/account/activity">View All Activity</button>
+          <button class="btn btn-ghost btn-sm w-full mt-4" data-nav-to="activity-feed">View All Activity</button>
         </div>
       </div>
 
@@ -170,16 +146,36 @@ export function render(): string {
       <div class="card card-hover p-6 mt-6">
         <h3 class="font-display font-semibold mb-4">Security & Administration</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          ${linkCard(`<span style="color:hsl(var(--muted-foreground))">${iconUsers(20)}</span>`, 'Manage Users', 'Add, edit, or remove team members', '/account/users')}
-          ${linkCard(`<span style="color:hsl(var(--muted-foreground))">${iconBell(20)}</span>`, 'Notifications', 'Email & push preferences', '/account/notifications')}
-          ${linkCard(`<span style="color:hsl(var(--muted-foreground))">${iconCreditCard(20)}</span>`, 'Billing History', 'View invoices and payments')}
+          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" data-nav-to="manage-users" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+            <span style="color:hsl(var(--muted-foreground))">${iconUsers(20)}</span>
+            <div style="flex:1;min-width:0">
+              <p class="font-medium text-sm">Manage Users</p>
+              <p class="text-xs text-muted truncate">Add, edit, or remove team members</p>
+            </div>
+            ${iconExternalLink(16)}
+          </button>
+          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" data-nav-to="notification-settings" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+            <span style="color:hsl(var(--muted-foreground))">${iconBell(20)}</span>
+            <div style="flex:1;min-width:0">
+              <p class="font-medium text-sm">Notifications</p>
+              <p class="text-xs text-muted truncate">Email & push preferences</p>
+            </div>
+            ${iconExternalLink(16)}
+          </button>
+          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+            <span style="color:hsl(var(--muted-foreground))">${iconCreditCard(20)}</span>
+            <div style="flex:1;min-width:0">
+              <p class="font-medium text-sm">Billing History</p>
+              <p class="text-xs text-muted truncate">View invoices and payments</p>
+            </div>
+            ${iconExternalLink(16)}
+          </button>
         </div>
       </div>
     </div>`;
 
-  return renderDashboardLayout(content);
-}
-
-export function init(): void {
-  initDashboardLayout();
+  // Bind navigation
+  container.querySelectorAll<HTMLElement>('[data-nav-to]').forEach(el => {
+    el.addEventListener('click', () => navigateTo(el.getAttribute('data-nav-to')!));
+  });
 }

@@ -1,5 +1,5 @@
 import {
-  $, navigate, escapeHtml,
+  $, escapeHtml, navigateTo,
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
 } from '../site/script';
@@ -159,15 +159,9 @@ function renderPage(): string {
     </div>`;
 }
 
-export function render(): string {
-  currentStep = 1;
-  Object.keys(formData).forEach(k => (formData as any)[k] = '');
-  return renderPage();
-}
-
 function rerender() {
-  const app = $('#app');
-  if (app) { app.innerHTML = renderPage(); bindEvents(); }
+  const root = $('#page-root');
+  if (root) { root.innerHTML = renderPage(); bindEvents(); }
 }
 
 function saveCurrentFields() {
@@ -186,17 +180,17 @@ function saveCurrentFields() {
 function bindEvents() {
   $('#back-btn')?.addEventListener('click', () => {
     if (currentStep > 1) { saveCurrentFields(); currentStep--; rerender(); }
-    else navigate('#/ideas');
+    else navigateTo('ideas');
   });
   $('#step-back')?.addEventListener('click', () => {
     if (currentStep > 1) { saveCurrentFields(); currentStep--; rerender(); }
-    else navigate('#/ideas');
+    else navigateTo('ideas');
   });
   $('#step-next')?.addEventListener('click', () => {
     saveCurrentFields();
     if (!canProceed()) return;
     if (currentStep < 3) { currentStep++; rerender(); }
-    else navigate('#/ideas/new/score');
+    else navigateTo('idea-scoring', { ideaId: 'new' });
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
     input.addEventListener('input', () => {
@@ -207,6 +201,8 @@ function bindEvents() {
   });
 }
 
-export function init(): void {
-  bindEvents();
+export async function init(): Promise<void> {
+  currentStep = 1;
+  Object.keys(formData).forEach(k => (formData as any)[k] = '');
+  rerender();
 }

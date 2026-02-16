@@ -1,11 +1,7 @@
 import {
-  navigate, $, showToast, escapeHtml,
+  $, showToast, navigateTo,
   iconSparkles, iconArrowRight, iconLoader,
 } from '../site/script';
-
-// ------------------------------------
-// Validation
-// ------------------------------------
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return 'Email is required';
@@ -19,14 +15,12 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
-// ------------------------------------
-// Render
-// ------------------------------------
+export async function init(): Promise<void> {
+  const root = $('#page-root');
+  if (!root) return;
 
-export function render(): string {
-  return `
+  root.innerHTML = `
     <div class="min-h-screen flex bg-background">
-      <!-- Left side - Branding (desktop only) -->
       <div class="auth-branding hidden" id="auth-branding">
         <div style="position:relative;z-index:10;display:flex;flex-direction:column;justify-content:center;padding:3rem 5rem;height:100%">
           <div class="mb-8">
@@ -51,10 +45,8 @@ export function render(): string {
         </div>
       </div>
 
-      <!-- Right side - Form -->
       <div style="width:100%;display:flex;align-items:center;justify-content:center;padding:2rem" id="auth-form-wrapper">
         <div style="width:100%;max-width:28rem">
-          <!-- Mobile logo -->
           <div class="flex items-center gap-3 mb-8 justify-center" id="mobile-logo">
             <div class="gradient-hero rounded-xl flex items-center justify-center" style="width:2.5rem;height:2.5rem">
               ${iconSparkles(20)}
@@ -107,9 +99,7 @@ export function render(): string {
         </div>
       </div>
     </div>`;
-}
 
-export function init(): void {
   let isLogin = true;
 
   const form = $('#auth-form') as HTMLFormElement;
@@ -180,16 +170,15 @@ export function init(): void {
 
     if (emailErr || passErr) return;
 
-    // Mock auth — always succeed
     submitBtn.innerHTML = iconLoader(20, 'animate-spin-slow');
     submitBtn.setAttribute('disabled', '');
 
     setTimeout(() => {
       if (isLogin) {
-        navigate('/dashboard');
+        navigateTo('dashboard');
       } else {
         showToast('Welcome to Fusion AI! Your account has been created.', 'success');
-        navigate('/onboarding');
+        navigateTo('onboarding');
       }
     }, 800);
   });

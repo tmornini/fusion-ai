@@ -1,17 +1,13 @@
 import {
-  navigate, $,
+  $,
   iconSparkles, iconArrowRight, iconMenu, iconX, iconCheck,
   iconBrain, iconUsers, iconZap, iconShield, iconLineChart, iconMessageSquare,
 } from '../site/script';
 
-// ------------------------------------
-// Data
-// ------------------------------------
-
 const features = [
   { icon: iconBrain, title: 'Intelligent Augmentation', description: 'AI that learns from your expertise and amplifies your decision-making capabilities without replacing human judgment.' },
   { icon: iconUsers, title: 'Collaborative Workflows', description: 'Seamlessly integrate AI assistance into your team\'s existing processes with human oversight at every step.' },
-  { icon: iconZap,   title: 'Real-Time Insights', description: 'Get instant analysis and recommendations while maintaining full control over the final decisions.' },
+  { icon: iconZap, title: 'Real-Time Insights', description: 'Get instant analysis and recommendations while maintaining full control over the final decisions.' },
   { icon: iconShield, title: 'Enterprise Security', description: 'Bank-grade encryption and compliance with SOC 2, GDPR, and HIPAA requirements built-in.' },
   { icon: iconLineChart, title: 'Transparent Analytics', description: 'Understand how AI arrives at its suggestions with clear explanations and confidence scores.' },
   { icon: iconMessageSquare, title: 'Natural Communication', description: 'Interact with AI using natural language. No technical expertise required to get powerful results.' },
@@ -25,16 +21,12 @@ const steps = [
 
 const companies = ['TechCorp', 'InnovateLab', 'DataFlow', 'NexGen', 'Synergi'];
 
-// ------------------------------------
-// Render Helpers
-// ------------------------------------
-
 function renderNavbar(): string {
   return `
     <nav class="navbar" id="navbar">
       <div class="container">
         <div class="navbar-inner">
-          <a href="#/" class="navbar-logo">
+          <a href="../landing/index.html" class="navbar-logo">
             <div class="navbar-logo-icon">F</div>
             <span class="navbar-logo-text">Fusion AI</span>
           </a>
@@ -44,8 +36,8 @@ function renderNavbar(): string {
             <a href="#about" class="navbar-link">About</a>
           </div>
           <div class="navbar-cta">
-            <button class="btn btn-ghost" data-nav="/auth">Sign In</button>
-            <button class="btn btn-primary" data-nav="/auth">Get Started</button>
+            <button class="btn btn-ghost" data-goto-auth>Sign In</button>
+            <button class="btn btn-primary" data-goto-auth>Get Started</button>
           </div>
           <button class="navbar-mobile-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
             ${iconMenu(24)}
@@ -56,8 +48,8 @@ function renderNavbar(): string {
           <a href="#how-it-works" class="navbar-link">How It Works</a>
           <a href="#about" class="navbar-link">About</a>
           <div class="flex flex-col gap-2 mt-4">
-            <button class="btn btn-ghost" data-nav="/auth">Sign In</button>
-            <button class="btn btn-primary" data-nav="/auth">Get Started</button>
+            <button class="btn btn-ghost" data-goto-auth>Sign In</button>
+            <button class="btn btn-primary" data-goto-auth>Get Started</button>
           </div>
         </div>
       </div>
@@ -83,7 +75,7 @@ function renderHero(): string {
             Fusion AI puts humans at the center. Our platform augments your expertise with intelligent automation, helping teams make better decisions faster.
           </p>
           <div class="hero-buttons animate-fade-in-up">
-            <button class="btn btn-accent btn-xl" data-nav="/auth">
+            <button class="btn btn-accent btn-xl" data-goto-auth>
               Start Free Trial ${iconArrowRight(20)}
             </button>
             <button class="btn btn-outline-hero btn-xl">Watch Demo</button>
@@ -159,7 +151,7 @@ function renderCTA(): string {
           <h2>Ready to Transform How Your Team Works?</h2>
           <p>Join thousands of teams who use Fusion AI to amplify their human intelligence. Start your free trial today — no credit card required.</p>
           <div class="cta-buttons">
-            <button class="btn btn-accent btn-xl" data-nav="/auth">
+            <button class="btn btn-accent btn-xl" data-goto-auth>
               Start Free Trial ${iconArrowRight(20)}
             </button>
             <button class="btn btn-outline-light btn-xl">Talk to Sales</button>
@@ -222,12 +214,11 @@ function renderFooter(): string {
     </footer>`;
 }
 
-// ------------------------------------
-// Page Exports
-// ------------------------------------
+export async function init(): Promise<void> {
+  const root = $('#page-root');
+  if (!root) return;
 
-export function render(): string {
-  return `
+  root.innerHTML = `
     <div class="min-h-screen bg-background">
       ${renderNavbar()}
       <main>
@@ -238,9 +229,7 @@ export function render(): string {
       </main>
       ${renderFooter()}
     </div>`;
-}
 
-export function init(): void {
   // Mobile menu toggle
   const toggle = $('#mobile-menu-toggle');
   const menu = $('#mobile-menu');
@@ -252,11 +241,10 @@ export function init(): void {
     });
   }
 
-  // Navigation buttons
-  document.querySelectorAll<HTMLElement>('[data-nav]').forEach(el => {
+  // Navigation to auth
+  document.querySelectorAll<HTMLElement>('[data-goto-auth]').forEach(el => {
     el.addEventListener('click', () => {
-      const target = el.getAttribute('data-nav');
-      if (target) navigate(target);
+      window.location.href = '../auth/index.html';
     });
   });
 }

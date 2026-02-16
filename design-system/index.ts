@@ -1,8 +1,7 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, escapeHtml,
+  $,
   iconCheck, iconX, iconAlertTriangle, iconInfo, iconSearch, iconPlus,
-  iconArrowRight, iconTrash, iconSun, iconMoon, iconMonitor,
-  iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
+  iconArrowRight, iconTrash, iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
 } from '../site/script';
 
 function colorSwatch(name: string, variable: string, style: string): string {
@@ -27,10 +26,12 @@ function shadowBox(name: string, variable: string): string {
   </div>`;
 }
 
-export function render(): string {
-  const content = `
+export async function init(): Promise<void> {
+  const root = $('#ds-root');
+  if (!root) return;
+
+  root.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:3rem;padding-bottom:4rem">
-      <!-- Header -->
       <div>
         <h1 class="text-3xl font-bold font-display">Fusion AI Design System</h1>
         <p class="text-muted" style="margin-top:0.5rem">A production-ready design system for enterprise applications prioritizing clarity, trust, focus, and calm decision-making.</p>
@@ -38,7 +39,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Brand Colors -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Brand Colors</h2><p class="text-muted mt-1">Primary brand colors for Fusion AI</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
@@ -49,7 +49,6 @@ export function render(): string {
         </div>
       </section>
 
-      <!-- Blue Scale -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Blue Scale</h2><p class="text-muted mt-1">Full blue color ramp for nuanced UI design</p></div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
@@ -68,7 +67,6 @@ export function render(): string {
         </div>
       </section>
 
-      <!-- Semantic Colors -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Semantic Colors</h2><p class="text-muted mt-1">Status and feedback colors (WCAG AA compliant)</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
@@ -85,7 +83,6 @@ export function render(): string {
         </div>
       </section>
 
-      <!-- UI Colors -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">UI Colors</h2><p class="text-muted mt-1">Background, surface, and border colors</p></div>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1.5rem" class="stats-grid">
@@ -100,7 +97,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Typography -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Typography</h2><p class="text-muted mt-1">IBM Plex Sans for display, Inter for body text</p></div>
         <div class="card" style="padding:1.5rem">
@@ -119,7 +115,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Buttons -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Buttons</h2><p class="text-muted mt-1">All button variants and sizes</p></div>
         <div class="card" style="padding:1.5rem">
@@ -166,7 +161,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Badges -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Badges</h2><p class="text-muted mt-1">Status indicators and labels</p></div>
         <div class="card" style="padding:1.5rem">
@@ -194,7 +188,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Form Elements -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Form Elements</h2><p class="text-muted mt-1">Input fields and text areas</p></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
@@ -227,7 +220,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Cards -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Cards</h2><p class="text-muted mt-1">Content containers with consistent styling</p></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem" class="score-grid">
@@ -251,7 +243,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Elevation & Shadows -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Elevation & Shadows</h2><p class="text-muted mt-1">Shadow scale for depth and hierarchy</p></div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
@@ -265,7 +256,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Iconography -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Iconography</h2><p class="text-muted mt-1">Lucide-compatible inline SVG icons at standard sizes</p></div>
         <div class="card" style="padding:1.5rem">
@@ -301,7 +291,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Spacing -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Spacing System</h2><p class="text-muted mt-1">8pt grid for consistent spacing</p></div>
         <div class="card" style="padding:1.5rem">
@@ -326,12 +315,9 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Error & System States -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Error & System States</h2><p class="text-muted mt-1">Patterns for validation errors, failures, and system messages</p></div>
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
-          <!-- Inline Validation -->
           <div class="card" style="padding:1.5rem">
             <h3 class="font-semibold mb-3">Inline Validation</h3>
             <div style="display:flex;flex-direction:column;gap:0.75rem">
@@ -347,8 +333,6 @@ export function render(): string {
               </div>
             </div>
           </div>
-
-          <!-- Upload Failed -->
           <div class="card" style="padding:1.5rem">
             <h3 class="font-semibold mb-3">Upload Failed</h3>
             <div style="padding:1.5rem;border-radius:var(--radius-lg);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));text-align:center">
@@ -358,8 +342,6 @@ export function render(): string {
               <button class="btn btn-outline btn-sm mt-3">Try Again</button>
             </div>
           </div>
-
-          <!-- Save Failed -->
           <div class="card" style="padding:1.5rem">
             <h3 class="font-semibold mb-3">Save Failed</h3>
             <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));display:flex;align-items:flex-start;gap:0.75rem">
@@ -371,8 +353,6 @@ export function render(): string {
               <button class="btn btn-outline btn-xs">Retry</button>
             </div>
           </div>
-
-          <!-- Connection Issue -->
           <div class="card" style="padding:1.5rem">
             <h3 class="font-semibold mb-3">Connection Issue</h3>
             <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--warning-soft));border:1px solid hsl(var(--warning-border));display:flex;align-items:flex-start;gap:0.75rem">
@@ -384,8 +364,6 @@ export function render(): string {
             </div>
           </div>
         </div>
-
-        <!-- Inline System Error -->
         <div class="card" style="padding:1.5rem">
           <h3 class="font-semibold mb-3">Inline System Error</h3>
           <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));display:flex;align-items:flex-start;gap:0.75rem">
@@ -397,8 +375,6 @@ export function render(): string {
             <button class="btn btn-outline btn-sm">Reload Section</button>
           </div>
         </div>
-
-        <!-- Full Page Error -->
         <div class="card" style="padding:3rem;text-align:center">
           <h3 class="font-semibold mb-3">Full Page Error</h3>
           <div style="padding:2rem">
@@ -415,7 +391,6 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
-      <!-- Guidelines -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Usage Guidelines</h2><p class="text-muted mt-1">Do's and don'ts for the design system</p></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
@@ -442,9 +417,4 @@ export function render(): string {
         </div>
       </section>
     </div>`;
-  return renderDashboardLayout(content);
-}
-
-export function init(): void {
-  initDashboardLayout();
 }

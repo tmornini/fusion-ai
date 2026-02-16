@@ -1,29 +1,10 @@
 import {
-  renderDashboardLayout, initDashboardLayout, $, $$, showToast, escapeHtml,
+  $, showToast, escapeHtml,
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
-  iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend, iconX,
+  iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
 } from '../site/script';
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'manager' | 'member' | 'viewer';
-  department: string;
-  status: 'active' | 'pending' | 'deactivated';
-  lastActive: string;
-}
-
-const mockUsers: UserData[] = [
-  { id: '1', name: 'Sarah Chen', email: 'sarah@acmecorp.com', role: 'admin', department: 'Engineering', status: 'active', lastActive: '2 hours ago' },
-  { id: '2', name: 'Marcus Johnson', email: 'marcus@acmecorp.com', role: 'manager', department: 'Product', status: 'active', lastActive: '30 min ago' },
-  { id: '3', name: 'Emily Rodriguez', email: 'emily@acmecorp.com', role: 'member', department: 'Design', status: 'active', lastActive: '1 hour ago' },
-  { id: '4', name: 'David Park', email: 'david@acmecorp.com', role: 'member', department: 'Engineering', status: 'active', lastActive: '4 hours ago' },
-  { id: '5', name: 'Lisa Wang', email: 'lisa@acmecorp.com', role: 'viewer', department: 'Sales', status: 'active', lastActive: '1 day ago' },
-  { id: '6', name: 'Alex Thompson', email: 'alex@acmecorp.com', role: 'member', department: 'Product', status: 'pending', lastActive: '' },
-  { id: '7', name: 'James Miller', email: 'james@acmecorp.com', role: 'member', department: 'Engineering', status: 'deactivated', lastActive: '1 week ago' },
-];
+import { getUsers, type UserData } from '../site/data';
 
 const roleLabels: Record<string, { label: string; icon: (s?: number) => string }> = {
   admin: { label: 'Admin', icon: iconCrown },
@@ -71,14 +52,18 @@ function userRow(u: UserData): string {
     </div>`;
 }
 
-export function render(): string {
-  const activeCount = mockUsers.filter(u => u.status === 'active').length;
-  const pendingCount = mockUsers.filter(u => u.status === 'pending').length;
+export async function init(): Promise<void> {
+  const users = await getUsers();
+  const activeCount = users.filter(u => u.status === 'active').length;
+  const pendingCount = users.filter(u => u.status === 'pending').length;
 
-  const content = `
+  const container = $('#manage-users-content');
+  if (!container) return;
+
+  container.innerHTML = `
     <div style="max-width:72rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
-        <a href="#/account" class="text-primary">Account</a>
+        <a href="../account/index.html" class="text-primary">Account</a>
         ${iconChevronRight(14)} <span>Manage Users</span>
       </nav>
 
@@ -90,7 +75,6 @@ export function render(): string {
         <button class="btn btn-primary gap-2" id="invite-btn">${iconUserPlus(16)} Invite User</button>
       </div>
 
-      <!-- Filters -->
       <div class="flex items-center gap-4 mb-6">
         <div class="search-wrapper" style="flex:1;max-width:20rem">
           <span class="search-icon">${iconSearch(16)}</span>
@@ -111,19 +95,17 @@ export function render(): string {
         </select>
       </div>
 
-      <!-- User List -->
       <div class="card" style="overflow:hidden">
         <div class="flex items-center gap-4 p-4" style="background:hsl(var(--muted)/0.3);border-bottom:1px solid hsl(var(--border))">
-          <div style="flex:2" class="text-xs font-medium text-muted" style="text-transform:uppercase;letter-spacing:0.05em">User</div>
+          <div style="flex:2" class="text-xs font-medium text-muted">User</div>
           <div style="flex:1" class="text-xs font-medium text-muted">Role</div>
           <div style="flex:1" class="text-xs font-medium text-muted">Department</div>
           <div style="flex:1" class="text-xs font-medium text-muted">Status</div>
           <div style="flex:0 0 auto;width:2.5rem"></div>
         </div>
-        <div id="user-list">${mockUsers.map(userRow).join('')}</div>
+        <div id="user-list">${users.map(userRow).join('')}</div>
       </div>
 
-      <!-- Invite Modal (hidden) -->
       <div id="invite-backdrop" class="dialog-backdrop hidden"></div>
       <div id="invite-dialog" class="dialog hidden" role="dialog" aria-modal="true" style="max-width:28rem">
         <div class="dialog-header">
@@ -131,29 +113,9 @@ export function render(): string {
           <p class="dialog-description">Send an invitation to join your organization.</p>
         </div>
         <div class="flex flex-col gap-4 py-4">
-          <div>
-            <label class="label mb-2 block">Email Address</label>
-            <input class="input" type="email" placeholder="colleague@company.com" id="invite-email" />
-          </div>
-          <div>
-            <label class="label mb-2 block">Role</label>
-            <select class="input" id="invite-role">
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </div>
-          <div>
-            <label class="label mb-2 block">Department</label>
-            <select class="input" id="invite-dept">
-              <option value="Engineering">Engineering</option>
-              <option value="Product">Product</option>
-              <option value="Design">Design</option>
-              <option value="Sales">Sales</option>
-              <option value="Operations">Operations</option>
-            </select>
-          </div>
+          <div><label class="label mb-2 block">Email Address</label><input class="input" type="email" placeholder="colleague@company.com" id="invite-email" /></div>
+          <div><label class="label mb-2 block">Role</label><select class="input" id="invite-role"><option value="member">Member</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="viewer">Viewer</option></select></div>
+          <div><label class="label mb-2 block">Department</label><select class="input" id="invite-dept"><option value="Engineering">Engineering</option><option value="Product">Product</option><option value="Design">Design</option><option value="Sales">Sales</option><option value="Operations">Operations</option></select></div>
         </div>
         <div class="dialog-footer">
           <button class="btn btn-outline" id="invite-cancel">Cancel</button>
@@ -162,22 +124,9 @@ export function render(): string {
       </div>
     </div>`;
 
-  return renderDashboardLayout(content);
-}
-
-export function init(): void {
-  initDashboardLayout();
-
   // Invite modal
-  const openInvite = () => {
-    $('#invite-backdrop')?.classList.remove('hidden');
-    $('#invite-dialog')?.classList.remove('hidden');
-  };
-  const closeInvite = () => {
-    $('#invite-backdrop')?.classList.add('hidden');
-    $('#invite-dialog')?.classList.add('hidden');
-  };
-
+  const openInvite = () => { $('#invite-backdrop')?.classList.remove('hidden'); $('#invite-dialog')?.classList.remove('hidden'); };
+  const closeInvite = () => { $('#invite-backdrop')?.classList.add('hidden'); $('#invite-dialog')?.classList.add('hidden'); };
   $('#invite-btn')?.addEventListener('click', openInvite);
   $('#invite-cancel')?.addEventListener('click', closeInvite);
   $('#invite-backdrop')?.addEventListener('click', closeInvite);
@@ -187,9 +136,5 @@ export function init(): void {
     showToast(`Invitation sent to ${email}`, 'success');
     closeInvite();
   });
-
-  // Escape to close
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeInvite();
-  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeInvite(); });
 }
