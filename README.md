@@ -40,7 +40,7 @@ Or open any page's `index.html` directly in a browser (`file://`).
 ```
 
 Requires a clean git working directory. The build:
-1. Composes dashboard pages by merging `site/layout.html` with each page's `page.html`
+1. Composes dashboard pages by merging `site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
 3. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 

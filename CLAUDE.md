@@ -43,12 +43,12 @@ All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS clas
 
 ### Design System
 
-Full spec in `DESIGN_SYSTEM.md`. Key constraints:
+Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `site/fonts/`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~80+ inline SVG functions in `site/script.ts` (replaces Lucide React). Each returns an SVG string: `iconSparkles(size, cssClass)`.
+- **Icons**: ~80+ inline SVG functions in `site/script.ts`. Each returns an SVG string: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
 - **Charts**: SVG rendering functions in `site/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
@@ -116,7 +116,7 @@ system/
 
 build                         # Executable build script
 tsconfig.json                 # TypeScript config
-DESIGN_SYSTEM.md              # Design system specification
+DESIGN-SYSTEM.md              # Design system specification
 ```
 
 Each page directory contains `index.ts` + `index.html`. Build output goes to a temp directory — no build artifacts in the repo.

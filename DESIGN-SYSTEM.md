@@ -113,33 +113,33 @@ All grays are derived from blue tones for brand cohesion. **Never use pure black
 
 ### Cards
 
-```tsx
-// Standard card
-<div className="fusion-card p-6">
+```html
+<!-- Standard card -->
+<div class="fusion-card p-6">
   Content
 </div>
 
-// Flat card (no hover effect)
-<div className="fusion-card-flat p-4">
+<!-- Flat card (no hover effect) -->
+<div class="fusion-card-flat p-4">
   Content
 </div>
 ```
 
 ### Status Badges
 
-```tsx
-<span className="status-badge-success">Approved</span>
-<span className="status-badge-warning">Pending</span>
-<span className="status-badge-error">Rejected</span>
+```html
+<span class="status-badge-success">Approved</span>
+<span class="status-badge-warning">Pending</span>
+<span class="status-badge-error">Rejected</span>
 ```
 
 ### Metric Widgets
 
-```tsx
-<div className="metric-widget">
-  <span className="metric-widget-label">Revenue</span>
-  <span className="metric-widget-value">$45,000</span>
-  <span className="metric-widget-trend-up">+12%</span>
+```html
+<div class="metric-widget">
+  <span class="metric-widget-label">Revenue</span>
+  <span class="metric-widget-value">$45,000</span>
+  <span class="metric-widget-trend-up">+12%</span>
 </div>
 ```
 
@@ -194,19 +194,19 @@ All grays are derived from blue tones for brand cohesion. **Never use pure black
 ## 9. Iconography
 
 ### Style Guide
-- **Library**: Lucide React (line-based)
+- **Library**: Inline SVG functions in `site/script.ts` (line-based, each returns an SVG string)
 - **Default size**: 16px (inline), 20px (buttons), 24px (standalone)
 - **Stroke width**: 2px
 - **Color**: Inherit from parent or use `text-muted-foreground`
 
 ### Icon Sizing
-| Context | Size | Class |
-|---------|------|-------|
-| Inline text | 16px | `w-4 h-4` |
-| Buttons | 16px | `w-4 h-4` |
-| Cards | 20px | `w-5 h-5` |
-| Feature icons | 24px | `w-6 h-6` |
-| Empty states | 48px | `w-12 h-12` |
+| Context | Size |
+|---------|------|
+| Inline text | 16px |
+| Buttons | 16px |
+| Cards | 20px |
+| Feature icons | 24px |
+| Empty states | 48px |
 
 ## 10. Content Guidelines
 
