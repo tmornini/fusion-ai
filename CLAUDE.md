@@ -99,11 +99,10 @@ fonts/                        # Self-hosted woff2 files
 build                         # Executable build script (esbuild)
 tsconfig.json                 # TypeScript config
 docs/                         # Design system documentation
-supabase/                     # Database migrations (for future use)
 ```
 
 ## Build
 
-The `build` script uses esbuild to:
-1. Compile TypeScript and bundle all page modules into a single IIFE (`site/app.js`)
-2. Create a distribution ZIP (`fusion-ai-YYYYMMDDTHHMMSSZ.zip`) containing `index.html`, `site/style.css`, `site/app.js`, and `fonts/`
+The `build` script requires a clean git working directory (no uncommitted changes), then:
+1. Compiles TypeScript and bundles all page modules into a single IIFE (`site/app.js`)
+2. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) containing `index.html`, `site/style.css`, `site/app.js`, and `fonts/`
