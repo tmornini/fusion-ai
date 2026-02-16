@@ -195,7 +195,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
 
 export async function init(): Promise<void> {
   const params = getParams();
-  const id = params.get('id') || '1';
+  const id = params['id'] || '1';
 
   const [idea, edge] = await Promise.all([
     getApprovalIdea(id),

@@ -527,7 +527,8 @@ function initPrefetch(): void {
   if (location.protocol === 'file:') return;
   const prefetched = new Set<string>();
   document.addEventListener('pointerenter', (e) => {
-    const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
+    if (!(e.target instanceof Element)) return;
+    const anchor = e.target.closest('a[href]') as HTMLAnchorElement | null;
     if (!anchor) return;
     const href = anchor.getAttribute('href');
     if (href && href.endsWith('/index.html') && !href.startsWith('http') && !prefetched.has(href)) {

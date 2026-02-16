@@ -35,7 +35,7 @@ function renderClarification(c: Clarification): string {
 
 export async function init(): Promise<void> {
   const params = getParams();
-  const projectId = params.get('projectId') || '1';
+  const projectId = params['projectId'] || '1';
   const [project, clarifications] = await Promise.all([
     getEngineeringProject(projectId),
     getClarifications(projectId),

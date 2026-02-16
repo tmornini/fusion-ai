@@ -180,7 +180,7 @@ export async function init(): Promise<void> {
   function bindCardActions() {
     document.querySelectorAll<HTMLElement>('[data-idea-card]').forEach(card => {
       card.addEventListener('click', (e) => {
-        if ((e.target as HTMLElement).closest('button')) return;
+        if (e.target instanceof Element && e.target.closest('button')) return;
         navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
       });
     });

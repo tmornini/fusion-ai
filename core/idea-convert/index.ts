@@ -169,7 +169,7 @@ function renderPage(idea: ConvertIdea, ideaId: string): string {
 
 export async function init(): Promise<void> {
   const params = getParams();
-  const ideaId = params.get('ideaId') || '1';
+  const ideaId = params['ideaId'] || '1';
 
   const idea = await getIdeaForConversion(ideaId);
 
