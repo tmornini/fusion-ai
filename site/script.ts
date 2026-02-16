@@ -382,6 +382,7 @@ const pageModules: Record<string, () => Promise<{ init: (params?: Record<string,
 
 document.addEventListener('DOMContentLoaded', async () => {
   applyTheme();
+  initPrefetch();
 
   const pageName = getPageName();
 
@@ -516,6 +517,27 @@ function setupDropdown(toggleId: string, contentId: string): void {
       content.classList.add('hidden');
     }
   });
+}
+
+// ------------------------------------
+// Navigation Prefetch
+// ------------------------------------
+
+function initPrefetch(): void {
+  if (location.protocol === 'file:') return;
+  const prefetched = new Set<string>();
+  document.addEventListener('pointerenter', (e) => {
+    const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
+    if (!anchor) return;
+    const href = anchor.getAttribute('href');
+    if (href && href.endsWith('/index.html') && !href.startsWith('http') && !prefetched.has(href)) {
+      prefetched.add(href);
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  }, { capture: true });
 }
 
 // ------------------------------------
