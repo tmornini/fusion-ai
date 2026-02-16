@@ -18,25 +18,28 @@ No test framework is configured.
 
 ## Architecture
 
-**Vanilla TypeScript SPA** with zero runtime browser dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). The app works via both HTTP server and `file://` (double-click `index.html`).
+**Vanilla TypeScript** with zero runtime browser dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file that works via both HTTP server and `file://` (double-click any `index.html`).
 
 ### Key Layers
 
-- **Routing**: Hash-based (`#/dashboard`, `#/ideas/123/edge`). All routes defined in `site/script.ts` via `route()` calls. A `matchRoute()` function handles static paths and `:param` segments.
-- **Layout**: Most pages use `renderDashboardLayout(content)` which provides sidebar, top header, search, notifications, and theme toggle. Mobile uses a Sheet-based drawer sidebar.
+- **HTML Composition**: A build step (`site/compose.ts`) merges `site/layout.html` (shared sidebar/header) with each page's `page.html` to produce standalone `index.html` files. 8 pages (landing, auth, onboarding, etc.) have hand-written `index.html` instead.
+- **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
+- **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
+- **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: All mock data is in `site/data.ts` with async functions returning Promises — ready for API replacement.
+- **Data**: All mock data is in `site/data.ts` with ~27 async functions returning Promises — ready for API replacement.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
 ### Page Module Pattern
 
 Each page folder contains `index.ts` exporting:
-- `render(params?): string` — returns HTML string for the page
-- `init(params?): void` — binds event listeners after DOM insertion
+- `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
+
+Dashboard pages also have `page.html` with the page-specific HTML content (placeholder containers for JS-populated data). Standalone pages have a complete `index.html` with a `<div id="page-root">` that `init()` renders into.
 
 ### Dark Mode
 
-CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggle persists to `localStorage`. Supports system preference detection via `prefers-color-scheme`.
+CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggle persists to `localStorage` and carries across page navigation. Supports system preference detection via `prefers-color-scheme`.
 
 ## UI & Styling
 
@@ -58,45 +61,52 @@ Full spec in `DESIGN_SYSTEM.md`. Key constraints:
 
 ### Mobile Responsiveness
 
-`matchMedia('(max-width: 767px)')` listener in `site/script.ts` detects mobile. `renderDashboardLayout` renders different header/sidebar for mobile vs desktop. Mobile sidebar uses Sheet (slide-in drawer). Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
+CSS media queries in `site/style.css` show/hide desktop vs mobile header and sidebar. Mobile sidebar uses Sheet (slide-in drawer) toggled by JS. Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
 
 ## Project Structure
 
 ```
-index.html                    # Single entry point
+index.html                    # Redirects to landing/index.html
 site/
+  layout.html                 # Shared dashboard layout template (sidebar, header)
+  compose.ts                  # Build-time script: layout.html + page.html → index.html
   style.css                   # All CSS: tokens, components, layouts, utilities
-  script.ts                   # Router, state, icons, shared UI functions
-  data.ts                     # Async mock data functions
+  script.ts                   # Page dispatch, state, icons, navigation, layout behavior
+  data.ts                     # ~27 async mock data functions + all interfaces
   charts.ts                   # SVG chart rendering (bar, line, donut, area)
-landing/index.ts              # Landing page
-auth/index.ts                 # Login/signup
-onboarding/index.ts           # Welcome screen
-dashboard/index.ts            # Dashboard with gauge cards
-ideas/index.ts                # Ideas list
-idea-create/index.ts          # Multi-step idea wizard
-idea-scoring/index.ts         # AI scoring display
-edge/index.ts                 # Edge definition (per-idea)
-edge-list/index.ts            # Edge list view
-idea-convert/index.ts         # Idea-to-project conversion
-idea-review-queue/index.ts    # Review queue
-approval-detail/index.ts      # Review decision page
-projects/index.ts             # Projects list
-project-detail/index.ts       # Project detail (tabbed)
-engineering-requirements/index.ts  # Engineering requirements
-team/index.ts                 # Team roster
-crunch/index.ts               # Data labeling tool
-flow/index.ts                 # Process documentation
-account/index.ts              # Account overview
-profile/index.ts              # Profile settings
-company-settings/index.ts     # Company settings
-manage-users/index.ts         # User administration
-activity-feed/index.ts        # Activity feed
-notification-settings/index.ts # Notification preferences
-design-system/index.ts        # Component gallery
-not-found/index.ts            # 404
+
+# Dashboard pages (layout composed at build time from page.html + layout.html)
+dashboard/                    # page.html + index.ts — Dashboard with gauge cards
+ideas/                        # page.html + index.ts — Ideas list
+projects/                     # page.html + index.ts — Projects list
+project-detail/               # page.html + index.ts — Project detail (tabbed)
+edge/                         # page.html + index.ts — Edge definition (per-idea)
+edge-list/                    # page.html + index.ts — Edge list view
+idea-review-queue/            # page.html + index.ts — Review queue
+team/                         # page.html + index.ts — Team roster
+crunch/                       # page.html + index.ts — Data labeling tool
+flow/                         # page.html + index.ts — Process documentation
+engineering-requirements/     # page.html + index.ts — Engineering requirements
+account/                      # page.html + index.ts — Account overview
+profile/                      # page.html + index.ts — Profile settings
+company-settings/             # page.html + index.ts — Company settings
+manage-users/                 # page.html + index.ts — User administration
+activity-feed/                # page.html + index.ts — Activity feed
+notification-settings/        # page.html + index.ts — Notification preferences
+design-system/                # page.html + index.ts — Component gallery
+
+# Standalone pages (hand-written index.html, no shared layout)
+landing/                      # index.html + index.ts — Landing page
+auth/                         # index.html + index.ts — Login/signup
+onboarding/                   # index.html + index.ts — Welcome screen
+idea-create/                  # index.html + index.ts — Multi-step idea wizard
+idea-scoring/                 # index.html + index.ts — AI scoring display
+idea-convert/                 # index.html + index.ts — Idea-to-project conversion
+approval-detail/              # index.html + index.ts — Review decision page
+not-found/                    # index.html + index.ts — 404
+
 fonts/                        # Self-hosted woff2 files
-build                         # Executable build script (esbuild)
+build                         # Executable build script
 tsconfig.json                 # TypeScript config
 DESIGN_SYSTEM.md              # Design system specification
 ```
@@ -104,5 +114,8 @@ DESIGN_SYSTEM.md              # Design system specification
 ## Build
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
-1. Compiles TypeScript and bundles all page modules into a single IIFE (`site/app.js`)
-2. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) containing `index.html`, `site/style.css`, `site/app.js`, and `fonts/`
+1. Composes HTML pages: runs `site/compose.ts` to merge `layout.html` with each `page.html`, producing 18 `index.html` files
+2. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild
+3. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) containing all `index.html` files, `site/style.css`, `site/app.js`, and `fonts/`
+
+The composed `index.html` files and `site/app.js` are build artifacts (gitignored).

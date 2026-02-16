@@ -4,7 +4,7 @@ Enterprise innovation management platform for capturing ideas, defining business
 
 ## Overview
 
-Vanilla TypeScript single-page application with zero runtime browser dependencies. Works via any HTTP server or by opening `index.html` directly in a browser.
+Vanilla TypeScript with zero runtime browser dependencies. Every page is a standalone HTML file — open any `index.html` directly in a browser or serve via any HTTP server.
 
 ### Modules
 
@@ -28,9 +28,10 @@ Preview locally:
 
 ```sh
 python3 -m http.server 8080
+# then open http://localhost:8080/landing/index.html
 ```
 
-Or open `index.html` directly in a browser.
+Or open any page's `index.html` directly in a browser (`file://`).
 
 ## Build
 
@@ -38,13 +39,17 @@ Or open `index.html` directly in a browser.
 ./build
 ```
 
-Requires a clean git working directory. Compiles TypeScript via esbuild into a single bundled JS file and produces a distribution ZIP named `fusion-ai-<sha>.zip`.
+Requires a clean git working directory. The build:
+1. Composes dashboard pages by merging `site/layout.html` with each page's `page.html`
+2. Bundles TypeScript via esbuild into a single JS file
+3. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack
 
 - TypeScript (vanilla, no framework)
+- Build-time HTML composition (shared layout + per-page content)
 - CSS custom properties with light/dark theme support
-- Hash-based client-side routing
+- Standard `<a href>` navigation between standalone HTML pages
 - SVG charts (bar, line, donut, area)
 - 80+ inline SVG icons
 - Self-hosted IBM Plex Sans, Inter, and IBM Plex Mono fonts
