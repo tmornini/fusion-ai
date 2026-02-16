@@ -333,8 +333,7 @@ async function handleRoute(): Promise<void> {
     mod.init?.(matched.params);
   } else {
     const notFound = await import('../not-found/index');
-    app.innerHTML = notFound.render({});
-    notFound.init?.({});
+    app.innerHTML = notFound.render();
   }
 }
 
