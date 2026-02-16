@@ -3,6 +3,7 @@ import {
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
+  renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
 import { getTeamMembers, type TeamMember } from '../../site/data';
 
@@ -153,7 +154,23 @@ function bindDetailTabs(): void {
 }
 
 export async function init(): Promise<void> {
-  members = await getTeamMembers();
+  const teamListEl = $('#team-list');
+  if (teamListEl) teamListEl.innerHTML = renderSkeleton('card-list', { count: 4 });
+
+  try {
+    members = await getTeamMembers();
+  } catch {
+    if (teamListEl) {
+      teamListEl.innerHTML = renderError('Failed to load team members.');
+      teamListEl.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    }
+    return;
+  }
+
+  if (members.length === 0) {
+    if (teamListEl) teamListEl.innerHTML = renderEmpty(iconUsers(24), 'No Team Members', 'Invite team members to start collaborating on projects.');
+    return;
+  }
 
   // Populate icons
   const iconPlusEl = $('#icon-plus');

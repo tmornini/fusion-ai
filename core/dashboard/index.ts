@@ -1,11 +1,15 @@
 import {
   $, icons,
+  renderSkeleton, renderError,
   iconSparkles, iconDollarSign, iconClock, iconZap,
+  iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
 } from '../../site/script';
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
-  type GaugeCardData,
+  getIdeas, getProjects, getTeamMembers,
+  type GaugeCardData, type Idea, type Project, type TeamMember,
 } from '../../site/data';
+import { donutChart, barChart, areaChart } from '../../site/charts';
 
 const themeStyles: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },
@@ -79,13 +83,164 @@ function greeting(): string {
   return 'evening';
 }
 
+// ── Chart data transformations ────────────────
+
+const statusLabels: Record<string, string> = {
+  draft: 'Draft',
+  scored: 'Scored',
+  pending_review: 'Under Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+};
+
+const statusColors: Record<string, string> = {
+  draft: 'hsl(var(--muted-foreground))',
+  scored: 'hsl(var(--info))',
+  pending_review: 'hsl(var(--warning))',
+  approved: 'hsl(var(--success))',
+  rejected: 'hsl(var(--error))',
+};
+
+const projectStatusLabels: Record<string, string> = {
+  approved: 'Approved',
+  under_review: 'Under Review',
+  sent_back: 'Sent Back',
+};
+
+const projectStatusColors: Record<string, string> = {
+  approved: 'hsl(var(--success))',
+  under_review: 'hsl(var(--warning))',
+  sent_back: 'hsl(var(--error))',
+};
+
+function buildPipelineData(ideas: Idea[]) {
+  const groups: Record<string, number> = {};
+  ideas.forEach(i => { groups[i.status] = (groups[i.status] || 0) + 1; });
+  return Object.entries(groups).map(([status, count]) => ({
+    label: statusLabels[status] || status,
+    value: count,
+    color: statusColors[status],
+  }));
+}
+
+function buildProjectHealthData(projects: Project[]) {
+  const groups: Record<string, number> = {};
+  projects.forEach(p => { groups[p.status] = (groups[p.status] || 0) + 1; });
+  return Object.entries(groups).map(([status, count]) => ({
+    label: projectStatusLabels[status] || status,
+    value: count,
+    color: projectStatusColors[status],
+  }));
+}
+
+function buildScoreData(ideas: Idea[]) {
+  return [...ideas]
+    .sort((a, b) => a.score - b.score)
+    .map(i => ({ label: i.title.slice(0, 12), value: i.score }));
+}
+
+function buildAvailabilityData(members: TeamMember[]) {
+  return members.map(m => ({
+    label: m.name.split(' ')[0],
+    value: m.availability,
+  }));
+}
+
+function makeResponsive(container: HTMLElement): void {
+  const svg = container.querySelector('svg');
+  if (svg) {
+    svg.style.width = '100%';
+    svg.style.height = 'auto';
+    svg.style.maxWidth = svg.getAttribute('width') + 'px';
+  }
+}
+
+// ── Chart rendering ────────────────
+
+function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
+  // Icons
+  const pipelineIcon = $('#chart-pipeline-icon');
+  if (pipelineIcon) pipelineIcon.innerHTML = iconLightbulb(16, 'text-primary');
+  const healthIcon = $('#chart-health-icon');
+  if (healthIcon) healthIcon.innerHTML = iconFolderKanban(16, 'text-success');
+  const scoresIcon = $('#chart-scores-icon');
+  if (scoresIcon) scoresIcon.innerHTML = iconBarChart(16, 'text-warning');
+  const availIcon = $('#chart-avail-icon');
+  if (availIcon) availIcon.innerHTML = iconUsers(16, 'text-primary');
+
+  // 1. Idea Pipeline (Donut)
+  const pipelineEl = $('#chart-pipeline');
+  if (pipelineEl) {
+    const pipelineData = buildPipelineData(ideas);
+    const total = pipelineData.reduce((a, d) => a + d.value, 0);
+    pipelineEl.innerHTML = donutChart(pipelineData, {
+      width: 140,
+      colors: pipelineData.map(d => d.color || ''),
+    }) + `<div class="donut-legend">${pipelineData.map(d =>
+      `<span class="donut-legend-item">
+        <span class="donut-legend-dot" style="background:${d.color}"></span>
+        ${d.label} <strong>${d.value}</strong> <span class="text-muted">(${Math.round(d.value / total * 100)}%)</span>
+      </span>`
+    ).join('')}</div>`;
+    makeResponsive(pipelineEl);
+  }
+
+  // 2. Project Health (Bar)
+  const healthEl = $('#chart-health');
+  if (healthEl) {
+    healthEl.innerHTML = barChart(buildProjectHealthData(projects), {
+      width: 300,
+      height: 180,
+      colors: Object.values(projectStatusColors),
+    });
+    makeResponsive(healthEl);
+  }
+
+  // 3. Idea Scores (Area)
+  const scoresEl = $('#chart-scores');
+  if (scoresEl) {
+    scoresEl.innerHTML = areaChart(buildScoreData(ideas), {
+      width: 300,
+      height: 180,
+      id: 'dashboard-scores',
+      colors: ['hsl(var(--warning))'],
+    });
+    makeResponsive(scoresEl);
+  }
+
+  // 4. Team Availability (Bar)
+  const availEl = $('#chart-availability');
+  if (availEl) {
+    availEl.innerHTML = barChart(buildAvailabilityData(members), {
+      width: 300,
+      height: 180,
+      colors: ['hsl(var(--primary))'],
+    });
+    makeResponsive(availEl);
+  }
+}
+
 export async function init(): Promise<void> {
-  const [user, gauges, quickActions, stats] = await Promise.all([
-    getCurrentUser(),
-    getDashboardGauges(),
-    getDashboardQuickActions(),
-    getDashboardStats(),
-  ]);
+  // Show skeletons
+  const gaugeContainer = $('#gauge-container');
+  if (gaugeContainer) gaugeContainer.innerHTML = renderSkeleton('card-grid', { count: 3 });
+  const actionsEl = $('#quick-actions');
+  if (actionsEl) actionsEl.innerHTML = renderSkeleton('card-grid', { count: 4 });
+
+  let user, gauges, quickActions, stats;
+  try {
+    [user, gauges, quickActions, stats] = await Promise.all([
+      getCurrentUser(),
+      getDashboardGauges(),
+      getDashboardQuickActions(),
+      getDashboardStats(),
+    ]);
+  } catch {
+    if (gaugeContainer) gaugeContainer.innerHTML = renderError('Failed to load dashboard data.');
+    const retryBtn = gaugeContainer?.querySelector('[data-retry-btn]');
+    if (retryBtn) retryBtn.addEventListener('click', () => init());
+    return;
+  }
 
   // Hero
   const heroIcon = $('#hero-icon');
@@ -116,11 +271,9 @@ export async function init(): Promise<void> {
   }
 
   // Gauges
-  const gaugeContainer = $('#gauge-container');
   if (gaugeContainer) gaugeContainer.innerHTML = gauges.map(renderGauge).join('');
 
   // Quick Actions
-  const actionsEl = $('#quick-actions');
   if (actionsEl) {
     actionsEl.innerHTML = quickActions.map(a => {
       const iconFn = icons[a.icon] || icons['lightbulb'];
@@ -136,5 +289,17 @@ export async function init(): Promise<void> {
     actionsEl.querySelectorAll<HTMLElement>('[data-action-href]').forEach(el => {
       el.addEventListener('click', () => { window.location.href = el.getAttribute('data-action-href')!; });
     });
+  }
+
+  // Charts — fetch chart data in parallel (non-blocking for main dashboard)
+  try {
+    const [ideas, projects, members] = await Promise.all([
+      getIdeas(),
+      getProjects(),
+      getTeamMembers(),
+    ]);
+    renderCharts(ideas, projects, members);
+  } catch {
+    // Charts are supplementary — silently degrade
   }
 }

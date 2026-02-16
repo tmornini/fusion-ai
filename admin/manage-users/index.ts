@@ -3,6 +3,7 @@ import {
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
+  renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
 import { getUsers, type UserData } from '../../site/data';
 
@@ -53,12 +54,27 @@ function userRow(u: UserData): string {
 }
 
 export async function init(): Promise<void> {
-  const users = await getUsers();
-  const activeCount = users.filter(u => u.status === 'active').length;
-  const pendingCount = users.filter(u => u.status === 'pending').length;
-
   const container = $('#manage-users-content');
   if (!container) return;
+
+  container.innerHTML = renderSkeleton('table', { count: 5 });
+
+  let users: UserData[];
+  try {
+    users = await getUsers();
+  } catch {
+    container.innerHTML = renderError('Failed to load users.');
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
+
+  if (users.length === 0) {
+    container.innerHTML = renderEmpty(iconUsers(24), 'No Users Yet', 'Invite users to your organization to start collaborating.');
+    return;
+  }
+
+  const activeCount = users.filter(u => u.status === 'active').length;
+  const pendingCount = users.filter(u => u.status === 'pending').length;
 
   container.innerHTML = `
     <div style="max-width:72rem;margin:0 auto">

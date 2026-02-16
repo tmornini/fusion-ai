@@ -2,6 +2,7 @@ import {
   $, escapeHtml, showToast, navigateTo,
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
+  renderSkeleton, renderError,
 } from '../../site/script';
 import { getEdgeIdea, type EdgeIdea } from '../../site/data';
 
@@ -279,7 +280,19 @@ function bindEdgeEvents(ideaId: string) {
 
 export async function init(params?: Record<string, string>): Promise<void> {
   const ideaId = params?.ideaId || '1';
-  currentIdea = await getEdgeIdea(ideaId);
+  const container = $('#edge-content');
+  if (container) container.innerHTML = renderSkeleton('detail');
+
+  try {
+    currentIdea = await getEdgeIdea(ideaId);
+  } catch {
+    if (container) {
+      container.innerHTML = renderError('Failed to load Edge definition.');
+      container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init(params));
+    }
+    return;
+  }
+
   edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
   nextId = 1;
   rerender(ideaId);

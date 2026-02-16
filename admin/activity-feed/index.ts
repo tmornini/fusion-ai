@@ -3,6 +3,7 @@ import {
   iconActivity, iconLightbulb, iconStar, iconFolderKanban,
   iconCheckCircle2, iconMessageSquare, iconUserPlus, iconEdit,
   iconArrowRight, iconSearch, iconChevronRight,
+  renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
 import { getActivityFeed, type ActivityItem } from '../../site/data';
 
@@ -38,9 +39,24 @@ function renderActivity(a: ActivityItem): string {
 }
 
 export async function init(): Promise<void> {
-  const activities = await getActivityFeed();
   const container = $('#activity-feed-content');
   if (!container) return;
+
+  container.innerHTML = renderSkeleton('card-list', { count: 6 });
+
+  let activities: ActivityItem[];
+  try {
+    activities = await getActivityFeed();
+  } catch {
+    container.innerHTML = renderError('Failed to load activity feed.');
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
+
+  if (activities.length === 0) {
+    container.innerHTML = renderEmpty(iconActivity(24), 'No Activity Yet', 'Activity from your team will appear here as they work on ideas and projects.');
+    return;
+  }
 
   container.innerHTML = `
     <div style="max-width:48rem;margin:0 auto">

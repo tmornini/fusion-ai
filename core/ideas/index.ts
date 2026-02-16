@@ -1,5 +1,6 @@
 import {
   $, escapeHtml, navigateTo,
+  renderSkeleton, renderError, renderEmpty,
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
@@ -110,7 +111,36 @@ function renderIdeaCard(idea: Idea, view: string): string {
 }
 
 export async function init(): Promise<void> {
-  const ideas = await getIdeas();
+  // Show skeleton immediately
+  const listContainer = $('#ideas-list');
+  if (listContainer) listContainer.innerHTML = renderSkeleton('card-list', { count: 4 });
+
+  // Fetch data with error handling
+  let ideas: Idea[];
+  try {
+    ideas = await getIdeas();
+  } catch (e) {
+    if (listContainer) {
+      const msg = e instanceof Error ? e.message : 'Failed to load ideas. Please try again.';
+      listContainer.innerHTML = renderError(msg);
+      listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
+    }
+    return;
+  }
+
+  // Empty state
+  if (ideas.length === 0) {
+    if (listContainer) {
+      listContainer.innerHTML = renderEmpty(
+        iconLightbulb(24),
+        'No Ideas Yet',
+        'Start innovating by creating your first idea.',
+        { label: 'Create Your First Idea', href: '../idea-create/index.html' },
+      );
+    }
+    return;
+  }
+
   let currentView = 'priority';
 
   // Populate icons in static elements

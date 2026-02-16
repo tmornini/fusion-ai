@@ -4,8 +4,9 @@ import {
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
+  renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
-import { getFlowData, type ProcessStep } from '../../site/data';
+import { getFlowData, type ProcessStep, type FlowData } from '../../site/data';
 
 const toolIcons: Record<string, (s?: number, c?: string) => string> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
@@ -261,7 +262,25 @@ function bindEvents(): void {
 }
 
 export async function init(): Promise<void> {
-  const flowData = await getFlowData();
+  const root = $('#flow-root');
+  if (root) root.innerHTML = renderSkeleton('card-list', { count: 4 });
+
+  let flowData: FlowData;
+  try {
+    flowData = await getFlowData();
+  } catch {
+    if (root) {
+      root.innerHTML = renderError('Failed to load process data.');
+      root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    }
+    return;
+  }
+
+  if (flowData.steps.length === 0) {
+    if (root) root.innerHTML = renderEmpty(iconGitBranch(24), 'No Process Documented', 'Start documenting your processes to improve visibility and consistency.');
+    return;
+  }
+
   processName = flowData.processName;
   processDescription = flowData.processDescription;
   processDepartment = flowData.processDepartment;

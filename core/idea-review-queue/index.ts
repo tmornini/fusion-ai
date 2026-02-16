@@ -1,8 +1,9 @@
 import {
   $, escapeHtml, navigateTo,
+  renderSkeleton, renderError, renderEmpty,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
-  iconChevronRight, iconTarget, iconShield,
+  iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
 } from '../../site/script';
 import { getReviewQueue, type ReviewIdea } from '../../site/data';
 
@@ -67,9 +68,31 @@ function renderReviewCard(idea: ReviewIdea): string {
 let allIdeas: ReviewIdea[] = [];
 
 export async function init(): Promise<void> {
-  allIdeas = await getReviewQueue();
   const root = $('#rq-root');
   if (!root) return;
+
+  // Show skeleton immediately
+  root.innerHTML = renderSkeleton('stats-row') + renderSkeleton('card-list', { count: 4 });
+
+  // Fetch data with error handling
+  try {
+    allIdeas = await getReviewQueue();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Failed to load review queue. Please try again.';
+    root.innerHTML = renderError(msg);
+    root.querySelector('[data-retry-btn]')?.addEventListener('click', init);
+    return;
+  }
+
+  // Empty state
+  if (allIdeas.length === 0) {
+    root.innerHTML = renderEmpty(
+      iconClipboardCheck(24),
+      'Review Queue Empty',
+      'All ideas have been reviewed. Check back later for new submissions.',
+    );
+    return;
+  }
 
   const stats = {
     total: allIdeas.length,

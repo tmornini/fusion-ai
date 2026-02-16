@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, showToast, navigateTo,
+  $, escapeHtml, showToast, navigateTo, renderSkeleton, renderError,
   iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
   iconCalendar, iconTarget, iconCheckCircle2, iconAlertCircle, iconMessageSquare,
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
@@ -350,10 +350,21 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
 
 export async function init(params?: Record<string, string>): Promise<void> {
   const projectId = params?.projectId || '1';
-  const project = await getProjectById(projectId);
 
   const container = $('#project-detail-content');
-  if (container) container.innerHTML = renderProjectDetail(project, projectId);
+  if (!container) return;
+  container.innerHTML = renderSkeleton('detail');
+
+  let project: ProjectDetail;
+  try {
+    project = await getProjectById(projectId);
+  } catch {
+    container.innerHTML = renderError('Failed to load project details. The project may not exist.');
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init(params));
+    return;
+  }
+
+  container.innerHTML = renderProjectDetail(project, projectId);
 
   // Engineering nav
   document.querySelectorAll<HTMLElement>('[data-nav-eng]').forEach(el => {

@@ -21,6 +21,38 @@
   <div class="gauge-grid" id="gauge-container" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:2rem">
   </div>
 
+  <!-- Analytics Charts -->
+  <div class="charts-grid" style="margin-bottom:2rem">
+    <div class="card" style="padding:1.5rem">
+      <div class="flex items-center gap-2 mb-4">
+        <div style="width:2rem;height:2rem;border-radius:var(--radius);background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center" id="chart-pipeline-icon"></div>
+        <h3 class="text-sm font-semibold">Idea Pipeline</h3>
+      </div>
+      <div id="chart-pipeline" style="display:flex;flex-direction:column;align-items:center"></div>
+    </div>
+    <div class="card" style="padding:1.5rem">
+      <div class="flex items-center gap-2 mb-4">
+        <div style="width:2rem;height:2rem;border-radius:var(--radius);background:hsl(var(--success)/0.1);display:flex;align-items:center;justify-content:center" id="chart-health-icon"></div>
+        <h3 class="text-sm font-semibold">Project Health</h3>
+      </div>
+      <div id="chart-health"></div>
+    </div>
+    <div class="card" style="padding:1.5rem">
+      <div class="flex items-center gap-2 mb-4">
+        <div style="width:2rem;height:2rem;border-radius:var(--radius);background:hsl(var(--warning)/0.1);display:flex;align-items:center;justify-content:center" id="chart-scores-icon"></div>
+        <h3 class="text-sm font-semibold">Idea Scores</h3>
+      </div>
+      <div id="chart-scores"></div>
+    </div>
+    <div class="card" style="padding:1.5rem">
+      <div class="flex items-center gap-2 mb-4">
+        <div style="width:2rem;height:2rem;border-radius:var(--radius);background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center" id="chart-avail-icon"></div>
+        <h3 class="text-sm font-semibold">Team Availability</h3>
+      </div>
+      <div id="chart-availability"></div>
+    </div>
+  </div>
+
   <!-- Quick Actions -->
   <div class="card" style="padding:2rem;border:2px dashed hsl(var(--border)/0.6)">
     <h2 class="text-lg font-display font-semibold" style="margin-bottom:1.5rem">Quick Actions</h2>

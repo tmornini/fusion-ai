@@ -1,8 +1,9 @@
 import {
   $, escapeHtml, navigateTo,
+  renderSkeleton, renderError, renderEmpty,
   iconTrendingUp, iconClock, iconDollarSign, iconCheckCircle2,
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
-  iconEye, iconTarget, iconGripVertical,
+  iconEye, iconTarget, iconGripVertical, iconFolderKanban,
 } from '../../site/script';
 import { getProjects, type Project } from '../../site/data';
 
@@ -68,7 +69,36 @@ function renderProjectCard(p: Project, view: string): string {
 }
 
 export async function init(): Promise<void> {
-  const projects = await getProjects();
+  // Show skeleton immediately
+  const listContainer = $('#projects-list');
+  if (listContainer) listContainer.innerHTML = renderSkeleton('card-list', { count: 4 });
+
+  // Fetch data with error handling
+  let projects: Project[];
+  try {
+    projects = await getProjects();
+  } catch (e) {
+    if (listContainer) {
+      const msg = e instanceof Error ? e.message : 'Failed to load projects. Please try again.';
+      listContainer.innerHTML = renderError(msg);
+      listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
+    }
+    return;
+  }
+
+  // Empty state
+  if (projects.length === 0) {
+    if (listContainer) {
+      listContainer.innerHTML = renderEmpty(
+        iconFolderKanban(24),
+        'No Projects Yet',
+        'Convert approved ideas into projects to start tracking progress.',
+        { label: 'View Ideas', href: '../ideas/index.html' },
+      );
+    }
+    return;
+  }
+
   let currentView: 'priority' | 'performance' = 'priority';
 
   // Populate icons

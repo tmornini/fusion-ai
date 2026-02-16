@@ -15,6 +15,7 @@ export interface ChartConfig {
   colors?: string[];
   showLabels?: boolean;
   padding?: number;
+  id?: string;
 }
 
 const defaultColors = [
@@ -129,14 +130,15 @@ export function areaChart(data: ChartData[], config?: ChartConfig): string {
 
   const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const areaD = lineD + ` L ${points[points.length - 1].x} ${h - pad} L ${points[0].x} ${h - pad} Z`;
+  const gradId = config?.id ? `area-grad-${config.id}` : `area-grad-${Math.random().toString(36).slice(2, 8)}`;
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
     </linearGradient></defs>
     <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>
-    <path d="${areaD}" fill="url(#area-grad)"/>
+    <path d="${areaD}" fill="url(#${gradId})"/>
     <path d="${lineD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 }

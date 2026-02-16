@@ -1,10 +1,10 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams,
+  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
   iconArrowLeft, iconLightbulb, iconTarget, iconUsers, iconMessageSquare,
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
 } from '../../site/script';
-import { getEngineeringProject, getClarifications, type Clarification } from '../../site/data';
+import { getEngineeringProject, getClarifications, type EngineeringProject, type Clarification } from '../../site/data';
 
 function renderClarification(c: Clarification): string {
   const isPending = c.status === 'pending';
@@ -36,16 +36,26 @@ function renderClarification(c: Clarification): string {
 export async function init(): Promise<void> {
   const params = getParams();
   const projectId = params['projectId'] || '1';
-  const [project, clarifications] = await Promise.all([
-    getEngineeringProject(projectId),
-    getClarifications(projectId),
-  ]);
-
-  const pendingCount = clarifications.filter(c => c.status === 'pending').length;
-  const answeredCount = clarifications.filter(c => c.status === 'answered').length;
 
   const root = $('#er-root');
   if (!root) return;
+  root.innerHTML = renderSkeleton('detail');
+
+  let project: EngineeringProject;
+  let clarifications: Clarification[];
+  try {
+    [project, clarifications] = await Promise.all([
+      getEngineeringProject(projectId),
+      getClarifications(projectId),
+    ]);
+  } catch {
+    root.innerHTML = renderError('Failed to load engineering requirements.');
+    root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
+
+  const pendingCount = clarifications.filter(c => c.status === 'pending').length;
+  const answeredCount = clarifications.filter(c => c.status === 'answered').length;
 
   root.innerHTML = `
     <div style="max-width:56rem;margin:0 auto">

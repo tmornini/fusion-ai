@@ -2,6 +2,7 @@ import {
   $, escapeHtml, navigateTo,
   iconTarget, iconSearch, iconCheckCircle2, iconAlertCircle, iconClock,
   iconChevronRight, iconTrendingUp, iconShield, iconBarChart, iconUser,
+  renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
 import { getEdges, type EdgeItem } from '../../site/data';
 
@@ -40,7 +41,24 @@ function renderEdgeCard(edge: EdgeItem): string {
 }
 
 export async function init(): Promise<void> {
-  const edges = await getEdges();
+  const listEl = $('#edge-list');
+  if (listEl) listEl.innerHTML = renderSkeleton('card-list', { count: 4 });
+
+  let edges: EdgeItem[];
+  try {
+    edges = await getEdges();
+  } catch {
+    if (listEl) {
+      listEl.innerHTML = renderError('Failed to load Edge definitions.');
+      listEl.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    }
+    return;
+  }
+
+  if (edges.length === 0) {
+    if (listEl) listEl.innerHTML = renderEmpty(iconTarget(24), 'No Edge Definitions', 'Create Edge definitions for your ideas to track outcomes and metrics.', { label: 'View Ideas', href: '../ideas/index.html' });
+    return;
+  }
 
   // Badge icon
   const badgeEl = $('#badge-icon');

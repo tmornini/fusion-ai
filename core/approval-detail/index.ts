@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams,
+  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
   iconArrowLeft, iconAlertTriangle, iconTrendingUp, iconClock,
   iconUser, iconCalendar, iconTarget, iconLightbulb, iconCheckCircle,
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
@@ -197,13 +197,23 @@ export async function init(): Promise<void> {
   const params = getParams();
   const id = params['id'] || '1';
 
-  const [idea, edge] = await Promise.all([
-    getApprovalIdea(id),
-    getApprovalEdge(id),
-  ]);
-
   const root = $('#page-root');
   if (!root) return;
+  root.innerHTML = renderSkeleton('detail');
+
+  let idea: ApprovalIdea;
+  let edge: ApprovalEdge;
+  try {
+    [idea, edge] = await Promise.all([
+      getApprovalIdea(id),
+      getApprovalEdge(id),
+    ]);
+  } catch {
+    root.innerHTML = renderError('Failed to load approval details.');
+    root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
+
   root.innerHTML = renderPage(idea, edge);
 
   // Approve

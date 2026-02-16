@@ -4,8 +4,9 @@ import {
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
   iconExternalLink, iconBell,
+  renderSkeleton, renderError,
 } from '../../site/script';
-import { getAccountData } from '../../site/data';
+import { getAccountData, type AccountData } from '../../site/data';
 
 function usageBarColor(current: number, limit: number): string {
   const pct = (current / limit) * 100;
@@ -33,11 +34,21 @@ function activityIcon(type: string): string {
 }
 
 export async function init(): Promise<void> {
-  const d = await getAccountData();
-  const billingDate = new Date(d.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
   const container = $('#account-content');
   if (!container) return;
+
+  container.innerHTML = renderSkeleton('detail');
+
+  let d: AccountData;
+  try {
+    d = await getAccountData();
+  } catch {
+    container.innerHTML = renderError('Failed to load account data.');
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
+
+  const billingDate = new Date(d.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   container.innerHTML = `
     <div style="max-width:64rem;margin:0 auto">

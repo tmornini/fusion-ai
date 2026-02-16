@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams,
+  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
@@ -171,7 +171,18 @@ export async function init(): Promise<void> {
   const params = getParams();
   const ideaId = params['ideaId'] || '1';
 
-  const idea = await getIdeaForConversion(ideaId);
+  const root = $('#page-root');
+  if (!root) return;
+  root.innerHTML = renderSkeleton('detail');
+
+  let idea: ConvertIdea;
+  try {
+    idea = await getIdeaForConversion(ideaId);
+  } catch {
+    root.innerHTML = renderError('Failed to load idea for conversion.');
+    root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
 
   projectDetails = {
     projectName: idea.title,
@@ -184,8 +195,6 @@ export async function init(): Promise<void> {
     successCriteria: '',
   };
 
-  const root = $('#page-root');
-  if (!root) return;
   root.innerHTML = renderPage(idea, ideaId);
 
   const syncFields = () => {
