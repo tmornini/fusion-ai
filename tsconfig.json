@@ -1,16 +1,16 @@
 {
-  "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
-  }
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+  },
+  "include": ["site/**/*.ts", "landing/**/*.ts", "auth/**/*.ts", "onboarding/**/*.ts", "dashboard/**/*.ts", "ideas/**/*.ts", "idea-create/**/*.ts", "idea-scoring/**/*.ts", "edge/**/*.ts", "edge-list/**/*.ts", "idea-convert/**/*.ts", "idea-review-queue/**/*.ts", "approval-detail/**/*.ts", "projects/**/*.ts", "project-detail/**/*.ts", "engineering-requirements/**/*.ts", "team/**/*.ts", "crunch/**/*.ts", "flow/**/*.ts", "account/**/*.ts", "profile/**/*.ts", "company-settings/**/*.ts", "manage-users/**/*.ts", "activity-feed/**/*.ts", "notification-settings/**/*.ts", "design-system/**/*.ts", "not-found/**/*.ts"]
 }

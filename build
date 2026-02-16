@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Building Fusion AI..."
+
+# Bundle TypeScript into a single JS file
+npx esbuild site/script.ts \
+  --bundle \
+  --minify \
+  --target=es2020 \
+  --format=iife \
+  --outfile=site/app.js
+
+echo "Bundle created: site/app.js ($(wc -c < site/app.js | tr -d ' ') bytes)"
+
+# Create distribution ZIP
+TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+ZIPNAME="fusion-ai-${TIMESTAMP}.zip"
+
+zip -r "$ZIPNAME" \
+  index.html \
+  site/style.css \
+  site/app.js \
+  fonts/ \
+  -x "*.ts" "*.map"
+
+echo "Distribution: $ZIPNAME ($(wc -c < "$ZIPNAME" | tr -d ' ') bytes)"
+echo "Done."
