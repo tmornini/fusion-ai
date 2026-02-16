@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo,
+  $, escapeHtml, navigateTo, scoreColor,
   renderSkeleton, renderError, renderEmpty,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
@@ -25,12 +25,6 @@ const edgeStatusConfig: Record<string, { label: string; cls: string }> = {
   missing: { label: 'Edge Missing', cls: 'badge-error' },
 };
 
-function scoreColor(score: number): string {
-  if (score >= 80) return 'color:hsl(142 71% 45%)';
-  if (score >= 60) return 'color:hsl(var(--warning))';
-  return 'color:hsl(var(--error))';
-}
-
 function renderReviewCard(idea: ReviewIdea): string {
   const rc = readinessConfig[idea.readiness];
   return `
@@ -38,9 +32,9 @@ function renderReviewCard(idea: ReviewIdea): string {
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${priorityConfig[idea.priority].cls} text-xs">${priorityConfig[idea.priority].label}</span>
-            <span class="flex items-center gap-1 text-sm ${rc.cls}">${rc.icon(16)} ${rc.label}</span>
-            <span class="badge ${edgeStatusConfig[idea.edgeStatus].cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus].label}</span>
+            <span class="badge ${priorityConfig[idea.priority]!.cls} text-xs">${priorityConfig[idea.priority]!.label}</span>
+            <span class="flex items-center gap-1 text-sm ${rc!.cls}">${rc!.icon(16)} ${rc!.label}</span>
+            <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
           </div>
           <h3 class="font-semibold mb-1">${escapeHtml(idea.title)}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">

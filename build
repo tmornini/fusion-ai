@@ -23,7 +23,7 @@ npx esbuild site/script.ts \
   --format=iife \
   --outfile="$BUILD_DIR/site/app.js"
 
-echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | tr -d ' ') bytes)"
+echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | xargs) bytes)"
 
 # Copy static assets into build dir
 cp site/style.css "$BUILD_DIR/site/"
@@ -37,10 +37,7 @@ ZIPNAME="fusion-ai-${SHA}.zip"
 
 ZIPDEST="$HOME/Desktop/$ZIPNAME"
 
-OLDPWD="$PWD"
-cd "$BUILD_DIR"
-zip -r "$ZIPDEST" .
-cd "$OLDPWD"
+(cd "$BUILD_DIR" && zip -r "$ZIPDEST" .)
 
-echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | tr -d ' ') bytes)"
+echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | xargs) bytes)"
 echo "Done."

@@ -36,7 +36,7 @@ function renderProjectCard(p: Project, view: string): string {
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <h3 class="font-display font-semibold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title)}</h3>
-                <span class="badge ${sc.cls} text-xs">${sc.icon(14)} ${sc.label}</span>
+                <span class="badge ${sc!.cls} text-xs">${sc!.icon(14)} ${sc!.label}</span>
               </div>
               ${view === 'priority' ? `<span class="text-xs text-muted">Priority #${p.priority}</span>` : ''}
             </div>

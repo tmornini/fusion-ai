@@ -1,5 +1,6 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
+  $, escapeHtml, showToast, navigateTo, getParams, openDialog, closeDialog,
+  renderSkeleton, renderError,
   iconArrowLeft, iconAlertTriangle, iconTrendingUp, iconClock,
   iconUser, iconCalendar, iconTarget, iconLightbulb, iconCheckCircle,
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
@@ -226,8 +227,8 @@ export async function init(): Promise<void> {
   $('#back-btn')?.addEventListener('click', () => navigateTo('idea-review-queue'));
 
   // Reject dialog
-  const openReject = () => { $('#reject-backdrop')?.classList.remove('hidden'); $('#reject-dialog')?.classList.remove('hidden'); };
-  const closeReject = () => { $('#reject-backdrop')?.classList.add('hidden'); $('#reject-dialog')?.classList.add('hidden'); };
+  const openReject = () => openDialog('reject');
+  const closeReject = () => closeDialog('reject');
   $('#reject-btn')?.addEventListener('click', openReject);
   $('#reject-cancel')?.addEventListener('click', closeReject);
   $('#reject-backdrop')?.addEventListener('click', closeReject);
@@ -238,8 +239,8 @@ export async function init(): Promise<void> {
   });
 
   // Clarify dialog
-  const openClarify = () => { $('#clarify-backdrop')?.classList.remove('hidden'); $('#clarify-dialog')?.classList.remove('hidden'); };
-  const closeClarify = () => { $('#clarify-backdrop')?.classList.add('hidden'); $('#clarify-dialog')?.classList.add('hidden'); };
+  const openClarify = () => openDialog('clarify');
+  const closeClarify = () => closeDialog('clarify');
   $('#clarify-btn')?.addEventListener('click', openClarify);
   $('#clarify-cancel')?.addEventListener('click', closeClarify);
   $('#clarify-backdrop')?.addEventListener('click', closeClarify);

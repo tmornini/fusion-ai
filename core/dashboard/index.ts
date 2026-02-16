@@ -23,7 +23,7 @@ const iconLookup: Record<string, (s?: number, c?: string) => string> = {
 };
 
 function renderGauge(card: GaugeCardData): string {
-  const ts = themeStyles[card.theme];
+  const ts = themeStyles[card.theme]!;
   const uid = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
   const innerPct = Math.min((card.inner.value / card.inner.max) * 100, 100);
@@ -141,7 +141,7 @@ function buildScoreData(ideas: Idea[]) {
 
 function buildAvailabilityData(members: TeamMember[]) {
   return members.map(m => ({
-    label: m.name.split(' ')[0],
+    label: m.name.split(' ')[0] ?? '',
     value: m.availability,
   }));
 }

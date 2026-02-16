@@ -168,7 +168,11 @@ function syncColumnFields(): void {
   document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-col-field]').forEach(el => {
     const [colId, field] = (el.getAttribute('data-col-field') || '').split(':');
     const col = columns.find(c => c.id === colId);
-    if (col && field) (col as any)[field] = el.value;
+    if (col && field) {
+      const k = field as keyof CrunchColumn;
+      if (k === 'friendlyName' || k === 'description' || k === 'dataType' || k === 'acronymExpansion') col[k] = el.value;
+      else if (k === 'isAcronym') col[k] = el.value === 'true';
+    }
   });
   const ctx = $('#crunch-context') as HTMLTextAreaElement;
   if (ctx) businessContext = ctx.value;

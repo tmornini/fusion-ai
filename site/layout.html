@@ -62,7 +62,7 @@
         <div class="sidebar-footer">
           <div class="sidebar-user">
             <div class="sidebar-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-            <div style="flex:1;min-width:0">
+            <div class="flex-fill">
               <p class="text-sm font-medium truncate" id="sidebar-user-name">Demo User</p>
               <p class="text-xs text-muted truncate" id="sidebar-user-company">Demo Company</p>
             </div>
@@ -84,7 +84,7 @@
             <!-- Theme Toggle -->
             <div class="dropdown">
               <button class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></button>
-              <div class="dropdown-content hidden" id="theme-dropdown" data-align="end" style="right:0">
+              <div class="dropdown-content hidden" id="theme-dropdown" data-align="end">
                 <button class="dropdown-item" data-theme-set="light"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> Light</button>
                 <button class="dropdown-item" data-theme-set="dark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> Dark</button>
                 <button class="dropdown-item" data-theme-set="system"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg> System</button>
@@ -96,13 +96,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                 <span class="notification-dot" id="notif-count" style="display:none"></span>
               </button>
-              <div class="dropdown-content hidden" id="notif-dropdown" data-align="end" style="width:20rem;right:0">
+              <div class="dropdown-content dropdown-panel hidden" id="notif-dropdown" data-align="end">
                 <div class="dropdown-label flex justify-between items-center">
                   <span>Notifications</span>
                   <span class="badge badge-secondary text-xs" id="notif-badge" style="display:none"></span>
                 </div>
                 <div class="dropdown-separator"></div>
-                <div id="notif-list" style="max-height:20rem;overflow-y:auto"></div>
+                <div class="dropdown-scroll" id="notif-list"></div>
                 <div class="dropdown-separator"></div>
                 <button class="dropdown-item justify-center text-primary">View all notifications</button>
               </div>
@@ -119,7 +119,7 @@
             <!-- Mobile Theme Toggle -->
             <div class="dropdown">
               <button class="btn btn-ghost btn-icon" id="mobile-theme-toggle" aria-label="Toggle theme"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></button>
-              <div class="dropdown-content hidden" id="mobile-theme-dropdown" data-align="end" style="right:0">
+              <div class="dropdown-content hidden" id="mobile-theme-dropdown" data-align="end">
                 <button class="dropdown-item" data-theme-set="light"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg> Light</button>
                 <button class="dropdown-item" data-theme-set="dark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> Dark</button>
                 <button class="dropdown-item" data-theme-set="system"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg> System</button>
@@ -131,13 +131,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                 <span class="notification-dot" id="mobile-notif-count" style="display:none"></span>
               </button>
-              <div class="dropdown-content hidden" id="mobile-notif-dropdown" data-align="end" style="width:20rem;right:0">
+              <div class="dropdown-content dropdown-panel hidden" id="mobile-notif-dropdown" data-align="end">
                 <div class="dropdown-label flex justify-between items-center">
                   <span>Notifications</span>
                   <span class="badge badge-secondary text-xs" id="mobile-notif-badge" style="display:none"></span>
                 </div>
                 <div class="dropdown-separator"></div>
-                <div id="mobile-notif-list" style="max-height:20rem;overflow-y:auto"></div>
+                <div class="dropdown-scroll" id="mobile-notif-list"></div>
                 <div class="dropdown-separator"></div>
                 <button class="dropdown-item justify-center text-primary">View all notifications</button>
               </div>
@@ -200,7 +200,7 @@
             <div class="sidebar-footer">
               <div class="sidebar-user">
                 <div class="sidebar-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                <div style="flex:1;min-width:0">
+                <div class="flex-fill">
                   <p class="text-sm font-medium truncate" id="mobile-sidebar-user-name">Demo User</p>
                   <p class="text-xs text-muted truncate" id="mobile-sidebar-user-company">Demo Company</p>
                 </div>

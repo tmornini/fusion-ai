@@ -6,7 +6,7 @@ import {
 } from '../../site/script';
 import { getEdgeIdea, type EdgeIdea } from '../../site/data';
 
-interface Metric { id: string; name: string; target: string; unit: string; }
+interface Metric { [key: string]: string; id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }
 interface Impact { shortTerm: string; midTerm: string; longTerm: string; }
 interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string; owner: string; }
@@ -213,10 +213,11 @@ function syncFormData() {
     if (outcome) outcome.description = inp.value;
   });
   document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(inp => {
-    const [oId, mId, field] = (inp.getAttribute('data-metric') || '').split('|');
+    const parts = (inp.getAttribute('data-metric') || '').split('|');
+    const [oId, mId, field] = [parts[0]!, parts[1]!, parts[2]!];
     const outcome = edgeData.outcomes.find(o => o.id === oId);
     const metric = outcome?.metrics.find(m => m.id === mId);
-    if (metric) (metric as any)[field] = inp.value;
+    if (metric && field in metric) metric[field] = inp.value;
   });
 }
 

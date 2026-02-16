@@ -27,16 +27,29 @@ const defaultColors = [
   'hsl(280 65% 60%)',
 ];
 
-export function barChart(data: ChartData[], config?: ChartConfig): string {
+function chartSetup(data: ChartData[], config?: ChartConfig) {
   const w = config?.width ?? 300;
   const h = config?.height ?? 200;
   const pad = config?.padding ?? 40;
   const colors = config?.colors ?? defaultColors;
-  if (!data.length) return '';
-
   const maxVal = Math.max(...data.map(d => d.value));
-  const barW = Math.min(40, (w - pad * 2) / data.length - 8);
   const chartH = h - pad * 2;
+  return { w, h, pad, colors, maxVal, chartH };
+}
+
+function chartPoints(data: ChartData[], w: number, h: number, pad: number, maxVal: number, chartH: number) {
+  const stepX = (w - pad * 2) / Math.max(data.length - 1, 1);
+  return data.map((d, i) => ({ x: pad + i * stepX, y: h - pad - (d.value / maxVal) * chartH }));
+}
+
+function baseline(pad: number, w: number, h: number): string {
+  return `<line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>`;
+}
+
+export function barChart(data: ChartData[], config?: ChartConfig): string {
+  if (!data.length) return '';
+  const { w, h, pad, colors, maxVal, chartH } = chartSetup(data, config);
+  const barW = Math.min(40, (w - pad * 2) / data.length - 8);
 
   let bars = '';
   data.forEach((d, i) => {
@@ -51,26 +64,16 @@ export function barChart(data: ChartData[], config?: ChartConfig): string {
   });
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>
+    ${baseline(pad, w, h)}
     ${bars}
   </svg>`;
 }
 
 export function lineChart(data: ChartData[], config?: ChartConfig): string {
-  const w = config?.width ?? 300;
-  const h = config?.height ?? 200;
-  const pad = config?.padding ?? 40;
-  const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
   if (!data.length) return '';
-
-  const maxVal = Math.max(...data.map(d => d.value));
-  const stepX = (w - pad * 2) / Math.max(data.length - 1, 1);
-  const chartH = h - pad * 2;
-
-  const points = data.map((d, i) => ({
-    x: pad + i * stepX,
-    y: h - pad - (d.value / maxVal) * chartH,
-  }));
+  const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
+  const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
+  const points = chartPoints(data, w, h, pad, maxVal, chartH);
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   let dots = '';
@@ -79,7 +82,7 @@ export function lineChart(data: ChartData[], config?: ChartConfig): string {
   });
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>
+    ${baseline(pad, w, h)}
     <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
   </svg>`;
@@ -113,23 +116,13 @@ export function donutChart(data: ChartData[], config?: ChartConfig): string {
 }
 
 export function areaChart(data: ChartData[], config?: ChartConfig): string {
-  const w = config?.width ?? 300;
-  const h = config?.height ?? 200;
-  const pad = config?.padding ?? 40;
-  const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
   if (!data.length) return '';
-
-  const maxVal = Math.max(...data.map(d => d.value));
-  const stepX = (w - pad * 2) / Math.max(data.length - 1, 1);
-  const chartH = h - pad * 2;
-
-  const points = data.map((d, i) => ({
-    x: pad + i * stepX,
-    y: h - pad - (d.value / maxVal) * chartH,
-  }));
+  const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
+  const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
+  const points = chartPoints(data, w, h, pad, maxVal, chartH);
 
   const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaD = lineD + ` L ${points[points.length - 1].x} ${h - pad} L ${points[0].x} ${h - pad} Z`;
+  const areaD = lineD + ` L ${points[points.length - 1]!.x} ${h - pad} L ${points[0]!.x} ${h - pad} Z`;
   const gradId = config?.id ? `area-grad-${config.id}` : `area-grad-${Math.random().toString(36).slice(2, 8)}`;
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
@@ -137,7 +130,7 @@ export function areaChart(data: ChartData[], config?: ChartConfig): string {
       <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
     </linearGradient></defs>
-    <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>
+    ${baseline(pad, w, h)}
     <path d="${areaD}" fill="url(#${gradId})"/>
     <path d="${lineD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;

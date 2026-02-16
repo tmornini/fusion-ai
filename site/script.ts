@@ -227,6 +227,43 @@ async function withLoadingState<T>(
 }
 
 // ------------------------------------
+// Shared Utilities
+// ------------------------------------
+
+function initials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('');
+}
+
+function scoreColor(score: number): string {
+  if (score >= 80) return 'color:hsl(142 71% 45%)';
+  if (score >= 60) return 'color:hsl(var(--warning))';
+  return 'color:hsl(var(--error))';
+}
+
+function openDialog(id: string): void {
+  $(`#${id}-backdrop`)?.classList.remove('hidden');
+  $(`#${id}-dialog`)?.classList.remove('hidden');
+}
+
+function closeDialog(id: string): void {
+  $(`#${id}-backdrop`)?.classList.add('hidden');
+  $(`#${id}-dialog`)?.classList.add('hidden');
+}
+
+function initTabs(tabSel: string, panelSel: string, activeClass = 'active'): void {
+  document.querySelectorAll<HTMLElement>(tabSel).forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll(tabSel).forEach(t => t.classList.remove(activeClass));
+      tab.classList.add(activeClass);
+      document.querySelectorAll(panelSel).forEach(p => (p as HTMLElement).style.display = 'none');
+      const attr = tab.dataset.tab ?? tab.dataset.detailTab ?? '';
+      const panel = document.getElementById(`tab-${attr}`) ?? document.getElementById(`detail-${attr}`);
+      if (panel) panel.style.display = '';
+    });
+  });
+}
+
+// ------------------------------------
 // Icons (inline SVG — Lucide-compatible)
 // Each returns an SVG string; inherits currentColor.
 // Full set populated in Phase 1; stubs below for nav.
@@ -336,44 +373,37 @@ function iconLayoutGrid(s = 16, c = '') { return icon('<rect width="7" height="7
 function iconChevronUp(s = 16, c = '') { return icon('<path d="m18 15-6-6-6 6"/>', s, c); }
 function iconHistory(s = 16, c = '') { return icon('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>', s, c); }
 
-// Collected icons map for lookup by name
-const icons: Record<string, (s?: number, c?: string) => string> = {
-  sparkles: iconSparkles, home: iconHome, lightbulb: iconLightbulb,
-  'folder-kanban': iconFolderKanban, users: iconUsers, user: iconUser,
-  target: iconTarget, database: iconDatabase, 'git-branch': iconGitBranch,
-  palette: iconPalette, 'log-out': iconLogOut, menu: iconMenu,
-  search: iconSearch, bell: iconBell, sun: iconSun, moon: iconMoon,
-  monitor: iconMonitor, x: iconX, 'chevron-down': iconChevronDown,
-  'chevron-right': iconChevronRight, 'chevron-left': iconChevronLeft,
-  'panel-left-close': iconPanelLeftClose, 'panel-left': iconPanelLeft,
-  plus: iconPlus, 'arrow-left': iconArrowLeft, 'arrow-right': iconArrowRight,
-  check: iconCheck, loader: iconLoader, settings: iconSettings,
-  'external-link': iconExternalLink, filter: iconFilter,
-  'more-horizontal': iconMoreHorizontal, 'more-vertical': iconMoreVertical,
-  star: iconStar, heart: iconHeart, 'trending-up': iconTrendingUp,
-  'trending-down': iconTrendingDown, 'alert-circle': iconAlertCircle,
-  'alert-triangle': iconAlertTriangle, 'check-circle': iconCheckCircle,
-  info: iconInfo, mail: iconMail, phone: iconPhone, calendar: iconCalendar,
-  clock: iconClock, upload: iconUpload, download: iconDownload, trash: iconTrash,
-  edit: iconEdit, eye: iconEye, copy: iconCopy, save: iconSave, send: iconSend,
-  share: iconShare, globe: iconGlobe, rocket: iconRocket, zap: iconZap,
-  award: iconAward, brain: iconBrain, wand: iconWand, activity: iconActivity,
-  'bar-chart': iconBarChart, 'file-text': iconFileText, shield: iconShield,
-  building: iconBuilding, crown: iconCrown, briefcase: iconBriefcase,
-  'clipboard-check': iconClipboardCheck, 'dollar-sign': iconDollarSign,
-  smartphone: iconSmartphone, code: iconCode, hash: iconHash,
-  'grip-vertical': iconGripVertical, gauge: iconGauge, 'line-chart': iconLineChart,
-  'arrow-up-right': iconArrowUpRight, 'arrow-down-right': iconArrowDownRight,
-  camera: iconCamera, 'credit-card': iconCreditCard, circle: iconCircle,
-  'message-square': iconMessageSquare, 'user-plus': iconUserPlus,
-  'user-check': iconUserCheck, 'user-x': iconUserX, 'x-circle': iconXCircle,
-  'check-circle-2': iconCheckCircle2, 'help-circle': iconHelpCircle,
-  minus: iconMinus, 'folder-open': iconFolderOpen,
-  'file-spreadsheet': iconFileSpreadsheet, 'list-todo': iconListTodo,
-  'toggle-left': iconToggleLeft, type: iconType, table: iconTable,
-  slider: iconSlider, dot: iconDot, 'layout-grid': iconLayoutGrid,
-  'chevron-up': iconChevronUp, history: iconHistory,
-};
+// Auto-generated icons map for lookup by kebab-case name.
+// Converts "iconFolderKanban" → "folder-kanban" etc.
+const _allIcons = [
+  iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
+  iconTarget, iconDatabase, iconGitBranch, iconPalette, iconLogOut, iconMenu,
+  iconSearch, iconBell, iconSun, iconMoon, iconMonitor, iconX,
+  iconChevronDown, iconChevronRight, iconChevronLeft,
+  iconPanelLeftClose, iconPanelLeft, iconPlus, iconArrowLeft, iconArrowRight,
+  iconCheck, iconLoader, iconSettings, iconExternalLink, iconFilter,
+  iconMoreHorizontal, iconMoreVertical, iconStar, iconHeart,
+  iconTrendingUp, iconTrendingDown, iconAlertCircle, iconAlertTriangle,
+  iconCheckCircle, iconInfo, iconMail, iconPhone, iconCalendar, iconClock,
+  iconUpload, iconDownload, iconTrash, iconEdit, iconEye, iconCopy, iconSave,
+  iconSend, iconShare, iconGlobe, iconRocket, iconZap, iconAward, iconBrain,
+  iconWand, iconActivity, iconBarChart, iconFileText, iconShield, iconBuilding,
+  iconCrown, iconBriefcase, iconClipboardCheck, iconDollarSign, iconSmartphone,
+  iconCode, iconHash, iconGripVertical, iconGauge, iconLineChart,
+  iconArrowUpRight, iconArrowDownRight, iconCamera, iconCreditCard, iconCircle,
+  iconMessageSquare, iconUserPlus, iconUserCheck, iconUserX, iconXCircle,
+  iconCheckCircle2, iconHelpCircle, iconMinus, iconFolderOpen,
+  iconFileSpreadsheet, iconListTodo, iconToggleLeft, iconType, iconTable,
+  iconSlider, iconDot, iconLayoutGrid, iconChevronUp, iconHistory,
+];
+const icons: Record<string, (s?: number, c?: string) => string> = {};
+for (const fn of _allIcons) {
+  const pascal = fn.name.replace(/^icon/, '');
+  const kebab = pascal.replace(/[A-Z]/g, (c, i) => (i ? '-' : '') + c.toLowerCase()).replace(/(\d+)/g, '-$1');
+  const camel = pascal[0]!.toLowerCase() + pascal.slice(1);
+  icons[kebab] = fn;
+  if (camel !== kebab) icons[camel] = fn;
+}
 
 // ------------------------------------
 // Navigation
@@ -450,8 +480,9 @@ async function populateNotifications(): Promise<void> {
     }
   }
 
-  renderItems('notif-list', 'notif-count', 'notif-badge');
-  renderItems('mobile-notif-list', 'mobile-notif-count', 'mobile-notif-badge');
+  for (const prefix of ['notif', 'mobile-notif']) {
+    renderItems(`${prefix}-list`, `${prefix}-count`, `${prefix}-badge`);
+  }
 }
 
 // ------------------------------------
@@ -571,10 +602,10 @@ function initDashboardLayout(): void {
   });
 
   // Dropdown toggles (theme, notifications — desktop + mobile)
-  setupDropdown('theme-toggle', 'theme-dropdown');
-  setupDropdown('notif-toggle', 'notif-dropdown');
-  setupDropdown('mobile-theme-toggle', 'mobile-theme-dropdown');
-  setupDropdown('mobile-notif-toggle', 'mobile-notif-dropdown');
+  for (const prefix of ['', 'mobile-']) {
+    setupDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
+    setupDropdown(`${prefix}notif-toggle`, `${prefix}notif-dropdown`);
+  }
 
   // Theme selection
   document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
@@ -674,6 +705,8 @@ export {
   showToast,
   // Loading / Error / Empty
   renderSkeleton, renderError, renderEmpty, withLoadingState,
+  // Shared Utilities
+  initials, scoreColor, openDialog, closeDialog, initTabs,
   // Icons
   icon, icons,
   iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,

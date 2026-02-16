@@ -225,7 +225,7 @@ function bindEvents(): void {
       if (idx < 0) return;
       const target = dir === 'up' ? idx - 1 : idx + 1;
       if (target < 0 || target >= processSteps.length) return;
-      [processSteps[idx], processSteps[target]] = [processSteps[target], processSteps[idx]];
+      [processSteps[idx], processSteps[target]] = [processSteps[target]!, processSteps[idx]!];
       rerender();
     });
   });
@@ -242,7 +242,8 @@ function bindEvents(): void {
   document.querySelectorAll<HTMLElement>('[data-toggle-tool]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
-      const [stepId, tool] = (el.getAttribute('data-toggle-tool') || '').split(':');
+      const parts = (el.getAttribute('data-toggle-tool') || '').split(':');
+      const stepId = parts[0]!, tool = parts[1]!;
       const step = processSteps.find(s => s.id === stepId);
       if (!step) return;
       step.tools = step.tools.includes(tool) ? step.tools.filter(t => t !== tool) : [...step.tools, tool];
@@ -256,7 +257,7 @@ function bindEvents(): void {
       id: Date.now().toString(), title: '', description: '', owner: '', role: '',
       tools: [], duration: '', order: processSteps.length + 1, type: 'action',
     });
-    expandedStepId = processSteps[processSteps.length - 1].id;
+    expandedStepId = processSteps[processSteps.length - 1]!.id;
     rerender();
   });
 }

@@ -143,8 +143,8 @@ function renderPage(): string {
         </div>
         <div class="card p-6" id="step-content">
           <div class="mb-6">
-            <h2 class="text-2xl font-display font-bold mb-2">${steps[currentStep - 1].title}</h2>
-            <p class="text-muted">${steps[currentStep - 1].description}</p>
+            <h2 class="text-2xl font-display font-bold mb-2">${steps[currentStep - 1]!.title}</h2>
+            <p class="text-muted">${steps[currentStep - 1]!.description}</p>
           </div>
           ${renderStepContent()}
           <div class="flex items-center justify-between gap-3 mt-8 pt-6" style="border-top:1px solid hsl(var(--border))">
@@ -203,6 +203,6 @@ function bindEvents() {
 
 export async function init(): Promise<void> {
   currentStep = 1;
-  Object.keys(formData).forEach(k => (formData as any)[k] = '');
+  (Object.keys(formData) as Array<keyof typeof formData>).forEach(k => formData[k] = '');
   rerender();
 }

@@ -1,16 +1,10 @@
 import {
-  $, escapeHtml, navigateTo, getParams,
+  $, escapeHtml, navigateTo, getParams, scoreColor,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
   iconCheckCircle2, iconLoader, iconSparkles,
 } from '../../site/script';
 import { getIdeaForScoring, getIdeaScore, type ScoreBreakdown, type IdeaScore } from '../../site/data';
-
-function scoreColor(score: number): string {
-  if (score >= 80) return 'hsl(142 71% 45%)';
-  if (score >= 60) return 'hsl(var(--warning))';
-  return 'hsl(var(--error))';
-}
 
 function progressBg(score: number): string {
   if (score >= 80) return 'background:hsl(142 71% 45%)';
@@ -29,7 +23,7 @@ function renderBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): 
     <div class="p-4 rounded-xl" style="background:hsl(var(--muted)/0.3)">
       <div class="flex items-center justify-between mb-2">
         <span class="font-medium">${item.label}</span>
-        <span class="font-bold" style="color:${scoreColor(item.score * 10)}">${item.score}/${item.maxScore}</span>
+        <span class="font-bold" style="${scoreColor(item.score * 10)}">${item.score}/${item.maxScore}</span>
       </div>
       <div style="width:100%;background:hsl(var(--muted));border-radius:9999px;height:0.5rem;margin-bottom:0.5rem">
         <div style="height:0.5rem;border-radius:9999px;${progressBg(item.score * 10)};width:${(item.score / item.maxScore) * 100}%;transition:width 0.3s"></div>

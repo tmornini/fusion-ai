@@ -43,8 +43,8 @@ function renderIdeaCard(idea: Idea, view: string): string {
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <h3 class="font-display font-semibold truncate">${escapeHtml(idea.title)}</h3>
-                <span class="badge ${statusConfig[idea.status].cls} text-xs">${statusConfig[idea.status].label}</span>
-                <span class="badge ${edgeStatusConfig[idea.edgeStatus].cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus].label}</span>
+                <span class="badge ${statusConfig[idea.status]!.cls} text-xs">${statusConfig[idea.status]!.label}</span>
+                <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted">
                 ${view === 'priority' ? `<span>Priority #${idea.priority}</span><span>•</span>` : ''}

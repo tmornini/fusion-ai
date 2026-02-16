@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, showToast, navigateTo, renderSkeleton, renderError,
+  $, escapeHtml, showToast, navigateTo, initials, initTabs, renderSkeleton, renderError,
   iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
   iconCalendar, iconTarget, iconCheckCircle2, iconAlertCircle, iconMessageSquare,
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
@@ -7,10 +7,6 @@ import {
   iconCode, iconShield, iconBarChart, iconGauge,
 } from '../../site/script';
 import { getProjectById, type ProjectDetail } from '../../site/data';
-
-function initials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('');
-}
 
 function varianceHtml(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): string {
   const diff = current - baseline;
@@ -372,15 +368,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   });
 
   // Tabs
-  document.querySelectorAll<HTMLElement>('.tab[data-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      document.querySelectorAll('.tab-panel').forEach(p => (p as HTMLElement).style.display = 'none');
-      const panel = $(`#tab-${tab.getAttribute('data-tab')}`);
-      if (panel) panel.style.display = '';
-    });
-  });
+  initTabs('.tab[data-tab]', '.tab-panel');
 
   // Comment box
   const comment = $('#pd-comment') as HTMLTextAreaElement;

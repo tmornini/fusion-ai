@@ -1,13 +1,11 @@
 import {
-  $, escapeHtml, showToast,
+  $, escapeHtml, showToast, initials, initTabs,
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
   renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
 import { getTeamMembers, type TeamMember } from '../../site/data';
-
-function initials(name: string): string { return name.split(' ').map(n => n[0]).join(''); }
 
 function availabilityClass(a: number): string {
   if (a >= 70) return 'color:hsl(142 71% 45%);background:hsl(142 71% 45%/0.1);border:1px solid hsl(142 71% 45%/0.2)';
@@ -142,15 +140,7 @@ function bindCards(): void {
 }
 
 function bindDetailTabs(): void {
-  document.querySelectorAll<HTMLElement>('[data-detail-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('[data-detail-tab]').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      document.querySelectorAll('.detail-tab-panel').forEach(p => (p as HTMLElement).style.display = 'none');
-      const panel = $(`#detail-${tab.getAttribute('data-detail-tab')}`);
-      if (panel) panel.style.display = '';
-    });
-  });
+  initTabs('[data-detail-tab]', '.detail-tab-panel');
 }
 
 export async function init(): Promise<void> {

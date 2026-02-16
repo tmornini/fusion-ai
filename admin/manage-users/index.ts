@@ -1,5 +1,5 @@
 import {
-  $, showToast, escapeHtml,
+  $, showToast, escapeHtml, initials, openDialog, closeDialog,
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
@@ -22,11 +22,8 @@ function statusBadge(status: string): string {
 
 function roleBadge(role: string): string {
   const r = roleLabels[role];
+  if (!r) return `<span class="badge badge-secondary">${role}</span>`;
   return `<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
-}
-
-function initials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('');
 }
 
 function userRow(u: UserData): string {
@@ -141,8 +138,8 @@ export async function init(): Promise<void> {
     </div>`;
 
   // Invite modal
-  const openInvite = () => { $('#invite-backdrop')?.classList.remove('hidden'); $('#invite-dialog')?.classList.remove('hidden'); };
-  const closeInvite = () => { $('#invite-backdrop')?.classList.add('hidden'); $('#invite-dialog')?.classList.add('hidden'); };
+  const openInvite = () => openDialog('invite');
+  const closeInvite = () => closeDialog('invite');
   $('#invite-btn')?.addEventListener('click', openInvite);
   $('#invite-cancel')?.addEventListener('click', closeInvite);
   $('#invite-backdrop')?.addEventListener('click', closeInvite);

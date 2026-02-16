@@ -25,8 +25,8 @@ function renderEdgeCard(edge: EdgeItem): string {
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${sc.cls} text-xs">${sc.icon(12)} ${sc.label}</span>
-            ${edge.confidence ? `<span class="flex items-center gap-1 text-xs ${confidenceConfig[edge.confidence].cls}">${iconShield(14)} ${confidenceConfig[edge.confidence].label} Confidence</span>` : ''}
+            <span class="badge ${sc!.cls} text-xs">${sc!.icon(12)} ${sc!.label}</span>
+            ${edge.confidence ? `<span class="flex items-center gap-1 text-xs ${confidenceConfig[edge.confidence]!.cls}">${iconShield(14)} ${confidenceConfig[edge.confidence]!.label} Confidence</span>` : ''}
           </div>
           <h3 class="font-semibold mb-1">${escapeHtml(edge.ideaTitle)}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
