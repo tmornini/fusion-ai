@@ -29,6 +29,7 @@ echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | tr -d ' 
 cp site/style.css "$BUILD_DIR/site/"
 cp -r fonts "$BUILD_DIR/"
 cp index.html "$BUILD_DIR/"
+cp favicon.ico "$BUILD_DIR/"
 
 # Create distribution ZIP on Desktop
 SHA=$(git rev-parse --short=7 HEAD)
