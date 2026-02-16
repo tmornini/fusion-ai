@@ -12,5 +12,5 @@
     "noEmit": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["site/**/*.ts", "landing/**/*.ts", "auth/**/*.ts", "onboarding/**/*.ts", "dashboard/**/*.ts", "ideas/**/*.ts", "idea-create/**/*.ts", "idea-scoring/**/*.ts", "edge/**/*.ts", "edge-list/**/*.ts", "idea-convert/**/*.ts", "idea-review-queue/**/*.ts", "approval-detail/**/*.ts", "projects/**/*.ts", "project-detail/**/*.ts", "engineering-requirements/**/*.ts", "team/**/*.ts", "crunch/**/*.ts", "flow/**/*.ts", "account/**/*.ts", "profile/**/*.ts", "company-settings/**/*.ts", "manage-users/**/*.ts", "activity-feed/**/*.ts", "notification-settings/**/*.ts", "design-system/**/*.ts", "not-found/**/*.ts"]
+  "include": ["site/**/*.ts", "core/**/*.ts", "tools/**/*.ts", "admin/**/*.ts", "reference/**/*.ts", "entry/**/*.ts", "system/**/*.ts"]
 }

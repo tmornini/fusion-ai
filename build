@@ -8,30 +8,36 @@ fi
 
 echo "Building Fusion AI..."
 
-# Compose HTML pages: combine layout.html with per-page page.html
-npx tsx site/compose.ts
+BUILD_DIR=$(mktemp -d)
+trap 'rm -rf "$BUILD_DIR"' EXIT
 
-# Bundle TypeScript into a single JS file
+# Compose HTML pages into build dir (dashboard + standalone)
+npx tsx site/compose.ts "$BUILD_DIR"
+
+# Bundle TypeScript into build dir
+mkdir -p "$BUILD_DIR/site"
 npx esbuild site/script.ts \
   --bundle \
   --minify \
   --target=es2020 \
   --format=iife \
-  --outfile=site/app.js
+  --outfile="$BUILD_DIR/site/app.js"
 
-echo "Bundle created: site/app.js ($(wc -c < site/app.js | tr -d ' ') bytes)"
+echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | tr -d ' ') bytes)"
 
-# Create distribution ZIP
+# Copy static assets into build dir
+cp site/style.css "$BUILD_DIR/site/"
+cp -r fonts "$BUILD_DIR/"
+cp index.html "$BUILD_DIR/"
+
+# Create distribution ZIP on Desktop
 SHA=$(git rev-parse --short=7 HEAD)
 ZIPNAME="fusion-ai-${SHA}.zip"
 
-zip -r "$ZIPNAME" \
-  index.html \
-  */index.html \
-  site/style.css \
-  site/app.js \
-  fonts/ \
-  -x "*.ts" "*.map" "node_modules/*"
+OLDPWD="$PWD"
+cd "$BUILD_DIR"
+zip -r "$OLDPWD/$ZIPNAME" .
+cd "$OLDPWD"
 
 echo "Distribution: $ZIPNAME ($(wc -c < "$ZIPNAME" | tr -d ' ') bytes)"
 echo "Done."

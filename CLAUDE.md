@@ -8,12 +8,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./build              # Compile, bundle, minify, and create distribution ZIP
 ```
 
-To preview locally, open `index.html` directly in a browser (file://) or serve via any HTTP server:
-
-```bash
-python3 -m http.server 8080
-```
-
 No test framework is configured.
 
 ## Architecture
@@ -22,7 +16,7 @@ No test framework is configured.
 
 ### Key Layers
 
-- **HTML Composition**: A build step (`site/compose.ts`) merges `site/layout.html` (shared sidebar/header) with each page's `page.html` to produce standalone `index.html` files. 8 pages (landing, auth, onboarding, etc.) have hand-written `index.html` instead.
+- **HTML Composition**: A build step (`site/compose.ts`) merges `site/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 8 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
@@ -32,10 +26,10 @@ No test framework is configured.
 
 ### Page Module Pattern
 
-Dashboard page folders contain `page.ts` and `page.html` — paired files where `page.ts` exports:
+All page folders uniformly contain `index.ts` and `index.html`. Each `index.ts` exports:
 - `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
 
-Standalone page folders contain `index.ts` and a hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
+Dashboard pages have `index.html` containing page content that gets composed with the layout template. Standalone pages have a complete hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
 
 ### Dark Mode
 
@@ -69,41 +63,55 @@ CSS media queries in `site/style.css` show/hide desktop vs mobile header and sid
 index.html                    # Redirects to landing/index.html
 site/
   layout.html                 # Shared dashboard layout template (sidebar, header)
-  compose.ts                  # Build-time script: layout.html + page.html → index.html
+  compose.ts                  # Build-time script: layout + page → composed index.html
   style.css                   # All CSS: tokens, components, layouts, utilities
   script.ts                   # Page dispatch, state, icons, navigation, layout behavior
   data.ts                     # ~27 async mock data functions + all interfaces
   charts.ts                   # SVG chart rendering (bar, line, donut, area)
 
-# Dashboard pages (layout composed at build time from page.html + layout.html)
-dashboard/                    # page.html + page.ts — Dashboard with gauge cards
-ideas/                        # page.html + page.ts — Ideas list
-projects/                     # page.html + page.ts — Projects list
-project-detail/               # page.html + page.ts — Project detail (tabbed)
-edge/                         # page.html + page.ts — Edge definition (per-idea)
-edge-list/                    # page.html + page.ts — Edge list view
-idea-review-queue/            # page.html + page.ts — Review queue
-team/                         # page.html + page.ts — Team roster
-crunch/                       # page.html + page.ts — Data labeling tool
-flow/                         # page.html + page.ts — Process documentation
-engineering-requirements/     # page.html + page.ts — Engineering requirements
-account/                      # page.html + page.ts — Account overview
-profile/                      # page.html + page.ts — Profile settings
-company-settings/             # page.html + page.ts — Company settings
-manage-users/                 # page.html + page.ts — User administration
-activity-feed/                # page.html + page.ts — Activity feed
-notification-settings/        # page.html + page.ts — Notification preferences
-design-system/                # page.html + page.ts — Component gallery
+# Core pages — ideas, projects, and related workflows
+core/
+  dashboard/                  # Dashboard with gauge cards
+  ideas/                      # Ideas list
+  idea-create/                # Multi-step idea wizard (standalone)
+  idea-scoring/               # AI scoring display (standalone)
+  idea-convert/               # Idea-to-project conversion (standalone)
+  idea-review-queue/          # Review queue
+  approval-detail/            # Review decision page (standalone)
+  projects/                   # Projects list
+  project-detail/             # Project detail (tabbed)
+  engineering-requirements/   # Engineering requirements
 
-# Standalone pages (hand-written index.html, no shared layout)
-landing/                      # index.html + index.ts — Landing page
-auth/                         # index.html + index.ts — Login/signup
-onboarding/                   # index.html + index.ts — Welcome screen
-idea-create/                  # index.html + index.ts — Multi-step idea wizard
-idea-scoring/                 # index.html + index.ts — AI scoring display
-idea-convert/                 # index.html + index.ts — Idea-to-project conversion
-approval-detail/              # index.html + index.ts — Review decision page
-not-found/                    # index.html + index.ts — 404
+# Tools — Edge, Crunch, Flow analytics
+tools/
+  edge/                       # Edge definition (per-idea)
+  edge-list/                  # Edge list view
+  crunch/                     # Data labeling tool
+  flow/                       # Process documentation
+
+# Admin — account, team, and settings
+admin/
+  team/                       # Team roster
+  account/                    # Account overview
+  profile/                    # Profile settings
+  company-settings/           # Company settings
+  manage-users/               # User administration
+  activity-feed/              # Activity feed
+  notification-settings/      # Notification preferences
+
+# Reference
+reference/
+  design-system/              # Component gallery
+
+# Entry — public-facing pages
+entry/
+  landing/                    # Landing page (standalone)
+  auth/                       # Login/signup (standalone)
+  onboarding/                 # Welcome screen (standalone)
+
+# System
+system/
+  not-found/                  # 404 page (standalone)
 
 fonts/                        # Self-hosted woff2 files
 build                         # Executable build script
@@ -111,11 +119,15 @@ tsconfig.json                 # TypeScript config
 DESIGN_SYSTEM.md              # Design system specification
 ```
 
+Each page directory contains `index.ts` + `index.html`. Build output goes to a temp directory — no build artifacts in the repo.
+
 ## Build
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
-1. Composes HTML pages: runs `site/compose.ts` to merge `layout.html` with each `page.html`, producing 18 `index.html` files
-2. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild
-3. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) containing all `index.html` files, `site/style.css`, `site/app.js`, and `fonts/`
+1. Composes HTML pages: runs `site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 18 composed files in a temp build directory
+2. Copies 8 standalone pages' `index.html` to the build directory
+3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
+4. Copies static assets (`site/style.css`, `fonts/`, `index.html`) to the build directory
+5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) from the build directory
 
-The composed `index.html` files and `site/app.js` are build artifacts (gitignored).
+No build artifacts are created in the repo — everything is assembled in `/tmp/`.
