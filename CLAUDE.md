@@ -32,10 +32,10 @@ No test framework is configured.
 
 ### Page Module Pattern
 
-Each page folder contains `index.ts` exporting:
+Dashboard page folders contain `page.ts` and `page.html` — paired files where `page.ts` exports:
 - `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
 
-Dashboard pages also have `page.html` with the page-specific HTML content (placeholder containers for JS-populated data). Standalone pages have a complete `index.html` with a `<div id="page-root">` that `init()` renders into.
+Standalone page folders contain `index.ts` and a hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
 
 ### Dark Mode
 
@@ -76,24 +76,24 @@ site/
   charts.ts                   # SVG chart rendering (bar, line, donut, area)
 
 # Dashboard pages (layout composed at build time from page.html + layout.html)
-dashboard/                    # page.html + index.ts — Dashboard with gauge cards
-ideas/                        # page.html + index.ts — Ideas list
-projects/                     # page.html + index.ts — Projects list
-project-detail/               # page.html + index.ts — Project detail (tabbed)
-edge/                         # page.html + index.ts — Edge definition (per-idea)
-edge-list/                    # page.html + index.ts — Edge list view
-idea-review-queue/            # page.html + index.ts — Review queue
-team/                         # page.html + index.ts — Team roster
-crunch/                       # page.html + index.ts — Data labeling tool
-flow/                         # page.html + index.ts — Process documentation
-engineering-requirements/     # page.html + index.ts — Engineering requirements
-account/                      # page.html + index.ts — Account overview
-profile/                      # page.html + index.ts — Profile settings
-company-settings/             # page.html + index.ts — Company settings
-manage-users/                 # page.html + index.ts — User administration
-activity-feed/                # page.html + index.ts — Activity feed
-notification-settings/        # page.html + index.ts — Notification preferences
-design-system/                # page.html + index.ts — Component gallery
+dashboard/                    # page.html + page.ts — Dashboard with gauge cards
+ideas/                        # page.html + page.ts — Ideas list
+projects/                     # page.html + page.ts — Projects list
+project-detail/               # page.html + page.ts — Project detail (tabbed)
+edge/                         # page.html + page.ts — Edge definition (per-idea)
+edge-list/                    # page.html + page.ts — Edge list view
+idea-review-queue/            # page.html + page.ts — Review queue
+team/                         # page.html + page.ts — Team roster
+crunch/                       # page.html + page.ts — Data labeling tool
+flow/                         # page.html + page.ts — Process documentation
+engineering-requirements/     # page.html + page.ts — Engineering requirements
+account/                      # page.html + page.ts — Account overview
+profile/                      # page.html + page.ts — Profile settings
+company-settings/             # page.html + page.ts — Company settings
+manage-users/                 # page.html + page.ts — User administration
+activity-feed/                # page.html + page.ts — Activity feed
+notification-settings/        # page.html + page.ts — Notification preferences
+design-system/                # page.html + page.ts — Component gallery
 
 # Standalone pages (hand-written index.html, no shared layout)
 landing/                      # index.html + index.ts — Landing page
