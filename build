@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Error: working directory is not clean. Commit or stash changes before building." >&2
+  exit 1
+fi
+
 echo "Building Fusion AI..."
 
 # Bundle TypeScript into a single JS file
@@ -14,8 +19,8 @@ npx esbuild site/script.ts \
 echo "Bundle created: site/app.js ($(wc -c < site/app.js | tr -d ' ') bytes)"
 
 # Create distribution ZIP
-TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-ZIPNAME="fusion-ai-${TIMESTAMP}.zip"
+SHA=$(git rev-parse --short=7 HEAD)
+ZIPNAME="fusion-ai-${SHA}.zip"
 
 zip -r "$ZIPNAME" \
   index.html \
