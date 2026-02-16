@@ -1,21 +1,2 @@
-# Distribution zips
-fusion-ai-*.zip
-
-# Logs
-*.log
-
 # OS files
 .DS_Store
-
-# Editor directories
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Environment
-.env
