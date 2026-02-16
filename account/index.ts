@@ -97,7 +97,7 @@ export function render(): string {
 
       <!-- Company Overview -->
       <div class="card card-hover p-6 mb-6">
-        <div class="flex flex-col gap-4 mb-6" style="flex-wrap:wrap">
+        <div class="flex items-center justify-between gap-4 mb-6" style="flex-wrap:wrap">
           <div class="flex items-center gap-4" style="flex:1">
             <div style="width:3.5rem;height:3.5rem;border-radius:var(--radius-xl);background:linear-gradient(135deg,hsl(var(--primary) / 0.2),hsl(var(--primary) / 0.05));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconBuilding(28)}</div>
             <div>
@@ -138,7 +138,7 @@ export function render(): string {
       </div>
 
       <!-- Usage & Activity -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="card card-hover p-6">
           <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconTrendingUp(20)} Usage Overview</h3>
           <div class="flex flex-col gap-4">

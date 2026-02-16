@@ -11,8 +11,8 @@ interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string; ow
 
 const mockIdea = {
   title: 'AI-Powered Customer Segmentation',
-  problem: 'Manual customer segmentation is time-consuming and often inaccurate.',
-  solution: 'Implement ML-based customer clustering that automatically segments users.',
+  problem: 'Manual customer segmentation is time-consuming and often inaccurate, leading to misaligned marketing efforts.',
+  solution: 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
   submittedBy: 'Sarah Chen',
   score: 92,
 };
@@ -23,7 +23,7 @@ let edgeData: EdgeData = {
   outcomes: [],
   impact: { shortTerm: '', midTerm: '', longTerm: '' },
   confidence: '',
-  owner: '',
+  owner: 'Sarah Chen',
 };
 let nextId = 1;
 
@@ -192,10 +192,10 @@ function renderEdgePage(ideaId: string): string {
               <div>
                 <p class="font-medium" style="color:hsl(var(--warning))">Complete all required fields to proceed</p>
                 <ul class="text-sm mt-1" style="color:hsl(var(--warning)/0.8)">
-                  ${!c.hasOutcomes ? '<li>· Add at least one business outcome</li>' : ''}
-                  ${c.hasOutcomes && !c.allMetrics ? '<li>· Add at least one metric to each outcome</li>' : ''}
-                  ${!c.hasImpact ? '<li>· Describe expected impact (at least one timeframe)</li>' : ''}
-                  ${!c.hasOwner ? '<li>· Assign an owner</li>' : ''}
+                  ${!c.hasOutcomes ? '<li>• Add at least one business outcome</li>' : ''}
+                  ${c.hasOutcomes && !c.allMetrics ? '<li>• Add at least one metric to each outcome</li>' : ''}
+                  ${!c.hasImpact ? '<li>• Describe expected impact (at least one timeframe)</li>' : ''}
+                  ${!c.hasOwner ? '<li>• Assign an owner</li>' : ''}
                 </ul>
               </div>
             </div>
@@ -209,7 +209,7 @@ function renderEdgePage(ideaId: string): string {
 
 export function render(params?: Record<string, string>): string {
   const ideaId = params?.ideaId || '1';
-  edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: '' };
+  edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
   nextId = 1;
   return renderEdgePage(ideaId);
 }

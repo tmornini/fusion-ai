@@ -67,7 +67,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
                 <span class="badge ${edgeStatusConfig[idea.edgeStatus].cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus].label}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted">
-                ${view === 'priority' ? `<span>Priority #${idea.priority}</span><span>·</span>` : ''}
+                ${view === 'priority' ? `<span>Priority #${idea.priority}</span><span>•</span>` : ''}
                 <span>by ${escapeHtml(idea.submittedBy)}</span>
               </div>
             </div>
@@ -173,7 +173,7 @@ export function render(): string {
             ${iconBarChart(16)} Performance
           </button>
         </div>
-        <span class="text-sm text-muted" id="ideas-count">${sortedByPriority.length} ideas · by priority</span>
+        <span class="text-sm text-muted" id="ideas-count">${sortedByPriority.length} ideas • by priority</span>
       </div>
 
       <!-- Ideas Grid -->
@@ -199,7 +199,7 @@ export function init(): void {
     if (list) list.innerHTML = sorted.map(idea => renderIdeaCard(idea, currentView)).join('');
 
     const count = $('#ideas-count');
-    if (count) count.textContent = `${sorted.length} ideas · ${currentView === 'priority' ? 'by priority' : 'by score'}`;
+    if (count) count.textContent = `${sorted.length} ideas • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
 
     bindCardActions();
   }

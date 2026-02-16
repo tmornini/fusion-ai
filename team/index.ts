@@ -115,7 +115,7 @@ function renderMemberCard(m: TeamMember): string {
             <h3 class="font-semibold text-sm">${escapeHtml(m.name)}</h3>
             <span style="display:inline-flex;align-items:center;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:500;${availabilityClass(m.availability)}">${m.availability}%</span>
           </div>
-          <p class="text-xs text-muted mb-2">${m.role} · ${m.department}</p>
+          <p class="text-xs text-muted mb-2">${m.role} • ${m.department}</p>
           <div class="flex flex-wrap gap-1.5 mb-2">
             ${m.strengths.slice(0, 3).map(s => `
               <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.125rem 0.5rem;border-radius:0.375rem;background:hsl(var(--muted)/0.5);font-size:0.625rem;color:hsl(var(--muted-foreground))">${iconStar(10)} ${s}</span>
@@ -180,7 +180,7 @@ export function render(): string {
       <div class="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-display font-bold">Team</h1>
-          <p class="text-sm text-muted mt-1">${mockTeamMembers.length} members · Manage roles, strengths, and availability</p>
+          <p class="text-sm text-muted mt-1">${mockTeamMembers.length} members • Manage roles, strengths, and availability</p>
         </div>
         <button class="btn btn-primary gap-2" id="team-add-btn">${iconPlus(16)} <span class="hidden-mobile">Add Member</span><span class="visible-mobile">Add</span></button>
       </div>

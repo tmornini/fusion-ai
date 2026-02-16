@@ -1523,6 +1523,7 @@ p { line-height: var(--leading-normal); }
 
 @media (min-width: 640px) {
   .sm\:grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
   .sm\:p-6 { padding: 1.5rem; }
   .sm\:text-2xl { font-size: var(--text-2xl); }
   .sm\:text-3xl { font-size: var(--text-3xl); }

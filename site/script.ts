@@ -315,7 +315,7 @@ function navigate(path: string): void {
 function isActive(href: string): boolean {
   const path = getHashPath();
   if (href === '/account') return path.startsWith('/account');
-  if (href === '/ideas') return path.startsWith('/ideas') || path.startsWith('/review');
+  if (href === '/ideas') return (path.startsWith('/ideas') || path.startsWith('/review')) && !path.includes('/edge');
   if (href === '/projects') return path.startsWith('/projects');
   if (href === '/teams') return path === '/teams' || path === '/team';
   return path === href;

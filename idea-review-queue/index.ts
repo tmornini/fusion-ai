@@ -65,9 +65,9 @@ function renderReviewCard(idea: ReviewIdea): string {
           <h3 class="font-semibold mb-1">${escapeHtml(idea.title)}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">
             <span>by ${escapeHtml(idea.submittedBy)}</span>
-            <span>·</span>
+            <span>•</span>
             <span>${idea.category}</span>
-            <span>·</span>
+            <span>•</span>
             <span style="color:hsl(var(--warning))">${idea.waitingDays} days waiting</span>
           </div>
         </div>

@@ -161,7 +161,7 @@ export function render(params?: Record<string, string>): string {
         <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconAlertTriangle(20, 'text-warning')} Constraints & Requirements</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
           ${mockProject.businessContext.constraints.map(c => `
-            <div class="flex items-start gap-2"><span class="text-warning">·</span> <span>${escapeHtml(c)}</span></div>
+            <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${escapeHtml(c)}</span></div>
           `).join('')}
         </div>
       </div>

@@ -102,7 +102,7 @@ function rerenderList(): void {
   const container = $('#projects-list');
   if (container) container.innerHTML = sortedProjects().map(p => renderProjectCard(p, currentView)).join('');
   const info = $('#projects-info');
-  if (info) info.textContent = `${mockProjects.length} projects · ${currentView === 'priority' ? 'by priority' : 'by score'}`;
+  if (info) info.textContent = `${mockProjects.length} projects • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
   bindCards();
 }
 
@@ -149,7 +149,7 @@ export function render(): string {
             ${iconBarChart(16)} Performance
           </button>
         </div>
-        <span class="text-sm text-muted" id="projects-info">${mockProjects.length} projects · by priority</span>
+        <span class="text-sm text-muted" id="projects-info">${mockProjects.length} projects • by priority</span>
       </div>
 
       <div id="projects-list" style="display:flex;flex-direction:column;gap:0.75rem">

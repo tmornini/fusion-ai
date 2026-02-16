@@ -40,7 +40,7 @@ const mockEdge = {
     { id: '1', description: 'Reduce support ticket volume', metrics: [{ id: '1', name: 'Ticket Reduction', target: '40', unit: '%' }, { id: '2', name: 'First Response Time', target: '1', unit: 'min' }] },
     { id: '2', description: 'Improve customer satisfaction', metrics: [{ id: '3', name: 'CSAT Score', target: '4.5', unit: '/5' }, { id: '4', name: 'Resolution Rate', target: '85', unit: '%' }] },
   ],
-  impact: { shortTerm: 'Handle 60% of tier-1 inquiries automatically.', midTerm: '40% reduction in support costs.', longTerm: 'Full self-service capability for common issues.' },
+  impact: { shortTerm: 'Handle 60% of tier-1 inquiries automatically. Reduce agent workload significantly.', midTerm: '40% reduction in support costs. Improved 24/7 availability for customers.', longTerm: 'Full self-service capability for common issues. Agents focus on complex cases only.' },
   confidence: 'high' as const,
   owner: 'Sarah Chen',
 };
@@ -185,7 +185,7 @@ export function render(params?: Record<string, string>): string {
         <div class="card p-6 mb-6">
           <h3 class="font-semibold mb-3">Key Assumptions</h3>
           <ul style="display:flex;flex-direction:column;gap:0.5rem">
-            ${idea.assumptions.map(a => `<li class="flex items-start gap-2 text-sm"><span class="text-primary mt-1">·</span> ${escapeHtml(a)}</li>`).join('')}
+            ${idea.assumptions.map(a => `<li class="flex items-start gap-2 text-sm"><span class="text-primary mt-1">•</span> ${escapeHtml(a)}</li>`).join('')}
           </ul>
         </div>
 

@@ -69,13 +69,13 @@ function initials(name: string): string {
   return name.split(' ').map(n => n[0]).join('');
 }
 
-function varianceHtml(baseline: number, current: number, isLowerBetter: boolean): string {
+function varianceHtml(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): string {
   const diff = current - baseline;
   if (diff === 0) return `<span class="text-muted">${iconMinus(16)} 0</span>`;
   const good = isLowerBetter ? diff < 0 : diff > 0;
   const icon = diff < 0 ? iconArrowDownRight(16) : iconArrowUpRight(16);
   const color = good ? 'color:hsl(142 71% 45%)' : 'color:hsl(var(--error))';
-  return `<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${Math.abs(diff)}${baseline >= 1000 ? 'k' : ''}</span>`;
+  return `<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
 }
 
 function milestoneIcon(status: string): string {
@@ -114,7 +114,7 @@ export function render(params?: Record<string, string>): string {
             <h1 class="text-xl font-display font-bold">${escapeHtml(p.title)}</h1>
             <span class="badge badge-success text-xs">${iconCheckCircle2(14)} Approved</span>
           </div>
-          <p class="text-sm text-muted">Led by ${p.projectLead} · ${p.progress}% complete</p>
+          <p class="text-sm text-muted">Led by ${p.projectLead} • ${p.progress}% complete</p>
         </div>
         <button class="btn btn-outline btn-icon">${iconMoreVertical(20)}</button>
       </div>
@@ -170,18 +170,18 @@ export function render(params?: Record<string, string>): string {
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem" class="score-grid">
               ${[
-                { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', lower: true },
-                { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', lower: true },
-                { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', lower: false },
+                { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', lower: true },
+                { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', lower: true },
+                { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', prefix: '', lower: false },
               ].map(m => `
                 <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-center gap-2 mb-3">${m.icon(20, 'text-primary')} <span class="font-medium">${m.label}</span></div>
                   <div style="display:flex;flex-direction:column;gap:0.5rem">
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${m.unit === 'k' ? '$' : ''}${m.baseline}${m.unit}</span></div>
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.unit === 'k' ? '$' : ''}${m.current}${m.unit}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${m.prefix}${m.baseline}${m.unit}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.prefix}${m.current}${m.unit}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
-                      ${varianceHtml(m.baseline, m.current, m.lower)}
+                      ${varianceHtml(m.baseline, m.current, m.lower, m.unit, m.prefix)}
                     </div>
                   </div>
                 </div>
@@ -269,9 +269,38 @@ export function render(params?: Record<string, string>): string {
             </div>
 
             <div id="tab-tasks" class="tab-panel">
-              <div style="text-align:center;padding:2rem 0">
-                ${iconListTodo(48, 'text-muted')}
-                <p class="text-muted mt-4">Task management coming soon</p>
+              <div style="display:flex;flex-direction:column;gap:0.75rem">
+                ${[
+                  { name: 'Set up data pipeline', priority: 'High', desc: 'Configure ETL pipeline for customer data ingestion', skills: ['Python', 'Apache Airflow', 'SQL'], hours: 24, assigned: 'Mike Thompson' },
+                  { name: 'Train ML model', priority: 'High', desc: 'Develop and train clustering model using customer behavior data', skills: ['Machine Learning', 'Python', 'scikit-learn'], hours: 40, assigned: '' },
+                  { name: 'Design dashboard UI', priority: 'Medium', desc: 'Create visual interface for segment exploration and management', skills: ['React', 'D3.js', 'CSS'], hours: 32, assigned: '' },
+                  { name: 'Build API endpoints', priority: 'Medium', desc: 'RESTful API for segment data access and management', skills: ['Node.js', 'REST API', 'PostgreSQL'], hours: 20, assigned: '' },
+                  { name: 'Create documentation', priority: 'Low', desc: 'Technical documentation and user guides for the segmentation system', skills: ['Technical Writing', 'Markdown'], hours: 12, assigned: '' },
+                ].map(task => {
+                  const prioColor = task.priority === 'High' ? 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))' : task.priority === 'Medium' ? 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))' : 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
+                  return `
+                  <div class="card" style="padding:1rem">
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                      <div style="flex:1">
+                        <div class="flex items-center gap-2 mb-1">
+                          <span class="font-medium text-sm">${escapeHtml(task.name)}</span>
+                          <span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;${prioColor}">${task.priority}</span>
+                          ${task.assigned ? `<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">${iconUsers(10)} AI Recommended</span>` : ''}
+                        </div>
+                        <p class="text-xs text-muted mb-2">${escapeHtml(task.desc)}</p>
+                        <div class="flex flex-wrap gap-1.5">
+                          ${task.skills.map(s => `<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:0.375rem;background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground))">${escapeHtml(s)}</span>`).join('')}
+                          <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.hours}h est.</span>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline btn-sm text-xs">${task.assigned ? escapeHtml(task.assigned) : 'Assign'}</button>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+              <div class="flex items-center justify-between mt-4 pt-4" style="border-top:1px solid hsl(var(--border))">
+                <span class="text-sm text-muted">1 assigned, 4 unassigned</span>
+                <button class="btn btn-primary btn-sm">Save Assignments</button>
               </div>
             </div>
             <div id="tab-discussion" class="tab-panel" style="display:none">
@@ -312,7 +341,7 @@ export function render(params?: Record<string, string>): string {
                     <span style="padding:0.25rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;font-weight:700;${i === 0 ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${v.version}</span>
                     <div style="flex:1">
                       <p class="font-medium">${escapeHtml(v.changes)}</p>
-                      <p class="text-xs text-muted" style="margin-top:0.25rem">${v.author} · ${v.date}</p>
+                      <p class="text-xs text-muted" style="margin-top:0.25rem">${v.author} • ${v.date}</p>
                     </div>
                   </div>
                 `).join('')}

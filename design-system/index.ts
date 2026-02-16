@@ -2,6 +2,7 @@ import {
   renderDashboardLayout, initDashboardLayout, $, escapeHtml,
   iconCheck, iconX, iconAlertTriangle, iconInfo, iconSearch, iconPlus,
   iconArrowRight, iconTrash, iconSun, iconMoon, iconMonitor,
+  iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
 } from '../site/script';
 
 function colorSwatch(name: string, variable: string, style: string): string {
@@ -16,6 +17,13 @@ function typographyRow(label: string, cls: string, sample: string): string {
   return `<div style="display:flex;flex-direction:column;gap:0.25rem;padding:0.75rem 0;border-bottom:1px solid hsl(var(--border))">
     <code class="text-xs text-muted">${label}</code>
     <p class="${cls}">${sample}</p>
+  </div>`;
+}
+
+function shadowBox(name: string, variable: string): string {
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
+    <div style="width:100%;height:5rem;border-radius:0.75rem;background:hsl(var(--card));box-shadow:var(${variable});border:1px solid hsl(var(--border))"></div>
+    <code class="text-xs text-muted">${name}</code>
   </div>`;
 }
 
@@ -41,13 +49,32 @@ export function render(): string {
         </div>
       </section>
 
+      <!-- Blue Scale -->
+      <section style="display:flex;flex-direction:column;gap:1.5rem">
+        <div><h2 class="text-2xl font-semibold font-display">Blue Scale</h2><p class="text-muted mt-1">Full blue color ramp for nuanced UI design</p></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
+          ${colorSwatch('Blue 50', '--blue-50', 'background:hsl(var(--blue-50))')}
+          ${colorSwatch('Blue 100', '--blue-100', 'background:hsl(var(--blue-100))')}
+          ${colorSwatch('Blue 200', '--blue-200', 'background:hsl(var(--blue-200))')}
+          ${colorSwatch('Blue 300', '--blue-300', 'background:hsl(var(--blue-300))')}
+          ${colorSwatch('Blue 400', '--blue-400', 'background:hsl(var(--blue-400))')}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
+          ${colorSwatch('Blue 500', '--blue-500', 'background:hsl(var(--blue-500))')}
+          ${colorSwatch('Blue 600', '--blue-600', 'background:hsl(var(--blue-600))')}
+          ${colorSwatch('Blue 700', '--blue-700', 'background:hsl(var(--blue-700))')}
+          ${colorSwatch('Blue 800', '--blue-800', 'background:hsl(var(--blue-800))')}
+          ${colorSwatch('Blue 900', '--blue-900', 'background:hsl(var(--blue-900))')}
+        </div>
+      </section>
+
       <!-- Semantic Colors -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Semantic Colors</h2><p class="text-muted mt-1">Status and feedback colors (WCAG AA compliant)</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
           ${colorSwatch('Success', '--success', 'background:hsl(142 71% 45%)')}
           ${colorSwatch('Warning', '--warning', 'background:hsl(var(--warning))')}
-          ${colorSwatch('Error', '--error', 'background:hsl(var(--error))')}
+          ${colorSwatch('Destructive', '--destructive', 'background:hsl(var(--destructive))')}
           ${colorSwatch('Info', '--info', 'background:hsl(var(--primary))')}
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
@@ -85,6 +112,7 @@ export function render(): string {
           ${typographyRow('text-base', 'text-base', 'Body text for general content and descriptions')}
           ${typographyRow('text-sm', 'text-sm', 'Dense body text for tables and lists')}
           ${typographyRow('text-xs', 'text-xs', 'Labels and helper text')}
+          ${typographyRow('text-2xs', 'text-2xs', 'Fine print and micro labels')}
           ${typographyRow('font-mono / text-sm', 'font-mono text-sm', "const code = 'monospace';")}
         </div>
       </section>
@@ -97,27 +125,41 @@ export function render(): string {
         <div class="card" style="padding:1.5rem">
           <h3 class="font-semibold mb-4">Variants</h3>
           <div class="flex flex-wrap gap-3 mb-4">
-            <button class="btn btn-primary">Primary</button>
+            <button class="btn btn-primary">Default</button>
+            <button class="btn btn-secondary">Secondary</button>
             <button class="btn btn-outline">Outline</button>
             <button class="btn btn-ghost">Ghost</button>
+            <button class="btn btn-destructive">Destructive</button>
+            <button class="btn btn-success">Success</button>
             <button class="btn btn-hero">Hero</button>
-            <button class="btn btn-error">Error</button>
           </div>
+          <h3 class="font-semibold mb-4">Soft Variants</h3>
+          <div class="flex flex-wrap gap-3 mb-4">
+            <button class="btn" style="background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">Soft Primary</button>
+            <button class="btn" style="background:hsl(var(--success-soft));color:hsl(var(--success-text))">Soft Success</button>
+            <button class="btn" style="background:hsl(var(--warning-soft));color:hsl(var(--warning-text))">Soft Warning</button>
+            <button class="btn" style="background:hsl(var(--error-soft));color:hsl(var(--error-text))">Soft Destructive</button>
+          </div>
+          <h3 class="font-semibold mb-4">Disabled</h3>
           <div class="flex flex-wrap gap-3 mb-4">
             <button class="btn btn-primary" disabled>Disabled</button>
             <button class="btn btn-outline" disabled>Disabled Outline</button>
           </div>
           <h3 class="font-semibold mb-4">Sizes</h3>
           <div class="flex flex-wrap items-center gap-3 mb-4">
+            <button class="btn btn-primary btn-xs">Extra Small</button>
             <button class="btn btn-primary btn-sm">Small</button>
             <button class="btn btn-primary">Default</button>
+            <button class="btn btn-primary btn-lg">Large</button>
+            <button class="btn btn-primary btn-xl">Extra Large</button>
           </div>
           <h3 class="font-semibold mb-4">With Icons</h3>
           <div class="flex flex-wrap gap-3">
             <button class="btn btn-primary gap-2">${iconPlus(16)} Create</button>
             <button class="btn btn-outline gap-2">${iconSearch(16)} Search</button>
             <button class="btn btn-outline gap-2">Continue ${iconArrowRight(16)}</button>
-            <button class="btn btn-error gap-2">${iconTrash(16)} Delete</button>
+            <button class="btn btn-destructive gap-2">${iconTrash(16)} Delete</button>
+            <button class="btn btn-primary btn-icon">${iconPlus(20)}</button>
           </div>
         </div>
       </section>
@@ -128,12 +170,24 @@ export function render(): string {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Badges</h2><p class="text-muted mt-1">Status indicators and labels</p></div>
         <div class="card" style="padding:1.5rem">
+          <h3 class="font-semibold mb-4">Standard</h3>
           <div class="flex flex-wrap gap-3 mb-4">
+            <span class="badge badge-default">Default</span>
+            <span class="badge badge-secondary">Secondary</span>
+            <span class="badge badge-outline">Outline</span>
             <span class="badge badge-primary">Primary</span>
+            <span class="badge badge-destructive">Destructive</span>
+          </div>
+          <h3 class="font-semibold mb-4">Status with Dot</h3>
+          <div class="flex flex-wrap gap-3 mb-4">
             <span class="badge badge-success">${iconCheck(12)} Approved</span>
             <span class="badge badge-warning">${iconAlertTriangle(12)} Pending</span>
             <span class="badge badge-error">${iconX(12)} Rejected</span>
-            <span class="badge badge-default">Default</span>
+            <span class="status-badge-info">${iconInfo(12)} Info</span>
+          </div>
+          <h3 class="font-semibold mb-4">Soft Accent</h3>
+          <div class="flex flex-wrap gap-3">
+            <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.75rem;border-radius:9999px;font-size:0.75rem;font-weight:500;background:hsl(var(--accent-soft));color:hsl(var(--accent-foreground));border:1px solid hsl(var(--accent)/0.3)">Accent Badge</span>
           </div>
         </div>
       </section>
@@ -149,6 +203,11 @@ export function render(): string {
             <div style="display:flex;flex-direction:column;gap:1rem">
               <div><label class="label mb-1 text-sm">Default Input</label><input class="input" placeholder="Enter text..."/></div>
               <div><label class="label mb-1 text-sm">With Value</label><input class="input" value="Sample content"/></div>
+              <div>
+                <label class="label mb-1 text-sm">Error State</label>
+                <input class="input input-error" value="Invalid input"/>
+                <p class="text-xs mt-1" style="color:hsl(var(--destructive))">This field is required</p>
+              </div>
               <div><label class="label mb-1 text-sm">Disabled</label><input class="input" disabled placeholder="Disabled input"/></div>
             </div>
           </div>
@@ -156,6 +215,11 @@ export function render(): string {
             <h3 class="font-semibold mb-4">Textareas</h3>
             <div style="display:flex;flex-direction:column;gap:1rem">
               <div><label class="label mb-1 text-sm">Default Textarea</label><textarea class="textarea" placeholder="Enter longer text..."></textarea></div>
+              <div>
+                <label class="label mb-1 text-sm">Error State</label>
+                <textarea class="textarea input-error">Invalid content</textarea>
+                <p class="text-xs mt-1" style="color:hsl(var(--destructive))">Please provide a valid description</p>
+              </div>
             </div>
           </div>
         </div>
@@ -168,19 +232,69 @@ export function render(): string {
         <div><h2 class="text-2xl font-semibold font-display">Cards</h2><p class="text-muted mt-1">Content containers with consistent styling</p></div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem" class="score-grid">
           <div class="card card-hover" style="padding:1.5rem">
-            <h3 class="font-semibold mb-1">Interactive Card</h3>
+            <h3 class="font-semibold mb-1">Fusion Card</h3>
             <p class="text-xs text-muted mb-2">With hover effect</p>
             <p class="text-sm text-muted">Hover over this card to see the subtle shadow effect.</p>
           </div>
+          <div class="card card-flat" style="padding:1.5rem">
+            <h3 class="font-semibold mb-1">Flat Card</h3>
+            <p class="text-xs text-muted mb-2">No shadow or hover</p>
+            <p class="text-sm text-muted">A minimal card with just a border, suitable for secondary content.</p>
+          </div>
           <div class="card" style="padding:1.5rem">
             <h3 class="font-semibold mb-1">Standard Card</h3>
-            <p class="text-xs text-muted mb-2">No hover effect</p>
-            <p class="text-sm text-muted">This card has no hover interaction, suitable for static content.</p>
+            <p class="text-xs text-muted mb-2">Default styling</p>
+            <p class="text-sm text-muted">The standard card with subtle shadow, suitable for most content.</p>
           </div>
-          <div class="card" style="padding:1.5rem;border:2px solid hsl(var(--primary)/0.2);background:hsl(var(--primary)/0.02)">
-            <h3 class="font-semibold mb-1">Highlighted Card</h3>
-            <p class="text-xs text-muted mb-2">With accent border</p>
-            <p class="text-sm text-muted">Uses primary color border for emphasis.</p>
+        </div>
+      </section>
+
+      <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
+
+      <!-- Elevation & Shadows -->
+      <section style="display:flex;flex-direction:column;gap:1.5rem">
+        <div><h2 class="text-2xl font-semibold font-display">Elevation & Shadows</h2><p class="text-muted mt-1">Shadow scale for depth and hierarchy</p></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
+          ${shadowBox('shadow-xs', '--shadow-xs')}
+          ${shadowBox('shadow-sm', '--shadow-sm')}
+          ${shadowBox('shadow-md', '--shadow-md')}
+          ${shadowBox('shadow-lg', '--shadow-lg')}
+          ${shadowBox('shadow-xl', '--shadow-xl')}
+        </div>
+      </section>
+
+      <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
+
+      <!-- Iconography -->
+      <section style="display:flex;flex-direction:column;gap:1.5rem">
+        <div><h2 class="text-2xl font-semibold font-display">Iconography</h2><p class="text-muted mt-1">Lucide-compatible inline SVG icons at standard sizes</p></div>
+        <div class="card" style="padding:1.5rem">
+          <div class="flex items-end gap-8">
+            ${[16, 20, 24, 48].map(size => `
+              <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
+                <div style="color:hsl(var(--primary))">${iconSparkles(size)}</div>
+                <code class="text-xs text-muted">${size}px</code>
+              </div>
+            `).join('')}
+          </div>
+          <div class="flex flex-wrap gap-4 mt-6 pt-4" style="border-top:1px solid hsl(var(--border))">
+            ${[
+              { fn: iconHome, name: 'Home' },
+              { fn: iconSearch, name: 'Search' },
+              { fn: iconPlus, name: 'Plus' },
+              { fn: iconCheck, name: 'Check' },
+              { fn: iconX, name: 'X' },
+              { fn: iconTarget, name: 'Target' },
+              { fn: iconAlertTriangle, name: 'Alert' },
+              { fn: iconInfo, name: 'Info' },
+              { fn: iconTrash, name: 'Trash' },
+              { fn: iconUpload, name: 'Upload' },
+            ].map(i => `
+              <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;width:3.5rem">
+                <div style="color:hsl(var(--foreground))">${i.fn(20)}</div>
+                <span class="text-2xs text-muted">${i.name}</span>
+              </div>
+            `).join('')}
           </div>
         </div>
       </section>
@@ -212,6 +326,95 @@ export function render(): string {
 
       <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
 
+      <!-- Error & System States -->
+      <section style="display:flex;flex-direction:column;gap:1.5rem">
+        <div><h2 class="text-2xl font-semibold font-display">Error & System States</h2><p class="text-muted mt-1">Patterns for validation errors, failures, and system messages</p></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
+          <!-- Inline Validation -->
+          <div class="card" style="padding:1.5rem">
+            <h3 class="font-semibold mb-3">Inline Validation</h3>
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+              <div>
+                <label class="label mb-1 text-sm">Email Address</label>
+                <input class="input input-error" value="invalid-email"/>
+                <p class="text-xs mt-1 flex items-center gap-1" style="color:hsl(var(--destructive))">${iconAlertCircle(12)} Please enter a valid email address</p>
+              </div>
+              <div>
+                <label class="label mb-1 text-sm">Project Name</label>
+                <input class="input" value="AI Segmentation" style="border-color:hsl(142 71% 45%)"/>
+                <p class="text-xs mt-1 flex items-center gap-1" style="color:hsl(142 71% 45%)">${iconCheck(12)} Looks good!</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Failed -->
+          <div class="card" style="padding:1.5rem">
+            <h3 class="font-semibold mb-3">Upload Failed</h3>
+            <div style="padding:1.5rem;border-radius:var(--radius-lg);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));text-align:center">
+              ${iconUpload(32, 'text-error')}
+              <p class="font-medium text-sm mt-2" style="color:hsl(var(--error-text))">Upload Failed</p>
+              <p class="text-xs text-muted mt-1">File exceeds maximum size of 10MB</p>
+              <button class="btn btn-outline btn-sm mt-3">Try Again</button>
+            </div>
+          </div>
+
+          <!-- Save Failed -->
+          <div class="card" style="padding:1.5rem">
+            <h3 class="font-semibold mb-3">Save Failed</h3>
+            <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));display:flex;align-items:flex-start;gap:0.75rem">
+              ${iconAlertCircle(20, 'text-error')}
+              <div style="flex:1">
+                <p class="text-sm font-medium" style="color:hsl(var(--error-text))">Changes could not be saved</p>
+                <p class="text-xs text-muted mt-0.5">Please check your connection and try again.</p>
+              </div>
+              <button class="btn btn-outline btn-xs">Retry</button>
+            </div>
+          </div>
+
+          <!-- Connection Issue -->
+          <div class="card" style="padding:1.5rem">
+            <h3 class="font-semibold mb-3">Connection Issue</h3>
+            <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--warning-soft));border:1px solid hsl(var(--warning-border));display:flex;align-items:flex-start;gap:0.75rem">
+              ${iconAlertTriangle(20, 'text-warning')}
+              <div style="flex:1">
+                <p class="text-sm font-medium" style="color:hsl(var(--warning-text))">Connection interrupted</p>
+                <p class="text-xs text-muted mt-0.5">Reconnecting automatically...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline System Error -->
+        <div class="card" style="padding:1.5rem">
+          <h3 class="font-semibold mb-3">Inline System Error</h3>
+          <div style="padding:1rem;border-radius:var(--radius);background:hsl(var(--error-soft));border:1px solid hsl(var(--error-border));display:flex;align-items:flex-start;gap:0.75rem">
+            ${iconAlertCircle(20, 'text-error')}
+            <div style="flex:1">
+              <p class="text-sm font-medium" style="color:hsl(var(--error-text))">Something went wrong</p>
+              <p class="text-xs text-muted mt-0.5">An unexpected error occurred while loading this section. Our team has been notified.</p>
+            </div>
+            <button class="btn btn-outline btn-sm">Reload Section</button>
+          </div>
+        </div>
+
+        <!-- Full Page Error -->
+        <div class="card" style="padding:3rem;text-align:center">
+          <h3 class="font-semibold mb-3">Full Page Error</h3>
+          <div style="padding:2rem">
+            ${iconAlertTriangle(48, 'text-error')}
+            <h3 class="text-xl font-display font-semibold mt-4">Something went wrong</h3>
+            <p class="text-sm text-muted mt-2" style="max-width:28rem;margin:0.5rem auto 0">We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.</p>
+            <div class="flex justify-center gap-3 mt-6">
+              <button class="btn btn-primary">Refresh Page</button>
+              <button class="btn btn-outline">Contact Support</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr style="border:none;border-top:1px solid hsl(var(--border))"/>
+
       <!-- Guidelines -->
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Usage Guidelines</h2><p class="text-muted mt-1">Do's and don'ts for the design system</p></div>
@@ -219,21 +422,21 @@ export function render(): string {
           <div class="card" style="padding:1.5rem;border-color:hsl(142 71% 45%/0.3);background:hsl(var(--success-soft)/0.3)">
             <h3 class="font-semibold text-success flex items-center gap-2 mb-4">${iconCheck(20)} Do</h3>
             <div class="text-sm" style="display:flex;flex-direction:column;gap:0.5rem">
-              <p>Use semantic color tokens, not raw hex values</p>
-              <p>Maintain consistent spacing with the 8pt grid</p>
-              <p>Ensure all interactive elements have focus states</p>
-              <p>Use the proper typography scale for hierarchy</p>
-              <p>Test contrast ratios for accessibility</p>
+              <p>${iconCheck(14, 'text-success')} Use semantic color tokens, not raw hex values</p>
+              <p>${iconCheck(14, 'text-success')} Maintain consistent spacing with the 8pt grid</p>
+              <p>${iconCheck(14, 'text-success')} Ensure all interactive elements have focus states</p>
+              <p>${iconCheck(14, 'text-success')} Use the proper typography scale for hierarchy</p>
+              <p>${iconCheck(14, 'text-success')} Test contrast ratios for accessibility</p>
             </div>
           </div>
           <div class="card" style="padding:1.5rem;border-color:hsl(var(--error)/0.3);background:hsl(var(--error-soft)/0.3)">
             <h3 class="font-semibold text-error flex items-center gap-2 mb-4">${iconX(20)} Don't</h3>
             <div class="text-sm" style="display:flex;flex-direction:column;gap:0.5rem">
-              <p>Use pure black (#000) for text</p>
-              <p>Create custom colors outside the system</p>
-              <p>Use decorative animations</p>
-              <p>Skip focus states on interactive elements</p>
-              <p>Mix typography scales inconsistently</p>
+              <p>${iconX(14, 'text-error')} Use pure black (#000) for text</p>
+              <p>${iconX(14, 'text-error')} Create custom colors outside the system</p>
+              <p>${iconX(14, 'text-error')} Use decorative animations</p>
+              <p>${iconX(14, 'text-error')} Skip focus states on interactive elements</p>
+              <p>${iconX(14, 'text-error')} Mix typography scales inconsistently</p>
             </div>
           </div>
         </div>

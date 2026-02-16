@@ -101,7 +101,7 @@ function renderEditMode(): string {
                       <span class="font-medium text-sm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${step.title || 'Untitled Step'}</span>
                       ${!step.title ? '<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Needs info</span>' : ''}
                     </div>
-                    ${step.owner ? `<div class="flex items-center gap-2 text-xs text-muted">${iconUsers(12)} <span>${escapeHtml(step.owner)}</span>${step.duration ? ` <span class="hidden-mobile">·</span> ${iconClock(12)} <span class="hidden-mobile">${step.duration}</span>` : ''}</div>` : ''}
+                    ${step.owner ? `<div class="flex items-center gap-2 text-xs text-muted">${iconUsers(12)} <span>${escapeHtml(step.owner)}</span>${step.duration ? ` <span class="hidden-mobile">•</span> ${iconClock(12)} <span class="hidden-mobile">${step.duration}</span>` : ''}</div>` : ''}
                   </div>
                   <div class="flex items-center gap-1">
                     <button class="btn btn-ghost btn-icon btn-sm" data-move-step="${step.id}:up" ${i === 0 ? 'disabled' : ''}>${iconChevronUp(16)}</button>

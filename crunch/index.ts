@@ -100,7 +100,7 @@ function renderLabelStep(): string {
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(142 71% 45%/0.1);display:flex;align-items:center;justify-content:center">${iconFileSpreadsheet(20, 'text-success')}</div>
-            <div><p class="font-medium text-sm">Q4_Sales_Report.xlsx</p><p class="text-xs text-muted">2.3 MB · 1,247 rows · ${columns.length} columns</p></div>
+            <div><p class="font-medium text-sm">Q4_Sales_Report.xlsx</p><p class="text-xs text-muted">2.3 MB • 1,247 rows • ${columns.length} columns</p></div>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right"><p class="text-sm font-medium">${pct}% complete</p><p class="text-xs text-muted">${labeled} of ${columns.length} columns labeled</p></div>
