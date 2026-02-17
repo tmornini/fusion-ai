@@ -97,6 +97,8 @@ web-app/
     script.ts                 # Page dispatch, state, icons, navigation, layout behavior
     data.ts                   # ~27 async adapter functions (API → frontend shapes)
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
+    command-palette.ts        # Cmd+K search overlay with keyboard navigation
+    favicon.ico               # Application favicon
     fonts/                    # Self-hosted woff2 files
 
   # Core pages — ideas, projects, and related workflows
@@ -155,7 +157,7 @@ The `build` script requires a clean git working directory (no uncommitted change
 1. Composes HTML pages: runs `web-app/site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory
 2. Copies 8 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
-4. Copies static assets (`web-app/site/style.css`, `web-app/site/fonts/`, `web-app/index.html`) to the build directory
+4. Copies static assets (`web-app/site/style.css`, `web-app/site/fonts/`, `web-app/site/favicon.ico`, `web-app/index.html`) to the build directory
 5. Copies `sql-wasm.wasm` from node_modules to the build directory
 6. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 

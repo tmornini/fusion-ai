@@ -143,6 +143,35 @@ All grays are derived from blue tones for brand cohesion. **Never use pure black
 </div>
 ```
 
+### Command Palette
+
+Cmd+K (or Ctrl+K) overlay for quick navigation and search. Implemented in `web-app/site/command-palette.ts`.
+
+- Full keyboard navigation (arrow keys, Enter to select, Escape to close)
+- Searches across pages, ideas, and projects
+- Renders categorized results with icons
+- Focus trap while open
+
+### Charts
+
+SVG chart rendering functions in `web-app/site/charts.ts`. All charts use design system colors and respond to dark mode.
+
+| Type | Function | Usage |
+|------|----------|-------|
+| Bar | `renderBarChart()` | Comparisons, category breakdowns |
+| Line | `renderLineChart()` | Trends over time |
+| Donut | `renderDonutChart()` | Proportions, status distribution |
+| Area | `renderAreaChart()` | Volume trends |
+
+### Dark Mode
+
+CSS custom properties on `:root` define light theme values. The `[data-theme="dark"]` selector overrides them for dark mode. Toggle is persisted to `localStorage` and respects `prefers-color-scheme` for initial detection.
+
+```css
+:root { --bg-primary: hsl(0 0% 100%); }
+[data-theme="dark"] { --bg-primary: hsl(217 45% 10%); }
+```
+
 ## 6. Interaction States
 
 ### State Guidelines

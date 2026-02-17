@@ -41,7 +41,7 @@ python3 -m http.server 8080
 Requires a clean git working directory. The build:
 1. Composes dashboard pages by merging `web-app/site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
-3. Copies sql-wasm.wasm for SQLite WASM support
+3. Copies static assets (style.css, fonts/, favicon.ico, sql-wasm.wasm)
 4. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack
@@ -53,6 +53,7 @@ Requires a clean git working directory. The build:
 - CSS custom properties with light/dark theme support
 - Standard `<a href>` navigation between standalone HTML pages
 - SVG charts (bar, line, donut, area)
+- Command palette (Cmd+K) with keyboard navigation
 - 80+ inline SVG icons
 - Self-hosted IBM Plex Sans, Inter, and IBM Plex Mono fonts
 
@@ -66,4 +67,6 @@ web-app/      # Frontend pages, styles, scripts, layout templates
   tools/      # Edge, Crunch, Flow analytics
   admin/      # Account, team, settings, db-admin
   entry/      # Landing, auth, onboarding
+  reference/  # Design system component gallery
+  system/     # 404 page
 ```
