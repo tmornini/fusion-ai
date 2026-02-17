@@ -8,6 +8,8 @@ fi
 
 echo "Building Fusion AI..."
 
+npm install
+
 BUILD_DIR=$(mktemp -d)
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
@@ -45,3 +47,5 @@ ZIPDEST="$HOME/Desktop/$ZIPNAME"
 
 echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | xargs) bytes)"
 echo "Done."
+
+rm -rf node_modules
