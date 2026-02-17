@@ -12,11 +12,11 @@ BUILD_DIR=$(mktemp -d)
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
 # Compose HTML pages into build dir (dashboard + standalone)
-npx tsx site/compose.ts "$BUILD_DIR"
+npx tsx web-app/site/compose.ts "$BUILD_DIR"
 
 # Bundle TypeScript into build dir
 mkdir -p "$BUILD_DIR/site"
-npx esbuild site/script.ts \
+npx esbuild web-app/site/script.ts \
   --bundle \
   --minify \
   --keep-names \
@@ -27,10 +27,13 @@ npx esbuild site/script.ts \
 echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | xargs) bytes)"
 
 # Copy static assets into build dir
-cp site/style.css "$BUILD_DIR/site/"
-cp -r site/fonts "$BUILD_DIR/site/"
-cp index.html "$BUILD_DIR/"
-cp site/favicon.ico "$BUILD_DIR/"
+cp web-app/site/style.css "$BUILD_DIR/site/"
+cp -r web-app/site/fonts "$BUILD_DIR/site/"
+cp web-app/index.html "$BUILD_DIR/"
+cp web-app/site/favicon.ico "$BUILD_DIR/"
+
+# Copy sql.js WASM binary into build dir (browser variant used by esbuild)
+cp node_modules/sql.js/dist/sql-wasm-browser.wasm "$BUILD_DIR/site/"
 
 # Create distribution ZIP on Desktop
 SHA=$(git rev-parse --short=7 HEAD)

@@ -194,7 +194,7 @@ All grays are derived from blue tones for brand cohesion. **Never use pure black
 ## 9. Iconography
 
 ### Style Guide
-- **Library**: Inline SVG functions in `site/script.ts` (line-based, each returns an SVG string)
+- **Library**: Inline SVG functions in `web-app/site/script.ts` (line-based, each returns an SVG string)
 - **Default size**: 16px (inline), 20px (buttons), 24px (standalone)
 - **Stroke width**: 2px
 - **Color**: Inherit from parent or use `text-muted-foreground`

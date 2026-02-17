@@ -511,6 +511,7 @@ const pageModules: Record<string, () => Promise<{ init: (params?: Record<string,
   'manage-users': () => import('../admin/manage-users/index'),
   'activity-feed': () => import('../admin/activity-feed/index'),
   'notification-settings': () => import('../admin/notification-settings/index'),
+  'db-admin': () => import('../admin/db-admin/index'),
   'design-system': () => import('../reference/design-system/index'),
   landing: () => import('../entry/landing/index'),
   auth: () => import('../entry/auth/index'),
@@ -525,6 +526,21 @@ const pageModules: Record<string, () => Promise<{ init: (params?: Record<string,
 document.addEventListener('DOMContentLoaded', async () => {
   applyTheme();
   initPrefetch();
+
+  // Initialize database before any page modules
+  const { createSqliteAdapter } = await import('../../api/db-sqlite');
+  const { initApi } = await import('../../api/api');
+  const { seedData } = await import('../../api/seed');
+
+  const adapter = await createSqliteAdapter();
+  await adapter.initialize();
+  initApi(adapter);
+
+  // Seed if DB is empty (first load)
+  const users = await adapter.users.getAll();
+  if (users.length === 0) {
+    await seedData(adapter);
+  }
 
   const pageName = getPageName();
 
@@ -555,7 +571,7 @@ function initDashboardLayout(): void {
     const linkPage = el.getAttribute('data-page-link') || '';
     let active = linkPage === pageName;
     if (!active) {
-      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings'].includes(pageName)) active = true;
+      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'db-admin'].includes(pageName)) active = true;
       else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) active = true;
       else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) active = true;
       else if (linkPage === 'edge-list' && pageName === 'edge') active = true;

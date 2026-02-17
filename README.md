@@ -4,7 +4,7 @@ Enterprise innovation management platform for capturing ideas, defining business
 
 ## Overview
 
-Vanilla TypeScript with zero runtime browser dependencies. Every page is a standalone HTML file — open any `index.html` directly in a browser or serve via any HTTP server.
+Vanilla TypeScript with SQLite WASM (sql.js) for in-browser data persistence. Every page is a standalone HTML file served via any HTTP server.
 
 ### Modules
 
@@ -15,6 +15,7 @@ Vanilla TypeScript with zero runtime browser dependencies. Every page is a stand
 - **Projects** — track approved ideas through execution
 - **Teams** — team roster and assignments
 - **Account** — organization settings, users, billing, and activity
+- **DB Admin** — database management (wipe, reload, import, export)
 
 ## Getting Started
 
@@ -31,8 +32,6 @@ python3 -m http.server 8080
 # then open http://localhost:8080/landing/index.html
 ```
 
-Or open any page's `index.html` directly in a browser (`file://`).
-
 ## Build
 
 ```sh
@@ -40,16 +39,31 @@ Or open any page's `index.html` directly in a browser (`file://`).
 ```
 
 Requires a clean git working directory. The build:
-1. Composes dashboard pages by merging `site/layout.html` with each page's `index.html`
+1. Composes dashboard pages by merging `web-app/site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
-3. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
+3. Copies sql-wasm.wasm for SQLite WASM support
+4. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack
 
 - TypeScript (vanilla, no framework)
+- SQLite WASM (sql.js) with IndexedDB persistence
+- REST-style API layer (`api/`) with `DbAdapter` interface
 - Build-time HTML composition (shared layout + per-page content)
 - CSS custom properties with light/dark theme support
 - Standard `<a href>` navigation between standalone HTML pages
 - SVG charts (bar, line, donut, area)
 - 80+ inline SVG icons
 - Self-hosted IBM Plex Sans, Inter, and IBM Plex Mono fonts
+
+## Architecture
+
+```
+api/          # Database abstraction, SQLite implementation, REST routing, seed data
+web-app/      # Frontend pages, styles, scripts, layout templates
+  site/       # Shared CSS, TypeScript, HTML layout, fonts
+  core/       # Ideas, projects, and related workflows
+  tools/      # Edge, Crunch, Flow analytics
+  admin/      # Account, team, settings, db-admin
+  entry/      # Landing, auth, onboarding
+```

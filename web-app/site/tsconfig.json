@@ -14,6 +14,6 @@
     "noUncheckedIndexedAccess": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
-  "include": ["site/**/*.ts", "core/**/*.ts", "tools/**/*.ts", "admin/**/*.ts", "reference/**/*.ts", "entry/**/*.ts", "system/**/*.ts"],
-  "exclude": ["site/compose.ts"]
+  "include": ["./**/*.ts", "../core/**/*.ts", "../tools/**/*.ts", "../admin/**/*.ts", "../reference/**/*.ts", "../entry/**/*.ts", "../system/**/*.ts", "../../api/**/*.ts"],
+  "exclude": ["./compose.ts"]
 }
