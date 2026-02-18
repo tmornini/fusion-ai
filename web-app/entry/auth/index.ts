@@ -60,7 +60,7 @@ export async function init(): Promise<void> {
               <p class="text-muted" id="auth-subtitle">Sign in to your account to continue</p>
             </div>
 
-            <form id="auth-form" class="flex flex-col gap-5">
+            <form id="auth-form" class="flex flex-col gap-5" novalidate>
               <div>
                 <label class="label mb-2 block" for="email">Email</label>
                 <input class="input" id="email" type="email" placeholder="you@company.com" autocomplete="email" />

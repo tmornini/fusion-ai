@@ -157,7 +157,7 @@ export interface Idea {
   priority: number;
   status: 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
   submittedBy: string;
-  edgeStatus: 'incomplete' | 'draft' | 'complete';
+  edgeStatus: 'incomplete' | 'draft' | 'complete' | 'missing';
 }
 
 export async function getIdeas(): Promise<Idea[]> {
@@ -166,7 +166,6 @@ export async function getIdeas(): Promise<Idea[]> {
     getUserMap(),
   ]);
   return ideas
-    .filter(i => i.priority > 0)
     .map(i => ({
       id: i.id,
       title: i.title,

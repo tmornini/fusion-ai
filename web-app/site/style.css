@@ -2587,6 +2587,11 @@ p { line-height: var(--leading-normal); }
   animation: cmdk-scale-in var(--duration-normal) var(--ease-out);
 }
 
+.cmdk-backdrop.hidden,
+.cmdk-dialog.hidden {
+  display: none;
+}
+
 @keyframes cmdk-scale-in {
   from { opacity: 0; transform: translateX(-50%) scale(0.96); }
   to { opacity: 1; transform: translateX(-50%) scale(1); }

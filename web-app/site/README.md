@@ -7,7 +7,7 @@ Shared code and assets used by all pages in the application.
 | File | Purpose |
 |------|---------|
 | `script.ts` | Page dispatch, state management, 80+ SVG icon functions, navigation helpers, toast notifications, sidebar/mobile behavior |
-| `data.ts` | ~27 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect |
+| `data.ts` | ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect |
 | `style.css` | All CSS: design tokens, component classes, layout utilities, responsive breakpoints, dark mode overrides |
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |

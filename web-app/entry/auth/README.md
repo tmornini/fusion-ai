@@ -8,6 +8,6 @@ Login and signup page with form toggle.
 ## Features
 
 - Login and signup form toggle
-- Email and password field validation
+- Custom JavaScript validation with `novalidate` (disables browser-native HTML5 validation so inline error messages render below each field)
 - Mock authentication (returns demo@example.com)
-- Redirects to dashboard on success
+- Redirects to dashboard on login, onboarding on signup

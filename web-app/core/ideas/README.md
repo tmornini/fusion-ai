@@ -7,8 +7,8 @@ Browse and manage innovation ideas across the organization.
 
 ## Features
 
-- Filterable list of all submitted ideas
-- Priority and status badge indicators
-- Search and category filtering
-- Sort by score, date, or priority
-- Quick navigation to idea details and scoring
+- Unfiltered list of all submitted ideas (no ideas are excluded by priority or other criteria)
+- Status badges: `draft`, `scored`, `pending_review`, `approved`, `rejected`
+- Edge status badges: `missing`, `incomplete`, `draft`, `complete`
+- Sort by score or priority (toggle view)
+- Quick navigation to idea details, scoring, edge definition, review, and conversion
