@@ -528,18 +528,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPrefetch();
 
   // Initialize database before any page modules
-  const { createSqliteAdapter } = await import('../../api/db-sqlite');
-  const { initApi } = await import('../../api/api');
-  const { seedData } = await import('../../api/seed');
+  try {
+    const { createSqliteAdapter } = await import('../../api/db-sqlite');
+    const { initApi } = await import('../../api/api');
+    const { seedData } = await import('../../api/seed');
 
-  const adapter = await createSqliteAdapter();
-  await adapter.initialize();
-  initApi(adapter);
+    const adapter = await createSqliteAdapter();
+    await adapter.initialize();
+    initApi(adapter);
 
-  // Seed if DB is empty (first load)
-  const users = await adapter.users.getAll();
-  if (users.length === 0) {
-    await seedData(adapter);
+    // Seed if DB is empty (first load)
+    const users = await adapter.users.getAll();
+    if (users.length === 0) {
+      await seedData(adapter);
+    }
+  } catch (err) {
+    console.error('Database initialization failed:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    document.body.innerHTML = `<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
+      <h1 style="color:#b91c1c">Failed to initialize database</h1>
+      <pre style="background:#fef2f2;padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
+      <p>Try clearing site data (IndexedDB) and reloading.</p>
+    </div>`;
+    return;
   }
 
   const pageName = getPageName();
