@@ -236,6 +236,12 @@ export async function createSqliteAdapter(): Promise<DbAdapter> {
       db.close();
     },
 
+    async flush(): Promise<void> {
+      if (saveTimer) clearTimeout(saveTimer);
+      const data = db.export();
+      await saveToIdb(new Uint8Array(data));
+    },
+
     async wipeAllData(): Promise<void> {
       for (const table of TABLE_NAMES) {
         db.run(`DELETE FROM ${table}`);

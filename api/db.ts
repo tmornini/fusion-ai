@@ -27,6 +27,7 @@ export interface SingletonStore<T> {
 export interface DbAdapter {
   initialize(): Promise<void>;
   close(): Promise<void>;
+  flush(): Promise<void>;
   wipeAllData(): Promise<void>;
   exportSnapshot(): Promise<string>;
   importSnapshot(json: string): Promise<void>;

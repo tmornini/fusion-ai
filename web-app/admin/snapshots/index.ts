@@ -101,6 +101,7 @@ export async function init(): Promise<void> {
       const db = getDbAdapter();
       await db.wipeAllData();
       await seedData(db);
+      await db.flush();
       window.location.href = '../index.html';
     } catch (e) {
       showToast('Failed to reload mock data.', 'error');
@@ -114,7 +115,9 @@ export async function init(): Promise<void> {
     if (!file) return;
     try {
       const text = await file.text();
-      await getDbAdapter().importSnapshot(text);
+      const db = getDbAdapter();
+      await db.importSnapshot(text);
+      await db.flush();
       window.location.href = '../index.html';
     } catch (e) {
       showToast('Failed to upload snapshot. Check file format.', 'error');
