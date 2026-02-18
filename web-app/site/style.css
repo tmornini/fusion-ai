@@ -1200,6 +1200,9 @@ p { line-height: var(--leading-normal); }
 }
 
 .sidebar-collapsed { width: 4rem; }
+.sidebar-expand-btn { display: none; }
+.sidebar-collapsed .sidebar-expand-btn { display: flex; }
+.sidebar-collapsed .sidebar-collapse-btn { display: none; }
 
 .sidebar-header {
   display: flex;

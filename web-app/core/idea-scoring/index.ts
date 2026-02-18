@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo, getParams, scoreColor,
+  $, escapeHtml, navigateTo, getParams, scoreColor, renderError,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
   iconCheckCircle2, iconLoader, iconSparkles,
@@ -166,20 +166,29 @@ export async function init(): Promise<void> {
   $('#loading-back')?.addEventListener('click', () => navigateTo('ideas'));
 
   // Simulate AI processing delay, then show results
-  const [idea, score] = await Promise.all([
-    getIdeaForScoring(ideaId),
-    getIdeaScore(ideaId),
-  ]);
+  try {
+    const [idea, score] = await Promise.all([
+      getIdeaForScoring(ideaId),
+      getIdeaScore(ideaId),
+    ]);
 
-  setTimeout(() => {
+    setTimeout(() => {
+      const body = $('#scoring-body');
+      if (body) {
+        body.innerHTML = renderScoreResults(ideaId, idea, score);
+        bindTabs(score);
+
+        $('#back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
+        $('#save-draft')?.addEventListener('click', () => navigateTo('ideas'));
+        $('#convert-btn')?.addEventListener('click', () => navigateTo('idea-convert', { ideaId }));
+      }
+    }, 2500);
+  } catch (err) {
     const body = $('#scoring-body');
     if (body) {
-      body.innerHTML = renderScoreResults(ideaId, idea, score);
-      bindTabs(score);
-
-      $('#back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
-      $('#save-draft')?.addEventListener('click', () => navigateTo('ideas'));
-      $('#convert-btn')?.addEventListener('click', () => navigateTo('idea-convert', { ideaId }));
+      const msg = err instanceof Error ? err.message : 'Failed to load idea for scoring.';
+      body.innerHTML = renderError(msg, 'Back to Ideas');
+      body.querySelector('[data-retry-btn]')?.addEventListener('click', () => navigateTo('ideas'));
     }
-  }, 2500);
+  }
 }

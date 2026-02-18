@@ -22,7 +22,7 @@ No test framework is configured.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by SQLite WASM. The `web-app/site/data.ts` file contains ~27 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by SQLite WASM. The `web-app/site/data.ts` file contains ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: SQLite WASM via sql.js, persisted to IndexedDB across page navigations. On first load, seed data is automatically populated. A db-admin page provides wipe, reload, import, and export operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
@@ -95,7 +95,7 @@ web-app/
     compose.ts                # Build-time script: layout + page → composed index.html
     style.css                 # All CSS: tokens, components, layouts, utilities
     script.ts                 # Page dispatch, state, icons, navigation, layout behavior
-    data.ts                   # ~27 async adapter functions (API → frontend shapes)
+    data.ts                   # ~28 async adapter functions (API → frontend shapes)
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
     command-palette.ts        # Cmd+K search overlay with keyboard navigation
     favicon.ico               # Application favicon

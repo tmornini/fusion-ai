@@ -2,7 +2,7 @@
 // FUSION AI — Data Layer
 // Adapter between normalized API data and the
 // denormalized shapes that page modules expect.
-// All 27 function signatures preserved.
+// All 28 function signatures preserved.
 // ============================================
 
 import { GET } from '../../api/api';
@@ -389,6 +389,40 @@ export async function getEdgeIdea(ideaId: string): Promise<EdgeIdea> {
     solution: idea.proposed_solution || 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
     submittedBy: userMap.get(idea.submitted_by_id) ? userName(userMap.get(idea.submitted_by_id)!) : 'Unknown',
     score: idea.score,
+  };
+}
+
+export async function getEdgeOutcomes(ideaId: string): Promise<{
+  outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string }[] }[];
+  impact: { shortTerm: string; midTerm: string; longTerm: string };
+  confidence: string;
+  owner: string;
+} | null> {
+  const allEdges = await GET('edges') as EdgeRow[];
+  const edge = allEdges.find(e => e.idea_id === ideaId);
+  if (!edge) return null;
+
+  const { getDbAdapter } = await import('../../api/api');
+  const db = getDbAdapter();
+  const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
+  const allMetrics = await db.edgeMetrics.getAll();
+  const userMap = await getUserMap();
+
+  return {
+    outcomes: outcomes.map((o: EdgeOutcomeRow) => ({
+      id: o.id,
+      description: o.description,
+      metrics: allMetrics.filter((m: EdgeMetricRow) => m.outcome_id === o.id).map((m: EdgeMetricRow) => ({
+        id: m.id, name: m.name, target: m.target, unit: m.unit,
+      })),
+    })),
+    impact: {
+      shortTerm: edge.impact_short_term,
+      midTerm: edge.impact_mid_term,
+      longTerm: edge.impact_long_term,
+    },
+    confidence: edge.confidence || '',
+    owner: userMap.get(edge.owner_id) ? userName(userMap.get(edge.owner_id)!) : '',
   };
 }
 
@@ -878,7 +912,8 @@ export interface IdeaScore {
 }
 
 export async function getIdeaForScoring(ideaId: string): Promise<{ title: string; problemStatement: string }> {
-  const idea = await GET(`ideas/${ideaId}`) as IdeaRow;
+  const idea = await GET(`ideas/${ideaId}`) as IdeaRow | null;
+  if (!idea) throw new Error(`Idea "${ideaId}" not found.`);
   return {
     title: idea.title,
     problemStatement: idea.problem_statement || 'Marketing team spends 20+ hours weekly manually segmenting customers, leading to delayed campaigns and missed opportunities.',

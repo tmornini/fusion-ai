@@ -4,7 +4,7 @@ import {
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
   renderSkeleton, renderError,
 } from '../../site/script';
-import { getEdgeIdea, type EdgeIdea } from '../../site/data';
+import { getEdgeIdea, getEdgeOutcomes, type EdgeIdea } from '../../site/data';
 
 interface Metric { [key: string]: string; id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }
@@ -294,7 +294,23 @@ export async function init(params?: Record<string, string>): Promise<void> {
     return;
   }
 
-  edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
-  nextId = 1;
+  const saved = await getEdgeOutcomes(ideaId);
+  if (saved && saved.outcomes.length > 0) {
+    edgeData = { outcomes: saved.outcomes, impact: saved.impact, confidence: saved.confidence, owner: saved.owner };
+    // Set nextId past the highest existing numeric ID to avoid collisions
+    let maxId = 0;
+    for (const o of saved.outcomes) {
+      const oNum = parseInt(o.id.replace(/\D/g, ''), 10);
+      if (oNum > maxId) maxId = oNum;
+      for (const m of o.metrics) {
+        const mNum = parseInt(m.id.replace(/\D/g, ''), 10);
+        if (mNum > maxId) maxId = mNum;
+      }
+    }
+    nextId = maxId + 1;
+  } else {
+    edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
+    nextId = 1;
+  }
   rerender(ideaId);
 }
