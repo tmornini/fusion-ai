@@ -147,6 +147,7 @@ web-app/
     not-found/                # 404 page (standalone)
 
 DESIGN-SYSTEM.md              # Design system specification
+TEST-PLAN.md                  # Human-executable test plan (146 cases)
 ```
 
 Each page directory contains `index.ts` + `index.html`. Build output goes to a temp directory — no build artifacts in the repo.
