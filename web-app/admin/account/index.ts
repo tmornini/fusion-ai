@@ -157,7 +157,7 @@ export async function init(): Promise<void> {
       <div class="card card-hover p-6 mt-6">
         <h3 class="font-display font-semibold mb-4">Security & Administration</h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" data-nav-to="manage-users" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+          <button class="admin-link-card" data-nav-to="manage-users">
             <span style="color:hsl(var(--muted-foreground))">${iconUsers(20)}</span>
             <div style="flex:1;min-width:0">
               <p class="font-medium text-sm">Manage Users</p>
@@ -165,7 +165,7 @@ export async function init(): Promise<void> {
             </div>
             ${iconExternalLink(16)}
           </button>
-          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" data-nav-to="notification-settings" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+          <button class="admin-link-card" data-nav-to="notification-settings">
             <span style="color:hsl(var(--muted-foreground))">${iconBell(20)}</span>
             <div style="flex:1;min-width:0">
               <p class="font-medium text-sm">Notifications</p>
@@ -173,7 +173,7 @@ export async function init(): Promise<void> {
             </div>
             ${iconExternalLink(16)}
           </button>
-          <button class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer text-left w-full" style="border-color:hsl(var(--border));transition:all var(--duration-fast) var(--ease-default)" onmouseover="this.style.borderColor='hsl(var(--primary) / 0.5)'" onmouseout="this.style.borderColor='hsl(var(--border))'">
+          <button class="admin-link-card">
             <span style="color:hsl(var(--muted-foreground))">${iconCreditCard(20)}</span>
             <div style="flex:1;min-width:0">
               <p class="font-medium text-sm">Billing History</p>

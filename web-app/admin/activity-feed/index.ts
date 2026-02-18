@@ -28,7 +28,7 @@ function renderActivity(a: ActivityItem): string {
   if (a.status) meta = `<div class="badge badge-default text-xs mt-1">${a.status}</div>`;
   if (a.comment) meta = `<p class="text-sm text-muted mt-1" style="font-style:italic">"${escapeHtml(a.comment)}"</p>`;
   return `
-    <div class="flex items-start gap-4 p-4 rounded-lg" style="transition:background var(--duration-fast)" onmouseover="this.style.background='hsl(var(--muted)/0.3)'" onmouseout="this.style.background='transparent'">
+    <div class="flex items-start gap-4 p-4 rounded-lg activity-row">
       ${activityIconHtml(a.type)}
       <div style="flex:1;min-width:0">
         <p class="text-sm"><span class="font-medium">${escapeHtml(a.actor)}</span><span class="text-muted"> ${a.action} </span><span class="font-medium">${escapeHtml(a.target)}</span></p>

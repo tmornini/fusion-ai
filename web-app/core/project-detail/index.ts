@@ -13,13 +13,13 @@ function varianceHtml(baseline: number, current: number, isLowerBetter: boolean,
   if (diff === 0) return `<span class="text-muted">${iconMinus(16)} 0</span>`;
   const good = isLowerBetter ? diff < 0 : diff > 0;
   const icon = diff < 0 ? iconArrowDownRight(16) : iconArrowUpRight(16);
-  const color = good ? 'color:hsl(142 71% 45%)' : 'color:hsl(var(--error))';
+  const color = good ? 'color:hsl(var(--success))' : 'color:hsl(var(--error))';
   return `<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
 }
 
 function milestoneIcon(status: string): string {
   switch (status) {
-    case 'completed': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(142 71% 45%);display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'text-primary-fg')}</div>`;
+    case 'completed': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'text-primary-fg')}</div>`;
     case 'in_progress': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--warning));display:flex;align-items:center;justify-content:center">${iconAlertCircle(12, 'text-primary-fg')}</div>`;
     default: return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">${iconClock(12, 'text-muted')}</div>`;
   }
@@ -27,7 +27,7 @@ function milestoneIcon(status: string): string {
 
 function milestoneColor(status: string): string {
   switch (status) {
-    case 'completed': return 'color:hsl(142 71% 45%)';
+    case 'completed': return 'color:hsl(var(--success))';
     case 'in_progress': return 'color:hsl(var(--warning))';
     default: return 'color:hsl(var(--muted-foreground))';
   }
@@ -168,7 +168,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                           <div class="flex items-center gap-4">
                             <div class="text-right"><p class="text-xs text-muted">Target</p><p class="text-sm font-medium">${m.unit === '$' ? '$' : ''}${m.target}${m.unit === '$' ? '' : m.unit}</p></div>
                             <div class="text-right"><p class="text-xs text-muted">Current</p><p class="text-sm font-medium ${onTrack ? 'text-success' : 'text-warning'}">${m.unit === '$' ? '$' : ''}${m.current}${m.unit === '$' ? '' : m.unit}</p></div>
-                            <div style="width:0.5rem;height:0.5rem;border-radius:9999px;background:${onTrack ? 'hsl(142 71% 45%)' : 'hsl(var(--warning))'}"></div>
+                            <div style="width:0.5rem;height:0.5rem;border-radius:9999px;background:${onTrack ? 'hsl(var(--success))' : 'hsl(var(--warning))'}"></div>
                           </div>
                         </div>`;
                     }).join('')}
@@ -181,7 +181,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
             <div style="display:flex;flex-direction:column;gap:0.75rem">
               <h3 class="text-sm font-medium flex items-center gap-2">${iconTrendingUp(16, 'text-primary')} Expected Impact Timeline</h3>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" class="score-grid">
-                <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--success-soft));border:1px solid hsl(142 71% 45%/0.2)">
+                <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--success-soft));border:1px solid hsl(var(--success) / 0.2)">
                   <div class="flex items-center gap-1 mb-2">${iconClock(14, 'text-success')} <span class="text-xs font-medium text-success">Short-term (0-3mo)</span></div>
                   <p class="text-xs">${p.edge.impact.shortTerm}</p>
                 </div>
@@ -225,12 +225,12 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                       <div style="flex:1">
                         <div class="flex items-center gap-2 mb-1">
                           <span class="font-medium text-sm">${escapeHtml(task.name)}</span>
-                          <span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;${prioColor}">${task.priority}</span>
-                          ${task.assigned ? `<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">${iconUsers(10)} AI Recommended</span>` : ''}
+                          <span class="pill" style="${prioColor}">${task.priority}</span>
+                          ${task.assigned ? `<span class="pill" style="background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">${iconUsers(10)} AI Recommended</span>` : ''}
                         </div>
                         <p class="text-xs text-muted mb-2">${escapeHtml(task.desc)}</p>
                         <div class="flex flex-wrap gap-1.5">
-                          ${task.skills.map(s => `<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:0.375rem;background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground))">${escapeHtml(s)}</span>`).join('')}
+                          ${task.skills.map(s => `<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${escapeHtml(s)}</span>`).join('')}
                           <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.hours}h est.</span>
                         </div>
                       </div>

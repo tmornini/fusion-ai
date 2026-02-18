@@ -235,7 +235,7 @@ function initials(name: string): string {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 80) return 'color:hsl(142 71% 45%)';
+  if (score >= 80) return 'color:hsl(var(--success))';
   if (score >= 60) return 'color:hsl(var(--warning))';
   return 'color:hsl(var(--error))';
 }

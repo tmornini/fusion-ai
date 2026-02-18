@@ -669,6 +669,71 @@ p { line-height: var(--leading-normal); }
   color: hsl(var(--info-text));
 }
 
+/* Pill — compact rounded label (replaces repeated inline pill styling) */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Pill-tag — rectangular tag variant with muted defaults */
+.pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+/* Admin link card — bordered card with hover highlight */
+.admin-link-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  background: transparent;
+  transition: border-color var(--duration-fast) var(--ease-default);
+}
+.admin-link-card:hover {
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+/* Activity row — subtle hover highlight */
+.activity-row {
+  transition: background-color var(--duration-fast) var(--ease-default);
+}
+.activity-row:hover {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+/* Page header / title (used by db-admin and similar pages) */
+.page-header {
+  margin-bottom: 1.5rem;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
 /* ==========================================
    10. TABLES
    ========================================== */
@@ -983,7 +1048,7 @@ p { line-height: var(--leading-normal); }
   left: 0.125rem;
   width: 1.25rem;
   height: 1.25rem;
-  background-color: white;
+  background-color: hsl(0 0% 100%);
   border-radius: 9999px;
   transition: transform var(--duration-fast) var(--ease-default);
   box-shadow: var(--shadow-sm);
@@ -1763,11 +1828,6 @@ p { line-height: var(--leading-normal); }
 .progress { width: 100%; height: 0.5rem; background: hsl(var(--muted)); border-radius: 9999px; overflow: hidden; }
 .progress-fill { height: 100%; background: hsl(var(--primary)); border-radius: 9999px; transition: width 0.3s; }
 
-/* Text utilities */
-.text-success { color: hsl(var(--success)) !important; }
-.text-warning { color: hsl(var(--warning)) !important; }
-.text-error { color: hsl(var(--error)) !important; }
-.text-primary { color: hsl(var(--primary)) !important; }
 
 /* ==========================================
    26. REDUCED MOTION

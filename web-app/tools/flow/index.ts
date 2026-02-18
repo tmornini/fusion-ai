@@ -22,7 +22,7 @@ let expandedStepId: string | null = null;
 
 function stepTypeColor(type: string): string {
   switch (type) {
-    case 'start': return 'background:hsl(142 71% 45%/0.1);border:2px solid hsl(142 71% 45%/0.3);color:hsl(142 71% 45%)';
+    case 'start': return 'background:hsl(var(--success) / 0.1);border:2px solid hsl(var(--success) / 0.3);color:hsl(var(--success))';
     case 'end': return 'background:hsl(var(--error)/0.1);border:2px solid hsl(var(--error)/0.3);color:hsl(var(--error))';
     case 'decision': return 'background:hsl(var(--warning)/0.1);border:2px solid hsl(var(--warning)/0.3);color:hsl(var(--warning))';
     default: return 'background:hsl(var(--primary)/0.1);border:2px solid hsl(var(--primary)/0.3);color:hsl(var(--primary))';
@@ -75,7 +75,7 @@ function renderEditMode(): string {
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2 mb-0.5">
                       <span class="font-medium text-sm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${step.title || 'Untitled Step'}</span>
-                      ${!step.title ? '<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Needs info</span>' : ''}
+                      ${!step.title ? '<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Needs info</span>' : ''}
                     </div>
                     ${step.owner ? `<div class="flex items-center gap-2 text-xs text-muted">${iconUsers(12)} <span>${escapeHtml(step.owner)}</span>${step.duration ? ` <span class="hidden-mobile">•</span> ${iconClock(12)} <span class="hidden-mobile">${step.duration}</span>` : ''}</div>` : ''}
                   </div>
@@ -149,7 +149,7 @@ function renderPreviewMode(): string {
               </div>
               ${step.tools.length ? `
                 <div class="flex flex-wrap gap-1.5" style="margin-top:0.75rem">
-                  ${step.tools.map(t => `<span class="flex items-center gap-1" style="padding:0.125rem 0.5rem;border-radius:0.25rem;background:hsl(var(--muted));font-size:0.625rem;color:hsl(var(--muted-foreground))">${toolIcons[t]?.(12) || ''} ${t}</span>`).join('')}
+                  ${step.tools.map(t => `<span class="pill-tag" style="font-size:0.625rem">${toolIcons[t]?.(12) || ''} ${t}</span>`).join('')}
                 </div>
               ` : ''}
             </div>

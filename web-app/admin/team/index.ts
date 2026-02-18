@@ -8,13 +8,13 @@ import {
 import { getTeamMembers, type TeamMember } from '../../site/data';
 
 function availabilityClass(a: number): string {
-  if (a >= 70) return 'color:hsl(142 71% 45%);background:hsl(142 71% 45%/0.1);border:1px solid hsl(142 71% 45%/0.2)';
+  if (a >= 70) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';
   if (a >= 40) return 'color:hsl(var(--warning));background:hsl(var(--warning)/0.1);border:1px solid hsl(var(--warning)/0.2)';
   return 'color:hsl(var(--error));background:hsl(var(--error)/0.1);border:1px solid hsl(var(--error)/0.2)';
 }
 
 function statusDot(status: string): string {
-  const colors: Record<string, string> = { available: 'hsl(142 71% 45%)', busy: 'hsl(var(--warning))', limited: 'hsl(var(--error))' };
+  const colors: Record<string, string> = { available: 'hsl(var(--success))', busy: 'hsl(var(--warning))', limited: 'hsl(var(--error))' };
   return `<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
 }
 
@@ -90,12 +90,12 @@ function renderMemberCard(m: TeamMember): string {
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <h3 class="font-semibold text-sm">${escapeHtml(m.name)}</h3>
-            <span style="display:inline-flex;align-items:center;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.625rem;font-weight:500;${availabilityClass(m.availability)}">${m.availability}%</span>
+            <span class="pill" style="${availabilityClass(m.availability)}">${m.availability}%</span>
           </div>
           <p class="text-xs text-muted mb-2">${m.role} • ${m.department}</p>
           <div class="flex flex-wrap gap-1.5 mb-2">
             ${m.strengths.slice(0, 3).map(s => `
-              <span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.125rem 0.5rem;border-radius:0.375rem;background:hsl(var(--muted)/0.5);font-size:0.625rem;color:hsl(var(--muted-foreground))">${iconStar(10)} ${s}</span>
+              <span class="pill-tag" style="background:hsl(var(--muted)/0.5);font-size:0.625rem">${iconStar(10)} ${s}</span>
             `).join('')}
           </div>
           <div class="flex items-center gap-4 text-xs text-muted">

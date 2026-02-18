@@ -7,7 +7,7 @@ import {
 import { getIdeaForScoring, getIdeaScore, type ScoreBreakdown, type IdeaScore } from '../../site/data';
 
 function progressBg(score: number): string {
-  if (score >= 80) return 'background:hsl(142 71% 45%)';
+  if (score >= 80) return 'background:hsl(var(--success))';
   if (score >= 60) return 'background:hsl(var(--warning))';
   return 'background:hsl(var(--error))';
 }
@@ -46,7 +46,7 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
           <div class="font-display font-bold mb-2" style="font-size:3.75rem;color:${scoreColor(score.overall)}">${score.overall}</div>
           <p class="text-sm text-muted">out of 100</p>
           <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid hsl(var(--border))">
-            <div class="flex items-center justify-center gap-2" style="color:hsl(142 71% 45%)">
+            <div class="flex items-center justify-center gap-2" style="color:hsl(var(--success))">
               ${iconCheckCircle2(20)} <span class="font-medium">Recommended</span>
             </div>
           </div>
@@ -147,11 +147,11 @@ export async function init(): Promise<void> {
           <p class="text-muted mb-8" style="max-width:28rem;margin-left:auto;margin-right:auto">Our AI is evaluating impact, feasibility, and efficiency based on your inputs and historical data.</p>
           <div style="max-width:16rem;margin:0 auto;display:flex;flex-direction:column;gap:1rem">
             <div class="flex items-center gap-3 text-sm">
-              <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(142 71% 45%);display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'color:white')}</div>
+              <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'color:hsl(var(--success-foreground))')}</div>
               <span>Problem analysis complete</span>
             </div>
             <div class="flex items-center gap-3 text-sm">
-              <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(142 71% 45%);display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'color:white')}</div>
+              <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'color:hsl(var(--success-foreground))')}</div>
               <span>Solution assessment complete</span>
             </div>
             <div class="flex items-center gap-3 text-sm">

@@ -34,13 +34,13 @@ function renderProgressSteps(): string {
     const isCurrent = currentStep === step.id;
     const isCompleted = currentStep > step.id;
     const bgStyle = isCompleted
-      ? 'background:hsl(142 71% 45%);color:white'
+      ? 'background:hsl(var(--success));color:hsl(var(--success-foreground))'
       : isCurrent
         ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))'
         : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))';
 
     const connector = index < steps.length - 1
-      ? `<div class="hidden-mobile" style="flex:1;height:0.25rem;margin:0 1rem;border-radius:9999px;${isCompleted ? 'background:hsl(142 71% 45%)' : 'background:hsl(var(--muted))'}"></div>`
+      ? `<div class="hidden-mobile" style="flex:1;height:0.25rem;margin:0 1rem;border-radius:9999px;${isCompleted ? 'background:hsl(var(--success))' : 'background:hsl(var(--muted))'}"></div>`
       : '';
 
     return `

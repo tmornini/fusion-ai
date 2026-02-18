@@ -67,7 +67,7 @@ function renderGauge(card: GaugeCardData): string {
         </div>
         <div style="text-align:center;padding:0.75rem;border-radius:0.5rem;background:hsl(var(--card)/0.8);border:1px solid hsl(var(--border)/0.5)">
           <div class="flex items-center justify-center gap-2" style="margin-bottom:0.25rem">
-            <div style="width:0.625rem;height:0.625rem;border-radius:9999px;background:hsl(142 71% 45%)"></div>
+            <div style="width:0.625rem;height:0.625rem;border-radius:9999px;background:hsl(var(--success))"></div>
             <span class="text-xs text-muted" style="font-weight:500">${card.inner.label}</span>
           </div>
           <p class="text-2xl font-bold">${card.inner.display}</p>

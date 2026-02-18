@@ -156,7 +156,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
             <button class="btn btn-outline gap-2" id="clarify-btn">${iconMessageSquare(16)} <span class="hidden-mobile">Request Clarification</span><span class="visible-mobile">Clarify</span></button>
             <div class="flex gap-3">
               <button class="btn btn-outline gap-2" id="reject-btn" style="border-color:hsl(var(--error)/0.3);color:hsl(var(--error))">${iconXCircle(16)} <span class="hidden-mobile">Send Back</span><span class="visible-mobile">Reject</span></button>
-              <button class="btn gap-2" id="approve-btn" style="background:hsl(142 71% 45%);color:white">${iconCheckCircle(16)} Approve</button>
+              <button class="btn gap-2" id="approve-btn" style="background:hsl(var(--success));color:hsl(var(--success-foreground))">${iconCheckCircle(16)} Approve</button>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ function canConvert(): boolean {
 }
 
 function fieldCheck(field: string): string {
-  return projectDetails[field]?.trim() ? `<span style="color:hsl(142 71% 45%)">${iconCheckCircle2(16)}</span>` : '';
+  return projectDetails[field]?.trim() ? `<span style="color:hsl(var(--success))">${iconCheckCircle2(16)}</span>` : '';
 }
 
 function renderPage(idea: ConvertIdea, ideaId: string): string {
@@ -41,7 +41,7 @@ function renderPage(idea: ConvertIdea, ideaId: string): string {
             <div class="hidden-mobile flex items-center gap-2 text-sm">
               <span class="text-muted">${done}/${requiredFields.length} required fields</span>
               <div style="width:6rem;height:0.5rem;background:hsl(var(--muted));border-radius:9999px;overflow:hidden">
-                <div style="height:100%;background:hsl(142 71% 45%);transition:width 0.3s;width:${pct}%"></div>
+                <div style="height:100%;background:hsl(var(--success));transition:width 0.3s;width:${pct}%"></div>
               </div>
             </div>
           </div>
@@ -70,7 +70,7 @@ function renderPage(idea: ConvertIdea, ideaId: string): string {
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconTrendingUp(16)} <span class="text-sm">Priority Score</span></span>
-                  <span class="font-bold" style="color:hsl(142 71% 45%)">${idea.score}/100</span>
+                  <span class="font-bold" style="color:hsl(var(--success))">${idea.score}/100</span>
                 </div>
               </div>
             </div>
@@ -144,9 +144,9 @@ function renderPage(idea: ConvertIdea, ideaId: string): string {
               </div>
             </div>
 
-            <div class="card p-6" id="convert-confirm" style="border:2px solid ${canConvert() ? 'hsl(142 71% 45%/0.3)' : 'transparent'};${canConvert() ? 'background:hsl(142 71% 45%/0.05)' : ''}">
+            <div class="card p-6" id="convert-confirm" style="border:2px solid ${canConvert() ? 'hsl(var(--success) / 0.3)' : 'transparent'};${canConvert() ? 'background:hsl(var(--success) / 0.05)' : ''}">
               <div class="flex items-start gap-4">
-                <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${canConvert() ? 'background:hsl(142 71% 45%);color:white' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
+                <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${canConvert() ? 'background:hsl(var(--success));color:hsl(var(--success-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
                 <div style="flex:1">
                   <h3 class="font-semibold mb-1">${canConvert() ? 'Ready to Create Project' : 'Complete Required Fields'}</h3>
                   <p class="text-sm text-muted mb-4">

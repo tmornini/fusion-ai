@@ -37,7 +37,7 @@ function stepIndicator(): string {
     const active = s.key === step;
     const complete = (step === 'label' && i === 0) || (step === 'review' && i <= 1);
     return `<div class="flex items-center gap-2" style="flex-shrink:0">
-      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${active ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : complete ? 'background:hsl(142 71% 45%/0.1);color:hsl(142 71% 45%);border:1px solid hsl(142 71% 45%/0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">
+      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${active ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : complete ? 'background:hsl(var(--success) / 0.1);color:hsl(var(--success));border:1px solid hsl(var(--success) / 0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">
         ${complete ? iconCheck(16) : s.icon(16)}
         <span class="text-sm font-medium">${s.label}</span>
       </div>
@@ -80,7 +80,7 @@ function renderLabelStep(): string {
       <div class="card" style="padding:1rem">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(142 71% 45%/0.1);display:flex;align-items:center;justify-content:center">${iconFileSpreadsheet(20, 'text-success')}</div>
+            <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--success) / 0.1);display:flex;align-items:center;justify-content:center">${iconFileSpreadsheet(20, 'text-success')}</div>
             <div><p class="font-medium text-sm">Q4_Sales_Report.xlsx</p><p class="text-xs text-muted">2.3 MB • 1,247 rows • ${columns.length} columns</p></div>
           </div>
           <div class="flex items-center gap-3">
@@ -104,14 +104,14 @@ function renderLabelStep(): string {
           const expanded = expandedColumnId === col.id;
           const complete = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
           return `
-            <div class="card" style="${complete ? 'border-color:hsl(142 71% 45%/0.3);background:hsl(142 71% 45%/0.03)' : ''};overflow:hidden">
+            <div class="card" style="${complete ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : ''};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-col-toggle="${col.id}">
                 <div class="flex items-center gap-3">
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${complete ? 'background:hsl(142 71% 45%/0.1)' : 'background:hsl(var(--muted))'}">${complete ? iconCheck(20, 'text-success') : dataTypeIcon(col.dataType)}</div>
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${complete ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))'}">${complete ? iconCheck(20, 'text-success') : dataTypeIcon(col.dataType)}</div>
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2">
                       <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${col.originalName}</code>
-                      ${col.isAcronym ? '<span style="font-size:0.625rem;padding:0.125rem 0.5rem;border-radius:9999px;background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>' : ''}
+                      ${col.isAcronym ? '<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>' : ''}
                     </div>
                     <p class="text-sm text-muted" style="margin-top:0.25rem">${col.friendlyName || 'Click to label this column'}</p>
                   </div>
@@ -152,7 +152,7 @@ function renderLabelStep(): string {
 function renderReviewStep(): string {
   return `
     <div class="card" style="padding:2rem;text-align:center">
-      <div style="width:4rem;height:4rem;border-radius:1rem;background:hsl(142 71% 45%/0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">
+      <div style="width:4rem;height:4rem;border-radius:1rem;background:hsl(var(--success) / 0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">
         ${iconCheck(32, 'text-success')}
       </div>
       <h2 class="text-2xl font-display font-bold mb-2">Data Translation Complete</h2>

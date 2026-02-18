@@ -70,7 +70,7 @@ export async function init(): Promise<void> {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Semantic Colors</h2><p class="text-muted mt-1">Status and feedback colors (WCAG AA compliant)</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Success', '--success', 'background:hsl(142 71% 45%)')}
+          ${colorSwatch('Success', '--success', 'background:hsl(var(--success))')}
           ${colorSwatch('Warning', '--warning', 'background:hsl(var(--warning))')}
           ${colorSwatch('Destructive', '--destructive', 'background:hsl(var(--destructive))')}
           ${colorSwatch('Info', '--info', 'background:hsl(var(--primary))')}
@@ -328,8 +328,8 @@ export async function init(): Promise<void> {
               </div>
               <div>
                 <label class="label mb-1 text-sm">Project Name</label>
-                <input class="input" value="AI Segmentation" style="border-color:hsl(142 71% 45%)"/>
-                <p class="text-xs mt-1 flex items-center gap-1" style="color:hsl(142 71% 45%)">${iconCheck(12)} Looks good!</p>
+                <input class="input" value="AI Segmentation" style="border-color:hsl(var(--success))"/>
+                <p class="text-xs mt-1 flex items-center gap-1" style="color:hsl(var(--success))">${iconCheck(12)} Looks good!</p>
               </div>
             </div>
           </div>
@@ -394,7 +394,7 @@ export async function init(): Promise<void> {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Usage Guidelines</h2><p class="text-muted mt-1">Do's and don'ts for the design system</p></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
-          <div class="card" style="padding:1.5rem;border-color:hsl(142 71% 45%/0.3);background:hsl(var(--success-soft)/0.3)">
+          <div class="card" style="padding:1.5rem;border-color:hsl(var(--success) / 0.3);background:hsl(var(--success-soft)/0.3)">
             <h3 class="font-semibold text-success flex items-center gap-2 mb-4">${iconCheck(20)} Do</h3>
             <div class="text-sm" style="display:flex;flex-direction:column;gap:0.5rem">
               <p>${iconCheck(14, 'text-success')} Use semantic color tokens, not raw hex values</p>
