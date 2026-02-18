@@ -230,13 +230,13 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **G16** 16 individual notification preferences are displayed with current on/off states. PASS: toggles render and are interactive.
 - [ ] **G17** Toggle a preference and save. PASS: change persists (no error toast).
 
-### DB Admin (`db-admin/`) — Run These Last
+### Snapshots (`snapshots/`) — Run These Last
 
-- [ ] **G18** Navigate to `db-admin/`. PASS: shows 4 operation cards: Wipe All Data, Reload Mock Data, Upload Snapshot, Download Snapshot.
+- [ ] **G18** Navigate to `snapshots/`. PASS: shows 4 operation cards: Wipe All Data, Reload Mock Data, Upload Snapshot, Download Snapshot.
 - [ ] **G19** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
-- [ ] **G20** Click "Wipe Data", confirm the dialog ("Are you sure you want to wipe ALL data? This cannot be undone."). PASS: success toast "All data wiped successfully." Info banner appears: "Your database is empty." Navigate to `ideas/` — redirected back to `db-admin/`.
+- [ ] **G20** Click "Wipe Data", confirm the dialog ("Are you sure you want to wipe ALL data? This cannot be undone."). PASS: success toast "All data wiped successfully." Info banner appears: "Your database is empty." Navigate to `ideas/` — redirected back to `snapshots/`.
 - [ ] **G21** Click "Reload Mock Data". PASS: redirects to root `index.html` (landing page). Navigate to `ideas/` — 11 ideas are back.
-- [ ] **G22** Return to `db-admin/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to root `index.html`. Data matches the snapshot.
+- [ ] **G22** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to root `index.html`. Data matches the snapshot.
 
 ---
 
@@ -309,7 +309,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 - [ ] **J9** Open `file:///.../dashboard/index.html`. Check DevTools Console. PASS if WASM loads: dashboard renders with seed data. KNOWN LIMITATION if WASM fails: page may show empty states or errors due to `file://` CORS restrictions on `.wasm` fetch.
 - [ ] **J10** If J9 passed (WASM loaded), navigate to `ideas/index.html`. PASS: ideas list renders with seed data.
-- [ ] **J11** If J9 passed, navigate to `db-admin/index.html` and click "Download Snapshot". PASS: download triggers.
+- [ ] **J11** If J9 passed, navigate to `snapshots/index.html` and click "Download Snapshot". PASS: download triggers.
 - [ ] **J12** If J9 failed, document the console error message here: ____________________
 
 ### Navigation Under `file://`

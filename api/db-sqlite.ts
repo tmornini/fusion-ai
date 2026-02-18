@@ -243,7 +243,7 @@ export async function createSqliteAdapter(): Promise<DbAdapter> {
       scheduleSave();
     },
 
-    async exportDump(): Promise<string> {
+    async exportSnapshot(): Promise<string> {
       const dump: Record<string, unknown[]> = {};
       for (const table of TABLE_NAMES) {
         dump[table] = queryAll(`SELECT * FROM ${table}`);
@@ -251,7 +251,7 @@ export async function createSqliteAdapter(): Promise<DbAdapter> {
       return JSON.stringify(dump, null, 2);
     },
 
-    async importDump(json: string): Promise<void> {
+    async importSnapshot(json: string): Promise<void> {
       const dump = JSON.parse(json) as Record<string, Record<string, unknown>[]>;
       for (const table of TABLE_NAMES) {
         db.run(`DELETE FROM ${table}`);

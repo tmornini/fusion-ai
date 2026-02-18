@@ -30,7 +30,7 @@ const dashboardPages: Record<string, { source: string; folder: string; title: st
   'manage-users':            { source: 'admin/manage-users',            folder: 'manage-users',            title: 'Manage Users' },
   'activity-feed':           { source: 'admin/activity-feed',           folder: 'activity-feed',           title: 'Activity Feed' },
   'notification-settings':   { source: 'admin/notification-settings',   folder: 'notification-settings',   title: 'Notification Settings' },
-  'db-admin':                { source: 'admin/db-admin',               folder: 'db-admin',               title: 'Database Admin' },
+  snapshots:                 { source: 'admin/snapshots',              folder: 'snapshots',              title: 'Snapshots' },
   'design-system': { source: 'reference/design-system', folder: 'design-system', title: 'Design System' },
 };
 

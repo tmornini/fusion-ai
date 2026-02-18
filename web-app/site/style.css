@@ -741,7 +741,7 @@ p { line-height: var(--leading-normal); }
   background-color: hsl(var(--muted) / 0.3);
 }
 
-/* Page header / title (used by db-admin and similar pages) */
+/* Page header / title (used by snapshots and similar pages) */
 .page-header {
   margin-bottom: 1.5rem;
 }

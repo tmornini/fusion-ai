@@ -65,7 +65,7 @@ web-app/      # Frontend pages, styles, scripts, layout templates
   site/       # Shared CSS, TypeScript, HTML layout, fonts
   core/       # Ideas, projects, and related workflows
   tools/      # Edge, Crunch, Flow analytics
-  admin/      # Account, team, settings, db-admin
+  admin/      # Account, team, settings, snapshots
   entry/      # Landing, auth, onboarding
   reference/  # Design system component gallery
   system/     # 404 page

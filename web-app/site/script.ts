@@ -511,7 +511,7 @@ const pageModules: Record<string, () => Promise<{ init: (params?: Record<string,
   'manage-users': () => import('../admin/manage-users/index'),
   'activity-feed': () => import('../admin/activity-feed/index'),
   'notification-settings': () => import('../admin/notification-settings/index'),
-  'db-admin': () => import('../admin/db-admin/index'),
+  snapshots: () => import('../admin/snapshots/index'),
   'design-system': () => import('../reference/design-system/index'),
   landing: () => import('../entry/landing/index'),
   auth: () => import('../entry/auth/index'),
@@ -536,13 +536,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     await adapter.initialize();
     initApi(adapter);
 
-    // If DB is empty, redirect to db-admin so user can choose what to load
+    // If DB is empty, redirect to snapshots so user can choose what to load
     const users = await adapter.users.getAll();
     if (users.length === 0) {
       const page = getPageName();
-      const skipRedirect = ['db-admin', 'landing', 'auth', 'onboarding', 'not-found', 'design-system'];
+      const skipRedirect = ['snapshots', 'landing', 'auth', 'onboarding', 'not-found', 'design-system'];
       if (!skipRedirect.includes(page)) {
-        navigateTo('db-admin');
+        navigateTo('snapshots');
         return;
       }
     }
@@ -586,7 +586,7 @@ function initDashboardLayout(): void {
     const linkPage = el.getAttribute('data-page-link') || '';
     let active = linkPage === pageName;
     if (!active) {
-      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'db-admin'].includes(pageName)) active = true;
+      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) active = true;
       else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) active = true;
       else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) active = true;
       else if (linkPage === 'edge-list' && pageName === 'edge') active = true;

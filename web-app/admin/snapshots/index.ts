@@ -1,5 +1,5 @@
 // ============================================
-// FUSION AI — Database Admin Page
+// FUSION AI — Snapshots Page
 // Wipe, reload, upload/download snapshot operations.
 // ============================================
 
@@ -7,7 +7,7 @@ import { getDbAdapter } from '../../../api/api';
 import { seedData } from '../../../api/seed';
 import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../../site/script';
 
-const BANNER_ID = 'db-empty-banner';
+const BANNER_ID = 'empty-banner';
 
 async function updateEmptyBanner(root: HTMLElement): Promise<void> {
   const users = await getDbAdapter().users.getAll();
@@ -28,7 +28,7 @@ async function updateEmptyBanner(root: HTMLElement): Promise<void> {
 }
 
 export async function init(): Promise<void> {
-  const root = $('#db-admin-root');
+  const root = $('#snapshots-root');
   if (!root) return;
 
   root.innerHTML = `
@@ -40,7 +40,7 @@ export async function init(): Promise<void> {
           <p class="text-xs text-muted">Delete all records from every table.</p>
         </div>
       </div>
-      <button class="btn btn-outline" id="db-wipe-btn" style="border-color:hsl(var(--error));color:hsl(var(--error))">Wipe Data</button>
+      <button class="btn btn-outline" id="wipe-btn" style="border-color:hsl(var(--error));color:hsl(var(--error))">Wipe Data</button>
     </div>
 
     <div class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:0.75rem">
@@ -51,7 +51,7 @@ export async function init(): Promise<void> {
           <p class="text-xs text-muted">Wipe and re-seed with default mock data.</p>
         </div>
       </div>
-      <button class="btn btn-primary" id="db-reload-btn">Reload Mock Data</button>
+      <button class="btn btn-primary" id="reload-btn">Reload Mock Data</button>
     </div>
 
     <div class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:0.75rem">
@@ -63,8 +63,8 @@ export async function init(): Promise<void> {
         </div>
       </div>
       <label class="btn btn-outline" style="cursor:pointer;text-align:center">
-        Choose File
-        <input type="file" accept=".json" id="db-import-input" style="display:none" />
+        Upload Snapshot
+        <input type="file" accept=".json" id="upload-input" style="display:none" />
       </label>
     </div>
 
@@ -76,7 +76,7 @@ export async function init(): Promise<void> {
           <p class="text-xs text-muted">Download all data as a snapshot file.</p>
         </div>
       </div>
-      <button class="btn btn-outline" id="db-export-btn">Download Snapshot</button>
+      <button class="btn btn-outline" id="download-btn">Download Snapshot</button>
     </div>
   `;
 
@@ -84,7 +84,7 @@ export async function init(): Promise<void> {
   await updateEmptyBanner(root);
 
   // Wipe
-  $('#db-wipe-btn')?.addEventListener('click', async () => {
+  $('#wipe-btn')?.addEventListener('click', async () => {
     if (!confirm('Are you sure you want to wipe ALL data? This cannot be undone.')) return;
     try {
       await getDbAdapter().wipeAllData();
@@ -96,7 +96,7 @@ export async function init(): Promise<void> {
   });
 
   // Reload mock
-  $('#db-reload-btn')?.addEventListener('click', async () => {
+  $('#reload-btn')?.addEventListener('click', async () => {
     try {
       const db = getDbAdapter();
       await db.wipeAllData();
@@ -108,13 +108,13 @@ export async function init(): Promise<void> {
   });
 
   // Upload snapshot
-  const importInput = document.getElementById('db-import-input') as HTMLInputElement | null;
+  const importInput = document.getElementById('upload-input') as HTMLInputElement | null;
   importInput?.addEventListener('change', async () => {
     const file = importInput.files?.[0];
     if (!file) return;
     try {
       const text = await file.text();
-      await getDbAdapter().importDump(text);
+      await getDbAdapter().importSnapshot(text);
       window.location.href = '../index.html';
     } catch (e) {
       showToast('Failed to upload snapshot. Check file format.', 'error');
@@ -123,9 +123,9 @@ export async function init(): Promise<void> {
   });
 
   // Download snapshot
-  $('#db-export-btn')?.addEventListener('click', async () => {
+  $('#download-btn')?.addEventListener('click', async () => {
     try {
-      const json = await getDbAdapter().exportDump();
+      const json = await getDbAdapter().exportSnapshot();
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

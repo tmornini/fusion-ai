@@ -1,9 +1,9 @@
-# DB Admin
+# Snapshots
 
 Database administration tools for development and testing.
 
 - **Type**: standalone
-- **Route**: `/db-admin/index.html`
+- **Route**: `/snapshots/index.html`
 
 ## Features
 

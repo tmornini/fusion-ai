@@ -28,8 +28,8 @@ export interface DbAdapter {
   initialize(): Promise<void>;
   close(): Promise<void>;
   wipeAllData(): Promise<void>;
-  exportDump(): Promise<string>;
-  importDump(json: string): Promise<void>;
+  exportSnapshot(): Promise<string>;
+  importSnapshot(json: string): Promise<void>;
 
   users: EntityStore<UserRow>;
   ideas: EntityStore<IdeaRow>;
