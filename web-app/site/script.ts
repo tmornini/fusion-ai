@@ -531,16 +531,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const { createSqliteAdapter } = await import('../../api/db-sqlite');
     const { initApi } = await import('../../api/api');
-    const { seedData } = await import('../../api/seed');
 
     const adapter = await createSqliteAdapter();
     await adapter.initialize();
     initApi(adapter);
 
-    // Seed if DB is empty (first load)
+    // If DB is empty, redirect to db-admin so user can choose what to load
     const users = await adapter.users.getAll();
     if (users.length === 0) {
-      await seedData(adapter);
+      const page = getPageName();
+      const skipRedirect = ['db-admin', 'landing', 'auth', 'onboarding', 'not-found', 'design-system'];
+      if (!skipRedirect.includes(page)) {
+        navigateTo('db-admin');
+        return;
+      }
     }
   } catch (err) {
     console.error('Database initialization failed:', err);

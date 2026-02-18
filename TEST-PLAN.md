@@ -232,11 +232,11 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 ### DB Admin (`db-admin/`) — Run These Last
 
-- [ ] **G18** Navigate to `db-admin/`. PASS: shows 4 operation cards: Wipe All Data, Reload Mock Data, Export Data Dump, Import Data Dump.
-- [ ] **G19** Click "Export Data". PASS: browser downloads `fusion-ai-dump-YYYY-MM-DD.json`. File contains valid JSON with entity data.
-- [ ] **G20** Click "Wipe Data", confirm the dialog ("Are you sure you want to wipe ALL data? This cannot be undone."). PASS: success toast "All data wiped successfully." Navigate to `ideas/` — list is empty.
-- [ ] **G21** Return to `db-admin/`, click "Reload Mock Data". PASS: success toast "Mock data reloaded successfully." Navigate to `ideas/` — 11 ideas are back.
-- [ ] **G22** Click "Import Data Dump" file input, select the previously exported JSON file. PASS: success toast "Data imported successfully." Data matches the export.
+- [ ] **G18** Navigate to `db-admin/`. PASS: shows 4 operation cards: Wipe All Data, Reload Mock Data, Upload Snapshot, Download Snapshot.
+- [ ] **G19** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
+- [ ] **G20** Click "Wipe Data", confirm the dialog ("Are you sure you want to wipe ALL data? This cannot be undone."). PASS: success toast "All data wiped successfully." Info banner appears: "Your database is empty." Navigate to `ideas/` — redirected back to `db-admin/`.
+- [ ] **G21** Click "Reload Mock Data". PASS: redirects to root `index.html` (landing page). Navigate to `ideas/` — 11 ideas are back.
+- [ ] **G22** Return to `db-admin/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to root `index.html`. Data matches the snapshot.
 
 ---
 
@@ -309,7 +309,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 - [ ] **J9** Open `file:///.../dashboard/index.html`. Check DevTools Console. PASS if WASM loads: dashboard renders with seed data. KNOWN LIMITATION if WASM fails: page may show empty states or errors due to `file://` CORS restrictions on `.wasm` fetch.
 - [ ] **J10** If J9 passed (WASM loaded), navigate to `ideas/index.html`. PASS: ideas list renders with seed data.
-- [ ] **J11** If J9 passed, navigate to `db-admin/index.html` and click "Export Data". PASS: download triggers.
+- [ ] **J11** If J9 passed, navigate to `db-admin/index.html` and click "Download Snapshot". PASS: download triggers.
 - [ ] **J12** If J9 failed, document the console error message here: ____________________
 
 ### Navigation Under `file://`

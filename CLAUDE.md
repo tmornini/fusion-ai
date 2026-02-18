@@ -23,7 +23,7 @@ No test framework is configured.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by SQLite WASM. The `web-app/site/data.ts` file contains ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
-- **Database**: SQLite WASM via sql.js, persisted to IndexedDB across page navigations. On first load, seed data is automatically populated. A db-admin page provides wipe, reload, import, and export operations.
+- **Database**: SQLite WASM via sql.js, persisted to IndexedDB across page navigations. When the DB is empty, non-entry pages redirect to db-admin so users can load mock data or upload a snapshot. A db-admin page provides wipe, reload, upload, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
 ### API Layer (`/api`)
@@ -130,7 +130,7 @@ web-app/
     manage-users/             # User administration
     activity-feed/            # Activity feed
     notification-settings/    # Notification preferences
-    db-admin/                 # Database admin (wipe, reload, import, export)
+    db-admin/                 # Database admin (wipe, reload, upload/download snapshots)
 
   # Reference
   reference/

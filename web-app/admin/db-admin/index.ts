@@ -1,11 +1,31 @@
 // ============================================
 // FUSION AI — Database Admin Page
-// Wipe, reload, import, export data operations.
+// Wipe, reload, upload/download snapshot operations.
 // ============================================
 
 import { getDbAdapter } from '../../../api/api';
 import { seedData } from '../../../api/seed';
-import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase } from '../../site/script';
+import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../../site/script';
+
+const BANNER_ID = 'db-empty-banner';
+
+async function updateEmptyBanner(root: HTMLElement): Promise<void> {
+  const users = await getDbAdapter().users.getAll();
+  const existing = document.getElementById(BANNER_ID);
+  if (users.length === 0) {
+    if (!existing) {
+      const banner = document.createElement('div');
+      banner.id = BANNER_ID;
+      banner.className = 'card';
+      banner.style.cssText = 'padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;grid-column:1/-1;background:hsl(var(--primary)/0.06);border:1px solid hsl(var(--primary)/0.2)';
+      banner.innerHTML = `<span style="color:hsl(var(--primary));flex-shrink:0">${iconInfo(20)}</span>
+        <p class="text-sm" style="margin:0">Your database is empty. Load mock data or upload a snapshot to get started.</p>`;
+      root.prepend(banner);
+    }
+  } else {
+    existing?.remove();
+  }
+}
 
 export async function init(): Promise<void> {
   const root = $('#db-admin-root');
@@ -38,8 +58,8 @@ export async function init(): Promise<void> {
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--success)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--success))">${iconUpload(20)}</div>
         <div>
-          <h3 class="text-sm font-semibold">Import Data Dump</h3>
-          <p class="text-xs text-muted">Load data from a previously exported JSON file.</p>
+          <h3 class="text-sm font-semibold">Upload Snapshot</h3>
+          <p class="text-xs text-muted">Load data from a previously downloaded snapshot file.</p>
         </div>
       </div>
       <label class="btn btn-outline" style="cursor:pointer;text-align:center">
@@ -52,13 +72,16 @@ export async function init(): Promise<void> {
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--warning)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--warning))">${iconDownload(20)}</div>
         <div>
-          <h3 class="text-sm font-semibold">Export Data Dump</h3>
-          <p class="text-xs text-muted">Download all data as a JSON file.</p>
+          <h3 class="text-sm font-semibold">Download Snapshot</h3>
+          <p class="text-xs text-muted">Download all data as a snapshot file.</p>
         </div>
       </div>
-      <button class="btn btn-outline" id="db-export-btn">Export Data</button>
+      <button class="btn btn-outline" id="db-export-btn">Download Snapshot</button>
     </div>
   `;
+
+  // Show empty-state banner if DB has no data
+  await updateEmptyBanner(root);
 
   // Wipe
   $('#db-wipe-btn')?.addEventListener('click', async () => {
@@ -66,6 +89,7 @@ export async function init(): Promise<void> {
     try {
       await getDbAdapter().wipeAllData();
       showToast('All data wiped successfully.', 'success');
+      await updateEmptyBanner(root);
     } catch (e) {
       showToast('Failed to wipe data.', 'error');
     }
@@ -77,13 +101,13 @@ export async function init(): Promise<void> {
       const db = getDbAdapter();
       await db.wipeAllData();
       await seedData(db);
-      showToast('Mock data reloaded successfully.', 'success');
+      window.location.href = '../index.html';
     } catch (e) {
       showToast('Failed to reload mock data.', 'error');
     }
   });
 
-  // Import
+  // Upload snapshot
   const importInput = document.getElementById('db-import-input') as HTMLInputElement | null;
   importInput?.addEventListener('change', async () => {
     const file = importInput.files?.[0];
@@ -91,14 +115,14 @@ export async function init(): Promise<void> {
     try {
       const text = await file.text();
       await getDbAdapter().importDump(text);
-      showToast('Data imported successfully.', 'success');
+      window.location.href = '../index.html';
     } catch (e) {
-      showToast('Failed to import data. Check file format.', 'error');
+      showToast('Failed to upload snapshot. Check file format.', 'error');
     }
     importInput.value = '';
   });
 
-  // Export
+  // Download snapshot
   $('#db-export-btn')?.addEventListener('click', async () => {
     try {
       const json = await getDbAdapter().exportDump();
@@ -107,12 +131,12 @@ export async function init(): Promise<void> {
       const a = document.createElement('a');
       a.href = url;
       const date = new Date().toISOString().split('T')[0];
-      a.download = `fusion-ai-dump-${date}.json`;
+      a.download = `fusion-ai-snapshot-${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('Data exported successfully.', 'success');
+      showToast('Snapshot downloaded successfully.', 'success');
     } catch (e) {
-      showToast('Failed to export data.', 'error');
+      showToast('Failed to download snapshot.', 'error');
     }
   });
 }

@@ -15,7 +15,7 @@ Vanilla TypeScript with SQLite WASM (sql.js) for in-browser data persistence. Ev
 - **Projects** — track approved ideas through execution
 - **Teams** — team roster and assignments
 - **Account** — organization settings, users, billing, and activity
-- **DB Admin** — database management (wipe, reload, import, export)
+- **DB Admin** — database management (wipe, reload, upload/download snapshots)
 
 ## Getting Started
 

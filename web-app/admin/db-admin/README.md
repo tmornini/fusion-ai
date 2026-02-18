@@ -9,5 +9,5 @@ Database administration tools for development and testing.
 
 - Wipe all existing data
 - Reload mock seed data
-- Import data from uploaded JSON dump
-- Export current database as JSON download
+- Upload snapshot from a previously downloaded file
+- Download current database as a snapshot file
