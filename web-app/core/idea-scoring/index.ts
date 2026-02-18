@@ -78,9 +78,9 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
         <div class="flex gap-2 mb-6 pb-3" style="border-bottom:1px solid hsl(var(--border));overflow-x:auto">
           ${tabs.map(tab => {
             const tabScore = score[tab.id as keyof typeof score] as { score: number };
-            return `<button class="score-tab flex items-center gap-2 font-medium text-sm" style="padding:0.625rem 1rem;border-radius:var(--radius-lg);white-space:nowrap;border:none;cursor:pointer;flex-shrink:0;transition:all var(--duration-fast);${tab.id === 'impact' ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}" data-score-tab="${tab.id}">
+            return `<button class="score-tab${tab.id === 'impact' ? ' active' : ''}" data-score-tab="${tab.id}">
               ${tab.icon(16)} ${tab.label}
-              <span style="margin-left:0.25rem;padding:0.125rem 0.5rem;border-radius:var(--radius);font-size:0.75rem;font-weight:700;${tab.id === 'impact' ? 'background:rgba(255,255,255,0.2)' : 'background:hsl(var(--background))'}">${tabScore.score}</span>
+              <span class="score-tab-badge">${tabScore.score}</span>
             </button>`;
           }).join('')}
         </div>
@@ -105,9 +105,7 @@ function bindTabs(score: IdeaScore) {
       const tabId = tab.getAttribute('data-score-tab') as 'impact' | 'feasibility' | 'efficiency';
       const data = score[tabId];
       document.querySelectorAll<HTMLElement>('.score-tab').forEach(t => {
-        const isActive = t.getAttribute('data-score-tab') === tabId;
-        t.style.background = isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted))';
-        t.style.color = isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))';
+        t.classList.toggle('active', t.getAttribute('data-score-tab') === tabId);
       });
       const content = $('#tab-content');
       if (content) content.innerHTML = renderBreakdown(data);

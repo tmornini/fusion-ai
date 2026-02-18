@@ -472,11 +472,11 @@ async function populateNotifications(): Promise<void> {
     }
     if (countEl && unreadCount > 0) {
       countEl.textContent = String(unreadCount);
-      countEl.style.display = '';
+      countEl.classList.remove('hidden');
     }
     if (badge && unreadCount > 0) {
       badge.textContent = `${unreadCount} new`;
-      badge.style.display = '';
+      badge.classList.remove('hidden');
     }
   }
 
@@ -546,8 +546,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Database initialization failed:', err);
     const msg = err instanceof Error ? err.message : String(err);
     document.body.innerHTML = `<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
-      <h1 style="color:#b91c1c">Failed to initialize database</h1>
-      <pre style="background:#fef2f2;padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
+      <h1 style="color:hsl(0 72% 51%)">Failed to initialize database</h1>
+      <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
       <p>Try clearing site data (IndexedDB) and reloading.</p>
     </div>`;
     return;

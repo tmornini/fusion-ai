@@ -150,13 +150,13 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
         </div>
       </main>
 
-      <div style="position:fixed;bottom:0;left:0;right:0;background:hsl(var(--background)/0.95);backdrop-filter:blur(8px);border-top:1px solid hsl(var(--border));z-index:20">
-        <div style="max-width:60rem;margin:0 auto;padding:0.75rem 1.5rem">
+      <div class="action-footer">
+        <div class="action-footer-inner">
           <div class="flex items-center justify-between gap-4">
             <button class="btn btn-outline gap-2" id="clarify-btn">${iconMessageSquare(16)} <span class="hidden-mobile">Request Clarification</span><span class="visible-mobile">Clarify</span></button>
             <div class="flex gap-3">
-              <button class="btn btn-outline gap-2" id="reject-btn" style="border-color:hsl(var(--error)/0.3);color:hsl(var(--error))">${iconXCircle(16)} <span class="hidden-mobile">Send Back</span><span class="visible-mobile">Reject</span></button>
-              <button class="btn gap-2" id="approve-btn" style="background:hsl(var(--success));color:hsl(var(--success-foreground))">${iconCheckCircle(16)} Approve</button>
+              <button class="btn btn-outline-error gap-2" id="reject-btn">${iconXCircle(16)} <span class="hidden-mobile">Send Back</span><span class="visible-mobile">Reject</span></button>
+              <button class="btn btn-success gap-2" id="approve-btn">${iconCheckCircle(16)} Approve</button>
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
           <p class="dialog-description">Provide feedback to help the submitter improve their idea.</p>
         </div>
         <div class="py-4">
-          <textarea class="textarea" id="reject-feedback" placeholder="Explain what changes or additional information is needed..." rows="4" style="resize:none"></textarea>
+          <textarea class="textarea resize-none" id="reject-feedback" placeholder="Explain what changes or additional information is needed..." rows="4"></textarea>
         </div>
         <div class="dialog-footer">
           <button class="btn btn-outline" id="reject-cancel">Cancel</button>
@@ -184,7 +184,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
           <p class="dialog-description">Ask the submitter for additional details before making a decision.</p>
         </div>
         <div class="py-4">
-          <textarea class="textarea" id="clarify-feedback" placeholder="What additional information do you need?" rows="4" style="resize:none"></textarea>
+          <textarea class="textarea resize-none" id="clarify-feedback" placeholder="What additional information do you need?" rows="4"></textarea>
         </div>
         <div class="dialog-footer">
           <button class="btn btn-outline" id="clarify-cancel">Cancel</button>

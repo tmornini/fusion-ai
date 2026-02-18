@@ -199,10 +199,7 @@ export async function init(): Promise<void> {
       const view = btn.getAttribute('data-view') || 'priority';
       currentView = view;
       document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(b => {
-        const isActive = b.getAttribute('data-view') === view;
-        b.style.background = isActive ? 'hsl(var(--background))' : 'transparent';
-        b.style.color = isActive ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground))';
-        b.style.boxShadow = isActive ? 'var(--shadow-sm)' : 'none';
+        b.classList.toggle('active', b.getAttribute('data-view') === view);
       });
       rerenderList();
     });

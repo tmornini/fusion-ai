@@ -45,7 +45,7 @@ export async function init(): Promise<void> {
         </div>
       </div>
 
-      <div style="width:100%;display:flex;align-items:center;justify-content:center;padding:2rem" id="auth-form-wrapper">
+      <div class="auth-form-wrapper" id="auth-form-wrapper">
         <div style="width:100%;max-width:28rem">
           <div class="flex items-center gap-3 mb-8 justify-center" id="mobile-logo">
             <div class="gradient-hero rounded-xl flex items-center justify-center" style="width:2.5rem;height:2.5rem">
@@ -119,8 +119,6 @@ export async function init(): Promise<void> {
   if (branding && window.innerWidth >= 1024) {
     branding.classList.remove('hidden');
     branding.style.display = '';
-    const wrapper = $('#auth-form-wrapper');
-    if (wrapper) wrapper.style.width = '50%';
   }
   const mobileLogo = $('#mobile-logo');
   if (mobileLogo && window.innerWidth >= 1024) mobileLogo.classList.add('hidden');

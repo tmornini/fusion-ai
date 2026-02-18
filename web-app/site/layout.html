@@ -22,8 +22,8 @@
             <div class="sidebar-logo-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg></div>
             <span class="sidebar-logo-text">Fusion AI</span>
           </div>
-          <button class="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn" id="sidebar-collapse" style="color:hsl(var(--muted-foreground))"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></button>
-          <button class="btn btn-ghost btn-icon btn-sm sidebar-expand-btn" id="sidebar-expand" style="color:hsl(var(--muted-foreground))"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
+          <button class="btn btn-ghost btn-icon btn-sm sidebar-collapse-btn" id="sidebar-collapse"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></button>
+          <button class="btn btn-ghost btn-icon btn-sm sidebar-expand-btn" id="sidebar-expand"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg></button>
         </div>
         <nav class="sidebar-nav">
           <!-- Journey -->
@@ -69,7 +69,7 @@
               <p class="text-xs text-muted truncate" id="sidebar-user-company">Demo Company</p>
             </div>
           </div>
-          <a class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start;color:hsl(var(--muted-foreground))" href="../index.html">
+          <a class="btn btn-ghost btn-sm w-full sidebar-signout" href="../index.html">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> <span class="mr-2"></span>Sign out
           </a>
         </div>
@@ -94,14 +94,14 @@
             </div>
             <!-- Notifications -->
             <div class="dropdown">
-              <button class="btn btn-ghost btn-icon" id="notif-toggle" aria-label="Notifications" style="position:relative">
+              <button class="btn btn-ghost btn-icon" id="notif-toggle" aria-label="Notifications">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                <span class="notification-dot" id="notif-count" style="display:none"></span>
+                <span class="notification-dot hidden" id="notif-count"></span>
               </button>
               <div class="dropdown-content dropdown-panel hidden" id="notif-dropdown" data-align="end">
                 <div class="dropdown-label flex justify-between items-center">
                   <span>Notifications</span>
-                  <span class="badge badge-secondary text-xs" id="notif-badge" style="display:none"></span>
+                  <span class="badge badge-secondary text-xs hidden" id="notif-badge"></span>
                 </div>
                 <div class="dropdown-separator"></div>
                 <div class="dropdown-scroll" id="notif-list"></div>
@@ -129,14 +129,14 @@
             </div>
             <!-- Mobile Notifications -->
             <div class="dropdown">
-              <button class="btn btn-ghost btn-icon" id="mobile-notif-toggle" aria-label="Notifications" style="position:relative">
+              <button class="btn btn-ghost btn-icon" id="mobile-notif-toggle" aria-label="Notifications">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                <span class="notification-dot" id="mobile-notif-count" style="display:none"></span>
+                <span class="notification-dot hidden" id="mobile-notif-count"></span>
               </button>
               <div class="dropdown-content dropdown-panel hidden" id="mobile-notif-dropdown" data-align="end">
                 <div class="dropdown-label flex justify-between items-center">
                   <span>Notifications</span>
-                  <span class="badge badge-secondary text-xs" id="mobile-notif-badge" style="display:none"></span>
+                  <span class="badge badge-secondary text-xs hidden" id="mobile-notif-badge"></span>
                 </div>
                 <div class="dropdown-separator"></div>
                 <div class="dropdown-scroll" id="mobile-notif-list"></div>
@@ -146,11 +146,11 @@
             </div>
           </div>
         </div>
-        <div class="hidden" id="mobile-search-bar" style="position:fixed;top:3.5rem;left:0;right:0;background:hsl(var(--background));border-bottom:1px solid hsl(var(--border));z-index:40;padding:0.75rem">
+        <div class="mobile-search-bar hidden" id="mobile-search-bar">
           <div class="search-wrapper">
             <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
             <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." />
-            <button class="btn btn-ghost btn-icon btn-sm" id="mobile-search-close" style="position:absolute;right:0.25rem;top:50%;transform:translateY(-50%)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            <button class="btn btn-ghost btn-icon btn-sm search-close-btn" id="mobile-search-close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           </div>
         </div>
 
@@ -208,7 +208,7 @@
                   <p class="text-xs text-muted truncate" id="mobile-sidebar-user-company">Demo Company</p>
                 </div>
               </div>
-              <a class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start;color:hsl(var(--muted-foreground))" href="../index.html">
+              <a class="btn btn-ghost btn-sm w-full sidebar-signout" href="../index.html">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> <span class="mr-2"></span>Sign out
               </a>
             </div>

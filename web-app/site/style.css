@@ -277,8 +277,15 @@
   --gradient-primary: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-600)) 100%);
   --gradient-accent: linear-gradient(135deg, hsl(var(--yellow-400)) 0%, hsl(var(--yellow-500)) 100%);
   --gradient-subtle: linear-gradient(180deg, hsl(var(--gray-50)) 0%, hsl(var(--gray-100)) 100%);
-  --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(var(--gray-50)) 100%);
+  --gradient-card: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--gray-50)) 100%);
   --gradient-hero: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-700)) 100%);
+
+  /* Chart Colors (extended palette) */
+  --chart-5: 217 71% 53%;
+  --chart-6: 280 65% 60%;
+
+  /* Backdrop */
+  --backdrop: 0 0% 0%;
 
   /* Z-Index Scale */
   --z-dropdown: 50;
@@ -332,11 +339,22 @@
   --sidebar-accent-foreground: var(--gray-200);
   --sidebar-border: var(--gray-700);
 
+  --chart-5: 217 71% 63%;
+  --chart-6: 280 65% 70%;
+
+  --backdrop: 0 0% 0%;
+
   --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
   --shadow-card-hover: 0 8px 16px -4px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
 
   --gradient-subtle: linear-gradient(180deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-800)) 100%);
   --gradient-card: linear-gradient(180deg, hsl(var(--gray-800)) 0%, hsl(var(--gray-900)) 100%);
+}
+
+[data-theme="dark"] .dialog-backdrop,
+[data-theme="dark"] .sheet-backdrop,
+[data-theme="dark"] .cmdk-backdrop {
+  background-color: hsl(var(--backdrop) / 0.7);
 }
 
 /* ==========================================
@@ -815,7 +833,7 @@ p { line-height: var(--leading-normal); }
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background-color: hsl(0 0% 0% / 0.5);
+  background-color: hsl(var(--backdrop) / 0.5);
   z-index: var(--z-modal-backdrop);
   animation: fade-in var(--duration-normal) var(--ease-out);
 }
@@ -861,7 +879,7 @@ p { line-height: var(--leading-normal); }
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  background-color: hsl(0 0% 0% / 0.5);
+  background-color: hsl(var(--backdrop) / 0.5);
   z-index: var(--z-modal-backdrop);
   animation: fade-in var(--duration-normal) var(--ease-out);
 }
@@ -1048,7 +1066,7 @@ p { line-height: var(--leading-normal); }
   left: 0.125rem;
   width: 1.25rem;
   height: 1.25rem;
-  background-color: hsl(0 0% 100%);
+  background-color: hsl(var(--card));
   border-radius: 9999px;
   transition: transform var(--duration-fast) var(--ease-default);
   box-shadow: var(--shadow-sm);
@@ -1267,6 +1285,10 @@ p { line-height: var(--leading-normal); }
 .sidebar-collapsed { width: 4rem; }
 .sidebar-expand-btn { display: none; }
 .sidebar-collapsed .sidebar-expand-btn { display: flex; }
+.sidebar-collapse-btn,
+.sidebar-expand-btn {
+  color: hsl(var(--muted-foreground));
+}
 .sidebar-collapsed .sidebar-collapse-btn { display: none; }
 
 .sidebar-header {
@@ -1500,6 +1522,38 @@ p { line-height: var(--leading-normal); }
   .main-content .page-content {
     padding: 1rem;
   }
+}
+
+/* Sidebar sign-out link */
+.sidebar-signout {
+  justify-content: flex-start;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Notification toggle — needs relative positioning for badge */
+#notif-toggle,
+#mobile-notif-toggle {
+  position: relative;
+}
+
+/* Mobile search bar */
+.mobile-search-bar {
+  position: fixed;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  z-index: 40;
+  padding: 0.75rem;
+}
+
+/* Search close button */
+.search-close-btn {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* Notification dot */
@@ -1818,7 +1872,7 @@ p { line-height: var(--leading-normal); }
 .btn-hero:hover { opacity: 0.9; box-shadow: 0 4px 12px hsl(var(--primary) / 0.4); }
 .btn-hero:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
-.btn-error { background: hsl(var(--error)); color: white; }
+.btn-error { background: hsl(var(--error)); color: hsl(var(--error-foreground)); }
 .btn-error:hover { opacity: 0.9; }
 
 /* Idea actions - show on hover on desktop */
@@ -1880,6 +1934,46 @@ p { line-height: var(--leading-normal); }
 }
 
 /* ==========================================
+   27b. SCORE TABS (Idea Scoring)
+   ========================================== */
+
+.score-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: var(--text-sm);
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-lg);
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--duration-fast) var(--ease-default),
+              color var(--duration-fast) var(--ease-default);
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.score-tab.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.score-tab .score-tab-badge {
+  margin-left: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: hsl(var(--background));
+}
+
+.score-tab.active .score-tab-badge {
+  background: hsl(var(--primary-foreground) / 0.2);
+}
+
+/* ==========================================
    28. VIEW TOGGLE BUTTONS
    ========================================== */
 
@@ -1917,6 +2011,7 @@ p { line-height: var(--leading-normal); }
    30. ADDITIONAL UTILITY CLASSES
    ========================================== */
 
+.resize-none { resize: none; }
 .text-primary-fg { color: hsl(var(--primary-foreground)); }
 .items-baseline { align-items: baseline; }
 .gap-1\.5 { gap: 0.375rem; }
@@ -2531,12 +2626,12 @@ p { line-height: var(--leading-normal); }
 }
 
 .btn-outline-light {
-  border: 1px solid hsl(0 0% 100% / 0.3);
-  background-color: hsl(0 0% 100% / 0.1);
-  color: white;
+  border: 1px solid hsl(var(--primary-foreground) / 0.3);
+  background-color: hsl(var(--primary-foreground) / 0.1);
+  color: hsl(var(--primary-foreground));
 }
 .btn-outline-light:hover {
-  background-color: hsl(0 0% 100% / 0.2);
+  background-color: hsl(var(--primary-foreground) / 0.2);
 }
 
 /* ==========================================
@@ -2552,6 +2647,48 @@ p { line-height: var(--leading-normal); }
 
 @media (max-width: 1023px) {
   .auth-branding { display: none !important; }
+}
+
+.auth-form-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .auth-form-wrapper { width: 50%; }
+}
+
+/* ==========================================
+   36b. ACTION FOOTER (Approval Detail)
+   ========================================== */
+
+.action-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid hsl(var(--border));
+  z-index: 20;
+}
+
+.action-footer-inner {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+}
+
+.btn-outline-error {
+  border: 1px solid hsl(var(--error) / 0.3);
+  background-color: transparent;
+  color: hsl(var(--error));
+}
+.btn-outline-error:hover {
+  background-color: hsl(var(--error-soft));
 }
 
 /* ==========================================
@@ -2624,7 +2761,7 @@ p { line-height: var(--leading-normal); }
 .cmdk-backdrop {
   position: fixed;
   inset: 0;
-  background-color: hsl(0 0% 0% / 0.5);
+  background-color: hsl(var(--backdrop) / 0.5);
   z-index: var(--z-modal-backdrop);
   animation: fade-in var(--duration-fast) var(--ease-out);
 }

@@ -23,8 +23,8 @@ const defaultColors = [
   'hsl(var(--success))',
   'hsl(var(--warning))',
   'hsl(var(--error))',
-  'hsl(217 71% 53%)',
-  'hsl(280 65% 60%)',
+  'hsl(var(--chart-5))',
+  'hsl(var(--chart-6))',
 ];
 
 function chartSetup(data: ChartData[], config?: ChartConfig) {
