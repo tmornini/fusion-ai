@@ -40,7 +40,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
 
 // ── Manage Users ────────────────────────────
 
-export interface UserData {
+export interface ManagedUser {
   id: string;
   name: string;
   email: string;
@@ -50,7 +50,7 @@ export interface UserData {
   lastActive: string;
 }
 
-export async function getUsers(): Promise<UserData[]> {
+export async function getManagedUsers(): Promise<ManagedUser[]> {
   const rows = await GET('users') as UserEntity[];
   return rows
     .filter(u => u.id !== 'current')
@@ -58,9 +58,9 @@ export async function getUsers(): Promise<UserData[]> {
       id: u.id,
       name: userName(u),
       email: u.email,
-      role: u.role as UserData['role'],
+      role: u.role as ManagedUser['role'],
       department: u.department,
-      status: u.status as UserData['status'],
+      status: u.status as ManagedUser['status'],
       lastActive: u.last_active,
     }));
 }

@@ -5,7 +5,7 @@ import {
   iconArrowRight, iconSearch, iconChevronRight,
   renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
-import { getActivityFeed, type ActivityItem } from '../../site/data';
+import { getActivityFeed, type Activity } from '../../site/data';
 
 function activityIconHtml(type: string): string {
   const iconMap: Record<string, { icon: (s?: number) => string; bg: string }> = {
@@ -22,7 +22,7 @@ function activityIconHtml(type: string): string {
   return `<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;${entry.bg}">${entry.icon(20)}</div>`;
 }
 
-function renderActivity(a: ActivityItem): string {
+function renderActivity(a: Activity): string {
   let meta = '';
   if (a.score) meta = `<div class="badge badge-default text-xs mt-1">${iconStar(12)} Score: ${a.score}</div>`;
   if (a.status) meta = `<div class="badge badge-default text-xs mt-1">${a.status}</div>`;
@@ -44,7 +44,7 @@ export async function init(): Promise<void> {
 
   container.innerHTML = renderSkeleton('card-list', { count: 6 });
 
-  let activities: ActivityItem[];
+  let activities: Activity[];
   try {
     activities = await getActivityFeed();
   } catch {

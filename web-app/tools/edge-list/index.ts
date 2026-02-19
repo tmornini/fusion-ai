@@ -4,7 +4,7 @@ import {
   iconChevronRight, iconTrendingUp, iconShield, iconBarChart, iconUser,
   renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
-import { getEdges, type EdgeItem } from '../../site/data';
+import { getEdgeList, type EdgeListItem } from '../../site/data';
 
 const statusConfig: Record<string, { label: string; cls: string; icon: (s?: number) => string }> = {
   complete: { label: 'Complete', cls: 'badge-success', icon: iconCheckCircle2 },
@@ -18,7 +18,7 @@ const confidenceConfig: Record<string, { label: string; cls: string }> = {
   low: { label: 'Low', cls: 'text-error' },
 };
 
-function renderEdgeCard(edge: EdgeItem): string {
+function renderEdgeCard(edge: EdgeListItem): string {
   const sc = statusConfig[edge.status];
   return `
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
@@ -44,9 +44,9 @@ export async function init(): Promise<void> {
   const listEl = $('#edge-list');
   if (listEl) listEl.innerHTML = renderSkeleton('card-list', { count: 4 });
 
-  let edges: EdgeItem[];
+  let edges: EdgeListItem[];
   try {
-    edges = await getEdges();
+    edges = await getEdgeList();
   } catch {
     if (listEl) {
       listEl.innerHTML = renderError('Failed to load Edge definitions.');

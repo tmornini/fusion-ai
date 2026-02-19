@@ -7,7 +7,7 @@ import {
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
   getIdeas, getProjects, getTeamMembers,
-  type GaugeCardData, type Idea, type Project, type TeamMember,
+  type GaugeCard, type Idea, type Project, type TeamMember,
 } from '../../site/data';
 import { donutChart, barChart, areaChart } from '../../site/charts';
 
@@ -22,7 +22,7 @@ const iconLookup: Record<string, (s?: number, c?: string) => string> = {
   dollarSign: iconDollarSign, clock: iconClock, zap: iconZap,
 };
 
-function renderGauge(card: GaugeCardData): string {
+function renderGauge(card: GaugeCard): string {
   const ts = themeStyles[card.theme]!;
   const uid = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);

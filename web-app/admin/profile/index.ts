@@ -3,7 +3,7 @@ import {
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
 } from '../../site/script';
-import { getProfileData, allStrengths } from '../../site/data';
+import { getProfile, allStrengths } from '../../site/data';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
 
@@ -15,7 +15,7 @@ function strengthChip(name: string): string {
 }
 
 export async function init(): Promise<void> {
-  const p = await getProfileData();
+  const p = await getProfile();
 
   // Breadcrumb chevron
   const chevronEl = $('#breadcrumb-chevron');

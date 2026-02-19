@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, ProjectEntity } from '../../../api/types';
 
-export interface GaugeCardData {
+export interface GaugeCard {
   title: string;
   icon: string;
   iconClass: string;
@@ -16,7 +16,7 @@ export interface QuickAction {
   href: string;
 }
 
-export async function getDashboardGauges(): Promise<GaugeCardData[]> {
+export async function getDashboardGauges(): Promise<GaugeCard[]> {
   const projects = await GET('projects') as ProjectEntity[];
   const totalEstTime = projects.reduce((s, p) => s + p.estimated_time, 0);
   const totalActTime = projects.reduce((s, p) => s + p.actual_time, 0);

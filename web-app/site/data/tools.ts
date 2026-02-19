@@ -44,14 +44,14 @@ export interface ProcessStep {
   type: 'action' | 'decision' | 'start' | 'end';
 }
 
-export interface FlowData {
+export interface Flow {
   processName: string;
   processDescription: string;
   processDepartment: string;
   steps: ProcessStep[];
 }
 
-export async function getFlowData(): Promise<FlowData> {
+export async function getFlow(): Promise<Flow> {
   const processes = await GET('processes') as ProcessEntity[];
   const process = processes[0];
   if (!process) {

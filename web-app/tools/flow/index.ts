@@ -6,7 +6,7 @@ import {
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
   renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
-import { getFlowData, type ProcessStep, type FlowData } from '../../site/data';
+import { getFlow, type ProcessStep, type Flow } from '../../site/data';
 
 const toolIcons: Record<string, (s?: number, c?: string) => string> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
@@ -266,9 +266,9 @@ export async function init(): Promise<void> {
   const root = $('#flow-root');
   if (root) root.innerHTML = renderSkeleton('card-list', { count: 4 });
 
-  let flowData: FlowData;
+  let flowData: Flow;
   try {
-    flowData = await getFlowData();
+    flowData = await getFlow();
   } catch {
     if (root) {
       root.innerHTML = renderError('Failed to load process data.');

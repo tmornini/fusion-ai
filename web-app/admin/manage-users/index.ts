@@ -5,7 +5,7 @@ import {
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
   renderSkeleton, renderError, renderEmpty,
 } from '../../site/script';
-import { getUsers, type UserData } from '../../site/data';
+import { getManagedUsers, type ManagedUser } from '../../site/data';
 
 const roleLabels: Record<string, { label: string; icon: (s?: number) => string }> = {
   admin: { label: 'Admin', icon: iconCrown },
@@ -26,7 +26,7 @@ function roleBadge(role: string): string {
   return `<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
 }
 
-function userRow(u: UserData): string {
+function userRow(u: ManagedUser): string {
   return `
     <div class="flex items-center gap-4 p-4 ${u.status === 'deactivated' ? 'opacity-50' : ''}" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:2;display:flex;align-items:center;gap:0.75rem;min-width:0">
@@ -56,9 +56,9 @@ export async function init(): Promise<void> {
 
   container.innerHTML = renderSkeleton('table', { count: 5 });
 
-  let users: UserData[];
+  let users: ManagedUser[];
   try {
-    users = await getUsers();
+    users = await getManagedUsers();
   } catch {
     container.innerHTML = renderError('Failed to load users.');
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());

@@ -3,7 +3,7 @@
 // Bar, Line, Donut, Area charts as SVG strings.
 // ============================================
 
-export interface ChartData {
+export interface ChartDatum {
   label: string;
   value: number;
   color?: string;
@@ -27,7 +27,7 @@ const defaultColors = [
   'hsl(var(--chart-6))',
 ];
 
-function chartSetup(data: ChartData[], config?: ChartConfig) {
+function chartSetup(data: ChartDatum[], config?: ChartConfig) {
   const w = config?.width ?? 300;
   const h = config?.height ?? 200;
   const pad = config?.padding ?? 40;
@@ -37,7 +37,7 @@ function chartSetup(data: ChartData[], config?: ChartConfig) {
   return { w, h, pad, colors, maxVal, chartH };
 }
 
-function chartPoints(data: ChartData[], w: number, h: number, pad: number, maxVal: number, chartH: number) {
+function chartPoints(data: ChartDatum[], w: number, h: number, pad: number, maxVal: number, chartH: number) {
   const stepX = (w - pad * 2) / Math.max(data.length - 1, 1);
   return data.map((d, i) => ({ x: pad + i * stepX, y: h - pad - (d.value / maxVal) * chartH }));
 }
@@ -46,7 +46,7 @@ function baseline(pad: number, w: number, h: number): string {
   return `<line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>`;
 }
 
-export function barChart(data: ChartData[], config?: ChartConfig): string {
+export function barChart(data: ChartDatum[], config?: ChartConfig): string {
   if (!data.length) return '';
   const { w, h, pad, colors, maxVal, chartH } = chartSetup(data, config);
   const barW = Math.min(40, (w - pad * 2) / data.length - 8);
@@ -69,7 +69,7 @@ export function barChart(data: ChartData[], config?: ChartConfig): string {
   </svg>`;
 }
 
-export function lineChart(data: ChartData[], config?: ChartConfig): string {
+export function lineChart(data: ChartDatum[], config?: ChartConfig): string {
   if (!data.length) return '';
   const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
@@ -88,7 +88,7 @@ export function lineChart(data: ChartData[], config?: ChartConfig): string {
   </svg>`;
 }
 
-export function donutChart(data: ChartData[], config?: ChartConfig): string {
+export function donutChart(data: ChartDatum[], config?: ChartConfig): string {
   const size = config?.width ?? 160;
   const colors = config?.colors ?? defaultColors;
   if (!data.length) return '';
@@ -115,7 +115,7 @@ export function donutChart(data: ChartData[], config?: ChartConfig): string {
   </svg>`;
 }
 
-export function areaChart(data: ChartData[], config?: ChartConfig): string {
+export function areaChart(data: ChartDatum[], config?: ChartConfig): string {
   if (!data.length) return '';
   const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';

@@ -4,7 +4,7 @@ import type {
   DiscussionEntity, ProjectVersionEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity,
   IdeaEntity, ClarificationEntity, UserEntity,
 } from '../../../api/types';
-import { getUserMap, lookupUser, parseJson } from './helpers';
+import { getUsersById, lookupUser, parseJson } from './helpers';
 
 export interface Project {
   id: string;
@@ -68,9 +68,9 @@ export interface ProjectDetail {
   tasks: { name: string; priority: string; desc: string; skills: string[]; hours: number; assigned: string }[];
 }
 
-async function buildEdgeData(
+async function getEdgeForProject(
   ideaId: string,
-  userMap: Map<string, UserEntity>,
+  usersById: Map<string, UserEntity>,
 ): Promise<ProjectDetail['edge']> {
   const allEdges = await GET('edges') as EdgeEntity[];
   const edge = allEdges.find(e => e.idea_id === ideaId);
@@ -97,22 +97,22 @@ async function buildEdgeData(
       longTerm: edge.impact_long_term,
     },
     confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
-    owner: lookupUser(userMap, edge.owner_id),
+    owner: lookupUser(usersById, edge.owner_id),
   };
 }
 
-export async function getProjectById(id: string): Promise<ProjectDetail> {
-  const [project, teamRows, milestoneRows, taskRows, discussionRows, versionRows, userMap] = await Promise.all([
-    GET(`projects/${id}`) as Promise<ProjectEntity>,
-    GET(`projects/${id}/team`) as Promise<ProjectTeamEntity[]>,
-    GET(`projects/${id}/milestones`) as Promise<MilestoneEntity[]>,
-    GET(`projects/${id}/tasks`) as Promise<ProjectTaskEntity[]>,
-    GET(`projects/${id}/discussions`) as Promise<DiscussionEntity[]>,
-    GET(`projects/${id}/versions`) as Promise<ProjectVersionEntity[]>,
-    getUserMap(),
+export async function getProjectById(projectId: string): Promise<ProjectDetail> {
+  const [project, teamRows, milestoneRows, taskRows, discussionRows, versionRows, usersById] = await Promise.all([
+    GET(`projects/${projectId}`) as Promise<ProjectEntity>,
+    GET(`projects/${projectId}/team`) as Promise<ProjectTeamEntity[]>,
+    GET(`projects/${projectId}/milestones`) as Promise<MilestoneEntity[]>,
+    GET(`projects/${projectId}/tasks`) as Promise<ProjectTaskEntity[]>,
+    GET(`projects/${projectId}/discussions`) as Promise<DiscussionEntity[]>,
+    GET(`projects/${projectId}/versions`) as Promise<ProjectVersionEntity[]>,
+    getUsersById(),
   ]);
 
-  const edgeData = await buildEdgeData(project.linked_idea_id || id, userMap);
+  const edgeData = await getEdgeForProject(project.linked_idea_id || projectId, usersById);
 
   return {
     id: project.id,
@@ -122,7 +122,7 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     progress: project.progress,
     startDate: project.start_date,
     targetEndDate: project.target_end_date,
-    projectLead: lookupUser(userMap, project.lead_id),
+    projectLead: lookupUser(usersById, project.lead_id),
     metrics: {
       time: { baseline: project.estimated_time, current: project.actual_time },
       cost: { baseline: project.estimated_cost, current: project.actual_cost },
@@ -131,7 +131,7 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     edge: edgeData,
     team: teamRows.map(t => ({
       id: t.user_id,
-      name: lookupUser(userMap, t.user_id),
+      name: lookupUser(usersById, t.user_id),
       role: t.role,
     })),
     milestones: milestoneRows.map(m => ({
@@ -139,17 +139,17 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     })),
     versions: versionRows.map(v => ({
       id: v.id, version: v.version, date: v.date, changes: v.changes,
-      author: lookupUser(userMap, v.author_id),
+      author: lookupUser(usersById, v.author_id),
     })),
     discussions: discussionRows.map(d => ({
       id: d.id, date: d.date, message: d.message,
-      author: lookupUser(userMap, d.author_id),
+      author: lookupUser(usersById, d.author_id),
     })),
     tasks: taskRows.map(t => ({
       name: t.name, priority: t.priority, desc: t.description,
       skills: parseJson<string[]>(t.skills),
       hours: t.hours,
-      assigned: lookupUser(userMap, t.assigned_to_id),
+      assigned: lookupUser(usersById, t.assigned_to_id),
     })),
   };
 }
@@ -184,10 +184,10 @@ export interface EngineeringProject {
 }
 
 export async function getEngineeringProject(projectId: string): Promise<EngineeringProject> {
-  const [project, teamRows, userMap] = await Promise.all([
+  const [project, teamRows, usersById] = await Promise.all([
     GET(`projects/${projectId}`) as Promise<ProjectEntity>,
     GET(`projects/${projectId}/team`) as Promise<ProjectTeamEntity[]>,
-    getUserMap(),
+    getUsersById(),
   ]);
 
   const bizCtx = parseJson<{ problem?: string; expectedOutcome?: string; successMetrics?: string[]; constraints?: string[] }>(project.business_context);
@@ -207,7 +207,7 @@ export async function getEngineeringProject(projectId: string): Promise<Engineer
     },
     team: teamRows.map(t => ({
       id: t.user_id,
-      name: lookupUser(userMap, t.user_id),
+      name: lookupUser(usersById, t.user_id),
       role: t.role,
       type: t.type,
     })),
@@ -220,18 +220,18 @@ export async function getEngineeringProject(projectId: string): Promise<Engineer
 }
 
 export async function getClarifications(projectId: string): Promise<Clarification[]> {
-  const [clarRows, userMap] = await Promise.all([
+  const [clarRows, usersById] = await Promise.all([
     GET(`projects/${projectId}/clarifications`) as Promise<ClarificationEntity[]>,
-    getUserMap(),
+    getUsersById(),
   ]);
   return clarRows.map(c => ({
     id: c.id,
     question: c.question,
-    askedBy: lookupUser(userMap, c.asked_by_id),
+    askedBy: lookupUser(usersById, c.asked_by_id),
     askedAt: c.asked_at,
     status: c.status as Clarification['status'],
     ...(c.answer ? { answer: c.answer } : {}),
-    ...(c.answered_by_id ? { answeredBy: lookupUser(userMap, c.answered_by_id) } : {}),
+    ...(c.answered_by_id ? { answeredBy: lookupUser(usersById, c.answered_by_id) } : {}),
     ...(c.answered_at ? { answeredAt: c.answered_at } : {}),
   }));
 }

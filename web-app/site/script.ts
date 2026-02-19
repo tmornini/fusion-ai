@@ -104,8 +104,8 @@ function skeletonStatsRow(): string {
   </div>`;
 }
 
-function renderSkeleton(type: SkeletonType, opts?: { count?: number }): string {
-  const count = opts?.count ?? 4;
+function renderSkeleton(type: SkeletonType, options?: { count?: number }): string {
+  const count = options?.count ?? 4;
   switch (type) {
     case 'card-grid':
       return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1.5rem">
@@ -155,12 +155,12 @@ function renderError(message: string, retryLabel = 'Try Again'): string {
   </div>`;
 }
 
-function renderEmpty(iconHtml: string, title: string, description: string, cta?: { label: string; href: string }): string {
+function renderEmpty(iconHtml: string, title: string, description: string, action?: { label: string; href: string }): string {
   return `<div class="state-container">
     <div class="state-icon state-icon-empty">${iconHtml}</div>
     <p class="state-title">${escapeHtml(title)}</p>
     <p class="state-description">${escapeHtml(description)}</p>
-    ${cta ? `<a href="${cta.href}" class="btn btn-primary">${escapeHtml(cta.label)}</a>` : ''}
+    ${action ? `<a href="${action.href}" class="btn btn-primary">${escapeHtml(action.label)}</a>` : ''}
   </div>`;
 }
 
@@ -200,31 +200,31 @@ function scoreColor(score: number): string {
 
 let _dialogPreviousFocus: HTMLElement | null = null;
 
-function openDialog(id: string): void {
+function openDialog(dialogId: string): void {
   _dialogPreviousFocus = document.activeElement as HTMLElement | null;
-  $(`#${id}-backdrop`)?.classList.remove('hidden');
-  const dialog = $(`#${id}-dialog`);
+  $(`#${dialogId}-backdrop`)?.classList.remove('hidden');
+  const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.remove('hidden');
   dialog?.setAttribute('aria-hidden', 'false');
   const focusable = dialog?.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
   focusable?.focus();
 }
 
-function closeDialog(id: string): void {
-  $(`#${id}-backdrop`)?.classList.add('hidden');
-  const dialog = $(`#${id}-dialog`);
+function closeDialog(dialogId: string): void {
+  $(`#${dialogId}-backdrop`)?.classList.add('hidden');
+  const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.add('hidden');
   dialog?.setAttribute('aria-hidden', 'true');
   _dialogPreviousFocus?.focus();
   _dialogPreviousFocus = null;
 }
 
-function initTabs(tabSel: string, panelSel: string, activeClass = 'active'): void {
-  document.querySelectorAll<HTMLElement>(tabSel).forEach(tab => {
+function initTabs(tabSelector: string, panelSelector: string, activeClass = 'active'): void {
+  document.querySelectorAll<HTMLElement>(tabSelector).forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll(tabSel).forEach(t => t.classList.remove(activeClass));
+      document.querySelectorAll(tabSelector).forEach(t => t.classList.remove(activeClass));
       tab.classList.add(activeClass);
-      document.querySelectorAll(panelSel).forEach(p => (p as HTMLElement).style.display = 'none');
+      document.querySelectorAll(panelSelector).forEach(p => (p as HTMLElement).style.display = 'none');
       const attr = tab.dataset.tab ?? tab.dataset.detailTab ?? '';
       const panel = document.getElementById(`tab-${attr}`) ?? document.getElementById(`detail-${attr}`);
       if (panel) panel.style.display = '';

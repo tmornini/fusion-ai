@@ -6,7 +6,7 @@ import {
   iconExternalLink, iconBell,
   renderSkeleton, renderError,
 } from '../../site/script';
-import { getAccountData, type AccountData } from '../../site/data';
+import { getAccount, type Account } from '../../site/data';
 
 function usageBarColor(current: number, limit: number): string {
   const pct = (current / limit) * 100;
@@ -39,9 +39,9 @@ export async function init(): Promise<void> {
 
   container.innerHTML = renderSkeleton('detail');
 
-  let d: AccountData;
+  let d: Account;
   try {
-    d = await getAccountData();
+    d = await getAccount();
   } catch {
     container.innerHTML = renderError('Failed to load account data.');
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());

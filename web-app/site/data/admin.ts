@@ -4,11 +4,11 @@ import type {
   NotificationCategoryEntity, NotificationPrefEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { getUserMap, lookupUser } from './helpers';
+import { getUsersById, lookupUser } from './helpers';
 
 // ── Account ─────────────────────────────────
 
-export interface AccountData {
+export interface Account {
   company: {
     name: string;
     plan: string;
@@ -27,14 +27,14 @@ export interface AccountData {
   recentActivity: { type: string; description: string; time: string }[];
 }
 
-export async function getAccountData(): Promise<AccountData> {
+export async function getAccount(): Promise<Account> {
   const [account, settings, activities] = await Promise.all([
     GET('account') as Promise<AccountEntity>,
     GET('company-settings') as Promise<CompanySettingsEntity>,
     GET('activities') as Promise<ActivityEntity[]>,
   ]);
 
-  const userMap = await getUserMap();
+  const usersById = await getUsersById();
 
   return {
     company: {
@@ -54,7 +54,7 @@ export async function getAccountData(): Promise<AccountData> {
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
     recentActivity: activities.slice(0, 3).map(a => ({
       type: a.type,
-      description: `${lookupUser(userMap, a.actor_id, 'Unknown')} ${a.action} ${a.target}`,
+      description: `${lookupUser(usersById, a.actor_id, 'Unknown')} ${a.action} ${a.target}`,
       time: a.timestamp,
     })),
   };
@@ -62,7 +62,7 @@ export async function getAccountData(): Promise<AccountData> {
 
 // ── Profile ─────────────────────────────────
 
-export interface ProfileData {
+export interface Profile {
   firstName: string;
   lastName: string;
   email: string;
@@ -74,7 +74,7 @@ export interface ProfileData {
 
 export const allStrengths = ['Strategic Planning', 'Data Analysis', 'Stakeholder Management', 'Agile Methods', 'Team Leadership', 'Risk Management', 'Budget Planning', 'Technical Writing', 'User Research', 'Prototyping'];
 
-export async function getProfileData(): Promise<ProfileData> {
+export async function getProfile(): Promise<Profile> {
   const user = await GET('current-user') as UserEntity | null;
   if (!user) return { firstName: 'Alex', lastName: 'Thompson', email: 'alex.thompson@company.com', phone: '+1 (555) 123-4567', role: 'Product Manager', department: 'Product', bio: 'Passionate about building products that solve real problems.' };
   return {
@@ -121,7 +121,7 @@ export async function getCompanySettings(): Promise<CompanySettingsData> {
 
 // ── Activity Feed ───────────────────────────
 
-export interface ActivityItem {
+export interface Activity {
   id: string;
   type: string;
   actor: string;
@@ -133,15 +133,15 @@ export interface ActivityItem {
   comment?: string;
 }
 
-export async function getActivityFeed(): Promise<ActivityItem[]> {
-  const [activities, userMap] = await Promise.all([
+export async function getActivityFeed(): Promise<Activity[]> {
+  const [activities, usersById] = await Promise.all([
     GET('activities') as Promise<ActivityEntity[]>,
-    getUserMap(),
+    getUsersById(),
   ]);
   return activities.map(a => ({
     id: a.id,
     type: a.type,
-    actor: lookupUser(userMap, a.actor_id, 'Unknown'),
+    actor: lookupUser(usersById, a.actor_id, 'Unknown'),
     action: a.action,
     target: a.target,
     timestamp: a.timestamp,
