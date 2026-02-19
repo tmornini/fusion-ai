@@ -16,131 +16,191 @@ export function getDbAdapter(): DbAdapter {
   return _adapter;
 }
 
-function db(): DbAdapter {
-  return getDbAdapter();
+// ── Route Registry ──────────────────────────
+
+type GetHandler = (adapter: DbAdapter, params: string[]) => Promise<unknown>;
+type PutHandler = (adapter: DbAdapter, params: string[], payload: Record<string, unknown>) => Promise<unknown>;
+
+interface Route {
+  segments: string[];
+  get?: GetHandler;
+  put?: PutHandler;
 }
 
-// ── GET ──────────────────────────────────────
+function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler }): Route {
+  return { segments: pattern.split('/'), ...handlers };
+}
+
+const routes: Route[] = [
+  // ── Collections ────────────────────────────
+  route('users', {
+    get: (db) => db.users.getAll(),
+  }),
+  route('ideas', {
+    get: (db) => db.ideas.getAll(),
+  }),
+  route('projects', {
+    get: (db) => db.projects.getAll(),
+  }),
+  route('edges', {
+    get: (db) => db.edges.getAll(),
+  }),
+  route('activities', {
+    get: (db) => db.activities.getAll(),
+  }),
+  route('notifications', {
+    get: (db) => db.notifications.getAll(),
+  }),
+  route('crunch-columns', {
+    get: (db) => db.crunchColumns.getAll(),
+  }),
+  route('processes', {
+    get: (db) => db.processes.getAll(),
+  }),
+  route('notification-categories', {
+    get: (db) => db.notificationCategories.getAll(),
+  }),
+  route('notification-prefs', {
+    get: (db) => db.notificationPrefs.getAll(),
+  }),
+
+  // ── Singletons ─────────────────────────────
+  route('company-settings', {
+    get: (db) => db.companySettings.get(),
+    put: (db, _, payload) => db.companySettings.put(payload),
+  }),
+  route('account', {
+    get: (db) => db.account.get(),
+    put: (db, _, payload) => db.account.put(payload),
+  }),
+  route('current-user', {
+    get: (db) => db.users.getById('current'),
+  }),
+
+  // ── Items by ID ────────────────────────────
+  route('users/:id', {
+    get: (db, [id]) => db.users.getById(id!),
+    put: (db, [id], payload) => db.users.put(id!, payload),
+  }),
+  route('ideas/:id', {
+    get: (db, [id]) => db.ideas.getById(id!),
+    put: (db, [id], payload) => db.ideas.put(id!, payload),
+  }),
+  route('projects/:id', {
+    get: (db, [id]) => db.projects.getById(id!),
+    put: (db, [id], payload) => db.projects.put(id!, payload),
+  }),
+  route('edges/:id', {
+    get: (db, [id]) => db.edges.getById(id!),
+    put: (db, [id], payload) => db.edges.put(id!, payload),
+  }),
+  route('processes/:id', {
+    get: (db, [id]) => db.processes.getById(id!),
+    put: (db, [id], payload) => db.processes.put(id!, payload),
+  }),
+  route('activities/:id', {
+    put: (db, [id], payload) => db.activities.put(id!, payload),
+  }),
+  route('notifications/:id', {
+    put: (db, [id], payload) => db.notifications.put(id!, payload),
+  }),
+  route('crunch-columns/:id', {
+    put: (db, [id], payload) => db.crunchColumns.put(id!, payload),
+  }),
+  route('notification-prefs/:id', {
+    put: (db, [id], payload) => db.notificationPrefs.put(id!, payload),
+  }),
+
+  // ── Nested: idea children ──────────────────
+  route('ideas/:ideaId/score', {
+    get: (db, [ideaId]) => db.ideaScores.getByIdeaId(ideaId!),
+    put: (db, [ideaId], payload) => db.ideaScores.put(ideaId!, payload),
+  }),
+
+  // ── Nested: project children (GET) ─────────
+  route('projects/:projectId/team', {
+    get: (db, [projectId]) => db.projectTeam.getByProjectId(projectId!),
+  }),
+  route('projects/:projectId/milestones', {
+    get: (db, [projectId]) => db.milestones.getByProjectId(projectId!),
+  }),
+  route('projects/:projectId/tasks', {
+    get: (db, [projectId]) => db.projectTasks.getByProjectId(projectId!),
+  }),
+  route('projects/:projectId/discussions', {
+    get: (db, [projectId]) => db.discussions.getByProjectId(projectId!),
+  }),
+  route('projects/:projectId/versions', {
+    get: (db, [projectId]) => db.projectVersions.getByProjectId(projectId!),
+  }),
+  route('projects/:projectId/clarifications', {
+    get: (db, [projectId]) => db.clarifications.getByProjectId(projectId!),
+  }),
+
+  // ── Nested: project children (PUT) ─────────
+  route('projects/:projectId/team/:userId', {
+    put: (db, [projectId, userId], payload) => db.projectTeam.put(projectId!, userId!, payload),
+  }),
+  route('projects/:projectId/milestones/:milestoneId', {
+    put: (db, [projectId, milestoneId], payload) => db.milestones.put(milestoneId!, { ...payload, project_id: projectId }),
+  }),
+  route('projects/:projectId/tasks/:taskId', {
+    put: (db, [projectId, taskId], payload) => db.projectTasks.put(taskId!, { ...payload, project_id: projectId }),
+  }),
+  route('projects/:projectId/discussions/:discussionId', {
+    put: (db, [projectId, discussionId], payload) => db.discussions.put(discussionId!, { ...payload, project_id: projectId }),
+  }),
+  route('projects/:projectId/versions/:versionId', {
+    put: (db, [projectId, versionId], payload) => db.projectVersions.put(versionId!, { ...payload, project_id: projectId }),
+  }),
+  route('projects/:projectId/clarifications/:clarificationId', {
+    put: (db, [projectId, clarificationId], payload) => db.clarifications.put(clarificationId!, { ...payload, project_id: projectId }),
+  }),
+
+  // ── Nested: edge children ──────────────────
+  route('edges/:edgeId/outcomes', {
+    get: (db, [edgeId]) => db.edgeOutcomes.getByEdgeId(edgeId!),
+  }),
+  route('edges/:edgeId/outcomes/:outcomeId', {
+    put: (db, [edgeId, outcomeId], payload) => db.edgeOutcomes.put(outcomeId!, { ...payload, edge_id: edgeId }),
+  }),
+  route('edges/:edgeId/outcomes/:outcomeId/metrics/:metricId', {
+    put: (db, [, , metricId], payload) => db.edgeMetrics.put(metricId!, payload),
+  }),
+];
+
+// ── Route Matching ──────────────────────────
+
+function matchRoute(parts: string[]): { route: Route; params: string[] } | null {
+  for (const entry of routes) {
+    if (entry.segments.length !== parts.length) continue;
+    const params: string[] = [];
+    let matched = true;
+    for (let i = 0; i < entry.segments.length; i++) {
+      if (entry.segments[i]!.startsWith(':')) {
+        params.push(parts[i]!);
+      } else if (entry.segments[i] !== parts[i]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return { route: entry, params };
+  }
+  return null;
+}
+
+// ── GET / PUT ───────────────────────────────
 
 export async function GET(resource: string): Promise<unknown> {
   const parts = resource.split('/').filter(Boolean);
-
-  // Top-level collections
-  if (parts.length === 1) {
-    switch (parts[0]) {
-      case 'users': return db().users.getAll();
-      case 'ideas': return db().ideas.getAll();
-      case 'projects': return db().projects.getAll();
-      case 'edges': return db().edges.getAll();
-      case 'activities': return db().activities.getAll();
-      case 'notifications': return db().notifications.getAll();
-      case 'crunch-columns': return db().crunchColumns.getAll();
-      case 'processes': return db().processes.getAll();
-      case 'company-settings': return db().companySettings.get();
-      case 'notification-categories': return db().notificationCategories.getAll();
-      case 'notification-prefs': return db().notificationPrefs.getAll();
-      case 'account': return db().account.get();
-      case 'current-user': return db().users.getById('current');
-    }
-  }
-
-  // Single item by ID
-  if (parts.length === 2) {
-    const [collection, id] = parts;
-    switch (collection) {
-      case 'users': return db().users.getById(id!);
-      case 'ideas': return db().ideas.getById(id!);
-      case 'projects': return db().projects.getById(id!);
-      case 'edges': return db().edges.getById(id!);
-      case 'processes': return db().processes.getById(id!);
-    }
-  }
-
-  // Nested resources: /{parent}/{id}/{child}
-  if (parts.length === 3) {
-    const [parent, parentId, child] = parts;
-    if (parent === 'ideas' && child === 'score') {
-      return db().ideaScores.getByIdeaId(parentId!);
-    }
-    if (parent === 'projects') {
-      switch (child) {
-        case 'team': return db().projectTeam.getByProjectId(parentId!);
-        case 'milestones': return db().milestones.getByProjectId(parentId!);
-        case 'tasks': return db().projectTasks.getByProjectId(parentId!);
-        case 'discussions': return db().discussions.getByProjectId(parentId!);
-        case 'versions': return db().projectVersions.getByProjectId(parentId!);
-        case 'clarifications': return db().clarifications.getByProjectId(parentId!);
-      }
-    }
-    if (parent === 'edges') {
-      if (child === 'outcomes') return db().edgeOutcomes.getByEdgeId(parentId!);
-    }
-  }
-
+  const match = matchRoute(parts);
+  if (match?.route.get) return match.route.get(getDbAdapter(), match.params);
   throw new Error(`GET: Unknown resource "${resource}"`);
 }
 
-// ── PUT ──────────────────────────────────────
-
 export async function PUT(resource: string, payload: Record<string, unknown>): Promise<unknown> {
   const parts = resource.split('/').filter(Boolean);
-
-  // Singletons
-  if (parts.length === 1) {
-    switch (parts[0]) {
-      case 'company-settings': return db().companySettings.put(payload);
-      case 'account': return db().account.put(payload);
-    }
-  }
-
-  // /{collection}/{id}
-  if (parts.length === 2) {
-    const [collection, id] = parts;
-    switch (collection) {
-      case 'users': return db().users.put(id!, payload);
-      case 'ideas': return db().ideas.put(id!, payload);
-      case 'projects': return db().projects.put(id!, payload);
-      case 'edges': return db().edges.put(id!, payload);
-      case 'activities': return db().activities.put(id!, payload);
-      case 'notifications': return db().notifications.put(id!, payload);
-      case 'crunch-columns': return db().crunchColumns.put(id!, payload);
-      case 'processes': return db().processes.put(id!, payload);
-      case 'notification-prefs': return db().notificationPrefs.put(id!, payload);
-    }
-  }
-
-  // /{parent}/{parentId}/{child}/{childId}
-  if (parts.length === 3) {
-    const [parent, parentId, child] = parts;
-    if (parent === 'ideas' && child === 'score') {
-      return db().ideaScores.put(parentId!, payload);
-    }
-  }
-
-  if (parts.length === 4) {
-    const [parent, parentId, child, childId] = parts;
-    if (parent === 'projects') {
-      switch (child) {
-        case 'team': return db().projectTeam.put(parentId!, childId!, payload);
-        case 'milestones': return db().milestones.put(childId!, { ...payload, project_id: parentId });
-        case 'tasks': return db().projectTasks.put(childId!, { ...payload, project_id: parentId });
-        case 'discussions': return db().discussions.put(childId!, { ...payload, project_id: parentId });
-        case 'versions': return db().projectVersions.put(childId!, { ...payload, project_id: parentId });
-        case 'clarifications': return db().clarifications.put(childId!, { ...payload, project_id: parentId });
-      }
-    }
-    if (parent === 'edges') {
-      if (child === 'outcomes') return db().edgeOutcomes.put(childId!, { ...payload, edge_id: parentId });
-    }
-  }
-
-  // /{parent}/{parentId}/{child}/{childId}/{subchild}/{subId}
-  if (parts.length === 6) {
-    const [parent, , child, , subchild, subId] = parts;
-    if (parent === 'edges' && child === 'outcomes' && subchild === 'metrics') {
-      return db().edgeMetrics.put(subId!, payload);
-    }
-  }
-
+  const match = matchRoute(parts);
+  if (match?.route.put) return match.route.put(getDbAdapter(), match.params, payload);
   throw new Error(`PUT: Unknown resource "${resource}"`);
 }
