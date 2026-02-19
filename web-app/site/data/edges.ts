@@ -1,4 +1,4 @@
-import { GET } from '../../../api/api';
+import { GET, getDbAdapter } from '../../../api/api';
 import type { IdeaEntity, EdgeEntity } from '../../../api/types';
 import { getUsersById, lookupUser, getEdgeDataByIdeaId } from './helpers';
 
@@ -48,9 +48,7 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
     GET('ideas') as Promise<IdeaEntity[]>,
     getUsersById(),
   ]);
-  const { getDbAdapter } = await import('../../../api/api');
   const db = getDbAdapter();
-
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
   const allMetrics = await db.edgeMetrics.getAll();
 

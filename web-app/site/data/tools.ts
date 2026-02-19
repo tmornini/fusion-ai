@@ -1,4 +1,4 @@
-import { GET } from '../../../api/api';
+import { GET, getDbAdapter } from '../../../api/api';
 import type { CrunchColumnEntity, ProcessEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
@@ -58,9 +58,7 @@ export async function getFlow(): Promise<Flow> {
     return { processName: '', processDescription: '', processDepartment: '', steps: [] };
   }
 
-  const { getDbAdapter } = await import('../../../api/api');
-  const db = getDbAdapter();
-  const steps = await db.processSteps.getByProcessId(process.id);
+  const steps = await getDbAdapter().processSteps.getByProcessId(process.id);
 
   return {
     processName: process.name,
