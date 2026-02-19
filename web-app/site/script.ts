@@ -419,8 +419,25 @@ function getParams(): Record<string, string> {
   return params;
 }
 
+const PAGE_PATHS: Record<string, string> = {
+  dashboard: 'core/dashboard', ideas: 'core/ideas', projects: 'core/projects',
+  'project-detail': 'core/project-detail', 'engineering-requirements': 'core/engineering-requirements',
+  'idea-create': 'core/idea-create', 'idea-scoring': 'core/idea-scoring',
+  'idea-convert': 'core/idea-convert', 'idea-review-queue': 'core/idea-review-queue',
+  'approval-detail': 'core/approval-detail',
+  edge: 'tools/edge', 'edge-list': 'tools/edge-list', crunch: 'tools/crunch', flow: 'tools/flow',
+  team: 'admin/team', account: 'admin/account', profile: 'admin/profile',
+  'company-settings': 'admin/company-settings', 'manage-users': 'admin/manage-users',
+  'activity-feed': 'admin/activity-feed', 'notification-settings': 'admin/notification-settings',
+  snapshots: 'admin/snapshots',
+  'design-system': 'reference/design-system',
+  landing: 'entry/landing', auth: 'entry/auth', onboarding: 'entry/onboarding',
+  'not-found': 'system/not-found',
+};
+
 function navigateTo(page: string, params?: Record<string, string>): void {
-  let url = '../' + page + '/index.html';
+  const path = PAGE_PATHS[page] || page;
+  let url = '../../' + path + '/index.html';
   if (params && Object.keys(params).length > 0) {
     url += '?' + new URLSearchParams(params).toString();
   }

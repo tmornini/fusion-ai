@@ -11,39 +11,38 @@ import { join, dirname } from 'path';
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const OUT = process.argv[2] || ROOT;
 
-// Page name → { source (in repo), folder (output), title }
-const dashboardPages: Record<string, { source: string; folder: string; title: string }> = {
-  dashboard:      { source: 'core/dashboard',      folder: 'dashboard',      title: 'Dashboard' },
-  ideas:          { source: 'core/ideas',           folder: 'ideas',          title: 'Ideas' },
-  projects:       { source: 'core/projects',        folder: 'projects',       title: 'Projects' },
-  'project-detail':          { source: 'core/project-detail',          folder: 'project-detail',          title: 'Project Detail' },
-  'engineering-requirements': { source: 'core/engineering-requirements', folder: 'engineering-requirements', title: 'Engineering Requirements' },
-  'idea-review-queue': { source: 'core/idea-review-queue', folder: 'idea-review-queue', title: 'Review Queue' },
-  edge:           { source: 'tools/edge',           folder: 'edge',           title: 'Edge Definition' },
-  'edge-list':    { source: 'tools/edge-list',      folder: 'edge-list',      title: 'Edge List' },
-  crunch:         { source: 'tools/crunch',         folder: 'crunch',         title: 'Crunch' },
-  flow:           { source: 'tools/flow',           folder: 'flow',           title: 'Flow' },
-  team:           { source: 'admin/team',           folder: 'team',           title: 'Teams' },
-  account:        { source: 'admin/account',        folder: 'account',        title: 'Account' },
-  profile:        { source: 'admin/profile',        folder: 'profile',        title: 'Profile' },
-  'company-settings':        { source: 'admin/company-settings',        folder: 'company-settings',        title: 'Company Settings' },
-  'manage-users':            { source: 'admin/manage-users',            folder: 'manage-users',            title: 'Manage Users' },
-  'activity-feed':           { source: 'admin/activity-feed',           folder: 'activity-feed',           title: 'Activity Feed' },
-  'notification-settings':   { source: 'admin/notification-settings',   folder: 'notification-settings',   title: 'Notification Settings' },
-  snapshots:                 { source: 'admin/snapshots',              folder: 'snapshots',              title: 'Snapshots' },
-  'design-system': { source: 'reference/design-system', folder: 'design-system', title: 'Design System' },
+// Page name → { source path (doubles as output path), title }
+const dashboardPages: Record<string, { source: string; title: string }> = {
+  dashboard:                  { source: 'core/dashboard',                title: 'Dashboard' },
+  ideas:                      { source: 'core/ideas',                    title: 'Ideas' },
+  projects:                   { source: 'core/projects',                 title: 'Projects' },
+  'project-detail':           { source: 'core/project-detail',           title: 'Project Detail' },
+  'engineering-requirements':  { source: 'core/engineering-requirements',  title: 'Engineering Requirements' },
+  'idea-review-queue':        { source: 'core/idea-review-queue',        title: 'Review Queue' },
+  edge:                       { source: 'tools/edge',                    title: 'Edge Definition' },
+  'edge-list':                { source: 'tools/edge-list',               title: 'Edge List' },
+  crunch:                     { source: 'tools/crunch',                  title: 'Crunch' },
+  flow:                       { source: 'tools/flow',                    title: 'Flow' },
+  team:                       { source: 'admin/team',                    title: 'Teams' },
+  account:                    { source: 'admin/account',                 title: 'Account' },
+  profile:                    { source: 'admin/profile',                 title: 'Profile' },
+  'company-settings':         { source: 'admin/company-settings',        title: 'Company Settings' },
+  'manage-users':             { source: 'admin/manage-users',            title: 'Manage Users' },
+  'activity-feed':            { source: 'admin/activity-feed',           title: 'Activity Feed' },
+  'notification-settings':    { source: 'admin/notification-settings',   title: 'Notification Settings' },
+  snapshots:                  { source: 'admin/snapshots',               title: 'Snapshots' },
+  'design-system':            { source: 'reference/design-system',       title: 'Design System' },
 };
 
-// Standalone pages: source index.html copied directly to output
+// Standalone pages: source index.html copied directly to output (source == output path)
 const standalonePages = [
-  { source: 'core/idea-create',     folder: 'idea-create' },
-  { source: 'core/idea-scoring',    folder: 'idea-scoring' },
-  { source: 'core/idea-convert',    folder: 'idea-convert' },
-  { source: 'core/approval-detail', folder: 'approval-detail' },
-  { source: 'entry/landing',        folder: 'landing' },
-  { source: 'entry/auth',           folder: 'auth' },
-  { source: 'entry/onboarding',     folder: 'onboarding' },
-  { source: 'system/not-found',     folder: 'not-found' },
+  'core/idea-create',
+  'core/idea-scoring',
+  'core/idea-convert',
+  'core/approval-detail',
+  'entry/auth',
+  'entry/onboarding',
+  'system/not-found',
 ];
 
 function compose(): void {
@@ -52,7 +51,7 @@ function compose(): void {
 
   let composed = 0;
 
-  for (const [pageName, { source, folder, title }] of Object.entries(dashboardPages)) {
+  for (const [pageName, { source, title }] of Object.entries(dashboardPages)) {
     const pageHtmlPath = join(ROOT, source, 'index.html');
 
     if (!existsSync(pageHtmlPath)) {
@@ -67,7 +66,7 @@ function compose(): void {
       .replace('{{PAGE_TITLE}}', title)
       .replace('<!-- PAGE_CONTENT -->', pageContent);
 
-    const outDir = join(OUT, folder);
+    const outDir = join(OUT, source);
     if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
     const outPath = join(outDir, 'index.html');
@@ -79,14 +78,14 @@ function compose(): void {
 
   // Copy standalone pages
   let copied = 0;
-  for (const { source, folder } of standalonePages) {
+  for (const source of standalonePages) {
     const srcPath = join(ROOT, source, 'index.html');
     if (!existsSync(srcPath)) {
       console.warn(`  skip: ${source}/index.html not found`);
       continue;
     }
 
-    const outDir = join(OUT, folder);
+    const outDir = join(OUT, source);
     if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
     copyFileSync(srcPath, join(outDir, 'index.html'));

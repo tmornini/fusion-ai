@@ -123,10 +123,10 @@ export async function getDashboardGauges(): Promise<GaugeCardData[]> {
 
 export async function getDashboardQuickActions(): Promise<QuickAction[]> {
   return [
-    { label: 'New Idea', icon: 'lightbulb', href: '../idea-create/index.html' },
-    { label: 'Create Project', icon: 'folderKanban', href: '../projects/index.html' },
-    { label: 'Invite Team', icon: 'users', href: '../team/index.html' },
-    { label: 'View Reports', icon: 'trendingUp', href: '../dashboard/index.html' },
+    { label: 'New Idea', icon: 'lightbulb', href: '../../core/idea-create/index.html' },
+    { label: 'Create Project', icon: 'folderKanban', href: '../../core/projects/index.html' },
+    { label: 'Invite Team', icon: 'users', href: '../../admin/team/index.html' },
+    { label: 'View Reports', icon: 'trendingUp', href: '../../core/dashboard/index.html' },
   ];
 }
 

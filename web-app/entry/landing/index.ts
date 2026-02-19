@@ -26,7 +26,7 @@ function renderNavbar(): string {
     <nav class="navbar" id="navbar">
       <div class="container">
         <div class="navbar-inner">
-          <a href="../landing/index.html" class="navbar-logo">
+          <a href="../../index.html" class="navbar-logo">
             <div class="navbar-logo-icon">F</div>
             <span class="navbar-logo-text">Fusion AI</span>
           </a>
@@ -244,7 +244,7 @@ export async function init(): Promise<void> {
   // Navigation to auth
   document.querySelectorAll<HTMLElement>('[data-goto-auth]').forEach(el => {
     el.addEventListener('click', () => {
-      window.location.href = '../auth/index.html';
+      window.location.href = '../../entry/auth/index.html';
     });
   });
 }

@@ -34,22 +34,22 @@ interface PageEntry {
 // ── Page registry ────────────────────────
 
 const pages: PageEntry[] = [
-  { title: 'Dashboard', icon: iconHome(16), href: '../dashboard/index.html', keywords: 'home overview' },
-  { title: 'Ideas', icon: iconLightbulb(16), href: '../ideas/index.html', keywords: 'ideas list innovation' },
-  { title: 'Create Idea', icon: iconLightbulb(16), href: '../idea-create/index.html', keywords: 'new idea submit' },
-  { title: 'Review Queue', icon: iconClipboardCheck(16), href: '../idea-review-queue/index.html', keywords: 'review approve reject' },
-  { title: 'Projects', icon: iconFolderKanban(16), href: '../projects/index.html', keywords: 'projects list kanban' },
-  { title: 'Edge List', icon: iconTarget(16), href: '../edge-list/index.html', keywords: 'edge outcomes metrics' },
-  { title: 'Crunch', icon: iconDatabase(16), href: '../crunch/index.html', keywords: 'data labeling columns' },
-  { title: 'Flow', icon: iconGitBranch(16), href: '../flow/index.html', keywords: 'process workflow steps' },
-  { title: 'Team', icon: iconUsers(16), href: '../team/index.html', keywords: 'team members roster' },
-  { title: 'Account', icon: iconSettings(16), href: '../account/index.html', keywords: 'account billing plan' },
-  { title: 'Profile', icon: iconUser(16), href: '../profile/index.html', keywords: 'profile settings personal' },
-  { title: 'Company Settings', icon: iconSettings(16), href: '../company-settings/index.html', keywords: 'company organization settings' },
-  { title: 'Manage Users', icon: iconUsers(16), href: '../manage-users/index.html', keywords: 'users invite admin' },
-  { title: 'Activity Feed', icon: iconActivity(16), href: '../activity-feed/index.html', keywords: 'activity feed log' },
-  { title: 'Notifications', icon: iconBell(16), href: '../notification-settings/index.html', keywords: 'notification preferences alerts' },
-  { title: 'Design System', icon: iconPalette(16), href: '../design-system/index.html', keywords: 'components ui reference' },
+  { title: 'Dashboard', icon: iconHome(16), href: '../../core/dashboard/index.html', keywords: 'home overview' },
+  { title: 'Ideas', icon: iconLightbulb(16), href: '../../core/ideas/index.html', keywords: 'ideas list innovation' },
+  { title: 'Create Idea', icon: iconLightbulb(16), href: '../../core/idea-create/index.html', keywords: 'new idea submit' },
+  { title: 'Review Queue', icon: iconClipboardCheck(16), href: '../../core/idea-review-queue/index.html', keywords: 'review approve reject' },
+  { title: 'Projects', icon: iconFolderKanban(16), href: '../../core/projects/index.html', keywords: 'projects list kanban' },
+  { title: 'Edge List', icon: iconTarget(16), href: '../../tools/edge-list/index.html', keywords: 'edge outcomes metrics' },
+  { title: 'Crunch', icon: iconDatabase(16), href: '../../tools/crunch/index.html', keywords: 'data labeling columns' },
+  { title: 'Flow', icon: iconGitBranch(16), href: '../../tools/flow/index.html', keywords: 'process workflow steps' },
+  { title: 'Team', icon: iconUsers(16), href: '../../admin/team/index.html', keywords: 'team members roster' },
+  { title: 'Account', icon: iconSettings(16), href: '../../admin/account/index.html', keywords: 'account billing plan' },
+  { title: 'Profile', icon: iconUser(16), href: '../../admin/profile/index.html', keywords: 'profile settings personal' },
+  { title: 'Company Settings', icon: iconSettings(16), href: '../../admin/company-settings/index.html', keywords: 'company organization settings' },
+  { title: 'Manage Users', icon: iconUsers(16), href: '../../admin/manage-users/index.html', keywords: 'users invite admin' },
+  { title: 'Activity Feed', icon: iconActivity(16), href: '../../admin/activity-feed/index.html', keywords: 'activity feed log' },
+  { title: 'Notifications', icon: iconBell(16), href: '../../admin/notification-settings/index.html', keywords: 'notification preferences alerts' },
+  { title: 'Design System', icon: iconPalette(16), href: '../../reference/design-system/index.html', keywords: 'components ui reference' },
 ];
 
 // ── State ────────────────────────────────
@@ -101,7 +101,7 @@ async function loadData(): Promise<void> {
       meta: `Score: ${i.score} · ${i.status.replace(/_/g, ' ')}`,
       category: 'ideas',
       icon: iconLightbulb(16),
-      href: `../idea-scoring/index.html?ideaId=${i.id}`,
+      href: `../../core/idea-scoring/index.html?ideaId=${i.id}`,
       keywords: `${i.submittedBy} ${i.status}`,
     }));
 
@@ -111,7 +111,7 @@ async function loadData(): Promise<void> {
       meta: `Progress: ${p.progress}% · ${p.status.replace(/_/g, ' ')}`,
       category: 'projects',
       icon: iconFolderKanban(16),
-      href: `../project-detail/index.html?projectId=${p.id}`,
+      href: `../../core/project-detail/index.html?projectId=${p.id}`,
       keywords: `${p.status}`,
     }));
 
@@ -121,7 +121,7 @@ async function loadData(): Promise<void> {
       meta: `${m.role} · ${m.department}`,
       category: 'people',
       icon: iconUser(16),
-      href: `../team/index.html`,
+      href: `../../admin/team/index.html`,
       keywords: `${m.role} ${m.department} ${m.email}`,
     }));
 
