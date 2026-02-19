@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type {
-  UserRow, AccountRow, CompanySettingsRow, ActivityRow,
-  NotificationCategoryRow, NotificationPrefRow,
+  UserEntity, AccountEntity, CompanySettingsEntity, ActivityEntity,
+  NotificationCategoryEntity, NotificationPrefEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { getUserMap, lookupUser } from './helpers';
@@ -29,9 +29,9 @@ export interface AccountData {
 
 export async function getAccountData(): Promise<AccountData> {
   const [account, settings, activities] = await Promise.all([
-    GET('account') as Promise<AccountRow>,
-    GET('company-settings') as Promise<CompanySettingsRow>,
-    GET('activities') as Promise<ActivityRow[]>,
+    GET('account') as Promise<AccountEntity>,
+    GET('company-settings') as Promise<CompanySettingsEntity>,
+    GET('activities') as Promise<ActivityEntity[]>,
   ]);
 
   const userMap = await getUserMap();
@@ -75,7 +75,7 @@ export interface ProfileData {
 export const allStrengths = ['Strategic Planning', 'Data Analysis', 'Stakeholder Management', 'Agile Methods', 'Team Leadership', 'Risk Management', 'Budget Planning', 'Technical Writing', 'User Research', 'Prototyping'];
 
 export async function getProfileData(): Promise<ProfileData> {
-  const user = await GET('current-user') as UserRow | null;
+  const user = await GET('current-user') as UserEntity | null;
   if (!user) return { firstName: 'Alex', lastName: 'Thompson', email: 'alex.thompson@company.com', phone: '+1 (555) 123-4567', role: 'Product Manager', department: 'Product', bio: 'Passionate about building products that solve real problems.' };
   return {
     firstName: user.first_name,
@@ -104,7 +104,7 @@ export interface CompanySettingsData {
 }
 
 export async function getCompanySettings(): Promise<CompanySettingsData> {
-  const row = await GET('company-settings') as CompanySettingsRow;
+  const row = await GET('company-settings') as CompanySettingsEntity;
   return {
     name: row.name,
     domain: row.domain,
@@ -135,7 +135,7 @@ export interface ActivityItem {
 
 export async function getActivityFeed(): Promise<ActivityItem[]> {
   const [activities, userMap] = await Promise.all([
-    GET('activities') as Promise<ActivityRow[]>,
+    GET('activities') as Promise<ActivityEntity[]>,
     getUserMap(),
   ]);
   return activities.map(a => ({
@@ -170,11 +170,11 @@ export interface NotificationCategory {
 
 export async function getNotificationCategories(): Promise<NotificationCategory[]> {
   const [categories, prefs] = await Promise.all([
-    GET('notification-categories') as Promise<NotificationCategoryRow[]>,
-    GET('notification-prefs') as Promise<NotificationPrefRow[]>,
+    GET('notification-categories') as Promise<NotificationCategoryEntity[]>,
+    GET('notification-prefs') as Promise<NotificationPrefEntity[]>,
   ]);
 
-  const prefsByCategory = new Map<string, NotificationPrefRow[]>();
+  const prefsByCategory = new Map<string, NotificationPrefEntity[]>();
   for (const p of prefs) {
     const list = prefsByCategory.get(p.category_id) || [];
     list.push(p);

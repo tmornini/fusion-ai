@@ -3,24 +3,24 @@
 // ============================================
 
 import type {
-  UserRow, IdeaRow, IdeaScoreRow, ProjectRow, ProjectTeamRow,
-  MilestoneRow, ProjectTaskRow, DiscussionRow, ProjectVersionRow,
-  EdgeRow, EdgeOutcomeRow, EdgeMetricRow, ActivityRow, NotificationRow,
-  ClarificationRow, CrunchColumnRow, ProcessRow, ProcessStepRow,
-  CompanySettingsRow, NotificationCategoryRow, NotificationPrefRow,
-  AccountRow,
+  UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
+  MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
+  EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity, NotificationEntity,
+  ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
+  CompanySettingsEntity, NotificationCategoryEntity, NotificationPrefEntity,
+  AccountEntity,
 } from './types';
 
 export interface EntityStore<T> {
   getAll(): Promise<T[]>;
   getById(id: string): Promise<T | null>;
-  put(id: string, data: Record<string, unknown>): Promise<T>;
+  put(id: string, fields: Record<string, unknown>): Promise<T>;
   delete(id: string): Promise<void>;
 }
 
 export interface SingletonStore<T> {
   get(): Promise<T>;
-  put(data: Record<string, unknown>): Promise<T>;
+  put(fields: Record<string, unknown>): Promise<T>;
 }
 
 export interface DbAdapter {
@@ -33,50 +33,50 @@ export interface DbAdapter {
   exportSnapshot(): Promise<string>;
   importSnapshot(json: string): Promise<void>;
 
-  users: EntityStore<UserRow>;
-  ideas: EntityStore<IdeaRow>;
+  users: EntityStore<UserEntity>;
+  ideas: EntityStore<IdeaEntity>;
   ideaScores: {
-    getByIdeaId(id: string): Promise<IdeaScoreRow | null>;
-    put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreRow>;
+    getByIdeaId(id: string): Promise<IdeaScoreEntity | null>;
+    put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreEntity>;
   };
-  projects: EntityStore<ProjectRow>;
+  projects: EntityStore<ProjectEntity>;
   projectTeam: {
-    getByProjectId(id: string): Promise<ProjectTeamRow[]>;
-    put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamRow>;
+    getByProjectId(id: string): Promise<ProjectTeamEntity[]>;
+    put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamEntity>;
   };
-  milestones: EntityStore<MilestoneRow> & {
-    getByProjectId(id: string): Promise<MilestoneRow[]>;
+  milestones: EntityStore<MilestoneEntity> & {
+    getByProjectId(id: string): Promise<MilestoneEntity[]>;
   };
-  projectTasks: EntityStore<ProjectTaskRow> & {
-    getByProjectId(id: string): Promise<ProjectTaskRow[]>;
+  projectTasks: EntityStore<ProjectTaskEntity> & {
+    getByProjectId(id: string): Promise<ProjectTaskEntity[]>;
   };
-  discussions: EntityStore<DiscussionRow> & {
-    getByProjectId(id: string): Promise<DiscussionRow[]>;
+  discussions: EntityStore<DiscussionEntity> & {
+    getByProjectId(id: string): Promise<DiscussionEntity[]>;
   };
-  projectVersions: EntityStore<ProjectVersionRow> & {
-    getByProjectId(id: string): Promise<ProjectVersionRow[]>;
+  projectVersions: EntityStore<ProjectVersionEntity> & {
+    getByProjectId(id: string): Promise<ProjectVersionEntity[]>;
   };
-  edges: EntityStore<EdgeRow>;
-  edgeOutcomes: EntityStore<EdgeOutcomeRow> & {
-    getByEdgeId(id: string): Promise<EdgeOutcomeRow[]>;
+  edges: EntityStore<EdgeEntity>;
+  edgeOutcomes: EntityStore<EdgeOutcomeEntity> & {
+    getByEdgeId(id: string): Promise<EdgeOutcomeEntity[]>;
   };
-  edgeMetrics: EntityStore<EdgeMetricRow>;
-  activities: EntityStore<ActivityRow>;
-  notifications: EntityStore<NotificationRow>;
-  clarifications: EntityStore<ClarificationRow> & {
-    getByProjectId(id: string): Promise<ClarificationRow[]>;
+  edgeMetrics: EntityStore<EdgeMetricEntity>;
+  activities: EntityStore<ActivityEntity>;
+  notifications: EntityStore<NotificationEntity>;
+  clarifications: EntityStore<ClarificationEntity> & {
+    getByProjectId(id: string): Promise<ClarificationEntity[]>;
   };
-  crunchColumns: EntityStore<CrunchColumnRow>;
-  processes: EntityStore<ProcessRow>;
-  processSteps: EntityStore<ProcessStepRow> & {
-    getByProcessId(id: string): Promise<ProcessStepRow[]>;
+  crunchColumns: EntityStore<CrunchColumnEntity>;
+  processes: EntityStore<ProcessEntity>;
+  processSteps: EntityStore<ProcessStepEntity> & {
+    getByProcessId(id: string): Promise<ProcessStepEntity[]>;
   };
-  companySettings: SingletonStore<CompanySettingsRow>;
-  notificationCategories: EntityStore<NotificationCategoryRow>;
+  companySettings: SingletonStore<CompanySettingsEntity>;
+  notificationCategories: EntityStore<NotificationCategoryEntity>;
   notificationPrefs: {
-    getAll(): Promise<NotificationPrefRow[]>;
-    getByCategoryId(id: string): Promise<NotificationPrefRow[]>;
-    put(id: string, data: Record<string, unknown>): Promise<NotificationPrefRow>;
+    getAll(): Promise<NotificationPrefEntity[]>;
+    getByCategoryId(id: string): Promise<NotificationPrefEntity[]>;
+    put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity>;
   };
-  account: SingletonStore<AccountRow>;
+  account: SingletonStore<AccountEntity>;
 }

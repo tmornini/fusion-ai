@@ -5,23 +5,23 @@
 
 // ── Utility ──────────────────────────────────
 
-export function snakeToCamel<T extends Record<string, unknown>>(row: T): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) {
-    const camel = k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-    out[camel] = v;
+export function snakeToCamel<T extends Record<string, unknown>>(record: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    const camel = key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
+    result[camel] = value;
   }
-  return out;
+  return result;
 }
 
 /** Convert 0/1/boolean to boolean (handles localStorage int vs JSON boolean). */
-export function toBool(val: unknown): boolean {
-  return val === 1 || val === true;
+export function toBool(value: unknown): boolean {
+  return value === 1 || value === true;
 }
 
-// ── Row Types ────────────────────────────────
+// ── Entity Types ─────────────────────────────
 
-export interface UserRow {
+export interface UserEntity {
   id: string;
   first_name: string;
   last_name: string;
@@ -40,7 +40,7 @@ export interface UserRow {
   last_active: string;
 }
 
-export interface IdeaRow {
+export interface IdeaEntity {
   id: string;
   title: string;
   score: number;
@@ -70,7 +70,7 @@ export interface IdeaRow {
   cost_breakdown: string;
 }
 
-export interface IdeaScoreRow {
+export interface IdeaScoreEntity {
   id: string;
   idea_id: string;
   overall: number;
@@ -85,7 +85,7 @@ export interface IdeaScoreRow {
   recommendation: string;
 }
 
-export interface ProjectRow {
+export interface ProjectEntity {
   id: string;
   title: string;
   description: string;
@@ -108,7 +108,7 @@ export interface ProjectRow {
   budget_label: string;
 }
 
-export interface ProjectTeamRow {
+export interface ProjectTeamEntity {
   id: string;
   project_id: string;
   user_id: string;
@@ -116,7 +116,7 @@ export interface ProjectTeamRow {
   type: string;
 }
 
-export interface MilestoneRow {
+export interface MilestoneEntity {
   id: string;
   project_id: string;
   title: string;
@@ -125,7 +125,7 @@ export interface MilestoneRow {
   sort_order: number;
 }
 
-export interface ProjectTaskRow {
+export interface ProjectTaskEntity {
   id: string;
   project_id: string;
   name: string;
@@ -136,7 +136,7 @@ export interface ProjectTaskRow {
   assigned_to_id: string;
 }
 
-export interface DiscussionRow {
+export interface DiscussionEntity {
   id: string;
   project_id: string;
   author_id: string;
@@ -144,7 +144,7 @@ export interface DiscussionRow {
   message: string;
 }
 
-export interface ProjectVersionRow {
+export interface ProjectVersionEntity {
   id: string;
   project_id: string;
   version: string;
@@ -153,7 +153,7 @@ export interface ProjectVersionRow {
   author_id: string;
 }
 
-export interface EdgeRow {
+export interface EdgeEntity {
   id: string;
   idea_id: string;
   status: string;
@@ -165,13 +165,13 @@ export interface EdgeRow {
   updated_at: string;
 }
 
-export interface EdgeOutcomeRow {
+export interface EdgeOutcomeEntity {
   id: string;
   edge_id: string;
   description: string;
 }
 
-export interface EdgeMetricRow {
+export interface EdgeMetricEntity {
   id: string;
   outcome_id: string;
   name: string;
@@ -180,7 +180,7 @@ export interface EdgeMetricRow {
   current: string;
 }
 
-export interface ActivityRow {
+export interface ActivityEntity {
   id: string;
   type: string;
   actor_id: string;
@@ -192,7 +192,7 @@ export interface ActivityRow {
   comment: string | null;
 }
 
-export interface NotificationRow {
+export interface NotificationEntity {
   id: string;
   title: string;
   message: string;
@@ -200,7 +200,7 @@ export interface NotificationRow {
   unread: number; // 0 or 1
 }
 
-export interface ClarificationRow {
+export interface ClarificationEntity {
   id: string;
   project_id: string;
   question: string;
@@ -212,7 +212,7 @@ export interface ClarificationRow {
   answered_at: string | null;
 }
 
-export interface CrunchColumnRow {
+export interface CrunchColumnEntity {
   id: string;
   original_name: string;
   friendly_name: string;
@@ -223,14 +223,14 @@ export interface CrunchColumnRow {
   acronym_expansion: string;
 }
 
-export interface ProcessRow {
+export interface ProcessEntity {
   id: string;
   name: string;
   description: string;
   department: string;
 }
 
-export interface ProcessStepRow {
+export interface ProcessStepEntity {
   id: string;
   process_id: string;
   title: string;
@@ -243,7 +243,7 @@ export interface ProcessStepRow {
   type: string;
 }
 
-export interface CompanySettingsRow {
+export interface CompanySettingsEntity {
   id: string;
   name: string;
   domain: string;
@@ -257,13 +257,13 @@ export interface CompanySettingsRow {
   data_retention: string;
 }
 
-export interface NotificationCategoryRow {
+export interface NotificationCategoryEntity {
   id: string;
   label: string;
   icon: string;
 }
 
-export interface NotificationPrefRow {
+export interface NotificationPrefEntity {
   id: string;
   category_id: string;
   label: string;
@@ -272,7 +272,7 @@ export interface NotificationPrefRow {
   push: number; // 0 or 1
 }
 
-export interface AccountRow {
+export interface AccountEntity {
   id: string;
   plan: string;
   plan_status: string;

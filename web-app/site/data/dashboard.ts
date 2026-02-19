@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { IdeaRow, ProjectRow } from '../../../api/types';
+import type { IdeaEntity, ProjectEntity } from '../../../api/types';
 
 export interface GaugeCardData {
   title: string;
@@ -17,7 +17,7 @@ export interface QuickAction {
 }
 
 export async function getDashboardGauges(): Promise<GaugeCardData[]> {
-  const projects = await GET('projects') as ProjectRow[];
+  const projects = await GET('projects') as ProjectEntity[];
   const totalEstTime = projects.reduce((s, p) => s + p.estimated_time, 0);
   const totalActTime = projects.reduce((s, p) => s + p.actual_time, 0);
   const totalEstCost = projects.reduce((s, p) => s + p.estimated_cost, 0);
@@ -55,8 +55,8 @@ export async function getDashboardQuickActions(): Promise<QuickAction[]> {
 
 export async function getDashboardStats(): Promise<{ label: string; value: number; trend: string }[]> {
   const [ideas, projects] = await Promise.all([
-    GET('ideas') as Promise<IdeaRow[]>,
-    GET('projects') as Promise<ProjectRow[]>,
+    GET('ideas') as Promise<IdeaEntity[]>,
+    GET('projects') as Promise<ProjectEntity[]>,
   ]);
   const doneCount = projects.filter(p => p.progress >= 90).length;
   const reviewCount = ideas.filter(i => i.status === 'pending_review').length;

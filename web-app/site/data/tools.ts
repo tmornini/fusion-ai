@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { CrunchColumnRow, ProcessRow } from '../../../api/types';
+import type { CrunchColumnEntity, ProcessEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
@@ -17,7 +17,7 @@ export interface CrunchColumn {
 }
 
 export async function getCrunchColumns(): Promise<CrunchColumn[]> {
-  const rows = await GET('crunch-columns') as CrunchColumnRow[];
+  const rows = await GET('crunch-columns') as CrunchColumnEntity[];
   return rows.map(r => ({
     id: r.id,
     originalName: r.original_name,
@@ -52,7 +52,7 @@ export interface FlowData {
 }
 
 export async function getFlowData(): Promise<FlowData> {
-  const processes = await GET('processes') as ProcessRow[];
+  const processes = await GET('processes') as ProcessEntity[];
   const process = processes[0];
   if (!process) {
     return { processName: '', processDescription: '', processDepartment: '', steps: [] };

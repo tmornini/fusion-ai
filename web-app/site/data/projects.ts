@@ -1,8 +1,8 @@
 import { GET } from '../../../api/api';
 import type {
-  ProjectRow, ProjectTeamRow, MilestoneRow, ProjectTaskRow,
-  DiscussionRow, ProjectVersionRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow,
-  IdeaRow, ClarificationRow, UserRow,
+  ProjectEntity, ProjectTeamEntity, MilestoneEntity, ProjectTaskEntity,
+  DiscussionEntity, ProjectVersionEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity,
+  IdeaEntity, ClarificationEntity, UserEntity,
 } from '../../../api/types';
 import { getUserMap, lookupUser, parseJson } from './helpers';
 
@@ -22,7 +22,7 @@ export interface Project {
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const rows = await GET('projects') as ProjectRow[];
+  const rows = await GET('projects') as ProjectEntity[];
   return rows.map(r => ({
     id: r.id,
     title: r.title,
@@ -70,9 +70,9 @@ export interface ProjectDetail {
 
 async function buildEdgeData(
   ideaId: string,
-  userMap: Map<string, UserRow>,
+  userMap: Map<string, UserEntity>,
 ): Promise<ProjectDetail['edge']> {
-  const allEdges = await GET('edges') as EdgeRow[];
+  const allEdges = await GET('edges') as EdgeEntity[];
   const edge = allEdges.find(e => e.idea_id === ideaId);
   if (!edge) {
     return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
@@ -84,10 +84,10 @@ async function buildEdgeData(
   const allMetrics = await db.edgeMetrics.getAll();
 
   return {
-    outcomes: outcomes.map((o: EdgeOutcomeRow) => ({
+    outcomes: outcomes.map((o: EdgeOutcomeEntity) => ({
       id: o.id,
       description: o.description,
-      metrics: allMetrics.filter((m: EdgeMetricRow) => m.outcome_id === o.id).map((m: EdgeMetricRow) => ({
+      metrics: allMetrics.filter((m: EdgeMetricEntity) => m.outcome_id === o.id).map((m: EdgeMetricEntity) => ({
         id: m.id, name: m.name, target: m.target, unit: m.unit, current: m.current,
       })),
     })),
@@ -103,12 +103,12 @@ async function buildEdgeData(
 
 export async function getProjectById(id: string): Promise<ProjectDetail> {
   const [project, teamRows, milestoneRows, taskRows, discussionRows, versionRows, userMap] = await Promise.all([
-    GET(`projects/${id}`) as Promise<ProjectRow>,
-    GET(`projects/${id}/team`) as Promise<ProjectTeamRow[]>,
-    GET(`projects/${id}/milestones`) as Promise<MilestoneRow[]>,
-    GET(`projects/${id}/tasks`) as Promise<ProjectTaskRow[]>,
-    GET(`projects/${id}/discussions`) as Promise<DiscussionRow[]>,
-    GET(`projects/${id}/versions`) as Promise<ProjectVersionRow[]>,
+    GET(`projects/${id}`) as Promise<ProjectEntity>,
+    GET(`projects/${id}/team`) as Promise<ProjectTeamEntity[]>,
+    GET(`projects/${id}/milestones`) as Promise<MilestoneEntity[]>,
+    GET(`projects/${id}/tasks`) as Promise<ProjectTaskEntity[]>,
+    GET(`projects/${id}/discussions`) as Promise<DiscussionEntity[]>,
+    GET(`projects/${id}/versions`) as Promise<ProjectVersionEntity[]>,
     getUserMap(),
   ]);
 
@@ -185,14 +185,14 @@ export interface EngineeringProject {
 
 export async function getEngineeringProject(projectId: string): Promise<EngineeringProject> {
   const [project, teamRows, userMap] = await Promise.all([
-    GET(`projects/${projectId}`) as Promise<ProjectRow>,
-    GET(`projects/${projectId}/team`) as Promise<ProjectTeamRow[]>,
+    GET(`projects/${projectId}`) as Promise<ProjectEntity>,
+    GET(`projects/${projectId}/team`) as Promise<ProjectTeamEntity[]>,
     getUserMap(),
   ]);
 
   const bizCtx = parseJson<{ problem?: string; expectedOutcome?: string; successMetrics?: string[]; constraints?: string[] }>(project.business_context);
   const linkedIdea = project.linked_idea_id
-    ? await GET(`ideas/${project.linked_idea_id}`) as IdeaRow | null
+    ? await GET(`ideas/${project.linked_idea_id}`) as IdeaEntity | null
     : null;
 
   return {
@@ -221,7 +221,7 @@ export async function getEngineeringProject(projectId: string): Promise<Engineer
 
 export async function getClarifications(projectId: string): Promise<Clarification[]> {
   const [clarRows, userMap] = await Promise.all([
-    GET(`projects/${projectId}/clarifications`) as Promise<ClarificationRow[]>,
+    GET(`projects/${projectId}/clarifications`) as Promise<ClarificationEntity[]>,
     getUserMap(),
   ]);
   return clarRows.map(c => ({

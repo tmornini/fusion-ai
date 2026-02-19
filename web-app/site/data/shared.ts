@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { UserRow, NotificationRow } from '../../../api/types';
+import type { UserEntity, NotificationEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { userName } from './helpers';
 
@@ -21,7 +21,7 @@ export interface Notification {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const row = await GET('current-user') as UserRow | null;
+  const row = await GET('current-user') as UserEntity | null;
   if (!row) return { id: 'current', name: 'Demo User', email: 'demo@example.com', role: 'Admin', company: 'Demo Company' };
   return {
     id: row.id,
@@ -33,7 +33,7 @@ export async function getCurrentUser(): Promise<User> {
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-  const rows = await GET('notifications') as NotificationRow[];
+  const rows = await GET('notifications') as NotificationEntity[];
   return rows.map(r => ({
     id: Number(r.id),
     title: r.title,

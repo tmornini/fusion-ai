@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
 import type {
-  IdeaRow, IdeaScoreRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow,
+  IdeaEntity, IdeaScoreEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity,
 } from '../../../api/types';
 import { getUserMap, lookupUser, parseJson } from './helpers';
 
@@ -19,7 +19,7 @@ export interface Idea {
 
 export async function getIdeas(): Promise<Idea[]> {
   const [ideas, userMap] = await Promise.all([
-    GET('ideas') as Promise<IdeaRow[]>,
+    GET('ideas') as Promise<IdeaEntity[]>,
     getUserMap(),
   ]);
   return ideas
@@ -55,7 +55,7 @@ export interface ReviewIdea {
 
 export async function getReviewQueue(): Promise<ReviewIdea[]> {
   const [ideas, userMap] = await Promise.all([
-    GET('ideas') as Promise<IdeaRow[]>,
+    GET('ideas') as Promise<IdeaEntity[]>,
     getUserMap(),
   ]);
 
@@ -102,7 +102,7 @@ export interface IdeaScore {
 }
 
 export async function getIdeaForScoring(ideaId: string): Promise<{ title: string; problemStatement: string }> {
-  const idea = await GET(`ideas/${ideaId}`) as IdeaRow | null;
+  const idea = await GET(`ideas/${ideaId}`) as IdeaEntity | null;
   if (!idea) throw new Error(`Idea "${ideaId}" not found.`);
   return {
     title: idea.title,
@@ -111,7 +111,7 @@ export async function getIdeaForScoring(ideaId: string): Promise<{ title: string
 }
 
 export async function getIdeaScore(ideaId: string): Promise<IdeaScore> {
-  const row = await GET(`ideas/${ideaId}/score`) as IdeaScoreRow | null;
+  const row = await GET(`ideas/${ideaId}/score`) as IdeaScoreEntity | null;
   if (!row) {
     return {
       overall: 0, estimatedTime: '', estimatedCost: '', recommendation: '',
@@ -146,8 +146,8 @@ export interface ConvertIdea {
 
 export async function getIdeaForConversion(ideaId: string): Promise<ConvertIdea> {
   const [idea, scoreRow] = await Promise.all([
-    GET(`ideas/${ideaId}`) as Promise<IdeaRow>,
-    GET(`ideas/${ideaId}/score`) as Promise<IdeaScoreRow | null>,
+    GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
+    GET(`ideas/${ideaId}/score`) as Promise<IdeaScoreEntity | null>,
   ]);
   return {
     id: idea.id,
@@ -189,7 +189,7 @@ export interface ApprovalEdge {
 
 export async function getApprovalIdea(id: string): Promise<ApprovalIdea> {
   const [idea, userMap] = await Promise.all([
-    GET(`ideas/${id}`) as Promise<IdeaRow>,
+    GET(`ideas/${id}`) as Promise<IdeaEntity>,
     getUserMap(),
   ]);
 
@@ -223,7 +223,7 @@ export async function getApprovalIdea(id: string): Promise<ApprovalIdea> {
 
 export async function getApprovalEdge(id: string): Promise<ApprovalEdge> {
   const [edges, userMap] = await Promise.all([
-    GET('edges') as Promise<EdgeRow[]>,
+    GET('edges') as Promise<EdgeEntity[]>,
     getUserMap(),
   ]);
 

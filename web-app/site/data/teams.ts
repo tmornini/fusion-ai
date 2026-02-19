@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { UserRow } from '../../../api/types';
+import type { UserEntity } from '../../../api/types';
 import { userName, parseJson } from './helpers';
 
 export interface TeamMember {
@@ -18,7 +18,7 @@ export interface TeamMember {
 }
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  const rows = await GET('users') as UserRow[];
+  const rows = await GET('users') as UserEntity[];
   return rows
     .filter(u => u.id !== 'current' && u.department !== '' && u.performance_score > 0)
     .slice(0, 6)
@@ -51,7 +51,7 @@ export interface UserData {
 }
 
 export async function getUsers(): Promise<UserData[]> {
-  const rows = await GET('users') as UserRow[];
+  const rows = await GET('users') as UserEntity[];
   return rows
     .filter(u => u.id !== 'current')
     .map(u => ({
