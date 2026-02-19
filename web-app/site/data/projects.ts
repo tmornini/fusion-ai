@@ -1,10 +1,10 @@
 import { GET } from '../../../api/api';
 import type {
   ProjectEntity, ProjectTeamEntity, MilestoneEntity, ProjectTaskEntity,
-  DiscussionEntity, ProjectVersionEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity,
+  DiscussionEntity, ProjectVersionEntity,
   IdeaEntity, ClarificationEntity, UserEntity,
 } from '../../../api/types';
-import { getUsersById, lookupUser, parseJson } from './helpers';
+import { getUsersById, lookupUser, parseJson, getEdgeDataByIdeaId } from './helpers';
 
 export interface Project {
   id: string;
@@ -72,32 +72,13 @@ async function getEdgeForProject(
   ideaId: string,
   usersById: Map<string, UserEntity>,
 ): Promise<ProjectDetail['edge']> {
-  const allEdges = await GET('edges') as EdgeEntity[];
-  const edge = allEdges.find(edge => edge.idea_id === ideaId);
-  if (!edge) {
+  const edgeData = await getEdgeDataByIdeaId(ideaId, usersById);
+  if (!edgeData) {
     return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
   }
-
-  const { getDbAdapter } = await import('../../../api/api');
-  const db = getDbAdapter();
-  const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
-  const allMetrics = await db.edgeMetrics.getAll();
-
   return {
-    outcomes: outcomes.map((outcome: EdgeOutcomeEntity) => ({
-      id: outcome.id,
-      description: outcome.description,
-      metrics: allMetrics.filter((metric: EdgeMetricEntity) => metric.outcome_id === outcome.id).map((metric: EdgeMetricEntity) => ({
-        id: metric.id, name: metric.name, target: metric.target, unit: metric.unit, current: metric.current,
-      })),
-    })),
-    impact: {
-      shortTerm: edge.impact_short_term,
-      midTerm: edge.impact_mid_term,
-      longTerm: edge.impact_long_term,
-    },
-    confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
-    owner: lookupUser(usersById, edge.owner_id),
+    ...edgeData,
+    confidence: (edgeData.confidence || 'medium') as 'high' | 'medium' | 'low',
   };
 }
 

@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity } from '../../../api/types';
-import { getUsersById, lookupUser } from './helpers';
+import type { IdeaEntity, EdgeEntity } from '../../../api/types';
+import { getUsersById, lookupUser, getEdgeDataByIdeaId } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -24,38 +24,8 @@ export async function getEdgeIdea(ideaId: string): Promise<EdgeIdea> {
   };
 }
 
-export async function getEdgeOutcomes(ideaId: string): Promise<{
-  outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string }[] }[];
-  impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: string;
-  owner: string;
-} | null> {
-  const allEdges = await GET('edges') as EdgeEntity[];
-  const edge = allEdges.find(edge => edge.idea_id === ideaId);
-  if (!edge) return null;
-
-  const { getDbAdapter } = await import('../../../api/api');
-  const db = getDbAdapter();
-  const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
-  const allMetrics = await db.edgeMetrics.getAll();
-  const usersById = await getUsersById();
-
-  return {
-    outcomes: outcomes.map((outcome: EdgeOutcomeEntity) => ({
-      id: outcome.id,
-      description: outcome.description,
-      metrics: allMetrics.filter((metric: EdgeMetricEntity) => metric.outcome_id === outcome.id).map((metric: EdgeMetricEntity) => ({
-        id: metric.id, name: metric.name, target: metric.target, unit: metric.unit,
-      })),
-    })),
-    impact: {
-      shortTerm: edge.impact_short_term,
-      midTerm: edge.impact_mid_term,
-      longTerm: edge.impact_long_term,
-    },
-    confidence: edge.confidence || '',
-    owner: lookupUser(usersById, edge.owner_id),
-  };
+export async function getEdgeOutcomes(ideaId: string) {
+  return getEdgeDataByIdeaId(ideaId);
 }
 
 // ── Edge List ───────────────────────────────
