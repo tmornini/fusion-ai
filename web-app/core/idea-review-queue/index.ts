@@ -6,6 +6,7 @@ import {
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
 } from '../../site/script';
 import { getReviewQueue, type ReviewIdea } from '../../site/data';
+import { edgeStatusConfig } from '../../site/config';
 
 const priorityConfig: Record<string, { label: string; cls: string }> = {
   high: { label: 'High Priority', cls: 'badge-error' },
@@ -17,12 +18,6 @@ const readinessConfig: Record<string, { label: string; icon: (s?: number) => str
   ready: { label: 'Ready for Review', icon: iconCheckCircle2, cls: 'text-success' },
   'needs-info': { label: 'Needs Info', icon: iconMessageSquare, cls: 'text-warning' },
   incomplete: { label: 'Incomplete', icon: iconAlertCircle, cls: 'text-error' },
-};
-
-const edgeStatusConfig: Record<string, { label: string; cls: string }> = {
-  complete: { label: 'Edge Complete', cls: 'badge-success' },
-  draft: { label: 'Edge Draft', cls: 'badge-warning' },
-  missing: { label: 'Edge Missing', cls: 'badge-error' },
 };
 
 function renderReviewCard(idea: ReviewIdea): string {

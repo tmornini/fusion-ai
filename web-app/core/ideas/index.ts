@@ -6,6 +6,7 @@ import {
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
 } from '../../site/script';
 import { getIdeas, type Idea } from '../../site/data';
+import { edgeStatusConfig } from '../../site/config';
 
 const statusConfig: Record<string, { label: string; cls: string }> = {
   draft: { label: 'Draft', cls: 'badge-default' },
@@ -13,13 +14,6 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
   pending_review: { label: 'Pending Review', cls: 'badge-warning' },
   approved: { label: 'Approved', cls: 'badge-success' },
   rejected: { label: 'Sent Back', cls: 'badge-error' },
-};
-
-const edgeStatusConfig: Record<string, { label: string; cls: string }> = {
-  missing: { label: 'Edge Missing', cls: 'badge-error' },
-  incomplete: { label: 'Edge Missing', cls: 'badge-error' },
-  draft: { label: 'Edge Draft', cls: 'badge-warning' },
-  complete: { label: 'Edge Complete', cls: 'badge-success' },
 };
 
 function getScoreColor(score: number): string {
