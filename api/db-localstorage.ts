@@ -20,7 +20,18 @@ const KEY_PREFIX = 'fusion-ai:';
 
 function readTable<T>(tableName: string): T[] {
   const raw = localStorage.getItem(KEY_PREFIX + tableName);
-  return raw ? JSON.parse(raw) as T[] : [];
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      console.warn(`fusion-ai: table "${tableName}" is not an array, resetting.`);
+      return [];
+    }
+    return parsed as T[];
+  } catch {
+    console.warn(`fusion-ai: table "${tableName}" has corrupt JSON, resetting.`);
+    return [];
+  }
 }
 
 function writeTable<T>(tableName: string, rows: T[]): void {
@@ -151,13 +162,28 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     },
 
     async importSnapshot(json: string): Promise<void> {
-      const dump = JSON.parse(json) as Record<string, unknown[]>;
+      let dump: unknown;
+      try {
+        dump = JSON.parse(json);
+      } catch {
+        throw new Error('Invalid snapshot: not valid JSON.');
+      }
+      if (typeof dump !== 'object' || dump === null || Array.isArray(dump)) {
+        throw new Error('Invalid snapshot: expected an object with table keys.');
+      }
+      const record = dump as Record<string, unknown>;
+      for (const table of TABLE_NAMES) {
+        const rows = record[table];
+        if (rows !== undefined && !Array.isArray(rows)) {
+          throw new Error(`Invalid snapshot: table "${table}" is not an array.`);
+        }
+      }
       for (const table of TABLE_NAMES) {
         localStorage.removeItem(KEY_PREFIX + table);
       }
       for (const table of TABLE_NAMES) {
-        const rows = dump[table];
-        if (rows && rows.length > 0) {
+        const rows = record[table];
+        if (Array.isArray(rows) && rows.length > 0) {
           writeTable(table, rows);
         }
       }
