@@ -49,7 +49,7 @@ function renderPage(idea: ConvertIdea, ideaId: string): string {
       </header>
 
       <div style="max-width:72rem;margin:0 auto;padding:2rem 1.5rem">
-        <div class="convert-grid" style="display:grid;grid-template-columns:2fr 3fr;gap:2rem">
+        <div class="convert-grid" style="grid-template-columns:2fr 3fr;gap:2rem">
           <div>
             <div class="card p-6" style="position:sticky;top:6rem">
               <div class="flex items-center gap-2 text-sm font-medium text-muted mb-4">${iconFolderKanban(16)} Idea Summary</div>

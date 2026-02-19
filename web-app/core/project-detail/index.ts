@@ -56,7 +56,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
       </div>
 
       <!-- Quick Action Links -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:2rem" class="actions-grid">
+      <div class="actions-grid mb-8" style="gap:0.75rem">
         <a href="#" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit" data-nav-eng>
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconCode(20, 'text-primary')}</div>
@@ -83,7 +83,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
         </a>
       </div>
 
-      <div class="detail-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:2rem">
+      <div class="detail-grid" style="gap:2rem">
         <!-- Main Column -->
         <div style="display:flex;flex-direction:column;gap:1.5rem">
           <!-- Summary -->
@@ -115,7 +115,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
               <h2 class="text-lg font-display font-semibold">Baseline vs Current</h2>
               <span class="text-xs text-muted">Real-time comparison</span>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem" class="score-grid">
+            <div class="score-grid">
               ${[
                 { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', lower: true },
                 { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', lower: true },
@@ -180,7 +180,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
             <!-- Impact Timeline -->
             <div style="display:flex;flex-direction:column;gap:0.75rem">
               <h3 class="text-sm font-medium flex items-center gap-2">${iconTrendingUp(16, 'text-primary')} Expected Impact Timeline</h3>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem" class="score-grid">
+              <div class="score-grid" style="gap:0.75rem">
                 <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--success-soft));border:1px solid hsl(var(--success) / 0.2)">
                   <div class="flex items-center gap-1 mb-2">${iconClock(14, 'text-success')} <span class="text-xs font-medium text-success">Short-term (0-3mo)</span></div>
                   <p class="text-xs">${p.edge.impact.shortTerm}</p>

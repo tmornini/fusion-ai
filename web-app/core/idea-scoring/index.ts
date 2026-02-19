@@ -40,7 +40,7 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
         <p class="text-muted text-sm">${escapeHtml(idea.problemStatement)}</p>
       </div>
 
-      <div class="score-grid" style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem">
+      <div class="score-grid" style="grid-template-columns:1fr 2fr;gap:1.5rem">
         <div class="card p-6 text-center flex flex-col justify-center">
           <p class="text-sm font-medium text-muted mb-3">Overall Priority Score</p>
           <div class="font-display font-bold mb-2" style="font-size:3.75rem;color:${scoreColor(score.overall)}">${score.overall}</div>

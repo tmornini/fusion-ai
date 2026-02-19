@@ -63,7 +63,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
           <p class="text-sm leading-relaxed">${escapeHtml(idea.description)}</p>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="detail-grid mb-6">
+        <div class="detail-grid mb-6" style="grid-template-columns:1fr 1fr">
           <div class="card p-6">
             <h3 class="font-semibold mb-3 flex items-center gap-2">${iconTrendingUp(20)} Expected Impact</h3>
             <p class="text-sm">${escapeHtml(idea.impact.description)}</p>

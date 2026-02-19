@@ -73,7 +73,7 @@ export async function init(): Promise<void> {
         <button class="btn btn-outline gap-2" id="er-back">${iconArrowLeft(16)} Back to Project</button>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem" class="stats-grid">
+      <div class="stats-grid mb-8">
         <div class="card p-4"><div class="flex items-center gap-3">
           <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconClock(20, 'text-primary')}</div>
           <div><p class="text-lg font-bold">${project.timeline}</p><p class="text-xs text-muted">Timeline</p></div>
@@ -120,7 +120,7 @@ export async function init(): Promise<void> {
 
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem" class="convert-grid">
+        <div class="convert-grid" style="gap:0.75rem">
           ${project.team.map((m: any) => `
             <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3)">
               <div style="width:2.5rem;height:2.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:${m.type === 'business' ? 'hsl(var(--primary)/0.1)' : 'hsl(var(--success-soft))'}">${iconUser(20, m.type === 'business' ? 'text-primary' : 'text-success')}</div>

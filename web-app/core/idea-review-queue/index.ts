@@ -103,7 +103,7 @@ export async function init(): Promise<void> {
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem" class="stats-grid mb-8">
+    <div class="stats-grid mb-8">
       <div class="card p-4"><div class="flex items-center gap-3">
         <div class="p-2 rounded-lg" style="background:hsl(var(--primary)/0.1)">${iconClock(20, 'text-primary')}</div>
         <div><p class="text-2xl font-bold">${stats.total}</p><p class="text-sm text-muted">Pending Review</p></div>

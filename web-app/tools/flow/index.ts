@@ -89,7 +89,7 @@ function renderEditMode(): string {
               </div>
               ${expanded ? `
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="convert-grid">
+                  <div class="convert-grid" style="gap:1rem">
                     <div style="grid-column:span 2"><label class="label mb-1 text-xs">What happens in this step?</label><input class="input" data-step-field="${step.id}:title" value="${escapeHtml(step.title)}" placeholder="e.g., Review and approve customer application"/></div>
                     <div style="grid-column:span 2"><label class="label mb-1 text-xs">Describe this step in detail</label><textarea class="textarea" data-step-field="${step.id}:description" style="resize:none" placeholder="Explain what needs to happen...">${escapeHtml(step.description)}</textarea></div>
                     <div><label class="label mb-1 text-xs">Who is responsible?</label><input class="input" data-step-field="${step.id}:owner" value="${escapeHtml(step.owner)}" placeholder="e.g., Customer Success Team"/></div>
@@ -176,7 +176,7 @@ function renderPage(): string {
       </div>
 
       <div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="convert-grid">
+        <div class="convert-grid">
           <div><label class="label mb-1 text-xs">Process Name</label><input class="input" id="flow-name" value="${escapeHtml(processName)}" placeholder="e.g., Customer Onboarding" style="font-size:1.125rem;font-weight:500"/></div>
           <div><label class="label mb-1 text-xs">Department</label>
             <select class="input" id="flow-dept">

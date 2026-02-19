@@ -123,7 +123,7 @@ function renderLabelStep(): string {
               </div>
               ${expanded ? `
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" class="convert-grid">
+                  <div class="convert-grid" style="gap:1rem">
                     <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-col-field="${col.id}:friendlyName" placeholder="e.g., Customer ID" value="${escapeHtml(col.friendlyName)}"/></div>
                     <div><label class="label mb-1 text-xs">Data type</label>
                       <select class="input" data-col-field="${col.id}:dataType">

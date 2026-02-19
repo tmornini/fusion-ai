@@ -113,7 +113,7 @@ function renderEdgePage(ideaId: string): string {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem" class="edge-grid">
+      <div class="edge-grid">
         <!-- Left: Idea Summary -->
         <div>
           <div class="card p-5" style="position:sticky;top:1.5rem">
@@ -145,7 +145,7 @@ function renderEdgePage(ideaId: string): string {
           <!-- Impact -->
           <div class="card p-5">
             <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconTrendingUp(20, 'text-primary')} Expected Impact</h3>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem" class="impact-grid">
+            <div class="impact-grid">
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Short-term (0-3 months)</label>
                 <textarea class="textarea text-sm" rows="4" id="impact-short" placeholder="Expected impact in the first 3 months...">${escapeHtml(edgeData.impact.shortTerm)}</textarea>

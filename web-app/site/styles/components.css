@@ -666,6 +666,13 @@
   border-radius: var(--radius);
 }
 
+[data-theme="dark"] .skeleton-shimmer {
+  background: linear-gradient(90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.12) 50%,
+    hsl(var(--muted)) 75%);
+}
+
 .skeleton-text {
   height: 0.875rem;
   width: 100%;
