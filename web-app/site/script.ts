@@ -73,68 +73,74 @@ function showToast(message: string, variant: 'success' | 'error' | 'warning' | '
 
 type SkeletonType = 'card-grid' | 'card-list' | 'detail' | 'table' | 'stats-row';
 
-function renderSkeleton(type: SkeletonType, opts?: { count?: number }): string {
-  const count = opts?.count ?? 4;
-  const shimmer = 'skeleton-shimmer';
+const S = 'skeleton-shimmer';
 
-  const cardSkel = `<div class="skeleton-card">
-    <div class="${shimmer} skeleton-badge" style="margin-bottom:0.75rem"></div>
-    <div class="${shimmer} skeleton-heading"></div>
-    <div class="${shimmer} skeleton-text"></div>
-    <div class="${shimmer} skeleton-text" style="width:80%"></div>
+function skeletonCard(): string {
+  return `<div class="skeleton-card">
+    <div class="${S} skeleton-badge" style="margin-bottom:0.75rem"></div>
+    <div class="${S} skeleton-heading"></div>
+    <div class="${S} skeleton-text"></div>
+    <div class="${S} skeleton-text" style="width:80%"></div>
   </div>`;
+}
 
-  const listItemSkel = `<div class="skeleton-card" style="display:flex;align-items:center;gap:1rem">
-    <div class="${shimmer} skeleton-avatar"></div>
+function skeletonListItem(): string {
+  return `<div class="skeleton-card" style="display:flex;align-items:center;gap:1rem">
+    <div class="${S} skeleton-avatar"></div>
     <div style="flex:1">
-      <div class="${shimmer} skeleton-text" style="width:60%;margin-bottom:0.375rem"></div>
-      <div class="${shimmer} skeleton-text-sm" style="width:40%"></div>
+      <div class="${S} skeleton-text" style="width:60%;margin-bottom:0.375rem"></div>
+      <div class="${S} skeleton-text-sm" style="width:40%"></div>
     </div>
-    <div class="${shimmer} skeleton-badge"></div>
+    <div class="${S} skeleton-badge"></div>
   </div>`;
+}
 
-  const statsRowSkel = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+function skeletonStatsRow(): string {
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
     ${Array(4).fill(`<div class="skeleton-card" style="padding:1rem">
-      <div class="${shimmer} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
-      <div class="${shimmer} skeleton-heading" style="width:40%"></div>
+      <div class="${S} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
+      <div class="${S} skeleton-heading" style="width:40%"></div>
     </div>`).join('')}
   </div>`;
+}
 
+function renderSkeleton(type: SkeletonType, opts?: { count?: number }): string {
+  const count = opts?.count ?? 4;
   switch (type) {
     case 'card-grid':
       return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1.5rem">
-        ${Array(count).fill(cardSkel).join('')}
+        ${Array(count).fill(skeletonCard()).join('')}
       </div>`;
     case 'card-list':
       return `<div style="display:flex;flex-direction:column;gap:0.75rem">
-        ${Array(count).fill(listItemSkel).join('')}
+        ${Array(count).fill(skeletonListItem()).join('')}
       </div>`;
     case 'detail':
       return `<div>
-        <div class="${shimmer} skeleton-heading" style="width:40%;margin-bottom:1.5rem"></div>
+        <div class="${S} skeleton-heading" style="width:40%;margin-bottom:1.5rem"></div>
         <div class="skeleton-card" style="margin-bottom:1.5rem">
-          <div class="${shimmer} skeleton-text" style="width:90%"></div>
-          <div class="${shimmer} skeleton-text" style="width:75%"></div>
-          <div class="${shimmer} skeleton-text" style="width:60%;margin-bottom:1rem"></div>
+          <div class="${S} skeleton-text" style="width:90%"></div>
+          <div class="${S} skeleton-text" style="width:75%"></div>
+          <div class="${S} skeleton-text" style="width:60%;margin-bottom:1rem"></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
-            ${Array(3).fill(`<div><div class="${shimmer} skeleton-text-sm"></div><div class="${shimmer} skeleton-heading" style="width:60%"></div></div>`).join('')}
+            ${Array(3).fill(`<div><div class="${S} skeleton-text-sm"></div><div class="${S} skeleton-heading" style="width:60%"></div></div>`).join('')}
           </div>
         </div>
       </div>`;
     case 'table':
       return `<div class="skeleton-card" style="padding:0;overflow:hidden">
         <div style="padding:1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${shimmer} skeleton-text" style="width:30%"></div>
+          <div class="${S} skeleton-text" style="width:30%"></div>
         </div>
         ${Array(count).fill(`<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${shimmer} skeleton-avatar" style="width:2rem;height:2rem"></div>
-          <div class="${shimmer} skeleton-text" style="width:25%;margin:0"></div>
-          <div class="${shimmer} skeleton-text" style="width:20%;margin:0"></div>
-          <div class="${shimmer} skeleton-badge" style="margin-left:auto"></div>
+          <div class="${S} skeleton-avatar" style="width:2rem;height:2rem"></div>
+          <div class="${S} skeleton-text" style="width:25%;margin:0"></div>
+          <div class="${S} skeleton-text" style="width:20%;margin:0"></div>
+          <div class="${S} skeleton-badge" style="margin-left:auto"></div>
         </div>`).join('')}
       </div>`;
     case 'stats-row':
-      return statsRowSkel;
+      return skeletonStatsRow();
     default:
       return '';
   }
@@ -417,8 +423,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Dashboard Layout Behavior
 // ------------------------------------
 
-function initDashboardLayout(): void {
-  // Mark active nav item
+function setupActiveNavItem(): void {
   const pageName = getPageName();
   document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(el => {
     const linkPage = el.getAttribute('data-page-link') || '';
@@ -432,8 +437,9 @@ function initDashboardLayout(): void {
     if (active) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
   });
+}
 
-  // Sidebar collapse/expand (desktop)
+function setupSidebar(): void {
   const sidebar = document.getElementById('desktop-sidebar');
   const mainContent = document.querySelector('.main-content') as HTMLElement;
 
@@ -456,7 +462,6 @@ function initDashboardLayout(): void {
     localStorage.setItem('fusion-sidebar-collapsed', 'false');
   });
 
-  // Section toggle
   document.querySelectorAll<HTMLElement>('[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const label = btn.getAttribute('data-section');
@@ -470,14 +475,14 @@ function initDashboardLayout(): void {
       }
     });
   });
+}
 
-  // Dropdown toggles (theme, notifications — desktop + mobile)
+function setupThemeAndDropdowns(): void {
   for (const prefix of ['', 'mobile-']) {
     setupDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
     setupDropdown(`${prefix}notif-toggle`, `${prefix}notif-dropdown`);
   }
 
-  // Theme selection
   document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
     el.addEventListener('click', () => {
       const theme = el.getAttribute('data-theme-set') as AppState['theme'];
@@ -488,8 +493,9 @@ function initDashboardLayout(): void {
       }
     });
   });
+}
 
-  // Mobile sidebar
+function setupMobileDrawer(): void {
   document.getElementById('mobile-sidebar-open')?.addEventListener('click', () => {
     document.getElementById('mobile-sheet')?.classList.remove('hidden');
     document.getElementById('mobile-sheet-backdrop')?.classList.remove('hidden');
@@ -499,15 +505,19 @@ function initDashboardLayout(): void {
     document.getElementById('mobile-sheet-backdrop')?.classList.add('hidden');
   });
 
-  // Mobile search
   document.getElementById('mobile-search-toggle')?.addEventListener('click', () => {
     document.getElementById('mobile-search-bar')?.classList.remove('hidden');
   });
   document.getElementById('mobile-search-close')?.addEventListener('click', () => {
     document.getElementById('mobile-search-bar')?.classList.add('hidden');
   });
+}
 
-  // Update theme icon and populate notifications
+function initDashboardLayout(): void {
+  setupActiveNavItem();
+  setupSidebar();
+  setupThemeAndDropdowns();
+  setupMobileDrawer();
   updateThemeToggleIcon();
   populateNotifications();
 }

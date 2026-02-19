@@ -2,7 +2,7 @@ import { GET } from '../../../api/api';
 import type {
   ProjectRow, ProjectTeamRow, MilestoneRow, ProjectTaskRow,
   DiscussionRow, ProjectVersionRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow,
-  IdeaRow, ClarificationRow,
+  IdeaRow, ClarificationRow, UserRow,
 } from '../../../api/types';
 import { getUserMap, lookupUser, parseJson } from './helpers';
 
@@ -68,6 +68,39 @@ export interface ProjectDetail {
   tasks: { name: string; priority: string; desc: string; skills: string[]; hours: number; assigned: string }[];
 }
 
+async function buildEdgeData(
+  ideaId: string,
+  userMap: Map<string, UserRow>,
+): Promise<ProjectDetail['edge']> {
+  const allEdges = await GET('edges') as EdgeRow[];
+  const edge = allEdges.find(e => e.idea_id === ideaId);
+  if (!edge) {
+    return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
+  }
+
+  const { getDbAdapter } = await import('../../../api/api');
+  const db = getDbAdapter();
+  const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
+  const allMetrics = await db.edgeMetrics.getAll();
+
+  return {
+    outcomes: outcomes.map((o: EdgeOutcomeRow) => ({
+      id: o.id,
+      description: o.description,
+      metrics: allMetrics.filter((m: EdgeMetricRow) => m.outcome_id === o.id).map((m: EdgeMetricRow) => ({
+        id: m.id, name: m.name, target: m.target, unit: m.unit, current: m.current,
+      })),
+    })),
+    impact: {
+      shortTerm: edge.impact_short_term,
+      midTerm: edge.impact_mid_term,
+      longTerm: edge.impact_long_term,
+    },
+    confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
+    owner: lookupUser(userMap, edge.owner_id),
+  };
+}
+
 export async function getProjectById(id: string): Promise<ProjectDetail> {
   const [project, teamRows, milestoneRows, taskRows, discussionRows, versionRows, userMap] = await Promise.all([
     GET(`projects/${id}`) as Promise<ProjectRow>,
@@ -79,37 +112,7 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     getUserMap(),
   ]);
 
-  // Get edge data for this project's linked idea
-  const ideaId = project.linked_idea_id || id;
-  const allEdges = await GET('edges') as EdgeRow[];
-  const edge = allEdges.find(e => e.idea_id === ideaId);
-  let edgeData: ProjectDetail['edge'] = {
-    outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '',
-  };
-
-  if (edge) {
-    const { getDbAdapter } = await import('../../../api/api');
-    const db = getDbAdapter();
-    const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
-    const allMetrics = await db.edgeMetrics.getAll();
-
-    edgeData = {
-      outcomes: outcomes.map((o: EdgeOutcomeRow) => ({
-        id: o.id,
-        description: o.description,
-        metrics: allMetrics.filter((m: EdgeMetricRow) => m.outcome_id === o.id).map((m: EdgeMetricRow) => ({
-          id: m.id, name: m.name, target: m.target, unit: m.unit, current: m.current,
-        })),
-      })),
-      impact: {
-        shortTerm: edge.impact_short_term,
-        midTerm: edge.impact_mid_term,
-        longTerm: edge.impact_long_term,
-      },
-      confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
-      owner: lookupUser(userMap, edge.owner_id),
-    };
-  }
+  const edgeData = await buildEdgeData(project.linked_idea_id || id, userMap);
 
   return {
     id: project.id,
