@@ -74,9 +74,9 @@ export async function init(): Promise<void> {
 
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconShield(20)} Security</h3>
-        ${toggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', c.enforceSSO)}
-        ${toggleRow('2fa', 'Two-Factor Authentication', 'Require 2FA for all users', c.twoFactor)}
-        ${toggleRow('ipWhitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', c.ipWhitelist)}
+        ${toggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', c.isSsoEnforced)}
+        ${toggleRow('2fa', 'Two-Factor Authentication', 'Require 2FA for all users', c.isTwoFactorEnabled)}
+        ${toggleRow('ipWhitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', c.isIpWhitelistEnabled)}
         <div class="pt-4">
           ${selectField('retention', 'Data Retention Period', c.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
         </div>

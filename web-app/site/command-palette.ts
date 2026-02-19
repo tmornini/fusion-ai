@@ -58,7 +58,7 @@ let isOpen = false;
 let activeIndex = 0;
 let allItems: SearchItem[] = [];
 let filteredItems: SearchItem[] = [];
-let dataLoaded = false;
+let isDataLoaded = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ── DOM refs ─────────────────────────────
@@ -73,8 +73,8 @@ let previousFocus: HTMLElement | null = null;
 // ── Data loading ─────────────────────────
 
 async function loadData(): Promise<void> {
-  if (dataLoaded) return;
-  dataLoaded = true;
+  if (isDataLoaded) return;
+  isDataLoaded = true;
 
   // Start with pages immediately
   allItems = pages.map((p, i) => ({

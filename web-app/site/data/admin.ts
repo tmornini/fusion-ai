@@ -97,9 +97,9 @@ export interface CompanySettingsData {
   size: string;
   timezone: string;
   language: string;
-  enforceSSO: boolean;
-  twoFactor: boolean;
-  ipWhitelist: boolean;
+  isSsoEnforced: boolean;
+  isTwoFactorEnabled: boolean;
+  isIpWhitelistEnabled: boolean;
   dataRetention: string;
 }
 
@@ -112,9 +112,9 @@ export async function getCompanySettings(): Promise<CompanySettingsData> {
     size: row.size,
     timezone: row.timezone,
     language: row.language,
-    enforceSSO: toBool(row.enforce_sso),
-    twoFactor: toBool(row.two_factor),
-    ipWhitelist: toBool(row.ip_whitelist),
+    isSsoEnforced: toBool(row.enforce_sso),
+    isTwoFactorEnabled: toBool(row.two_factor),
+    isIpWhitelistEnabled: toBool(row.ip_whitelist),
     dataRetention: row.data_retention,
   };
 }

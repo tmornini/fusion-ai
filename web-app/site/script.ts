@@ -452,19 +452,19 @@ function setupSidebar(): void {
   if (localStorage.getItem('fusion-sidebar-collapsed') === 'true') {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
-    state.sidebarCollapsed = true;
+    state.isSidebarCollapsed = true;
   }
 
   document.getElementById('sidebar-collapse')?.addEventListener('click', () => {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
-    state.sidebarCollapsed = true;
+    state.isSidebarCollapsed = true;
     localStorage.setItem('fusion-sidebar-collapsed', 'true');
   });
   document.getElementById('sidebar-expand')?.addEventListener('click', () => {
     sidebar?.classList.remove('sidebar-collapsed');
     mainContent?.classList.remove('sidebar-collapsed');
-    state.sidebarCollapsed = false;
+    state.isSidebarCollapsed = false;
     localStorage.setItem('fusion-sidebar-collapsed', 'false');
   });
 

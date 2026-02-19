@@ -10,9 +10,9 @@
 interface AppState {
   theme: 'light' | 'dark' | 'system';
   isMobile: boolean;
-  sidebarCollapsed: boolean;
-  sidebarOpen: boolean;
-  searchOpen: boolean;
+  isSidebarCollapsed: boolean;
+  isSidebarOpen: boolean;
+  isSearchOpen: boolean;
   searchQuery: string;
   user: { name: string; email: string; company: string } | null;
 }
@@ -22,9 +22,9 @@ type StateListener = () => void;
 const state: AppState = {
   theme: (localStorage.getItem('fusion-theme') as AppState['theme']) || 'system',
   isMobile: window.matchMedia('(max-width: 768px)').matches,
-  sidebarCollapsed: false,
-  sidebarOpen: false,
-  searchOpen: false,
+  isSidebarCollapsed: false,
+  isSidebarOpen: false,
+  isSearchOpen: false,
   searchQuery: '',
   user: { name: 'Demo User', email: 'demo@example.com', company: 'Demo Company' },
 };
@@ -76,7 +76,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 
 window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
   setState({ isMobile: e.matches });
-  if (!e.matches) setState({ sidebarOpen: false, searchOpen: false });
+  if (!e.matches) setState({ isSidebarOpen: false, isSearchOpen: false });
 });
 
 export type { AppState };
