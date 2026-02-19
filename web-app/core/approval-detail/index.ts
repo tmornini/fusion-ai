@@ -32,7 +32,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
         </div>
       </header>
 
-      <main style="max-width:60rem;margin:0 auto;padding:1.5rem;padding-bottom:8rem">
+      <main style="max-width:60rem;margin:0 auto;padding:1.5rem;padding-bottom:10rem">
         <div class="flex flex-wrap items-center gap-4 text-sm text-muted mb-6">
           <span class="flex items-center gap-1">${iconUser(16)} <span class="font-medium" style="color:hsl(var(--foreground))">${escapeHtml(idea.submittedBy)}</span></span>
           <span class="flex items-center gap-1">${iconCalendar(16)} ${idea.submittedAt}</span>

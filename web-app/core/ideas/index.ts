@@ -65,7 +65,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
                 </div>
                 <div>
                   <p class="text-xs text-muted">Time</p>
-                  <p class="text-sm font-medium">${idea.estimatedTime}h</p>
+                  <p class="text-sm font-medium">${idea.estimatedTime ? `${idea.estimatedTime}h` : '—'}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -74,7 +74,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
                 </div>
                 <div>
                   <p class="text-xs text-muted">Cost</p>
-                  <p class="text-sm font-medium">$${(idea.estimatedCost / 1000).toFixed(0)}k</p>
+                  <p class="text-sm font-medium">${idea.estimatedCost ? `$${(idea.estimatedCost / 1000).toFixed(0)}k` : '—'}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
@@ -83,7 +83,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
                 </div>
                 <div>
                   <p class="text-xs text-muted">Impact</p>
-                  <p class="text-sm font-medium">${idea.estimatedImpact}</p>
+                  <p class="text-sm font-medium">${idea.estimatedImpact || '—'}</p>
                 </div>
               </div>
             </div>

@@ -80,7 +80,7 @@
 
 ### Ideas List (`ideas/`)
 
-- [ ] **D1** Navigate to `ideas/`. PASS: table/list shows 11 seeded ideas with title, score, priority, and status columns.
+- [ ] **D1** Navigate to `ideas/`. PASS: table/list shows 11 seeded ideas with title, score, priority, status, and Time/Cost/Impact stats. Ideas without estimates show "—" (em-dash) instead of zero values.
 - [ ] **D2** Each idea row shows a status badge (pending_review, approved, scored, draft, or rejected). PASS: badges render with distinct colors.
 - [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
 - [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `idea-create/index.html`.
@@ -172,7 +172,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 ### Edge List (`edge-list/`)
 
-- [ ] **F6** Navigate to `edge-list/`. PASS: shows a list of edges (up to 6 seeded) with status indicators (complete, draft, missing).
+- [ ] **F6** Navigate to `edge-list/`. PASS: shows a list of edges (up to 6 seeded) with status indicators (complete, draft, missing). Outcome/metric counts use correct singular/plural grammar (e.g. "1 outcome", "2 outcomes").
 
 ### Crunch (`crunch/`)
 

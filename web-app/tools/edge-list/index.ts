@@ -31,7 +31,7 @@ function renderEdgeCard(edge: EdgeItem): string {
           <h3 class="font-semibold mb-1">${escapeHtml(edge.ideaTitle)}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
             ${edge.owner ? `<span class="flex items-center gap-1">${iconUser(14)} ${escapeHtml(edge.owner)}</span>` : ''}
-            ${edge.status !== 'missing' ? `<span class="flex items-center gap-1">${iconTrendingUp(14)} ${edge.outcomesCount} outcomes</span><span class="flex items-center gap-1">${iconBarChart(14)} ${edge.metricsCount} metrics</span>` : ''}
+            ${edge.status !== 'missing' ? `<span class="flex items-center gap-1">${iconTrendingUp(14)} ${edge.outcomesCount} ${edge.outcomesCount === 1 ? 'outcome' : 'outcomes'}</span><span class="flex items-center gap-1">${iconBarChart(14)} ${edge.metricsCount} ${edge.metricsCount === 1 ? 'metric' : 'metrics'}</span>` : ''}
             ${edge.updatedAt ? `<span class="text-xs">Updated ${edge.updatedAt}</span>` : ''}
           </div>
         </div>
