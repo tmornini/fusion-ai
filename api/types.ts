@@ -14,6 +14,11 @@ export function snakeToCamel<T extends Record<string, unknown>>(row: T): Record<
   return out;
 }
 
+/** Convert 0/1/boolean to boolean (handles localStorage int vs JSON boolean). */
+export function toBool(val: unknown): boolean {
+  return val === 1 || val === true;
+}
+
 // ── Row Types ────────────────────────────────
 
 export interface UserRow {

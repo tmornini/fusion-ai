@@ -3,7 +3,8 @@ import type {
   UserRow, AccountRow, CompanySettingsRow, ActivityRow,
   NotificationCategoryRow, NotificationPrefRow,
 } from '../../../api/types';
-import { userName, getUserMap } from './helpers';
+import { toBool } from '../../../api/types';
+import { getUserMap, lookupUser } from './helpers';
 
 // ── Account ─────────────────────────────────
 
@@ -53,7 +54,7 @@ export async function getAccountData(): Promise<AccountData> {
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
     recentActivity: activities.slice(0, 3).map(a => ({
       type: a.type,
-      description: `${userMap.get(a.actor_id) ? userName(userMap.get(a.actor_id)!) : 'Unknown'} ${a.action} ${a.target}`,
+      description: `${lookupUser(userMap, a.actor_id, 'Unknown')} ${a.action} ${a.target}`,
       time: a.timestamp,
     })),
   };
@@ -111,9 +112,9 @@ export async function getCompanySettings(): Promise<CompanySettingsData> {
     size: row.size,
     timezone: row.timezone,
     language: row.language,
-    enforceSSO: row.enforce_sso === 1 || row.enforce_sso as unknown === true,
-    twoFactor: row.two_factor === 1 || row.two_factor as unknown === true,
-    ipWhitelist: row.ip_whitelist === 1 || row.ip_whitelist as unknown === true,
+    enforceSSO: toBool(row.enforce_sso),
+    twoFactor: toBool(row.two_factor),
+    ipWhitelist: toBool(row.ip_whitelist),
     dataRetention: row.data_retention,
   };
 }
@@ -140,7 +141,7 @@ export async function getActivityFeed(): Promise<ActivityItem[]> {
   return activities.map(a => ({
     id: a.id,
     type: a.type,
-    actor: userMap.get(a.actor_id) ? userName(userMap.get(a.actor_id)!) : 'Unknown',
+    actor: lookupUser(userMap, a.actor_id, 'Unknown'),
     action: a.action,
     target: a.target,
     timestamp: a.timestamp,
@@ -188,8 +189,8 @@ export async function getNotificationCategories(): Promise<NotificationCategory[
       id: p.id,
       label: p.label,
       description: p.description,
-      email: p.email === 1 || p.email as unknown === true,
-      push: p.push === 1 || p.push as unknown === true,
+      email: toBool(p.email),
+      push: toBool(p.push),
     })),
   }));
 }

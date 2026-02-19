@@ -1,5 +1,6 @@
 import { GET } from '../../../api/api';
 import type { UserRow, NotificationRow } from '../../../api/types';
+import { toBool } from '../../../api/types';
 import { userName } from './helpers';
 
 export interface User {
@@ -38,6 +39,6 @@ export async function getNotifications(): Promise<Notification[]> {
     title: r.title,
     message: r.message,
     time: r.time,
-    unread: r.unread === 1 || r.unread as unknown === true,
+    unread: toBool(r.unread),
   }));
 }

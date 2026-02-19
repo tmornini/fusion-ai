@@ -2,7 +2,7 @@ import { GET } from '../../../api/api';
 import type {
   IdeaRow, IdeaScoreRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow,
 } from '../../../api/types';
-import { userName, getUserMap, parseJson } from './helpers';
+import { getUserMap, lookupUser, parseJson } from './helpers';
 
 export interface Idea {
   id: string;
@@ -32,7 +32,7 @@ export async function getIdeas(): Promise<Idea[]> {
       estimatedCost: i.estimated_cost,
       priority: i.priority,
       status: i.status as Idea['status'],
-      submittedBy: userMap.get(i.submitted_by_id) ? userName(userMap.get(i.submitted_by_id)!) : 'Unknown',
+      submittedBy: lookupUser(userMap, i.submitted_by_id, 'Unknown'),
       edgeStatus: i.edge_status as Idea['edgeStatus'],
     }));
 }
@@ -69,7 +69,7 @@ export async function getReviewQueue(): Promise<ReviewIdea[]> {
       return {
         id: i.id,
         title: i.title,
-        submittedBy: userMap.get(i.submitted_by_id) ? userName(userMap.get(i.submitted_by_id)!) : 'Unknown',
+        submittedBy: lookupUser(userMap, i.submitted_by_id, 'Unknown'),
         priority,
         readiness: (i.readiness || 'incomplete') as ReviewIdea['readiness'],
         edgeStatus: (i.edge_status || 'missing') as ReviewIdea['edgeStatus'],
@@ -197,7 +197,7 @@ export async function getApprovalIdea(id: string): Promise<ApprovalIdea> {
     id: idea.id,
     title: idea.title,
     description: idea.description || `Implement an intelligent system for ${idea.title.toLowerCase()}.`,
-    submittedBy: userMap.get(idea.submitted_by_id) ? userName(userMap.get(idea.submitted_by_id)!) : 'Unknown',
+    submittedBy: lookupUser(userMap, idea.submitted_by_id, 'Unknown'),
     submittedAt: idea.submitted_at || 'January 15, 2024',
     priority: idea.score >= 80 ? 'high' : idea.score >= 60 ? 'medium' : 'low',
     score: idea.score,
@@ -251,6 +251,6 @@ export async function getApprovalEdge(id: string): Promise<ApprovalEdge> {
       longTerm: edge.impact_long_term,
     },
     confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
-    owner: edge.owner_id && userMap.get(edge.owner_id) ? userName(userMap.get(edge.owner_id)!) : '',
+    owner: lookupUser(userMap, edge.owner_id),
   };
 }

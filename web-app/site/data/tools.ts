@@ -1,5 +1,6 @@
 import { GET } from '../../../api/api';
 import type { CrunchColumnRow, ProcessRow } from '../../../api/types';
+import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
 // ── Crunch ───────────────────────────────────
@@ -24,7 +25,7 @@ export async function getCrunchColumns(): Promise<CrunchColumn[]> {
     dataType: r.data_type,
     description: r.description,
     sampleValues: parseJson<string[]>(r.sample_values),
-    isAcronym: r.is_acronym === 1 || r.is_acronym as unknown === true,
+    isAcronym: toBool(r.is_acronym),
     acronymExpansion: r.acronym_expansion,
   }));
 }

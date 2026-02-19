@@ -4,7 +4,7 @@ import type {
   DiscussionRow, ProjectVersionRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow,
   IdeaRow, ClarificationRow,
 } from '../../../api/types';
-import { userName, getUserMap, parseJson } from './helpers';
+import { getUserMap, lookupUser, parseJson } from './helpers';
 
 export interface Project {
   id: string;
@@ -107,11 +107,9 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
         longTerm: edge.impact_long_term,
       },
       confidence: (edge.confidence || 'medium') as 'high' | 'medium' | 'low',
-      owner: userMap.get(edge.owner_id) ? userName(userMap.get(edge.owner_id)!) : '',
+      owner: lookupUser(userMap, edge.owner_id),
     };
   }
-
-  const leadUser = userMap.get(project.lead_id);
 
   return {
     id: project.id,
@@ -121,7 +119,7 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     progress: project.progress,
     startDate: project.start_date,
     targetEndDate: project.target_end_date,
-    projectLead: leadUser ? userName(leadUser) : '',
+    projectLead: lookupUser(userMap, project.lead_id),
     metrics: {
       time: { baseline: project.estimated_time, current: project.actual_time },
       cost: { baseline: project.estimated_cost, current: project.actual_cost },
@@ -130,7 +128,7 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     edge: edgeData,
     team: teamRows.map(t => ({
       id: t.user_id,
-      name: userMap.get(t.user_id) ? userName(userMap.get(t.user_id)!) : '',
+      name: lookupUser(userMap, t.user_id),
       role: t.role,
     })),
     milestones: milestoneRows.map(m => ({
@@ -138,17 +136,17 @@ export async function getProjectById(id: string): Promise<ProjectDetail> {
     })),
     versions: versionRows.map(v => ({
       id: v.id, version: v.version, date: v.date, changes: v.changes,
-      author: userMap.get(v.author_id) ? userName(userMap.get(v.author_id)!) : '',
+      author: lookupUser(userMap, v.author_id),
     })),
     discussions: discussionRows.map(d => ({
       id: d.id, date: d.date, message: d.message,
-      author: userMap.get(d.author_id) ? userName(userMap.get(d.author_id)!) : '',
+      author: lookupUser(userMap, d.author_id),
     })),
     tasks: taskRows.map(t => ({
       name: t.name, priority: t.priority, desc: t.description,
       skills: parseJson<string[]>(t.skills),
       hours: t.hours,
-      assigned: t.assigned_to_id && userMap.get(t.assigned_to_id) ? userName(userMap.get(t.assigned_to_id)!) : '',
+      assigned: lookupUser(userMap, t.assigned_to_id),
     })),
   };
 }
@@ -206,7 +204,7 @@ export async function getEngineeringProject(projectId: string): Promise<Engineer
     },
     team: teamRows.map(t => ({
       id: t.user_id,
-      name: userMap.get(t.user_id) ? userName(userMap.get(t.user_id)!) : '',
+      name: lookupUser(userMap, t.user_id),
       role: t.role,
       type: t.type,
     })),
@@ -226,11 +224,11 @@ export async function getClarifications(projectId: string): Promise<Clarificatio
   return clarRows.map(c => ({
     id: c.id,
     question: c.question,
-    askedBy: userMap.get(c.asked_by_id) ? userName(userMap.get(c.asked_by_id)!) : '',
+    askedBy: lookupUser(userMap, c.asked_by_id),
     askedAt: c.asked_at,
     status: c.status as Clarification['status'],
     ...(c.answer ? { answer: c.answer } : {}),
-    ...(c.answered_by_id ? { answeredBy: userMap.get(c.answered_by_id) ? userName(userMap.get(c.answered_by_id)!) : '' } : {}),
+    ...(c.answered_by_id ? { answeredBy: lookupUser(userMap, c.answered_by_id) } : {}),
     ...(c.answered_at ? { answeredAt: c.answered_at } : {}),
   }));
 }

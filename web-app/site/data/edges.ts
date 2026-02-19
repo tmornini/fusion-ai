@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
 import type { IdeaRow, EdgeRow, EdgeOutcomeRow, EdgeMetricRow } from '../../../api/types';
-import { userName, getUserMap } from './helpers';
+import { getUserMap, lookupUser } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -19,7 +19,7 @@ export async function getEdgeIdea(ideaId: string): Promise<EdgeIdea> {
     title: idea.title,
     problem: idea.problem_statement || 'Manual customer segmentation is time-consuming and often inaccurate, leading to misaligned marketing efforts.',
     solution: idea.proposed_solution || 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
-    submittedBy: userMap.get(idea.submitted_by_id) ? userName(userMap.get(idea.submitted_by_id)!) : 'Unknown',
+    submittedBy: lookupUser(userMap, idea.submitted_by_id, 'Unknown'),
     score: idea.score,
   };
 }
@@ -54,7 +54,7 @@ export async function getEdgeOutcomes(ideaId: string): Promise<{
       longTerm: edge.impact_long_term,
     },
     confidence: edge.confidence || '',
-    owner: userMap.get(edge.owner_id) ? userName(userMap.get(edge.owner_id)!) : '',
+    owner: lookupUser(userMap, edge.owner_id),
   };
 }
 
@@ -82,10 +82,10 @@ export async function getEdges(): Promise<EdgeItem[]> {
   const db = getDbAdapter();
 
   const ideaMap = new Map(ideaRows.map(i => [i.id, i]));
+  const allMetrics = await db.edgeMetrics.getAll();
 
   return Promise.all(edgeRows.map(async (e) => {
     const outcomes = await db.edgeOutcomes.getByEdgeId(e.id);
-    const allMetrics = await db.edgeMetrics.getAll();
     const outcomeIds = new Set(outcomes.map(o => o.id));
     const metricsCount = allMetrics.filter(m => outcomeIds.has(m.outcome_id)).length;
 
@@ -98,7 +98,7 @@ export async function getEdges(): Promise<EdgeItem[]> {
       outcomesCount: outcomes.length,
       metricsCount,
       confidence: (e.confidence || null) as EdgeItem['confidence'],
-      owner: e.owner_id && userMap.get(e.owner_id) ? userName(userMap.get(e.owner_id)!) : '',
+      owner: lookupUser(userMap, e.owner_id),
       updatedAt: e.updated_at,
     };
   }));
