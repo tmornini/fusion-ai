@@ -1,6 +1,5 @@
 // ============================================
 // FUSION AI — Database Abstraction Interface
-// Implement this for SQLite, Postgres, etc.
 // ============================================
 
 import type {

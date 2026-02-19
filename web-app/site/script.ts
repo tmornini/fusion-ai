@@ -529,10 +529,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize database before any page modules
   try {
-    const { createSqliteAdapter } = await import('../../api/db-sqlite');
+    const { createLocalStorageAdapter } = await import('../../api/db-localstorage');
     const { initApi } = await import('../../api/api');
 
-    const adapter = await createSqliteAdapter();
+    const adapter = await createLocalStorageAdapter();
     await adapter.initialize();
     initApi(adapter);
 
@@ -552,7 +552,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.innerHTML = `<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
       <h1 style="color:hsl(0 72% 51%)">Failed to initialize database</h1>
       <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
-      <p>Try clearing site data (IndexedDB) and reloading.</p>
+      <p>Try clearing site data and reloading.</p>
     </div>`;
     return;
   }

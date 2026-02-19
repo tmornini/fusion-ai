@@ -24,7 +24,7 @@
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `site/app.js`, `site/style.css`, `site/sql-wasm-browser.wasm`, `site/fonts/`, `index.html`, and 27 page directories each with `index.html`.
+- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `site/app.js`, `site/style.css`, `site/fonts/`, `index.html`, and 27 page directories each with `index.html`.
 - [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `landing/index.html`.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
@@ -292,7 +292,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 ## J. Protocol B: `file://` Retest
 
-> Open the unzipped build directory directly in the browser via `file://` protocol (e.g. `file:///tmp/fusion-test/index.html`). The `file://` protocol has stricter security restrictions — WASM loading and some features may not work.
+> Open the unzipped build directory directly in the browser via `file://` protocol (e.g. `file:///tmp/fusion-test/index.html`). The app uses localStorage for persistence, which works on `file://` across all major browsers.
 
 ### Static Pages (No DB Required)
 
@@ -305,12 +305,12 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **J7** Verify CSS loads: pages are styled (not unstyled HTML). PASS: fonts, colors, and layout apply correctly.
 - [ ] **J8** Verify `site/app.js` loads: interactive elements work (e.g. theme toggle, auth form validation). PASS: JavaScript executes.
 
-### WASM / Database-Dependent Pages
+### Database-Dependent Pages
 
-- [ ] **J9** Open `file:///.../dashboard/index.html`. Check DevTools Console. PASS if WASM loads: dashboard renders with seed data. KNOWN LIMITATION if WASM fails: page may show empty states or errors due to `file://` CORS restrictions on `.wasm` fetch.
-- [ ] **J10** If J9 passed (WASM loaded), navigate to `ideas/index.html`. PASS: ideas list renders with seed data.
-- [ ] **J11** If J9 passed, navigate to `snapshots/index.html` and click "Download Snapshot". PASS: download triggers.
-- [ ] **J12** If J9 failed, document the console error message here: ____________________
+- [ ] **J9** Open `file:///.../dashboard/index.html`. PASS: dashboard renders (redirects to snapshots if no data loaded yet).
+- [ ] **J10** Navigate to `snapshots/index.html`, click "Reload Mock Data". PASS: mock data loads. Navigate to `ideas/index.html`. PASS: ideas list renders with seed data.
+- [ ] **J11** Navigate to `snapshots/index.html` and click "Download Snapshot". PASS: download triggers.
+- [ ] **J12** Navigate between 3+ database-dependent pages (dashboard, ideas, projects). PASS: data persists across page navigations via localStorage.
 
 ### Navigation Under `file://`
 

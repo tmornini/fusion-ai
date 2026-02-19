@@ -4,7 +4,7 @@ Enterprise innovation management platform for capturing ideas, defining business
 
 ## Overview
 
-Vanilla TypeScript with SQLite WASM (sql.js) for in-browser data persistence. Every page is a standalone HTML file served via any HTTP server.
+Vanilla TypeScript with zero runtime dependencies. Uses localStorage for in-browser data persistence. Every page is a standalone HTML file that works via both HTTP server and `file:///` protocol.
 
 ### Modules
 
@@ -22,7 +22,6 @@ Vanilla TypeScript with SQLite WASM (sql.js) for in-browser data persistence. Ev
 ```sh
 git clone <repo-url>
 cd fusion-ai
-npm install
 ```
 
 Preview locally:
@@ -41,13 +40,13 @@ python3 -m http.server 8080
 Requires a clean git working directory. The build:
 1. Composes dashboard pages by merging `web-app/site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
-3. Copies static assets (style.css, fonts/, favicon.ico, sql-wasm.wasm)
+3. Copies static assets (style.css, fonts/, favicon.ico)
 4. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack
 
 - TypeScript (vanilla, no framework)
-- SQLite WASM (sql.js) with IndexedDB persistence
+- localStorage with JSON serialization (zero runtime dependencies)
 - REST-style API layer (`api/`) with `DbAdapter` interface
 - Build-time HTML composition (shared layout + per-page content)
 - CSS custom properties with light/dark theme support
@@ -60,7 +59,7 @@ Requires a clean git working directory. The build:
 ## Architecture
 
 ```
-api/          # Database abstraction, SQLite implementation, REST routing, seed data
+api/          # Database abstraction, localStorage implementation, REST routing, seed data
 web-app/      # Frontend pages, styles, scripts, layout templates
   site/       # Shared CSS, TypeScript, HTML layout, fonts
   core/       # Ideas, projects, and related workflows

@@ -1,7 +1,6 @@
 // ============================================
 // FUSION AI — API Type Definitions
-// Row types (snake_case, matching SQL schema) and
-// re-exported camelCase frontend types.
+// Row types (snake_case) and camelCase utility.
 // ============================================
 
 // ── Utility ──────────────────────────────────
@@ -15,7 +14,7 @@ export function snakeToCamel<T extends Record<string, unknown>>(row: T): Record<
   return out;
 }
 
-// ── Row Types (match SQL columns) ────────────
+// ── Row Types ────────────────────────────────
 
 export interface UserRow {
   id: string;
@@ -193,7 +192,7 @@ export interface NotificationRow {
   title: string;
   message: string;
   time: string;
-  unread: number; // 0 or 1 (SQLite boolean)
+  unread: number; // 0 or 1
 }
 
 export interface ClarificationRow {

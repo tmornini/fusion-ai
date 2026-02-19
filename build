@@ -8,8 +8,6 @@ fi
 
 echo "Building Fusion AI..."
 
-npm install
-
 BUILD_DIR=$(mktemp -d)
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
@@ -34,9 +32,6 @@ cp -r web-app/site/fonts "$BUILD_DIR/site/"
 cp web-app/index.html "$BUILD_DIR/"
 cp web-app/site/favicon.ico "$BUILD_DIR/"
 
-# Copy sql.js WASM binary into build dir (browser variant used by esbuild)
-cp node_modules/sql.js/dist/sql-wasm-browser.wasm "$BUILD_DIR/site/"
-
 # Create distribution ZIP on Desktop
 SHA=$(git rev-parse --short=7 HEAD)
 ZIPNAME="fusion-ai-${SHA}.zip"
@@ -47,5 +42,3 @@ ZIPDEST="$HOME/Desktop/$ZIPNAME"
 
 echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | xargs) bytes)"
 echo "Done."
-
-rm -rf node_modules

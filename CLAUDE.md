@@ -5,7 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Dev Commands
 
 ```bash
-npm install            # Install dependencies (sql.js)
 ./build                # Compile, bundle, minify, and create distribution ZIP
 ```
 
@@ -13,7 +12,7 @@ No test framework is configured.
 
 ## Architecture
 
-**Vanilla TypeScript** with sql.js (SQLite WASM) as the only runtime browser dependency. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file that works via HTTP server.
+**Vanilla TypeScript** with zero runtime dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file that works via both HTTP server and `file:///` protocol.
 
 ### Key Layers
 
@@ -22,18 +21,17 @@ No test framework is configured.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by SQLite WASM. The `web-app/site/data.ts` file contains ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
-- **Database**: SQLite WASM via sql.js, persisted to IndexedDB across page navigations. When the DB is empty, non-entry pages redirect to snapshots so users can load mock data or upload a snapshot. A snapshots page provides wipe, reload, upload, and download snapshot operations.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/site/data.ts` file contains ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When the DB is empty, non-entry pages redirect to snapshots so users can load mock data or upload a snapshot. A snapshots page provides wipe, reload, upload, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
 ### API Layer (`/api`)
 
 The API layer is a set of TypeScript modules that provide a REST-style interface to the database:
 
-- **`api/types.ts`** — Row types (snake_case) matching SQL schema, plus `snakeToCamel` utility
-- **`api/schema.ts`** — SQL DDL (CREATE TABLE statements)
+- **`api/types.ts`** — Row types (snake_case) matching schema, plus `snakeToCamel` utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns
-- **`api/db-sqlite.ts`** — SQLite WASM implementation with IndexedDB persistence
+- **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
 - **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` URL routing
 - **`api/seed.ts`** — Mock data seeding function
 
@@ -75,17 +73,15 @@ CSS media queries in `web-app/site/style.css` show/hide desktop vs mobile header
 ## Project Structure
 
 ```
-package.json                  # Dependencies (sql.js)
+package.json                  # Project config (zero runtime dependencies)
 build                         # Executable build script
 
 api/
   types.ts                    # Row types (snake_case), snakeToCamel utility
-  schema.ts                   # SQL DDL for all tables
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore)
-  db-sqlite.ts                # SQLite WASM implementation with IndexedDB persistence
+  db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT URL routing
   seed.ts                     # Mock data seeding
-  sql-js.d.ts                 # Type declarations for sql.js
 
 web-app/
   index.html                  # Redirects to landing/index.html
@@ -146,6 +142,7 @@ web-app/
   system/
     not-found/                # 404 page (standalone)
 
+SCHEMA.md                     # Database schema (22 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification
 TEST-PLAN.md                  # Human-executable test plan (146 cases)
 ```
@@ -159,7 +156,6 @@ The `build` script requires a clean git working directory (no uncommitted change
 2. Copies 8 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
 4. Copies static assets (`web-app/site/style.css`, `web-app/site/fonts/`, `web-app/site/favicon.ico`, `web-app/index.html`) to the build directory
-5. Copies `sql-wasm.wasm` from node_modules to the build directory
-6. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
+5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.
