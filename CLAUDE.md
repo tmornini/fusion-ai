@@ -21,7 +21,7 @@ No test framework is configured.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/site/data.ts` file contains ~28 async adapter functions that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/site/data/` directory contains ~28 async adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When the DB is empty, non-entry pages redirect to snapshots so users can load mock data or upload a snapshot. A snapshots page provides wipe, reload, upload, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
@@ -29,7 +29,7 @@ No test framework is configured.
 
 The API layer is a set of TypeScript modules that provide a REST-style interface to the database:
 
-- **`api/types.ts`** — Row types (snake_case) matching schema, plus `snakeToCamel` utility
+- **`api/types.ts`** — Row types (snake_case) matching schema, plus `snakeToCamel` and `toBool` utilities
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
 - **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` URL routing
@@ -52,7 +52,7 @@ CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggl
 
 ### Component Library
 
-All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/site/style.css` and helper functions in `web-app/site/script.ts`. No external component library.
+All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/site/styles/` and helper functions in `web-app/site/script.ts`. No external component library.
 
 ### Design System
 
@@ -61,14 +61,14 @@ Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `web-app/site/fonts/`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~80+ inline SVG functions in `web-app/site/script.ts`. Each returns an SVG string: `iconSparkles(size, cssClass)`.
+- **Icons**: ~80+ inline SVG functions in `web-app/site/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
 - **Charts**: SVG rendering functions in `web-app/site/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
 
 ### Mobile Responsiveness
 
-CSS media queries in `web-app/site/style.css` show/hide desktop vs mobile header and sidebar. Mobile sidebar uses Sheet (slide-in drawer) toggled by JS. Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
+CSS media queries in `web-app/site/styles/responsive.css` show/hide desktop vs mobile header and sidebar. Mobile sidebar uses Sheet (slide-in drawer) toggled by JS. Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
 
 ## Project Structure
 
@@ -77,7 +77,7 @@ package.json                  # Project config (zero runtime dependencies)
 build                         # Executable build script
 
 api/
-  types.ts                    # Row types (snake_case), snakeToCamel utility
+  types.ts                    # Row types (snake_case), snakeToCamel, toBool utilities
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore)
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT URL routing
@@ -89,9 +89,32 @@ web-app/
     tsconfig.json             # TypeScript config
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
-    style.css                 # All CSS: tokens, components, layouts, utilities
-    script.ts                 # Page dispatch, state, icons, navigation, layout behavior
-    data.ts                   # ~28 async adapter functions (API → frontend shapes)
+    script.ts                 # Page dispatch, navigation, layout behavior, toast
+    icons.ts                  # 90+ SVG icon functions and lookup map
+    state.ts                  # AppState, theme, mobile detection, pub-sub
+    data/                     # ~28 async adapter functions (API → frontend shapes)
+      index.ts                # Barrel re-export
+      helpers.ts              # userName, getUserMap, parseJson, lookupUser
+      shared.ts               # getCurrentUser, getNotifications
+      dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
+      ideas.ts                # getIdeas, getReviewQueue, getIdeaForScoring, etc.
+      projects.ts             # getProjects, getProjectById, getEngineeringProject
+      teams.ts                # getTeamMembers, getUsers
+      edges.ts                # getEdgeIdea, getEdgeOutcomes, getEdges
+      tools.ts                # getCrunchColumns, getFlowData
+      admin.ts                # getAccountData, getProfileData, getCompanySettings, etc.
+    styles/                   # CSS modules (cascade-ordered)
+      fonts.css               # @font-face declarations
+      tokens.css              # :root custom properties (light mode)
+      dark-mode.css           # [data-theme="dark"] overrides
+      base.css                # Reset, typography, focus/selection
+      components.css          # Buttons, inputs, cards, badges, tables, etc.
+      layout.css              # Dashboard grid, sidebar, header, named grid classes
+      utilities.css           # Utility classes and animations
+      responsive.css          # Media queries and reduced motion
+      pages.css               # Page-specific styles
+      command-palette.css     # Command palette styles
+    style.css                 # @import barrel (dev); build concatenates modules
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
     command-palette.ts        # Cmd+K search overlay with keyboard navigation
     favicon.ico               # Application favicon
@@ -152,10 +175,10 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 ## Build
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
-1. Composes HTML pages: runs `web-app/site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory
-2. Copies 8 standalone pages' `index.html` to the build directory
+1. Composes HTML pages: runs `web-app/site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
+2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
-4. Copies static assets (`web-app/site/style.css`, `web-app/site/fonts/`, `web-app/site/favicon.ico`, `web-app/index.html`) to the build directory
+4. Concatenates CSS modules (`web-app/site/styles/*.css`) into `site/style.css`, copies `fonts/` and `favicon.ico` to the build directory
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.

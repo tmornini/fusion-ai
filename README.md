@@ -40,7 +40,7 @@ python3 -m http.server 8080
 Requires a clean git working directory. The build:
 1. Composes dashboard pages by merging `web-app/site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
-3. Copies static assets (style.css, fonts/, favicon.ico)
+3. Concatenates CSS modules (styles/*.css) into style.css, copies fonts/ and favicon.ico
 4. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack

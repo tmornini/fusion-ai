@@ -1,6 +1,6 @@
 # Fonts
 
-Self-hosted woff2 font files loaded via `@font-face` declarations in `../style.css`.
+Self-hosted woff2 font files loaded via `@font-face` declarations in `../styles/fonts.css`.
 
 ## Font Files
 

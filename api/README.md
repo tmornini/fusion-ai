@@ -7,7 +7,7 @@ REST-style in-process API backed by localStorage. Provides `GET(resource)` and `
 | File | Purpose |
 |------|---------|
 | `api.ts` | `GET()`/`PUT()` URL routing, `initApi()` entry point |
-| `types.ts` | Row types (snake_case) matching schema, `snakeToCamel` utility |
+| `types.ts` | Row types (snake_case) matching schema, `snakeToCamel` and `toBool` utilities |
 | `db.ts` | `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns |
 | `db-localstorage.ts` | localStorage implementation with JSON serialization |
 | `seed.ts` | Mock data seeding for first-load population |
@@ -42,4 +42,4 @@ The `DbAdapter` interface is designed for easy migration to Postgres or other ba
 
 1. Implement the `DbAdapter` interface for the new database
 2. Swap the import in `web-app/site/script.ts` from `db-localstorage` to the new implementation
-3. All pages continue working unchanged — they only call `GET()`/`PUT()` through `data.ts`
+3. All pages continue working unchanged — they only call `GET()`/`PUT()` through `data/`
