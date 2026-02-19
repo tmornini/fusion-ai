@@ -189,7 +189,7 @@ export async function init(): Promise<void> {
     if (list) list.innerHTML = sorted.map(idea => renderIdeaCard(idea, currentView)).join('');
 
     const count = $('#ideas-count');
-    if (count) count.textContent = `${sorted.length} ideas • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
+    if (count) count.textContent = `${sorted.length} ${sorted.length === 1 ? 'idea' : 'ideas'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
 
     bindCardActions();
   }

@@ -170,7 +170,7 @@ export async function init(): Promise<void> {
 
   // Summary
   const summaryEl = $('#team-summary');
-  if (summaryEl) summaryEl.textContent = `${members.length} members • Manage roles, strengths, and availability`;
+  if (summaryEl) summaryEl.textContent = `${members.length} ${members.length === 1 ? 'member' : 'members'} • Manage roles, strengths, and availability`;
 
   // Detail placeholder
   const placeholderEl = $('#detail-placeholder');

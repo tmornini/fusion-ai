@@ -124,8 +124,8 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                 <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-center gap-2 mb-3">${m.icon(20, 'text-primary')} <span class="font-medium">${m.label}</span></div>
                   <div style="display:flex;flex-direction:column;gap:0.5rem">
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${m.prefix}${m.baseline}${m.unit}</span></div>
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.prefix}${m.current}${m.unit}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${m.baseline ? `${m.prefix}${m.baseline}${m.unit}` : '—'}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.current ? `${m.prefix}${m.current}${m.unit}` : '—'}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
                       ${varianceHtml(m.baseline, m.current, m.lower, m.unit, m.prefix)}
@@ -240,7 +240,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                 }).join('')}
               </div>
               <div class="flex items-center justify-between mt-4 pt-4" style="border-top:1px solid hsl(var(--border))">
-                <span class="text-sm text-muted">1 assigned, 4 unassigned</span>
+                <span class="text-sm text-muted">${p.tasks.filter(t => t.assigned).length} assigned, ${p.tasks.filter(t => !t.assigned).length} unassigned</span>
                 <button class="btn btn-primary btn-sm">Save Assignments</button>
               </div>
             </div>

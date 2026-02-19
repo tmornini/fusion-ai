@@ -84,7 +84,7 @@ function renderLabelStep(): string {
             <div><p class="font-medium text-sm">Q4_Sales_Report.xlsx</p><p class="text-xs text-muted">2.3 MB • 1,247 rows • ${columns.length} columns</p></div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="text-right"><p class="text-sm font-medium">${pct}% complete</p><p class="text-xs text-muted">${labeled} of ${columns.length} columns labeled</p></div>
+            <div class="text-right"><p class="text-sm font-medium">${pct}% complete</p><p class="text-xs text-muted">${labeled} of ${columns.length} ${columns.length === 1 ? 'column' : 'columns'} labeled</p></div>
             <div style="width:6rem"><div class="progress" style="height:0.5rem"><div class="progress-fill" style="width:${pct}%"></div></div></div>
           </div>
         </div>

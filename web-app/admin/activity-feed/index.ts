@@ -61,7 +61,7 @@ export async function init(): Promise<void> {
   container.innerHTML = `
     <div style="max-width:48rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
-        <a href="../account/index.html" class="text-primary">Account</a>
+        <a href="../account/index.html" class="hover-link">Account</a>
         ${iconChevronRight(14)} <span>Activity Feed</span>
       </nav>
 

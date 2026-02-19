@@ -46,15 +46,15 @@ function renderProjectCard(p: Project, view: string): string {
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;flex:1" class="project-metrics-grid">
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconClock(16, 'text-primary')}</div>
-                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${p.actualTime}h <span class="text-xs text-muted">/ ${p.estimatedTime}h</span></p></div>
+                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${p.estimatedTime ? `${p.actualTime}h <span class="text-xs text-muted">/ ${p.estimatedTime}h</span>` : '—'}</p></div>
               </div>
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconDollarSign(16, 'text-primary')}</div>
-                <div><p class="text-xs text-muted">Cost</p><p class="text-sm font-medium">$${(p.actualCost / 1000).toFixed(0)}k</p></div>
+                <div><p class="text-xs text-muted">Cost</p><p class="text-sm font-medium">${p.actualCost ? `$${(p.actualCost / 1000).toFixed(0)}k` : '—'}</p></div>
               </div>
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconTrendingUp(16, 'text-primary')}</div>
-                <div><p class="text-xs text-muted">Impact</p><p class="text-sm font-medium">${p.actualImpact || p.estimatedImpact}</p></div>
+                <div><p class="text-xs text-muted">Impact</p><p class="text-sm font-medium">${p.actualImpact || p.estimatedImpact || '—'}</p></div>
               </div>
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconTarget(16, 'text-primary')}</div>
@@ -144,7 +144,7 @@ export async function init(): Promise<void> {
     const container = $('#projects-list');
     if (container) container.innerHTML = sortedProjects().map(p => renderProjectCard(p, currentView)).join('');
     const info = $('#projects-info');
-    if (info) info.textContent = `${projects.length} projects • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
+    if (info) info.textContent = `${projects.length} ${projects.length === 1 ? 'project' : 'projects'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
     bindCards();
   }
 

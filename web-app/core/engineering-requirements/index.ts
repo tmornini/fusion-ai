@@ -93,7 +93,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="card p-6 mb-6">
-        <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconLightbulb(20, 'text-primary')} Business Context</h3>
+        <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconLightbulb(20, 'text-primary')} Business Context</h3>
         <div style="display:flex;flex-direction:column;gap:1.5rem">
           <div><h4 class="text-sm font-semibold mb-2">Problem Statement</h4><p class="text-muted">${escapeHtml(project.businessContext.problem)}</p></div>
           <div><h4 class="text-sm font-semibold mb-2">Expected Outcome</h4><p class="text-muted">${escapeHtml(project.businessContext.expectedOutcome)}</p></div>
@@ -101,7 +101,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="card p-6 mb-6">
-        <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconTarget(20, 'text-success')} Success Metrics</h3>
+        <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconTarget(20, 'text-success')} Success Metrics</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
           ${project.businessContext.successMetrics.map((m: string) => `
             <div class="flex items-start gap-2">${iconCheckCircle2(16, 'text-success')} <span>${escapeHtml(m)}</span></div>
@@ -110,7 +110,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="card p-6 mb-6">
-        <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconAlertTriangle(20, 'text-warning')} Constraints & Requirements</h3>
+        <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconAlertTriangle(20, 'text-warning')} Constraints & Requirements</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
           ${project.businessContext.constraints.map((c: string) => `
             <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${escapeHtml(c)}</span></div>
@@ -119,7 +119,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="card p-6 mb-6">
-        <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
+        <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem" class="convert-grid">
           ${project.team.map((m: any) => `
             <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3)">
@@ -132,7 +132,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="card p-6 mb-8">
-        <h3 class="flex items-center gap-2 text-lg font-semibold mb-4">${iconFileText(20, 'text-primary')} Source Idea</h3>
+        <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconFileText(20, 'text-primary')} Source Idea</h3>
         <a href="../idea-scoring/index.html?ideaId=${project.linkedIdea.id}" class="flex items-center justify-between" style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);text-decoration:none;color:inherit">
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconLightbulb(20, 'text-primary')}</div>
@@ -159,7 +159,7 @@ export async function init(): Promise<void> {
       </div>
 
       <div class="flex items-center justify-between" style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
-        <span class="text-sm text-muted">${pendingCount > 0 ? `${pendingCount} question(s) awaiting business response` : 'All questions have been answered'}</span>
+        <span class="text-sm text-muted">${pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? 'question' : 'questions'} awaiting business response` : 'All questions have been answered'}</span>
         <div class="flex gap-3">
           <button class="btn btn-outline" id="er-back2">Back to Project</button>
           <button class="btn btn-primary gap-2" id="er-complete">${iconCheckCircle2(16)} Mark Requirements Complete</button>

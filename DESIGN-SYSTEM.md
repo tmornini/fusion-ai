@@ -245,6 +245,12 @@ CSS custom properties on `:root` define light theme values. The `[data-theme="da
 - No jargon for business users
 - Action-oriented
 
+### Data Formatting
+- **Missing/zero values**: Display `—` (em-dash) instead of `0h`, `$0k`, or blank. Use the guard pattern: `value ? formatted : '—'`
+- **Singular/plural**: Use ternary grammar — `${count} ${count === 1 ? 'item' : 'items'}` — never parenthetical `item(s)` form
+- **Breadcrumb links**: Always use `class="hover-link"` for breadcrumb navigation links (not `text-primary`)
+- **Section headers (h3)**: Always include `font-display` class on section header h3 tags to use the display typeface (IBM Plex Sans)
+
 ### Error Messages
 **Do:**
 - "Unable to save. Please check your connection and try again."
