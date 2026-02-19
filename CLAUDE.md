@@ -22,7 +22,7 @@ No test framework is configured.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/site/data/` directory contains ~28 async adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
-- **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When the DB is empty, non-entry pages redirect to snapshots so users can load mock data or upload a snapshot. A snapshots page provides wipe, reload, upload, and download snapshot operations.
+- **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
 ### API Layer (`/api`)
@@ -30,7 +30,7 @@ No test framework is configured.
 The API layer is a set of TypeScript modules that provide a REST-style interface to the database:
 
 - **`api/types.ts`** — Row types (snake_case) matching schema, plus `snakeToCamel` and `toBool` utilities
-- **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns
+- **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
 - **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` URL routing
 - **`api/seed.ts`** — Mock data seeding function
@@ -78,7 +78,7 @@ build                         # Executable build script
 
 api/
   types.ts                    # Row types (snake_case), snakeToCamel, toBool utilities
-  db.ts                       # DbAdapter interface (EntityStore, SingletonStore)
+  db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema)
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT URL routing
   seed.ts                     # Mock data seeding

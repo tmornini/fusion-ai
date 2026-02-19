@@ -380,9 +380,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await adapter.initialize();
     initApi(adapter);
 
-    // If DB is empty, redirect to snapshots so user can choose what to load
-    const users = await adapter.users.getAll();
-    if (users.length === 0) {
+    // If no schema exists, redirect to snapshots so user can choose what to load
+    const schemaExists = await adapter.hasSchema();
+    if (!schemaExists) {
       const page = getPageName();
       const skipRedirect = ['snapshots', 'auth', 'onboarding', 'not-found', 'design-system'];
       if (!skipRedirect.includes(page)) {

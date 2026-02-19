@@ -153,6 +153,18 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
       }
     },
 
+    async hasSchema(): Promise<boolean> {
+      return TABLE_NAMES.some(t => localStorage.getItem(KEY_PREFIX + t) !== null);
+    },
+
+    async createSchema(): Promise<void> {
+      for (const table of TABLE_NAMES) {
+        if (localStorage.getItem(KEY_PREFIX + table) === null) {
+          writeTable(table, []);
+        }
+      }
+    },
+
     async exportSnapshot(): Promise<string> {
       const dump: Record<string, unknown[]> = {};
       for (const table of TABLE_NAMES) {
@@ -183,9 +195,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
       }
       for (const table of TABLE_NAMES) {
         const rows = record[table];
-        if (Array.isArray(rows) && rows.length > 0) {
-          writeTable(table, rows);
-        }
+        writeTable(table, Array.isArray(rows) ? rows : []);
       }
     },
 

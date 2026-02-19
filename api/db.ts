@@ -28,6 +28,8 @@ export interface DbAdapter {
   close(): Promise<void>;
   flush(): Promise<void>;
   wipeAllData(): Promise<void>;
+  hasSchema(): Promise<boolean>;
+  createSchema(): Promise<void>;
   exportSnapshot(): Promise<string>;
   importSnapshot(json: string): Promise<void>;
 

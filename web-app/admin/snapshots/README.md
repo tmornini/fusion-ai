@@ -7,7 +7,7 @@ Database administration tools for development and testing.
 
 ## Features
 
-- Wipe all existing data
-- Reload mock seed data
+- Create pristine environment (wipe + empty schema)
+- Wipe and load mock data
 - Upload snapshot from a previously downloaded file
 - Download current database as a snapshot file

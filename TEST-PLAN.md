@@ -232,10 +232,10 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 ### Snapshots (`snapshots/`) — Run These Last
 
-- [ ] **G18** Navigate to `snapshots/`. PASS: shows 4 operation cards: Wipe All Data, Reload Mock Data, Upload Snapshot, Download Snapshot.
+- [ ] **G18** Navigate to `snapshots/`. PASS: shows 4 operation cards: Create Pristine Environment, Wipe and Load Mock Data, Upload Snapshot, Download Snapshot.
 - [ ] **G19** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
-- [ ] **G20** Click "Wipe Data", confirm the dialog ("Are you sure you want to wipe ALL data? This cannot be undone."). PASS: success toast "All data wiped successfully." Info banner appears: "Your database is empty." Navigate to `ideas/` — redirected back to `snapshots/`.
-- [ ] **G21** Click "Reload Mock Data". PASS: redirects to root `index.html` (landing page). Navigate to `ideas/` — 11 ideas are back.
+- [ ] **G20** Click "Create Pristine Environment", confirm the dialog. PASS: success toast "Pristine environment created." Info banner appears: "Your database is empty." Navigate to `ideas/` — page loads (no redirect, schema exists). All 22 `fusion-ai:*` keys exist in localStorage as empty arrays.
+- [ ] **G21** Click "Wipe and Load Mock Data". PASS: redirects to root `index.html` (landing page). Navigate to `ideas/` — 11 ideas are back.
 - [ ] **G22** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to root `index.html`. Data matches the snapshot.
 
 ---

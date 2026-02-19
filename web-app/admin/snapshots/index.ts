@@ -37,7 +37,7 @@ export async function init(): Promise<void> {
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--success)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--success))">${iconDownload(20)}</div>
         <div>
           <h3 class="text-sm font-semibold">Download Snapshot</h3>
-          <p class="text-xs text-muted">Download all data as a snapshot file.</p>
+          <p class="text-xs text-muted">Download snapshot</p>
         </div>
       </div>
       <button class="btn btn-outline" id="download-btn" style="border-color:hsl(var(--success));color:hsl(var(--success))">Download Snapshot</button>
@@ -48,7 +48,7 @@ export async function init(): Promise<void> {
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--success)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--success))">${iconUpload(20)}</div>
         <div>
           <h3 class="text-sm font-semibold">Upload Snapshot</h3>
-          <p class="text-xs text-muted">Load data from a previously downloaded snapshot file.</p>
+          <p class="text-xs text-muted">Load data from snapshot file</p>
         </div>
       </div>
       <label class="btn btn-outline" style="cursor:pointer;text-align:center;border-color:hsl(var(--success));color:hsl(var(--success))">
@@ -61,50 +61,53 @@ export async function init(): Promise<void> {
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--warning)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--warning))">${iconDatabase(20)}</div>
         <div>
-          <h3 class="text-sm font-semibold">Reload Mock Data</h3>
-          <p class="text-xs text-muted">Wipe and re-seed with default mock data.</p>
+          <h3 class="text-sm font-semibold">Wipe and Load Mock Data</h3>
+          <p class="text-xs text-muted">Wipe and load mock data</p>
         </div>
       </div>
-      <button class="btn btn-outline" id="reload-btn" style="border-color:hsl(var(--warning));color:hsl(var(--warning))">Reload Mock Data</button>
+      <button class="btn btn-outline" id="reload-btn" style="border-color:hsl(var(--warning));color:hsl(var(--warning))">Wipe and Load Mock Data</button>
     </div>
 
     <div class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:0.75rem">
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--error)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--error))">${iconTrash(20)}</div>
         <div>
-          <h3 class="text-sm font-semibold">Wipe All Data</h3>
-          <p class="text-xs text-muted">Delete all records from every table.</p>
+          <h3 class="text-sm font-semibold">Create Pristine Environment</h3>
+          <p class="text-xs text-muted">Create a pristine environment</p>
         </div>
       </div>
-      <button class="btn btn-outline" id="wipe-btn" style="border-color:hsl(var(--error));color:hsl(var(--error))">Wipe Data</button>
+      <button class="btn btn-outline" id="wipe-btn" style="border-color:hsl(var(--error));color:hsl(var(--error))">Create Pristine Environment</button>
     </div>
   `;
 
   // Show empty-state banner if DB has no data
   await updateEmptyBanner(root);
 
-  // Wipe
+  // Create Pristine Environment
   $('#wipe-btn')?.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to wipe ALL data? This cannot be undone.')) return;
+    if (!confirm('Are you sure you want to create a pristine environment? All existing data will be removed. This cannot be undone.')) return;
     try {
-      await getDbAdapter().wipeAllData();
-      showToast('All data wiped successfully.', 'success');
+      const db = getDbAdapter();
+      await db.wipeAllData();
+      await db.createSchema();
+      showToast('Pristine environment created.', 'success');
       await updateEmptyBanner(root);
     } catch (e) {
-      showToast('Failed to wipe data.', 'error');
+      showToast('Failed to create pristine environment.', 'error');
     }
   });
 
-  // Reload mock
+  // Wipe and load mock data
   $('#reload-btn')?.addEventListener('click', async () => {
     try {
       const db = getDbAdapter();
       await db.wipeAllData();
+      await db.createSchema();
       await seedData(db);
       await db.flush();
       window.location.href = '../../index.html';
     } catch (e) {
-      showToast('Failed to reload mock data.', 'error');
+      showToast('Failed to load mock data.', 'error');
     }
   });
 
@@ -116,6 +119,7 @@ export async function init(): Promise<void> {
     try {
       const text = await file.text();
       const db = getDbAdapter();
+      await db.wipeAllData();
       await db.importSnapshot(text);
       await db.flush();
       window.location.href = '../../index.html';
