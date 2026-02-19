@@ -188,7 +188,7 @@ function renderResults(query: string): void {
 
     html += `<div class="cmdk-group-label">${categoryLabels[cat]}</div>`;
     for (const item of items) {
-      html += `<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" ${globalIndex === 0 ? 'aria-selected="true"' : ''}>
+      html += `<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? 'aria-selected="true"' : ''}>
         <div class="cmdk-item-icon">${item.icon}</div>
         <div class="cmdk-item-content">
           <div class="cmdk-item-title">${highlightMatch(item.title, query)}</div>

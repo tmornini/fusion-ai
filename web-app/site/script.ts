@@ -192,14 +192,25 @@ function scoreColor(score: number): string {
   return 'color:hsl(var(--error))';
 }
 
+let _dialogPreviousFocus: HTMLElement | null = null;
+
 function openDialog(id: string): void {
+  _dialogPreviousFocus = document.activeElement as HTMLElement | null;
   $(`#${id}-backdrop`)?.classList.remove('hidden');
-  $(`#${id}-dialog`)?.classList.remove('hidden');
+  const dialog = $(`#${id}-dialog`);
+  dialog?.classList.remove('hidden');
+  dialog?.setAttribute('aria-hidden', 'false');
+  const focusable = dialog?.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  focusable?.focus();
 }
 
 function closeDialog(id: string): void {
   $(`#${id}-backdrop`)?.classList.add('hidden');
-  $(`#${id}-dialog`)?.classList.add('hidden');
+  const dialog = $(`#${id}-dialog`);
+  dialog?.classList.add('hidden');
+  dialog?.setAttribute('aria-hidden', 'true');
+  _dialogPreviousFocus?.focus();
+  _dialogPreviousFocus = null;
 }
 
 function initTabs(tabSel: string, panelSel: string, activeClass = 'active'): void {
@@ -453,6 +464,7 @@ function initDashboardLayout(): void {
       if (items) {
         const hidden = items.style.display === 'none';
         items.style.display = hidden ? '' : 'none';
+        btn.setAttribute('aria-expanded', String(hidden));
         const chevron = btn.querySelector('svg');
         if (chevron) chevron.style.transform = hidden ? '' : 'rotate(-90deg)';
       }
