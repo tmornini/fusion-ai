@@ -49,13 +49,14 @@ function compose(): void {
   const layoutPath = join(ROOT, 'site', 'layout.html');
   const layout = readFileSync(layoutPath, 'utf-8');
 
+  const missing: string[] = [];
   let composed = 0;
 
   for (const [pageName, { source, title }] of Object.entries(dashboardPages)) {
     const pageHtmlPath = join(ROOT, source, 'index.html');
 
     if (!existsSync(pageHtmlPath)) {
-      console.warn(`  skip: ${source}/index.html not found`);
+      missing.push(source);
       continue;
     }
 
@@ -81,7 +82,7 @@ function compose(): void {
   for (const source of standalonePages) {
     const srcPath = join(ROOT, source, 'index.html');
     if (!existsSync(srcPath)) {
-      console.warn(`  skip: ${source}/index.html not found`);
+      missing.push(source);
       continue;
     }
 
@@ -93,6 +94,11 @@ function compose(): void {
   }
 
   console.log(`Copied ${copied} standalone pages.`);
+
+  if (missing.length > 0) {
+    console.error(`ERROR: ${missing.length} page(s) not found:\n  ${missing.join('\n  ')}`);
+    process.exit(1);
+  }
 }
 
 compose();
