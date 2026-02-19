@@ -5,6 +5,10 @@
 
 import type { AppState } from './state';
 import { state, setState, subscribe, resolvedTheme, applyTheme, setTheme } from './state';
+import { $, $$, escapeHtml } from './dom';
+import { showToast } from './toast';
+import type { SkeletonType } from './skeleton';
+import { renderSkeleton, renderError, renderEmpty, withLoadingState } from './skeleton';
 import {
   icon, icons,
   iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
@@ -27,162 +31,6 @@ import {
   iconFileSpreadsheet, iconListTodo, iconToggleLeft, iconType, iconTable,
   iconSlider, iconDot, iconLayoutGrid, iconChevronUp, iconHistory,
 } from './icons';
-
-// ------------------------------------
-// DOM Helpers
-// ------------------------------------
-
-function $(selector: string, parent: ParentNode = document): HTMLElement | null {
-  return parent.querySelector(selector);
-}
-
-function $$(selector: string, parent: ParentNode = document): HTMLElement[] {
-  return Array.from(parent.querySelectorAll(selector));
-}
-
-function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// ------------------------------------
-// Toast
-// ------------------------------------
-
-function showToast(message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${variant}`;
-  const msgSpan = document.createElement('span');
-  msgSpan.className = 'toast-message';
-  msgSpan.textContent = message;
-  toast.appendChild(msgSpan);
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 300ms ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ------------------------------------
-// Skeleton / Loading / Error / Empty State Helpers
-// ------------------------------------
-
-type SkeletonType = 'card-grid' | 'card-list' | 'detail' | 'table' | 'stats-row';
-
-const SHIMMER_CLASS = 'skeleton-shimmer';
-
-function skeletonCard(): string {
-  return `<div class="skeleton-card">
-    <div class="${SHIMMER_CLASS} skeleton-badge" style="margin-bottom:0.75rem"></div>
-    <div class="${SHIMMER_CLASS} skeleton-heading"></div>
-    <div class="${SHIMMER_CLASS} skeleton-text"></div>
-    <div class="${SHIMMER_CLASS} skeleton-text" style="width:80%"></div>
-  </div>`;
-}
-
-function skeletonListItem(): string {
-  return `<div class="skeleton-card" style="display:flex;align-items:center;gap:1rem">
-    <div class="${SHIMMER_CLASS} skeleton-avatar"></div>
-    <div style="flex:1">
-      <div class="${SHIMMER_CLASS} skeleton-text" style="width:60%;margin-bottom:0.375rem"></div>
-      <div class="${SHIMMER_CLASS} skeleton-text-sm" style="width:40%"></div>
-    </div>
-    <div class="${SHIMMER_CLASS} skeleton-badge"></div>
-  </div>`;
-}
-
-function skeletonStatsRow(): string {
-  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
-    ${Array(4).fill(`<div class="skeleton-card" style="padding:1rem">
-      <div class="${SHIMMER_CLASS} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
-      <div class="${SHIMMER_CLASS} skeleton-heading" style="width:40%"></div>
-    </div>`).join('')}
-  </div>`;
-}
-
-function renderSkeleton(type: SkeletonType, options?: { count?: number }): string {
-  const count = options?.count ?? 4;
-  switch (type) {
-    case 'card-grid':
-      return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1.5rem">
-        ${Array(count).fill(skeletonCard()).join('')}
-      </div>`;
-    case 'card-list':
-      return `<div style="display:flex;flex-direction:column;gap:0.75rem">
-        ${Array(count).fill(skeletonListItem()).join('')}
-      </div>`;
-    case 'detail':
-      return `<div>
-        <div class="${SHIMMER_CLASS} skeleton-heading" style="width:40%;margin-bottom:1.5rem"></div>
-        <div class="skeleton-card" style="margin-bottom:1.5rem">
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:90%"></div>
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:75%"></div>
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:60%;margin-bottom:1rem"></div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
-            ${Array(3).fill(`<div><div class="${SHIMMER_CLASS} skeleton-text-sm"></div><div class="${SHIMMER_CLASS} skeleton-heading" style="width:60%"></div></div>`).join('')}
-          </div>
-        </div>
-      </div>`;
-    case 'table':
-      return `<div class="skeleton-card" style="padding:0;overflow:hidden">
-        <div style="padding:1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:30%"></div>
-        </div>
-        ${Array(count).fill(`<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${SHIMMER_CLASS} skeleton-avatar" style="width:2rem;height:2rem"></div>
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:25%;margin:0"></div>
-          <div class="${SHIMMER_CLASS} skeleton-text" style="width:20%;margin:0"></div>
-          <div class="${SHIMMER_CLASS} skeleton-badge" style="margin-left:auto"></div>
-        </div>`).join('')}
-      </div>`;
-    case 'stats-row':
-      return skeletonStatsRow();
-    default:
-      return '';
-  }
-}
-
-function renderError(message: string, retryLabel = 'Try Again'): string {
-  return `<div class="state-container">
-    <div class="state-icon state-icon-error">${iconAlertTriangle(24)}</div>
-    <p class="state-title">Something went wrong</p>
-    <p class="state-description">${escapeHtml(message)}</p>
-    <button class="btn btn-outline" data-retry-btn>${retryLabel}</button>
-  </div>`;
-}
-
-function renderEmpty(iconHtml: string, title: string, description: string, action?: { label: string; href: string }): string {
-  return `<div class="state-container">
-    <div class="state-icon state-icon-empty">${iconHtml}</div>
-    <p class="state-title">${escapeHtml(title)}</p>
-    <p class="state-description">${escapeHtml(description)}</p>
-    ${action ? `<a href="${action.href}" class="btn btn-primary">${escapeHtml(action.label)}</a>` : ''}
-  </div>`;
-}
-
-async function withLoadingState<T>(
-  container: HTMLElement,
-  skeletonHtml: string,
-  fetchFn: () => Promise<T>,
-  retryFn?: () => void,
-): Promise<T | null> {
-  container.innerHTML = skeletonHtml;
-  try {
-    return await fetchFn();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.';
-    container.innerHTML = renderError(msg);
-    const retryBtn = container.querySelector('[data-retry-btn]');
-    if (retryBtn && retryFn) {
-      retryBtn.addEventListener('click', retryFn);
-    }
-    return null;
-  }
-}
 
 // ------------------------------------
 // Shared Utilities
@@ -581,16 +429,16 @@ export {
   state, setState, subscribe, resolvedTheme,
   // Theme (re-exported from ./state)
   applyTheme, setTheme,
-  // DOM
+  // DOM (re-exported from ./dom)
   $, $$, escapeHtml,
   // Navigation
   getPageName, getParams, navigateTo,
   // Layout
   initDashboardLayout,
-  // Toast
+  // Toast (re-exported from ./toast)
   showToast,
-  // Loading / Error / Empty
-  renderSkeleton, renderError, renderEmpty, withLoadingState,
+  // Loading / Error / Empty (re-exported from ./skeleton)
+  type SkeletonType, renderSkeleton, renderError, renderEmpty, withLoadingState,
   // Shared Utilities
   initials, scoreColor, openDialog, closeDialog, initTabs,
   // Icons (re-exported from ./icons)
