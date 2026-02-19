@@ -18,12 +18,12 @@ export interface QuickAction {
 
 export async function getDashboardGauges(): Promise<GaugeCard[]> {
   const projects = await GET('projects') as ProjectEntity[];
-  const totalEstTime = projects.reduce((s, p) => s + p.estimated_time, 0);
-  const totalActTime = projects.reduce((s, p) => s + p.actual_time, 0);
-  const totalEstCost = projects.reduce((s, p) => s + p.estimated_cost, 0);
-  const totalActCost = projects.reduce((s, p) => s + p.actual_cost, 0);
-  const avgEstImpact = projects.length ? Math.round(projects.reduce((s, p) => s + p.estimated_impact, 0) / projects.length) : 0;
-  const avgActImpact = projects.length ? Math.round(projects.filter(p => p.actual_impact > 0).reduce((s, p) => s + p.actual_impact, 0) / Math.max(1, projects.filter(p => p.actual_impact > 0).length)) : 0;
+  const totalEstTime = projects.reduce((sum, project) => sum + project.estimated_time, 0);
+  const totalActTime = projects.reduce((sum, project) => sum + project.actual_time, 0);
+  const totalEstCost = projects.reduce((sum, project) => sum + project.estimated_cost, 0);
+  const totalActCost = projects.reduce((sum, project) => sum + project.actual_cost, 0);
+  const avgEstImpact = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.estimated_impact, 0) / projects.length) : 0;
+  const avgActImpact = projects.length ? Math.round(projects.filter(project => project.actual_impact > 0).reduce((sum, project) => sum + project.actual_impact, 0) / Math.max(1, projects.filter(project => project.actual_impact > 0).length)) : 0;
 
   return [
     {
@@ -58,8 +58,8 @@ export async function getDashboardStats(): Promise<{ label: string; value: numbe
     GET('ideas') as Promise<IdeaEntity[]>,
     GET('projects') as Promise<ProjectEntity[]>,
   ]);
-  const doneCount = projects.filter(p => p.progress >= 90).length;
-  const reviewCount = ideas.filter(i => i.status === 'pending_review').length;
+  const doneCount = projects.filter(project => project.progress >= 90).length;
+  const reviewCount = ideas.filter(idea => idea.status === 'pending_review').length;
   return [
     { label: 'Ideas', value: ideas.length, trend: `+${Math.min(3, ideas.length)}` },
     { label: 'Projects', value: projects.length, trend: `+${Math.min(1, projects.length)}` },

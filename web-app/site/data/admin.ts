@@ -52,10 +52,10 @@ export async function getAccount(): Promise<Account> {
       aiCredits: { current: account.ai_credits_current, limit: account.ai_credits_limit },
     },
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
-    recentActivity: activities.slice(0, 3).map(a => ({
-      type: a.type,
-      description: `${lookupUser(usersById, a.actor_id, 'Unknown')} ${a.action} ${a.target}`,
-      time: a.timestamp,
+    recentActivity: activities.slice(0, 3).map(activity => ({
+      type: activity.type,
+      description: `${lookupUser(usersById, activity.actor_id, 'Unknown')} ${activity.action} ${activity.target}`,
+      time: activity.timestamp,
     })),
   };
 }
@@ -138,16 +138,16 @@ export async function getActivityFeed(): Promise<Activity[]> {
     GET('activities') as Promise<ActivityEntity[]>,
     getUsersById(),
   ]);
-  return activities.map(a => ({
-    id: a.id,
-    type: a.type,
-    actor: lookupUser(usersById, a.actor_id, 'Unknown'),
-    action: a.action,
-    target: a.target,
-    timestamp: a.timestamp,
-    ...(a.score != null ? { score: a.score } : {}),
-    ...(a.status != null ? { status: a.status } : {}),
-    ...(a.comment != null ? { comment: a.comment } : {}),
+  return activities.map(activity => ({
+    id: activity.id,
+    type: activity.type,
+    actor: lookupUser(usersById, activity.actor_id, 'Unknown'),
+    action: activity.action,
+    target: activity.target,
+    timestamp: activity.timestamp,
+    ...(activity.score != null ? { score: activity.score } : {}),
+    ...(activity.status != null ? { status: activity.status } : {}),
+    ...(activity.comment != null ? { comment: activity.comment } : {}),
   }));
 }
 
@@ -175,22 +175,22 @@ export async function getNotificationCategories(): Promise<NotificationCategory[
   ]);
 
   const prefsByCategory = new Map<string, NotificationPrefEntity[]>();
-  for (const p of prefs) {
-    const list = prefsByCategory.get(p.category_id) || [];
-    list.push(p);
-    prefsByCategory.set(p.category_id, list);
+  for (const pref of prefs) {
+    const list = prefsByCategory.get(pref.category_id) || [];
+    list.push(pref);
+    prefsByCategory.set(pref.category_id, list);
   }
 
-  return categories.map(c => ({
-    id: c.id,
-    label: c.label,
-    icon: c.icon,
-    prefs: (prefsByCategory.get(c.id) || []).map(p => ({
-      id: p.id,
-      label: p.label,
-      description: p.description,
-      email: toBool(p.email),
-      push: toBool(p.push),
+  return categories.map(category => ({
+    id: category.id,
+    label: category.label,
+    icon: category.icon,
+    prefs: (prefsByCategory.get(category.id) || []).map(pref => ({
+      id: pref.id,
+      label: pref.label,
+      description: pref.description,
+      email: toBool(pref.email),
+      push: toBool(pref.push),
     })),
   }));
 }

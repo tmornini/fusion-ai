@@ -18,15 +18,15 @@ export interface CrunchColumn {
 
 export async function getCrunchColumns(): Promise<CrunchColumn[]> {
   const rows = await GET('crunch-columns') as CrunchColumnEntity[];
-  return rows.map(r => ({
-    id: r.id,
-    originalName: r.original_name,
-    friendlyName: r.friendly_name,
-    dataType: r.data_type,
-    description: r.description,
-    sampleValues: parseJson<string[]>(r.sample_values),
-    isAcronym: toBool(r.is_acronym),
-    acronymExpansion: r.acronym_expansion,
+  return rows.map(row => ({
+    id: row.id,
+    originalName: row.original_name,
+    friendlyName: row.friendly_name,
+    dataType: row.data_type,
+    description: row.description,
+    sampleValues: parseJson<string[]>(row.sample_values),
+    isAcronym: toBool(row.is_acronym),
+    acronymExpansion: row.acronym_expansion,
   }));
 }
 
@@ -66,16 +66,16 @@ export async function getFlow(): Promise<Flow> {
     processName: process.name,
     processDescription: process.description,
     processDepartment: process.department,
-    steps: steps.map(s => ({
-      id: s.id,
-      title: s.title,
-      description: s.description,
-      owner: s.owner,
-      role: s.role,
-      tools: parseJson<string[]>(s.tools),
-      duration: s.duration,
-      order: s.sort_order,
-      type: s.type as ProcessStep['type'],
+    steps: steps.map(step => ({
+      id: step.id,
+      title: step.title,
+      description: step.description,
+      owner: step.owner,
+      role: step.role,
+      tools: parseJson<string[]>(step.tools),
+      duration: step.duration,
+      order: step.sort_order,
+      type: step.type as ProcessStep['type'],
     })),
   };
 }

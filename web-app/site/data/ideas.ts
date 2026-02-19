@@ -23,17 +23,17 @@ export async function getIdeas(): Promise<Idea[]> {
     getUsersById(),
   ]);
   return ideas
-    .map(i => ({
-      id: i.id,
-      title: i.title,
-      score: i.score,
-      estimatedImpact: i.estimated_impact,
-      estimatedTime: i.estimated_time,
-      estimatedCost: i.estimated_cost,
-      priority: i.priority,
-      status: i.status as Idea['status'],
-      submittedBy: lookupUser(usersById, i.submitted_by_id, 'Unknown'),
-      edgeStatus: i.edge_status as Idea['edgeStatus'],
+    .map(idea => ({
+      id: idea.id,
+      title: idea.title,
+      score: idea.score,
+      estimatedImpact: idea.estimated_impact,
+      estimatedTime: idea.estimated_time,
+      estimatedCost: idea.estimated_cost,
+      priority: idea.priority,
+      status: idea.status as Idea['status'],
+      submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
+      edgeStatus: idea.edge_status as Idea['edgeStatus'],
     }));
 }
 
@@ -60,24 +60,24 @@ export async function getReviewQueue(): Promise<ReviewIdea[]> {
   ]);
 
   return ideas
-    .filter(i => i.readiness !== '')
-    .map(i => {
+    .filter(idea => idea.readiness !== '')
+    .map(idea => {
       let priority: ReviewIdea['priority'] = 'low';
-      if (i.score >= 80) priority = 'high';
-      else if (i.score >= 60) priority = 'medium';
+      if (idea.score >= 80) priority = 'high';
+      else if (idea.score >= 60) priority = 'medium';
 
       return {
-        id: i.id,
-        title: i.title,
-        submittedBy: lookupUser(usersById, i.submitted_by_id, 'Unknown'),
+        id: idea.id,
+        title: idea.title,
+        submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
         priority,
-        readiness: (i.readiness || 'incomplete') as ReviewIdea['readiness'],
-        edgeStatus: (i.edge_status || 'missing') as ReviewIdea['edgeStatus'],
-        score: i.score,
-        impact: i.impact_label,
-        effort: i.effort_label,
-        waitingDays: i.waiting_days,
-        category: i.category,
+        readiness: (idea.readiness || 'incomplete') as ReviewIdea['readiness'],
+        edgeStatus: (idea.edge_status || 'missing') as ReviewIdea['edgeStatus'],
+        score: idea.score,
+        impact: idea.impact_label,
+        effort: idea.effort_label,
+        waitingDays: idea.waiting_days,
+        category: idea.category,
       };
     });
 }
@@ -227,7 +227,7 @@ export async function getApprovalEdge(ideaId: string): Promise<ApprovalEdge> {
     getUsersById(),
   ]);
 
-  const edge = edges.find(e => e.idea_id === ideaId);
+  const edge = edges.find(edge => edge.idea_id === ideaId);
   if (!edge) {
     return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
   }
@@ -238,11 +238,11 @@ export async function getApprovalEdge(ideaId: string): Promise<ApprovalEdge> {
   const allMetrics = await db.edgeMetrics.getAll();
 
   return {
-    outcomes: outcomes.map(o => ({
-      id: o.id,
-      description: o.description,
-      metrics: allMetrics.filter(m => m.outcome_id === o.id).map(m => ({
-        id: m.id, name: m.name, target: m.target, unit: m.unit,
+    outcomes: outcomes.map(outcome => ({
+      id: outcome.id,
+      description: outcome.description,
+      metrics: allMetrics.filter(metric => metric.outcome_id === outcome.id).map(metric => ({
+        id: metric.id, name: metric.name, target: metric.target, unit: metric.unit,
       })),
     })),
     impact: {

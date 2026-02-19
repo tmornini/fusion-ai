@@ -21,11 +21,11 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'current', first_name: 'Demo', last_name: 'User', email: 'demo@example.com', role: 'Admin', department: 'Product', status: 'active', availability: 100, performance_score: 95, projects_completed: 20, current_projects: 5, strengths: ['Strategic Planning', 'Data Analysis', 'Stakeholder Management'], team_dimensions: { driver: 80, analytical: 80, expressive: 80, amiable: 80 }, phone: '+1 (555) 123-4567', bio: 'Passionate about building products that solve real problems.', last_active: '' },
   ];
 
-  for (const u of users) {
-    await adapter.users.put(u.id, {
-      ...u,
-      strengths: JSON.stringify(u.strengths),
-      team_dimensions: JSON.stringify(u.team_dimensions),
+  for (const user of users) {
+    await adapter.users.put(user.id, {
+      ...user,
+      strengths: JSON.stringify(user.strengths),
+      team_dimensions: JSON.stringify(user.team_dimensions),
     });
   }
 
@@ -98,8 +98,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '6', title: 'Employee Training Assistant', description: '', status: 'under_review', progress: 18, start_date: '', target_end_date: '', lead_id: '3', estimated_time: 90, actual_time: 20, estimated_cost: 35000, actual_cost: 8000, estimated_impact: 65, actual_impact: 0, priority: 6, priority_score: 74, linked_idea_id: '6', business_context: '{}', timeline_label: '', budget_label: '' },
   ];
 
-  for (const p of projects) {
-    await adapter.projects.put(p.id, p);
+  for (const project of projects) {
+    await adapter.projects.put(project.id, project);
   }
 
   // ── Project Team (for project 1) ───────────
@@ -121,8 +121,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'm4', project_id: '1', title: 'User Acceptance Testing', status: 'pending', date: '2024-03-20', sort_order: 4 },
     { id: 'm5', project_id: '1', title: 'Production Deployment', status: 'pending', date: '2024-04-01', sort_order: 5 },
   ];
-  for (const m of milestones) {
-    await adapter.milestones.put(m.id, m);
+  for (const milestone of milestones) {
+    await adapter.milestones.put(milestone.id, milestone);
   }
 
   // ── Project Tasks (for project 1) ──────────
@@ -133,8 +133,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'task-4', project_id: '1', name: 'Build API endpoints', priority: 'Medium', description: 'RESTful API for segment data access and management', skills: JSON.stringify(['Node.js', 'REST API', 'PostgreSQL']), hours: 20, assigned_to_id: '' },
     { id: 'task-5', project_id: '1', name: 'Create documentation', priority: 'Low', description: 'Technical documentation and user guides for the segmentation system', skills: JSON.stringify(['Technical Writing', 'Markdown']), hours: 12, assigned_to_id: '' },
   ];
-  for (const t of tasks) {
-    await adapter.projectTasks.put(t.id, t);
+  for (const task of tasks) {
+    await adapter.projectTasks.put(task.id, task);
   }
 
   // ── Discussions (for project 1) ────────────
@@ -143,8 +143,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'd2', project_id: '1', author_id: '2', date: '2024-02-25', message: 'Segmentation accuracy is now at 94%. Exceeding our initial target of 90%.' },
     { id: 'd3', project_id: '1', author_id: '4', date: '2024-02-20', message: 'API endpoints are ready for frontend integration.' },
   ];
-  for (const d of discussions) {
-    await adapter.discussions.put(d.id, d);
+  for (const discussion of discussions) {
+    await adapter.discussions.put(discussion.id, discussion);
   }
 
   // ── Project Versions (for project 1) ───────
@@ -153,8 +153,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'v2', project_id: '1', version: 'v1.1', date: '2024-02-15', changes: 'Improved model accuracy by 12%', author_id: '3' },
     { id: 'v3', project_id: '1', version: 'v1.0', date: '2024-01-30', changes: 'Initial model deployment', author_id: '1' },
   ];
-  for (const v of versions) {
-    await adapter.projectVersions.put(v.id, v);
+  for (const version of versions) {
+    await adapter.projectVersions.put(version.id, version);
   }
 
   // ── Edges ──────────────────────────────────
@@ -167,8 +167,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     // Edge for approval-detail idea (id 7)
     { id: '6', idea_id: '7', status: 'complete', confidence: 'high', owner_id: '1', impact_short_term: 'Handle 60% of tier-1 inquiries automatically. Reduce agent workload significantly.', impact_mid_term: '40% reduction in support costs. Improved 24/7 availability for customers.', impact_long_term: 'Full self-service capability for common issues. Agents focus on complex cases only.', updated_at: '2024-02-28' },
   ];
-  for (const e of edges) {
-    await adapter.edges.put(e.id, e);
+  for (const edge of edges) {
+    await adapter.edges.put(edge.id, edge);
   }
 
   // ── Edge Outcomes & Metrics ────────────────
@@ -224,8 +224,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '9', type: 'task_completed', actor_id: '5', action: 'completed task', target: 'API documentation update', timestamp: 'Yesterday', score: null, status: null, comment: null },
     { id: '10', type: 'idea_scored', actor_id: '7', action: 'scored', target: 'Data Pipeline Modernization', timestamp: 'Yesterday', score: 92, status: null, comment: null },
   ];
-  for (const a of activities) {
-    await adapter.activities.put(a.id, a);
+  for (const activity of activities) {
+    await adapter.activities.put(activity.id, activity);
   }
 
   // ── Notifications ──────────────────────────
@@ -235,8 +235,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '3', title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', unread: 0 },
     { id: '4', title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', unread: 0 },
   ];
-  for (const n of notifications) {
-    await adapter.notifications.put(n.id, n);
+  for (const notification of notifications) {
+    await adapter.notifications.put(notification.id, notification);
   }
 
   // ── Clarifications (for project 1) ─────────
@@ -258,8 +258,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '5', original_name: 'REP_ID', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['R101', 'R102', 'R103']), is_acronym: 1, acronym_expansion: '' },
     { id: '6', original_name: 'STATUS', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['COMP', 'PEND', 'CANC']), is_acronym: 0, acronym_expansion: '' },
   ];
-  for (const c of crunchColumns) {
-    await adapter.crunchColumns.put(c.id, c);
+  for (const column of crunchColumns) {
+    await adapter.crunchColumns.put(column.id, column);
   }
 
   // ── Flow (Process + Steps) ─────────────────
@@ -276,8 +276,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'ps4', process_id: '1', title: 'Conduct kickoff meeting', description: 'Review goals, timeline, and assign customer contacts', owner: 'Customer Success', role: 'Implementation Specialist', tools: JSON.stringify(['Chat', 'Document']), duration: '1 hour', sort_order: 4, type: 'action' },
     { id: 'ps5', process_id: '1', title: 'Technical setup complete', description: 'Engineering confirms environment is ready for customer use', owner: 'Engineering', role: 'Solutions Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '2 days', sort_order: 5, type: 'action' },
   ];
-  for (const s of processSteps) {
-    await adapter.processSteps.put(s.id, s);
+  for (const step of processSteps) {
+    await adapter.processSteps.put(step.id, step);
   }
 
   // ── Company Settings ───────────────────────
@@ -323,8 +323,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', email: 1, push: 1 },
     { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', email: 1, push: 0 },
   ];
-  for (const p of notifPrefs) {
-    await adapter.notificationPrefs.put(p.id, p);
+  for (const pref of notifPrefs) {
+    await adapter.notificationPrefs.put(pref.id, pref);
   }
 
   // ── Account Config ─────────────────────────

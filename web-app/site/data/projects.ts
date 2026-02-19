@@ -23,19 +23,19 @@ export interface Project {
 
 export async function getProjects(): Promise<Project[]> {
   const rows = await GET('projects') as ProjectEntity[];
-  return rows.map(r => ({
-    id: r.id,
-    title: r.title,
-    status: r.status as Project['status'],
-    priorityScore: r.priority_score,
-    estimatedTime: r.estimated_time,
-    actualTime: r.actual_time,
-    estimatedCost: r.estimated_cost,
-    actualCost: r.actual_cost,
-    estimatedImpact: r.estimated_impact,
-    actualImpact: r.actual_impact,
-    progress: r.progress,
-    priority: r.priority,
+  return rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    status: row.status as Project['status'],
+    priorityScore: row.priority_score,
+    estimatedTime: row.estimated_time,
+    actualTime: row.actual_time,
+    estimatedCost: row.estimated_cost,
+    actualCost: row.actual_cost,
+    estimatedImpact: row.estimated_impact,
+    actualImpact: row.actual_impact,
+    progress: row.progress,
+    priority: row.priority,
   }));
 }
 
@@ -73,7 +73,7 @@ async function getEdgeForProject(
   usersById: Map<string, UserEntity>,
 ): Promise<ProjectDetail['edge']> {
   const allEdges = await GET('edges') as EdgeEntity[];
-  const edge = allEdges.find(e => e.idea_id === ideaId);
+  const edge = allEdges.find(edge => edge.idea_id === ideaId);
   if (!edge) {
     return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
   }
@@ -84,11 +84,11 @@ async function getEdgeForProject(
   const allMetrics = await db.edgeMetrics.getAll();
 
   return {
-    outcomes: outcomes.map((o: EdgeOutcomeEntity) => ({
-      id: o.id,
-      description: o.description,
-      metrics: allMetrics.filter((m: EdgeMetricEntity) => m.outcome_id === o.id).map((m: EdgeMetricEntity) => ({
-        id: m.id, name: m.name, target: m.target, unit: m.unit, current: m.current,
+    outcomes: outcomes.map((outcome: EdgeOutcomeEntity) => ({
+      id: outcome.id,
+      description: outcome.description,
+      metrics: allMetrics.filter((metric: EdgeMetricEntity) => metric.outcome_id === outcome.id).map((metric: EdgeMetricEntity) => ({
+        id: metric.id, name: metric.name, target: metric.target, unit: metric.unit, current: metric.current,
       })),
     })),
     impact: {
@@ -129,27 +129,27 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
       impact: { baseline: project.estimated_impact, current: project.actual_impact },
     },
     edge: edgeData,
-    team: teamRows.map(t => ({
-      id: t.user_id,
-      name: lookupUser(usersById, t.user_id),
-      role: t.role,
+    team: teamRows.map(member => ({
+      id: member.user_id,
+      name: lookupUser(usersById, member.user_id),
+      role: member.role,
     })),
-    milestones: milestoneRows.map(m => ({
-      id: m.id, title: m.title, status: m.status, date: m.date,
+    milestones: milestoneRows.map(milestone => ({
+      id: milestone.id, title: milestone.title, status: milestone.status, date: milestone.date,
     })),
-    versions: versionRows.map(v => ({
-      id: v.id, version: v.version, date: v.date, changes: v.changes,
-      author: lookupUser(usersById, v.author_id),
+    versions: versionRows.map(version => ({
+      id: version.id, version: version.version, date: version.date, changes: version.changes,
+      author: lookupUser(usersById, version.author_id),
     })),
-    discussions: discussionRows.map(d => ({
-      id: d.id, date: d.date, message: d.message,
-      author: lookupUser(usersById, d.author_id),
+    discussions: discussionRows.map(discussion => ({
+      id: discussion.id, date: discussion.date, message: discussion.message,
+      author: lookupUser(usersById, discussion.author_id),
     })),
-    tasks: taskRows.map(t => ({
-      name: t.name, priority: t.priority, desc: t.description,
-      skills: parseJson<string[]>(t.skills),
-      hours: t.hours,
-      assigned: lookupUser(usersById, t.assigned_to_id),
+    tasks: taskRows.map(task => ({
+      name: task.name, priority: task.priority, desc: task.description,
+      skills: parseJson<string[]>(task.skills),
+      hours: task.hours,
+      assigned: lookupUser(usersById, task.assigned_to_id),
     })),
   };
 }
@@ -205,11 +205,11 @@ export async function getEngineeringProject(projectId: string): Promise<Engineer
       successMetrics: bizCtx.successMetrics || [],
       constraints: bizCtx.constraints || [],
     },
-    team: teamRows.map(t => ({
-      id: t.user_id,
-      name: lookupUser(usersById, t.user_id),
-      role: t.role,
-      type: t.type,
+    team: teamRows.map(member => ({
+      id: member.user_id,
+      name: lookupUser(usersById, member.user_id),
+      role: member.role,
+      type: member.type,
     })),
     linkedIdea: linkedIdea
       ? { id: linkedIdea.id, title: linkedIdea.title, score: linkedIdea.score }
@@ -224,14 +224,14 @@ export async function getClarifications(projectId: string): Promise<Clarificatio
     GET(`projects/${projectId}/clarifications`) as Promise<ClarificationEntity[]>,
     getUsersById(),
   ]);
-  return clarRows.map(c => ({
-    id: c.id,
-    question: c.question,
-    askedBy: lookupUser(usersById, c.asked_by_id),
-    askedAt: c.asked_at,
-    status: c.status as Clarification['status'],
-    ...(c.answer ? { answer: c.answer } : {}),
-    ...(c.answered_by_id ? { answeredBy: lookupUser(usersById, c.answered_by_id) } : {}),
-    ...(c.answered_at ? { answeredAt: c.answered_at } : {}),
+  return clarRows.map(clarification => ({
+    id: clarification.id,
+    question: clarification.question,
+    askedBy: lookupUser(usersById, clarification.asked_by_id),
+    askedAt: clarification.asked_at,
+    status: clarification.status as Clarification['status'],
+    ...(clarification.answer ? { answer: clarification.answer } : {}),
+    ...(clarification.answered_by_id ? { answeredBy: lookupUser(usersById, clarification.answered_by_id) } : {}),
+    ...(clarification.answered_at ? { answeredAt: clarification.answered_at } : {}),
   }));
 }

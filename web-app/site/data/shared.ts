@@ -34,11 +34,11 @@ export async function getCurrentUser(): Promise<User> {
 
 export async function getNotifications(): Promise<Notification[]> {
   const rows = await GET('notifications') as NotificationEntity[];
-  return rows.map(r => ({
-    id: Number(r.id),
-    title: r.title,
-    message: r.message,
-    time: r.time,
-    unread: toBool(r.unread),
+  return rows.map(row => ({
+    id: Number(row.id),
+    title: row.title,
+    message: row.message,
+    time: row.time,
+    unread: toBool(row.unread),
   }));
 }

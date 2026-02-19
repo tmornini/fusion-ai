@@ -20,21 +20,21 @@ export interface TeamMember {
 export async function getTeamMembers(): Promise<TeamMember[]> {
   const rows = await GET('users') as UserEntity[];
   return rows
-    .filter(u => u.id !== 'current' && u.department !== '' && u.performance_score > 0)
+    .filter(user => user.id !== 'current' && user.department !== '' && user.performance_score > 0)
     .slice(0, 6)
-    .map(u => ({
-      id: u.id,
-      name: userName(u),
-      role: u.role,
-      department: u.department,
-      email: u.email,
-      availability: u.availability,
-      performanceScore: u.performance_score,
-      projectsCompleted: u.projects_completed,
-      currentProjects: u.current_projects,
-      strengths: parseJson<string[]>(u.strengths),
-      teamDimensions: parseJson<Record<string, number>>(u.team_dimensions),
-      status: u.status,
+    .map(user => ({
+      id: user.id,
+      name: userName(user),
+      role: user.role,
+      department: user.department,
+      email: user.email,
+      availability: user.availability,
+      performanceScore: user.performance_score,
+      projectsCompleted: user.projects_completed,
+      currentProjects: user.current_projects,
+      strengths: parseJson<string[]>(user.strengths),
+      teamDimensions: parseJson<Record<string, number>>(user.team_dimensions),
+      status: user.status,
     }));
 }
 
@@ -53,14 +53,14 @@ export interface ManagedUser {
 export async function getManagedUsers(): Promise<ManagedUser[]> {
   const rows = await GET('users') as UserEntity[];
   return rows
-    .filter(u => u.id !== 'current')
-    .map(u => ({
-      id: u.id,
-      name: userName(u),
-      email: u.email,
-      role: u.role as ManagedUser['role'],
-      department: u.department,
-      status: u.status as ManagedUser['status'],
-      lastActive: u.last_active,
+    .filter(user => user.id !== 'current')
+    .map(user => ({
+      id: user.id,
+      name: userName(user),
+      email: user.email,
+      role: user.role as ManagedUser['role'],
+      department: user.department,
+      status: user.status as ManagedUser['status'],
+      lastActive: user.last_active,
     }));
 }

@@ -31,7 +31,7 @@ export async function getEdgeOutcomes(ideaId: string): Promise<{
   owner: string;
 } | null> {
   const allEdges = await GET('edges') as EdgeEntity[];
-  const edge = allEdges.find(e => e.idea_id === ideaId);
+  const edge = allEdges.find(edge => edge.idea_id === ideaId);
   if (!edge) return null;
 
   const { getDbAdapter } = await import('../../../api/api');
@@ -41,11 +41,11 @@ export async function getEdgeOutcomes(ideaId: string): Promise<{
   const usersById = await getUsersById();
 
   return {
-    outcomes: outcomes.map((o: EdgeOutcomeEntity) => ({
-      id: o.id,
-      description: o.description,
-      metrics: allMetrics.filter((m: EdgeMetricEntity) => m.outcome_id === o.id).map((m: EdgeMetricEntity) => ({
-        id: m.id, name: m.name, target: m.target, unit: m.unit,
+    outcomes: outcomes.map((outcome: EdgeOutcomeEntity) => ({
+      id: outcome.id,
+      description: outcome.description,
+      metrics: allMetrics.filter((metric: EdgeMetricEntity) => metric.outcome_id === outcome.id).map((metric: EdgeMetricEntity) => ({
+        id: metric.id, name: metric.name, target: metric.target, unit: metric.unit,
       })),
     })),
     impact: {
@@ -81,25 +81,25 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
   const { getDbAdapter } = await import('../../../api/api');
   const db = getDbAdapter();
 
-  const ideaMap = new Map(ideaRows.map(i => [i.id, i]));
+  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
   const allMetrics = await db.edgeMetrics.getAll();
 
-  return Promise.all(edgeRows.map(async (e) => {
-    const outcomes = await db.edgeOutcomes.getByEdgeId(e.id);
-    const outcomeIds = new Set(outcomes.map(o => o.id));
-    const metricsCount = allMetrics.filter(m => outcomeIds.has(m.outcome_id)).length;
+  return Promise.all(edgeRows.map(async (edge) => {
+    const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
+    const outcomeIds = new Set(outcomes.map(outcome => outcome.id));
+    const metricsCount = allMetrics.filter(metric => outcomeIds.has(metric.outcome_id)).length;
 
-    const idea = ideaMap.get(e.idea_id);
+    const idea = ideaMap.get(edge.idea_id);
     return {
-      id: e.id,
-      ideaId: e.idea_id,
+      id: edge.id,
+      ideaId: edge.idea_id,
       ideaTitle: idea?.title || '',
-      status: (e.status || 'missing') as EdgeListItem['status'],
+      status: (edge.status || 'missing') as EdgeListItem['status'],
       outcomesCount: outcomes.length,
       metricsCount,
-      confidence: (e.confidence || null) as EdgeListItem['confidence'],
-      owner: lookupUser(usersById, e.owner_id),
-      updatedAt: e.updated_at,
+      confidence: (edge.confidence || null) as EdgeListItem['confidence'],
+      owner: lookupUser(usersById, edge.owner_id),
+      updatedAt: edge.updated_at,
     };
   }));
 }

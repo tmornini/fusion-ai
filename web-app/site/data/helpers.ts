@@ -7,13 +7,13 @@ export function userName(user: UserEntity): string {
 
 export async function getUsersById(): Promise<Map<string, UserEntity>> {
   const users = await GET('users') as UserEntity[];
-  return new Map(users.map(u => [u.id, u]));
+  return new Map(users.map(user => [user.id, user]));
 }
 
 export function lookupUser(usersById: Map<string, UserEntity>, id: string | null | undefined, fallback = ''): string {
   if (!id) return fallback;
-  const u = usersById.get(id);
-  return u ? userName(u) : fallback;
+  const user = usersById.get(id);
+  return user ? userName(user) : fallback;
 }
 
 export function parseJson<T>(value: string | T): T {

@@ -73,33 +73,33 @@ function showToast(message: string, variant: 'success' | 'error' | 'warning' | '
 
 type SkeletonType = 'card-grid' | 'card-list' | 'detail' | 'table' | 'stats-row';
 
-const S = 'skeleton-shimmer';
+const SHIMMER_CLASS = 'skeleton-shimmer';
 
 function skeletonCard(): string {
   return `<div class="skeleton-card">
-    <div class="${S} skeleton-badge" style="margin-bottom:0.75rem"></div>
-    <div class="${S} skeleton-heading"></div>
-    <div class="${S} skeleton-text"></div>
-    <div class="${S} skeleton-text" style="width:80%"></div>
+    <div class="${SHIMMER_CLASS} skeleton-badge" style="margin-bottom:0.75rem"></div>
+    <div class="${SHIMMER_CLASS} skeleton-heading"></div>
+    <div class="${SHIMMER_CLASS} skeleton-text"></div>
+    <div class="${SHIMMER_CLASS} skeleton-text" style="width:80%"></div>
   </div>`;
 }
 
 function skeletonListItem(): string {
   return `<div class="skeleton-card" style="display:flex;align-items:center;gap:1rem">
-    <div class="${S} skeleton-avatar"></div>
+    <div class="${SHIMMER_CLASS} skeleton-avatar"></div>
     <div style="flex:1">
-      <div class="${S} skeleton-text" style="width:60%;margin-bottom:0.375rem"></div>
-      <div class="${S} skeleton-text-sm" style="width:40%"></div>
+      <div class="${SHIMMER_CLASS} skeleton-text" style="width:60%;margin-bottom:0.375rem"></div>
+      <div class="${SHIMMER_CLASS} skeleton-text-sm" style="width:40%"></div>
     </div>
-    <div class="${S} skeleton-badge"></div>
+    <div class="${SHIMMER_CLASS} skeleton-badge"></div>
   </div>`;
 }
 
 function skeletonStatsRow(): string {
   return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
     ${Array(4).fill(`<div class="skeleton-card" style="padding:1rem">
-      <div class="${S} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
-      <div class="${S} skeleton-heading" style="width:40%"></div>
+      <div class="${SHIMMER_CLASS} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
+      <div class="${SHIMMER_CLASS} skeleton-heading" style="width:40%"></div>
     </div>`).join('')}
   </div>`;
 }
@@ -117,26 +117,26 @@ function renderSkeleton(type: SkeletonType, options?: { count?: number }): strin
       </div>`;
     case 'detail':
       return `<div>
-        <div class="${S} skeleton-heading" style="width:40%;margin-bottom:1.5rem"></div>
+        <div class="${SHIMMER_CLASS} skeleton-heading" style="width:40%;margin-bottom:1.5rem"></div>
         <div class="skeleton-card" style="margin-bottom:1.5rem">
-          <div class="${S} skeleton-text" style="width:90%"></div>
-          <div class="${S} skeleton-text" style="width:75%"></div>
-          <div class="${S} skeleton-text" style="width:60%;margin-bottom:1rem"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:90%"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:75%"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:60%;margin-bottom:1rem"></div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
-            ${Array(3).fill(`<div><div class="${S} skeleton-text-sm"></div><div class="${S} skeleton-heading" style="width:60%"></div></div>`).join('')}
+            ${Array(3).fill(`<div><div class="${SHIMMER_CLASS} skeleton-text-sm"></div><div class="${SHIMMER_CLASS} skeleton-heading" style="width:60%"></div></div>`).join('')}
           </div>
         </div>
       </div>`;
     case 'table':
       return `<div class="skeleton-card" style="padding:0;overflow:hidden">
         <div style="padding:1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${S} skeleton-text" style="width:30%"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:30%"></div>
         </div>
         ${Array(count).fill(`<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;border-bottom:1px solid hsl(var(--border))">
-          <div class="${S} skeleton-avatar" style="width:2rem;height:2rem"></div>
-          <div class="${S} skeleton-text" style="width:25%;margin:0"></div>
-          <div class="${S} skeleton-text" style="width:20%;margin:0"></div>
-          <div class="${S} skeleton-badge" style="margin-left:auto"></div>
+          <div class="${SHIMMER_CLASS} skeleton-avatar" style="width:2rem;height:2rem"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:25%;margin:0"></div>
+          <div class="${SHIMMER_CLASS} skeleton-text" style="width:20%;margin:0"></div>
+          <div class="${SHIMMER_CLASS} skeleton-badge" style="margin-left:auto"></div>
         </div>`).join('')}
       </div>`;
     case 'stats-row':
@@ -242,7 +242,7 @@ function getPageName(): string {
 
 function getParams(): Record<string, string> {
   const params: Record<string, string> = {};
-  new URLSearchParams(window.location.search).forEach((v, k) => { params[k] = v; });
+  new URLSearchParams(window.location.search).forEach((value, key) => { params[key] = value; });
   return params;
 }
 
