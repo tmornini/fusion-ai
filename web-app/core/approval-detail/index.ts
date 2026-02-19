@@ -121,7 +121,7 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
           </div>
         </div>
 
-        <div class="card p-6 mb-6">
+        ${idea.risks.length ? `<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-4 flex items-center gap-2">${iconAlertTriangle(20)} Identified Risks</h3>
           <div style="display:flex;flex-direction:column;gap:0.75rem">
             ${idea.risks.map((r: any) => `
@@ -133,21 +133,21 @@ function renderPage(idea: ApprovalIdea, edge: ApprovalEdge): string {
                 <p class="text-xs text-muted"><span class="font-medium">Mitigation:</span> ${escapeHtml(r.mitigation)}</p>
               </div>`).join('')}
           </div>
-        </div>
+        </div>` : ''}
 
-        <div class="card p-6 mb-6">
+        ${idea.assumptions.length ? `<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-3">Key Assumptions</h3>
           <ul style="display:flex;flex-direction:column;gap:0.5rem">
             ${idea.assumptions.map((a: string) => `<li class="flex items-start gap-2 text-sm"><span class="text-primary mt-1">•</span> ${escapeHtml(a)}</li>`).join('')}
           </ul>
-        </div>
+        </div>` : ''}
 
-        <div class="card p-6 mb-6">
+        ${idea.alignments.length ? `<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-3 flex items-center gap-2">${iconUsers(20, 'text-primary')} Strategic Alignment</h3>
           <div class="flex flex-wrap gap-2">
             ${idea.alignments.map((a: string) => `<span class="badge badge-primary text-xs">${escapeHtml(a)}</span>`).join('')}
           </div>
-        </div>
+        </div>` : ''}
       </main>
 
       <div class="action-footer">
