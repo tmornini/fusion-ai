@@ -184,8 +184,6 @@ export async function init(): Promise<void> {
 
     const count = $('#ideas-count');
     if (count) count.textContent = `${sorted.length} ${sorted.length === 1 ? 'idea' : 'ideas'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
-
-    bindCardActions();
   }
 
   document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(btn => {
@@ -199,26 +197,19 @@ export async function init(): Promise<void> {
     });
   });
 
-  function bindCardActions() {
-    document.querySelectorAll<HTMLElement>('[data-idea-card]').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target instanceof Element && e.target.closest('button')) return;
-        navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
-      });
-    });
-    document.querySelectorAll<HTMLElement>('[data-idea-view]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('idea-scoring', { ideaId: btn.getAttribute('data-idea-view')! }); });
-    });
-    document.querySelectorAll<HTMLElement>('[data-idea-edge]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('edge', { ideaId: btn.getAttribute('data-idea-edge')! }); });
-    });
-    document.querySelectorAll<HTMLElement>('[data-idea-review]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('approval-detail', { id: btn.getAttribute('data-idea-review')! }); });
-    });
-    document.querySelectorAll<HTMLElement>('[data-idea-convert]').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); navigateTo('idea-convert', { ideaId: btn.getAttribute('data-idea-convert')! }); });
-    });
-  }
+  $('#ideas-list')?.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const btn = target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
+    if (btn) {
+      if (btn.hasAttribute('data-idea-view')) navigateTo('idea-scoring', { ideaId: btn.getAttribute('data-idea-view')! });
+      else if (btn.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: btn.getAttribute('data-idea-edge')! });
+      else if (btn.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: btn.getAttribute('data-idea-review')! });
+      else if (btn.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: btn.getAttribute('data-idea-convert')! });
+      return;
+    }
+    const card = target.closest<HTMLElement>('[data-idea-card]');
+    if (card) navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
+  });
 
   rerenderList();
 }

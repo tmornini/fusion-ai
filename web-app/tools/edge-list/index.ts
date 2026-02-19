@@ -101,10 +101,12 @@ export async function init(): Promise<void> {
     if (list) list.innerHTML = filtered.map(renderEdgeCard).join('');
     if (list) list.style.display = filtered.length ? '' : 'none';
     if (empty) empty.style.display = filtered.length ? 'none' : '';
-    document.querySelectorAll<HTMLElement>('[data-edge-card]').forEach(card => {
-      card.addEventListener('click', () => navigateTo('edge', { ideaId: card.getAttribute('data-edge-card')! }));
-    });
   }
+
+  listEl?.addEventListener('click', (e) => {
+    const card = (e.target as Element).closest<HTMLElement>('[data-edge-card]');
+    if (card) navigateTo('edge', { ideaId: card.getAttribute('data-edge-card')! });
+  });
 
   $('#edge-search')?.addEventListener('input', filterAndRender);
   $('#edge-status-filter')?.addEventListener('change', filterAndRender);

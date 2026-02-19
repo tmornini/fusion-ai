@@ -162,17 +162,15 @@ export async function init(): Promise<void> {
     if (list) list.innerHTML = filtered.map(renderReviewCard).join('');
     if (list) list.style.display = filtered.length ? '' : 'none';
     if (empty) empty.style.display = filtered.length ? 'none' : '';
-    bindCards();
   }
 
-  function bindCards() {
-    document.querySelectorAll<HTMLElement>('[data-review-card]').forEach(card => {
-      card.addEventListener('click', () => navigateTo('approval-detail', { id: card.getAttribute('data-review-card')! }));
-    });
-  }
+  $('#rq-list')?.addEventListener('click', (e) => {
+    const card = (e.target as Element).closest<HTMLElement>('[data-review-card]');
+    if (card) navigateTo('approval-detail', { id: card.getAttribute('data-review-card')! });
+  });
 
   $('#rq-search')?.addEventListener('input', filterAndRender);
   $('#rq-priority')?.addEventListener('change', filterAndRender);
   $('#rq-readiness')?.addEventListener('change', filterAndRender);
-  bindCards();
+  filterAndRender();
 }
