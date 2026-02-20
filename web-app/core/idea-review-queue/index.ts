@@ -1,6 +1,6 @@
 import {
-  $, escapeHtml, navigateTo, colorForScore,
-  renderSkeleton, renderError, renderEmpty,
+  $, navigateTo, colorForScore, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState, buildEmptyState,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
@@ -14,15 +14,15 @@ const priorityConfig: Record<string, { label: string; cls: string }> = {
   low: { label: 'Low', cls: 'badge-default' },
 };
 
-const readinessConfig: Record<string, { label: string; icon: (s?: number) => string; cls: string }> = {
+const readinessConfig: Record<string, { label: string; icon: (s?: number) => SafeHtml; cls: string }> = {
   ready: { label: 'Ready for Review', icon: iconCheckCircle2, cls: 'text-success' },
   'needs-info': { label: 'Needs Info', icon: iconMessageSquare, cls: 'text-warning' },
   incomplete: { label: 'Incomplete', icon: iconAlertCircle, cls: 'text-error' },
 };
 
-function renderReviewCard(idea: ReviewIdea): string {
+function buildReviewCard(idea: ReviewIdea): SafeHtml {
   const rc = readinessConfig[idea.readiness];
-  return `
+  return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-review-card="${idea.id}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
@@ -31,9 +31,9 @@ function renderReviewCard(idea: ReviewIdea): string {
             <span class="flex items-center gap-1 text-sm ${rc!.cls}">${rc!.icon(16)} ${rc!.label}</span>
             <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
           </div>
-          <h3 class="font-semibold mb-1">${escapeHtml(idea.title)}</h3>
+          <h3 class="font-semibold mb-1">${idea.title}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">
-            <span>by ${escapeHtml(idea.submittedBy)}</span>
+            <span>by ${idea.submittedBy}</span>
             <span>•</span>
             <span>${idea.category}</span>
             <span>•</span>
@@ -61,25 +61,25 @@ export async function init(): Promise<void> {
   if (!root) return;
 
   // Show skeleton immediately
-  root.innerHTML = renderSkeleton('stats-row') + renderSkeleton('card-list', { count: 4 });
+  setHtml(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`);
 
   // Fetch data with error handling
   try {
     allIdeas = await getReviewQueue();
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to load review queue. Please try again.';
-    root.innerHTML = renderError(msg);
+    setHtml(root, buildErrorState(msg));
     root.querySelector('[data-retry-btn]')?.addEventListener('click', init);
     return;
   }
 
   // Empty state
   if (allIdeas.length === 0) {
-    root.innerHTML = renderEmpty(
+    setHtml(root, buildEmptyState(
       iconClipboardCheck(24),
       'Review Queue Empty',
       'All ideas have been reviewed. Check back later for new submissions.',
-    );
+    ));
     return;
   }
 
@@ -90,7 +90,7 @@ export async function init(): Promise<void> {
     avgWait: Math.round(allIdeas.reduce((a, i) => a + i.waitingDays, 0) / allIdeas.length),
   };
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div class="flex items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="page-title">Review Queue</h1>
@@ -137,13 +137,13 @@ export async function init(): Promise<void> {
     </div>
 
     <div id="rq-list" style="display:flex;flex-direction:column;gap:0.75rem">
-      ${allIdeas.map(renderReviewCard).join('')}
+      ${allIdeas.map(buildReviewCard)}
     </div>
     <div id="rq-empty" class="text-center" style="display:none;padding:3rem 0">
       ${iconClock(48, 'text-muted')}
       <h3 class="text-lg font-semibold mt-4 mb-2">No ideas match your filters</h3>
       <p class="text-muted">Try adjusting your search or filter criteria</p>
-    </div>`;
+    </div>`);
 
   function filterAndRender() {
     const search = (($('#rq-search') as HTMLInputElement)?.value || '').toLowerCase();
@@ -159,7 +159,7 @@ export async function init(): Promise<void> {
 
     const list = $('#rq-list');
     const empty = $('#rq-empty');
-    if (list) list.innerHTML = filtered.map(renderReviewCard).join('');
+    if (list) setHtml(list, html`${filtered.map(buildReviewCard)}`);
     if (list) list.style.display = filtered.length ? '' : 'none';
     if (empty) empty.style.display = filtered.length ? 'none' : '';
   }

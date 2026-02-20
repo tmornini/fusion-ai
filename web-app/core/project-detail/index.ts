@@ -1,5 +1,6 @@
 import {
-  $, escapeHtml, showToast, navigateTo, initials, initTabs, renderSkeleton, renderError,
+  $, showToast, navigateTo, initials, initTabs, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState,
   iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
   iconCalendar, iconTarget, iconCheckCircle2, iconAlertCircle, iconMessageSquare,
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
@@ -8,20 +9,20 @@ import {
 } from '../../site/script';
 import { getProjectById, type ProjectDetail } from '../../site/data';
 
-function renderVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): string {
+function buildVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): SafeHtml {
   const diff = current - baseline;
-  if (diff === 0) return `<span class="text-muted">${iconMinus(16)} 0</span>`;
+  if (diff === 0) return html`<span class="text-muted">${iconMinus(16)} 0</span>`;
   const good = isLowerBetter ? diff < 0 : diff > 0;
   const icon = diff < 0 ? iconArrowDownRight(16) : iconArrowUpRight(16);
   const color = good ? 'color:hsl(var(--success))' : 'color:hsl(var(--error))';
-  return `<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
+  return html`<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
 }
 
-function renderMilestoneIcon(status: string): string {
+function buildMilestoneIcon(status: string): SafeHtml {
   switch (status) {
-    case 'completed': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'text-primary-fg')}</div>`;
-    case 'in_progress': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--warning));display:flex;align-items:center;justify-content:center">${iconAlertCircle(12, 'text-primary-fg')}</div>`;
-    default: return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">${iconClock(12, 'text-muted')}</div>`;
+    case 'completed': return html`<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'text-primary-fg')}</div>`;
+    case 'in_progress': return html`<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--warning));display:flex;align-items:center;justify-content:center">${iconAlertCircle(12, 'text-primary-fg')}</div>`;
+    default: return html`<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">${iconClock(12, 'text-muted')}</div>`;
   }
 }
 
@@ -33,21 +34,21 @@ function milestoneColor(status: string): string {
   }
 }
 
-function renderProjectDetail(p: ProjectDetail, projectId: string): string {
-  return `
+function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
+  return html`
     <div style="max-width:64rem;margin:0 auto">
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 text-sm text-muted mb-4">
         <a href="../projects/index.html" class="hover-link">Projects</a>
         <span>/</span>
-        <span>${escapeHtml(p.title)}</span>
+        <span>${p.title}</span>
       </div>
 
       <!-- Header -->
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <div class="flex flex-wrap items-center gap-3 mb-2">
-            <h1 class="text-xl font-display font-bold">${escapeHtml(p.title)}</h1>
+            <h1 class="text-xl font-display font-bold">${p.title}</h1>
             <span class="badge badge-success text-xs">${iconCheckCircle2(14)} Approved</span>
           </div>
           <p class="text-sm text-muted">Led by ${p.projectLead} • ${p.progress}% complete</p>
@@ -89,7 +90,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
           <!-- Summary -->
           <div class="card p-6">
             <h2 class="text-lg font-display font-semibold mb-4">Project Summary</h2>
-            <p class="text-sm text-muted mb-6">${escapeHtml(p.description)}</p>
+            <p class="text-sm text-muted mb-6">${p.description}</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
               <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5)">
                 ${iconCalendar(20, 'text-primary')}
@@ -120,7 +121,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                 { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', lower: true },
                 { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', lower: true },
                 { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', prefix: '', lower: false },
-              ].map(m => `
+              ].map(m => html`
                 <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-center gap-2 mb-3">${m.icon(20, 'text-primary')} <span class="font-medium">${m.label}</span></div>
                   <div style="display:flex;flex-direction:column;gap:0.5rem">
@@ -128,11 +129,11 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                     <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.current ? `${m.prefix}${m.current}${m.unit}` : '—'}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
-                      ${renderVariance(m.baseline, m.current, m.lower, m.unit, m.prefix)}
+                      ${buildVariance(m.baseline, m.current, m.lower, m.unit, m.prefix)}
                     </div>
                   </div>
                 </div>
-              `).join('')}
+              `)}
             </div>
           </div>
 
@@ -151,30 +152,30 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
 
             <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem">
               <h3 class="text-sm font-medium flex items-center gap-2">${iconBarChart(16, 'text-primary')} Business Outcomes & Metrics</h3>
-              ${p.edge.outcomes.map((outcome, oi) => `
+              ${p.edge.outcomes.map((outcome, oi) => html`
                 <div style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-start gap-3 mb-3">
                     <div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:hsl(var(--primary));flex-shrink:0">${oi + 1}</div>
-                    <p class="font-medium">${escapeHtml(outcome.description)}</p>
+                    <p class="font-medium">${outcome.description}</p>
                   </div>
                   <div style="padding-left:2.25rem;display:flex;flex-direction:column;gap:0.5rem">
                     ${outcome.metrics.map(m => {
                       const target = parseFloat(m.target);
                       const current = parseFloat(m.current);
                       const onTrack = m.unit === '$' ? current <= target : current >= target * 0.9;
-                      return `
+                      return html`
                         <div class="flex items-center justify-between gap-2" style="padding:0.5rem;border-radius:0.25rem;background:hsl(var(--background));border:1px solid hsl(var(--border))">
-                          <div class="flex items-center gap-2">${iconGauge(16, 'text-muted')} <span class="text-sm">${escapeHtml(m.name)}</span></div>
+                          <div class="flex items-center gap-2">${iconGauge(16, 'text-muted')} <span class="text-sm">${m.name}</span></div>
                           <div class="flex items-center gap-4">
                             <div class="text-right"><p class="text-xs text-muted">Target</p><p class="text-sm font-medium">${m.unit === '$' ? '$' : ''}${m.target}${m.unit === '$' ? '' : m.unit}</p></div>
                             <div class="text-right"><p class="text-xs text-muted">Current</p><p class="text-sm font-medium ${onTrack ? 'text-success' : 'text-warning'}">${m.unit === '$' ? '$' : ''}${m.current}${m.unit === '$' ? '' : m.unit}</p></div>
                             <div style="width:0.5rem;height:0.5rem;border-radius:9999px;background:${onTrack ? 'hsl(var(--success))' : 'hsl(var(--warning))'}"></div>
                           </div>
                         </div>`;
-                    }).join('')}
+                    })}
                   </div>
                 </div>
-              `).join('')}
+              `)}
             </div>
 
             <!-- Impact Timeline -->
@@ -210,34 +211,34 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                 { id: 'discussion', label: 'Discussion', icon: iconMessageSquare },
                 { id: 'history', label: 'History', icon: iconHistory },
                 { id: 'linked', label: 'Linked Data', icon: iconFileText },
-              ].map((t, i) => `
+              ].map((t, i) => html`
                 <button class="tab${i === 0 ? ' active' : ''}" role="tab" data-tab="${t.id}">${t.icon(16)} ${t.label}</button>
-              `).join('')}
+              `)}
             </div>
 
             <div id="tab-tasks" class="tab-panel">
               <div style="display:flex;flex-direction:column;gap:0.75rem">
                 ${p.tasks.map(task => {
                   const prioColor = task.priority === 'High' ? 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))' : task.priority === 'Medium' ? 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))' : 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
-                  return `
+                  return html`
                   <div class="card" style="padding:1rem">
                     <div class="flex items-start justify-between gap-3 mb-2">
                       <div style="flex:1">
                         <div class="flex items-center gap-2 mb-1">
-                          <span class="font-medium text-sm">${escapeHtml(task.name)}</span>
+                          <span class="font-medium text-sm">${task.name}</span>
                           <span class="pill" style="${prioColor}">${task.priority}</span>
-                          ${task.assigned ? `<span class="pill" style="background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">${iconUsers(10)} AI Recommended</span>` : ''}
+                          ${task.assigned ? html`<span class="pill" style="background:hsl(var(--primary)/0.1);color:hsl(var(--primary))">${iconUsers(10)} AI Recommended</span>` : html``}
                         </div>
-                        <p class="text-xs text-muted mb-2">${escapeHtml(task.desc)}</p>
+                        <p class="text-xs text-muted mb-2">${task.description}</p>
                         <div class="flex flex-wrap gap-1.5">
-                          ${task.skills.map(s => `<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${escapeHtml(s)}</span>`).join('')}
+                          ${task.skills.map(s => html`<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${s}</span>`)}
                           <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.hours}h est.</span>
                         </div>
                       </div>
-                      <button class="btn btn-outline btn-sm text-xs">${task.assigned ? escapeHtml(task.assigned) : 'Assign'}</button>
+                      <button class="btn btn-outline btn-sm text-xs">${task.assigned ? task.assigned : 'Assign'}</button>
                     </div>
                   </div>`;
-                }).join('')}
+                })}
               </div>
               <div class="flex items-center justify-between mt-4 pt-4" style="border-top:1px solid hsl(var(--border))">
                 <span class="text-sm text-muted">${p.tasks.filter(t => t.assigned).length} assigned, ${p.tasks.filter(t => !t.assigned).length} unassigned</span>
@@ -258,34 +259,34 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                   </div>
                 </div>
                 <div style="border-top:1px solid hsl(var(--border));padding-top:1rem;display:flex;flex-direction:column;gap:1rem">
-                  ${p.discussions.map(d => `
+                  ${p.discussions.map(d => html`
                     <div class="flex gap-3">
                       <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center;flex-shrink:0">
                         <span class="text-sm font-bold text-muted">${initials(d.author)}</span>
                       </div>
                       <div>
                         <div class="flex items-center gap-2 mb-1">
-                          <span class="font-medium">${escapeHtml(d.author)}</span>
+                          <span class="font-medium">${d.author}</span>
                           <span class="text-xs text-muted">${d.date}</span>
                         </div>
-                        <p class="text-sm text-muted">${escapeHtml(d.message)}</p>
+                        <p class="text-sm text-muted">${d.message}</p>
                       </div>
                     </div>
-                  `).join('')}
+                  `)}
                 </div>
               </div>
             </div>
             <div id="tab-history" class="tab-panel" style="display:none">
               <div style="display:flex;flex-direction:column;gap:0.75rem">
-                ${p.versions.map((v, i) => `
+                ${p.versions.map((v, i) => html`
                   <div class="flex items-start gap-4" style="padding:1rem;border-radius:0.5rem;${i === 0 ? 'background:hsl(var(--primary)/0.05);border:1px solid hsl(var(--primary)/0.2)' : 'background:hsl(var(--muted)/0.3)'}">
                     <span style="padding:0.25rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;font-weight:700;${i === 0 ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${v.version}</span>
                     <div style="flex:1">
-                      <p class="font-medium">${escapeHtml(v.changes)}</p>
+                      <p class="font-medium">${v.changes}</p>
                       <p class="text-xs text-muted" style="margin-top:0.25rem">${v.author} • ${v.date}</p>
                     </div>
                   </div>
-                `).join('')}
+                `)}
               </div>
             </div>
             <div id="tab-linked" class="tab-panel" style="display:none">
@@ -307,17 +308,17 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
               <button class="btn btn-ghost btn-sm gap-1">${iconPlus(14)} Add</button>
             </div>
             <div style="display:flex;flex-direction:column;gap:0.75rem">
-              ${p.team.map(m => `
+              ${p.team.map(m => html`
                 <div class="flex items-center gap-3">
                   <div style="width:2.25rem;height:2.25rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                     <span class="text-xs font-bold text-primary">${initials(m.name)}</span>
                   </div>
                   <div style="flex:1;min-width:0">
-                    <p class="text-sm font-medium" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(m.name)}</p>
+                    <p class="text-sm font-medium" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</p>
                     <p class="text-xs text-muted">${m.role}</p>
                   </div>
                 </div>
-              `).join('')}
+              `)}
             </div>
           </div>
 
@@ -325,18 +326,18 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
           <div class="card p-6">
             <h3 class="font-display font-semibold mb-4">Milestones</h3>
             <div style="position:relative">
-              ${p.milestones.map((m, i) => `
+              ${p.milestones.map((m, i) => html`
                 <div class="flex gap-3" style="padding-bottom:${i < p.milestones.length - 1 ? '1rem' : '0'}">
                   <div style="display:flex;flex-direction:column;align-items:center">
-                    ${renderMilestoneIcon(m.status)}
-                    ${i < p.milestones.length - 1 ? '<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>' : ''}
+                    ${buildMilestoneIcon(m.status)}
+                    ${i < p.milestones.length - 1 ? html`<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>` : html``}
                   </div>
                   <div style="flex:1;padding-bottom:0.5rem">
-                    <p class="text-sm font-medium" style="${milestoneColor(m.status)}">${escapeHtml(m.title)}</p>
+                    <p class="text-sm font-medium" style="${milestoneColor(m.status)}">${m.title}</p>
                     <p class="text-xs text-muted">${m.date}</p>
                   </div>
                 </div>
-              `).join('')}
+              `)}
             </div>
           </div>
         </div>
@@ -349,18 +350,18 @@ export async function init(params?: Record<string, string>): Promise<void> {
 
   const container = $('#project-detail-content');
   if (!container) return;
-  container.innerHTML = renderSkeleton('detail');
+  setHtml(container, buildSkeleton('detail'));
 
   let project: ProjectDetail;
   try {
     project = await getProjectById(projectId);
   } catch {
-    container.innerHTML = renderError('Failed to load project details. The project may not exist.');
+    setHtml(container, buildErrorState('Failed to load project details. The project may not exist.'));
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init(params));
     return;
   }
 
-  container.innerHTML = renderProjectDetail(project, projectId);
+  setHtml(container, buildProjectDetail(project, projectId));
 
   // Engineering nav
   document.querySelectorAll<HTMLElement>('[data-nav-eng]').forEach(el => {

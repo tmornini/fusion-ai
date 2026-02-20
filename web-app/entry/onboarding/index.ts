@@ -1,10 +1,10 @@
-import { $, navigateTo, iconSparkles, iconArrowRight } from '../../site/script';
+import { $, navigateTo, iconSparkles, iconArrowRight, html, setHtml } from '../../site/script';
 
 export async function init(): Promise<void> {
   const root = $('#page-root');
   if (!root) return;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div class="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       <div class="text-center" style="max-width:28rem">
         <div class="gradient-hero rounded-xl flex items-center justify-center mx-auto mb-6" style="width:4rem;height:4rem;box-shadow:var(--shadow-lg)">
@@ -20,7 +20,7 @@ export async function init(): Promise<void> {
           Go to Dashboard ${iconArrowRight(16)}
         </button>
       </div>
-    </div>`;
+    </div>`);
 
   $('#go-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
 }

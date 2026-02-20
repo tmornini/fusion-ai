@@ -1,5 +1,6 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
+  $, showToast, navigateTo, getParams, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState,
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
@@ -10,23 +11,23 @@ const requiredFields = ['projectName', 'projectLead', 'startDate', 'targetEndDat
 
 let projectDetails: Record<string, string> = {};
 
-function completedCount(): number {
+function completedFieldCount(): number {
   return requiredFields.filter(f => projectDetails[f]?.trim()).length;
 }
 
 function canConvert(): boolean {
-  return completedCount() === requiredFields.length;
+  return completedFieldCount() === requiredFields.length;
 }
 
-function fieldCheck(field: string): string {
-  return projectDetails[field]?.trim() ? `<span style="color:hsl(var(--success))">${iconCheckCircle2(16)}</span>` : '';
+function fieldCheck(field: string): SafeHtml {
+  return projectDetails[field]?.trim() ? html`<span style="color:hsl(var(--success))">${iconCheckCircle2(16)}</span>` : html``;
 }
 
-function renderPage(idea: ConversionIdea, ideaId: string): string {
-  const done = completedCount();
-  const pct = (done / requiredFields.length) * 100;
+function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
+  const done = completedFieldCount();
+  const percent = (done / requiredFields.length) * 100;
 
-  return `
+  return html`
     <div style="min-height:100vh;background:hsl(var(--background))">
       <header style="border-bottom:1px solid hsl(var(--border));background:hsl(var(--card)/0.5);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50">
         <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem">
@@ -41,7 +42,7 @@ function renderPage(idea: ConversionIdea, ideaId: string): string {
             <div class="hidden-mobile flex items-center gap-2 text-sm">
               <span class="text-muted">${done}/${requiredFields.length} required fields</span>
               <div style="width:6rem;height:0.5rem;background:hsl(var(--muted));border-radius:9999px;overflow:hidden">
-                <div style="height:100%;background:hsl(var(--success));transition:width 0.3s;width:${pct}%"></div>
+                <div style="height:100%;background:hsl(var(--success));transition:width 0.3s;width:${percent}%"></div>
               </div>
             </div>
           </div>
@@ -53,11 +54,11 @@ function renderPage(idea: ConversionIdea, ideaId: string): string {
           <div>
             <div class="card p-6" style="position:sticky;top:6rem">
               <div class="flex items-center gap-2 text-sm font-medium text-muted mb-4">${iconFolderKanban(16)} Idea Summary</div>
-              <h2 class="text-xl font-display font-bold mb-4">${escapeHtml(idea.title)}</h2>
+              <h2 class="text-xl font-display font-bold mb-4">${idea.title}</h2>
               <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem">
-                <div><h4 class="text-sm font-medium text-muted mb-1">Problem</h4><p class="text-sm">${escapeHtml(idea.problemStatement)}</p></div>
-                <div><h4 class="text-sm font-medium text-muted mb-1">Solution</h4><p class="text-sm">${escapeHtml(idea.proposedSolution)}</p></div>
-                <div><h4 class="text-sm font-medium text-muted mb-1">Expected Outcome</h4><p class="text-sm">${escapeHtml(idea.expectedOutcome)}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Problem</h4><p class="text-sm">${idea.problemStatement}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Solution</h4><p class="text-sm">${idea.proposedSolution}</p></div>
+                <div><h4 class="text-sm font-medium text-muted mb-1">Expected Outcome</h4><p class="text-sm">${idea.expectedOutcome}</p></div>
               </div>
               <div style="border-top:1px solid hsl(var(--border));padding-top:1rem;display:flex;flex-direction:column;gap:0.75rem">
                 <div class="flex items-center justify-between">
@@ -82,7 +83,7 @@ function renderPage(idea: ConversionIdea, ideaId: string): string {
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheck('projectName')}</label>
-                  <input class="input" id="f-projectName" value="${escapeHtml(projectDetails.projectName || '')}" placeholder="Give your project a clear name" />
+                  <input class="input" id="f-projectName" value="${projectDetails.projectName || ''}" placeholder="Give your project a clear name" />
                 </div>
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheck('projectLead')}</label>
@@ -134,12 +135,12 @@ function renderPage(idea: ConversionIdea, ideaId: string): string {
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
                   <label class="label mb-2 font-medium">First Milestone</label>
-                  <input class="input" id="f-firstMilestone" placeholder="e.g., Complete data pipeline setup" value="${escapeHtml(projectDetails.firstMilestone || '')}" />
+                  <input class="input" id="f-firstMilestone" placeholder="e.g., Complete data pipeline setup" value="${projectDetails.firstMilestone || ''}" />
                   <p class="text-xs text-muted mt-1">What is the first measurable goal for this project?</p>
                 </div>
                 <div>
                   <label class="label mb-2 font-medium">Success Criteria</label>
-                  <textarea class="textarea" id="f-successCriteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${escapeHtml(projectDetails.successCriteria || '')}</textarea>
+                  <textarea class="textarea" id="f-successCriteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${projectDetails.successCriteria || ''}</textarea>
                 </div>
               </div>
             </div>
@@ -152,7 +153,7 @@ function renderPage(idea: ConversionIdea, ideaId: string): string {
                   <p class="text-sm text-muted mb-4">
                     ${canConvert()
                       ? 'All required information has been provided. Click below to officially create this project.'
-                      : `${requiredFields.length - completedCount()} required field${requiredFields.length - completedCount() > 1 ? 's' : ''} remaining`}
+                      : `${requiredFields.length - completedFieldCount()} required field${requiredFields.length - completedFieldCount() > 1 ? 's' : ''} remaining`}
                   </p>
                   <div class="flex gap-3">
                     <button class="btn btn-ghost" id="back-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
@@ -173,13 +174,13 @@ export async function init(): Promise<void> {
 
   const root = $('#page-root');
   if (!root) return;
-  root.innerHTML = renderSkeleton('detail');
+  setHtml(root, buildSkeleton('detail'));
 
   let idea: ConversionIdea;
   try {
     idea = await getIdeaForConversion(ideaId);
   } catch {
-    root.innerHTML = renderError('Failed to load idea for conversion.');
+    setHtml(root, buildErrorState('Failed to load idea for conversion.'));
     root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
@@ -195,9 +196,9 @@ export async function init(): Promise<void> {
     successCriteria: '',
   };
 
-  root.innerHTML = renderPage(idea, ideaId);
+  setHtml(root, buildConversionPage(idea, ideaId));
 
-  const syncFields = () => {
+  const syncFormFields = () => {
     requiredFields.concat(['firstMilestone', 'successCriteria']).forEach(f => {
       const el = $(`#f-${f}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
       if (el) projectDetails[f] = el.value;
@@ -206,22 +207,22 @@ export async function init(): Promise<void> {
 
   document.querySelectorAll<HTMLElement>('.card input, .card select, .card textarea').forEach(el => {
     el.addEventListener('input', () => {
-      syncFields();
+      syncFormFields();
       const btn = $('#convert-btn') as HTMLButtonElement;
       if (btn) btn.disabled = !canConvert();
     });
     el.addEventListener('change', () => {
-      syncFields();
+      syncFormFields();
       const btn = $('#convert-btn') as HTMLButtonElement;
       if (btn) btn.disabled = !canConvert();
     });
   });
 
   $('#convert-btn')?.addEventListener('click', () => {
-    syncFields();
+    syncFormFields();
     if (!canConvert()) return;
     const btn = $('#convert-btn')!;
-    btn.innerHTML = `${iconLoader(16)} Creating Project...`;
+    setHtml(btn, html`${iconLoader(16)} Creating Project...`);
     (btn as HTMLButtonElement).disabled = true;
     setTimeout(() => {
       showToast('Project created successfully!', 'success');

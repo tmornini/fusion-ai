@@ -2,6 +2,7 @@ import {
   $,
   iconSparkles, iconArrowRight, iconMenu, iconX, iconCheck,
   iconBrain, iconUsers, iconZap, iconShield, iconLineChart, iconMessageSquare,
+  html, setHtml, type SafeHtml,
 } from '../../site/script';
 
 const features = [
@@ -21,8 +22,8 @@ const steps = [
 
 const companies = ['TechCorp', 'InnovateLab', 'DataFlow', 'NexGen', 'Synergi'];
 
-function renderNavbar(): string {
-  return `
+function buildNavbar(): SafeHtml {
+  return html`
     <nav class="navbar" id="navbar">
       <div class="container">
         <div class="navbar-inner">
@@ -56,8 +57,8 @@ function renderNavbar(): string {
     </nav>`;
 }
 
-function renderHero(): string {
-  return `
+function buildHero(): SafeHtml {
+  return html`
     <section class="hero">
       <div class="hero-bg"></div>
       <div class="hero-blob hero-blob-1"></div>
@@ -83,7 +84,7 @@ function renderHero(): string {
           <div class="hero-trust animate-fade-in-up">
             <p>Trusted by forward-thinking teams</p>
             <div class="hero-trust-logos">
-              ${companies.map(c => `<span>${c}</span>`).join('')}
+              ${companies.map(c => html`<span>${c}</span>`)}
             </div>
           </div>
         </div>
@@ -91,57 +92,57 @@ function renderHero(): string {
     </section>`;
 }
 
-function renderFeatures(): string {
-  const cards = features.map(f => `
-    <div class="card card-hover feature-card">
-      <div class="feature-icon">${f.icon(24)}</div>
-      <h3>${f.title}</h3>
-      <p>${f.description}</p>
-    </div>`).join('');
-
-  return `
+function buildFeatures(): SafeHtml {
+  return html`
     <section id="features" class="features-section bg-background">
       <div class="container">
         <div class="section-header">
           <h2>Built for the Way You Work</h2>
           <p>Powerful AI capabilities designed around human needs, not the other way around.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${cards}</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          ${features.map(f => html`
+            <div class="card card-hover feature-card">
+              <div class="feature-icon">${f.icon(24)}</div>
+              <h3>${f.title}</h3>
+              <p>${f.description}</p>
+            </div>`)}
+        </div>
       </div>
     </section>`;
 }
 
-function renderHowItWorks(): string {
-  const stepCards = steps.map(s => `
-    <div class="step">
-      <div class="step-number"><span>${s.number}</span></div>
-      <div class="card card-flat step-content p-6">
-        <h3>${s.title}</h3>
-        <p>${s.description}</p>
-        <ul class="step-points">
-          ${s.points.map(p => `
-            <li class="step-point">
-              <div class="step-point-icon">${iconCheck(12)}</div>
-              <span>${p}</span>
-            </li>`).join('')}
-        </ul>
-      </div>
-    </div>`).join('');
-
-  return `
+function buildHowItWorks(): SafeHtml {
+  return html`
     <section id="how-it-works" class="how-it-works-section">
       <div class="container">
         <div class="section-header">
           <h2>Get Started in Minutes</h2>
           <p>A straightforward path from setup to value, with support at every step.</p>
         </div>
-        <div class="steps-list">${stepCards}</div>
+        <div class="steps-list">
+          ${steps.map(s => html`
+            <div class="step">
+              <div class="step-number"><span>${s.number}</span></div>
+              <div class="card card-flat step-content p-6">
+                <h3>${s.title}</h3>
+                <p>${s.description}</p>
+                <ul class="step-points">
+                  ${s.points.map(p => html`
+                    <li class="step-point">
+                      <div class="step-point-icon">${iconCheck(12)}</div>
+                      <span>${p}</span>
+                    </li>`)}
+                </ul>
+              </div>
+            </div>`)}
+        </div>
       </div>
     </section>`;
 }
 
-function renderCTA(): string {
-  return `
+function buildCTA(): SafeHtml {
+  return html`
     <section class="cta-section">
       <div class="cta-bg"></div>
       <div class="cta-blob cta-blob-1"></div>
@@ -161,9 +162,9 @@ function renderCTA(): string {
     </section>`;
 }
 
-function renderFooter(): string {
+function buildFooter(): SafeHtml {
   const year = new Date().getFullYear();
-  return `
+  return html`
     <footer id="about" class="footer">
       <div class="container">
         <div class="footer-grid">
@@ -218,17 +219,17 @@ export async function init(): Promise<void> {
   const root = $('#page-root');
   if (!root) return;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div class="min-h-screen bg-background">
-      ${renderNavbar()}
+      ${buildNavbar()}
       <main>
-        ${renderHero()}
-        ${renderFeatures()}
-        ${renderHowItWorks()}
-        ${renderCTA()}
+        ${buildHero()}
+        ${buildFeatures()}
+        ${buildHowItWorks()}
+        ${buildCTA()}
       </main>
-      ${renderFooter()}
-    </div>`;
+      ${buildFooter()}
+    </div>`);
 
   // Mobile menu toggle
   const toggle = $('#mobile-menu-toggle');
@@ -237,7 +238,7 @@ export async function init(): Promise<void> {
     toggle.addEventListener('click', () => {
       const isHidden = menu.classList.contains('hidden');
       menu.classList.toggle('hidden', !isHidden);
-      toggle.innerHTML = isHidden ? iconX(24) : iconMenu(24);
+      setHtml(toggle, isHidden ? iconX(24) : iconMenu(24));
     });
   }
 

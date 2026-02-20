@@ -1,14 +1,15 @@
 import {
-  $, escapeHtml,
+  $,
   iconActivity, iconLightbulb, iconStar, iconFolderKanban,
   iconCheckCircle2, iconMessageSquare, iconUserPlus, iconEdit,
   iconArrowRight, iconSearch, iconChevronRight,
-  renderSkeleton, renderError, renderEmpty,
+  buildSkeleton, buildErrorState, buildEmptyState,
+  html, setHtml, SafeHtml, trusted,
 } from '../../site/script';
 import { getActivityFeed, type Activity } from '../../site/data';
 
-function activityIconHtml(type: string): string {
-  const iconMap: Record<string, { icon: (s?: number) => string; bg: string }> = {
+function activityIconHtml(type: string): SafeHtml {
+  const iconMap: Record<string, { icon: (s?: number) => SafeHtml; bg: string }> = {
     idea_created: { icon: iconLightbulb, bg: 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text))' },
     idea_scored: { icon: iconStar, bg: 'background:hsl(var(--info-soft));color:hsl(var(--info-text))' },
     project_created: { icon: iconFolderKanban, bg: 'background:hsl(var(--primary) / 0.1);color:hsl(var(--primary))' },
@@ -19,19 +20,22 @@ function activityIconHtml(type: string): string {
     idea_converted: { icon: iconArrowRight, bg: 'background:hsl(var(--success-soft));color:hsl(var(--success-text))' },
   };
   const entry = iconMap[type] || { icon: iconActivity, bg: 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))' };
-  return `<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;${entry.bg}">${entry.icon(20)}</div>`;
+  return html`<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;${entry.bg}">${entry.icon(20)}</div>`;
 }
 
-function renderActivity(a: Activity): string {
-  let meta = '';
-  if (a.score) meta = `<div class="badge badge-default text-xs mt-1">${iconStar(12)} Score: ${a.score}</div>`;
-  if (a.status) meta = `<div class="badge badge-default text-xs mt-1">${a.status}</div>`;
-  if (a.comment) meta = `<p class="text-sm text-muted mt-1" style="font-style:italic">"${escapeHtml(a.comment)}"</p>`;
-  return `
+function buildActivity(a: Activity): SafeHtml {
+  const meta = a.score
+    ? html`<div class="badge badge-default text-xs mt-1">${iconStar(12)} Score: ${a.score}</div>`
+    : a.status
+      ? html`<div class="badge badge-default text-xs mt-1">${a.status}</div>`
+      : a.comment
+        ? html`<p class="text-sm text-muted mt-1" style="font-style:italic">"${a.comment}"</p>`
+        : html``;
+  return html`
     <div class="flex items-start gap-4 p-4 rounded-lg activity-row">
       ${activityIconHtml(a.type)}
       <div style="flex:1;min-width:0">
-        <p class="text-sm"><span class="font-medium">${escapeHtml(a.actor)}</span><span class="text-muted"> ${a.action} </span><span class="font-medium">${escapeHtml(a.target)}</span></p>
+        <p class="text-sm"><span class="font-medium">${a.actor}</span><span class="text-muted"> ${a.action} </span><span class="font-medium">${a.target}</span></p>
         ${meta}
         <p class="text-xs text-muted mt-1">${a.timestamp}</p>
       </div>
@@ -42,23 +46,23 @@ export async function init(): Promise<void> {
   const container = $('#activity-feed-content');
   if (!container) return;
 
-  container.innerHTML = renderSkeleton('card-list', { count: 6 });
+  setHtml(container, buildSkeleton('card-list', { count: 6 }));
 
   let activities: Activity[];
   try {
     activities = await getActivityFeed();
   } catch {
-    container.innerHTML = renderError('Failed to load activity feed.');
+    setHtml(container, buildErrorState('Failed to load activity feed.'));
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
 
   if (activities.length === 0) {
-    container.innerHTML = renderEmpty(iconActivity(24), 'No Activity Yet', 'Activity from your team will appear here as they work on ideas and projects.');
+    setHtml(container, buildEmptyState(iconActivity(24), 'No Activity Yet', 'Activity from your team will appear here as they work on ideas and projects.'));
     return;
   }
 
-  container.innerHTML = `
+  setHtml(container, html`
     <div style="max-width:48rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
         <a href="../account/index.html" class="hover-link">Account</a>
@@ -88,11 +92,11 @@ export async function init(): Promise<void> {
       </div>
 
       <div id="activity-list">
-        ${activities.map(renderActivity).join('')}
+        ${activities.map(buildActivity)}
       </div>
 
       <div class="text-center mt-8">
         <button class="btn btn-outline">Load More Activity</button>
       </div>
-    </div>`;
+    </div>`);
 }

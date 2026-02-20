@@ -1,35 +1,36 @@
 import {
-  $, escapeHtml, showToast, navigateTo, getParams, renderSkeleton, renderError,
+  $, showToast, navigateTo, getParams, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState,
   iconArrowLeft, iconLightbulb, iconTarget, iconUsers, iconMessageSquare,
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
 } from '../../site/script';
 import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../../site/data';
 
-function renderClarification(c: Clarification): string {
+function buildClarification(c: Clarification): SafeHtml {
   const isPending = c.status === 'pending';
-  return `
+  return html`
     <div class="card" style="border:1px solid ${isPending ? 'hsl(var(--warning)/0.3)' : 'hsl(var(--border))'};${isPending ? 'background:hsl(var(--warning)/0.05)' : ''};padding:1rem">
       <div class="flex items-start gap-3 mb-3">
         <div style="padding:0.5rem;border-radius:9999px;${isPending ? 'background:hsl(var(--warning)/0.1)' : 'background:hsl(var(--muted))'}">${iconMessageSquare(16, isPending ? 'text-warning' : 'text-muted')}</div>
         <div style="flex:1">
           <div class="flex items-center gap-2 mb-1">
-            <span class="font-medium">${escapeHtml(c.askedBy)}</span>
+            <span class="font-medium">${c.askedBy}</span>
             <span class="text-xs text-muted">${c.askedAt}</span>
             <span class="badge ${isPending ? 'badge-warning' : 'badge-success'} text-xs">${isPending ? 'Awaiting response' : 'Answered'}</span>
           </div>
-          <p>${escapeHtml(c.question)}</p>
+          <p>${c.question}</p>
         </div>
       </div>
-      ${c.answer ? `
+      ${c.answer ? html`
         <div style="margin-left:2.5rem;margin-top:1rem;padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5);border-left:2px solid hsl(var(--primary))">
           <div class="flex items-center gap-2 mb-1">
-            <span class="font-medium">${escapeHtml(c.answeredBy!)}</span>
+            <span class="font-medium">${c.answeredBy!}</span>
             <span class="text-xs text-muted">${c.answeredAt}</span>
           </div>
-          <p>${escapeHtml(c.answer)}</p>
+          <p>${c.answer}</p>
         </div>
-      ` : ''}
+      ` : html``}
     </div>`;
 }
 
@@ -39,7 +40,7 @@ export async function init(): Promise<void> {
 
   const root = $('#er-root');
   if (!root) return;
-  root.innerHTML = renderSkeleton('detail');
+  setHtml(root, buildSkeleton('detail'));
 
   let project: EngineeringProject;
   let clarifications: Clarification[];
@@ -49,7 +50,7 @@ export async function init(): Promise<void> {
       getClarificationsByProjectId(projectId),
     ]);
   } catch {
-    root.innerHTML = renderError('Failed to load engineering requirements.');
+    setHtml(root, buildErrorState('Failed to load engineering requirements.'));
     root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
@@ -57,18 +58,18 @@ export async function init(): Promise<void> {
   const pendingCount = clarifications.filter(c => c.status === 'pending').length;
   const answeredCount = clarifications.filter(c => c.status === 'answered').length;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div style="max-width:56rem;margin:0 auto">
       <div class="flex items-center gap-2 text-sm text-muted mb-4">
         <a href="../projects/index.html" class="hover-link">Projects</a><span>/</span>
-        <a href="../project-detail/index.html?projectId=${projectId}" class="hover-link">${escapeHtml(project.title)}</a><span>/</span>
+        <a href="../project-detail/index.html?projectId=${projectId}" class="hover-link">${project.title}</a><span>/</span>
         <span>Engineering Requirements</span>
       </div>
 
       <div class="flex items-start justify-between mb-8">
         <div>
           <h1 class="text-2xl font-display font-bold mb-2">Engineering Requirements</h1>
-          <p class="text-muted">Business context and clarifications for ${escapeHtml(project.title)}</p>
+          <p class="text-muted">Business context and clarifications for ${project.title}</p>
         </div>
         <button class="btn btn-outline gap-2" id="er-back">${iconArrowLeft(16)} Back to Project</button>
       </div>
@@ -95,39 +96,39 @@ export async function init(): Promise<void> {
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconLightbulb(20, 'text-primary')} Business Context</h3>
         <div style="display:flex;flex-direction:column;gap:1.5rem">
-          <div><h4 class="text-sm font-semibold mb-2">Problem Statement</h4><p class="text-muted">${escapeHtml(project.businessContext.problem)}</p></div>
-          <div><h4 class="text-sm font-semibold mb-2">Expected Outcome</h4><p class="text-muted">${escapeHtml(project.businessContext.expectedOutcome)}</p></div>
+          <div><h4 class="text-sm font-semibold mb-2">Problem Statement</h4><p class="text-muted">${project.businessContext.problem}</p></div>
+          <div><h4 class="text-sm font-semibold mb-2">Expected Outcome</h4><p class="text-muted">${project.businessContext.expectedOutcome}</p></div>
         </div>
       </div>
 
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconTarget(20, 'text-success')} Success Metrics</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
-          ${project.businessContext.successMetrics.map((m: string) => `
-            <div class="flex items-start gap-2">${iconCheckCircle2(16, 'text-success')} <span>${escapeHtml(m)}</span></div>
-          `).join('')}
+          ${project.businessContext.successMetrics.map((m: string) => html`
+            <div class="flex items-start gap-2">${iconCheckCircle2(16, 'text-success')} <span>${m}</span></div>
+          `)}
         </div>
       </div>
 
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconAlertTriangle(20, 'text-warning')} Constraints & Requirements</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
-          ${project.businessContext.constraints.map((c: string) => `
-            <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${escapeHtml(c)}</span></div>
-          `).join('')}
+          ${project.businessContext.constraints.map((c: string) => html`
+            <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${c}</span></div>
+          `)}
         </div>
       </div>
 
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
         <div class="convert-grid" style="gap:0.75rem">
-          ${project.team.map((m: any) => `
+          ${project.team.map((m: any) => html`
             <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3)">
               <div style="width:2.5rem;height:2.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:${m.type === 'business' ? 'hsl(var(--primary)/0.1)' : 'hsl(var(--success-soft))'}">${iconUser(20, m.type === 'business' ? 'text-primary' : 'text-success')}</div>
-              <div style="flex:1;min-width:0"><p class="font-medium">${escapeHtml(m.name)}</p><p class="text-xs text-muted">${m.role}</p></div>
+              <div style="flex:1;min-width:0"><p class="font-medium">${m.name}</p><p class="text-xs text-muted">${m.role}</p></div>
               <span class="badge ${m.type === 'business' ? 'badge-primary' : 'badge-success'} text-xs">${m.type}</span>
             </div>
-          `).join('')}
+          `)}
         </div>
       </div>
 
@@ -136,7 +137,7 @@ export async function init(): Promise<void> {
         <a href="../idea-scoring/index.html?ideaId=${project.linkedIdea.id}" class="flex items-center justify-between" style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);text-decoration:none;color:inherit">
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconLightbulb(20, 'text-primary')}</div>
-            <div><p class="font-medium">${escapeHtml(project.linkedIdea.title)}</p><p class="text-xs text-muted">View original idea and scoring</p></div>
+            <div><p class="font-medium">${project.linkedIdea.title}</p><p class="text-xs text-muted">View original idea and scoring</p></div>
           </div>
           <div class="flex items-center gap-3">
             <span class="badge badge-success text-xs">Score: ${project.linkedIdea.score}</span>
@@ -154,7 +155,7 @@ export async function init(): Promise<void> {
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:1rem" id="er-thread">
-          ${clarifications.map(renderClarification).join('')}
+          ${clarifications.map(buildClarification)}
         </div>
       </div>
 
@@ -165,7 +166,7 @@ export async function init(): Promise<void> {
           <button class="btn btn-primary gap-2" id="er-complete">${iconCheckCircle2(16)} Mark Requirements Complete</button>
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   // Event bindings
   const q = $('#er-question') as HTMLTextAreaElement;

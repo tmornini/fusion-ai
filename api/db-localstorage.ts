@@ -120,12 +120,20 @@ const TABLE_NAMES = [
   'edges', 'edge_outcomes', 'edge_metrics', 'activities', 'notifications',
   'clarifications', 'crunch_columns', 'processes', 'process_steps',
   'company_settings', 'notification_categories', 'notification_prefs',
-  'account_config',
+  'account',
 ];
 
 // ── Adapter factory ──────────────────────
 
 export async function createLocalStorageAdapter(): Promise<DbAdapter> {
+  // Migrate account_config → account (one-time rename)
+  const oldAccountKey = KEY_PREFIX + 'account_config';
+  const newAccountKey = KEY_PREFIX + 'account';
+  if (localStorage.getItem(oldAccountKey) !== null && localStorage.getItem(newAccountKey) === null) {
+    localStorage.setItem(newAccountKey, localStorage.getItem(oldAccountKey)!);
+    localStorage.removeItem(oldAccountKey);
+  }
+
   const milestoneStore = makeEntityStore<MilestoneEntity>('milestones');
   const projectTaskStore = makeEntityStore<ProjectTaskEntity>('project_tasks');
   const discussionStore = makeEntityStore<DiscussionEntity>('discussions');
@@ -203,9 +211,9 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     ideas: makeEntityStore<IdeaEntity>('ideas'),
 
     ideaScores: {
-      async getByIdeaId(id: string): Promise<IdeaScoreEntity | null> {
+      async getByIdeaId(ideaId: string): Promise<IdeaScoreEntity | null> {
         const rows = readTable<IdeaScoreEntity>('idea_scores');
-        return rows.find(row => row.idea_id === id) ?? null;
+        return rows.find(row => row.idea_id === ideaId) ?? null;
       },
       async put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreEntity> {
         const rows = readTable<IdeaScoreEntity>('idea_scores');
@@ -227,8 +235,8 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     projects: makeEntityStore<ProjectEntity>('projects'),
 
     projectTeam: {
-      async getByProjectId(id: string): Promise<ProjectTeamEntity[]> {
-        return readTable<ProjectTeamEntity>('project_team').filter(row => row.project_id === id);
+      async getByProjectId(projectId: string): Promise<ProjectTeamEntity[]> {
+        return readTable<ProjectTeamEntity>('project_team').filter(row => row.project_id === projectId);
       },
       async put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamEntity> {
         const rows = readTable<ProjectTeamEntity>('project_team');
@@ -248,31 +256,31 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     },
 
     milestones: Object.assign(milestoneStore, {
-      async getByProjectId(id: string): Promise<MilestoneEntity[]> {
+      async getByProjectId(projectId: string): Promise<MilestoneEntity[]> {
         return readTable<MilestoneEntity>('milestones')
-          .filter(row => row.project_id === id)
+          .filter(row => row.project_id === projectId)
           .sort((a, b) => a.sort_order - b.sort_order);
       },
     }),
 
     projectTasks: Object.assign(projectTaskStore, {
-      async getByProjectId(id: string): Promise<ProjectTaskEntity[]> {
-        return readTable<ProjectTaskEntity>('project_tasks').filter(row => row.project_id === id);
+      async getByProjectId(projectId: string): Promise<ProjectTaskEntity[]> {
+        return readTable<ProjectTaskEntity>('project_tasks').filter(row => row.project_id === projectId);
       },
     }),
 
     discussions: Object.assign(discussionStore, {
-      async getByProjectId(id: string): Promise<DiscussionEntity[]> {
+      async getByProjectId(projectId: string): Promise<DiscussionEntity[]> {
         return readTable<DiscussionEntity>('discussions')
-          .filter(row => row.project_id === id)
+          .filter(row => row.project_id === projectId)
           .sort((a, b) => b.date.localeCompare(a.date));
       },
     }),
 
     projectVersions: Object.assign(projectVersionStore, {
-      async getByProjectId(id: string): Promise<ProjectVersionEntity[]> {
+      async getByProjectId(projectId: string): Promise<ProjectVersionEntity[]> {
         return readTable<ProjectVersionEntity>('project_versions')
-          .filter(row => row.project_id === id)
+          .filter(row => row.project_id === projectId)
           .sort((a, b) => b.date.localeCompare(a.date));
       },
     }),
@@ -280,8 +288,8 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     edges: makeEntityStore<EdgeEntity>('edges'),
 
     edgeOutcomes: Object.assign(edgeOutcomeStore, {
-      async getByEdgeId(id: string): Promise<EdgeOutcomeEntity[]> {
-        return readTable<EdgeOutcomeEntity>('edge_outcomes').filter(row => row.edge_id === id);
+      async getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]> {
+        return readTable<EdgeOutcomeEntity>('edge_outcomes').filter(row => row.edge_id === edgeId);
       },
     }),
 
@@ -290,8 +298,8 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     notifications: makeEntityStore<NotificationEntity>('notifications'),
 
     clarifications: Object.assign(clarificationStore, {
-      async getByProjectId(id: string): Promise<ClarificationEntity[]> {
-        return readTable<ClarificationEntity>('clarifications').filter(row => row.project_id === id);
+      async getByProjectId(projectId: string): Promise<ClarificationEntity[]> {
+        return readTable<ClarificationEntity>('clarifications').filter(row => row.project_id === projectId);
       },
     }),
 
@@ -299,9 +307,9 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     processes: makeEntityStore<ProcessEntity>('processes'),
 
     processSteps: Object.assign(processStepStore, {
-      async getByProcessId(id: string): Promise<ProcessStepEntity[]> {
+      async getByProcessId(processId: string): Promise<ProcessStepEntity[]> {
         return readTable<ProcessStepEntity>('process_steps')
-          .filter(row => row.process_id === id)
+          .filter(row => row.process_id === processId)
           .sort((a, b) => a.sort_order - b.sort_order);
       },
     }),
@@ -309,20 +317,22 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     companySettings: makeSingletonStore<CompanySettingsEntity>('company_settings'),
     notificationCategories: makeEntityStore<NotificationCategoryEntity>('notification_categories'),
 
-    notificationPrefs: {
-      async getAll(): Promise<NotificationPrefEntity[]> {
-        return readTable<NotificationPrefEntity>('notification_prefs');
-      },
-      async getByCategoryId(id: string): Promise<NotificationPrefEntity[]> {
-        return readTable<NotificationPrefEntity>('notification_prefs').filter(row => row.category_id === id);
-      },
-      async put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity> {
-        const store = makeEntityStore<NotificationPrefEntity>('notification_prefs');
-        return store.put(id, data);
-      },
-    },
+    notificationPrefs: (() => {
+      const store = makeEntityStore<NotificationPrefEntity>('notification_prefs');
+      return {
+        async getAll(): Promise<NotificationPrefEntity[]> {
+          return readTable<NotificationPrefEntity>('notification_prefs');
+        },
+        async getByCategoryId(categoryId: string): Promise<NotificationPrefEntity[]> {
+          return readTable<NotificationPrefEntity>('notification_prefs').filter(row => row.category_id === categoryId);
+        },
+        async put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity> {
+          return store.put(id, data);
+        },
+      };
+    })(),
 
-    account: makeSingletonStore<AccountEntity>('account_config'),
+    account: makeSingletonStore<AccountEntity>('account'),
   };
 
   return adapter;

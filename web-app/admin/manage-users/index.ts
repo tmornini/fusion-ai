@@ -1,47 +1,48 @@
 import {
-  $, showToast, escapeHtml, initials, openDialog, closeDialog,
+  $, showToast, initials, openDialog, closeDialog,
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
-  renderSkeleton, renderError, renderEmpty,
+  buildSkeleton, buildErrorState, buildEmptyState,
+  html, setHtml, SafeHtml, trusted,
 } from '../../site/script';
 import { getManagedUsers, type ManagedUser } from '../../site/data';
 
-const roleLabels: Record<string, { label: string; icon: (s?: number) => string }> = {
+const roleLabels: Record<string, { label: string; icon: (s?: number) => SafeHtml }> = {
   admin: { label: 'Admin', icon: iconCrown },
   manager: { label: 'Manager', icon: iconUserCheck },
   member: { label: 'Member', icon: iconUser },
   viewer: { label: 'Viewer', icon: iconEye },
 };
 
-function renderStatusBadge(status: string): string {
-  if (status === 'active') return `<span class="status-badge-success">${iconCheckCircle2(14)} Active</span>`;
-  if (status === 'pending') return `<span class="status-badge-warning">${iconClock(14)} Pending</span>`;
-  return `<span class="status-badge-error">${iconUserX(14)} Deactivated</span>`;
+function buildStatusBadge(status: string): SafeHtml {
+  if (status === 'active') return html`<span class="status-badge-success">${iconCheckCircle2(14)} Active</span>`;
+  if (status === 'pending') return html`<span class="status-badge-warning">${iconClock(14)} Pending</span>`;
+  return html`<span class="status-badge-error">${iconUserX(14)} Deactivated</span>`;
 }
 
-function renderRoleBadge(role: string): string {
+function buildRoleBadge(role: string): SafeHtml {
   const r = roleLabels[role];
-  if (!r) return `<span class="badge badge-secondary">${role}</span>`;
-  return `<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
+  if (!r) return html`<span class="badge badge-secondary">${role}</span>`;
+  return html`<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
 }
 
-function renderUserRow(u: ManagedUser): string {
-  return `
+function buildUserRow(u: ManagedUser): SafeHtml {
+  return html`
     <div class="flex items-center gap-4 p-4 ${u.status === 'deactivated' ? 'opacity-50' : ''}" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:2;display:flex;align-items:center;gap:0.75rem;min-width:0">
         <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <span class="text-sm font-bold text-primary">${initials(u.name)}</span>
         </div>
         <div style="min-width:0">
-          <p class="font-medium truncate">${escapeHtml(u.name)}</p>
-          <p class="text-xs text-muted truncate">${escapeHtml(u.email)}</p>
+          <p class="font-medium truncate">${u.name}</p>
+          <p class="text-xs text-muted truncate">${u.email}</p>
         </div>
       </div>
-      <div style="flex:1">${renderRoleBadge(u.role)}</div>
+      <div style="flex:1">${buildRoleBadge(u.role)}</div>
       <div style="flex:1" class="text-sm text-muted">${u.department}</div>
       <div style="flex:1">
-        ${renderStatusBadge(u.status)}
+        ${buildStatusBadge(u.status)}
         <p class="text-xs text-muted mt-1">${u.status === 'pending' ? 'Invite sent' : 'Last active ' + u.lastActive}</p>
       </div>
       <div style="flex:0 0 auto">
@@ -54,26 +55,26 @@ export async function init(): Promise<void> {
   const container = $('#manage-users-content');
   if (!container) return;
 
-  container.innerHTML = renderSkeleton('table', { count: 5 });
+  setHtml(container, buildSkeleton('table', { count: 5 }));
 
   let users: ManagedUser[];
   try {
     users = await getManagedUsers();
   } catch {
-    container.innerHTML = renderError('Failed to load users.');
+    setHtml(container, buildErrorState('Failed to load users.'));
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
 
   if (users.length === 0) {
-    container.innerHTML = renderEmpty(iconUsers(24), 'No Users Yet', 'Invite users to your organization to start collaborating.');
+    setHtml(container, buildEmptyState(iconUsers(24), 'No Users Yet', 'Invite users to your organization to start collaborating.'));
     return;
   }
 
   const activeCount = users.filter(u => u.status === 'active').length;
   const pendingCount = users.filter(u => u.status === 'pending').length;
 
-  container.innerHTML = `
+  setHtml(container, html`
     <div style="max-width:72rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
         <a href="../account/index.html" class="text-primary">Account</a>
@@ -116,7 +117,7 @@ export async function init(): Promise<void> {
           <div style="flex:1" class="text-xs font-medium text-muted">Status</div>
           <div style="flex:0 0 auto;width:2.5rem"></div>
         </div>
-        <div id="user-list">${users.map(renderUserRow).join('')}</div>
+        <div id="user-list">${users.map(buildUserRow)}</div>
       </div>
 
       <div id="invite-backdrop" class="dialog-backdrop hidden"></div>
@@ -135,7 +136,7 @@ export async function init(): Promise<void> {
           <button class="btn btn-primary gap-2" id="invite-submit">${iconSend(16)} Send Invite</button>
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   // Invite modal
   const openInvite = () => openDialog('invite');

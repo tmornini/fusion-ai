@@ -36,46 +36,46 @@ export interface DbAdapter {
   users: EntityStore<UserEntity>;
   ideas: EntityStore<IdeaEntity>;
   ideaScores: {
-    getByIdeaId(id: string): Promise<IdeaScoreEntity | null>;
+    getByIdeaId(ideaId: string): Promise<IdeaScoreEntity | null>;
     put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreEntity>;
   };
   projects: EntityStore<ProjectEntity>;
   projectTeam: {
-    getByProjectId(id: string): Promise<ProjectTeamEntity[]>;
+    getByProjectId(projectId: string): Promise<ProjectTeamEntity[]>;
     put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamEntity>;
   };
   milestones: EntityStore<MilestoneEntity> & {
-    getByProjectId(id: string): Promise<MilestoneEntity[]>;
+    getByProjectId(projectId: string): Promise<MilestoneEntity[]>;
   };
   projectTasks: EntityStore<ProjectTaskEntity> & {
-    getByProjectId(id: string): Promise<ProjectTaskEntity[]>;
+    getByProjectId(projectId: string): Promise<ProjectTaskEntity[]>;
   };
   discussions: EntityStore<DiscussionEntity> & {
-    getByProjectId(id: string): Promise<DiscussionEntity[]>;
+    getByProjectId(projectId: string): Promise<DiscussionEntity[]>;
   };
   projectVersions: EntityStore<ProjectVersionEntity> & {
-    getByProjectId(id: string): Promise<ProjectVersionEntity[]>;
+    getByProjectId(projectId: string): Promise<ProjectVersionEntity[]>;
   };
   edges: EntityStore<EdgeEntity>;
   edgeOutcomes: EntityStore<EdgeOutcomeEntity> & {
-    getByEdgeId(id: string): Promise<EdgeOutcomeEntity[]>;
+    getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]>;
   };
   edgeMetrics: EntityStore<EdgeMetricEntity>;
   activities: EntityStore<ActivityEntity>;
   notifications: EntityStore<NotificationEntity>;
   clarifications: EntityStore<ClarificationEntity> & {
-    getByProjectId(id: string): Promise<ClarificationEntity[]>;
+    getByProjectId(projectId: string): Promise<ClarificationEntity[]>;
   };
   crunchColumns: EntityStore<CrunchColumnEntity>;
   processes: EntityStore<ProcessEntity>;
   processSteps: EntityStore<ProcessStepEntity> & {
-    getByProcessId(id: string): Promise<ProcessStepEntity[]>;
+    getByProcessId(processId: string): Promise<ProcessStepEntity[]>;
   };
   companySettings: SingletonStore<CompanySettingsEntity>;
   notificationCategories: EntityStore<NotificationCategoryEntity>;
   notificationPrefs: {
     getAll(): Promise<NotificationPrefEntity[]>;
-    getByCategoryId(id: string): Promise<NotificationPrefEntity[]>;
+    getByCategoryId(categoryId: string): Promise<NotificationPrefEntity[]>;
     put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity>;
   };
   account: SingletonStore<AccountEntity>;

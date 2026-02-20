@@ -1,26 +1,26 @@
 import {
-  $,
+  $, html, setHtml, type SafeHtml,
   iconCheck, iconX, iconAlertTriangle, iconInfo, iconSearch, iconPlus,
   iconArrowRight, iconTrash, iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
 } from '../../site/script';
 
-function colorSwatch(name: string, variable: string, style: string): string {
-  return `<div style="display:flex;flex-direction:column;gap:0.5rem">
+function colorSwatch(name: string, variable: string, style: string): SafeHtml {
+  return html`<div style="display:flex;flex-direction:column;gap:0.5rem">
     <div style="height:4rem;width:100%;border-radius:0.5rem;border:1px solid hsl(var(--border));${style}"></div>
     <div class="text-sm font-medium">${name}</div>
     <code class="text-xs text-muted">${variable}</code>
   </div>`;
 }
 
-function typographyRow(label: string, cls: string, sample: string): string {
-  return `<div style="display:flex;flex-direction:column;gap:0.25rem;padding:0.75rem 0;border-bottom:1px solid hsl(var(--border))">
+function typographyRow(label: string, cls: string, sample: string): SafeHtml {
+  return html`<div style="display:flex;flex-direction:column;gap:0.25rem;padding:0.75rem 0;border-bottom:1px solid hsl(var(--border))">
     <code class="text-xs text-muted">${label}</code>
     <p class="${cls}">${sample}</p>
   </div>`;
 }
 
-function shadowBox(name: string, variable: string): string {
-  return `<div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
+function shadowBox(name: string, variable: string): SafeHtml {
+  return html`<div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
     <div style="width:100%;height:5rem;border-radius:0.75rem;background:hsl(var(--card));box-shadow:var(${variable});border:1px solid hsl(var(--border))"></div>
     <code class="text-xs text-muted">${name}</code>
   </div>`;
@@ -30,7 +30,7 @@ export async function init(): Promise<void> {
   const root = $('#ds-root');
   if (!root) return;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div style="display:flex;flex-direction:column;gap:3rem;padding-bottom:4rem">
       <div>
         <h1 class="text-3xl font-bold font-display">Fusion AI Design System</h1>
@@ -260,12 +260,12 @@ export async function init(): Promise<void> {
         <div><h2 class="text-2xl font-semibold font-display">Iconography</h2><p class="text-muted mt-1">Lucide-compatible inline SVG icons at standard sizes</p></div>
         <div class="card" style="padding:1.5rem">
           <div class="flex items-end gap-8">
-            ${[16, 20, 24, 48].map(size => `
+            ${[16, 20, 24, 48].map(size => html`
               <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
                 <div style="color:hsl(var(--primary))">${iconSparkles(size)}</div>
                 <code class="text-xs text-muted">${size}px</code>
               </div>
-            `).join('')}
+            `)}
           </div>
           <div class="flex flex-wrap gap-4 mt-6 pt-4" style="border-top:1px solid hsl(var(--border))">
             ${[
@@ -279,12 +279,12 @@ export async function init(): Promise<void> {
               { fn: iconInfo, name: 'Info' },
               { fn: iconTrash, name: 'Trash' },
               { fn: iconUpload, name: 'Upload' },
-            ].map(i => `
+            ].map(i => html`
               <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;width:3.5rem">
                 <div style="color:hsl(var(--foreground))">${i.fn(20)}</div>
                 <span class="text-2xs text-muted">${i.name}</span>
               </div>
-            `).join('')}
+            `)}
           </div>
         </div>
       </section>
@@ -303,13 +303,13 @@ export async function init(): Promise<void> {
             { name: 'space-8', value: '32px', w: '2rem' },
             { name: 'space-12', value: '48px', w: '3rem' },
             { name: 'space-16', value: '64px', w: '4rem' },
-          ].map(s => `
+          ].map(s => html`
             <div class="flex items-center gap-4" style="margin-bottom:0.75rem">
               <code class="text-xs text-muted" style="width:5rem">${s.name}</code>
               <div style="height:1rem;background:hsl(var(--primary));border-radius:0.25rem;width:${s.w}"></div>
               <span class="text-sm text-muted">${s.value}</span>
             </div>
-          `).join('')}
+          `)}
         </div>
       </section>
 
@@ -416,5 +416,5 @@ export async function init(): Promise<void> {
           </div>
         </div>
       </section>
-    </div>`;
+    </div>`);
 }

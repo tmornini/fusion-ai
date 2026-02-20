@@ -9,6 +9,7 @@ import {
   iconTarget, iconDatabase, iconGitBranch, iconSettings, iconUsers,
   iconActivity, iconBell, iconBarChart, iconBrain, iconPalette,
   iconClipboardCheck, iconFileText, iconX,
+  html, setHtml, SafeHtml, trusted,
 } from './script';
 import { getIdeas, getProjects, getTeamMembers } from './data';
 
@@ -19,14 +20,14 @@ interface SearchItem {
   title: string;
   meta: string;
   category: 'ideas' | 'projects' | 'people' | 'pages';
-  icon: string;
+  icon: SafeHtml;
   href: string;
   keywords: string;
 }
 
 interface PageEntry {
   title: string;
-  icon: string;
+  icon: SafeHtml;
   href: string;
   keywords: string;
 }
@@ -143,12 +144,12 @@ function search(query: string): SearchItem[] {
   );
 }
 
-function renderHighlightedMatch(text: string, query: string): string {
-  if (!query.trim()) return escapeHtml(text);
+function buildHighlightedMatch(text: string, query: string): SafeHtml {
+  if (!query.trim()) return trusted(escapeHtml(text));
   const escaped = escapeHtml(text);
   const q = escapeHtml(query);
   const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return escaped.replace(re, '<mark>$1</mark>');
+  return trusted(escaped.replace(re, '<mark>$1</mark>'));
 }
 
 // ── Rendering ────────────────────────────
@@ -168,7 +169,7 @@ function renderResults(query: string): void {
   activeIndex = 0;
 
   if (filteredItems.length === 0) {
-    list.innerHTML = `<div class="cmdk-empty">No results found for "${escapeHtml(query)}"</div>`;
+    setHtml(list, html`<div class="cmdk-empty">No results found for "${query}"</div>`);
     if (liveRegion) liveRegion.textContent = 'No results found';
     return;
   }
@@ -180,26 +181,26 @@ function renderResults(query: string): void {
     grouped[item.category]!.push(item);
   });
 
-  let html = '';
+  const markup: SafeHtml[] = [];
   let globalIndex = 0;
   for (const cat of categoryOrder) {
     const items = grouped[cat];
     if (!items?.length) continue;
 
-    html += `<div class="cmdk-group-label">${categoryLabels[cat]}</div>`;
+    markup.push(html`<div class="cmdk-group-label">${categoryLabels[cat]}</div>`);
     for (const item of items) {
-      html += `<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? 'aria-selected="true"' : ''}>
+      markup.push(html`<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
         <div class="cmdk-item-icon">${item.icon}</div>
         <div class="cmdk-item-content">
-          <div class="cmdk-item-title">${renderHighlightedMatch(item.title, query)}</div>
-          <div class="cmdk-item-meta">${escapeHtml(item.meta)}</div>
+          <div class="cmdk-item-title">${buildHighlightedMatch(item.title, query)}</div>
+          <div class="cmdk-item-meta">${item.meta}</div>
         </div>
-      </div>`;
+      </div>`);
       globalIndex++;
     }
   }
 
-  list.innerHTML = html;
+  setHtml(list, html`${markup}`);
   if (liveRegion) liveRegion.textContent = `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} found`;
 }
 
@@ -259,7 +260,7 @@ function injectDOM(): void {
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-label', 'Search');
 
-  dialog.innerHTML = `
+  setHtml(dialog, html`
     <div class="cmdk-input-wrapper">
       ${iconSearch(20)}
       <input class="cmdk-input" placeholder="Search ideas, projects, people, pages..." type="text" role="combobox" aria-expanded="true" aria-controls="cmdk-listbox" aria-autocomplete="list" />
@@ -268,12 +269,12 @@ function injectDOM(): void {
     <div class="cmdk-list" id="cmdk-listbox" role="listbox" aria-label="Search results"></div>
     <div class="cmdk-footer">
       <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
-        <span class="flex items-center gap-1"><kbd>↵</kbd> Open</span>
-        <span class="flex items-center gap-1"><kbd>Esc</kbd> Close</span>
+        ${trusted('<span class="flex items-center gap-1"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>')}
+        ${trusted('<span class="flex items-center gap-1"><kbd>↵</kbd> Open</span>')}
+        ${trusted('<span class="flex items-center gap-1"><kbd>Esc</kbd> Close</span>')}
       </div>
     </div>
-    <div class="cmdk-live" role="status" aria-live="polite" aria-atomic="true"></div>`;
+    <div class="cmdk-live" role="status" aria-live="polite" aria-atomic="true"></div>`);
 
   input = dialog.querySelector('.cmdk-input') as HTMLInputElement;
   list = dialog.querySelector('#cmdk-listbox');

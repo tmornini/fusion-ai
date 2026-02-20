@@ -8,7 +8,8 @@ import { state, setState, subscribe, resolvedTheme, applyTheme, setTheme } from 
 import { $, $$, escapeHtml } from './dom';
 import { showToast } from './toast';
 import type { SkeletonType } from './skeleton';
-import { renderSkeleton, renderError, renderEmpty, withLoadingState } from './skeleton';
+import { buildSkeleton, buildErrorState, buildEmptyState, withLoadingState } from './skeleton';
+import { SafeHtml, html, trusted, setHtml } from './safe-html';
 import {
   icon, icons,
   iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
@@ -124,14 +125,14 @@ function navigateTo(page: string, params?: Record<string, string>): void {
 // ------------------------------------
 
 function updateThemeToggleIcon(): void {
-  const themeIconHtml = state.theme === 'dark'
+  const themeIcon = state.theme === 'dark'
     ? iconMoon(20)
     : state.theme === 'light'
     ? iconSun(20)
     : iconMonitor(20);
   ['theme-toggle', 'mobile-theme-toggle'].forEach(id => {
     const btn = document.getElementById(id);
-    if (btn) btn.innerHTML = themeIconHtml;
+    if (btn) setHtml(btn, themeIcon);
   });
 }
 
@@ -150,17 +151,17 @@ async function populateNotifications(): Promise<void> {
     const badge = document.getElementById(badgeId);
 
     if (list) {
-      list.innerHTML = notifications.map(n => `
+      setHtml(list, html`${notifications.map(n => html`
         <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
           <div class="flex items-start gap-2 w-full">
-            ${n.unread ? '<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>' : ''}
+            ${n.unread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
             <div style="flex:1;${!n.unread ? 'margin-left:1rem' : ''}">
-              <p class="text-sm ${n.unread ? 'font-medium' : 'text-muted'}">${escapeHtml(n.title)}</p>
-              <p class="text-xs text-muted line-clamp-2">${escapeHtml(n.message)}</p>
+              <p class="text-sm ${n.unread ? 'font-medium' : 'text-muted'}">${n.title}</p>
+              <p class="text-xs text-muted line-clamp-2">${n.message}</p>
               <p class="text-xs text-muted mt-1">${n.time}</p>
             </div>
           </div>
-        </button>`).join('');
+        </button>`)}`);
     }
     if (countEl && unreadCount > 0) {
       countEl.textContent = String(unreadCount);
@@ -247,11 +248,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error('Database initialization failed:', err);
     const msg = err instanceof Error ? err.message : String(err);
-    document.body.innerHTML = `<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
+    setHtml(document.body, html`<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
       <h1 style="color:hsl(0 72% 51%)">Failed to initialize database</h1>
       <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
       <p>Try clearing site data and reloading.</p>
-    </div>`;
+    </div>`);
     return;
   }
 
@@ -321,11 +322,11 @@ function initSidebar(): void {
       const label = btn.getAttribute('data-section');
       const items = document.querySelector(`[data-section-items="${label}"]`) as HTMLElement;
       if (items) {
-        const hidden = items.style.display === 'none';
-        items.style.display = hidden ? '' : 'none';
-        btn.setAttribute('aria-expanded', String(hidden));
+        const willExpand = items.style.display === 'none';
+        items.style.display = willExpand ? '' : 'none';
+        btn.setAttribute('aria-expanded', String(willExpand));
         const chevron = btn.querySelector('svg');
-        if (chevron) chevron.style.transform = hidden ? '' : 'rotate(-90deg)';
+        if (chevron) chevron.style.transform = willExpand ? '' : 'rotate(-90deg)';
       }
     });
   });
@@ -431,6 +432,8 @@ export {
   applyTheme, setTheme,
   // DOM (re-exported from ./dom)
   $, $$, escapeHtml,
+  // Safe HTML (re-exported from ./html)
+  SafeHtml, html, trusted, setHtml,
   // Navigation
   getPageName, getParams, navigateTo,
   // Layout
@@ -438,7 +441,7 @@ export {
   // Toast (re-exported from ./toast)
   showToast,
   // Loading / Error / Empty (re-exported from ./skeleton)
-  type SkeletonType, renderSkeleton, renderError, renderEmpty, withLoadingState,
+  type SkeletonType, buildSkeleton, buildErrorState, buildEmptyState, withLoadingState,
   // Shared Utilities
   initials, colorForScore, openDialog, closeDialog, initTabs,
   // Icons (re-exported from ./icons)

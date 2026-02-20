@@ -1,5 +1,5 @@
 import {
-  $, showToast, navigateTo,
+  $, showToast, navigateTo, setHtml, html,
   iconSparkles, iconArrowRight, iconLoader,
 } from '../../site/script';
 
@@ -19,7 +19,7 @@ export async function init(): Promise<void> {
   const root = $('#page-root');
   if (!root) return;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div class="min-h-screen flex bg-background">
       <div class="auth-branding hidden" id="auth-branding">
         <div style="position:relative;z-index:10;display:flex;flex-direction:column;justify-content:center;padding:3rem 5rem;height:100%">
@@ -98,7 +98,7 @@ export async function init(): Promise<void> {
           </p>
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   let isLogin = true;
 
@@ -129,7 +129,7 @@ export async function init(): Promise<void> {
     companyField.classList.toggle('hidden', isLogin);
     togglePrompt.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
     toggleMode.textContent = isLogin ? 'Sign up' : 'Sign in';
-    submitBtn.innerHTML = (isLogin ? 'Sign in' : 'Create account') + ' ' + iconArrowRight(20);
+    setHtml(submitBtn, html`${isLogin ? 'Sign in' : 'Create account'} ${iconArrowRight(20)}`);
   }
 
   toggleMode.addEventListener('click', () => {
@@ -168,7 +168,7 @@ export async function init(): Promise<void> {
 
     if (emailErr || passErr) return;
 
-    submitBtn.innerHTML = iconLoader(20, 'animate-spin-slow');
+    setHtml(submitBtn, iconLoader(20, 'animate-spin-slow'));
     submitBtn.setAttribute('disabled', '');
 
     setTimeout(() => {

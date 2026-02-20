@@ -1,10 +1,12 @@
 // ============================================
 // FUSION AI — Icons (inline SVG — Lucide-compatible)
-// Each returns an SVG string; inherits currentColor.
+// Each returns SafeHtml; inherits currentColor.
 // ============================================
 
-function icon(paths: string, size = 16, cls = ''): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}">${paths}</svg>`;
+import { SafeHtml } from './safe-html';
+
+function icon(paths: string, size = 16, cls = ''): SafeHtml {
+  return new SafeHtml(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${cls}">${paths}</svg>`);
 }
 
 function iconSparkles(s = 16, c = '') { return icon('<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/>', s, c); }
@@ -130,7 +132,7 @@ const _allIcons = [
   iconFileSpreadsheet, iconListTodo, iconToggleLeft, iconType, iconTable,
   iconSlider, iconDot, iconLayoutGrid, iconChevronUp, iconHistory,
 ];
-const icons: Record<string, (s?: number, c?: string) => string> = {};
+const icons: Record<string, (s?: number, c?: string) => SafeHtml> = {};
 for (const fn of _allIcons) {
   const pascal = fn.name.replace(/^icon/, '');
   const kebab = pascal.replace(/[A-Z]/g, (c, i) => (i ? '-' : '') + c.toLowerCase()).replace(/(\d+)/g, '-$1');

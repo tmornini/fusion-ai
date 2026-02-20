@@ -1,20 +1,21 @@
 import {
-  $, showToast, escapeHtml,
+  $, showToast,
   iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight,
+  html, setHtml, SafeHtml, trusted,
 } from '../../site/script';
 import { getCompanySettings } from '../../site/data';
 
-function selectField(id: string, label: string, value: string, options: string[]): string {
-  return `<div>
+function selectField(id: string, label: string, value: string, options: string[]): SafeHtml {
+  return html`<div>
     <label class="label mb-2 block">${label}</label>
     <select class="input" id="${id}">
-      ${options.map(o => `<option value="${o}" ${o === value ? 'selected' : ''}>${o}</option>`).join('')}
+      ${options.map(o => html`<option value="${o}" ${o === value ? trusted('selected') : html``}>${o}</option>`)}
     </select>
   </div>`;
 }
 
-function toggleRow(id: string, label: string, description: string, checked: boolean): string {
-  return `
+function toggleRow(id: string, label: string, description: string, checked: boolean): SafeHtml {
+  return html`
     <div class="flex items-center justify-between py-4" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:1;min-width:0;margin-right:2rem">
         <p class="font-medium">${label}</p>
@@ -31,7 +32,7 @@ export async function init(): Promise<void> {
   const container = $('#company-settings-content');
   if (!container) return;
 
-  container.innerHTML = `
+  setHtml(container, html`
     <div style="max-width:48rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
         <a href="../account/index.html" class="text-primary">Account</a>
@@ -51,11 +52,11 @@ export async function init(): Promise<void> {
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label class="label mb-2 block">Company Name</label>
-            <input class="input" id="companyName" value="${escapeHtml(c.name)}" />
+            <input class="input" id="companyName" value="${c.name}" />
           </div>
           <div>
             <label class="label mb-2 block flex items-center gap-2">${iconGlobe(16)} Domain</label>
-            <input class="input" id="domain" value="${escapeHtml(c.domain)}" />
+            <input class="input" id="domain" value="${c.domain}" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -81,7 +82,7 @@ export async function init(): Promise<void> {
           ${selectField('retention', 'Data Retention Period', c.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   // Switch toggles
   document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {

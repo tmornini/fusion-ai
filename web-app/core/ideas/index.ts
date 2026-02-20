@@ -1,6 +1,6 @@
 import {
-  $, escapeHtml, navigateTo,
-  renderSkeleton, renderError, renderEmpty,
+  $, navigateTo, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState, buildEmptyState,
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
@@ -8,7 +8,7 @@ import {
 import { getIdeas, type Idea } from '../../site/data';
 import { edgeStatusConfig } from '../../site/config';
 
-const statusConfig: Record<string, { label: string; cls: string }> = {
+const ideaStatusConfig: Record<string, { label: string; cls: string }> = {
   draft: { label: 'Draft', cls: 'badge-default' },
   scored: { label: 'Scored', cls: 'badge-primary' },
   pending_review: { label: 'Pending Review', cls: 'badge-warning' },
@@ -22,12 +22,12 @@ function colorAndBackgroundForScore(score: number): string {
   return 'color:hsl(var(--error));background:hsl(var(--error-soft))';
 }
 
-function renderIdeaCard(idea: Idea, view: string): string {
+function buildIdeaCard(idea: Idea, view: string): SafeHtml {
   const canReview = idea.status === 'pending_review' && idea.edgeStatus === 'complete';
   const canConvert = idea.status === 'approved';
-  const needsEdge = idea.edgeStatus !== 'complete' && idea.status !== 'draft';
+  const needsEdgeDefinition = idea.edgeStatus !== 'complete' && idea.status !== 'draft';
 
-  return `
+  return html`
     <div class="card card-hover p-5" style="cursor:pointer" data-idea-card="${idea.id}">
       <div class="flex items-start gap-4">
         <div class="hidden-mobile" style="color:hsl(var(--muted-foreground)/0.5);margin-top:0.25rem;cursor:grab">
@@ -37,13 +37,13 @@ function renderIdeaCard(idea: Idea, view: string): string {
           <div class="flex items-start justify-between gap-4 mb-3">
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
-                <h3 class="font-display font-semibold truncate">${escapeHtml(idea.title)}</h3>
-                <span class="badge ${statusConfig[idea.status]!.cls} text-xs">${statusConfig[idea.status]!.label}</span>
+                <h3 class="font-display font-semibold truncate">${idea.title}</h3>
+                <span class="badge ${ideaStatusConfig[idea.status]!.cls} text-xs">${ideaStatusConfig[idea.status]!.label}</span>
                 <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted">
-                ${view === 'priority' ? `<span>Priority #${idea.priority}</span><span>•</span>` : ''}
-                <span>by ${escapeHtml(idea.submittedBy)}</span>
+                ${view === 'priority' ? html`<span>Priority #${idea.priority}</span><span>•</span>` : html``}
+                <span>by ${idea.submittedBy}</span>
               </div>
             </div>
             <div style="padding:0.25rem 0.75rem;border-radius:var(--radius-lg);font-weight:600;font-size:0.875rem;${colorAndBackgroundForScore(idea.score)}">
@@ -86,18 +86,18 @@ function renderIdeaCard(idea: Idea, view: string): string {
               <button class="btn btn-outline btn-sm gap-2" data-idea-view="${idea.id}">
                 ${iconEye(16)} <span class="hidden-mobile">View</span>
               </button>
-              ${needsEdge ? `
+              ${needsEdgeDefinition ? html`
                 <button class="btn btn-outline btn-sm gap-2" style="border-color:hsl(var(--primary)/0.3);color:hsl(var(--primary))" data-idea-edge="${idea.id}">
                   ${iconTarget(16)} <span class="hidden-mobile">Define Edge</span>
-                </button>` : ''}
-              ${canReview ? `
+                </button>` : html``}
+              ${canReview ? html`
                 <button class="btn btn-outline btn-sm gap-2" style="border-color:hsl(var(--warning)/0.3);color:hsl(var(--warning))" data-idea-review="${idea.id}">
                   ${iconClipboardCheck(16)} <span class="hidden-mobile">Review</span>
-                </button>` : ''}
-              ${canConvert ? `
+                </button>` : html``}
+              ${canConvert ? html`
                 <button class="btn btn-primary btn-sm gap-2" data-idea-convert="${idea.id}">
                   ${iconArrowRight(16)} <span class="hidden-mobile">Convert</span>
-                </button>` : ''}
+                </button>` : html``}
             </div>
           </div>
         </div>
@@ -108,7 +108,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
 export async function init(): Promise<void> {
   // Show skeleton immediately
   const listContainer = $('#ideas-list');
-  if (listContainer) listContainer.innerHTML = renderSkeleton('card-list', { count: 4 });
+  if (listContainer) setHtml(listContainer, buildSkeleton('card-list', { count: 4 }));
 
   // Fetch data with error handling
   let ideas: Idea[];
@@ -117,7 +117,7 @@ export async function init(): Promise<void> {
   } catch (e) {
     if (listContainer) {
       const msg = e instanceof Error ? e.message : 'Failed to load ideas. Please try again.';
-      listContainer.innerHTML = renderError(msg);
+      setHtml(listContainer, buildErrorState(msg));
       listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
     }
     return;
@@ -126,12 +126,12 @@ export async function init(): Promise<void> {
   // Empty state
   if (ideas.length === 0) {
     if (listContainer) {
-      listContainer.innerHTML = renderEmpty(
+      setHtml(listContainer, buildEmptyState(
         iconLightbulb(24),
         'No Ideas Yet',
         'Start innovating by creating your first idea.',
         { label: 'Create Your First Idea', href: '../idea-create/index.html' },
-      );
+      ));
     }
     return;
   }
@@ -140,34 +140,34 @@ export async function init(): Promise<void> {
 
   // Populate icons in static elements
   const iconPlusEl = $('#icon-plus');
-  if (iconPlusEl) iconPlusEl.innerHTML = iconPlus(16);
+  if (iconPlusEl) setHtml(iconPlusEl, iconPlus(16));
   const iconWandEl = $('#icon-wand');
-  if (iconWandEl) iconWandEl.innerHTML = iconWand(16);
+  if (iconWandEl) setHtml(iconWandEl, iconWand(16));
   const iconLayoutGridEl = $('#icon-layout-grid');
-  if (iconLayoutGridEl) iconLayoutGridEl.innerHTML = iconLayoutGrid(16);
+  if (iconLayoutGridEl) setHtml(iconLayoutGridEl, iconLayoutGrid(16));
   const iconBarChartEl = $('#icon-bar-chart');
-  if (iconBarChartEl) iconBarChartEl.innerHTML = iconBarChart(16);
+  if (iconBarChartEl) setHtml(iconBarChartEl, iconBarChart(16));
 
   // Flow indicator
   const flowEl = $('#flow-indicator');
   if (flowEl) {
-    flowEl.innerHTML = `
+    setHtml(flowEl, html`
       ${iconLightbulb(16, 'text-primary')}
       <span class="text-sm text-muted" style="white-space:nowrap">
         <span class="font-medium" style="color:hsl(var(--foreground))">Idea Flow:</span>
         Create → Score → <span class="text-primary font-medium">Edge</span> → Review → Convert
       </span>
-      ${iconChevronRight(16, 'text-muted')}`;
+      ${iconChevronRight(16, 'text-muted')}`);
   }
 
   // Review queue button
   const pendingReviewCount = ideas.filter(i => i.status === 'pending_review').length;
   const reviewBtnEl = $('#review-queue-btn');
   if (reviewBtnEl && pendingReviewCount > 0) {
-    reviewBtnEl.innerHTML = `
+    setHtml(reviewBtnEl, html`
       <button class="btn btn-outline gap-2" style="border-color:hsl(var(--warning)/0.3);color:hsl(var(--warning))" id="review-queue-nav">
         ${iconClipboardCheck(16)} <span class="hidden-mobile">Review Queue</span> (${pendingReviewCount})
-      </button>`;
+      </button>`);
     $('#review-queue-nav')?.addEventListener('click', () => navigateTo('idea-review-queue'));
   }
 
@@ -180,7 +180,7 @@ export async function init(): Promise<void> {
       : [...ideas].sort((a, b) => b.score - a.score);
 
     const list = $('#ideas-list');
-    if (list) list.innerHTML = sorted.map(idea => renderIdeaCard(idea, currentView)).join('');
+    if (list) setHtml(list, html`${sorted.map(idea => buildIdeaCard(idea, currentView))}`);
 
     const count = $('#ideas-count');
     if (count) count.textContent = `${sorted.length} ${sorted.length === 1 ? 'idea' : 'ideas'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;

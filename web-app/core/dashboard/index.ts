@@ -1,6 +1,6 @@
 import {
-  $, icons,
-  renderSkeleton, renderError,
+  $, icons, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState,
   iconSparkles, iconDollarSign, iconClock, iconZap,
   iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
 } from '../../site/script';
@@ -18,11 +18,11 @@ const themeStyles: Record<string, { bg: string; iconBg: string; border: string }
 };
 
 // Map data.ts icon string names to icon functions
-const iconLookup: Record<string, (s?: number, c?: string) => string> = {
+const iconLookup: Record<string, (s?: number, c?: string) => SafeHtml> = {
   dollarSign: iconDollarSign, clock: iconClock, zap: iconZap,
 };
 
-function renderGauge(card: GaugeCard): string {
+function buildGauge(card: GaugeCard): SafeHtml {
   const ts = themeStyles[card.theme]!;
   const uid = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
@@ -31,7 +31,7 @@ function renderGauge(card: GaugeCard): string {
   const innerArc = Math.PI * 45;
   const iconFn = iconLookup[card.icon] || iconDollarSign;
 
-  return `
+  return html`
     <div class="card" style="border:2px solid transparent;${ts.border};${ts.bg};border-radius:0.75rem;padding:1.5rem;transition:all 0.3s">
       <div class="flex items-center gap-3 mb-5">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;${ts.iconBg};display:flex;align-items:center;justify-content:center">
@@ -160,62 +160,62 @@ function makeResponsive(container: HTMLElement): void {
 function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
   // Icons
   const pipelineIcon = $('#chart-pipeline-icon');
-  if (pipelineIcon) pipelineIcon.innerHTML = iconLightbulb(16, 'text-primary');
+  if (pipelineIcon) setHtml(pipelineIcon, iconLightbulb(16, 'text-primary'));
   const healthIcon = $('#chart-health-icon');
-  if (healthIcon) healthIcon.innerHTML = iconFolderKanban(16, 'text-success');
+  if (healthIcon) setHtml(healthIcon, iconFolderKanban(16, 'text-success'));
   const scoresIcon = $('#chart-scores-icon');
-  if (scoresIcon) scoresIcon.innerHTML = iconBarChart(16, 'text-warning');
+  if (scoresIcon) setHtml(scoresIcon, iconBarChart(16, 'text-warning'));
   const availIcon = $('#chart-avail-icon');
-  if (availIcon) availIcon.innerHTML = iconUsers(16, 'text-primary');
+  if (availIcon) setHtml(availIcon, iconUsers(16, 'text-primary'));
 
   // 1. Idea Pipeline (Donut)
   const pipelineEl = $('#chart-pipeline');
   if (pipelineEl) {
     const pipelineData = buildPipelineData(ideas);
     const total = pipelineData.reduce((a, d) => a + d.value, 0);
-    pipelineEl.innerHTML = donutChart(pipelineData, {
+    setHtml(pipelineEl, html`${donutChart(pipelineData, {
       width: 140,
       colors: pipelineData.map(d => d.color || ''),
-    }) + `<div class="donut-legend">${pipelineData.map(d =>
-      `<span class="donut-legend-item">
+    })}<div class="donut-legend">${pipelineData.map(d =>
+      html`<span class="donut-legend-item">
         <span class="donut-legend-dot" style="background:${d.color}"></span>
         ${d.label} <strong>${d.value}</strong> <span class="text-muted">(${Math.round(d.value / total * 100)}%)</span>
       </span>`
-    ).join('')}</div>`;
+    )}</div>`);
     makeResponsive(pipelineEl);
   }
 
   // 2. Project Health (Bar)
   const healthEl = $('#chart-health');
   if (healthEl) {
-    healthEl.innerHTML = barChart(buildProjectHealthData(projects), {
+    setHtml(healthEl, barChart(buildProjectHealthData(projects), {
       width: 300,
       height: 180,
       colors: Object.values(projectStatusColors),
-    });
+    }));
     makeResponsive(healthEl);
   }
 
   // 3. Idea Scores (Area)
   const scoresEl = $('#chart-scores');
   if (scoresEl) {
-    scoresEl.innerHTML = areaChart(buildScoreData(ideas), {
+    setHtml(scoresEl, areaChart(buildScoreData(ideas), {
       width: 300,
       height: 180,
       id: 'dashboard-scores',
       colors: ['hsl(var(--warning))'],
-    });
+    }));
     makeResponsive(scoresEl);
   }
 
   // 4. Team Availability (Bar)
   const availEl = $('#chart-availability');
   if (availEl) {
-    availEl.innerHTML = barChart(buildAvailabilityData(members), {
+    setHtml(availEl, barChart(buildAvailabilityData(members), {
       width: 300,
       height: 180,
       colors: ['hsl(var(--primary))'],
-    });
+    }));
     makeResponsive(availEl);
   }
 }
@@ -223,9 +223,9 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
 export async function init(): Promise<void> {
   // Show skeletons
   const gaugeContainer = $('#gauge-container');
-  if (gaugeContainer) gaugeContainer.innerHTML = renderSkeleton('card-grid', { count: 3 });
+  if (gaugeContainer) setHtml(gaugeContainer, buildSkeleton('card-grid', { count: 3 }));
   const actionsEl = $('#quick-actions');
-  if (actionsEl) actionsEl.innerHTML = renderSkeleton('card-grid', { count: 4 });
+  if (actionsEl) setHtml(actionsEl, buildSkeleton('card-grid', { count: 4 }));
 
   let user, gauges, quickActions, stats;
   try {
@@ -236,15 +236,17 @@ export async function init(): Promise<void> {
       getDashboardStats(),
     ]);
   } catch {
-    if (gaugeContainer) gaugeContainer.innerHTML = renderError('Failed to load dashboard data.');
-    const retryBtn = gaugeContainer?.querySelector('[data-retry-btn]');
-    if (retryBtn) retryBtn.addEventListener('click', () => init());
+    if (gaugeContainer) {
+      setHtml(gaugeContainer, buildErrorState('Failed to load dashboard data.'));
+      const retryBtn = gaugeContainer.querySelector('[data-retry-btn]');
+      if (retryBtn) retryBtn.addEventListener('click', () => init());
+    }
     return;
   }
 
   // Hero
   const heroIcon = $('#hero-icon');
-  if (heroIcon) heroIcon.innerHTML = iconSparkles(28, 'text-primary-fg');
+  if (heroIcon) setHtml(heroIcon, iconSparkles(28, 'text-primary-fg'));
 
   const greetingEl = $('#hero-greeting');
   if (greetingEl) greetingEl.textContent = `Good ${greeting()}`;
@@ -258,33 +260,33 @@ export async function init(): Promise<void> {
   // Stats
   const statsEl = $('#hero-stats');
   if (statsEl) {
-    statsEl.innerHTML = stats.map((s, i) => `
+    setHtml(statsEl, html`${stats.map((s, i) => html`
       <div style="text-align:center">
         <div class="flex items-baseline justify-center gap-1">
           <span class="text-2xl font-bold">${s.value}</span>
-          ${s.trend ? `<span class="text-xs font-semibold text-success">${s.trend}</span>` : ''}
+          ${s.trend ? html`<span class="text-xs font-semibold text-success">${s.trend}</span>` : html``}
         </div>
         <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${s.label}</p>
       </div>
-      ${i < stats.length - 1 ? '<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>' : ''}
-    `).join('');
+      ${i < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
+    `)}`);
   }
 
   // Gauges
-  if (gaugeContainer) gaugeContainer.innerHTML = gauges.map(renderGauge).join('');
+  if (gaugeContainer) setHtml(gaugeContainer, html`${gauges.map(buildGauge)}`);
 
   // Quick Actions
   if (actionsEl) {
-    actionsEl.innerHTML = quickActions.map(a => {
+    setHtml(actionsEl, html`${quickActions.map(a => {
       const iconFn = icons[a.icon] || icons['lightbulb'];
-      return `
+      return html`
         <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${a.href}">
           <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">
-            ${iconFn ? iconFn(24, 'text-muted') : ''}
+            ${iconFn ? iconFn(24, 'text-muted') : html``}
           </div>
           <span class="text-sm font-semibold">${a.label}</span>
         </button>`;
-    }).join('');
+    })}`);
 
     actionsEl.querySelectorAll<HTMLElement>('[data-action-href]').forEach(el => {
       el.addEventListener('click', () => { window.location.href = el.getAttribute('data-action-href')!; });

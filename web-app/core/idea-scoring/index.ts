@@ -1,5 +1,6 @@
 import {
-  $, escapeHtml, navigateTo, getParams, colorForScore, renderError,
+  $, navigateTo, getParams, colorForScore, html, setHtml, SafeHtml,
+  buildErrorState,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
   iconCheckCircle2, iconLoader, iconSparkles,
@@ -18,8 +19,8 @@ const tabs = [
   { id: 'efficiency', label: 'Efficiency', icon: iconZap },
 ] as const;
 
-function renderBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): string {
-  return data.breakdown.map(item => `
+function buildBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): SafeHtml {
+  return html`${data.breakdown.map(item => html`
     <div class="p-4 rounded-xl" style="background:hsl(var(--muted)/0.3)">
       <div class="flex items-center justify-between mb-2">
         <span class="font-medium">${item.label}</span>
@@ -29,15 +30,15 @@ function renderBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): 
         <div style="height:0.5rem;border-radius:9999px;${progressBg(item.score * 10)};width:${(item.score / item.maxScore) * 100}%;transition:width 0.3s"></div>
       </div>
       <p class="text-sm text-muted">${item.reason}</p>
-    </div>`).join('');
+    </div>`)}`;
 }
 
-function renderScoreResults(ideaId: string, idea: { title: string; problemStatement: string }, score: IdeaScore): string {
-  return `
+function buildScoreResults(ideaId: string, idea: { title: string; problemStatement: string }, score: IdeaScore): SafeHtml {
+  return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="card p-6">
-        <h2 class="text-xl font-display font-bold mb-2">${escapeHtml(idea.title)}</h2>
-        <p class="text-muted text-sm">${escapeHtml(idea.problemStatement)}</p>
+        <h2 class="text-xl font-display font-bold mb-2">${idea.title}</h2>
+        <p class="text-muted text-sm">${idea.problemStatement}</p>
       </div>
 
       <div class="score-grid" style="grid-template-columns:1fr 2fr;gap:1.5rem">
@@ -56,7 +57,7 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
             ${iconInfo(20, 'text-primary')}
             <div>
               <h3 class="font-semibold mb-1">AI Recommendation</h3>
-              <p class="text-muted text-sm">${escapeHtml(score.recommendation)}</p>
+              <p class="text-muted text-sm">${score.recommendation}</p>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem">
@@ -78,14 +79,14 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
         <div class="flex gap-2 mb-6 pb-3" style="border-bottom:1px solid hsl(var(--border));overflow-x:auto">
           ${tabs.map(tab => {
             const tabScore = score[tab.id as keyof typeof score] as { score: number };
-            return `<button class="score-tab${tab.id === 'impact' ? ' active' : ''}" data-score-tab="${tab.id}">
+            return html`<button class="score-tab${tab.id === 'impact' ? ' active' : ''}" data-score-tab="${tab.id}">
               ${tab.icon(16)} ${tab.label}
               <span class="score-tab-badge">${tabScore.score}</span>
             </button>`;
-          }).join('')}
+          })}
         </div>
         <div id="tab-content" style="display:flex;flex-direction:column;gap:1rem">
-          ${renderBreakdown(score.impact)}
+          ${buildBreakdown(score.impact)}
         </div>
       </div>
 
@@ -108,7 +109,7 @@ function bindTabs(score: IdeaScore) {
         t.classList.toggle('active', t.getAttribute('data-score-tab') === tabId);
       });
       const content = $('#tab-content');
-      if (content) content.innerHTML = renderBreakdown(data);
+      if (content) setHtml(content, buildBreakdown(data));
     });
   });
 }
@@ -121,7 +122,7 @@ export async function init(): Promise<void> {
   if (!root) return;
 
   // Show loading state first
-  root.innerHTML = `
+  setHtml(root, html`
     <div style="min-height:100vh;background:hsl(var(--background))">
       <header style="border-bottom:1px solid hsl(var(--border));background:hsl(var(--card)/0.5);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50">
         <div style="max-width:60rem;margin:0 auto;padding:0 1.5rem">
@@ -159,7 +160,7 @@ export async function init(): Promise<void> {
           </div>
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   $('#loading-back')?.addEventListener('click', () => navigateTo('ideas'));
 
@@ -173,7 +174,7 @@ export async function init(): Promise<void> {
     setTimeout(() => {
       const body = $('#scoring-body');
       if (body) {
-        body.innerHTML = renderScoreResults(ideaId, idea, score);
+        setHtml(body, buildScoreResults(ideaId, idea, score));
         bindTabs(score);
 
         $('#back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
@@ -185,7 +186,7 @@ export async function init(): Promise<void> {
     const body = $('#scoring-body');
     if (body) {
       const msg = err instanceof Error ? err.message : 'Failed to load idea for scoring.';
-      body.innerHTML = renderError(msg, 'Back to Ideas');
+      setHtml(body, buildErrorState(msg, 'Back to Ideas'));
       body.querySelector('[data-retry-btn]')?.addEventListener('click', () => navigateTo('ideas'));
     }
   }

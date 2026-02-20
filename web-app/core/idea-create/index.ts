@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo,
+  $, navigateTo, html, setHtml, SafeHtml,
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
 } from '../../site/script';
@@ -29,8 +29,8 @@ function canProceed(): boolean {
   }
 }
 
-function renderProgressSteps(): string {
-  return steps.map((step, index) => {
+function buildProgressSteps(): SafeHtml {
+  return html`${steps.map((step, index) => {
     const isCurrent = currentStep === step.id;
     const isCompleted = currentStep > step.id;
     const bgStyle = isCompleted
@@ -40,10 +40,10 @@ function renderProgressSteps(): string {
         : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))';
 
     const connector = index < steps.length - 1
-      ? `<div class="hidden-mobile" style="flex:1;height:0.25rem;margin:0 1rem;border-radius:9999px;${isCompleted ? 'background:hsl(var(--success))' : 'background:hsl(var(--muted))'}"></div>`
-      : '';
+      ? html`<div class="hidden-mobile" style="flex:1;height:0.25rem;margin:0 1rem;border-radius:9999px;${isCompleted ? 'background:hsl(var(--success))' : 'background:hsl(var(--muted))'}"></div>`
+      : html``;
 
-    return `
+    return html`
       <div class="flex items-center" style="flex-shrink:0${index < steps.length - 1 ? ';flex:1' : ''}">
         <div class="flex flex-col items-center">
           <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${bgStyle}">
@@ -53,35 +53,35 @@ function renderProgressSteps(): string {
         </div>
         ${connector}
       </div>`;
-  }).join('');
+  })}`;
 }
 
-function renderStepContent(): string {
+function buildStepContent(): SafeHtml {
   if (currentStep === 1) {
-    return `
+    return html`
       <div style="display:flex;flex-direction:column;gap:1.5rem">
         <div>
           <label class="label mb-2 block font-medium">Give your idea a clear title</label>
-          <input class="input" id="field-title" placeholder="e.g., AI-Powered Customer Segmentation" value="${escapeHtml(formData.title)}" style="font-size:1.125rem;padding:0.75rem 1rem" />
+          <input class="input" id="field-title" placeholder="e.g., AI-Powered Customer Segmentation" value="${formData.title}" style="font-size:1.125rem;padding:0.75rem 1rem" />
           <p class="text-xs text-muted mt-1">Keep it short and descriptive – think of what you would search for</p>
         </div>
         <div>
           <label class="label mb-2 block font-medium">What problem does this solve?</label>
-          <textarea class="textarea" id="field-problem" placeholder="Describe the current pain point or challenge. Who experiences it? How often? What is the cost of not solving it?" rows="5" style="resize:none">${escapeHtml(formData.problemStatement)}</textarea>
+          <textarea class="textarea" id="field-problem" placeholder="Describe the current pain point or challenge. Who experiences it? How often? What is the cost of not solving it?" rows="5" style="resize:none">${formData.problemStatement}</textarea>
           <p class="text-xs text-muted mt-1">Focus on the impact – why does this matter to the business?</p>
         </div>
         <div>
           <label class="label mb-2 block font-medium">Who will benefit from this? <span class="text-muted" style="font-weight:normal">(optional)</span></label>
-          <input class="input" id="field-target" placeholder="e.g., Sales team, customers, operations managers" value="${escapeHtml(formData.targetUsers)}" />
+          <input class="input" id="field-target" placeholder="e.g., Sales team, customers, operations managers" value="${formData.targetUsers}" />
         </div>
       </div>`;
   }
   if (currentStep === 2) {
-    return `
+    return html`
       <div style="display:flex;flex-direction:column;gap:1.5rem">
         <div>
           <label class="label mb-2 block font-medium">How would you solve this?</label>
-          <textarea class="textarea" id="field-solution" placeholder="Describe your proposed approach. What would change? What technology or process would you use?" rows="7" style="resize:none">${escapeHtml(formData.proposedSolution)}</textarea>
+          <textarea class="textarea" id="field-solution" placeholder="Describe your proposed approach. What would change? What technology or process would you use?" rows="7" style="resize:none">${formData.proposedSolution}</textarea>
           <p class="text-xs text-muted mt-1">You do not need all the answers – outline your best thinking</p>
         </div>
         <div class="p-4 rounded-xl" style="background:hsl(var(--primary)/0.05);border:1px solid hsl(var(--primary)/0.1)">
@@ -95,16 +95,16 @@ function renderStepContent(): string {
         </div>
       </div>`;
   }
-  return `
+  return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div>
         <label class="label mb-2 block font-medium">What outcome do you expect?</label>
-        <textarea class="textarea" id="field-outcome" placeholder="If this works, what changes? Be specific: revenue impact, time saved, errors reduced, satisfaction improved..." rows="5" style="resize:none">${escapeHtml(formData.expectedOutcome)}</textarea>
+        <textarea class="textarea" id="field-outcome" placeholder="If this works, what changes? Be specific: revenue impact, time saved, errors reduced, satisfaction improved..." rows="5" style="resize:none">${formData.expectedOutcome}</textarea>
         <p class="text-xs text-muted mt-1">Think about what success looks like in 6-12 months</p>
       </div>
       <div>
         <label class="label mb-2 block font-medium">How would you measure success? <span class="text-muted" style="font-weight:normal">(optional)</span></label>
-        <textarea class="textarea" id="field-metrics" placeholder="e.g., 20% reduction in processing time, 15% increase in conversion rate, NPS improvement of 10 points" rows="4" style="resize:none">${escapeHtml(formData.successMetrics)}</textarea>
+        <textarea class="textarea" id="field-metrics" placeholder="e.g., 20% reduction in processing time, 15% increase in conversion rate, NPS improvement of 10 points" rows="4" style="resize:none">${formData.successMetrics}</textarea>
       </div>
       <div class="p-4 rounded-xl" style="background:hsl(var(--success-soft));border:1px solid hsl(var(--success)/0.2)">
         <div class="flex items-start gap-3">
@@ -118,8 +118,8 @@ function renderStepContent(): string {
     </div>`;
 }
 
-function renderPage(): string {
-  return `
+function buildWizardPage(): SafeHtml {
+  return html`
     <div style="min-height:100vh;background:hsl(var(--background))">
       <header style="border-bottom:1px solid hsl(var(--border));background:hsl(var(--card)/0.5);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50">
         <div style="max-width:48rem;margin:0 auto;padding:0 1.5rem">
@@ -139,19 +139,19 @@ function renderPage(): string {
       </header>
       <div style="max-width:48rem;margin:0 auto;padding:2rem 1.5rem">
         <div class="flex items-center justify-between mb-8" style="overflow-x:auto;padding-bottom:0.5rem">
-          ${renderProgressSteps()}
+          ${buildProgressSteps()}
         </div>
         <div class="card p-6" id="step-content">
           <div class="mb-6">
             <h2 class="text-2xl font-display font-bold mb-2">${steps[currentStep - 1]!.title}</h2>
             <p class="text-muted">${steps[currentStep - 1]!.description}</p>
           </div>
-          ${renderStepContent()}
+          ${buildStepContent()}
           <div class="flex items-center justify-between gap-3 mt-8 pt-6" style="border-top:1px solid hsl(var(--border))">
             <button class="btn btn-ghost gap-2" id="step-back">${iconArrowLeft(16)} ${currentStep === 1 ? 'Cancel' : 'Back'}</button>
             <span class="text-sm text-muted">Step ${currentStep} of ${steps.length}</span>
             <button class="btn btn-hero gap-2" id="step-next" ${canProceed() ? '' : 'disabled'}>
-              ${currentStep === 3 ? `Score Idea ${iconTrendingUp(16)}` : `Continue ${iconArrowRight(16)}`}
+              ${currentStep === 3 ? html`Score Idea ${iconTrendingUp(16)}` : html`Continue ${iconArrowRight(16)}`}
             </button>
           </div>
         </div>
@@ -159,9 +159,9 @@ function renderPage(): string {
     </div>`;
 }
 
-function rerender() {
+function rerenderWizard() {
   const root = $('#page-root');
-  if (root) { root.innerHTML = renderPage(); bindEvents(); }
+  if (root) { setHtml(root, buildWizardPage()); bindWizardEvents(); }
 }
 
 function syncFormFields() {
@@ -177,19 +177,19 @@ function syncFormFields() {
   }
 }
 
-function bindEvents() {
+function bindWizardEvents() {
   $('#back-btn')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; rerender(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; rerenderWizard(); }
     else navigateTo('ideas');
   });
   $('#step-back')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; rerender(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; rerenderWizard(); }
     else navigateTo('ideas');
   });
   $('#step-next')?.addEventListener('click', () => {
     syncFormFields();
     if (!canProceed()) return;
-    if (currentStep < 3) { currentStep++; rerender(); }
+    if (currentStep < 3) { currentStep++; rerenderWizard(); }
     else navigateTo('idea-scoring', { ideaId: 'new' });
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
@@ -204,5 +204,5 @@ function bindEvents() {
 export async function init(): Promise<void> {
   currentStep = 1;
   (Object.keys(formData) as Array<keyof typeof formData>).forEach(k => formData[k] = '');
-  rerender();
+  rerenderWizard();
 }

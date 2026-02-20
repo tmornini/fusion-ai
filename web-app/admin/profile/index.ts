@@ -1,16 +1,17 @@
 import {
-  $, showToast, escapeHtml,
+  $, showToast,
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
+  html, setHtml, SafeHtml,
 } from '../../site/script';
 import { getProfile, allStrengths } from '../../site/data';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
 
-function renderStrengthChip(name: string): string {
+function buildStrengthChip(name: string): SafeHtml {
   const active = selectedStrengths.has(name);
-  return `<button class="strength-chip btn ${active ? 'btn-primary' : 'btn-secondary'} btn-sm" data-strength="${escapeHtml(name)}">
-    ${active ? iconCheckCircle2(12) + ' ' : ''}${escapeHtml(name)}
+  return html`<button class="strength-chip btn ${active ? 'btn-primary' : 'btn-secondary'} btn-sm" data-strength="${name}">
+    ${active ? html`${iconCheckCircle2(12)} ` : html``}${name}
   </button>`;
 }
 
@@ -19,21 +20,21 @@ export async function init(): Promise<void> {
 
   // Breadcrumb chevron
   const chevronEl = $('#breadcrumb-chevron');
-  if (chevronEl) chevronEl.innerHTML = iconChevronRight(14);
+  if (chevronEl) setHtml(chevronEl, iconChevronRight(14));
 
   // Icons
   const iconSaveEl = $('#icon-save');
-  if (iconSaveEl) iconSaveEl.innerHTML = iconSave(16);
+  if (iconSaveEl) setHtml(iconSaveEl, iconSave(16));
   const avatarBtn = $('#avatar-btn');
-  if (avatarBtn) avatarBtn.innerHTML = iconCamera(14);
+  if (avatarBtn) setHtml(avatarBtn, iconCamera(14));
   const emailLabel = $('#email-label');
-  if (emailLabel) emailLabel.innerHTML = `${iconMail(16)} Email`;
+  if (emailLabel) setHtml(emailLabel, html`${iconMail(16)} Email`);
   const phoneLabel = $('#phone-label');
-  if (phoneLabel) phoneLabel.innerHTML = `${iconPhone(16)} Phone`;
+  if (phoneLabel) setHtml(phoneLabel, html`${iconPhone(16)} Phone`);
   const roleLabel = $('#role-label');
-  if (roleLabel) roleLabel.innerHTML = `${iconBriefcase(16)} Role`;
+  if (roleLabel) setHtml(roleLabel, html`${iconBriefcase(16)} Role`);
   const strengthsHeader = $('#strengths-header');
-  if (strengthsHeader) strengthsHeader.innerHTML = `${iconStar(20, 'text-primary')} My Strengths`;
+  if (strengthsHeader) setHtml(strengthsHeader, html`${iconStar(20, 'text-primary')} My Strengths`);
 
   // Fill form values
   const avatarInitials = $('#avatar-initials');
@@ -49,18 +50,18 @@ export async function init(): Promise<void> {
   // Strengths
   const strengthsContainer = $('#strengths-container');
   if (strengthsContainer) {
-    strengthsContainer.innerHTML = allStrengths.map(renderStrengthChip).join('');
+    setHtml(strengthsContainer, html`${allStrengths.map(buildStrengthChip)}`);
     strengthsContainer.querySelectorAll<HTMLElement>('.strength-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const name = chip.getAttribute('data-strength') ?? '';
         if (selectedStrengths.has(name)) {
           selectedStrengths.delete(name);
           chip.className = 'strength-chip btn btn-secondary btn-sm';
-          chip.innerHTML = escapeHtml(name);
+          chip.textContent = name;
         } else {
           selectedStrengths.add(name);
           chip.className = 'strength-chip btn btn-primary btn-sm';
-          chip.innerHTML = iconCheckCircle2(12) + ' ' + escapeHtml(name);
+          setHtml(chip, html`${iconCheckCircle2(12)} ${name}`);
         }
       });
     });
@@ -69,13 +70,13 @@ export async function init(): Promise<void> {
   // Save button
   $('#save-btn')?.addEventListener('click', () => {
     const btn = $('#save-btn')!;
-    btn.innerHTML = 'Saving...';
+    btn.textContent = 'Saving...';
     btn.setAttribute('disabled', '');
     setTimeout(() => {
-      btn.innerHTML = iconCheckCircle2(16) + ' Saved!';
+      setHtml(btn, html`${iconCheckCircle2(16)} Saved!`);
       btn.removeAttribute('disabled');
       showToast('Profile saved successfully', 'success');
-      setTimeout(() => { btn.innerHTML = iconSave(16) + ' Save Changes'; }, 2000);
+      setTimeout(() => { setHtml(btn, html`${iconSave(16)} Save Changes`); }, 2000);
     }, 800);
   });
 }

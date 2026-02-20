@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo,
+  $, navigateTo, html, setHtml, type SafeHtml, trusted,
   iconUpload, iconFileSpreadsheet, iconFileText, iconHelpCircle,
   iconCheck, iconChevronRight, iconChevronDown,
   iconSparkles, iconMessageSquare, iconTable, iconHash, iconCalendar,
@@ -12,7 +12,7 @@ let columns: CrunchColumn[] = [];
 let expandedColumnId: string | null = null;
 let businessContext = '';
 
-function renderDataTypeIcon(type: string): string {
+function buildDataTypeIcon(type: string): SafeHtml {
   switch (type) {
     case 'number': return iconHash(16, 'text-muted');
     case 'date': return iconCalendar(16, 'text-muted');
@@ -21,33 +21,33 @@ function renderDataTypeIcon(type: string): string {
   }
 }
 
-function completionPct(): number {
+function completionPercent(): number {
   if (!columns.length) return 0;
-  const done = columns.filter(c => c.friendlyName && c.description && (!c.isAcronym || c.acronymExpansion)).length;
-  return Math.round((done / columns.length) * 100);
+  const labeledCount = columns.filter(c => c.friendlyName && c.description && (!c.isAcronym || c.acronymExpansion)).length;
+  return Math.round((labeledCount / columns.length) * 100);
 }
 
-function renderStepIndicator(): string {
+function buildStepIndicator(): SafeHtml {
   const steps = [
     { key: 'upload', label: 'Upload', icon: iconUpload },
     { key: 'label', label: 'Label & Explain', icon: iconMessageSquare },
     { key: 'review', label: 'Review', icon: iconCheck },
   ];
-  return steps.map((s, i) => {
+  return html`${steps.map((s, i) => {
     const active = s.key === step;
     const complete = (step === 'label' && i === 0) || (step === 'review' && i <= 1);
-    return `<div class="flex items-center gap-2" style="flex-shrink:0">
-      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${active ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : complete ? 'background:hsl(var(--success) / 0.1);color:hsl(var(--success));border:1px solid hsl(var(--success) / 0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">
+    return html`<div class="flex items-center gap-2" style="flex-shrink:0">
+      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${trusted(active ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : complete ? 'background:hsl(var(--success) / 0.1);color:hsl(var(--success));border:1px solid hsl(var(--success) / 0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">
         ${complete ? iconCheck(16) : s.icon(16)}
         <span class="text-sm font-medium">${s.label}</span>
       </div>
-      ${i < 2 ? iconChevronRight(16, 'text-muted') : ''}
+      ${i < 2 ? iconChevronRight(16, 'text-muted') : html``}
     </div>`;
-  }).join('');
+  })}`;
 }
 
-function renderUploadStep(): string {
-  return `
+function buildUploadStep(): SafeHtml {
+  return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="card" id="crunch-dropzone" style="padding:3rem;text-align:center;border:2px dashed hsl(var(--border));cursor:pointer">
         <div style="width:4rem;height:4rem;border-radius:1rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
@@ -72,10 +72,10 @@ function renderUploadStep(): string {
     </div>`;
 }
 
-function renderLabelStep(): string {
-  const pct = completionPct();
+function buildLabelStep(): SafeHtml {
+  const percent = completionPercent();
   const labeled = columns.filter(c => c.friendlyName && c.description).length;
-  return `
+  return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="card" style="padding:1rem">
         <div class="flex items-center justify-between gap-3">
@@ -84,8 +84,8 @@ function renderLabelStep(): string {
             <div><p class="font-medium text-sm">Q4_Sales_Report.xlsx</p><p class="text-xs text-muted">2.3 MB • 1,247 rows • ${columns.length} columns</p></div>
           </div>
           <div class="flex items-center gap-3">
-            <div class="text-right"><p class="text-sm font-medium">${pct}% complete</p><p class="text-xs text-muted">${labeled} of ${columns.length} ${columns.length === 1 ? 'column' : 'columns'} labeled</p></div>
-            <div style="width:6rem"><div class="progress" style="height:0.5rem"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+            <div class="text-right"><p class="text-sm font-medium">${percent}% complete</p><p class="text-xs text-muted">${labeled} of ${columns.length} ${columns.length === 1 ? 'column' : 'columns'} labeled</p></div>
+            <div style="width:6rem"><div class="progress" style="height:0.5rem"><div class="progress-fill" style="width:${percent}%"></div></div></div>
           </div>
         </div>
       </div>
@@ -95,23 +95,23 @@ function renderLabelStep(): string {
           ${iconSparkles(20, 'text-primary')}
           <div><h3 class="font-medium text-sm">What is this data about?</h3><p class="text-xs text-muted">Give us some context to help understand your business data better.</p></div>
         </div>
-        <textarea class="textarea" id="crunch-context" placeholder="Example: This is our quarterly sales report..." style="min-height:5rem;resize:none">${escapeHtml(businessContext)}</textarea>
+        <textarea class="textarea" id="crunch-context" placeholder="Example: This is our quarterly sales report..." style="min-height:5rem;resize:none">${businessContext}</textarea>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <h3 class="font-medium">Help us understand each column</h3>
         ${columns.map(col => {
           const expanded = expandedColumnId === col.id;
-          const complete = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
-          return `
-            <div class="card" style="${complete ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : ''};overflow:hidden">
+          const isLabeled = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
+          return html`
+            <div class="card" style="${trusted(isLabeled ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : '')};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-col-toggle="${col.id}">
                 <div class="flex items-center gap-3">
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${complete ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))'}">${complete ? iconCheck(20, 'text-success') : renderDataTypeIcon(col.dataType)}</div>
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${trusted(isLabeled ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))')}">${isLabeled ? iconCheck(20, 'text-success') : buildDataTypeIcon(col.dataType)}</div>
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2">
                       <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${col.originalName}</code>
-                      ${col.isAcronym ? '<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>' : ''}
+                      ${col.isAcronym ? html`<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>` : html``}
                     </div>
                     <p class="text-sm text-muted" style="margin-top:0.25rem">${col.friendlyName || 'Click to label this column'}</p>
                   </div>
@@ -121,36 +121,36 @@ function renderLabelStep(): string {
                   </div>
                 </div>
               </div>
-              ${expanded ? `
+              ${expanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
-                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-col-field="${col.id}:friendlyName" placeholder="e.g., Customer ID" value="${escapeHtml(col.friendlyName)}"/></div>
+                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-col-field="${col.id}:friendlyName" placeholder="e.g., Customer ID" value="${col.friendlyName}"/></div>
                     <div><label class="label mb-1 text-xs">Data type</label>
                       <select class="input" data-col-field="${col.id}:dataType">
-                        <option value="text" ${col.dataType === 'text' ? 'selected' : ''}>Text</option>
-                        <option value="number" ${col.dataType === 'number' ? 'selected' : ''}>Number</option>
-                        <option value="date" ${col.dataType === 'date' ? 'selected' : ''}>Date</option>
-                        <option value="boolean" ${col.dataType === 'boolean' ? 'selected' : ''}>Yes/No</option>
+                        <option value="text" ${trusted(col.dataType === 'text' ? 'selected' : '')}>Text</option>
+                        <option value="number" ${trusted(col.dataType === 'number' ? 'selected' : '')}>Number</option>
+                        <option value="date" ${trusted(col.dataType === 'date' ? 'selected' : '')}>Date</option>
+                        <option value="boolean" ${trusted(col.dataType === 'boolean' ? 'selected' : '')}>Yes/No</option>
                       </select>
                     </div>
                   </div>
-                  ${col.isAcronym ? `<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${col.originalName}" stand for?</label><input class="input" data-col-field="${col.id}:acronymExpansion" placeholder="e.g., Customer Identifier" value="${escapeHtml(col.acronymExpansion)}"/></div>` : ''}
-                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-col-field="${col.id}:description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${escapeHtml(col.description)}</textarea></div>
+                  ${col.isAcronym ? html`<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${col.originalName}" stand for?</label><input class="input" data-col-field="${col.id}:acronymExpansion" placeholder="e.g., Customer Identifier" value="${col.acronymExpansion}"/></div>` : html``}
+                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-col-field="${col.id}:description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${col.description}</textarea></div>
                 </div>
-              ` : ''}
+              ` : html``}
             </div>`;
-        }).join('')}
+        })}
       </div>
 
       <div class="flex items-center justify-between" style="padding-top:1rem">
         <button class="btn btn-ghost" id="crunch-back-upload">Upload Different File</button>
-        <button class="btn btn-primary gap-2" id="crunch-to-review" ${pct < 100 ? 'disabled' : ''}>Continue to Review ${iconChevronRight(16)}</button>
+        <button class="btn btn-primary gap-2" id="crunch-to-review" ${trusted(percent < 100 ? 'disabled' : '')}>Continue to Review ${iconChevronRight(16)}</button>
       </div>
     </div>`;
 }
 
-function renderReviewStep(): string {
-  return `
+function buildReviewStep(): SafeHtml {
+  return html`
     <div class="card" style="padding:2rem;text-align:center">
       <div style="width:4rem;height:4rem;border-radius:1rem;background:hsl(var(--success) / 0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem">
         ${iconCheck(32, 'text-success')}
@@ -178,8 +178,8 @@ function syncFormFields(): void {
   if (ctx) businessContext = ctx.value;
 }
 
-function renderPage(): string {
-  return `
+function buildCrunchPage(): SafeHtml {
+  return html`
     <div style="max-width:56rem;margin:0 auto">
       <div style="margin-bottom:2rem">
         <div class="badge badge-primary text-sm mb-3">${iconTable(14)} Data Translation Tool</div>
@@ -188,28 +188,28 @@ function renderPage(): string {
       </div>
 
       <div class="flex items-center justify-center gap-3 mb-8" style="overflow-x:auto;padding-bottom:0.5rem">
-        ${renderStepIndicator()}
+        ${buildStepIndicator()}
       </div>
 
-      ${step === 'upload' ? renderUploadStep() : step === 'label' ? renderLabelStep() : renderReviewStep()}
+      ${step === 'upload' ? buildUploadStep() : step === 'label' ? buildLabelStep() : buildReviewStep()}
     </div>`;
 }
 
 let mockColumns: CrunchColumn[] = [];
 
-function rerender(): void {
+function rerenderCrunchPage(): void {
   const root = $('#crunch-root');
   if (!root) return;
-  root.innerHTML = renderPage();
-  bindEvents();
+  setHtml(root, buildCrunchPage());
+  bindCrunchEvents();
 }
 
-function bindEvents(): void {
+function bindCrunchEvents(): void {
   if (step === 'upload') {
     $('#crunch-dropzone')?.addEventListener('click', () => {
       columns = mockColumns.map(c => ({ ...c }));
       step = 'label';
-      rerender();
+      rerenderCrunchPage();
     });
   }
 
@@ -219,7 +219,7 @@ function bindEvents(): void {
         syncFormFields();
         const id = el.getAttribute('data-col-toggle');
         expandedColumnId = expandedColumnId === id ? null : id;
-        rerender();
+        rerenderCrunchPage();
       });
     });
 
@@ -227,16 +227,16 @@ function bindEvents(): void {
       el.addEventListener('input', () => {
         syncFormFields();
         const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;
-        if (reviewBtn) reviewBtn.disabled = completionPct() < 100;
+        if (reviewBtn) reviewBtn.disabled = completionPercent() < 100;
       });
     });
 
-    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; rerender(); });
-    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; rerender(); });
+    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; rerenderCrunchPage(); });
+    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; rerenderCrunchPage(); });
   }
 
   if (step === 'review') {
-    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; rerender(); });
+    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; rerenderCrunchPage(); });
     $('#crunch-to-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
   }
 }
@@ -247,5 +247,5 @@ export async function init(): Promise<void> {
   columns = [];
   expandedColumnId = null;
   businessContext = '';
-  rerender();
+  rerenderCrunchPage();
 }

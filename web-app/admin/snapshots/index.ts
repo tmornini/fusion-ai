@@ -5,7 +5,7 @@
 
 import { getDbAdapter } from '../../../api/api';
 import { seedData } from '../../../api/seed';
-import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../../site/script';
+import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo, html, setHtml, SafeHtml } from '../../site/script';
 
 const BANNER_ID = 'empty-banner';
 
@@ -18,8 +18,8 @@ async function updateEmptyBanner(root: HTMLElement): Promise<void> {
       banner.id = BANNER_ID;
       banner.className = 'card';
       banner.style.cssText = 'padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;grid-column:1/-1;background:hsl(var(--primary)/0.06);border:1px solid hsl(var(--primary)/0.2)';
-      banner.innerHTML = `<span style="color:hsl(var(--primary));flex-shrink:0">${iconInfo(20)}</span>
-        <p class="text-sm" style="margin:0">Your database is empty. Load mock data or upload a snapshot to get started.</p>`;
+      setHtml(banner, html`<span style="color:hsl(var(--primary));flex-shrink:0">${iconInfo(20)}</span>
+        <p class="text-sm" style="margin:0">Your database is empty. Load mock data or upload a snapshot to get started.</p>`);
       root.prepend(banner);
     }
   } else {
@@ -31,7 +31,7 @@ export async function init(): Promise<void> {
   const root = $('#snapshots-root');
   if (!root) return;
 
-  root.innerHTML = `
+  setHtml(root, html`
     <div class="card" style="padding:1.5rem;display:flex;flex-direction:column;gap:0.75rem">
       <div style="display:flex;align-items:center;gap:0.75rem">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;background:hsl(var(--success)/0.1);display:flex;align-items:center;justify-content:center;color:hsl(var(--success))">${iconDownload(20)}</div>
@@ -78,7 +78,7 @@ export async function init(): Promise<void> {
       </div>
       <button class="btn btn-outline" id="wipe-btn" style="border-color:hsl(var(--error));color:hsl(var(--error))">Create Pristine Environment</button>
     </div>
-  `;
+  `);
 
   // Show empty-state banner if DB has no data
   await updateEmptyBanner(root);

@@ -1,9 +1,10 @@
 import {
-  $, escapeHtml, showToast, initials, initTabs,
+  $, showToast, initials, initTabs,
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
-  renderSkeleton, renderError, renderEmpty,
+  buildSkeleton, buildErrorState, buildEmptyState,
+  html, setHtml, SafeHtml, trusted,
 } from '../../site/script';
 import { getTeamMembers, type TeamMember } from '../../site/data';
 
@@ -13,26 +14,26 @@ function availabilityClass(a: number): string {
   return 'color:hsl(var(--error));background:hsl(var(--error)/0.1);border:1px solid hsl(var(--error)/0.2)';
 }
 
-function renderStatusDot(status: string): string {
+function buildStatusDot(status: string): SafeHtml {
   const colors: Record<string, string> = { available: 'hsl(var(--success))', busy: 'hsl(var(--warning))', limited: 'hsl(var(--error))' };
-  return `<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
+  return html`<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
 }
 
-const dimensionIcons: Record<string, (s?: number, c?: string) => string> = {
+const dimensionIcons: Record<string, (s?: number, c?: string) => SafeHtml> = {
   driver: iconTarget, analytical: iconBrain, expressive: iconZap, amiable: iconHeart,
 };
 
 let members: TeamMember[] = [];
 let selectedMemberId: string | null = null;
 
-function renderMemberDetail(member: TeamMember): string {
-  return `
+function buildMemberDetail(member: TeamMember): SafeHtml {
+  return html`
     <div style="padding:1.5rem">
       <div style="text-align:center;margin-bottom:1.5rem">
         <div style="width:5rem;height:5rem;border-radius:1rem;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
           <span class="text-2xl font-bold text-primary">${initials(member.name)}</span>
         </div>
-        <h3 class="text-lg font-display font-semibold">${escapeHtml(member.name)}</h3>
+        <h3 class="text-lg font-display font-semibold">${member.name}</h3>
         <p class="text-sm text-muted">${member.role}</p>
         <p class="text-xs text-muted">${member.email}</p>
       </div>
@@ -44,7 +45,7 @@ function renderMemberDetail(member: TeamMember): string {
 
       <div id="detail-dimensions" class="detail-tab-panel">
         <p class="text-xs text-muted" style="text-align:center;margin-bottom:1rem">Team Dimensions Assessment Results</p>
-        ${Object.entries(member.teamDimensions).map(([key, value]) => `
+        ${Object.entries(member.teamDimensions).map(([key, value]) => html`
           <div style="margin-bottom:1rem">
             <div class="flex items-center justify-between" style="margin-bottom:0.5rem">
               <div class="flex items-center gap-2">${(dimensionIcons[key] || iconStar)(16, 'text-primary')} <span class="text-sm font-medium" style="text-transform:capitalize">${key}</span></div>
@@ -52,7 +53,7 @@ function renderMemberDetail(member: TeamMember): string {
             </div>
             <div class="progress" style="height:0.5rem"><div class="progress-fill" style="width:${value}%"></div></div>
           </div>
-        `).join('')}
+        `)}
       </div>
 
       <div id="detail-performance" class="detail-tab-panel" style="display:none">
@@ -77,26 +78,26 @@ function renderMemberDetail(member: TeamMember): string {
     </div>`;
 }
 
-function renderMemberCard(m: TeamMember): string {
-  return `
+function buildMemberCard(m: TeamMember): SafeHtml {
+  return html`
     <div class="card card-hover" style="padding:1.25rem;cursor:pointer;${selectedMemberId === m.id ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : ''}" data-member-card="${m.id}">
       <div class="flex items-start gap-4">
         <div style="position:relative;flex-shrink:0">
           <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center">
             <span class="text-lg font-bold text-primary">${initials(m.name)}</span>
           </div>
-          ${renderStatusDot(m.status)}
+          ${buildStatusDot(m.status)}
         </div>
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-1">
-            <h3 class="font-semibold text-sm">${escapeHtml(m.name)}</h3>
+            <h3 class="font-semibold text-sm">${m.name}</h3>
             <span class="pill" style="${availabilityClass(m.availability)}">${m.availability}%</span>
           </div>
           <p class="text-xs text-muted mb-2">${m.role} • ${m.department}</p>
           <div class="flex flex-wrap gap-1.5 mb-2">
-            ${m.strengths.slice(0, 3).map(s => `
+            ${m.strengths.slice(0, 3).map(s => html`
               <span class="pill-tag" style="background:hsl(var(--muted)/0.5);font-size:0.625rem">${iconStar(10)} ${s}</span>
-            `).join('')}
+            `)}
           </div>
           <div class="flex items-center gap-4 text-xs text-muted">
             <span class="flex items-center gap-1">${iconTrendingUp(14, 'text-success')} ${m.performanceScore}%</span>
@@ -115,16 +116,16 @@ function rerenderList(): void {
     m.name.toLowerCase().includes(search) || m.role.toLowerCase().includes(search) || m.department.toLowerCase().includes(search)
   );
   const list = $('#team-list');
-  if (list) list.innerHTML = filtered.map(renderMemberCard).join('');
+  if (list) setHtml(list, html`${filtered.map(buildMemberCard)}`);
 
   const panel = $('#team-detail-panel');
   const member = selectedMemberId ? members.find(m => m.id === selectedMemberId) : null;
   if (panel) {
-    panel.innerHTML = member ? renderMemberDetail(member) : `
+    setHtml(panel, member ? buildMemberDetail(member) : html`
       <div style="padding:1.5rem;text-align:center">
         ${iconUsers(48, 'text-muted')}
         <p class="text-muted" style="margin-top:1rem">Select a team member to view details</p>
-      </div>`;
+      </div>`);
   }
   bindCards();
   bindDetailTabs();
@@ -145,28 +146,28 @@ function bindDetailTabs(): void {
 
 export async function init(): Promise<void> {
   const teamListEl = $('#team-list');
-  if (teamListEl) teamListEl.innerHTML = renderSkeleton('card-list', { count: 4 });
+  if (teamListEl) setHtml(teamListEl, buildSkeleton('card-list', { count: 4 }));
 
   try {
     members = await getTeamMembers();
   } catch {
     if (teamListEl) {
-      teamListEl.innerHTML = renderError('Failed to load team members.');
+      setHtml(teamListEl, buildErrorState('Failed to load team members.'));
       teamListEl.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     }
     return;
   }
 
   if (members.length === 0) {
-    if (teamListEl) teamListEl.innerHTML = renderEmpty(iconUsers(24), 'No Team Members', 'Invite team members to start collaborating on projects.');
+    if (teamListEl) setHtml(teamListEl, buildEmptyState(iconUsers(24), 'No Team Members', 'Invite team members to start collaborating on projects.'));
     return;
   }
 
   // Populate icons
   const iconPlusEl = $('#icon-plus');
-  if (iconPlusEl) iconPlusEl.innerHTML = iconPlus(16);
+  if (iconPlusEl) setHtml(iconPlusEl, iconPlus(16));
   const iconSearchEl = $('#icon-search');
-  if (iconSearchEl) iconSearchEl.innerHTML = iconSearch(16);
+  if (iconSearchEl) setHtml(iconSearchEl, iconSearch(16));
 
   // Summary
   const summaryEl = $('#team-summary');
@@ -175,9 +176,9 @@ export async function init(): Promise<void> {
   // Detail placeholder
   const placeholderEl = $('#detail-placeholder');
   if (placeholderEl) {
-    placeholderEl.innerHTML = `
+    setHtml(placeholderEl, html`
       ${iconUsers(48, 'text-muted')}
-      <p class="text-muted" style="margin-top:1rem">Select a team member to view details</p>`;
+      <p class="text-muted" style="margin-top:1rem">Select a team member to view details</p>`);
   }
 
   // Search

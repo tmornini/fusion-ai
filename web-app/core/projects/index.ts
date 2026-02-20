@@ -1,33 +1,33 @@
 import {
-  $, escapeHtml, navigateTo,
-  renderSkeleton, renderError, renderEmpty,
+  $, navigateTo, html, setHtml, SafeHtml,
+  buildSkeleton, buildErrorState, buildEmptyState,
   iconTrendingUp, iconClock, iconDollarSign, iconCheckCircle2,
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
   iconEye, iconTarget, iconGripVertical, iconFolderKanban,
 } from '../../site/script';
 import { getProjects, type Project } from '../../site/data';
 
-const statusConfig: Record<string, { icon: (s?: number, c?: string) => string; cls: string; label: string }> = {
+const projectStatusConfig: Record<string, { icon: (s?: number, c?: string) => SafeHtml; cls: string; label: string }> = {
   approved: { icon: iconCheckCircle2, cls: 'badge-success', label: 'Approved' },
   under_review: { icon: iconAlertCircle, cls: 'badge-warning', label: 'Under Review' },
   sent_back: { icon: iconXCircle, cls: 'badge-error', label: 'Sent Back' },
 };
 
-function progressRing(pct: number): string {
+function progressRing(percent: number): SafeHtml {
   const r = 20, c = 24, circ = 2 * Math.PI * r;
-  return `
+  return html`
     <div style="position:relative;width:3rem;height:3rem">
       <svg width="48" height="48" style="transform:rotate(-90deg)">
         <circle cx="${c}" cy="${c}" r="${r}" stroke="hsl(var(--muted))" stroke-width="4" fill="none"/>
-        <circle cx="${c}" cy="${c}" r="${r}" stroke="hsl(var(--primary))" stroke-width="4" fill="none" stroke-dasharray="${pct * circ / 100} ${circ}"/>
+        <circle cx="${c}" cy="${c}" r="${r}" stroke="hsl(var(--primary))" stroke-width="4" fill="none" stroke-dasharray="${percent * circ / 100} ${circ}"/>
       </svg>
-      <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.625rem;font-weight:700">${pct}%</span>
+      <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.625rem;font-weight:700">${percent}%</span>
     </div>`;
 }
 
-function renderProjectCard(p: Project, view: string): string {
-  const sc = statusConfig[p.status];
-  return `
+function buildProjectCard(p: Project, view: string): SafeHtml {
+  const statusDisplay = projectStatusConfig[p.status];
+  return html`
     <div class="card card-hover" style="padding:1.25rem" data-project-card="${p.id}">
       <div class="flex items-start gap-4">
         <div class="hidden-mobile text-muted" style="margin-top:0.25rem;cursor:grab">${iconGripVertical(20)}</div>
@@ -35,10 +35,10 @@ function renderProjectCard(p: Project, view: string): string {
           <div class="flex items-start justify-between gap-4 mb-3">
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
-                <h3 class="font-display font-semibold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.title)}</h3>
-                <span class="badge ${sc!.cls} text-xs">${sc!.icon(14)} ${sc!.label}</span>
+                <h3 class="font-display font-semibold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.title}</h3>
+                <span class="badge ${statusDisplay!.cls} text-xs">${statusDisplay!.icon(14)} ${statusDisplay!.label}</span>
               </div>
-              ${view === 'priority' ? `<span class="text-xs text-muted">Priority #${p.priority}</span>` : ''}
+              ${view === 'priority' ? html`<span class="text-xs text-muted">Priority #${p.priority}</span>` : html``}
             </div>
             ${progressRing(p.progress)}
           </div>
@@ -46,7 +46,7 @@ function renderProjectCard(p: Project, view: string): string {
             <div class="project-metrics-grid" style="flex:1">
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconClock(16, 'text-primary')}</div>
-                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${p.estimatedTime ? `${p.actualTime}h <span class="text-xs text-muted">/ ${p.estimatedTime}h</span>` : '—'}</p></div>
+                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${p.estimatedTime ? html`${p.actualTime}h <span class="text-xs text-muted">/ ${p.estimatedTime}h</span>` : html`—`}</p></div>
               </div>
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconDollarSign(16, 'text-primary')}</div>
@@ -71,7 +71,7 @@ function renderProjectCard(p: Project, view: string): string {
 export async function init(): Promise<void> {
   // Show skeleton immediately
   const listContainer = $('#projects-list');
-  if (listContainer) listContainer.innerHTML = renderSkeleton('card-list', { count: 4 });
+  if (listContainer) setHtml(listContainer, buildSkeleton('card-list', { count: 4 }));
 
   // Fetch data with error handling
   let projects: Project[];
@@ -80,7 +80,7 @@ export async function init(): Promise<void> {
   } catch (e) {
     if (listContainer) {
       const msg = e instanceof Error ? e.message : 'Failed to load projects. Please try again.';
-      listContainer.innerHTML = renderError(msg);
+      setHtml(listContainer, buildErrorState(msg));
       listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
     }
     return;
@@ -89,12 +89,12 @@ export async function init(): Promise<void> {
   // Empty state
   if (projects.length === 0) {
     if (listContainer) {
-      listContainer.innerHTML = renderEmpty(
+      setHtml(listContainer, buildEmptyState(
         iconFolderKanban(24),
         'No Projects Yet',
         'Convert approved ideas into projects to start tracking progress.',
         { label: 'View Ideas', href: '../ideas/index.html' },
-      );
+      ));
     }
     return;
   }
@@ -103,9 +103,9 @@ export async function init(): Promise<void> {
 
   // Populate icons
   const iconLGEl = $('#icon-layout-grid');
-  if (iconLGEl) iconLGEl.innerHTML = iconLayoutGrid(16);
+  if (iconLGEl) setHtml(iconLGEl, iconLayoutGrid(16));
   const iconBCEl = $('#icon-bar-chart');
-  if (iconBCEl) iconBCEl.innerHTML = iconBarChart(16);
+  if (iconBCEl) setHtml(iconBCEl, iconBarChart(16));
 
   // Status badges
   const counts = {
@@ -115,10 +115,10 @@ export async function init(): Promise<void> {
   };
   const badgesEl = $('#status-badges');
   if (badgesEl) {
-    badgesEl.innerHTML = `
+    setHtml(badgesEl, html`
       <span class="badge badge-success text-xs">${iconCheckCircle2(14)} ${counts.approved}</span>
       <span class="badge badge-warning text-xs">${iconAlertCircle(14)} ${counts.under_review}</span>
-      <span class="badge badge-error text-xs">${iconXCircle(14)} ${counts.sent_back}</span>`;
+      <span class="badge badge-error text-xs">${iconXCircle(14)} ${counts.sent_back}</span>`);
   }
 
   function sortedProjects(): Project[] {
@@ -142,7 +142,7 @@ export async function init(): Promise<void> {
 
   function rerenderList(): void {
     const container = $('#projects-list');
-    if (container) container.innerHTML = sortedProjects().map(p => renderProjectCard(p, currentView)).join('');
+    if (container) setHtml(container, html`${sortedProjects().map(p => buildProjectCard(p, currentView))}`);
     const info = $('#projects-info');
     if (info) info.textContent = `${projects.length} ${projects.length === 1 ? 'project' : 'projects'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
     bindCards();

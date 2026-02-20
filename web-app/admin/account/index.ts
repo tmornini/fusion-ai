@@ -1,10 +1,11 @@
 import {
-  $, escapeHtml, navigateTo,
+  $, navigateTo,
   iconUser, iconSettings, iconCreditCard, iconBuilding, iconCrown,
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
   iconExternalLink, iconBell,
-  renderSkeleton, renderError,
+  buildSkeleton, buildErrorState,
+  html, setHtml, SafeHtml, trusted,
 } from '../../site/script';
 import { getAccount, type Account } from '../../site/data';
 
@@ -15,9 +16,9 @@ function usageBarColor(current: number, limit: number): string {
   return 'background:hsl(var(--primary))';
 }
 
-function usageBar(label: string, current: number, limit: number): string {
+function usageBar(label: string, current: number, limit: number): SafeHtml {
   const pct = Math.min(100, (current / limit) * 100);
-  return `
+  return html`
     <div>
       <div class="flex items-center justify-between text-sm mb-1">
         <span class="text-muted">${label}</span>
@@ -27,30 +28,30 @@ function usageBar(label: string, current: number, limit: number): string {
     </div>`;
 }
 
-function activityIcon(type: string): string {
-  if (type === 'user_added') return `<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconUserPlus(16)}</div>`;
-  if (type === 'project_created') return `<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconFolderKanban(16)}</div>`;
-  return `<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(16)}</div>`;
+function activityIcon(type: string): SafeHtml {
+  if (type === 'user_added') return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconUserPlus(16)}</div>`;
+  if (type === 'project_created') return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconFolderKanban(16)}</div>`;
+  return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(16)}</div>`;
 }
 
 export async function init(): Promise<void> {
   const container = $('#account-content');
   if (!container) return;
 
-  container.innerHTML = renderSkeleton('detail');
+  setHtml(container, buildSkeleton('detail'));
 
   let d: Account;
   try {
     d = await getAccount();
   } catch {
-    container.innerHTML = renderError('Failed to load account data.');
+    setHtml(container, buildErrorState('Failed to load account data.'));
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
 
   const billingDate = new Date(d.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  container.innerHTML = `
+  setHtml(container, html`
     <div style="max-width:64rem;margin:0 auto">
       <div class="mb-8">
         <h1 class="text-3xl font-display font-bold mb-2">Account Overview</h1>
@@ -88,7 +89,7 @@ export async function init(): Promise<void> {
           <div class="flex items-center gap-4" style="flex:1">
             <div style="width:3.5rem;height:3.5rem;border-radius:var(--radius-xl);background:linear-gradient(135deg,hsl(var(--primary) / 0.2),hsl(var(--primary) / 0.05));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconBuilding(28)}</div>
             <div>
-              <h2 class="text-xl font-display font-semibold">${escapeHtml(d.company.name)}</h2>
+              <h2 class="text-xl font-display font-semibold">${d.company.name}</h2>
               <div class="flex items-center gap-2 mt-1">
                 <span class="badge badge-default text-xs">${iconCrown(12)} ${d.company.plan} Plan</span>
                 <span class="status-badge-success">${iconCheckCircle2(12)} Active</span>
@@ -140,14 +141,14 @@ export async function init(): Promise<void> {
         <div class="card card-hover p-6">
           <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconActivity(20)} Recent Activity</h3>
           <div class="flex flex-col gap-4">
-            ${d.recentActivity.map(a => `
+            ${d.recentActivity.map(a => html`
               <div class="flex items-start gap-3">
                 ${activityIcon(a.type)}
                 <div style="flex:1;min-width:0">
-                  <p class="text-sm">${escapeHtml(a.description)}</p>
+                  <p class="text-sm">${a.description}</p>
                   <p class="text-xs text-muted">${a.time}</p>
                 </div>
-              </div>`).join('')}
+              </div>`)}
           </div>
           <button class="btn btn-ghost btn-sm w-full mt-4" data-nav-to="activity-feed">View All Activity</button>
         </div>
@@ -183,7 +184,7 @@ export async function init(): Promise<void> {
           </button>
         </div>
       </div>
-    </div>`;
+    </div>`);
 
   // Bind navigation
   container.querySelectorAll<HTMLElement>('[data-nav-to]').forEach(el => {

@@ -24,7 +24,7 @@ export interface EdgeData {
   owner: string;
 }
 
-export async function getEdgeDataByIdeaId(ideaId: string, existingUserMap?: Map<Id, User>): Promise<EdgeData | null> {
+export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<EdgeData | null> {
   const allEdges = await GET('edges') as EdgeEntity[];
   const edge = allEdges.find(entry => entry.idea_id === ideaId);
   if (!edge) return null;
@@ -32,7 +32,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, existingUserMap?: Map<
   const db = getDbAdapter();
   const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
   const allMetrics = await db.edgeMetrics.getAll();
-  const userMap = existingUserMap ?? await buildUserMap();
+  const userMap = cachedUserMap ?? await buildUserMap();
 
   return {
     outcomes: outcomes.map(outcome => ({
@@ -54,7 +54,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, existingUserMap?: Map<
 
 // ── Edge Data with Confidence ───────────────
 
-export function emptyEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
+export function createDefaultEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
   return {
     outcomes: [],
     impact: { shortTerm: '', midTerm: '', longTerm: '' },
@@ -65,10 +65,10 @@ export function emptyEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
 
 export async function getEdgeDataWithConfidence(
   ideaId: string,
-  existingUserMap?: Map<Id, User>,
+  cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData & { confidence: ConfidenceLevel }> {
-  const edgeData = await getEdgeDataByIdeaId(ideaId, existingUserMap);
-  if (!edgeData) return emptyEdgeData();
+  const edgeData = await getEdgeDataByIdeaId(ideaId, cachedUserMap);
+  if (!edgeData) return createDefaultEdgeData();
   return {
     ...edgeData,
     confidence: (edgeData.confidence || 'medium') as ConfidenceLevel,
