@@ -8,7 +8,7 @@ import {
 } from '../../site/script';
 import { getProjectById, type ProjectDetail } from '../../site/data';
 
-function varianceHtml(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): string {
+function renderVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): string {
   const diff = current - baseline;
   if (diff === 0) return `<span class="text-muted">${iconMinus(16)} 0</span>`;
   const good = isLowerBetter ? diff < 0 : diff > 0;
@@ -17,7 +17,7 @@ function varianceHtml(baseline: number, current: number, isLowerBetter: boolean,
   return `<span style="${color}" class="flex items-center gap-1 font-bold text-sm">${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
 }
 
-function milestoneIcon(status: string): string {
+function renderMilestoneIcon(status: string): string {
   switch (status) {
     case 'completed': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--success));display:flex;align-items:center;justify-content:center">${iconCheckCircle2(12, 'text-primary-fg')}</div>`;
     case 'in_progress': return `<div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--warning));display:flex;align-items:center;justify-content:center">${iconAlertCircle(12, 'text-primary-fg')}</div>`;
@@ -128,7 +128,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
                     <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.current ? `${m.prefix}${m.current}${m.unit}` : '—'}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
-                      ${varianceHtml(m.baseline, m.current, m.lower, m.unit, m.prefix)}
+                      ${renderVariance(m.baseline, m.current, m.lower, m.unit, m.prefix)}
                     </div>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ function renderProjectDetail(p: ProjectDetail, projectId: string): string {
               ${p.milestones.map((m, i) => `
                 <div class="flex gap-3" style="padding-bottom:${i < p.milestones.length - 1 ? '1rem' : '0'}">
                   <div style="display:flex;flex-direction:column;align-items:center">
-                    ${milestoneIcon(m.status)}
+                    ${renderMilestoneIcon(m.status)}
                     ${i < p.milestones.length - 1 ? '<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>' : ''}
                   </div>
                   <div style="flex:1;padding-bottom:0.5rem">

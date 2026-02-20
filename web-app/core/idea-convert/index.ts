@@ -4,7 +4,7 @@ import {
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
 } from '../../site/script';
-import { getIdeaForConversion, type ConvertIdea } from '../../site/data';
+import { getIdeaForConversion, type ConversionIdea } from '../../site/data';
 
 const requiredFields = ['projectName', 'projectLead', 'startDate', 'targetEndDate', 'budget', 'priority'];
 
@@ -22,7 +22,7 @@ function fieldCheck(field: string): string {
   return projectDetails[field]?.trim() ? `<span style="color:hsl(var(--success))">${iconCheckCircle2(16)}</span>` : '';
 }
 
-function renderPage(idea: ConvertIdea, ideaId: string): string {
+function renderPage(idea: ConversionIdea, ideaId: string): string {
   const done = completedCount();
   const pct = (done / requiredFields.length) * 100;
 
@@ -175,7 +175,7 @@ export async function init(): Promise<void> {
   if (!root) return;
   root.innerHTML = renderSkeleton('detail');
 
-  let idea: ConvertIdea;
+  let idea: ConversionIdea;
   try {
     idea = await getIdeaForConversion(ideaId);
   } catch {

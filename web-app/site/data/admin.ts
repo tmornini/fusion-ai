@@ -4,7 +4,7 @@ import type {
   NotificationCategoryEntity, NotificationPrefEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { getUsersById, lookupUser } from './helpers';
+import { buildUserMap } from './helpers';
 
 // ── Account ─────────────────────────────────
 
@@ -34,7 +34,7 @@ export async function getAccount(): Promise<Account> {
     GET('activities') as Promise<ActivityEntity[]>,
   ]);
 
-  const usersById = await getUsersById();
+  const userMap = await buildUserMap();
 
   return {
     company: {
@@ -54,7 +54,7 @@ export async function getAccount(): Promise<Account> {
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
     recentActivity: activities.slice(0, 3).map(activity => ({
       type: activity.type,
-      description: `${lookupUser(usersById, activity.actor_id, 'Unknown')} ${activity.action} ${activity.target}`,
+      description: `${userMap.get(activity.actor_id)?.fullName() ?? 'Unknown'} ${activity.action} ${activity.target}`,
       time: activity.timestamp,
     })),
   };
@@ -90,7 +90,7 @@ export async function getProfile(): Promise<Profile> {
 
 // ── Company Settings ────────────────────────
 
-export interface CompanySettingsData {
+export interface CompanySettings {
   name: string;
   domain: string;
   industry: string;
@@ -103,7 +103,7 @@ export interface CompanySettingsData {
   dataRetention: string;
 }
 
-export async function getCompanySettings(): Promise<CompanySettingsData> {
+export async function getCompanySettings(): Promise<CompanySettings> {
   const row = await GET('company-settings') as CompanySettingsEntity;
   return {
     name: row.name,
@@ -134,14 +134,14 @@ export interface Activity {
 }
 
 export async function getActivityFeed(): Promise<Activity[]> {
-  const [activities, usersById] = await Promise.all([
+  const [activities, userMap] = await Promise.all([
     GET('activities') as Promise<ActivityEntity[]>,
-    getUsersById(),
+    buildUserMap(),
   ]);
   return activities.map(activity => ({
     id: activity.id,
     type: activity.type,
-    actor: lookupUser(usersById, activity.actor_id, 'Unknown'),
+    actor: userMap.get(activity.actor_id)?.fullName() ?? 'Unknown',
     action: activity.action,
     target: activity.target,
     timestamp: activity.timestamp,

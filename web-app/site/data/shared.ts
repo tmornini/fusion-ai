@@ -1,9 +1,9 @@
 import { GET } from '../../../api/api';
 import type { UserEntity, NotificationEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { userName } from './helpers';
+import { buildUserMap } from './helpers';
 
-export interface User {
+export interface CurrentUser {
   id: string;
   name: string;
   email: string;
@@ -13,19 +13,21 @@ export interface User {
 }
 
 export interface Notification {
-  id: number;
+  id: string;
   title: string;
   message: string;
   time: string;
   unread: boolean;
 }
 
-export async function getCurrentUser(): Promise<User> {
+export async function getCurrentUser(): Promise<CurrentUser> {
   const row = await GET('current-user') as UserEntity | null;
   if (!row) return { id: 'current', name: 'Demo User', email: 'demo@example.com', role: 'Admin', company: 'Demo Company' };
+  const userMap = await buildUserMap();
+  const user = userMap.get(row.id);
   return {
     id: row.id,
-    name: userName(row),
+    name: user?.fullName() ?? `${row.first_name} ${row.last_name}`.trim(),
     email: row.email,
     role: row.role,
     company: 'Demo Company',
@@ -35,7 +37,7 @@ export async function getCurrentUser(): Promise<User> {
 export async function getNotifications(): Promise<Notification[]> {
   const rows = await GET('notifications') as NotificationEntity[];
   return rows.map(row => ({
-    id: Number(row.id),
+    id: row.id,
     title: row.title,
     message: row.message,
     time: row.time,

@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, IdeaScoreEntity } from '../../../api/types';
-import { getUsersById, lookupUser, parseJson, getEdgeDataByIdeaId } from './helpers';
+import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import { buildUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
 
 export interface Idea {
   id: string;
@@ -10,15 +10,15 @@ export interface Idea {
   estimatedTime: number;
   estimatedCost: number;
   priority: number;
-  status: 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
+  status: IdeaStatus;
   submittedBy: string;
-  edgeStatus: 'incomplete' | 'draft' | 'complete' | 'missing';
+  edgeStatus: 'incomplete' | EdgeStatus;
 }
 
 export async function getIdeas(): Promise<Idea[]> {
-  const [ideas, usersById] = await Promise.all([
+  const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    getUsersById(),
+    buildUserMap(),
   ]);
   return ideas
     .map(idea => ({
@@ -30,7 +30,7 @@ export async function getIdeas(): Promise<Idea[]> {
       estimatedCost: idea.estimated_cost,
       priority: idea.priority,
       status: idea.status as Idea['status'],
-      submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
+      submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
       edgeStatus: idea.edge_status as Idea['edgeStatus'],
     }));
 }
@@ -41,9 +41,9 @@ export interface ReviewIdea {
   id: string;
   title: string;
   submittedBy: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: ConfidenceLevel;
   readiness: 'ready' | 'needs-info' | 'incomplete';
-  edgeStatus: 'complete' | 'draft' | 'missing';
+  edgeStatus: EdgeStatus;
   score: number;
   impact: string;
   effort: string;
@@ -52,9 +52,9 @@ export interface ReviewIdea {
 }
 
 export async function getReviewQueue(): Promise<ReviewIdea[]> {
-  const [ideas, usersById] = await Promise.all([
+  const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    getUsersById(),
+    buildUserMap(),
   ]);
 
   return ideas
@@ -67,7 +67,7 @@ export async function getReviewQueue(): Promise<ReviewIdea[]> {
       return {
         id: idea.id,
         title: idea.title,
-        submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
+        submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
         priority,
         readiness: (idea.readiness || 'incomplete') as ReviewIdea['readiness'],
         edgeStatus: (idea.edge_status || 'missing') as ReviewIdea['edgeStatus'],
@@ -131,7 +131,7 @@ export async function getIdeaScore(ideaId: string): Promise<IdeaScore> {
 
 // ── Idea Convert ────────────────────────────
 
-export interface ConvertIdea {
+export interface ConversionIdea {
   id: string;
   title: string;
   problemStatement: string;
@@ -142,7 +142,7 @@ export interface ConvertIdea {
   estimatedCost: string;
 }
 
-export async function getIdeaForConversion(ideaId: string): Promise<ConvertIdea> {
+export async function getIdeaForConversion(ideaId: string): Promise<ConversionIdea> {
   const [idea, scoreRow] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
     GET(`ideas/${ideaId}/score`) as Promise<IdeaScoreEntity | null>,
@@ -181,21 +181,21 @@ export interface ApprovalIdea {
 export interface ApprovalEdge {
   outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string }[] }[];
   impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: 'high' | 'medium' | 'low';
+  confidence: ConfidenceLevel;
   owner: string;
 }
 
-export async function getApprovalIdea(ideaId: string): Promise<ApprovalIdea> {
-  const [idea, usersById] = await Promise.all([
+export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> {
+  const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    getUsersById(),
+    buildUserMap(),
   ]);
 
   return {
     id: idea.id,
     title: idea.title,
     description: idea.description || `Implement an intelligent system for ${idea.title.toLowerCase()}.`,
-    submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
+    submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
     submittedAt: idea.submitted_at || 'January 15, 2024',
     priority: idea.score >= 80 ? 'high' : idea.score >= 60 ? 'medium' : 'low',
     score: idea.score,
@@ -219,13 +219,6 @@ export async function getApprovalIdea(ideaId: string): Promise<ApprovalIdea> {
   };
 }
 
-export async function getApprovalEdge(ideaId: string): Promise<ApprovalEdge> {
-  const edgeData = await getEdgeDataByIdeaId(ideaId);
-  if (!edgeData) {
-    return { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: 'medium', owner: '' };
-  }
-  return {
-    ...edgeData,
-    confidence: (edgeData.confidence || 'medium') as 'high' | 'medium' | 'low',
-  };
+export async function getEdgeForApproval(ideaId: string): Promise<ApprovalEdge> {
+  return getEdgeDataWithConfidence(ideaId);
 }

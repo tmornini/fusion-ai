@@ -6,7 +6,7 @@ import {
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
   iconUsers, iconShield, iconGauge,
 } from '../../site/script';
-import { getApprovalIdea, getApprovalEdge, type ApprovalIdea, type ApprovalEdge } from '../../site/data';
+import { getIdeaForApproval, getEdgeForApproval, type ApprovalIdea, type ApprovalEdge } from '../../site/data';
 
 const severityConfig: Record<string, string> = {
   high: 'badge-error',
@@ -206,8 +206,8 @@ export async function init(): Promise<void> {
   let edge: ApprovalEdge;
   try {
     [idea, edge] = await Promise.all([
-      getApprovalIdea(id),
-      getApprovalEdge(id),
+      getIdeaForApproval(id),
+      getEdgeForApproval(id),
     ]);
   } catch {
     root.innerHTML = renderError('Failed to load approval details.');

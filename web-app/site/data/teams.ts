@@ -1,6 +1,7 @@
 import { GET } from '../../../api/api';
 import type { UserEntity } from '../../../api/types';
-import { userName, parseJson } from './helpers';
+import { User } from '../../../api/types';
+import { parseJson } from './helpers';
 
 export interface TeamMember {
   id: string;
@@ -24,7 +25,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     .slice(0, 6)
     .map(user => ({
       id: user.id,
-      name: userName(user),
+      name: new User(user).fullName(),
       role: user.role,
       department: user.department,
       email: user.email,
@@ -56,7 +57,7 @@ export async function getManagedUsers(): Promise<ManagedUser[]> {
     .filter(user => user.id !== 'current')
     .map(user => ({
       id: user.id,
-      name: userName(user),
+      name: new User(user).fullName(),
       email: user.email,
       role: user.role as ManagedUser['role'],
       department: user.department,

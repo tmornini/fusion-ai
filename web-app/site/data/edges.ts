@@ -1,6 +1,6 @@
 import { GET, getDbAdapter } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity } from '../../../api/types';
-import { getUsersById, lookupUser, getEdgeDataByIdeaId } from './helpers';
+import type { IdeaEntity, EdgeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import { buildUserMap } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -10,22 +10,18 @@ export interface EdgeIdea {
   score: number;
 }
 
-export async function getEdgeIdea(ideaId: string): Promise<EdgeIdea> {
-  const [idea, usersById] = await Promise.all([
+export async function getIdeaForEdge(ideaId: string): Promise<EdgeIdea> {
+  const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    getUsersById(),
+    buildUserMap(),
   ]);
   return {
     title: idea.title,
     problem: idea.problem_statement || 'Manual customer segmentation is time-consuming and often inaccurate, leading to misaligned marketing efforts.',
     solution: idea.proposed_solution || 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
-    submittedBy: lookupUser(usersById, idea.submitted_by_id, 'Unknown'),
+    submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
     score: idea.score,
   };
-}
-
-export async function getEdgeOutcomes(ideaId: string) {
-  return getEdgeDataByIdeaId(ideaId);
 }
 
 // ── Edge List ───────────────────────────────
@@ -34,19 +30,19 @@ export interface EdgeListItem {
   id: string;
   ideaId: string;
   ideaTitle: string;
-  status: 'complete' | 'draft' | 'missing';
+  status: EdgeStatus;
   outcomesCount: number;
   metricsCount: number;
-  confidence: 'high' | 'medium' | 'low' | null;
+  confidence: ConfidenceLevel | null;
   owner: string;
   updatedAt: string;
 }
 
 export async function getEdgeList(): Promise<EdgeListItem[]> {
-  const [edgeRows, ideaRows, usersById] = await Promise.all([
+  const [edgeRows, ideaRows, userMap] = await Promise.all([
     GET('edges') as Promise<EdgeEntity[]>,
     GET('ideas') as Promise<IdeaEntity[]>,
-    getUsersById(),
+    buildUserMap(),
   ]);
   const db = getDbAdapter();
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
@@ -66,7 +62,7 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
       outcomesCount: outcomes.length,
       metricsCount,
       confidence: (edge.confidence || null) as EdgeListItem['confidence'],
-      owner: lookupUser(usersById, edge.owner_id),
+      owner: userMap.get(edge.owner_id)?.fullName() ?? '',
       updatedAt: edge.updated_at,
     };
   }));

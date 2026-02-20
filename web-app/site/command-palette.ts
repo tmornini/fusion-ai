@@ -143,7 +143,7 @@ function search(query: string): SearchItem[] {
   );
 }
 
-function highlightMatch(text: string, query: string): string {
+function renderHighlightedMatch(text: string, query: string): string {
   if (!query.trim()) return escapeHtml(text);
   const escaped = escapeHtml(text);
   const q = escapeHtml(query);
@@ -191,7 +191,7 @@ function renderResults(query: string): void {
       html += `<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? 'aria-selected="true"' : ''}>
         <div class="cmdk-item-icon">${item.icon}</div>
         <div class="cmdk-item-content">
-          <div class="cmdk-item-title">${highlightMatch(item.title, query)}</div>
+          <div class="cmdk-item-title">${renderHighlightedMatch(item.title, query)}</div>
           <div class="cmdk-item-meta">${escapeHtml(item.meta)}</div>
         </div>
       </div>`;

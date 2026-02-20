@@ -4,7 +4,7 @@ import {
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
   renderSkeleton, renderError,
 } from '../../site/script';
-import { getEdgeIdea, getEdgeOutcomes, type EdgeIdea } from '../../site/data';
+import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea } from '../../site/data';
 
 interface Metric { [key: string]: string; id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }
@@ -33,7 +33,7 @@ function getCompletion() {
   return { hasOutcomes, allMetrics, hasImpact, hasOwner, hasConfidence, percent, valid };
 }
 
-function checkIcon(ok: boolean): string {
+function renderCheckIcon(ok: boolean): string {
   return ok
     ? `<span style="color:hsl(var(--success))">${iconCheck(14)}</span>`
     : `<span style="color:hsl(var(--muted-foreground))">${iconAlertCircle(14)}</span>`;
@@ -106,10 +106,10 @@ function renderEdgePage(ideaId: string): string {
         </div>
         <div class="progress"><div class="progress-fill" style="width:${c.percent}%"></div></div>
         <div class="flex flex-wrap gap-3 mt-3">
-          <div class="flex items-center gap-1 text-xs">${checkIcon(c.hasOutcomes)} <span class="${c.hasOutcomes ? 'text-success' : 'text-muted'}">Outcomes</span></div>
-          <div class="flex items-center gap-1 text-xs">${checkIcon(c.allMetrics && c.hasOutcomes)} <span class="${c.allMetrics && c.hasOutcomes ? 'text-success' : 'text-muted'}">Metrics</span></div>
-          <div class="flex items-center gap-1 text-xs">${checkIcon(c.hasImpact)} <span class="${c.hasImpact ? 'text-success' : 'text-muted'}">Impact</span></div>
-          <div class="flex items-center gap-1 text-xs">${checkIcon(c.hasOwner)} <span class="${c.hasOwner ? 'text-success' : 'text-muted'}">Owner</span></div>
+          <div class="flex items-center gap-1 text-xs">${renderCheckIcon(c.hasOutcomes)} <span class="${c.hasOutcomes ? 'text-success' : 'text-muted'}">Outcomes</span></div>
+          <div class="flex items-center gap-1 text-xs">${renderCheckIcon(c.allMetrics && c.hasOutcomes)} <span class="${c.allMetrics && c.hasOutcomes ? 'text-success' : 'text-muted'}">Metrics</span></div>
+          <div class="flex items-center gap-1 text-xs">${renderCheckIcon(c.hasImpact)} <span class="${c.hasImpact ? 'text-success' : 'text-muted'}">Impact</span></div>
+          <div class="flex items-center gap-1 text-xs">${renderCheckIcon(c.hasOwner)} <span class="${c.hasOwner ? 'text-success' : 'text-muted'}">Owner</span></div>
         </div>
       </div>
 
@@ -201,7 +201,7 @@ function renderEdgePage(ideaId: string): string {
     </div>`;
 }
 
-function syncFormData() {
+function syncFormFields() {
   edgeData.impact.shortTerm = ($('#impact-short') as HTMLTextAreaElement)?.value || '';
   edgeData.impact.midTerm = ($('#impact-mid') as HTMLTextAreaElement)?.value || '';
   edgeData.impact.longTerm = ($('#impact-long') as HTMLTextAreaElement)?.value || '';
@@ -230,14 +230,14 @@ function bindEdgeEvents(ideaId: string) {
   $('#back-btn')?.addEventListener('click', () => navigateTo('ideas'));
 
   $('#add-outcome')?.addEventListener('click', () => {
-    syncFormData();
+    syncFormFields();
     edgeData.outcomes.push({ id: `o${nextId++}`, description: '', metrics: [] });
     rerender(ideaId);
   });
 
   document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(btn => {
     btn.addEventListener('click', () => {
-      syncFormData();
+      syncFormFields();
       edgeData.outcomes.push({ id: `o${nextId++}`, description: btn.getAttribute('data-add-template') || '', metrics: [] });
       rerender(ideaId);
     });
@@ -245,7 +245,7 @@ function bindEdgeEvents(ideaId: string) {
 
   document.querySelectorAll<HTMLElement>('[data-remove-outcome]').forEach(btn => {
     btn.addEventListener('click', () => {
-      syncFormData();
+      syncFormFields();
       edgeData.outcomes = edgeData.outcomes.filter(o => o.id !== btn.getAttribute('data-remove-outcome'));
       rerender(ideaId);
     });
@@ -253,7 +253,7 @@ function bindEdgeEvents(ideaId: string) {
 
   document.querySelectorAll<HTMLElement>('[data-add-metric]').forEach(btn => {
     btn.addEventListener('click', () => {
-      syncFormData();
+      syncFormFields();
       const oId = btn.getAttribute('data-add-metric')!;
       const outcome = edgeData.outcomes.find(o => o.id === oId);
       if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
@@ -263,7 +263,7 @@ function bindEdgeEvents(ideaId: string) {
 
   document.querySelectorAll<HTMLElement>('[data-remove-metric]').forEach(btn => {
     btn.addEventListener('click', () => {
-      syncFormData();
+      syncFormFields();
       const [oId, mId] = (btn.getAttribute('data-remove-metric') || '').split('|');
       const outcome = edgeData.outcomes.find(o => o.id === oId);
       if (outcome) outcome.metrics = outcome.metrics.filter(m => m.id !== mId);
@@ -272,7 +272,7 @@ function bindEdgeEvents(ideaId: string) {
   });
 
   $('#save-edge')?.addEventListener('click', () => {
-    syncFormData();
+    syncFormFields();
     if (!getCompletion().valid) { showToast('Please complete all required fields', 'error'); return; }
     showToast('Edge data saved successfully', 'success');
     navigateTo('approval-detail', { id: ideaId });
@@ -285,7 +285,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   if (container) container.innerHTML = renderSkeleton('detail');
 
   try {
-    currentIdea = await getEdgeIdea(ideaId);
+    currentIdea = await getIdeaForEdge(ideaId);
   } catch {
     if (container) {
       container.innerHTML = renderError('Failed to load Edge definition.');
@@ -294,7 +294,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
     return;
   }
 
-  const saved = await getEdgeOutcomes(ideaId);
+  const saved = await getEdgeDataByIdeaId(ideaId);
   if (saved && saved.outcomes.length > 0) {
     edgeData = { outcomes: saved.outcomes, impact: saved.impact, confidence: saved.confidence, owner: saved.owner };
     // Set nextId past the highest existing numeric ID to avoid collisions

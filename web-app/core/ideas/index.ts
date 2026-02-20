@@ -16,7 +16,7 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
   rejected: { label: 'Sent Back', cls: 'badge-error' },
 };
 
-function getScoreColor(score: number): string {
+function colorAndBackgroundForScore(score: number): string {
   if (score >= 85) return 'color:hsl(var(--success));background:hsl(var(--success-soft))';
   if (score >= 70) return 'color:hsl(var(--warning));background:hsl(var(--warning-soft))';
   return 'color:hsl(var(--error));background:hsl(var(--error-soft))';
@@ -46,7 +46,7 @@ function renderIdeaCard(idea: Idea, view: string): string {
                 <span>by ${escapeHtml(idea.submittedBy)}</span>
               </div>
             </div>
-            <div style="padding:0.25rem 0.75rem;border-radius:var(--radius-lg);font-weight:600;font-size:0.875rem;${getScoreColor(idea.score)}">
+            <div style="padding:0.25rem 0.75rem;border-radius:var(--radius-lg);font-weight:600;font-size:0.875rem;${colorAndBackgroundForScore(idea.score)}">
               ${iconStar(14)} ${idea.score}
             </div>
           </div>

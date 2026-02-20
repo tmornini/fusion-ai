@@ -1,18 +1,24 @@
 // ============================================
 // FUSION AI — API Type Definitions
-// Row types (snake_case) and camelCase utility.
+// Row types (snake_case), shared type aliases,
+// and utility functions.
 // ============================================
 
-// ── Utility ──────────────────────────────────
+// ── Shared Type Aliases ─────────────────────
 
-export function snakeToCamel<T extends Record<string, unknown>>(record: T): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(record)) {
-    const camel = key.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
-    result[camel] = value;
-  }
-  return result;
-}
+/** Semantic alias for entity ID strings used as map keys and function params. */
+export type Id = string;
+
+/** Confidence level used across Edge, ideas, and projects. */
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+/** Edge definition completion status. */
+export type EdgeStatus = 'complete' | 'draft' | 'missing';
+
+/** Idea lifecycle status. */
+export type IdeaStatus = 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
+
+// ── Utility ──────────────────────────────────
 
 /** Convert 0/1/boolean to boolean (handles localStorage int vs JSON boolean). */
 export function toBool(value: unknown): boolean {
@@ -38,6 +44,49 @@ export interface UserEntity {
   phone: string;
   bio: string;
   last_active: string;
+}
+
+/** Domain object wrapping a UserEntity with camelCase accessors. */
+export class User {
+  readonly id: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly email: string;
+  readonly role: string;
+  readonly department: string;
+  readonly status: string;
+  readonly availability: number;
+  readonly performanceScore: number;
+  readonly projectsCompleted: number;
+  readonly currentProjects: number;
+  readonly strengths: string;
+  readonly teamDimensions: string;
+  readonly phone: string;
+  readonly bio: string;
+  readonly lastActive: string;
+
+  constructor(entity: UserEntity) {
+    this.id = entity.id;
+    this.firstName = entity.first_name;
+    this.lastName = entity.last_name;
+    this.email = entity.email;
+    this.role = entity.role;
+    this.department = entity.department;
+    this.status = entity.status;
+    this.availability = entity.availability;
+    this.performanceScore = entity.performance_score;
+    this.projectsCompleted = entity.projects_completed;
+    this.currentProjects = entity.current_projects;
+    this.strengths = entity.strengths;
+    this.teamDimensions = entity.team_dimensions;
+    this.phone = entity.phone;
+    this.bio = entity.bio;
+    this.lastActive = entity.last_active;
+  }
+
+  fullName(): string {
+    return `${this.firstName} ${this.lastName}`.trim();
+  }
 }
 
 export interface IdeaEntity {

@@ -12,7 +12,7 @@ let columns: CrunchColumn[] = [];
 let expandedColumnId: string | null = null;
 let businessContext = '';
 
-function dataTypeIcon(type: string): string {
+function renderDataTypeIcon(type: string): string {
   switch (type) {
     case 'number': return iconHash(16, 'text-muted');
     case 'date': return iconCalendar(16, 'text-muted');
@@ -27,7 +27,7 @@ function completionPct(): number {
   return Math.round((done / columns.length) * 100);
 }
 
-function stepIndicator(): string {
+function renderStepIndicator(): string {
   const steps = [
     { key: 'upload', label: 'Upload', icon: iconUpload },
     { key: 'label', label: 'Label & Explain', icon: iconMessageSquare },
@@ -107,7 +107,7 @@ function renderLabelStep(): string {
             <div class="card" style="${complete ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : ''};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-col-toggle="${col.id}">
                 <div class="flex items-center gap-3">
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${complete ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))'}">${complete ? iconCheck(20, 'text-success') : dataTypeIcon(col.dataType)}</div>
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${complete ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))'}">${complete ? iconCheck(20, 'text-success') : renderDataTypeIcon(col.dataType)}</div>
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2">
                       <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${col.originalName}</code>
@@ -164,7 +164,7 @@ function renderReviewStep(): string {
     </div>`;
 }
 
-function syncColumnFields(): void {
+function syncFormFields(): void {
   document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-col-field]').forEach(el => {
     const [colId, field] = (el.getAttribute('data-col-field') || '').split(':');
     const col = columns.find(c => c.id === colId);
@@ -188,7 +188,7 @@ function renderPage(): string {
       </div>
 
       <div class="flex items-center justify-center gap-3 mb-8" style="overflow-x:auto;padding-bottom:0.5rem">
-        ${stepIndicator()}
+        ${renderStepIndicator()}
       </div>
 
       ${step === 'upload' ? renderUploadStep() : step === 'label' ? renderLabelStep() : renderReviewStep()}
@@ -216,7 +216,7 @@ function bindEvents(): void {
   if (step === 'label') {
     document.querySelectorAll<HTMLElement>('[data-col-toggle]').forEach(el => {
       el.addEventListener('click', () => {
-        syncColumnFields();
+        syncFormFields();
         const id = el.getAttribute('data-col-toggle');
         expandedColumnId = expandedColumnId === id ? null : id;
         rerender();
@@ -225,14 +225,14 @@ function bindEvents(): void {
 
     document.querySelectorAll<HTMLElement>('[data-col-field]').forEach(el => {
       el.addEventListener('input', () => {
-        syncColumnFields();
+        syncFormFields();
         const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;
         if (reviewBtn) reviewBtn.disabled = completionPct() < 100;
       });
     });
 
     $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; rerender(); });
-    $('#crunch-to-review')?.addEventListener('click', () => { syncColumnFields(); step = 'review'; rerender(); });
+    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; rerender(); });
   }
 
   if (step === 'review') {

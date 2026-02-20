@@ -4,7 +4,7 @@ import {
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
 } from '../../site/script';
-import { getEngineeringProject, getClarifications, type EngineeringProject, type Clarification } from '../../site/data';
+import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../../site/data';
 
 function renderClarification(c: Clarification): string {
   const isPending = c.status === 'pending';
@@ -45,8 +45,8 @@ export async function init(): Promise<void> {
   let clarifications: Clarification[];
   try {
     [project, clarifications] = await Promise.all([
-      getEngineeringProject(projectId),
-      getClarifications(projectId),
+      getProjectForEngineering(projectId),
+      getClarificationsByProjectId(projectId),
     ]);
   } catch {
     root.innerHTML = renderError('Failed to load engineering requirements.');

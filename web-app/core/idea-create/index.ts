@@ -164,7 +164,7 @@ function rerender() {
   if (root) { root.innerHTML = renderPage(); bindEvents(); }
 }
 
-function saveCurrentFields() {
+function syncFormFields() {
   if (currentStep === 1) {
     formData.title = ($('#field-title') as HTMLInputElement)?.value || '';
     formData.problemStatement = ($('#field-problem') as HTMLTextAreaElement)?.value || '';
@@ -179,22 +179,22 @@ function saveCurrentFields() {
 
 function bindEvents() {
   $('#back-btn')?.addEventListener('click', () => {
-    if (currentStep > 1) { saveCurrentFields(); currentStep--; rerender(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; rerender(); }
     else navigateTo('ideas');
   });
   $('#step-back')?.addEventListener('click', () => {
-    if (currentStep > 1) { saveCurrentFields(); currentStep--; rerender(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; rerender(); }
     else navigateTo('ideas');
   });
   $('#step-next')?.addEventListener('click', () => {
-    saveCurrentFields();
+    syncFormFields();
     if (!canProceed()) return;
     if (currentStep < 3) { currentStep++; rerender(); }
     else navigateTo('idea-scoring', { ideaId: 'new' });
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
     input.addEventListener('input', () => {
-      saveCurrentFields();
+      syncFormFields();
       const nextBtn = $('#step-next') as HTMLButtonElement;
       if (nextBtn) nextBtn.disabled = !canProceed();
     });

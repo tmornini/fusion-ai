@@ -7,7 +7,7 @@ import { getProfile, allStrengths } from '../../site/data';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
 
-function strengthChip(name: string): string {
+function renderStrengthChip(name: string): string {
   const active = selectedStrengths.has(name);
   return `<button class="strength-chip btn ${active ? 'btn-primary' : 'btn-secondary'} btn-sm" data-strength="${escapeHtml(name)}">
     ${active ? iconCheckCircle2(12) + ' ' : ''}${escapeHtml(name)}
@@ -49,7 +49,7 @@ export async function init(): Promise<void> {
   // Strengths
   const strengthsContainer = $('#strengths-container');
   if (strengthsContainer) {
-    strengthsContainer.innerHTML = allStrengths.map(strengthChip).join('');
+    strengthsContainer.innerHTML = allStrengths.map(renderStrengthChip).join('');
     strengthsContainer.querySelectorAll<HTMLElement>('.strength-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const name = chip.getAttribute('data-strength') ?? '';

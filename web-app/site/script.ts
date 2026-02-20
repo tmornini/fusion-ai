@@ -40,7 +40,7 @@ function initials(name: string): string {
   return name.split(' ').map(n => n[0]).join('');
 }
 
-function scoreColor(score: number): string {
+function colorForScore(score: number): string {
   if (score >= 80) return 'color:hsl(var(--success))';
   if (score >= 60) return 'color:hsl(var(--warning))';
   return 'color:hsl(var(--error))';
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Dashboard Layout Behavior
 // ------------------------------------
 
-function setupActiveNavItem(): void {
+function initActiveNavItem(): void {
   const pageName = getPageName();
   document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(el => {
     const linkPage = el.getAttribute('data-page-link') || '';
@@ -293,7 +293,7 @@ function setupActiveNavItem(): void {
   });
 }
 
-function setupSidebar(): void {
+function initSidebar(): void {
   const sidebar = document.getElementById('desktop-sidebar');
   const mainContent = document.querySelector('.main-content') as HTMLElement;
 
@@ -331,10 +331,10 @@ function setupSidebar(): void {
   });
 }
 
-function setupThemeAndDropdowns(): void {
+function initThemeAndDropdowns(): void {
   for (const prefix of ['', 'mobile-']) {
-    setupDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
-    setupDropdown(`${prefix}notif-toggle`, `${prefix}notif-dropdown`);
+    initDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
+    initDropdown(`${prefix}notif-toggle`, `${prefix}notif-dropdown`);
   }
 
   document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
@@ -349,7 +349,7 @@ function setupThemeAndDropdowns(): void {
   });
 }
 
-function setupMobileDrawer(): void {
+function initMobileDrawer(): void {
   document.getElementById('mobile-sidebar-open')?.addEventListener('click', () => {
     document.getElementById('mobile-sheet')?.classList.remove('hidden');
     document.getElementById('mobile-sheet-backdrop')?.classList.remove('hidden');
@@ -368,15 +368,15 @@ function setupMobileDrawer(): void {
 }
 
 function initDashboardLayout(): void {
-  setupActiveNavItem();
-  setupSidebar();
-  setupThemeAndDropdowns();
-  setupMobileDrawer();
+  initActiveNavItem();
+  initSidebar();
+  initThemeAndDropdowns();
+  initMobileDrawer();
   updateThemeToggleIcon();
   populateNotifications();
 }
 
-function setupDropdown(toggleId: string, contentId: string): void {
+function initDropdown(toggleId: string, contentId: string): void {
   const toggle = document.getElementById(toggleId);
   const content = document.getElementById(contentId);
   if (!toggle || !content) return;
@@ -440,7 +440,7 @@ export {
   // Loading / Error / Empty (re-exported from ./skeleton)
   type SkeletonType, renderSkeleton, renderError, renderEmpty, withLoadingState,
   // Shared Utilities
-  initials, scoreColor, openDialog, closeDialog, initTabs,
+  initials, colorForScore, openDialog, closeDialog, initTabs,
   // Icons (re-exported from ./icons)
   icon, icons,
   iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,

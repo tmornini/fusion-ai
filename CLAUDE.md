@@ -29,7 +29,7 @@ No test framework is configured.
 
 The API layer is a set of TypeScript modules that provide a REST-style interface to the database:
 
-- **`api/types.ts`** — Row types (snake_case) matching schema, plus `snakeToCamel` and `toBool` utilities
+- **`api/types.ts`** — Row types (snake_case) matching schema, shared type aliases (`Id`, `ConfidenceLevel`, `EdgeStatus`, `IdeaStatus`), `User` class wrapping `UserEntity`, and `toBool` utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
 - **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` URL routing
@@ -77,7 +77,7 @@ package.json                  # Project config (zero runtime dependencies)
 build                         # Executable build script
 
 api/
-  types.ts                    # Row types (snake_case), snakeToCamel, toBool utilities
+  types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, EdgeStatus, IdeaStatus), User class, toBool
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema)
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT URL routing
@@ -94,15 +94,15 @@ web-app/
     state.ts                  # AppState, theme, mobile detection, pub-sub
     data/                     # ~28 async adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
-      helpers.ts              # userName, getUserMap, parseJson, lookupUser
+      helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence
       shared.ts               # getCurrentUser, getNotifications
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
       ideas.ts                # getIdeas, getReviewQueue, getIdeaForScoring, etc.
-      projects.ts             # getProjects, getProjectById, getEngineeringProject
-      teams.ts                # getTeamMembers, getUsers
-      edges.ts                # getEdgeIdea, getEdgeOutcomes, getEdges
-      tools.ts                # getCrunchColumns, getFlowData
-      admin.ts                # getAccountData, getProfileData, getCompanySettings, etc.
+      projects.ts             # getProjects, getProjectById, getProjectForEngineering, getClarificationsByProjectId
+      teams.ts                # getTeamMembers, getManagedUsers
+      edges.ts                # getIdeaForEdge, getEdgeList
+      tools.ts                # getCrunchColumns, getFlow
+      admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed, getNotificationCategories
     styles/                   # CSS modules (cascade-ordered)
       fonts.css               # @font-face declarations
       tokens.css              # :root custom properties (light mode)
@@ -182,3 +182,7 @@ The `build` script requires a clean git working directory (no uncommitted change
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.
+
+## Worktrees
+
+Use `/tmp/claude` as the worktree directory for isolated feature work.

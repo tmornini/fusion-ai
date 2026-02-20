@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo, scoreColor,
+  $, escapeHtml, navigateTo, colorForScore,
   renderSkeleton, renderError, renderEmpty,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
@@ -43,7 +43,7 @@ function renderReviewCard(idea: ReviewIdea): string {
         <div class="flex items-center gap-6">
           <div class="text-right hidden-mobile">
             <div class="flex items-center gap-4 text-sm">
-              <div><p class="text-muted">Score</p><p class="font-semibold" style="${scoreColor(idea.score)}">${idea.score}</p></div>
+              <div><p class="text-muted">Score</p><p class="font-semibold" style="${colorForScore(idea.score)}">${idea.score}</p></div>
               <div><p class="text-muted">Impact</p><p class="font-medium">${idea.impact}</p></div>
               <div><p class="text-muted">Effort</p><p class="font-medium">${idea.effort}</p></div>
             </div>

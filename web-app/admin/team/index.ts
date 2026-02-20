@@ -13,7 +13,7 @@ function availabilityClass(a: number): string {
   return 'color:hsl(var(--error));background:hsl(var(--error)/0.1);border:1px solid hsl(var(--error)/0.2)';
 }
 
-function statusDot(status: string): string {
+function renderStatusDot(status: string): string {
   const colors: Record<string, string> = { available: 'hsl(var(--success))', busy: 'hsl(var(--warning))', limited: 'hsl(var(--error))' };
   return `<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
 }
@@ -85,7 +85,7 @@ function renderMemberCard(m: TeamMember): string {
           <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center">
             <span class="text-lg font-bold text-primary">${initials(m.name)}</span>
           </div>
-          ${statusDot(m.status)}
+          ${renderStatusDot(m.status)}
         </div>
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-1">

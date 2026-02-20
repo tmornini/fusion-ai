@@ -1,5 +1,5 @@
 import {
-  $, escapeHtml, navigateTo, getParams, scoreColor, renderError,
+  $, escapeHtml, navigateTo, getParams, colorForScore, renderError,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
   iconCheckCircle2, iconLoader, iconSparkles,
@@ -23,7 +23,7 @@ function renderBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): 
     <div class="p-4 rounded-xl" style="background:hsl(var(--muted)/0.3)">
       <div class="flex items-center justify-between mb-2">
         <span class="font-medium">${item.label}</span>
-        <span class="font-bold" style="${scoreColor(item.score * 10)}">${item.score}/${item.maxScore}</span>
+        <span class="font-bold" style="${colorForScore(item.score * 10)}">${item.score}/${item.maxScore}</span>
       </div>
       <div style="width:100%;background:hsl(var(--muted));border-radius:9999px;height:0.5rem;margin-bottom:0.5rem">
         <div style="height:0.5rem;border-radius:9999px;${progressBg(item.score * 10)};width:${(item.score / item.maxScore) * 100}%;transition:width 0.3s"></div>
@@ -43,7 +43,7 @@ function renderScoreResults(ideaId: string, idea: { title: string; problemStatem
       <div class="score-grid" style="grid-template-columns:1fr 2fr;gap:1.5rem">
         <div class="card p-6 text-center flex flex-col justify-center">
           <p class="text-sm font-medium text-muted mb-3">Overall Priority Score</p>
-          <div class="font-display font-bold mb-2" style="font-size:3.75rem;color:${scoreColor(score.overall)}">${score.overall}</div>
+          <div class="font-display font-bold mb-2" style="font-size:3.75rem;color:${colorForScore(score.overall)}">${score.overall}</div>
           <p class="text-sm text-muted">out of 100</p>
           <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid hsl(var(--border))">
             <div class="flex items-center justify-center gap-2" style="color:hsl(var(--success))">

@@ -14,19 +14,19 @@ const roleLabels: Record<string, { label: string; icon: (s?: number) => string }
   viewer: { label: 'Viewer', icon: iconEye },
 };
 
-function statusBadge(status: string): string {
+function renderStatusBadge(status: string): string {
   if (status === 'active') return `<span class="status-badge-success">${iconCheckCircle2(14)} Active</span>`;
   if (status === 'pending') return `<span class="status-badge-warning">${iconClock(14)} Pending</span>`;
   return `<span class="status-badge-error">${iconUserX(14)} Deactivated</span>`;
 }
 
-function roleBadge(role: string): string {
+function renderRoleBadge(role: string): string {
   const r = roleLabels[role];
   if (!r) return `<span class="badge badge-secondary">${role}</span>`;
   return `<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
 }
 
-function userRow(u: ManagedUser): string {
+function renderUserRow(u: ManagedUser): string {
   return `
     <div class="flex items-center gap-4 p-4 ${u.status === 'deactivated' ? 'opacity-50' : ''}" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:2;display:flex;align-items:center;gap:0.75rem;min-width:0">
@@ -38,10 +38,10 @@ function userRow(u: ManagedUser): string {
           <p class="text-xs text-muted truncate">${escapeHtml(u.email)}</p>
         </div>
       </div>
-      <div style="flex:1">${roleBadge(u.role)}</div>
+      <div style="flex:1">${renderRoleBadge(u.role)}</div>
       <div style="flex:1" class="text-sm text-muted">${u.department}</div>
       <div style="flex:1">
-        ${statusBadge(u.status)}
+        ${renderStatusBadge(u.status)}
         <p class="text-xs text-muted mt-1">${u.status === 'pending' ? 'Invite sent' : 'Last active ' + u.lastActive}</p>
       </div>
       <div style="flex:0 0 auto">
@@ -116,7 +116,7 @@ export async function init(): Promise<void> {
           <div style="flex:1" class="text-xs font-medium text-muted">Status</div>
           <div style="flex:0 0 auto;width:2.5rem"></div>
         </div>
-        <div id="user-list">${users.map(userRow).join('')}</div>
+        <div id="user-list">${users.map(renderUserRow).join('')}</div>
       </div>
 
       <div id="invite-backdrop" class="dialog-backdrop hidden"></div>
