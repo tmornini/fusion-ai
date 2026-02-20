@@ -33,22 +33,13 @@
   --error-soft: 0 40% 15%;
   --info-soft: 217 40% 15%;
 
-  --sidebar-background: var(--gray-900);
-  --sidebar-foreground: var(--gray-200);
-  --sidebar-accent: var(--gray-800);
-  --sidebar-accent-foreground: var(--gray-200);
-  --sidebar-border: var(--gray-700);
-
   --chart-5: 217 71% 63%;
   --chart-6: 280 65% 70%;
-
-  --backdrop: 0 0% 0%;
 
   --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
   --shadow-card-hover: 0 8px 16px -4px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
 
   --gradient-subtle: linear-gradient(180deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-800)) 100%);
-  --gradient-card: linear-gradient(180deg, hsl(var(--gray-800)) 0%, hsl(var(--gray-900)) 100%);
 }
 
 [data-theme="dark"] .dialog-backdrop,

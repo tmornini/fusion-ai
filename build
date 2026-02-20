@@ -26,18 +26,14 @@ npx esbuild web-app/site/script.ts \
 
 echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | xargs) bytes)"
 
-# Copy static assets into build dir
-cat web-app/site/styles/fonts.css \
-    web-app/site/styles/tokens.css \
-    web-app/site/styles/dark-mode.css \
-    web-app/site/styles/base.css \
-    web-app/site/styles/components.css \
-    web-app/site/styles/layout.css \
-    web-app/site/styles/utilities.css \
-    web-app/site/styles/responsive.css \
-    web-app/site/styles/pages.css \
-    web-app/site/styles/command-palette.css \
-    > "$BUILD_DIR/site/style.css"
+# Bundle and minify CSS into build dir
+npx esbuild web-app/site/style.css \
+  --bundle \
+  --minify \
+  '--external:fonts/*' \
+  --outfile="$BUILD_DIR/site/style.css"
+
+echo "Styles created: site/style.css ($(wc -c < "$BUILD_DIR/site/style.css" | xargs) bytes)"
 cp -r web-app/site/fonts "$BUILD_DIR/site/"
 cp web-app/index.html "$BUILD_DIR/"
 cp web-app/site/favicon.ico "$BUILD_DIR/site/"
