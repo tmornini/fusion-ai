@@ -16,7 +16,7 @@ function buildStrengthChip(name: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  const p = await getProfile();
+  const profile = await getProfile();
 
   // Breadcrumb chevron
   const chevronEl = $('#breadcrumb-chevron');
@@ -38,14 +38,14 @@ export async function init(): Promise<void> {
 
   // Fill form values
   const avatarInitials = $('#avatar-initials');
-  if (avatarInitials) avatarInitials.textContent = `${p.firstName[0]}${p.lastName[0]}`;
-  ($('#firstName') as HTMLInputElement).value = p.firstName;
-  ($('#lastName') as HTMLInputElement).value = p.lastName;
-  ($('#email') as HTMLInputElement).value = p.email;
-  ($('#phone') as HTMLInputElement).value = p.phone;
-  ($('#role') as HTMLInputElement).value = p.role;
-  ($('#department') as HTMLSelectElement).value = p.department;
-  ($('#bio') as HTMLTextAreaElement).value = p.bio;
+  if (avatarInitials) avatarInitials.textContent = `${profile.firstName[0]}${profile.lastName[0]}`;
+  ($('#first-name') as HTMLInputElement).value = profile.firstName;
+  ($('#last-name') as HTMLInputElement).value = profile.lastName;
+  ($('#email') as HTMLInputElement).value = profile.email;
+  ($('#phone') as HTMLInputElement).value = profile.phone;
+  ($('#role') as HTMLInputElement).value = profile.role;
+  ($('#department') as HTMLSelectElement).value = profile.department;
+  ($('#bio') as HTMLTextAreaElement).value = profile.bio;
 
   // Strengths
   const strengthsContainer = $('#strengths-container');

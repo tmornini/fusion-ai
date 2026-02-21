@@ -60,8 +60,8 @@ const routes: Route[] = [
   route('notification-categories', {
     get: (db) => db.notificationCategories.getAll(),
   }),
-  route('notification-prefs', {
-    get: (db) => db.notificationPrefs.getAll(),
+  route('notification-preferences', {
+    get: (db) => db.notificationPreferences.getAll(),
   }),
 
   // ── Singletons ─────────────────────────────
@@ -107,8 +107,8 @@ const routes: Route[] = [
   route('crunch-columns/:id', {
     put: (db, [id], payload) => db.crunchColumns.put(id!, payload),
   }),
-  route('notification-prefs/:id', {
-    put: (db, [id], payload) => db.notificationPrefs.put(id!, payload),
+  route('notification-preferences/:id', {
+    put: (db, [id], payload) => db.notificationPreferences.put(id!, payload),
   }),
 
   // ── Nested: idea children ──────────────────

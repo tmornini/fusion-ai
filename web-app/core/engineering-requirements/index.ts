@@ -7,28 +7,28 @@ import {
 } from '../../site/script';
 import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../../site/data';
 
-function buildClarification(c: Clarification): SafeHtml {
-  const isPending = c.status === 'pending';
+function buildClarification(clarification: Clarification): SafeHtml {
+  const isPending = clarification.status === 'pending';
   return html`
     <div class="card" style="border:1px solid ${isPending ? 'hsl(var(--warning)/0.3)' : 'hsl(var(--border))'};${isPending ? 'background:hsl(var(--warning)/0.05)' : ''};padding:1rem">
       <div class="flex items-start gap-3 mb-3">
         <div style="padding:0.5rem;border-radius:9999px;${isPending ? 'background:hsl(var(--warning)/0.1)' : 'background:hsl(var(--muted))'}">${iconMessageSquare(16, isPending ? 'text-warning' : 'text-muted')}</div>
         <div style="flex:1">
           <div class="flex items-center gap-2 mb-1">
-            <span class="font-medium">${c.askedBy}</span>
-            <span class="text-xs text-muted">${c.askedAt}</span>
+            <span class="font-medium">${clarification.askedBy}</span>
+            <span class="text-xs text-muted">${clarification.askedAt}</span>
             <span class="badge ${isPending ? 'badge-warning' : 'badge-success'} text-xs">${isPending ? 'Awaiting response' : 'Answered'}</span>
           </div>
-          <p>${c.question}</p>
+          <p>${clarification.question}</p>
         </div>
       </div>
-      ${c.answer ? html`
+      ${clarification.answer ? html`
         <div style="margin-left:2.5rem;margin-top:1rem;padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5);border-left:2px solid hsl(var(--primary))">
           <div class="flex items-center gap-2 mb-1">
-            <span class="font-medium">${c.answeredBy!}</span>
-            <span class="text-xs text-muted">${c.answeredAt}</span>
+            <span class="font-medium">${clarification.answeredBy!}</span>
+            <span class="text-xs text-muted">${clarification.answeredAt}</span>
           </div>
-          <p>${c.answer}</p>
+          <p>${clarification.answer}</p>
         </div>
       ` : html``}
     </div>`;
@@ -38,7 +38,7 @@ export async function init(): Promise<void> {
   const params = getParams();
   const projectId = params['projectId'] || '1';
 
-  const root = $('#er-root');
+  const root = $('#engineering-requirements-content');
   if (!root) return;
   setHtml(root, buildSkeleton('detail'));
 
@@ -55,8 +55,8 @@ export async function init(): Promise<void> {
     return;
   }
 
-  const pendingCount = clarifications.filter(c => c.status === 'pending').length;
-  const answeredCount = clarifications.filter(c => c.status === 'answered').length;
+  const pendingCount = clarifications.filter(clarification => clarification.status === 'pending').length;
+  const answeredCount = clarifications.filter(clarification => clarification.status === 'answered').length;
 
   setHtml(root, html`
     <div style="max-width:56rem;margin:0 auto">
@@ -71,7 +71,7 @@ export async function init(): Promise<void> {
           <h1 class="text-2xl font-display font-bold mb-2">Engineering Requirements</h1>
           <p class="text-muted">Business context and clarifications for ${project.title}</p>
         </div>
-        <button class="btn btn-outline gap-2" id="er-back">${iconArrowLeft(16)} Back to Project</button>
+        <button class="btn btn-outline gap-2" id="requirements-back">${iconArrowLeft(16)} Back to Project</button>
       </div>
 
       <div class="stats-grid mb-8">
@@ -104,8 +104,8 @@ export async function init(): Promise<void> {
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconTarget(20, 'text-success')} Success Metrics</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
-          ${project.businessContext.successMetrics.map((m: string) => html`
-            <div class="flex items-start gap-2">${iconCheckCircle2(16, 'text-success')} <span>${m}</span></div>
+          ${project.businessContext.successMetrics.map((metric: string) => html`
+            <div class="flex items-start gap-2">${iconCheckCircle2(16, 'text-success')} <span>${metric}</span></div>
           `)}
         </div>
       </div>
@@ -113,8 +113,8 @@ export async function init(): Promise<void> {
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconAlertTriangle(20, 'text-warning')} Constraints & Requirements</h3>
         <div style="display:flex;flex-direction:column;gap:0.5rem">
-          ${project.businessContext.constraints.map((c: string) => html`
-            <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${c}</span></div>
+          ${project.businessContext.constraints.map((constraint: string) => html`
+            <div class="flex items-start gap-2"><span class="text-warning">•</span> <span>${constraint}</span></div>
           `)}
         </div>
       </div>
@@ -122,11 +122,11 @@ export async function init(): Promise<void> {
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
         <div class="convert-grid" style="gap:0.75rem">
-          ${project.team.map((m: any) => html`
+          ${project.team.map((teamMember: any) => html`
             <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3)">
-              <div style="width:2.5rem;height:2.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:${m.type === 'business' ? 'hsl(var(--primary)/0.1)' : 'hsl(var(--success-soft))'}">${iconUser(20, m.type === 'business' ? 'text-primary' : 'text-success')}</div>
-              <div style="flex:1;min-width:0"><p class="font-medium">${m.name}</p><p class="text-xs text-muted">${m.role}</p></div>
-              <span class="badge ${m.type === 'business' ? 'badge-primary' : 'badge-success'} text-xs">${m.type}</span>
+              <div style="width:2.5rem;height:2.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:${teamMember.type === 'business' ? 'hsl(var(--primary)/0.1)' : 'hsl(var(--success-soft))'}">${iconUser(20, teamMember.type === 'business' ? 'text-primary' : 'text-success')}</div>
+              <div style="flex:1;min-width:0"><p class="font-medium">${teamMember.name}</p><p class="text-xs text-muted">${teamMember.role}</p></div>
+              <span class="badge ${teamMember.type === 'business' ? 'badge-primary' : 'badge-success'} text-xs">${teamMember.type}</span>
             </div>
           `)}
         </div>
@@ -149,12 +149,12 @@ export async function init(): Promise<void> {
       <div style="margin-bottom:2rem">
         <h2 class="text-xl font-display font-semibold mb-4 flex items-center gap-2">${iconMessageSquare(20, 'text-primary')} Clarifications</h2>
         <div class="card" style="padding:1rem;margin-bottom:1rem">
-          <textarea class="textarea" id="er-question" placeholder="Ask a clarifying question to the business team..." style="min-height:5rem;resize:none;margin-bottom:0.75rem"></textarea>
+          <textarea class="textarea" id="requirements-question" placeholder="Ask a clarifying question to the business team..." style="min-height:5rem;resize:none;margin-bottom:0.75rem"></textarea>
           <div style="display:flex;justify-content:flex-end">
-            <button class="btn btn-primary gap-2" id="er-send" disabled>${iconSend(16)} Send Question</button>
+            <button class="btn btn-primary gap-2" id="requirements-send" disabled>${iconSend(16)} Send Question</button>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:1rem" id="er-thread">
+        <div style="display:flex;flex-direction:column;gap:1rem" id="requirements-thread">
           ${clarifications.map(buildClarification)}
         </div>
       </div>
@@ -162,27 +162,27 @@ export async function init(): Promise<void> {
       <div class="flex items-center justify-between" style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
         <span class="text-sm text-muted">${pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? 'question' : 'questions'} awaiting business response` : 'All questions have been answered'}</span>
         <div class="flex gap-3">
-          <button class="btn btn-outline" id="er-back2">Back to Project</button>
-          <button class="btn btn-primary gap-2" id="er-complete">${iconCheckCircle2(16)} Mark Requirements Complete</button>
+          <button class="btn btn-outline" id="requirements-back-footer">Back to Project</button>
+          <button class="btn btn-primary gap-2" id="requirements-complete">${iconCheckCircle2(16)} Mark Requirements Complete</button>
         </div>
       </div>
     </div>`);
 
   // Event bindings
-  const q = $('#er-question') as HTMLTextAreaElement;
-  const send = $('#er-send') as HTMLButtonElement;
-  q?.addEventListener('input', () => { if (send) send.disabled = !q.value.trim(); });
-  send?.addEventListener('click', () => {
+  const questionField = $('#requirements-question') as HTMLTextAreaElement;
+  const sendButton = $('#requirements-send') as HTMLButtonElement;
+  questionField?.addEventListener('input', () => { if (sendButton) sendButton.disabled = !questionField.value.trim(); });
+  sendButton?.addEventListener('click', () => {
     showToast('Question sent to business team', 'success');
-    if (q) q.value = '';
-    if (send) send.disabled = true;
+    if (questionField) questionField.value = '';
+    if (sendButton) sendButton.disabled = true;
   });
 
-  $('#er-complete')?.addEventListener('click', () => {
+  $('#requirements-complete')?.addEventListener('click', () => {
     showToast('Requirements marked as complete', 'success');
     navigateTo('project-detail', { projectId });
   });
 
-  $('#er-back')?.addEventListener('click', () => navigateTo('project-detail', { projectId }));
-  $('#er-back2')?.addEventListener('click', () => navigateTo('project-detail', { projectId }));
+  $('#requirements-back')?.addEventListener('click', () => navigateTo('project-detail', { projectId }));
+  $('#requirements-back-footer')?.addEventListener('click', () => navigateTo('project-detail', { projectId }));
 }

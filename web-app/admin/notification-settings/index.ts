@@ -5,33 +5,33 @@ import {
 } from '../../site/script';
 import { getNotificationCategories, type NotificationCategory } from '../../site/data';
 
-function switchHtml(id: string, checked: boolean): SafeHtml {
+function buildSwitch(id: string, checked: boolean): SafeHtml {
   return html`<button class="switch" role="switch" aria-checked="${checked}" data-pref="${id}"><span class="switch-thumb"></span></button>`;
 }
 
-function buildCategory(cat: NotificationCategory): SafeHtml {
-  const catIcon = icons[cat.icon] || icons['bell'];
+function buildCategory(category: NotificationCategory): SafeHtml {
+  const categoryIcon = icons[category.icon] || icons['bell'];
   return html`
     <div class="card" style="overflow:hidden;margin-bottom:1.5rem">
       <div class="flex items-center justify-between p-4" style="background:hsl(var(--muted)/0.2);border-bottom:1px solid hsl(var(--border))">
         <div class="flex items-center gap-3">
-          <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--primary)/0.1);color:hsl(var(--primary));display:flex;align-items:center;justify-content:center">${catIcon ? catIcon(20) : html``}</div>
-          <h3 class="font-display font-semibold">${cat.label}</h3>
+          <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--primary)/0.1);color:hsl(var(--primary));display:flex;align-items:center;justify-content:center">${categoryIcon ? categoryIcon(20) : html``}</div>
+          <h3 class="font-display font-semibold">${category.label}</h3>
         </div>
         <div class="flex items-center gap-2">
-          <button class="btn btn-ghost btn-xs" data-enable-all="${cat.id}">Enable all</button>
-          <button class="btn btn-ghost btn-xs text-muted" data-disable-all="${cat.id}">Disable all</button>
+          <button class="btn btn-ghost btn-xs" data-enable-all="${category.id}">Enable all</button>
+          <button class="btn btn-ghost btn-xs text-muted" data-disable-all="${category.id}">Disable all</button>
         </div>
       </div>
-      <div data-cat-prefs="${cat.id}">${cat.prefs.map(p => html`
+      <div data-category-preferences="${category.id}">${category.preferences.map(preference => html`
         <div class="flex items-center justify-between p-4" style="border-bottom:1px solid hsl(var(--border))">
           <div style="flex:1;min-width:0;margin-right:2rem">
-            <p class="font-medium">${p.label}</p>
-            <p class="text-sm text-muted">${p.description}</p>
+            <p class="font-medium">${preference.label}</p>
+            <p class="text-sm text-muted">${preference.description}</p>
           </div>
           <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2">${iconMail(16)} ${switchHtml(p.id + '-email', p.isEmailEnabled)}</div>
-            <div class="flex items-center gap-2">${iconSmartphone(16)} ${switchHtml(p.id + '-push', p.isPushEnabled)}</div>
+            <div class="flex items-center gap-2">${iconMail(16)} ${buildSwitch(preference.id + '-email', preference.isEmailEnabled)}</div>
+            <div class="flex items-center gap-2">${iconSmartphone(16)} ${buildSwitch(preference.id + '-push', preference.isPushEnabled)}</div>
           </div>
         </div>`)}</div>
     </div>`;
@@ -65,7 +65,7 @@ export async function init(): Promise<void> {
       ${categories.map(buildCategory)}
 
       <div class="flex justify-end mt-6">
-        <button class="btn btn-primary gap-2" id="save-notif">${iconSave(16)} Save Changes</button>
+        <button class="btn btn-primary gap-2" id="save-btn">${iconSave(16)} Save Changes</button>
       </div>
     </div>`);
 
@@ -80,21 +80,21 @@ export async function init(): Promise<void> {
   // Enable/disable all
   document.querySelectorAll<HTMLElement>('[data-enable-all]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const catId = btn.getAttribute('data-enable-all');
-      const catContainer = document.querySelector(`[data-cat-prefs="${catId}"]`);
-      catContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'true'));
+      const categoryId = btn.getAttribute('data-enable-all');
+      const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
+      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'true'));
     });
   });
   document.querySelectorAll<HTMLElement>('[data-disable-all]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const catId = btn.getAttribute('data-disable-all');
-      const catContainer = document.querySelector(`[data-cat-prefs="${catId}"]`);
-      catContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'false'));
+      const categoryId = btn.getAttribute('data-disable-all');
+      const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
+      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'false'));
     });
   });
 
   // Save
-  $('#save-notif')?.addEventListener('click', () => {
+  $('#save-btn')?.addEventListener('click', () => {
     showToast('Notification preferences saved', 'success');
   });
 }

@@ -28,7 +28,7 @@ async function updateEmptyBanner(root: HTMLElement): Promise<void> {
 }
 
 export async function init(): Promise<void> {
-  const root = $('#snapshots-root');
+  const root = $('#snapshots-content');
   if (!root) return;
 
   setHtml(root, html`
@@ -135,11 +135,11 @@ export async function init(): Promise<void> {
       const json = await getDbAdapter().exportSnapshot();
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
       const date = new Date().toISOString().split('T')[0];
-      a.download = `fusion-ai-snapshot-${date}.json`;
-      a.click();
+      downloadLink.download = `fusion-ai-snapshot-${date}.json`;
+      downloadLink.click();
       URL.revokeObjectURL(url);
       showToast('Snapshot downloaded successfully.', 'success');
     } catch (e) {

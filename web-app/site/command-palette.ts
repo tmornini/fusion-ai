@@ -162,14 +162,14 @@ const categoryLabels: Record<string, string> = {
   pages: 'Pages',
 };
 
-function renderResults(query: string): void {
+function mutateResults(query: string): void {
   if (!list) return;
 
   filteredItems = search(query);
   activeIndex = 0;
 
   if (filteredItems.length === 0) {
-    setHtml(list, html`<div class="cmdk-empty">No results found for "${query}"</div>`);
+    setHtml(list, html`<div class="command-palette-empty">No results found for "${query}"</div>`);
     if (liveRegion) liveRegion.textContent = 'No results found';
     return;
   }
@@ -183,17 +183,17 @@ function renderResults(query: string): void {
 
   const markup: SafeHtml[] = [];
   let globalIndex = 0;
-  for (const cat of categoryOrder) {
-    const items = grouped[cat];
+  for (const category of categoryOrder) {
+    const items = grouped[category];
     if (!items?.length) continue;
 
-    markup.push(html`<div class="cmdk-group-label">${categoryLabels[cat]}</div>`);
+    markup.push(html`<div class="command-palette-group-label">${categoryLabels[category]}</div>`);
     for (const item of items) {
-      markup.push(html`<div class="cmdk-item" role="option" id="cmdk-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
-        <div class="cmdk-item-icon">${item.icon}</div>
-        <div class="cmdk-item-content">
-          <div class="cmdk-item-title">${buildHighlightedMatch(item.title, query)}</div>
-          <div class="cmdk-item-meta">${item.meta}</div>
+      markup.push(html`<div class="command-palette-item" role="option" id="command-palette-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
+        <div class="command-palette-item-icon">${item.icon}</div>
+        <div class="command-palette-item-content">
+          <div class="command-palette-item-title">${buildHighlightedMatch(item.title, query)}</div>
+          <div class="command-palette-item-meta">${item.meta}</div>
         </div>
       </div>`);
       globalIndex++;
@@ -206,12 +206,12 @@ function renderResults(query: string): void {
 
 function updateActiveItem(): void {
   if (!list) return;
-  list.querySelectorAll('.cmdk-item').forEach((el, i) => {
+  list.querySelectorAll('.command-palette-item').forEach((el, i) => {
     el.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
   });
   const activeEl = list.querySelector(`[data-index="${activeIndex}"]`);
   if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
-  if (input) input.setAttribute('aria-activedescendant', `cmdk-item-${activeIndex}`);
+  if (input) input.setAttribute('aria-activedescendant', `command-palette-item-${activeIndex}`);
 }
 
 // ── Navigation ───────────────────────────
@@ -236,7 +236,7 @@ function open(): void {
   input!.value = '';
   input!.focus();
 
-  loadData().then(() => renderResults(''));
+  loadData().then(() => mutateResults(''));
 }
 
 function close(): void {
@@ -251,45 +251,45 @@ function close(): void {
 
 function injectDOM(): void {
   backdrop = document.createElement('div');
-  backdrop.className = 'cmdk-backdrop hidden';
+  backdrop.className = 'command-palette-backdrop hidden';
   backdrop.addEventListener('click', close);
 
   dialog = document.createElement('div');
-  dialog.className = 'cmdk-dialog hidden';
+  dialog.className = 'command-palette-dialog hidden';
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-label', 'Search');
 
   setHtml(dialog, html`
-    <div class="cmdk-input-wrapper">
+    <div class="command-palette-input-wrapper">
       ${iconSearch(20)}
-      <input class="cmdk-input" placeholder="Search ideas, projects, people, pages..." type="text" role="combobox" aria-expanded="true" aria-controls="cmdk-listbox" aria-autocomplete="list" />
-      <button class="btn btn-ghost btn-icon btn-xs" aria-label="Close" id="cmdk-close">${iconX(16)}</button>
+      <input class="command-palette-input" placeholder="Search ideas, projects, people, pages..." type="text" role="combobox" aria-expanded="true" aria-controls="command-palette-listbox" aria-autocomplete="list" />
+      <button class="btn btn-ghost btn-icon btn-xs" aria-label="Close" id="command-palette-close">${iconX(16)}</button>
     </div>
-    <div class="cmdk-list" id="cmdk-listbox" role="listbox" aria-label="Search results"></div>
-    <div class="cmdk-footer">
+    <div class="command-palette-list" id="command-palette-listbox" role="listbox" aria-label="Search results"></div>
+    <div class="command-palette-footer">
       <div class="flex items-center gap-3">
         ${trusted('<span class="flex items-center gap-1"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>')}
         ${trusted('<span class="flex items-center gap-1"><kbd>↵</kbd> Open</span>')}
         ${trusted('<span class="flex items-center gap-1"><kbd>Esc</kbd> Close</span>')}
       </div>
     </div>
-    <div class="cmdk-live" role="status" aria-live="polite" aria-atomic="true"></div>`);
+    <div class="command-palette-live" role="status" aria-live="polite" aria-atomic="true"></div>`);
 
-  input = dialog.querySelector('.cmdk-input') as HTMLInputElement;
-  list = dialog.querySelector('#cmdk-listbox');
-  liveRegion = dialog.querySelector('.cmdk-live');
+  input = dialog.querySelector('.command-palette-input') as HTMLInputElement;
+  list = dialog.querySelector('#command-palette-listbox');
+  liveRegion = dialog.querySelector('.command-palette-live');
 
   // Input handler with debounce
   input.addEventListener('input', () => {
     if (debounceTimeoutId) clearTimeout(debounceTimeoutId);
     debounceTimeoutId = setTimeout(() => {
-      renderResults(input!.value);
+      mutateResults(input!.value);
     }, 100);
   });
 
   // Close button
-  dialog.querySelector('#cmdk-close')?.addEventListener('click', close);
+  dialog.querySelector('#command-palette-close')?.addEventListener('click', close);
 
   // Keyboard nav
   dialog.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -323,11 +323,11 @@ function injectDOM(): void {
 
   // Mouse hover sets active
   list!.addEventListener('mousemove', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement | null;
+    const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
     if (target) {
-      const idx = parseInt(target.getAttribute('data-index') || '0', 10);
-      if (idx !== activeIndex) {
-        activeIndex = idx;
+      const hoveredIndex = parseInt(target.getAttribute('data-index') || '0', 10);
+      if (hoveredIndex !== activeIndex) {
+        activeIndex = hoveredIndex;
         updateActiveItem();
       }
     }
@@ -335,10 +335,10 @@ function injectDOM(): void {
 
   // Click to navigate
   list!.addEventListener('click', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.cmdk-item') as HTMLElement | null;
+    const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
     if (target) {
-      const idx = parseInt(target.getAttribute('data-index') || '0', 10);
-      navigateToItem(idx);
+      const clickedIndex = parseInt(target.getAttribute('data-index') || '0', 10);
+      navigateToItem(clickedIndex);
     }
   });
 

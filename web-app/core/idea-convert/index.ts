@@ -7,12 +7,12 @@ import {
 } from '../../site/script';
 import { getIdeaForConversion, type ConversionIdea } from '../../site/data';
 
-const requiredFields = ['projectName', 'projectLead', 'startDate', 'targetEndDate', 'budget', 'priority'];
+const requiredFields = ['project-name', 'project-lead', 'start-date', 'target-end-date', 'budget', 'priority'];
 
 let projectDetails: Record<string, string> = {};
 
 function completedFieldCount(): number {
-  return requiredFields.filter(f => projectDetails[f]?.trim()).length;
+  return requiredFields.filter(field => projectDetails[field]?.trim()).length;
 }
 
 function isReadyToConvert(): boolean {
@@ -82,32 +82,32 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               <div class="flex items-center gap-2 mb-6">${iconAlertCircle(20, 'text-warning')} <span class="font-medium">Complete these details to create a project</span></div>
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheckIcon('projectName')}</label>
-                  <input class="input" id="f-projectName" value="${projectDetails.projectName || ''}" placeholder="Give your project a clear name" />
+                  <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheckIcon('project-name')}</label>
+                  <input class="input" id="convert-project-name" value="${projectDetails['project-name'] || ''}" placeholder="Give your project a clear name" />
                 </div>
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheckIcon('projectLead')}</label>
-                  <select class="input" id="f-projectLead">
+                  <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheckIcon('project-lead')}</label>
+                  <select class="input" id="convert-project-lead">
                     <option value="">Who will own this project?</option>
-                    <option value="sarah" ${projectDetails.projectLead === 'sarah' ? 'selected' : ''}>Sarah Chen - Product Manager</option>
-                    <option value="mike" ${projectDetails.projectLead === 'mike' ? 'selected' : ''}>Mike Thompson - Engineering Lead</option>
-                    <option value="jessica" ${projectDetails.projectLead === 'jessica' ? 'selected' : ''}>Jessica Park - Data Science Lead</option>
-                    <option value="david" ${projectDetails.projectLead === 'david' ? 'selected' : ''}>David Martinez - Marketing Director</option>
+                    <option value="sarah" ${projectDetails['project-lead'] === 'sarah' ? 'selected' : ''}>Sarah Chen - Product Manager</option>
+                    <option value="mike" ${projectDetails['project-lead'] === 'mike' ? 'selected' : ''}>Mike Thompson - Engineering Lead</option>
+                    <option value="jessica" ${projectDetails['project-lead'] === 'jessica' ? 'selected' : ''}>Jessica Park - Data Science Lead</option>
+                    <option value="david" ${projectDetails['project-lead'] === 'david' ? 'selected' : ''}>David Martinez - Marketing Director</option>
                   </select>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
                   <div>
-                    <label class="label mb-2 font-medium flex items-center gap-2">${iconCalendar(16, 'text-muted')} Start Date ${fieldCheckIcon('startDate')}</label>
-                    <input class="input" type="date" id="f-startDate" value="${projectDetails.startDate || ''}" />
+                    <label class="label mb-2 font-medium flex items-center gap-2">${iconCalendar(16, 'text-muted')} Start Date ${fieldCheckIcon('start-date')}</label>
+                    <input class="input" type="date" id="convert-start-date" value="${projectDetails['start-date'] || ''}" />
                   </div>
                   <div>
-                    <label class="label mb-2 font-medium flex items-center gap-2">${iconTarget(16, 'text-muted')} Target End Date ${fieldCheckIcon('targetEndDate')}</label>
-                    <input class="input" type="date" id="f-targetEndDate" value="${projectDetails.targetEndDate || ''}" />
+                    <label class="label mb-2 font-medium flex items-center gap-2">${iconTarget(16, 'text-muted')} Target End Date ${fieldCheckIcon('target-end-date')}</label>
+                    <input class="input" type="date" id="convert-target-end-date" value="${projectDetails['target-end-date'] || ''}" />
                   </div>
                 </div>
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">${iconDollarSign(16, 'text-muted')} Allocated Budget ${fieldCheckIcon('budget')}</label>
-                  <select class="input" id="f-budget">
+                  <select class="input" id="convert-budget">
                     <option value="">Select budget range</option>
                     <option value="0-25k">Under $25,000</option>
                     <option value="25-50k">$25,000 - $50,000</option>
@@ -119,7 +119,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
                 </div>
                 <div>
                   <label class="label mb-2 font-medium flex items-center gap-2">Priority Level ${fieldCheckIcon('priority')}</label>
-                  <select class="input" id="f-priority">
+                  <select class="input" id="convert-priority">
                     <option value="">How urgent is this project?</option>
                     <option value="critical">Critical - Must start immediately</option>
                     <option value="high">High - Start within 2 weeks</option>
@@ -135,12 +135,12 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
                   <label class="label mb-2 font-medium">First Milestone</label>
-                  <input class="input" id="f-firstMilestone" placeholder="e.g., Complete data pipeline setup" value="${projectDetails.firstMilestone || ''}" />
+                  <input class="input" id="convert-first-milestone" placeholder="e.g., Complete data pipeline setup" value="${projectDetails['first-milestone'] || ''}" />
                   <p class="text-xs text-muted mt-1">What is the first measurable goal for this project?</p>
                 </div>
                 <div>
                   <label class="label mb-2 font-medium">Success Criteria</label>
-                  <textarea class="textarea" id="f-successCriteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${projectDetails.successCriteria || ''}</textarea>
+                  <textarea class="textarea" id="convert-success-criteria" placeholder="How will you know when this project is complete and successful?" rows="4" style="resize:none">${projectDetails['success-criteria'] || ''}</textarea>
                 </div>
               </div>
             </div>
@@ -186,22 +186,22 @@ export async function init(): Promise<void> {
   }
 
   projectDetails = {
-    projectName: idea.title,
-    projectLead: '',
-    startDate: '',
-    targetEndDate: '',
-    budget: '',
-    priority: '',
-    firstMilestone: '',
-    successCriteria: '',
+    'project-name': idea.title,
+    'project-lead': '',
+    'start-date': '',
+    'target-end-date': '',
+    'budget': '',
+    'priority': '',
+    'first-milestone': '',
+    'success-criteria': '',
   };
 
   setHtml(root, buildConversionPage(idea, ideaId));
 
   const syncFormFields = () => {
-    requiredFields.concat(['firstMilestone', 'successCriteria']).forEach(f => {
-      const el = $(`#f-${f}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      if (el) projectDetails[f] = el.value;
+    requiredFields.concat(['first-milestone', 'success-criteria']).forEach(field => {
+      const el = $(`#convert-${field}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+      if (el) projectDetails[field] = el.value;
     });
   };
 

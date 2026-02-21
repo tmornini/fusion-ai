@@ -89,16 +89,16 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
             <h3 class="font-semibold flex items-center gap-2">${iconTarget(20, 'text-primary')} Edge: Business Outcomes &amp; Success Criteria</h3>
             <span class="badge badge-success text-xs">${iconShield(12)} High Confidence</span>
           </div>
-          ${edge.outcomes.map((o: any, i: number) => html`
+          ${edge.outcomes.map((outcome: any, outcomeIndex: number) => html`
             <div class="p-4 rounded-lg mb-3" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
               <div class="flex items-start gap-2 mb-3">
-                <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:hsl(var(--primary));flex-shrink:0">${i + 1}</div>
-                <p class="font-medium text-sm">${o.description}</p>
+                <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:hsl(var(--primary));flex-shrink:0">${outcomeIndex + 1}</div>
+                <p class="font-medium text-sm">${outcome.description}</p>
               </div>
               <div style="padding-left:1.75rem" class="flex flex-wrap gap-2">
-                ${o.metrics.map((m: any) => html`
+                ${outcome.metrics.map((metric: any) => html`
                   <span class="flex items-center gap-2 text-sm" style="padding:0.375rem 0.75rem;border-radius:9999px;background:hsl(var(--muted)/0.5);border:1px solid hsl(var(--border))">
-                    ${iconGauge(14, 'text-primary')} ${m.name}: <span class="font-semibold text-primary">${m.target}${m.unit}</span>
+                    ${iconGauge(14, 'text-primary')} ${metric.name}: <span class="font-semibold text-primary">${metric.target}${metric.unit}</span>
                   </span>`)}
               </div>
             </div>`)}
@@ -125,13 +125,13 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
         ${idea.risks.length ? html`<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-4 flex items-center gap-2">${iconAlertTriangle(20)} Identified Risks</h3>
           <div style="display:flex;flex-direction:column;gap:0.75rem">
-            ${idea.risks.map((r: any) => html`
+            ${idea.risks.map((risk: any) => html`
               <div class="p-4 rounded-lg" style="background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                 <div class="flex items-center justify-between mb-2">
-                  <h4 class="font-medium text-sm">${r.title}</h4>
-                  <span class="badge ${severityConfig[r.severity]} text-xs">${r.severity}</span>
+                  <h4 class="font-medium text-sm">${risk.title}</h4>
+                  <span class="badge ${severityConfig[risk.severity]} text-xs">${risk.severity}</span>
                 </div>
-                <p class="text-xs text-muted"><span class="font-medium">Mitigation:</span> ${r.mitigation}</p>
+                <p class="text-xs text-muted"><span class="font-medium">Mitigation:</span> ${risk.mitigation}</p>
               </div>`)}
           </div>
         </div>` : html``}
@@ -139,14 +139,14 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
         ${idea.assumptions.length ? html`<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-3">Key Assumptions</h3>
           <ul style="display:flex;flex-direction:column;gap:0.5rem">
-            ${idea.assumptions.map((a: string) => html`<li class="flex items-start gap-2 text-sm"><span class="text-primary mt-1">•</span> ${a}</li>`)}
+            ${idea.assumptions.map((assumption: string) => html`<li class="flex items-start gap-2 text-sm"><span class="text-primary mt-1">•</span> ${assumption}</li>`)}
           </ul>
         </div>` : html``}
 
         ${idea.alignments.length ? html`<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-3 flex items-center gap-2">${iconUsers(20, 'text-primary')} Strategic Alignment</h3>
           <div class="flex flex-wrap gap-2">
-            ${idea.alignments.map((a: string) => html`<span class="badge badge-primary text-xs">${a}</span>`)}
+            ${idea.alignments.map((alignment: string) => html`<span class="badge badge-primary text-xs">${alignment}</span>`)}
           </div>
         </div>` : html``}
       </main>

@@ -312,7 +312,7 @@ export interface NotificationCategoryEntity {
   icon: string;
 }
 
-export interface NotificationPrefEntity {
+export interface NotificationPreferenceEntity {
   id: string;
   category_id: string;
   label: string;

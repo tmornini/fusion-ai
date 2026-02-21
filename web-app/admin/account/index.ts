@@ -10,21 +10,21 @@ import {
 import { getAccount, type Account } from '../../site/data';
 
 function styleForUsageLevel(current: number, limit: number): string {
-  const pct = (current / limit) * 100;
-  if (pct >= 90) return 'background:hsl(var(--error))';
-  if (pct >= 70) return 'background:hsl(var(--warning))';
+  const percentage = (current / limit) * 100;
+  if (percentage >= 90) return 'background:hsl(var(--error))';
+  if (percentage >= 70) return 'background:hsl(var(--warning))';
   return 'background:hsl(var(--primary))';
 }
 
-function usageBar(label: string, current: number, limit: number): SafeHtml {
-  const pct = Math.min(100, (current / limit) * 100);
+function buildUsageBar(label: string, current: number, limit: number): SafeHtml {
+  const percentage = Math.min(100, (current / limit) * 100);
   return html`
     <div>
       <div class="flex items-center justify-between text-sm mb-1">
         <span class="text-muted">${label}</span>
         <span class="font-medium">${current} / ${limit}</span>
       </div>
-      <div class="progress"><div class="progress-bar" style="width:${pct}%;${styleForUsageLevel(current, limit)}"></div></div>
+      <div class="progress"><div class="progress-bar" style="width:${percentage}%;${styleForUsageLevel(current, limit)}"></div></div>
     </div>`;
 }
 
@@ -40,16 +40,16 @@ export async function init(): Promise<void> {
 
   setHtml(container, buildSkeleton('detail'));
 
-  let d: Account;
+  let account: Account;
   try {
-    d = await getAccount();
+    account = await getAccount();
   } catch {
     setHtml(container, buildErrorState('Failed to load account data.'));
     container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
     return;
   }
 
-  const billingDate = new Date(d.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const billingDate = new Date(account.company.nextBilling).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   setHtml(container, html`
     <div style="max-width:64rem;margin:0 auto">
@@ -89,9 +89,9 @@ export async function init(): Promise<void> {
           <div class="flex items-center gap-4" style="flex:1">
             <div style="width:3.5rem;height:3.5rem;border-radius:var(--radius-xl);background:linear-gradient(135deg,hsl(var(--primary) / 0.2),hsl(var(--primary) / 0.05));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconBuilding(28)}</div>
             <div>
-              <h2 class="text-xl font-display font-semibold">${d.company.name}</h2>
+              <h2 class="text-xl font-display font-semibold">${account.company.name}</h2>
               <div class="flex items-center gap-2 mt-1">
-                <span class="badge badge-default text-xs">${iconCrown(12)} ${d.company.plan} Plan</span>
+                <span class="badge badge-default text-xs">${iconCrown(12)} ${account.company.plan} Plan</span>
                 <span class="status-badge-success">${iconCheckCircle2(12)} Active</span>
               </div>
             </div>
@@ -99,24 +99,24 @@ export async function init(): Promise<void> {
           <div class="status-badge-success" style="padding:0.5rem 1rem;align-self:flex-start">
             <div class="flex items-center gap-2">
               ${iconActivity(16)}
-              <span class="text-sm font-medium">${d.health.status}</span>
+              <span class="text-sm font-medium">${account.health.status}</span>
             </div>
-            <p class="text-xs mt-1">Health Score: ${d.health.score}%</p>
+            <p class="text-xs mt-1">Health Score: ${account.health.score}%</p>
           </div>
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="p-4 rounded-lg" style="background:hsl(var(--muted) / 0.3)">
             <div class="flex items-center gap-2 text-muted mb-1">${iconUsers(16)} <span class="text-xs">Active Users</span></div>
-            <p class="text-2xl font-bold">${d.company.usedSeats}<span class="text-sm font-normal text-muted">/${d.company.seats}</span></p>
+            <p class="text-2xl font-bold">${account.company.usedSeats}<span class="text-sm font-normal text-muted">/${account.company.seats}</span></p>
           </div>
           <div class="p-4 rounded-lg" style="background:hsl(var(--muted) / 0.3)">
             <div class="flex items-center gap-2 text-muted mb-1">${iconFolderKanban(16)} <span class="text-xs">Projects</span></div>
-            <p class="text-2xl font-bold">${d.usage.projects.current}</p>
+            <p class="text-2xl font-bold">${account.usage.projects.current}</p>
           </div>
           <div class="p-4 rounded-lg" style="background:hsl(var(--muted) / 0.3)">
             <div class="flex items-center gap-2 text-muted mb-1">${iconLightbulb(16)} <span class="text-xs">Ideas</span></div>
-            <p class="text-2xl font-bold">${d.usage.ideas.current}</p>
+            <p class="text-2xl font-bold">${account.usage.ideas.current}</p>
           </div>
           <div class="p-4 rounded-lg" style="background:hsl(var(--muted) / 0.3)">
             <div class="flex items-center gap-2 text-muted mb-1">${iconCalendar(16)} <span class="text-xs">Next Billing</span></div>
@@ -130,23 +130,23 @@ export async function init(): Promise<void> {
         <div class="card card-hover p-6">
           <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconTrendingUp(20)} Usage Overview</h3>
           <div class="flex flex-col gap-4">
-            ${usageBar('User Seats', d.company.usedSeats, d.company.seats)}
-            ${usageBar('Projects', d.usage.projects.current, d.usage.projects.limit)}
-            ${usageBar('Ideas', d.usage.ideas.current, d.usage.ideas.limit)}
-            ${usageBar('AI Credits', d.usage.aiCredits.current, d.usage.aiCredits.limit)}
-            ${usageBar('Storage (GB)', d.usage.storage.current, d.usage.storage.limit)}
+            ${buildUsageBar('User Seats', account.company.usedSeats, account.company.seats)}
+            ${buildUsageBar('Projects', account.usage.projects.current, account.usage.projects.limit)}
+            ${buildUsageBar('Ideas', account.usage.ideas.current, account.usage.ideas.limit)}
+            ${buildUsageBar('AI Credits', account.usage.aiCredits.current, account.usage.aiCredits.limit)}
+            ${buildUsageBar('Storage (GB)', account.usage.storage.current, account.usage.storage.limit)}
           </div>
         </div>
 
         <div class="card card-hover p-6">
           <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconActivity(20)} Recent Activity</h3>
           <div class="flex flex-col gap-4">
-            ${d.recentActivity.map(a => html`
+            ${account.recentActivity.map(activity => html`
               <div class="flex items-start gap-3">
-                ${buildActivityIcon(a.type)}
+                ${buildActivityIcon(activity.type)}
                 <div style="flex:1;min-width:0">
-                  <p class="text-sm">${a.description}</p>
-                  <p class="text-xs text-muted">${a.time}</p>
+                  <p class="text-sm">${activity.description}</p>
+                  <p class="text-xs text-muted">${activity.time}</p>
                 </div>
               </div>`)}
           </div>
@@ -187,7 +187,7 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Bind navigation
-  container.querySelectorAll<HTMLElement>('[data-nav-to]').forEach(el => {
-    el.addEventListener('click', () => navigateTo(el.getAttribute('data-nav-to')!));
+  container.querySelectorAll<HTMLElement>('[data-nav-to]').forEach(navButton => {
+    navButton.addEventListener('click', () => navigateTo(navButton.getAttribute('data-nav-to')!));
   });
 }

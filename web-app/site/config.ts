@@ -5,9 +5,9 @@
 
 import type { EdgeStatus } from '../../api/types';
 
-export const edgeStatusConfig: Record<EdgeStatus | 'incomplete', { label: string; cls: string }> = {
-  missing:    { label: 'Edge Missing',  cls: 'badge-error' },
-  incomplete: { label: 'Edge Missing',  cls: 'badge-error' },
-  draft:      { label: 'Edge Draft',    cls: 'badge-warning' },
-  complete:   { label: 'Edge Complete', cls: 'badge-success' },
+export const edgeStatusConfig: Record<EdgeStatus | 'incomplete', { label: string; className: string }> = {
+  missing:    { label: 'Edge Missing',  className: 'badge-error' },
+  incomplete: { label: 'Edge Missing',  className: 'badge-error' },
+  draft:      { label: 'Edge Draft',    className: 'badge-warning' },
+  complete:   { label: 'Edge Complete', className: 'badge-success' },
 };

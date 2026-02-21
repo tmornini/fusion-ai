@@ -109,8 +109,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'pt-1-3', project_id: '1', user_id: '3', role: 'Data Scientist', type: 'engineering' },
     { id: 'pt-1-4', project_id: '1', user_id: '4', role: 'Backend Developer', type: 'engineering' },
   ];
-  for (const tm of teamMembers) {
-    await adapter.projectTeam.put(tm.project_id, tm.user_id, tm);
+  for (const teamMember of teamMembers) {
+    await adapter.projectTeam.put(teamMember.project_id, teamMember.user_id, teamMember);
   }
 
   // ── Milestones (for project 1) ─────────────
@@ -245,8 +245,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'c2', project_id: '1', question: 'Are there any existing segment definitions we should match, or are we free to discover optimal segments through clustering?', asked_by_id: '3', asked_at: '2024-02-22', status: 'answered', answer: "Marketing has 5 legacy segments they use today (High Value, Growth, At-Risk, New, Dormant). We'd like to preserve compatibility but welcome additional discovered segments.", answered_by_id: '1', answered_at: '2024-02-22' },
     { id: 'c3', project_id: '1', question: "What's the expected latency requirement for segment updates? Real-time vs batch processing has significant architecture implications.", asked_by_id: '4', asked_at: '2024-02-25', status: 'pending', answer: null, answered_by_id: null, answered_at: null },
   ];
-  for (const c of clarifications) {
-    await adapter.clarifications.put(c.id, c);
+  for (const clarification of clarifications) {
+    await adapter.clarifications.put(clarification.id, clarification);
   }
 
   // ── Crunch Columns ─────────────────────────
@@ -305,7 +305,7 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     await adapter.notificationCategories.put(cat.id, cat);
   }
 
-  const notifPrefs = [
+  const notificationPreferences = [
     { id: 'idea_submitted', category_id: 'ideas', label: 'New idea submitted', description: 'When someone submits a new idea', is_email_enabled: 1, is_push_enabled: 1 },
     { id: 'idea_scored', category_id: 'ideas', label: 'Idea scored', description: 'When an idea receives an AI score', is_email_enabled: 1, is_push_enabled: 0 },
     { id: 'idea_converted', category_id: 'ideas', label: 'Idea converted to project', description: 'When an idea becomes a project', is_email_enabled: 1, is_push_enabled: 1 },
@@ -323,8 +323,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', is_email_enabled: 1, is_push_enabled: 1 },
     { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', is_email_enabled: 1, is_push_enabled: 0 },
   ];
-  for (const pref of notifPrefs) {
-    await adapter.notificationPrefs.put(pref.id, pref);
+  for (const preference of notificationPreferences) {
+    await adapter.notificationPreferences.put(preference.id, preference);
   }
 
   // ── Account Config ─────────────────────────

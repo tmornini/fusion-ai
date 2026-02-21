@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type {
   UserEntity, AccountEntity, CompanySettingsEntity, ActivityEntity,
-  NotificationCategoryEntity, NotificationPrefEntity,
+  NotificationCategoryEntity, NotificationPreferenceEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { getUserMap } from './helpers';
@@ -153,7 +153,7 @@ export async function getActivityFeed(): Promise<Activity[]> {
 
 // ── Notification Settings ───────────────────
 
-export interface NotificationPref {
+export interface NotificationPreference {
   id: string;
   label: string;
   description: string;
@@ -165,32 +165,32 @@ export interface NotificationCategory {
   id: string;
   label: string;
   icon: string;
-  prefs: NotificationPref[];
+  preferences: NotificationPreference[];
 }
 
 export async function getNotificationCategories(): Promise<NotificationCategory[]> {
-  const [categories, prefs] = await Promise.all([
+  const [categories, preferences] = await Promise.all([
     GET('notification-categories') as Promise<NotificationCategoryEntity[]>,
-    GET('notification-prefs') as Promise<NotificationPrefEntity[]>,
+    GET('notification-preferences') as Promise<NotificationPreferenceEntity[]>,
   ]);
 
-  const prefsByCategory = new Map<string, NotificationPrefEntity[]>();
-  for (const pref of prefs) {
-    const list = prefsByCategory.get(pref.category_id) || [];
-    list.push(pref);
-    prefsByCategory.set(pref.category_id, list);
+  const preferencesByCategory = new Map<string, NotificationPreferenceEntity[]>();
+  for (const preference of preferences) {
+    const list = preferencesByCategory.get(preference.category_id) || [];
+    list.push(preference);
+    preferencesByCategory.set(preference.category_id, list);
   }
 
   return categories.map(category => ({
     id: category.id,
     label: category.label,
     icon: category.icon,
-    prefs: (prefsByCategory.get(category.id) || []).map(pref => ({
-      id: pref.id,
-      label: pref.label,
-      description: pref.description,
-      isEmailEnabled: toBool(pref.is_email_enabled),
-      isPushEnabled: toBool(pref.is_push_enabled),
+    preferences: (preferencesByCategory.get(category.id) || []).map(preference => ({
+      id: preference.id,
+      label: preference.label,
+      description: preference.description,
+      isEmailEnabled: toBool(preference.is_email_enabled),
+      isPushEnabled: toBool(preference.is_push_enabled),
     })),
   }));
 }

@@ -10,7 +10,7 @@ export type SkeletonType = 'card-grid' | 'card-list' | 'detail' | 'table' | 'sta
 
 const SHIMMER_CLASS = 'skeleton-shimmer';
 
-function skeletonCard(): SafeHtml {
+function buildSkeletonCard(): SafeHtml {
   return html`<div class="skeleton-card">
     <div class="${SHIMMER_CLASS} skeleton-badge" style="margin-bottom:0.75rem"></div>
     <div class="${SHIMMER_CLASS} skeleton-heading"></div>
@@ -19,7 +19,7 @@ function skeletonCard(): SafeHtml {
   </div>`;
 }
 
-function skeletonListItem(): SafeHtml {
+function buildSkeletonListItem(): SafeHtml {
   return html`<div class="skeleton-card" style="display:flex;align-items:center;gap:1rem">
     <div class="${SHIMMER_CLASS} skeleton-avatar"></div>
     <div style="flex:1">
@@ -30,7 +30,7 @@ function skeletonListItem(): SafeHtml {
   </div>`;
 }
 
-function skeletonStatsRow(): SafeHtml {
+function buildSkeletonStatsRow(): SafeHtml {
   return html`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
     ${Array(4).fill(trusted(`<div class="skeleton-card" style="padding:1rem">
       <div class="${SHIMMER_CLASS} skeleton-text-sm" style="width:50%;margin-bottom:0.5rem"></div>
@@ -44,11 +44,11 @@ export function buildSkeleton(type: SkeletonType, options?: { count?: number }):
   switch (type) {
     case 'card-grid':
       return html`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:1.5rem">
-        ${Array(count).fill(skeletonCard())}
+        ${Array(count).fill(buildSkeletonCard())}
       </div>`;
     case 'card-list':
       return html`<div style="display:flex;flex-direction:column;gap:0.75rem">
-        ${Array(count).fill(skeletonListItem())}
+        ${Array(count).fill(buildSkeletonListItem())}
       </div>`;
     case 'detail':
       return html`<div>
@@ -75,7 +75,7 @@ export function buildSkeleton(type: SkeletonType, options?: { count?: number }):
         </div>`))}
       </div>`;
     case 'stats-row':
-      return skeletonStatsRow();
+      return buildSkeletonStatsRow();
     default:
       return html``;
   }
@@ -109,8 +109,8 @@ export async function withLoadingState<T>(
   try {
     return await fetchFn();
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.';
-    setHtml(container, buildErrorState(msg));
+    const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.';
+    setHtml(container, buildErrorState(errorMessage));
     const retryBtn = container.querySelector('[data-retry-btn]');
     if (retryBtn && retryFn) {
       retryBtn.addEventListener('click', retryFn);

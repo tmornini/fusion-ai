@@ -8,28 +8,28 @@ import {
 import { getReviewQueue, type ReviewIdea } from '../../site/data';
 import { edgeStatusConfig } from '../../site/config';
 
-const priorityConfig: Record<string, { label: string; cls: string }> = {
-  high: { label: 'High Priority', cls: 'badge-error' },
-  medium: { label: 'Medium', cls: 'badge-warning' },
-  low: { label: 'Low', cls: 'badge-default' },
+const priorityConfig: Record<string, { label: string; className: string }> = {
+  high: { label: 'High Priority', className: 'badge-error' },
+  medium: { label: 'Medium', className: 'badge-warning' },
+  low: { label: 'Low', className: 'badge-default' },
 };
 
-const readinessConfig: Record<string, { label: string; icon: (size?: number) => SafeHtml; cls: string }> = {
-  ready: { label: 'Ready for Review', icon: iconCheckCircle2, cls: 'text-success' },
-  'needs-info': { label: 'Needs Info', icon: iconMessageSquare, cls: 'text-warning' },
-  incomplete: { label: 'Incomplete', icon: iconAlertCircle, cls: 'text-error' },
+const readinessConfig: Record<string, { label: string; icon: (size?: number) => SafeHtml; className: string }> = {
+  ready: { label: 'Ready for Review', icon: iconCheckCircle2, className: 'text-success' },
+  'needs-info': { label: 'Needs Info', icon: iconMessageSquare, className: 'text-warning' },
+  incomplete: { label: 'Incomplete', icon: iconAlertCircle, className: 'text-error' },
 };
 
 function buildReviewCard(idea: ReviewIdea): SafeHtml {
-  const rc = readinessConfig[idea.readiness];
+  const readinessDisplay = readinessConfig[idea.readiness];
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-review-card="${idea.id}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${priorityConfig[idea.priority]!.cls} text-xs">${priorityConfig[idea.priority]!.label}</span>
-            <span class="flex items-center gap-1 text-sm ${rc!.cls}">${rc!.icon(16)} ${rc!.label}</span>
-            <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
+            <span class="badge ${priorityConfig[idea.priority]!.className} text-xs">${priorityConfig[idea.priority]!.label}</span>
+            <span class="flex items-center gap-1 text-sm ${readinessDisplay!.className}">${readinessDisplay!.icon(16)} ${readinessDisplay!.label}</span>
+            <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.className} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
           </div>
           <h3 class="font-semibold mb-1">${idea.title}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">
@@ -67,8 +67,8 @@ export async function init(): Promise<void> {
   try {
     allIdeas = await getReviewQueue();
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Failed to load review queue. Please try again.';
-    setHtml(root, buildErrorState(msg));
+    const errorMessage = e instanceof Error ? e.message : 'Failed to load review queue. Please try again.';
+    setHtml(root, buildErrorState(errorMessage));
     root.querySelector('[data-retry-btn]')?.addEventListener('click', init);
     return;
   }
@@ -85,9 +85,9 @@ export async function init(): Promise<void> {
 
   const stats = {
     total: allIdeas.length,
-    ready: allIdeas.filter(i => i.readiness === 'ready').length,
-    highPriority: allIdeas.filter(i => i.priority === 'high').length,
-    avgWait: Math.round(allIdeas.reduce((a, i) => a + i.waitingDays, 0) / allIdeas.length),
+    ready: allIdeas.filter(idea => idea.readiness === 'ready').length,
+    highPriority: allIdeas.filter(idea => idea.priority === 'high').length,
+    avgWait: Math.round(allIdeas.reduce((sum, idea) => sum + idea.waitingDays, 0) / allIdeas.length),
   };
 
   setHtml(root, html`
@@ -120,15 +120,15 @@ export async function init(): Promise<void> {
     <div class="flex gap-4 mb-6">
       <div class="search-wrapper" style="flex:1">
         <span class="search-icon">${iconSearch(16)}</span>
-        <input class="input search-input" placeholder="Search ideas or submitters..." id="rq-search" />
+        <input class="input search-input" placeholder="Search ideas or submitters..." id="review-queue-search" />
       </div>
-      <select class="input" style="width:10rem" id="rq-priority">
+      <select class="input" style="width:10rem" id="review-queue-priority-filter">
         <option value="all">All Priority</option>
         <option value="high">High</option>
         <option value="medium">Medium</option>
         <option value="low">Low</option>
       </select>
-      <select class="input" style="width:10rem" id="rq-readiness">
+      <select class="input" style="width:10rem" id="review-queue-readiness-filter">
         <option value="all">All Status</option>
         <option value="ready">Ready</option>
         <option value="needs-info">Needs Info</option>
@@ -136,41 +136,41 @@ export async function init(): Promise<void> {
       </select>
     </div>
 
-    <div id="rq-list" style="display:flex;flex-direction:column;gap:0.75rem">
+    <div id="review-queue-list" style="display:flex;flex-direction:column;gap:0.75rem">
       ${allIdeas.map(buildReviewCard)}
     </div>
-    <div id="rq-empty" class="text-center" style="display:none;padding:3rem 0">
+    <div id="review-queue-empty" class="text-center" style="display:none;padding:3rem 0">
       ${iconClock(48, 'text-muted')}
       <h3 class="text-lg font-semibold mt-4 mb-2">No ideas match your filters</h3>
       <p class="text-muted">Try adjusting your search or filter criteria</p>
     </div>`);
 
   function filterAndRender() {
-    const search = (($('#rq-search') as HTMLInputElement)?.value || '').toLowerCase();
-    const priority = ($('#rq-priority') as HTMLSelectElement)?.value || 'all';
-    const readiness = ($('#rq-readiness') as HTMLSelectElement)?.value || 'all';
+    const search = (($('#review-queue-search') as HTMLInputElement)?.value || '').toLowerCase();
+    const priority = ($('#review-queue-priority-filter') as HTMLSelectElement)?.value || 'all';
+    const readiness = ($('#review-queue-readiness-filter') as HTMLSelectElement)?.value || 'all';
 
-    const filtered = allIdeas.filter(i => {
-      const matchesSearch = i.title.toLowerCase().includes(search) || i.submittedBy.toLowerCase().includes(search);
-      const matchesPriority = priority === 'all' || i.priority === priority;
-      const matchesReadiness = readiness === 'all' || i.readiness === readiness;
+    const filtered = allIdeas.filter(idea => {
+      const matchesSearch = idea.title.toLowerCase().includes(search) || idea.submittedBy.toLowerCase().includes(search);
+      const matchesPriority = priority === 'all' || idea.priority === priority;
+      const matchesReadiness = readiness === 'all' || idea.readiness === readiness;
       return matchesSearch && matchesPriority && matchesReadiness;
     });
 
-    const list = $('#rq-list');
-    const empty = $('#rq-empty');
+    const list = $('#review-queue-list');
+    const empty = $('#review-queue-empty');
     if (list) setHtml(list, html`${filtered.map(buildReviewCard)}`);
     if (list) list.style.display = filtered.length ? '' : 'none';
     if (empty) empty.style.display = filtered.length ? 'none' : '';
   }
 
-  $('#rq-list')?.addEventListener('click', (e) => {
+  $('#review-queue-list')?.addEventListener('click', (e) => {
     const card = (e.target as Element).closest<HTMLElement>('[data-review-card]');
     if (card) navigateTo('approval-detail', { id: card.getAttribute('data-review-card')! });
   });
 
-  $('#rq-search')?.addEventListener('input', filterAndRender);
-  $('#rq-priority')?.addEventListener('change', filterAndRender);
-  $('#rq-readiness')?.addEventListener('change', filterAndRender);
+  $('#review-queue-search')?.addEventListener('input', filterAndRender);
+  $('#review-queue-priority-filter')?.addEventListener('change', filterAndRender);
+  $('#review-queue-readiness-filter')?.addEventListener('change', filterAndRender);
   filterAndRender();
 }

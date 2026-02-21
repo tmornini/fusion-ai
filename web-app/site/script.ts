@@ -38,7 +38,7 @@ import {
 // ------------------------------------
 
 function initials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('');
+  return name.split(' ').map(word => word[0]).join('');
 }
 
 function styleForScore(score: number): string {
@@ -71,11 +71,11 @@ function closeDialog(dialogId: string): void {
 function initTabs(tabSelector: string, panelSelector: string, activeClass = 'active'): void {
   document.querySelectorAll<HTMLElement>(tabSelector).forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll(tabSelector).forEach(t => t.classList.remove(activeClass));
+      document.querySelectorAll(tabSelector).forEach(otherTab => otherTab.classList.remove(activeClass));
       tab.classList.add(activeClass);
-      document.querySelectorAll(panelSelector).forEach(p => (p as HTMLElement).style.display = 'none');
-      const attr = tab.dataset.tab ?? tab.dataset.detailTab ?? '';
-      const panel = document.getElementById(`tab-${attr}`) ?? document.getElementById(`detail-${attr}`);
+      document.querySelectorAll(panelSelector).forEach(panel => (panel as HTMLElement).style.display = 'none');
+      const tabId = tab.dataset.tab ?? tab.dataset.detailTab ?? '';
+      const panel = document.getElementById(`tab-${tabId}`) ?? document.getElementById(`detail-${tabId}`);
       if (panel) panel.style.display = '';
     });
   });
@@ -131,8 +131,8 @@ function updateThemeToggleIcon(): void {
     ? iconSun(20)
     : iconMonitor(20);
   ['theme-toggle', 'mobile-theme-toggle'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) setHtml(btn, themeIcon);
+    const button = document.getElementById(id);
+    if (button) setHtml(button, themeIcon);
   });
 }
 
@@ -140,25 +140,25 @@ function updateThemeToggleIcon(): void {
 // Notification Population
 // ------------------------------------
 
-async function populateNotifications(): Promise<void> {
+async function mutateNotifications(): Promise<void> {
   const { getNotifications } = await import('./data');
   const notifications = await getNotifications();
-  const unreadCount = notifications.filter(n => n.isUnread).length;
+  const unreadCount = notifications.filter(notification => notification.isUnread).length;
 
-  function renderItems(containerId: string, countId: string, badgeId: string) {
+  function mutateNotificationPanel(containerId: string, countId: string, badgeId: string) {
     const list = document.getElementById(containerId);
     const countEl = document.getElementById(countId);
     const badge = document.getElementById(badgeId);
 
     if (list) {
-      setHtml(list, html`${notifications.map(n => html`
+      setHtml(list, html`${notifications.map(notification => html`
         <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
           <div class="flex items-start gap-2 w-full">
-            ${n.isUnread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
-            <div style="flex:1;${!n.isUnread ? 'margin-left:1rem' : ''}">
-              <p class="text-sm ${n.isUnread ? 'font-medium' : 'text-muted'}">${n.title}</p>
-              <p class="text-xs text-muted line-clamp-2">${n.message}</p>
-              <p class="text-xs text-muted mt-1">${n.time}</p>
+            ${notification.isUnread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
+            <div style="flex:1;${!notification.isUnread ? 'margin-left:1rem' : ''}">
+              <p class="text-sm ${notification.isUnread ? 'font-medium' : 'text-muted'}">${notification.title}</p>
+              <p class="text-xs text-muted line-clamp-2">${notification.message}</p>
+              <p class="text-xs text-muted mt-1">${notification.time}</p>
             </div>
           </div>
         </button>`)}`);
@@ -174,7 +174,7 @@ async function populateNotifications(): Promise<void> {
   }
 
   for (const prefix of ['notification', 'mobile-notification']) {
-    renderItems(`${prefix}-list`, `${prefix}-count`, `${prefix}-badge`);
+    mutateNotificationPanel(`${prefix}-list`, `${prefix}-count`, `${prefix}-badge`);
   }
 }
 
@@ -247,10 +247,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (err) {
     console.error('Database initialization failed:', err);
-    const msg = err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     setHtml(document.body, html`<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
       <h1 style="color:hsl(0 72% 51%)">Failed to initialize database</h1>
-      <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${msg}</pre>
+      <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${errorMessage}</pre>
       <p>Try clearing site data and reloading.</p>
     </div>`);
     return;
@@ -280,8 +280,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initActiveNavItem(): void {
   const pageName = getPageName();
-  document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(el => {
-    const linkPage = el.getAttribute('data-page-link') || '';
+  document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(navLink => {
+    const linkPage = navLink.getAttribute('data-page-link') || '';
     let isActive = linkPage === pageName;
     if (!isActive) {
       if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) isActive = true;
@@ -289,8 +289,8 @@ function initActiveNavItem(): void {
       else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) isActive = true;
       else if (linkPage === 'edge-list' && pageName === 'edge') isActive = true;
     }
-    if (isActive) el.setAttribute('aria-current', 'page');
-    else el.removeAttribute('aria-current');
+    if (isActive) navLink.setAttribute('aria-current', 'page');
+    else navLink.removeAttribute('aria-current');
   });
 }
 
@@ -322,11 +322,11 @@ function initSidebar(): void {
       const label = btn.getAttribute('data-section');
       const items = document.querySelector(`[data-section-items="${label}"]`) as HTMLElement;
       if (items) {
-        const willExpand = items.style.display === 'none';
-        items.style.display = willExpand ? '' : 'none';
-        btn.setAttribute('aria-expanded', String(willExpand));
+        const isCollapsed = items.style.display === 'none';
+        items.style.display = isCollapsed ? '' : 'none';
+        btn.setAttribute('aria-expanded', String(isCollapsed));
         const chevron = btn.querySelector('svg');
-        if (chevron) chevron.style.transform = willExpand ? '' : 'rotate(-90deg)';
+        if (chevron) chevron.style.transform = isCollapsed ? '' : 'rotate(-90deg)';
       }
     });
   });
@@ -338,13 +338,13 @@ function initThemeAndDropdowns(): void {
     initDropdown(`${prefix}notification-toggle`, `${prefix}notification-dropdown`);
   }
 
-  document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
-    el.addEventListener('click', () => {
-      const theme = el.getAttribute('data-theme-set') as AppState['theme'];
+  document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(themeButton => {
+    themeButton.addEventListener('click', () => {
+      const theme = themeButton.getAttribute('data-theme-set') as AppState['theme'];
       if (theme) {
         setTheme(theme);
         updateThemeToggleIcon();
-        document.querySelectorAll('.dropdown-content').forEach(d => d.classList.add('hidden'));
+        document.querySelectorAll('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
       }
     });
   });
@@ -374,7 +374,7 @@ function initDashboardLayout(): void {
   initThemeAndDropdowns();
   initMobileDrawer();
   updateThemeToggleIcon();
-  populateNotifications();
+  mutateNotifications();
 }
 
 function initDropdown(toggleId: string, contentId: string): void {
@@ -385,8 +385,8 @@ function initDropdown(toggleId: string, contentId: string): void {
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     // Close other dropdowns
-    document.querySelectorAll('.dropdown-content').forEach(d => {
-      if (d.id !== contentId) d.classList.add('hidden');
+    document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+      if (dropdown.id !== contentId) dropdown.classList.add('hidden');
     });
     content.classList.toggle('hidden');
   });

@@ -22,28 +22,28 @@ function buildStatusBadge(status: string): SafeHtml {
 }
 
 function buildRoleBadge(role: string): SafeHtml {
-  const r = roleLabels[role];
-  if (!r) return html`<span class="badge badge-secondary">${role}</span>`;
-  return html`<span class="badge badge-secondary">${r.icon(12)} ${r.label}</span>`;
+  const roleConfig = roleLabels[role];
+  if (!roleConfig) return html`<span class="badge badge-secondary">${role}</span>`;
+  return html`<span class="badge badge-secondary">${roleConfig.icon(12)} ${roleConfig.label}</span>`;
 }
 
-function buildUserRow(u: ManagedUser): SafeHtml {
+function buildUserRow(user: ManagedUser): SafeHtml {
   return html`
-    <div class="flex items-center gap-4 p-4 ${u.status === 'deactivated' ? 'opacity-50' : ''}" style="border-bottom:1px solid hsl(var(--border))">
+    <div class="flex items-center gap-4 p-4 ${user.status === 'deactivated' ? 'opacity-50' : ''}" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:2;display:flex;align-items:center;gap:0.75rem;min-width:0">
         <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <span class="text-sm font-bold text-primary">${initials(u.name)}</span>
+          <span class="text-sm font-bold text-primary">${initials(user.name)}</span>
         </div>
         <div style="min-width:0">
-          <p class="font-medium truncate">${u.name}</p>
-          <p class="text-xs text-muted truncate">${u.email}</p>
+          <p class="font-medium truncate">${user.name}</p>
+          <p class="text-xs text-muted truncate">${user.email}</p>
         </div>
       </div>
-      <div style="flex:1">${buildRoleBadge(u.role)}</div>
-      <div style="flex:1" class="text-sm text-muted">${u.department}</div>
+      <div style="flex:1">${buildRoleBadge(user.role)}</div>
+      <div style="flex:1" class="text-sm text-muted">${user.department}</div>
       <div style="flex:1">
-        ${buildStatusBadge(u.status)}
-        <p class="text-xs text-muted mt-1">${u.status === 'pending' ? 'Invite sent' : 'Last active ' + u.lastActive}</p>
+        ${buildStatusBadge(user.status)}
+        <p class="text-xs text-muted mt-1">${user.status === 'pending' ? 'Invite sent' : 'Last active ' + user.lastActive}</p>
       </div>
       <div style="flex:0 0 auto">
         <button class="btn btn-ghost btn-icon btn-sm">${iconMoreHorizontal(16)}</button>
@@ -71,8 +71,8 @@ export async function init(): Promise<void> {
     return;
   }
 
-  const activeCount = users.filter(u => u.status === 'active').length;
-  const pendingCount = users.filter(u => u.status === 'pending').length;
+  const activeCount = users.filter(user => user.status === 'active').length;
+  const pendingCount = users.filter(user => user.status === 'pending').length;
 
   setHtml(container, html`
     <div style="max-width:72rem;margin:0 auto">
@@ -129,7 +129,7 @@ export async function init(): Promise<void> {
         <div class="flex flex-col gap-4 py-4">
           <div><label class="label mb-2 block">Email Address</label><input class="input" type="email" placeholder="colleague@company.com" id="invite-email" /></div>
           <div><label class="label mb-2 block">Role</label><select class="input" id="invite-role"><option value="member">Member</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="viewer">Viewer</option></select></div>
-          <div><label class="label mb-2 block">Department</label><select class="input" id="invite-dept"><option value="Engineering">Engineering</option><option value="Product">Product</option><option value="Design">Design</option><option value="Sales">Sales</option><option value="Operations">Operations</option></select></div>
+          <div><label class="label mb-2 block">Department</label><select class="input" id="invite-department"><option value="Engineering">Engineering</option><option value="Product">Product</option><option value="Design">Design</option><option value="Sales">Sales</option><option value="Operations">Operations</option></select></div>
         </div>
         <div class="dialog-footer">
           <button class="btn btn-outline" id="invite-cancel">Cancel</button>

@@ -6,27 +6,27 @@ import {
 } from '../../site/script';
 import { getEdgeList, type EdgeListItem } from '../../site/data';
 
-const edgeStatusDisplayConfig: Record<string, { label: string; cls: string; icon: (size?: number) => SafeHtml }> = {
-  complete: { label: 'Complete', cls: 'badge-success', icon: iconCheckCircle2 },
-  draft: { label: 'Draft', cls: 'badge-warning', icon: iconClock },
-  missing: { label: 'Missing', cls: 'badge-error', icon: iconAlertCircle },
+const edgeStatusDisplayConfig: Record<string, { label: string; className: string; icon: (size?: number) => SafeHtml }> = {
+  complete: { label: 'Complete', className: 'badge-success', icon: iconCheckCircle2 },
+  draft: { label: 'Draft', className: 'badge-warning', icon: iconClock },
+  missing: { label: 'Missing', className: 'badge-error', icon: iconAlertCircle },
 };
 
-const confidenceLevelConfig: Record<string, { label: string; cls: string }> = {
-  high: { label: 'High', cls: 'text-success' },
-  medium: { label: 'Medium', cls: 'text-warning' },
-  low: { label: 'Low', cls: 'text-error' },
+const confidenceLevelConfig: Record<string, { label: string; className: string }> = {
+  high: { label: 'High', className: 'text-success' },
+  medium: { label: 'Medium', className: 'text-warning' },
+  low: { label: 'Low', className: 'text-error' },
 };
 
 function buildEdgeCard(edge: EdgeListItem): SafeHtml {
-  const sc = edgeStatusDisplayConfig[edge.status];
+  const statusDisplay = edgeStatusDisplayConfig[edge.status];
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${sc!.cls} text-xs">${sc!.icon(12)} ${sc!.label}</span>
-            ${edge.confidence ? html`<span class="flex items-center gap-1 text-xs ${confidenceLevelConfig[edge.confidence]!.cls}">${iconShield(14)} ${confidenceLevelConfig[edge.confidence]!.label} Confidence</span>` : html``}
+            <span class="badge ${statusDisplay!.className} text-xs">${statusDisplay!.icon(12)} ${statusDisplay!.label}</span>
+            ${edge.confidence ? html`<span class="flex items-center gap-1 text-xs ${confidenceLevelConfig[edge.confidence]!.className}">${iconShield(14)} ${confidenceLevelConfig[edge.confidence]!.label} Confidence</span>` : html``}
           </div>
           <h3 class="font-semibold mb-1">${edge.ideaTitle}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
@@ -71,9 +71,9 @@ export async function init(): Promise<void> {
   // Stats
   const stats = {
     total: edges.length,
-    complete: edges.filter(e => e.status === 'complete').length,
-    draft: edges.filter(e => e.status === 'draft').length,
-    missing: edges.filter(e => e.status === 'missing').length,
+    complete: edges.filter(edge => edge.status === 'complete').length,
+    draft: edges.filter(edge => edge.status === 'draft').length,
+    missing: edges.filter(edge => edge.status === 'missing').length,
   };
   const statsEl = $('#edge-stats');
   if (statsEl) {
@@ -91,9 +91,9 @@ export async function init(): Promise<void> {
   function filterAndRender() {
     const search = (($('#edge-search') as HTMLInputElement)?.value || '').toLowerCase();
     const status = ($('#edge-status-filter') as HTMLSelectElement)?.value || 'all';
-    const filtered = edges.filter(e => {
-      const matchesSearch = e.ideaTitle.toLowerCase().includes(search) || e.owner.toLowerCase().includes(search);
-      const matchesStatus = status === 'all' || e.status === status;
+    const filtered = edges.filter(edge => {
+      const matchesSearch = edge.ideaTitle.toLowerCase().includes(search) || edge.owner.toLowerCase().includes(search);
+      const matchesStatus = status === 'all' || edge.status === status;
       return matchesSearch && matchesStatus;
     });
     const list = $('#edge-list');

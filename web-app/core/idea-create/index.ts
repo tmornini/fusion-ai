@@ -159,7 +159,7 @@ function buildWizardPage(): SafeHtml {
     </div>`;
 }
 
-function renderWizard() {
+function mutateWizard() {
   const root = $('#page-root');
   if (root) { setHtml(root, buildWizardPage()); bindWizardEvents(); }
 }
@@ -179,17 +179,17 @@ function syncFormFields() {
 
 function bindWizardEvents() {
   $('#back-btn')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; renderWizard(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; mutateWizard(); }
     else navigateTo('ideas');
   });
   $('#step-back')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; renderWizard(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; mutateWizard(); }
     else navigateTo('ideas');
   });
   $('#step-next')?.addEventListener('click', () => {
     syncFormFields();
     if (!isStepComplete()) return;
-    if (currentStep < 3) { currentStep++; renderWizard(); }
+    if (currentStep < 3) { currentStep++; mutateWizard(); }
     else navigateTo('idea-scoring', { ideaId: 'new' });
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
@@ -203,6 +203,6 @@ function bindWizardEvents() {
 
 export async function init(): Promise<void> {
   currentStep = 1;
-  (Object.keys(formData) as Array<keyof typeof formData>).forEach(k => formData[k] = '');
-  renderWizard();
+  (Object.keys(formData) as Array<keyof typeof formData>).forEach(key => formData[key] = '');
+  mutateWizard();
 }

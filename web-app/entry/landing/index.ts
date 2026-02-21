@@ -84,7 +84,7 @@ function buildHero(): SafeHtml {
           <div class="hero-trust animate-fade-in-up">
             <p>Trusted by forward-thinking teams</p>
             <div class="hero-trust-logos">
-              ${companies.map(c => html`<span>${c}</span>`)}
+              ${companies.map(company => html`<span>${company}</span>`)}
             </div>
           </div>
         </div>
@@ -101,11 +101,11 @@ function buildFeatures(): SafeHtml {
           <p>Powerful AI capabilities designed around human needs, not the other way around.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          ${features.map(f => html`
+          ${features.map(feature => html`
             <div class="card card-hover feature-card">
-              <div class="feature-icon">${f.icon(24)}</div>
-              <h3>${f.title}</h3>
-              <p>${f.description}</p>
+              <div class="feature-icon">${feature.icon(24)}</div>
+              <h3>${feature.title}</h3>
+              <p>${feature.description}</p>
             </div>`)}
         </div>
       </div>
@@ -121,17 +121,17 @@ function buildHowItWorks(): SafeHtml {
           <p>A straightforward path from setup to value, with support at every step.</p>
         </div>
         <div class="steps-list">
-          ${steps.map(s => html`
+          ${steps.map(stepData => html`
             <div class="step">
-              <div class="step-number"><span>${s.number}</span></div>
+              <div class="step-number"><span>${stepData.number}</span></div>
               <div class="card card-flat step-content p-6">
-                <h3>${s.title}</h3>
-                <p>${s.description}</p>
+                <h3>${stepData.title}</h3>
+                <p>${stepData.description}</p>
                 <ul class="step-points">
-                  ${s.points.map(p => html`
+                  ${stepData.points.map(point => html`
                     <li class="step-point">
                       <div class="step-point-icon">${iconCheck(12)}</div>
-                      <span>${p}</span>
+                      <span>${point}</span>
                     </li>`)}
                 </ul>
               </div>

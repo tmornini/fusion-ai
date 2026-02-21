@@ -726,7 +726,7 @@
 
 /* Screen reader only */
 .sr-only,
-.cmdk-live {
+.command-palette-live {
   position: absolute;
   width: 1px;
   height: 1px;

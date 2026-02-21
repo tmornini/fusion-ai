@@ -1,5 +1,5 @@
 import { GET, getDbAdapter } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
 import { getUserMap } from './helpers';
 
 export interface EdgeIdea {
@@ -45,15 +45,25 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
     getUserMap(),
   ]);
   const db = getDbAdapter();
-  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
-  const allMetrics = await db.edgeMetrics.getAll();
+  const ideaById = new Map(ideaRows.map(idea => [idea.id, idea]));
+  const [allOutcomes, allMetrics] = await Promise.all([
+    db.edgeOutcomes.getAll(),
+    db.edgeMetrics.getAll(),
+  ]);
 
-  return Promise.all(edgeRows.map(async (edge) => {
-    const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
+  const outcomesByEdgeId = new Map<string, EdgeOutcomeEntity[]>();
+  for (const outcome of allOutcomes) {
+    const list = outcomesByEdgeId.get(outcome.edge_id) || [];
+    list.push(outcome);
+    outcomesByEdgeId.set(outcome.edge_id, list);
+  }
+
+  return edgeRows.map(edge => {
+    const outcomes = outcomesByEdgeId.get(edge.id) || [];
     const outcomeIds = new Set(outcomes.map(outcome => outcome.id));
     const metricsCount = allMetrics.filter(metric => outcomeIds.has(metric.outcome_id)).length;
 
-    const idea = ideaMap.get(edge.idea_id);
+    const idea = ideaById.get(edge.idea_id);
     return {
       id: edge.id,
       ideaId: edge.idea_id,
@@ -65,5 +75,5 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
       owner: userMap.get(edge.owner_id)?.fullName() ?? '',
       updatedAt: edge.updated_at,
     };
-  }));
+  });
 }

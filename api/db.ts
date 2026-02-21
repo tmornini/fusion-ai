@@ -7,7 +7,7 @@ import type {
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
   EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity, NotificationEntity,
   ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
-  CompanySettingsEntity, NotificationCategoryEntity, NotificationPrefEntity,
+  CompanySettingsEntity, NotificationCategoryEntity, NotificationPreferenceEntity,
   AccountEntity,
 } from './types';
 
@@ -37,12 +37,12 @@ export interface DbAdapter {
   ideas: EntityStore<IdeaEntity>;
   ideaScores: {
     getByIdeaId(ideaId: string): Promise<IdeaScoreEntity | null>;
-    put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreEntity>;
+    put(ideaId: string, fields: Record<string, unknown>): Promise<IdeaScoreEntity>;
   };
   projects: EntityStore<ProjectEntity>;
   projectTeam: {
     getByProjectId(projectId: string): Promise<ProjectTeamEntity[]>;
-    put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamEntity>;
+    put(projectId: string, userId: string, fields: Record<string, unknown>): Promise<ProjectTeamEntity>;
   };
   milestones: EntityStore<MilestoneEntity> & {
     getByProjectId(projectId: string): Promise<MilestoneEntity[]>;
@@ -73,10 +73,10 @@ export interface DbAdapter {
   };
   companySettings: SingletonStore<CompanySettingsEntity>;
   notificationCategories: EntityStore<NotificationCategoryEntity>;
-  notificationPrefs: {
-    getAll(): Promise<NotificationPrefEntity[]>;
-    getByCategoryId(categoryId: string): Promise<NotificationPrefEntity[]>;
-    put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity>;
+  notificationPreferences: {
+    getAll(): Promise<NotificationPreferenceEntity[]>;
+    getByCategoryId(categoryId: string): Promise<NotificationPreferenceEntity[]>;
+    put(id: string, fields: Record<string, unknown>): Promise<NotificationPreferenceEntity>;
   };
   account: SingletonStore<AccountEntity>;
 }

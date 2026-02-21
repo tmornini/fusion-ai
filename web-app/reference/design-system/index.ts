@@ -4,7 +4,7 @@ import {
   iconArrowRight, iconTrash, iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
 } from '../../site/script';
 
-function colorSwatch(name: string, variable: string, style: string): SafeHtml {
+function buildColorSwatch(name: string, variable: string, style: string): SafeHtml {
   return html`<div style="display:flex;flex-direction:column;gap:0.5rem">
     <div style="height:4rem;width:100%;border-radius:0.5rem;border:1px solid hsl(var(--border));${style}"></div>
     <div class="text-sm font-medium">${name}</div>
@@ -12,14 +12,14 @@ function colorSwatch(name: string, variable: string, style: string): SafeHtml {
   </div>`;
 }
 
-function typographyRow(label: string, cls: string, sample: string): SafeHtml {
+function buildTypographyRow(label: string, className: string, sample: string): SafeHtml {
   return html`<div style="display:flex;flex-direction:column;gap:0.25rem;padding:0.75rem 0;border-bottom:1px solid hsl(var(--border))">
     <code class="text-xs text-muted">${label}</code>
-    <p class="${cls}">${sample}</p>
+    <p class="${className}">${sample}</p>
   </div>`;
 }
 
-function shadowBox(name: string, variable: string): SafeHtml {
+function buildShadowBox(name: string, variable: string): SafeHtml {
   return html`<div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
     <div style="width:100%;height:5rem;border-radius:0.75rem;background:hsl(var(--card));box-shadow:var(${variable});border:1px solid hsl(var(--border))"></div>
     <code class="text-xs text-muted">${name}</code>
@@ -27,7 +27,7 @@ function shadowBox(name: string, variable: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  const root = $('#ds-root');
+  const root = $('#design-system-content');
   if (!root) return;
 
   setHtml(root, html`
@@ -42,56 +42,56 @@ export async function init(): Promise<void> {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Brand Colors</h2><p class="text-muted mt-1">Primary brand colors for Fusion AI</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Primary Blue', '--primary', 'background:hsl(var(--primary))')}
-          ${colorSwatch('Primary Foreground', '--primary-foreground', 'background:hsl(var(--primary-foreground));border-width:2px')}
-          ${colorSwatch('Accent Yellow', '--accent', 'background:hsl(var(--accent))')}
-          ${colorSwatch('Accent Foreground', '--accent-foreground', 'background:hsl(var(--accent-foreground))')}
+          ${buildColorSwatch('Primary Blue', '--primary', 'background:hsl(var(--primary))')}
+          ${buildColorSwatch('Primary Foreground', '--primary-foreground', 'background:hsl(var(--primary-foreground));border-width:2px')}
+          ${buildColorSwatch('Accent Yellow', '--accent', 'background:hsl(var(--accent))')}
+          ${buildColorSwatch('Accent Foreground', '--accent-foreground', 'background:hsl(var(--accent-foreground))')}
         </div>
       </section>
 
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Blue Scale</h2><p class="text-muted mt-1">Full blue color ramp for nuanced UI design</p></div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Blue 50', '--blue-50', 'background:hsl(var(--blue-50))')}
-          ${colorSwatch('Blue 100', '--blue-100', 'background:hsl(var(--blue-100))')}
-          ${colorSwatch('Blue 200', '--blue-200', 'background:hsl(var(--blue-200))')}
-          ${colorSwatch('Blue 300', '--blue-300', 'background:hsl(var(--blue-300))')}
-          ${colorSwatch('Blue 400', '--blue-400', 'background:hsl(var(--blue-400))')}
+          ${buildColorSwatch('Blue 50', '--blue-50', 'background:hsl(var(--blue-50))')}
+          ${buildColorSwatch('Blue 100', '--blue-100', 'background:hsl(var(--blue-100))')}
+          ${buildColorSwatch('Blue 200', '--blue-200', 'background:hsl(var(--blue-200))')}
+          ${buildColorSwatch('Blue 300', '--blue-300', 'background:hsl(var(--blue-300))')}
+          ${buildColorSwatch('Blue 400', '--blue-400', 'background:hsl(var(--blue-400))')}
         </div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Blue 500', '--blue-500', 'background:hsl(var(--blue-500))')}
-          ${colorSwatch('Blue 600', '--blue-600', 'background:hsl(var(--blue-600))')}
-          ${colorSwatch('Blue 700', '--blue-700', 'background:hsl(var(--blue-700))')}
-          ${colorSwatch('Blue 800', '--blue-800', 'background:hsl(var(--blue-800))')}
-          ${colorSwatch('Blue 900', '--blue-900', 'background:hsl(var(--blue-900))')}
+          ${buildColorSwatch('Blue 500', '--blue-500', 'background:hsl(var(--blue-500))')}
+          ${buildColorSwatch('Blue 600', '--blue-600', 'background:hsl(var(--blue-600))')}
+          ${buildColorSwatch('Blue 700', '--blue-700', 'background:hsl(var(--blue-700))')}
+          ${buildColorSwatch('Blue 800', '--blue-800', 'background:hsl(var(--blue-800))')}
+          ${buildColorSwatch('Blue 900', '--blue-900', 'background:hsl(var(--blue-900))')}
         </div>
       </section>
 
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Semantic Colors</h2><p class="text-muted mt-1">Status and feedback colors (WCAG AA compliant)</p></div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Success', '--success', 'background:hsl(var(--success))')}
-          ${colorSwatch('Warning', '--warning', 'background:hsl(var(--warning))')}
-          ${colorSwatch('Destructive', '--destructive', 'background:hsl(var(--destructive))')}
-          ${colorSwatch('Info', '--info', 'background:hsl(var(--primary))')}
+          ${buildColorSwatch('Success', '--success', 'background:hsl(var(--success))')}
+          ${buildColorSwatch('Warning', '--warning', 'background:hsl(var(--warning))')}
+          ${buildColorSwatch('Destructive', '--destructive', 'background:hsl(var(--destructive))')}
+          ${buildColorSwatch('Info', '--info', 'background:hsl(var(--primary))')}
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Success Soft', '--success-soft', 'background:hsl(var(--success-soft))')}
-          ${colorSwatch('Warning Soft', '--warning-soft', 'background:hsl(var(--warning-soft))')}
-          ${colorSwatch('Error Soft', '--error-soft', 'background:hsl(var(--error-soft))')}
-          ${colorSwatch('Info Soft', '--info-soft', 'background:hsl(var(--primary)/0.1)')}
+          ${buildColorSwatch('Success Soft', '--success-soft', 'background:hsl(var(--success-soft))')}
+          ${buildColorSwatch('Warning Soft', '--warning-soft', 'background:hsl(var(--warning-soft))')}
+          ${buildColorSwatch('Error Soft', '--error-soft', 'background:hsl(var(--error-soft))')}
+          ${buildColorSwatch('Info Soft', '--info-soft', 'background:hsl(var(--primary)/0.1)')}
         </div>
       </section>
 
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">UI Colors</h2><p class="text-muted mt-1">Background, surface, and border colors</p></div>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:1.5rem" class="stats-grid">
-          ${colorSwatch('Background', '--background', 'background:hsl(var(--background))')}
-          ${colorSwatch('Foreground', '--foreground', 'background:hsl(var(--foreground))')}
-          ${colorSwatch('Card', '--card', 'background:hsl(var(--card))')}
-          ${colorSwatch('Muted', '--muted', 'background:hsl(var(--muted))')}
-          ${colorSwatch('Border', '--border', 'background:hsl(var(--border))')}
-          ${colorSwatch('Ring', '--ring', 'background:hsl(var(--ring))')}
+          ${buildColorSwatch('Background', '--background', 'background:hsl(var(--background))')}
+          ${buildColorSwatch('Foreground', '--foreground', 'background:hsl(var(--foreground))')}
+          ${buildColorSwatch('Card', '--card', 'background:hsl(var(--card))')}
+          ${buildColorSwatch('Muted', '--muted', 'background:hsl(var(--muted))')}
+          ${buildColorSwatch('Border', '--border', 'background:hsl(var(--border))')}
+          ${buildColorSwatch('Ring', '--ring', 'background:hsl(var(--ring))')}
         </div>
       </section>
 
@@ -100,16 +100,16 @@ export async function init(): Promise<void> {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Typography</h2><p class="text-muted mt-1">IBM Plex Sans for display, Inter for body text</p></div>
         <div class="card" style="padding:1.5rem">
-          ${typographyRow('text-4xl / font-display / font-bold', 'text-4xl font-display font-bold', 'Hero Headlines')}
-          ${typographyRow('text-3xl / font-display / font-bold', 'text-3xl font-display font-bold', 'Page Titles')}
-          ${typographyRow('text-2xl / font-semibold', 'text-2xl font-semibold', 'Section Headers')}
-          ${typographyRow('text-xl / font-semibold', 'text-xl font-semibold', 'Subsection Headers')}
-          ${typographyRow('text-lg / font-medium', 'text-lg font-medium', 'Card Titles')}
-          ${typographyRow('text-base', 'text-base', 'Body text for general content and descriptions')}
-          ${typographyRow('text-sm', 'text-sm', 'Dense body text for tables and lists')}
-          ${typographyRow('text-xs', 'text-xs', 'Labels and helper text')}
-          ${typographyRow('text-2xs', 'text-2xs', 'Fine print and micro labels')}
-          ${typographyRow('font-mono / text-sm', 'font-mono text-sm', "const code = 'monospace';")}
+          ${buildTypographyRow('text-4xl / font-display / font-bold', 'text-4xl font-display font-bold', 'Hero Headlines')}
+          ${buildTypographyRow('text-3xl / font-display / font-bold', 'text-3xl font-display font-bold', 'Page Titles')}
+          ${buildTypographyRow('text-2xl / font-semibold', 'text-2xl font-semibold', 'Section Headers')}
+          ${buildTypographyRow('text-xl / font-semibold', 'text-xl font-semibold', 'Subsection Headers')}
+          ${buildTypographyRow('text-lg / font-medium', 'text-lg font-medium', 'Card Titles')}
+          ${buildTypographyRow('text-base', 'text-base', 'Body text for general content and descriptions')}
+          ${buildTypographyRow('text-sm', 'text-sm', 'Dense body text for tables and lists')}
+          ${buildTypographyRow('text-xs', 'text-xs', 'Labels and helper text')}
+          ${buildTypographyRow('text-2xs', 'text-2xs', 'Fine print and micro labels')}
+          ${buildTypographyRow('font-mono / text-sm', 'font-mono text-sm', "const code = 'monospace';")}
         </div>
       </section>
 
@@ -246,11 +246,11 @@ export async function init(): Promise<void> {
       <section style="display:flex;flex-direction:column;gap:1.5rem">
         <div><h2 class="text-2xl font-semibold font-display">Elevation & Shadows</h2><p class="text-muted mt-1">Shadow scale for depth and hierarchy</p></div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1.5rem" class="stats-grid">
-          ${shadowBox('shadow-xs', '--shadow-xs')}
-          ${shadowBox('shadow-sm', '--shadow-sm')}
-          ${shadowBox('shadow-md', '--shadow-md')}
-          ${shadowBox('shadow-lg', '--shadow-lg')}
-          ${shadowBox('shadow-xl', '--shadow-xl')}
+          ${buildShadowBox('shadow-xs', '--shadow-xs')}
+          ${buildShadowBox('shadow-sm', '--shadow-sm')}
+          ${buildShadowBox('shadow-md', '--shadow-md')}
+          ${buildShadowBox('shadow-lg', '--shadow-lg')}
+          ${buildShadowBox('shadow-xl', '--shadow-xl')}
         </div>
       </section>
 
@@ -279,10 +279,10 @@ export async function init(): Promise<void> {
               { fn: iconInfo, name: 'Info' },
               { fn: iconTrash, name: 'Trash' },
               { fn: iconUpload, name: 'Upload' },
-            ].map(i => html`
+            ].map(entry => html`
               <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;width:3.5rem">
-                <div style="color:hsl(var(--foreground))">${i.fn(20)}</div>
-                <span class="text-2xs text-muted">${i.name}</span>
+                <div style="color:hsl(var(--foreground))">${entry.fn(20)}</div>
+                <span class="text-2xs text-muted">${entry.name}</span>
               </div>
             `)}
           </div>
@@ -303,11 +303,11 @@ export async function init(): Promise<void> {
             { name: 'space-8', value: '32px', w: '2rem' },
             { name: 'space-12', value: '48px', w: '3rem' },
             { name: 'space-16', value: '64px', w: '4rem' },
-          ].map(s => html`
+          ].map(space => html`
             <div class="flex items-center gap-4" style="margin-bottom:0.75rem">
-              <code class="text-xs text-muted" style="width:5rem">${s.name}</code>
-              <div style="height:1rem;background:hsl(var(--primary));border-radius:0.25rem;width:${s.w}"></div>
-              <span class="text-sm text-muted">${s.value}</span>
+              <code class="text-xs text-muted" style="width:5rem">${space.name}</code>
+              <div style="height:1rem;background:hsl(var(--primary));border-radius:0.25rem;width:${space.w}"></div>
+              <span class="text-sm text-muted">${space.value}</span>
             </div>
           `)}
         </div>

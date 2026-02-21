@@ -105,8 +105,8 @@ function bindTabs(score: IdeaScore) {
     tab.addEventListener('click', () => {
       const tabId = tab.getAttribute('data-score-tab') as 'impact' | 'feasibility' | 'efficiency';
       const data = score[tabId];
-      document.querySelectorAll<HTMLElement>('.score-tab').forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-score-tab') === tabId);
+      document.querySelectorAll<HTMLElement>('.score-tab').forEach(otherTab => {
+        otherTab.classList.toggle('active', otherTab.getAttribute('data-score-tab') === tabId);
       });
       const content = $('#tab-content');
       if (content) setHtml(content, buildBreakdown(data));
@@ -185,8 +185,8 @@ export async function init(): Promise<void> {
   } catch (err) {
     const body = $('#scoring-body');
     if (body) {
-      const msg = err instanceof Error ? err.message : 'Failed to load idea for scoring.';
-      setHtml(body, buildErrorState(msg, 'Back to Ideas'));
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load idea for scoring.';
+      setHtml(body, buildErrorState(errorMessage, 'Back to Ideas'));
       body.querySelector('[data-retry-btn]')?.addEventListener('click', () => navigateTo('ideas'));
     }
   }

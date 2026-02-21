@@ -34,31 +34,31 @@ function styleForMilestone(status: string): string {
   }
 }
 
-function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
+function buildProjectDetail(project: ProjectDetail, projectId: string): SafeHtml {
   return html`
     <div style="max-width:64rem;margin:0 auto">
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 text-sm text-muted mb-4">
         <a href="../projects/index.html" class="hover-link">Projects</a>
         <span>/</span>
-        <span>${p.title}</span>
+        <span>${project.title}</span>
       </div>
 
       <!-- Header -->
       <div class="flex items-start justify-between gap-4 mb-6">
         <div>
           <div class="flex flex-wrap items-center gap-3 mb-2">
-            <h1 class="text-xl font-display font-bold">${p.title}</h1>
+            <h1 class="text-xl font-display font-bold">${project.title}</h1>
             <span class="badge badge-success text-xs">${iconCheckCircle2(14)} Approved</span>
           </div>
-          <p class="text-sm text-muted">Led by ${p.projectLead} • ${p.progress}% complete</p>
+          <p class="text-sm text-muted">Led by ${project.projectLead} • ${project.progress}% complete</p>
         </div>
         <button class="btn btn-outline btn-icon">${iconMoreVertical(20)}</button>
       </div>
 
       <!-- Quick Action Links -->
       <div class="actions-grid mb-8" style="gap:0.75rem">
-        <a href="#" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit" data-nav-eng>
+        <a href="#" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit" data-navigate-to-engineering>
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconCode(20, 'text-primary')}</div>
             <div style="min-width:0"><p class="font-medium text-sm">Engineering</p><p class="text-xs text-muted hidden-mobile">Requirements & clarifications</p></div>
@@ -90,23 +90,23 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
           <!-- Summary -->
           <div class="card p-6">
             <h2 class="text-lg font-display font-semibold mb-4">Project Summary</h2>
-            <p class="text-sm text-muted mb-6">${p.description}</p>
+            <p class="text-sm text-muted mb-6">${project.description}</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
               <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5)">
                 ${iconCalendar(20, 'text-primary')}
-                <div><p class="text-xs text-muted">Start Date</p><p class="text-sm font-medium">${p.startDate}</p></div>
+                <div><p class="text-xs text-muted">Start Date</p><p class="text-sm font-medium">${project.startDate}</p></div>
               </div>
               <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5)">
                 ${iconTarget(20, 'text-primary')}
-                <div><p class="text-xs text-muted">Target End</p><p class="text-sm font-medium">${p.targetEndDate}</p></div>
+                <div><p class="text-xs text-muted">Target End</p><p class="text-sm font-medium">${project.targetEndDate}</p></div>
               </div>
             </div>
             <div style="margin-top:1.5rem">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium">Overall Progress</span>
-                <span class="text-sm font-bold text-primary">${p.progress}%</span>
+                <span class="text-sm font-bold text-primary">${project.progress}%</span>
               </div>
-              <div class="progress"><div class="progress-fill" style="width:${p.progress}%"></div></div>
+              <div class="progress"><div class="progress-fill" style="width:${project.progress}%"></div></div>
             </div>
           </div>
 
@@ -118,18 +118,18 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
             </div>
             <div class="score-grid">
               ${[
-                { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', isLowerBetter: true },
-                { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
-                { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
-              ].map(m => html`
+                { label: 'Time', icon: iconClock, baseline: project.metrics.time.baseline, current: project.metrics.time.current, unit: 'h', prefix: '', isLowerBetter: true },
+                { label: 'Cost', icon: iconDollarSign, baseline: project.metrics.cost.baseline / 1000, current: project.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
+                { label: 'Impact', icon: iconTrendingUp, baseline: project.metrics.impact.baseline, current: project.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
+              ].map(metric => html`
                 <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
-                  <div class="flex items-center gap-2 mb-3">${m.icon(20, 'text-primary')} <span class="font-medium">${m.label}</span></div>
+                  <div class="flex items-center gap-2 mb-3">${metric.icon(20, 'text-primary')} <span class="font-medium">${metric.label}</span></div>
                   <div style="display:flex;flex-direction:column;gap:0.5rem">
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${m.baseline ? `${m.prefix}${m.baseline}${m.unit}` : '—'}</span></div>
-                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.current ? `${m.prefix}${m.current}${m.unit}` : '—'}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${metric.baseline ? `${metric.prefix}${metric.baseline}${metric.unit}` : '—'}</span></div>
+                    <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${metric.current ? `${metric.prefix}${metric.current}${metric.unit}` : '—'}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
-                      ${buildVariance(m.baseline, m.current, m.isLowerBetter, m.unit, m.prefix)}
+                      ${buildVariance(metric.baseline, metric.current, metric.isLowerBetter, metric.unit, metric.prefix)}
                     </div>
                   </div>
                 </div>
@@ -152,24 +152,24 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
 
             <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem">
               <h3 class="text-sm font-medium flex items-center gap-2">${iconBarChart(16, 'text-primary')} Business Outcomes & Metrics</h3>
-              ${p.edge.outcomes.map((outcome, oi) => html`
+              ${project.edge.outcomes.map((outcome, oi) => html`
                 <div style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-start gap-3 mb-3">
                     <div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:hsl(var(--primary));flex-shrink:0">${oi + 1}</div>
                     <p class="font-medium">${outcome.description}</p>
                   </div>
                   <div style="padding-left:2.25rem;display:flex;flex-direction:column;gap:0.5rem">
-                    ${outcome.metrics.map(m => {
-                      const target = parseFloat(m.target);
-                      const current = parseFloat(m.current);
-                      const onTrack = m.unit === '$' ? current <= target : current >= target * 0.9;
+                    ${outcome.metrics.map(kpi => {
+                      const target = parseFloat(kpi.target);
+                      const current = parseFloat(kpi.current);
+                      const isOnTrack = kpi.unit === '$' ? current <= target : current >= target * 0.9;
                       return html`
                         <div class="flex items-center justify-between gap-2" style="padding:0.5rem;border-radius:0.25rem;background:hsl(var(--background));border:1px solid hsl(var(--border))">
-                          <div class="flex items-center gap-2">${iconGauge(16, 'text-muted')} <span class="text-sm">${m.name}</span></div>
+                          <div class="flex items-center gap-2">${iconGauge(16, 'text-muted')} <span class="text-sm">${kpi.name}</span></div>
                           <div class="flex items-center gap-4">
-                            <div class="text-right"><p class="text-xs text-muted">Target</p><p class="text-sm font-medium">${m.unit === '$' ? '$' : ''}${m.target}${m.unit === '$' ? '' : m.unit}</p></div>
-                            <div class="text-right"><p class="text-xs text-muted">Current</p><p class="text-sm font-medium ${onTrack ? 'text-success' : 'text-warning'}">${m.unit === '$' ? '$' : ''}${m.current}${m.unit === '$' ? '' : m.unit}</p></div>
-                            <div style="width:0.5rem;height:0.5rem;border-radius:9999px;background:${onTrack ? 'hsl(var(--success))' : 'hsl(var(--warning))'}"></div>
+                            <div class="text-right"><p class="text-xs text-muted">Target</p><p class="text-sm font-medium">${kpi.unit === '$' ? '$' : ''}${kpi.target}${kpi.unit === '$' ? '' : kpi.unit}</p></div>
+                            <div class="text-right"><p class="text-xs text-muted">Current</p><p class="text-sm font-medium ${isOnTrack ? 'text-success' : 'text-warning'}">${kpi.unit === '$' ? '$' : ''}${kpi.current}${kpi.unit === '$' ? '' : kpi.unit}</p></div>
+                            <div style="width:0.5rem;height:0.5rem;border-radius:9999px;background:${isOnTrack ? 'hsl(var(--success))' : 'hsl(var(--warning))'}"></div>
                           </div>
                         </div>`;
                     })}
@@ -184,22 +184,22 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
               <div class="score-grid" style="gap:0.75rem">
                 <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--success-soft));border:1px solid hsl(var(--success) / 0.2)">
                   <div class="flex items-center gap-1 mb-2">${iconClock(14, 'text-success')} <span class="text-xs font-medium text-success">Short-term (0-3mo)</span></div>
-                  <p class="text-xs">${p.edge.impact.shortTerm}</p>
+                  <p class="text-xs">${project.edge.impact.shortTerm}</p>
                 </div>
                 <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--warning-soft));border:1px solid hsl(var(--warning)/0.2)">
                   <div class="flex items-center gap-1 mb-2">${iconClock(14, 'text-warning')} <span class="text-xs font-medium text-warning">Mid-term (3-12mo)</span></div>
-                  <p class="text-xs">${p.edge.impact.midTerm}</p>
+                  <p class="text-xs">${project.edge.impact.midTerm}</p>
                 </div>
                 <div style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--primary)/0.05);border:1px solid hsl(var(--primary)/0.2)">
                   <div class="flex items-center gap-1 mb-2">${iconClock(14, 'text-primary')} <span class="text-xs font-medium text-primary">Long-term (12+mo)</span></div>
-                  <p class="text-xs">${p.edge.impact.longTerm}</p>
+                  <p class="text-xs">${project.edge.impact.longTerm}</p>
                 </div>
               </div>
             </div>
 
             <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
               <span class="text-xs text-muted">Edge Owner</span>
-              <span class="text-sm font-medium">${p.edge.owner}</span>
+              <span class="text-sm font-medium">${project.edge.owner}</span>
             </div>
           </div>
 
@@ -211,14 +211,14 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                 { id: 'discussion', label: 'Discussion', icon: iconMessageSquare },
                 { id: 'history', label: 'History', icon: iconHistory },
                 { id: 'linked', label: 'Linked Data', icon: iconFileText },
-              ].map((t, i) => html`
-                <button class="tab${i === 0 ? ' active' : ''}" role="tab" data-tab="${t.id}">${t.icon(16)} ${t.label}</button>
+              ].map((tab, tabIndex) => html`
+                <button class="tab${tabIndex === 0 ? ' active' : ''}" role="tab" data-tab="${tab.id}">${tab.icon(16)} ${tab.label}</button>
               `)}
             </div>
 
             <div id="tab-tasks" class="tab-panel">
               <div style="display:flex;flex-direction:column;gap:0.75rem">
-                ${p.tasks.map(task => {
+                ${project.tasks.map(task => {
                   const prioColor = task.priority === 'High' ? 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))' : task.priority === 'Medium' ? 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))' : 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
                   return html`
                   <div class="card" style="padding:1rem">
@@ -231,7 +231,7 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                         </div>
                         <p class="text-xs text-muted mb-2">${task.description}</p>
                         <div class="flex flex-wrap gap-1.5">
-                          ${task.skills.map(s => html`<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${s}</span>`)}
+                          ${task.skills.map(skill => html`<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${skill}</span>`)}
                           <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.hours}h est.</span>
                         </div>
                       </div>
@@ -241,7 +241,7 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                 })}
               </div>
               <div class="flex items-center justify-between mt-4 pt-4" style="border-top:1px solid hsl(var(--border))">
-                <span class="text-sm text-muted">${p.tasks.filter(t => t.assigned).length} assigned, ${p.tasks.filter(t => !t.assigned).length} unassigned</span>
+                <span class="text-sm text-muted">${project.tasks.filter(task => task.assigned).length} assigned, ${project.tasks.filter(task => !task.assigned).length} unassigned</span>
                 <button class="btn btn-primary btn-sm">Save Assignments</button>
               </div>
             </div>
@@ -252,24 +252,24 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                     <span class="text-sm font-bold text-primary">D</span>
                   </div>
                   <div style="flex:1">
-                    <textarea class="textarea" id="pd-comment" placeholder="Add a comment or update..." style="min-height:5rem;resize:none"></textarea>
+                    <textarea class="textarea" id="discussion-comment" placeholder="Add a comment or update..." style="min-height:5rem;resize:none"></textarea>
                     <div style="display:flex;justify-content:flex-end;margin-top:0.5rem">
-                      <button class="btn btn-primary btn-sm" id="pd-post-btn" disabled>Post Comment</button>
+                      <button class="btn btn-primary btn-sm" id="discussion-post-button" disabled>Post Comment</button>
                     </div>
                   </div>
                 </div>
                 <div style="border-top:1px solid hsl(var(--border));padding-top:1rem;display:flex;flex-direction:column;gap:1rem">
-                  ${p.discussions.map(d => html`
+                  ${project.discussions.map(discussion => html`
                     <div class="flex gap-3">
                       <div style="width:2.5rem;height:2.5rem;border-radius:9999px;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                        <span class="text-sm font-bold text-muted">${initials(d.author)}</span>
+                        <span class="text-sm font-bold text-muted">${initials(discussion.author)}</span>
                       </div>
                       <div>
                         <div class="flex items-center gap-2 mb-1">
-                          <span class="font-medium">${d.author}</span>
-                          <span class="text-xs text-muted">${d.date}</span>
+                          <span class="font-medium">${discussion.author}</span>
+                          <span class="text-xs text-muted">${discussion.date}</span>
                         </div>
-                        <p class="text-sm text-muted">${d.message}</p>
+                        <p class="text-sm text-muted">${discussion.message}</p>
                       </div>
                     </div>
                   `)}
@@ -278,12 +278,12 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
             </div>
             <div id="tab-history" class="tab-panel" style="display:none">
               <div style="display:flex;flex-direction:column;gap:0.75rem">
-                ${p.versions.map((v, i) => html`
-                  <div class="flex items-start gap-4" style="padding:1rem;border-radius:0.5rem;${i === 0 ? 'background:hsl(var(--primary)/0.05);border:1px solid hsl(var(--primary)/0.2)' : 'background:hsl(var(--muted)/0.3)'}">
-                    <span style="padding:0.25rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;font-weight:700;${i === 0 ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${v.version}</span>
+                ${project.versions.map((version, versionIndex) => html`
+                  <div class="flex items-start gap-4" style="padding:1rem;border-radius:0.5rem;${versionIndex === 0 ? 'background:hsl(var(--primary)/0.05);border:1px solid hsl(var(--primary)/0.2)' : 'background:hsl(var(--muted)/0.3)'}">
+                    <span style="padding:0.25rem 0.5rem;border-radius:0.25rem;font-size:0.75rem;font-weight:700;${versionIndex === 0 ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${version.version}</span>
                     <div style="flex:1">
-                      <p class="font-medium">${v.changes}</p>
-                      <p class="text-xs text-muted" style="margin-top:0.25rem">${v.author} • ${v.date}</p>
+                      <p class="font-medium">${version.changes}</p>
+                      <p class="text-xs text-muted" style="margin-top:0.25rem">${version.author} • ${version.date}</p>
                     </div>
                   </div>
                 `)}
@@ -308,14 +308,14 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
               <button class="btn btn-ghost btn-sm gap-1">${iconPlus(14)} Add</button>
             </div>
             <div style="display:flex;flex-direction:column;gap:0.75rem">
-              ${p.team.map(m => html`
+              ${project.team.map(teamMember => html`
                 <div class="flex items-center gap-3">
                   <div style="width:2.25rem;height:2.25rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    <span class="text-xs font-bold text-primary">${initials(m.name)}</span>
+                    <span class="text-xs font-bold text-primary">${initials(teamMember.name)}</span>
                   </div>
                   <div style="flex:1;min-width:0">
-                    <p class="text-sm font-medium" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</p>
-                    <p class="text-xs text-muted">${m.role}</p>
+                    <p class="text-sm font-medium" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${teamMember.name}</p>
+                    <p class="text-xs text-muted">${teamMember.role}</p>
                   </div>
                 </div>
               `)}
@@ -326,15 +326,15 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
           <div class="card p-6">
             <h3 class="font-display font-semibold mb-4">Milestones</h3>
             <div style="position:relative">
-              ${p.milestones.map((m, i) => html`
-                <div class="flex gap-3" style="padding-bottom:${i < p.milestones.length - 1 ? '1rem' : '0'}">
+              ${project.milestones.map((milestone, milestoneIndex) => html`
+                <div class="flex gap-3" style="padding-bottom:${milestoneIndex < project.milestones.length - 1 ? '1rem' : '0'}">
                   <div style="display:flex;flex-direction:column;align-items:center">
-                    ${buildMilestoneIcon(m.status)}
-                    ${i < p.milestones.length - 1 ? html`<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>` : html``}
+                    ${buildMilestoneIcon(milestone.status)}
+                    ${milestoneIndex < project.milestones.length - 1 ? html`<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>` : html``}
                   </div>
                   <div style="flex:1;padding-bottom:0.5rem">
-                    <p class="text-sm font-medium" style="${styleForMilestone(m.status)}">${m.title}</p>
-                    <p class="text-xs text-muted">${m.date}</p>
+                    <p class="text-sm font-medium" style="${styleForMilestone(milestone.status)}">${milestone.title}</p>
+                    <p class="text-xs text-muted">${milestone.date}</p>
                   </div>
                 </div>
               `)}
@@ -364,7 +364,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   setHtml(container, buildProjectDetail(project, projectId));
 
   // Engineering nav
-  document.querySelectorAll<HTMLElement>('[data-nav-eng]').forEach(el => {
+  document.querySelectorAll<HTMLElement>('[data-navigate-to-engineering]').forEach(el => {
     el.addEventListener('click', (e) => { e.preventDefault(); navigateTo('engineering-requirements', { projectId }); });
   });
 
@@ -372,8 +372,8 @@ export async function init(params?: Record<string, string>): Promise<void> {
   initTabs('.tab[data-tab]', '.tab-panel');
 
   // Comment box
-  const comment = $('#pd-comment') as HTMLTextAreaElement;
-  const postBtn = $('#pd-post-btn') as HTMLButtonElement;
+  const comment = $('#discussion-comment') as HTMLTextAreaElement;
+  const postBtn = $('#discussion-post-button') as HTMLButtonElement;
   comment?.addEventListener('input', () => { if (postBtn) postBtn.disabled = !comment.value.trim(); });
   postBtn?.addEventListener('click', () => {
     showToast('Comment posted', 'success');

@@ -4,6 +4,7 @@ import {
   iconSparkles, iconDollarSign, iconClock, iconZap,
   iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
 } from '../../site/script';
+import { GET } from '../../../api/api';
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
   getIdeas, getProjects, getTeamMembers,
@@ -34,7 +35,7 @@ function buildGauge(card: GaugeCard): SafeHtml {
     <div class="card" style="border:2px solid transparent;${themeStyle.border};${themeStyle.bg};border-radius:0.75rem;padding:1.5rem;transition:all 0.3s">
       <div class="flex items-center gap-3 mb-5">
         <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;${themeStyle.iconBg};display:flex;align-items:center;justify-content:center">
-          ${iconFn(20, card.iconClass)}
+          ${iconFn(20, card.iconCssClass)}
         </div>
         <h3 class="text-sm font-semibold">${card.title}</h3>
       </div>
@@ -76,9 +77,9 @@ function buildGauge(card: GaugeCard): SafeHtml {
 }
 
 function timeOfDay(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 18) return 'afternoon';
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
   return 'evening';
 }
 
@@ -142,7 +143,7 @@ function fitSvgToContainer(container: HTMLElement): void {
 
 // ── Chart rendering ────────────────
 
-function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
+function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
   // Icons
   const pipelineIcon = $('#chart-pipeline-icon');
   if (pipelineIcon) setHtml(pipelineIcon, iconLightbulb(16, 'text-primary'));
@@ -150,21 +151,21 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   if (healthIcon) setHtml(healthIcon, iconFolderKanban(16, 'text-success'));
   const scoresIcon = $('#chart-scores-icon');
   if (scoresIcon) setHtml(scoresIcon, iconBarChart(16, 'text-warning'));
-  const availIcon = $('#chart-avail-icon');
+  const availIcon = $('#chart-availability-icon');
   if (availIcon) setHtml(availIcon, iconUsers(16, 'text-primary'));
 
   // 1. Idea Pipeline (Donut)
   const pipelineEl = $('#chart-pipeline');
   if (pipelineEl) {
     const pipelineData = buildPipelineData(ideas);
-    const total = pipelineData.reduce((a, d) => a + d.value, 0);
+    const total = pipelineData.reduce((sum, datum) => sum + datum.value, 0);
     setHtml(pipelineEl, html`${buildDonutChart(pipelineData, {
       width: 140,
-      colors: pipelineData.map(d => d.color || ''),
-    })}<div class="donut-legend">${pipelineData.map(d =>
+      colors: pipelineData.map(datum => datum.color || ''),
+    })}<div class="donut-legend">${pipelineData.map(datum =>
       html`<span class="donut-legend-item">
-        <span class="donut-legend-dot" style="background:${d.color}"></span>
-        ${d.label} <strong>${d.value}</strong> <span class="text-muted">(${Math.round(d.value / total * 100)}%)</span>
+        <span class="donut-legend-dot" style="background:${datum.color}"></span>
+        ${datum.label} <strong>${datum.value}</strong> <span class="text-muted">(${Math.round(datum.value / total * 100)}%)</span>
       </span>`
     )}</div>`);
     fitSvgToContainer(pipelineEl);
@@ -176,7 +177,7 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
     setHtml(healthEl, buildBarChart(buildProjectHealthData(projects), {
       width: 300,
       height: 180,
-      colors: Object.values(projectHealthConfig).map(c => c.color),
+      colors: Object.values(projectHealthConfig).map(config => config.color),
     }));
     fitSvgToContainer(healthEl);
   }
@@ -214,11 +215,16 @@ export async function init(): Promise<void> {
 
   let user, gauges, quickActions, stats;
   try {
+    // Fetch raw entities once to share across gauge/stats builders
+    const [rawIdeas, rawProjects] = await Promise.all([
+      GET('ideas') as Promise<import('../../../api/types').IdeaEntity[]>,
+      GET('projects') as Promise<import('../../../api/types').ProjectEntity[]>,
+    ]);
     [user, gauges, quickActions, stats] = await Promise.all([
       getCurrentUser(),
-      getDashboardGauges(),
+      getDashboardGauges(rawProjects),
       getDashboardQuickActions(),
-      getDashboardStats(),
+      getDashboardStats(rawIdeas, rawProjects),
     ]);
   } catch {
     if (gaugeContainer) {
@@ -245,15 +251,15 @@ export async function init(): Promise<void> {
   // Stats
   const statsEl = $('#hero-stats');
   if (statsEl) {
-    setHtml(statsEl, html`${stats.map((s, i) => html`
+    setHtml(statsEl, html`${stats.map((stat, statIndex) => html`
       <div style="text-align:center">
         <div class="flex items-baseline justify-center gap-1">
-          <span class="text-2xl font-bold">${s.value}</span>
-          ${s.trend ? html`<span class="text-xs font-semibold text-success">${s.trend}</span>` : html``}
+          <span class="text-2xl font-bold">${stat.value}</span>
+          ${stat.trend ? html`<span class="text-xs font-semibold text-success">${stat.trend}</span>` : html``}
         </div>
-        <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${s.label}</p>
+        <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${stat.label}</p>
       </div>
-      ${i < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
+      ${statIndex < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
     `)}`);
   }
 
@@ -262,19 +268,19 @@ export async function init(): Promise<void> {
 
   // Quick Actions
   if (actionsEl) {
-    setHtml(actionsEl, html`${quickActions.map(a => {
-      const iconFn = icons[a.icon] || icons['lightbulb'];
+    setHtml(actionsEl, html`${quickActions.map(action => {
+      const iconFn = icons[action.icon] || icons['lightbulb'];
       return html`
-        <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${a.href}">
+        <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${action.href}">
           <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">
             ${iconFn ? iconFn(24, 'text-muted') : html``}
           </div>
-          <span class="text-sm font-semibold">${a.label}</span>
+          <span class="text-sm font-semibold">${action.label}</span>
         </button>`;
     })}`);
 
-    actionsEl.querySelectorAll<HTMLElement>('[data-action-href]').forEach(el => {
-      el.addEventListener('click', () => { window.location.href = el.getAttribute('data-action-href')!; });
+    actionsEl.querySelectorAll<HTMLElement>('[data-action-href]').forEach(actionCard => {
+      actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href')!; });
     });
   }
 
@@ -285,7 +291,7 @@ export async function init(): Promise<void> {
       getProjects(),
       getTeamMembers(),
     ]);
-    renderCharts(ideas, projects, members);
+    mutateCharts(ideas, projects, members);
   } catch {
     // Charts are supplementary — silently degrade
   }

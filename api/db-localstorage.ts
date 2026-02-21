@@ -10,7 +10,7 @@ import type {
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
   EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity, NotificationEntity,
   ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
-  CompanySettingsEntity, NotificationCategoryEntity, NotificationPrefEntity,
+  CompanySettingsEntity, NotificationCategoryEntity, NotificationPreferenceEntity,
   AccountEntity,
 } from './types';
 
@@ -64,19 +64,19 @@ function makeEntityStore<T extends { id: string }>(tableName: string): EntitySto
       const rows = readTable<T>(tableName);
       return rows.find(row => row.id === id) ?? null;
     },
-    async put(id: string, data: Record<string, unknown>): Promise<T> {
+    async put(id: string, fields: Record<string, unknown>): Promise<T> {
       const rows = readTable<T>(tableName);
-      const idx = rows.findIndex(row => row.id === id);
-      const serialized = serializeRecord(data);
+      const index = rows.findIndex(row => row.id === id);
+      const serialized = serializeRecord(fields);
 
-      if (idx >= 0) {
-        rows[idx] = { ...rows[idx]!, ...serialized, id } as T;
+      if (index >= 0) {
+        rows[index] = { ...rows[index]!, ...serialized, id } as T;
       } else {
         rows.push({ id, ...serialized } as T);
       }
 
       writeTable(tableName, rows);
-      return rows[idx >= 0 ? idx : rows.length - 1]!;
+      return rows[index >= 0 ? index : rows.length - 1]!;
     },
     async delete(id: string): Promise<void> {
       const rows = readTable<T>(tableName);
@@ -95,19 +95,19 @@ function makeSingletonStore<T extends { id: string }>(tableName: string): Single
       writeTable(tableName, [defaultRow]);
       return defaultRow;
     },
-    async put(data: Record<string, unknown>): Promise<T> {
+    async put(fields: Record<string, unknown>): Promise<T> {
       const rows = readTable<T>(tableName);
-      const serialized = serializeRecord(data);
-      const idx = rows.findIndex(row => row.id === '1');
+      const serialized = serializeRecord(fields);
+      const index = rows.findIndex(row => row.id === '1');
 
-      if (idx >= 0) {
-        rows[idx] = { ...rows[idx]!, ...serialized, id: '1' } as T;
+      if (index >= 0) {
+        rows[index] = { ...rows[index]!, ...serialized, id: '1' } as T;
       } else {
         rows.push({ id: '1', ...serialized } as T);
       }
 
       writeTable(tableName, rows);
-      return rows[idx >= 0 ? idx : rows.length - 1]!;
+      return rows[index >= 0 ? index : rows.length - 1]!;
     },
   };
 }
@@ -119,7 +119,7 @@ const TABLE_NAMES = [
   'milestones', 'project_tasks', 'discussions', 'project_versions',
   'edges', 'edge_outcomes', 'edge_metrics', 'activities', 'notifications',
   'clarifications', 'crunch_columns', 'processes', 'process_steps',
-  'company_settings', 'notification_categories', 'notification_prefs',
+  'company_settings', 'notification_categories', 'notification_preferences',
   'account',
 ];
 
@@ -132,6 +132,14 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
   if (localStorage.getItem(oldAccountKey) !== null && localStorage.getItem(newAccountKey) === null) {
     localStorage.setItem(newAccountKey, localStorage.getItem(oldAccountKey)!);
     localStorage.removeItem(oldAccountKey);
+  }
+
+  // Migrate notification_prefs → notification_preferences (one-time rename)
+  const oldPrefsKey = KEY_PREFIX + 'notification_prefs';
+  const newPrefsKey = KEY_PREFIX + 'notification_preferences';
+  if (localStorage.getItem(oldPrefsKey) !== null && localStorage.getItem(newPrefsKey) === null) {
+    localStorage.setItem(newPrefsKey, localStorage.getItem(oldPrefsKey)!);
+    localStorage.removeItem(oldPrefsKey);
   }
 
   const milestoneStore = makeEntityStore<MilestoneEntity>('milestones');
@@ -215,20 +223,20 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
         const rows = readTable<IdeaScoreEntity>('idea_scores');
         return rows.find(row => row.idea_id === ideaId) ?? null;
       },
-      async put(ideaId: string, data: Record<string, unknown>): Promise<IdeaScoreEntity> {
+      async put(ideaId: string, fields: Record<string, unknown>): Promise<IdeaScoreEntity> {
         const rows = readTable<IdeaScoreEntity>('idea_scores');
-        const serialized = serializeRecord(data);
-        const idx = rows.findIndex(row => row.idea_id === ideaId);
-        const id = idx >= 0 ? rows[idx]!.id : (data.id as string ?? `score-${ideaId}`);
+        const serialized = serializeRecord(fields);
+        const index = rows.findIndex(row => row.idea_id === ideaId);
+        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? `score-${ideaId}`);
 
-        if (idx >= 0) {
-          rows[idx] = { ...rows[idx]!, ...serialized, id, idea_id: ideaId } as IdeaScoreEntity;
+        if (index >= 0) {
+          rows[index] = { ...rows[index]!, ...serialized, id, idea_id: ideaId } as IdeaScoreEntity;
         } else {
           rows.push({ id, ...serialized, idea_id: ideaId } as IdeaScoreEntity);
         }
 
         writeTable('idea_scores', rows);
-        return rows[idx >= 0 ? idx : rows.length - 1]!;
+        return rows[index >= 0 ? index : rows.length - 1]!;
       },
     },
 
@@ -238,20 +246,20 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
       async getByProjectId(projectId: string): Promise<ProjectTeamEntity[]> {
         return readTable<ProjectTeamEntity>('project_team').filter(row => row.project_id === projectId);
       },
-      async put(projectId: string, userId: string, data: Record<string, unknown>): Promise<ProjectTeamEntity> {
+      async put(projectId: string, userId: string, fields: Record<string, unknown>): Promise<ProjectTeamEntity> {
         const rows = readTable<ProjectTeamEntity>('project_team');
-        const serialized = serializeRecord(data);
-        const idx = rows.findIndex(row => row.project_id === projectId && row.user_id === userId);
-        const id = idx >= 0 ? rows[idx]!.id : (data.id as string ?? `pt-${projectId}-${userId}`);
+        const serialized = serializeRecord(fields);
+        const index = rows.findIndex(row => row.project_id === projectId && row.user_id === userId);
+        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? `pt-${projectId}-${userId}`);
 
-        if (idx >= 0) {
-          rows[idx] = { ...rows[idx]!, ...serialized, id, project_id: projectId, user_id: userId } as ProjectTeamEntity;
+        if (index >= 0) {
+          rows[index] = { ...rows[index]!, ...serialized, id, project_id: projectId, user_id: userId } as ProjectTeamEntity;
         } else {
           rows.push({ id, ...serialized, project_id: projectId, user_id: userId } as ProjectTeamEntity);
         }
 
         writeTable('project_team', rows);
-        return rows[idx >= 0 ? idx : rows.length - 1]!;
+        return rows[index >= 0 ? index : rows.length - 1]!;
       },
     },
 
@@ -317,17 +325,17 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     companySettings: makeSingletonStore<CompanySettingsEntity>('company_settings'),
     notificationCategories: makeEntityStore<NotificationCategoryEntity>('notification_categories'),
 
-    notificationPrefs: (() => {
-      const store = makeEntityStore<NotificationPrefEntity>('notification_prefs');
+    notificationPreferences: (() => {
+      const store = makeEntityStore<NotificationPreferenceEntity>('notification_preferences');
       return {
-        async getAll(): Promise<NotificationPrefEntity[]> {
-          return readTable<NotificationPrefEntity>('notification_prefs');
+        async getAll(): Promise<NotificationPreferenceEntity[]> {
+          return readTable<NotificationPreferenceEntity>('notification_preferences');
         },
-        async getByCategoryId(categoryId: string): Promise<NotificationPrefEntity[]> {
-          return readTable<NotificationPrefEntity>('notification_prefs').filter(row => row.category_id === categoryId);
+        async getByCategoryId(categoryId: string): Promise<NotificationPreferenceEntity[]> {
+          return readTable<NotificationPreferenceEntity>('notification_preferences').filter(row => row.category_id === categoryId);
         },
-        async put(id: string, data: Record<string, unknown>): Promise<NotificationPrefEntity> {
-          return store.put(id, data);
+        async put(id: string, fields: Record<string, unknown>): Promise<NotificationPreferenceEntity> {
+          return store.put(id, fields);
         },
       };
     })(),

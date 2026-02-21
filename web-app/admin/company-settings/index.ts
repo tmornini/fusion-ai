@@ -5,16 +5,16 @@ import {
 } from '../../site/script';
 import { getCompanySettings } from '../../site/data';
 
-function selectField(id: string, label: string, value: string, options: string[]): SafeHtml {
+function buildSelectField(id: string, label: string, value: string, options: string[]): SafeHtml {
   return html`<div>
     <label class="label mb-2 block">${label}</label>
     <select class="input" id="${id}">
-      ${options.map(o => html`<option value="${o}" ${o === value ? trusted('selected') : html``}>${o}</option>`)}
+      ${options.map(option => html`<option value="${option}" ${option === value ? trusted('selected') : html``}>${option}</option>`)}
     </select>
   </div>`;
 }
 
-function toggleRow(id: string, label: string, description: string, checked: boolean): SafeHtml {
+function buildToggleRow(id: string, label: string, description: string, checked: boolean): SafeHtml {
   return html`
     <div class="flex items-center justify-between py-4" style="border-bottom:1px solid hsl(var(--border))">
       <div style="flex:1;min-width:0;margin-right:2rem">
@@ -28,7 +28,7 @@ function toggleRow(id: string, label: string, description: string, checked: bool
 }
 
 export async function init(): Promise<void> {
-  const c = await getCompanySettings();
+  const settings = await getCompanySettings();
   const container = $('#company-settings-content');
   if (!container) return;
 
@@ -52,34 +52,34 @@ export async function init(): Promise<void> {
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label class="label mb-2 block">Company Name</label>
-            <input class="input" id="companyName" value="${c.name}" />
+            <input class="input" id="company-name" value="${settings.name}" />
           </div>
           <div>
             <label class="label mb-2 block flex items-center gap-2">${iconGlobe(16)} Domain</label>
-            <input class="input" id="domain" value="${c.domain}" />
+            <input class="input" id="domain" value="${settings.domain}" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          ${selectField('industry', 'Industry', c.industry, ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Education', 'Other'])}
-          ${selectField('size', 'Company Size', c.size, ['1-10', '11-50', '51-200', '201-500', '500+'])}
+          ${buildSelectField('industry', 'Industry', settings.industry, ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Education', 'Other'])}
+          ${buildSelectField('size', 'Company Size', settings.size, ['1-10', '11-50', '51-200', '201-500', '500+'])}
         </div>
       </div>
 
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4">Regional Settings</h3>
         <div class="grid grid-cols-2 gap-4">
-          ${selectField('timezone', 'Timezone', c.timezone, ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'])}
-          ${selectField('language', 'Language', c.language, ['English', 'Spanish', 'French', 'German', 'Japanese'])}
+          ${buildSelectField('timezone', 'Timezone', settings.timezone, ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'])}
+          ${buildSelectField('language', 'Language', settings.language, ['English', 'Spanish', 'French', 'German', 'Japanese'])}
         </div>
       </div>
 
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconShield(20)} Security</h3>
-        ${toggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', c.isSsoEnforced)}
-        ${toggleRow('2fa', 'Two-Factor Authentication', 'Require 2FA for all users', c.isTwoFactorEnabled)}
-        ${toggleRow('ipWhitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', c.isIpWhitelistEnabled)}
+        ${buildToggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', settings.isSsoEnforced)}
+        ${buildToggleRow('2fa', 'Two-Factor Authentication', 'Require 2FA for all users', settings.isTwoFactorEnabled)}
+        ${buildToggleRow('ipWhitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', settings.isIpWhitelistEnabled)}
         <div class="pt-4">
-          ${selectField('retention', 'Data Retention Period', c.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
+          ${buildSelectField('retention', 'Data Retention Period', settings.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
         </div>
       </div>
     </div>`);

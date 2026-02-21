@@ -24,7 +24,7 @@ let currentIdea: EdgeIdea | null = null;
 
 function completionStatus() {
   const hasOutcomes = edgeData.outcomes.length > 0;
-  const allOutcomesHaveMetrics = hasOutcomes && edgeData.outcomes.every(o => o.metrics.length > 0);
+  const allOutcomesHaveMetrics = hasOutcomes && edgeData.outcomes.every(outcome => outcome.metrics.length > 0);
   const hasImpact = !!(edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm);
   const hasOwner = edgeData.owner.trim() !== '';
   const hasConfidence = edgeData.confidence !== '';
@@ -43,14 +43,14 @@ function buildEdgePage(ideaId: string): SafeHtml {
   const idea = currentIdea!;
   const completion = completionStatus();
   const statusLabel = completion.isComplete ? 'Complete' : completion.completionPercent > 0 ? 'In Progress' : 'Incomplete';
-  const statusCls = completion.isComplete ? 'badge-success' : completion.completionPercent > 0 ? 'badge-warning' : 'badge-error';
+  const statusClassName = completion.isComplete ? 'badge-success' : completion.completionPercent > 0 ? 'badge-warning' : 'badge-error';
 
   const outcomesHtml = edgeData.outcomes.length === 0
     ? html`<div class="text-center p-8" style="border:2px dashed hsl(var(--border));border-radius:var(--radius-lg)">
         ${iconTarget(40, 'text-muted')}
         <p class="text-sm text-muted mb-4 mt-3">No outcomes defined yet</p>
         <div class="flex flex-wrap justify-center gap-2">
-          ${outcomeTemplates.map(t => html`<button class="btn btn-outline btn-sm text-xs" data-add-template="${t}">${t}</button>`)}
+          ${outcomeTemplates.map(template => html`<button class="btn btn-outline btn-sm text-xs" data-add-template="${template}">${template}</button>`)}
         </div>
       </div>`
     : html`${edgeData.outcomes.map((outcome, idx) => html`
@@ -67,13 +67,13 @@ function buildEdgePage(ideaId: string): SafeHtml {
           </div>
           ${outcome.metrics.length === 0
             ? html`<p class="text-xs text-muted" style="font-style:italic">Add at least one metric to measure this outcome</p>`
-            : html`${outcome.metrics.map(m => html`
+            : html`${outcome.metrics.map(metric => html`
               <div class="p-2 rounded mb-2" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
                 <div class="flex items-center gap-2">
-                  <input class="input" style="flex:1;height:2rem;font-size:0.875rem" value="${m.name}" placeholder="Metric name" data-metric="${outcome.id}|${m.id}|name" />
-                  <input class="input" style="width:5rem;height:2rem;font-size:0.875rem" value="${m.target}" placeholder="Target" data-metric="${outcome.id}|${m.id}|target" />
-                  <input class="input" style="width:4rem;height:2rem;font-size:0.875rem" value="${m.unit}" placeholder="Unit" data-metric="${outcome.id}|${m.id}|unit" />
-                  <button class="btn btn-ghost btn-icon btn-xs" data-remove-metric="${outcome.id}|${m.id}">${iconTrash(14)}</button>
+                  <input class="input" style="flex:1;height:2rem;font-size:0.875rem" value="${metric.name}" placeholder="Metric name" data-metric="${outcome.id}|${metric.id}|name" />
+                  <input class="input" style="width:5rem;height:2rem;font-size:0.875rem" value="${metric.target}" placeholder="Target" data-metric="${outcome.id}|${metric.id}|target" />
+                  <input class="input" style="width:4rem;height:2rem;font-size:0.875rem" value="${metric.unit}" placeholder="Unit" data-metric="${outcome.id}|${metric.id}|unit" />
+                  <button class="btn btn-ghost btn-icon btn-xs" data-remove-metric="${outcome.id}|${metric.id}">${iconTrash(14)}</button>
                 </div>
               </div>`)}`}
         </div>
@@ -88,7 +88,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
             <div class="badge badge-primary text-sm mb-2">${iconTarget(14)} Business Case Definition</div>
             <div class="flex items-center gap-3 mb-1">
               <h1 class="text-2xl font-display font-bold">Edge</h1>
-              <span class="badge ${statusCls}">${statusLabel}</span>
+              <span class="badge ${statusClassName}">${statusLabel}</span>
             </div>
             <p class="text-sm text-muted">Define outcomes, metrics, and expected impact</p>
           </div>
@@ -148,15 +148,15 @@ function buildEdgePage(ideaId: string): SafeHtml {
             <div class="impact-grid">
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Short-term (0-3 months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-short" placeholder="Expected impact in the first 3 months...">${edgeData.impact.shortTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="impact-short-term" placeholder="Expected impact in the first 3 months...">${edgeData.impact.shortTerm}</textarea>
               </div>
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Mid-term (3-12 months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-mid" placeholder="Expected impact over 3-12 months...">${edgeData.impact.midTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="impact-mid-term" placeholder="Expected impact over 3-12 months...">${edgeData.impact.midTerm}</textarea>
               </div>
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Long-term (12+ months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-long" placeholder="Expected impact after 12 months...">${edgeData.impact.longTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="impact-long-term" placeholder="Expected impact after 12 months...">${edgeData.impact.longTerm}</textarea>
               </div>
             </div>
           </div>
@@ -202,26 +202,26 @@ function buildEdgePage(ideaId: string): SafeHtml {
 }
 
 function syncFormFields() {
-  edgeData.impact.shortTerm = ($('#impact-short') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.midTerm = ($('#impact-mid') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.longTerm = ($('#impact-long') as HTMLTextAreaElement)?.value || '';
+  edgeData.impact.shortTerm = ($('#impact-short-term') as HTMLTextAreaElement)?.value || '';
+  edgeData.impact.midTerm = ($('#impact-mid-term') as HTMLTextAreaElement)?.value || '';
+  edgeData.impact.longTerm = ($('#impact-long-term') as HTMLTextAreaElement)?.value || '';
   edgeData.confidence = ($('#confidence-select') as HTMLSelectElement)?.value || '';
   edgeData.owner = ($('#owner-input') as HTMLInputElement)?.value || '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-desc]').forEach(inp => {
     const outcomeId = inp.getAttribute('data-outcome-desc')!;
-    const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
+    const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     if (outcome) outcome.description = inp.value;
   });
   document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(inp => {
     const parts = (inp.getAttribute('data-metric') || '').split('|');
     const [outcomeId, metricId, field] = [parts[0]!, parts[1]!, parts[2]!];
-    const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
-    const metric = outcome?.metrics.find(m => m.id === metricId);
+    const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
+    const metric = outcome?.metrics.find(candidate => candidate.id === metricId);
     if (metric && field in metric) metric[field] = inp.value;
   });
 }
 
-function renderEdgePage(ideaId: string) {
+function mutateEdgePage(ideaId: string) {
   const container = $('#edge-content');
   if (container) { setHtml(container, buildEdgePage(ideaId)); bindEdgeEvents(ideaId); }
 }
@@ -232,22 +232,22 @@ function bindEdgeEvents(ideaId: string) {
   $('#add-outcome')?.addEventListener('click', () => {
     syncFormFields();
     edgeData.outcomes.push({ id: `o${nextId++}`, description: '', metrics: [] });
-    renderEdgePage(ideaId);
+    mutateEdgePage(ideaId);
   });
 
   document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
       edgeData.outcomes.push({ id: `o${nextId++}`, description: btn.getAttribute('data-add-template') || '', metrics: [] });
-      renderEdgePage(ideaId);
+      mutateEdgePage(ideaId);
     });
   });
 
   document.querySelectorAll<HTMLElement>('[data-remove-outcome]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
-      edgeData.outcomes = edgeData.outcomes.filter(o => o.id !== btn.getAttribute('data-remove-outcome'));
-      renderEdgePage(ideaId);
+      edgeData.outcomes = edgeData.outcomes.filter(outcome => outcome.id !== btn.getAttribute('data-remove-outcome'));
+      mutateEdgePage(ideaId);
     });
   });
 
@@ -255,9 +255,9 @@ function bindEdgeEvents(ideaId: string) {
     btn.addEventListener('click', () => {
       syncFormFields();
       const outcomeId = btn.getAttribute('data-add-metric')!;
-      const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
+      const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
       if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
-      renderEdgePage(ideaId);
+      mutateEdgePage(ideaId);
     });
   });
 
@@ -265,9 +265,9 @@ function bindEdgeEvents(ideaId: string) {
     btn.addEventListener('click', () => {
       syncFormFields();
       const [outcomeId, metricId] = (btn.getAttribute('data-remove-metric') || '').split('|');
-      const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
-      if (outcome) outcome.metrics = outcome.metrics.filter(m => m.id !== metricId);
-      renderEdgePage(ideaId);
+      const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
+      if (outcome) outcome.metrics = outcome.metrics.filter(metric => metric.id !== metricId);
+      mutateEdgePage(ideaId);
     });
   });
 
@@ -312,5 +312,5 @@ export async function init(params?: Record<string, string>): Promise<void> {
     edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
     nextId = 1;
   }
-  renderEdgePage(ideaId);
+  mutateEdgePage(ideaId);
 }

@@ -44,7 +44,7 @@
 
 [data-theme="dark"] .dialog-backdrop,
 [data-theme="dark"] .sheet-backdrop,
-[data-theme="dark"] .cmdk-backdrop {
+[data-theme="dark"] .command-palette-backdrop {
   background-color: hsl(var(--backdrop) / 0.7);
 }
 

@@ -23,21 +23,21 @@ function buildActivityIcon(type: string): SafeHtml {
   return html`<div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;${entry.bg}">${entry.icon(20)}</div>`;
 }
 
-function buildActivity(a: Activity): SafeHtml {
-  const meta = a.score
-    ? html`<div class="badge badge-default text-xs mt-1">${iconStar(12)} Score: ${a.score}</div>`
-    : a.status
-      ? html`<div class="badge badge-default text-xs mt-1">${a.status}</div>`
-      : a.comment
-        ? html`<p class="text-sm text-muted mt-1" style="font-style:italic">"${a.comment}"</p>`
+function buildActivity(activity: Activity): SafeHtml {
+  const meta = activity.score
+    ? html`<div class="badge badge-default text-xs mt-1">${iconStar(12)} Score: ${activity.score}</div>`
+    : activity.status
+      ? html`<div class="badge badge-default text-xs mt-1">${activity.status}</div>`
+      : activity.comment
+        ? html`<p class="text-sm text-muted mt-1" style="font-style:italic">"${activity.comment}"</p>`
         : html``;
   return html`
     <div class="flex items-start gap-4 p-4 rounded-lg activity-row">
-      ${buildActivityIcon(a.type)}
+      ${buildActivityIcon(activity.type)}
       <div style="flex:1;min-width:0">
-        <p class="text-sm"><span class="font-medium">${a.actor}</span><span class="text-muted"> ${a.action} </span><span class="font-medium">${a.target}</span></p>
+        <p class="text-sm"><span class="font-medium">${activity.actor}</span><span class="text-muted"> ${activity.action} </span><span class="font-medium">${activity.target}</span></p>
         ${meta}
-        <p class="text-xs text-muted mt-1">${a.timestamp}</p>
+        <p class="text-xs text-muted mt-1">${activity.timestamp}</p>
       </div>
     </div>`;
 }

@@ -8,12 +8,12 @@ import {
 import { getIdeas, type Idea } from '../../site/data';
 import { edgeStatusConfig } from '../../site/config';
 
-const ideaStatusConfig: Record<string, { label: string; cls: string }> = {
-  draft: { label: 'Draft', cls: 'badge-default' },
-  scored: { label: 'Scored', cls: 'badge-primary' },
-  pending_review: { label: 'Pending Review', cls: 'badge-warning' },
-  approved: { label: 'Approved', cls: 'badge-success' },
-  rejected: { label: 'Sent Back', cls: 'badge-error' },
+const ideaStatusConfig: Record<string, { label: string; className: string }> = {
+  draft: { label: 'Draft', className: 'badge-default' },
+  scored: { label: 'Scored', className: 'badge-primary' },
+  pending_review: { label: 'Pending Review', className: 'badge-warning' },
+  approved: { label: 'Approved', className: 'badge-success' },
+  rejected: { label: 'Sent Back', className: 'badge-error' },
 };
 
 function styleForScore(score: number): string {
@@ -38,8 +38,8 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <h3 class="font-display font-semibold truncate">${idea.title}</h3>
-                <span class="badge ${ideaStatusConfig[idea.status]!.cls} text-xs">${ideaStatusConfig[idea.status]!.label}</span>
-                <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.cls} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
+                <span class="badge ${ideaStatusConfig[idea.status]!.className} text-xs">${ideaStatusConfig[idea.status]!.label}</span>
+                <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.className} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted">
                 ${view === 'priority' ? html`<span>Priority #${idea.priority}</span><span>•</span>` : html``}
@@ -116,8 +116,8 @@ export async function init(): Promise<void> {
     ideas = await getIdeas();
   } catch (e) {
     if (listContainer) {
-      const msg = e instanceof Error ? e.message : 'Failed to load ideas. Please try again.';
-      setHtml(listContainer, buildErrorState(msg));
+      const errorMessage = e instanceof Error ? e.message : 'Failed to load ideas. Please try again.';
+      setHtml(listContainer, buildErrorState(errorMessage));
       listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
     }
     return;
@@ -161,7 +161,7 @@ export async function init(): Promise<void> {
   }
 
   // Review queue button
-  const pendingReviewCount = ideas.filter(i => i.status === 'pending_review').length;
+  const pendingReviewCount = ideas.filter(idea => idea.status === 'pending_review').length;
   const reviewBtnEl = $('#review-queue-btn');
   if (reviewBtnEl && pendingReviewCount > 0) {
     setHtml(reviewBtnEl, html`
@@ -174,7 +174,7 @@ export async function init(): Promise<void> {
   // Create button
   $('#create-idea-btn')?.addEventListener('click', () => navigateTo('idea-create'));
 
-  function renderList() {
+  function mutateList() {
     const sorted = currentView === 'priority'
       ? [...ideas].sort((a, b) => a.priority - b.priority)
       : [...ideas].sort((a, b) => b.score - a.score);
@@ -190,10 +190,10 @@ export async function init(): Promise<void> {
     btn.addEventListener('click', () => {
       const view = btn.getAttribute('data-view') || 'priority';
       currentView = view;
-      document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(b => {
-        b.classList.toggle('active', b.getAttribute('data-view') === view);
+      document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-view') === view);
       });
-      renderList();
+      mutateList();
     });
   });
 
@@ -211,5 +211,5 @@ export async function init(): Promise<void> {
     if (card) navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
   });
 
-  renderList();
+  mutateList();
 }

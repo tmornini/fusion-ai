@@ -34,14 +34,14 @@ function calculateChartLayout(data: ChartDatum[], config?: ChartConfig) {
   const height = config?.height ?? 200;
   const padding = config?.padding ?? 40;
   const colors = config?.colors ?? defaultColors;
-  const maxValue = Math.max(...data.map(d => d.value));
+  const maxValue = Math.max(...data.map(datum => datum.value));
   const chartHeight = height - padding * 2;
   return { width, height, padding, colors, maxValue, chartHeight };
 }
 
 function calculateChartPoints(data: ChartDatum[], width: number, height: number, padding: number, maxValue: number, chartHeight: number) {
   const stepWidth = (width - padding * 2) / Math.max(data.length - 1, 1);
-  return data.map((d, i) => ({ x: padding + i * stepWidth, y: height - padding - (d.value / maxValue) * chartHeight }));
+  return data.map((datum, index) => ({ x: padding + index * stepWidth, y: height - padding - (datum.value / maxValue) * chartHeight }));
 }
 
 function buildBaseline(padding: number, width: number, height: number): string {
@@ -54,14 +54,14 @@ export function buildBarChart(data: ChartDatum[], config?: ChartConfig): SafeHtm
   const barWidth = Math.min(40, (width - padding * 2) / data.length - 8);
 
   let bars = '';
-  data.forEach((d, i) => {
-    const barHeight = (d.value / maxValue) * chartHeight;
-    const x = padding + i * ((width - padding * 2) / data.length) + ((width - padding * 2) / data.length - barWidth) / 2;
+  data.forEach((datum, index) => {
+    const barHeight = (datum.value / maxValue) * chartHeight;
+    const x = padding + index * ((width - padding * 2) / data.length) + ((width - padding * 2) / data.length - barWidth) / 2;
     const y = height - padding - barHeight;
-    const color = d.color || colors[i % colors.length];
+    const color = datum.color || colors[index % colors.length];
     bars += `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="4" fill="${color}" opacity="0.85"/>`;
     if (config?.showLabels !== false) {
-      bars += `<text x="${x + barWidth / 2}" y="${height - padding + 16}" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.6">${d.label}</text>`;
+      bars += `<text x="${x + barWidth / 2}" y="${height - padding + 16}" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.6">${datum.label}</text>`;
     }
   });
 
@@ -77,10 +77,10 @@ export function buildLineChart(data: ChartDatum[], config?: ChartConfig): SafeHt
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
   const points = calculateChartPoints(data, width, height, padding, maxValue, chartHeight);
 
-  const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const pathData = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   let dotMarkup = '';
-  points.forEach(p => {
-    dotMarkup += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`;
+  points.forEach(point => {
+    dotMarkup += `<circle cx="${point.x}" cy="${point.y}" r="3" fill="${color}"/>`;
   });
 
   return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -97,18 +97,18 @@ export function buildDonutChart(data: ChartDatum[], config?: ChartConfig): SafeH
 
   const cx = size / 2;
   const cy = size / 2;
-  const r = size / 2 - 10;
+  const radius = size / 2 - 10;
   const strokeWidth = 20;
-  const total = data.reduce((a, d) => a + d.value, 0);
-  const circumference = 2 * Math.PI * r;
+  const total = data.reduce((sum, datum) => sum + datum.value, 0);
+  const circumference = 2 * Math.PI * radius;
 
   let offset = 0;
   let arcs = '';
-  data.forEach((d, i) => {
-    const pct = d.value / total;
-    const dash = pct * circumference;
-    const color = d.color || colors[i % colors.length];
-    arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>`;
+  data.forEach((datum, index) => {
+    const percentage = datum.value / total;
+    const dash = percentage * circumference;
+    const color = datum.color || colors[index % colors.length];
+    arcs += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="round"/>`;
     offset += dash;
   });
 
@@ -123,7 +123,7 @@ export function buildAreaChart(data: ChartDatum[], config?: ChartConfig): SafeHt
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
   const points = calculateChartPoints(data, width, height, padding, maxValue, chartHeight);
 
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   const areaPath = linePath + ` L ${points[points.length - 1]!.x} ${height - padding} L ${points[0]!.x} ${height - padding} Z`;
   const gradientId = config?.id ? `area-grad-${config.id}` : `area-grad-${Math.random().toString(36).slice(2, 8)}`;
 

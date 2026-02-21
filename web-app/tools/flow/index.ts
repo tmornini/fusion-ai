@@ -31,21 +31,21 @@ function styleForStepType(type: string): string {
 
 function syncFormFields(): void {
   const nameInput = $('#flow-name') as HTMLInputElement;
-  const descriptionInput = $('#flow-desc') as HTMLTextAreaElement;
-  const dept = $('#flow-dept') as HTMLSelectElement;
+  const descriptionInput = $('#flow-description') as HTMLTextAreaElement;
+  const dept = $('#flow-department') as HTMLSelectElement;
   if (nameInput) processName = nameInput.value;
   if (descriptionInput) processDescription = descriptionInput.value;
   if (dept) processDepartment = dept.value;
 
   processSteps.forEach(step => {
     const title = $(`[data-step-field="${step.id}:title"]`) as HTMLInputElement;
-    const desc = $(`[data-step-field="${step.id}:description"]`) as HTMLTextAreaElement;
+    const descriptionField = $(`[data-step-field="${step.id}:description"]`) as HTMLTextAreaElement;
     const owner = $(`[data-step-field="${step.id}:owner"]`) as HTMLInputElement;
     const role = $(`[data-step-field="${step.id}:role"]`) as HTMLInputElement;
     const durationInput = $(`[data-step-field="${step.id}:duration"]`) as HTMLInputElement;
     const type = $(`[data-step-field="${step.id}:type"]`) as HTMLSelectElement;
     if (title) step.title = title.value;
-    if (desc) step.description = desc.value;
+    if (descriptionField) step.description = descriptionField.value;
     if (owner) step.owner = owner.value;
     if (role) step.role = role.value;
     if (durationInput) step.duration = durationInput.value;
@@ -149,7 +149,7 @@ function buildPreviewMode(): SafeHtml {
               </div>
               ${step.tools.length ? html`
                 <div class="flex flex-wrap gap-1.5" style="margin-top:0.75rem">
-                  ${step.tools.map(t => html`<span class="pill-tag" style="font-size:0.625rem">${toolIconConfig[t]?.(12) || html``} ${t}</span>`)}
+                  ${step.tools.map(toolName => html`<span class="pill-tag" style="font-size:0.625rem">${toolIconConfig[toolName]?.(12) || html``} ${toolName}</span>`)}
                 </div>
               ` : html``}
             </div>
@@ -179,11 +179,11 @@ function buildFlowPage(): SafeHtml {
         <div class="convert-grid">
           <div><label class="label mb-1 text-xs">Process Name</label><input class="input" id="flow-name" value="${processName}" placeholder="e.g., Customer Onboarding" style="font-size:1.125rem;font-weight:500"/></div>
           <div><label class="label mb-1 text-xs">Department</label>
-            <select class="input" id="flow-dept">
-              ${deptOptions.map(d => html`<option ${trusted(d === processDepartment ? 'selected' : '')}>${d}</option>`)}
+            <select class="input" id="flow-department">
+              ${deptOptions.map(department => html`<option ${trusted(department === processDepartment ? 'selected' : '')}>${department}</option>`)}
             </select>
           </div>
-          <div style="grid-column:span 2"><label class="label mb-1 text-xs">Description</label><textarea class="textarea" id="flow-desc" style="resize:none" placeholder="Briefly describe what this process accomplishes...">${processDescription}</textarea></div>
+          <div style="grid-column:span 2"><label class="label mb-1 text-xs">Description</label><textarea class="textarea" id="flow-description" style="resize:none" placeholder="Briefly describe what this process accomplishes...">${processDescription}</textarea></div>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ function buildFlowPage(): SafeHtml {
     </div>`;
 }
 
-function renderFlowPage(): void {
+function mutateFlowPage(): void {
   const root = $('#flow-content');
   if (!root) return;
   setHtml(root, buildFlowPage());
@@ -203,7 +203,7 @@ function bindFlowEvents(): void {
     btn.addEventListener('click', () => {
       syncFormFields();
       viewMode = btn.getAttribute('data-flow-mode') as 'edit' | 'preview';
-      renderFlowPage();
+      mutateFlowPage();
     });
   });
 
@@ -212,7 +212,7 @@ function bindFlowEvents(): void {
       syncFormFields();
       const id = el.getAttribute('data-step-header');
       expandedStepId = expandedStepId === id ? null : id;
-      renderFlowPage();
+      mutateFlowPage();
     });
   });
 
@@ -221,12 +221,12 @@ function bindFlowEvents(): void {
       e.stopPropagation();
       syncFormFields();
       const [id, dir] = (el.getAttribute('data-move-step') || '').split(':');
-      const idx = processSteps.findIndex(s => s.id === id);
-      if (idx < 0) return;
-      const target = dir === 'up' ? idx - 1 : idx + 1;
-      if (target < 0 || target >= processSteps.length) return;
-      [processSteps[idx], processSteps[target]] = [processSteps[target]!, processSteps[idx]!];
-      renderFlowPage();
+      const stepIndex = processSteps.findIndex(step => step.id === id);
+      if (stepIndex < 0) return;
+      const targetIndex = dir === 'up' ? stepIndex - 1 : stepIndex + 1;
+      if (targetIndex < 0 || targetIndex >= processSteps.length) return;
+      [processSteps[stepIndex], processSteps[targetIndex]] = [processSteps[targetIndex]!, processSteps[stepIndex]!];
+      mutateFlowPage();
     });
   });
 
@@ -234,8 +234,8 @@ function bindFlowEvents(): void {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       syncFormFields();
-      processSteps = processSteps.filter(s => s.id !== el.getAttribute('data-remove-step'));
-      renderFlowPage();
+      processSteps = processSteps.filter(step => step.id !== el.getAttribute('data-remove-step'));
+      mutateFlowPage();
     });
   });
 
@@ -244,10 +244,10 @@ function bindFlowEvents(): void {
       syncFormFields();
       const parts = (el.getAttribute('data-toggle-tool') || '').split(':');
       const stepId = parts[0]!, tool = parts[1]!;
-      const step = processSteps.find(s => s.id === stepId);
+      const step = processSteps.find(candidate => candidate.id === stepId);
       if (!step) return;
-      step.tools = step.tools.includes(tool) ? step.tools.filter(t => t !== tool) : [...step.tools, tool];
-      renderFlowPage();
+      step.tools = step.tools.includes(tool) ? step.tools.filter(toolName => toolName !== tool) : [...step.tools, tool];
+      mutateFlowPage();
     });
   });
 
@@ -258,7 +258,7 @@ function bindFlowEvents(): void {
       tools: [], duration: '', order: processSteps.length + 1, type: 'action',
     });
     expandedStepId = processSteps[processSteps.length - 1]!.id;
-    renderFlowPage();
+    mutateFlowPage();
   });
 }
 
@@ -288,5 +288,5 @@ export async function init(): Promise<void> {
   processSteps = flowData.steps;
   viewMode = 'edit';
   expandedStepId = null;
-  renderFlowPage();
+  mutateFlowPage();
 }

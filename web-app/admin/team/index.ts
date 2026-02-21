@@ -78,31 +78,31 @@ function buildMemberDetail(member: TeamMember): SafeHtml {
     </div>`;
 }
 
-function buildMemberCard(m: TeamMember): SafeHtml {
+function buildMemberCard(member: TeamMember): SafeHtml {
   return html`
-    <div class="card card-hover" style="padding:1.25rem;cursor:pointer;${selectedMemberId === m.id ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : ''}" data-member-card="${m.id}">
+    <div class="card card-hover" style="padding:1.25rem;cursor:pointer;${selectedMemberId === member.id ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : ''}" data-member-card="${member.id}">
       <div class="flex items-start gap-4">
         <div style="position:relative;flex-shrink:0">
           <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.05));display:flex;align-items:center;justify-content:center">
-            <span class="text-lg font-bold text-primary">${initials(m.name)}</span>
+            <span class="text-lg font-bold text-primary">${initials(member.name)}</span>
           </div>
-          ${buildStatusDot(m.status)}
+          ${buildStatusDot(member.status)}
         </div>
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-1">
-            <h3 class="font-semibold text-sm">${m.name}</h3>
-            <span class="pill" style="${styleForAvailability(m.availability)}">${m.availability}%</span>
+            <h3 class="font-semibold text-sm">${member.name}</h3>
+            <span class="pill" style="${styleForAvailability(member.availability)}">${member.availability}%</span>
           </div>
-          <p class="text-xs text-muted mb-2">${m.role} • ${m.department}</p>
+          <p class="text-xs text-muted mb-2">${member.role} • ${member.department}</p>
           <div class="flex flex-wrap gap-1.5 mb-2">
-            ${m.strengths.slice(0, 3).map(s => html`
-              <span class="pill-tag" style="background:hsl(var(--muted)/0.5);font-size:0.625rem">${iconStar(10)} ${s}</span>
+            ${member.strengths.slice(0, 3).map(strength => html`
+              <span class="pill-tag" style="background:hsl(var(--muted)/0.5);font-size:0.625rem">${iconStar(10)} ${strength}</span>
             `)}
           </div>
           <div class="flex items-center gap-4 text-xs text-muted">
-            <span class="flex items-center gap-1">${iconTrendingUp(14, 'text-success')} ${m.performanceScore}%</span>
-            <span class="flex items-center gap-1">${iconBriefcase(14)} ${m.currentProjects} active</span>
-            <span class="flex items-center gap-1 hidden-mobile">${iconAward(14, 'text-primary')} ${m.projectsCompleted} completed</span>
+            <span class="flex items-center gap-1">${iconTrendingUp(14, 'text-success')} ${member.performanceScore}%</span>
+            <span class="flex items-center gap-1">${iconBriefcase(14)} ${member.currentProjects} active</span>
+            <span class="flex items-center gap-1 hidden-mobile">${iconAward(14, 'text-primary')} ${member.projectsCompleted} completed</span>
           </div>
         </div>
         ${iconChevronRight(20, 'text-muted')}
@@ -110,16 +110,16 @@ function buildMemberCard(m: TeamMember): SafeHtml {
     </div>`;
 }
 
-function renderList(): void {
+function mutateList(): void {
   const search = (($('#team-search') as HTMLInputElement)?.value || '').toLowerCase();
-  const filtered = members.filter(m =>
-    m.name.toLowerCase().includes(search) || m.role.toLowerCase().includes(search) || m.department.toLowerCase().includes(search)
+  const filtered = members.filter(member =>
+    member.name.toLowerCase().includes(search) || member.role.toLowerCase().includes(search) || member.department.toLowerCase().includes(search)
   );
   const list = $('#team-list');
   if (list) setHtml(list, html`${filtered.map(buildMemberCard)}`);
 
   const panel = $('#team-detail-panel');
-  const member = selectedMemberId ? members.find(m => m.id === selectedMemberId) : null;
+  const member = selectedMemberId ? members.find(candidate => candidate.id === selectedMemberId) : null;
   if (panel) {
     setHtml(panel, member ? buildMemberDetail(member) : html`
       <div style="padding:1.5rem;text-align:center">
@@ -135,7 +135,7 @@ function bindCards(): void {
   document.querySelectorAll<HTMLElement>('[data-member-card]').forEach(card => {
     card.addEventListener('click', () => {
       selectedMemberId = card.getAttribute('data-member-card');
-      renderList();
+      mutateList();
     });
   });
 }
@@ -182,19 +182,19 @@ export async function init(): Promise<void> {
   }
 
   // Search
-  $('#team-search')?.addEventListener('input', renderList);
+  $('#team-search')?.addEventListener('input', mutateList);
 
   // Add member dialog
   const dialog = $('#add-member-dialog')!;
   $('#team-add-btn')?.addEventListener('click', () => { dialog.style.display = ''; });
-  $('#am-cancel')?.addEventListener('click', () => { dialog.style.display = 'none'; });
+  $('#add-member-cancel')?.addEventListener('click', () => { dialog.style.display = 'none'; });
   dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.style.display = 'none'; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dialog.style.display !== 'none') dialog.style.display = 'none'; });
-  $('#am-send')?.addEventListener('click', () => {
-    const email = ($('#am-email') as HTMLInputElement)?.value;
+  $('#add-member-send')?.addEventListener('click', () => {
+    const email = ($('#add-member-email') as HTMLInputElement)?.value;
     showToast(email ? `Invitation sent to ${email}` : 'Member invited', 'success');
     dialog.style.display = 'none';
   });
 
-  renderList();
+  mutateList();
 }

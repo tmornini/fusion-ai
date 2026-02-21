@@ -23,7 +23,7 @@ function buildDataTypeIcon(type: string): SafeHtml {
 
 function completionPercent(): number {
   if (!columns.length) return 0;
-  const labeledCount = columns.filter(c => c.friendlyName && c.description && (!c.isAcronym || c.acronymExpansion)).length;
+  const labeledCount = columns.filter(column => column.friendlyName && column.description && (!column.isAcronym || column.acronymExpansion)).length;
   return Math.round((labeledCount / columns.length) * 100);
 }
 
@@ -74,7 +74,7 @@ function buildUploadStep(): SafeHtml {
 
 function buildLabelStep(): SafeHtml {
   const percent = completionPercent();
-  const labeled = columns.filter(c => c.friendlyName && c.description).length;
+  const labeled = columns.filter(column => column.friendlyName && column.description).length;
   return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="card" style="padding:1rem">
@@ -100,23 +100,23 @@ function buildLabelStep(): SafeHtml {
 
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <h3 class="font-medium">Help us understand each column</h3>
-        ${columns.map(col => {
-          const isExpanded = expandedColumnId === col.id;
-          const isColumnLabeled = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
+        ${columns.map(column => {
+          const isExpanded = expandedColumnId === column.id;
+          const isColumnLabeled = column.friendlyName && column.description && (!column.isAcronym || column.acronymExpansion);
           return html`
             <div class="card" style="${trusted(isColumnLabeled ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : '')};overflow:hidden">
-              <div style="padding:1rem;cursor:pointer" data-col-toggle="${col.id}">
+              <div style="padding:1rem;cursor:pointer" data-column-toggle="${column.id}">
                 <div class="flex items-center gap-3">
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${trusted(isColumnLabeled ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))')}">${isColumnLabeled ? iconCheck(20, 'text-success') : buildDataTypeIcon(col.dataType)}</div>
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${trusted(isColumnLabeled ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))')}">${isColumnLabeled ? iconCheck(20, 'text-success') : buildDataTypeIcon(column.dataType)}</div>
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2">
-                      <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${col.originalName}</code>
-                      ${col.isAcronym ? html`<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>` : html``}
+                      <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${column.originalName}</code>
+                      ${column.isAcronym ? html`<span class="pill" style="background:hsl(var(--warning)/0.1);color:hsl(var(--warning));border:1px solid hsl(var(--warning)/0.2)">Acronym</span>` : html``}
                     </div>
-                    <p class="text-sm text-muted" style="margin-top:0.25rem">${col.friendlyName || 'Click to label this column'}</p>
+                    <p class="text-sm text-muted" style="margin-top:0.25rem">${column.friendlyName || 'Click to label this column'}</p>
                   </div>
                   <div class="flex items-center gap-3">
-                    <div class="text-right hidden-mobile"><p class="text-xs text-muted">Sample values</p><p class="text-sm">${col.sampleValues.slice(0, 2).join(', ')}</p></div>
+                    <div class="text-right hidden-mobile"><p class="text-xs text-muted">Sample values</p><p class="text-sm">${column.sampleValues.slice(0, 2).join(', ')}</p></div>
                     ${isExpanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
                   </div>
                 </div>
@@ -124,18 +124,18 @@ function buildLabelStep(): SafeHtml {
               ${isExpanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
-                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-col-field="${col.id}:friendlyName" placeholder="e.g., Customer ID" value="${col.friendlyName}"/></div>
+                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-column-field="${column.id}:friendlyName" placeholder="e.g., Customer ID" value="${column.friendlyName}"/></div>
                     <div><label class="label mb-1 text-xs">Data type</label>
-                      <select class="input" data-col-field="${col.id}:dataType">
-                        <option value="text" ${trusted(col.dataType === 'text' ? 'selected' : '')}>Text</option>
-                        <option value="number" ${trusted(col.dataType === 'number' ? 'selected' : '')}>Number</option>
-                        <option value="date" ${trusted(col.dataType === 'date' ? 'selected' : '')}>Date</option>
-                        <option value="boolean" ${trusted(col.dataType === 'boolean' ? 'selected' : '')}>Yes/No</option>
+                      <select class="input" data-column-field="${column.id}:dataType">
+                        <option value="text" ${trusted(column.dataType === 'text' ? 'selected' : '')}>Text</option>
+                        <option value="number" ${trusted(column.dataType === 'number' ? 'selected' : '')}>Number</option>
+                        <option value="date" ${trusted(column.dataType === 'date' ? 'selected' : '')}>Date</option>
+                        <option value="boolean" ${trusted(column.dataType === 'boolean' ? 'selected' : '')}>Yes/No</option>
                       </select>
                     </div>
                   </div>
-                  ${col.isAcronym ? html`<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${col.originalName}" stand for?</label><input class="input" data-col-field="${col.id}:acronymExpansion" placeholder="e.g., Customer Identifier" value="${col.acronymExpansion}"/></div>` : html``}
-                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-col-field="${col.id}:description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${col.description}</textarea></div>
+                  ${column.isAcronym ? html`<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${column.originalName}" stand for?</label><input class="input" data-column-field="${column.id}:acronymExpansion" placeholder="e.g., Customer Identifier" value="${column.acronymExpansion}"/></div>` : html``}
+                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-column-field="${column.id}:description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${column.description}</textarea></div>
                 </div>
               ` : html``}
             </div>`;
@@ -165,17 +165,17 @@ function buildReviewStep(): SafeHtml {
 }
 
 function syncFormFields(): void {
-  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-col-field]').forEach(el => {
-    const [columnId, field] = (el.getAttribute('data-col-field') || '').split(':');
-    const col = columns.find(c => c.id === columnId);
-    if (col && field) {
-      const k = field as keyof CrunchColumn;
-      if (k === 'friendlyName' || k === 'description' || k === 'dataType' || k === 'acronymExpansion') col[k] = el.value;
-      else if (k === 'isAcronym') col[k] = el.value === 'true';
+  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-column-field]').forEach(el => {
+    const [columnId, field] = (el.getAttribute('data-column-field') || '').split(':');
+    const column = columns.find(candidate => candidate.id === columnId);
+    if (column && field) {
+      const columnKey = field as keyof CrunchColumn;
+      if (columnKey === 'friendlyName' || columnKey === 'description' || columnKey === 'dataType' || columnKey === 'acronymExpansion') column[columnKey] = el.value;
+      else if (columnKey === 'isAcronym') column[columnKey] = el.value === 'true';
     }
   });
-  const ctx = $('#crunch-context') as HTMLTextAreaElement;
-  if (ctx) businessContext = ctx.value;
+  const contextField = $('#crunch-context') as HTMLTextAreaElement;
+  if (contextField) businessContext = contextField.value;
 }
 
 function buildCrunchPage(): SafeHtml {
@@ -197,7 +197,7 @@ function buildCrunchPage(): SafeHtml {
 
 let mockColumns: CrunchColumn[] = [];
 
-function renderCrunchPage(): void {
+function mutateCrunchPage(): void {
   const root = $('#crunch-content');
   if (!root) return;
   setHtml(root, buildCrunchPage());
@@ -209,21 +209,21 @@ function bindCrunchEvents(): void {
     $('#crunch-dropzone')?.addEventListener('click', () => {
       columns = mockColumns.map(c => ({ ...c }));
       step = 'label';
-      renderCrunchPage();
+      mutateCrunchPage();
     });
   }
 
   if (step === 'label') {
-    document.querySelectorAll<HTMLElement>('[data-col-toggle]').forEach(el => {
+    document.querySelectorAll<HTMLElement>('[data-column-toggle]').forEach(el => {
       el.addEventListener('click', () => {
         syncFormFields();
-        const id = el.getAttribute('data-col-toggle');
+        const id = el.getAttribute('data-column-toggle');
         expandedColumnId = expandedColumnId === id ? null : id;
-        renderCrunchPage();
+        mutateCrunchPage();
       });
     });
 
-    document.querySelectorAll<HTMLElement>('[data-col-field]').forEach(el => {
+    document.querySelectorAll<HTMLElement>('[data-column-field]').forEach(el => {
       el.addEventListener('input', () => {
         syncFormFields();
         const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;
@@ -231,12 +231,12 @@ function bindCrunchEvents(): void {
       });
     });
 
-    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; renderCrunchPage(); });
-    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; renderCrunchPage(); });
+    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; mutateCrunchPage(); });
+    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; mutateCrunchPage(); });
   }
 
   if (step === 'review') {
-    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; renderCrunchPage(); });
+    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; mutateCrunchPage(); });
     $('#crunch-to-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
   }
 }
@@ -247,5 +247,5 @@ export async function init(): Promise<void> {
   columns = [];
   expandedColumnId = null;
   businessContext = '';
-  renderCrunchPage();
+  mutateCrunchPage();
 }
