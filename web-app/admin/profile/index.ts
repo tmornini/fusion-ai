@@ -9,9 +9,9 @@ import { getProfile, allStrengths } from '../../site/data';
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
 
 function buildStrengthChip(name: string): SafeHtml {
-  const active = selectedStrengths.has(name);
-  return html`<button class="strength-chip btn ${active ? 'btn-primary' : 'btn-secondary'} btn-sm" data-strength="${name}">
-    ${active ? html`${iconCheckCircle2(12)} ` : html``}${name}
+  const isActive = selectedStrengths.has(name);
+  return html`<button class="strength-chip btn ${isActive ? 'btn-primary' : 'btn-secondary'} btn-sm" data-strength="${name}">
+    ${isActive ? html`${iconCheckCircle2(12)} ` : html``}${name}
   </button>`;
 }
 

@@ -8,9 +8,9 @@ import {
 } from '../../site/script';
 import { getTeamMembers, type TeamMember } from '../../site/data';
 
-function availabilityClass(a: number): string {
-  if (a >= 70) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';
-  if (a >= 40) return 'color:hsl(var(--warning));background:hsl(var(--warning)/0.1);border:1px solid hsl(var(--warning)/0.2)';
+function styleForAvailability(availability: number): string {
+  if (availability >= 70) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';
+  if (availability >= 40) return 'color:hsl(var(--warning));background:hsl(var(--warning)/0.1);border:1px solid hsl(var(--warning)/0.2)';
   return 'color:hsl(var(--error));background:hsl(var(--error)/0.1);border:1px solid hsl(var(--error)/0.2)';
 }
 
@@ -19,7 +19,7 @@ function buildStatusDot(status: string): SafeHtml {
   return html`<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
 }
 
-const dimensionIcons: Record<string, (s?: number, c?: string) => SafeHtml> = {
+const dimensionIcons: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   driver: iconTarget, analytical: iconBrain, expressive: iconZap, amiable: iconHeart,
 };
 
@@ -91,7 +91,7 @@ function buildMemberCard(m: TeamMember): SafeHtml {
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <h3 class="font-semibold text-sm">${m.name}</h3>
-            <span class="pill" style="${availabilityClass(m.availability)}">${m.availability}%</span>
+            <span class="pill" style="${styleForAvailability(m.availability)}">${m.availability}%</span>
           </div>
           <p class="text-xs text-muted mb-2">${m.role} • ${m.department}</p>
           <div class="flex flex-wrap gap-1.5 mb-2">

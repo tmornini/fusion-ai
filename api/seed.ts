@@ -230,10 +230,10 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
 
   // ── Notifications ──────────────────────────
   const notifications = [
-    { id: '1', title: 'New idea submitted', message: 'Marketing team submitted "AI Chatbot Integration"', time: '5 min ago', unread: 1 },
-    { id: '2', title: 'Project approved', message: 'Your project "Mobile App Redesign" was approved', time: '1 hour ago', unread: 1 },
-    { id: '3', title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', unread: 0 },
-    { id: '4', title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', unread: 0 },
+    { id: '1', title: 'New idea submitted', message: 'Marketing team submitted "AI Chatbot Integration"', time: '5 min ago', is_unread: 1 },
+    { id: '2', title: 'Project approved', message: 'Your project "Mobile App Redesign" was approved', time: '1 hour ago', is_unread: 1 },
+    { id: '3', title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', is_unread: 0 },
+    { id: '4', title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', is_unread: 0 },
   ];
   for (const notification of notifications) {
     await adapter.notifications.put(notification.id, notification);
@@ -288,9 +288,9 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     size: '51-200',
     timezone: 'America/New_York',
     language: 'English',
-    enforce_sso: 0,
-    two_factor: 1,
-    ip_whitelist: 0,
+    is_sso_enforced: 0,
+    is_two_factor_enabled: 1,
+    is_ip_whitelist_enabled: 0,
     data_retention: '12 months',
   });
 
@@ -306,22 +306,22 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
   }
 
   const notifPrefs = [
-    { id: 'idea_submitted', category_id: 'ideas', label: 'New idea submitted', description: 'When someone submits a new idea', email: 1, push: 1 },
-    { id: 'idea_scored', category_id: 'ideas', label: 'Idea scored', description: 'When an idea receives an AI score', email: 1, push: 0 },
-    { id: 'idea_converted', category_id: 'ideas', label: 'Idea converted to project', description: 'When an idea becomes a project', email: 1, push: 1 },
-    { id: 'idea_comment', category_id: 'ideas', label: 'Comment on your idea', description: 'When someone comments on your idea', email: 1, push: 1 },
-    { id: 'project_created', category_id: 'projects', label: 'New project created', description: 'When a new project is started', email: 1, push: 0 },
-    { id: 'task_assigned', category_id: 'projects', label: 'Task assigned to you', description: 'When you are assigned a new task', email: 1, push: 1 },
-    { id: 'task_completed', category_id: 'projects', label: 'Task completed', description: 'When a task in your project is completed', email: 0, push: 0 },
-    { id: 'project_status', category_id: 'projects', label: 'Project status changed', description: 'When a project status is updated', email: 1, push: 0 },
-    { id: 'team_invite', category_id: 'teams', label: 'Team invitation', description: 'When you are invited to join a team', email: 1, push: 1 },
-    { id: 'member_joined', category_id: 'teams', label: 'New team member', description: 'When someone joins your team', email: 1, push: 0 },
-    { id: 'member_left', category_id: 'teams', label: 'Team member left', description: 'When someone leaves your team', email: 1, push: 0 },
-    { id: 'team_mention', category_id: 'teams', label: 'Team mention', description: 'When your team is mentioned', email: 0, push: 1 },
-    { id: 'security_alert', category_id: 'account', label: 'Security alerts', description: 'Important security notifications', email: 1, push: 1 },
-    { id: 'billing_reminder', category_id: 'account', label: 'Billing reminders', description: 'Upcoming payment reminders', email: 1, push: 0 },
-    { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', email: 1, push: 1 },
-    { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', email: 1, push: 0 },
+    { id: 'idea_submitted', category_id: 'ideas', label: 'New idea submitted', description: 'When someone submits a new idea', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'idea_scored', category_id: 'ideas', label: 'Idea scored', description: 'When an idea receives an AI score', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'idea_converted', category_id: 'ideas', label: 'Idea converted to project', description: 'When an idea becomes a project', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'idea_comment', category_id: 'ideas', label: 'Comment on your idea', description: 'When someone comments on your idea', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'project_created', category_id: 'projects', label: 'New project created', description: 'When a new project is started', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'task_assigned', category_id: 'projects', label: 'Task assigned to you', description: 'When you are assigned a new task', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'task_completed', category_id: 'projects', label: 'Task completed', description: 'When a task in your project is completed', is_email_enabled: 0, is_push_enabled: 0 },
+    { id: 'project_status', category_id: 'projects', label: 'Project status changed', description: 'When a project status is updated', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'team_invite', category_id: 'teams', label: 'Team invitation', description: 'When you are invited to join a team', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'member_joined', category_id: 'teams', label: 'New team member', description: 'When someone joins your team', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'member_left', category_id: 'teams', label: 'Team member left', description: 'When someone leaves your team', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'team_mention', category_id: 'teams', label: 'Team mention', description: 'When your team is mentioned', is_email_enabled: 0, is_push_enabled: 1 },
+    { id: 'security_alert', category_id: 'account', label: 'Security alerts', description: 'Important security notifications', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'billing_reminder', category_id: 'account', label: 'Billing reminders', description: 'Upcoming payment reminders', is_email_enabled: 1, is_push_enabled: 0 },
+    { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', is_email_enabled: 1, is_push_enabled: 1 },
+    { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', is_email_enabled: 1, is_push_enabled: 0 },
   ];
   for (const pref of notifPrefs) {
     await adapter.notificationPrefs.put(pref.id, pref);

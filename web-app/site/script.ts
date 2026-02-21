@@ -143,7 +143,7 @@ function updateThemeToggleIcon(): void {
 async function populateNotifications(): Promise<void> {
   const { getNotifications } = await import('./data');
   const notifications = await getNotifications();
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = notifications.filter(n => n.isUnread).length;
 
   function renderItems(containerId: string, countId: string, badgeId: string) {
     const list = document.getElementById(containerId);
@@ -154,9 +154,9 @@ async function populateNotifications(): Promise<void> {
       setHtml(list, html`${notifications.map(n => html`
         <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
           <div class="flex items-start gap-2 w-full">
-            ${n.unread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
-            <div style="flex:1;${!n.unread ? 'margin-left:1rem' : ''}">
-              <p class="text-sm ${n.unread ? 'font-medium' : 'text-muted'}">${n.title}</p>
+            ${n.isUnread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
+            <div style="flex:1;${!n.isUnread ? 'margin-left:1rem' : ''}">
+              <p class="text-sm ${n.isUnread ? 'font-medium' : 'text-muted'}">${n.title}</p>
               <p class="text-xs text-muted line-clamp-2">${n.message}</p>
               <p class="text-xs text-muted mt-1">${n.time}</p>
             </div>
@@ -282,14 +282,14 @@ function initActiveNavItem(): void {
   const pageName = getPageName();
   document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(el => {
     const linkPage = el.getAttribute('data-page-link') || '';
-    let active = linkPage === pageName;
-    if (!active) {
-      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) active = true;
-      else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) active = true;
-      else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) active = true;
-      else if (linkPage === 'edge-list' && pageName === 'edge') active = true;
+    let isActive = linkPage === pageName;
+    if (!isActive) {
+      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) isActive = true;
+      else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) isActive = true;
+      else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) isActive = true;
+      else if (linkPage === 'edge-list' && pageName === 'edge') isActive = true;
     }
-    if (active) el.setAttribute('aria-current', 'page');
+    if (isActive) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
   });
 }

@@ -34,11 +34,11 @@ function buildStepIndicator(): SafeHtml {
     { key: 'review', label: 'Review', icon: iconCheck },
   ];
   return html`${steps.map((s, i) => {
-    const active = s.key === step;
-    const complete = (step === 'label' && i === 0) || (step === 'review' && i <= 1);
+    const isActive = s.key === step;
+    const isComplete = (step === 'label' && i === 0) || (step === 'review' && i <= 1);
     return html`<div class="flex items-center gap-2" style="flex-shrink:0">
-      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${trusted(active ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : complete ? 'background:hsl(var(--success) / 0.1);color:hsl(var(--success));border:1px solid hsl(var(--success) / 0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">
-        ${complete ? iconCheck(16) : s.icon(16)}
+      <div class="flex items-center gap-2" style="padding:0.375rem 1rem;border-radius:9999px;${trusted(isActive ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : isComplete ? 'background:hsl(var(--success) / 0.1);color:hsl(var(--success));border:1px solid hsl(var(--success) / 0.2)' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">
+        ${isComplete ? iconCheck(16) : s.icon(16)}
         <span class="text-sm font-medium">${s.label}</span>
       </div>
       ${i < 2 ? iconChevronRight(16, 'text-muted') : html``}
@@ -101,13 +101,13 @@ function buildLabelStep(): SafeHtml {
       <div style="display:flex;flex-direction:column;gap:0.75rem">
         <h3 class="font-medium">Help us understand each column</h3>
         ${columns.map(col => {
-          const expanded = expandedColumnId === col.id;
-          const isLabeled = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
+          const isExpanded = expandedColumnId === col.id;
+          const isColumnLabeled = col.friendlyName && col.description && (!col.isAcronym || col.acronymExpansion);
           return html`
-            <div class="card" style="${trusted(isLabeled ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : '')};overflow:hidden">
+            <div class="card" style="${trusted(isColumnLabeled ? 'border-color:hsl(var(--success) / 0.3);background:hsl(var(--success) / 0.03)' : '')};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-col-toggle="${col.id}">
                 <div class="flex items-center gap-3">
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${trusted(isLabeled ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))')}">${isLabeled ? iconCheck(20, 'text-success') : buildDataTypeIcon(col.dataType)}</div>
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;${trusted(isColumnLabeled ? 'background:hsl(var(--success) / 0.1)' : 'background:hsl(var(--muted))')}">${isColumnLabeled ? iconCheck(20, 'text-success') : buildDataTypeIcon(col.dataType)}</div>
                   <div style="flex:1;min-width:0">
                     <div class="flex flex-wrap items-center gap-2">
                       <code style="font-size:0.75rem;background:hsl(var(--muted));padding:0.125rem 0.5rem;border-radius:0.25rem">${col.originalName}</code>
@@ -117,11 +117,11 @@ function buildLabelStep(): SafeHtml {
                   </div>
                   <div class="flex items-center gap-3">
                     <div class="text-right hidden-mobile"><p class="text-xs text-muted">Sample values</p><p class="text-sm">${col.sampleValues.slice(0, 2).join(', ')}</p></div>
-                    ${expanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
+                    ${isExpanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
                   </div>
                 </div>
               </div>
-              ${expanded ? html`
+              ${isExpanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
                     <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-col-field="${col.id}:friendlyName" placeholder="e.g., Customer ID" value="${col.friendlyName}"/></div>

@@ -26,7 +26,7 @@ function buildMilestoneIcon(status: string): SafeHtml {
   }
 }
 
-function milestoneColor(status: string): string {
+function styleForMilestone(status: string): string {
   switch (status) {
     case 'completed': return 'color:hsl(var(--success))';
     case 'in_progress': return 'color:hsl(var(--warning))';
@@ -333,7 +333,7 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                     ${i < p.milestones.length - 1 ? html`<div style="width:2px;flex:1;background:hsl(var(--border));margin-top:0.25rem"></div>` : html``}
                   </div>
                   <div style="flex:1;padding-bottom:0.5rem">
-                    <p class="text-sm font-medium" style="${milestoneColor(m.status)}">${m.title}</p>
+                    <p class="text-sm font-medium" style="${styleForMilestone(m.status)}">${m.title}</p>
                     <p class="text-xs text-muted">${m.date}</p>
                   </div>
                 </div>

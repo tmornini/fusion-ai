@@ -7,7 +7,7 @@ import {
 } from '../../site/script';
 import { getIdeaForScoring, getIdeaScore, type ScoreBreakdown, type IdeaScore } from '../../site/data';
 
-function progressBg(score: number): string {
+function styleForProgress(score: number): string {
   if (score >= 80) return 'background:hsl(var(--success))';
   if (score >= 60) return 'background:hsl(var(--warning))';
   return 'background:hsl(var(--error))';
@@ -27,7 +27,7 @@ function buildBreakdown(data: { score: number; breakdown: ScoreBreakdown[] }): S
         <span class="font-bold" style="${colorForScore(item.score * 10)}">${item.score}/${item.maxScore}</span>
       </div>
       <div style="width:100%;background:hsl(var(--muted));border-radius:9999px;height:0.5rem;margin-bottom:0.5rem">
-        <div style="height:0.5rem;border-radius:9999px;${progressBg(item.score * 10)};width:${(item.score / item.maxScore) * 100}%;transition:width 0.3s"></div>
+        <div style="height:0.5rem;border-radius:9999px;${styleForProgress(item.score * 10)};width:${(item.score / item.maxScore) * 100}%;transition:width 0.3s"></div>
       </div>
       <p class="text-sm text-muted">${item.reason}</p>
     </div>`)}`;

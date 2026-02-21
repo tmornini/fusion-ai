@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel } from '../../../api/types';
-import { buildUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
+import { getUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
 
 export interface Idea {
   id: string;
@@ -18,7 +18,7 @@ export interface Idea {
 export async function getIdeas(): Promise<Idea[]> {
   const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
+    getUserMap(),
   ]);
   return ideas
     .map(idea => ({
@@ -54,7 +54,7 @@ export interface ReviewIdea {
 export async function getReviewQueue(): Promise<ReviewIdea[]> {
   const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
+    getUserMap(),
   ]);
 
   return ideas
@@ -188,7 +188,7 @@ export interface ApprovalEdge {
 export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    buildUserMap(),
+    getUserMap(),
   ]);
 
   return {

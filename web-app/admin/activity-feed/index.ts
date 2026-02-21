@@ -9,7 +9,7 @@ import {
 import { getActivityFeed, type Activity } from '../../site/data';
 
 function activityIconHtml(type: string): SafeHtml {
-  const iconMap: Record<string, { icon: (s?: number) => SafeHtml; bg: string }> = {
+  const iconMap: Record<string, { icon: (size?: number) => SafeHtml; bg: string }> = {
     idea_created: { icon: iconLightbulb, bg: 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text))' },
     idea_scored: { icon: iconStar, bg: 'background:hsl(var(--info-soft));color:hsl(var(--info-text))' },
     project_created: { icon: iconFolderKanban, bg: 'background:hsl(var(--primary) / 0.1);color:hsl(var(--primary))' },

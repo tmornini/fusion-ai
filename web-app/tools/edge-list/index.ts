@@ -6,27 +6,27 @@ import {
 } from '../../site/script';
 import { getEdgeList, type EdgeListItem } from '../../site/data';
 
-const statusConfig: Record<string, { label: string; cls: string; icon: (s?: number) => SafeHtml }> = {
+const edgeStatusConfig: Record<string, { label: string; cls: string; icon: (size?: number) => SafeHtml }> = {
   complete: { label: 'Complete', cls: 'badge-success', icon: iconCheckCircle2 },
   draft: { label: 'Draft', cls: 'badge-warning', icon: iconClock },
   missing: { label: 'Missing', cls: 'badge-error', icon: iconAlertCircle },
 };
 
-const confidenceConfig: Record<string, { label: string; cls: string }> = {
+const confidenceLevelConfig: Record<string, { label: string; cls: string }> = {
   high: { label: 'High', cls: 'text-success' },
   medium: { label: 'Medium', cls: 'text-warning' },
   low: { label: 'Low', cls: 'text-error' },
 };
 
 function buildEdgeCard(edge: EdgeListItem): SafeHtml {
-  const sc = statusConfig[edge.status];
+  const sc = edgeStatusConfig[edge.status];
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
             <span class="badge ${sc!.cls} text-xs">${sc!.icon(12)} ${sc!.label}</span>
-            ${edge.confidence ? html`<span class="flex items-center gap-1 text-xs ${confidenceConfig[edge.confidence]!.cls}">${iconShield(14)} ${confidenceConfig[edge.confidence]!.label} Confidence</span>` : html``}
+            ${edge.confidence ? html`<span class="flex items-center gap-1 text-xs ${confidenceLevelConfig[edge.confidence]!.cls}">${iconShield(14)} ${confidenceLevelConfig[edge.confidence]!.label} Confidence</span>` : html``}
           </div>
           <h3 class="font-semibold mb-1">${edge.ideaTitle}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">
@@ -92,9 +92,9 @@ export async function init(): Promise<void> {
     const search = (($('#edge-search') as HTMLInputElement)?.value || '').toLowerCase();
     const status = ($('#edge-status-filter') as HTMLSelectElement)?.value || 'all';
     const filtered = edges.filter(e => {
-      const matchSearch = e.ideaTitle.toLowerCase().includes(search) || e.owner.toLowerCase().includes(search);
-      const matchStatus = status === 'all' || e.status === status;
-      return matchSearch && matchStatus;
+      const matchesSearch = e.ideaTitle.toLowerCase().includes(search) || e.owner.toLowerCase().includes(search);
+      const matchesStatus = status === 'all' || e.status === status;
+      return matchesSearch && matchesStatus;
     });
     const list = $('#edge-list');
     const empty = $('#edge-empty');

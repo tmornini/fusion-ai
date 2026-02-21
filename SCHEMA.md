@@ -250,7 +250,7 @@
 | title | TEXT | '' |
 | message | TEXT | '' |
 | time | TEXT | '' |
-| unread | INTEGER | 1 |
+| is_unread | INTEGER | 1 |
 
 ### clarifications
 
@@ -281,9 +281,9 @@ Singleton table (single row, `id = '1'`).
 | size | TEXT | '' |
 | timezone | TEXT | '' |
 | language | TEXT | '' |
-| enforce_sso | INTEGER | 0 |
-| two_factor | INTEGER | 0 |
-| ip_whitelist | INTEGER | 0 |
+| is_sso_enforced | INTEGER | 0 |
+| is_two_factor_enabled | INTEGER | 0 |
+| is_ip_whitelist_enabled | INTEGER | 0 |
 | data_retention | TEXT | '' |
 
 ### notification_categories
@@ -302,8 +302,8 @@ Singleton table (single row, `id = '1'`).
 | category_id | TEXT (FK → notification_categories) | — |
 | label | TEXT | '' |
 | description | TEXT | '' |
-| email | INTEGER | 1 |
-| push | INTEGER | 0 |
+| is_email_enabled | INTEGER | 1 |
+| is_push_enabled | INTEGER | 0 |
 
 ### account_config
 

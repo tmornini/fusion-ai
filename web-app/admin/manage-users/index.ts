@@ -8,7 +8,7 @@ import {
 } from '../../site/script';
 import { getManagedUsers, type ManagedUser } from '../../site/data';
 
-const roleLabels: Record<string, { label: string; icon: (s?: number) => SafeHtml }> = {
+const roleLabels: Record<string, { label: string; icon: (size?: number) => SafeHtml }> = {
   admin: { label: 'Admin', icon: iconCrown },
   manager: { label: 'Manager', icon: iconUserCheck },
   member: { label: 'Member', icon: iconUser },

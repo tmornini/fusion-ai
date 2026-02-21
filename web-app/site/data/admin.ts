@@ -4,7 +4,7 @@ import type {
   NotificationCategoryEntity, NotificationPrefEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { buildUserMap } from './helpers';
+import { getUserMap } from './helpers';
 
 // ── Account ─────────────────────────────────
 
@@ -34,7 +34,7 @@ export async function getAccount(): Promise<Account> {
     GET('activities') as Promise<ActivityEntity[]>,
   ]);
 
-  const userMap = await buildUserMap();
+  const userMap = await getUserMap();
 
   return {
     company: {
@@ -112,9 +112,9 @@ export async function getCompanySettings(): Promise<CompanySettings> {
     size: row.size,
     timezone: row.timezone,
     language: row.language,
-    isSsoEnforced: toBool(row.enforce_sso),
-    isTwoFactorEnabled: toBool(row.two_factor),
-    isIpWhitelistEnabled: toBool(row.ip_whitelist),
+    isSsoEnforced: toBool(row.is_sso_enforced),
+    isTwoFactorEnabled: toBool(row.is_two_factor_enabled),
+    isIpWhitelistEnabled: toBool(row.is_ip_whitelist_enabled),
     dataRetention: row.data_retention,
   };
 }
@@ -136,7 +136,7 @@ export interface Activity {
 export async function getActivityFeed(): Promise<Activity[]> {
   const [activities, userMap] = await Promise.all([
     GET('activities') as Promise<ActivityEntity[]>,
-    buildUserMap(),
+    getUserMap(),
   ]);
   return activities.map(activity => ({
     id: activity.id,
@@ -157,8 +157,8 @@ export interface NotificationPref {
   id: string;
   label: string;
   description: string;
-  email: boolean;
-  push: boolean;
+  isEmailEnabled: boolean;
+  isPushEnabled: boolean;
 }
 
 export interface NotificationCategory {
@@ -189,8 +189,8 @@ export async function getNotificationCategories(): Promise<NotificationCategory[
       id: pref.id,
       label: pref.label,
       description: pref.description,
-      email: toBool(pref.email),
-      push: toBool(pref.push),
+      isEmailEnabled: toBool(pref.is_email_enabled),
+      isPushEnabled: toBool(pref.is_push_enabled),
     })),
   }));
 }

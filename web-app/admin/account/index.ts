@@ -9,7 +9,7 @@ import {
 } from '../../site/script';
 import { getAccount, type Account } from '../../site/data';
 
-function usageBarColor(current: number, limit: number): string {
+function styleForUsageBar(current: number, limit: number): string {
   const pct = (current / limit) * 100;
   if (pct >= 90) return 'background:hsl(var(--error))';
   if (pct >= 70) return 'background:hsl(var(--warning))';
@@ -24,7 +24,7 @@ function usageBar(label: string, current: number, limit: number): SafeHtml {
         <span class="text-muted">${label}</span>
         <span class="font-medium">${current} / ${limit}</span>
       </div>
-      <div class="progress"><div class="progress-bar" style="width:${pct}%;${usageBarColor(current, limit)}"></div></div>
+      <div class="progress"><div class="progress-bar" style="width:${pct}%;${styleForUsageBar(current, limit)}"></div></div>
     </div>`;
 }
 

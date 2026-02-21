@@ -8,7 +8,7 @@ import {
 } from '../../site/script';
 import { getFlow, type ProcessStep, type Flow } from '../../site/data';
 
-const toolIcons: Record<string, (s?: number, c?: string) => SafeHtml> = {
+const toolIcons: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
   Phone: iconPhone, Chat: iconMessageSquare, Files: iconFolderOpen, Document: iconFileText,
 };
@@ -20,7 +20,7 @@ let processDepartment = '';
 let viewMode: 'edit' | 'preview' = 'edit';
 let expandedStepId: string | null = null;
 
-function stepTypeColor(type: string): string {
+function styleForStepType(type: string): string {
   switch (type) {
     case 'start': return 'background:hsl(var(--success) / 0.1);border:2px solid hsl(var(--success) / 0.3);color:hsl(var(--success))';
     case 'end': return 'background:hsl(var(--error)/0.1);border:2px solid hsl(var(--error)/0.3);color:hsl(var(--error))';
@@ -61,15 +61,15 @@ function buildEditMode(): SafeHtml {
         <span class="text-sm text-muted">${processSteps.length} steps</span>
       </div>
       ${processSteps.map((step, i) => {
-        const expanded = expandedStepId === step.id;
+        const isExpanded = expandedStepId === step.id;
         return html`
           <div style="position:relative">
             ${i < processSteps.length - 1 ? html`<div style="position:absolute;left:1.5rem;top:100%;width:2px;height:0.75rem;background:hsl(var(--border));z-index:0"></div>` : html``}
-            <div class="card" style="${trusted(expanded ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : '')};overflow:hidden">
+            <div class="card" style="${trusted(isExpanded ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : '')};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-step-header="${step.id}">
                 <div class="flex items-center gap-3">
                   <div class="hidden-mobile text-muted" style="cursor:grab">${iconGripVertical(16)}</div>
-                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;${trusted(stepTypeColor(step.type))}">
+                  <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;${trusted(styleForStepType(step.type))}">
                     <span class="text-sm font-bold">${i + 1}</span>
                   </div>
                   <div style="flex:1;min-width:0">
@@ -83,11 +83,11 @@ function buildEditMode(): SafeHtml {
                     <button class="btn btn-ghost btn-icon btn-sm" data-move-step="${step.id}:up" ${trusted(i === 0 ? 'disabled' : '')}>${iconChevronUp(16)}</button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-move-step="${step.id}:down" ${trusted(i === processSteps.length - 1 ? 'disabled' : '')}>${iconChevronDown(16)}</button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-remove-step="${step.id}" style="color:hsl(var(--error))">${iconTrash(16)}</button>
-                    ${expanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
+                    ${isExpanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
                   </div>
                 </div>
               </div>
-              ${expanded ? html`
+              ${isExpanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
                     <div style="grid-column:span 2"><label class="label mb-1 text-xs">What happens in this step?</label><input class="input" data-step-field="${step.id}:title" value="${step.title}" placeholder="e.g., Review and approve customer application"/></div>
@@ -107,8 +107,8 @@ function buildEditMode(): SafeHtml {
                       <label class="label mb-1 text-xs">Tools Used</label>
                       <div class="flex flex-wrap gap-1.5">
                         ${Object.entries(toolIcons).map(([name, iconFn]) => {
-                          const selected = step.tools.includes(name);
-                          return html`<button data-toggle-tool="${step.id}:${name}" style="display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;border:none;cursor:pointer;${trusted(selected ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">${iconFn(14)} ${name}</button>`;
+                          const isSelected = step.tools.includes(name);
+                          return html`<button data-toggle-tool="${step.id}:${name}" style="display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;border:none;cursor:pointer;${trusted(isSelected ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">${iconFn(14)} ${name}</button>`;
                         })}
                       </div>
                     </div>
@@ -137,7 +137,7 @@ function buildPreviewMode(): SafeHtml {
         <div style="position:absolute;left:0.75rem;top:0;bottom:0;width:2px;background:hsl(var(--border))"></div>
         ${processSteps.map((step, i) => html`
           <div style="position:relative;padding-bottom:${i < processSteps.length - 1 ? '2rem' : '0'}">
-            <div style="position:absolute;left:0;width:1.5rem;height:1.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;transform:translateX(calc(-50% - 1px));${trusted(stepTypeColor(step.type))};background:hsl(var(--background))">
+            <div style="position:absolute;left:0;width:1.5rem;height:1.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;transform:translateX(calc(-50% - 1px));${trusted(styleForStepType(step.type))};background:hsl(var(--background))">
               <span style="font-size:0.625rem;font-weight:700">${i + 1}</span>
             </div>
             <div class="card" style="margin-left:1.5rem;padding:1rem">

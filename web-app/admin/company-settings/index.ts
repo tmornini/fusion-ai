@@ -87,8 +87,8 @@ export async function init(): Promise<void> {
   // Switch toggles
   document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {
     sw.addEventListener('click', () => {
-      const checked = sw.getAttribute('aria-checked') === 'true';
-      sw.setAttribute('aria-checked', String(!checked));
+      const isChecked = sw.getAttribute('aria-checked') === 'true';
+      sw.setAttribute('aria-checked', String(!isChecked));
     });
   });
 

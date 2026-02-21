@@ -246,7 +246,7 @@ export interface NotificationEntity {
   title: string;
   message: string;
   time: string;
-  unread: number; // 0 or 1
+  is_unread: number; // 0 or 1
 }
 
 export interface ClarificationEntity {
@@ -300,9 +300,9 @@ export interface CompanySettingsEntity {
   size: string;
   timezone: string;
   language: string;
-  enforce_sso: number; // 0 or 1
-  two_factor: number; // 0 or 1
-  ip_whitelist: number; // 0 or 1
+  is_sso_enforced: number; // 0 or 1
+  is_two_factor_enabled: number; // 0 or 1
+  is_ip_whitelist_enabled: number; // 0 or 1
   data_retention: string;
 }
 
@@ -317,8 +317,8 @@ export interface NotificationPrefEntity {
   category_id: string;
   label: string;
   description: string;
-  email: number; // 0 or 1
-  push: number; // 0 or 1
+  is_email_enabled: number; // 0 or 1
+  is_push_enabled: number; // 0 or 1
 }
 
 export interface AccountEntity {

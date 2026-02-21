@@ -14,7 +14,7 @@ const priorityConfig: Record<string, { label: string; cls: string }> = {
   low: { label: 'Low', cls: 'badge-default' },
 };
 
-const readinessConfig: Record<string, { label: string; icon: (s?: number) => SafeHtml; cls: string }> = {
+const readinessConfig: Record<string, { label: string; icon: (size?: number) => SafeHtml; cls: string }> = {
   ready: { label: 'Ready for Review', icon: iconCheckCircle2, cls: 'text-success' },
   'needs-info': { label: 'Needs Info', icon: iconMessageSquare, cls: 'text-warning' },
   incomplete: { label: 'Incomplete', icon: iconAlertCircle, cls: 'text-error' },

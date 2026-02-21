@@ -19,13 +19,13 @@ function canConvert(): boolean {
   return completedFieldCount() === requiredFields.length;
 }
 
-function fieldCheck(field: string): SafeHtml {
+function fieldCheckIcon(field: string): SafeHtml {
   return projectDetails[field]?.trim() ? html`<span style="color:hsl(var(--success))">${iconCheckCircle2(16)}</span>` : html``;
 }
 
 function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
-  const done = completedFieldCount();
-  const percent = (done / requiredFields.length) * 100;
+  const completedCount = completedFieldCount();
+  const percent = (completedCount / requiredFields.length) * 100;
 
   return html`
     <div style="min-height:100vh;background:hsl(var(--background))">
@@ -40,7 +40,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               </div>
             </div>
             <div class="hidden-mobile flex items-center gap-2 text-sm">
-              <span class="text-muted">${done}/${requiredFields.length} required fields</span>
+              <span class="text-muted">${completedCount}/${requiredFields.length} required fields</span>
               <div style="width:6rem;height:0.5rem;background:hsl(var(--muted));border-radius:9999px;overflow:hidden">
                 <div style="height:100%;background:hsl(var(--success));transition:width 0.3s;width:${percent}%"></div>
               </div>
@@ -82,11 +82,11 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               <div class="flex items-center gap-2 mb-6">${iconAlertCircle(20, 'text-warning')} <span class="font-medium">Complete these details to create a project</span></div>
               <div style="display:flex;flex-direction:column;gap:1.5rem">
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheck('projectName')}</label>
+                  <label class="label mb-2 font-medium flex items-center gap-2">Project Name ${fieldCheckIcon('projectName')}</label>
                   <input class="input" id="f-projectName" value="${projectDetails.projectName || ''}" placeholder="Give your project a clear name" />
                 </div>
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheck('projectLead')}</label>
+                  <label class="label mb-2 font-medium flex items-center gap-2">Project Lead ${fieldCheckIcon('projectLead')}</label>
                   <select class="input" id="f-projectLead">
                     <option value="">Who will own this project?</option>
                     <option value="sarah" ${projectDetails.projectLead === 'sarah' ? 'selected' : ''}>Sarah Chen - Product Manager</option>
@@ -97,16 +97,16 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
                   <div>
-                    <label class="label mb-2 font-medium flex items-center gap-2">${iconCalendar(16, 'text-muted')} Start Date ${fieldCheck('startDate')}</label>
+                    <label class="label mb-2 font-medium flex items-center gap-2">${iconCalendar(16, 'text-muted')} Start Date ${fieldCheckIcon('startDate')}</label>
                     <input class="input" type="date" id="f-startDate" value="${projectDetails.startDate || ''}" />
                   </div>
                   <div>
-                    <label class="label mb-2 font-medium flex items-center gap-2">${iconTarget(16, 'text-muted')} Target End Date ${fieldCheck('targetEndDate')}</label>
+                    <label class="label mb-2 font-medium flex items-center gap-2">${iconTarget(16, 'text-muted')} Target End Date ${fieldCheckIcon('targetEndDate')}</label>
                     <input class="input" type="date" id="f-targetEndDate" value="${projectDetails.targetEndDate || ''}" />
                   </div>
                 </div>
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">${iconDollarSign(16, 'text-muted')} Allocated Budget ${fieldCheck('budget')}</label>
+                  <label class="label mb-2 font-medium flex items-center gap-2">${iconDollarSign(16, 'text-muted')} Allocated Budget ${fieldCheckIcon('budget')}</label>
                   <select class="input" id="f-budget">
                     <option value="">Select budget range</option>
                     <option value="0-25k">Under $25,000</option>
@@ -118,7 +118,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
                   <p class="text-xs text-muted mt-1">AI estimate: ${idea.estimatedCost}</p>
                 </div>
                 <div>
-                  <label class="label mb-2 font-medium flex items-center gap-2">Priority Level ${fieldCheck('priority')}</label>
+                  <label class="label mb-2 font-medium flex items-center gap-2">Priority Level ${fieldCheckIcon('priority')}</label>
                   <select class="input" id="f-priority">
                     <option value="">How urgent is this project?</option>
                     <option value="critical">Critical - Must start immediately</option>

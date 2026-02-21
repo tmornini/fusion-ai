@@ -1,6 +1,6 @@
 import { GET, getDbAdapter } from '../../../api/api';
 import type { IdeaEntity, EdgeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
-import { buildUserMap } from './helpers';
+import { getUserMap } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -13,7 +13,7 @@ export interface EdgeIdea {
 export async function getIdeaForEdge(ideaId: string): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    buildUserMap(),
+    getUserMap(),
   ]);
   return {
     title: idea.title,
@@ -42,7 +42,7 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
   const [edgeRows, ideaRows, userMap] = await Promise.all([
     GET('edges') as Promise<EdgeEntity[]>,
     GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
+    getUserMap(),
   ]);
   const db = getDbAdapter();
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));

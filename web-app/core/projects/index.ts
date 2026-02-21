@@ -7,7 +7,7 @@ import {
 } from '../../site/script';
 import { getProjects, type Project } from '../../site/data';
 
-const projectStatusConfig: Record<string, { icon: (s?: number, c?: string) => SafeHtml; cls: string; label: string }> = {
+const projectStatusConfig: Record<string, { icon: (size?: number, cssClass?: string) => SafeHtml; cls: string; label: string }> = {
   approved: { icon: iconCheckCircle2, cls: 'badge-success', label: 'Approved' },
   under_review: { icon: iconAlertCircle, cls: 'badge-warning', label: 'Under Review' },
   sent_back: { icon: iconXCircle, cls: 'badge-error', label: 'Sent Back' },

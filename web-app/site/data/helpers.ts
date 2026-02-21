@@ -2,7 +2,7 @@ import { GET, getDbAdapter } from '../../../api/api';
 import type { UserEntity, EdgeEntity, Id, ConfidenceLevel } from '../../../api/types';
 import { User } from '../../../api/types';
 
-export async function buildUserMap(): Promise<Map<Id, User>> {
+export async function getUserMap(): Promise<Map<Id, User>> {
   const users = await GET('users') as UserEntity[];
   return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
@@ -32,7 +32,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
   const db = getDbAdapter();
   const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
   const allMetrics = await db.edgeMetrics.getAll();
-  const userMap = cachedUserMap ?? await buildUserMap();
+  const userMap = cachedUserMap ?? await getUserMap();
 
   return {
     outcomes: outcomes.map(outcome => ({
@@ -54,7 +54,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
 
 // ── Edge Data with Confidence ───────────────
 
-export function createDefaultEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
+export function defaultEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
   return {
     outcomes: [],
     impact: { shortTerm: '', midTerm: '', longTerm: '' },
@@ -68,7 +68,7 @@ export async function getEdgeDataWithConfidence(
   cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData & { confidence: ConfidenceLevel }> {
   const edgeData = await getEdgeDataByIdeaId(ideaId, cachedUserMap);
-  if (!edgeData) return createDefaultEdgeData();
+  if (!edgeData) return defaultEdgeData();
   return {
     ...edgeData,
     confidence: (edgeData.confidence || 'medium') as ConfidenceLevel,

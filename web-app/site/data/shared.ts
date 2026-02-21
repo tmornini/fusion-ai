@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type { UserEntity, NotificationEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { buildUserMap } from './helpers';
+import { getUserMap } from './helpers';
 
 export interface CurrentUser {
   id: string;
@@ -17,13 +17,13 @@ export interface Notification {
   title: string;
   message: string;
   time: string;
-  unread: boolean;
+  isUnread: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
   const row = await GET('current-user') as UserEntity | null;
   if (!row) return { id: 'current', name: 'Demo User', email: 'demo@example.com', role: 'Admin', company: 'Demo Company' };
-  const userMap = await buildUserMap();
+  const userMap = await getUserMap();
   const user = userMap.get(row.id);
   return {
     id: row.id,
@@ -41,6 +41,6 @@ export async function getNotifications(): Promise<Notification[]> {
     title: row.title,
     message: row.message,
     time: row.time,
-    unread: toBool(row.unread),
+    isUnread: toBool(row.is_unread),
   }));
 }

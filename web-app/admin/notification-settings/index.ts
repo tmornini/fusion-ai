@@ -30,8 +30,8 @@ function buildCategory(cat: NotificationCategory): SafeHtml {
             <p class="text-sm text-muted">${p.description}</p>
           </div>
           <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2">${iconMail(16)} ${switchHtml(p.id + '-email', p.email)}</div>
-            <div class="flex items-center gap-2">${iconSmartphone(16)} ${switchHtml(p.id + '-push', p.push)}</div>
+            <div class="flex items-center gap-2">${iconMail(16)} ${switchHtml(p.id + '-email', p.isEmailEnabled)}</div>
+            <div class="flex items-center gap-2">${iconSmartphone(16)} ${switchHtml(p.id + '-push', p.isPushEnabled)}</div>
           </div>
         </div>`)}</div>
     </div>`;
@@ -72,8 +72,8 @@ export async function init(): Promise<void> {
   // Switch toggles
   document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {
     sw.addEventListener('click', () => {
-      const checked = sw.getAttribute('aria-checked') === 'true';
-      sw.setAttribute('aria-checked', String(!checked));
+      const isChecked = sw.getAttribute('aria-checked') === 'true';
+      sw.setAttribute('aria-checked', String(!isChecked));
     });
   });
 
