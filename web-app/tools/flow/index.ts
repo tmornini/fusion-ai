@@ -8,7 +8,7 @@ import {
 } from '../../site/script';
 import { getFlow, type ProcessStep, type Flow } from '../../site/data';
 
-const toolIcons: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
+const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
   Phone: iconPhone, Chat: iconMessageSquare, Files: iconFolderOpen, Document: iconFileText,
 };
@@ -106,7 +106,7 @@ function buildEditMode(): SafeHtml {
                     <div style="grid-column:span 2">
                       <label class="label mb-1 text-xs">Tools Used</label>
                       <div class="flex flex-wrap gap-1.5">
-                        ${Object.entries(toolIcons).map(([name, iconFn]) => {
+                        ${Object.entries(toolIconConfig).map(([name, iconFn]) => {
                           const isSelected = step.tools.includes(name);
                           return html`<button data-toggle-tool="${step.id}:${name}" style="display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;border:none;cursor:pointer;${trusted(isSelected ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">${iconFn(14)} ${name}</button>`;
                         })}
@@ -149,7 +149,7 @@ function buildPreviewMode(): SafeHtml {
               </div>
               ${step.tools.length ? html`
                 <div class="flex flex-wrap gap-1.5" style="margin-top:0.75rem">
-                  ${step.tools.map(t => html`<span class="pill-tag" style="font-size:0.625rem">${toolIcons[t]?.(12) || html``} ${t}</span>`)}
+                  ${step.tools.map(t => html`<span class="pill-tag" style="font-size:0.625rem">${toolIconConfig[t]?.(12) || html``} ${t}</span>`)}
                 </div>
               ` : html``}
             </div>
@@ -191,7 +191,7 @@ function buildFlowPage(): SafeHtml {
     </div>`;
 }
 
-function rerenderFlowPage(): void {
+function renderFlowPage(): void {
   const root = $('#flow-root');
   if (!root) return;
   setHtml(root, buildFlowPage());
@@ -203,7 +203,7 @@ function bindFlowEvents(): void {
     btn.addEventListener('click', () => {
       syncFormFields();
       viewMode = btn.getAttribute('data-flow-mode') as 'edit' | 'preview';
-      rerenderFlowPage();
+      renderFlowPage();
     });
   });
 
@@ -212,7 +212,7 @@ function bindFlowEvents(): void {
       syncFormFields();
       const id = el.getAttribute('data-step-header');
       expandedStepId = expandedStepId === id ? null : id;
-      rerenderFlowPage();
+      renderFlowPage();
     });
   });
 
@@ -226,7 +226,7 @@ function bindFlowEvents(): void {
       const target = dir === 'up' ? idx - 1 : idx + 1;
       if (target < 0 || target >= processSteps.length) return;
       [processSteps[idx], processSteps[target]] = [processSteps[target]!, processSteps[idx]!];
-      rerenderFlowPage();
+      renderFlowPage();
     });
   });
 
@@ -235,7 +235,7 @@ function bindFlowEvents(): void {
       e.stopPropagation();
       syncFormFields();
       processSteps = processSteps.filter(s => s.id !== el.getAttribute('data-remove-step'));
-      rerenderFlowPage();
+      renderFlowPage();
     });
   });
 
@@ -247,7 +247,7 @@ function bindFlowEvents(): void {
       const step = processSteps.find(s => s.id === stepId);
       if (!step) return;
       step.tools = step.tools.includes(tool) ? step.tools.filter(t => t !== tool) : [...step.tools, tool];
-      rerenderFlowPage();
+      renderFlowPage();
     });
   });
 
@@ -258,7 +258,7 @@ function bindFlowEvents(): void {
       tools: [], duration: '', order: processSteps.length + 1, type: 'action',
     });
     expandedStepId = processSteps[processSteps.length - 1]!.id;
-    rerenderFlowPage();
+    renderFlowPage();
   });
 }
 
@@ -288,5 +288,5 @@ export async function init(): Promise<void> {
   processSteps = flowData.steps;
   viewMode = 'edit';
   expandedStepId = null;
-  rerenderFlowPage();
+  renderFlowPage();
 }

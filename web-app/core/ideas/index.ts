@@ -23,8 +23,8 @@ function styleForScore(score: number): string {
 }
 
 function buildIdeaCard(idea: Idea, view: string): SafeHtml {
-  const canReview = idea.status === 'pending_review' && idea.edgeStatus === 'complete';
-  const canConvert = idea.status === 'approved';
+  const isReviewable = idea.status === 'pending_review' && idea.edgeStatus === 'complete';
+  const isConvertible = idea.status === 'approved';
   const needsEdgeDefinition = idea.edgeStatus !== 'complete' && idea.status !== 'draft';
 
   return html`
@@ -90,11 +90,11 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
                 <button class="btn btn-outline btn-sm gap-2" style="border-color:hsl(var(--primary)/0.3);color:hsl(var(--primary))" data-idea-edge="${idea.id}">
                   ${iconTarget(16)} <span class="hidden-mobile">Define Edge</span>
                 </button>` : html``}
-              ${canReview ? html`
+              ${isReviewable ? html`
                 <button class="btn btn-outline btn-sm gap-2" style="border-color:hsl(var(--warning)/0.3);color:hsl(var(--warning))" data-idea-review="${idea.id}">
                   ${iconClipboardCheck(16)} <span class="hidden-mobile">Review</span>
                 </button>` : html``}
-              ${canConvert ? html`
+              ${isConvertible ? html`
                 <button class="btn btn-primary btn-sm gap-2" data-idea-convert="${idea.id}">
                   ${iconArrowRight(16)} <span class="hidden-mobile">Convert</span>
                 </button>` : html``}
@@ -174,7 +174,7 @@ export async function init(): Promise<void> {
   // Create button
   $('#create-idea-btn')?.addEventListener('click', () => navigateTo('idea-create'));
 
-  function rerenderList() {
+  function renderList() {
     const sorted = currentView === 'priority'
       ? [...ideas].sort((a, b) => a.priority - b.priority)
       : [...ideas].sort((a, b) => b.score - a.score);
@@ -193,7 +193,7 @@ export async function init(): Promise<void> {
       document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(b => {
         b.classList.toggle('active', b.getAttribute('data-view') === view);
       });
-      rerenderList();
+      renderList();
     });
   });
 
@@ -211,5 +211,5 @@ export async function init(): Promise<void> {
     if (card) navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
   });
 
-  rerenderList();
+  renderList();
 }

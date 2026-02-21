@@ -20,7 +20,7 @@ const formData = {
   successMetrics: '',
 };
 
-function canProceed(): boolean {
+function isStepComplete(): boolean {
   switch (currentStep) {
     case 1: return !!(formData.title.trim() && formData.problemStatement.trim());
     case 2: return !!formData.proposedSolution.trim();
@@ -150,7 +150,7 @@ function buildWizardPage(): SafeHtml {
           <div class="flex items-center justify-between gap-3 mt-8 pt-6" style="border-top:1px solid hsl(var(--border))">
             <button class="btn btn-ghost gap-2" id="step-back">${iconArrowLeft(16)} ${currentStep === 1 ? 'Cancel' : 'Back'}</button>
             <span class="text-sm text-muted">Step ${currentStep} of ${steps.length}</span>
-            <button class="btn btn-hero gap-2" id="step-next" ${canProceed() ? '' : 'disabled'}>
+            <button class="btn btn-hero gap-2" id="step-next" ${isStepComplete() ? '' : 'disabled'}>
               ${currentStep === 3 ? html`Score Idea ${iconTrendingUp(16)}` : html`Continue ${iconArrowRight(16)}`}
             </button>
           </div>
@@ -159,7 +159,7 @@ function buildWizardPage(): SafeHtml {
     </div>`;
 }
 
-function rerenderWizard() {
+function renderWizard() {
   const root = $('#page-root');
   if (root) { setHtml(root, buildWizardPage()); bindWizardEvents(); }
 }
@@ -179,24 +179,24 @@ function syncFormFields() {
 
 function bindWizardEvents() {
   $('#back-btn')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; rerenderWizard(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; renderWizard(); }
     else navigateTo('ideas');
   });
   $('#step-back')?.addEventListener('click', () => {
-    if (currentStep > 1) { syncFormFields(); currentStep--; rerenderWizard(); }
+    if (currentStep > 1) { syncFormFields(); currentStep--; renderWizard(); }
     else navigateTo('ideas');
   });
   $('#step-next')?.addEventListener('click', () => {
     syncFormFields();
-    if (!canProceed()) return;
-    if (currentStep < 3) { currentStep++; rerenderWizard(); }
+    if (!isStepComplete()) return;
+    if (currentStep < 3) { currentStep++; renderWizard(); }
     else navigateTo('idea-scoring', { ideaId: 'new' });
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
     input.addEventListener('input', () => {
       syncFormFields();
       const nextBtn = $('#step-next') as HTMLButtonElement;
-      if (nextBtn) nextBtn.disabled = !canProceed();
+      if (nextBtn) nextBtn.disabled = !isStepComplete();
     });
   });
 }
@@ -204,5 +204,5 @@ function bindWizardEvents() {
 export async function init(): Promise<void> {
   currentStep = 1;
   (Object.keys(formData) as Array<keyof typeof formData>).forEach(k => formData[k] = '');
-  rerenderWizard();
+  renderWizard();
 }

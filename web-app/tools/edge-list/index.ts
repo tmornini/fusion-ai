@@ -6,7 +6,7 @@ import {
 } from '../../site/script';
 import { getEdgeList, type EdgeListItem } from '../../site/data';
 
-const edgeStatusConfig: Record<string, { label: string; cls: string; icon: (size?: number) => SafeHtml }> = {
+const edgeStatusDisplayConfig: Record<string, { label: string; cls: string; icon: (size?: number) => SafeHtml }> = {
   complete: { label: 'Complete', cls: 'badge-success', icon: iconCheckCircle2 },
   draft: { label: 'Draft', cls: 'badge-warning', icon: iconClock },
   missing: { label: 'Missing', cls: 'badge-error', icon: iconAlertCircle },
@@ -19,7 +19,7 @@ const confidenceLevelConfig: Record<string, { label: string; cls: string }> = {
 };
 
 function buildEdgeCard(edge: EdgeListItem): SafeHtml {
-  const sc = edgeStatusConfig[edge.status];
+  const sc = edgeStatusDisplayConfig[edge.status];
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
       <div class="flex items-start justify-between gap-4">

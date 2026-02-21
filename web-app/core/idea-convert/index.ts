@@ -15,7 +15,7 @@ function completedFieldCount(): number {
   return requiredFields.filter(f => projectDetails[f]?.trim()).length;
 }
 
-function canConvert(): boolean {
+function isReadyToConvert(): boolean {
   return completedFieldCount() === requiredFields.length;
 }
 
@@ -145,19 +145,19 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               </div>
             </div>
 
-            <div class="card p-6" id="convert-confirm" style="border:2px solid ${canConvert() ? 'hsl(var(--success) / 0.3)' : 'transparent'};${canConvert() ? 'background:hsl(var(--success) / 0.05)' : ''}">
+            <div class="card p-6" id="convert-confirm" style="border:2px solid ${isReadyToConvert() ? 'hsl(var(--success) / 0.3)' : 'transparent'};${isReadyToConvert() ? 'background:hsl(var(--success) / 0.05)' : ''}">
               <div class="flex items-start gap-4">
-                <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${canConvert() ? 'background:hsl(var(--success));color:hsl(var(--success-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
+                <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${isReadyToConvert() ? 'background:hsl(var(--success));color:hsl(var(--success-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
                 <div style="flex:1">
-                  <h3 class="font-semibold mb-1">${canConvert() ? 'Ready to Create Project' : 'Complete Required Fields'}</h3>
+                  <h3 class="font-semibold mb-1">${isReadyToConvert() ? 'Ready to Create Project' : 'Complete Required Fields'}</h3>
                   <p class="text-sm text-muted mb-4">
-                    ${canConvert()
+                    ${isReadyToConvert()
                       ? 'All required information has been provided. Click below to officially create this project.'
                       : `${requiredFields.length - completedFieldCount()} required field${requiredFields.length - completedFieldCount() > 1 ? 's' : ''} remaining`}
                   </p>
                   <div class="flex gap-3">
                     <button class="btn btn-ghost" id="back-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
-                    <button class="btn btn-hero gap-2" id="convert-btn" ${canConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
+                    <button class="btn btn-hero gap-2" id="convert-btn" ${isReadyToConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
                   </div>
                 </div>
               </div>
@@ -209,18 +209,18 @@ export async function init(): Promise<void> {
     el.addEventListener('input', () => {
       syncFormFields();
       const btn = $('#convert-btn') as HTMLButtonElement;
-      if (btn) btn.disabled = !canConvert();
+      if (btn) btn.disabled = !isReadyToConvert();
     });
     el.addEventListener('change', () => {
       syncFormFields();
       const btn = $('#convert-btn') as HTMLButtonElement;
-      if (btn) btn.disabled = !canConvert();
+      if (btn) btn.disabled = !isReadyToConvert();
     });
   });
 
   $('#convert-btn')?.addEventListener('click', () => {
     syncFormFields();
-    if (!canConvert()) return;
+    if (!isReadyToConvert()) return;
     const btn = $('#convert-btn')!;
     setHtml(btn, html`${iconLoader(16)} Creating Project...`);
     (btn as HTMLButtonElement).disabled = true;

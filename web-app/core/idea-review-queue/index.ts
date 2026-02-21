@@ -151,10 +151,10 @@ export async function init(): Promise<void> {
     const readiness = ($('#rq-readiness') as HTMLSelectElement)?.value || 'all';
 
     const filtered = allIdeas.filter(i => {
-      const ms = i.title.toLowerCase().includes(search) || i.submittedBy.toLowerCase().includes(search);
-      const mp = priority === 'all' || i.priority === priority;
-      const mr = readiness === 'all' || i.readiness === readiness;
-      return ms && mp && mr;
+      const matchesSearch = i.title.toLowerCase().includes(search) || i.submittedBy.toLowerCase().includes(search);
+      const matchesPriority = priority === 'all' || i.priority === priority;
+      const matchesReadiness = readiness === 'all' || i.readiness === readiness;
+      return matchesSearch && matchesPriority && matchesReadiness;
     });
 
     const list = $('#rq-list');

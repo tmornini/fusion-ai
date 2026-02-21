@@ -13,7 +13,7 @@ const projectStatusConfig: Record<string, { icon: (size?: number, cssClass?: str
   sent_back: { icon: iconXCircle, cls: 'badge-error', label: 'Sent Back' },
 };
 
-function progressRing(percent: number): SafeHtml {
+function buildProgressRing(percent: number): SafeHtml {
   const r = 20, c = 24, circ = 2 * Math.PI * r;
   return html`
     <div style="position:relative;width:3rem;height:3rem">
@@ -40,7 +40,7 @@ function buildProjectCard(p: Project, view: string): SafeHtml {
               </div>
               ${view === 'priority' ? html`<span class="text-xs text-muted">Priority #${p.priority}</span>` : html``}
             </div>
-            ${progressRing(p.progress)}
+            ${buildProgressRing(p.progress)}
           </div>
           <div class="flex items-end justify-between gap-4">
             <div class="project-metrics-grid" style="flex:1">
@@ -121,12 +121,6 @@ export async function init(): Promise<void> {
       <span class="badge badge-error text-xs">${iconXCircle(14)} ${counts.sent_back}</span>`);
   }
 
-  function sortedProjects(): Project[] {
-    return [...projects].sort((a, b) =>
-      currentView === 'priority' ? a.priority - b.priority : b.priorityScore - a.priorityScore
-    );
-  }
-
   function bindCards(): void {
     document.querySelectorAll<HTMLElement>('[data-project-card]').forEach(el => {
       el.style.cursor = 'pointer';
@@ -140,9 +134,12 @@ export async function init(): Promise<void> {
     });
   }
 
-  function rerenderList(): void {
+  function renderList(): void {
     const container = $('#projects-list');
-    if (container) setHtml(container, html`${sortedProjects().map(p => buildProjectCard(p, currentView))}`);
+    const sorted = [...projects].sort((a, b) =>
+      currentView === 'priority' ? a.priority - b.priority : b.priorityScore - a.priorityScore
+    );
+    if (container) setHtml(container, html`${sorted.map(p => buildProjectCard(p, currentView))}`);
     const info = $('#projects-info');
     if (info) info.textContent = `${projects.length} ${projects.length === 1 ? 'project' : 'projects'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
     bindCards();
@@ -153,9 +150,9 @@ export async function init(): Promise<void> {
       currentView = btn.getAttribute('data-view') as 'priority' | 'performance';
       document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      rerenderList();
+      renderList();
     });
   });
 
-  rerenderList();
+  renderList();
 }

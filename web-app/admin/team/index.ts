@@ -19,7 +19,7 @@ function buildStatusDot(status: string): SafeHtml {
   return html`<div style="position:absolute;bottom:-2px;right:-2px;width:1rem;height:1rem;border-radius:9999px;border:2px solid hsl(var(--background));background:${colors[status] || 'hsl(var(--muted))'}"></div>`;
 }
 
-const dimensionIcons: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
+const dimensionIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   driver: iconTarget, analytical: iconBrain, expressive: iconZap, amiable: iconHeart,
 };
 
@@ -48,7 +48,7 @@ function buildMemberDetail(member: TeamMember): SafeHtml {
         ${Object.entries(member.teamDimensions).map(([key, value]) => html`
           <div style="margin-bottom:1rem">
             <div class="flex items-center justify-between" style="margin-bottom:0.5rem">
-              <div class="flex items-center gap-2">${(dimensionIcons[key] || iconStar)(16, 'text-primary')} <span class="text-sm font-medium" style="text-transform:capitalize">${key}</span></div>
+              <div class="flex items-center gap-2">${(dimensionIconConfig[key] || iconStar)(16, 'text-primary')} <span class="text-sm font-medium" style="text-transform:capitalize">${key}</span></div>
               <span class="text-sm font-bold text-primary">${value}%</span>
             </div>
             <div class="progress" style="height:0.5rem"><div class="progress-fill" style="width:${value}%"></div></div>
@@ -110,7 +110,7 @@ function buildMemberCard(m: TeamMember): SafeHtml {
     </div>`;
 }
 
-function rerenderList(): void {
+function renderList(): void {
   const search = (($('#team-search') as HTMLInputElement)?.value || '').toLowerCase();
   const filtered = members.filter(m =>
     m.name.toLowerCase().includes(search) || m.role.toLowerCase().includes(search) || m.department.toLowerCase().includes(search)
@@ -135,7 +135,7 @@ function bindCards(): void {
   document.querySelectorAll<HTMLElement>('[data-member-card]').forEach(card => {
     card.addEventListener('click', () => {
       selectedMemberId = card.getAttribute('data-member-card');
-      rerenderList();
+      renderList();
     });
   });
 }
@@ -182,7 +182,7 @@ export async function init(): Promise<void> {
   }
 
   // Search
-  $('#team-search')?.addEventListener('input', rerenderList);
+  $('#team-search')?.addEventListener('input', renderList);
 
   // Add member dialog
   const dialog = $('#add-member-dialog')!;
@@ -196,5 +196,5 @@ export async function init(): Promise<void> {
     dialog.style.display = 'none';
   });
 
-  rerenderList();
+  renderList();
 }

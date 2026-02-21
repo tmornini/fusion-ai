@@ -30,52 +30,52 @@ const defaultColors = [
 ];
 
 function chartSetup(data: ChartDatum[], config?: ChartConfig) {
-  const w = config?.width ?? 300;
-  const h = config?.height ?? 200;
-  const pad = config?.padding ?? 40;
+  const width = config?.width ?? 300;
+  const height = config?.height ?? 200;
+  const padding = config?.padding ?? 40;
   const colors = config?.colors ?? defaultColors;
-  const maxVal = Math.max(...data.map(d => d.value));
-  const chartH = h - pad * 2;
-  return { w, h, pad, colors, maxVal, chartH };
+  const maxValue = Math.max(...data.map(d => d.value));
+  const chartHeight = height - padding * 2;
+  return { width, height, padding, colors, maxValue, chartHeight };
 }
 
-function chartPoints(data: ChartDatum[], w: number, h: number, pad: number, maxVal: number, chartH: number) {
-  const stepX = (w - pad * 2) / Math.max(data.length - 1, 1);
-  return data.map((d, i) => ({ x: pad + i * stepX, y: h - pad - (d.value / maxVal) * chartH }));
+function chartPoints(data: ChartDatum[], width: number, height: number, padding: number, maxValue: number, chartHeight: number) {
+  const stepWidth = (width - padding * 2) / Math.max(data.length - 1, 1);
+  return data.map((d, i) => ({ x: padding + i * stepWidth, y: height - padding - (d.value / maxValue) * chartHeight }));
 }
 
-function baseline(pad: number, w: number, h: number): string {
-  return `<line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="currentColor" stroke-opacity="0.15"/>`;
+function baseline(padding: number, width: number, height: number): string {
+  return `<line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="currentColor" stroke-opacity="0.15"/>`;
 }
 
 export function barChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { w, h, pad, colors, maxVal, chartH } = chartSetup(data, config);
-  const barW = Math.min(40, (w - pad * 2) / data.length - 8);
+  const { width, height, padding, colors, maxValue, chartHeight } = chartSetup(data, config);
+  const barWidth = Math.min(40, (width - padding * 2) / data.length - 8);
 
   let bars = '';
   data.forEach((d, i) => {
-    const barH = (d.value / maxVal) * chartH;
-    const x = pad + i * ((w - pad * 2) / data.length) + ((w - pad * 2) / data.length - barW) / 2;
-    const y = h - pad - barH;
+    const barHeight = (d.value / maxValue) * chartHeight;
+    const x = padding + i * ((width - padding * 2) / data.length) + ((width - padding * 2) / data.length - barWidth) / 2;
+    const y = height - padding - barHeight;
     const color = d.color || colors[i % colors.length];
-    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${color}" opacity="0.85"/>`;
+    bars += `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="4" fill="${color}" opacity="0.85"/>`;
     if (config?.showLabels !== false) {
-      bars += `<text x="${x + barW / 2}" y="${h - pad + 16}" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.6">${d.label}</text>`;
+      bars += `<text x="${x + barWidth / 2}" y="${height - padding + 16}" text-anchor="middle" fill="currentColor" font-size="10" opacity="0.6">${d.label}</text>`;
     }
   });
 
-  return trusted(`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    ${baseline(pad, w, h)}
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    ${baseline(padding, width, height)}
     ${bars}
   </svg>`);
 }
 
 export function lineChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
+  const { width, height, padding, maxValue, chartHeight } = chartSetup(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
-  const points = chartPoints(data, w, h, pad, maxVal, chartH);
+  const points = chartPoints(data, width, height, padding, maxValue, chartHeight);
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   let dots = '';
@@ -83,8 +83,8 @@ export function lineChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
     dots += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${color}"/>`;
   });
 
-  return trusted(`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    ${baseline(pad, w, h)}
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+    ${baseline(padding, width, height)}
     <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
   </svg>`);
@@ -119,20 +119,20 @@ export function donutChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
 
 export function areaChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { w, h, pad, maxVal, chartH } = chartSetup(data, config);
+  const { width, height, padding, maxValue, chartHeight } = chartSetup(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
-  const points = chartPoints(data, w, h, pad, maxVal, chartH);
+  const points = chartPoints(data, width, height, padding, maxValue, chartHeight);
 
   const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaD = lineD + ` L ${points[points.length - 1]!.x} ${h - pad} L ${points[0]!.x} ${h - pad} Z`;
+  const areaD = lineD + ` L ${points[points.length - 1]!.x} ${height - padding} L ${points[0]!.x} ${height - padding} Z`;
   const gradId = config?.id ? `area-grad-${config.id}` : `area-grad-${Math.random().toString(36).slice(2, 8)}`;
 
-  return trusted(`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
     </linearGradient></defs>
-    ${baseline(pad, w, h)}
+    ${baseline(padding, width, height)}
     <path d="${areaD}" fill="url(#${gradId})"/>
     <path d="${lineD}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`);

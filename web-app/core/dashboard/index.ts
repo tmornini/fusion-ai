@@ -75,7 +75,7 @@ function buildGauge(card: GaugeCard): SafeHtml {
     </div>`;
 }
 
-function greeting(): string {
+function timeOfDay(): string {
   const h = new Date().getHours();
   if (h < 12) return 'morning';
   if (h < 18) return 'afternoon';
@@ -234,7 +234,7 @@ export async function init(): Promise<void> {
   if (heroIcon) setHtml(heroIcon, iconSparkles(28, 'text-primary-fg'));
 
   const greetingEl = $('#hero-greeting');
-  if (greetingEl) greetingEl.textContent = `Good ${greeting()}`;
+  if (greetingEl) greetingEl.textContent = `Good ${timeOfDay()}`;
 
   const userName = $('#hero-user-name');
   if (userName) userName.textContent = user.name;

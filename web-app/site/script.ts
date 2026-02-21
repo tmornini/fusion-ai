@@ -47,10 +47,10 @@ function colorForScore(score: number): string {
   return 'color:hsl(var(--error))';
 }
 
-let _dialogPreviousFocus: HTMLElement | null = null;
+let savedFocusBeforeDialog: HTMLElement | null = null;
 
 function openDialog(dialogId: string): void {
-  _dialogPreviousFocus = document.activeElement as HTMLElement | null;
+  savedFocusBeforeDialog = document.activeElement as HTMLElement | null;
   $(`#${dialogId}-backdrop`)?.classList.remove('hidden');
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.remove('hidden');
@@ -64,8 +64,8 @@ function closeDialog(dialogId: string): void {
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.add('hidden');
   dialog?.setAttribute('aria-hidden', 'true');
-  _dialogPreviousFocus?.focus();
-  _dialogPreviousFocus = null;
+  savedFocusBeforeDialog?.focus();
+  savedFocusBeforeDialog = null;
 }
 
 function initTabs(tabSelector: string, panelSelector: string, activeClass = 'active'): void {

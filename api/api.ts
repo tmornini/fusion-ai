@@ -5,15 +5,15 @@
 
 import type { DbAdapter } from './db';
 
-let _adapter: DbAdapter | null = null;
+let adapter: DbAdapter | null = null;
 
-export function initApi(adapter: DbAdapter): void {
-  _adapter = adapter;
+export function initApi(dbAdapter: DbAdapter): void {
+  adapter = dbAdapter;
 }
 
 export function getDbAdapter(): DbAdapter {
-  if (!_adapter) throw new Error('API not initialized. Call initApi() first.');
-  return _adapter;
+  if (!adapter) throw new Error('API not initialized. Call initApi() first.');
+  return adapter;
 }
 
 // ── Route Registry ──────────────────────────

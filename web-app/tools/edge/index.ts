@@ -22,7 +22,7 @@ let edgeData: EdgeData = {
 let nextId = 1;
 let currentIdea: EdgeIdea | null = null;
 
-function getCompletionStatus() {
+function completionStatus() {
   const hasOutcomes = edgeData.outcomes.length > 0;
   const allOutcomesHaveMetrics = hasOutcomes && edgeData.outcomes.every(o => o.metrics.length > 0);
   const hasImpact = !!(edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm);
@@ -41,7 +41,7 @@ function buildCompletionIcon(satisfied: boolean): SafeHtml {
 
 function buildEdgePage(ideaId: string): SafeHtml {
   const idea = currentIdea!;
-  const completion = getCompletionStatus();
+  const completion = completionStatus();
   const statusLabel = completion.isComplete ? 'Complete' : completion.completionPercent > 0 ? 'In Progress' : 'Incomplete';
   const statusCls = completion.isComplete ? 'badge-success' : completion.completionPercent > 0 ? 'badge-warning' : 'badge-error';
 
@@ -221,7 +221,7 @@ function syncFormFields() {
   });
 }
 
-function rerenderEdgePage(ideaId: string) {
+function renderEdgePage(ideaId: string) {
   const container = $('#edge-content');
   if (container) { setHtml(container, buildEdgePage(ideaId)); bindEdgeEvents(ideaId); }
 }
@@ -232,14 +232,14 @@ function bindEdgeEvents(ideaId: string) {
   $('#add-outcome')?.addEventListener('click', () => {
     syncFormFields();
     edgeData.outcomes.push({ id: `o${nextId++}`, description: '', metrics: [] });
-    rerenderEdgePage(ideaId);
+    renderEdgePage(ideaId);
   });
 
   document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
       edgeData.outcomes.push({ id: `o${nextId++}`, description: btn.getAttribute('data-add-template') || '', metrics: [] });
-      rerenderEdgePage(ideaId);
+      renderEdgePage(ideaId);
     });
   });
 
@@ -247,7 +247,7 @@ function bindEdgeEvents(ideaId: string) {
     btn.addEventListener('click', () => {
       syncFormFields();
       edgeData.outcomes = edgeData.outcomes.filter(o => o.id !== btn.getAttribute('data-remove-outcome'));
-      rerenderEdgePage(ideaId);
+      renderEdgePage(ideaId);
     });
   });
 
@@ -257,7 +257,7 @@ function bindEdgeEvents(ideaId: string) {
       const oId = btn.getAttribute('data-add-metric')!;
       const outcome = edgeData.outcomes.find(o => o.id === oId);
       if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
-      rerenderEdgePage(ideaId);
+      renderEdgePage(ideaId);
     });
   });
 
@@ -267,13 +267,13 @@ function bindEdgeEvents(ideaId: string) {
       const [oId, mId] = (btn.getAttribute('data-remove-metric') || '').split('|');
       const outcome = edgeData.outcomes.find(o => o.id === oId);
       if (outcome) outcome.metrics = outcome.metrics.filter(m => m.id !== mId);
-      rerenderEdgePage(ideaId);
+      renderEdgePage(ideaId);
     });
   });
 
   $('#save-edge')?.addEventListener('click', () => {
     syncFormFields();
-    if (!getCompletionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
+    if (!completionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
     showToast('Edge data saved successfully', 'success');
     navigateTo('approval-detail', { id: ideaId });
   });
@@ -312,5 +312,5 @@ export async function init(params?: Record<string, string>): Promise<void> {
     edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
     nextId = 1;
   }
-  rerenderEdgePage(ideaId);
+  renderEdgePage(ideaId);
 }
