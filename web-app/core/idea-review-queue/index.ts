@@ -1,5 +1,5 @@
 import {
-  $, navigateTo, colorForScore, html, setHtml, SafeHtml,
+  $, navigateTo, styleForScore, html, setHtml, SafeHtml,
   buildSkeleton, buildErrorState, buildEmptyState,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
@@ -43,7 +43,7 @@ function buildReviewCard(idea: ReviewIdea): SafeHtml {
         <div class="flex items-center gap-6">
           <div class="text-right hidden-mobile">
             <div class="flex items-center gap-4 text-sm">
-              <div><p class="text-muted">Score</p><p class="font-semibold" style="${colorForScore(idea.score)}">${idea.score}</p></div>
+              <div><p class="text-muted">Score</p><p class="font-semibold" style="${styleForScore(idea.score)}">${idea.score}</p></div>
               <div><p class="text-muted">Impact</p><p class="font-medium">${idea.impact}</p></div>
               <div><p class="text-muted">Effort</p><p class="font-medium">${idea.effort}</p></div>
             </div>
@@ -57,7 +57,7 @@ function buildReviewCard(idea: ReviewIdea): SafeHtml {
 let allIdeas: ReviewIdea[] = [];
 
 export async function init(): Promise<void> {
-  const root = $('#rq-root');
+  const root = $('#review-queue-content');
   if (!root) return;
 
   // Show skeleton immediately

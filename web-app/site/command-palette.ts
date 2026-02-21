@@ -60,7 +60,7 @@ let activeIndex = 0;
 let allItems: SearchItem[] = [];
 let filteredItems: SearchItem[] = [];
 let isDataLoaded = false;
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let debounceTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 // ── DOM refs ─────────────────────────────
 
@@ -69,7 +69,7 @@ let dialog: HTMLElement | null = null;
 let input: HTMLInputElement | null = null;
 let list: HTMLElement | null = null;
 let liveRegion: HTMLElement | null = null;
-let previousFocus: HTMLElement | null = null;
+let previousFocusElement: HTMLElement | null = null;
 
 // ── Data loading ─────────────────────────
 
@@ -78,14 +78,14 @@ async function loadData(): Promise<void> {
   isDataLoaded = true;
 
   // Start with pages immediately
-  allItems = pages.map((p, i) => ({
-    id: `page-${i}`,
-    title: p.title,
+  allItems = pages.map((page, index) => ({
+    id: `page-${index}`,
+    title: page.title,
     meta: 'Page',
     category: 'pages' as const,
-    icon: p.icon,
-    href: p.href,
-    keywords: p.keywords,
+    icon: page.icon,
+    href: page.href,
+    keywords: page.keywords,
   }));
 
   // Load dynamic data
@@ -96,34 +96,34 @@ async function loadData(): Promise<void> {
       getTeamMembers(),
     ]);
 
-    const ideaItems: SearchItem[] = ideas.map(i => ({
-      id: `idea-${i.id}`,
-      title: i.title,
-      meta: `Score: ${i.score} · ${i.status.replace(/_/g, ' ')}`,
+    const ideaItems: SearchItem[] = ideas.map(idea => ({
+      id: `idea-${idea.id}`,
+      title: idea.title,
+      meta: `Score: ${idea.score} · ${idea.status.replace(/_/g, ' ')}`,
       category: 'ideas',
       icon: iconLightbulb(16),
-      href: `../../core/idea-scoring/index.html?ideaId=${i.id}`,
-      keywords: `${i.submittedBy} ${i.status}`,
+      href: `../../core/idea-scoring/index.html?ideaId=${idea.id}`,
+      keywords: `${idea.submittedBy} ${idea.status}`,
     }));
 
-    const projectItems: SearchItem[] = projects.map(p => ({
-      id: `project-${p.id}`,
-      title: p.title,
-      meta: `Progress: ${p.progress}% · ${p.status.replace(/_/g, ' ')}`,
+    const projectItems: SearchItem[] = projects.map(project => ({
+      id: `project-${project.id}`,
+      title: project.title,
+      meta: `Progress: ${project.progress}% · ${project.status.replace(/_/g, ' ')}`,
       category: 'projects',
       icon: iconFolderKanban(16),
-      href: `../../core/project-detail/index.html?projectId=${p.id}`,
-      keywords: `${p.status}`,
+      href: `../../core/project-detail/index.html?projectId=${project.id}`,
+      keywords: `${project.status}`,
     }));
 
-    const peopleItems: SearchItem[] = members.map(m => ({
-      id: `person-${m.id}`,
-      title: m.name,
-      meta: `${m.role} · ${m.department}`,
+    const peopleItems: SearchItem[] = members.map(member => ({
+      id: `person-${member.id}`,
+      title: member.name,
+      meta: `${member.role} · ${member.department}`,
       category: 'people',
       icon: iconUser(16),
       href: `../../admin/team/index.html`,
-      keywords: `${m.role} ${m.department} ${m.email}`,
+      keywords: `${member.role} ${member.department} ${member.email}`,
     }));
 
     allItems = [...ideaItems, ...projectItems, ...peopleItems, ...allItems];
@@ -136,20 +136,20 @@ async function loadData(): Promise<void> {
 
 function search(query: string): SearchItem[] {
   if (!query.trim()) return allItems.slice(0, 12);
-  const q = query.toLowerCase();
+  const normalizedQuery = query.toLowerCase();
   return allItems.filter(item =>
-    item.title.toLowerCase().includes(q) ||
-    item.meta.toLowerCase().includes(q) ||
-    item.keywords.toLowerCase().includes(q)
+    item.title.toLowerCase().includes(normalizedQuery) ||
+    item.meta.toLowerCase().includes(normalizedQuery) ||
+    item.keywords.toLowerCase().includes(normalizedQuery)
   );
 }
 
 function buildHighlightedMatch(text: string, query: string): SafeHtml {
   if (!query.trim()) return trusted(escapeHtml(text));
   const escaped = escapeHtml(text);
-  const q = escapeHtml(query);
-  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return trusted(escaped.replace(re, '<mark>$1</mark>'));
+  const escapedQuery = escapeHtml(query);
+  const highlightPattern = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return trusted(escaped.replace(highlightPattern, '<mark>$1</mark>'));
 }
 
 // ── Rendering ────────────────────────────
@@ -228,7 +228,7 @@ function navigateToItem(index: number): void {
 function open(): void {
   if (isOpen) return;
   isOpen = true;
-  previousFocus = document.activeElement as HTMLElement;
+  previousFocusElement = document.activeElement as HTMLElement;
 
   if (!backdrop) injectDOM();
   backdrop!.classList.remove('hidden');
@@ -244,7 +244,7 @@ function close(): void {
   isOpen = false;
   backdrop?.classList.add('hidden');
   dialog?.classList.add('hidden');
-  if (previousFocus) previousFocus.focus();
+  if (previousFocusElement) previousFocusElement.focus();
 }
 
 // ── DOM injection ────────────────────────
@@ -282,8 +282,8 @@ function injectDOM(): void {
 
   // Input handler with debounce
   input.addEventListener('input', () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+    if (debounceTimeoutId) clearTimeout(debounceTimeoutId);
+    debounceTimeoutId = setTimeout(() => {
       renderResults(input!.value);
     }, 100);
   });

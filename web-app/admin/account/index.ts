@@ -9,7 +9,7 @@ import {
 } from '../../site/script';
 import { getAccount, type Account } from '../../site/data';
 
-function styleForUsageBar(current: number, limit: number): string {
+function styleForUsageLevel(current: number, limit: number): string {
   const pct = (current / limit) * 100;
   if (pct >= 90) return 'background:hsl(var(--error))';
   if (pct >= 70) return 'background:hsl(var(--warning))';
@@ -24,11 +24,11 @@ function usageBar(label: string, current: number, limit: number): SafeHtml {
         <span class="text-muted">${label}</span>
         <span class="font-medium">${current} / ${limit}</span>
       </div>
-      <div class="progress"><div class="progress-bar" style="width:${pct}%;${styleForUsageBar(current, limit)}"></div></div>
+      <div class="progress"><div class="progress-bar" style="width:${pct}%;${styleForUsageLevel(current, limit)}"></div></div>
     </div>`;
 }
 
-function activityIcon(type: string): SafeHtml {
+function buildActivityIcon(type: string): SafeHtml {
   if (type === 'user_added') return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconUserPlus(16)}</div>`;
   if (type === 'project_created') return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--primary))">${iconFolderKanban(16)}</div>`;
   return html`<div style="width:2rem;height:2rem;border-radius:var(--radius-lg);background:hsl(var(--success-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--success-text))">${iconCreditCard(16)}</div>`;
@@ -143,7 +143,7 @@ export async function init(): Promise<void> {
           <div class="flex flex-col gap-4">
             ${d.recentActivity.map(a => html`
               <div class="flex items-start gap-3">
-                ${activityIcon(a.type)}
+                ${buildActivityIcon(a.type)}
                 <div style="flex:1;min-width:0">
                   <p class="text-sm">${a.description}</p>
                   <p class="text-xs text-muted">${a.time}</p>

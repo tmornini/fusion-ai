@@ -166,8 +166,8 @@ function buildReviewStep(): SafeHtml {
 
 function syncFormFields(): void {
   document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-col-field]').forEach(el => {
-    const [colId, field] = (el.getAttribute('data-col-field') || '').split(':');
-    const col = columns.find(c => c.id === colId);
+    const [columnId, field] = (el.getAttribute('data-col-field') || '').split(':');
+    const col = columns.find(c => c.id === columnId);
     if (col && field) {
       const k = field as keyof CrunchColumn;
       if (k === 'friendlyName' || k === 'description' || k === 'dataType' || k === 'acronymExpansion') col[k] = el.value;
@@ -197,8 +197,8 @@ function buildCrunchPage(): SafeHtml {
 
 let mockColumns: CrunchColumn[] = [];
 
-function rerenderCrunchPage(): void {
-  const root = $('#crunch-root');
+function renderCrunchPage(): void {
+  const root = $('#crunch-content');
   if (!root) return;
   setHtml(root, buildCrunchPage());
   bindCrunchEvents();
@@ -209,7 +209,7 @@ function bindCrunchEvents(): void {
     $('#crunch-dropzone')?.addEventListener('click', () => {
       columns = mockColumns.map(c => ({ ...c }));
       step = 'label';
-      rerenderCrunchPage();
+      renderCrunchPage();
     });
   }
 
@@ -219,7 +219,7 @@ function bindCrunchEvents(): void {
         syncFormFields();
         const id = el.getAttribute('data-col-toggle');
         expandedColumnId = expandedColumnId === id ? null : id;
-        rerenderCrunchPage();
+        renderCrunchPage();
       });
     });
 
@@ -231,12 +231,12 @@ function bindCrunchEvents(): void {
       });
     });
 
-    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; rerenderCrunchPage(); });
-    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; rerenderCrunchPage(); });
+    $('#crunch-back-upload')?.addEventListener('click', () => { step = 'upload'; columns = []; renderCrunchPage(); });
+    $('#crunch-to-review')?.addEventListener('click', () => { syncFormFields(); step = 'review'; renderCrunchPage(); });
   }
 
   if (step === 'review') {
-    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; rerenderCrunchPage(); });
+    $('#crunch-edit-labels')?.addEventListener('click', () => { step = 'label'; renderCrunchPage(); });
     $('#crunch-to-dashboard')?.addEventListener('click', () => navigateTo('dashboard'));
   }
 }
@@ -247,5 +247,5 @@ export async function init(): Promise<void> {
   columns = [];
   expandedColumnId = null;
   businessContext = '';
-  rerenderCrunchPage();
+  renderCrunchPage();
 }

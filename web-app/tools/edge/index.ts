@@ -208,15 +208,15 @@ function syncFormFields() {
   edgeData.confidence = ($('#confidence-select') as HTMLSelectElement)?.value || '';
   edgeData.owner = ($('#owner-input') as HTMLInputElement)?.value || '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-desc]').forEach(inp => {
-    const oId = inp.getAttribute('data-outcome-desc')!;
-    const outcome = edgeData.outcomes.find(o => o.id === oId);
+    const outcomeId = inp.getAttribute('data-outcome-desc')!;
+    const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
     if (outcome) outcome.description = inp.value;
   });
   document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(inp => {
     const parts = (inp.getAttribute('data-metric') || '').split('|');
-    const [oId, mId, field] = [parts[0]!, parts[1]!, parts[2]!];
-    const outcome = edgeData.outcomes.find(o => o.id === oId);
-    const metric = outcome?.metrics.find(m => m.id === mId);
+    const [outcomeId, metricId, field] = [parts[0]!, parts[1]!, parts[2]!];
+    const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
+    const metric = outcome?.metrics.find(m => m.id === metricId);
     if (metric && field in metric) metric[field] = inp.value;
   });
 }
@@ -254,8 +254,8 @@ function bindEdgeEvents(ideaId: string) {
   document.querySelectorAll<HTMLElement>('[data-add-metric]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
-      const oId = btn.getAttribute('data-add-metric')!;
-      const outcome = edgeData.outcomes.find(o => o.id === oId);
+      const outcomeId = btn.getAttribute('data-add-metric')!;
+      const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
       if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
       renderEdgePage(ideaId);
     });
@@ -264,9 +264,9 @@ function bindEdgeEvents(ideaId: string) {
   document.querySelectorAll<HTMLElement>('[data-remove-metric]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
-      const [oId, mId] = (btn.getAttribute('data-remove-metric') || '').split('|');
-      const outcome = edgeData.outcomes.find(o => o.id === oId);
-      if (outcome) outcome.metrics = outcome.metrics.filter(m => m.id !== mId);
+      const [outcomeId, metricId] = (btn.getAttribute('data-remove-metric') || '').split('|');
+      const outcome = edgeData.outcomes.find(o => o.id === outcomeId);
+      if (outcome) outcome.metrics = outcome.metrics.filter(m => m.id !== metricId);
       renderEdgePage(ideaId);
     });
   });
@@ -299,12 +299,12 @@ export async function init(params?: Record<string, string>): Promise<void> {
     edgeData = { outcomes: saved.outcomes, impact: saved.impact, confidence: saved.confidence, owner: saved.owner };
     // Set nextId past the highest existing numeric ID to avoid collisions
     let maxId = 0;
-    for (const o of saved.outcomes) {
-      const oNum = parseInt(o.id.replace(/\D/g, ''), 10);
-      if (oNum > maxId) maxId = oNum;
-      for (const m of o.metrics) {
-        const mNum = parseInt(m.id.replace(/\D/g, ''), 10);
-        if (mNum > maxId) maxId = mNum;
+    for (const outcome of saved.outcomes) {
+      const outcomeNum = parseInt(outcome.id.replace(/\D/g, ''), 10);
+      if (outcomeNum > maxId) maxId = outcomeNum;
+      for (const metric of outcome.metrics) {
+        const metricNum = parseInt(metric.id.replace(/\D/g, ''), 10);
+        if (metricNum > maxId) maxId = metricNum;
       }
     }
     nextId = maxId + 1;

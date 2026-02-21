@@ -8,7 +8,7 @@ import {
 } from '../../site/script';
 import { getActivityFeed, type Activity } from '../../site/data';
 
-function activityIconHtml(type: string): SafeHtml {
+function buildActivityIcon(type: string): SafeHtml {
   const iconMap: Record<string, { icon: (size?: number) => SafeHtml; bg: string }> = {
     idea_created: { icon: iconLightbulb, bg: 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text))' },
     idea_scored: { icon: iconStar, bg: 'background:hsl(var(--info-soft));color:hsl(var(--info-text))' },
@@ -33,7 +33,7 @@ function buildActivity(a: Activity): SafeHtml {
         : html``;
   return html`
     <div class="flex items-start gap-4 p-4 rounded-lg activity-row">
-      ${activityIconHtml(a.type)}
+      ${buildActivityIcon(a.type)}
       <div style="flex:1;min-width:0">
         <p class="text-sm"><span class="font-medium">${a.actor}</span><span class="text-muted"> ${a.action} </span><span class="font-medium">${a.target}</span></p>
         ${meta}

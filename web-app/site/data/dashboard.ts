@@ -23,8 +23,8 @@ export async function getDashboardGauges(): Promise<GaugeCard[]> {
   const totalEstCost = projects.reduce((sum, project) => sum + project.estimated_cost, 0);
   const totalActCost = projects.reduce((sum, project) => sum + project.actual_cost, 0);
   const avgEstImpact = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.estimated_impact, 0) / projects.length) : 0;
-  const withActualImpact = projects.filter(project => project.actual_impact > 0);
-  const avgActImpact = withActualImpact.length ? Math.round(withActualImpact.reduce((sum, project) => sum + project.actual_impact, 0) / withActualImpact.length) : 0;
+  const projectsWithActualImpact = projects.filter(project => project.actual_impact > 0);
+  const avgActImpact = projectsWithActualImpact.length ? Math.round(projectsWithActualImpact.reduce((sum, project) => sum + project.actual_impact, 0) / projectsWithActualImpact.length) : 0;
 
   return [
     {

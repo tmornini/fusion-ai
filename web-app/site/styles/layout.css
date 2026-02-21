@@ -283,8 +283,8 @@
 }
 
 /* Notification toggle — needs relative positioning for badge */
-#notif-toggle,
-#mobile-notif-toggle {
+#notification-toggle,
+#mobile-notification-toggle {
   position: relative;
 }
 

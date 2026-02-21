@@ -9,7 +9,7 @@ import {
   getIdeas, getProjects, getTeamMembers,
   type GaugeCard, type Idea, type Project, type TeamMember,
 } from '../../site/data';
-import { donutChart, barChart, areaChart } from '../../site/charts';
+import { buildDonutChart, buildBarChart, buildAreaChart } from '../../site/charts';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },
@@ -22,8 +22,8 @@ const gaugeIconConfig: Record<string, (size?: number, cssClass?: string) => Safe
 };
 
 function buildGauge(card: GaugeCard): SafeHtml {
-  const ts = gaugeThemeConfig[card.theme]!;
-  const uid = card.title.replace(/\s+/g, '-').toLowerCase();
+  const themeStyle = gaugeThemeConfig[card.theme]!;
+  const elementId = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
   const innerPct = Math.min((card.inner.value / card.inner.max) * 100, 100);
   const outerArc = Math.PI * 65;
@@ -31,9 +31,9 @@ function buildGauge(card: GaugeCard): SafeHtml {
   const iconFn = gaugeIconConfig[card.icon] || iconDollarSign;
 
   return html`
-    <div class="card" style="border:2px solid transparent;${ts.border};${ts.bg};border-radius:0.75rem;padding:1.5rem;transition:all 0.3s">
+    <div class="card" style="border:2px solid transparent;${themeStyle.border};${themeStyle.bg};border-radius:0.75rem;padding:1.5rem;transition:all 0.3s">
       <div class="flex items-center gap-3 mb-5">
-        <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;${ts.iconBg};display:flex;align-items:center;justify-content:center">
+        <div style="width:2.5rem;height:2.5rem;border-radius:0.5rem;${themeStyle.iconBg};display:flex;align-items:center;justify-content:center">
           ${iconFn(20, card.iconClass)}
         </div>
         <h3 class="text-sm font-semibold">${card.title}</h3>
@@ -41,19 +41,19 @@ function buildGauge(card: GaugeCard): SafeHtml {
       <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
         <svg width="180" height="95" viewBox="0 0 180 95" style="overflow:visible">
           <defs>
-            <linearGradient id="outer-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id="outer-${elementId}" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stop-color="hsl(var(--primary))" stop-opacity="0.4"/>
               <stop offset="100%" stop-color="hsl(var(--primary))" stop-opacity="1"/>
             </linearGradient>
-            <linearGradient id="inner-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id="inner-${elementId}" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stop-color="hsl(var(--success))" stop-opacity="0.4"/>
               <stop offset="100%" stop-color="hsl(var(--success))" stop-opacity="1"/>
             </linearGradient>
           </defs>
           <path d="M 25 85 A 65 65 0 0 1 155 85" fill="none" stroke="hsl(var(--muted))" stroke-width="14" stroke-linecap="round" opacity="0.3"/>
-          <path d="M 25 85 A 65 65 0 0 1 155 85" fill="none" stroke="url(#outer-${uid})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${outerArc}" stroke-dashoffset="${outerArc - (outerPct / 100) * outerArc}"/>
+          <path d="M 25 85 A 65 65 0 0 1 155 85" fill="none" stroke="url(#outer-${elementId})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${outerArc}" stroke-dashoffset="${outerArc - (outerPct / 100) * outerArc}"/>
           <path d="M 45 85 A 45 45 0 0 1 135 85" fill="none" stroke="hsl(var(--muted))" stroke-width="14" stroke-linecap="round" opacity="0.3"/>
-          <path d="M 45 85 A 45 45 0 0 1 135 85" fill="none" stroke="url(#inner-${uid})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${innerArc}" stroke-dashoffset="${innerArc - (innerPct / 100) * innerArc}"/>
+          <path d="M 45 85 A 45 45 0 0 1 135 85" fill="none" stroke="url(#inner-${elementId})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${innerArc}" stroke-dashoffset="${innerArc - (innerPct / 100) * innerArc}"/>
         </svg>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -100,7 +100,7 @@ const projectHealthConfig: Record<string, { label: string; color: string }> = {
 
 function buildPipelineData(ideas: Idea[]) {
   const groups: Record<string, number> = {};
-  ideas.forEach(i => { groups[i.status] = (groups[i.status] || 0) + 1; });
+  ideas.forEach(idea => { groups[idea.status] = (groups[idea.status] || 0) + 1; });
   return Object.entries(groups).map(([status, count]) => ({
     label: ideaPipelineConfig[status]?.label || status,
     value: count,
@@ -110,7 +110,7 @@ function buildPipelineData(ideas: Idea[]) {
 
 function buildProjectHealthData(projects: Project[]) {
   const groups: Record<string, number> = {};
-  projects.forEach(p => { groups[p.status] = (groups[p.status] || 0) + 1; });
+  projects.forEach(project => { groups[project.status] = (groups[project.status] || 0) + 1; });
   return Object.entries(groups).map(([status, count]) => ({
     label: projectHealthConfig[status]?.label || status,
     value: count,
@@ -121,13 +121,13 @@ function buildProjectHealthData(projects: Project[]) {
 function buildScoreData(ideas: Idea[]) {
   return [...ideas]
     .sort((a, b) => a.score - b.score)
-    .map(i => ({ label: i.title.slice(0, 12), value: i.score }));
+    .map(idea => ({ label: idea.title.slice(0, 12), value: idea.score }));
 }
 
 function buildAvailabilityData(members: TeamMember[]) {
-  return members.map(m => ({
-    label: m.name.split(' ')[0] ?? '',
-    value: m.availability,
+  return members.map(member => ({
+    label: member.name.split(' ')[0] ?? '',
+    value: member.availability,
   }));
 }
 
@@ -158,7 +158,7 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   if (pipelineEl) {
     const pipelineData = buildPipelineData(ideas);
     const total = pipelineData.reduce((a, d) => a + d.value, 0);
-    setHtml(pipelineEl, html`${donutChart(pipelineData, {
+    setHtml(pipelineEl, html`${buildDonutChart(pipelineData, {
       width: 140,
       colors: pipelineData.map(d => d.color || ''),
     })}<div class="donut-legend">${pipelineData.map(d =>
@@ -173,7 +173,7 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   // 2. Project Health (Bar)
   const healthEl = $('#chart-health');
   if (healthEl) {
-    setHtml(healthEl, barChart(buildProjectHealthData(projects), {
+    setHtml(healthEl, buildBarChart(buildProjectHealthData(projects), {
       width: 300,
       height: 180,
       colors: Object.values(projectHealthConfig).map(c => c.color),
@@ -184,7 +184,7 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   // 3. Idea Scores (Area)
   const scoresEl = $('#chart-scores');
   if (scoresEl) {
-    setHtml(scoresEl, areaChart(buildScoreData(ideas), {
+    setHtml(scoresEl, buildAreaChart(buildScoreData(ideas), {
       width: 300,
       height: 180,
       id: 'dashboard-scores',
@@ -196,7 +196,7 @@ function renderCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   // 4. Team Availability (Bar)
   const availEl = $('#chart-availability');
   if (availEl) {
-    setHtml(availEl, barChart(buildAvailabilityData(members), {
+    setHtml(availEl, buildBarChart(buildAvailabilityData(members), {
       width: 300,
       height: 180,
       colors: ['hsl(var(--primary))'],

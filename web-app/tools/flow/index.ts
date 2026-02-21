@@ -192,7 +192,7 @@ function buildFlowPage(): SafeHtml {
 }
 
 function renderFlowPage(): void {
-  const root = $('#flow-root');
+  const root = $('#flow-content');
   if (!root) return;
   setHtml(root, buildFlowPage());
   bindFlowEvents();
@@ -263,7 +263,7 @@ function bindFlowEvents(): void {
 }
 
 export async function init(): Promise<void> {
-  const root = $('#flow-root');
+  const root = $('#flow-content');
   if (root) setHtml(root, buildSkeleton('card-list', { count: 4 }));
 
   let flowData: Flow;

@@ -118,9 +118,9 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
             </div>
             <div class="score-grid">
               ${[
-                { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', lower: true },
-                { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', lower: true },
-                { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', prefix: '', lower: false },
+                { label: 'Time', icon: iconClock, baseline: p.metrics.time.baseline, current: p.metrics.time.current, unit: 'h', prefix: '', isLowerBetter: true },
+                { label: 'Cost', icon: iconDollarSign, baseline: p.metrics.cost.baseline / 1000, current: p.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
+                { label: 'Impact', icon: iconTrendingUp, baseline: p.metrics.impact.baseline, current: p.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
               ].map(m => html`
                 <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                   <div class="flex items-center gap-2 mb-3">${m.icon(20, 'text-primary')} <span class="font-medium">${m.label}</span></div>
@@ -129,7 +129,7 @@ function buildProjectDetail(p: ProjectDetail, projectId: string): SafeHtml {
                     <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${m.current ? `${m.prefix}${m.current}${m.unit}` : '—'}</span></div>
                     <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                       <span class="text-xs font-medium text-muted">Variance</span>
-                      ${buildVariance(m.baseline, m.current, m.lower, m.unit, m.prefix)}
+                      ${buildVariance(m.baseline, m.current, m.isLowerBetter, m.unit, m.prefix)}
                     </div>
                   </div>
                 </div>

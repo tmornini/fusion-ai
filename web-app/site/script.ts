@@ -41,16 +41,16 @@ function initials(name: string): string {
   return name.split(' ').map(n => n[0]).join('');
 }
 
-function colorForScore(score: number): string {
+function styleForScore(score: number): string {
   if (score >= 80) return 'color:hsl(var(--success))';
   if (score >= 60) return 'color:hsl(var(--warning))';
   return 'color:hsl(var(--error))';
 }
 
-let savedFocusBeforeDialog: HTMLElement | null = null;
+let previousFocusElement: HTMLElement | null = null;
 
 function openDialog(dialogId: string): void {
-  savedFocusBeforeDialog = document.activeElement as HTMLElement | null;
+  previousFocusElement = document.activeElement as HTMLElement | null;
   $(`#${dialogId}-backdrop`)?.classList.remove('hidden');
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.remove('hidden');
@@ -64,8 +64,8 @@ function closeDialog(dialogId: string): void {
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.add('hidden');
   dialog?.setAttribute('aria-hidden', 'true');
-  savedFocusBeforeDialog?.focus();
-  savedFocusBeforeDialog = null;
+  previousFocusElement?.focus();
+  previousFocusElement = null;
 }
 
 function initTabs(tabSelector: string, panelSelector: string, activeClass = 'active'): void {
@@ -173,7 +173,7 @@ async function populateNotifications(): Promise<void> {
     }
   }
 
-  for (const prefix of ['notif', 'mobile-notif']) {
+  for (const prefix of ['notification', 'mobile-notification']) {
     renderItems(`${prefix}-list`, `${prefix}-count`, `${prefix}-badge`);
   }
 }
@@ -335,7 +335,7 @@ function initSidebar(): void {
 function initThemeAndDropdowns(): void {
   for (const prefix of ['', 'mobile-']) {
     initDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
-    initDropdown(`${prefix}notif-toggle`, `${prefix}notif-dropdown`);
+    initDropdown(`${prefix}notification-toggle`, `${prefix}notification-dropdown`);
   }
 
   document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(el => {
@@ -443,7 +443,7 @@ export {
   // Loading / Error / Empty (re-exported from ./skeleton)
   type SkeletonType, buildSkeleton, buildErrorState, buildEmptyState, withLoadingState,
   // Shared Utilities
-  initials, colorForScore, openDialog, closeDialog, initTabs,
+  initials, styleForScore, openDialog, closeDialog, initTabs,
   // Icons (re-exported from ./icons)
   icon, icons,
   iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
