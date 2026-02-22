@@ -22,7 +22,7 @@ let edgeData: EdgeData = {
 let nextId = 1;
 let currentIdea: EdgeIdea | null = null;
 
-function completionStatus() {
+function computeCompletionStatus() {
   const hasOutcomes = edgeData.outcomes.length > 0;
   const allOutcomesHaveMetrics = hasOutcomes && edgeData.outcomes.every(outcome => outcome.metrics.length > 0);
   const hasImpact = !!(edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm);
@@ -41,7 +41,7 @@ function buildCompletionIcon(satisfied: boolean): SafeHtml {
 
 function buildEdgePage(ideaId: string): SafeHtml {
   const idea = currentIdea!;
-  const completion = completionStatus();
+  const completion = computeCompletionStatus();
   const statusLabel = completion.isComplete ? 'Complete' : completion.completionPercent > 0 ? 'In Progress' : 'Incomplete';
   const statusClassName = completion.isComplete ? 'badge-success' : completion.completionPercent > 0 ? 'badge-warning' : 'badge-error';
 
@@ -57,7 +57,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
       <div class="p-4 rounded-lg" style="background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
         <div class="flex items-start gap-3 mb-3">
           <div style="width:1.5rem;height:1.5rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600;color:hsl(var(--primary));flex-shrink:0">${idx + 1}</div>
-          <input class="input" style="flex:1" value="${outcome.description}" placeholder="Describe the business outcome..." data-outcome-desc="${outcome.id}" />
+          <input class="input" style="flex:1" value="${outcome.description}" placeholder="Describe the business outcome..." data-outcome-description="${outcome.id}" />
           <button class="btn btn-ghost btn-icon btn-sm" data-remove-outcome="${outcome.id}">${iconTrash(16)}</button>
         </div>
         <div style="padding-left:2.25rem">
@@ -207,17 +207,16 @@ function syncFormFields() {
   edgeData.impact.longTerm = ($('#impact-long-term') as HTMLTextAreaElement)?.value || '';
   edgeData.confidence = ($('#confidence-select') as HTMLSelectElement)?.value || '';
   edgeData.owner = ($('#owner-input') as HTMLInputElement)?.value || '';
-  document.querySelectorAll<HTMLInputElement>('[data-outcome-desc]').forEach(inp => {
-    const outcomeId = inp.getAttribute('data-outcome-desc')!;
+  document.querySelectorAll<HTMLInputElement>('[data-outcome-description]').forEach(descriptionInput => {
+    const outcomeId = descriptionInput.getAttribute('data-outcome-description')!;
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
-    if (outcome) outcome.description = inp.value;
+    if (outcome) outcome.description = descriptionInput.value;
   });
-  document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(inp => {
-    const parts = (inp.getAttribute('data-metric') || '').split('|');
-    const [outcomeId, metricId, field] = [parts[0]!, parts[1]!, parts[2]!];
+  document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(metricInput => {
+    const [outcomeId, metricId, field] = (metricInput.getAttribute('data-metric') || '').split('|');
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     const metric = outcome?.metrics.find(candidate => candidate.id === metricId);
-    if (metric && field in metric) metric[field] = inp.value;
+    if (metric && field && field in metric) metric[field] = metricInput.value;
   });
 }
 
@@ -235,36 +234,36 @@ function bindEdgeEvents(ideaId: string) {
     mutateEdgePage(ideaId);
   });
 
-  document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(templateButton => {
+    templateButton.addEventListener('click', () => {
       syncFormFields();
-      edgeData.outcomes.push({ id: `o${nextId++}`, description: btn.getAttribute('data-add-template') || '', metrics: [] });
+      edgeData.outcomes.push({ id: `o${nextId++}`, description: templateButton.getAttribute('data-add-template') || '', metrics: [] });
       mutateEdgePage(ideaId);
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-remove-outcome]').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll<HTMLElement>('[data-remove-outcome]').forEach(removeButton => {
+    removeButton.addEventListener('click', () => {
       syncFormFields();
-      edgeData.outcomes = edgeData.outcomes.filter(outcome => outcome.id !== btn.getAttribute('data-remove-outcome'));
+      edgeData.outcomes = edgeData.outcomes.filter(outcome => outcome.id !== removeButton.getAttribute('data-remove-outcome'));
       mutateEdgePage(ideaId);
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-add-metric]').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll<HTMLElement>('[data-add-metric]').forEach(addButton => {
+    addButton.addEventListener('click', () => {
       syncFormFields();
-      const outcomeId = btn.getAttribute('data-add-metric')!;
+      const outcomeId = addButton.getAttribute('data-add-metric')!;
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
       if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
       mutateEdgePage(ideaId);
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-remove-metric]').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll<HTMLElement>('[data-remove-metric]').forEach(removeButton => {
+    removeButton.addEventListener('click', () => {
       syncFormFields();
-      const [outcomeId, metricId] = (btn.getAttribute('data-remove-metric') || '').split('|');
+      const [outcomeId, metricId] = (removeButton.getAttribute('data-remove-metric') || '').split('|');
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
       if (outcome) outcome.metrics = outcome.metrics.filter(metric => metric.id !== metricId);
       mutateEdgePage(ideaId);
@@ -273,7 +272,7 @@ function bindEdgeEvents(ideaId: string) {
 
   $('#save-edge')?.addEventListener('click', () => {
     syncFormFields();
-    if (!completionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
+    if (!computeCompletionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
     showToast('Edge data saved successfully', 'success');
     navigateTo('approval-detail', { id: ideaId });
   });

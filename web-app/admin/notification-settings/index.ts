@@ -70,10 +70,10 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Switch toggles
-  document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {
-    sw.addEventListener('click', () => {
-      const isChecked = sw.getAttribute('aria-checked') === 'true';
-      sw.setAttribute('aria-checked', String(!isChecked));
+  document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(switchElement => {
+    switchElement.addEventListener('click', () => {
+      const isChecked = switchElement.getAttribute('aria-checked') === 'true';
+      switchElement.setAttribute('aria-checked', String(!isChecked));
     });
   });
 
@@ -82,14 +82,14 @@ export async function init(): Promise<void> {
     btn.addEventListener('click', () => {
       const categoryId = btn.getAttribute('data-enable-all');
       const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
-      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'true'));
+      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'true'));
     });
   });
   document.querySelectorAll<HTMLElement>('[data-disable-all]').forEach(btn => {
     btn.addEventListener('click', () => {
       const categoryId = btn.getAttribute('data-disable-all');
       const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
-      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(sw => sw.setAttribute('aria-checked', 'false'));
+      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'false'));
     });
   });
 

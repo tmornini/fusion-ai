@@ -76,7 +76,7 @@ function buildGauge(card: GaugeCard): SafeHtml {
     </div>`;
 }
 
-function timeOfDay(): string {
+function getTimeOfDay(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'morning';
   if (hour < 18) return 'afternoon';
@@ -99,7 +99,7 @@ const projectHealthConfig: Record<string, { label: string; color: string }> = {
   sent_back: { label: 'Sent Back', color: 'hsl(var(--error))' },
 };
 
-function buildPipelineData(ideas: Idea[]) {
+function computePipelineData(ideas: Idea[]) {
   const groups: Record<string, number> = {};
   ideas.forEach(idea => { groups[idea.status] = (groups[idea.status] || 0) + 1; });
   return Object.entries(groups).map(([status, count]) => ({
@@ -109,7 +109,7 @@ function buildPipelineData(ideas: Idea[]) {
   }));
 }
 
-function buildProjectHealthData(projects: Project[]) {
+function computeProjectHealthData(projects: Project[]) {
   const groups: Record<string, number> = {};
   projects.forEach(project => { groups[project.status] = (groups[project.status] || 0) + 1; });
   return Object.entries(groups).map(([status, count]) => ({
@@ -119,20 +119,20 @@ function buildProjectHealthData(projects: Project[]) {
   }));
 }
 
-function buildScoreData(ideas: Idea[]) {
+function computeScoreData(ideas: Idea[]) {
   return [...ideas]
     .sort((a, b) => a.score - b.score)
     .map(idea => ({ label: idea.title.slice(0, 12), value: idea.score }));
 }
 
-function buildAvailabilityData(members: TeamMember[]) {
+function computeAvailabilityData(members: TeamMember[]) {
   return members.map(member => ({
     label: member.name.split(' ')[0] ?? '',
     value: member.availability,
   }));
 }
 
-function fitSvgToContainer(container: HTMLElement): void {
+function mutateSvgToFit(container: HTMLElement): void {
   const svg = container.querySelector('svg');
   if (svg) {
     svg.style.width = '100%';
@@ -157,7 +157,7 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   // 1. Idea Pipeline (Donut)
   const pipelineEl = $('#chart-pipeline');
   if (pipelineEl) {
-    const pipelineData = buildPipelineData(ideas);
+    const pipelineData = computePipelineData(ideas);
     const total = pipelineData.reduce((sum, datum) => sum + datum.value, 0);
     setHtml(pipelineEl, html`${buildDonutChart(pipelineData, {
       width: 140,
@@ -168,41 +168,41 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
         ${datum.label} <strong>${datum.value}</strong> <span class="text-muted">(${Math.round(datum.value / total * 100)}%)</span>
       </span>`
     )}</div>`);
-    fitSvgToContainer(pipelineEl);
+    mutateSvgToFit(pipelineEl);
   }
 
   // 2. Project Health (Bar)
   const healthEl = $('#chart-health');
   if (healthEl) {
-    setHtml(healthEl, buildBarChart(buildProjectHealthData(projects), {
+    setHtml(healthEl, buildBarChart(computeProjectHealthData(projects), {
       width: 300,
       height: 180,
       colors: Object.values(projectHealthConfig).map(config => config.color),
     }));
-    fitSvgToContainer(healthEl);
+    mutateSvgToFit(healthEl);
   }
 
   // 3. Idea Scores (Area)
   const scoresEl = $('#chart-scores');
   if (scoresEl) {
-    setHtml(scoresEl, buildAreaChart(buildScoreData(ideas), {
+    setHtml(scoresEl, buildAreaChart(computeScoreData(ideas), {
       width: 300,
       height: 180,
       id: 'dashboard-scores',
       colors: ['hsl(var(--warning))'],
     }));
-    fitSvgToContainer(scoresEl);
+    mutateSvgToFit(scoresEl);
   }
 
   // 4. Team Availability (Bar)
   const availEl = $('#chart-availability');
   if (availEl) {
-    setHtml(availEl, buildBarChart(buildAvailabilityData(members), {
+    setHtml(availEl, buildBarChart(computeAvailabilityData(members), {
       width: 300,
       height: 180,
       colors: ['hsl(var(--primary))'],
     }));
-    fitSvgToContainer(availEl);
+    mutateSvgToFit(availEl);
   }
 }
 
@@ -213,10 +213,12 @@ export async function init(): Promise<void> {
   const actionsEl = $('#quick-actions');
   if (actionsEl) setHtml(actionsEl, buildSkeleton('card-grid', { count: 4 }));
 
+  let rawIdeas: import('../../../api/types').IdeaEntity[] = [];
+  let rawProjects: import('../../../api/types').ProjectEntity[] = [];
   let user, gauges, quickActions, stats;
   try {
-    // Fetch raw entities once to share across gauge/stats builders
-    const [rawIdeas, rawProjects] = await Promise.all([
+    // Fetch raw entities once to share across gauge/stats builders and charts
+    [rawIdeas, rawProjects] = await Promise.all([
       GET('ideas') as Promise<import('../../../api/types').IdeaEntity[]>,
       GET('projects') as Promise<import('../../../api/types').ProjectEntity[]>,
     ]);
@@ -240,7 +242,7 @@ export async function init(): Promise<void> {
   if (heroIcon) setHtml(heroIcon, iconSparkles(28, 'text-primary-fg'));
 
   const greetingEl = $('#hero-greeting');
-  if (greetingEl) greetingEl.textContent = `Good ${timeOfDay()}`;
+  if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}`;
 
   const userName = $('#hero-user-name');
   if (userName) userName.textContent = user.name;
@@ -287,8 +289,8 @@ export async function init(): Promise<void> {
   // Charts — fetch chart data in parallel (non-blocking for main dashboard)
   try {
     const [ideas, projects, members] = await Promise.all([
-      getIdeas(),
-      getProjects(),
+      getIdeas(rawIdeas),
+      getProjects(rawProjects),
       getTeamMembers(),
     ]);
     mutateCharts(ideas, projects, members);

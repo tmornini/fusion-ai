@@ -88,7 +88,7 @@ export async function init(): Promise<void> {
   const emptyEl = $('#edge-empty');
   if (emptyEl) setHtml(emptyEl, html`${iconTarget(48, 'text-muted')}<h3 class="text-lg font-semibold mt-4 mb-2">No Edge definitions found</h3><p class="text-muted">Try adjusting your search or filter criteria</p>`);
 
-  function filterAndRender() {
+  function mutateFilteredList() {
     const search = (($('#edge-search') as HTMLInputElement)?.value || '').toLowerCase();
     const status = ($('#edge-status-filter') as HTMLSelectElement)?.value || 'all';
     const filtered = edges.filter(edge => {
@@ -108,7 +108,7 @@ export async function init(): Promise<void> {
     if (card) navigateTo('edge', { ideaId: card.getAttribute('data-edge-card')! });
   });
 
-  $('#edge-search')?.addEventListener('input', filterAndRender);
-  $('#edge-status-filter')?.addEventListener('change', filterAndRender);
-  filterAndRender();
+  $('#edge-search')?.addEventListener('input', mutateFilteredList);
+  $('#edge-status-filter')?.addEventListener('change', mutateFilteredList);
+  mutateFilteredList();
 }

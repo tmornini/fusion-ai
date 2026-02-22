@@ -15,9 +15,9 @@ export interface Idea {
   edgeStatus: 'incomplete' | EdgeStatus;
 }
 
-export async function getIdeas(): Promise<Idea[]> {
+export async function getIdeas(prefetchedIdeas?: IdeaEntity[]): Promise<Idea[]> {
   const [ideas, userMap] = await Promise.all([
-    GET('ideas') as Promise<IdeaEntity[]>,
+    prefetchedIdeas ? Promise.resolve(prefetchedIdeas) : GET('ideas') as Promise<IdeaEntity[]>,
     getUserMap(),
   ]);
   return ideas

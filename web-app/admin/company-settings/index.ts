@@ -85,10 +85,10 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Switch toggles
-  document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(sw => {
-    sw.addEventListener('click', () => {
-      const isChecked = sw.getAttribute('aria-checked') === 'true';
-      sw.setAttribute('aria-checked', String(!isChecked));
+  document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(switchElement => {
+    switchElement.addEventListener('click', () => {
+      const isChecked = switchElement.getAttribute('aria-checked') === 'true';
+      switchElement.setAttribute('aria-checked', String(!isChecked));
     });
   });
 

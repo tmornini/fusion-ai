@@ -145,7 +145,7 @@ export async function init(): Promise<void> {
       <p class="text-muted">Try adjusting your search or filter criteria</p>
     </div>`);
 
-  function filterAndRender() {
+  function mutateFilteredList() {
     const search = (($('#review-queue-search') as HTMLInputElement)?.value || '').toLowerCase();
     const priority = ($('#review-queue-priority-filter') as HTMLSelectElement)?.value || 'all';
     const readiness = ($('#review-queue-readiness-filter') as HTMLSelectElement)?.value || 'all';
@@ -169,8 +169,8 @@ export async function init(): Promise<void> {
     if (card) navigateTo('approval-detail', { id: card.getAttribute('data-review-card')! });
   });
 
-  $('#review-queue-search')?.addEventListener('input', filterAndRender);
-  $('#review-queue-priority-filter')?.addEventListener('change', filterAndRender);
-  $('#review-queue-readiness-filter')?.addEventListener('change', filterAndRender);
-  filterAndRender();
+  $('#review-queue-search')?.addEventListener('input', mutateFilteredList);
+  $('#review-queue-priority-filter')?.addEventListener('change', mutateFilteredList);
+  $('#review-queue-readiness-filter')?.addEventListener('change', mutateFilteredList);
+  mutateFilteredList();
 }

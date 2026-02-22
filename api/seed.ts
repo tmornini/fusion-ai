@@ -301,8 +301,8 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'teams', label: 'Teams', icon: 'users' },
     { id: 'account', label: 'Account', icon: 'user' },
   ];
-  for (const cat of categories) {
-    await adapter.notificationCategories.put(cat.id, cat);
+  for (const category of categories) {
+    await adapter.notificationCategories.put(category.id, category);
   }
 
   const notificationPreferences = [

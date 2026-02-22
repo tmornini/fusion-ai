@@ -16,7 +16,7 @@ const ideaStatusConfig: Record<string, { label: string; className: string }> = {
   rejected: { label: 'Sent Back', className: 'badge-error' },
 };
 
-function styleForScore(score: number): string {
+function styleForScoreBadge(score: number): string {
   if (score >= 85) return 'color:hsl(var(--success));background:hsl(var(--success-soft))';
   if (score >= 70) return 'color:hsl(var(--warning));background:hsl(var(--warning-soft))';
   return 'color:hsl(var(--error));background:hsl(var(--error-soft))';
@@ -46,7 +46,7 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
                 <span>by ${idea.submittedBy}</span>
               </div>
             </div>
-            <div style="padding:0.25rem 0.75rem;border-radius:var(--radius-lg);font-weight:600;font-size:0.875rem;${styleForScore(idea.score)}">
+            <div style="padding:0.25rem 0.75rem;border-radius:var(--radius-lg);font-weight:600;font-size:0.875rem;${styleForScoreBadge(idea.score)}">
               ${iconStar(14)} ${idea.score}
             </div>
           </div>
@@ -186,9 +186,9 @@ export async function init(): Promise<void> {
     if (count) count.textContent = `${sorted.length} ${sorted.length === 1 ? 'idea' : 'ideas'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
   }
 
-  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const view = btn.getAttribute('data-view') || 'priority';
+  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(viewToggleButton => {
+    viewToggleButton.addEventListener('click', () => {
+      const view = viewToggleButton.getAttribute('data-view') || 'priority';
       currentView = view;
       document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(button => {
         button.classList.toggle('active', button.getAttribute('data-view') === view);
@@ -199,12 +199,12 @@ export async function init(): Promise<void> {
 
   $('#ideas-list')?.addEventListener('click', (e) => {
     const target = e.target as Element;
-    const btn = target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
-    if (btn) {
-      if (btn.hasAttribute('data-idea-view')) navigateTo('idea-scoring', { ideaId: btn.getAttribute('data-idea-view')! });
-      else if (btn.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: btn.getAttribute('data-idea-edge')! });
-      else if (btn.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: btn.getAttribute('data-idea-review')! });
-      else if (btn.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: btn.getAttribute('data-idea-convert')! });
+    const actionButton = target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
+    if (actionButton) {
+      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-scoring', { ideaId: actionButton.getAttribute('data-idea-view')! });
+      else if (actionButton.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: actionButton.getAttribute('data-idea-edge')! });
+      else if (actionButton.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: actionButton.getAttribute('data-idea-review')! });
+      else if (actionButton.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: actionButton.getAttribute('data-idea-convert')! });
       return;
     }
     const card = target.closest<HTMLElement>('[data-idea-card]');

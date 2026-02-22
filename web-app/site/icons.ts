@@ -134,11 +134,11 @@ const _allIcons = [
 ];
 const icons: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {};
 for (const fn of _allIcons) {
-  const pascal = fn.name.replace(/^icon/, '');
-  const kebab = pascal.replace(/[A-Z]/g, (c, i) => (i ? '-' : '') + c.toLowerCase()).replace(/(\d+)/g, '-$1');
-  const camel = pascal[0]!.toLowerCase() + pascal.slice(1);
-  icons[kebab] = fn;
-  if (camel !== kebab) icons[camel] = fn;
+  const pascalName = fn.name.replace(/^icon/, '');
+  const kebabName = pascalName.replace(/[A-Z]/g, (c, i) => (i ? '-' : '') + c.toLowerCase()).replace(/(\d+)/g, '-$1');
+  const camelName = pascalName[0]!.toLowerCase() + pascalName.slice(1);
+  icons[kebabName] = fn;
+  if (camelName !== kebabName) icons[camelName] = fn;
 }
 
 export {

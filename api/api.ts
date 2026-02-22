@@ -171,20 +171,20 @@ const routes: Route[] = [
 
 // ── Route Matching ──────────────────────────
 
-function matchRoute(parts: string[]): { route: Route; params: string[] } | null {
-  for (const entry of routes) {
-    if (entry.segments.length !== parts.length) continue;
+function matchRoute(pathSegments: string[]): { route: Route; params: string[] } | null {
+  for (const routeDefinition of routes) {
+    if (routeDefinition.segments.length !== pathSegments.length) continue;
     const params: string[] = [];
     let matched = true;
-    for (let i = 0; i < entry.segments.length; i++) {
-      if (entry.segments[i]!.startsWith(':')) {
-        params.push(parts[i]!);
-      } else if (entry.segments[i] !== parts[i]) {
+    for (let i = 0; i < routeDefinition.segments.length; i++) {
+      if (routeDefinition.segments[i]!.startsWith(':')) {
+        params.push(pathSegments[i]!);
+      } else if (routeDefinition.segments[i] !== pathSegments[i]) {
         matched = false;
         break;
       }
     }
-    if (matched) return { route: entry, params };
+    if (matched) return { route: routeDefinition, params };
   }
   return null;
 }
@@ -192,15 +192,15 @@ function matchRoute(parts: string[]): { route: Route; params: string[] } | null 
 // ── GET / PUT ───────────────────────────────
 
 export async function GET(resource: string): Promise<unknown> {
-  const parts = resource.split('/').filter(Boolean);
-  const match = matchRoute(parts);
+  const pathSegments = resource.split('/').filter(Boolean);
+  const match = matchRoute(pathSegments);
   if (match?.route.get) return match.route.get(getDbAdapter(), match.params);
   throw new Error(`GET: Unknown resource "${resource}"`);
 }
 
 export async function PUT(resource: string, payload: Record<string, unknown>): Promise<unknown> {
-  const parts = resource.split('/').filter(Boolean);
-  const match = matchRoute(parts);
+  const pathSegments = resource.split('/').filter(Boolean);
+  const match = matchRoute(pathSegments);
   if (match?.route.put) return match.route.put(getDbAdapter(), match.params, payload);
   throw new Error(`PUT: Unknown resource "${resource}"`);
 }

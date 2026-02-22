@@ -102,10 +102,10 @@ export async function init(): Promise<void> {
   let currentView: 'priority' | 'performance' = 'priority';
 
   // Populate icons
-  const iconLGEl = $('#icon-layout-grid');
-  if (iconLGEl) setHtml(iconLGEl, iconLayoutGrid(16));
-  const iconBCEl = $('#icon-bar-chart');
-  if (iconBCEl) setHtml(iconBCEl, iconBarChart(16));
+  const iconLayoutGridElement = $('#icon-layout-grid');
+  if (iconLayoutGridElement) setHtml(iconLayoutGridElement, iconLayoutGrid(16));
+  const iconBarChartElement = $('#icon-bar-chart');
+  if (iconBarChartElement) setHtml(iconBarChartElement, iconBarChart(16));
 
   // Status badges
   const counts = {
@@ -122,14 +122,14 @@ export async function init(): Promise<void> {
   }
 
   function bindCards(): void {
-    document.querySelectorAll<HTMLElement>('[data-project-card]').forEach(el => {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', () => navigateTo('project-detail', { projectId: el.getAttribute('data-project-card')! }));
+    document.querySelectorAll<HTMLElement>('[data-project-card]').forEach(projectCard => {
+      projectCard.style.cursor = 'pointer';
+      projectCard.addEventListener('click', () => navigateTo('project-detail', { projectId: projectCard.getAttribute('data-project-card')! }));
     });
-    document.querySelectorAll<HTMLElement>('[data-view-project]').forEach(el => {
-      el.addEventListener('click', (e) => {
+    document.querySelectorAll<HTMLElement>('[data-view-project]').forEach(viewButton => {
+      viewButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        navigateTo('project-detail', { projectId: el.getAttribute('data-view-project')! });
+        navigateTo('project-detail', { projectId: viewButton.getAttribute('data-view-project')! });
       });
     });
   }
@@ -145,11 +145,11 @@ export async function init(): Promise<void> {
     bindCards();
   }
 
-  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      currentView = btn.getAttribute('data-view') as 'priority' | 'performance';
+  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(viewToggleButton => {
+    viewToggleButton.addEventListener('click', () => {
+      currentView = viewToggleButton.getAttribute('data-view') as 'priority' | 'performance';
       document.querySelectorAll('.view-toggle-btn').forEach(button => button.classList.remove('active'));
-      btn.classList.add('active');
+      viewToggleButton.classList.add('active');
       mutateList();
     });
   });

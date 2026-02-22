@@ -22,8 +22,8 @@ export interface Project {
   priority: number;
 }
 
-export async function getProjects(): Promise<Project[]> {
-  const rows = await GET('projects') as ProjectEntity[];
+export async function getProjects(prefetchedProjects?: ProjectEntity[]): Promise<Project[]> {
+  const rows = prefetchedProjects ?? await GET('projects') as ProjectEntity[];
   return rows.map(row => ({
     id: row.id,
     title: row.title,

@@ -29,7 +29,7 @@ const defaultColors = [
   'hsl(var(--chart-6))',
 ];
 
-function calculateChartLayout(data: ChartDatum[], config?: ChartConfig) {
+function computeChartLayout(data: ChartDatum[], config?: ChartConfig) {
   const width = config?.width ?? 300;
   const height = config?.height ?? 200;
   const padding = config?.padding ?? 40;
@@ -39,7 +39,7 @@ function calculateChartLayout(data: ChartDatum[], config?: ChartConfig) {
   return { width, height, padding, colors, maxValue, chartHeight };
 }
 
-function calculateChartPoints(data: ChartDatum[], width: number, height: number, padding: number, maxValue: number, chartHeight: number) {
+function computeChartPoints(data: ChartDatum[], width: number, height: number, padding: number, maxValue: number, chartHeight: number) {
   const stepWidth = (width - padding * 2) / Math.max(data.length - 1, 1);
   return data.map((datum, index) => ({ x: padding + index * stepWidth, y: height - padding - (datum.value / maxValue) * chartHeight }));
 }
@@ -50,7 +50,7 @@ function buildBaseline(padding: number, width: number, height: number): string {
 
 export function buildBarChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { width, height, padding, colors, maxValue, chartHeight } = calculateChartLayout(data, config);
+  const { width, height, padding, colors, maxValue, chartHeight } = computeChartLayout(data, config);
   const barWidth = Math.min(40, (width - padding * 2) / data.length - 8);
 
   let bars = '';
@@ -73,9 +73,9 @@ export function buildBarChart(data: ChartDatum[], config?: ChartConfig): SafeHtm
 
 export function buildLineChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { width, height, padding, maxValue, chartHeight } = calculateChartLayout(data, config);
+  const { width, height, padding, maxValue, chartHeight } = computeChartLayout(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
-  const points = calculateChartPoints(data, width, height, padding, maxValue, chartHeight);
+  const points = computeChartPoints(data, width, height, padding, maxValue, chartHeight);
 
   const pathData = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   let dotMarkup = '';
@@ -119,9 +119,9 @@ export function buildDonutChart(data: ChartDatum[], config?: ChartConfig): SafeH
 
 export function buildAreaChart(data: ChartDatum[], config?: ChartConfig): SafeHtml {
   if (!data.length) return trusted('');
-  const { width, height, padding, maxValue, chartHeight } = calculateChartLayout(data, config);
+  const { width, height, padding, maxValue, chartHeight } = computeChartLayout(data, config);
   const color = config?.colors?.[0] ?? 'hsl(var(--primary))';
-  const points = calculateChartPoints(data, width, height, padding, maxValue, chartHeight);
+  const points = computeChartPoints(data, width, height, padding, maxValue, chartHeight);
 
   const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   const areaPath = linePath + ` L ${points[points.length - 1]!.x} ${height - padding} L ${points[0]!.x} ${height - padding} Z`;
