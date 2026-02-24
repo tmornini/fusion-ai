@@ -4,7 +4,7 @@ import type {
   NotificationCategoryEntity, NotificationPreferenceEntity,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
-import { getUserMap } from './helpers';
+import { buildUserMap, groupBy } from './helpers';
 
 // ── Account ─────────────────────────────────
 
@@ -28,13 +28,12 @@ export interface Account {
 }
 
 export async function getAccount(): Promise<Account> {
-  const [account, settings, activities] = await Promise.all([
+  const [account, settings, activities, userMap] = await Promise.all([
     GET('account') as Promise<AccountEntity>,
     GET('company-settings') as Promise<CompanySettingsEntity>,
     GET('activities') as Promise<ActivityEntity[]>,
+    buildUserMap(),
   ]);
-
-  const userMap = await getUserMap();
 
   return {
     company: {
@@ -136,7 +135,7 @@ export interface Activity {
 export async function getActivityFeed(): Promise<Activity[]> {
   const [activities, userMap] = await Promise.all([
     GET('activities') as Promise<ActivityEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
   return activities.map(activity => ({
     id: activity.id,
@@ -174,18 +173,13 @@ export async function getNotificationCategories(): Promise<NotificationCategory[
     GET('notification-preferences') as Promise<NotificationPreferenceEntity[]>,
   ]);
 
-  const preferencesByCategory = new Map<string, NotificationPreferenceEntity[]>();
-  for (const preference of preferences) {
-    const list = preferencesByCategory.get(preference.category_id) || [];
-    list.push(preference);
-    preferencesByCategory.set(preference.category_id, list);
-  }
+  const preferencesByCategoryId = groupBy(preferences, preference => preference.category_id);
 
   return categories.map(category => ({
     id: category.id,
     label: category.label,
     icon: category.icon,
-    preferences: (preferencesByCategory.get(category.id) || []).map(preference => ({
+    preferences: (preferencesByCategoryId.get(category.id) || []).map(preference => ({
       id: preference.id,
       label: preference.label,
       description: preference.description,

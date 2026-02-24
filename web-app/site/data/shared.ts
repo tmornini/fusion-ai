@@ -1,8 +1,6 @@
 import { GET } from '../../../api/api';
 import type { UserEntity, NotificationEntity } from '../../../api/types';
-import { toBool } from '../../../api/types';
-import { getUserMap } from './helpers';
-
+import { toBool, User } from '../../../api/types';
 export interface CurrentUser {
   id: string;
   name: string;
@@ -23,11 +21,9 @@ export interface Notification {
 export async function getCurrentUser(): Promise<CurrentUser> {
   const row = await GET('current-user') as UserEntity | null;
   if (!row) return { id: 'current', name: 'Demo User', email: 'demo@example.com', role: 'Admin', company: 'Demo Company' };
-  const userMap = await getUserMap();
-  const user = userMap.get(row.id);
   return {
     id: row.id,
-    name: user?.fullName() ?? `${row.first_name} ${row.last_name}`.trim(),
+    name: new User(row).fullName(),
     email: row.email,
     role: row.role,
     company: 'Demo Company',

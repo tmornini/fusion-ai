@@ -18,6 +18,9 @@ export type EdgeStatus = 'complete' | 'draft' | 'missing';
 /** Idea lifecycle status. */
 export type IdeaStatus = 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
 
+/** Stored boolean in localStorage (0 or 1 integer). */
+export type StoredBoolean = 0 | 1;
+
 // ── Utility ──────────────────────────────────
 
 /** Convert 0/1/boolean to boolean (handles localStorage int vs JSON boolean). */
@@ -28,7 +31,7 @@ export function toBool(value: unknown): boolean {
 // ── Entity Types ─────────────────────────────
 
 export interface UserEntity {
-  id: string;
+  id: Id;
   first_name: string;
   last_name: string;
   email: string;
@@ -90,15 +93,15 @@ export class User {
 }
 
 export interface IdeaEntity {
-  id: string;
+  id: Id;
   title: string;
   score: number;
   estimated_impact: number;
   estimated_time: number;
   estimated_cost: number;
   priority: number;
-  status: string;
-  submitted_by_id: string;
+  status: IdeaStatus;
+  submitted_by_id: Id;
   edge_status: string;
   problem_statement: string;
   proposed_solution: string;
@@ -120,8 +123,8 @@ export interface IdeaEntity {
 }
 
 export interface IdeaScoreEntity {
-  id: string;
-  idea_id: string;
+  id: Id;
+  idea_id: Id;
   overall: number;
   impact_score: number;
   impact_breakdown: string; // JSON array
@@ -135,14 +138,14 @@ export interface IdeaScoreEntity {
 }
 
 export interface ProjectEntity {
-  id: string;
+  id: Id;
   title: string;
   description: string;
   status: string;
   progress: number;
   start_date: string;
   target_end_date: string;
-  lead_id: string;
+  lead_id: Id;
   estimated_time: number;
   actual_time: number;
   estimated_cost: number;
@@ -151,23 +154,23 @@ export interface ProjectEntity {
   actual_impact: number;
   priority: number;
   priority_score: number;
-  linked_idea_id: string;
+  linked_idea_id: Id;
   business_context: string; // JSON object
   timeline_label: string;
   budget_label: string;
 }
 
 export interface ProjectTeamEntity {
-  id: string;
-  project_id: string;
-  user_id: string;
+  id: Id;
+  project_id: Id;
+  user_id: Id;
   role: string;
   type: string;
 }
 
 export interface MilestoneEntity {
-  id: string;
-  project_id: string;
+  id: Id;
+  project_id: Id;
   title: string;
   status: string;
   date: string;
@@ -175,39 +178,39 @@ export interface MilestoneEntity {
 }
 
 export interface ProjectTaskEntity {
-  id: string;
-  project_id: string;
+  id: Id;
+  project_id: Id;
   name: string;
   priority: string;
   description: string;
   skills: string; // JSON array
   hours: number;
-  assigned_to_id: string;
+  assigned_to_id: Id;
 }
 
 export interface DiscussionEntity {
-  id: string;
-  project_id: string;
-  author_id: string;
+  id: Id;
+  project_id: Id;
+  author_id: Id;
   date: string;
   message: string;
 }
 
 export interface ProjectVersionEntity {
-  id: string;
-  project_id: string;
+  id: Id;
+  project_id: Id;
   version: string;
   date: string;
   changes: string;
-  author_id: string;
+  author_id: Id;
 }
 
 export interface EdgeEntity {
-  id: string;
-  idea_id: string;
-  status: string;
-  confidence: string;
-  owner_id: string;
+  id: Id;
+  idea_id: Id;
+  status: EdgeStatus;
+  confidence: ConfidenceLevel | '';
+  owner_id: Id;
   impact_short_term: string;
   impact_mid_term: string;
   impact_long_term: string;
@@ -215,14 +218,14 @@ export interface EdgeEntity {
 }
 
 export interface EdgeOutcomeEntity {
-  id: string;
-  edge_id: string;
+  id: Id;
+  edge_id: Id;
   description: string;
 }
 
 export interface EdgeMetricEntity {
-  id: string;
-  outcome_id: string;
+  id: Id;
+  outcome_id: Id;
   name: string;
   target: string;
   unit: string;
@@ -230,9 +233,9 @@ export interface EdgeMetricEntity {
 }
 
 export interface ActivityEntity {
-  id: string;
+  id: Id;
   type: string;
-  actor_id: string;
+  actor_id: Id;
   action: string;
   target: string;
   timestamp: string;
@@ -242,46 +245,46 @@ export interface ActivityEntity {
 }
 
 export interface NotificationEntity {
-  id: string;
+  id: Id;
   title: string;
   message: string;
   time: string;
-  is_unread: number; // 0 or 1
+  is_unread: StoredBoolean;
 }
 
 export interface ClarificationEntity {
-  id: string;
-  project_id: string;
+  id: Id;
+  project_id: Id;
   question: string;
-  asked_by_id: string;
+  asked_by_id: Id;
   asked_at: string;
   status: string;
   answer: string | null;
-  answered_by_id: string | null;
+  answered_by_id: Id | null;
   answered_at: string | null;
 }
 
 export interface CrunchColumnEntity {
-  id: string;
+  id: Id;
   original_name: string;
   friendly_name: string;
   data_type: string;
   description: string;
   sample_values: string; // JSON array
-  is_acronym: number; // 0 or 1
+  is_acronym: StoredBoolean;
   acronym_expansion: string;
 }
 
 export interface ProcessEntity {
-  id: string;
+  id: Id;
   name: string;
   description: string;
   department: string;
 }
 
 export interface ProcessStepEntity {
-  id: string;
-  process_id: string;
+  id: Id;
+  process_id: Id;
   title: string;
   description: string;
   owner: string;
@@ -293,36 +296,36 @@ export interface ProcessStepEntity {
 }
 
 export interface CompanySettingsEntity {
-  id: string;
+  id: Id;
   name: string;
   domain: string;
   industry: string;
   size: string;
   timezone: string;
   language: string;
-  is_sso_enforced: number; // 0 or 1
-  is_two_factor_enabled: number; // 0 or 1
-  is_ip_whitelist_enabled: number; // 0 or 1
+  is_sso_enforced: StoredBoolean;
+  is_two_factor_enabled: StoredBoolean;
+  is_ip_whitelist_enabled: StoredBoolean;
   data_retention: string;
 }
 
 export interface NotificationCategoryEntity {
-  id: string;
+  id: Id;
   label: string;
   icon: string;
 }
 
 export interface NotificationPreferenceEntity {
-  id: string;
-  category_id: string;
+  id: Id;
+  category_id: Id;
   label: string;
   description: string;
-  is_email_enabled: number; // 0 or 1
-  is_push_enabled: number; // 0 or 1
+  is_email_enabled: StoredBoolean;
+  is_push_enabled: StoredBoolean;
 }
 
 export interface AccountEntity {
-  id: string;
+  id: Id;
   plan: string;
   plan_status: string;
   next_billing: string;

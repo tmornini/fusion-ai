@@ -1,5 +1,5 @@
 import {
-  $, showToast, navigateTo, getParams, html, setHtml, SafeHtml,
+  $, showToast, navigateTo, html, setHtml, SafeHtml,
   buildSkeleton, buildErrorState,
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
@@ -168,9 +168,8 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
     </div>`;
 }
 
-export async function init(): Promise<void> {
-  const params = getParams();
-  const ideaId = params['ideaId'] || '1';
+export async function init(params?: Record<string, string>): Promise<void> {
+  const ideaId = params?.['ideaId'] || '1';
 
   const root = $('#page-root');
   if (!root) return;

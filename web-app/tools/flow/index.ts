@@ -255,7 +255,7 @@ function bindFlowEvents(): void {
     syncFormFields();
     processSteps.push({
       id: Date.now().toString(), title: '', description: '', owner: '', role: '',
-      tools: [], duration: '', order: processSteps.length + 1, type: 'action',
+      tools: [], duration: '', sortOrder: processSteps.length + 1, type: 'action',
     });
     expandedStepId = processSteps[processSteps.length - 1]!.id;
     mutateFlowPage();

@@ -5,7 +5,7 @@ import type {
   IdeaEntity, ClarificationEntity, ConfidenceLevel, Id,
 } from '../../../api/types';
 import { User } from '../../../api/types';
-import { getUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
+import { buildUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
 
 export interface Project {
   id: string;
@@ -77,7 +77,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     GET(`projects/${projectId}/tasks`) as Promise<ProjectTaskEntity[]>,
     GET(`projects/${projectId}/discussions`) as Promise<DiscussionEntity[]>,
     GET(`projects/${projectId}/versions`) as Promise<ProjectVersionEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
 
   const edgeData = await getEdgeDataWithConfidence(project.linked_idea_id || projectId, userMap);
@@ -155,7 +155,7 @@ export async function getProjectForEngineering(projectId: string): Promise<Engin
   const [project, teamRows, userMap] = await Promise.all([
     GET(`projects/${projectId}`) as Promise<ProjectEntity>,
     GET(`projects/${projectId}/team`) as Promise<ProjectTeamEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
 
   const businessContext = parseJson<{ problem?: string; expectedOutcome?: string; successMetrics?: string[]; constraints?: string[] }>(project.business_context);
@@ -190,7 +190,7 @@ export async function getProjectForEngineering(projectId: string): Promise<Engin
 export async function getClarificationsByProjectId(projectId: string): Promise<Clarification[]> {
   const [clarificationRows, userMap] = await Promise.all([
     GET(`projects/${projectId}/clarifications`) as Promise<ClarificationEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
   return clarificationRows.map(clarification => ({
     id: clarification.id,

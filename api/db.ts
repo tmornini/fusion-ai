@@ -56,7 +56,9 @@ export interface DbAdapter {
   projectVersions: EntityStore<ProjectVersionEntity> & {
     getByProjectId(projectId: string): Promise<ProjectVersionEntity[]>;
   };
-  edges: EntityStore<EdgeEntity>;
+  edges: EntityStore<EdgeEntity> & {
+    getByIdeaId(ideaId: string): Promise<EdgeEntity | null>;
+  };
   edgeOutcomes: EntityStore<EdgeOutcomeEntity> & {
     getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]>;
   };
@@ -73,10 +75,8 @@ export interface DbAdapter {
   };
   companySettings: SingletonStore<CompanySettingsEntity>;
   notificationCategories: EntityStore<NotificationCategoryEntity>;
-  notificationPreferences: {
-    getAll(): Promise<NotificationPreferenceEntity[]>;
+  notificationPreferences: EntityStore<NotificationPreferenceEntity> & {
     getByCategoryId(categoryId: string): Promise<NotificationPreferenceEntity[]>;
-    put(id: string, fields: Record<string, unknown>): Promise<NotificationPreferenceEntity>;
   };
   account: SingletonStore<AccountEntity>;
 }

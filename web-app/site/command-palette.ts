@@ -73,7 +73,7 @@ let previousFocusElement: HTMLElement | null = null;
 
 // ── Data loading ─────────────────────────
 
-async function loadData(): Promise<void> {
+async function loadSearchIndex(): Promise<void> {
   if (isDataLoaded) return;
   isDataLoaded = true;
 
@@ -204,7 +204,7 @@ function mutateResults(query: string): void {
   if (liveRegion) liveRegion.textContent = `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} found`;
 }
 
-function updateActiveItem(): void {
+function mutateActiveItem(): void {
   if (!list) return;
   list.querySelectorAll('.command-palette-item').forEach((el, i) => {
     el.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
@@ -230,13 +230,13 @@ function open(): void {
   isOpen = true;
   previousFocusElement = document.activeElement as HTMLElement;
 
-  if (!backdrop) injectDOM();
+  if (!backdrop) initCommandPaletteDOM();
   backdrop!.classList.remove('hidden');
   dialog!.classList.remove('hidden');
   input!.value = '';
   input!.focus();
 
-  loadData().then(() => mutateResults(''));
+  loadSearchIndex().then(() => mutateResults(''));
 }
 
 function close(): void {
@@ -249,7 +249,7 @@ function close(): void {
 
 // ── DOM injection ────────────────────────
 
-function injectDOM(): void {
+function initCommandPaletteDOM(): void {
   backdrop = document.createElement('div');
   backdrop.className = 'command-palette-backdrop hidden';
   backdrop.addEventListener('click', close);
@@ -302,7 +302,7 @@ function injectDOM(): void {
       e.preventDefault();
       if (filteredItems.length > 0) {
         activeIndex = (activeIndex + 1) % filteredItems.length;
-        updateActiveItem();
+        mutateActiveItem();
       }
       return;
     }
@@ -310,7 +310,7 @@ function injectDOM(): void {
       e.preventDefault();
       if (filteredItems.length > 0) {
         activeIndex = (activeIndex - 1 + filteredItems.length) % filteredItems.length;
-        updateActiveItem();
+        mutateActiveItem();
       }
       return;
     }
@@ -328,7 +328,7 @@ function injectDOM(): void {
       const hoveredIndex = parseInt(target.getAttribute('data-index') || '0', 10);
       if (hoveredIndex !== activeIndex) {
         activeIndex = hoveredIndex;
-        updateActiveItem();
+        mutateActiveItem();
       }
     }
   });

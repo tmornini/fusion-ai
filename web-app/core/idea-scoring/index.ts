@@ -1,5 +1,5 @@
 import {
-  $, navigateTo, getParams, styleForScore, html, setHtml, SafeHtml,
+  $, navigateTo, styleForScore, html, setHtml, SafeHtml,
   buildErrorState,
   iconArrowLeft, iconArrowRight, iconTrendingUp, iconClock,
   iconDollarSign, iconZap, iconTarget, iconBarChart, iconInfo,
@@ -114,9 +114,8 @@ function bindTabs(score: IdeaScore) {
   });
 }
 
-export async function init(): Promise<void> {
-  const params = getParams();
-  const ideaId = params['ideaId'] || '1';
+export async function init(params?: Record<string, string>): Promise<void> {
+  const ideaId = params?.['ideaId'] || '1';
 
   const root = $('#page-root');
   if (!root) return;

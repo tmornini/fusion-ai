@@ -1,8 +1,21 @@
-import { GET, getDbAdapter } from '../../../api/api';
-import type { UserEntity, EdgeEntity, Id, ConfidenceLevel } from '../../../api/types';
+import { getDbAdapter } from '../../../api/api';
+import type { Id, ConfidenceLevel } from '../../../api/types';
+import { GET } from '../../../api/api';
+import type { UserEntity } from '../../../api/types';
 import { User } from '../../../api/types';
 
-export async function getUserMap(): Promise<Map<Id, User>> {
+export function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyFn(item);
+    const list = map.get(key);
+    if (list) list.push(item);
+    else map.set(key, [item]);
+  }
+  return map;
+}
+
+export async function buildUserMap(): Promise<Map<Id, User>> {
   const users = await GET('users') as UserEntity[];
   return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
@@ -20,26 +33,28 @@ export function parseJson<T>(value: string | T): T {
 export interface EdgeData {
   outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string; current: string }[] }[];
   impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: string;
+  confidence: ConfidenceLevel | '';
   owner: string;
 }
 
 export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<EdgeData | null> {
-  const allEdges = await GET('edges') as EdgeEntity[];
-  const edge = allEdges.find(entry => entry.idea_id === ideaId);
+  const db = getDbAdapter();
+  const edge = await db.edges.getByIdeaId(ideaId);
   if (!edge) return null;
 
-  const db = getDbAdapter();
-  const outcomes = await db.edgeOutcomes.getByEdgeId(edge.id);
-  const allMetrics = await db.edgeMetrics.getAll();
-  const userMap = cachedUserMap ?? await getUserMap();
+  const [outcomes, allMetrics, userMap] = await Promise.all([
+    db.edgeOutcomes.getByEdgeId(edge.id),
+    db.edgeMetrics.getAll(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
+  ]);
+
+  const metricsByOutcomeId = groupBy(allMetrics, metric => metric.outcome_id);
 
   return {
     outcomes: outcomes.map(outcome => ({
       id: outcome.id,
       description: outcome.description,
-      metrics: allMetrics
-        .filter(metric => metric.outcome_id === outcome.id)
+      metrics: (metricsByOutcomeId.get(outcome.id) || [])
         .map(metric => ({ id: metric.id, name: metric.name, target: metric.target, unit: metric.unit, current: metric.current })),
     })),
     impact: {

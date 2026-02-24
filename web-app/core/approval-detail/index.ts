@@ -1,5 +1,5 @@
 import {
-  $, showToast, navigateTo, getParams, openDialog, closeDialog,
+  $, showToast, navigateTo, openDialog, closeDialog,
   html, setHtml, SafeHtml,
   buildSkeleton, buildErrorState,
   iconArrowLeft, iconAlertTriangle, iconTrendingUp, iconClock,
@@ -195,9 +195,8 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
     </div>`;
 }
 
-export async function init(): Promise<void> {
-  const params = getParams();
-  const id = params['id'] || '1';
+export async function init(params?: Record<string, string>): Promise<void> {
+  const id = params?.['id'] || '1';
 
   const root = $('#page-root');
   if (!root) return;

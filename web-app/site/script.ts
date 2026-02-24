@@ -4,7 +4,7 @@
 // ============================================
 
 import type { AppState } from './state';
-import { state, setState, subscribe, resolvedTheme, applyTheme, setTheme } from './state';
+import { state, setState, subscribe, computeTheme, applyTheme, setTheme } from './state';
 import { $, $$, escapeHtml } from './dom';
 import { showToast } from './toast';
 import type { SkeletonType } from './skeleton';
@@ -124,7 +124,7 @@ function navigateTo(page: string, params?: Record<string, string>): void {
 // Theme Toggle Icon Update
 // ------------------------------------
 
-function updateThemeToggleIcon(): void {
+function mutateThemeToggleIcon(): void {
   const themeIcon = state.theme === 'dark'
     ? iconMoon(20)
     : state.theme === 'light'
@@ -343,7 +343,7 @@ function initThemeAndDropdowns(): void {
       const theme = themeButton.getAttribute('data-theme-set') as AppState['theme'];
       if (theme) {
         setTheme(theme);
-        updateThemeToggleIcon();
+        mutateThemeToggleIcon();
         document.querySelectorAll('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
       }
     });
@@ -373,7 +373,7 @@ function initDashboardLayout(): void {
   initSidebar();
   initThemeAndDropdowns();
   initMobileDrawer();
-  updateThemeToggleIcon();
+  mutateThemeToggleIcon();
   mutateNotifications();
 }
 
@@ -427,7 +427,7 @@ function initPrefetch(): void {
 
 export {
   // State (re-exported from ./state)
-  state, setState, subscribe, resolvedTheme,
+  state, setState, subscribe, computeTheme,
   // Theme (re-exported from ./state)
   applyTheme, setTheme,
   // DOM (re-exported from ./dom)

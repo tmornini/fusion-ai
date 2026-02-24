@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel } from '../../../api/types';
-import { getUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
+import { buildUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
 
 export interface Idea {
   id: string;
@@ -18,7 +18,7 @@ export interface Idea {
 export async function getIdeas(prefetchedIdeas?: IdeaEntity[]): Promise<Idea[]> {
   const [ideas, userMap] = await Promise.all([
     prefetchedIdeas ? Promise.resolve(prefetchedIdeas) : GET('ideas') as Promise<IdeaEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
   return ideas
     .map(idea => ({
@@ -29,7 +29,7 @@ export async function getIdeas(prefetchedIdeas?: IdeaEntity[]): Promise<Idea[]> 
       estimatedTime: idea.estimated_time,
       estimatedCost: idea.estimated_cost,
       priority: idea.priority,
-      status: idea.status as Idea['status'],
+      status: idea.status,
       submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
       edgeStatus: idea.edge_status as Idea['edgeStatus'],
     }));
@@ -54,7 +54,7 @@ export interface ReviewIdea {
 export async function getReviewQueue(): Promise<ReviewIdea[]> {
   const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
 
   return ideas
@@ -188,7 +188,7 @@ export interface ApprovalEdge {
 export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    getUserMap(),
+    buildUserMap(),
   ]);
 
   return {

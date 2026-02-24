@@ -40,7 +40,7 @@ export interface ProcessStep {
   role: string;
   tools: string[];
   duration: string;
-  order: number;
+  sortOrder: number;
   type: 'action' | 'decision' | 'start' | 'end';
 }
 
@@ -72,7 +72,7 @@ export async function getFlow(): Promise<Flow> {
       role: step.role,
       tools: parseJson<string[]>(step.tools),
       duration: step.duration,
-      order: step.sort_order,
+      sortOrder: step.sort_order,
       type: step.type as ProcessStep['type'],
     })),
   };

@@ -1,6 +1,6 @@
 import { GET, getDbAdapter } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
-import { getUserMap } from './helpers';
+import type { IdeaEntity, EdgeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import { buildUserMap, groupBy } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -13,7 +13,7 @@ export interface EdgeIdea {
 export async function getIdeaForEdge(ideaId: string): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    getUserMap(),
+    buildUserMap(),
   ]);
   return {
     title: idea.title,
@@ -42,36 +42,31 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
   const [edgeRows, ideaRows, userMap] = await Promise.all([
     GET('edges') as Promise<EdgeEntity[]>,
     GET('ideas') as Promise<IdeaEntity[]>,
-    getUserMap(),
+    buildUserMap(),
   ]);
   const db = getDbAdapter();
-  const ideaById = new Map(ideaRows.map(idea => [idea.id, idea]));
+  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
   const [allOutcomes, allMetrics] = await Promise.all([
     db.edgeOutcomes.getAll(),
     db.edgeMetrics.getAll(),
   ]);
 
-  const outcomesByEdgeId = new Map<string, EdgeOutcomeEntity[]>();
-  for (const outcome of allOutcomes) {
-    const list = outcomesByEdgeId.get(outcome.edge_id) || [];
-    list.push(outcome);
-    outcomesByEdgeId.set(outcome.edge_id, list);
-  }
+  const outcomesByEdgeId = groupBy(allOutcomes, outcome => outcome.edge_id);
 
   return edgeRows.map(edge => {
     const outcomes = outcomesByEdgeId.get(edge.id) || [];
     const outcomeIds = new Set(outcomes.map(outcome => outcome.id));
     const metricsCount = allMetrics.filter(metric => outcomeIds.has(metric.outcome_id)).length;
 
-    const idea = ideaById.get(edge.idea_id);
+    const idea = ideaMap.get(edge.idea_id);
     return {
       id: edge.id,
       ideaId: edge.idea_id,
       ideaTitle: idea?.title || '',
-      status: (edge.status || 'missing') as EdgeListItem['status'],
+      status: edge.status || 'missing',
       outcomesCount: outcomes.length,
       metricsCount,
-      confidence: (edge.confidence || null) as EdgeListItem['confidence'],
+      confidence: edge.confidence || null,
       owner: userMap.get(edge.owner_id)?.fullName() ?? '',
       updatedAt: edge.updated_at,
     };

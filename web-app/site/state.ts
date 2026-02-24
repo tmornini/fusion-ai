@@ -45,7 +45,7 @@ function subscribe(fn: StateListener): () => void {
 // Theme
 // ------------------------------------
 
-function resolvedTheme(): 'light' | 'dark' {
+function computeTheme(): 'light' | 'dark' {
   if (state.theme === 'system') {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
@@ -53,7 +53,7 @@ function resolvedTheme(): 'light' | 'dark' {
 }
 
 function applyTheme(): void {
-  const resolved = resolvedTheme();
+  const resolved = computeTheme();
   document.documentElement.setAttribute('data-theme', resolved);
   // Also set class for any CSS that uses .dark selector
   document.documentElement.classList.toggle('dark', resolved === 'dark');
@@ -80,4 +80,4 @@ window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
 });
 
 export type { AppState };
-export { state, setState, subscribe, resolvedTheme, applyTheme, setTheme };
+export { state, setState, subscribe, computeTheme, applyTheme, setTheme };

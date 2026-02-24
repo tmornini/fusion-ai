@@ -1,5 +1,5 @@
 import {
-  $, showToast, navigateTo, getParams, html, setHtml, SafeHtml,
+  $, showToast, navigateTo, html, setHtml, SafeHtml,
   buildSkeleton, buildErrorState,
   iconArrowLeft, iconLightbulb, iconTarget, iconUsers, iconMessageSquare,
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
@@ -34,9 +34,8 @@ function buildClarification(clarification: Clarification): SafeHtml {
     </div>`;
 }
 
-export async function init(): Promise<void> {
-  const params = getParams();
-  const projectId = params['projectId'] || '1';
+export async function init(params?: Record<string, string>): Promise<void> {
+  const projectId = params?.['projectId'] || '1';
 
   const root = $('#engineering-requirements-content');
   if (!root) return;

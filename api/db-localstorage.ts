@@ -142,6 +142,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     localStorage.removeItem(oldPrefsKey);
   }
 
+  const edgeStore = createEntityStore<EdgeEntity>('edges');
   const milestoneStore = createEntityStore<MilestoneEntity>('milestones');
   const projectTaskStore = createEntityStore<ProjectTaskEntity>('project_tasks');
   const discussionStore = createEntityStore<DiscussionEntity>('discussions');
@@ -293,7 +294,11 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
       },
     }),
 
-    edges: createEntityStore<EdgeEntity>('edges'),
+    edges: Object.assign(edgeStore, {
+      async getByIdeaId(ideaId: string): Promise<EdgeEntity | null> {
+        return readTable<EdgeEntity>('edges').find(entity => entity.idea_id === ideaId) ?? null;
+      },
+    }),
 
     edgeOutcomes: Object.assign(edgeOutcomeStore, {
       async getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]> {

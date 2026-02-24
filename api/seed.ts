@@ -21,13 +21,14 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'current', first_name: 'Demo', last_name: 'User', email: 'demo@example.com', role: 'Admin', department: 'Product', status: 'active', availability: 100, performance_score: 95, projects_completed: 20, current_projects: 5, strengths: ['Strategic Planning', 'Data Analysis', 'Stakeholder Management'], team_dimensions: { driver: 80, analytical: 80, expressive: 80, amiable: 80 }, phone: '+1 (555) 123-4567', bio: 'Passionate about building products that solve real problems.', last_active: '' },
   ];
 
-  for (const user of users) {
-    await adapter.users.put(user.id, {
+  // Batch 1: Users (no foreign keys)
+  await Promise.all(users.map(user =>
+    adapter.users.put(user.id, {
       ...user,
       strengths: JSON.stringify(user.strengths),
       team_dimensions: JSON.stringify(user.team_dimensions),
-    });
-  }
+    }),
+  ));
 
   // ── Ideas ──────────────────────────────────
   const ideas = [
@@ -57,36 +58,54 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '11', title: 'Real-time Inventory Tracking System', score: 91, estimated_impact: 0, estimated_time: 0, estimated_cost: 0, priority: 7, status: 'pending_review', submitted_by_id: '9', edge_status: 'complete', problem_statement: '', proposed_solution: '', expected_outcome: '', category: 'Operations', readiness: 'ready', waiting_days: 5, impact_label: 'High', effort_label: 'Medium', description: '', submitted_at: '', risks: '[]', assumptions: '[]', alignments: '[]', effort_time_estimate: '', effort_team_size: '', cost_estimate: '', cost_breakdown: '' },
   ];
 
-  for (const idea of ideas) {
-    await adapter.ideas.put(idea.id, idea);
-  }
+  const categories = [
+    { id: 'ideas', label: 'Ideas', icon: 'lightbulb' },
+    { id: 'projects', label: 'Projects', icon: 'folderKanban' },
+    { id: 'teams', label: 'Teams', icon: 'users' },
+    { id: 'account', label: 'Account', icon: 'user' },
+  ];
 
-  // ── Idea Score ─────────────────────────────
-  await adapter.ideaScores.put('1', {
-    id: 'score-1',
-    overall: 82,
-    impact_score: 88,
-    impact_breakdown: JSON.stringify([
-      { label: 'Business Value', score: 9, maxScore: 10, reason: 'Direct revenue impact through improved conversions' },
-      { label: 'Strategic Alignment', score: 8, maxScore: 10, reason: 'Supports digital transformation goals' },
-      { label: 'User Benefit', score: 9, maxScore: 10, reason: 'Saves significant time for marketing team' },
-    ]),
-    feasibility_score: 75,
-    feasibility_breakdown: JSON.stringify([
-      { label: 'Technical Complexity', score: 7, maxScore: 10, reason: 'Requires ML expertise and data pipeline' },
-      { label: 'Resource Availability', score: 8, maxScore: 10, reason: 'Team has relevant skills' },
-      { label: 'Integration Effort', score: 8, maxScore: 10, reason: 'Works with existing CRM' },
-    ]),
-    efficiency_score: 85,
-    efficiency_breakdown: JSON.stringify([
-      { label: 'Time to Value', score: 9, maxScore: 10, reason: 'MVP deliverable in 6-8 weeks' },
-      { label: 'Cost Efficiency', score: 8, maxScore: 10, reason: 'Reasonable investment for expected returns' },
-      { label: 'Scalability', score: 9, maxScore: 10, reason: 'Can expand to other use cases' },
-    ]),
-    estimated_time: '6-8 weeks',
-    estimated_cost: '$45,000 - $65,000',
-    recommendation: 'Strong candidate for immediate prioritization. High impact with manageable complexity. Recommend starting with a focused pilot on top customer segment.',
-  });
+  // Batch 2: Ideas, processes, company settings, account, notification categories (reference users)
+  await Promise.all([
+    ...ideas.map(idea => adapter.ideas.put(idea.id, idea)),
+    adapter.processes.put('1', {
+      name: 'Customer Onboarding',
+      description: 'End-to-end process for onboarding new enterprise customers',
+      department: 'Customer Success',
+    }),
+    adapter.companySettings.put({
+      name: 'Acme Corporation',
+      domain: 'acmecorp.com',
+      industry: 'Technology',
+      size: '51-200',
+      timezone: 'America/New_York',
+      language: 'English',
+      is_sso_enforced: 0,
+      is_two_factor_enabled: 1,
+      is_ip_whitelist_enabled: 0,
+      data_retention: '12 months',
+    }),
+    adapter.account.put({
+      plan: 'Business',
+      plan_status: 'active',
+      next_billing: '2025-01-15',
+      seats: 25,
+      used_seats: 18,
+      projects_limit: 50,
+      projects_current: 12,
+      ideas_limit: 200,
+      ideas_current: 47,
+      storage_limit: 10,
+      storage_current: 2.4,
+      ai_credits_limit: 1000,
+      ai_credits_current: 850,
+      health_score: 92,
+      health_status: 'excellent',
+      last_activity: '2 hours ago',
+      active_users: 14,
+    }),
+    ...categories.map(category => adapter.notificationCategories.put(category.id, category)),
+  ]);
 
   // ── Projects ───────────────────────────────
   const projects = [
@@ -98,120 +117,15 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '6', title: 'Employee Training Assistant', description: '', status: 'under_review', progress: 18, start_date: '', target_end_date: '', lead_id: '3', estimated_time: 90, actual_time: 20, estimated_cost: 35000, actual_cost: 8000, estimated_impact: 65, actual_impact: 0, priority: 6, priority_score: 74, linked_idea_id: '6', business_context: '{}', timeline_label: '', budget_label: '' },
   ];
 
-  for (const project of projects) {
-    await adapter.projects.put(project.id, project);
-  }
-
-  // ── Project Team (for project 1) ───────────
-  const teamMembers = [
-    { id: 'pt-1-1', project_id: '1', user_id: '1', role: 'Project Lead', type: 'business' },
-    { id: 'pt-1-2', project_id: '1', user_id: '2', role: 'ML Engineer', type: 'engineering' },
-    { id: 'pt-1-3', project_id: '1', user_id: '3', role: 'Data Scientist', type: 'engineering' },
-    { id: 'pt-1-4', project_id: '1', user_id: '4', role: 'Backend Developer', type: 'engineering' },
-  ];
-  for (const teamMember of teamMembers) {
-    await adapter.projectTeam.put(teamMember.project_id, teamMember.user_id, teamMember);
-  }
-
-  // ── Milestones (for project 1) ─────────────
-  const milestones = [
-    { id: 'm1', project_id: '1', title: 'Data Pipeline Setup', status: 'completed', date: '2024-01-30', sort_order: 1 },
-    { id: 'm2', project_id: '1', title: 'Model Training Complete', status: 'completed', date: '2024-02-15', sort_order: 2 },
-    { id: 'm3', project_id: '1', title: 'Integration Testing', status: 'in_progress', date: '2024-03-01', sort_order: 3 },
-    { id: 'm4', project_id: '1', title: 'User Acceptance Testing', status: 'pending', date: '2024-03-20', sort_order: 4 },
-    { id: 'm5', project_id: '1', title: 'Production Deployment', status: 'pending', date: '2024-04-01', sort_order: 5 },
-  ];
-  for (const milestone of milestones) {
-    await adapter.milestones.put(milestone.id, milestone);
-  }
-
-  // ── Project Tasks (for project 1) ──────────
-  const tasks = [
-    { id: 'task-1', project_id: '1', name: 'Set up data pipeline', priority: 'High', description: 'Configure ETL pipeline for customer data ingestion', skills: JSON.stringify(['Python', 'Apache Airflow', 'SQL']), hours: 24, assigned_to_id: '2' },
-    { id: 'task-2', project_id: '1', name: 'Train ML model', priority: 'High', description: 'Develop and train clustering model using customer behavior data', skills: JSON.stringify(['Machine Learning', 'Python', 'scikit-learn']), hours: 40, assigned_to_id: '' },
-    { id: 'task-3', project_id: '1', name: 'Design dashboard UI', priority: 'Medium', description: 'Create visual interface for segment exploration and management', skills: JSON.stringify(['React', 'D3.js', 'CSS']), hours: 32, assigned_to_id: '' },
-    { id: 'task-4', project_id: '1', name: 'Build API endpoints', priority: 'Medium', description: 'RESTful API for segment data access and management', skills: JSON.stringify(['Node.js', 'REST API', 'PostgreSQL']), hours: 20, assigned_to_id: '' },
-    { id: 'task-5', project_id: '1', name: 'Create documentation', priority: 'Low', description: 'Technical documentation and user guides for the segmentation system', skills: JSON.stringify(['Technical Writing', 'Markdown']), hours: 12, assigned_to_id: '' },
-  ];
-  for (const task of tasks) {
-    await adapter.projectTasks.put(task.id, task);
-  }
-
-  // ── Discussions (for project 1) ────────────
-  const discussions = [
-    { id: 'd1', project_id: '1', author_id: '1', date: '2024-02-28', message: 'Great progress on the integration testing. We should be ready for UAT next week.' },
-    { id: 'd2', project_id: '1', author_id: '2', date: '2024-02-25', message: 'Segmentation accuracy is now at 94%. Exceeding our initial target of 90%.' },
-    { id: 'd3', project_id: '1', author_id: '4', date: '2024-02-20', message: 'API endpoints are ready for frontend integration.' },
-  ];
-  for (const discussion of discussions) {
-    await adapter.discussions.put(discussion.id, discussion);
-  }
-
-  // ── Project Versions (for project 1) ───────
-  const versions = [
-    { id: 'v1', project_id: '1', version: 'v1.2', date: '2024-02-28', changes: 'Added real-time segmentation capability', author_id: '2' },
-    { id: 'v2', project_id: '1', version: 'v1.1', date: '2024-02-15', changes: 'Improved model accuracy by 12%', author_id: '3' },
-    { id: 'v3', project_id: '1', version: 'v1.0', date: '2024-01-30', changes: 'Initial model deployment', author_id: '1' },
-  ];
-  for (const version of versions) {
-    await adapter.projectVersions.put(version.id, version);
-  }
-
-  // ── Edges ──────────────────────────────────
   const edges = [
     { id: '1', idea_id: '1', status: 'complete', confidence: 'high', owner_id: '1', impact_short_term: 'Automated segmentation reduces manual effort by 80%. Initial customer insights available within 2 weeks.', impact_mid_term: 'Expected 15% reduction in churn through targeted campaigns. Marketing ROI improvement of 25%.', impact_long_term: 'Full personalization pipeline enabling real-time customer journey optimization across all channels.', updated_at: '2024-02-28' },
     { id: '2', idea_id: '2', status: 'complete', confidence: 'medium', owner_id: '2', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-25' },
     { id: '3', idea_id: '3', status: 'draft', confidence: 'low', owner_id: '5', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-20' },
     { id: '4', idea_id: '4', status: 'complete', confidence: 'high', owner_id: '8', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-18' },
     { id: '5', idea_id: '5', status: 'missing', confidence: '', owner_id: '', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '' },
-    // Edge for approval-detail idea (id 7)
     { id: '6', idea_id: '7', status: 'complete', confidence: 'high', owner_id: '1', impact_short_term: 'Handle 60% of tier-1 inquiries automatically. Reduce agent workload significantly.', impact_mid_term: '40% reduction in support costs. Improved 24/7 availability for customers.', impact_long_term: 'Full self-service capability for common issues. Agents focus on complex cases only.', updated_at: '2024-02-28' },
   ];
-  for (const edge of edges) {
-    await adapter.edges.put(edge.id, edge);
-  }
 
-  // ── Edge Outcomes & Metrics ────────────────
-  // Edge 1 outcomes
-  await adapter.edgeOutcomes.put('eo1', { edge_id: '1', description: 'Reduce customer churn rate' });
-  await adapter.edgeMetrics.put('em1', { outcome_id: 'eo1', name: 'Churn Rate Reduction', target: '15', unit: '%', current: '12' });
-  await adapter.edgeMetrics.put('em2', { outcome_id: 'eo1', name: 'Customer Retention', target: '85', unit: '%', current: '82' });
-
-  await adapter.edgeOutcomes.put('eo2', { edge_id: '1', description: 'Increase marketing ROI' });
-  await adapter.edgeMetrics.put('em3', { outcome_id: 'eo2', name: 'Campaign Conversion', target: '25', unit: '%', current: '28' });
-  await adapter.edgeMetrics.put('em4', { outcome_id: 'eo2', name: 'Cost per Acquisition', target: '45', unit: '$', current: '42' });
-
-  // Edge 2 outcomes (3 outcomes, 5 metrics for edge-list counts)
-  await adapter.edgeOutcomes.put('eo3', { edge_id: '2', description: 'Automate report generation' });
-  await adapter.edgeMetrics.put('em5', { outcome_id: 'eo3', name: 'Report Time', target: '5', unit: 'min', current: '8' });
-  await adapter.edgeMetrics.put('em6', { outcome_id: 'eo3', name: 'Accuracy', target: '99', unit: '%', current: '95' });
-  await adapter.edgeOutcomes.put('eo4', { edge_id: '2', description: 'Reduce manual effort' });
-  await adapter.edgeMetrics.put('em7', { outcome_id: 'eo4', name: 'Effort Reduction', target: '80', unit: '%', current: '60' });
-  await adapter.edgeOutcomes.put('eo5', { edge_id: '2', description: 'Improve data quality' });
-  await adapter.edgeMetrics.put('em8', { outcome_id: 'eo5', name: 'Data Quality', target: '95', unit: '%', current: '88' });
-  await adapter.edgeMetrics.put('em9', { outcome_id: 'eo5', name: 'Error Rate', target: '1', unit: '%', current: '3' });
-
-  // Edge 3 outcomes (1 outcome, 2 metrics)
-  await adapter.edgeOutcomes.put('eo6', { edge_id: '3', description: 'Predict equipment failures' });
-  await adapter.edgeMetrics.put('em10', { outcome_id: 'eo6', name: 'Detection Rate', target: '90', unit: '%', current: '45' });
-  await adapter.edgeMetrics.put('em11', { outcome_id: 'eo6', name: 'False Positive Rate', target: '5', unit: '%', current: '15' });
-
-  // Edge 4 outcomes (2 outcomes, 3 metrics)
-  await adapter.edgeOutcomes.put('eo7', { edge_id: '4', description: 'Real-time data visibility' });
-  await adapter.edgeMetrics.put('em12', { outcome_id: 'eo7', name: 'Dashboard Load', target: '2', unit: 's', current: '3' });
-  await adapter.edgeOutcomes.put('eo8', { edge_id: '4', description: 'Improve decision speed' });
-  await adapter.edgeMetrics.put('em13', { outcome_id: 'eo8', name: 'Decision Time', target: '1', unit: 'hr', current: '4' });
-  await adapter.edgeMetrics.put('em14', { outcome_id: 'eo8', name: 'Data Freshness', target: '5', unit: 'min', current: '30' });
-
-  // Edge 6 outcomes (for approval-detail)
-  await adapter.edgeOutcomes.put('eo9', { edge_id: '6', description: 'Reduce support ticket volume' });
-  await adapter.edgeMetrics.put('em15', { outcome_id: 'eo9', name: 'Ticket Reduction', target: '40', unit: '%', current: '' });
-  await adapter.edgeMetrics.put('em16', { outcome_id: 'eo9', name: 'First Response Time', target: '1', unit: 'min', current: '' });
-  await adapter.edgeOutcomes.put('eo10', { edge_id: '6', description: 'Improve customer satisfaction' });
-  await adapter.edgeMetrics.put('em17', { outcome_id: 'eo10', name: 'CSAT Score', target: '4.5', unit: '/5', current: '' });
-  await adapter.edgeMetrics.put('em18', { outcome_id: 'eo10', name: 'Resolution Rate', target: '85', unit: '%', current: '' });
-
-  // ── Activities ─────────────────────────────
   const activities = [
     { id: '1', type: 'idea_scored', actor_id: '1', action: 'scored', target: 'AI-Powered Customer Support Bot', timestamp: '10 minutes ago', score: 87, status: null, comment: null },
     { id: '2', type: 'task_completed', actor_id: '7', action: 'completed task', target: 'Design system audit', timestamp: '25 minutes ago', score: null, status: null, comment: null },
@@ -224,32 +138,14 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '9', type: 'task_completed', actor_id: '5', action: 'completed task', target: 'API documentation update', timestamp: 'Yesterday', score: null, status: null, comment: null },
     { id: '10', type: 'idea_scored', actor_id: '7', action: 'scored', target: 'Data Pipeline Modernization', timestamp: 'Yesterday', score: 92, status: null, comment: null },
   ];
-  for (const activity of activities) {
-    await adapter.activities.put(activity.id, activity);
-  }
 
-  // ── Notifications ──────────────────────────
   const notifications = [
     { id: '1', title: 'New idea submitted', message: 'Marketing team submitted "AI Chatbot Integration"', time: '5 min ago', is_unread: 1 },
     { id: '2', title: 'Project approved', message: 'Your project "Mobile App Redesign" was approved', time: '1 hour ago', is_unread: 1 },
     { id: '3', title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', is_unread: 0 },
     { id: '4', title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', is_unread: 0 },
   ];
-  for (const notification of notifications) {
-    await adapter.notifications.put(notification.id, notification);
-  }
 
-  // ── Clarifications (for project 1) ─────────
-  const clarifications = [
-    { id: 'c1', project_id: '1', question: 'What data sources are currently available for customer behavior tracking? We need to understand the data pipeline before designing the ML model.', asked_by_id: '2', asked_at: '2024-02-20', status: 'answered', answer: 'We have event tracking via Segment, transaction data in our data warehouse (Snowflake), and email engagement metrics from Mailchimp. All can be accessed via APIs.', answered_by_id: '1', answered_at: '2024-02-21' },
-    { id: 'c2', project_id: '1', question: 'Are there any existing segment definitions we should match, or are we free to discover optimal segments through clustering?', asked_by_id: '3', asked_at: '2024-02-22', status: 'answered', answer: "Marketing has 5 legacy segments they use today (High Value, Growth, At-Risk, New, Dormant). We'd like to preserve compatibility but welcome additional discovered segments.", answered_by_id: '1', answered_at: '2024-02-22' },
-    { id: 'c3', project_id: '1', question: "What's the expected latency requirement for segment updates? Real-time vs batch processing has significant architecture implications.", asked_by_id: '4', asked_at: '2024-02-25', status: 'pending', answer: null, answered_by_id: null, answered_at: null },
-  ];
-  for (const clarification of clarifications) {
-    await adapter.clarifications.put(clarification.id, clarification);
-  }
-
-  // ── Crunch Columns ─────────────────────────
   const crunchColumns = [
     { id: '1', original_name: 'CUST_ID', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['C001', 'C002', 'C003']), is_acronym: 1, acronym_expansion: '' },
     { id: '2', original_name: 'TXN_DT', friendly_name: '', data_type: 'date', description: '', sample_values: JSON.stringify(['2024-01-15', '2024-01-16', '2024-01-17']), is_acronym: 1, acronym_expansion: '' },
@@ -258,16 +154,6 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: '5', original_name: 'REP_ID', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['R101', 'R102', 'R103']), is_acronym: 1, acronym_expansion: '' },
     { id: '6', original_name: 'STATUS', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['COMP', 'PEND', 'CANC']), is_acronym: 0, acronym_expansion: '' },
   ];
-  for (const column of crunchColumns) {
-    await adapter.crunchColumns.put(column.id, column);
-  }
-
-  // ── Flow (Process + Steps) ─────────────────
-  await adapter.processes.put('1', {
-    name: 'Customer Onboarding',
-    description: 'End-to-end process for onboarding new enterprise customers',
-    department: 'Customer Success',
-  });
 
   const processSteps = [
     { id: 'ps1', process_id: '1', title: 'Receive signed contract', description: 'Sales team sends signed contract to customer success inbox', owner: 'Sales Team', role: 'Account Executive', tools: JSON.stringify(['Email', 'Document']), duration: 'Immediate', sort_order: 1, type: 'start' },
@@ -276,34 +162,6 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'ps4', process_id: '1', title: 'Conduct kickoff meeting', description: 'Review goals, timeline, and assign customer contacts', owner: 'Customer Success', role: 'Implementation Specialist', tools: JSON.stringify(['Chat', 'Document']), duration: '1 hour', sort_order: 4, type: 'action' },
     { id: 'ps5', process_id: '1', title: 'Technical setup complete', description: 'Engineering confirms environment is ready for customer use', owner: 'Engineering', role: 'Solutions Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '2 days', sort_order: 5, type: 'action' },
   ];
-  for (const step of processSteps) {
-    await adapter.processSteps.put(step.id, step);
-  }
-
-  // ── Company Settings ───────────────────────
-  await adapter.companySettings.put({
-    name: 'Acme Corporation',
-    domain: 'acmecorp.com',
-    industry: 'Technology',
-    size: '51-200',
-    timezone: 'America/New_York',
-    language: 'English',
-    is_sso_enforced: 0,
-    is_two_factor_enabled: 1,
-    is_ip_whitelist_enabled: 0,
-    data_retention: '12 months',
-  });
-
-  // ── Notification Categories & Prefs ────────
-  const categories = [
-    { id: 'ideas', label: 'Ideas', icon: 'lightbulb' },
-    { id: 'projects', label: 'Projects', icon: 'folderKanban' },
-    { id: 'teams', label: 'Teams', icon: 'users' },
-    { id: 'account', label: 'Account', icon: 'user' },
-  ];
-  for (const category of categories) {
-    await adapter.notificationCategories.put(category.id, category);
-  }
 
   const notificationPreferences = [
     { id: 'idea_submitted', category_id: 'ideas', label: 'New idea submitted', description: 'When someone submits a new idea', is_email_enabled: 1, is_push_enabled: 1 },
@@ -323,28 +181,123 @@ export async function seedData(adapter: DbAdapter): Promise<void> {
     { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', is_email_enabled: 1, is_push_enabled: 1 },
     { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', is_email_enabled: 1, is_push_enabled: 0 },
   ];
-  for (const preference of notificationPreferences) {
-    await adapter.notificationPreferences.put(preference.id, preference);
-  }
 
-  // ── Account Config ─────────────────────────
-  await adapter.account.put({
-    plan: 'Business',
-    plan_status: 'active',
-    next_billing: '2025-01-15',
-    seats: 25,
-    used_seats: 18,
-    projects_limit: 50,
-    projects_current: 12,
-    ideas_limit: 200,
-    ideas_current: 47,
-    storage_limit: 10,
-    storage_current: 2.4,
-    ai_credits_limit: 1000,
-    ai_credits_current: 850,
-    health_score: 92,
-    health_status: 'excellent',
-    last_activity: '2 hours ago',
-    active_users: 14,
-  });
+  // Batch 3: Idea scores, projects, edges, activities, notifications, crunch columns, process steps, notification preferences
+  await Promise.all([
+    adapter.ideaScores.put('1', {
+      id: 'score-1',
+      overall: 82,
+      impact_score: 88,
+      impact_breakdown: JSON.stringify([
+        { label: 'Business Value', score: 9, maxScore: 10, reason: 'Direct revenue impact through improved conversions' },
+        { label: 'Strategic Alignment', score: 8, maxScore: 10, reason: 'Supports digital transformation goals' },
+        { label: 'User Benefit', score: 9, maxScore: 10, reason: 'Saves significant time for marketing team' },
+      ]),
+      feasibility_score: 75,
+      feasibility_breakdown: JSON.stringify([
+        { label: 'Technical Complexity', score: 7, maxScore: 10, reason: 'Requires ML expertise and data pipeline' },
+        { label: 'Resource Availability', score: 8, maxScore: 10, reason: 'Team has relevant skills' },
+        { label: 'Integration Effort', score: 8, maxScore: 10, reason: 'Works with existing CRM' },
+      ]),
+      efficiency_score: 85,
+      efficiency_breakdown: JSON.stringify([
+        { label: 'Time to Value', score: 9, maxScore: 10, reason: 'MVP deliverable in 6-8 weeks' },
+        { label: 'Cost Efficiency', score: 8, maxScore: 10, reason: 'Reasonable investment for expected returns' },
+        { label: 'Scalability', score: 9, maxScore: 10, reason: 'Can expand to other use cases' },
+      ]),
+      estimated_time: '6-8 weeks',
+      estimated_cost: '$45,000 - $65,000',
+      recommendation: 'Strong candidate for immediate prioritization. High impact with manageable complexity. Recommend starting with a focused pilot on top customer segment.',
+    }),
+    ...projects.map(project => adapter.projects.put(project.id, project)),
+    ...edges.map(edge => adapter.edges.put(edge.id, edge)),
+    ...activities.map(activity => adapter.activities.put(activity.id, activity)),
+    ...notifications.map(notification => adapter.notifications.put(notification.id, notification)),
+    ...crunchColumns.map(column => adapter.crunchColumns.put(column.id, column)),
+    ...processSteps.map(step => adapter.processSteps.put(step.id, step)),
+    ...notificationPreferences.map(preference => adapter.notificationPreferences.put(preference.id, preference)),
+  ]);
+
+  // Batch 4: Project team, milestones, project tasks, discussions, project versions, clarifications, edge outcomes
+  const teamMembers = [
+    { id: 'pt-1-1', project_id: '1', user_id: '1', role: 'Project Lead', type: 'business' },
+    { id: 'pt-1-2', project_id: '1', user_id: '2', role: 'ML Engineer', type: 'engineering' },
+    { id: 'pt-1-3', project_id: '1', user_id: '3', role: 'Data Scientist', type: 'engineering' },
+    { id: 'pt-1-4', project_id: '1', user_id: '4', role: 'Backend Developer', type: 'engineering' },
+  ];
+
+  const milestones = [
+    { id: 'm1', project_id: '1', title: 'Data Pipeline Setup', status: 'completed', date: '2024-01-30', sort_order: 1 },
+    { id: 'm2', project_id: '1', title: 'Model Training Complete', status: 'completed', date: '2024-02-15', sort_order: 2 },
+    { id: 'm3', project_id: '1', title: 'Integration Testing', status: 'in_progress', date: '2024-03-01', sort_order: 3 },
+    { id: 'm4', project_id: '1', title: 'User Acceptance Testing', status: 'pending', date: '2024-03-20', sort_order: 4 },
+    { id: 'm5', project_id: '1', title: 'Production Deployment', status: 'pending', date: '2024-04-01', sort_order: 5 },
+  ];
+
+  const tasks = [
+    { id: 'task-1', project_id: '1', name: 'Set up data pipeline', priority: 'High', description: 'Configure ETL pipeline for customer data ingestion', skills: JSON.stringify(['Python', 'Apache Airflow', 'SQL']), hours: 24, assigned_to_id: '2' },
+    { id: 'task-2', project_id: '1', name: 'Train ML model', priority: 'High', description: 'Develop and train clustering model using customer behavior data', skills: JSON.stringify(['Machine Learning', 'Python', 'scikit-learn']), hours: 40, assigned_to_id: '' },
+    { id: 'task-3', project_id: '1', name: 'Design dashboard UI', priority: 'Medium', description: 'Create visual interface for segment exploration and management', skills: JSON.stringify(['React', 'D3.js', 'CSS']), hours: 32, assigned_to_id: '' },
+    { id: 'task-4', project_id: '1', name: 'Build API endpoints', priority: 'Medium', description: 'RESTful API for segment data access and management', skills: JSON.stringify(['Node.js', 'REST API', 'PostgreSQL']), hours: 20, assigned_to_id: '' },
+    { id: 'task-5', project_id: '1', name: 'Create documentation', priority: 'Low', description: 'Technical documentation and user guides for the segmentation system', skills: JSON.stringify(['Technical Writing', 'Markdown']), hours: 12, assigned_to_id: '' },
+  ];
+
+  const discussions = [
+    { id: 'd1', project_id: '1', author_id: '1', date: '2024-02-28', message: 'Great progress on the integration testing. We should be ready for UAT next week.' },
+    { id: 'd2', project_id: '1', author_id: '2', date: '2024-02-25', message: 'Segmentation accuracy is now at 94%. Exceeding our initial target of 90%.' },
+    { id: 'd3', project_id: '1', author_id: '4', date: '2024-02-20', message: 'API endpoints are ready for frontend integration.' },
+  ];
+
+  const versions = [
+    { id: 'v1', project_id: '1', version: 'v1.2', date: '2024-02-28', changes: 'Added real-time segmentation capability', author_id: '2' },
+    { id: 'v2', project_id: '1', version: 'v1.1', date: '2024-02-15', changes: 'Improved model accuracy by 12%', author_id: '3' },
+    { id: 'v3', project_id: '1', version: 'v1.0', date: '2024-01-30', changes: 'Initial model deployment', author_id: '1' },
+  ];
+
+  const clarifications = [
+    { id: 'c1', project_id: '1', question: 'What data sources are currently available for customer behavior tracking? We need to understand the data pipeline before designing the ML model.', asked_by_id: '2', asked_at: '2024-02-20', status: 'answered', answer: 'We have event tracking via Segment, transaction data in our data warehouse (Snowflake), and email engagement metrics from Mailchimp. All can be accessed via APIs.', answered_by_id: '1', answered_at: '2024-02-21' },
+    { id: 'c2', project_id: '1', question: 'Are there any existing segment definitions we should match, or are we free to discover optimal segments through clustering?', asked_by_id: '3', asked_at: '2024-02-22', status: 'answered', answer: "Marketing has 5 legacy segments they use today (High Value, Growth, At-Risk, New, Dormant). We'd like to preserve compatibility but welcome additional discovered segments.", answered_by_id: '1', answered_at: '2024-02-22' },
+    { id: 'c3', project_id: '1', question: "What's the expected latency requirement for segment updates? Real-time vs batch processing has significant architecture implications.", asked_by_id: '4', asked_at: '2024-02-25', status: 'pending', answer: null, answered_by_id: null, answered_at: null },
+  ];
+
+  await Promise.all([
+    ...teamMembers.map(teamMember => adapter.projectTeam.put(teamMember.project_id, teamMember.user_id, teamMember)),
+    ...milestones.map(milestone => adapter.milestones.put(milestone.id, milestone)),
+    ...tasks.map(task => adapter.projectTasks.put(task.id, task)),
+    ...discussions.map(discussion => adapter.discussions.put(discussion.id, discussion)),
+    ...versions.map(version => adapter.projectVersions.put(version.id, version)),
+    ...clarifications.map(clarification => adapter.clarifications.put(clarification.id, clarification)),
+    adapter.edgeOutcomes.put('eo1', { edge_id: '1', description: 'Reduce customer churn rate' }),
+    adapter.edgeOutcomes.put('eo2', { edge_id: '1', description: 'Increase marketing ROI' }),
+    adapter.edgeOutcomes.put('eo3', { edge_id: '2', description: 'Automate report generation' }),
+    adapter.edgeOutcomes.put('eo4', { edge_id: '2', description: 'Reduce manual effort' }),
+    adapter.edgeOutcomes.put('eo5', { edge_id: '2', description: 'Improve data quality' }),
+    adapter.edgeOutcomes.put('eo6', { edge_id: '3', description: 'Predict equipment failures' }),
+    adapter.edgeOutcomes.put('eo7', { edge_id: '4', description: 'Real-time data visibility' }),
+    adapter.edgeOutcomes.put('eo8', { edge_id: '4', description: 'Improve decision speed' }),
+    adapter.edgeOutcomes.put('eo9', { edge_id: '6', description: 'Reduce support ticket volume' }),
+    adapter.edgeOutcomes.put('eo10', { edge_id: '6', description: 'Improve customer satisfaction' }),
+  ]);
+
+  // Batch 5: Edge metrics (reference edge outcomes)
+  await Promise.all([
+    adapter.edgeMetrics.put('em1', { outcome_id: 'eo1', name: 'Churn Rate Reduction', target: '15', unit: '%', current: '12' }),
+    adapter.edgeMetrics.put('em2', { outcome_id: 'eo1', name: 'Customer Retention', target: '85', unit: '%', current: '82' }),
+    adapter.edgeMetrics.put('em3', { outcome_id: 'eo2', name: 'Campaign Conversion', target: '25', unit: '%', current: '28' }),
+    adapter.edgeMetrics.put('em4', { outcome_id: 'eo2', name: 'Cost per Acquisition', target: '45', unit: '$', current: '42' }),
+    adapter.edgeMetrics.put('em5', { outcome_id: 'eo3', name: 'Report Time', target: '5', unit: 'min', current: '8' }),
+    adapter.edgeMetrics.put('em6', { outcome_id: 'eo3', name: 'Accuracy', target: '99', unit: '%', current: '95' }),
+    adapter.edgeMetrics.put('em7', { outcome_id: 'eo4', name: 'Effort Reduction', target: '80', unit: '%', current: '60' }),
+    adapter.edgeMetrics.put('em8', { outcome_id: 'eo5', name: 'Data Quality', target: '95', unit: '%', current: '88' }),
+    adapter.edgeMetrics.put('em9', { outcome_id: 'eo5', name: 'Error Rate', target: '1', unit: '%', current: '3' }),
+    adapter.edgeMetrics.put('em10', { outcome_id: 'eo6', name: 'Detection Rate', target: '90', unit: '%', current: '45' }),
+    adapter.edgeMetrics.put('em11', { outcome_id: 'eo6', name: 'False Positive Rate', target: '5', unit: '%', current: '15' }),
+    adapter.edgeMetrics.put('em12', { outcome_id: 'eo7', name: 'Dashboard Load', target: '2', unit: 's', current: '3' }),
+    adapter.edgeMetrics.put('em13', { outcome_id: 'eo8', name: 'Decision Time', target: '1', unit: 'hr', current: '4' }),
+    adapter.edgeMetrics.put('em14', { outcome_id: 'eo8', name: 'Data Freshness', target: '5', unit: 'min', current: '30' }),
+    adapter.edgeMetrics.put('em15', { outcome_id: 'eo9', name: 'Ticket Reduction', target: '40', unit: '%', current: '' }),
+    adapter.edgeMetrics.put('em16', { outcome_id: 'eo9', name: 'First Response Time', target: '1', unit: 'min', current: '' }),
+    adapter.edgeMetrics.put('em17', { outcome_id: 'eo10', name: 'CSAT Score', target: '4.5', unit: '/5', current: '' }),
+    adapter.edgeMetrics.put('em18', { outcome_id: 'eo10', name: 'Resolution Rate', target: '85', unit: '%', current: '' }),
+  ]);
 }
