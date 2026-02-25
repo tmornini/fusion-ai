@@ -6,6 +6,7 @@ import {
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
 } from '../../site/script';
 import { getIdeaForConversion, type ConversionIdea } from '../../site/data';
+import { PUT, GET } from '../../../api/api';
 
 const requiredFields = ['project-name', 'project-lead', 'start-date', 'target-end-date', 'budget', 'priority'];
 
@@ -217,16 +218,61 @@ export async function init(params?: Record<string, string>): Promise<void> {
     });
   });
 
-  $('#convert-submit-btn')?.addEventListener('click', () => {
+  $('#convert-submit-btn')?.addEventListener('click', async () => {
     syncFormFields();
     if (!isReadyToConvert()) return;
     const btn = $('#convert-submit-btn')!;
     setHtml(btn, html`${iconLoader(16)} Creating Project...`);
     (btn as HTMLButtonElement).disabled = true;
-    setTimeout(() => {
+
+    const leadMap: Record<string, string> = { sarah: '1', mike: '2', jessica: '3', david: '4' };
+    const priorityMap: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
+
+    const projectId = crypto.randomUUID();
+    try {
+      await PUT(`projects/${projectId}`, {
+        title: projectDetails['project-name'],
+        description: projectDetails['success-criteria'] || '',
+        status: 'active',
+        progress: 0,
+        start_date: projectDetails['start-date'],
+        target_end_date: projectDetails['target-end-date'],
+        lead_id: leadMap[projectDetails['project-lead']!] || '1',
+        estimated_time: 0,
+        actual_time: 0,
+        estimated_cost: 0,
+        actual_cost: 0,
+        estimated_impact: 0,
+        actual_impact: 0,
+        priority: priorityMap[projectDetails['priority']!] || 3,
+        priority_score: 0,
+        linked_idea_id: ideaId,
+        business_context: '{}',
+        timeline_label: '',
+        budget_label: projectDetails['budget'] || '',
+      });
+
+      const existingIdea = await GET(`ideas/${ideaId}`);
+      await PUT(`ideas/${ideaId}`, { ...existingIdea, status: 'approved' });
+
+      if (projectDetails['first-milestone']?.trim()) {
+        const milestoneId = crypto.randomUUID();
+        await PUT(`milestones/${milestoneId}`, {
+          project_id: projectId,
+          title: projectDetails['first-milestone'],
+          status: 'pending',
+          date: projectDetails['target-end-date'] || '',
+          sort_order: 1,
+        });
+      }
+
       showToast('Project created successfully!', 'success');
-      navigateTo('dashboard');
-    }, 2000);
+      navigateTo('project-detail', { projectId });
+    } catch {
+      showToast('Failed to create project. Please try again.', 'error');
+      setHtml(btn, html`Create Project ${iconArrowRight(16)}`);
+      (btn as HTMLButtonElement).disabled = false;
+    }
   });
 
   $('#convert-back-to-scoring')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
