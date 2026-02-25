@@ -233,15 +233,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const schemaExists = await adapter.hasSchema();
     if (!schemaExists) {
       const page = getPageName();
-      const skipRedirect = ['snapshots', 'auth', 'onboarding', 'not-found', 'design-system'];
+      const skipRedirect = ['snapshots', 'auth', 'onboarding', 'not-found', 'design-system', 'landing'];
       if (!skipRedirect.includes(page)) {
-        if (page === 'landing') {
-          // Root-level index.html is not 2 dirs deep like other pages,
-          // so navigateTo's ../../ prefix won't work here
-          window.location.href = 'admin/snapshots/index.html';
-        } else {
-          navigateTo('snapshots');
-        }
+        navigateTo('snapshots');
         return;
       }
     }

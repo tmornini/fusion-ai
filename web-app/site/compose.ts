@@ -41,6 +41,7 @@ const standalonePages = [
   'core/idea-convert',
   'core/approval-detail',
   'entry/auth',
+  'entry/landing',
   'entry/onboarding',
   'system/not-found',
 ];
