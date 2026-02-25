@@ -3,6 +3,7 @@ import {
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
 } from '../../site/script';
+import { PUT } from '../../../api/api';
 
 const steps = [
   { id: 1, title: 'The Problem', icon: iconAlertCircle, description: 'What challenge are you trying to solve?' },
@@ -186,11 +187,26 @@ function bindWizardEvents() {
     if (currentStep > 1) { syncFormFields(); currentStep--; mutateWizard(); }
     else navigateTo('ideas');
   });
-  $('#step-next')?.addEventListener('click', () => {
+  $('#step-next')?.addEventListener('click', async () => {
     syncFormFields();
     if (!isStepComplete()) return;
     if (currentStep < 3) { currentStep++; mutateWizard(); }
-    else navigateTo('idea-scoring', { ideaId: 'new' });
+    else {
+      const ideaId = crypto.randomUUID();
+      await PUT(`ideas/${ideaId}`, {
+        title: formData.title,
+        problem_statement: formData.problemStatement,
+        proposed_solution: formData.proposedSolution,
+        expected_outcome: formData.expectedOutcome,
+        description: formData.targetUsers,
+        status: 'scored',
+        submitted_by_id: '1',
+        score: 0, estimated_impact: 0, estimated_time: 0, estimated_cost: 0,
+        priority: 0, edge_status: '', category: '', readiness: '',
+        waiting_days: 0, impact_label: '', effort_label: '', submitted_at: '',
+      });
+      navigateTo('idea-scoring', { ideaId });
+    }
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#step-content input, #step-content textarea').forEach(input => {
     input.addEventListener('input', () => {
