@@ -90,8 +90,7 @@ export async function init(): Promise<void> {
       const db = getDbAdapter();
       await db.wipeAllData();
       await db.createSchema();
-      showToast('Pristine environment created.', 'success');
-      await updateEmptyBanner(root);
+      window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to create pristine environment.', 'error');
     }
@@ -105,7 +104,7 @@ export async function init(): Promise<void> {
       await db.createSchema();
       await seedData(db);
       await db.flush();
-      window.location.href = '../../index.html';
+      window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to load mock data.', 'error');
     }
@@ -122,7 +121,7 @@ export async function init(): Promise<void> {
       await db.wipeAllData();
       await db.importSnapshot(text);
       await db.flush();
-      window.location.href = '../../index.html';
+      window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to upload snapshot. Check file format.', 'error');
     }
