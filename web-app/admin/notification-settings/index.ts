@@ -65,7 +65,7 @@ export async function init(): Promise<void> {
       ${categories.map(buildCategory)}
 
       <div class="flex justify-end mt-6">
-        <button class="btn btn-primary gap-2" id="save-btn">${iconSave(16)} Save Changes</button>
+        <button class="btn btn-primary gap-2" id="notification-settings-save-btn">${iconSave(16)} Save Changes</button>
       </div>
     </div>`);
 
@@ -94,7 +94,7 @@ export async function init(): Promise<void> {
   });
 
   // Save
-  $('#save-btn')?.addEventListener('click', () => {
+  $('#notification-settings-save-btn')?.addEventListener('click', () => {
     showToast('Notification preferences saved', 'success');
   });
 }

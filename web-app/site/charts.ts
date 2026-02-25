@@ -20,8 +20,6 @@ export interface ChartConfig {
   id?: string;
 }
 
-let areaChartInstanceId = 0;
-
 const defaultColors = [
   'hsl(var(--primary))',
   'hsl(var(--success))',
@@ -127,7 +125,8 @@ export function buildAreaChart(data: ChartDatum[], config?: ChartConfig): SafeHt
 
   const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   const areaPath = linePath + ` L ${points[points.length - 1]!.x} ${height - padding} L ${points[0]!.x} ${height - padding} Z`;
-  const gradientId = config?.id ? `area-grad-${config.id}` : `area-grad-${areaChartInstanceId++}`;
+  if (!config?.id) throw new Error('buildAreaChart requires config.id for a deterministic SVG gradient ID');
+  const gradientId = `area-grad-${config.id}`;
 
   return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">

@@ -174,7 +174,7 @@ export async function init(): Promise<void> {
   if (summaryEl) summaryEl.textContent = `${members.length} ${members.length === 1 ? 'member' : 'members'} • Manage roles, strengths, and availability`;
 
   // Detail placeholder
-  const placeholderEl = $('#detail-placeholder');
+  const placeholderEl = $('#team-detail-placeholder');
   if (placeholderEl) {
     setHtml(placeholderEl, html`
       ${iconUsers(48, 'text-muted')}

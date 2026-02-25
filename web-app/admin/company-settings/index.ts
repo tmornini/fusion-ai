@@ -44,7 +44,7 @@ export async function init(): Promise<void> {
           <h1 class="text-3xl font-display font-bold mb-2">Company Settings</h1>
           <p class="text-muted">Manage your organization's configuration</p>
         </div>
-        <button class="btn btn-primary gap-2" id="save-btn">${iconSave(16)} Save Changes</button>
+        <button class="btn btn-primary gap-2" id="company-settings-save-btn">${iconSave(16)} Save Changes</button>
       </div>
 
       <div class="card card-hover p-6 mb-6">
@@ -52,34 +52,34 @@ export async function init(): Promise<void> {
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label class="label mb-2 block">Company Name</label>
-            <input class="input" id="company-name" value="${settings.name}" />
+            <input class="input" id="company-settings-name" value="${settings.name}" />
           </div>
           <div>
             <label class="label mb-2 block flex items-center gap-2">${iconGlobe(16)} Domain</label>
-            <input class="input" id="domain" value="${settings.domain}" />
+            <input class="input" id="company-settings-domain" value="${settings.domain}" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          ${buildSelectField('industry', 'Industry', settings.industry, ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Education', 'Other'])}
-          ${buildSelectField('size', 'Company Size', settings.size, ['1-10', '11-50', '51-200', '201-500', '500+'])}
+          ${buildSelectField('company-settings-industry', 'Industry', settings.industry, ['Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Education', 'Other'])}
+          ${buildSelectField('company-settings-size', 'Company Size', settings.size, ['1-10', '11-50', '51-200', '201-500', '500+'])}
         </div>
       </div>
 
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4">Regional Settings</h3>
         <div class="grid grid-cols-2 gap-4">
-          ${buildSelectField('timezone', 'Timezone', settings.timezone, ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'])}
-          ${buildSelectField('language', 'Language', settings.language, ['English', 'Spanish', 'French', 'German', 'Japanese'])}
+          ${buildSelectField('company-settings-timezone', 'Timezone', settings.timezone, ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo'])}
+          ${buildSelectField('company-settings-language', 'Language', settings.language, ['English', 'Spanish', 'French', 'German', 'Japanese'])}
         </div>
       </div>
 
       <div class="card card-hover p-6 mb-6">
         <h3 class="font-display font-semibold mb-4 flex items-center gap-2">${iconShield(20)} Security</h3>
-        ${buildToggleRow('sso', 'Enforce SSO', 'Require Single Sign-On for all users', settings.isSsoEnforced)}
-        ${buildToggleRow('2fa', 'Two-Factor Authentication', 'Require 2FA for all users', settings.isTwoFactorEnabled)}
-        ${buildToggleRow('ipWhitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', settings.isIpWhitelistEnabled)}
+        ${buildToggleRow('company-settings-sso', 'Enforce SSO', 'Require Single Sign-On for all users', settings.isSsoEnforced)}
+        ${buildToggleRow('company-settings-2fa', 'Two-Factor Authentication', 'Require 2FA for all users', settings.isTwoFactorEnabled)}
+        ${buildToggleRow('company-settings-ip-whitelist', 'IP Whitelist', 'Restrict access to specific IP addresses', settings.isIpWhitelistEnabled)}
         <div class="pt-4">
-          ${buildSelectField('retention', 'Data Retention Period', settings.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
+          ${buildSelectField('company-settings-retention', 'Data Retention Period', settings.dataRetention, ['6 months', '12 months', '24 months', '36 months', 'Indefinite'])}
         </div>
       </div>
     </div>`);
@@ -93,7 +93,7 @@ export async function init(): Promise<void> {
   });
 
   // Save
-  $('#save-btn')?.addEventListener('click', () => {
+  $('#company-settings-save-btn')?.addEventListener('click', () => {
     showToast('Company settings saved successfully', 'success');
   });
 }

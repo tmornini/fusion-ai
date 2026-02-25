@@ -82,7 +82,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
     <div>
       <div class="flex items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-4">
-          <button class="btn btn-ghost btn-icon" id="back-btn">${iconArrowLeft(20)}</button>
+          <button class="btn btn-ghost btn-icon" id="edge-back-btn">${iconArrowLeft(20)}</button>
           <div>
             <div class="badge badge-primary text-sm mb-2">${iconTarget(14)} Business Case Definition</div>
             <div class="flex items-center gap-3 mb-1">
@@ -92,7 +92,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
             <p class="text-sm text-muted">Define outcomes, metrics, and expected impact</p>
           </div>
         </div>
-        <button class="btn btn-hero gap-2" id="save-edge" ${trusted(completion.isComplete ? '' : 'disabled')}>
+        <button class="btn btn-hero gap-2" id="edge-save-btn" ${trusted(completion.isComplete ? '' : 'disabled')}>
           ${iconSave(16)} Save &amp; Continue
         </button>
       </div>
@@ -136,9 +136,9 @@ function buildEdgePage(ideaId: string): SafeHtml {
           <div class="card p-5">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-display font-semibold flex items-center gap-2">${iconTarget(20, 'text-primary')} Business Outcomes</h3>
-              <button class="btn btn-outline btn-sm gap-1" id="add-outcome">${iconPlus(16)} Add Outcome</button>
+              <button class="btn btn-outline btn-sm gap-1" id="edge-add-outcome">${iconPlus(16)} Add Outcome</button>
             </div>
-            <div id="outcomes-container">${outcomesHtml}</div>
+            <div id="edge-outcomes">${outcomesHtml}</div>
           </div>
 
           <!-- Impact -->
@@ -147,15 +147,15 @@ function buildEdgePage(ideaId: string): SafeHtml {
             <div class="impact-grid">
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Short-term (0-3 months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-short-term" placeholder="Expected impact in the first 3 months...">${edgeData.impact.shortTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="edge-impact-short-term" placeholder="Expected impact in the first 3 months...">${edgeData.impact.shortTerm}</textarea>
               </div>
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Mid-term (3-12 months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-mid-term" placeholder="Expected impact over 3-12 months...">${edgeData.impact.midTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="edge-impact-mid-term" placeholder="Expected impact over 3-12 months...">${edgeData.impact.midTerm}</textarea>
               </div>
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconClock(14)} Long-term (12+ months)</label>
-                <textarea class="textarea text-sm" rows="4" id="impact-long-term" placeholder="Expected impact after 12 months...">${edgeData.impact.longTerm}</textarea>
+                <textarea class="textarea text-sm" rows="4" id="edge-impact-long-term" placeholder="Expected impact after 12 months...">${edgeData.impact.longTerm}</textarea>
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
               <div>
                 <label class="label text-xs text-muted mb-2 block">Confidence Level</label>
-                <select class="input" id="confidence-select">
+                <select class="input" id="edge-confidence-select">
                   <option value="">Select confidence level</option>
                   <option value="high" ${trusted(edgeData.confidence === 'high' ? 'selected' : '')}>High - Strong evidence</option>
                   <option value="medium" ${trusted(edgeData.confidence === 'medium' ? 'selected' : '')}>Medium - Some uncertainty</option>
@@ -175,7 +175,7 @@ function buildEdgePage(ideaId: string): SafeHtml {
               </div>
               <div>
                 <label class="label text-xs text-muted mb-2 flex items-center gap-1">${iconUser(14)} Edge Owner</label>
-                <input class="input" id="owner-input" placeholder="Who owns this Edge definition?" value="${edgeData.owner}" />
+                <input class="input" id="edge-owner-input" placeholder="Who owns this Edge definition?" value="${edgeData.owner}" />
               </div>
             </div>
           </div>
@@ -201,11 +201,11 @@ function buildEdgePage(ideaId: string): SafeHtml {
 }
 
 function syncFormFields() {
-  edgeData.impact.shortTerm = ($('#impact-short-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.midTerm = ($('#impact-mid-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.longTerm = ($('#impact-long-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.confidence = ($('#confidence-select') as HTMLSelectElement)?.value || '';
-  edgeData.owner = ($('#owner-input') as HTMLInputElement)?.value || '';
+  edgeData.impact.shortTerm = ($('#edge-impact-short-term') as HTMLTextAreaElement)?.value || '';
+  edgeData.impact.midTerm = ($('#edge-impact-mid-term') as HTMLTextAreaElement)?.value || '';
+  edgeData.impact.longTerm = ($('#edge-impact-long-term') as HTMLTextAreaElement)?.value || '';
+  edgeData.confidence = ($('#edge-confidence-select') as HTMLSelectElement)?.value || '';
+  edgeData.owner = ($('#edge-owner-input') as HTMLInputElement)?.value || '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-description]').forEach(descriptionInput => {
     const outcomeId = descriptionInput.getAttribute('data-outcome-description')!;
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
@@ -227,9 +227,9 @@ function mutateEdgePage(ideaId: string) {
 }
 
 function bindEdgeEvents(ideaId: string) {
-  $('#back-btn')?.addEventListener('click', () => navigateTo('ideas'));
+  $('#edge-back-btn')?.addEventListener('click', () => navigateTo('ideas'));
 
-  $('#add-outcome')?.addEventListener('click', () => {
+  $('#edge-add-outcome')?.addEventListener('click', () => {
     syncFormFields();
     edgeData.outcomes.push({ id: crypto.randomUUID(), description: '', metrics: [] });
     mutateEdgePage(ideaId);
@@ -272,7 +272,7 @@ function bindEdgeEvents(ideaId: string) {
     });
   });
 
-  $('#save-edge')?.addEventListener('click', () => {
+  $('#edge-save-btn')?.addEventListener('click', () => {
     syncFormFields();
     if (!computeCompletionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
     showToast('Edge data saved successfully', 'success');

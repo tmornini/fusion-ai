@@ -19,36 +19,36 @@ export async function init(): Promise<void> {
   const profile = await getProfile();
 
   // Breadcrumb chevron
-  const breadcrumbSeparatorEl = $('#breadcrumb-separator');
+  const breadcrumbSeparatorEl = $('#profile-breadcrumb-separator');
   if (breadcrumbSeparatorEl) setHtml(breadcrumbSeparatorEl, iconChevronRight(14));
 
   // Icons
-  const saveBtnIconEl = $('#save-btn-icon');
+  const saveBtnIconEl = $('#profile-save-btn-icon');
   if (saveBtnIconEl) setHtml(saveBtnIconEl, iconSave(16));
-  const avatarBtn = $('#avatar-btn');
+  const avatarBtn = $('#profile-avatar-btn');
   if (avatarBtn) setHtml(avatarBtn, iconCamera(14));
-  const emailLabel = $('#email-label');
+  const emailLabel = $('#profile-email-label');
   if (emailLabel) setHtml(emailLabel, html`${iconMail(16)} Email`);
-  const phoneLabel = $('#phone-label');
+  const phoneLabel = $('#profile-phone-label');
   if (phoneLabel) setHtml(phoneLabel, html`${iconPhone(16)} Phone`);
-  const roleLabel = $('#role-label');
+  const roleLabel = $('#profile-role-label');
   if (roleLabel) setHtml(roleLabel, html`${iconBriefcase(16)} Role`);
-  const strengthsHeader = $('#strengths-header');
+  const strengthsHeader = $('#profile-strengths-header');
   if (strengthsHeader) setHtml(strengthsHeader, html`${iconStar(20, 'text-primary')} My Strengths`);
 
   // Fill form values
-  const avatarInitials = $('#avatar-initials');
+  const avatarInitials = $('#profile-avatar-initials');
   if (avatarInitials) avatarInitials.textContent = `${profile.firstName[0]}${profile.lastName[0]}`;
-  ($('#first-name') as HTMLInputElement).value = profile.firstName;
-  ($('#last-name') as HTMLInputElement).value = profile.lastName;
-  ($('#email') as HTMLInputElement).value = profile.email;
-  ($('#phone') as HTMLInputElement).value = profile.phone;
-  ($('#role') as HTMLInputElement).value = profile.role;
-  ($('#department') as HTMLSelectElement).value = profile.department;
-  ($('#bio') as HTMLTextAreaElement).value = profile.bio;
+  ($('#profile-first-name') as HTMLInputElement).value = profile.firstName;
+  ($('#profile-last-name') as HTMLInputElement).value = profile.lastName;
+  ($('#profile-email') as HTMLInputElement).value = profile.email;
+  ($('#profile-phone') as HTMLInputElement).value = profile.phone;
+  ($('#profile-role') as HTMLInputElement).value = profile.role;
+  ($('#profile-department') as HTMLSelectElement).value = profile.department;
+  ($('#profile-bio') as HTMLTextAreaElement).value = profile.bio;
 
   // Strengths
-  const strengthsContainer = $('#strengths-container');
+  const strengthsContainer = $('#profile-strengths');
   if (strengthsContainer) {
     setHtml(strengthsContainer, html`${allStrengths.map(buildStrengthChip)}`);
     strengthsContainer.querySelectorAll<HTMLElement>('.strength-chip').forEach(chip => {
@@ -68,8 +68,8 @@ export async function init(): Promise<void> {
   }
 
   // Save button
-  $('#save-btn')?.addEventListener('click', () => {
-    const btn = $('#save-btn')!;
+  $('#profile-save-btn')?.addEventListener('click', () => {
+    const btn = $('#profile-save-btn')!;
     btn.textContent = 'Saving...';
     btn.setAttribute('disabled', '');
     setTimeout(() => {

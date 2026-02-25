@@ -78,8 +78,8 @@ async function loadSearchIndex(): Promise<void> {
   isDataLoaded = true;
 
   // Start with pages immediately
-  allItems = pages.map((page, index) => ({
-    id: `page-${index}`,
+  allItems = pages.map((page) => ({
+    id: `page-${page.href.split('/').slice(-2, -1)[0]!}`,
     title: page.title,
     meta: 'Page',
     category: 'pages' as const,
@@ -182,21 +182,21 @@ function mutateResults(query: string): void {
   });
 
   const markup: SafeHtml[] = [];
-  let globalIndex = 0;
+  let posIndex = 0;
   for (const category of categoryOrder) {
     const items = grouped[category];
     if (!items?.length) continue;
 
     markup.push(html`<div class="command-palette-group-label">${categoryLabels[category]}</div>`);
     for (const item of items) {
-      markup.push(html`<div class="command-palette-item" role="option" id="command-palette-item-${globalIndex}" data-index="${globalIndex}" data-href="${item.href}" aria-posinset="${globalIndex + 1}" aria-setsize="${filteredItems.length}" ${globalIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
+      markup.push(html`<div class="command-palette-item" role="option" id="command-palette-item-${item.id}" data-item-id="${item.id}" data-href="${item.href}" aria-posinset="${posIndex + 1}" aria-setsize="${filteredItems.length}" ${posIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
         <div class="command-palette-item-icon">${item.icon}</div>
         <div class="command-palette-item-content">
           <div class="command-palette-item-title">${buildHighlightedMatch(item.title, query)}</div>
           <div class="command-palette-item-meta">${item.meta}</div>
         </div>
       </div>`);
-      globalIndex++;
+      posIndex++;
     }
   }
 
@@ -209,9 +209,12 @@ function mutateActiveItem(): void {
   list.querySelectorAll('.command-palette-item').forEach((el, i) => {
     el.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
   });
-  const activeEl = list.querySelector(`[data-index="${activeIndex}"]`);
-  if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
-  if (input) input.setAttribute('aria-activedescendant', `command-palette-item-${activeIndex}`);
+  const activeItem = filteredItems[activeIndex];
+  if (activeItem) {
+    const activeEl = list.querySelector(`[data-item-id="${activeItem.id}"]`);
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+    if (input) input.setAttribute('aria-activedescendant', `command-palette-item-${activeItem.id}`);
+  }
 }
 
 // ── Navigation ───────────────────────────
@@ -325,8 +328,9 @@ function initCommandPaletteDOM(): void {
   list!.addEventListener('mousemove', (e: Event) => {
     const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
     if (target) {
-      const hoveredIndex = parseInt(target.getAttribute('data-index') || '0', 10);
-      if (hoveredIndex !== activeIndex) {
+      const hoveredId = target.getAttribute('data-item-id');
+      const hoveredIndex = filteredItems.findIndex(item => item.id === hoveredId);
+      if (hoveredIndex >= 0 && hoveredIndex !== activeIndex) {
         activeIndex = hoveredIndex;
         mutateActiveItem();
       }
@@ -337,8 +341,9 @@ function initCommandPaletteDOM(): void {
   list!.addEventListener('click', (e: Event) => {
     const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
     if (target) {
-      const clickedIndex = parseInt(target.getAttribute('data-index') || '0', 10);
-      navigateToItem(clickedIndex);
+      const clickedId = target.getAttribute('data-item-id');
+      const clickedIndex = filteredItems.findIndex(item => item.id === clickedId);
+      if (clickedIndex >= 0) navigateToItem(clickedIndex);
     }
   });
 

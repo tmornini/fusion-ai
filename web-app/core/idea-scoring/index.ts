@@ -85,16 +85,16 @@ function buildScoreResults(ideaId: string, idea: { title: string; problemStateme
             </button>`;
           })}
         </div>
-        <div id="tab-content" style="display:flex;flex-direction:column;gap:1rem">
+        <div id="scoring-tab-content" style="display:flex;flex-direction:column;gap:1rem">
           ${buildBreakdown(score.impact)}
         </div>
       </div>
 
       <div class="flex items-center justify-between gap-3 pt-4">
-        <button class="btn btn-ghost gap-2" id="back-to-ideas">${iconArrowLeft(16)} Back to Ideas</button>
+        <button class="btn btn-ghost gap-2" id="scoring-back-to-ideas">${iconArrowLeft(16)} Back to Ideas</button>
         <div class="flex gap-3">
-          <button class="btn btn-outline" id="save-draft">Save as Draft</button>
-          <button class="btn btn-hero gap-2" id="convert-btn">Convert to Project ${iconArrowRight(16)}</button>
+          <button class="btn btn-outline" id="scoring-save-draft">Save as Draft</button>
+          <button class="btn btn-hero gap-2" id="scoring-convert-btn">Convert to Project ${iconArrowRight(16)}</button>
         </div>
       </div>
     </div>`;
@@ -108,7 +108,7 @@ function bindTabs(score: IdeaScore) {
       document.querySelectorAll<HTMLElement>('.score-tab').forEach(otherTab => {
         otherTab.classList.toggle('active', otherTab.getAttribute('data-score-tab') === tabId);
       });
-      const content = $('#tab-content');
+      const content = $('#scoring-tab-content');
       if (content) setHtml(content, buildBreakdown(data));
     });
   });
@@ -127,7 +127,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
         <div style="max-width:60rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem">
             <div class="flex items-center gap-4">
-              <button class="btn btn-ghost btn-icon" id="loading-back">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="scoring-loading-back">${iconArrowLeft(20)}</button>
               <div class="flex items-center gap-3">
                 <div class="gradient-hero rounded-lg flex items-center justify-center" style="width:2.25rem;height:2.25rem;color:hsl(var(--primary-foreground))">${iconBarChart(20)}</div>
                 <span class="text-xl font-display font-bold">Idea Scoring</span>
@@ -161,7 +161,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
       </div>
     </div>`);
 
-  $('#loading-back')?.addEventListener('click', () => navigateTo('ideas'));
+  $('#scoring-loading-back')?.addEventListener('click', () => navigateTo('ideas'));
 
   // Simulate AI processing delay, then show results
   try {
@@ -176,9 +176,9 @@ export async function init(params?: Record<string, string>): Promise<void> {
         setHtml(body, buildScoreResults(ideaId, idea, score));
         bindTabs(score);
 
-        $('#back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
-        $('#save-draft')?.addEventListener('click', () => navigateTo('ideas'));
-        $('#convert-btn')?.addEventListener('click', () => navigateTo('idea-convert', { ideaId }));
+        $('#scoring-back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
+        $('#scoring-save-draft')?.addEventListener('click', () => navigateTo('ideas'));
+        $('#scoring-convert-btn')?.addEventListener('click', () => navigateTo('idea-convert', { ideaId }));
       }
     }, 2500);
   } catch (err) {

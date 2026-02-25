@@ -22,7 +22,7 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
         <div style="max-width:60rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem;gap:0.5rem">
             <div class="flex items-center gap-4" style="min-width:0">
-              <button class="btn btn-ghost btn-icon" id="back-btn">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="approval-back-btn">${iconArrowLeft(20)}</button>
               <div style="min-width:0">
                 <p class="text-xs text-muted">Reviewing Idea</p>
                 <h1 class="text-lg font-bold truncate">${idea.title}</h1>
@@ -154,42 +154,42 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
       <div class="action-footer">
         <div class="action-footer-inner">
           <div class="flex items-center justify-between gap-4">
-            <button class="btn btn-outline gap-2" id="clarify-btn">${iconMessageSquare(16)} <span class="hidden-mobile">Request Clarification</span><span class="visible-mobile">Clarify</span></button>
+            <button class="btn btn-outline gap-2" id="approval-clarify-btn">${iconMessageSquare(16)} <span class="hidden-mobile">Request Clarification</span><span class="visible-mobile">Clarify</span></button>
             <div class="flex gap-3">
-              <button class="btn btn-outline-error gap-2" id="reject-btn">${iconXCircle(16)} <span class="hidden-mobile">Send Back</span><span class="visible-mobile">Reject</span></button>
-              <button class="btn btn-success gap-2" id="approve-btn">${iconCheckCircle(16)} Approve</button>
+              <button class="btn btn-outline-error gap-2" id="approval-reject-btn">${iconXCircle(16)} <span class="hidden-mobile">Send Back</span><span class="visible-mobile">Reject</span></button>
+              <button class="btn btn-success gap-2" id="approval-approve-btn">${iconCheckCircle(16)} Approve</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="reject-backdrop" class="dialog-backdrop hidden"></div>
-      <div id="reject-dialog" class="dialog hidden" role="dialog" aria-modal="true" style="max-width:28rem">
+      <div id="approval-reject-backdrop" class="dialog-backdrop hidden"></div>
+      <div id="approval-reject-dialog" class="dialog hidden" role="dialog" aria-modal="true" style="max-width:28rem">
         <div class="dialog-header">
           <h3 class="dialog-title">Send Back for Revision</h3>
           <p class="dialog-description">Provide feedback to help the submitter improve their idea.</p>
         </div>
         <div class="py-4">
-          <textarea class="textarea resize-none" id="reject-feedback" placeholder="Explain what changes or additional information is needed..." rows="4"></textarea>
+          <textarea class="textarea resize-none" id="approval-reject-feedback" placeholder="Explain what changes or additional information is needed..." rows="4"></textarea>
         </div>
         <div class="dialog-footer">
-          <button class="btn btn-outline" id="reject-cancel">Cancel</button>
-          <button class="btn btn-error" id="reject-confirm">Send Back</button>
+          <button class="btn btn-outline" id="approval-reject-cancel">Cancel</button>
+          <button class="btn btn-error" id="approval-reject-confirm">Send Back</button>
         </div>
       </div>
 
-      <div id="clarify-backdrop" class="dialog-backdrop hidden"></div>
-      <div id="clarify-dialog" class="dialog hidden" role="dialog" aria-modal="true" style="max-width:28rem">
+      <div id="approval-clarify-backdrop" class="dialog-backdrop hidden"></div>
+      <div id="approval-clarify-dialog" class="dialog hidden" role="dialog" aria-modal="true" style="max-width:28rem">
         <div class="dialog-header">
           <h3 class="dialog-title">Request Clarification</h3>
           <p class="dialog-description">Ask the submitter for additional details before making a decision.</p>
         </div>
         <div class="py-4">
-          <textarea class="textarea resize-none" id="clarify-feedback" placeholder="What additional information do you need?" rows="4"></textarea>
+          <textarea class="textarea resize-none" id="approval-clarify-feedback" placeholder="What additional information do you need?" rows="4"></textarea>
         </div>
         <div class="dialog-footer">
-          <button class="btn btn-outline" id="clarify-cancel">Cancel</button>
-          <button class="btn btn-primary" id="clarify-confirm">Send Request</button>
+          <button class="btn btn-outline" id="approval-clarify-cancel">Cancel</button>
+          <button class="btn btn-primary" id="approval-clarify-confirm">Send Request</button>
         </div>
       </div>
     </div>`;
@@ -218,33 +218,33 @@ export async function init(params?: Record<string, string>): Promise<void> {
   setHtml(root, buildApprovalPage(idea, edge));
 
   // Approve
-  $('#approve-btn')?.addEventListener('click', () => {
+  $('#approval-approve-btn')?.addEventListener('click', () => {
     showToast('Idea approved successfully', 'success');
     navigateTo('idea-review-queue');
   });
 
   // Back
-  $('#back-btn')?.addEventListener('click', () => navigateTo('idea-review-queue'));
+  $('#approval-back-btn')?.addEventListener('click', () => navigateTo('idea-review-queue'));
 
   // Reject dialog
-  const openReject = () => openDialog('reject');
-  const closeReject = () => closeDialog('reject');
-  $('#reject-btn')?.addEventListener('click', openReject);
-  $('#reject-cancel')?.addEventListener('click', closeReject);
-  $('#reject-backdrop')?.addEventListener('click', closeReject);
-  $('#reject-confirm')?.addEventListener('click', () => {
+  const openReject = () => openDialog('approval-reject');
+  const closeReject = () => closeDialog('approval-reject');
+  $('#approval-reject-btn')?.addEventListener('click', openReject);
+  $('#approval-reject-cancel')?.addEventListener('click', closeReject);
+  $('#approval-reject-backdrop')?.addEventListener('click', closeReject);
+  $('#approval-reject-confirm')?.addEventListener('click', () => {
     showToast('Idea sent back for revision', 'info');
     closeReject();
     navigateTo('idea-review-queue');
   });
 
   // Clarify dialog
-  const openClarify = () => openDialog('clarify');
-  const closeClarify = () => closeDialog('clarify');
-  $('#clarify-btn')?.addEventListener('click', openClarify);
-  $('#clarify-cancel')?.addEventListener('click', closeClarify);
-  $('#clarify-backdrop')?.addEventListener('click', closeClarify);
-  $('#clarify-confirm')?.addEventListener('click', () => {
+  const openClarify = () => openDialog('approval-clarify');
+  const closeClarify = () => closeDialog('approval-clarify');
+  $('#approval-clarify-btn')?.addEventListener('click', openClarify);
+  $('#approval-clarify-cancel')?.addEventListener('click', closeClarify);
+  $('#approval-clarify-backdrop')?.addEventListener('click', closeClarify);
+  $('#approval-clarify-confirm')?.addEventListener('click', () => {
     showToast('Clarification requested', 'info');
     closeClarify();
   });

@@ -252,9 +252,9 @@ function buildProjectDetail(project: ProjectDetail, projectId: string): SafeHtml
                     <span class="text-sm font-bold text-primary">D</span>
                   </div>
                   <div style="flex:1">
-                    <textarea class="textarea" id="discussion-comment" placeholder="Add a comment or update..." style="min-height:5rem;resize:none"></textarea>
+                    <textarea class="textarea" id="project-discussion-comment" placeholder="Add a comment or update..." style="min-height:5rem;resize:none"></textarea>
                     <div style="display:flex;justify-content:flex-end;margin-top:0.5rem">
-                      <button class="btn btn-primary btn-sm" id="discussion-post-button" disabled>Post Comment</button>
+                      <button class="btn btn-primary btn-sm" id="project-discussion-post-btn" disabled>Post Comment</button>
                     </div>
                   </div>
                 </div>
@@ -372,8 +372,8 @@ export async function init(params?: Record<string, string>): Promise<void> {
   initTabs('.tab[data-tab]', '.tab-panel');
 
   // Comment box
-  const comment = $('#discussion-comment') as HTMLTextAreaElement;
-  const postBtn = $('#discussion-post-button') as HTMLButtonElement;
+  const comment = $('#project-discussion-comment') as HTMLTextAreaElement;
+  const postBtn = $('#project-discussion-post-btn') as HTMLButtonElement;
   comment?.addEventListener('input', () => { if (postBtn) postBtn.disabled = !comment.value.trim(); });
   postBtn?.addEventListener('click', () => {
     showToast('Comment posted', 'success');

@@ -33,7 +33,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
         <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem">
             <div class="flex items-center gap-4">
-              <button class="btn btn-ghost btn-icon" id="back-to-scoring">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="convert-back-to-scoring">${iconArrowLeft(20)}</button>
               <div class="flex items-center gap-3">
                 <div class="gradient-hero rounded-lg flex items-center justify-center" style="width:2.25rem;height:2.25rem;color:hsl(var(--primary-foreground))">${iconRocket(20)}</div>
                 <span class="text-xl font-display font-bold">Convert to Project</span>
@@ -145,7 +145,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               </div>
             </div>
 
-            <div class="card p-6" id="convert-confirm" style="border:2px solid ${isReadyToConvert() ? 'hsl(var(--success) / 0.3)' : 'transparent'};${isReadyToConvert() ? 'background:hsl(var(--success) / 0.05)' : ''}">
+            <div class="card p-6" id="convert-confirm-section" style="border:2px solid ${isReadyToConvert() ? 'hsl(var(--success) / 0.3)' : 'transparent'};${isReadyToConvert() ? 'background:hsl(var(--success) / 0.05)' : ''}">
               <div class="flex items-start gap-4">
                 <div style="width:3rem;height:3rem;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;${isReadyToConvert() ? 'background:hsl(var(--success));color:hsl(var(--success-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))'}">${iconRocket(24)}</div>
                 <div style="flex:1">
@@ -156,8 +156,8 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
                       : `${requiredFields.length - completedFieldCount()} required field${requiredFields.length - completedFieldCount() > 1 ? 's' : ''} remaining`}
                   </p>
                   <div class="flex gap-3">
-                    <button class="btn btn-ghost" id="back-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
-                    <button class="btn btn-hero gap-2" id="convert-btn" ${isReadyToConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
+                    <button class="btn btn-ghost" id="convert-back-to-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
+                    <button class="btn btn-hero gap-2" id="convert-submit-btn" ${isReadyToConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
                   </div>
                 </div>
               </div>
@@ -207,20 +207,20 @@ export async function init(params?: Record<string, string>): Promise<void> {
   document.querySelectorAll<HTMLElement>('.card input, .card select, .card textarea').forEach(el => {
     el.addEventListener('input', () => {
       syncFormFields();
-      const btn = $('#convert-btn') as HTMLButtonElement;
+      const btn = $('#convert-submit-btn') as HTMLButtonElement;
       if (btn) btn.disabled = !isReadyToConvert();
     });
     el.addEventListener('change', () => {
       syncFormFields();
-      const btn = $('#convert-btn') as HTMLButtonElement;
+      const btn = $('#convert-submit-btn') as HTMLButtonElement;
       if (btn) btn.disabled = !isReadyToConvert();
     });
   });
 
-  $('#convert-btn')?.addEventListener('click', () => {
+  $('#convert-submit-btn')?.addEventListener('click', () => {
     syncFormFields();
     if (!isReadyToConvert()) return;
-    const btn = $('#convert-btn')!;
+    const btn = $('#convert-submit-btn')!;
     setHtml(btn, html`${iconLoader(16)} Creating Project...`);
     (btn as HTMLButtonElement).disabled = true;
     setTimeout(() => {
@@ -229,6 +229,6 @@ export async function init(params?: Record<string, string>): Promise<void> {
     }, 2000);
   });
 
-  $('#back-to-scoring')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
-  $('#back-scoring-2')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
+  $('#convert-back-to-scoring')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
+  $('#convert-back-to-scoring-2')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
 }
