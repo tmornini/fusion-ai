@@ -1,5 +1,5 @@
-import { GET, getDbAdapter } from '../../../api/api';
-import type { CrunchColumnEntity, ProcessEntity } from '../../../api/types';
+import { GET } from '../../../api/api';
+import type { CrunchColumnEntity, ProcessEntity, ProcessStepEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
@@ -58,7 +58,7 @@ export async function getFlow(): Promise<Flow> {
     return { processName: '', processDescription: '', processDepartment: '', steps: [] };
   }
 
-  const steps = await getDbAdapter().processSteps.getByProcessId(process.id);
+  const steps = await GET(`processes/${process.id}/steps`) as ProcessStepEntity[];
 
   return {
     processName: process.name,

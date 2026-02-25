@@ -1,6 +1,6 @@
 // ============================================
 // FUSION AI — REST-style API
-// GET/PUT routing for the database adapter.
+// GET/PUT/DELETE routing for the database adapter.
 // ============================================
 
 import type { DbAdapter } from './db';
@@ -20,14 +20,16 @@ export function getDbAdapter(): DbAdapter {
 
 type GetHandler = (adapter: DbAdapter, params: string[]) => Promise<unknown>;
 type PutHandler = (adapter: DbAdapter, params: string[], payload: Record<string, unknown>) => Promise<unknown>;
+type DeleteHandler = (adapter: DbAdapter, params: string[]) => Promise<void>;
 
 interface Route {
   segments: string[];
   get?: GetHandler;
   put?: PutHandler;
+  delete?: DeleteHandler;
 }
 
-function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler }): Route {
+function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler; delete?: DeleteHandler }): Route {
   return { segments: pattern.split('/'), ...handlers };
 }
 
@@ -63,6 +65,12 @@ const routes: Route[] = [
   route('notification-preferences', {
     get: (db) => db.notificationPreferences.getAll(),
   }),
+  route('edge-outcomes', {
+    get: (db) => db.edgeOutcomes.getAll(),
+  }),
+  route('edge-metrics', {
+    get: (db) => db.edgeMetrics.getAll(),
+  }),
 
   // ── Singletons ─────────────────────────────
   route('company-settings', {
@@ -85,18 +93,25 @@ const routes: Route[] = [
   route('ideas/:id', {
     get: (db, [id]) => db.ideas.getById(id!),
     put: (db, [id], payload) => db.ideas.put(id!, payload),
+    delete: (db, [id]) => db.ideas.delete(id!),
   }),
   route('projects/:id', {
     get: (db, [id]) => db.projects.getById(id!),
     put: (db, [id], payload) => db.projects.put(id!, payload),
+    delete: (db, [id]) => db.projects.delete(id!),
   }),
   route('edges/:id', {
     get: (db, [id]) => db.edges.getById(id!),
     put: (db, [id], payload) => db.edges.put(id!, payload),
+    delete: (db, [id]) => db.edges.delete(id!),
   }),
   route('processes/:id', {
     get: (db, [id]) => db.processes.getById(id!),
     put: (db, [id], payload) => db.processes.put(id!, payload),
+    delete: (db, [id]) => db.processes.delete(id!),
+  }),
+  route('processes/:processId/steps', {
+    get: (db, [processId]) => db.processSteps.getByProcessId(processId!),
   }),
   route('activities/:id', {
     put: (db, [id], payload) => db.activities.put(id!, payload),
@@ -112,6 +127,9 @@ const routes: Route[] = [
   }),
 
   // ── Nested: idea children ──────────────────
+  route('ideas/:ideaId/edge', {
+    get: (db, [ideaId]) => db.edges.getByIdeaId(ideaId!),
+  }),
   route('ideas/:ideaId/score', {
     get: (db, [ideaId]) => db.ideaScores.getByIdeaId(ideaId!),
     put: (db, [ideaId], payload) => db.ideaScores.put(ideaId!, payload),
@@ -189,7 +207,7 @@ function matchRoute(pathSegments: string[]): { route: Route; params: string[] } 
   return null;
 }
 
-// ── GET / PUT ───────────────────────────────
+// ── GET / PUT / DELETE ──────────────────────
 
 export async function GET(resource: string): Promise<unknown> {
   const pathSegments = resource.split('/').filter(Boolean);
@@ -203,4 +221,11 @@ export async function PUT(resource: string, payload: Record<string, unknown>): P
   const match = matchRoute(pathSegments);
   if (match?.route.put) return match.route.put(getDbAdapter(), match.params, payload);
   throw new Error(`PUT: Unknown resource "${resource}"`);
+}
+
+export async function DELETE(resource: string): Promise<void> {
+  const pathSegments = resource.split('/').filter(Boolean);
+  const match = matchRoute(pathSegments);
+  if (match?.route.delete) return match.route.delete(getDbAdapter(), match.params);
+  throw new Error(`DELETE: Unknown resource "${resource}"`);
 }

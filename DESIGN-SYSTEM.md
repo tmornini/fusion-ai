@@ -115,12 +115,12 @@ All grays are derived from blue tones for brand cohesion. **Never use pure black
 
 ```html
 <!-- Standard card -->
-<div class="fusion-card p-6">
+<div class="card p-6">
   Content
 </div>
 
 <!-- Flat card (no hover effect) -->
-<div class="fusion-card-flat p-4">
+<div class="card-flat p-4">
   Content
 </div>
 ```
@@ -208,7 +208,6 @@ CSS custom properties on `:root` define light theme values. The `[data-theme="da
 | `fast` | 150ms | Hover, focus |
 | `normal` | 200ms | Transitions |
 | `slow` | 300ms | Modals, drawers |
-| `slower` | 500ms | Page transitions |
 
 ### Easing
 - **Default**: `cubic-bezier(0.4, 0, 0.2, 1)` - Most transitions
@@ -273,7 +272,6 @@ CSS custom properties on `:root` define light theme values. The `[data-theme="da
 | `md` | 768px | Tablets |
 | `lg` | 1024px | Small laptops |
 | `xl` | 1280px | Desktops |
-| `2xl` | 1400px | Large screens |
 
 ### Layout Rules
 - **Mobile**: Single column, full-width cards

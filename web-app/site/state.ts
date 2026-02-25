@@ -4,6 +4,13 @@
 // ============================================
 
 // ------------------------------------
+// localStorage Key Constants
+// ------------------------------------
+
+const STORAGE_KEY_THEME = 'fusion-theme';
+const STORAGE_KEY_SIDEBAR = 'fusion-sidebar-collapsed';
+
+// ------------------------------------
 // State Management
 // ------------------------------------
 
@@ -20,7 +27,7 @@ interface AppState {
 type StateListener = () => void;
 
 const state: AppState = {
-  theme: (localStorage.getItem('fusion-theme') as AppState['theme']) || 'system',
+  theme: (localStorage.getItem(STORAGE_KEY_THEME) as AppState['theme']) || 'system',
   isMobile: window.matchMedia('(max-width: 768px)').matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
@@ -60,7 +67,7 @@ function applyTheme(): void {
 }
 
 function setTheme(theme: AppState['theme']): void {
-  localStorage.setItem('fusion-theme', theme);
+  localStorage.setItem(STORAGE_KEY_THEME, theme);
   setState({ theme });
   applyTheme();
 }
@@ -80,4 +87,4 @@ window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
 });
 
 export type { AppState };
-export { state, setState, subscribe, computeTheme, applyTheme, setTheme };
+export { STORAGE_KEY_THEME, STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme };

@@ -18,7 +18,7 @@ const KEY_PREFIX = 'fusion-ai:';
 
 // ── Helpers ────────────────────────────────
 
-function readTable<T>(tableName: string): T[] {
+function readTable<T>(tableName: string, includeDeleted = false): T[] {
   const raw = localStorage.getItem(KEY_PREFIX + tableName);
   if (!raw) return [];
   try {
@@ -26,6 +26,9 @@ function readTable<T>(tableName: string): T[] {
     if (!Array.isArray(parsed)) {
       console.warn(`fusion-ai: table "${tableName}" is not an array, resetting.`);
       return [];
+    }
+    if (!includeDeleted) {
+      return parsed.filter((row: Record<string, unknown>) => !row.deleted_at) as T[];
     }
     return parsed as T[];
   } catch {
@@ -79,8 +82,12 @@ function createEntityStore<T extends { id: string }>(tableName: string): EntityS
       return rows[index >= 0 ? index : rows.length - 1]!;
     },
     async delete(id: string): Promise<void> {
-      const rows = readTable<T>(tableName);
-      writeTable(tableName, rows.filter(entity => entity.id !== id));
+      const rows = readTable<T>(tableName, true);
+      const entity = rows.find(e => e.id === id);
+      if (entity) {
+        (entity as Record<string, unknown>).deleted_at = new Date().toISOString();
+        writeTable(tableName, rows);
+      }
     },
   };
 }
@@ -185,7 +192,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     async exportSnapshot(): Promise<string> {
       const snapshot: Record<string, unknown[]> = {};
       for (const table of TABLE_NAMES) {
-        snapshot[table] = readTable(table);
+        snapshot[table] = readTable(table, true);
       }
       return JSON.stringify(snapshot, null, 2);
     },

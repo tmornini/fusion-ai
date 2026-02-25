@@ -32,7 +32,7 @@ The API layer is a set of TypeScript modules that provide a REST-style interface
 - **`api/types.ts`** — Row types (snake_case) matching schema, shared type aliases (`Id`, `ConfidenceLevel`, `EdgeStatus`, `IdeaStatus`), `User` class wrapping `UserEntity`, and `toBool` utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
-- **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` URL routing
+- **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` / `DELETE(resource)` URL routing
 - **`api/seed.ts`** — Mock data seeding function
 
 The `DbAdapter` interface is designed for easy migration to Postgres or other backends — implement the same interface and swap the import.
@@ -61,7 +61,7 @@ Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `web-app/site/fonts/`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~80+ inline SVG functions in `web-app/site/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
+- **Icons**: ~100 inline SVG functions in `web-app/site/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
 - **Charts**: SVG rendering functions in `web-app/site/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
@@ -80,7 +80,7 @@ api/
   types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, EdgeStatus, IdeaStatus), User class, toBool
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema)
   db-localstorage.ts          # localStorage implementation with JSON serialization
-  api.ts                      # GET/PUT URL routing
+  api.ts                      # GET/PUT/DELETE URL routing
   seed.ts                     # Mock data seeding
 
 web-app/
@@ -90,7 +90,7 @@ web-app/
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
     script.ts                 # Page dispatch, navigation, layout behavior, toast
-    icons.ts                  # 90+ SVG icon functions and lookup map
+    icons.ts                  # ~100 SVG icon functions and lookup map
     state.ts                  # AppState, theme, mobile detection, pub-sub
     data/                     # ~28 async adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
@@ -176,9 +176,9 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
 1. Composes HTML pages: runs `web-app/site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
-2. Copies 7 standalone pages' `index.html` to the build directory
+2. Copies 8 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
-4. Concatenates CSS modules (`web-app/site/styles/*.css`) into `site/style.css`, copies `fonts/` and `favicon.ico` to the build directory
+4. Bundles and minifies CSS via esbuild into `site/style.css`, copies `fonts/` and `favicon.ico` to the build directory
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.

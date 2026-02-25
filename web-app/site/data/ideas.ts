@@ -104,7 +104,7 @@ export async function getIdeaForScoring(ideaId: string): Promise<{ title: string
   if (!idea) throw new Error(`Idea "${ideaId}" not found.`);
   return {
     title: idea.title,
-    problemStatement: idea.problem_statement || 'Marketing team spends 20+ hours weekly manually segmenting customers, leading to delayed campaigns and missed opportunities.',
+    problemStatement: idea.problem_statement || '',
   };
 }
 
@@ -150,12 +150,12 @@ export async function getIdeaForConversion(ideaId: string): Promise<ConversionId
   return {
     id: idea.id,
     title: idea.title,
-    problemStatement: idea.problem_statement || 'Marketing team spends 20+ hours weekly manually segmenting customers.',
-    proposedSolution: idea.proposed_solution || 'Implement machine learning model to automatically segment customers.',
-    expectedOutcome: idea.expected_outcome || 'Reduce segmentation time by 80% and increase conversion rates by 25%.',
+    problemStatement: idea.problem_statement || '',
+    proposedSolution: idea.proposed_solution || '',
+    expectedOutcome: idea.expected_outcome || '',
     score: scoreRow?.overall || idea.score,
-    estimatedTime: scoreRow?.estimated_time || '6-8 weeks',
-    estimatedCost: scoreRow?.estimated_cost || '$45,000 - $65,000',
+    estimatedTime: scoreRow?.estimated_time || '',
+    estimatedCost: scoreRow?.estimated_cost || '',
   };
 }
 
@@ -194,24 +194,24 @@ export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> 
   return {
     id: idea.id,
     title: idea.title,
-    description: idea.description || `Implement an intelligent system for ${idea.title.toLowerCase()}.`,
+    description: idea.description || '',
     submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
-    submittedAt: idea.submitted_at || 'January 15, 2024',
+    submittedAt: idea.submitted_at || '',
     priority: idea.score >= 80 ? 'high' : idea.score >= 60 ? 'medium' : 'low',
     score: idea.score,
-    category: idea.category || 'General',
+    category: idea.category || '',
     impact: {
-      level: idea.impact_label || 'High',
-      description: idea.description || `Expected to significantly improve operations through ${idea.title.toLowerCase()}.`,
+      level: idea.impact_label || '',
+      description: idea.description || '',
     },
     effort: {
-      level: idea.effort_label || 'Medium',
-      timeEstimate: idea.effort_time_estimate || '3-4 months',
-      teamSize: idea.effort_team_size || '4-5 engineers',
+      level: idea.effort_label || '',
+      timeEstimate: idea.effort_time_estimate || '',
+      teamSize: idea.effort_team_size || '',
     },
     cost: {
-      estimate: idea.cost_estimate || '$120,000 - $150,000',
-      breakdown: idea.cost_breakdown || 'Development: $80K, API costs: $20K/year, Training: $10K',
+      estimate: idea.cost_estimate || '',
+      breakdown: idea.cost_breakdown || '',
     },
     risks: parseJson<ApprovalIdea['risks']>(idea.risks),
     assumptions: parseJson<string[]>(idea.assumptions),

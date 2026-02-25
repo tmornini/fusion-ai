@@ -4,7 +4,7 @@
 // ============================================
 
 import type { AppState } from './state';
-import { state, setState, subscribe, computeTheme, applyTheme, setTheme } from './state';
+import { STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme } from './state';
 import { $, $$, escapeHtml } from './dom';
 import { showToast } from './toast';
 import type { SkeletonType } from './skeleton';
@@ -292,7 +292,7 @@ function initSidebar(): void {
   const sidebar = document.getElementById('desktop-sidebar');
   const mainContent = document.querySelector('.main-content') as HTMLElement;
 
-  if (localStorage.getItem('fusion-sidebar-collapsed') === 'true') {
+  if (localStorage.getItem(STORAGE_KEY_SIDEBAR) === 'true') {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
     state.isSidebarCollapsed = true;
@@ -302,13 +302,13 @@ function initSidebar(): void {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
     state.isSidebarCollapsed = true;
-    localStorage.setItem('fusion-sidebar-collapsed', 'true');
+    localStorage.setItem(STORAGE_KEY_SIDEBAR, 'true');
   });
   document.getElementById('sidebar-expand')?.addEventListener('click', () => {
     sidebar?.classList.remove('sidebar-collapsed');
     mainContent?.classList.remove('sidebar-collapsed');
     state.isSidebarCollapsed = false;
-    localStorage.setItem('fusion-sidebar-collapsed', 'false');
+    localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false');
   });
 
   document.querySelectorAll<HTMLElement>('[data-section]').forEach(btn => {

@@ -1,7 +1,6 @@
-import { getDbAdapter } from '../../../api/api';
-import type { Id, ConfidenceLevel } from '../../../api/types';
 import { GET } from '../../../api/api';
-import type { UserEntity } from '../../../api/types';
+import type { Id, ConfidenceLevel } from '../../../api/types';
+import type { UserEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity } from '../../../api/types';
 import { User } from '../../../api/types';
 
 export function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
@@ -38,13 +37,12 @@ export interface EdgeData {
 }
 
 export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<EdgeData | null> {
-  const db = getDbAdapter();
-  const edge = await db.edges.getByIdeaId(ideaId);
+  const edge = await GET(`ideas/${ideaId}/edge`) as EdgeEntity | null;
   if (!edge) return null;
 
   const [outcomes, allMetrics, userMap] = await Promise.all([
-    db.edgeOutcomes.getByEdgeId(edge.id),
-    db.edgeMetrics.getAll(),
+    GET(`edges/${edge.id}/outcomes`) as Promise<EdgeOutcomeEntity[]>,
+    GET('edge-metrics') as Promise<EdgeMetricEntity[]>,
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 

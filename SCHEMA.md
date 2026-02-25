@@ -294,7 +294,7 @@ Singleton table (single row, `id = '1'`).
 | label | TEXT | '' |
 | icon | TEXT | '' |
 
-### notification_prefs
+### notification_preferences
 
 | Column | Type | Default |
 |--------|------|---------|
@@ -305,7 +305,7 @@ Singleton table (single row, `id = '1'`).
 | is_email_enabled | INTEGER | 1 |
 | is_push_enabled | INTEGER | 0 |
 
-### account_config
+### account
 
 Singleton table (single row, `id = '1'`).
 

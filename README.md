@@ -28,7 +28,7 @@ Preview locally:
 
 ```sh
 python3 -m http.server 8080
-# then open http://localhost:8080/landing/index.html
+# then open http://localhost:8080/web-app/entry/landing/index.html
 ```
 
 ## Build
@@ -40,7 +40,7 @@ python3 -m http.server 8080
 Requires a clean git working directory. The build:
 1. Composes dashboard pages by merging `web-app/site/layout.html` with each page's `index.html`
 2. Bundles TypeScript via esbuild into a single JS file
-3. Concatenates CSS modules (styles/*.css) into style.css, copies fonts/ and favicon.ico
+3. Bundles and minifies CSS via esbuild into style.css, copies fonts/ and favicon.ico
 4. Produces a distribution ZIP named `fusion-ai-<sha>.zip`
 
 ## Tech Stack
@@ -53,7 +53,7 @@ Requires a clean git working directory. The build:
 - Standard `<a href>` navigation between standalone HTML pages
 - SVG charts (bar, line, donut, area)
 - Command palette (Cmd+K) with keyboard navigation
-- 80+ inline SVG icons
+- ~100 inline SVG icons
 - Self-hosted IBM Plex Sans, Inter, and IBM Plex Mono fonts
 
 ## Architecture

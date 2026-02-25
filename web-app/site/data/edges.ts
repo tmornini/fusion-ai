@@ -1,5 +1,5 @@
-import { GET, getDbAdapter } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import { GET } from '../../../api/api';
+import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
 import { buildUserMap, groupBy } from './helpers';
 
 export interface EdgeIdea {
@@ -17,8 +17,8 @@ export async function getIdeaForEdge(ideaId: string): Promise<EdgeIdea> {
   ]);
   return {
     title: idea.title,
-    problem: idea.problem_statement || 'Manual customer segmentation is time-consuming and often inaccurate, leading to misaligned marketing efforts.',
-    solution: idea.proposed_solution || 'Implement ML-based customer clustering that automatically segments users based on behavior patterns.',
+    problem: idea.problem_statement || '',
+    solution: idea.proposed_solution || '',
     submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
     score: idea.score,
   };
@@ -44,11 +44,10 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
     GET('ideas') as Promise<IdeaEntity[]>,
     buildUserMap(),
   ]);
-  const db = getDbAdapter();
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
   const [allOutcomes, allMetrics] = await Promise.all([
-    db.edgeOutcomes.getAll(),
-    db.edgeMetrics.getAll(),
+    GET('edge-outcomes') as Promise<EdgeOutcomeEntity[]>,
+    GET('edge-metrics') as Promise<EdgeMetricEntity[]>,
   ]);
 
   const outcomesByEdgeId = groupBy(allOutcomes, outcome => outcome.edge_id);
