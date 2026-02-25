@@ -63,13 +63,13 @@ export async function init(): Promise<void> {
             <form id="auth-form" class="flex flex-col gap-5" novalidate>
               <div>
                 <label class="label mb-2 block" for="email">Email</label>
-                <input class="input" id="email" type="email" placeholder="you@company.com" autocomplete="email" />
+                <input class="input" id="email" name="email" type="email" placeholder="you@company.com" autocomplete="username" />
                 <p class="text-sm text-error mt-1 hidden" id="email-error"></p>
               </div>
 
               <div>
                 <label class="label mb-2 block" for="password">Password</label>
-                <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+                <input class="input" id="password" name="password" type="password" placeholder="••••••••" autocomplete="current-password" />
                 <p class="text-sm text-error mt-1 hidden" id="password-error"></p>
               </div>
 
@@ -77,7 +77,7 @@ export async function init(): Promise<void> {
                 <label class="label mb-2 block" for="companyName">
                   Company name <span class="text-muted">(optional)</span>
                 </label>
-                <input class="input" id="companyName" type="text" placeholder="Acme Inc." />
+                <input class="input" id="companyName" name="companyName" type="text" placeholder="Acme Inc." autocomplete="organization" />
               </div>
 
               <button type="submit" class="btn btn-primary w-full" style="height:3rem;font-size:var(--text-base)" id="submit-btn">
@@ -130,6 +130,8 @@ export async function init(): Promise<void> {
     togglePrompt.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
     toggleMode.textContent = isLogin ? 'Sign up' : 'Sign in';
     setHtml(submitBtn, html`${isLogin ? 'Sign in' : 'Create account'} ${iconArrowRight(20)}`);
+    emailInput.setAttribute('autocomplete', isLogin ? 'username' : 'email');
+    passwordInput.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
   }
 
   toggleMode.addEventListener('click', () => {
