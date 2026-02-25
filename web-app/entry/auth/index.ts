@@ -63,7 +63,7 @@ export async function init(): Promise<void> {
             <form id="auth-form" class="flex flex-col gap-5" novalidate>
               <div>
                 <label class="label mb-2 block" for="email">Email</label>
-                <input class="input" id="email" name="email" type="email" placeholder="you@company.com" autocomplete="username" />
+                <input class="input" id="email" name="username" type="email" placeholder="you@company.com" autocomplete="username" />
                 <p class="text-sm text-error mt-1 hidden" id="email-error"></p>
               </div>
 
