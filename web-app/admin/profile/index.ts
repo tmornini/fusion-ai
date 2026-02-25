@@ -19,12 +19,12 @@ export async function init(): Promise<void> {
   const profile = await getProfile();
 
   // Breadcrumb chevron
-  const chevronEl = $('#breadcrumb-chevron');
-  if (chevronEl) setHtml(chevronEl, iconChevronRight(14));
+  const breadcrumbSeparatorEl = $('#breadcrumb-separator');
+  if (breadcrumbSeparatorEl) setHtml(breadcrumbSeparatorEl, iconChevronRight(14));
 
   // Icons
-  const iconSaveEl = $('#icon-save');
-  if (iconSaveEl) setHtml(iconSaveEl, iconSave(16));
+  const saveBtnIconEl = $('#save-btn-icon');
+  if (saveBtnIconEl) setHtml(saveBtnIconEl, iconSave(16));
   const avatarBtn = $('#avatar-btn');
   if (avatarBtn) setHtml(avatarBtn, iconCamera(14));
   const emailLabel = $('#email-label');

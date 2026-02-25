@@ -139,14 +139,14 @@ export async function init(): Promise<void> {
   let currentView = 'priority';
 
   // Populate icons in static elements
-  const iconPlusEl = $('#icon-plus');
-  if (iconPlusEl) setHtml(iconPlusEl, iconPlus(16));
-  const iconWandEl = $('#icon-wand');
-  if (iconWandEl) setHtml(iconWandEl, iconWand(16));
-  const iconLayoutGridEl = $('#icon-layout-grid');
-  if (iconLayoutGridEl) setHtml(iconLayoutGridEl, iconLayoutGrid(16));
-  const iconBarChartEl = $('#icon-bar-chart');
-  if (iconBarChartEl) setHtml(iconBarChartEl, iconBarChart(16));
+  const createBtnIconEl = $('#create-btn-icon');
+  if (createBtnIconEl) setHtml(createBtnIconEl, iconPlus(16));
+  const createBtnAccentEl = $('#create-btn-accent');
+  if (createBtnAccentEl) setHtml(createBtnAccentEl, iconWand(16));
+  const priorityViewIconEl = $('#priority-view-icon');
+  if (priorityViewIconEl) setHtml(priorityViewIconEl, iconLayoutGrid(16));
+  const performanceViewIconEl = $('#performance-view-icon');
+  if (performanceViewIconEl) setHtml(performanceViewIconEl, iconBarChart(16));
 
   // Flow indicator
   const flowEl = $('#flow-indicator');

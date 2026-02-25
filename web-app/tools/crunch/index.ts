@@ -124,9 +124,9 @@ function buildLabelStep(): SafeHtml {
               ${isExpanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
-                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-column-field="${column.id}:friendlyName" placeholder="e.g., Customer ID" value="${column.friendlyName}"/></div>
+                    <div><label class="label mb-1 text-xs">What would you call this column?</label><input class="input" data-column-id="${column.id}" data-field-name="friendlyName" placeholder="e.g., Customer ID" value="${column.friendlyName}"/></div>
                     <div><label class="label mb-1 text-xs">Data type</label>
-                      <select class="input" data-column-field="${column.id}:dataType">
+                      <select class="input" data-column-id="${column.id}" data-field-name="dataType">
                         <option value="text" ${trusted(column.dataType === 'text' ? 'selected' : '')}>Text</option>
                         <option value="number" ${trusted(column.dataType === 'number' ? 'selected' : '')}>Number</option>
                         <option value="date" ${trusted(column.dataType === 'date' ? 'selected' : '')}>Date</option>
@@ -134,8 +134,8 @@ function buildLabelStep(): SafeHtml {
                       </select>
                     </div>
                   </div>
-                  ${column.isAcronym ? html`<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${column.originalName}" stand for?</label><input class="input" data-column-field="${column.id}:acronymExpansion" placeholder="e.g., Customer Identifier" value="${column.acronymExpansion}"/></div>` : html``}
-                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-column-field="${column.id}:description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${column.description}</textarea></div>
+                  ${column.isAcronym ? html`<div style="margin-top:1rem"><label class="label mb-1 text-xs">What does "${column.originalName}" stand for?</label><input class="input" data-column-id="${column.id}" data-field-name="acronymExpansion" placeholder="e.g., Customer Identifier" value="${column.acronymExpansion}"/></div>` : html``}
+                  <div style="margin-top:1rem"><label class="label mb-1 text-xs">Describe what this column contains</label><textarea class="textarea" data-column-id="${column.id}" data-field-name="description" placeholder="e.g., A unique identifier assigned to each customer..." style="resize:none" rows="2">${column.description}</textarea></div>
                 </div>
               ` : html``}
             </div>`;
@@ -165,8 +165,9 @@ function buildReviewStep(): SafeHtml {
 }
 
 function syncFormFields(): void {
-  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-column-field]').forEach(el => {
-    const [columnId, field] = (el.getAttribute('data-column-field') || '').split(':');
+  document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[data-column-id][data-field-name]').forEach(el => {
+    const columnId = el.getAttribute('data-column-id');
+    const field = el.getAttribute('data-field-name');
     const column = columns.find(candidate => candidate.id === columnId);
     if (column && field) {
       const columnKey = field as keyof CrunchColumn;
@@ -223,7 +224,7 @@ function bindCrunchEvents(): void {
       });
     });
 
-    document.querySelectorAll<HTMLElement>('[data-column-field]').forEach(el => {
+    document.querySelectorAll<HTMLElement>('[data-column-id][data-field-name]').forEach(el => {
       el.addEventListener('input', () => {
         syncFormFields();
         const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;

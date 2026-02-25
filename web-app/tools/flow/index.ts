@@ -38,12 +38,12 @@ function syncFormFields(): void {
   if (dept) processDepartment = dept.value;
 
   processSteps.forEach(step => {
-    const title = $(`[data-step-field="${step.id}:title"]`) as HTMLInputElement;
-    const descriptionField = $(`[data-step-field="${step.id}:description"]`) as HTMLTextAreaElement;
-    const owner = $(`[data-step-field="${step.id}:owner"]`) as HTMLInputElement;
-    const role = $(`[data-step-field="${step.id}:role"]`) as HTMLInputElement;
-    const durationInput = $(`[data-step-field="${step.id}:duration"]`) as HTMLInputElement;
-    const type = $(`[data-step-field="${step.id}:type"]`) as HTMLSelectElement;
+    const title = $(`[data-step-id="${step.id}"][data-field-name="title"]`) as HTMLInputElement;
+    const descriptionField = $(`[data-step-id="${step.id}"][data-field-name="description"]`) as HTMLTextAreaElement;
+    const owner = $(`[data-step-id="${step.id}"][data-field-name="owner"]`) as HTMLInputElement;
+    const role = $(`[data-step-id="${step.id}"][data-field-name="role"]`) as HTMLInputElement;
+    const durationInput = $(`[data-step-id="${step.id}"][data-field-name="duration"]`) as HTMLInputElement;
+    const type = $(`[data-step-id="${step.id}"][data-field-name="type"]`) as HTMLSelectElement;
     if (title) step.title = title.value;
     if (descriptionField) step.description = descriptionField.value;
     if (owner) step.owner = owner.value;
@@ -80,8 +80,8 @@ function buildEditMode(): SafeHtml {
                     ${step.owner ? html`<div class="flex items-center gap-2 text-xs text-muted">${iconUsers(12)} <span>${step.owner}</span>${step.duration ? html` <span class="hidden-mobile">•</span> ${iconClock(12)} <span class="hidden-mobile">${step.duration}</span>` : html``}</div>` : html``}
                   </div>
                   <div class="flex items-center gap-1">
-                    <button class="btn btn-ghost btn-icon btn-sm" data-move-step="${step.id}:up" ${trusted(i === 0 ? 'disabled' : '')}>${iconChevronUp(16)}</button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-move-step="${step.id}:down" ${trusted(i === processSteps.length - 1 ? 'disabled' : '')}>${iconChevronDown(16)}</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-action="move-step" data-step-id="${step.id}" data-direction="up" ${trusted(i === 0 ? 'disabled' : '')}>${iconChevronUp(16)}</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-action="move-step" data-step-id="${step.id}" data-direction="down" ${trusted(i === processSteps.length - 1 ? 'disabled' : '')}>${iconChevronDown(16)}</button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-remove-step="${step.id}" style="color:hsl(var(--error))">${iconTrash(16)}</button>
                     ${isExpanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
                   </div>
@@ -90,13 +90,13 @@ function buildEditMode(): SafeHtml {
               ${isExpanded ? html`
                 <div style="padding:0 1rem 1rem;border-top:1px solid hsl(var(--border));padding-top:1rem;background:hsl(var(--muted)/0.2)">
                   <div class="convert-grid" style="gap:1rem">
-                    <div style="grid-column:span 2"><label class="label mb-1 text-xs">What happens in this step?</label><input class="input" data-step-field="${step.id}:title" value="${step.title}" placeholder="e.g., Review and approve customer application"/></div>
-                    <div style="grid-column:span 2"><label class="label mb-1 text-xs">Describe this step in detail</label><textarea class="textarea" data-step-field="${step.id}:description" style="resize:none" placeholder="Explain what needs to happen...">${step.description}</textarea></div>
-                    <div><label class="label mb-1 text-xs">Who is responsible?</label><input class="input" data-step-field="${step.id}:owner" value="${step.owner}" placeholder="e.g., Customer Success Team"/></div>
-                    <div><label class="label mb-1 text-xs">Specific Role</label><input class="input" data-step-field="${step.id}:role" value="${step.role}" placeholder="e.g., Account Manager"/></div>
-                    <div><label class="label mb-1 text-xs">How long does this take?</label><input class="input" data-step-field="${step.id}:duration" value="${step.duration}" placeholder="e.g., 30 minutes"/></div>
+                    <div style="grid-column:span 2"><label class="label mb-1 text-xs">What happens in this step?</label><input class="input" data-step-id="${step.id}" data-field-name="title" value="${step.title}" placeholder="e.g., Review and approve customer application"/></div>
+                    <div style="grid-column:span 2"><label class="label mb-1 text-xs">Describe this step in detail</label><textarea class="textarea" data-step-id="${step.id}" data-field-name="description" style="resize:none" placeholder="Explain what needs to happen...">${step.description}</textarea></div>
+                    <div><label class="label mb-1 text-xs">Who is responsible?</label><input class="input" data-step-id="${step.id}" data-field-name="owner" value="${step.owner}" placeholder="e.g., Customer Success Team"/></div>
+                    <div><label class="label mb-1 text-xs">Specific Role</label><input class="input" data-step-id="${step.id}" data-field-name="role" value="${step.role}" placeholder="e.g., Account Manager"/></div>
+                    <div><label class="label mb-1 text-xs">How long does this take?</label><input class="input" data-step-id="${step.id}" data-field-name="duration" value="${step.duration}" placeholder="e.g., 30 minutes"/></div>
                     <div><label class="label mb-1 text-xs">Step Type</label>
-                      <select class="input" data-step-field="${step.id}:type">
+                      <select class="input" data-step-id="${step.id}" data-field-name="type">
                         <option value="start" ${trusted(step.type === 'start' ? 'selected' : '')}>Start</option>
                         <option value="action" ${trusted(step.type === 'action' ? 'selected' : '')}>Action</option>
                         <option value="decision" ${trusted(step.type === 'decision' ? 'selected' : '')}>Decision</option>
@@ -108,7 +108,7 @@ function buildEditMode(): SafeHtml {
                       <div class="flex flex-wrap gap-1.5">
                         ${Object.entries(toolIconConfig).map(([name, iconFn]) => {
                           const isSelected = step.tools.includes(name);
-                          return html`<button data-toggle-tool="${step.id}:${name}" style="display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;border:none;cursor:pointer;${trusted(isSelected ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">${iconFn(14)} ${name}</button>`;
+                          return html`<button data-action="toggle-tool" data-step-id="${step.id}" data-tool-name="${name}" style="display:flex;align-items:center;gap:0.375rem;padding:0.25rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;border:none;cursor:pointer;${trusted(isSelected ? 'background:hsl(var(--primary));color:hsl(var(--primary-foreground))' : 'background:hsl(var(--muted));color:hsl(var(--muted-foreground))')}">${iconFn(14)} ${name}</button>`;
                         })}
                       </div>
                     </div>
@@ -216,11 +216,12 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-move-step]').forEach(el => {
+  document.querySelectorAll<HTMLElement>('[data-action="move-step"]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       syncFormFields();
-      const [id, dir] = (el.getAttribute('data-move-step') || '').split(':');
+      const id = el.getAttribute('data-step-id');
+      const dir = el.getAttribute('data-direction');
       const stepIndex = processSteps.findIndex(step => step.id === id);
       if (stepIndex < 0) return;
       const targetIndex = dir === 'up' ? stepIndex - 1 : stepIndex + 1;
@@ -239,11 +240,11 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-toggle-tool]').forEach(el => {
+  document.querySelectorAll<HTMLElement>('[data-action="toggle-tool"]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
-      const parts = (el.getAttribute('data-toggle-tool') || '').split(':');
-      const stepId = parts[0]!, tool = parts[1]!;
+      const stepId = el.getAttribute('data-step-id')!;
+      const tool = el.getAttribute('data-tool-name')!;
       const step = processSteps.find(candidate => candidate.id === stepId);
       if (!step) return;
       step.tools = step.tools.includes(tool) ? step.tools.filter(toolName => toolName !== tool) : [...step.tools, tool];
@@ -254,7 +255,7 @@ function bindFlowEvents(): void {
   $('#flow-add-step')?.addEventListener('click', () => {
     syncFormFields();
     processSteps.push({
-      id: Date.now().toString(), title: '', description: '', owner: '', role: '',
+      id: crypto.randomUUID(), title: '', description: '', owner: '', role: '',
       tools: [], duration: '', sortOrder: processSteps.length + 1, type: 'action',
     });
     expandedStepId = processSteps[processSteps.length - 1]!.id;

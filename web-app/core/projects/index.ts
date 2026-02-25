@@ -102,10 +102,10 @@ export async function init(): Promise<void> {
   let currentView: 'priority' | 'performance' = 'priority';
 
   // Populate icons
-  const iconLayoutGridElement = $('#icon-layout-grid');
-  if (iconLayoutGridElement) setHtml(iconLayoutGridElement, iconLayoutGrid(16));
-  const iconBarChartElement = $('#icon-bar-chart');
-  if (iconBarChartElement) setHtml(iconBarChartElement, iconBarChart(16));
+  const priorityViewIconEl = $('#priority-view-icon');
+  if (priorityViewIconEl) setHtml(priorityViewIconEl, iconLayoutGrid(16));
+  const performanceViewIconEl = $('#performance-view-icon');
+  if (performanceViewIconEl) setHtml(performanceViewIconEl, iconBarChart(16));
 
   // Status badges
   const counts = {

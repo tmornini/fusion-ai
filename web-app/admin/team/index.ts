@@ -164,10 +164,10 @@ export async function init(): Promise<void> {
   }
 
   // Populate icons
-  const iconPlusEl = $('#icon-plus');
-  if (iconPlusEl) setHtml(iconPlusEl, iconPlus(16));
-  const iconSearchEl = $('#icon-search');
-  if (iconSearchEl) setHtml(iconSearchEl, iconSearch(16));
+  const addMemberBtnIconEl = $('#add-member-btn-icon');
+  if (addMemberBtnIconEl) setHtml(addMemberBtnIconEl, iconPlus(16));
+  const searchFieldIconEl = $('#search-field-icon');
+  if (searchFieldIconEl) setHtml(searchFieldIconEl, iconSearch(16));
 
   // Summary
   const summaryEl = $('#team-summary');

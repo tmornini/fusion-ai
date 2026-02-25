@@ -19,7 +19,6 @@ let edgeData: EdgeData = {
   confidence: '',
   owner: 'Sarah Chen',
 };
-let nextId = 1;
 let currentIdea: EdgeIdea | null = null;
 
 function computeCompletionStatus() {
@@ -70,10 +69,10 @@ function buildEdgePage(ideaId: string): SafeHtml {
             : html`${outcome.metrics.map(metric => html`
               <div class="p-2 rounded mb-2" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
                 <div class="flex items-center gap-2">
-                  <input class="input" style="flex:1;height:2rem;font-size:0.875rem" value="${metric.name}" placeholder="Metric name" data-metric="${outcome.id}|${metric.id}|name" />
-                  <input class="input" style="width:5rem;height:2rem;font-size:0.875rem" value="${metric.target}" placeholder="Target" data-metric="${outcome.id}|${metric.id}|target" />
-                  <input class="input" style="width:4rem;height:2rem;font-size:0.875rem" value="${metric.unit}" placeholder="Unit" data-metric="${outcome.id}|${metric.id}|unit" />
-                  <button class="btn btn-ghost btn-icon btn-xs" data-remove-metric="${outcome.id}|${metric.id}">${iconTrash(14)}</button>
+                  <input class="input" style="flex:1;height:2rem;font-size:0.875rem" value="${metric.name}" placeholder="Metric name" data-outcome-id="${outcome.id}" data-metric-id="${metric.id}" data-metric-field="name" />
+                  <input class="input" style="width:5rem;height:2rem;font-size:0.875rem" value="${metric.target}" placeholder="Target" data-outcome-id="${outcome.id}" data-metric-id="${metric.id}" data-metric-field="target" />
+                  <input class="input" style="width:4rem;height:2rem;font-size:0.875rem" value="${metric.unit}" placeholder="Unit" data-outcome-id="${outcome.id}" data-metric-id="${metric.id}" data-metric-field="unit" />
+                  <button class="btn btn-ghost btn-icon btn-xs" data-action="remove-metric" data-outcome-id="${outcome.id}" data-metric-id="${metric.id}">${iconTrash(14)}</button>
                 </div>
               </div>`)}`}
         </div>
@@ -212,8 +211,10 @@ function syncFormFields() {
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     if (outcome) outcome.description = descriptionInput.value;
   });
-  document.querySelectorAll<HTMLInputElement>('[data-metric]').forEach(metricInput => {
-    const [outcomeId, metricId, field] = (metricInput.getAttribute('data-metric') || '').split('|');
+  document.querySelectorAll<HTMLInputElement>('[data-metric-field]').forEach(metricInput => {
+    const outcomeId = metricInput.getAttribute('data-outcome-id');
+    const metricId = metricInput.getAttribute('data-metric-id');
+    const field = metricInput.getAttribute('data-metric-field');
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     const metric = outcome?.metrics.find(candidate => candidate.id === metricId);
     if (metric && field && field in metric) metric[field] = metricInput.value;
@@ -230,14 +231,14 @@ function bindEdgeEvents(ideaId: string) {
 
   $('#add-outcome')?.addEventListener('click', () => {
     syncFormFields();
-    edgeData.outcomes.push({ id: `o${nextId++}`, description: '', metrics: [] });
+    edgeData.outcomes.push({ id: crypto.randomUUID(), description: '', metrics: [] });
     mutateEdgePage(ideaId);
   });
 
   document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(templateButton => {
     templateButton.addEventListener('click', () => {
       syncFormFields();
-      edgeData.outcomes.push({ id: `o${nextId++}`, description: templateButton.getAttribute('data-add-template') || '', metrics: [] });
+      edgeData.outcomes.push({ id: crypto.randomUUID(), description: templateButton.getAttribute('data-add-template') || '', metrics: [] });
       mutateEdgePage(ideaId);
     });
   });
@@ -255,15 +256,16 @@ function bindEdgeEvents(ideaId: string) {
       syncFormFields();
       const outcomeId = addButton.getAttribute('data-add-metric')!;
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
-      if (outcome) outcome.metrics.push({ id: `m${nextId++}`, name: '', target: '', unit: '' });
+      if (outcome) outcome.metrics.push({ id: crypto.randomUUID(), name: '', target: '', unit: '' });
       mutateEdgePage(ideaId);
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-remove-metric]').forEach(removeButton => {
+  document.querySelectorAll<HTMLElement>('[data-action="remove-metric"]').forEach(removeButton => {
     removeButton.addEventListener('click', () => {
       syncFormFields();
-      const [outcomeId, metricId] = (removeButton.getAttribute('data-remove-metric') || '').split('|');
+      const outcomeId = removeButton.getAttribute('data-outcome-id');
+      const metricId = removeButton.getAttribute('data-metric-id');
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
       if (outcome) outcome.metrics = outcome.metrics.filter(metric => metric.id !== metricId);
       mutateEdgePage(ideaId);
@@ -296,20 +298,8 @@ export async function init(params?: Record<string, string>): Promise<void> {
   const saved = await getEdgeDataByIdeaId(ideaId);
   if (saved && saved.outcomes.length > 0) {
     edgeData = { outcomes: saved.outcomes, impact: saved.impact, confidence: saved.confidence, owner: saved.owner };
-    // Set nextId past the highest existing numeric ID to avoid collisions
-    let maxId = 0;
-    for (const outcome of saved.outcomes) {
-      const outcomeNum = parseInt(outcome.id.replace(/\D/g, ''), 10);
-      if (outcomeNum > maxId) maxId = outcomeNum;
-      for (const metric of outcome.metrics) {
-        const metricNum = parseInt(metric.id.replace(/\D/g, ''), 10);
-        if (metricNum > maxId) maxId = metricNum;
-      }
-    }
-    nextId = maxId + 1;
   } else {
     edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
-    nextId = 1;
   }
   mutateEdgePage(ideaId);
 }

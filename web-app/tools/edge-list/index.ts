@@ -61,12 +61,12 @@ export async function init(): Promise<void> {
   }
 
   // Badge icon
-  const badgeEl = $('#badge-icon');
-  if (badgeEl) setHtml(badgeEl, html`${iconTarget(14)} Business Case Definition`);
+  const pageBadgeEl = $('#page-badge');
+  if (pageBadgeEl) setHtml(pageBadgeEl, html`${iconTarget(14)} Business Case Definition`);
 
   // Search icon
-  const searchIconEl = $('#search-icon');
-  if (searchIconEl) setHtml(searchIconEl, iconSearch(16));
+  const searchFieldIconEl = $('#search-field-icon');
+  if (searchFieldIconEl) setHtml(searchFieldIconEl, iconSearch(16));
 
   // Stats
   const stats = {
