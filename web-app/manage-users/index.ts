@@ -1,11 +1,13 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, showToast, initials, openDialog, closeDialog,
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
-  buildSkeleton, buildErrorState, buildEmptyState,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+} from '../app/icons';
+import { initials, openDialog, closeDialog } from '../app/script';
 import { getManagedUsers, type ManagedUser } from '../app/adapters';
 
 const roleLabels: Record<string, { label: string; icon: (size?: number) => SafeHtml }> = {

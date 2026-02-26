@@ -1,4 +1,7 @@
-import { $, navigateTo, iconSparkles, iconArrowRight, html, setHtml } from '../app/script';
+import { $ } from '../app/dom';
+import { html, setHtml } from '../app/safe-html';
+import { iconSparkles, iconArrowRight } from '../app/icons';
+import { navigateTo } from '../app/script';
 
 export async function init(): Promise<void> {
   const root = $('#page-root');

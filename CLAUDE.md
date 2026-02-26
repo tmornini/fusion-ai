@@ -29,7 +29,7 @@ No test framework is configured.
 
 The API layer is a set of TypeScript modules that provide a REST-style interface to the database:
 
-- **`api/types.ts`** — Row types (snake_case) matching schema, shared type aliases (`Id`, `ConfidenceLevel`, `EdgeStatus`, `IdeaStatus`), `User` class wrapping `UserEntity`, and `toBool` utility
+- **`api/types.ts`** — Row types (snake_case) matching schema, shared type aliases (`Id`, `ConfidenceLevel`, `PriorityLevel`, `EdgeStatus`, `IdeaStatus`), `User` class wrapping `UserEntity`, and `toBool` utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
 - **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` / `DELETE(resource)` / `POST(resource, body)` URL routing
@@ -44,6 +44,28 @@ All page folders uniformly contain `index.ts` and `index.html`. Each `index.ts` 
 
 Dashboard pages have `index.html` containing page content that gets composed with the layout template. Standalone pages have a complete hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
 
+### Import Conventions
+
+Page modules import directly from source modules, not through a barrel:
+
+```typescript
+import { $ } from '../app/dom';
+import { html, setHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { iconPlus, iconTrash } from '../app/icons';
+import { navigateTo, openDialog, closeDialog } from '../app/script';
+```
+
+`script.ts` only exports what it defines: `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
+
+### Adapter Conventions
+
+- **User-name fallback**: When a user ID can't resolve to a name, return `'Unknown'` (never empty string).
+- **Absent values**: Use `null` for semantically absent values (e.g., `confidence: ConfidenceLevel | null`), not empty string.
+- **Shared userMap**: When a page calls multiple adapter functions that need user names, call `buildUserMap()` once and pass it via the `cachedUserMap` parameter to avoid redundant localStorage deserialization.
+- **Shared types**: The `Metric` interface (`{ id, name, target, unit, current }`) is defined in `helpers.ts` and used across adapters. `PriorityLevel` (computed from score) is distinct from `ConfidenceLevel` (user-selected).
+
 ### Dark Mode
 
 CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggle persists to `localStorage` and carries across page navigation. Supports system preference detection via `prefers-color-scheme`.
@@ -52,7 +74,11 @@ CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggl
 
 ### Component Library
 
-All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/app/styles/` and helper functions in `web-app/app/script.ts`. No external component library.
+All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/app/styles/` and helper functions across `web-app/app/` modules. No external component library.
+
+**Dialog pattern**: Use `openDialog(id)` / `closeDialog(id)` from `script.ts`. Requires matching HTML elements: `id="{id}-backdrop"` (with `class="dialog-backdrop hidden"`) and `id="{id}-dialog"` (with `class="dialog hidden" aria-hidden="true"`). Helpers manage visibility, ARIA attributes, and focus.
+
+**Tab pattern**: Use `initTabs('[data-tab]', '.tab-panel')` from `script.ts`. Tab buttons use `data-tab="{name}"` attribute, panels use `id="tab-{name}"`.
 
 ### Design System
 
@@ -61,7 +87,7 @@ Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files at `web-app/assets/*.woff2`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~100 inline SVG functions in `web-app/app/icons.ts` (re-exported from `script.ts`). Each returns a `SafeHtml` value: `iconSparkles(size, cssClass)`.
+- **Icons**: ~100 inline SVG functions in `web-app/app/icons.ts`. Each returns a `SafeHtml` value: `iconSparkles(size, cssClass)`. Pages import icons directly from `icons.ts`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
 - **Charts**: SVG rendering functions in `web-app/app/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
@@ -77,7 +103,7 @@ package.json                  # Project config (zero runtime dependencies)
 build                         # Executable build script
 
 api/
-  types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, EdgeStatus, IdeaStatus), User class, toBool
+  types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, PriorityLevel, EdgeStatus, IdeaStatus), User class, toBool
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema)
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT/DELETE/POST URL routing
@@ -89,7 +115,7 @@ web-app/
     tsconfig.json             # TypeScript config
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
-    script.ts                 # Page dispatch, navigation, layout behavior, toast
+    script.ts                 # Page dispatch, navigation, layout behavior, shared utilities
     icons.ts                  # ~100 SVG icon functions and lookup map
     state.ts                  # AppState, theme, mobile detection, pub-sub
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
@@ -101,7 +127,7 @@ web-app/
     skeleton.ts               # Loading skeletons, error states, empty states, withLoadingState()
     adapters/                 # ~30 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
-      helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence
+      helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence, shared Metric type
       shared.ts               # getCurrentUser, getNotifications
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
       ideas.ts                # getIdeas, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval

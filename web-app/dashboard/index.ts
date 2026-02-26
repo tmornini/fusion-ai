@@ -1,9 +1,10 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, icons, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState,
-  iconSparkles, iconDollarSign, iconClock, iconZap,
+  icons, iconSparkles, iconDollarSign, iconClock, iconZap,
   iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
-} from '../app/script';
+} from '../app/icons';
 import { GET } from '../../api/api';
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,

@@ -1,7 +1,8 @@
-import {
-  $, showToast, navigateTo, setHtml, html,
-  iconSparkles, iconArrowRight, iconLoader,
-} from '../app/script';
+import { $ } from '../app/dom';
+import { html, setHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { iconSparkles, iconArrowRight, iconLoader } from '../app/icons';
+import { navigateTo } from '../app/script';
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return 'Email is required';

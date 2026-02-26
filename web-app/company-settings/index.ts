@@ -1,8 +1,7 @@
-import {
-  $, showToast,
-  iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight } from '../app/icons';
 import { getCompanySettings } from '../app/adapters';
 
 function buildSelectField(id: string, label: string, value: string, options: string[]): SafeHtml {

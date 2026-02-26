@@ -1,10 +1,13 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState,
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getIdeaForConversion, type ConversionIdea } from '../app/adapters';
 import { PUT, GET } from '../../api/api';
 import type { IdeaEntity } from '../../api/types';

@@ -1,5 +1,6 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel } from '../../../api/types';
+import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel, Id } from '../../../api/types';
+import { User } from '../../../api/types';
 import { buildUserMap, groupBy } from './helpers';
 
 export interface EdgeIdea {
@@ -10,10 +11,10 @@ export interface EdgeIdea {
   score: number;
 }
 
-export async function getIdeaForEdge(ideaId: string): Promise<EdgeIdea> {
+export async function getIdeaForEdge(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
   return {
     title: idea.title,
@@ -38,17 +39,15 @@ export interface EdgeListItem {
   updatedAt: string;
 }
 
-export async function getEdgeList(): Promise<EdgeListItem[]> {
-  const [edgeRows, ideaRows, userMap] = await Promise.all([
+export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeListItem[]> {
+  const [edgeRows, ideaRows, userMap, allOutcomes, allMetrics] = await Promise.all([
     GET('edges') as Promise<EdgeEntity[]>,
     GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
-  ]);
-  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
-  const [allOutcomes, allMetrics] = await Promise.all([
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
     GET('edge-outcomes') as Promise<EdgeOutcomeEntity[]>,
     GET('edge-metrics') as Promise<EdgeMetricEntity[]>,
   ]);
+  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
 
   const outcomesByEdgeId = groupBy(allOutcomes, outcome => outcome.edge_id);
 
@@ -66,7 +65,7 @@ export async function getEdgeList(): Promise<EdgeListItem[]> {
       outcomesCount: outcomes.length,
       metricsCount,
       confidence: edge.confidence || null,
-      owner: userMap.get(edge.owner_id)?.fullName() ?? '',
+      owner: userMap.get(edge.owner_id)?.fullName() ?? 'Unknown',
       updatedAt: edge.updated_at,
     };
   });

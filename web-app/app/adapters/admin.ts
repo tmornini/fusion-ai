@@ -1,9 +1,9 @@
 import { GET } from '../../../api/api';
 import type {
   UserEntity, AccountEntity, CompanySettingsEntity, ActivityEntity,
-  NotificationCategoryEntity, NotificationPreferenceEntity,
+  NotificationCategoryEntity, NotificationPreferenceEntity, Id,
 } from '../../../api/types';
-import { toBool } from '../../../api/types';
+import { toBool, User } from '../../../api/types';
 import { buildUserMap, groupBy } from './helpers';
 
 // ── Account ─────────────────────────────────
@@ -27,12 +27,12 @@ export interface Account {
   recentActivity: { type: string; description: string; time: string }[];
 }
 
-export async function getAccount(): Promise<Account> {
+export async function getAccount(cachedUserMap?: Map<Id, User>): Promise<Account> {
   const [account, settings, activities, userMap] = await Promise.all([
     GET('account') as Promise<AccountEntity>,
     GET('company-settings') as Promise<CompanySettingsEntity>,
     GET('activities') as Promise<ActivityEntity[]>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 
   return {
@@ -132,10 +132,10 @@ export interface Activity {
   comment?: string;
 }
 
-export async function getActivityFeed(): Promise<Activity[]> {
+export async function getActivityFeed(cachedUserMap?: Map<Id, User>): Promise<Activity[]> {
   const [activities, userMap] = await Promise.all([
     GET('activities') as Promise<ActivityEntity[]>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
   return activities.map(activity => ({
     id: activity.id,

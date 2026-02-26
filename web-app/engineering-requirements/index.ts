@@ -1,11 +1,14 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState,
   iconArrowLeft, iconLightbulb, iconTarget, iconUsers, iconMessageSquare,
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
-} from '../app/script';
-import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../app/adapters';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
+import { getProjectForEngineering, getClarificationsByProjectId, buildUserMap, type EngineeringProject, type Clarification } from '../app/adapters';
 
 function buildClarification(clarification: Clarification): SafeHtml {
   const isPending = clarification.status === 'pending';
@@ -44,9 +47,10 @@ export async function init(params?: Record<string, string>): Promise<void> {
   let project: EngineeringProject;
   let clarifications: Clarification[];
   try {
+    const userMap = await buildUserMap();
     [project, clarifications] = await Promise.all([
-      getProjectForEngineering(projectId),
-      getClarificationsByProjectId(projectId),
+      getProjectForEngineering(projectId, userMap),
+      getClarificationsByProjectId(projectId, userMap),
     ]);
   } catch {
     setHtml(root, buildErrorState('Failed to load engineering requirements.'));

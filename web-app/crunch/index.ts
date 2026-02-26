@@ -1,10 +1,12 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import {
-  $, navigateTo, html, setHtml, type SafeHtml, trusted,
   iconUpload, iconFileSpreadsheet, iconFileText, iconHelpCircle,
   iconCheck, iconChevronRight, iconChevronDown,
   iconSparkles, iconMessageSquare, iconTable, iconHash, iconCalendar,
   iconType, iconToggleLeft,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getCrunchColumns, type CrunchColumn } from '../app/adapters';
 
 let step: 'upload' | 'label' | 'review' = 'upload';

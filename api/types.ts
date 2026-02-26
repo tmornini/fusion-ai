@@ -12,6 +12,9 @@ export type Id = string;
 /** Confidence level used across Edge, ideas, and projects. */
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
+/** Computed priority from score (distinct from confidence). */
+export type PriorityLevel = 'high' | 'medium' | 'low';
+
 /** Edge definition completion status. */
 export type EdgeStatus = 'complete' | 'draft' | 'missing';
 

@@ -1,9 +1,10 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
 import {
-  $, showToast,
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
-  html, setHtml, SafeHtml,
-} from '../app/script';
+} from '../app/icons';
 import { getProfile, allStrengths } from '../app/adapters';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);

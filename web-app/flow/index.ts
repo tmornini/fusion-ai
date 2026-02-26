@@ -1,11 +1,14 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, html, setHtml, type SafeHtml, trusted,
   iconGitBranch, iconPlus, iconTrash, iconCheck, iconUsers, iconClock,
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
-  buildSkeleton, buildErrorState, buildEmptyState,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getFlow, type ProcessStep, type Flow } from '../app/adapters';
 
 const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
@@ -14,9 +17,9 @@ const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeH
 };
 
 let processSteps: ProcessStep[] = [];
-let processName = '';
-let processDescription = '';
-let processDepartment = '';
+let flowName = '';
+let flowDescription = '';
+let flowDepartment = '';
 let viewMode: 'edit' | 'preview' = 'edit';
 let expandedStepId: string | null = null;
 
@@ -33,9 +36,9 @@ function syncFormFields(): void {
   const nameInput = $('#flow-name') as HTMLInputElement;
   const descriptionInput = $('#flow-description') as HTMLTextAreaElement;
   const dept = $('#flow-department') as HTMLSelectElement;
-  if (nameInput) processName = nameInput.value;
-  if (descriptionInput) processDescription = descriptionInput.value;
-  if (dept) processDepartment = dept.value;
+  if (nameInput) flowName = nameInput.value;
+  if (descriptionInput) flowDescription = descriptionInput.value;
+  if (dept) flowDepartment = dept.value;
 
   processSteps.forEach(step => {
     const title = $(`[data-step-id="${step.id}"][data-field-name="title"]`) as HTMLInputElement;
@@ -126,13 +129,13 @@ function buildPreviewMode(): SafeHtml {
   return html`
     <div style="display:flex;flex-direction:column;gap:1.5rem">
       <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-display font-semibold">${processName}</h2>
+        <h2 class="text-lg font-display font-semibold">${flowName}</h2>
         <div class="flex items-center gap-2">
           <button class="btn btn-outline btn-sm gap-2">${iconShare(14)} Share</button>
           <button class="btn btn-outline btn-sm gap-2">${iconDownload(14)} Export</button>
         </div>
       </div>
-      <p class="text-sm text-muted">${processDescription}</p>
+      <p class="text-sm text-muted">${flowDescription}</p>
       <div style="position:relative;padding-left:1.5rem">
         <div style="position:absolute;left:0.75rem;top:0;bottom:0;width:2px;background:hsl(var(--border))"></div>
         ${processSteps.map((step, i) => html`
@@ -177,13 +180,13 @@ function buildFlowPage(): SafeHtml {
 
       <div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
         <div class="convert-grid">
-          <div><label class="label mb-1 text-xs">Process Name</label><input class="input" id="flow-name" value="${processName}" placeholder="e.g., Customer Onboarding" style="font-size:1.125rem;font-weight:500"/></div>
+          <div><label class="label mb-1 text-xs">Process Name</label><input class="input" id="flow-name" value="${flowName}" placeholder="e.g., Customer Onboarding" style="font-size:1.125rem;font-weight:500"/></div>
           <div><label class="label mb-1 text-xs">Department</label>
             <select class="input" id="flow-department">
-              ${deptOptions.map(department => html`<option ${trusted(department === processDepartment ? 'selected' : '')}>${department}</option>`)}
+              ${deptOptions.map(department => html`<option ${trusted(department === flowDepartment ? 'selected' : '')}>${department}</option>`)}
             </select>
           </div>
-          <div style="grid-column:span 2"><label class="label mb-1 text-xs">Description</label><textarea class="textarea" id="flow-description" style="resize:none" placeholder="Briefly describe what this process accomplishes...">${processDescription}</textarea></div>
+          <div style="grid-column:span 2"><label class="label mb-1 text-xs">Description</label><textarea class="textarea" id="flow-description" style="resize:none" placeholder="Briefly describe what this process accomplishes...">${flowDescription}</textarea></div>
         </div>
       </div>
 
@@ -283,9 +286,9 @@ export async function init(): Promise<void> {
     return;
   }
 
-  processName = flowData.processName;
-  processDescription = flowData.processDescription;
-  processDepartment = flowData.processDepartment;
+  flowName = flowData.name;
+  flowDescription = flowData.description;
+  flowDepartment = flowData.department;
   processSteps = flowData.steps;
   viewMode = 'edit';
   expandedStepId = null;

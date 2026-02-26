@@ -1,8 +1,9 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml } from '../app/safe-html';
 import {
-  $, html, setHtml, type SafeHtml,
   iconCheck, iconX, iconAlertTriangle, iconInfo, iconSearch, iconPlus,
   iconArrowRight, iconTrash, iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
-} from '../app/script';
+} from '../app/icons';
 
 function buildColorSwatch(name: string, variable: string, style: string): SafeHtml {
   return html`<div style="display:flex;flex-direction:column;gap:0.5rem">

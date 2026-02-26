@@ -45,9 +45,9 @@ export interface ProcessStep {
 }
 
 export interface Flow {
-  processName: string;
-  processDescription: string;
-  processDepartment: string;
+  name: string;
+  description: string;
+  department: string;
   steps: ProcessStep[];
 }
 
@@ -55,15 +55,15 @@ export async function getFlow(): Promise<Flow> {
   const processes = await GET('processes') as ProcessEntity[];
   const process = processes[0];
   if (!process) {
-    return { processName: '', processDescription: '', processDepartment: '', steps: [] };
+    return { name: '', description: '', department: '', steps: [] };
   }
 
   const steps = await GET(`processes/${process.id}/steps`) as ProcessStepEntity[];
 
   return {
-    processName: process.name,
-    processDescription: process.description,
-    processDepartment: process.department,
+    name: process.name,
+    description: process.description,
+    department: process.department,
     steps: steps.map(step => ({
       id: step.id,
       title: step.title,

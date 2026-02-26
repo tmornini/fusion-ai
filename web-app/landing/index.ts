@@ -1,9 +1,9 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml } from '../app/safe-html';
 import {
-  $,
   iconSparkles, iconArrowRight, iconMenu, iconX, iconCheck,
   iconBrain, iconUsers, iconZap, iconShield, iconLineChart, iconMessageSquare,
-  html, setHtml, type SafeHtml,
-} from '../app/script';
+} from '../app/icons';
 
 const features = [
   { icon: iconBrain, title: 'Intelligent Augmentation', description: 'AI that learns from your expertise and amplifies your decision-making capabilities without replacing human judgment.' },

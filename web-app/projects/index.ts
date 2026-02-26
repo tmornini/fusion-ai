@@ -1,10 +1,12 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, navigateTo, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState, buildEmptyState,
   iconTrendingUp, iconClock, iconDollarSign, iconCheckCircle2,
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
   iconEye, iconTarget, iconGripVertical, iconFolderKanban,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getProjects, type Project } from '../app/adapters';
 
 const projectStatusConfig: Record<string, { icon: (size?: number, cssClass?: string) => SafeHtml; className: string; label: string }> = {

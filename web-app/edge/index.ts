@@ -1,22 +1,24 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, html, setHtml, type SafeHtml, trusted,
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
-  buildSkeleton, buildErrorState,
-} from '../app/script';
-import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea } from '../app/adapters';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
+import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea, type Metric } from '../app/adapters';
 
-interface Metric { [key: string]: string; id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }
 interface Impact { shortTerm: string; midTerm: string; longTerm: string; }
-interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string; owner: string; }
+interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string | null; owner: string; }
 
 const outcomeTemplates = ['Reduce operational cost', 'Increase customer retention', 'Improve delivery speed'];
 
 let edgeData: EdgeData = {
   outcomes: [],
   impact: { shortTerm: '', midTerm: '', longTerm: '' },
-  confidence: '',
+  confidence: null,
   owner: 'Sarah Chen',
 };
 let currentIdea: EdgeIdea | null = null;
@@ -26,7 +28,7 @@ function computeCompletionStatus() {
   const allOutcomesHaveMetrics = hasOutcomes && edgeData.outcomes.every(outcome => outcome.metrics.length > 0);
   const hasImpact = !!(edgeData.impact.shortTerm || edgeData.impact.midTerm || edgeData.impact.longTerm);
   const hasOwner = edgeData.owner.trim() !== '';
-  const hasConfidence = edgeData.confidence !== '';
+  const hasConfidence = edgeData.confidence !== null;
   const completionPercent = [hasOutcomes, allOutcomesHaveMetrics, hasImpact, hasOwner, hasConfidence].filter(Boolean).length * 20;
   const isComplete = hasOutcomes && allOutcomesHaveMetrics && hasImpact && hasOwner;
   return { hasOutcomes, allOutcomesHaveMetrics, hasImpact, hasOwner, hasConfidence, completionPercent, isComplete };
@@ -204,7 +206,7 @@ function syncFormFields() {
   edgeData.impact.shortTerm = ($('#edge-impact-short-term') as HTMLTextAreaElement)?.value || '';
   edgeData.impact.midTerm = ($('#edge-impact-mid-term') as HTMLTextAreaElement)?.value || '';
   edgeData.impact.longTerm = ($('#edge-impact-long-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.confidence = ($('#edge-confidence-select') as HTMLSelectElement)?.value || '';
+  edgeData.confidence = ($('#edge-confidence-select') as HTMLSelectElement)?.value || null;
   edgeData.owner = ($('#edge-owner-input') as HTMLInputElement)?.value || '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-description]').forEach(descriptionInput => {
     const outcomeId = descriptionInput.getAttribute('data-outcome-description')!;
@@ -217,7 +219,7 @@ function syncFormFields() {
     const field = metricInput.getAttribute('data-metric-field');
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     const metric = outcome?.metrics.find(candidate => candidate.id === metricId);
-    if (metric && field && field in metric) metric[field] = metricInput.value;
+    if (metric && field && field in metric) (metric as Record<string, string>)[field] = metricInput.value;
   });
 }
 
@@ -256,7 +258,7 @@ function bindEdgeEvents(ideaId: string) {
       syncFormFields();
       const outcomeId = addButton.getAttribute('data-add-metric')!;
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
-      if (outcome) outcome.metrics.push({ id: crypto.randomUUID(), name: '', target: '', unit: '' });
+      if (outcome) outcome.metrics.push({ id: crypto.randomUUID(), name: '', target: '', unit: '', current: '' });
       mutateEdgePage(ideaId);
     });
   });
@@ -299,7 +301,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   if (saved && saved.outcomes.length > 0) {
     edgeData = { outcomes: saved.outcomes, impact: saved.impact, confidence: saved.confidence, owner: saved.owner };
   } else {
-    edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: '', owner: 'Sarah Chen' };
+    edgeData = { outcomes: [], impact: { shortTerm: '', midTerm: '', longTerm: '' }, confidence: null, owner: 'Sarah Chen' };
   }
   mutateEdgePage(ideaId);
 }

@@ -1,10 +1,12 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, navigateTo, styleForScore, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState, buildEmptyState,
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo, styleForScore } from '../app/script';
 import { getReviewQueue, type ReviewIdea } from '../app/adapters';
 import { edgeStatusConfig } from '../app/config';
 

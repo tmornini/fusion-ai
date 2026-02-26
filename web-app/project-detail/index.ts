@@ -1,12 +1,15 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, initials, initTabs, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState,
   iconTrendingUp, iconTrendingDown, iconClock, iconDollarSign, iconUsers,
   iconCalendar, iconTarget, iconCheckCircle2, iconAlertCircle, iconMessageSquare,
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
   iconArrowDownRight, iconMinus, iconListTodo, iconGitBranch, iconDatabase,
   iconCode, iconShield, iconBarChart, iconGauge,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo, initials, initTabs } from '../app/script';
 import { getProjectById, type ProjectDetail } from '../app/adapters';
 
 function buildVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): SafeHtml {

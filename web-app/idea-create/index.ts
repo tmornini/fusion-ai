@@ -1,8 +1,10 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
 import {
-  $, navigateTo, html, setHtml, SafeHtml,
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { PUT } from '../../api/api';
 
 const steps = [

@@ -1,10 +1,12 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, navigateTo, html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState, buildEmptyState,
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getIdeas, type Idea } from '../app/adapters';
 import { edgeStatusConfig } from '../app/config';
 

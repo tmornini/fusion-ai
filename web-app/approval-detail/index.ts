@@ -1,13 +1,15 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, showToast, navigateTo, openDialog, closeDialog,
-  html, setHtml, SafeHtml,
-  buildSkeleton, buildErrorState,
   iconArrowLeft, iconAlertTriangle, iconTrendingUp, iconClock,
   iconUser, iconCalendar, iconTarget, iconLightbulb, iconCheckCircle,
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
   iconUsers, iconShield, iconGauge,
-} from '../app/script';
-import { getIdeaForApproval, getEdgeForApproval, type ApprovalIdea, type ApprovalEdge } from '../app/adapters';
+} from '../app/icons';
+import { navigateTo, openDialog, closeDialog } from '../app/script';
+import { getIdeaForApproval, getEdgeForApproval, buildUserMap, type ApprovalIdea, type ApprovalEdge } from '../app/adapters';
 
 const severityConfig: Record<string, string> = {
   high: 'badge-error',
@@ -205,9 +207,10 @@ export async function init(params?: Record<string, string>): Promise<void> {
   let idea: ApprovalIdea;
   let edge: ApprovalEdge;
   try {
+    const userMap = await buildUserMap();
     [idea, edge] = await Promise.all([
-      getIdeaForApproval(id),
-      getEdgeForApproval(id),
+      getIdeaForApproval(id, userMap),
+      getEdgeForApproval(id, userMap),
     ]);
   } catch {
     setHtml(root, buildErrorState('Failed to load approval details.'));

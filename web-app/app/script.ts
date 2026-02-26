@@ -4,34 +4,10 @@
 // ============================================
 
 import type { AppState } from './state';
-import { STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme } from './state';
-import { $, $$, escapeHtml } from './dom';
-import { showToast } from './toast';
-import type { SkeletonType } from './skeleton';
-import { buildSkeleton, buildErrorState, buildEmptyState, withLoadingState } from './skeleton';
-import { SafeHtml, html, trusted, setHtml } from './safe-html';
-import {
-  icon, icons,
-  iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
-  iconTarget, iconDatabase, iconGitBranch, iconPalette, iconLogOut, iconMenu,
-  iconSearch, iconBell, iconSun, iconMoon, iconMonitor, iconX,
-  iconChevronDown, iconChevronRight, iconChevronLeft,
-  iconPanelLeftClose, iconPanelLeft, iconPlus, iconArrowLeft, iconArrowRight,
-  iconCheck, iconLoader, iconSettings, iconExternalLink, iconFilter,
-  iconMoreHorizontal, iconMoreVertical, iconStar, iconHeart,
-  iconTrendingUp, iconTrendingDown, iconAlertCircle, iconAlertTriangle,
-  iconCheckCircle, iconInfo, iconMail, iconPhone, iconCalendar, iconClock,
-  iconUpload, iconDownload, iconTrash, iconEdit, iconEye, iconCopy, iconSave,
-  iconSend, iconShare, iconGlobe, iconRocket, iconZap, iconAward, iconBrain,
-  iconWand, iconActivity, iconBarChart, iconFileText, iconShield, iconBuilding,
-  iconCrown, iconBriefcase, iconClipboardCheck, iconDollarSign, iconSmartphone,
-  iconCode, iconHash, iconGripVertical, iconGauge, iconLineChart,
-  iconArrowUpRight, iconArrowDownRight, iconCamera, iconCreditCard, iconCircle,
-  iconMessageSquare, iconUserPlus, iconUserCheck, iconUserX, iconXCircle,
-  iconCheckCircle2, iconHelpCircle, iconMinus, iconFolderOpen,
-  iconFileSpreadsheet, iconListTodo, iconToggleLeft, iconType, iconTable,
-  iconSlider, iconDot, iconLayoutGrid, iconChevronUp, iconHistory,
-} from './icons';
+import { STORAGE_KEY_SIDEBAR, state, applyTheme, setTheme } from './state';
+import { $ } from './dom';
+import { html, setHtml } from './safe-html';
+import { iconSun, iconMoon, iconMonitor } from './icons';
 
 // ------------------------------------
 // Shared Utilities
@@ -74,8 +50,8 @@ function initTabs(tabSelector: string, panelSelector: string, activeClass = 'act
       document.querySelectorAll(tabSelector).forEach(otherTab => otherTab.classList.remove(activeClass));
       tab.classList.add(activeClass);
       document.querySelectorAll(panelSelector).forEach(panel => (panel as HTMLElement).style.display = 'none');
-      const tabId = tab.dataset.tab ?? tab.dataset.detailTab ?? '';
-      const panel = document.getElementById(`tab-${tabId}`) ?? document.getElementById(`detail-${tabId}`);
+      const tabId = tab.dataset.tab ?? '';
+      const panel = document.getElementById(`tab-${tabId}`);
       if (panel) panel.style.display = '';
     });
   });
@@ -95,25 +71,8 @@ function getParams(): Record<string, string> {
   return params;
 }
 
-const PAGE_PATHS: Record<string, string> = {
-  dashboard: 'dashboard', ideas: 'ideas', projects: 'projects',
-  'project-detail': 'project-detail', 'engineering-requirements': 'engineering-requirements',
-  'idea-create': 'idea-create',
-  'idea-convert': 'idea-convert', 'idea-review-queue': 'idea-review-queue',
-  'approval-detail': 'approval-detail',
-  edge: 'edge', 'edge-list': 'edge-list', crunch: 'crunch', flow: 'flow',
-  team: 'team', account: 'account', profile: 'profile',
-  'company-settings': 'company-settings', 'manage-users': 'manage-users',
-  'activity-feed': 'activity-feed', 'notification-settings': 'notification-settings',
-  snapshots: 'snapshots',
-  'design-system': 'design-system',
-  landing: 'landing', auth: 'auth', onboarding: 'onboarding',
-  'not-found': 'not-found',
-};
-
 function navigateTo(page: string, params?: Record<string, string>): void {
-  const path = PAGE_PATHS[page] || page;
-  let url = '../' + path + '/index.html';
+  let url = '../' + page + '/index.html';
   if (params && Object.keys(params).length > 0) {
     url += '?' + new URLSearchParams(params).toString();
   }
@@ -414,48 +373,4 @@ function initPrefetch(): void {
   }, { capture: true });
 }
 
-// ------------------------------------
-// Exports for page modules
-// ------------------------------------
-
-export {
-  // State (re-exported from ./state)
-  state, setState, subscribe, computeTheme,
-  // Theme (re-exported from ./state)
-  applyTheme, setTheme,
-  // DOM (re-exported from ./dom)
-  $, $$, escapeHtml,
-  // Safe HTML (re-exported from ./html)
-  SafeHtml, html, trusted, setHtml,
-  // Navigation
-  getPageName, getParams, navigateTo,
-  // Layout
-  initDashboardLayout,
-  // Toast (re-exported from ./toast)
-  showToast,
-  // Loading / Error / Empty (re-exported from ./skeleton)
-  type SkeletonType, buildSkeleton, buildErrorState, buildEmptyState, withLoadingState,
-  // Shared Utilities
-  initials, styleForScore, openDialog, closeDialog, initTabs,
-  // Icons (re-exported from ./icons)
-  icon, icons,
-  iconSparkles, iconHome, iconLightbulb, iconFolderKanban, iconUsers, iconUser,
-  iconTarget, iconDatabase, iconGitBranch, iconPalette, iconLogOut, iconMenu,
-  iconSearch, iconBell, iconSun, iconMoon, iconMonitor, iconX,
-  iconChevronDown, iconChevronRight, iconChevronLeft,
-  iconPanelLeftClose, iconPanelLeft, iconPlus, iconArrowLeft, iconArrowRight,
-  iconCheck, iconLoader, iconSettings, iconExternalLink, iconFilter,
-  iconMoreHorizontal, iconMoreVertical, iconStar, iconHeart,
-  iconTrendingUp, iconTrendingDown, iconAlertCircle, iconAlertTriangle,
-  iconCheckCircle, iconInfo, iconMail, iconPhone, iconCalendar, iconClock,
-  iconUpload, iconDownload, iconTrash, iconEdit, iconEye, iconCopy, iconSave,
-  iconSend, iconShare, iconGlobe, iconRocket, iconZap, iconAward, iconBrain,
-  iconWand, iconActivity, iconBarChart, iconFileText, iconShield, iconBuilding,
-  iconCrown, iconBriefcase, iconClipboardCheck, iconDollarSign, iconSmartphone,
-  iconCode, iconHash, iconGripVertical, iconGauge, iconLineChart,
-  iconArrowUpRight, iconArrowDownRight, iconCamera, iconCreditCard, iconCircle,
-  iconMessageSquare, iconUserPlus, iconUserCheck, iconUserX, iconXCircle,
-  iconCheckCircle2, iconHelpCircle, iconMinus, iconFolderOpen,
-  iconFileSpreadsheet, iconListTodo, iconToggleLeft, iconType, iconTable,
-  iconSlider, iconDot, iconLayoutGrid, iconChevronUp, iconHistory,
-};
+export { navigateTo, initials, styleForScore, openDialog, closeDialog, initTabs };

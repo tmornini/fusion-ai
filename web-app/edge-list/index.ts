@@ -1,9 +1,11 @@
+import { $ } from '../app/dom';
+import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, navigateTo, html, setHtml, type SafeHtml, trusted,
   iconTarget, iconSearch, iconCheckCircle2, iconAlertCircle, iconClock,
   iconChevronRight, iconTrendingUp, iconShield, iconBarChart, iconUser,
-  buildSkeleton, buildErrorState, buildEmptyState,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getEdgeList, type EdgeListItem } from '../app/adapters';
 
 const edgeStatusDisplayConfig: Record<string, { label: string; className: string; icon: (size?: number) => SafeHtml }> = {

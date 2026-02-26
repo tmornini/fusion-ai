@@ -1,11 +1,13 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import {
-  $, showToast, initials, initTabs,
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
-  buildSkeleton, buildErrorState, buildEmptyState,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+} from '../app/icons';
+import { initials, initTabs, openDialog, closeDialog } from '../app/script';
 import { getTeamMembers, type TeamMember } from '../app/adapters';
 
 function styleForAvailability(availability: number): string {
@@ -39,11 +41,11 @@ function buildMemberDetail(member: TeamMember): SafeHtml {
       </div>
 
       <div class="tabs" role="tablist" style="margin-bottom:1rem">
-        <button class="tab active" role="tab" data-detail-tab="dimensions">Dimensions</button>
-        <button class="tab" role="tab" data-detail-tab="performance">Performance</button>
+        <button class="tab active" role="tab" data-tab="dimensions">Dimensions</button>
+        <button class="tab" role="tab" data-tab="performance">Performance</button>
       </div>
 
-      <div id="detail-dimensions" class="detail-tab-panel">
+      <div id="tab-dimensions" class="tab-panel">
         <p class="text-xs text-muted" style="text-align:center;margin-bottom:1rem">Team Dimensions Assessment Results</p>
         ${Object.entries(member.teamDimensions).map(([key, value]) => html`
           <div style="margin-bottom:1rem">
@@ -56,7 +58,7 @@ function buildMemberDetail(member: TeamMember): SafeHtml {
         `)}
       </div>
 
-      <div id="detail-performance" class="detail-tab-panel" style="display:none">
+      <div id="tab-performance" class="tab-panel" style="display:none">
         <div style="padding:1rem;border-radius:0.75rem;background:linear-gradient(135deg,hsl(var(--primary)/0.1),hsl(var(--primary)/0.05));text-align:center;margin-bottom:1rem">
           ${iconBarChart(32, 'text-primary')}
           <div class="text-3xl font-bold text-primary" style="margin:0.5rem 0">${member.performanceScore}%</div>
@@ -141,7 +143,7 @@ function bindCards(): void {
 }
 
 function bindDetailTabs(): void {
-  initTabs('[data-detail-tab]', '.detail-tab-panel');
+  initTabs('[data-tab]', '.tab-panel');
 }
 
 export async function init(): Promise<void> {
@@ -185,15 +187,13 @@ export async function init(): Promise<void> {
   $('#team-search')?.addEventListener('input', mutateList);
 
   // Add member dialog
-  const dialog = $('#add-member-dialog')!;
-  $('#team-add-btn')?.addEventListener('click', () => { dialog.style.display = ''; });
-  $('#add-member-cancel')?.addEventListener('click', () => { dialog.style.display = 'none'; });
-  dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.style.display = 'none'; });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dialog.style.display !== 'none') dialog.style.display = 'none'; });
+  $('#team-add-btn')?.addEventListener('click', () => { openDialog('add-member'); });
+  $('#add-member-cancel')?.addEventListener('click', () => { closeDialog('add-member'); });
+  $('#add-member-backdrop')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDialog('add-member'); });
   $('#add-member-send')?.addEventListener('click', () => {
     const email = ($('#add-member-email') as HTMLInputElement)?.value;
     showToast(email ? `Invitation sent to ${email}` : 'Member invited', 'success');
-    dialog.style.display = 'none';
+    closeDialog('add-member');
   });
 
   mutateList();

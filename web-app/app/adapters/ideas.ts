@@ -1,6 +1,7 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel } from '../../../api/types';
-import { buildUserMap, parseJson, getEdgeDataWithConfidence } from './helpers';
+import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel, PriorityLevel, Id } from '../../../api/types';
+import { User } from '../../../api/types';
+import { buildUserMap, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
 
 export interface Idea {
   id: string;
@@ -15,10 +16,10 @@ export interface Idea {
   edgeStatus: 'incomplete' | EdgeStatus;
 }
 
-export async function getIdeas(prefetchedIdeas?: IdeaEntity[]): Promise<Idea[]> {
+export async function getIdeas(prefetchedIdeas?: IdeaEntity[], cachedUserMap?: Map<Id, User>): Promise<Idea[]> {
   const [ideas, userMap] = await Promise.all([
     prefetchedIdeas ? Promise.resolve(prefetchedIdeas) : GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
   return ideas
     .map(idea => ({
@@ -41,7 +42,7 @@ export interface ReviewIdea {
   id: string;
   title: string;
   submittedBy: string;
-  priority: ConfidenceLevel;
+  priority: PriorityLevel;
   readiness: 'ready' | 'needs-info' | 'incomplete';
   edgeStatus: EdgeStatus;
   score: number;
@@ -51,10 +52,10 @@ export interface ReviewIdea {
   category: string;
 }
 
-export async function getReviewQueue(): Promise<ReviewIdea[]> {
+export async function getReviewQueue(cachedUserMap?: Map<Id, User>): Promise<ReviewIdea[]> {
   const [ideas, userMap] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 
   return ideas
@@ -118,7 +119,7 @@ export interface ApprovalIdea {
   description: string;
   submittedBy: string;
   submittedAt: string;
-  priority: string;
+  priority: PriorityLevel;
   score: number;
   category: string;
   impact: { level: string; description: string };
@@ -130,16 +131,16 @@ export interface ApprovalIdea {
 }
 
 export interface ApprovalEdge {
-  outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string }[] }[];
+  outcomes: { id: string; description: string; metrics: Omit<Metric, 'current'>[] }[];
   impact: { shortTerm: string; midTerm: string; longTerm: string };
   confidence: ConfidenceLevel;
   owner: string;
 }
 
-export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> {
+export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<ApprovalIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
-    buildUserMap(),
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 
   return {
@@ -170,6 +171,6 @@ export async function getIdeaForApproval(ideaId: string): Promise<ApprovalIdea> 
   };
 }
 
-export async function getEdgeForApproval(ideaId: string): Promise<ApprovalEdge> {
-  return getEdgeDataWithConfidence(ideaId);
+export async function getEdgeForApproval(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<ApprovalEdge> {
+  return getEdgeDataWithConfidence(ideaId, cachedUserMap);
 }

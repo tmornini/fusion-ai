@@ -1,8 +1,7 @@
-import {
-  $, showToast, icons,
-  iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
+import { showToast } from '../app/toast';
+import { icons, iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave } from '../app/icons';
 import { getNotificationCategories, type NotificationCategory } from '../app/adapters';
 
 function buildSwitch(id: string, checked: boolean): SafeHtml {

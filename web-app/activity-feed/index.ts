@@ -1,11 +1,11 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import {
-  $,
   iconActivity, iconLightbulb, iconStar, iconFolderKanban,
   iconCheckCircle2, iconMessageSquare, iconUserPlus, iconEdit,
   iconArrowRight, iconSearch, iconChevronRight,
-  buildSkeleton, buildErrorState, buildEmptyState,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+} from '../app/icons';
+import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
 import { getActivityFeed, type Activity } from '../app/adapters';
 
 function buildActivityIcon(type: string): SafeHtml {

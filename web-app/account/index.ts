@@ -1,12 +1,13 @@
+import { $ } from '../app/dom';
+import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
+import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
-  $, navigateTo,
   iconUser, iconSettings, iconCreditCard, iconBuilding, iconCrown,
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
   iconExternalLink, iconBell,
-  buildSkeleton, buildErrorState,
-  html, setHtml, SafeHtml, trusted,
-} from '../app/script';
+} from '../app/icons';
+import { navigateTo } from '../app/script';
 import { getAccount, type Account } from '../app/adapters';
 
 function styleForUsageLevel(current: number, limit: number): string {

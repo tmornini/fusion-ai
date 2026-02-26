@@ -3,14 +3,14 @@
 // Self-contained module: search, keyboard nav, rendering
 // ============================================
 
+import { $, escapeHtml } from './dom';
+import { html, setHtml, SafeHtml, trusted } from './safe-html';
 import {
-  escapeHtml,
   iconSearch, iconLightbulb, iconFolderKanban, iconUser, iconHome,
   iconTarget, iconDatabase, iconGitBranch, iconSettings, iconUsers,
   iconActivity, iconBell, iconBarChart, iconBrain, iconPalette,
   iconClipboardCheck, iconFileText, iconX,
-  html, setHtml, SafeHtml, trusted,
-} from './script';
+} from './icons';
 import { getIdeas, getProjects, getTeamMembers } from './adapters';
 
 // ── Types ────────────────────────────────
@@ -363,17 +363,15 @@ export function initCommandPalette(): void {
   });
 
   // Intercept desktop search input focus
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('focus', (e) => {
-      e.preventDefault();
-      (searchInput as HTMLInputElement).blur();
-      open();
-    });
-  }
+  const searchInput = $('#search-input');
+  searchInput?.addEventListener('focus', (e) => {
+    e.preventDefault();
+    (searchInput as HTMLInputElement).blur();
+    open();
+  });
 
   // Intercept mobile search toggle
-  const mobileSearchToggle = document.getElementById('mobile-search-toggle');
+  const mobileSearchToggle = $('#mobile-search-toggle');
   if (mobileSearchToggle) {
     // Replace click handler
     const newToggle = mobileSearchToggle.cloneNode(true) as HTMLElement;

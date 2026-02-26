@@ -27,12 +27,22 @@ export function parseJson<T>(value: string | T): T {
   return value;
 }
 
+// ── Shared Types ────────────────────────────
+
+export interface Metric {
+  id: string;
+  name: string;
+  target: string;
+  unit: string;
+  current: string;
+}
+
 // ── Shared Edge Data Fetching ───────────────
 
 export interface EdgeData {
-  outcomes: { id: string; description: string; metrics: { id: string; name: string; target: string; unit: string; current: string }[] }[];
+  outcomes: { id: string; description: string; metrics: Metric[] }[];
   impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: ConfidenceLevel | '';
+  confidence: ConfidenceLevel | null;
   owner: string;
 }
 
@@ -60,8 +70,8 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
       midTerm: edge.impact_mid_term,
       longTerm: edge.impact_long_term,
     },
-    confidence: edge.confidence || '',
-    owner: userMap.get(edge.owner_id)?.fullName() ?? '',
+    confidence: edge.confidence || null,
+    owner: userMap.get(edge.owner_id)?.fullName() ?? 'Unknown',
   };
 }
 
