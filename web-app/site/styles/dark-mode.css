@@ -3,6 +3,7 @@
    ========================================== */
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --background: var(--gray-900);
   --background-subtle: var(--gray-800);
   --foreground: var(--gray-100);
