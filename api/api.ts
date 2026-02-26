@@ -35,6 +35,13 @@ function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler; 
   return { segments: pattern.split('/'), ...handlers };
 }
 
+// Safe route param access — eliminates non-null assertions in route handlers
+function param(params: string[], index: number): string {
+  const value = params[index];
+  if (value === undefined) throw new Error(`Missing route param at index ${index}`);
+  return value;
+}
+
 const routes: Route[] = [
   // ── Collections ────────────────────────────
   route('users', {
