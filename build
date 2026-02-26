@@ -15,28 +15,34 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
 npx tsx web-app/site/compose.ts "$BUILD_DIR"
 
 # Bundle TypeScript into build dir
-mkdir -p "$BUILD_DIR/site"
+mkdir -p "$BUILD_DIR/assets"
 npx esbuild web-app/site/script.ts \
   --bundle \
   --minify \
   --keep-names \
   --target=es2020 \
   --format=iife \
-  --outfile="$BUILD_DIR/site/app.js"
+  --outfile="$BUILD_DIR/assets/app.js"
 
-echo "Bundle created: site/app.js ($(wc -c < "$BUILD_DIR/site/app.js" | xargs) bytes)"
+echo "Bundle created: assets/app.js ($(wc -c < "$BUILD_DIR/assets/app.js" | xargs) bytes)"
 
-# Bundle and minify CSS into build dir
-npx esbuild web-app/site/style.css \
-  --bundle \
-  --minify \
-  '--external:fonts/*' \
-  --outfile="$BUILD_DIR/site/style.css"
+# Bundle and minify CSS — concatenate in cascade order, minify via esbuild
+cat web-app/site/styles/fonts.css \
+    web-app/site/styles/tokens.css \
+    web-app/site/styles/dark-mode.css \
+    web-app/site/styles/base.css \
+    web-app/site/styles/components.css \
+    web-app/site/styles/layout.css \
+    web-app/site/styles/utilities.css \
+    web-app/site/styles/responsive.css \
+    web-app/site/styles/pages.css \
+    web-app/site/styles/command-palette.css \
+  | npx esbuild --loader=css --minify > "$BUILD_DIR/assets/styles.css"
 
-echo "Styles created: site/style.css ($(wc -c < "$BUILD_DIR/site/style.css" | xargs) bytes)"
-cp -r web-app/site/fonts "$BUILD_DIR/site/"
+echo "Styles created: assets/styles.css ($(wc -c < "$BUILD_DIR/assets/styles.css" | xargs) bytes)"
+cp web-app/assets/*.woff2 "$BUILD_DIR/assets/"
 cp web-app/index.html "$BUILD_DIR/"
-cp web-app/site/favicon.ico "$BUILD_DIR/site/"
+cp web-app/assets/favicon.ico "$BUILD_DIR/assets/"
 
 # Create distribution ZIP on Desktop
 SHA=$(git rev-parse --short=7 HEAD)
