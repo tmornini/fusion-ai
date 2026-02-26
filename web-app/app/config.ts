@@ -11,3 +11,10 @@ export const edgeStatusConfig: Record<EdgeStatus | 'incomplete', { label: string
   draft:      { label: 'Edge Draft',    className: 'badge-warning' },
   complete:   { label: 'Edge Complete', className: 'badge-success' },
 };
+
+// ── Config fallback constants ───────────────
+// Used when a status/config key doesn't match known values.
+
+export const UNKNOWN_STATUS = { label: 'Unknown', className: 'badge-default' } as const;
+export const UNKNOWN_EDGE_STATUS = { label: 'Unknown', className: 'badge-default' } as const;
+export const UNKNOWN_CONFIDENCE = { label: 'Unknown', className: 'text-muted' } as const;

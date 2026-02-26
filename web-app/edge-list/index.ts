@@ -21,14 +21,15 @@ const confidenceLevelConfig: Record<string, { label: string; className: string }
 };
 
 function buildEdgeCard(edge: EdgeListItem): SafeHtml {
-  const statusDisplay = edgeStatusDisplayConfig[edge.status];
+  const statusDisplay = edgeStatusDisplayConfig[edge.status] ?? { label: 'Unknown', className: 'badge-default', icon: iconAlertCircle };
+  const confidenceDisplay = edge.confidence ? (confidenceLevelConfig[edge.confidence] ?? { label: 'Unknown', className: 'text-muted' }) : null;
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${statusDisplay!.className} text-xs">${statusDisplay!.icon(12)} ${statusDisplay!.label}</span>
-            ${edge.confidence ? html`<span class="flex items-center gap-1 text-xs ${confidenceLevelConfig[edge.confidence]!.className}">${iconShield(14)} ${confidenceLevelConfig[edge.confidence]!.label} Confidence</span>` : html``}
+            <span class="badge ${statusDisplay.className} text-xs">${statusDisplay.icon(12)} ${statusDisplay.label}</span>
+            ${confidenceDisplay ? html`<span class="flex items-center gap-1 text-xs ${confidenceDisplay.className}">${iconShield(14)} ${confidenceDisplay.label} Confidence</span>` : html``}
           </div>
           <h3 class="font-semibold mb-1">${edge.ideaTitle}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">

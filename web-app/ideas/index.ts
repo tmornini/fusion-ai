@@ -8,7 +8,7 @@ import {
 } from '../app/icons';
 import { navigateTo } from '../app/core';
 import { getIdeas, type Idea } from '../app/adapters';
-import { edgeStatusConfig } from '../app/config';
+import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
 
 const ideaStatusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'badge-default' },
@@ -18,9 +18,12 @@ const ideaStatusConfig: Record<string, { label: string; className: string }> = {
   rejected: { label: 'Sent Back', className: 'badge-error' },
 };
 
+const SCORE_BADGE_HIGH = 85;
+const SCORE_BADGE_MEDIUM = 70;
+
 function styleForScoreBadge(score: number): string {
-  if (score >= 85) return 'color:hsl(var(--success));background:hsl(var(--success-soft))';
-  if (score >= 70) return 'color:hsl(var(--warning));background:hsl(var(--warning-soft))';
+  if (score >= SCORE_BADGE_HIGH) return 'color:hsl(var(--success));background:hsl(var(--success-soft))';
+  if (score >= SCORE_BADGE_MEDIUM) return 'color:hsl(var(--warning));background:hsl(var(--warning-soft))';
   return 'color:hsl(var(--error));background:hsl(var(--error-soft))';
 }
 
@@ -40,8 +43,8 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <h3 class="font-display font-semibold truncate">${idea.title}</h3>
-                <span class="badge ${ideaStatusConfig[idea.status]!.className} text-xs">${ideaStatusConfig[idea.status]!.label}</span>
-                <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.className} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
+                <span class="badge ${(ideaStatusConfig[idea.status] ?? UNKNOWN_STATUS).className} text-xs">${(ideaStatusConfig[idea.status] ?? UNKNOWN_STATUS).label}</span>
+                <span class="badge ${(edgeStatusConfig[idea.edgeStatus] ?? UNKNOWN_EDGE_STATUS).className} text-xs">${iconTarget(12)} ${(edgeStatusConfig[idea.edgeStatus] ?? UNKNOWN_EDGE_STATUS).label}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted">
                 ${view === 'priority' ? html`<span>Priority #${idea.priority}</span><span>•</span>` : html``}

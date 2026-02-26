@@ -6,6 +6,8 @@ import type {
 import { toBool, User } from '../../../api/types';
 import { buildUserMap } from './helpers';
 
+const RECENT_ACTIVITY_COUNT = 3;
+
 // ── Account ─────────────────────────────────
 
 export interface Account {
@@ -51,7 +53,7 @@ export async function getAccount(cachedUserMap?: Map<Id, User>): Promise<Account
       aiCredits: { current: account.ai_credits_current, limit: account.ai_credits_limit },
     },
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
-    recentActivity: activities.slice(0, 3).map(activity => ({
+    recentActivity: activities.slice(0, RECENT_ACTIVITY_COUNT).map(activity => ({
       type: activity.type,
       description: `${userMap.get(activity.actor_id)?.fullName() ?? 'Unknown'} ${activity.action} ${activity.target}`,
       time: activity.timestamp,

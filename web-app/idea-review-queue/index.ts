@@ -8,7 +8,7 @@ import {
 } from '../app/icons';
 import { navigateTo, styleForScore } from '../app/core';
 import { getReviewQueue, type ReviewIdea } from '../app/adapters';
-import { edgeStatusConfig } from '../app/config';
+import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
   high: { label: 'High Priority', className: 'badge-error' },
@@ -23,15 +23,17 @@ const readinessConfig: Record<string, { label: string; icon: (size?: number) => 
 };
 
 function buildReviewCard(idea: ReviewIdea): SafeHtml {
-  const readinessDisplay = readinessConfig[idea.readiness];
+  const readinessDisplay = readinessConfig[idea.readiness] ?? { label: 'Unknown', icon: iconAlertCircle, className: 'text-muted' };
+  const priorityDisplay = priorityConfig[idea.priority] ?? UNKNOWN_STATUS;
+  const edgeDisplay = edgeStatusConfig[idea.edgeStatus] ?? UNKNOWN_EDGE_STATUS;
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-review-card="${idea.id}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${priorityConfig[idea.priority]!.className} text-xs">${priorityConfig[idea.priority]!.label}</span>
-            <span class="flex items-center gap-1 text-sm ${readinessDisplay!.className}">${readinessDisplay!.icon(16)} ${readinessDisplay!.label}</span>
-            <span class="badge ${edgeStatusConfig[idea.edgeStatus]!.className} text-xs">${iconTarget(12)} ${edgeStatusConfig[idea.edgeStatus]!.label}</span>
+            <span class="badge ${priorityDisplay.className} text-xs">${priorityDisplay.label}</span>
+            <span class="flex items-center gap-1 text-sm ${readinessDisplay.className}">${readinessDisplay.icon(16)} ${readinessDisplay.label}</span>
+            <span class="badge ${edgeDisplay.className} text-xs">${iconTarget(12)} ${edgeDisplay.label}</span>
           </div>
           <h3 class="font-semibold mb-1">${idea.title}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">

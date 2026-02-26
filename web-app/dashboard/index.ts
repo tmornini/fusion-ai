@@ -23,8 +23,11 @@ const gaugeIconConfig: Record<string, (size?: number, cssClass?: string) => Safe
   dollarSign: iconDollarSign, clock: iconClock, zap: iconZap,
 };
 
+const GAUGE_THEME_FALLBACK = { bg: 'background:hsl(var(--muted)/0.04)', iconBg: 'background:hsl(var(--muted)/0.1)', border: 'border-color:hsl(var(--muted)/0.15)' };
+const CHART_LABEL_MAX_LEN = 12;
+
 function buildGauge(card: GaugeCard): SafeHtml {
-  const themeStyle = gaugeThemeConfig[card.theme]!;
+  const themeStyle = gaugeThemeConfig[card.theme] ?? GAUGE_THEME_FALLBACK;
   const elementId = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
   const innerPct = Math.min((card.inner.value / card.inner.max) * 100, 100);
@@ -121,7 +124,7 @@ function computeProjectHealthData(projects: Project[]) {
 function computeScoreData(ideas: Idea[]) {
   return [...ideas]
     .sort((a, b) => a.score - b.score)
-    .map(idea => ({ label: idea.title.slice(0, 12), value: idea.score }));
+    .map(idea => ({ label: idea.title.slice(0, CHART_LABEL_MAX_LEN), value: idea.score }));
 }
 
 function computeAvailabilityData(members: TeamMember[]) {

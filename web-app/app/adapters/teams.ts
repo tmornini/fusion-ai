@@ -18,11 +18,13 @@ export interface TeamMember {
   status: string;
 }
 
+const TOP_MEMBERS_COUNT = 6;
+
 export async function getTeamMembers(): Promise<TeamMember[]> {
   const rows = await GET('users') as UserEntity[];
   return rows
     .filter(user => user.id !== 'current' && user.department !== '' && user.performance_score > 0)
-    .slice(0, 6)
+    .slice(0, TOP_MEMBERS_COUNT)
     .map(user => ({
       id: user.id,
       name: new User(user).fullName(),

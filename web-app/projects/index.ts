@@ -28,7 +28,7 @@ function buildProgressRing(percent: number): SafeHtml {
 }
 
 function buildProjectCard(project: Project, view: string): SafeHtml {
-  const statusDisplay = projectStatusConfig[project.status];
+  const statusDisplay = projectStatusConfig[project.status] ?? { icon: iconAlertCircle, className: 'badge-default', label: 'Unknown' };
   return html`
     <div class="card card-hover" style="padding:1.25rem" data-project-card="${project.id}">
       <div class="flex items-start gap-4">
@@ -38,7 +38,7 @@ function buildProjectCard(project: Project, view: string): SafeHtml {
             <div style="flex:1;min-width:0">
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <h3 class="font-display font-semibold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${project.title}</h3>
-                <span class="badge ${statusDisplay!.className} text-xs">${statusDisplay!.icon(14)} ${statusDisplay!.label}</span>
+                <span class="badge ${statusDisplay.className} text-xs">${statusDisplay.icon(14)} ${statusDisplay.label}</span>
               </div>
               ${view === 'priority' ? html`<span class="text-xs text-muted">Priority #${project.priority}</span>` : html``}
             </div>
