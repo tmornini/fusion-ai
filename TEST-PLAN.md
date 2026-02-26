@@ -26,7 +26,7 @@
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
 - [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 26 page directories each with `index.html`.
 - [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
-- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `landing/index.html`.
+- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
 ---
@@ -94,7 +94,7 @@
 - [ ] **D9** Step 2 shows "Proposed Solution" textarea (required). "Continue" is disabled until text is entered. PASS: button enables after typing.
 - [ ] **D10** Click "Continue". PASS: advances to Step 3 ("The Impact"), button label changes to "Submit Idea".
 - [ ] **D11** Step 3 shows "Expected Outcome" (required) and "Success Metrics" (optional). "Submit Idea" disabled until Expected Outcome is filled. PASS: button enables after typing in Expected Outcome.
-- [ ] **D12** Click "Submit Idea". PASS: navigates to `idea-convert/index.html?ideaId=new`.
+- [ ] **D12** Click "Submit Idea". PASS: navigates to `ideas/index.html`.
 - [ ] **D13** On Step 2, click "Back". PASS: returns to Step 1 with previously entered data preserved.
 - [ ] **D14** On Step 1, click "Cancel" (or "Back"). PASS: navigates to `ideas/` list.
 - [ ] **D15** "Generate with AI" button is present in the header. PASS: button is visible (no action expected — UI placeholder).
@@ -227,9 +227,9 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 - [ ] **G18** Navigate to `snapshots/`. PASS: shows 4 operation cards: Create Pristine Environment, Wipe and Load Mock Data, Upload Snapshot, Download Snapshot.
 - [ ] **G19** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
-- [ ] **G20** Click "Create Pristine Environment", confirm the dialog. PASS: success toast "Pristine environment created." Info banner appears: "Your database is empty." Navigate to `ideas/` — page loads (no redirect, schema exists). All 22 `fusion-ai:*` keys exist in localStorage as empty arrays.
-- [ ] **G21** Click "Wipe and Load Mock Data". PASS: redirects to root `index.html` (landing page). Navigate to `ideas/` — 11 ideas are back.
-- [ ] **G22** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to root `index.html`. Data matches the snapshot.
+- [ ] **G20** Click "Create Pristine Environment", confirm the dialog. PASS: redirects to `dashboard/index.html`. Dashboard renders with zeroed-out metrics (empty database). All 22 `fusion-ai:*` keys exist in localStorage as empty arrays.
+- [ ] **G21** Click "Wipe and Load Mock Data". PASS: redirects to `dashboard/index.html`. Navigate to `ideas/` — 11 ideas are back.
+- [ ] **G22** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
 
 ---
 
