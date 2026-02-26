@@ -96,103 +96,103 @@ const routes: Route[] = [
 
   // ── Items by ID ────────────────────────────
   route('users/:id', {
-    get: (db, [id]) => db.users.getById(id!),
-    put: (db, [id], payload) => db.users.put(id!, payload),
+    get: (db, p) => db.users.getById(param(p, 0)),
+    put: (db, p, payload) => db.users.put(param(p, 0), payload),
   }),
   route('ideas/:id', {
-    get: (db, [id]) => db.ideas.getById(id!),
-    put: (db, [id], payload) => db.ideas.put(id!, payload),
-    delete: (db, [id]) => db.ideas.delete(id!),
+    get: (db, p) => db.ideas.getById(param(p, 0)),
+    put: (db, p, payload) => db.ideas.put(param(p, 0), payload),
+    delete: (db, p) => db.ideas.delete(param(p, 0)),
   }),
   route('projects/:id', {
-    get: (db, [id]) => db.projects.getById(id!),
-    put: (db, [id], payload) => db.projects.put(id!, payload),
-    delete: (db, [id]) => db.projects.delete(id!),
+    get: (db, p) => db.projects.getById(param(p, 0)),
+    put: (db, p, payload) => db.projects.put(param(p, 0), payload),
+    delete: (db, p) => db.projects.delete(param(p, 0)),
   }),
   route('edges/:id', {
-    get: (db, [id]) => db.edges.getById(id!),
-    put: (db, [id], payload) => db.edges.put(id!, payload),
-    delete: (db, [id]) => db.edges.delete(id!),
+    get: (db, p) => db.edges.getById(param(p, 0)),
+    put: (db, p, payload) => db.edges.put(param(p, 0), payload),
+    delete: (db, p) => db.edges.delete(param(p, 0)),
   }),
   route('processes/:id', {
-    get: (db, [id]) => db.processes.getById(id!),
-    put: (db, [id], payload) => db.processes.put(id!, payload),
-    delete: (db, [id]) => db.processes.delete(id!),
+    get: (db, p) => db.processes.getById(param(p, 0)),
+    put: (db, p, payload) => db.processes.put(param(p, 0), payload),
+    delete: (db, p) => db.processes.delete(param(p, 0)),
   }),
   route('processes/:processId/steps', {
-    get: (db, [processId]) => db.processSteps.getByProcessId(processId!),
+    get: (db, p) => db.processSteps.getByProcessId(param(p, 0)),
   }),
   route('activities/:id', {
-    put: (db, [id], payload) => db.activities.put(id!, payload),
+    put: (db, p, payload) => db.activities.put(param(p, 0), payload),
   }),
   route('notifications/:id', {
-    put: (db, [id], payload) => db.notifications.put(id!, payload),
+    put: (db, p, payload) => db.notifications.put(param(p, 0), payload),
   }),
   route('crunch-columns/:id', {
-    put: (db, [id], payload) => db.crunchColumns.put(id!, payload),
+    put: (db, p, payload) => db.crunchColumns.put(param(p, 0), payload),
   }),
   route('notification-preferences/:id', {
-    put: (db, [id], payload) => db.notificationPreferences.put(id!, payload),
+    put: (db, p, payload) => db.notificationPreferences.put(param(p, 0), payload),
   }),
 
   // ── Nested: idea children ──────────────────
   route('ideas/:ideaId/edge', {
-    get: (db, [ideaId]) => db.edges.getByIdeaId(ideaId!),
+    get: (db, p) => db.edges.getByIdeaId(param(p, 0)),
   }),
   route('ideas/:ideaId/score', {
-    get: (db, [ideaId]) => db.ideaScores.getByIdeaId(ideaId!),
-    put: (db, [ideaId], payload) => db.ideaScores.put(ideaId!, payload),
+    get: (db, p) => db.ideaScores.getByIdeaId(param(p, 0)),
+    put: (db, p, payload) => db.ideaScores.put(param(p, 0), payload),
   }),
 
   // ── Nested: project children (GET) ─────────
   route('projects/:projectId/team', {
-    get: (db, [projectId]) => db.projectTeam.getByProjectId(projectId!),
+    get: (db, p) => db.projectTeam.getByProjectId(param(p, 0)),
   }),
   route('projects/:projectId/milestones', {
-    get: (db, [projectId]) => db.milestones.getByProjectId(projectId!),
+    get: (db, p) => db.milestones.getByProjectId(param(p, 0)),
   }),
   route('projects/:projectId/tasks', {
-    get: (db, [projectId]) => db.projectTasks.getByProjectId(projectId!),
+    get: (db, p) => db.projectTasks.getByProjectId(param(p, 0)),
   }),
   route('projects/:projectId/discussions', {
-    get: (db, [projectId]) => db.discussions.getByProjectId(projectId!),
+    get: (db, p) => db.discussions.getByProjectId(param(p, 0)),
   }),
   route('projects/:projectId/versions', {
-    get: (db, [projectId]) => db.projectVersions.getByProjectId(projectId!),
+    get: (db, p) => db.projectVersions.getByProjectId(param(p, 0)),
   }),
   route('projects/:projectId/clarifications', {
-    get: (db, [projectId]) => db.clarifications.getByProjectId(projectId!),
+    get: (db, p) => db.clarifications.getByProjectId(param(p, 0)),
   }),
 
   // ── Nested: project children (PUT) ─────────
   route('projects/:projectId/team/:userId', {
-    put: (db, [projectId, userId], payload) => db.projectTeam.put(projectId!, userId!, payload),
+    put: (db, p, payload) => db.projectTeam.put(param(p, 0), param(p, 1), payload),
   }),
   route('projects/:projectId/milestones/:milestoneId', {
-    put: (db, [projectId, milestoneId], payload) => db.milestones.put(milestoneId!, { ...payload, project_id: projectId }),
+    put: (db, p, payload) => db.milestones.put(param(p, 1), { ...payload, project_id: param(p, 0) }),
   }),
   route('projects/:projectId/tasks/:taskId', {
-    put: (db, [projectId, taskId], payload) => db.projectTasks.put(taskId!, { ...payload, project_id: projectId }),
+    put: (db, p, payload) => db.projectTasks.put(param(p, 1), { ...payload, project_id: param(p, 0) }),
   }),
   route('projects/:projectId/discussions/:discussionId', {
-    put: (db, [projectId, discussionId], payload) => db.discussions.put(discussionId!, { ...payload, project_id: projectId }),
+    put: (db, p, payload) => db.discussions.put(param(p, 1), { ...payload, project_id: param(p, 0) }),
   }),
   route('projects/:projectId/versions/:versionId', {
-    put: (db, [projectId, versionId], payload) => db.projectVersions.put(versionId!, { ...payload, project_id: projectId }),
+    put: (db, p, payload) => db.projectVersions.put(param(p, 1), { ...payload, project_id: param(p, 0) }),
   }),
   route('projects/:projectId/clarifications/:clarificationId', {
-    put: (db, [projectId, clarificationId], payload) => db.clarifications.put(clarificationId!, { ...payload, project_id: projectId }),
+    put: (db, p, payload) => db.clarifications.put(param(p, 1), { ...payload, project_id: param(p, 0) }),
   }),
 
   // ── Nested: edge children ──────────────────
   route('edges/:edgeId/outcomes', {
-    get: (db, [edgeId]) => db.edgeOutcomes.getByEdgeId(edgeId!),
+    get: (db, p) => db.edgeOutcomes.getByEdgeId(param(p, 0)),
   }),
   route('edges/:edgeId/outcomes/:outcomeId', {
-    put: (db, [edgeId, outcomeId], payload) => db.edgeOutcomes.put(outcomeId!, { ...payload, edge_id: edgeId }),
+    put: (db, p, payload) => db.edgeOutcomes.put(param(p, 1), { ...payload, edge_id: param(p, 0) }),
   }),
   route('edges/:edgeId/outcomes/:outcomeId/metrics/:metricId', {
-    put: (db, [, , metricId], payload) => db.edgeMetrics.put(metricId!, payload),
+    put: (db, p, payload) => db.edgeMetrics.put(param(p, 2), payload),
   }),
 
   // ── Snapshots ──────────────────────────────
