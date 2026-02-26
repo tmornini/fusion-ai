@@ -28,7 +28,7 @@ Preview locally:
 
 ```sh
 python3 -m http.server 8080
-# then open http://localhost:8080/web-app/entry/landing/index.html
+# then open http://localhost:8080/web-app/landing/index.html
 ```
 
 ## Build
@@ -62,10 +62,7 @@ Requires a clean git working directory. The build:
 api/          # Database abstraction, localStorage implementation, REST routing, seed data
 web-app/      # Frontend pages, styles, scripts, layout templates
   site/       # Shared CSS, TypeScript, HTML layout, fonts
-  core/       # Ideas, projects, and related workflows
-  tools/      # Edge, Crunch, Flow analytics
-  admin/      # Account, team, settings, snapshots
-  entry/      # Landing, auth, onboarding
-  reference/  # Design system component gallery
-  system/     # 404 page
+  dashboard/  # 26 page directories at top level (dashboard, ideas, projects, team,
+  ideas/      #   edge, crunch, flow, account, profile, snapshots, landing, auth,
+  ...         #   onboarding, design-system, not-found, etc.)
 ```

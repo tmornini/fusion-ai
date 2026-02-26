@@ -120,49 +120,33 @@ web-app/
     favicon.ico               # Application favicon
     fonts/                    # Self-hosted woff2 files
 
-  # Core pages — ideas, projects, and related workflows
-  core/
-    dashboard/                # Dashboard with gauge cards
-    ideas/                    # Ideas list
-    idea-create/              # Multi-step idea wizard (standalone)
-    idea-convert/             # Idea-to-project conversion (standalone)
-    idea-review-queue/        # Review queue
-    approval-detail/          # Review decision page (standalone)
-    projects/                 # Projects list
-    project-detail/           # Project detail (tabbed)
-    engineering-requirements/ # Engineering requirements
-
-  # Tools — Edge, Crunch, Flow analytics
-  tools/
-    edge/                     # Edge definition (per-idea)
-    edge-list/                # Edge list view
-    crunch/                   # Data labeling tool
-    flow/                     # Process documentation
-
-  # Admin — account, team, and settings
-  admin/
-    team/                     # Team roster
-    account/                  # Account overview
-    profile/                  # Profile settings
-    company-settings/         # Company settings
-    manage-users/             # User administration
-    activity-feed/            # Activity feed
-    notification-settings/    # Notification preferences
-    snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
-
-  # Reference
-  reference/
-    design-system/            # Component gallery
-
-  # Entry — public-facing pages
-  entry/
-    landing/                  # Landing page (standalone)
-    auth/                     # Login/signup (standalone)
-    onboarding/               # Welcome screen (standalone)
-
-  # System
-  system/
-    not-found/                # 404 page (standalone)
+  # Pages — 26 page directories, each with index.ts + index.html
+  dashboard/                # Dashboard with gauge cards
+  ideas/                    # Ideas list
+  idea-create/              # Multi-step idea wizard (standalone)
+  idea-convert/             # Idea-to-project conversion (standalone)
+  idea-review-queue/        # Review queue
+  approval-detail/          # Review decision page (standalone)
+  projects/                 # Projects list
+  project-detail/           # Project detail (tabbed)
+  engineering-requirements/ # Engineering requirements
+  edge/                     # Edge definition (per-idea)
+  edge-list/                # Edge list view
+  crunch/                   # Data labeling tool
+  flow/                     # Process documentation
+  team/                     # Team roster
+  account/                  # Account overview
+  profile/                  # Profile settings
+  company-settings/         # Company settings
+  manage-users/             # User administration
+  activity-feed/            # Activity feed
+  notification-settings/    # Notification preferences
+  snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
+  design-system/            # Component gallery
+  landing/                  # Landing page (standalone)
+  auth/                     # Login/signup (standalone)
+  onboarding/               # Welcome screen (standalone)
+  not-found/                # 404 page (standalone)
 
 SCHEMA.md                     # Database schema (22 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification

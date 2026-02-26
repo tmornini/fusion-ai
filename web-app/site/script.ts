@@ -96,24 +96,24 @@ function getParams(): Record<string, string> {
 }
 
 const PAGE_PATHS: Record<string, string> = {
-  dashboard: 'core/dashboard', ideas: 'core/ideas', projects: 'core/projects',
-  'project-detail': 'core/project-detail', 'engineering-requirements': 'core/engineering-requirements',
-  'idea-create': 'core/idea-create',
-  'idea-convert': 'core/idea-convert', 'idea-review-queue': 'core/idea-review-queue',
-  'approval-detail': 'core/approval-detail',
-  edge: 'tools/edge', 'edge-list': 'tools/edge-list', crunch: 'tools/crunch', flow: 'tools/flow',
-  team: 'admin/team', account: 'admin/account', profile: 'admin/profile',
-  'company-settings': 'admin/company-settings', 'manage-users': 'admin/manage-users',
-  'activity-feed': 'admin/activity-feed', 'notification-settings': 'admin/notification-settings',
-  snapshots: 'admin/snapshots',
-  'design-system': 'reference/design-system',
-  landing: 'entry/landing', auth: 'entry/auth', onboarding: 'entry/onboarding',
-  'not-found': 'system/not-found',
+  dashboard: 'dashboard', ideas: 'ideas', projects: 'projects',
+  'project-detail': 'project-detail', 'engineering-requirements': 'engineering-requirements',
+  'idea-create': 'idea-create',
+  'idea-convert': 'idea-convert', 'idea-review-queue': 'idea-review-queue',
+  'approval-detail': 'approval-detail',
+  edge: 'edge', 'edge-list': 'edge-list', crunch: 'crunch', flow: 'flow',
+  team: 'team', account: 'account', profile: 'profile',
+  'company-settings': 'company-settings', 'manage-users': 'manage-users',
+  'activity-feed': 'activity-feed', 'notification-settings': 'notification-settings',
+  snapshots: 'snapshots',
+  'design-system': 'design-system',
+  landing: 'landing', auth: 'auth', onboarding: 'onboarding',
+  'not-found': 'not-found',
 };
 
 function navigateTo(page: string, params?: Record<string, string>): void {
   const path = PAGE_PATHS[page] || page;
-  let url = '../../' + path + '/index.html';
+  let url = '../' + path + '/index.html';
   if (params && Object.keys(params).length > 0) {
     url += '?' + new URLSearchParams(params).toString();
   }
@@ -183,32 +183,32 @@ async function mutateNotifications(): Promise<void> {
 // ------------------------------------
 
 const pageModules: Record<string, () => Promise<{ init: (params?: Record<string, string>) => void | Promise<void> }>> = {
-  dashboard: () => import('../core/dashboard/index'),
-  ideas: () => import('../core/ideas/index'),
-  projects: () => import('../core/projects/index'),
-  'project-detail': () => import('../core/project-detail/index'),
-  'engineering-requirements': () => import('../core/engineering-requirements/index'),
-  'idea-create': () => import('../core/idea-create/index'),
-  'idea-convert': () => import('../core/idea-convert/index'),
-  'idea-review-queue': () => import('../core/idea-review-queue/index'),
-  'approval-detail': () => import('../core/approval-detail/index'),
-  edge: () => import('../tools/edge/index'),
-  'edge-list': () => import('../tools/edge-list/index'),
-  crunch: () => import('../tools/crunch/index'),
-  flow: () => import('../tools/flow/index'),
-  team: () => import('../admin/team/index'),
-  account: () => import('../admin/account/index'),
-  profile: () => import('../admin/profile/index'),
-  'company-settings': () => import('../admin/company-settings/index'),
-  'manage-users': () => import('../admin/manage-users/index'),
-  'activity-feed': () => import('../admin/activity-feed/index'),
-  'notification-settings': () => import('../admin/notification-settings/index'),
-  snapshots: () => import('../admin/snapshots/index'),
-  'design-system': () => import('../reference/design-system/index'),
-  landing: () => import('../entry/landing/index'),
-  auth: () => import('../entry/auth/index'),
-  onboarding: () => import('../entry/onboarding/index'),
-  'not-found': () => import('../system/not-found/index'),
+  dashboard: () => import('../dashboard/index'),
+  ideas: () => import('../ideas/index'),
+  projects: () => import('../projects/index'),
+  'project-detail': () => import('../project-detail/index'),
+  'engineering-requirements': () => import('../engineering-requirements/index'),
+  'idea-create': () => import('../idea-create/index'),
+  'idea-convert': () => import('../idea-convert/index'),
+  'idea-review-queue': () => import('../idea-review-queue/index'),
+  'approval-detail': () => import('../approval-detail/index'),
+  edge: () => import('../edge/index'),
+  'edge-list': () => import('../edge-list/index'),
+  crunch: () => import('../crunch/index'),
+  flow: () => import('../flow/index'),
+  team: () => import('../team/index'),
+  account: () => import('../account/index'),
+  profile: () => import('../profile/index'),
+  'company-settings': () => import('../company-settings/index'),
+  'manage-users': () => import('../manage-users/index'),
+  'activity-feed': () => import('../activity-feed/index'),
+  'notification-settings': () => import('../notification-settings/index'),
+  snapshots: () => import('../snapshots/index'),
+  'design-system': () => import('../design-system/index'),
+  landing: () => import('../landing/index'),
+  auth: () => import('../auth/index'),
+  onboarding: () => import('../onboarding/index'),
+  'not-found': () => import('../not-found/index'),
 };
 
 // ------------------------------------
