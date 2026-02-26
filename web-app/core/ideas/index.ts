@@ -125,12 +125,13 @@ export async function init(): Promise<void> {
 
   // Empty state
   if (ideas.length === 0) {
+    $('#create-idea-btn')?.remove();
     if (listContainer) {
       setHtml(listContainer, buildEmptyState(
         iconLightbulb(24),
         'No Ideas Yet',
         'Start innovating by creating your first idea.',
-        { label: 'Create Your First Idea', href: '../idea-create/index.html' },
+        { label: html`${iconPlus(16)} Create Your First Idea ${iconWand(16)}`, href: '../idea-create/index.html' },
       ));
     }
     return;

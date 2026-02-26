@@ -90,7 +90,7 @@ export function buildErrorState(message: string, retryLabel = 'Try Again'): Safe
   </div>`;
 }
 
-export function buildEmptyState(iconHtml: SafeHtml, title: string, description: string, action?: { label: string; href: string }): SafeHtml {
+export function buildEmptyState(iconHtml: SafeHtml, title: string, description: string, action?: { label: string | SafeHtml; href: string }): SafeHtml {
   return html`<div class="state-container">
     <div class="state-icon state-icon-empty">${iconHtml}</div>
     <p class="state-title">${title}</p>
