@@ -7,6 +7,7 @@ import {
 } from '../site/script';
 import { getIdeaForConversion, type ConversionIdea } from '../site/data';
 import { PUT, GET } from '../../api/api';
+import type { IdeaEntity } from '../../api/types';
 
 const requiredFields = ['project-name', 'project-lead', 'start-date', 'target-end-date', 'budget', 'priority'];
 
@@ -252,7 +253,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
         budget_label: projectDetails['budget'] || '',
       });
 
-      const existingIdea = await GET(`ideas/${ideaId}`);
+      const existingIdea = await GET(`ideas/${ideaId}`) as IdeaEntity;
       await PUT(`ideas/${ideaId}`, { ...existingIdea, status: 'approved' });
 
       if (projectDetails['first-milestone']?.trim()) {
