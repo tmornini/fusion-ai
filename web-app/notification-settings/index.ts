@@ -2,6 +2,7 @@ import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { icons, iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave } from '../app/icons';
+import { buildErrorState } from '../app/skeleton';
 import { getNotificationCategories, type NotificationCategory } from '../app/adapters';
 
 function buildSwitch(id: string, checked: boolean): SafeHtml {
@@ -37,9 +38,16 @@ function buildCategory(category: NotificationCategory): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  const categories = await getNotificationCategories();
   const container = $('#notification-settings-content');
   if (!container) return;
+  let categories: Awaited<ReturnType<typeof getNotificationCategories>>;
+  try {
+    categories = await getNotificationCategories();
+  } catch {
+    setHtml(container, buildErrorState('Failed to load notification settings.'));
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
 
   setHtml(container, html`
     <div style="max-width:48rem;margin:0 auto">

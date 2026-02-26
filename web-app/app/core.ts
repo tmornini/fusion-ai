@@ -8,6 +8,7 @@ import { STORAGE_KEY_SIDEBAR, state, applyTheme, setTheme } from './state';
 import { $ } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
+import { buildErrorState } from './skeleton';
 import { SCORE_THRESHOLD_HIGH, SCORE_THRESHOLD_MEDIUM } from '../../api/types';
 
 // ------------------------------------
@@ -222,8 +223,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load and init the page module
   const loader = pageModules[pageName];
   if (loader) {
-    const mod = await loader();
-    await mod.init(getParams());
+    try {
+      const mod = await loader();
+      await mod.init(getParams());
+    } catch (err) {
+      console.error(`Page "${pageName}" failed to initialize:`, err);
+      const container = document.querySelector('.page-content') as HTMLElement
+        || document.getElementById('page-root');
+      if (container) {
+        setHtml(container, buildErrorState(
+          err instanceof Error ? err.message : 'This page failed to load.',
+        ));
+        container.querySelector('[data-retry-btn]')?.addEventListener('click', () => location.reload());
+      }
+    }
   }
 });
 

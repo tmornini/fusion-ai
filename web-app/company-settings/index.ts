@@ -2,6 +2,7 @@ import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight } from '../app/icons';
+import { buildErrorState } from '../app/skeleton';
 import { getCompanySettings } from '../app/adapters';
 
 function buildSelectField(id: string, label: string, value: string, options: string[]): SafeHtml {
@@ -27,9 +28,16 @@ function buildToggleRow(id: string, label: string, description: string, checked:
 }
 
 export async function init(): Promise<void> {
-  const settings = await getCompanySettings();
   const container = $('#company-settings-content');
   if (!container) return;
+  let settings: Awaited<ReturnType<typeof getCompanySettings>>;
+  try {
+    settings = await getCompanySettings();
+  } catch {
+    setHtml(container, buildErrorState('Failed to load company settings.'));
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
 
   setHtml(container, html`
     <div style="max-width:48rem;margin:0 auto">

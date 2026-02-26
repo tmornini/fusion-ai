@@ -5,6 +5,7 @@ import {
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
 } from '../app/icons';
+import { buildErrorState } from '../app/skeleton';
 import { getProfile, allStrengths } from '../app/adapters';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
@@ -17,7 +18,16 @@ function buildStrengthChip(name: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  const profile = await getProfile();
+  const container = document.querySelector('.page-content') as HTMLElement;
+  if (!container) return;
+  let profile: Awaited<ReturnType<typeof getProfile>>;
+  try {
+    profile = await getProfile();
+  } catch {
+    setHtml(container, buildErrorState('Failed to load profile.'));
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+    return;
+  }
 
   // Breadcrumb chevron
   const breadcrumbSeparatorEl = $('#profile-breadcrumb-separator');

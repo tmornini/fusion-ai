@@ -7,6 +7,7 @@ import {
   iconType, iconToggleLeft,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
+import { buildErrorState } from '../app/skeleton';
 import { getCrunchColumns, type CrunchColumn } from '../app/adapters';
 
 let step: 'upload' | 'label' | 'review' = 'upload';
@@ -245,10 +246,17 @@ function bindCrunchEvents(): void {
 }
 
 export async function init(): Promise<void> {
-  mockColumns = await getCrunchColumns();
-  step = 'upload';
-  columns = [];
-  expandedColumnId = null;
-  businessContext = '';
-  mutateCrunchPage();
+  const container = $('#crunch-content');
+  if (!container) return;
+  try {
+    mockColumns = await getCrunchColumns();
+    step = 'upload';
+    columns = [];
+    expandedColumnId = null;
+    businessContext = '';
+    mutateCrunchPage();
+  } catch {
+    setHtml(container, buildErrorState('Failed to load Crunch data.'));
+    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
+  }
 }
