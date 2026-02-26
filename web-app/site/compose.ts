@@ -37,7 +37,6 @@ const dashboardPages: Record<string, { source: string; title: string }> = {
 // Standalone pages: source index.html copied directly to output (source == output path)
 const standalonePages = [
   'core/idea-create',
-  'core/idea-scoring',
   'core/idea-convert',
   'core/approval-detail',
   'entry/auth',

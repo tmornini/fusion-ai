@@ -34,7 +34,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
         <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem">
           <div class="flex items-center justify-between" style="height:4rem">
             <div class="flex items-center gap-4">
-              <button class="btn btn-ghost btn-icon" id="convert-back-to-scoring">${iconArrowLeft(20)}</button>
+              <button class="btn btn-ghost btn-icon" id="convert-back-to-ideas">${iconArrowLeft(20)}</button>
               <div class="flex items-center gap-3">
                 <div class="gradient-hero rounded-lg flex items-center justify-center" style="width:2.25rem;height:2.25rem;color:hsl(var(--primary-foreground))">${iconRocket(20)}</div>
                 <span class="text-xl font-display font-bold">Convert to Project</span>
@@ -157,7 +157,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
                       : `${requiredFields.length - completedFieldCount()} required field${requiredFields.length - completedFieldCount() > 1 ? 's' : ''} remaining`}
                   </p>
                   <div class="flex gap-3">
-                    <button class="btn btn-ghost" id="convert-back-to-scoring-2">${iconArrowLeft(16)} Back to Scoring</button>
+                    <button class="btn btn-ghost" id="convert-back-to-ideas-2">${iconArrowLeft(16)} Back to Ideas</button>
                     <button class="btn btn-hero gap-2" id="convert-submit-btn" ${isReadyToConvert() ? '' : 'disabled'}>Create Project ${iconArrowRight(16)}</button>
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
       await PUT(`projects/${projectId}`, {
         title: projectDetails['project-name'],
         description: projectDetails['success-criteria'] || '',
-        status: 'active',
+        status: 'approved',
         progress: 0,
         start_date: projectDetails['start-date'],
         target_end_date: projectDetails['target-end-date'],
@@ -257,8 +257,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
 
       if (projectDetails['first-milestone']?.trim()) {
         const milestoneId = crypto.randomUUID();
-        await PUT(`milestones/${milestoneId}`, {
-          project_id: projectId,
+        await PUT(`projects/${projectId}/milestones/${milestoneId}`, {
           title: projectDetails['first-milestone'],
           status: 'pending',
           date: projectDetails['target-end-date'] || '',
@@ -275,6 +274,6 @@ export async function init(params?: Record<string, string>): Promise<void> {
     }
   });
 
-  $('#convert-back-to-scoring')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
-  $('#convert-back-to-scoring-2')?.addEventListener('click', () => navigateTo('idea-scoring', { ideaId }));
+  $('#convert-back-to-ideas')?.addEventListener('click', () => navigateTo('ideas'));
+  $('#convert-back-to-ideas-2')?.addEventListener('click', () => navigateTo('ideas'));
 }

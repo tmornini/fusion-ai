@@ -133,10 +133,10 @@ export async function init(params?: Record<string, string>): Promise<void> {
 
       <div class="card p-6 mb-8">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconFileText(20, 'text-primary')} Source Idea</h3>
-        <a href="../idea-scoring/index.html?ideaId=${project.linkedIdea.id}" class="flex items-center justify-between" style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);text-decoration:none;color:inherit">
+        <a href="../idea-convert/index.html?ideaId=${project.linkedIdea.id}" class="flex items-center justify-between" style="padding:1rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3);text-decoration:none;color:inherit">
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconLightbulb(20, 'text-primary')}</div>
-            <div><p class="font-medium">${project.linkedIdea.title}</p><p class="text-xs text-muted">View original idea and scoring</p></div>
+            <div><p class="font-medium">${project.linkedIdea.title}</p><p class="text-xs text-muted">View original idea</p></div>
           </div>
           <div class="flex items-center gap-3">
             <span class="badge badge-success text-xs">Score: ${project.linkedIdea.score}</span>

@@ -111,8 +111,8 @@ function buildStepContent(): SafeHtml {
         <div class="flex items-start gap-3">
           ${iconTrendingUp(20, 'text-success')}
           <div>
-            <p class="text-sm font-medium mb-1">Next: AI Scoring</p>
-            <p class="text-sm text-muted">After submitting, our AI will estimate impact, time, and cost based on your inputs.</p>
+            <p class="text-sm font-medium mb-1">Next: Convert to Project</p>
+            <p class="text-sm text-muted">After submitting, you can convert this idea into a project with timeline, budget, and team details.</p>
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ function buildWizardPage(): SafeHtml {
             <button class="btn btn-ghost gap-2" id="idea-create-step-back">${iconArrowLeft(16)} ${currentStep === 1 ? 'Cancel' : 'Back'}</button>
             <span class="text-sm text-muted">Step ${currentStep} of ${steps.length}</span>
             <button class="btn btn-hero gap-2" id="idea-create-step-next" ${isStepComplete() ? '' : 'disabled'}>
-              ${currentStep === 3 ? html`Score Idea ${iconTrendingUp(16)}` : html`Continue ${iconArrowRight(16)}`}
+              ${currentStep === 3 ? html`Submit Idea ${iconCheck(16)}` : html`Continue ${iconArrowRight(16)}`}
             </button>
           </div>
         </div>
@@ -205,7 +205,7 @@ function bindWizardEvents() {
         priority: 0, edge_status: 'missing', category: '', readiness: '',
         waiting_days: 0, impact_label: '', effort_label: '', submitted_at: new Date().toISOString(),
       });
-      navigateTo('idea-scoring', { ideaId });
+      navigateTo('idea-convert', { ideaId });
     }
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#idea-create-step-content input, #idea-create-step-content textarea').forEach(input => {

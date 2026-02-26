@@ -80,55 +80,6 @@ export async function getReviewQueue(): Promise<ReviewIdea[]> {
     });
 }
 
-// ── Idea Scoring ────────────────────────────
-
-export interface ScoreBreakdown {
-  label: string;
-  score: number;
-  maxScore: number;
-  reason: string;
-}
-
-export interface IdeaScore {
-  overall: number;
-  impact: { score: number; breakdown: ScoreBreakdown[] };
-  feasibility: { score: number; breakdown: ScoreBreakdown[] };
-  efficiency: { score: number; breakdown: ScoreBreakdown[] };
-  estimatedTime: string;
-  estimatedCost: string;
-  recommendation: string;
-}
-
-export async function getIdeaForScoring(ideaId: string): Promise<{ title: string; problemStatement: string }> {
-  const idea = await GET(`ideas/${ideaId}`) as IdeaEntity | null;
-  if (!idea) throw new Error(`Idea "${ideaId}" not found.`);
-  return {
-    title: idea.title,
-    problemStatement: idea.problem_statement || '',
-  };
-}
-
-export async function getIdeaScore(ideaId: string): Promise<IdeaScore> {
-  const row = await GET(`ideas/${ideaId}/score`) as IdeaScoreEntity | null;
-  if (!row) {
-    return {
-      overall: 0, estimatedTime: '', estimatedCost: '', recommendation: '',
-      impact: { score: 0, breakdown: [] },
-      feasibility: { score: 0, breakdown: [] },
-      efficiency: { score: 0, breakdown: [] },
-    };
-  }
-  return {
-    overall: row.overall,
-    impact: { score: row.impact_score, breakdown: parseJson<ScoreBreakdown[]>(row.impact_breakdown) },
-    feasibility: { score: row.feasibility_score, breakdown: parseJson<ScoreBreakdown[]>(row.feasibility_breakdown) },
-    efficiency: { score: row.efficiency_score, breakdown: parseJson<ScoreBreakdown[]>(row.efficiency_breakdown) },
-    estimatedTime: row.estimated_time,
-    estimatedCost: row.estimated_cost,
-    recommendation: row.recommendation,
-  };
-}
-
 // ── Idea Convert ────────────────────────────
 
 export interface ConversionIdea {

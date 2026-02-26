@@ -9,7 +9,6 @@ Innovation workflow pages — from idea submission through project execution.
 | [dashboard](dashboard/) | composed | Main dashboard with gauge cards, pipeline stats, and charts |
 | [ideas](ideas/) | composed | Browse and filter ideas with priority views and status badges |
 | [idea-create](idea-create/) | standalone | Multi-step wizard for submitting new ideas |
-| [idea-scoring](idea-scoring/) | standalone | AI scoring breakdown for a specific idea |
 | [idea-convert](idea-convert/) | standalone | Convert an approved idea into a project |
 | [idea-review-queue](idea-review-queue/) | composed | Queue of ideas awaiting approval review |
 | [approval-detail](approval-detail/) | standalone | Deep review with Edge data, approve or reject |

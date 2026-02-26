@@ -98,7 +98,7 @@ function getParams(): Record<string, string> {
 const PAGE_PATHS: Record<string, string> = {
   dashboard: 'core/dashboard', ideas: 'core/ideas', projects: 'core/projects',
   'project-detail': 'core/project-detail', 'engineering-requirements': 'core/engineering-requirements',
-  'idea-create': 'core/idea-create', 'idea-scoring': 'core/idea-scoring',
+  'idea-create': 'core/idea-create',
   'idea-convert': 'core/idea-convert', 'idea-review-queue': 'core/idea-review-queue',
   'approval-detail': 'core/approval-detail',
   edge: 'tools/edge', 'edge-list': 'tools/edge-list', crunch: 'tools/crunch', flow: 'tools/flow',
@@ -189,7 +189,6 @@ const pageModules: Record<string, () => Promise<{ init: (params?: Record<string,
   'project-detail': () => import('../core/project-detail/index'),
   'engineering-requirements': () => import('../core/engineering-requirements/index'),
   'idea-create': () => import('../core/idea-create/index'),
-  'idea-scoring': () => import('../core/idea-scoring/index'),
   'idea-convert': () => import('../core/idea-convert/index'),
   'idea-review-queue': () => import('../core/idea-review-queue/index'),
   'approval-detail': () => import('../core/approval-detail/index'),
@@ -279,7 +278,7 @@ function initActiveNavItem(): void {
     let isActive = linkPage === pageName;
     if (!isActive) {
       if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) isActive = true;
-      else if (linkPage === 'ideas' && ['idea-create', 'idea-scoring', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) isActive = true;
+      else if (linkPage === 'ideas' && ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) isActive = true;
       else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) isActive = true;
       else if (linkPage === 'edge-list' && pageName === 'edge') isActive = true;
     }

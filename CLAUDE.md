@@ -125,7 +125,6 @@ web-app/
     dashboard/                # Dashboard with gauge cards
     ideas/                    # Ideas list
     idea-create/              # Multi-step idea wizard (standalone)
-    idea-scoring/             # AI scoring display (standalone)
     idea-convert/             # Idea-to-project conversion (standalone)
     idea-review-queue/        # Review queue
     approval-detail/          # Review decision page (standalone)

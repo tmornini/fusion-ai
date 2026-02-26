@@ -155,7 +155,7 @@ export async function init(): Promise<void> {
       ${iconLightbulb(16, 'text-primary')}
       <span class="text-sm text-muted" style="white-space:nowrap">
         <span class="font-medium" style="color:hsl(var(--foreground))">Idea Flow:</span>
-        Create → Score → <span class="text-primary font-medium">Edge</span> → Review → Convert
+        Create → <span class="text-primary font-medium">Edge</span> → Review → Convert
       </span>
       ${iconChevronRight(16, 'text-muted')}`);
   }
@@ -201,14 +201,14 @@ export async function init(): Promise<void> {
     const target = e.target as Element;
     const actionButton = target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
     if (actionButton) {
-      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-scoring', { ideaId: actionButton.getAttribute('data-idea-view')! });
+      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-convert', { ideaId: actionButton.getAttribute('data-idea-view')! });
       else if (actionButton.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: actionButton.getAttribute('data-idea-edge')! });
       else if (actionButton.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: actionButton.getAttribute('data-idea-review')! });
       else if (actionButton.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: actionButton.getAttribute('data-idea-convert')! });
       return;
     }
     const card = target.closest<HTMLElement>('[data-idea-card]');
-    if (card) navigateTo('idea-scoring', { ideaId: card.getAttribute('data-idea-card')! });
+    if (card) navigateTo('idea-convert', { ideaId: card.getAttribute('data-idea-card')! });
   });
 
   mutateList();

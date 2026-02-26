@@ -92,19 +92,12 @@
 - [ ] **D7** Enter a Title and Problem Statement. PASS: "Continue" button becomes enabled.
 - [ ] **D8** Click "Continue". PASS: advances to Step 2 ("The Solution"), progress bar updates.
 - [ ] **D9** Step 2 shows "Proposed Solution" textarea (required). "Continue" is disabled until text is entered. PASS: button enables after typing.
-- [ ] **D10** Click "Continue". PASS: advances to Step 3 ("The Impact"), button label changes to "Score Idea".
-- [ ] **D11** Step 3 shows "Expected Outcome" (required) and "Success Metrics" (optional). "Score Idea" disabled until Expected Outcome is filled. PASS: button enables after typing in Expected Outcome.
-- [ ] **D12** Click "Score Idea". PASS: navigates to `idea-scoring/index.html?ideaId=new`.
+- [ ] **D10** Click "Continue". PASS: advances to Step 3 ("The Impact"), button label changes to "Submit Idea".
+- [ ] **D11** Step 3 shows "Expected Outcome" (required) and "Success Metrics" (optional). "Submit Idea" disabled until Expected Outcome is filled. PASS: button enables after typing in Expected Outcome.
+- [ ] **D12** Click "Submit Idea". PASS: navigates to `idea-convert/index.html?ideaId=new`.
 - [ ] **D13** On Step 2, click "Back". PASS: returns to Step 1 with previously entered data preserved.
 - [ ] **D14** On Step 1, click "Cancel" (or "Back"). PASS: navigates to `ideas/` list.
 - [ ] **D15** "Generate with AI" button is present in the header. PASS: button is visible (no action expected — UI placeholder).
-
-### Idea Scoring (`idea-scoring/`)
-
-- [ ] **D16** Navigate to `idea-scoring/?ideaId=1`. PASS: page loads with scores for idea 1 — overall score 82 displayed prominently.
-- [ ] **D17** Score breakdown shows Impact (88), Feasibility (75), and Efficiency (85) with sub-breakdowns (3 items each). PASS: all scores and labels render.
-- [ ] **D18** Estimated time ("6-8 weeks") and cost ("$45,000-$65,000") are displayed. PASS: values visible.
-- [ ] **D19** Recommendation text is displayed. PASS: non-empty recommendation paragraph visible.
 
 ### Idea Convert (`idea-convert/`)
 
@@ -128,9 +121,9 @@
 
 ### Ideas Workflow Integration
 
-- [ ] **D31** After completing the idea-create wizard through to idea-scoring, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
-- [ ] **D32** Navigate from ideas list → idea scoring → back (browser back button). PASS: ideas list renders correctly.
-- [ ] **D33** Navigate to `idea-scoring/?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
+- [ ] **D31** After completing the idea-create wizard through to idea-convert, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
+- [ ] **D32** Navigate from ideas list → idea convert → back button. PASS: navigates to ideas list.
+- [ ] **D33** Navigate to `idea-convert/?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
 - [ ] **D34** Navigate to `approval-detail/` with no `id` parameter. PASS: page handles gracefully — no crash.
 
 ---

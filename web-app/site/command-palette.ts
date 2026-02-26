@@ -102,7 +102,7 @@ async function loadSearchIndex(): Promise<void> {
       meta: `Score: ${idea.score} · ${idea.status.replace(/_/g, ' ')}`,
       category: 'ideas',
       icon: iconLightbulb(16),
-      href: `../../core/idea-scoring/index.html?ideaId=${idea.id}`,
+      href: `../../core/idea-convert/index.html?ideaId=${idea.id}`,
       keywords: `${idea.submittedBy} ${idea.status}`,
     }));
 
