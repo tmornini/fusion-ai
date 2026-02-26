@@ -7,7 +7,7 @@ import {
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
   iconExternalLink, iconBell,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getAccount, type Account } from '../app/adapters';
 
 function styleForUsageLevel(current: number, limit: number): string {

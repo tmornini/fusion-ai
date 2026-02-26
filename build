@@ -16,7 +16,7 @@ npx tsx web-app/app/compose.ts "$BUILD_DIR"
 
 # Bundle TypeScript into build dir
 mkdir -p "$BUILD_DIR/assets"
-npx esbuild web-app/app/script.ts \
+npx esbuild web-app/app/core.ts \
   --bundle \
   --minify \
   --keep-names \

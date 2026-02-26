@@ -8,8 +8,8 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 
 | File | Purpose |
 |------|---------|
-| `script.ts` | Page dispatch, navigation helpers, toast notifications, sidebar/mobile behavior, skeleton rendering |
-| `icons.ts` | ~100 SVG icon functions and `icons` lookup map (re-exported from `script.ts`) |
+| `core.ts` | Page dispatch, navigation helpers, toast notifications, sidebar/mobile behavior, skeleton rendering |
+| `icons.ts` | ~100 SVG icon functions and `icons` lookup map (re-exported from `core.ts`) |
 | `state.ts` | AppState interface, theme persistence, mobile detection, pub-sub (`subscribe`/`setState`) |
 | `dom.ts` | querySelector wrappers ($, $$) and escapeHtml |
 | `toast.ts` | showToast() auto-dismiss notifications |
@@ -53,7 +53,7 @@ All page modules import from `'../../app/adapters'` — with `moduleResolution: 
 
 This produces 19 composed pages. The remaining 7 standalone pages are copied directly.
 
-## Key Exports from `script.ts`
+## Key Exports from `core.ts`
 
 - **Icons** — `iconSparkles(size, cssClass)`, `iconPlus()`, etc. (~100 functions, defined in `icons.ts`, each returns `SafeHtml`)
 - **Navigation** — `navigateTo(page, params?)` constructs relative URLs

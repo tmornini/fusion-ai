@@ -7,7 +7,7 @@ import {
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
 } from '../app/icons';
-import { initials, initTabs, openDialog, closeDialog } from '../app/script';
+import { initials, initTabs, openDialog, closeDialog } from '../app/core';
 import { getTeamMembers, type TeamMember } from '../app/adapters';
 
 function styleForAvailability(availability: number): string {

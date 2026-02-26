@@ -9,7 +9,7 @@ import {
   iconArrowDownRight, iconMinus, iconListTodo, iconGitBranch, iconDatabase,
   iconCode, iconShield, iconBarChart, iconGauge,
 } from '../app/icons';
-import { navigateTo, initials, initTabs } from '../app/script';
+import { navigateTo, initials, initTabs } from '../app/core';
 import { getProjectById, type ProjectDetail } from '../app/adapters';
 
 function buildVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): SafeHtml {

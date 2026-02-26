@@ -6,7 +6,7 @@ import {
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea, type Metric } from '../app/adapters';
 
 interface Outcome { id: string; description: string; metrics: Metric[]; }

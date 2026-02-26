@@ -2,7 +2,7 @@ import { $ } from '../app/dom';
 import { html, setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { iconSparkles, iconArrowRight, iconLoader } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 
 function validateEmail(email: string): string | null {
   if (!email.trim()) return 'Email is required';

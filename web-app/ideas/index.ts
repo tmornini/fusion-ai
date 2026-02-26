@@ -6,7 +6,7 @@ import {
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getIdeas, type Idea } from '../app/adapters';
 import { edgeStatusConfig } from '../app/config';
 

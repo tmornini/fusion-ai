@@ -4,7 +4,7 @@ import {
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { PUT } from '../../api/api';
 
 const steps = [

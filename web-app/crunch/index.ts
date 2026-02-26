@@ -6,7 +6,7 @@ import {
   iconSparkles, iconMessageSquare, iconTable, iconHash, iconCalendar,
   iconType, iconToggleLeft,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getCrunchColumns, type CrunchColumn } from '../app/adapters';
 
 let step: 'upload' | 'label' | 'review' = 'upload';

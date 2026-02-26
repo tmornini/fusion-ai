@@ -8,7 +8,7 @@ import {
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
   iconUsers, iconShield, iconGauge,
 } from '../app/icons';
-import { navigateTo, openDialog, closeDialog } from '../app/script';
+import { navigateTo, openDialog, closeDialog } from '../app/core';
 import { getIdeaForApproval, getEdgeForApproval, buildUserMap, type ApprovalIdea, type ApprovalEdge } from '../app/adapters';
 
 const severityConfig: Record<string, string> = {

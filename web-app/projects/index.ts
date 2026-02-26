@@ -6,7 +6,7 @@ import {
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
   iconEye, iconTarget, iconGripVertical, iconFolderKanban,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getProjects, type Project } from '../app/adapters';
 
 const projectStatusConfig: Record<string, { icon: (size?: number, cssClass?: string) => SafeHtml; className: string; label: string }> = {

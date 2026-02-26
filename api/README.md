@@ -50,5 +50,5 @@ users, ideas, idea_scores, projects, project_team, milestones, project_tasks, di
 The `DbAdapter` interface is designed for easy migration to Postgres or other backends:
 
 1. Implement the `DbAdapter` interface for the new database
-2. Swap the import in `web-app/app/script.ts` from `db-localstorage` to the new implementation
+2. Swap the import in `web-app/app/core.ts` from `db-localstorage` to the new implementation
 3. All pages continue working unchanged — they only call `GET()`/`PUT()` through the `api/` layer

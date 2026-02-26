@@ -6,7 +6,7 @@ import {
   iconCheckCircle2, iconMessageSquare, iconSearch,
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
 } from '../app/icons';
-import { navigateTo, styleForScore } from '../app/script';
+import { navigateTo, styleForScore } from '../app/core';
 import { getReviewQueue, type ReviewIdea } from '../app/adapters';
 import { edgeStatusConfig } from '../app/config';
 

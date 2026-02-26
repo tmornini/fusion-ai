@@ -7,7 +7,7 @@ import {
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getIdeaForConversion, type ConversionIdea } from '../app/adapters';
 import { PUT, GET } from '../../api/api';
 import type { IdeaEntity } from '../../api/types';

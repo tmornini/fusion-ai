@@ -7,7 +7,7 @@ import {
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getProjectForEngineering, getClarificationsByProjectId, buildUserMap, type EngineeringProject, type Clarification } from '../app/adapters';
 
 function buildClarification(clarification: Clarification): SafeHtml {

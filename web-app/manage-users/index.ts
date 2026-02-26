@@ -7,7 +7,7 @@ import {
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
 } from '../app/icons';
-import { initials, openDialog, closeDialog } from '../app/script';
+import { initials, openDialog, closeDialog } from '../app/core';
 import { getManagedUsers, type ManagedUser } from '../app/adapters';
 
 const roleLabels: Record<string, { label: string; icon: (size?: number) => SafeHtml }> = {

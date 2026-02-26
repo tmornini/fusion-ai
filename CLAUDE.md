@@ -54,10 +54,10 @@ import { html, setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import { iconPlus, iconTrash } from '../app/icons';
-import { navigateTo, openDialog, closeDialog } from '../app/script';
+import { navigateTo, openDialog, closeDialog } from '../app/core';
 ```
 
-`script.ts` only exports what it defines: `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
+`core.ts` only exports what it defines: `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
 
 ### Adapter Conventions
 
@@ -76,9 +76,9 @@ CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggl
 
 All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/app/styles/` and helper functions across `web-app/app/` modules. No external component library.
 
-**Dialog pattern**: Use `openDialog(id)` / `closeDialog(id)` from `script.ts`. Requires matching HTML elements: `id="{id}-backdrop"` (with `class="dialog-backdrop hidden"`) and `id="{id}-dialog"` (with `class="dialog hidden" aria-hidden="true"`). Helpers manage visibility, ARIA attributes, and focus.
+**Dialog pattern**: Use `openDialog(id)` / `closeDialog(id)` from `core.ts`. Requires matching HTML elements: `id="{id}-backdrop"` (with `class="dialog-backdrop hidden"`) and `id="{id}-dialog"` (with `class="dialog hidden" aria-hidden="true"`). Helpers manage visibility, ARIA attributes, and focus.
 
-**Tab pattern**: Use `initTabs('[data-tab]', '.tab-panel')` from `script.ts`. Tab buttons use `data-tab="{name}"` attribute, panels use `id="tab-{name}"`.
+**Tab pattern**: Use `initTabs('[data-tab]', '.tab-panel')` from `core.ts`. Tab buttons use `data-tab="{name}"` attribute, panels use `id="tab-{name}"`.
 
 ### Design System
 
@@ -115,7 +115,7 @@ web-app/
     tsconfig.json             # TypeScript config
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
-    script.ts                 # Page dispatch, navigation, layout behavior, shared utilities
+    core.ts                   # Page dispatch, navigation, layout behavior, shared utilities
     icons.ts                  # ~100 SVG icon functions and lookup map
     state.ts                  # AppState, theme, mobile detection, pub-sub
     charts.ts                 # SVG chart rendering (bar, line, donut, area)

@@ -8,7 +8,7 @@ import {
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
 } from '../app/icons';
-import { navigateTo } from '../app/script';
+import { navigateTo } from '../app/core';
 import { getFlow, type ProcessStep, type Flow } from '../app/adapters';
 
 const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
