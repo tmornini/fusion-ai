@@ -10,6 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 No test framework is configured.
 
+## TypeScript
+
+Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `web-app/app/tsconfig.json`. The `compose.ts` build script is excluded from type checking (it runs in Node).
+
 ## Architecture
 
 **Vanilla TypeScript** with zero runtime dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file that works via both HTTP server and `file:///` protocol.
@@ -19,7 +23,7 @@ No test framework is configured.
 - **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
-- **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
+- **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'dashboard'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~30 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
@@ -57,7 +61,7 @@ import { iconPlus, iconTrash } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
 ```
 
-`core.ts` only exports what it defines: `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
+`core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
 
 ### Adapter Conventions
 
@@ -115,7 +119,12 @@ web-app/
     tsconfig.json             # TypeScript config
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
-    core.ts                   # Page dispatch, navigation, layout behavior, shared utilities
+    core.ts                   # Page dispatch + re-exports from format.ts, layout.ts, navigation.ts, dialog.ts
+    page-registry.ts          # PAGE_REGISTRY: maps page names → dashboard/standalone classification
+    format.ts                 # initials(), styleForScore() formatting utilities
+    layout.ts                 # Dashboard layout initialization and sidebar behavior
+    navigation.ts             # navigateTo(), getPageName(), URL construction, link prefetch
+    dialog.ts                 # openDialog(), closeDialog(), initTabs() dialog/tab helpers
     icons.ts                  # ~100 SVG icon functions and lookup map
     state.ts                  # AppState, theme, mobile detection, pub-sub
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
@@ -188,7 +197,7 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 
 ## Build
 
-The `build` script requires a clean git working directory (no uncommitted changes), then:
+Build steps (requires clean git working directory):
 1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
 2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
@@ -196,6 +205,17 @@ The `build` script requires a clean git working directory (no uncommitted change
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.
+
+## Gotchas
+
+- **`noUncheckedIndexedAccess`**: tsconfig enables this — array/object index access returns `T | undefined`, requiring explicit `!` assertions or guards.
+- **ES2024 target**: No transpilation. Native `Object.groupBy()`, `Map.groupBy()` are available. Assumes modern browser.
+- **`withLoadingState()` returns null**: Returns `null` on error AND when data is empty with an `emptyState` config — callers must check for null before using the result.
+- **Cross-tab theme sync**: `state.ts` listens to `StorageEvent` and syncs theme changes across browser tabs automatically.
+- **Non-critical writes swallowed**: localStorage writes for theme and sidebar state are wrapped in try/catch with empty catch — quota errors don't break the app.
+- **Snapshots wipe-first**: All snapshot operations (pristine, mock data, import) call `DELETE('snapshots/schema')` before writing — there is no merge, only replace.
+- **Score thresholds**: `SCORE_THRESHOLD_HIGH = 80` and `SCORE_THRESHOLD_MEDIUM = 60` in `api/types.ts` determine `PriorityLevel` computation.
+- **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. All page URLs use `../pageName/index.html` relative paths.
 
 ## Worktrees
 
