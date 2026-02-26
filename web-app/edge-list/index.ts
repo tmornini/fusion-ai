@@ -1,6 +1,6 @@
 import { $ } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconTarget, iconSearch, iconCheckCircle2, iconAlertCircle, iconClock,
   iconChevronRight, iconTrendingUp, iconShield, iconBarChart, iconUser,
@@ -44,23 +44,16 @@ function buildEdgeCard(edge: EdgeListItem): SafeHtml {
 
 export async function init(): Promise<void> {
   const listEl = $('#edge-list');
-  if (listEl) setHtml(listEl, buildSkeleton('card-list', { count: 4 }));
+  if (!listEl) return;
 
-  let edges: EdgeListItem[];
-  try {
-    edges = await getEdgeList();
-  } catch {
-    if (listEl) {
-      setHtml(listEl, buildErrorState('Failed to load Edge definitions.'));
-      listEl.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
-    }
-    return;
-  }
-
-  if (edges.length === 0) {
-    if (listEl) setHtml(listEl, buildEmptyState(iconTarget(24), 'No Edge Definitions', 'Create Edge definitions for your ideas to track outcomes and metrics.', { label: 'View Ideas', href: '../ideas/index.html' }));
-    return;
-  }
+  const result = await withLoadingState(listEl, buildSkeleton('card-list', { count: 4 }), getEdgeList, () => init(), {
+    icon: iconTarget(24),
+    title: 'No Edge Definitions',
+    description: 'Create Edge definitions for your ideas to track outcomes and metrics.',
+    action: { label: 'View Ideas', href: '../ideas/index.html' },
+  });
+  if (!result) return;
+  const edges = result;
 
   // Badge icon
   const pageBadgeEl = $('#page-badge');

@@ -7,43 +7,19 @@
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { PAGE_REGISTRY } from './page-registry';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const OUT = process.argv[2] || ROOT;
 
-// Page name → { source path (doubles as output path), title }
-const dashboardPages: Record<string, { source: string; title: string }> = {
-  dashboard:                  { source: 'dashboard',                title: 'Dashboard' },
-  ideas:                      { source: 'ideas',                    title: 'Ideas' },
-  projects:                   { source: 'projects',                 title: 'Projects' },
-  'project-detail':           { source: 'project-detail',           title: 'Project Detail' },
-  'engineering-requirements':  { source: 'engineering-requirements',  title: 'Engineering Requirements' },
-  'idea-review-queue':        { source: 'idea-review-queue',        title: 'Review Queue' },
-  edge:                       { source: 'edge',                    title: 'Edge Definition' },
-  'edge-list':                { source: 'edge-list',               title: 'Edge List' },
-  crunch:                     { source: 'crunch',                  title: 'Crunch' },
-  flow:                       { source: 'flow',                    title: 'Flow' },
-  team:                       { source: 'team',                    title: 'Teams' },
-  account:                    { source: 'account',                 title: 'Account' },
-  profile:                    { source: 'profile',                 title: 'Profile' },
-  'company-settings':         { source: 'company-settings',        title: 'Company Settings' },
-  'manage-users':             { source: 'manage-users',            title: 'Manage Users' },
-  'activity-feed':            { source: 'activity-feed',           title: 'Activity Feed' },
-  'notification-settings':    { source: 'notification-settings',   title: 'Notification Settings' },
-  snapshots:                  { source: 'snapshots',               title: 'Snapshots' },
-  'design-system':            { source: 'design-system',           title: 'Design System' },
-};
+// Derive dashboard and standalone page lists from the single registry
+const dashboardPages = Object.entries(PAGE_REGISTRY)
+  .filter(([, entry]) => entry.layout === 'dashboard')
+  .map(([name, entry]) => ({ name, title: entry.title }));
 
-// Standalone pages: source index.html copied directly to output (source == output path)
-const standalonePages = [
-  'idea-create',
-  'idea-convert',
-  'approval-detail',
-  'auth',
-  'landing',
-  'onboarding',
-  'not-found',
-];
+const standalonePages = Object.entries(PAGE_REGISTRY)
+  .filter(([, entry]) => entry.layout === 'standalone')
+  .map(([name]) => name);
 
 function compose(): void {
   const layoutPath = join(ROOT, 'app', 'layout.html');
@@ -52,22 +28,22 @@ function compose(): void {
   const missing: string[] = [];
   let composed = 0;
 
-  for (const [pageName, { source, title }] of Object.entries(dashboardPages)) {
-    const pageHtmlPath = join(ROOT, source, 'index.html');
+  for (const { name, title } of dashboardPages) {
+    const pageHtmlPath = join(ROOT, name, 'index.html');
 
     if (!existsSync(pageHtmlPath)) {
-      missing.push(source);
+      missing.push(name);
       continue;
     }
 
     const pageContent = readFileSync(pageHtmlPath, 'utf-8');
 
     let html = layout
-      .replace('{{PAGE_NAME}}', pageName)
+      .replace('{{PAGE_NAME}}', name)
       .replace('{{PAGE_TITLE}}', title)
       .replace('<!-- PAGE_CONTENT -->', pageContent);
 
-    const outDir = join(OUT, source);
+    const outDir = join(OUT, name);
     if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
     const outPath = join(outDir, 'index.html');
@@ -79,14 +55,14 @@ function compose(): void {
 
   // Copy standalone pages
   let copied = 0;
-  for (const source of standalonePages) {
-    const srcPath = join(ROOT, source, 'index.html');
+  for (const name of standalonePages) {
+    const srcPath = join(ROOT, name, 'index.html');
     if (!existsSync(srcPath)) {
-      missing.push(source);
+      missing.push(name);
       continue;
     }
 
-    const outDir = join(OUT, source);
+    const outDir = join(OUT, name);
     if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
     copyFileSync(srcPath, join(outDir, 'index.html'));

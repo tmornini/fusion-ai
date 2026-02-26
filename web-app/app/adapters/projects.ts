@@ -115,7 +115,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     })),
     tasks: taskRows.map(task => ({
       name: task.name, priority: task.priority, description: task.description,
-      skills: parseJson<string[]>(task.skills),
+      skills: parseJson<string[]>(task.skills, []),
       hours: task.hours,
       assigned: userMap.get(task.assigned_to_id)?.fullName() ?? 'Unknown',
     })),
@@ -158,7 +158,7 @@ export async function getProjectForEngineering(projectId: string, cachedUserMap?
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 
-  const businessContext = parseJson<{ problem?: string; expectedOutcome?: string; successMetrics?: string[]; constraints?: string[] }>(project.business_context);
+  const businessContext = parseJson<{ problem?: string; expectedOutcome?: string; successMetrics?: string[]; constraints?: string[] }>(project.business_context, {});
   const linkedIdea = project.linked_idea_id
     ? await GET(`ideas/${project.linked_idea_id}`) as IdeaEntity | null
     : null;

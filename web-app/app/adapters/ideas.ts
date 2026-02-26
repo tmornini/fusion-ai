@@ -161,9 +161,9 @@ export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id,
       estimate: idea.cost_estimate || '',
       breakdown: idea.cost_breakdown || '',
     },
-    risks: parseJson<ApprovalIdea['risks']>(idea.risks),
-    assumptions: parseJson<string[]>(idea.assumptions),
-    alignments: parseJson<string[]>(idea.alignments),
+    risks: parseJson<ApprovalIdea['risks']>(idea.risks, []),
+    assumptions: parseJson<string[]>(idea.assumptions, []),
+    alignments: parseJson<string[]>(idea.alignments, []),
   };
 }
 

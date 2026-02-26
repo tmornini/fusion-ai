@@ -33,8 +33,8 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       performanceScore: user.performance_score,
       projectsCompleted: user.projects_completed,
       currentProjects: user.current_projects,
-      strengths: parseJson<string[]>(user.strengths),
-      teamDimensions: parseJson<Record<string, number>>(user.team_dimensions),
+      strengths: parseJson<string[]>(user.strengths, []),
+      teamDimensions: parseJson<Record<string, number>>(user.team_dimensions, {}),
       status: user.status,
     }));
 }

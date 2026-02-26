@@ -26,7 +26,7 @@ interface AppState {
 
 type StateListener = () => void;
 
-const state: AppState = {
+const _state: AppState = {
   theme: (localStorage.getItem(STORAGE_KEY_THEME) as AppState['theme']) || 'system',
   isMobile: window.matchMedia('(max-width: 768px)').matches,
   isSidebarCollapsed: false,
@@ -36,10 +36,12 @@ const state: AppState = {
   user: { name: 'Demo User', email: 'demo@example.com', company: 'Demo Company' },
 };
 
+const state: Readonly<AppState> = _state;
+
 const listeners = new Set<StateListener>();
 
 function setState(partial: Partial<AppState>): void {
-  Object.assign(state, partial);
+  Object.assign(_state, partial);
   listeners.forEach(fn => fn());
 }
 
@@ -89,7 +91,7 @@ window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
 // Sync theme across tabs via StorageEvent
 window.addEventListener('storage', (e) => {
   if (e.key === STORAGE_KEY_THEME && e.newValue) {
-    state.theme = e.newValue as AppState['theme'];
+    setState({ theme: e.newValue as AppState['theme'] });
     applyTheme();
   }
 });

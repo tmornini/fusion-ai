@@ -19,10 +19,10 @@ export async function buildUserMap(): Promise<Map<Id, User>> {
   return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
 
-export function parseJson<T>(value: string | T): T {
+export function parseJson<T>(value: string | T, fallback: T): T {
   if (typeof value === 'string') {
     try { return JSON.parse(value) as T; }
-    catch { return value as unknown as T; }
+    catch { return fallback; }
   }
   return value;
 }

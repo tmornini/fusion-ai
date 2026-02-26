@@ -24,7 +24,7 @@ export async function getCrunchColumns(): Promise<CrunchColumn[]> {
     friendlyName: row.friendly_name,
     dataType: row.data_type,
     description: row.description,
-    sampleValues: parseJson<string[]>(row.sample_values),
+    sampleValues: parseJson<string[]>(row.sample_values, []),
     isAcronym: toBool(row.is_acronym),
     acronymExpansion: row.acronym_expansion,
   }));
@@ -70,7 +70,7 @@ export async function getFlow(): Promise<Flow> {
       description: step.description,
       owner: step.owner,
       role: step.role,
-      tools: parseJson<string[]>(step.tools),
+      tools: parseJson<string[]>(step.tools, []),
       duration: step.duration,
       sortOrder: step.sort_order,
       type: step.type as ProcessStep['type'],

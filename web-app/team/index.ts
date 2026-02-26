@@ -1,7 +1,7 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
@@ -148,22 +148,15 @@ function bindDetailTabs(): void {
 
 export async function init(): Promise<void> {
   const teamListEl = $('#team-list');
-  if (teamListEl) setHtml(teamListEl, buildSkeleton('card-list', { count: 4 }));
+  if (!teamListEl) return;
 
-  try {
-    members = await getTeamMembers();
-  } catch {
-    if (teamListEl) {
-      setHtml(teamListEl, buildErrorState('Failed to load team members.'));
-      teamListEl.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
-    }
-    return;
-  }
-
-  if (members.length === 0) {
-    if (teamListEl) setHtml(teamListEl, buildEmptyState(iconUsers(24), 'No Team Members', 'Invite team members to start collaborating on projects.'));
-    return;
-  }
+  const result = await withLoadingState(teamListEl, buildSkeleton('card-list', { count: 4 }), getTeamMembers, () => init(), {
+    icon: iconUsers(24),
+    title: 'No Team Members',
+    description: 'Invite team members to start collaborating on projects.',
+  });
+  if (!result) return;
+  members = result;
 
   // Populate icons
   const addMemberBtnIconEl = $('#add-member-btn-icon');

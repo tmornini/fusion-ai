@@ -1,7 +1,7 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconUsers, iconUserPlus, iconSearch, iconMoreHorizontal,
   iconCrown, iconUserCheck, iconUser, iconEye, iconMail,
@@ -57,21 +57,12 @@ export async function init(): Promise<void> {
   const container = $('#manage-users-content');
   if (!container) return;
 
-  setHtml(container, buildSkeleton('table', { count: 5 }));
-
-  let users: ManagedUser[];
-  try {
-    users = await getManagedUsers();
-  } catch {
-    setHtml(container, buildErrorState('Failed to load users.'));
-    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
-    return;
-  }
-
-  if (users.length === 0) {
-    setHtml(container, buildEmptyState(iconUsers(24), 'No Users Yet', 'Invite users to your organization to start collaborating.'));
-    return;
-  }
+  const users = await withLoadingState(container, buildSkeleton('table', { count: 5 }), getManagedUsers, () => init(), {
+    icon: iconUsers(24),
+    title: 'No Users Yet',
+    description: 'Invite users to your organization to start collaborating.',
+  });
+  if (!users) return;
 
   const activeCount = users.filter(user => user.status === 'active').length;
   const pendingCount = users.filter(user => user.status === 'pending').length;
@@ -94,16 +85,16 @@ export async function init(): Promise<void> {
       <div class="flex items-center gap-4 mb-6">
         <div class="search-wrapper" style="flex:1;max-width:20rem">
           <span class="search-icon">${iconSearch(16)}</span>
-          <input class="input search-input" placeholder="Search by name or email..." id="user-search" />
+          <input class="input search-input" placeholder="Search by name or email..." id="user-search" aria-label="Search by name or email" />
         </div>
-        <select class="input" style="width:10rem" id="role-filter">
+        <select class="input" style="width:10rem" id="role-filter" aria-label="Filter by role">
           <option value="all">All Roles</option>
           <option value="admin">Admin</option>
           <option value="manager">Manager</option>
           <option value="member">Member</option>
           <option value="viewer">Viewer</option>
         </select>
-        <select class="input" style="width:10rem" id="status-filter">
+        <select class="input" style="width:10rem" id="status-filter" aria-label="Filter by status">
           <option value="all">All Status</option>
           <option value="active">Active</option>
           <option value="pending">Pending</option>

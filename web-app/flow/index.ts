@@ -1,7 +1,7 @@
 import { $ } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, buildEmptyState, withLoadingState } from '../app/skeleton';
 import {
   iconGitBranch, iconPlus, iconTrash, iconCheck, iconUsers, iconClock,
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
@@ -268,21 +268,13 @@ function bindFlowEvents(): void {
 
 export async function init(): Promise<void> {
   const root = $('#flow-content');
-  if (root) setHtml(root, buildSkeleton('card-list', { count: 4 }));
+  if (!root) return;
 
-  let flowData: Flow;
-  try {
-    flowData = await getFlow();
-  } catch {
-    if (root) {
-      setHtml(root, buildErrorState('Failed to load process data.'));
-      root.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
-    }
-    return;
-  }
+  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), getFlow, () => init());
+  if (!flowData) return;
 
   if (flowData.steps.length === 0) {
-    if (root) setHtml(root, buildEmptyState(iconGitBranch(24), 'No Process Documented', 'Start documenting your processes to improve visibility and consistency.'));
+    setHtml(root, buildEmptyState(iconGitBranch(24), 'No Process Documented', 'Start documenting your processes to improve visibility and consistency.'));
     return;
   }
 

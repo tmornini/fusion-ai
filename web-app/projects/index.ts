@@ -1,6 +1,6 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconTrendingUp, iconClock, iconDollarSign, iconCheckCircle2,
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
@@ -71,35 +71,17 @@ function buildProjectCard(project: Project, view: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  // Show skeleton immediately
   const listContainer = $('#projects-list');
-  if (listContainer) setHtml(listContainer, buildSkeleton('card-list', { count: 4 }));
+  if (!listContainer) return;
 
-  // Fetch data with error handling
-  let projects: Project[];
-  try {
-    projects = await getProjects();
-  } catch (e) {
-    if (listContainer) {
-      const errorMessage = e instanceof Error ? e.message : 'Failed to load projects. Please try again.';
-      setHtml(listContainer, buildErrorState(errorMessage));
-      listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
-    }
-    return;
-  }
-
-  // Empty state
-  if (projects.length === 0) {
-    if (listContainer) {
-      setHtml(listContainer, buildEmptyState(
-        iconFolderKanban(24),
-        'No Projects Yet',
-        'Convert approved ideas into projects to start tracking progress.',
-        { label: 'View Ideas', href: '../ideas/index.html' },
-      ));
-    }
-    return;
-  }
+  const result = await withLoadingState(listContainer, buildSkeleton('card-list', { count: 4 }), getProjects, init, {
+    icon: iconFolderKanban(24),
+    title: 'No Projects Yet',
+    description: 'Convert approved ideas into projects to start tracking progress.',
+    action: { label: 'View Ideas', href: '../ideas/index.html' },
+  });
+  if (!result) return;
+  const projects = result;
 
   let currentView: 'priority' | 'performance' = 'priority';
 

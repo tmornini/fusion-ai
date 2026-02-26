@@ -99,18 +99,38 @@ export function buildEmptyState(iconHtml: SafeHtml, title: string, description: 
   </div>`;
 }
 
+export function errorMessage(error: unknown, fallback = 'An unexpected error occurred. Please try again.'): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string' && error.length > 0) return error;
+  return fallback;
+}
+
+export interface EmptyStateConfig {
+  icon: SafeHtml;
+  title: string;
+  description: string;
+  action?: { label: string | SafeHtml; href: string };
+  onEmpty?: () => void;
+}
+
 export async function withLoadingState<T>(
   container: HTMLElement,
   skeletonHtml: SafeHtml,
   fetchFn: () => Promise<T>,
   retryFn?: () => void,
+  emptyState?: EmptyStateConfig,
 ): Promise<T | null> {
   setHtml(container, skeletonHtml);
   try {
-    return await fetchFn();
+    const data = await fetchFn();
+    if (emptyState && Array.isArray(data) && data.length === 0) {
+      setHtml(container, buildEmptyState(emptyState.icon, emptyState.title, emptyState.description, emptyState.action));
+      emptyState.onEmpty?.();
+      return null;
+    }
+    return data;
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'An unexpected error occurred. Please try again.';
-    setHtml(container, buildErrorState(errorMessage));
+    setHtml(container, buildErrorState(errorMessage(e)));
     const retryBtn = container.querySelector('[data-retry-btn]');
     if (retryBtn && retryFn) {
       retryBtn.addEventListener('click', retryFn);

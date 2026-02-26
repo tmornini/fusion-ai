@@ -1,6 +1,6 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
@@ -62,28 +62,13 @@ export async function init(): Promise<void> {
   const root = $('#review-queue-content');
   if (!root) return;
 
-  // Show skeleton immediately
-  setHtml(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`);
-
-  // Fetch data with error handling
-  try {
-    allIdeas = await getReviewQueue();
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Failed to load review queue. Please try again.';
-    setHtml(root, buildErrorState(errorMessage));
-    root.querySelector('[data-retry-btn]')?.addEventListener('click', init);
-    return;
-  }
-
-  // Empty state
-  if (allIdeas.length === 0) {
-    setHtml(root, buildEmptyState(
-      iconClipboardCheck(24),
-      'Review Queue Empty',
-      'All ideas have been reviewed. Check back later for new submissions.',
-    ));
-    return;
-  }
+  const result = await withLoadingState(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`, getReviewQueue, () => init(), {
+    icon: iconClipboardCheck(24),
+    title: 'Review Queue Empty',
+    description: 'All ideas have been reviewed. Check back later for new submissions.',
+  });
+  if (!result) return;
+  allIdeas = result;
 
   const stats = {
     total: allIdeas.length,
@@ -122,15 +107,15 @@ export async function init(): Promise<void> {
     <div class="flex gap-4 mb-6">
       <div class="search-wrapper" style="flex:1">
         <span class="search-icon">${iconSearch(16)}</span>
-        <input class="input search-input" placeholder="Search ideas or submitters..." id="review-queue-search" />
+        <input class="input search-input" placeholder="Search ideas or submitters..." id="review-queue-search" aria-label="Search ideas or submitters" />
       </div>
-      <select class="input" style="width:10rem" id="review-queue-priority-filter">
+      <select class="input" style="width:10rem" id="review-queue-priority-filter" aria-label="Filter by priority">
         <option value="all">All Priority</option>
         <option value="high">High</option>
         <option value="medium">Medium</option>
         <option value="low">Low</option>
       </select>
-      <select class="input" style="width:10rem" id="review-queue-readiness-filter">
+      <select class="input" style="width:10rem" id="review-queue-readiness-filter" aria-label="Filter by readiness">
         <option value="all">All Status</option>
         <option value="ready">Ready</option>
         <option value="needs-info">Needs Info</option>

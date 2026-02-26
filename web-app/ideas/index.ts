@@ -1,6 +1,6 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
@@ -108,36 +108,18 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  // Show skeleton immediately
   const listContainer = $('#ideas-list');
-  if (listContainer) setHtml(listContainer, buildSkeleton('card-list', { count: 4 }));
+  if (!listContainer) return;
 
-  // Fetch data with error handling
-  let ideas: Idea[];
-  try {
-    ideas = await getIdeas();
-  } catch (e) {
-    if (listContainer) {
-      const errorMessage = e instanceof Error ? e.message : 'Failed to load ideas. Please try again.';
-      setHtml(listContainer, buildErrorState(errorMessage));
-      listContainer.querySelector('[data-retry-btn]')?.addEventListener('click', init);
-    }
-    return;
-  }
-
-  // Empty state
-  if (ideas.length === 0) {
-    $('#create-idea-btn')?.remove();
-    if (listContainer) {
-      setHtml(listContainer, buildEmptyState(
-        iconLightbulb(24),
-        'No Ideas Yet',
-        'Start innovating by creating your first idea.',
-        { label: html`${iconPlus(16)} Create Your First Idea ${iconWand(16)}`, href: '../idea-create/index.html' },
-      ));
-    }
-    return;
-  }
+  const result = await withLoadingState(listContainer, buildSkeleton('card-list', { count: 4 }), getIdeas, init, {
+    icon: iconLightbulb(24),
+    title: 'No Ideas Yet',
+    description: 'Start innovating by creating your first idea.',
+    action: { label: html`${iconPlus(16)} Create Your First Idea ${iconWand(16)}`, href: '../idea-create/index.html' },
+    onEmpty: () => { $('#create-idea-btn')?.remove(); },
+  });
+  if (!result) return;
+  const ideas = result;
 
   let currentView = 'priority';
 

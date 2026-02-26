@@ -5,7 +5,7 @@ import {
   iconCheckCircle2, iconMessageSquare, iconUserPlus, iconEdit,
   iconArrowRight, iconSearch, iconChevronRight,
 } from '../app/icons';
-import { buildSkeleton, buildErrorState, buildEmptyState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import { getActivityFeed, type Activity } from '../app/adapters';
 
 function buildActivityIcon(type: string): SafeHtml {
@@ -46,21 +46,12 @@ export async function init(): Promise<void> {
   const container = $('#activity-feed-content');
   if (!container) return;
 
-  setHtml(container, buildSkeleton('card-list', { count: 6 }));
-
-  let activities: Activity[];
-  try {
-    activities = await getActivityFeed();
-  } catch {
-    setHtml(container, buildErrorState('Failed to load activity feed.'));
-    container.querySelector('[data-retry-btn]')?.addEventListener('click', () => init());
-    return;
-  }
-
-  if (activities.length === 0) {
-    setHtml(container, buildEmptyState(iconActivity(24), 'No Activity Yet', 'Activity from your team will appear here as they work on ideas and projects.'));
-    return;
-  }
+  const activities = await withLoadingState(container, buildSkeleton('card-list', { count: 6 }), getActivityFeed, () => init(), {
+    icon: iconActivity(24),
+    title: 'No Activity Yet',
+    description: 'Activity from your team will appear here as they work on ideas and projects.',
+  });
+  if (!activities) return;
 
   setHtml(container, html`
     <div style="max-width:48rem;margin:0 auto">
@@ -80,9 +71,9 @@ export async function init(): Promise<void> {
       <div class="flex items-center gap-4 mb-6">
         <div class="search-wrapper" style="flex:1">
           <span class="search-icon">${iconSearch(16)}</span>
-          <input class="input search-input" placeholder="Search activity..." id="activity-search" />
+          <input class="input search-input" placeholder="Search activity..." id="activity-search" aria-label="Search activity" />
         </div>
-        <select class="input" style="width:10rem" id="activity-filter">
+        <select class="input" style="width:10rem" id="activity-filter" aria-label="Filter by activity type">
           <option value="all">All Activity</option>
           <option value="idea">Ideas</option>
           <option value="project">Projects</option>

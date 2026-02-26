@@ -4,6 +4,7 @@
 // ============================================
 
 import { GET, POST, PUT, DELETE } from '../../api/api';
+import type { UserEntity } from '../../api/types';
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -12,7 +13,7 @@ import { iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../
 const BANNER_ID = 'empty-banner';
 
 async function updateEmptyBanner(root: HTMLElement): Promise<void> {
-  const users = await GET('users') as unknown[];
+  const users = await GET('users') as UserEntity[];
   const existing = document.getElementById(BANNER_ID);
   if (users.length === 0) {
     if (!existing) {

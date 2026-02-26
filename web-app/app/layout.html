@@ -76,7 +76,7 @@
         <header class="top-header">
           <div class="search-wrapper">
             <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-            <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." id="search-input" />
+            <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." id="search-input" aria-label="Search ideas, projects, teams" />
           </div>
           <div class="header-actions">
             <!-- Theme Toggle -->
@@ -110,7 +110,7 @@
 
         <!-- ===== MOBILE HEADER ===== -->
         <div class="mobile-header">
-          <button class="btn btn-ghost btn-icon" id="mobile-sidebar-open"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+          <button class="btn btn-ghost btn-icon" id="mobile-sidebar-open" aria-label="Open navigation menu"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
           <span class="mobile-header-title">Fusion AI</span>
           <div class="header-actions">
             <button class="btn btn-ghost btn-icon" id="mobile-search-toggle"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
@@ -145,14 +145,14 @@
         <div class="mobile-search-bar hidden" id="mobile-search-bar">
           <div class="search-wrapper">
             <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-            <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." />
+            <input type="text" class="input search-input" placeholder="Search ideas, projects, teams..." aria-label="Search ideas, projects, teams" />
             <button class="btn btn-ghost btn-icon btn-sm search-close-btn" id="mobile-search-close"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           </div>
         </div>
 
         <!-- ===== MOBILE SIDEBAR SHEET ===== -->
         <div id="mobile-sheet-backdrop" class="hidden sheet-backdrop"></div>
-        <div id="mobile-sheet" class="sheet sheet-left hidden">
+        <div id="mobile-sheet" class="sheet sheet-left hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
           <aside class="w-full h-full">
             <div class="sidebar-header">
               <div class="sidebar-logo">
