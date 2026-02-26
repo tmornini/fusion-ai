@@ -205,7 +205,7 @@ function bindWizardEvents() {
         priority: 0, edge_status: 'missing', category: '', readiness: '',
         waiting_days: 0, impact_label: '', effort_label: '', submitted_at: new Date().toISOString(),
       });
-      navigateTo('idea-convert', { ideaId });
+      navigateTo('ideas');
     }
   });
   document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#idea-create-step-content input, #idea-create-step-content textarea').forEach(input => {
