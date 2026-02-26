@@ -101,21 +101,19 @@ const projectHealthConfig: Record<string, { label: string; color: string }> = {
 };
 
 function computePipelineData(ideas: Idea[]) {
-  const groups: Record<string, number> = {};
-  ideas.forEach(idea => { groups[idea.status] = (groups[idea.status] || 0) + 1; });
-  return Object.entries(groups).map(([status, count]) => ({
+  const groups = Object.groupBy(ideas, idea => idea.status);
+  return Object.entries(groups).map(([status, items]) => ({
     label: ideaPipelineConfig[status]?.label || status,
-    value: count,
+    value: items?.length ?? 0,
     color: ideaPipelineConfig[status]?.color,
   }));
 }
 
 function computeProjectHealthData(projects: Project[]) {
-  const groups: Record<string, number> = {};
-  projects.forEach(project => { groups[project.status] = (groups[project.status] || 0) + 1; });
-  return Object.entries(groups).map(([status, count]) => ({
+  const groups = Object.groupBy(projects, project => project.status);
+  return Object.entries(groups).map(([status, items]) => ({
     label: projectHealthConfig[status]?.label || status,
-    value: count,
+    value: items?.length ?? 0,
     color: projectHealthConfig[status]?.color,
   }));
 }

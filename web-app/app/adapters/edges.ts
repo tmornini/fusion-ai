@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel, Id } from '../../../api/types';
 import { User } from '../../../api/types';
-import { buildUserMap, groupBy } from './helpers';
+import { buildUserMap } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -49,7 +49,7 @@ export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeLi
   ]);
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
 
-  const outcomesByEdgeId = groupBy(allOutcomes, outcome => outcome.edge_id);
+  const outcomesByEdgeId = Map.groupBy(allOutcomes, outcome => outcome.edge_id);
 
   return edgeRows.map(edge => {
     const outcomes = outcomesByEdgeId.get(edge.id) || [];

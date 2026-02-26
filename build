@@ -20,7 +20,7 @@ npx esbuild web-app/app/core.ts \
   --bundle \
   --minify \
   --keep-names \
-  --target=es2020 \
+  --target=es2024 \
   --format=iife \
   --outfile="$BUILD_DIR/assets/app.js"
 

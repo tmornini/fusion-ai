@@ -3,17 +3,6 @@ import type { Id, ConfidenceLevel } from '../../../api/types';
 import type { UserEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity } from '../../../api/types';
 import { User } from '../../../api/types';
 
-export function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, T[]> {
-  const map = new Map<string, T[]>();
-  for (const item of items) {
-    const key = keyFn(item);
-    const list = map.get(key);
-    if (list) list.push(item);
-    else map.set(key, [item]);
-  }
-  return map;
-}
-
 export async function buildUserMap(): Promise<Map<Id, User>> {
   const users = await GET('users') as UserEntity[];
   return new Map(users.map(entity => [entity.id, new User(entity)]));
@@ -56,7 +45,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 
-  const metricsByOutcomeId = groupBy(allMetrics, metric => metric.outcome_id);
+  const metricsByOutcomeId = Map.groupBy(allMetrics, metric => metric.outcome_id);
 
   return {
     outcomes: outcomes.map(outcome => ({

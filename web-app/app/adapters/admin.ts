@@ -4,7 +4,7 @@ import type {
   NotificationCategoryEntity, NotificationPreferenceEntity, Id,
 } from '../../../api/types';
 import { toBool, User } from '../../../api/types';
-import { buildUserMap, groupBy } from './helpers';
+import { buildUserMap } from './helpers';
 
 // ── Account ─────────────────────────────────
 
@@ -173,7 +173,7 @@ export async function getNotificationCategories(): Promise<NotificationCategory[
     GET('notification-preferences') as Promise<NotificationPreferenceEntity[]>,
   ]);
 
-  const preferencesByCategoryId = groupBy(preferences, preference => preference.category_id);
+  const preferencesByCategoryId = Map.groupBy(preferences, preference => preference.category_id);
 
   return categories.map(category => ({
     id: category.id,
