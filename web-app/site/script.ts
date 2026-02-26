@@ -222,15 +222,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize database before any page modules
   try {
     const { createLocalStorageAdapter } = await import('../../api/db-localstorage');
-    const { initApi } = await import('../../api/api');
+    const { initApi, GET } = await import('../../api/api');
 
     const adapter = await createLocalStorageAdapter();
     await adapter.initialize();
     initApi(adapter);
 
     // If no schema exists, redirect to snapshots so user can choose what to load
-    const schemaExists = await adapter.hasSchema();
-    if (!schemaExists) {
+    const snapshot = await GET('snapshots/schema');
+    if (snapshot === null) {
       const page = getPageName();
       const skipRedirect = ['snapshots', 'auth', 'onboarding', 'not-found', 'design-system', 'landing'];
       if (!skipRedirect.includes(page)) {

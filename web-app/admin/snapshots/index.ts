@@ -3,14 +3,13 @@
 // Wipe, reload, upload/download snapshot operations.
 // ============================================
 
-import { getDbAdapter } from '../../../api/api';
-import { seedData } from '../../../api/seed';
+import { GET, POST, PUT, DELETE } from '../../../api/api';
 import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo, html, setHtml, SafeHtml } from '../../site/script';
 
 const BANNER_ID = 'empty-banner';
 
 async function updateEmptyBanner(root: HTMLElement): Promise<void> {
-  const users = await getDbAdapter().users.getAll();
+  const users = await GET('users') as unknown[];
   const existing = document.getElementById(BANNER_ID);
   if (users.length === 0) {
     if (!existing) {
@@ -87,9 +86,8 @@ export async function init(): Promise<void> {
   $('#wipe-btn')?.addEventListener('click', async () => {
     if (!confirm('Are you sure you want to create a pristine environment? All existing data will be removed. This cannot be undone.')) return;
     try {
-      const db = getDbAdapter();
-      await db.wipeAllData();
-      await db.createSchema();
+      await DELETE('snapshots/schema');
+      await POST('snapshots/schema', {});
       window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to create pristine environment.', 'error');
@@ -99,11 +97,9 @@ export async function init(): Promise<void> {
   // Wipe and load mock data
   $('#reload-btn')?.addEventListener('click', async () => {
     try {
-      const db = getDbAdapter();
-      await db.wipeAllData();
-      await db.createSchema();
-      await seedData(db);
-      await db.flush();
+      await DELETE('snapshots/schema');
+      await POST('snapshots/schema', {});
+      await POST('snapshots/mock-data', {});
       window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to load mock data.', 'error');
@@ -117,10 +113,8 @@ export async function init(): Promise<void> {
     if (!file) return;
     try {
       const text = await file.text();
-      const db = getDbAdapter();
-      await db.wipeAllData();
-      await db.importSnapshot(text);
-      await db.flush();
+      await DELETE('snapshots/schema');
+      await PUT('snapshots/import', { json: text });
       window.location.href = '../../core/dashboard/index.html';
     } catch (e) {
       showToast('Failed to upload snapshot. Check file format.', 'error');
@@ -131,7 +125,7 @@ export async function init(): Promise<void> {
   // Download snapshot
   $('#download-btn')?.addEventListener('click', async () => {
     try {
-      const json = await getDbAdapter().exportSnapshot();
+      const json = await GET('snapshots/schema') as string;
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const downloadLink = document.createElement('a');

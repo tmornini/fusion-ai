@@ -1,6 +1,6 @@
 // ============================================
 // FUSION AI — REST-style API
-// GET/PUT/DELETE routing for the database adapter.
+// GET/PUT/DELETE/POST routing for the database adapter.
 // ============================================
 
 import type { DbAdapter } from './db';
@@ -21,15 +21,17 @@ export function getDbAdapter(): DbAdapter {
 type GetHandler = (adapter: DbAdapter, params: string[]) => Promise<unknown>;
 type PutHandler = (adapter: DbAdapter, params: string[], payload: Record<string, unknown>) => Promise<unknown>;
 type DeleteHandler = (adapter: DbAdapter, params: string[]) => Promise<void>;
+type PostHandler = (adapter: DbAdapter, params: string[], payload: Record<string, unknown>) => Promise<unknown>;
 
 interface Route {
   segments: string[];
   get?: GetHandler;
   put?: PutHandler;
   delete?: DeleteHandler;
+  post?: PostHandler;
 }
 
-function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler; delete?: DeleteHandler }): Route {
+function route(pattern: string, handlers: { get?: GetHandler; put?: PutHandler; delete?: DeleteHandler; post?: PostHandler }): Route {
   return { segments: pattern.split('/'), ...handlers };
 }
 
@@ -185,6 +187,19 @@ const routes: Route[] = [
   route('edges/:edgeId/outcomes/:outcomeId/metrics/:metricId', {
     put: (db, [, , metricId], payload) => db.edgeMetrics.put(metricId!, payload),
   }),
+
+  // ── Snapshots ──────────────────────────────
+  route('snapshots/schema', {
+    get: async (db) => await db.hasSchema() ? db.exportSnapshot() : null,
+    delete: (db) => db.deleteSchema(),
+    post: (db) => db.createSchema(),
+  }),
+  route('snapshots/mock-data', {
+    post: async (db) => { const { populateMockData } = await import('./seed'); await populateMockData(db); },
+  }),
+  route('snapshots/import', {
+    put: (db, _, payload) => db.importSnapshot(payload.json as string),
+  }),
 ];
 
 // ── Route Matching ──────────────────────────
@@ -207,7 +222,7 @@ function matchRoute(pathSegments: string[]): { route: Route; params: string[] } 
   return null;
 }
 
-// ── GET / PUT / DELETE ──────────────────────
+// ── GET / PUT / DELETE / POST ────────────────
 
 export async function GET(resource: string): Promise<unknown> {
   const pathSegments = resource.split('/').filter(Boolean);
@@ -228,4 +243,11 @@ export async function DELETE(resource: string): Promise<void> {
   const match = matchRoute(pathSegments);
   if (match?.route.delete) return match.route.delete(getDbAdapter(), match.params);
   throw new Error(`DELETE: Unknown resource "${resource}"`);
+}
+
+export async function POST(resource: string, payload: Record<string, unknown>): Promise<unknown> {
+  const pathSegments = resource.split('/').filter(Boolean);
+  const match = matchRoute(pathSegments);
+  if (match?.route.post) return match.route.post(getDbAdapter(), match.params, payload);
+  throw new Error(`POST: Unknown resource "${resource}"`);
 }

@@ -171,7 +171,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
       // No-op — writes are immediate
     },
 
-    async wipeAllData(): Promise<void> {
+    async deleteSchema(): Promise<void> {
       for (const table of TABLE_NAMES) {
         localStorage.removeItem(KEY_PREFIX + table);
       }

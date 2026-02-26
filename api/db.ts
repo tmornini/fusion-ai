@@ -27,7 +27,7 @@ export interface DbAdapter {
   initialize(): Promise<void>;
   close(): Promise<void>;
   flush(): Promise<void>;
-  wipeAllData(): Promise<void>;
+  deleteSchema(): Promise<void>;
   hasSchema(): Promise<boolean>;
   createSchema(): Promise<void>;
   exportSnapshot(): Promise<string>;

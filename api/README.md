@@ -1,12 +1,12 @@
 # API Layer
 
-REST-style in-process API backed by localStorage. Provides `GET(resource)` and `PUT(resource, body)` routing for all application data.
+REST-style in-process API backed by localStorage. Provides `GET`/`PUT`/`DELETE`/`POST` routing for all application data.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `api.ts` | `GET()`/`PUT()` URL routing, `initApi()` entry point |
+| `api.ts` | `GET()`/`PUT()`/`DELETE()`/`POST()` URL routing, `initApi()` entry point |
 | `types.ts` | Row types (snake_case) matching schema, `snakeToCamel` and `toBool` utilities |
 | `db.ts` | `DbAdapter` interface with `EntityStore<T>`, `SingletonStore<T>`, and schema lifecycle methods |
 | `db-localstorage.ts` | localStorage implementation with JSON serialization |
@@ -23,14 +23,14 @@ Lifecycle methods on `DbAdapter` manage the schema and data:
 
 - **`hasSchema()`** — returns `true` if any `fusion-ai:*` table key exists in storage
 - **`createSchema()`** — creates empty arrays for any missing table keys (idempotent)
-- **`wipeAllData()`** — removes all table keys from storage
+- **`deleteSchema()`** — removes all table keys from storage
 - **`importSnapshot(json)`** / **`exportSnapshot()`** — full database import/export (import always writes all 22 keys)
 
 The localStorage implementation (`db-localstorage.ts`) persists each table as a `fusion-ai:tableName` key containing a JSON array of row objects, so data survives page navigations. Works on both HTTP and `file:///` protocols.
 
 ## URL Routing
 
-`GET()` and `PUT()` parse URL-style resource paths:
+`GET()`/`PUT()`/`DELETE()`/`POST()` parse URL-style resource paths:
 
 | Pattern | Example | Description |
 |---------|---------|-------------|

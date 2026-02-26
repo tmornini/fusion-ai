@@ -5,7 +5,7 @@
 
 import type { DbAdapter } from './db';
 
-export async function seedData(adapter: DbAdapter): Promise<void> {
+export async function populateMockData(adapter: DbAdapter): Promise<void> {
   // ── Users ──────────────────────────────────
   const users = [
     { id: '1', first_name: 'Sarah', last_name: 'Chen', email: 'sarah.chen@company.com', role: 'Project Lead', department: 'Operations', status: 'available', availability: 85, performance_score: 94, projects_completed: 12, current_projects: 3, strengths: ['Strategic Planning', 'Team Leadership', 'Risk Management'], team_dimensions: { driver: 78, analytical: 85, expressive: 62, amiable: 70 }, phone: '', bio: '', last_active: '2 hours ago' },
