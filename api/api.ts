@@ -222,32 +222,82 @@ function matchRoute(pathSegments: string[]): { route: Route; params: string[] } 
   return null;
 }
 
+const BASE_URL = 'http://localhost';
+
+// ── Request / Response Dispatch ─────────────
+
+export async function handleRequest(request: Request): Promise<Response> {
+  const { pathname } = new URL(request.url);
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const match = matchRoute(pathSegments);
+
+  if (!match) return Response.json({ error: `Not found: ${pathname}` }, { status: 404 });
+
+  const { route: matched, params } = match;
+  const method = request.method;
+  const db = getDbAdapter();
+
+  try {
+    switch (method) {
+      case 'GET': {
+        if (!matched.get) return Response.json({ error: `Method GET not allowed on ${pathname}` }, { status: 405 });
+        return Response.json(await matched.get(db, params));
+      }
+      case 'PUT': {
+        if (!matched.put) return Response.json({ error: `Method PUT not allowed on ${pathname}` }, { status: 405 });
+        const payload = await request.json() as Record<string, unknown>;
+        return Response.json(await matched.put(db, params, payload));
+      }
+      case 'DELETE': {
+        if (!matched.delete) return Response.json({ error: `Method DELETE not allowed on ${pathname}` }, { status: 405 });
+        await matched.delete(db, params);
+        return new Response(null, { status: 204 });
+      }
+      case 'POST': {
+        if (!matched.post) return Response.json({ error: `Method POST not allowed on ${pathname}` }, { status: 405 });
+        const payload = await request.json() as Record<string, unknown>;
+        const result = await matched.post(db, params, payload);
+        if (result === undefined) return new Response(null, { status: 204 });
+        return Response.json(result);
+      }
+      default:
+        return Response.json({ error: `Method ${method} not allowed` }, { status: 405 });
+    }
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+  }
+}
+
 // ── GET / PUT / DELETE / POST ────────────────
 
+async function unwrapResponse(response: Response): Promise<unknown> {
+  if (response.ok) return response.status === 204 ? undefined : response.json();
+  const { error } = await response.json() as { error: string };
+  throw new Error(error);
+}
+
 export async function GET(resource: string): Promise<unknown> {
-  const pathSegments = resource.split('/').filter(Boolean);
-  const match = matchRoute(pathSegments);
-  if (match?.route.get) return match.route.get(getDbAdapter(), match.params);
-  throw new Error(`GET: Unknown resource "${resource}"`);
+  return unwrapResponse(await handleRequest(new Request(`${BASE_URL}/${resource}`)));
 }
 
 export async function PUT(resource: string, payload: Record<string, unknown>): Promise<unknown> {
-  const pathSegments = resource.split('/').filter(Boolean);
-  const match = matchRoute(pathSegments);
-  if (match?.route.put) return match.route.put(getDbAdapter(), match.params, payload);
-  throw new Error(`PUT: Unknown resource "${resource}"`);
+  return unwrapResponse(await handleRequest(new Request(`${BASE_URL}/${resource}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })));
 }
 
 export async function DELETE(resource: string): Promise<void> {
-  const pathSegments = resource.split('/').filter(Boolean);
-  const match = matchRoute(pathSegments);
-  if (match?.route.delete) return match.route.delete(getDbAdapter(), match.params);
-  throw new Error(`DELETE: Unknown resource "${resource}"`);
+  await unwrapResponse(await handleRequest(new Request(`${BASE_URL}/${resource}`, {
+    method: 'DELETE',
+  })));
 }
 
 export async function POST(resource: string, payload: Record<string, unknown>): Promise<unknown> {
-  const pathSegments = resource.split('/').filter(Boolean);
-  const match = matchRoute(pathSegments);
-  if (match?.route.post) return match.route.post(getDbAdapter(), match.params, payload);
-  throw new Error(`POST: Unknown resource "${resource}"`);
+  return unwrapResponse(await handleRequest(new Request(`${BASE_URL}/${resource}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })));
 }
