@@ -67,7 +67,7 @@ function applyTheme(): void {
 }
 
 function setTheme(theme: AppState['theme']): void {
-  localStorage.setItem(STORAGE_KEY_THEME, theme);
+  try { localStorage.setItem(STORAGE_KEY_THEME, theme); } catch { /* non-critical */ }
   setState({ theme });
   applyTheme();
 }
@@ -84,6 +84,14 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
   setState({ isMobile: e.matches });
   if (!e.matches) setState({ isSidebarOpen: false, isSearchOpen: false });
+});
+
+// Sync theme across tabs via StorageEvent
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY_THEME && e.newValue) {
+    state.theme = e.newValue as AppState['theme'];
+    applyTheme();
+  }
 });
 
 export type { AppState };

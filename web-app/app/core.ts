@@ -274,13 +274,13 @@ function initSidebar(): void {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
     state.isSidebarCollapsed = true;
-    localStorage.setItem(STORAGE_KEY_SIDEBAR, 'true');
+    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'true'); } catch { /* non-critical */ }
   });
   document.getElementById('sidebar-expand')?.addEventListener('click', () => {
     sidebar?.classList.remove('sidebar-collapsed');
     mainContent?.classList.remove('sidebar-collapsed');
     state.isSidebarCollapsed = false;
-    localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false');
+    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false'); } catch { /* non-critical */ }
   });
 
   document.querySelectorAll<HTMLElement>('[data-section]').forEach(btn => {

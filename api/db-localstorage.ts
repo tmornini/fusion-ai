@@ -38,7 +38,14 @@ function readTable<T>(tableName: string, includeDeleted = false): T[] {
 }
 
 function writeTable<T>(tableName: string, rows: T[]): void {
-  localStorage.setItem(KEY_PREFIX + tableName, JSON.stringify(rows));
+  try {
+    localStorage.setItem(KEY_PREFIX + tableName, JSON.stringify(rows));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      throw new Error(`Storage quota exceeded writing "${tableName}". Clear old data or export a snapshot first.`);
+    }
+    throw e;
+  }
 }
 
 function serializeValue(value: unknown): unknown {
@@ -208,18 +215,22 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
         throw new Error('Invalid snapshot: expected an object with table keys.');
       }
       const record = snapshot as Record<string, unknown>;
+      // Pre-serialize all table data before any destructive operation
+      const serialized = new Map<string, string>();
       for (const table of TABLE_NAMES) {
         const rows = record[table];
         if (rows !== undefined && !Array.isArray(rows)) {
           throw new Error(`Invalid snapshot: table "${table}" is not an array.`);
         }
+        serialized.set(table, JSON.stringify(Array.isArray(rows) ? rows : []));
       }
+
+      // Now perform the swap — all serialization is done, so failures here are minimized
       for (const table of TABLE_NAMES) {
         localStorage.removeItem(KEY_PREFIX + table);
       }
-      for (const table of TABLE_NAMES) {
-        const rows = record[table];
-        writeTable(table, Array.isArray(rows) ? rows : []);
+      for (const [table, json] of serialized) {
+        localStorage.setItem(KEY_PREFIX + table, json);
       }
     },
 
