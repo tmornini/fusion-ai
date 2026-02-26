@@ -1,6 +1,6 @@
 # CSS Modules
 
-CSS split into cascade-ordered modules. The build concatenates these files (in order) into a single `style.css` for distribution. For development, `../style.css` uses `@import` directives.
+CSS split into cascade-ordered modules. The build script concatenates these files (in order) and minifies into a single `styles.css` for distribution.
 
 ## Cascade Order
 

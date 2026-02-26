@@ -3,8 +3,8 @@ import {
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
   html, setHtml, SafeHtml,
-} from '../site/script';
-import { getProfile, allStrengths } from '../site/data';
+} from '../app/script';
+import { getProfile, allStrengths } from '../app/adapters';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);
 

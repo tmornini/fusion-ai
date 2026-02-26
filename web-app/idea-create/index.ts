@@ -2,7 +2,7 @@ import {
   $, navigateTo, html, setHtml, SafeHtml,
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
-} from '../site/script';
+} from '../app/script';
 import { PUT } from '../../api/api';
 
 const steps = [

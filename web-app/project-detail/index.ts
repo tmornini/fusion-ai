@@ -6,8 +6,8 @@ import {
   iconFileText, iconHistory, iconMoreVertical, iconPlus, iconArrowUpRight,
   iconArrowDownRight, iconMinus, iconListTodo, iconGitBranch, iconDatabase,
   iconCode, iconShield, iconBarChart, iconGauge,
-} from '../site/script';
-import { getProjectById, type ProjectDetail } from '../site/data';
+} from '../app/script';
+import { getProjectById, type ProjectDetail } from '../app/adapters';
 
 function buildVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): SafeHtml {
   const diff = current - baseline;

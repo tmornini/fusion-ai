@@ -4,9 +4,9 @@ import {
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,
   iconClipboardCheck, iconChevronRight, iconArrowRight, iconLightbulb, iconTarget,
-} from '../site/script';
-import { getIdeas, type Idea } from '../site/data';
-import { edgeStatusConfig } from '../site/config';
+} from '../app/script';
+import { getIdeas, type Idea } from '../app/adapters';
+import { edgeStatusConfig } from '../app/config';
 
 const ideaStatusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'badge-default' },

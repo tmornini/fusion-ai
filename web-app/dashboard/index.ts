@@ -3,14 +3,14 @@ import {
   buildSkeleton, buildErrorState,
   iconSparkles, iconDollarSign, iconClock, iconZap,
   iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
-} from '../site/script';
+} from '../app/script';
 import { GET } from '../../api/api';
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
   getIdeas, getProjects, getTeamMembers,
   type GaugeCard, type Idea, type Project, type TeamMember,
-} from '../site/data';
-import { buildDonutChart, buildBarChart, buildAreaChart } from '../site/charts';
+} from '../app/adapters';
+import { buildDonutChart, buildBarChart, buildAreaChart } from '../app/charts';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },

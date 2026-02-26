@@ -141,7 +141,7 @@ function mutateThemeToggleIcon(): void {
 // ------------------------------------
 
 async function mutateNotifications(): Promise<void> {
-  const { getNotifications } = await import('./data');
+  const { getNotifications } = await import('./adapters');
   const notifications = await getNotifications();
   const unreadCount = notifications.filter(notification => notification.isUnread).length;
 

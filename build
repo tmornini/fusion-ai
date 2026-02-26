@@ -12,11 +12,11 @@ BUILD_DIR=$(mktemp -d)
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
 # Compose HTML pages into build dir (dashboard + standalone)
-npx tsx web-app/site/compose.ts "$BUILD_DIR"
+npx tsx web-app/app/compose.ts "$BUILD_DIR"
 
 # Bundle TypeScript into build dir
 mkdir -p "$BUILD_DIR/assets"
-npx esbuild web-app/site/script.ts \
+npx esbuild web-app/app/script.ts \
   --bundle \
   --minify \
   --keep-names \
@@ -27,16 +27,16 @@ npx esbuild web-app/site/script.ts \
 echo "Bundle created: assets/app.js ($(wc -c < "$BUILD_DIR/assets/app.js" | xargs) bytes)"
 
 # Bundle and minify CSS — concatenate in cascade order, minify via esbuild
-cat web-app/site/styles/fonts.css \
-    web-app/site/styles/tokens.css \
-    web-app/site/styles/dark-mode.css \
-    web-app/site/styles/base.css \
-    web-app/site/styles/components.css \
-    web-app/site/styles/layout.css \
-    web-app/site/styles/utilities.css \
-    web-app/site/styles/responsive.css \
-    web-app/site/styles/pages.css \
-    web-app/site/styles/command-palette.css \
+cat web-app/app/styles/fonts.css \
+    web-app/app/styles/tokens.css \
+    web-app/app/styles/dark-mode.css \
+    web-app/app/styles/base.css \
+    web-app/app/styles/components.css \
+    web-app/app/styles/layout.css \
+    web-app/app/styles/utilities.css \
+    web-app/app/styles/responsive.css \
+    web-app/app/styles/pages.css \
+    web-app/app/styles/command-palette.css \
   | npx esbuild --loader=css --minify > "$BUILD_DIR/assets/styles.css"
 
 echo "Styles created: assets/styles.css ($(wc -c < "$BUILD_DIR/assets/styles.css" | xargs) bytes)"

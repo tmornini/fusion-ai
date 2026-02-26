@@ -4,7 +4,7 @@ Async adapter functions that call `GET()`/`PUT()` from the API layer and convert
 
 ## Organization
 
-Domain modules with a barrel re-export (`index.ts`). All page modules import from `'../../site/data'` — with `moduleResolution: "bundler"`, this resolves to `data/index.ts` automatically.
+Domain modules with a barrel re-export (`index.ts`). All page modules import from `'../../app/adapters'` — with `moduleResolution: "bundler"`, this resolves to `adapters/index.ts` automatically.
 
 | Module | Domain |
 |--------|--------|

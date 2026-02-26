@@ -6,8 +6,8 @@ import {
   iconUser, iconCalendar, iconTarget, iconLightbulb, iconCheckCircle,
   iconXCircle, iconMessageSquare, iconFileText, iconDollarSign,
   iconUsers, iconShield, iconGauge,
-} from '../site/script';
-import { getIdeaForApproval, getEdgeForApproval, type ApprovalIdea, type ApprovalEdge } from '../site/data';
+} from '../app/script';
+import { getIdeaForApproval, getEdgeForApproval, type ApprovalIdea, type ApprovalEdge } from '../app/adapters';
 
 const severityConfig: Record<string, string> = {
   high: 'badge-error',

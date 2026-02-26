@@ -4,8 +4,8 @@ import {
   iconArrowLeft, iconLightbulb, iconTarget, iconUsers, iconMessageSquare,
   iconAlertTriangle, iconCheckCircle2, iconSend, iconFileText,
   iconClock, iconDollarSign, iconUser, iconChevronRight,
-} from '../site/script';
-import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../site/data';
+} from '../app/script';
+import { getProjectForEngineering, getClarificationsByProjectId, type EngineeringProject, type Clarification } from '../app/adapters';
 
 function buildClarification(clarification: Clarification): SafeHtml {
   const isPending = clarification.status === 'pending';

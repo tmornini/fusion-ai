@@ -6,8 +6,8 @@ import {
   iconExternalLink, iconBell,
   buildSkeleton, buildErrorState,
   html, setHtml, SafeHtml, trusted,
-} from '../site/script';
-import { getAccount, type Account } from '../site/data';
+} from '../app/script';
+import { getAccount, type Account } from '../app/adapters';
 
 function styleForUsageLevel(current: number, limit: number): string {
   const percentage = (current / limit) * 100;

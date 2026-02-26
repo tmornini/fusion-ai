@@ -4,7 +4,7 @@
 // ============================================
 
 import { GET, POST, PUT, DELETE } from '../../api/api';
-import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo, html, setHtml, SafeHtml } from '../site/script';
+import { $, showToast, iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo, html, setHtml, SafeHtml } from '../app/script';
 
 const BANNER_ID = 'empty-banner';
 

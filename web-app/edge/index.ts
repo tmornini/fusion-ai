@@ -3,8 +3,8 @@ import {
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
   buildSkeleton, buildErrorState,
-} from '../site/script';
-import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea } from '../site/data';
+} from '../app/script';
+import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea } from '../app/adapters';
 
 interface Metric { [key: string]: string; id: string; name: string; target: string; unit: string; }
 interface Outcome { id: string; description: string; metrics: Metric[]; }

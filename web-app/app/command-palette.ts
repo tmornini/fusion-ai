@@ -11,7 +11,7 @@ import {
   iconClipboardCheck, iconFileText, iconX,
   html, setHtml, SafeHtml, trusted,
 } from './script';
-import { getIdeas, getProjects, getTeamMembers } from './data';
+import { getIdeas, getProjects, getTeamMembers } from './adapters';
 
 // ── Types ────────────────────────────────
 

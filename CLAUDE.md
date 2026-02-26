@@ -16,12 +16,12 @@ No test framework is configured.
 
 ### Key Layers
 
-- **HTML Composition**: A build step (`web-app/site/compose.ts`) merges `web-app/site/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 8 standalone pages have hand-written `index.html` that are copied directly to the build output.
+- **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 8 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/site/data/` directory contains ~28 async adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~28 async adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
@@ -52,23 +52,23 @@ CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark). Toggl
 
 ### Component Library
 
-All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/site/styles/` and helper functions in `web-app/site/script.ts`. No external component library.
+All UI components are vanilla HTML/CSS with ARIA attributes, defined as CSS classes in `web-app/app/styles/` and helper functions in `web-app/app/script.ts`. No external component library.
 
 ### Design System
 
 Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
-- **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files in `web-app/site/fonts/`.
+- **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files at `web-app/assets/*.woff2`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~100 inline SVG functions in `web-app/site/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
+- **Icons**: ~100 inline SVG functions in `web-app/app/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
-- **Charts**: SVG rendering functions in `web-app/site/charts.ts` (bar, line, donut, area).
+- **Charts**: SVG rendering functions in `web-app/app/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
 
 ### Mobile Responsiveness
 
-CSS media queries in `web-app/site/styles/responsive.css` show/hide desktop vs mobile header and sidebar. Mobile sidebar uses Sheet (slide-in drawer) toggled by JS. Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
+CSS media queries in `web-app/app/styles/responsive.css` show/hide desktop vs mobile header and sidebar. Mobile sidebar uses Sheet (slide-in drawer) toggled by JS. Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
 
 ## Project Structure
 
@@ -85,14 +85,16 @@ api/
 
 web-app/
   index.html                  # Redirects to landing/index.html
-  site/
+  app/                        # All source code (TypeScript + CSS)
     tsconfig.json             # TypeScript config
     layout.html               # Shared dashboard layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
     script.ts                 # Page dispatch, navigation, layout behavior, toast
     icons.ts                  # ~100 SVG icon functions and lookup map
     state.ts                  # AppState, theme, mobile detection, pub-sub
-    data/                     # ~28 async adapter functions (API → frontend shapes)
+    charts.ts                 # SVG chart rendering (bar, line, donut, area)
+    command-palette.ts        # Cmd+K search overlay with keyboard navigation
+    adapters/                 # ~28 async adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence
       shared.ts               # getCurrentUser, getNotifications
@@ -103,7 +105,7 @@ web-app/
       edges.ts                # getIdeaForEdge, getEdgeList
       tools.ts                # getCrunchColumns, getFlow
       admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed, getNotificationCategories
-    styles/                   # CSS modules (cascade-ordered)
+    styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
       tokens.css              # :root custom properties (light mode)
       dark-mode.css           # [data-theme="dark"] overrides
@@ -114,11 +116,9 @@ web-app/
       responsive.css          # Media queries and reduced motion
       pages.css               # Page-specific styles
       command-palette.css     # Command palette styles
-    style.css                 # @import barrel (dev); build concatenates modules
-    charts.ts                 # SVG chart rendering (bar, line, donut, area)
-    command-palette.ts        # Cmd+K search overlay with keyboard navigation
+  assets/                     # Static files — copied as-is to build output
     favicon.ico               # Application favicon
-    fonts/                    # Self-hosted woff2 files
+    *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
   # Pages — 26 page directories, each with index.ts + index.html
   dashboard/                # Dashboard with gauge cards
@@ -158,10 +158,10 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 ## Build
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
-1. Composes HTML pages: runs `web-app/site/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
 2. Copies 8 standalone pages' `index.html` to the build directory
-3. Bundles TypeScript into a single IIFE (`site/app.js`) via esbuild into the build directory
-4. Bundles and minifies CSS via esbuild into `site/style.css`, copies `fonts/` and `favicon.ico` to the build directory
+3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
+4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
 
 No build artifacts are created in the repo — everything is assembled in `/tmp/`.

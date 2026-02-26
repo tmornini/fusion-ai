@@ -1,6 +1,6 @@
-# Site Infrastructure
+# App Source
 
-Shared code and assets used by all pages in the application.
+All TypeScript and CSS source code for the application. Static assets (fonts, favicon) are in `../assets/`.
 
 ## Files
 
@@ -9,18 +9,15 @@ Shared code and assets used by all pages in the application.
 | `script.ts` | Page dispatch, navigation helpers, toast notifications, sidebar/mobile behavior, skeleton rendering |
 | `icons.ts` | ~100 SVG icon functions and `icons` lookup map (re-exported from `script.ts`) |
 | `state.ts` | AppState interface, theme persistence, mobile detection, pub-sub (`subscribe`/`setState`) |
-| `data/` | ~28 async adapter functions split into domain modules with barrel re-export (`data/index.ts`) |
+| `adapters/` | ~28 async adapter functions split into domain modules with barrel re-export (`adapters/index.ts`) |
 | `styles/` | CSS modules in cascade order: fonts, tokens, dark-mode, base, components, layout, utilities, responsive, pages, command-palette |
-| `style.css` | `@import` barrel for dev; build bundles and minifies via esbuild into a single file |
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
 | `compose.ts` | Build-time script that merges `layout.html` with each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
 | `layout.html` | Shared dashboard layout template (sidebar, header, search, notifications, theme toggle) |
 | `tsconfig.json` | TypeScript compiler configuration |
-| `favicon.ico` | Application favicon |
-| `fonts/` | Self-hosted woff2 font files (IBM Plex Sans, Inter, IBM Plex Mono) |
 
-## Data Modules (`data/`)
+## Adapter Modules (`adapters/`)
 
 Domain-specific adapter functions organized by module:
 
@@ -37,7 +34,7 @@ Domain-specific adapter functions organized by module:
 | `admin.ts` | `getAccount`, `getProfile`, `getCompanySettings`, `getActivityFeed`, `getNotificationCategories` |
 | `index.ts` | Barrel re-export of all modules |
 
-All page modules import from `'../../site/data'` — with `moduleResolution: "bundler"`, this resolves to `data/index.ts` automatically.
+All page modules import from `'../../app/adapters'` — with `moduleResolution: "bundler"`, this resolves to `adapters/index.ts` automatically.
 
 ## Build-Time Composition
 

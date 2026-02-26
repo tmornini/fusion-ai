@@ -1,6 +1,6 @@
 // ============================================
 // FUSION AI — Build-time HTML Composition
-// Combines site/layout.html with per-page index.html
+// Combines app/layout.html with per-page index.html
 // to produce standalone dashboard index.html files.
 // Also copies standalone pages to output directory.
 // ============================================
@@ -46,7 +46,7 @@ const standalonePages = [
 ];
 
 function compose(): void {
-  const layoutPath = join(ROOT, 'site', 'layout.html');
+  const layoutPath = join(ROOT, 'app', 'layout.html');
   const layout = readFileSync(layoutPath, 'utf-8');
 
   const missing: string[] = [];

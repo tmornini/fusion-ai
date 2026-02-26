@@ -5,8 +5,8 @@ import {
   iconUserX, iconCheckCircle2, iconClock, iconChevronRight, iconSend,
   buildSkeleton, buildErrorState, buildEmptyState,
   html, setHtml, SafeHtml, trusted,
-} from '../site/script';
-import { getManagedUsers, type ManagedUser } from '../site/data';
+} from '../app/script';
+import { getManagedUsers, type ManagedUser } from '../app/adapters';
 
 const roleLabels: Record<string, { label: string; icon: (size?: number) => SafeHtml }> = {
   admin: { label: 'Admin', icon: iconCrown },

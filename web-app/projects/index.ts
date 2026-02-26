@@ -4,8 +4,8 @@ import {
   iconTrendingUp, iconClock, iconDollarSign, iconCheckCircle2,
   iconAlertCircle, iconXCircle, iconLayoutGrid, iconBarChart,
   iconEye, iconTarget, iconGripVertical, iconFolderKanban,
-} from '../site/script';
-import { getProjects, type Project } from '../site/data';
+} from '../app/script';
+import { getProjects, type Project } from '../app/adapters';
 
 const projectStatusConfig: Record<string, { icon: (size?: number, cssClass?: string) => SafeHtml; className: string; label: string }> = {
   approved: { icon: iconCheckCircle2, className: 'badge-success', label: 'Approved' },

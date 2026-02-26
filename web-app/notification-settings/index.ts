@@ -2,8 +2,8 @@ import {
   $, showToast, icons,
   iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave,
   html, setHtml, SafeHtml, trusted,
-} from '../site/script';
-import { getNotificationCategories, type NotificationCategory } from '../site/data';
+} from '../app/script';
+import { getNotificationCategories, type NotificationCategory } from '../app/adapters';
 
 function buildSwitch(id: string, checked: boolean): SafeHtml {
   return html`<button class="switch" role="switch" aria-checked="${checked}" data-pref="${id}"><span class="switch-thumb"></span></button>`;

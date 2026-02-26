@@ -5,8 +5,8 @@ import {
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
   buildSkeleton, buildErrorState, buildEmptyState,
   html, setHtml, SafeHtml, trusted,
-} from '../site/script';
-import { getTeamMembers, type TeamMember } from '../site/data';
+} from '../app/script';
+import { getTeamMembers, type TeamMember } from '../app/adapters';
 
 function styleForAvailability(availability: number): string {
   if (availability >= 70) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';

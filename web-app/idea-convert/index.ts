@@ -4,8 +4,8 @@ import {
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
-} from '../site/script';
-import { getIdeaForConversion, type ConversionIdea } from '../site/data';
+} from '../app/script';
+import { getIdeaForConversion, type ConversionIdea } from '../app/adapters';
 import { PUT, GET } from '../../api/api';
 import type { IdeaEntity } from '../../api/types';
 

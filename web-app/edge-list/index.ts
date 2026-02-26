@@ -3,8 +3,8 @@ import {
   iconTarget, iconSearch, iconCheckCircle2, iconAlertCircle, iconClock,
   iconChevronRight, iconTrendingUp, iconShield, iconBarChart, iconUser,
   buildSkeleton, buildErrorState, buildEmptyState,
-} from '../site/script';
-import { getEdgeList, type EdgeListItem } from '../site/data';
+} from '../app/script';
+import { getEdgeList, type EdgeListItem } from '../app/adapters';
 
 const edgeStatusDisplayConfig: Record<string, { label: string; className: string; icon: (size?: number) => SafeHtml }> = {
   complete: { label: 'Complete', className: 'badge-success', icon: iconCheckCircle2 },

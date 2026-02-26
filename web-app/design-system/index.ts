@@ -2,7 +2,7 @@ import {
   $, html, setHtml, type SafeHtml,
   iconCheck, iconX, iconAlertTriangle, iconInfo, iconSearch, iconPlus,
   iconArrowRight, iconTrash, iconSparkles, iconHome, iconTarget, iconUpload, iconAlertCircle,
-} from '../site/script';
+} from '../app/script';
 
 function buildColorSwatch(name: string, variable: string, style: string): SafeHtml {
   return html`<div style="display:flex;flex-direction:column;gap:0.5rem">

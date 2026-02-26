@@ -4,9 +4,9 @@ import {
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
-} from '../site/script';
-import { getReviewQueue, type ReviewIdea } from '../site/data';
-import { edgeStatusConfig } from '../site/config';
+} from '../app/script';
+import { getReviewQueue, type ReviewIdea } from '../app/adapters';
+import { edgeStatusConfig } from '../app/config';
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
   high: { label: 'High Priority', className: 'badge-error' },

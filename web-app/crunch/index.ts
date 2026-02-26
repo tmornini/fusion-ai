@@ -4,8 +4,8 @@ import {
   iconCheck, iconChevronRight, iconChevronDown,
   iconSparkles, iconMessageSquare, iconTable, iconHash, iconCalendar,
   iconType, iconToggleLeft,
-} from '../site/script';
-import { getCrunchColumns, type CrunchColumn } from '../site/data';
+} from '../app/script';
+import { getCrunchColumns, type CrunchColumn } from '../app/adapters';
 
 let step: 'upload' | 'label' | 'review' = 'upload';
 let columns: CrunchColumn[] = [];

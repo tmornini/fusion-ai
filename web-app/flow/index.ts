@@ -5,8 +5,8 @@ import {
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
   buildSkeleton, buildErrorState, buildEmptyState,
-} from '../site/script';
-import { getFlow, type ProcessStep, type Flow } from '../site/data';
+} from '../app/script';
+import { getFlow, type ProcessStep, type Flow } from '../app/adapters';
 
 const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,

@@ -5,8 +5,8 @@ import {
   iconArrowRight, iconSearch, iconChevronRight,
   buildSkeleton, buildErrorState, buildEmptyState,
   html, setHtml, SafeHtml, trusted,
-} from '../site/script';
-import { getActivityFeed, type Activity } from '../site/data';
+} from '../app/script';
+import { getActivityFeed, type Activity } from '../app/adapters';
 
 function buildActivityIcon(type: string): SafeHtml {
   const iconMap: Record<string, { icon: (size?: number) => SafeHtml; bg: string }> = {
