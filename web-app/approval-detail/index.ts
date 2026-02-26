@@ -9,7 +9,7 @@ import {
   iconUsers, iconShield, iconGauge,
 } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
-import { getIdeaForApproval, getEdgeForApproval, buildUserMap, type ApprovalIdea, type ApprovalEdge } from '../app/adapters';
+import { getIdeaForApproval, getEdgeForApproval, buildUserMap, type ApprovalIdea, type ApprovalEdge, type Metric } from '../app/adapters';
 
 const severityConfig: Record<string, string> = {
   high: 'badge-error',
@@ -91,14 +91,14 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
             <h3 class="font-semibold flex items-center gap-2">${iconTarget(20, 'text-primary')} Edge: Business Outcomes &amp; Success Criteria</h3>
             <span class="badge badge-success text-xs">${iconShield(12)} High Confidence</span>
           </div>
-          ${edge.outcomes.map((outcome: any, outcomeIndex: number) => html`
+          ${edge.outcomes.map((outcome: ApprovalEdge['outcomes'][number], outcomeIndex: number) => html`
             <div class="p-4 rounded-lg mb-3" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
               <div class="flex items-start gap-2 mb-3">
                 <div style="width:1.25rem;height:1.25rem;border-radius:9999px;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:hsl(var(--primary));flex-shrink:0">${outcomeIndex + 1}</div>
                 <p class="font-medium text-sm">${outcome.description}</p>
               </div>
               <div style="padding-left:1.75rem" class="flex flex-wrap gap-2">
-                ${outcome.metrics.map((metric: any) => html`
+                ${outcome.metrics.map((metric: Omit<Metric, 'current'>) => html`
                   <span class="flex items-center gap-2 text-sm" style="padding:0.375rem 0.75rem;border-radius:9999px;background:hsl(var(--muted)/0.5);border:1px solid hsl(var(--border))">
                     ${iconGauge(14, 'text-primary')} ${metric.name}: <span class="font-semibold text-primary">${metric.target}${metric.unit}</span>
                   </span>`)}
@@ -127,7 +127,7 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
         ${idea.risks.length ? html`<div class="card p-6 mb-6">
           <h3 class="font-semibold mb-4 flex items-center gap-2">${iconAlertTriangle(20)} Identified Risks</h3>
           <div style="display:flex;flex-direction:column;gap:0.75rem">
-            ${idea.risks.map((risk: any) => html`
+            ${idea.risks.map((risk: ApprovalIdea['risks'][number]) => html`
               <div class="p-4 rounded-lg" style="background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
                 <div class="flex items-center justify-between mb-2">
                   <h4 class="font-medium text-sm">${risk.title}</h4>

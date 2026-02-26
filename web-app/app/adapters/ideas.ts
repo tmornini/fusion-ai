@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel, PriorityLevel, Id } from '../../../api/types';
-import { User } from '../../../api/types';
+import { User, computePriority } from '../../../api/types';
 import { buildUserMap, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
 
 export interface Idea {
@@ -61,15 +61,11 @@ export async function getReviewQueue(cachedUserMap?: Map<Id, User>): Promise<Rev
   return ideas
     .filter(idea => idea.readiness !== '')
     .map(idea => {
-      let priority: ReviewIdea['priority'] = 'low';
-      if (idea.score >= 80) priority = 'high';
-      else if (idea.score >= 60) priority = 'medium';
-
       return {
         id: idea.id,
         title: idea.title,
         submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
-        priority,
+        priority: computePriority(idea.score),
         readiness: (idea.readiness || 'incomplete') as ReviewIdea['readiness'],
         edgeStatus: (idea.edge_status || 'missing') as ReviewIdea['edgeStatus'],
         score: idea.score,
@@ -149,7 +145,7 @@ export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id,
     description: idea.description || '',
     submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
     submittedAt: idea.submitted_at || '',
-    priority: idea.score >= 80 ? 'high' : idea.score >= 60 ? 'medium' : 'low',
+    priority: computePriority(idea.score),
     score: idea.score,
     category: idea.category || '',
     impact: {

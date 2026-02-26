@@ -8,6 +8,7 @@ import { STORAGE_KEY_SIDEBAR, state, applyTheme, setTheme } from './state';
 import { $ } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
+import { SCORE_THRESHOLD_HIGH, SCORE_THRESHOLD_MEDIUM } from '../../api/types';
 
 // ------------------------------------
 // Shared Utilities
@@ -18,8 +19,8 @@ function initials(name: string): string {
 }
 
 function styleForScore(score: number): string {
-  if (score >= 80) return 'color:hsl(var(--success))';
-  if (score >= 60) return 'color:hsl(var(--warning))';
+  if (score >= SCORE_THRESHOLD_HIGH) return 'color:hsl(var(--success))';
+  if (score >= SCORE_THRESHOLD_MEDIUM) return 'color:hsl(var(--warning))';
   return 'color:hsl(var(--error))';
 }
 

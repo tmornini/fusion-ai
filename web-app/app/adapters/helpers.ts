@@ -70,7 +70,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
       midTerm: edge.impact_mid_term,
       longTerm: edge.impact_long_term,
     },
-    confidence: edge.confidence || null,
+    confidence: edge.confidence ?? null,
     owner: userMap.get(edge.owner_id)?.fullName() ?? 'Unknown',
   };
 }
@@ -94,6 +94,6 @@ export async function getEdgeDataWithConfidence(
   if (!edgeData) return createDefaultEdgeData();
   return {
     ...edgeData,
-    confidence: (edgeData.confidence || 'medium') as ConfidenceLevel,
+    confidence: edgeData.confidence ?? 'medium',
   };
 }

@@ -21,6 +21,17 @@ export type EdgeStatus = 'complete' | 'draft' | 'missing';
 /** Idea lifecycle status. */
 export type IdeaStatus = 'draft' | 'scored' | 'pending_review' | 'approved' | 'rejected';
 
+/** Score thresholds for priority classification. */
+export const SCORE_THRESHOLD_HIGH = 80;
+export const SCORE_THRESHOLD_MEDIUM = 60;
+
+/** Compute priority level from a numeric score. */
+export function computePriority(score: number): PriorityLevel {
+  if (score >= SCORE_THRESHOLD_HIGH) return 'high';
+  if (score >= SCORE_THRESHOLD_MEDIUM) return 'medium';
+  return 'low';
+}
+
 /** Stored boolean in localStorage (0 or 1 integer). */
 export type StoredBoolean = 0 | 1;
 
@@ -212,7 +223,7 @@ export interface EdgeEntity {
   id: Id;
   idea_id: Id;
   status: EdgeStatus;
-  confidence: ConfidenceLevel | '';
+  confidence: ConfidenceLevel | null;
   owner_id: Id;
   impact_short_term: string;
   impact_mid_term: string;

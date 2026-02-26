@@ -219,7 +219,7 @@ function syncFormFields() {
     const field = metricInput.getAttribute('data-metric-field');
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     const metric = outcome?.metrics.find(candidate => candidate.id === metricId);
-    if (metric && field && field in metric) (metric as Record<string, string>)[field] = metricInput.value;
+    if (metric && field && field in metric) (metric as unknown as Record<string, string>)[field] = metricInput.value;
   });
 }
 

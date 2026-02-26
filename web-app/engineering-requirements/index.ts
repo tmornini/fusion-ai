@@ -10,6 +10,8 @@ import {
 import { navigateTo } from '../app/core';
 import { getProjectForEngineering, getClarificationsByProjectId, buildUserMap, type EngineeringProject, type Clarification } from '../app/adapters';
 
+type TeamMember = EngineeringProject['team'][number];
+
 function buildClarification(clarification: Clarification): SafeHtml {
   const isPending = clarification.status === 'pending';
   return html`
@@ -125,7 +127,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
       <div class="card p-6 mb-6">
         <h3 class="flex items-center gap-2 text-lg font-display font-semibold mb-4">${iconUsers(20, 'text-primary')} Team Contacts</h3>
         <div class="convert-grid" style="gap:0.75rem">
-          ${project.team.map((teamMember: any) => html`
+          ${project.team.map((teamMember: TeamMember) => html`
             <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.3)">
               <div style="width:2.5rem;height:2.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:${teamMember.type === 'business' ? 'hsl(var(--primary)/0.1)' : 'hsl(var(--success-soft))'}">${iconUser(20, teamMember.type === 'business' ? 'text-primary' : 'text-success')}</div>
               <div style="flex:1;min-width:0"><p class="font-medium">${teamMember.name}</p><p class="text-xs text-muted">${teamMember.role}</p></div>

@@ -122,7 +122,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: '2', idea_id: '2', status: 'complete', confidence: 'medium', owner_id: '2', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-25' },
     { id: '3', idea_id: '3', status: 'draft', confidence: 'low', owner_id: '5', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-20' },
     { id: '4', idea_id: '4', status: 'complete', confidence: 'high', owner_id: '8', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '2024-02-18' },
-    { id: '5', idea_id: '5', status: 'missing', confidence: '', owner_id: '', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '' },
+    { id: '5', idea_id: '5', status: 'missing', confidence: null, owner_id: '', impact_short_term: '', impact_mid_term: '', impact_long_term: '', updated_at: '' },
     { id: '6', idea_id: '7', status: 'complete', confidence: 'high', owner_id: '1', impact_short_term: 'Handle 60% of tier-1 inquiries automatically. Reduce agent workload significantly.', impact_mid_term: '40% reduction in support costs. Improved 24/7 availability for customers.', impact_long_term: 'Full self-service capability for common issues. Agents focus on complex cases only.', updated_at: '2024-02-28' },
   ];
 
