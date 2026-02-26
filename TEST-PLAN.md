@@ -24,7 +24,7 @@
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `site/app.js`, `site/style.css`, `site/fonts/`, `index.html`, and 27 page directories each with `index.html`.
+- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 26 page directories each with `index.html`.
 - [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `landing/index.html`.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
@@ -296,7 +296,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **J5** Open `file:///.../not-found/index.html`. PASS: 404 page renders.
 - [ ] **J6** Open `file:///.../design-system/index.html`. PASS: component gallery renders.
 - [ ] **J7** Verify CSS loads: pages are styled (not unstyled HTML). PASS: fonts, colors, and layout apply correctly.
-- [ ] **J8** Verify `site/app.js` loads: interactive elements work (e.g. theme toggle, auth form validation). PASS: JavaScript executes.
+- [ ] **J8** Verify `assets/app.js` loads: interactive elements work (e.g. theme toggle, auth form validation). PASS: JavaScript executes.
 
 ### Database-Dependent Pages
 

@@ -1,5 +1,7 @@
 # Data Adapter Layer
 
+**Parent:** [app](../README.md)
+
 Async adapter functions that call `GET()`/`PUT()` from the API layer and convert normalized DB rows into the denormalized shapes that page modules expect.
 
 ## Organization

@@ -1,5 +1,7 @@
 # Activity Feed
 
+**Parent:** [web-app](../README.md)
+
 Chronological timeline of team actions across the platform.
 
 - **Type**: composed

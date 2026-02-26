@@ -1,5 +1,7 @@
 # Ideas
 
+**Parent:** [web-app](../README.md)
+
 Browse and manage innovation ideas across the organization.
 
 - **Type**: composed

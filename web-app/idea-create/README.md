@@ -1,5 +1,7 @@
 # Create Idea
 
+**Parent:** [web-app](../README.md)
+
 Multi-step wizard for submitting new innovation ideas.
 
 - **Type**: standalone

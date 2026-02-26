@@ -1,5 +1,7 @@
 # Account
 
+**Parent:** [web-app](../README.md)
+
 Organization overview with billing and usage information.
 
 - **Type**: composed

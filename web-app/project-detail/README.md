@@ -1,5 +1,7 @@
 # Project Detail
 
+**Parent:** [web-app](../README.md)
+
 Tabbed hub for managing a single project.
 
 - **Type**: composed

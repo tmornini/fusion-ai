@@ -1,5 +1,7 @@
 # Projects
 
+**Parent:** [web-app](../README.md)
+
 Browse and monitor active projects converted from approved ideas.
 
 - **Type**: composed

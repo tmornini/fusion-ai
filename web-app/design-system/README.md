@@ -1,5 +1,7 @@
 # Design System Gallery
 
+**Parent:** [web-app](../README.md)
+
 Interactive component gallery showcasing all available UI components.
 
 - **Type**: composed

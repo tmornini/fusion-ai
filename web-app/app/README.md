@@ -1,5 +1,7 @@
 # App Source
 
+**Parent:** [web-app](../README.md)
+
 All TypeScript and CSS source code for the application. Static assets (fonts, favicon) are in `../assets/`.
 
 ## Files
@@ -9,8 +11,13 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | `script.ts` | Page dispatch, navigation helpers, toast notifications, sidebar/mobile behavior, skeleton rendering |
 | `icons.ts` | ~100 SVG icon functions and `icons` lookup map (re-exported from `script.ts`) |
 | `state.ts` | AppState interface, theme persistence, mobile detection, pub-sub (`subscribe`/`setState`) |
-| `adapters/` | ~28 async adapter functions split into domain modules with barrel re-export (`adapters/index.ts`) |
-| `styles/` | CSS modules in cascade order: fonts, tokens, dark-mode, base, components, layout, utilities, responsive, pages, command-palette |
+| `dom.ts` | querySelector wrappers ($, $$) and escapeHtml |
+| `toast.ts` | showToast() auto-dismiss notifications |
+| `config.ts` | edgeStatusConfig mapping |
+| `safe-html.ts` | SafeHtml class, html tagged template, trusted(), setHtml() |
+| `skeleton.ts` | Loading skeletons, error states, empty states, withLoadingState() |
+| [`adapters/`](adapters/README.md) | ~30 adapter functions split into domain modules with barrel re-export (`adapters/index.ts`) |
+| [`styles/`](styles/README.md) | CSS modules in cascade order: fonts, tokens, dark-mode, base, components, layout, utilities, responsive, pages, command-palette |
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
 | `compose.ts` | Build-time script that merges `layout.html` with each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
@@ -26,7 +33,7 @@ Domain-specific adapter functions organized by module:
 | `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `createDefaultEdgeData`, `getEdgeDataWithConfidence` |
 | `shared.ts` | `getCurrentUser`, `getNotifications` |
 | `dashboard.ts` | `getDashboardGauges`, `getDashboardQuickActions`, `getDashboardStats` |
-| `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForScoring`, `getIdeaScore`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval` |
+| `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval` |
 | `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId` |
 | `teams.ts` | `getTeamMembers`, `getManagedUsers` |
 | `edges.ts` | `getIdeaForEdge`, `getEdgeList` |
@@ -44,11 +51,11 @@ All page modules import from `'../../app/adapters'` — with `moduleResolution: 
 2. Inserts the page's HTML content
 3. Writes the composed file to the build output directory
 
-This produces 19 composed pages. The remaining 8 standalone pages are copied directly.
+This produces 19 composed pages. The remaining 7 standalone pages are copied directly.
 
 ## Key Exports from `script.ts`
 
-- **Icons** — `iconSparkles(size, cssClass)`, `iconPlus()`, etc. (~100 functions, defined in `icons.ts`)
+- **Icons** — `iconSparkles(size, cssClass)`, `iconPlus()`, etc. (~100 functions, defined in `icons.ts`, each returns `SafeHtml`)
 - **Navigation** — `navigateTo(page, params?)` constructs relative URLs
 - **State** — pub-sub for theme, mobile detection, auth, sidebar state (defined in `state.ts`)
 - **Toast** — `showToast(message, type)` with auto-dismiss

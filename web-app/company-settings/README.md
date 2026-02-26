@@ -1,5 +1,7 @@
 # Company Settings
 
+**Parent:** [web-app](../README.md)
+
 Organization-wide configuration and security settings.
 
 - **Type**: composed

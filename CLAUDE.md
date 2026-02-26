@@ -16,12 +16,12 @@ No test framework is configured.
 
 ### Key Layers
 
-- **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 8 standalone pages have hand-written `index.html` that are copied directly to the build output.
+- **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Dashboard pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~28 async adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~30 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 
@@ -32,7 +32,7 @@ The API layer is a set of TypeScript modules that provide a REST-style interface
 - **`api/types.ts`** — Row types (snake_case) matching schema, shared type aliases (`Id`, `ConfidenceLevel`, `EdgeStatus`, `IdeaStatus`), `User` class wrapping `UserEntity`, and `toBool` utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
-- **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` / `DELETE(resource)` URL routing
+- **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` / `DELETE(resource)` / `POST(resource, body)` URL routing
 - **`api/seed.ts`** — Mock data seeding function
 
 The `DbAdapter` interface is designed for easy migration to Postgres or other backends — implement the same interface and swap the import.
@@ -61,7 +61,7 @@ Full spec in `DESIGN-SYSTEM.md`. Key constraints:
 - **Colors**: Primary Blue `#4B6CA1`, Primary Yellow `#FDD31D`. Never use pure black `#000` — all grays are blue-tinted. All colors defined as CSS custom properties.
 - **Typography**: Display = IBM Plex Sans, Body = Inter, Mono = IBM Plex Mono. Self-hosted woff2 files at `web-app/assets/*.woff2`.
 - **Spacing**: 8px grid system.
-- **Icons**: ~100 inline SVG functions in `web-app/app/icons.ts` (re-exported from `script.ts`). Each returns an SVG string: `iconSparkles(size, cssClass)`.
+- **Icons**: ~100 inline SVG functions in `web-app/app/icons.ts` (re-exported from `script.ts`). Each returns a `SafeHtml` value: `iconSparkles(size, cssClass)`.
 - **Toasts**: `showToast(message, type)` function with auto-dismiss.
 - **Charts**: SVG rendering functions in `web-app/app/charts.ts` (bar, line, donut, area).
 - **Dark mode**: CSS custom properties with `data-theme` attribute.
@@ -80,7 +80,7 @@ api/
   types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, EdgeStatus, IdeaStatus), User class, toBool
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema)
   db-localstorage.ts          # localStorage implementation with JSON serialization
-  api.ts                      # GET/PUT/DELETE URL routing
+  api.ts                      # GET/PUT/DELETE/POST URL routing
   seed.ts                     # Mock data seeding
 
 web-app/
@@ -94,12 +94,17 @@ web-app/
     state.ts                  # AppState, theme, mobile detection, pub-sub
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
     command-palette.ts        # Cmd+K search overlay with keyboard navigation
-    adapters/                 # ~28 async adapter functions (API → frontend shapes)
+    dom.ts                    # querySelector wrappers ($, $$) and escapeHtml
+    toast.ts                  # showToast() auto-dismiss notifications
+    config.ts                 # edgeStatusConfig mapping
+    safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()
+    skeleton.ts               # Loading skeletons, error states, empty states, withLoadingState()
+    adapters/                 # ~30 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence
       shared.ts               # getCurrentUser, getNotifications
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
-      ideas.ts                # getIdeas, getReviewQueue, getIdeaForScoring, etc.
+      ideas.ts                # getIdeas, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval
       projects.ts             # getProjects, getProjectById, getProjectForEngineering, getClarificationsByProjectId
       teams.ts                # getTeamMembers, getManagedUsers
       edges.ts                # getIdeaForEdge, getEdgeList
@@ -159,7 +164,7 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 
 The `build` script requires a clean git working directory (no uncommitted changes), then:
 1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each dashboard page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
-2. Copies 8 standalone pages' `index.html` to the build directory
+2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
 4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
 5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`

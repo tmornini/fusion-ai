@@ -1,5 +1,7 @@
 # Notification Settings
 
+**Parent:** [web-app](../README.md)
+
 Configure notification preferences by category and delivery channel.
 
 - **Type**: composed

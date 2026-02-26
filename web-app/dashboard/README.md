@@ -1,5 +1,7 @@
 # Dashboard
 
+**Parent:** [web-app](../README.md)
+
 Main dashboard providing an at-a-glance overview of innovation pipeline health.
 
 - **Type**: composed

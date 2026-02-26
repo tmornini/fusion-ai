@@ -1,5 +1,7 @@
 # API Layer
 
+**Parent:** [fusion-ai](../README.md)
+
 REST-style in-process API backed by localStorage. Provides `GET`/`PUT`/`DELETE`/`POST` routing for all application data.
 
 ## Files
@@ -7,7 +9,7 @@ REST-style in-process API backed by localStorage. Provides `GET`/`PUT`/`DELETE`/
 | File | Purpose |
 |------|---------|
 | `api.ts` | `GET()`/`PUT()`/`DELETE()`/`POST()` URL routing, `initApi()` entry point |
-| `types.ts` | Row types (snake_case) matching schema, `snakeToCamel` and `toBool` utilities |
+| `types.ts` | Row types (snake_case) matching schema, `toBool` utility |
 | `db.ts` | `DbAdapter` interface with `EntityStore<T>`, `SingletonStore<T>`, and schema lifecycle methods |
 | `db-localstorage.ts` | localStorage implementation with JSON serialization |
 | `seed.ts` | Mock data seeding for first-load population |
@@ -41,12 +43,12 @@ The localStorage implementation (`db-localstorage.ts`) persists each table as a 
 
 ## Database Tables (22)
 
-users, ideas, idea_scores, projects, project_team, milestones, project_tasks, discussions, project_versions, edges, edge_outcomes, edge_metrics, activities, notifications, clarifications, crunch_columns, processes, process_steps, company_settings, notification_categories, notification_prefs, account_config. See `SCHEMA.md` for full column definitions.
+users, ideas, idea_scores, projects, project_team, milestones, project_tasks, discussions, project_versions, edges, edge_outcomes, edge_metrics, activities, notifications, clarifications, crunch_columns, processes, process_steps, company_settings, notification_categories, notification_preferences, account. See `SCHEMA.md` for full column definitions.
 
 ## Migration to Another Database
 
 The `DbAdapter` interface is designed for easy migration to Postgres or other backends:
 
 1. Implement the `DbAdapter` interface for the new database
-2. Swap the import in `web-app/site/script.ts` from `db-localstorage` to the new implementation
-3. All pages continue working unchanged — they only call `GET()`/`PUT()` through `data/`
+2. Swap the import in `web-app/app/script.ts` from `db-localstorage` to the new implementation
+3. All pages continue working unchanged — they only call `GET()`/`PUT()` through the `api/` layer

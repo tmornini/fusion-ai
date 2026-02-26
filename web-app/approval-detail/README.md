@@ -1,5 +1,7 @@
 # Approval Detail
 
+**Parent:** [web-app](../README.md)
+
 Deep review page for approving or rejecting an idea.
 
 - **Type**: standalone

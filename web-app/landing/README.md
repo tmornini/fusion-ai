@@ -1,5 +1,7 @@
 # Landing Page
 
+**Parent:** [web-app](../README.md)
+
 Marketing landing page and primary entry point for new visitors.
 
 - **Type**: standalone

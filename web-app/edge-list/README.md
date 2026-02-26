@@ -1,5 +1,7 @@
 # Edge List
 
+**Parent:** [web-app](../README.md)
+
 Browse all Edge definitions across the organization.
 
 - **Type**: composed
