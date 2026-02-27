@@ -278,11 +278,21 @@ function bindEdgeEvents(ideaId: string) {
     });
   });
 
-  $('#edge-save-btn')?.addEventListener('click', () => {
+  const saveBtn = document.querySelector<HTMLButtonElement>('#edge-save-btn');
+  saveBtn?.addEventListener('click', async () => {
     syncFormFields();
     if (!computeCompletionStatus().isComplete) { showToast('Please complete all required fields', 'error'); return; }
-    showToast('Edge data saved successfully', 'success');
-    navigateTo('approval-detail', { id: ideaId });
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      // Simulated save — replace with real API call when available
+      showToast('Edge data saved successfully', 'success');
+      navigateTo('approval-detail', { id: ideaId });
+    } catch {
+      showToast('Failed to save Edge data', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & Continue';
+    }
   });
 }
 

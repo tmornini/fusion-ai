@@ -31,6 +31,27 @@ async function updateEmptyBanner(root: HTMLElement): Promise<void> {
   }
 }
 
+async function withWipeAndReload(
+  button: HTMLButtonElement,
+  label: string,
+  action: () => Promise<void>,
+  confirmMessage?: string,
+): Promise<void> {
+  if (confirmMessage && !confirm(confirmMessage)) return;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Working...';
+  try {
+    await DELETE('snapshots/schema');
+    await action();
+    navigateTo('dashboard');
+  } catch {
+    showToast(`Failed to ${label.toLowerCase()}.`, 'error');
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
 export async function init(): Promise<void> {
   const root = $('#snapshots-content');
   if (!root) return;
@@ -88,28 +109,25 @@ export async function init(): Promise<void> {
   await updateEmptyBanner(root);
 
   // Create Pristine Environment
-  $('#wipe-btn')?.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to create a pristine environment? All existing data will be removed. This cannot be undone.')) return;
-    try {
-      await DELETE('snapshots/schema');
-      await POST('snapshots/schema', {});
-      navigateTo('dashboard');
-    } catch (e) {
-      showToast('Failed to create pristine environment.', 'error');
-    }
-  });
+  const wipeBtn = document.querySelector<HTMLButtonElement>('#wipe-btn');
+  if (wipeBtn) {
+    wipeBtn.addEventListener('click', () => withWipeAndReload(
+      wipeBtn,
+      'Create pristine environment',
+      async () => { await POST('snapshots/schema', {}); },
+      'Are you sure you want to create a pristine environment? All existing data will be removed. This cannot be undone.',
+    ));
+  }
 
   // Wipe and load mock data
-  $('#reload-btn')?.addEventListener('click', async () => {
-    try {
-      await DELETE('snapshots/schema');
-      await POST('snapshots/schema', {});
-      await POST('snapshots/mock-data', {});
-      navigateTo('dashboard');
-    } catch (e) {
-      showToast('Failed to load mock data.', 'error');
-    }
-  });
+  const reloadBtn = document.querySelector<HTMLButtonElement>('#reload-btn');
+  if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => withWipeAndReload(
+      reloadBtn,
+      'Load mock data',
+      async () => { await POST('snapshots/schema', {}); await POST('snapshots/mock-data', {}); },
+    ));
+  }
 
   // Upload snapshot
   const importInput = document.querySelector<HTMLInputElement>('#upload-input');
@@ -121,7 +139,7 @@ export async function init(): Promise<void> {
       await DELETE('snapshots/schema');
       await PUT('snapshots/import', { json: text });
       navigateTo('dashboard');
-    } catch (e) {
+    } catch {
       showToast('Failed to upload snapshot. Check file format.', 'error');
     }
     importInput.value = '';
@@ -140,7 +158,7 @@ export async function init(): Promise<void> {
       downloadLink.click();
       URL.revokeObjectURL(url);
       showToast('Snapshot downloaded successfully.', 'success');
-    } catch (e) {
+    } catch {
       showToast('Failed to download snapshot.', 'error');
     }
   });
