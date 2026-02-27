@@ -131,9 +131,10 @@ export async function withLoadingState<T>(
     return data;
   } catch (e) {
     setHtml(container, buildErrorState(errorMessage(e)));
-    const retryBtn = container.querySelector('[data-retry-btn]');
+    const retryBtn = container.querySelector<HTMLElement>('[data-retry-btn]');
     if (retryBtn && retryFn) {
       retryBtn.addEventListener('click', retryFn);
+      retryBtn.focus();
     }
     return null;
   }

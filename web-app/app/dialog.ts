@@ -1,9 +1,11 @@
 import { $ } from './dom';
 
-let previousFocusElement: HTMLElement | null = null;
+const focusStack: HTMLElement[] = [];
 
 function openDialog(dialogId: string): void {
-  previousFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (document.activeElement instanceof HTMLElement) {
+    focusStack.push(document.activeElement);
+  }
   $(`#${dialogId}-backdrop`)?.classList.remove('hidden');
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.remove('hidden');
@@ -17,8 +19,7 @@ function closeDialog(dialogId: string): void {
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.add('hidden');
   dialog?.setAttribute('aria-hidden', 'true');
-  previousFocusElement?.focus();
-  previousFocusElement = null;
+  focusStack.pop()?.focus();
 }
 
 function initTabs(tabSelector: string, panelSelector: string, activeClass = 'active'): void {
