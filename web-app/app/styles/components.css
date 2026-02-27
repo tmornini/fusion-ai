@@ -531,7 +531,21 @@
 .toast-info { border-left: 3px solid hsl(var(--info)); }
 
 .toast-title { font-size: var(--text-sm); font-weight: 500; }
-.toast-message { font-size: var(--text-sm); color: hsl(var(--muted-foreground)); }
+.toast-message { font-size: var(--text-sm); color: hsl(var(--muted-foreground)); flex: 1; }
+
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.6;
+  transition: opacity var(--duration-fast) var(--ease-default);
+  flex-shrink: 0;
+}
+.toast-close:hover { opacity: 1; }
 
 /* ==========================================
    17. PROGRESS BAR
