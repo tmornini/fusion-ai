@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel, Id } from '../../../api/types';
 import { User } from '../../../api/types';
-import { buildUserMap } from './helpers';
+import { buildUserMap, userName } from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -20,7 +20,7 @@ export async function getIdeaForEdge(ideaId: string, cachedUserMap?: Map<Id, Use
     title: idea.title,
     problem: idea.problem_statement || '',
     solution: idea.proposed_solution || '',
-    submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
+    submittedBy: userName(userMap, idea.submitted_by_id),
     score: idea.score,
   };
 }
@@ -65,7 +65,7 @@ export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeLi
       outcomesCount: outcomes.length,
       metricsCount,
       confidence: edge.confidence || null,
-      owner: userMap.get(edge.owner_id)?.fullName() ?? 'Unknown',
+      owner: userName(userMap, edge.owner_id),
       updatedAt: edge.updated_at,
     };
   });

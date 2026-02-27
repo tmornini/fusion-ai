@@ -2,16 +2,21 @@ import { GET } from '../../../api/api';
 import type { Id, ConfidenceLevel } from '../../../api/types';
 import type { UserEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity } from '../../../api/types';
 import { User } from '../../../api/types';
+import { log } from '../logger';
 
 export async function buildUserMap(): Promise<Map<Id, User>> {
   const users = await GET('users') as UserEntity[];
   return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
 
+export function userName(userMap: Map<Id, User>, userId: string): string {
+  return userMap.get(userId)?.fullName() ?? 'Unknown';
+}
+
 export function parseJson<T>(value: string | T, fallback: T): T {
   if (typeof value === 'string') {
     try { return JSON.parse(value) as T; }
-    catch { return fallback; }
+    catch { log.warn(`Failed to parse JSON value: ${value.slice(0, 100)}`, 'parseJson'); return fallback; }
   }
   return value;
 }
@@ -60,7 +65,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
       longTerm: edge.impact_long_term,
     },
     confidence: edge.confidence ?? null,
-    owner: userMap.get(edge.owner_id)?.fullName() ?? 'Unknown',
+    owner: userName(userMap, edge.owner_id),
   };
 }
 

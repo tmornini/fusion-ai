@@ -29,10 +29,29 @@
   --border-strong: var(--gray-600);
   --input: var(--gray-700);
 
+  --success: 152 55% 50%;
+  --success-foreground: 152 60% 10%;
   --success-soft: 152 40% 15%;
+  --success-border: 152 40% 30%;
+  --success-text: 152 55% 65%;
+
+  --warning: 38 85% 55%;
+  --warning-foreground: 38 90% 10%;
   --warning-soft: 38 40% 15%;
+  --warning-border: 38 40% 30%;
+  --warning-text: 38 80% 65%;
+
+  --error: 0 65% 58%;
+  --error-foreground: 0 0% 100%;
   --error-soft: 0 40% 15%;
+  --error-border: 0 40% 30%;
+  --error-text: 0 65% 70%;
+
+  --info: 217 45% 60%;
+  --info-foreground: 0 0% 100%;
   --info-soft: 217 40% 15%;
+  --info-border: 217 40% 30%;
+  --info-text: 217 45% 70%;
 
   --chart-5: 217 71% 63%;
   --chart-6: 280 65% 70%;

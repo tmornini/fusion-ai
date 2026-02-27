@@ -1,7 +1,7 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel, PriorityLevel, Id } from '../../../api/types';
 import { User, computePriority } from '../../../api/types';
-import { buildUserMap, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
+import { buildUserMap, userName, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
 
 export interface Idea {
   id: string;
@@ -31,7 +31,7 @@ export async function getIdeas(prefetchedIdeas?: IdeaEntity[], cachedUserMap?: M
       estimatedCost: idea.estimated_cost,
       priority: idea.priority,
       status: idea.status,
-      submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
+      submittedBy: userName(userMap, idea.submitted_by_id),
       edgeStatus: idea.edge_status as Idea['edgeStatus'],
     }));
 }
@@ -64,7 +64,7 @@ export async function getReviewQueue(cachedUserMap?: Map<Id, User>): Promise<Rev
       return {
         id: idea.id,
         title: idea.title,
-        submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
+        submittedBy: userName(userMap, idea.submitted_by_id),
         priority: computePriority(idea.score),
         readiness: (idea.readiness || 'incomplete') as ReviewIdea['readiness'],
         edgeStatus: (idea.edge_status || 'missing') as ReviewIdea['edgeStatus'],
@@ -143,7 +143,7 @@ export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id,
     id: idea.id,
     title: idea.title,
     description: idea.description || '',
-    submittedBy: userMap.get(idea.submitted_by_id)?.fullName() ?? 'Unknown',
+    submittedBy: userName(userMap, idea.submitted_by_id),
     submittedAt: idea.submitted_at || '',
     priority: computePriority(idea.score),
     score: idea.score,

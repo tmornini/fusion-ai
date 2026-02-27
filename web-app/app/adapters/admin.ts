@@ -4,7 +4,7 @@ import type {
   NotificationCategoryEntity, NotificationPreferenceEntity, Id,
 } from '../../../api/types';
 import { toBool, User } from '../../../api/types';
-import { buildUserMap } from './helpers';
+import { buildUserMap, userName } from './helpers';
 
 const RECENT_ACTIVITY_COUNT = 3;
 
@@ -55,7 +55,7 @@ export async function getAccount(cachedUserMap?: Map<Id, User>): Promise<Account
     health: { score: account.health_score, status: account.health_status, lastActivity: account.last_activity, activeUsers: account.active_users },
     recentActivity: activities.slice(0, RECENT_ACTIVITY_COUNT).map(activity => ({
       type: activity.type,
-      description: `${userMap.get(activity.actor_id)?.fullName() ?? 'Unknown'} ${activity.action} ${activity.target}`,
+      description: `${userName(userMap, activity.actor_id)} ${activity.action} ${activity.target}`,
       time: activity.timestamp,
     })),
   };
@@ -142,7 +142,7 @@ export async function getActivityFeed(cachedUserMap?: Map<Id, User>): Promise<Ac
   return activities.map(activity => ({
     id: activity.id,
     type: activity.type,
-    actor: userMap.get(activity.actor_id)?.fullName() ?? 'Unknown',
+    actor: userName(userMap, activity.actor_id),
     action: activity.action,
     target: activity.target,
     timestamp: activity.timestamp,

@@ -8,16 +8,8 @@ import {
 } from '../app/icons';
 import { navigateTo } from '../app/core';
 import { getIdeas, type Idea } from '../app/adapters';
-import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
+import { edgeStatusConfig, ideaStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
 import { SCORE_BADGE_HIGH, SCORE_BADGE_MEDIUM } from '../../api/types';
-
-const ideaStatusConfig: Record<string, { label: string; className: string }> = {
-  draft: { label: 'Draft', className: 'badge-default' },
-  scored: { label: 'Scored', className: 'badge-primary' },
-  pending_review: { label: 'Pending Review', className: 'badge-warning' },
-  approved: { label: 'Approved', className: 'badge-success' },
-  rejected: { label: 'Sent Back', className: 'badge-error' },
-};
 
 function styleForScoreBadge(score: number): string {
   if (score >= SCORE_BADGE_HIGH) return 'color:hsl(var(--success));background:hsl(var(--success-soft))';

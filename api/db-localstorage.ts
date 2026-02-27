@@ -50,7 +50,6 @@ function writeTable<T>(tableName: string, rows: T[]): void {
 
 function serializeValue(value: unknown): unknown {
   if (value === null || value === undefined) return null;
-  if (typeof value === 'object') return JSON.stringify(value);
   if (typeof value === 'boolean') return value ? 1 : 0;
   return value;
 }
@@ -61,6 +60,10 @@ function serializeRecord(record: Record<string, unknown>): Record<string, unknow
     result[key] = serializeValue(value);
   }
   return result;
+}
+
+function generateCompositeId(prefix: string, ...parts: string[]): string {
+  return `${prefix}-${parts.join('-')}`;
 }
 
 // ── Generic store factories ──────────────
@@ -128,7 +131,7 @@ function createSingletonStore<T extends { id: string }>(tableName: string): Sing
 
 // ── Table list for bulk operations ─────────
 
-const TABLE_NAMES = [
+export const TABLE_NAMES = [
   'users', 'ideas', 'idea_scores', 'projects', 'project_team',
   'milestones', 'project_tasks', 'discussions', 'project_versions',
   'edges', 'edge_outcomes', 'edge_metrics', 'activities', 'notifications',
@@ -246,7 +249,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
         const rows = readTable<IdeaScoreEntity>('idea_scores');
         const serialized = serializeRecord(fields);
         const index = rows.findIndex(entity => entity.idea_id === ideaId);
-        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? `score-${ideaId}`);
+        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? generateCompositeId('score', ideaId));
 
         if (index >= 0) {
           rows[index] = { ...rows[index]!, ...serialized, id, idea_id: ideaId } as IdeaScoreEntity;
@@ -269,7 +272,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
         const rows = readTable<ProjectTeamEntity>('project_team');
         const serialized = serializeRecord(fields);
         const index = rows.findIndex(entity => entity.project_id === projectId && entity.user_id === userId);
-        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? `pt-${projectId}-${userId}`);
+        const id = index >= 0 ? rows[index]!.id : (fields.id as string ?? generateCompositeId('pt', projectId, userId));
 
         if (index >= 0) {
           rows[index] = { ...rows[index]!, ...serialized, id, project_id: projectId, user_id: userId } as ProjectTeamEntity;

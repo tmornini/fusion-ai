@@ -4,6 +4,7 @@ import { $, $$, } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
 import { getPageName } from './navigation';
+import { log } from './logger';
 
 function mutateThemeToggleIcon(): void {
   const themeIcon = state.theme === 'dark'
@@ -11,9 +12,17 @@ function mutateThemeToggleIcon(): void {
     : state.theme === 'light'
     ? iconSun(20)
     : iconMonitor(20);
+  const themeLabel = state.theme === 'dark'
+    ? 'Switch to light theme'
+    : state.theme === 'light'
+    ? 'Switch to dark theme'
+    : 'Toggle theme';
   ['theme-toggle', 'mobile-theme-toggle'].forEach(id => {
     const button = document.getElementById(id);
-    if (button) setHtml(button, themeIcon);
+    if (button) {
+      setHtml(button, themeIcon);
+      button.setAttribute('aria-label', themeLabel);
+    }
   });
 }
 
@@ -87,13 +96,13 @@ function initSidebar(): void {
     sidebar?.classList.add('sidebar-collapsed');
     mainContent?.classList.add('sidebar-collapsed');
     setState({ isSidebarCollapsed: true });
-    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'true'); } catch { /* non-critical */ }
+    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'true'); } catch { log.debug('Failed to save sidebar state', 'layout'); }
   });
   document.getElementById('sidebar-expand')?.addEventListener('click', () => {
     sidebar?.classList.remove('sidebar-collapsed');
     mainContent?.classList.remove('sidebar-collapsed');
     setState({ isSidebarCollapsed: false });
-    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false'); } catch { /* non-critical */ }
+    try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false'); } catch { log.debug('Failed to save sidebar state', 'layout'); }
   });
 
   $$('[data-section]').forEach(btn => {
@@ -175,7 +184,8 @@ function initMobileDrawer(): void {
 
   // Escape key closes drawer
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sheet && !sheet.classList.contains('hidden')) {
+    if (e.key !== 'Escape') return;
+    if (sheet && !sheet.classList.contains('hidden')) {
       closeDrawer();
     }
   });

@@ -96,20 +96,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load and init the page module
   const loader = pageModules[pageName];
-  if (loader) {
-    try {
-      const mod = await loader();
-      await mod.init(getParams());
-    } catch (err) {
-      console.error(`Page "${pageName}" failed to initialize:`, err);
-      const container = document.querySelector<HTMLElement>('.page-content')
-        || document.getElementById('page-root');
-      if (container) {
-        setHtml(container, buildErrorState(
-          errorMessage(err, 'This page failed to load.'),
-        ));
-        container.querySelector('[data-retry-btn]')?.addEventListener('click', () => location.reload());
-      }
+  if (!loader) {
+    navigateTo('not-found');
+    return;
+  }
+  try {
+    const mod = await loader();
+    await mod.init(getParams());
+  } catch (err) {
+    console.error(`Page "${pageName}" failed to initialize:`, err);
+    const container = document.querySelector<HTMLElement>('.page-content')
+      || document.getElementById('page-root');
+    if (container) {
+      setHtml(container, buildErrorState(
+        errorMessage(err, 'This page failed to load.'),
+      ));
+      container.querySelector('[data-retry-btn]')?.addEventListener('click', () => location.reload());
     }
   }
 });

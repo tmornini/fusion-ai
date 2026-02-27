@@ -288,7 +288,7 @@
 
 /* Activity row — subtle hover highlight */
 .activity-row {
-  transition: background-color var(--duration-fast) var(--ease-default);
+  transition: var(--transition-colors);
 }
 .activity-row:hover {
   background-color: hsl(var(--muted) / 0.3);
@@ -586,7 +586,7 @@
   border-radius: 9999px;
   border: none;
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-default);
+  transition: var(--transition-colors);
 }
 
 .switch[aria-checked="true"] {

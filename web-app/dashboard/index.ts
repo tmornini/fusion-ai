@@ -12,6 +12,7 @@ import {
   type GaugeCard, type Idea, type Project, type TeamMember,
 } from '../app/adapters';
 import { buildDonutChart, buildBarChart, buildAreaChart } from '../app/charts';
+import { log } from '../app/logger';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },
@@ -297,7 +298,7 @@ export async function init(): Promise<void> {
       getTeamMembers(),
     ]);
     mutateCharts(ideas, projects, members);
-  } catch {
-    // Charts are supplementary — silently degrade
+  } catch (err) {
+    log.warn('Failed to mutate dashboard charts', 'dashboard', err);
   }
 }

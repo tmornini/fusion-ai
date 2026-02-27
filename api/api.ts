@@ -5,6 +5,10 @@
 
 import type { DbAdapter } from './db';
 
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
 let adapter: DbAdapter | null = null;
 
 export function initApi(dbAdapter: DbAdapter): void {
@@ -271,7 +275,8 @@ export async function handleRequest(request: Request): Promise<Response> {
         return Response.json({ error: `Method ${method} not allowed` }, { status: 405 });
     }
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    const status = error instanceof ApiError ? error.status : 500;
+    return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status });
   }
 }
 
@@ -280,7 +285,7 @@ export async function handleRequest(request: Request): Promise<Response> {
 async function unwrapResponse(response: Response): Promise<unknown> {
   if (response.ok) return response.status === 204 ? undefined : response.json();
   const { error } = await response.json() as { error: string };
-  throw new Error(error);
+  throw new Error(`${error} (${response.url})`);
 }
 
 export async function GET(resource: string): Promise<unknown> {

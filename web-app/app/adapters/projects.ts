@@ -5,7 +5,7 @@ import type {
   IdeaEntity, ClarificationEntity, ConfidenceLevel, Id,
 } from '../../../api/types';
 import { User } from '../../../api/types';
-import { buildUserMap, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
+import { buildUserMap, userName, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
 
 export interface Project {
   id: string;
@@ -90,7 +90,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     progress: project.progress,
     startDate: project.start_date,
     targetEndDate: project.target_end_date,
-    projectLead: userMap.get(project.lead_id)?.fullName() ?? 'Unknown',
+    projectLead: userName(userMap, project.lead_id),
     metrics: {
       time: { baseline: project.estimated_time, current: project.actual_time },
       cost: { baseline: project.estimated_cost, current: project.actual_cost },
@@ -99,7 +99,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     edge: edgeData,
     team: teamRows.map(member => ({
       id: member.user_id,
-      name: userMap.get(member.user_id)?.fullName() ?? 'Unknown',
+      name: userName(userMap, member.user_id),
       role: member.role,
     })),
     milestones: milestoneRows.map(milestone => ({
@@ -107,17 +107,17 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     })),
     versions: versionRows.map(version => ({
       id: version.id, version: version.version, date: version.date, changes: version.changes,
-      author: userMap.get(version.author_id)?.fullName() ?? 'Unknown',
+      author: userName(userMap, version.author_id),
     })),
     discussions: discussionRows.map(discussion => ({
       id: discussion.id, date: discussion.date, message: discussion.message,
-      author: userMap.get(discussion.author_id)?.fullName() ?? 'Unknown',
+      author: userName(userMap, discussion.author_id),
     })),
     tasks: taskRows.map(task => ({
       name: task.name, priority: task.priority, description: task.description,
       skills: parseJson<string[]>(task.skills, []),
       hours: task.hours,
-      assigned: userMap.get(task.assigned_to_id)?.fullName() ?? 'Unknown',
+      assigned: userName(userMap, task.assigned_to_id),
     })),
   };
 }
@@ -175,7 +175,7 @@ export async function getProjectForEngineering(projectId: string, cachedUserMap?
     },
     team: teamRows.map(member => ({
       id: member.user_id,
-      name: userMap.get(member.user_id)?.fullName() ?? 'Unknown',
+      name: userName(userMap, member.user_id),
       role: member.role,
       type: member.type,
     })),
@@ -195,11 +195,11 @@ export async function getClarificationsByProjectId(projectId: string, cachedUser
   return clarificationRows.map(clarification => ({
     id: clarification.id,
     question: clarification.question,
-    askedBy: userMap.get(clarification.asked_by_id)?.fullName() ?? 'Unknown',
+    askedBy: userName(userMap, clarification.asked_by_id),
     askedAt: clarification.asked_at,
     status: clarification.status as Clarification['status'],
     ...(clarification.answer ? { answer: clarification.answer } : {}),
-    ...(clarification.answered_by_id ? { answeredBy: userMap.get(clarification.answered_by_id)?.fullName() ?? 'Unknown' } : {}),
+    ...(clarification.answered_by_id ? { answeredBy: userName(userMap, clarification.answered_by_id) } : {}),
     ...(clarification.answered_at ? { answeredAt: clarification.answered_at } : {}),
   }));
 }

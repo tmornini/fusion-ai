@@ -7,6 +7,8 @@
 // localStorage Key Constants
 // ------------------------------------
 
+import { log } from './logger';
+
 const STORAGE_KEY_THEME = 'fusion-theme';
 const STORAGE_KEY_SIDEBAR = 'fusion-sidebar-collapsed';
 
@@ -69,7 +71,7 @@ function applyTheme(): void {
 }
 
 function setTheme(theme: AppState['theme']): void {
-  try { localStorage.setItem(STORAGE_KEY_THEME, theme); } catch { /* non-critical */ }
+  try { localStorage.setItem(STORAGE_KEY_THEME, theme); } catch { log.debug('Failed to save theme preference', 'state'); }
   setState({ theme });
   applyTheme();
 }

@@ -7,6 +7,7 @@ import {
 } from '../app/icons';
 import { navigateTo } from '../app/core';
 import { getEdgeList, type EdgeListItem } from '../app/adapters';
+import { confidenceLevelConfig, UNKNOWN_STATUS, UNKNOWN_CONFIDENCE } from '../app/config';
 
 const edgeStatusDisplayConfig: Record<string, { label: string; className: string; icon: (size?: number) => SafeHtml }> = {
   complete: { label: 'Complete', className: 'badge-success', icon: iconCheckCircle2 },
@@ -14,15 +15,9 @@ const edgeStatusDisplayConfig: Record<string, { label: string; className: string
   missing: { label: 'Missing', className: 'badge-error', icon: iconAlertCircle },
 };
 
-const confidenceLevelConfig: Record<string, { label: string; className: string }> = {
-  high: { label: 'High', className: 'text-success' },
-  medium: { label: 'Medium', className: 'text-warning' },
-  low: { label: 'Low', className: 'text-error' },
-};
-
 function buildEdgeCard(edge: EdgeListItem): SafeHtml {
   const statusDisplay = edgeStatusDisplayConfig[edge.status] ?? { label: 'Unknown', className: 'badge-default', icon: iconAlertCircle };
-  const confidenceDisplay = edge.confidence ? (confidenceLevelConfig[edge.confidence] ?? { label: 'Unknown', className: 'text-muted' }) : null;
+  const confidenceDisplay = edge.confidence ? (confidenceLevelConfig[edge.confidence] ?? UNKNOWN_CONFIDENCE) : null;
   return html`
     <div class="card card-hover p-4" style="cursor:pointer" data-edge-card="${edge.ideaId}">
       <div class="flex items-start justify-between gap-4">
