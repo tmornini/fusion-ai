@@ -1,4 +1,4 @@
-import { $, $input, $select, $textarea } from '../app/dom';
+import { $, $input, $select, $textarea, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -29,23 +29,15 @@ export async function init(): Promise<void> {
     return;
   }
 
-  // Breadcrumb chevron
-  const breadcrumbSeparatorEl = $('#profile-breadcrumb-separator');
-  if (breadcrumbSeparatorEl) setHtml(breadcrumbSeparatorEl, iconChevronRight(14));
-
-  // Icons
-  const saveBtnIconEl = $('#profile-save-btn-icon');
-  if (saveBtnIconEl) setHtml(saveBtnIconEl, iconSave(16));
-  const avatarBtn = $('#profile-avatar-btn');
-  if (avatarBtn) setHtml(avatarBtn, iconCamera(14));
-  const emailLabel = $('#profile-email-label');
-  if (emailLabel) setHtml(emailLabel, html`${iconMail(16)} Email`);
-  const phoneLabel = $('#profile-phone-label');
-  if (phoneLabel) setHtml(phoneLabel, html`${iconPhone(16)} Phone`);
-  const roleLabel = $('#profile-role-label');
-  if (roleLabel) setHtml(roleLabel, html`${iconBriefcase(16)} Role`);
-  const strengthsHeader = $('#profile-strengths-header');
-  if (strengthsHeader) setHtml(strengthsHeader, html`${iconStar(20, 'text-primary')} My Strengths`);
+  populateIcons([
+    ['#profile-breadcrumb-separator', iconChevronRight(14)],
+    ['#profile-save-btn-icon', iconSave(16)],
+    ['#profile-avatar-btn', iconCamera(14)],
+    ['#profile-email-label', html`${iconMail(16)} Email`],
+    ['#profile-phone-label', html`${iconPhone(16)} Phone`],
+    ['#profile-role-label', html`${iconBriefcase(16)} Role`],
+    ['#profile-strengths-header', html`${iconStar(20, 'text-primary')} My Strengths`],
+  ]);
 
   // Fill form values
   const avatarInitials = $('#profile-avatar-initials');

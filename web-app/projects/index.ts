@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, populateIcons, initToggleGroup } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -85,11 +85,10 @@ export async function init(): Promise<void> {
 
   let currentView: 'priority' | 'performance' = 'priority';
 
-  // Populate icons
-  const priorityViewIconEl = $('#priority-view-icon');
-  if (priorityViewIconEl) setHtml(priorityViewIconEl, iconLayoutGrid(16));
-  const performanceViewIconEl = $('#performance-view-icon');
-  if (performanceViewIconEl) setHtml(performanceViewIconEl, iconBarChart(16));
+  populateIcons([
+    ['#priority-view-icon', iconLayoutGrid(16)],
+    ['#performance-view-icon', iconBarChart(16)],
+  ]);
 
   // Status badges
   const counts = {
@@ -129,13 +128,9 @@ export async function init(): Promise<void> {
     bindCards();
   }
 
-  $$('.view-toggle-btn').forEach(viewToggleButton => {
-    viewToggleButton.addEventListener('click', () => {
-      currentView = viewToggleButton.getAttribute('data-view') as 'priority' | 'performance';
-      $$('.view-toggle-btn').forEach(button => button.classList.remove('active'));
-      viewToggleButton.classList.add('active');
-      mutateList();
-    });
+  initToggleGroup('.view-toggle-btn', 'data-view', (view) => {
+    currentView = view as 'priority' | 'performance';
+    mutateList();
   });
 
   mutateList();

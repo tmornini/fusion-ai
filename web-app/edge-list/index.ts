@@ -1,4 +1,4 @@
-import { $, $input, $select, attr } from '../app/dom';
+import { $, $input, $select, attr, populateIcons } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -56,13 +56,10 @@ export async function init(): Promise<void> {
   if (!result) return;
   const edges = result;
 
-  // Badge icon
-  const pageBadgeEl = $('#page-badge');
-  if (pageBadgeEl) setHtml(pageBadgeEl, html`${iconTarget(14)} Business Case Definition`);
-
-  // Search icon
-  const searchFieldIconEl = $('#search-field-icon');
-  if (searchFieldIconEl) setHtml(searchFieldIconEl, iconSearch(16));
+  populateIcons([
+    ['#page-badge', html`${iconTarget(14)} Business Case Definition`],
+    ['#search-field-icon', iconSearch(16)],
+  ]);
 
   // Stats
   const stats = {

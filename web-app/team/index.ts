@@ -1,4 +1,4 @@
-import { $, $$, $input } from '../app/dom';
+import { $, $$, $input, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
@@ -158,11 +158,10 @@ export async function init(): Promise<void> {
   if (!result) return;
   members = result;
 
-  // Populate icons
-  const addMemberBtnIconEl = $('#add-member-btn-icon');
-  if (addMemberBtnIconEl) setHtml(addMemberBtnIconEl, iconPlus(16));
-  const searchFieldIconEl = $('#search-field-icon');
-  if (searchFieldIconEl) setHtml(searchFieldIconEl, iconSearch(16));
+  populateIcons([
+    ['#add-member-btn-icon', iconPlus(16)],
+    ['#search-field-icon', iconSearch(16)],
+  ]);
 
   // Summary
   const summaryEl = $('#team-summary');

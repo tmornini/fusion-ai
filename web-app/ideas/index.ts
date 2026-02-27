@@ -1,4 +1,4 @@
-import { $, attr } from '../app/dom';
+import { $, attr, populateIcons, initToggleGroup } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -126,15 +126,12 @@ export async function init(): Promise<void> {
 
   let currentView = 'priority';
 
-  // Populate icons in static elements
-  const createBtnIconEl = $('#create-btn-icon');
-  if (createBtnIconEl) setHtml(createBtnIconEl, iconPlus(16));
-  const createBtnAccentEl = $('#create-btn-accent');
-  if (createBtnAccentEl) setHtml(createBtnAccentEl, iconWand(16));
-  const priorityViewIconEl = $('#priority-view-icon');
-  if (priorityViewIconEl) setHtml(priorityViewIconEl, iconLayoutGrid(16));
-  const performanceViewIconEl = $('#performance-view-icon');
-  if (performanceViewIconEl) setHtml(performanceViewIconEl, iconBarChart(16));
+  populateIcons([
+    ['#create-btn-icon', iconPlus(16)],
+    ['#create-btn-accent', iconWand(16)],
+    ['#priority-view-icon', iconLayoutGrid(16)],
+    ['#performance-view-icon', iconBarChart(16)],
+  ]);
 
   // Flow indicator
   const flowEl = $('#flow-indicator');
@@ -174,15 +171,9 @@ export async function init(): Promise<void> {
     if (count) count.textContent = `${sorted.length} ${sorted.length === 1 ? 'idea' : 'ideas'} • ${currentView === 'priority' ? 'by priority' : 'by score'}`;
   }
 
-  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(viewToggleButton => {
-    viewToggleButton.addEventListener('click', () => {
-      const view = viewToggleButton.getAttribute('data-view') || 'priority';
-      currentView = view;
-      document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(button => {
-        button.classList.toggle('active', button.getAttribute('data-view') === view);
-      });
-      mutateList();
-    });
+  initToggleGroup('.view-toggle-btn', 'data-view', (view) => {
+    currentView = view;
+    mutateList();
   });
 
   $('#ideas-list')?.addEventListener('click', (e) => {

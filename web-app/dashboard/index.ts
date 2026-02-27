@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
@@ -146,15 +146,12 @@ function mutateSvgToFit(container: HTMLElement): void {
 // ── Chart rendering ────────────────
 
 function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
-  // Icons
-  const pipelineIcon = $('#chart-pipeline-icon');
-  if (pipelineIcon) setHtml(pipelineIcon, iconLightbulb(16, 'text-primary'));
-  const healthIcon = $('#chart-health-icon');
-  if (healthIcon) setHtml(healthIcon, iconFolderKanban(16, 'text-success'));
-  const scoresIcon = $('#chart-scores-icon');
-  if (scoresIcon) setHtml(scoresIcon, iconBarChart(16, 'text-warning'));
-  const availIcon = $('#chart-availability-icon');
-  if (availIcon) setHtml(availIcon, iconUsers(16, 'text-primary'));
+  populateIcons([
+    ['#chart-pipeline-icon', iconLightbulb(16, 'text-primary')],
+    ['#chart-health-icon', iconFolderKanban(16, 'text-success')],
+    ['#chart-scores-icon', iconBarChart(16, 'text-warning')],
+    ['#chart-availability-icon', iconUsers(16, 'text-primary')],
+  ]);
 
   // 1. Idea Pipeline (Donut)
   const pipelineEl = $('#chart-pipeline');
