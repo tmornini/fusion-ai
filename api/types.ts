@@ -25,6 +25,14 @@ export type IdeaStatus = 'draft' | 'scored' | 'pending_review' | 'approved' | 'r
 export const SCORE_THRESHOLD_HIGH = 80;
 export const SCORE_THRESHOLD_MEDIUM = 60;
 
+/** Score badge thresholds for UI display (ideas list). */
+export const SCORE_BADGE_HIGH = 85;
+export const SCORE_BADGE_MEDIUM = 70;
+
+/** Team availability thresholds for UI display (team page). */
+export const AVAILABILITY_HIGH = 70;
+export const AVAILABILITY_LOW = 40;
+
 /** Compute priority level from a numeric score. */
 export function computePriority(score: number): PriorityLevel {
   if (score >= SCORE_THRESHOLD_HIGH) return 'high';

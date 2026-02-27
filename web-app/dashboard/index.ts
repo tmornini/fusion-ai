@@ -24,6 +24,8 @@ const gaugeIconConfig: Record<string, (size?: number, cssClass?: string) => Safe
 };
 
 const GAUGE_THEME_FALLBACK = { bg: 'background:hsl(var(--muted)/0.04)', iconBg: 'background:hsl(var(--muted)/0.1)', border: 'border-color:hsl(var(--muted)/0.15)' };
+const GAUGE_ARC_OUTER_RADIUS = 65;
+const GAUGE_ARC_INNER_RADIUS = 45;
 const CHART_LABEL_MAX_LEN = 12;
 
 function buildGauge(card: GaugeCard): SafeHtml {
@@ -31,8 +33,8 @@ function buildGauge(card: GaugeCard): SafeHtml {
   const elementId = card.title.replace(/\s+/g, '-').toLowerCase();
   const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
   const innerPct = Math.min((card.inner.value / card.inner.max) * 100, 100);
-  const outerArc = Math.PI * 65;
-  const innerArc = Math.PI * 45;
+  const outerArc = Math.PI * GAUGE_ARC_OUTER_RADIUS;
+  const innerArc = Math.PI * GAUGE_ARC_INNER_RADIUS;
   const iconFn = gaugeIconConfig[card.icon] || iconDollarSign;
 
   return html`

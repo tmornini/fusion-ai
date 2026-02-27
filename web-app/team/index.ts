@@ -9,10 +9,11 @@ import {
 } from '../app/icons';
 import { initials, initTabs, openDialog, closeDialog } from '../app/core';
 import { getTeamMembers, type TeamMember } from '../app/adapters';
+import { AVAILABILITY_HIGH, AVAILABILITY_LOW } from '../../api/types';
 
 function styleForAvailability(availability: number): string {
-  if (availability >= 70) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';
-  if (availability >= 40) return 'color:hsl(var(--warning));background:hsl(var(--warning)/0.1);border:1px solid hsl(var(--warning)/0.2)';
+  if (availability >= AVAILABILITY_HIGH) return 'color:hsl(var(--success));background:hsl(var(--success) / 0.1);border:1px solid hsl(var(--success) / 0.2)';
+  if (availability >= AVAILABILITY_LOW) return 'color:hsl(var(--warning));background:hsl(var(--warning)/0.1);border:1px solid hsl(var(--warning)/0.2)';
   return 'color:hsl(var(--error));background:hsl(var(--error)/0.1);border:1px solid hsl(var(--error)/0.2)';
 }
 
