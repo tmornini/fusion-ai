@@ -3,7 +3,7 @@ import { $ } from './dom';
 let previousFocusElement: HTMLElement | null = null;
 
 function openDialog(dialogId: string): void {
-  previousFocusElement = document.activeElement as HTMLElement | null;
+  previousFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   $(`#${dialogId}-backdrop`)?.classList.remove('hidden');
   const dialog = $(`#${dialogId}-dialog`);
   dialog?.classList.remove('hidden');
@@ -60,7 +60,7 @@ function initTabs(tabSelector: string, panelSelector: string, activeClass = 'act
     tab.setAttribute('aria-selected', 'true');
     tab.setAttribute('tabindex', '0');
     tab.focus();
-    panels.forEach(panel => (panel as HTMLElement).style.display = 'none');
+    panels.forEach(panel => { panel.style.display = 'none'; });
     const panel = document.getElementById(`tab-${tabId}`);
     if (panel) panel.style.display = '';
   }

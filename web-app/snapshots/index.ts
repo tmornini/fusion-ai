@@ -112,7 +112,7 @@ export async function init(): Promise<void> {
   });
 
   // Upload snapshot
-  const importInput = document.getElementById('upload-input') as HTMLInputElement | null;
+  const importInput = document.querySelector<HTMLInputElement>('#upload-input');
   importInput?.addEventListener('change', async () => {
     const file = importInput.files?.[0];
     if (!file) return;

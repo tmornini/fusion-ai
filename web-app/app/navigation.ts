@@ -21,7 +21,7 @@ function initPrefetch(): void {
   const prefetched = new Set<string>();
   document.addEventListener('pointerenter', (e) => {
     if (!(e.target instanceof Element)) return;
-    const anchor = e.target.closest('a[href]') as HTMLAnchorElement | null;
+    const anchor = e.target.closest<HTMLAnchorElement>('a[href]');
     if (!anchor) return;
     const href = anchor.getAttribute('href');
     if (href && href.endsWith('/index.html') && !href.startsWith('http') && !prefetched.has(href)) {

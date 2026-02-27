@@ -231,7 +231,7 @@ function navigateToItem(index: number): void {
 function open(): void {
   if (isOpen) return;
   isOpen = true;
-  previousFocusElement = document.activeElement as HTMLElement;
+  previousFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
   if (!backdrop) initCommandPaletteDOM();
   backdrop!.classList.remove('hidden');

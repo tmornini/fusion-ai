@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await mod.init(getParams());
     } catch (err) {
       console.error(`Page "${pageName}" failed to initialize:`, err);
-      const container = document.querySelector('.page-content') as HTMLElement
+      const container = document.querySelector<HTMLElement>('.page-content')
         || document.getElementById('page-root');
       if (container) {
         setHtml(container, buildErrorState(

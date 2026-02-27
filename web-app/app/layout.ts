@@ -55,17 +55,19 @@ async function mutateNotifications(): Promise<void> {
   }
 }
 
+const NAV_GROUP_CHILDREN: Record<string, string[]> = {
+  account: ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'],
+  ideas: ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'],
+  projects: ['project-detail', 'engineering-requirements'],
+  'edge-list': ['edge'],
+};
+
 function initActiveNavItem(): void {
   const pageName = getPageName();
   $$('[data-page-link]').forEach(navLink => {
     const linkPage = navLink.getAttribute('data-page-link') || '';
-    let isActive = linkPage === pageName;
-    if (!isActive) {
-      if (linkPage === 'account' && ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'].includes(pageName)) isActive = true;
-      else if (linkPage === 'ideas' && ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'].includes(pageName)) isActive = true;
-      else if (linkPage === 'projects' && ['project-detail', 'engineering-requirements'].includes(pageName)) isActive = true;
-      else if (linkPage === 'edge-list' && pageName === 'edge') isActive = true;
-    }
+    const isActive = linkPage === pageName
+      || (NAV_GROUP_CHILDREN[linkPage]?.includes(pageName) ?? false);
     if (isActive) navLink.setAttribute('aria-current', 'page');
     else navLink.removeAttribute('aria-current');
   });
