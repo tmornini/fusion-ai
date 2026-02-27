@@ -7,11 +7,8 @@ import {
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea, type Metric } from '../app/adapters';
-
-interface Outcome { id: string; description: string; metrics: Metric[]; }
-interface Impact { shortTerm: string; midTerm: string; longTerm: string; }
-interface EdgeData { outcomes: Outcome[]; impact: Impact; confidence: string | null; owner: string; }
+import { getIdeaForEdge, getEdgeDataByIdeaId, type EdgeIdea, type EdgeData } from '../app/adapters';
+import type { ConfidenceLevel } from '../../api/types';
 
 const outcomeTemplates = ['Reduce operational cost', 'Increase customer retention', 'Improve delivery speed'];
 
@@ -206,7 +203,7 @@ function syncFormFields() {
   edgeData.impact.shortTerm = $textarea('#edge-impact-short-term')?.value ?? '';
   edgeData.impact.midTerm = $textarea('#edge-impact-mid-term')?.value ?? '';
   edgeData.impact.longTerm = $textarea('#edge-impact-long-term')?.value ?? '';
-  edgeData.confidence = $select('#edge-confidence-select')?.value || null;
+  edgeData.confidence = ($select('#edge-confidence-select')?.value || null) as ConfidenceLevel | null;
   edgeData.owner = $input('#edge-owner-input')?.value ?? '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-description]').forEach(descriptionInput => {
     const outcomeId = descriptionInput.getAttribute('data-outcome-description') ?? '';
