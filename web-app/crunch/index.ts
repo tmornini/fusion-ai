@@ -7,7 +7,7 @@ import {
   iconType, iconToggleLeft,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { buildErrorState } from '../app/skeleton';
+import { buildErrorState } from '../app/loading-states';
 import { getCrunchColumns, type CrunchColumn } from '../app/adapters';
 
 let step: 'upload' | 'label' | 'review' = 'upload';

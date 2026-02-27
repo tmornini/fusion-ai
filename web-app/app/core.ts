@@ -5,7 +5,7 @@
 
 import { applyTheme } from './state';
 import { html, setHtml } from './safe-html';
-import { buildErrorState, errorMessage } from './skeleton';
+import { buildErrorState, errorMessage } from './loading-states';
 import { navigateTo, getPageName, getParams, initPrefetch } from './navigation';
 import { initDashboardLayout } from './layout';
 

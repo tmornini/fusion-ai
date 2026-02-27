@@ -1,7 +1,7 @@
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
   iconArrowLeft, iconAlertTriangle, iconTrendingUp, iconClock,
   iconUser, iconCalendar, iconTarget, iconLightbulb, iconCheckCircle,

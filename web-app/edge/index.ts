@@ -1,7 +1,7 @@
 import { $, $$, $textarea, $select, $input } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
   iconArrowLeft, iconTarget, iconTrendingUp, iconShield, iconPlus,
   iconTrash, iconCheck, iconAlertCircle, iconClock, iconUser, iconSave,

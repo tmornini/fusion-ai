@@ -5,7 +5,7 @@ import {
   iconMail, iconPhone, iconBriefcase, iconStar,
   iconSave, iconCheckCircle2, iconCamera, iconChevronRight,
 } from '../app/icons';
-import { buildErrorState } from '../app/skeleton';
+import { buildErrorState } from '../app/loading-states';
 import { getProfile, allStrengths } from '../app/adapters';
 
 const selectedStrengths = new Set(['Strategic Planning', 'Data Analysis', 'Stakeholder Management']);

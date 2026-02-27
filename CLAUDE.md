@@ -56,7 +56,7 @@ Page modules import directly from source modules, not through a barrel:
 import { $ } from '../app/dom';
 import { html, setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import { iconPlus, iconTrash } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
 ```
@@ -133,7 +133,7 @@ web-app/
     toast.ts                  # showToast() auto-dismiss notifications
     config.ts                 # edgeStatusConfig mapping
     safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()
-    skeleton.ts               # Loading skeletons, error states, empty states, withLoadingState()
+    loading-states.ts         # Loading skeletons, error states, empty states, withLoadingState()
     adapters/                 # ~30 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence, shared Metric type

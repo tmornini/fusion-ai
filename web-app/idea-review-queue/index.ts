@@ -1,6 +1,6 @@
 import { $, $input, $select, attr } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, withLoadingState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import {
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,

@@ -1,6 +1,6 @@
 import { $, attr, populateIcons, initToggleGroup } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, withLoadingState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import {
   iconPlus, iconWand, iconGripVertical, iconTrendingUp, iconClock,
   iconDollarSign, iconStar, iconLayoutGrid, iconBarChart, iconEye,

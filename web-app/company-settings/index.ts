@@ -2,7 +2,7 @@ import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { iconBuilding, iconGlobe, iconShield, iconSave, iconChevronRight } from '../app/icons';
-import { buildErrorState } from '../app/skeleton';
+import { buildErrorState } from '../app/loading-states';
 import { getCompanySettings } from '../app/adapters';
 
 function buildSelectField(id: string, label: string, value: string, options: string[]): SafeHtml {

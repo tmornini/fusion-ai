@@ -1,7 +1,7 @@
 import { $, $$, $input, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
-import { buildSkeleton, withLoadingState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import {
   iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,

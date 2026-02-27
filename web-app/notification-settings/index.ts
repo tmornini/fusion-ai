@@ -2,7 +2,7 @@ import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { icons, iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave } from '../app/icons';
-import { buildErrorState } from '../app/skeleton';
+import { buildErrorState } from '../app/loading-states';
 import { getNotificationCategories, type NotificationCategory } from '../app/adapters';
 
 function buildSwitch(id: string, checked: boolean): SafeHtml {

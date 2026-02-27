@@ -1,6 +1,6 @@
 import { $, $$, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
   icons, iconSparkles, iconDollarSign, iconClock, iconZap,
   iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,

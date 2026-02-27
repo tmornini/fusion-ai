@@ -1,6 +1,6 @@
 import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
-import { buildSkeleton, buildErrorState } from '../app/skeleton';
+import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
   iconUser, iconSettings, iconCreditCard, iconBuilding, iconCrown,
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,

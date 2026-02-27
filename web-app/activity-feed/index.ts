@@ -5,7 +5,7 @@ import {
   iconCheckCircle2, iconMessageSquare, iconUserPlus, iconEdit,
   iconArrowRight, iconSearch, iconChevronRight,
 } from '../app/icons';
-import { buildSkeleton, withLoadingState } from '../app/skeleton';
+import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import { getActivityFeed, type Activity } from '../app/adapters';
 
 function buildActivityIcon(type: string): SafeHtml {
