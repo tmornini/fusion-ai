@@ -205,6 +205,49 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
   }
 }
 
+function setupHero(user: { name: string; company: string }, stats: Array<{ value: number; label: string; trend: string }>): void {
+  populateIcons([['#hero-icon', iconSparkles(28, 'text-primary-fg')]]);
+
+  const greetingEl = $('#hero-greeting');
+  if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}`;
+  const userName = $('#hero-user-name');
+  if (userName) userName.textContent = user.name;
+  const company = $('#hero-company');
+  if (company) company.textContent = user.company;
+
+  const statsEl = $('#hero-stats');
+  if (statsEl) {
+    setHtml(statsEl, html`${stats.map((stat, statIndex) => html`
+      <div style="text-align:center">
+        <div class="flex items-baseline justify-center gap-1">
+          <span class="text-2xl font-bold">${stat.value}</span>
+          ${stat.trend ? html`<span class="text-xs font-semibold text-success">${stat.trend}</span>` : html``}
+        </div>
+        <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${stat.label}</p>
+      </div>
+      ${statIndex < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
+    `)}`);
+  }
+}
+
+function setupQuickActions(actionsEl: HTMLElement | null, quickActions: Array<{ icon: string; label: string; href: string }>): void {
+  if (!actionsEl) return;
+  setHtml(actionsEl, html`${quickActions.map(action => {
+    const iconFn = icons[action.icon] || icons['lightbulb'];
+    return html`
+      <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${action.href}">
+        <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">
+          ${iconFn ? iconFn(24, 'text-muted') : html``}
+        </div>
+        <span class="text-sm font-semibold">${action.label}</span>
+      </button>`;
+  })}`);
+
+  $$('[data-action-href]').forEach(actionCard => {
+    actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href') ?? ''; });
+  });
+}
+
 export async function init(): Promise<void> {
   // Show skeletons
   const gaugeContainer = $('#gauge-container');
@@ -236,54 +279,9 @@ export async function init(): Promise<void> {
     return;
   }
 
-  // Hero
-  const heroIcon = $('#hero-icon');
-  if (heroIcon) setHtml(heroIcon, iconSparkles(28, 'text-primary-fg'));
-
-  const greetingEl = $('#hero-greeting');
-  if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}`;
-
-  const userName = $('#hero-user-name');
-  if (userName) userName.textContent = user.name;
-
-  const company = $('#hero-company');
-  if (company) company.textContent = user.company;
-
-  // Stats
-  const statsEl = $('#hero-stats');
-  if (statsEl) {
-    setHtml(statsEl, html`${stats.map((stat, statIndex) => html`
-      <div style="text-align:center">
-        <div class="flex items-baseline justify-center gap-1">
-          <span class="text-2xl font-bold">${stat.value}</span>
-          ${stat.trend ? html`<span class="text-xs font-semibold text-success">${stat.trend}</span>` : html``}
-        </div>
-        <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${stat.label}</p>
-      </div>
-      ${statIndex < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
-    `)}`);
-  }
-
-  // Gauges
+  setupHero(user, stats);
   if (gaugeContainer) setHtml(gaugeContainer, html`${gauges.map(buildGauge)}`);
-
-  // Quick Actions
-  if (actionsEl) {
-    setHtml(actionsEl, html`${quickActions.map(action => {
-      const iconFn = icons[action.icon] || icons['lightbulb'];
-      return html`
-        <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${action.href}">
-          <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">
-            ${iconFn ? iconFn(24, 'text-muted') : html``}
-          </div>
-          <span class="text-sm font-semibold">${action.label}</span>
-        </button>`;
-    })}`);
-
-    $$('[data-action-href]').forEach(actionCard => {
-      actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href') ?? ''; });
-    });
-  }
+  setupQuickActions(actionsEl, quickActions);
 
   // Charts — fetch chart data in parallel (non-blocking for main dashboard)
   try {
