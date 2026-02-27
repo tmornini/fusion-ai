@@ -18,6 +18,7 @@ export interface ChartConfig {
   showLabels?: boolean;
   padding?: number;
   id?: string;
+  accessibleLabel?: string;
 }
 
 const defaultColors = [
@@ -65,7 +66,9 @@ export function buildBarChart(data: ChartDatum[], config?: ChartConfig): SafeHtm
     }
   });
 
-  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  const label = config?.accessibleLabel ?? 'Bar chart';
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}">
+    <title>${label}</title>
     ${buildBaseline(padding, width, height)}
     ${bars}
   </svg>`);
@@ -83,7 +86,9 @@ export function buildLineChart(data: ChartDatum[], config?: ChartConfig): SafeHt
     dotMarkup += `<circle cx="${point.x}" cy="${point.y}" r="3" fill="${color}"/>`;
   });
 
-  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  const label = config?.accessibleLabel ?? 'Line chart';
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}">
+    <title>${label}</title>
     ${buildBaseline(padding, width, height)}
     <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     ${dotMarkup}
@@ -112,7 +117,9 @@ export function buildDonutChart(data: ChartDatum[], config?: ChartConfig): SafeH
     offset += dash;
   });
 
-  return trusted(`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+  const label = config?.accessibleLabel ?? 'Donut chart';
+  return trusted(`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}">
+    <title>${label}</title>
     ${arcs}
   </svg>`);
 }
@@ -128,7 +135,9 @@ export function buildAreaChart(data: ChartDatum[], config?: ChartConfig): SafeHt
   if (!config?.id) throw new Error('buildAreaChart requires config.id for a deterministic SVG gradient ID');
   const gradientId = `area-grad-${config.id}`;
 
-  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  const label = config?.accessibleLabel ?? 'Area chart';
+  return trusted(`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${label}">
+    <title>${label}</title>
     <defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
       <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>

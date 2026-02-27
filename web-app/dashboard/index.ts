@@ -163,6 +163,7 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
     setHtml(pipelineEl, html`${buildDonutChart(pipelineData, {
       width: 140,
       colors: pipelineData.map(datum => datum.color || ''),
+      accessibleLabel: 'Idea pipeline distribution',
     })}<div class="donut-legend">${pipelineData.map(datum =>
       html`<span class="donut-legend-item">
         <span class="donut-legend-dot" style="background:${datum.color}"></span>
@@ -179,6 +180,7 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
       width: 300,
       height: 180,
       colors: Object.values(projectHealthConfig).map(config => config.color),
+      accessibleLabel: 'Project health by status',
     }));
     mutateSvgToFit(healthEl);
   }
@@ -191,6 +193,7 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
       height: 180,
       id: 'dashboard-scores',
       colors: ['hsl(var(--warning))'],
+      accessibleLabel: 'Idea scores distribution',
     }));
     mutateSvgToFit(scoresEl);
   }
@@ -202,6 +205,7 @@ function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[])
       width: 300,
       height: 180,
       colors: ['hsl(var(--primary))'],
+      accessibleLabel: 'Team member availability',
     }));
     mutateSvgToFit(availEl);
   }
