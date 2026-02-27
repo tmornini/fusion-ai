@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, $input, $textarea, $select } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildEmptyState, withLoadingState } from '../app/skeleton';
@@ -33,20 +33,20 @@ function styleForStepType(type: string): string {
 }
 
 function syncFormFields(): void {
-  const nameInput = $('#flow-name') as HTMLInputElement;
-  const descriptionInput = $('#flow-description') as HTMLTextAreaElement;
-  const dept = $('#flow-department') as HTMLSelectElement;
+  const nameInput = $input('#flow-name');
+  const descriptionInput = $textarea('#flow-description');
+  const dept = $select('#flow-department');
   if (nameInput) flowName = nameInput.value;
   if (descriptionInput) flowDescription = descriptionInput.value;
   if (dept) flowDepartment = dept.value;
 
   processSteps.forEach(step => {
-    const title = $(`[data-step-id="${step.id}"][data-field-name="title"]`) as HTMLInputElement;
-    const descriptionField = $(`[data-step-id="${step.id}"][data-field-name="description"]`) as HTMLTextAreaElement;
-    const owner = $(`[data-step-id="${step.id}"][data-field-name="owner"]`) as HTMLInputElement;
-    const role = $(`[data-step-id="${step.id}"][data-field-name="role"]`) as HTMLInputElement;
-    const durationInput = $(`[data-step-id="${step.id}"][data-field-name="duration"]`) as HTMLInputElement;
-    const type = $(`[data-step-id="${step.id}"][data-field-name="type"]`) as HTMLSelectElement;
+    const title = $input(`[data-step-id="${step.id}"][data-field-name="title"]`);
+    const descriptionField = $textarea(`[data-step-id="${step.id}"][data-field-name="description"]`);
+    const owner = $input(`[data-step-id="${step.id}"][data-field-name="owner"]`);
+    const role = $input(`[data-step-id="${step.id}"][data-field-name="role"]`);
+    const durationInput = $input(`[data-step-id="${step.id}"][data-field-name="duration"]`);
+    const type = $select(`[data-step-id="${step.id}"][data-field-name="type"]`);
     if (title) step.title = title.value;
     if (descriptionField) step.description = descriptionField.value;
     if (owner) step.owner = owner.value;

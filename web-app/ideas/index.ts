@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, attr } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -186,17 +186,17 @@ export async function init(): Promise<void> {
   });
 
   $('#ideas-list')?.addEventListener('click', (e) => {
-    const target = e.target as Element;
-    const actionButton = target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
+    if (!(e.target instanceof Element)) return;
+    const actionButton = e.target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
     if (actionButton) {
-      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-convert', { ideaId: actionButton.getAttribute('data-idea-view')! });
-      else if (actionButton.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: actionButton.getAttribute('data-idea-edge')! });
-      else if (actionButton.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: actionButton.getAttribute('data-idea-review')! });
-      else if (actionButton.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: actionButton.getAttribute('data-idea-convert')! });
+      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-convert', { ideaId: attr(actionButton, 'data-idea-view') });
+      else if (actionButton.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: attr(actionButton, 'data-idea-edge') });
+      else if (actionButton.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: attr(actionButton, 'data-idea-review') });
+      else if (actionButton.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: attr(actionButton, 'data-idea-convert') });
       return;
     }
-    const card = target.closest<HTMLElement>('[data-idea-card]');
-    if (card) navigateTo('idea-convert', { ideaId: card.getAttribute('data-idea-card')! });
+    const card = e.target.closest<HTMLElement>('[data-idea-card]');
+    if (card) navigateTo('idea-convert', { ideaId: attr(card, 'data-idea-card') });
   });
 
   mutateList();

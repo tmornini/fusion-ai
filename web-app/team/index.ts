@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, $input } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
@@ -113,7 +113,7 @@ function buildMemberCard(member: TeamMember): SafeHtml {
 }
 
 function mutateList(): void {
-  const search = (($('#team-search') as HTMLInputElement)?.value || '').toLowerCase();
+  const search = ($input('#team-search')?.value ?? '').toLowerCase();
   const filtered = members.filter(member =>
     member.name.toLowerCase().includes(search) || member.role.toLowerCase().includes(search) || member.department.toLowerCase().includes(search)
   );
@@ -184,7 +184,7 @@ export async function init(): Promise<void> {
   $('#add-member-cancel')?.addEventListener('click', () => { closeDialog('add-member'); });
   $('#add-member-backdrop')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDialog('add-member'); });
   $('#add-member-send')?.addEventListener('click', () => {
-    const email = ($('#add-member-email') as HTMLInputElement)?.value;
+    const email = $input('#add-member-email')?.value;
     showToast(email ? `Invitation sent to ${email}` : 'Member invited', 'success');
     closeDialog('add-member');
   });

@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input, $select, attr } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -135,9 +135,9 @@ export async function init(): Promise<void> {
     </div>`);
 
   function mutateFilteredList() {
-    const search = (($('#review-queue-search') as HTMLInputElement)?.value || '').toLowerCase();
-    const priority = ($('#review-queue-priority-filter') as HTMLSelectElement)?.value || 'all';
-    const readiness = ($('#review-queue-readiness-filter') as HTMLSelectElement)?.value || 'all';
+    const search = ($input('#review-queue-search')?.value ?? '').toLowerCase();
+    const priority = $select('#review-queue-priority-filter')?.value ?? 'all';
+    const readiness = $select('#review-queue-readiness-filter')?.value ?? 'all';
 
     const filtered = allIdeas.filter(idea => {
       const matchesSearch = idea.title.toLowerCase().includes(search) || idea.submittedBy.toLowerCase().includes(search);
@@ -154,8 +154,9 @@ export async function init(): Promise<void> {
   }
 
   $('#review-queue-list')?.addEventListener('click', (e) => {
-    const card = (e.target as Element).closest<HTMLElement>('[data-review-card]');
-    if (card) navigateTo('approval-detail', { id: card.getAttribute('data-review-card')! });
+    if (!(e.target instanceof Element)) return;
+    const card = e.target.closest<HTMLElement>('[data-review-card]');
+    if (card) navigateTo('approval-detail', { id: attr(card, 'data-review-card') });
   });
 
   $('#review-queue-search')?.addEventListener('input', mutateFilteredList);

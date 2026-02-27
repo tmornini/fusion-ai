@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$, $textarea } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
@@ -367,7 +367,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   setHtml(container, buildProjectDetail(project, projectId));
 
   // Engineering nav
-  document.querySelectorAll<HTMLElement>('[data-navigate-to-engineering]').forEach(el => {
+  $$('[data-navigate-to-engineering]').forEach(el => {
     el.addEventListener('click', (e) => { e.preventDefault(); navigateTo('engineering-requirements', { projectId }); });
   });
 
@@ -375,12 +375,12 @@ export async function init(params?: Record<string, string>): Promise<void> {
   initTabs('.tab[data-tab]', '.tab-panel');
 
   // Comment box
-  const comment = $('#project-discussion-comment') as HTMLTextAreaElement;
-  const postBtn = $('#project-discussion-post-btn') as HTMLButtonElement;
-  comment?.addEventListener('input', () => { if (postBtn) postBtn.disabled = !comment.value.trim(); });
+  const comment = $textarea('#project-discussion-comment');
+  const postBtn = $('#project-discussion-post-btn');
+  comment?.addEventListener('input', () => { if (postBtn instanceof HTMLButtonElement) postBtn.disabled = !comment.value.trim(); });
   postBtn?.addEventListener('click', () => {
     showToast('Comment posted', 'success');
     if (comment) comment.value = '';
-    if (postBtn) postBtn.disabled = true;
+    if (postBtn instanceof HTMLButtonElement) postBtn.disabled = true;
   });
 }

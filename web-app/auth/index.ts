@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input } from '../app/dom';
 import { html, setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { iconSparkles, iconArrowRight, iconLoader } from '../app/icons';
@@ -103,17 +103,17 @@ export async function init(): Promise<void> {
 
   let isLogin = true;
 
-  const form = $('#auth-form') as HTMLFormElement;
-  const emailInput = $('#email') as HTMLInputElement;
-  const passwordInput = $('#password') as HTMLInputElement;
-  const emailError = $('#email-error') as HTMLElement;
-  const passwordError = $('#password-error') as HTMLElement;
-  const companyField = $('#company-field') as HTMLElement;
-  const toggleMode = $('#toggle-mode') as HTMLElement;
-  const togglePrompt = $('#toggle-prompt') as HTMLElement;
-  const authTitle = $('#auth-title') as HTMLElement;
-  const authSubtitle = $('#auth-subtitle') as HTMLElement;
-  const submitBtn = $('#submit-btn') as HTMLElement;
+  const form = $('#auth-form');
+  const emailInput = $input('#email');
+  const passwordInput = $input('#password');
+  const emailError = $('#email-error');
+  const passwordError = $('#password-error');
+  const companyField = $('#company-field');
+  const toggleMode = $('#toggle-mode');
+  const togglePrompt = $('#toggle-prompt');
+  const authTitle = $('#auth-title');
+  const authSubtitle = $('#auth-subtitle');
+  const submitBtn = $('#submit-btn');
 
   // Desktop branding visibility
   const branding = $('#auth-branding');
@@ -124,7 +124,9 @@ export async function init(): Promise<void> {
   const mobileLogo = $('#mobile-logo');
   if (mobileLogo && window.innerWidth >= 1024) mobileLogo.classList.add('hidden');
 
-  function updateMode(): void {
+  if (!form || !emailInput || !passwordInput || !emailError || !passwordError || !companyField || !toggleMode || !togglePrompt || !authTitle || !authSubtitle || !submitBtn) return;
+
+  const updateMode = (): void => {
     authTitle.textContent = isLogin ? 'Welcome back' : 'Get started';
     authSubtitle.textContent = isLogin ? 'Sign in to your account to continue' : 'Create your account and start your journey';
     companyField.classList.toggle('hidden', isLogin);
@@ -133,7 +135,7 @@ export async function init(): Promise<void> {
     setHtml(submitBtn, html`${isLogin ? 'Sign in' : 'Create account'} ${iconArrowRight(20)}`);
     emailInput.setAttribute('autocomplete', isLogin ? 'username' : 'email');
     passwordInput.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
-  }
+  };
 
   toggleMode.addEventListener('click', () => {
     isLogin = !isLogin;

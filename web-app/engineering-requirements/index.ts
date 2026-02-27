@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $textarea } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
@@ -174,13 +174,13 @@ export async function init(params?: Record<string, string>): Promise<void> {
     </div>`);
 
   // Event bindings
-  const questionField = $('#requirements-question') as HTMLTextAreaElement;
-  const sendButton = $('#requirements-send') as HTMLButtonElement;
-  questionField?.addEventListener('input', () => { if (sendButton) sendButton.disabled = !questionField.value.trim(); });
+  const questionField = $textarea('#requirements-question');
+  const sendButton = $('#requirements-send');
+  questionField?.addEventListener('input', () => { if (sendButton instanceof HTMLButtonElement) sendButton.disabled = !questionField.value.trim(); });
   sendButton?.addEventListener('click', () => {
     showToast('Question sent to business team', 'success');
     if (questionField) questionField.value = '';
-    if (sendButton) sendButton.disabled = true;
+    if (sendButton instanceof HTMLButtonElement) sendButton.disabled = true;
   });
 
   $('#requirements-complete')?.addEventListener('click', () => {

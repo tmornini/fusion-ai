@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
@@ -57,7 +57,7 @@ export async function init(): Promise<void> {
   const container = $('#manage-users-content');
   if (!container) return;
 
-  const users = await withLoadingState(container, buildSkeleton('table', { count: 5 }), getManagedUsers, () => init(), {
+  const users = await withLoadingState(container, buildSkeleton('table', { count: 5 }), getManagedUsers, init, {
     icon: iconUsers(24),
     title: 'No Users Yet',
     description: 'Invite users to your organization to start collaborating.',
@@ -138,7 +138,7 @@ export async function init(): Promise<void> {
   $('#invite-cancel')?.addEventListener('click', closeInvite);
   $('#invite-backdrop')?.addEventListener('click', closeInvite);
   $('#invite-submit')?.addEventListener('click', () => {
-    const email = ($('#invite-email') as HTMLInputElement)?.value;
+    const email = $input('#invite-email')?.value;
     if (!email) { showToast('Please enter an email address', 'error'); return; }
     showToast(`Invitation sent to ${email}`, 'success');
     closeInvite();

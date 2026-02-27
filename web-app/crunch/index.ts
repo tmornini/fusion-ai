@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, $textarea } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import {
   iconUpload, iconFileSpreadsheet, iconFileText, iconHelpCircle,
@@ -178,7 +178,7 @@ function syncFormFields(): void {
       else if (columnKey === 'isAcronym') column[columnKey] = el.value === 'true';
     }
   });
-  const contextField = $('#crunch-context') as HTMLTextAreaElement;
+  const contextField = $textarea('#crunch-context');
   if (contextField) businessContext = contextField.value;
 }
 
@@ -230,8 +230,8 @@ function bindCrunchEvents(): void {
     $$('[data-column-id][data-field-name]').forEach(el => {
       el.addEventListener('input', () => {
         syncFormFields();
-        const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;
-        if (reviewBtn) reviewBtn.disabled = completionPercent() < 100;
+        const reviewBtn = $('#crunch-to-review');
+        if (reviewBtn instanceof HTMLButtonElement) reviewBtn.disabled = completionPercent() < 100;
       });
     });
 

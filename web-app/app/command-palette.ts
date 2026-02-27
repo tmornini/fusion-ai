@@ -3,7 +3,7 @@
 // Self-contained module: search, keyboard nav, rendering
 // ============================================
 
-import { $, escapeHtml } from './dom';
+import { $, $input, escapeHtml } from './dom';
 import { html, setHtml, SafeHtml, trusted } from './safe-html';
 import {
   iconSearch, iconLightbulb, iconFolderKanban, iconUser, iconHome,
@@ -279,15 +279,15 @@ function initCommandPaletteDOM(): void {
     </div>
     <div class="command-palette-live" role="status" aria-live="polite" aria-atomic="true"></div>`);
 
-  input = dialog.querySelector('.command-palette-input') as HTMLInputElement;
+  input = dialog.querySelector<HTMLInputElement>('.command-palette-input');
   list = dialog.querySelector('#command-palette-listbox');
   liveRegion = dialog.querySelector('.command-palette-live');
 
   // Input handler with debounce
-  input.addEventListener('input', () => {
+  input?.addEventListener('input', () => {
     if (debounceTimeoutId) clearTimeout(debounceTimeoutId);
     debounceTimeoutId = setTimeout(() => {
-      mutateResults(input!.value);
+      mutateResults(input?.value ?? '');
     }, 100);
   });
 
@@ -326,7 +326,8 @@ function initCommandPaletteDOM(): void {
 
   // Mouse hover sets active
   list!.addEventListener('mousemove', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
+    if (!(e.target instanceof Element)) return;
+    const target = e.target.closest<HTMLElement>('.command-palette-item');
     if (target) {
       const hoveredId = target.getAttribute('data-item-id');
       const hoveredIndex = filteredItems.findIndex(item => item.id === hoveredId);
@@ -339,7 +340,8 @@ function initCommandPaletteDOM(): void {
 
   // Click to navigate
   list!.addEventListener('click', (e: Event) => {
-    const target = (e.target as HTMLElement).closest('.command-palette-item') as HTMLElement | null;
+    if (!(e.target instanceof Element)) return;
+    const target = e.target.closest<HTMLElement>('.command-palette-item');
     if (target) {
       const clickedId = target.getAttribute('data-item-id');
       const clickedIndex = filteredItems.findIndex(item => item.id === clickedId);
@@ -366,7 +368,7 @@ export function initCommandPalette(): void {
   const searchInput = $('#search-input');
   searchInput?.addEventListener('focus', (e) => {
     e.preventDefault();
-    (searchInput as HTMLInputElement).blur();
+    searchInput.blur();
     open();
   });
 

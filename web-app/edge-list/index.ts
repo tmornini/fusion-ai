@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input, $select, attr } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -85,8 +85,8 @@ export async function init(): Promise<void> {
   if (emptyEl) setHtml(emptyEl, html`${iconTarget(48, 'text-muted')}<h3 class="text-lg font-semibold mt-4 mb-2">No Edge definitions found</h3><p class="text-muted">Try adjusting your search or filter criteria</p>`);
 
   function mutateFilteredList() {
-    const search = (($('#edge-search') as HTMLInputElement)?.value || '').toLowerCase();
-    const status = ($('#edge-status-filter') as HTMLSelectElement)?.value || 'all';
+    const search = ($input('#edge-search')?.value ?? '').toLowerCase();
+    const status = $select('#edge-status-filter')?.value ?? 'all';
     const filtered = edges.filter(edge => {
       const matchesSearch = edge.ideaTitle.toLowerCase().includes(search) || edge.owner.toLowerCase().includes(search);
       const matchesStatus = status === 'all' || edge.status === status;
@@ -100,8 +100,9 @@ export async function init(): Promise<void> {
   }
 
   listEl?.addEventListener('click', (e) => {
-    const card = (e.target as Element).closest<HTMLElement>('[data-edge-card]');
-    if (card) navigateTo('edge', { ideaId: card.getAttribute('data-edge-card')! });
+    if (!(e.target instanceof Element)) return;
+    const card = e.target.closest<HTMLElement>('[data-edge-card]');
+    if (card) navigateTo('edge', { ideaId: attr(card, 'data-edge-card') });
   });
 
   $('#edge-search')?.addEventListener('input', mutateFilteredList);

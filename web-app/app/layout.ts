@@ -73,7 +73,7 @@ function initActiveNavItem(): void {
 
 function initSidebar(): void {
   const sidebar = document.getElementById('desktop-sidebar');
-  const mainContent = document.querySelector('.main-content') as HTMLElement;
+  const mainContent = $('.main-content');
 
   if (localStorage.getItem(STORAGE_KEY_SIDEBAR) === 'true') {
     sidebar?.classList.add('sidebar-collapsed');
@@ -97,7 +97,7 @@ function initSidebar(): void {
   $$('[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const label = btn.getAttribute('data-section');
-      const items = document.querySelector(`[data-section-items="${label}"]`) as HTMLElement;
+      const items = $(`[data-section-items="${label}"]`);
       if (items) {
         const isCollapsed = items.style.display === 'none';
         items.style.display = isCollapsed ? '' : 'none';
@@ -123,7 +123,7 @@ function initDropdown(toggleId: string, contentId: string): void {
   });
 
   document.addEventListener('click', (e) => {
-    if (!content.contains(e.target as Node) && !toggle.contains(e.target as Node)) {
+    if (e.target instanceof Node && !content.contains(e.target) && !toggle.contains(e.target)) {
       content.classList.add('hidden');
     }
   });
@@ -137,8 +137,8 @@ function initThemeAndDropdowns(): void {
 
   $$('[data-theme-set]').forEach(themeButton => {
     themeButton.addEventListener('click', () => {
-      const theme = themeButton.getAttribute('data-theme-set') as AppState['theme'];
-      if (theme) {
+      const theme = themeButton.getAttribute('data-theme-set');
+      if (theme === 'light' || theme === 'dark' || theme === 'system') {
         setTheme(theme);
         mutateThemeToggleIcon();
         $$('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
@@ -153,7 +153,7 @@ function initMobileDrawer(): void {
   let drawerPreviousFocus: HTMLElement | null = null;
 
   function openDrawer(): void {
-    drawerPreviousFocus = document.activeElement as HTMLElement | null;
+    drawerPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     sheet?.classList.remove('hidden');
     backdrop?.classList.remove('hidden');
     // Focus first focusable element in the drawer

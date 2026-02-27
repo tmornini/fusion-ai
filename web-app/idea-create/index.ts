@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input, $textarea } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import {
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
@@ -169,14 +169,14 @@ function mutateWizard() {
 
 function syncFormFields() {
   if (currentStep === 1) {
-    formData.title = ($('#idea-create-field-title') as HTMLInputElement)?.value || '';
-    formData.problemStatement = ($('#idea-create-field-problem') as HTMLTextAreaElement)?.value || '';
-    formData.targetUsers = ($('#idea-create-field-target') as HTMLInputElement)?.value || '';
+    formData.title = $input('#idea-create-field-title')?.value ?? '';
+    formData.problemStatement = $textarea('#idea-create-field-problem')?.value ?? '';
+    formData.targetUsers = $input('#idea-create-field-target')?.value ?? '';
   } else if (currentStep === 2) {
-    formData.proposedSolution = ($('#idea-create-field-solution') as HTMLTextAreaElement)?.value || '';
+    formData.proposedSolution = $textarea('#idea-create-field-solution')?.value ?? '';
   } else if (currentStep === 3) {
-    formData.expectedOutcome = ($('#idea-create-field-outcome') as HTMLTextAreaElement)?.value || '';
-    formData.successMetrics = ($('#idea-create-field-metrics') as HTMLTextAreaElement)?.value || '';
+    formData.expectedOutcome = $textarea('#idea-create-field-outcome')?.value ?? '';
+    formData.successMetrics = $textarea('#idea-create-field-metrics')?.value ?? '';
   }
 }
 
@@ -210,11 +210,11 @@ function bindWizardEvents() {
       navigateTo('ideas');
     }
   });
-  document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#idea-create-step-content input, #idea-create-step-content textarea').forEach(input => {
-    input.addEventListener('input', () => {
+  document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('#idea-create-step-content input, #idea-create-step-content textarea').forEach(field => {
+    field.addEventListener('input', () => {
       syncFormFields();
-      const nextBtn = $('#idea-create-step-next') as HTMLButtonElement;
-      if (nextBtn) nextBtn.disabled = !isStepComplete();
+      const nextBtn = $('#idea-create-step-next');
+      if (nextBtn instanceof HTMLButtonElement) nextBtn.disabled = !isStepComplete();
     });
   });
 }

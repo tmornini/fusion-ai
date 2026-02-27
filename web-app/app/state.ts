@@ -27,7 +27,7 @@ interface AppState {
 type StateListener = () => void;
 
 const _state: AppState = {
-  theme: (localStorage.getItem(STORAGE_KEY_THEME) as AppState['theme']) || 'system',
+  theme: (() => { const raw = localStorage.getItem(STORAGE_KEY_THEME); return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system'; })(),
   isMobile: window.matchMedia('(max-width: 768px)').matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
@@ -91,8 +91,10 @@ window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
 // Sync theme across tabs via StorageEvent
 window.addEventListener('storage', (e) => {
   if (e.key === STORAGE_KEY_THEME && e.newValue) {
-    setState({ theme: e.newValue as AppState['theme'] });
-    applyTheme();
+    if (e.newValue === 'light' || e.newValue === 'dark' || e.newValue === 'system') {
+      setState({ theme: e.newValue });
+      applyTheme();
+    }
   }
 });
 

@@ -1,4 +1,4 @@
-import { $, $$ } from '../app/dom';
+import { $, $$, $textarea, $select, $input } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
@@ -203,13 +203,13 @@ function buildEdgePage(ideaId: string): SafeHtml {
 }
 
 function syncFormFields() {
-  edgeData.impact.shortTerm = ($('#edge-impact-short-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.midTerm = ($('#edge-impact-mid-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.impact.longTerm = ($('#edge-impact-long-term') as HTMLTextAreaElement)?.value || '';
-  edgeData.confidence = ($('#edge-confidence-select') as HTMLSelectElement)?.value || null;
-  edgeData.owner = ($('#edge-owner-input') as HTMLInputElement)?.value || '';
+  edgeData.impact.shortTerm = $textarea('#edge-impact-short-term')?.value ?? '';
+  edgeData.impact.midTerm = $textarea('#edge-impact-mid-term')?.value ?? '';
+  edgeData.impact.longTerm = $textarea('#edge-impact-long-term')?.value ?? '';
+  edgeData.confidence = $select('#edge-confidence-select')?.value || null;
+  edgeData.owner = $input('#edge-owner-input')?.value ?? '';
   document.querySelectorAll<HTMLInputElement>('[data-outcome-description]').forEach(descriptionInput => {
-    const outcomeId = descriptionInput.getAttribute('data-outcome-description')!;
+    const outcomeId = descriptionInput.getAttribute('data-outcome-description') ?? '';
     const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
     if (outcome) outcome.description = descriptionInput.value;
   });

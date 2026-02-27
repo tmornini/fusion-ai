@@ -204,30 +204,31 @@ export async function init(params?: Record<string, string>): Promise<void> {
 
   const syncFormFields = () => {
     requiredFields.concat(['first-milestone', 'success-criteria']).forEach(field => {
-      const el = $(`#convert-${field}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      if (el) projectDetails[field] = el.value;
+      const el = $(`#convert-${field}`);
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) projectDetails[field] = el.value;
     });
   };
 
   document.querySelectorAll<HTMLElement>('.card input, .card select, .card textarea').forEach(el => {
     el.addEventListener('input', () => {
       syncFormFields();
-      const btn = $('#convert-submit-btn') as HTMLButtonElement;
-      if (btn) btn.disabled = !isReadyToConvert();
+      const btn = $('#convert-submit-btn');
+      if (btn instanceof HTMLButtonElement) btn.disabled = !isReadyToConvert();
     });
     el.addEventListener('change', () => {
       syncFormFields();
-      const btn = $('#convert-submit-btn') as HTMLButtonElement;
-      if (btn) btn.disabled = !isReadyToConvert();
+      const btn = $('#convert-submit-btn');
+      if (btn instanceof HTMLButtonElement) btn.disabled = !isReadyToConvert();
     });
   });
 
   $('#convert-submit-btn')?.addEventListener('click', async () => {
     syncFormFields();
     if (!isReadyToConvert()) return;
-    const btn = $('#convert-submit-btn')!;
+    const btn = $('#convert-submit-btn');
+    if (!btn) return;
     setHtml(btn, html`${iconLoader(16)} Creating Project...`);
-    (btn as HTMLButtonElement).disabled = true;
+    if (btn instanceof HTMLButtonElement) btn.disabled = true;
 
     const leadMap: Record<string, string> = { sarah: '1', mike: '2', jessica: '3', david: '4' };
     const priorityMap: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
@@ -241,14 +242,14 @@ export async function init(params?: Record<string, string>): Promise<void> {
         progress: 0,
         start_date: projectDetails['start-date'],
         target_end_date: projectDetails['target-end-date'],
-        lead_id: leadMap[projectDetails['project-lead']!] || '1',
+        lead_id: leadMap[projectDetails['project-lead'] ?? ''] ?? '1',
         estimated_time: 0,
         actual_time: 0,
         estimated_cost: 0,
         actual_cost: 0,
         estimated_impact: 0,
         actual_impact: 0,
-        priority: priorityMap[projectDetails['priority']!] || 3,
+        priority: priorityMap[projectDetails['priority'] ?? ''] ?? 3,
         priority_score: 0,
         linked_idea_id: ideaId,
         business_context: '{}',
@@ -274,7 +275,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
     } catch {
       showToast('Failed to create project. Please try again.', 'error');
       setHtml(btn, html`Create Project ${iconArrowRight(16)}`);
-      (btn as HTMLButtonElement).disabled = false;
+      if (btn instanceof HTMLButtonElement) btn.disabled = false;
     }
   });
 

@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $input, $select, $textarea } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -18,7 +18,7 @@ function buildStrengthChip(name: string): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-  const container = document.querySelector('.page-content') as HTMLElement;
+  const container = $('.page-content');
   if (!container) return;
   let profile: Awaited<ReturnType<typeof getProfile>>;
   try {
@@ -50,13 +50,20 @@ export async function init(): Promise<void> {
   // Fill form values
   const avatarInitials = $('#profile-avatar-initials');
   if (avatarInitials) avatarInitials.textContent = `${profile.firstName[0]}${profile.lastName[0]}`;
-  ($('#profile-first-name') as HTMLInputElement).value = profile.firstName;
-  ($('#profile-last-name') as HTMLInputElement).value = profile.lastName;
-  ($('#profile-email') as HTMLInputElement).value = profile.email;
-  ($('#profile-phone') as HTMLInputElement).value = profile.phone;
-  ($('#profile-role') as HTMLInputElement).value = profile.role;
-  ($('#profile-department') as HTMLSelectElement).value = profile.department;
-  ($('#profile-bio') as HTMLTextAreaElement).value = profile.bio;
+  const firstName = $input('#profile-first-name');
+  if (firstName) firstName.value = profile.firstName;
+  const lastName = $input('#profile-last-name');
+  if (lastName) lastName.value = profile.lastName;
+  const email = $input('#profile-email');
+  if (email) email.value = profile.email;
+  const phone = $input('#profile-phone');
+  if (phone) phone.value = profile.phone;
+  const role = $input('#profile-role');
+  if (role) role.value = profile.role;
+  const department = $select('#profile-department');
+  if (department) department.value = profile.department;
+  const bio = $textarea('#profile-bio');
+  if (bio) bio.value = profile.bio;
 
   // Strengths
   const strengthsContainer = $('#profile-strengths');
