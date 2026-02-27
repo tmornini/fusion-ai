@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
 import {
@@ -106,14 +106,14 @@ export async function init(): Promise<void> {
   }
 
   function bindCards(): void {
-    document.querySelectorAll<HTMLElement>('[data-project-card]').forEach(projectCard => {
+    $$('[data-project-card]').forEach(projectCard => {
       projectCard.style.cursor = 'pointer';
-      projectCard.addEventListener('click', () => navigateTo('project-detail', { projectId: projectCard.getAttribute('data-project-card')! }));
+      projectCard.addEventListener('click', () => navigateTo('project-detail', { projectId: projectCard.getAttribute('data-project-card') ?? '' }));
     });
-    document.querySelectorAll<HTMLElement>('[data-view-project]').forEach(viewButton => {
+    $$('[data-view-project]').forEach(viewButton => {
       viewButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        navigateTo('project-detail', { projectId: viewButton.getAttribute('data-view-project')! });
+        navigateTo('project-detail', { projectId: viewButton.getAttribute('data-view-project') ?? '' });
       });
     });
   }
@@ -129,10 +129,10 @@ export async function init(): Promise<void> {
     bindCards();
   }
 
-  document.querySelectorAll<HTMLElement>('.view-toggle-btn').forEach(viewToggleButton => {
+  $$('.view-toggle-btn').forEach(viewToggleButton => {
     viewToggleButton.addEventListener('click', () => {
       currentView = viewToggleButton.getAttribute('data-view') as 'priority' | 'performance';
-      document.querySelectorAll('.view-toggle-btn').forEach(button => button.classList.remove('active'));
+      $$('.view-toggle-btn').forEach(button => button.classList.remove('active'));
       viewToggleButton.classList.add('active');
       mutateList();
     });

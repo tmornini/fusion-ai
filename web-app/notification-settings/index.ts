@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { icons, iconBell, iconMail, iconSmartphone, iconChevronRight, iconSave } from '../app/icons';
@@ -77,7 +77,7 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Switch toggles
-  document.querySelectorAll<HTMLElement>('.switch[role="switch"]').forEach(switchElement => {
+  $$('.switch[role="switch"]').forEach(switchElement => {
     switchElement.addEventListener('click', () => {
       const isChecked = switchElement.getAttribute('aria-checked') === 'true';
       switchElement.setAttribute('aria-checked', String(!isChecked));
@@ -85,18 +85,16 @@ export async function init(): Promise<void> {
   });
 
   // Enable/disable all
-  document.querySelectorAll<HTMLElement>('[data-enable-all]').forEach(btn => {
+  $$('[data-enable-all]').forEach(btn => {
     btn.addEventListener('click', () => {
       const categoryId = btn.getAttribute('data-enable-all');
-      const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
-      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'true'));
+      $(`[data-category-preferences="${categoryId}"]`)?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'true'));
     });
   });
-  document.querySelectorAll<HTMLElement>('[data-disable-all]').forEach(btn => {
+  $$('[data-disable-all]').forEach(btn => {
     btn.addEventListener('click', () => {
       const categoryId = btn.getAttribute('data-disable-all');
-      const categoryContainer = document.querySelector(`[data-category-preferences="${categoryId}"]`);
-      categoryContainer?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'false'));
+      $(`[data-category-preferences="${categoryId}"]`)?.querySelectorAll<HTMLElement>('.switch').forEach(switchElement => switchElement.setAttribute('aria-checked', 'false'));
     });
   });
 

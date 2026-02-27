@@ -47,7 +47,7 @@ export async function init(): Promise<void> {
   const listEl = $('#edge-list');
   if (!listEl) return;
 
-  const result = await withLoadingState(listEl, buildSkeleton('card-list', { count: 4 }), getEdgeList, () => init(), {
+  const result = await withLoadingState(listEl, buildSkeleton('card-list', { count: 4 }), getEdgeList, init, {
     icon: iconTarget(24),
     title: 'No Edge Definitions',
     description: 'Create Edge definitions for your ideas to track outcomes and metrics.',

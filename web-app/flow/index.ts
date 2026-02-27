@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildEmptyState, withLoadingState } from '../app/skeleton';
@@ -202,7 +202,7 @@ function mutateFlowPage(): void {
 }
 
 function bindFlowEvents(): void {
-  document.querySelectorAll<HTMLElement>('[data-flow-mode]').forEach(btn => {
+  $$('[data-flow-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       syncFormFields();
       viewMode = btn.getAttribute('data-flow-mode') as 'edit' | 'preview';
@@ -210,7 +210,7 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-step-header]').forEach(el => {
+  $$('[data-step-header]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
       const id = el.getAttribute('data-step-header');
@@ -219,7 +219,7 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-action="move-step"]').forEach(el => {
+  $$('[data-action="move-step"]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       syncFormFields();
@@ -234,7 +234,7 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-remove-step]').forEach(el => {
+  $$('[data-remove-step]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       syncFormFields();
@@ -243,11 +243,11 @@ function bindFlowEvents(): void {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-action="toggle-tool"]').forEach(el => {
+  $$('[data-action="toggle-tool"]').forEach(el => {
     el.addEventListener('click', () => {
       syncFormFields();
-      const stepId = el.getAttribute('data-step-id')!;
-      const tool = el.getAttribute('data-tool-name')!;
+      const stepId = el.getAttribute('data-step-id') ?? '';
+      const tool = el.getAttribute('data-tool-name') ?? '';
       const step = processSteps.find(candidate => candidate.id === stepId);
       if (!step) return;
       step.tools = step.tools.includes(tool) ? step.tools.filter(toolName => toolName !== tool) : [...step.tools, tool];
@@ -270,7 +270,7 @@ export async function init(): Promise<void> {
   const root = $('#flow-content');
   if (!root) return;
 
-  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), getFlow, () => init());
+  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), getFlow, init);
   if (!flowData) return;
 
   if (flowData.steps.length === 0) {

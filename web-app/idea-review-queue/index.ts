@@ -64,7 +64,7 @@ export async function init(): Promise<void> {
   const root = $('#review-queue-content');
   if (!root) return;
 
-  const result = await withLoadingState(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`, getReviewQueue, () => init(), {
+  const result = await withLoadingState(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`, getReviewQueue, init, {
     icon: iconClipboardCheck(24),
     title: 'Review Queue Empty',
     description: 'All ideas have been reviewed. Check back later for new submissions.',

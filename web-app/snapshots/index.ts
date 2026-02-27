@@ -8,6 +8,7 @@ import type { UserEntity } from '../../api/types';
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
+import { navigateTo } from '../app/core';
 import { iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../app/icons';
 
 const BANNER_ID = 'empty-banner';
@@ -92,7 +93,7 @@ export async function init(): Promise<void> {
     try {
       await DELETE('snapshots/schema');
       await POST('snapshots/schema', {});
-      window.location.href = '../dashboard/index.html';
+      navigateTo('dashboard');
     } catch (e) {
       showToast('Failed to create pristine environment.', 'error');
     }
@@ -104,7 +105,7 @@ export async function init(): Promise<void> {
       await DELETE('snapshots/schema');
       await POST('snapshots/schema', {});
       await POST('snapshots/mock-data', {});
-      window.location.href = '../dashboard/index.html';
+      navigateTo('dashboard');
     } catch (e) {
       showToast('Failed to load mock data.', 'error');
     }
@@ -119,7 +120,7 @@ export async function init(): Promise<void> {
       const text = await file.text();
       await DELETE('snapshots/schema');
       await PUT('snapshots/import', { json: text });
-      window.location.href = '../dashboard/index.html';
+      navigateTo('dashboard');
     } catch (e) {
       showToast('Failed to upload snapshot. Check file format.', 'error');
     }

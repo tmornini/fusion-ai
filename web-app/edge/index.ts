@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
@@ -244,7 +244,7 @@ function bindEdgeEvents(ideaId: string) {
     mutateEdgePage(ideaId);
   });
 
-  document.querySelectorAll<HTMLElement>('[data-add-template]').forEach(templateButton => {
+  $$('[data-add-template]').forEach(templateButton => {
     templateButton.addEventListener('click', () => {
       syncFormFields();
       edgeData.outcomes.push({ id: crypto.randomUUID(), description: templateButton.getAttribute('data-add-template') || '', metrics: [] });
@@ -252,7 +252,7 @@ function bindEdgeEvents(ideaId: string) {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-remove-outcome]').forEach(removeButton => {
+  $$('[data-remove-outcome]').forEach(removeButton => {
     removeButton.addEventListener('click', () => {
       syncFormFields();
       edgeData.outcomes = edgeData.outcomes.filter(outcome => outcome.id !== removeButton.getAttribute('data-remove-outcome'));
@@ -260,17 +260,17 @@ function bindEdgeEvents(ideaId: string) {
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-add-metric]').forEach(addButton => {
+  $$('[data-add-metric]').forEach(addButton => {
     addButton.addEventListener('click', () => {
       syncFormFields();
-      const outcomeId = addButton.getAttribute('data-add-metric')!;
+      const outcomeId = addButton.getAttribute('data-add-metric') ?? '';
       const outcome = edgeData.outcomes.find(candidate => candidate.id === outcomeId);
       if (outcome) outcome.metrics.push({ id: crypto.randomUUID(), name: '', target: '', unit: '', current: '' });
       mutateEdgePage(ideaId);
     });
   });
 
-  document.querySelectorAll<HTMLElement>('[data-action="remove-metric"]').forEach(removeButton => {
+  $$('[data-action="remove-metric"]').forEach(removeButton => {
     removeButton.addEventListener('click', () => {
       syncFormFields();
       const outcomeId = removeButton.getAttribute('data-outcome-id');

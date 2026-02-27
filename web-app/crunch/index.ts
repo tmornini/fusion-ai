@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, type SafeHtml, trusted } from '../app/safe-html';
 import {
   iconUpload, iconFileSpreadsheet, iconFileText, iconHelpCircle,
@@ -218,7 +218,7 @@ function bindCrunchEvents(): void {
   }
 
   if (step === 'label') {
-    document.querySelectorAll<HTMLElement>('[data-column-toggle]').forEach(el => {
+    $$('[data-column-toggle]').forEach(el => {
       el.addEventListener('click', () => {
         syncFormFields();
         const id = el.getAttribute('data-column-toggle');
@@ -227,7 +227,7 @@ function bindCrunchEvents(): void {
       });
     });
 
-    document.querySelectorAll<HTMLElement>('[data-column-id][data-field-name]').forEach(el => {
+    $$('[data-column-id][data-field-name]').forEach(el => {
       el.addEventListener('input', () => {
         syncFormFields();
         const reviewBtn = $('#crunch-to-review') as HTMLButtonElement;

@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, withLoadingState } from '../app/skeleton';
@@ -134,7 +134,7 @@ function mutateList(): void {
 }
 
 function bindCards(): void {
-  document.querySelectorAll<HTMLElement>('[data-member-card]').forEach(card => {
+  $$('[data-member-card]').forEach(card => {
     card.addEventListener('click', () => {
       selectedMemberId = card.getAttribute('data-member-card');
       mutateList();
@@ -150,7 +150,7 @@ export async function init(): Promise<void> {
   const teamListEl = $('#team-list');
   if (!teamListEl) return;
 
-  const result = await withLoadingState(teamListEl, buildSkeleton('card-list', { count: 4 }), getTeamMembers, () => init(), {
+  const result = await withLoadingState(teamListEl, buildSkeleton('card-list', { count: 4 }), getTeamMembers, init, {
     icon: iconUsers(24),
     title: 'No Team Members',
     description: 'Invite team members to start collaborating on projects.',

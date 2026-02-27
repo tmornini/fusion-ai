@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
@@ -188,7 +188,7 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Bind navigation
-  container.querySelectorAll<HTMLElement>('[data-nav-to]').forEach(navButton => {
-    navButton.addEventListener('click', () => navigateTo(navButton.getAttribute('data-nav-to')!));
+  $$('[data-nav-to]').forEach(navButton => {
+    navButton.addEventListener('click', () => navigateTo(navButton.getAttribute('data-nav-to') ?? ''));
   });
 }

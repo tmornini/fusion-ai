@@ -1,4 +1,4 @@
-import { $ } from '../app/dom';
+import { $, $$ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/skeleton';
 import {
@@ -283,8 +283,8 @@ export async function init(): Promise<void> {
         </button>`;
     })}`);
 
-    actionsEl.querySelectorAll<HTMLElement>('[data-action-href]').forEach(actionCard => {
-      actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href')!; });
+    $$('[data-action-href]').forEach(actionCard => {
+      actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href') ?? ''; });
     });
   }
 

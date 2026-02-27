@@ -1,5 +1,6 @@
 import type { AppState } from './state';
 import { STORAGE_KEY_SIDEBAR, state, setState, setTheme } from './state';
+import { $, $$, } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
 import { getPageName } from './navigation';
@@ -56,7 +57,7 @@ async function mutateNotifications(): Promise<void> {
 
 function initActiveNavItem(): void {
   const pageName = getPageName();
-  document.querySelectorAll<HTMLElement>('[data-page-link]').forEach(navLink => {
+  $$('[data-page-link]').forEach(navLink => {
     const linkPage = navLink.getAttribute('data-page-link') || '';
     let isActive = linkPage === pageName;
     if (!isActive) {
@@ -93,7 +94,7 @@ function initSidebar(): void {
     try { localStorage.setItem(STORAGE_KEY_SIDEBAR, 'false'); } catch { /* non-critical */ }
   });
 
-  document.querySelectorAll<HTMLElement>('[data-section]').forEach(btn => {
+  $$('[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
       const label = btn.getAttribute('data-section');
       const items = document.querySelector(`[data-section-items="${label}"]`) as HTMLElement;
@@ -115,7 +116,7 @@ function initDropdown(toggleId: string, contentId: string): void {
 
   toggle.addEventListener('click', (e) => {
     e.stopPropagation();
-    document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+    $$('.dropdown-content').forEach(dropdown => {
       if (dropdown.id !== contentId) dropdown.classList.add('hidden');
     });
     content.classList.toggle('hidden');
@@ -134,13 +135,13 @@ function initThemeAndDropdowns(): void {
     initDropdown(`${prefix}notification-toggle`, `${prefix}notification-dropdown`);
   }
 
-  document.querySelectorAll<HTMLElement>('[data-theme-set]').forEach(themeButton => {
+  $$('[data-theme-set]').forEach(themeButton => {
     themeButton.addEventListener('click', () => {
       const theme = themeButton.getAttribute('data-theme-set') as AppState['theme'];
       if (theme) {
         setTheme(theme);
         mutateThemeToggleIcon();
-        document.querySelectorAll('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
+        $$('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
       }
     });
   });
