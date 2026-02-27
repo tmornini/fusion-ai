@@ -119,10 +119,18 @@ export async function withLoadingState<T>(
   fetchFn: () => Promise<T>,
   retryFn?: () => void,
   emptyState?: EmptyStateConfig,
+  timeoutMs?: number,
 ): Promise<T | null> {
   setHtml(container, skeletonHtml);
   try {
-    const data = await fetchFn();
+    const data = timeoutMs
+      ? await Promise.race([
+          fetchFn(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out. Please try again.')), timeoutMs),
+          ),
+        ])
+      : await fetchFn();
     if (emptyState && Array.isArray(data) && data.length === 0) {
       setHtml(container, buildEmptyState(emptyState.icon, emptyState.title, emptyState.description, emptyState.action));
       emptyState.onEmpty?.();
