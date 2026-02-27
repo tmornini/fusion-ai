@@ -74,6 +74,11 @@
 }
 .btn-success:hover { background-color: hsl(152 60% 35%); }
 
+.btn-destructive:focus-visible,
+.btn-success:focus-visible {
+  outline-color: white;
+}
+
 /* Sizes */
 .btn-xs { height: 1.75rem; padding: 0 0.5rem; font-size: var(--text-xs); }
 .btn-sm { height: 2rem; padding: 0 0.75rem; font-size: var(--text-xs); }
