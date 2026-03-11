@@ -10,12 +10,6 @@ export interface GaugeCard {
   inner: { value: number; max: number; label: string; display: string };
 }
 
-export interface QuickAction {
-  label: string;
-  icon: string;
-  href: string;
-}
-
 export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): Promise<GaugeCard[]> {
   const projects = prefetchedProjects ?? await GET('projects') as ProjectEntity[];
   const totalEstimatedTime = projects.reduce((sum, project) => sum + project.estimated_time, 0);
@@ -28,29 +22,20 @@ export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): 
 
   return [
     {
-      title: 'Time Tracking', icon: 'clock', iconCssClass: 'text-success', theme: 'green',
-      outer: { value: Math.round(totalActualTime / 24), max: Math.round(totalEstimatedTime / 24), label: 'Total Duration', display: `${Math.round(totalEstimatedTime / 24)}d` },
-      inner: { value: Math.round(totalActualTime / 48), max: Math.round(totalEstimatedTime / 24), label: 'Days Elapsed', display: `${Math.round(totalActualTime / 48)}d` },
+      title: 'Time', icon: 'clock', iconCssClass: 'text-success', theme: 'green',
+      outer: { value: Math.round(totalActualTime / 24), max: Math.round(totalEstimatedTime / 24), label: 'Baseline', display: `${Math.round(totalEstimatedTime / 24)}d` },
+      inner: { value: Math.round(totalActualTime / 48), max: Math.round(totalEstimatedTime / 24), label: 'Current', display: `${Math.round(totalActualTime / 48)}d` },
     },
     {
-      title: 'Cost Overview', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
-      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Budget Allocated', display: `$${(totalActualCost / 1000).toFixed(1)}K` },
-      inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'Budget Spent', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
+      title: 'Cost', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
+      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Baseline', display: `$${(totalActualCost / 1000).toFixed(1)}K` },
+      inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'Current', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
     },
     {
-      title: 'Return on Investment', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
-      outer: { value: averageEstimatedImpact, max: 100, label: 'Projected Return', display: `${averageEstimatedImpact}%` },
-      inner: { value: averageActualImpact, max: 100, label: 'Current Score', display: `${averageActualImpact}%` },
+      title: 'Impact', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
+      outer: { value: averageEstimatedImpact, max: 100, label: 'Baseline', display: `${averageEstimatedImpact}%` },
+      inner: { value: averageActualImpact, max: 100, label: 'Current', display: `${averageActualImpact}%` },
     },
-  ];
-}
-
-export async function getDashboardQuickActions(): Promise<QuickAction[]> {
-  return [
-    { label: 'New Idea', icon: 'lightbulb', href: '../idea-create/index.html' },
-    { label: 'Create Project', icon: 'folderKanban', href: '../projects/index.html' },
-    { label: 'Invite Team', icon: 'users', href: '../team/index.html' },
-    { label: 'View Reports', icon: 'trendingUp', href: '../dashboard/index.html' },
   ];
 }
 

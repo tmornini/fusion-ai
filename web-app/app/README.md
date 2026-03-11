@@ -32,7 +32,7 @@ Domain-specific adapter functions organized by module:
 |--------|---------|
 | `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `createDefaultEdgeData`, `getEdgeDataWithConfidence` |
 | `shared.ts` | `getCurrentUser`, `getNotifications` |
-| `dashboard.ts` | `getDashboardGauges`, `getDashboardQuickActions`, `getDashboardStats` |
+| `dashboard.ts` | `getDashboardGauges`, `getDashboardStats` |
 | `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval` |
 | `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId` |
 | `teams.ts` | `getTeamMembers`, `getManagedUsers` |

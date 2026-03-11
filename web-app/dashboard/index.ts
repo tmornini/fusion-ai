@@ -1,12 +1,12 @@
-import { $, $$, populateIcons } from '../app/dom';
+import { $, populateIcons } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
-  icons, iconSparkles, iconDollarSign, iconClock, iconZap,
+  iconSparkles, iconDollarSign, iconClock, iconZap,
 } from '../app/icons';
 import { GET } from '../../api/api';
 import {
-  getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
+  getCurrentUser, getDashboardGauges, getDashboardStats,
   type GaugeCard,
 } from '../app/adapters';
 
@@ -110,44 +110,22 @@ function setupHero(user: { name: string; company: string }, stats: Array<{ value
   }
 }
 
-function setupQuickActions(actionsEl: HTMLElement | null, quickActions: Array<{ icon: string; label: string; href: string }>): void {
-  if (!actionsEl) return;
-  setHtml(actionsEl, html`${quickActions.map(action => {
-    const iconFn = icons[action.icon] || icons['lightbulb'];
-    return html`
-      <button class="card card-hover" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:1.5rem;cursor:pointer;border:2px solid hsl(var(--border)/0.5)" data-action-href="${action.href}">
-        <div style="width:3.5rem;height:3.5rem;border-radius:0.75rem;background:hsl(var(--muted));display:flex;align-items:center;justify-content:center">
-          ${iconFn ? iconFn(24, 'text-muted') : html``}
-        </div>
-        <span class="text-sm font-semibold">${action.label}</span>
-      </button>`;
-  })}`);
-
-  $$('[data-action-href]').forEach(actionCard => {
-    actionCard.addEventListener('click', () => { window.location.href = actionCard.getAttribute('data-action-href') ?? ''; });
-  });
-}
-
 export async function init(): Promise<void> {
   // Show skeletons
   const gaugeContainer = $('#gauge-container');
   if (gaugeContainer) setHtml(gaugeContainer, buildSkeleton('card-grid', { count: 3 }));
-  const actionsEl = $('#quick-actions');
-  if (actionsEl) setHtml(actionsEl, buildSkeleton('card-grid', { count: 4 }));
-
   let rawIdeas: import('../../api/types').IdeaEntity[] = [];
   let rawProjects: import('../../api/types').ProjectEntity[] = [];
-  let user, gauges, quickActions, stats;
+  let user, gauges, stats;
   try {
     // Fetch raw entities once to share across gauge/stats builders
     [rawIdeas, rawProjects] = await Promise.all([
       GET('ideas') as Promise<import('../../api/types').IdeaEntity[]>,
       GET('projects') as Promise<import('../../api/types').ProjectEntity[]>,
     ]);
-    [user, gauges, quickActions, stats] = await Promise.all([
+    [user, gauges, stats] = await Promise.all([
       getCurrentUser(),
       getDashboardGauges(rawProjects),
-      getDashboardQuickActions(),
       getDashboardStats(rawIdeas, rawProjects),
     ]);
   } catch {
@@ -161,5 +139,4 @@ export async function init(): Promise<void> {
 
   setupHero(user, stats);
   if (gaugeContainer) setHtml(gaugeContainer, html`${gauges.map(buildGauge)}`);
-  setupQuickActions(actionsEl, quickActions);
 }
