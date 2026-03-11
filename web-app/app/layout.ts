@@ -3,7 +3,7 @@ import { STORAGE_KEY_SIDEBAR, state, setState, setTheme } from './state';
 import { $, $$, } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
-import { getPageName } from './navigation';
+import { getPageName, navigateTo } from './navigation';
 import { log } from './logger';
 
 function mutateThemeToggleIcon(): void {
@@ -244,7 +244,10 @@ async function mutateHeaderInfo(): Promise<void> {
     const stats = await getDashboardStats(rawIdeas, rawProjects);
 
     const greetingEl = document.getElementById('header-greeting');
-    if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}, ${user.name}`;
+    if (greetingEl) {
+      setHtml(greetingEl, html`<span style="font-weight:400">Good ${getTimeOfDay()},</span> ${user.name}`);
+      greetingEl.addEventListener('click', () => navigateTo('profile'));
+    }
 
     const statsEl = document.getElementById('header-stats');
     if (statsEl) {
