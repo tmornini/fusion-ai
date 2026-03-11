@@ -11,6 +11,7 @@ import {
 } from '../app/icons';
 import { navigateTo, initials, initTabs } from '../app/core';
 import { getProjectById, type ProjectDetail } from '../app/adapters';
+import { projectStatusConfig, UNKNOWN_STATUS } from '../app/config';
 
 function buildVariance(baseline: number, current: number, isLowerBetter: boolean, unit: string, prefix = ''): SafeHtml {
   const diff = current - baseline;
@@ -325,7 +326,7 @@ function buildProjectDetail(project: ProjectDetail, projectId: string): SafeHtml
         <div>
           <div class="flex flex-wrap items-center gap-3 mb-2">
             <h1 class="text-xl font-display font-bold">${project.title}</h1>
-            <span class="badge badge-success text-xs">${iconCheckCircle2(14)} Approved</span>
+            <span class="badge ${(projectStatusConfig[project.status as keyof typeof projectStatusConfig] ?? UNKNOWN_STATUS).className} text-xs">${iconCheckCircle2(14)} ${(projectStatusConfig[project.status as keyof typeof projectStatusConfig] ?? UNKNOWN_STATUS).label}</span>
           </div>
           <p class="text-sm text-muted">Led by ${project.projectLead} • ${project.progress}% complete</p>
         </div>

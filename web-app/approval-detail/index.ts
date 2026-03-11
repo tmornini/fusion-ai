@@ -9,7 +9,7 @@ import {
   iconUsers, iconShield, iconGauge,
 } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
-import { getIdeaForApproval, getEdgeForApproval, buildUserMap, type ApprovalIdea, type ApprovalEdge, type Metric } from '../app/adapters';
+import { getIdeaForApproval, getEdgeForApproval, getIdea, putIdea, buildUserMap, type ApprovalIdea, type ApprovalEdge, type Metric } from '../app/adapters';
 
 const severityConfig: Record<string, string> = {
   high: 'badge-error',
@@ -221,7 +221,9 @@ export async function init(params?: Record<string, string>): Promise<void> {
   setHtml(root, buildApprovalPage(idea, edge));
 
   // Approve
-  $('#approval-approve-btn')?.addEventListener('click', () => {
+  $('#approval-approve-btn')?.addEventListener('click', async () => {
+    const existingIdea = await getIdea(id);
+    await putIdea(id, { ...existingIdea, status: 'approved' });
     showToast('Idea approved successfully', 'success');
     navigateTo('idea-review-queue');
   });
@@ -235,7 +237,9 @@ export async function init(params?: Record<string, string>): Promise<void> {
   $('#approval-reject-btn')?.addEventListener('click', openReject);
   $('#approval-reject-cancel')?.addEventListener('click', closeReject);
   $('#approval-reject-backdrop')?.addEventListener('click', closeReject);
-  $('#approval-reject-confirm')?.addEventListener('click', () => {
+  $('#approval-reject-confirm')?.addEventListener('click', async () => {
+    const existingIdea = await getIdea(id);
+    await putIdea(id, { ...existingIdea, status: 'archived' });
     showToast('Idea sent back for revision', 'info');
     closeReject();
     navigateTo('idea-review-queue');
