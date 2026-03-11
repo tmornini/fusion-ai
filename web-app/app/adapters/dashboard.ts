@@ -7,8 +7,8 @@ export interface GaugeCard {
   icon: string;
   iconCssClass: string;
   theme: 'blue' | 'green' | 'amber';
-  baseline: { value: number; display: string };
-  current: { value: number; display: string };
+  outer: { value: number; max: number; label: string; display: string };
+  inner: { value: number; max: number; label: string; display: string };
   hasOverrunWarning: boolean;
 }
 
@@ -23,26 +23,29 @@ export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): 
   const sumEstimatedImpact = projects.reduce((sum, p) => sum + p.estimated_impact, 0);
   const sumActualImpact = projects.reduce((sum, p) => sum + p.actual_impact, 0);
 
-  const baselineDurationDays = durationInDays(sumEstimatedDuration);
-  const currentDurationDays = durationInDays(sumActualDuration);
+  const baselineDays = durationInDays(sumEstimatedDuration);
+  const currentDays = durationInDays(sumActualDuration);
+  const estCost = Math.ceil(sumEstimatedCost);
+  const actCost = Math.ceil(sumActualCost);
+  const maxImpact = Math.max(sumEstimatedImpact, sumActualImpact) || 1;
 
   return [
     {
       title: 'Time', icon: 'clock', iconCssClass: 'text-success', theme: 'green',
-      baseline: { value: baselineDurationDays, display: `${baselineDurationDays}d` },
-      current: { value: currentDurationDays, display: `${currentDurationDays}d` },
+      outer: { value: baselineDays, max: baselineDays, label: 'Baseline', display: `${baselineDays}d` },
+      inner: { value: currentDays, max: baselineDays, label: 'Current', display: `${currentDays}d` },
       hasOverrunWarning: true,
     },
     {
       title: 'Cost', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
-      baseline: { value: Math.ceil(sumEstimatedCost), display: formatCompactCurrency(Math.ceil(sumEstimatedCost)) },
-      current: { value: Math.ceil(sumActualCost), display: formatCompactCurrency(Math.ceil(sumActualCost)) },
+      outer: { value: estCost, max: estCost, label: 'Baseline', display: formatCompactCurrency(estCost) },
+      inner: { value: actCost, max: estCost, label: 'Current', display: formatCompactCurrency(actCost) },
       hasOverrunWarning: true,
     },
     {
       title: 'Impact', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
-      baseline: { value: sumEstimatedImpact, display: `${sumEstimatedImpact}` },
-      current: { value: sumActualImpact, display: `${sumActualImpact}` },
+      outer: { value: sumEstimatedImpact, max: maxImpact, label: 'Baseline', display: `${sumEstimatedImpact} pts` },
+      inner: { value: sumActualImpact, max: maxImpact, label: 'Current', display: `${sumActualImpact} pts` },
       hasOverrunWarning: false,
     },
   ];
