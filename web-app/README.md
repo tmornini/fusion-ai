@@ -11,7 +11,7 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 | [`app/`](app/README.md) | Shared CSS, TypeScript, HTML layout, adapters |
 | [`assets/`](assets/README.md) | Static files: fonts (*.woff2), favicon |
 
-26 page directories at the top level, each containing `index.ts` + `index.html`.
+25 page directories at the top level, each containing `index.ts` + `index.html`.
 
 ## Page Types
 
@@ -22,7 +22,7 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 
 `index.html` at the web-app root redirects to `landing/index.html`.
 
-## Pages (26)
+## Pages (25)
 
 | Page | Type | Description |
 |------|------|-------------|
@@ -45,7 +45,6 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 | [landing](landing/README.md) | standalone | Landing page |
 | [manage-users](manage-users/README.md) | composed | User administration |
 | [not-found](not-found/README.md) | standalone | 404 page |
-| [notification-settings](notification-settings/README.md) | composed | Notification preferences |
 | [onboarding](onboarding/README.md) | standalone | Welcome screen |
 | [profile](profile/README.md) | composed | Profile settings |
 | [project-detail](project-detail/README.md) | composed | Project detail (tabbed) |

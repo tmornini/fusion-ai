@@ -8,7 +8,7 @@ import { html, setHtml, SafeHtml, trusted } from './safe-html';
 import {
   iconSearch, iconLightbulb, iconFolderKanban, iconUser, iconHome,
   iconTarget, iconDatabase, iconGitBranch, iconSettings, iconUsers,
-  iconActivity, iconBell, iconBarChart, iconBrain, iconPalette,
+  iconActivity, iconBarChart, iconBrain, iconPalette,
   iconClipboardCheck, iconFileText, iconX,
 } from './icons';
 import { getIdeas, getProjects, getTeamMembers } from './adapters';
@@ -49,7 +49,6 @@ const pages: PageEntry[] = [
   { title: 'Company Settings', icon: iconSettings(16), href: '../company-settings/index.html', keywords: 'company organization settings' },
   { title: 'Manage Users', icon: iconUsers(16), href: '../manage-users/index.html', keywords: 'users invite admin' },
   { title: 'Activity Feed', icon: iconActivity(16), href: '../activity-feed/index.html', keywords: 'activity feed log' },
-  { title: 'Notifications', icon: iconBell(16), href: '../notification-settings/index.html', keywords: 'notification preferences alerts' },
   { title: 'Design System', icon: iconPalette(16), href: '../design-system/index.html', keywords: 'components ui reference' },
 ];
 

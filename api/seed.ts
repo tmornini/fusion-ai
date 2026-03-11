@@ -58,14 +58,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: '11', title: 'Real-time Inventory Tracking System', score: 91, estimated_impact: 0, estimated_duration: 0, estimated_cost: 0, priority: 7, status: 'pending_review', submitted_by_id: '9', edge_status: 'complete', problem_statement: '', proposed_solution: '', expected_outcome: '', category: 'Operations', readiness: 'ready', waiting_days: 5, impact_label: 'High', effort_label: 'Medium', description: '', submitted_at: '', risks: '[]', assumptions: '[]', alignments: '[]', effort_duration_estimate: '', effort_team_size: '', cost_estimate: '', cost_breakdown: '' },
   ];
 
-  const categories = [
-    { id: 'ideas', label: 'Ideas', icon: 'lightbulb' },
-    { id: 'projects', label: 'Projects', icon: 'folderKanban' },
-    { id: 'teams', label: 'Teams', icon: 'users' },
-    { id: 'account', label: 'Account', icon: 'user' },
-  ];
-
-  // Batch 2: Ideas, processes, company settings, account, notification categories (reference users)
+  // Batch 2: Ideas, processes, company settings, account (reference users)
   await Promise.all([
     ...ideas.map(idea => adapter.ideas.put(idea.id, idea)),
     adapter.processes.put('1', {
@@ -104,7 +97,6 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
       last_activity: '2 hours ago',
       active_users: 14,
     }),
-    ...categories.map(category => adapter.notificationCategories.put(category.id, category)),
   ]);
 
   // ── Projects ───────────────────────────────
@@ -139,13 +131,6 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: '10', type: 'idea_scored', actor_id: '7', action: 'scored', target: 'Data Pipeline Modernization', timestamp: 'Yesterday', score: 92, status: null, comment: null },
   ];
 
-  const notifications = [
-    { id: '1', title: 'New idea submitted', message: 'Marketing team submitted "AI Chatbot Integration"', time: '5 min ago', is_unread: 1 },
-    { id: '2', title: 'Project approved', message: 'Your project "Mobile App Redesign" was approved', time: '1 hour ago', is_unread: 1 },
-    { id: '3', title: 'Comment on idea', message: 'John commented on "Customer Portal"', time: '2 hours ago', is_unread: 0 },
-    { id: '4', title: 'Review requested', message: 'Sarah requested your review on "API Gateway"', time: '1 day ago', is_unread: 0 },
-  ];
-
   const crunchColumns = [
     { id: '1', original_name: 'CUST_ID', friendly_name: '', data_type: 'text', description: '', sample_values: JSON.stringify(['C001', 'C002', 'C003']), is_acronym: 1, acronym_expansion: '' },
     { id: '2', original_name: 'TXN_DT', friendly_name: '', data_type: 'date', description: '', sample_values: JSON.stringify(['2024-01-15', '2024-01-16', '2024-01-17']), is_acronym: 1, acronym_expansion: '' },
@@ -163,26 +148,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: 'ps5', process_id: '1', title: 'Technical setup complete', description: 'Engineering confirms environment is ready for customer use', owner: 'Engineering', role: 'Solutions Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '2 days', sort_order: 5, type: 'action' },
   ];
 
-  const notificationPreferences = [
-    { id: 'idea_submitted', category_id: 'ideas', label: 'New idea submitted', description: 'When someone submits a new idea', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'idea_scored', category_id: 'ideas', label: 'Idea scored', description: 'When an idea receives an AI score', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'idea_converted', category_id: 'ideas', label: 'Idea converted to project', description: 'When an idea becomes a project', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'idea_comment', category_id: 'ideas', label: 'Comment on your idea', description: 'When someone comments on your idea', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'project_created', category_id: 'projects', label: 'New project created', description: 'When a new project is started', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'task_assigned', category_id: 'projects', label: 'Task assigned to you', description: 'When you are assigned a new task', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'task_completed', category_id: 'projects', label: 'Task completed', description: 'When a task in your project is completed', is_email_enabled: 0, is_push_enabled: 0 },
-    { id: 'project_status', category_id: 'projects', label: 'Project status changed', description: 'When a project status is updated', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'team_invite', category_id: 'teams', label: 'Team invitation', description: 'When you are invited to join a team', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'member_joined', category_id: 'teams', label: 'New team member', description: 'When someone joins your team', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'member_left', category_id: 'teams', label: 'Team member left', description: 'When someone leaves your team', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'team_mention', category_id: 'teams', label: 'Team mention', description: 'When your team is mentioned', is_email_enabled: 0, is_push_enabled: 1 },
-    { id: 'security_alert', category_id: 'account', label: 'Security alerts', description: 'Important security notifications', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'billing_reminder', category_id: 'account', label: 'Billing reminders', description: 'Upcoming payment reminders', is_email_enabled: 1, is_push_enabled: 0 },
-    { id: 'usage_limit', category_id: 'account', label: 'Usage limit warnings', description: 'When approaching plan limits', is_email_enabled: 1, is_push_enabled: 1 },
-    { id: 'weekly_digest', category_id: 'account', label: 'Weekly activity digest', description: 'Summary of weekly activity', is_email_enabled: 1, is_push_enabled: 0 },
-  ];
-
-  // Batch 3: Idea scores, projects, edges, activities, notifications, crunch columns, process steps, notification preferences
+  // Batch 3: Idea scores, projects, edges, activities, crunch columns, process steps
   await Promise.all([
     adapter.ideaScores.put('1', {
       id: 'score-1',
@@ -212,10 +178,8 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     ...projects.map(project => adapter.projects.put(project.id, project)),
     ...edges.map(edge => adapter.edges.put(edge.id, edge)),
     ...activities.map(activity => adapter.activities.put(activity.id, activity)),
-    ...notifications.map(notification => adapter.notifications.put(notification.id, notification)),
     ...crunchColumns.map(column => adapter.crunchColumns.put(column.id, column)),
     ...processSteps.map(step => adapter.processSteps.put(step.id, step)),
-    ...notificationPreferences.map(preference => adapter.notificationPreferences.put(preference.id, preference)),
   ]);
 
   // Batch 4: Project team, milestones, project tasks, discussions, project versions, clarifications, edge outcomes

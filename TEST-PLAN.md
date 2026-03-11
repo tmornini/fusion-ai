@@ -12,12 +12,12 @@
 | D. Core: Ideas Workflow | 34 |
 | E. Core: Projects | 10 |
 | F. Tools | 14 |
-| G. Admin Pages | 22 |
+| G. Admin Pages | 19 |
 | H. Reference & System | 2 |
-| I. Cross-Cutting Concerns | 18 |
+| I. Cross-Cutting Concerns | 16 |
 | J. Protocol B: `file://` Retest | 14 |
 | K. Teardown | 3 |
-| **Total** | **146** |
+| **Total** | **141** |
 
 ---
 
@@ -67,7 +67,7 @@
 
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
 - [ ] **C2** Sidebar shows navigation links for all sections (Dashboard, Ideas, Projects, Edge List, Crunch, Flow, Team, Activity Feed, Settings group). PASS: all links present and styled.
-- [ ] **C3** Header shows user avatar area, notification bell, and theme toggle. PASS: elements visible and styled.
+- [ ] **C3** Header shows user avatar area and theme toggle. PASS: elements visible and styled.
 - [ ] **C4** Dashboard displays gauge/metric cards with numerical values. PASS: at least 3 metric cards render with non-zero values.
 - [ ] **C5** Dashboard displays at least one chart (bar, line, donut, or area). PASS: SVG chart renders with visible data.
 - [ ] **C6** Quick-action cards or links are present. PASS: clicking one navigates to the expected page.
@@ -217,17 +217,11 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **G13** Navigate to `activity-feed/`. PASS: shows 10 seeded activity entries with type icons and timestamps.
 - [ ] **G14** Activity types include idea_scored, task_completed, idea_created, comment_added, user_joined, status_changed, idea_converted, project_created. PASS: multiple distinct types visible with appropriate icons.
 
-### Notification Settings (`notification-settings/`)
-
-- [ ] **G15** Navigate to `notification-settings/`. PASS: shows 4 categories (Ideas, Projects, Teams, Account) with toggle controls.
-- [ ] **G16** 16 individual notification preferences are displayed with current on/off states. PASS: toggles render and are interactive.
-- [ ] **G17** Toggle a preference and save. PASS: change persists (no error toast).
-
 ### Snapshots (`snapshots/`) — Run These Last
 
 - [ ] **G18** Navigate to `snapshots/`. PASS: shows 4 operation cards: Create Pristine Environment, Wipe and Load Mock Data, Upload Snapshot, Download Snapshot.
 - [ ] **G19** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
-- [ ] **G20** Click "Create Pristine Environment", confirm the dialog. PASS: redirects to `dashboard/index.html`. Dashboard renders with zeroed-out metrics (empty database). All 22 `fusion-ai:*` keys exist in localStorage as empty arrays.
+- [ ] **G20** Click "Create Pristine Environment", confirm the dialog. PASS: redirects to `dashboard/index.html`. Dashboard renders with zeroed-out metrics (empty database). All 19 `fusion-ai:*` keys exist in localStorage as empty arrays.
 - [ ] **G21** Click "Wipe and Load Mock Data". PASS: redirects to `dashboard/index.html`. Navigate to `ideas/` — 11 ideas are back.
 - [ ] **G22** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
 
@@ -267,11 +261,6 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **I12** Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux). PASS: command palette overlay appears with search input focused.
 - [ ] **I13** Type a search term (e.g. "ideas"). PASS: filtered results appear. Select a result — navigates to the corresponding page.
 - [ ] **I14** Press `Escape`. PASS: command palette closes.
-
-### Notifications
-
-- [ ] **I15** Click the notification bell icon. PASS: dropdown opens showing 4 seeded notifications (2 unread, 2 read). Unread count badge shows "2".
-- [ ] **I16** Click outside the dropdown. PASS: dropdown closes.
 
 ### Toasts
 
@@ -329,7 +318,7 @@ This test is covered by E4 (navigation) — verify the page loads:
 | Browser & Version | |
 | OS | |
 | Build SHA | |
-| Tests Passed | /146 |
-| Tests Failed | /146 |
-| Tests Skipped | /146 |
+| Tests Passed | /141 |
+| Tests Failed | /141 |
+| Tests Skipped | /141 |
 | Notes | |

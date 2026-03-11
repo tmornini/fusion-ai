@@ -63,20 +63,11 @@ const routes: Route[] = [
   route('activities', {
     get: (db) => db.activities.getAll(),
   }),
-  route('notifications', {
-    get: (db) => db.notifications.getAll(),
-  }),
   route('crunch-columns', {
     get: (db) => db.crunchColumns.getAll(),
   }),
   route('processes', {
     get: (db) => db.processes.getAll(),
-  }),
-  route('notification-categories', {
-    get: (db) => db.notificationCategories.getAll(),
-  }),
-  route('notification-preferences', {
-    get: (db) => db.notificationPreferences.getAll(),
   }),
   route('edge-outcomes', {
     get: (db) => db.edgeOutcomes.getAll(),
@@ -129,16 +120,9 @@ const routes: Route[] = [
   route('activities/:id', {
     put: (db, p, payload) => db.activities.put(param(p, 0), payload),
   }),
-  route('notifications/:id', {
-    put: (db, p, payload) => db.notifications.put(param(p, 0), payload),
-  }),
   route('crunch-columns/:id', {
     put: (db, p, payload) => db.crunchColumns.put(param(p, 0), payload),
   }),
-  route('notification-preferences/:id', {
-    put: (db, p, payload) => db.notificationPreferences.put(param(p, 0), payload),
-  }),
-
   // ── Nested: idea children ──────────────────
   route('ideas/:ideaId/edge', {
     get: (db, p) => db.edges.getByIdeaId(param(p, 0)),

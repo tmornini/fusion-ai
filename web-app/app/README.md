@@ -21,7 +21,7 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
 | `compose.ts` | Build-time script that merges `layout.html` with each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
-| `layout.html` | Shared sidebar layout template (sidebar, header, search, notifications, theme toggle) |
+| `layout.html` | Shared sidebar layout template (sidebar, header, search, theme toggle) |
 | `tsconfig.json` | TypeScript compiler configuration |
 
 ## Adapter Modules (`adapters/`)
@@ -31,14 +31,14 @@ Domain-specific adapter functions organized by module:
 | Module | Exports |
 |--------|---------|
 | `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `buildDefaultEdgeData`, `getEdgeDataWithConfidence` |
-| `shared.ts` | `getCurrentUser`, `getNotifications` |
+| `shared.ts` | `getCurrentUser` |
 | `dashboard.ts` | `getDashboardGauges`, `getDashboardStats` |
 | `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval`, `getIdea`, `putIdea` |
 | `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId`, `putProject`, `putMilestone` |
 | `teams.ts` | `getTeamMembers`, `getManagedUsers` |
 | `edges.ts` | `getIdeaForEdge`, `getEdgeList` |
 | `tools.ts` | `getCrunchColumns`, `getFlow` |
-| `admin.ts` | `getAccount`, `getProfile`, `getCompanySettings`, `getActivityFeed`, `getNotificationCategories` |
+| `admin.ts` | `getAccount`, `getProfile`, `getCompanySettings`, `getActivityFeed` |
 | `snapshots.ts` | `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot`, `hasData` |
 | `index.ts` | Barrel re-export of all modules |
 

@@ -11,14 +11,14 @@ Domain modules with a barrel re-export (`index.ts`). All page modules import fro
 | Module | Domain |
 |--------|--------|
 | `helpers.ts` | Shared utilities: `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `buildDefaultEdgeData`, `getEdgeDataWithConfidence` |
-| `shared.ts` | Cross-cutting: `getCurrentUser`, `getNotifications` |
+| `shared.ts` | Cross-cutting: `getCurrentUser` |
 | `dashboard.ts` | Dashboard gauges, stats, quick actions |
 | `ideas.ts` | Idea listing, review queue, scoring, conversion, approval, write operations (`putIdea`, `getIdea`) |
 | `projects.ts` | Project listing, detail, engineering requirements, write operations (`putProject`, `putMilestone`) |
 | `teams.ts` | Team members, managed users |
 | `edges.ts` | Edge definitions, edge list |
 | `tools.ts` | Crunch columns, Flow process data |
-| `admin.ts` | Account, profile, company settings, notifications, activity |
+| `admin.ts` | Account, profile, company settings, activity |
 | `snapshots.ts` | Snapshot lifecycle: `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot`, `hasData` |
 
 ## Conventions

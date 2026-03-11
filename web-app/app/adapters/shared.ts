@@ -1,6 +1,6 @@
 import { GET } from '../../../api/api';
-import type { UserEntity, NotificationEntity, CompanySettingsEntity } from '../../../api/types';
-import { toBool, User } from '../../../api/types';
+import type { UserEntity, CompanySettingsEntity } from '../../../api/types';
+import { User } from '../../../api/types';
 export interface CurrentUser {
   id: string;
   name: string;
@@ -8,14 +8,6 @@ export interface CurrentUser {
   role: string;
   company: string;
   avatar?: string;
-}
-
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  time: string;
-  isUnread: boolean;
 }
 
 export function getTimeOfDay(): string {
@@ -37,15 +29,4 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     role: row.role,
     company: settings.name,
   };
-}
-
-export async function getNotifications(): Promise<Notification[]> {
-  const rows = await GET('notifications') as NotificationEntity[];
-  return rows.map(row => ({
-    id: row.id,
-    title: row.title,
-    message: row.message,
-    time: row.time,
-    isUnread: toBool(row.is_unread),
-  }));
 }

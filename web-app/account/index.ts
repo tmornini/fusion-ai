@@ -5,7 +5,7 @@ import {
   iconUser, iconSettings, iconCreditCard, iconBuilding, iconCrown,
   iconCheckCircle2, iconActivity, iconUsers, iconFolderKanban,
   iconLightbulb, iconCalendar, iconTrendingUp, iconUserPlus,
-  iconExternalLink, iconBell,
+  iconExternalLink,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
 import { getAccount, type Account } from '../app/adapters';
@@ -164,14 +164,6 @@ export async function init(): Promise<void> {
             <div style="flex:1;min-width:0">
               <p class="font-medium text-sm">Manage Users</p>
               <p class="text-xs text-muted truncate">Add, edit, or remove team members</p>
-            </div>
-            ${iconExternalLink(16)}
-          </button>
-          <button class="admin-link-card" data-nav-to="notification-settings">
-            <span style="color:hsl(var(--muted-foreground))">${iconBell(20)}</span>
-            <div style="flex:1;min-width:0">
-              <p class="font-medium text-sm">Notifications</p>
-              <p class="text-xs text-muted truncate">Email & push preferences</p>
             </div>
             ${iconExternalLink(16)}
           </button>

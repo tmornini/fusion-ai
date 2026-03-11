@@ -26,7 +26,7 @@ Lifecycle methods on `DbAdapter` manage the schema and data:
 - **`hasSchema()`** — returns `true` if any `fusion-ai:*` table key exists in storage
 - **`createSchema()`** — creates empty arrays for any missing table keys (idempotent)
 - **`deleteSchema()`** — removes all table keys from storage
-- **`importSnapshot(json)`** / **`exportSnapshot()`** — full database import/export (import always writes all 22 keys)
+- **`importSnapshot(json)`** / **`exportSnapshot()`** — full database import/export (import always writes all 19 keys)
 
 The localStorage implementation (`db-localstorage.ts`) persists each table as a `fusion-ai:tableName` key containing a JSON array of row objects, so data survives page navigations. Works on both HTTP and `file:///` protocols.
 
@@ -41,9 +41,9 @@ The localStorage implementation (`db-localstorage.ts`) persists each table as a 
 | `/{parent}/{id}/{child}` | `GET("ideas/abc/scores")` | Nested resources |
 | `/{collection}` | `PUT("users", body)` | Create or update entity |
 
-## Database Tables (22)
+## Database Tables (19)
 
-users, ideas, idea_scores, projects, project_team, milestones, project_tasks, discussions, project_versions, edges, edge_outcomes, edge_metrics, activities, notifications, clarifications, crunch_columns, processes, process_steps, company_settings, notification_categories, notification_preferences, account. See `SCHEMA.md` for full column definitions.
+users, ideas, idea_scores, projects, project_team, milestones, project_tasks, discussions, project_versions, edges, edge_outcomes, edge_metrics, activities, clarifications, crunch_columns, processes, process_steps, company_settings, account. See `SCHEMA.md` for full column definitions.
 
 ## Migration to Another Database
 

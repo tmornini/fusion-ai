@@ -1,7 +1,6 @@
 import { GET } from '../../../api/api';
 import type {
-  UserEntity, AccountEntity, CompanySettingsEntity, ActivityEntity,
-  NotificationCategoryEntity, NotificationPreferenceEntity, Id,
+  UserEntity, AccountEntity, CompanySettingsEntity, ActivityEntity, Id,
 } from '../../../api/types';
 import { toBool, User } from '../../../api/types';
 import { buildUserMap, userName } from './helpers';
@@ -152,41 +151,3 @@ export async function getActivityFeed(cachedUserMap?: Map<Id, User>): Promise<Ac
   }));
 }
 
-// ── Notification Settings ───────────────────
-
-export interface NotificationPreference {
-  id: string;
-  label: string;
-  description: string;
-  isEmailEnabled: boolean;
-  isPushEnabled: boolean;
-}
-
-export interface NotificationCategory {
-  id: string;
-  label: string;
-  icon: string;
-  preferences: NotificationPreference[];
-}
-
-export async function getNotificationCategories(): Promise<NotificationCategory[]> {
-  const [categories, preferences] = await Promise.all([
-    GET('notification-categories') as Promise<NotificationCategoryEntity[]>,
-    GET('notification-preferences') as Promise<NotificationPreferenceEntity[]>,
-  ]);
-
-  const preferencesByCategoryId = Map.groupBy(preferences, preference => preference.category_id);
-
-  return categories.map(category => ({
-    id: category.id,
-    label: category.label,
-    icon: category.icon,
-    preferences: (preferencesByCategoryId.get(category.id) || []).map(preference => ({
-      id: preference.id,
-      label: preference.label,
-      description: preference.description,
-      isEmailEnabled: toBool(preference.is_email_enabled),
-      isPushEnabled: toBool(preference.is_push_enabled),
-    })),
-  }));
-}

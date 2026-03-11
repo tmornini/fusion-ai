@@ -266,14 +266,6 @@ export interface ActivityEntity {
   comment: string | null;
 }
 
-export interface NotificationEntity {
-  id: Id;
-  title: string;
-  message: string;
-  time: string;
-  is_unread: StoredBoolean;
-}
-
 export interface ClarificationEntity {
   id: Id;
   project_id: Id;
@@ -329,21 +321,6 @@ export interface CompanySettingsEntity {
   is_two_factor_enabled: StoredBoolean;
   is_ip_whitelist_enabled: StoredBoolean;
   data_retention: string;
-}
-
-export interface NotificationCategoryEntity {
-  id: Id;
-  label: string;
-  icon: string;
-}
-
-export interface NotificationPreferenceEntity {
-  id: Id;
-  category_id: Id;
-  label: string;
-  description: string;
-  is_email_enabled: StoredBoolean;
-  is_push_enabled: StoredBoolean;
 }
 
 export interface AccountEntity {

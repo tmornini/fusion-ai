@@ -22,7 +22,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 
 - **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
-- **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, notifications, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
+- **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~30 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
@@ -154,14 +154,14 @@ web-app/
     adapters/                 # ~30 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence, shared Metric type
-      shared.ts               # getCurrentUser, getNotifications
+      shared.ts               # getCurrentUser
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
       ideas.ts                # getIdeas, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval
       projects.ts             # getProjects, getProjectById, getProjectForEngineering, getClarificationsByProjectId
       teams.ts                # getTeamMembers, getManagedUsers
       edges.ts                # getIdeaForEdge, getEdgeList
       tools.ts                # getCrunchColumns, getFlow
-      admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed, getNotificationCategories
+      admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
       tokens.css              # :root custom properties (light mode)
@@ -177,7 +177,7 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 26 page directories, each with index.ts + index.html
+  # Pages — 25 page directories, each with index.ts + index.html
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list
   idea-create/              # Multi-step idea wizard (standalone)
@@ -197,7 +197,6 @@ web-app/
   company-settings/         # Company settings
   manage-users/             # User administration
   activity-feed/            # Activity feed
-  notification-settings/    # Notification preferences
   snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
   design-system/            # Component gallery
   landing/                  # Landing page (standalone)
@@ -205,7 +204,7 @@ web-app/
   onboarding/               # Welcome screen (standalone)
   not-found/                # 404 page (standalone)
 
-SCHEMA.md                     # Database schema (22 tables, columns, types, defaults)
+SCHEMA.md                     # Database schema (19 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification
 TEST-PLAN.md                  # Human-executable test plan (146 cases)
 ```

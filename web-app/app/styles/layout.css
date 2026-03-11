@@ -334,12 +334,6 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* Notification toggle — needs relative positioning for badge */
-#notification-toggle,
-#mobile-notification-toggle {
-  position: relative;
-}
-
 /* Mobile search bar */
 .mobile-search-bar {
   position: fixed;
@@ -358,23 +352,6 @@
   right: 0.25rem;
   top: 50%;
   transform: translateY(-50%);
-}
-
-/* Notification dot */
-.notification-dot {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 1rem;
-  height: 1rem;
-  background-color: hsl(var(--destructive));
-  color: hsl(var(--destructive-foreground));
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ── Named Grid Layouts ─────────────────────── */

@@ -1,7 +1,7 @@
 import type { AppState } from './state';
 import { STORAGE_KEY_SIDEBAR, state, setState, setTheme, isValidTheme } from './state';
 import { $, $$, } from './dom';
-import { html, setHtml } from './safe-html';
+import { setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
 import { getPageName, navigateTo } from './navigation';
 import { log } from './logger';
@@ -39,46 +39,8 @@ async function mutateSidebarUser(): Promise<void> {
   }
 }
 
-async function mutateNotifications(): Promise<void> {
-  const { getNotifications } = await import('./adapters');
-  const notifications = await getNotifications();
-  const unreadCount = notifications.filter(notification => notification.isUnread).length;
-
-  function mutateNotificationPanel(containerId: string, countId: string, badgeId: string) {
-    const list = document.getElementById(containerId);
-    const countEl = document.getElementById(countId);
-    const badge = document.getElementById(badgeId);
-
-    if (list) {
-      setHtml(list, html`${notifications.map(notification => html`
-        <button class="dropdown-item" style="flex-direction:column;align-items:flex-start;padding:0.75rem 0.5rem">
-          <div class="flex items-start gap-2 w-full">
-            ${notification.isUnread ? html`<span style="width:0.5rem;height:0.5rem;background:hsl(var(--primary));border-radius:9999px;margin-top:0.375rem;flex-shrink:0"></span>` : html``}
-            <div style="flex:1;${!notification.isUnread ? 'margin-left:1rem' : ''}">
-              <p class="text-sm ${notification.isUnread ? 'font-medium' : 'text-muted'}">${notification.title}</p>
-              <p class="text-xs text-muted line-clamp-2">${notification.message}</p>
-              <p class="text-xs text-muted mt-1">${notification.time}</p>
-            </div>
-          </div>
-        </button>`)}`);
-    }
-    if (countEl && unreadCount > 0) {
-      countEl.textContent = String(unreadCount);
-      countEl.classList.remove('hidden');
-    }
-    if (badge && unreadCount > 0) {
-      badge.textContent = `${unreadCount} new`;
-      badge.classList.remove('hidden');
-    }
-  }
-
-  for (const prefix of ['notification', 'mobile-notification']) {
-    mutateNotificationPanel(`${prefix}-list`, `${prefix}-count`, `${prefix}-badge`);
-  }
-}
-
 const NAV_GROUP_CHILDREN: Record<string, string[]> = {
-  account: ['profile', 'company-settings', 'manage-users', 'activity-feed', 'notification-settings', 'snapshots'],
+  account: ['profile', 'company-settings', 'manage-users', 'activity-feed', 'snapshots'],
   ideas: ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'],
   projects: ['project-detail', 'engineering-requirements'],
   'edge-list': ['edge'],
@@ -156,7 +118,6 @@ function initDropdown(toggleId: string, contentId: string): void {
 function initThemeAndDropdowns(): void {
   for (const prefix of ['', 'mobile-']) {
     initDropdown(`${prefix}theme-toggle`, `${prefix}theme-dropdown`);
-    initDropdown(`${prefix}notification-toggle`, `${prefix}notification-dropdown`);
   }
 
   $$('[data-theme-set]').forEach(themeButton => {
@@ -259,7 +220,6 @@ function initSidebarLayout(): void {
   initMobileDrawer();
   mutateThemeToggleIcon();
   mutateSidebarUser();
-  mutateNotifications();
   mutateHeaderInfo();
 }
 

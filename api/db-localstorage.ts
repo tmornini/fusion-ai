@@ -8,10 +8,9 @@ import type { DbAdapter, EntityStore, SingletonStore } from './db';
 import type {
   UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
-  EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity, NotificationEntity,
+  EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity,
   ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
-  CompanySettingsEntity, NotificationCategoryEntity, NotificationPreferenceEntity,
-  AccountEntity,
+  CompanySettingsEntity, AccountEntity,
 } from './types';
 
 const KEY_PREFIX = 'fusion-ai:';
@@ -134,10 +133,9 @@ function createSingletonStore<T extends { id: string }>(tableName: string): Sing
 export const TABLE_NAMES = [
   'users', 'ideas', 'idea_scores', 'projects', 'project_team',
   'milestones', 'project_tasks', 'discussions', 'project_versions',
-  'edges', 'edge_outcomes', 'edge_metrics', 'activities', 'notifications',
+  'edges', 'edge_outcomes', 'edge_metrics', 'activities',
   'clarifications', 'crunch_columns', 'processes', 'process_steps',
-  'company_settings', 'notification_categories', 'notification_preferences',
-  'account',
+  'company_settings', 'account',
 ];
 
 // ── Adapter factory ──────────────────────
@@ -149,14 +147,6 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
   if (localStorage.getItem(oldAccountKey) !== null && localStorage.getItem(newAccountKey) === null) {
     localStorage.setItem(newAccountKey, localStorage.getItem(oldAccountKey)!);
     localStorage.removeItem(oldAccountKey);
-  }
-
-  // Migrate notification_prefs → notification_preferences (one-time rename)
-  const oldPrefsKey = KEY_PREFIX + 'notification_prefs';
-  const newPrefsKey = KEY_PREFIX + 'notification_preferences';
-  if (localStorage.getItem(oldPrefsKey) !== null && localStorage.getItem(newPrefsKey) === null) {
-    localStorage.setItem(newPrefsKey, localStorage.getItem(oldPrefsKey)!);
-    localStorage.removeItem(oldPrefsKey);
   }
 
   // Migrate ideas: estimated_time → estimated_duration (hours→seconds), effort_time_estimate → effort_duration_estimate
@@ -369,7 +359,6 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
 
     edgeMetrics: createEntityStore<EdgeMetricEntity>('edge_metrics'),
     activities: createEntityStore<ActivityEntity>('activities'),
-    notifications: createEntityStore<NotificationEntity>('notifications'),
 
     clarifications: Object.assign(clarificationStore, {
       async getByProjectId(projectId: string): Promise<ClarificationEntity[]> {
@@ -389,17 +378,6 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     }),
 
     companySettings: createSingletonStore<CompanySettingsEntity>('company_settings'),
-    notificationCategories: createEntityStore<NotificationCategoryEntity>('notification_categories'),
-
-    notificationPreferences: Object.assign(
-      createEntityStore<NotificationPreferenceEntity>('notification_preferences'),
-      {
-        async getByCategoryId(categoryId: string): Promise<NotificationPreferenceEntity[]> {
-          return readTable<NotificationPreferenceEntity>('notification_preferences')
-            .filter(entity => entity.category_id === categoryId);
-        },
-      },
-    ),
 
     account: createSingletonStore<AccountEntity>('account'),
   };

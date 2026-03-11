@@ -1,6 +1,6 @@
 # Database Schema
 
-22 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+19 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -244,16 +244,6 @@
 | status | TEXT | null |
 | comment | TEXT | null |
 
-### notifications
-
-| Column | Type | Default |
-|--------|------|---------|
-| id | TEXT | — |
-| title | TEXT | '' |
-| message | TEXT | '' |
-| time | TEXT | '' |
-| is_unread | INTEGER | 1 |
-
 ### clarifications
 
 | Column | Type | Default |
@@ -287,25 +277,6 @@ Singleton table (single row, `id = '1'`).
 | is_two_factor_enabled | INTEGER | 0 |
 | is_ip_whitelist_enabled | INTEGER | 0 |
 | data_retention | TEXT | '' |
-
-### notification_categories
-
-| Column | Type | Default |
-|--------|------|---------|
-| id | TEXT | — |
-| label | TEXT | '' |
-| icon | TEXT | '' |
-
-### notification_preferences
-
-| Column | Type | Default |
-|--------|------|---------|
-| id | TEXT | — |
-| category_id | TEXT (FK → notification_categories) | — |
-| label | TEXT | '' |
-| description | TEXT | '' |
-| is_email_enabled | INTEGER | 1 |
-| is_push_enabled | INTEGER | 0 |
 
 ### account
 
