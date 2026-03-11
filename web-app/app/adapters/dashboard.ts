@@ -34,12 +34,12 @@ export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): 
     },
     {
       title: 'Cost Overview', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
-      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Budget Spent', display: `$${(totalActualCost / 1000).toFixed(1)}K` },
-      inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'ROI Generated', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
+      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Budget Allocated', display: `$${(totalActualCost / 1000).toFixed(1)}K` },
+      inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'Budget Spent', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
     },
     {
-      title: 'Project Impact', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
-      outer: { value: averageEstimatedImpact, max: 100, label: 'Target Score', display: `${averageEstimatedImpact}%` },
+      title: 'Return on Investment', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
+      outer: { value: averageEstimatedImpact, max: 100, label: 'Projected Return', display: `${averageEstimatedImpact}%` },
       inner: { value: averageActualImpact, max: 100, label: 'Current Score', display: `${averageActualImpact}%` },
     },
   ];

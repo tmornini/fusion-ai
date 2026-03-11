@@ -3,16 +3,12 @@ import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import {
   icons, iconSparkles, iconDollarSign, iconClock, iconZap,
-  iconLightbulb, iconFolderKanban, iconBarChart, iconUsers,
 } from '../app/icons';
 import { GET } from '../../api/api';
 import {
   getCurrentUser, getDashboardGauges, getDashboardQuickActions, getDashboardStats,
-  getIdeas, getProjects, getTeamMembers,
-  type GaugeCard, type Idea, type Project, type TeamMember,
+  type GaugeCard,
 } from '../app/adapters';
-import { buildDonutChart, buildBarChart, buildAreaChart } from '../app/charts';
-import { log } from '../app/logger';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },
@@ -27,7 +23,6 @@ const gaugeIconConfig: Record<string, (size?: number, cssClass?: string) => Safe
 const GAUGE_THEME_FALLBACK = { bg: 'background:hsl(var(--muted)/0.04)', iconBg: 'background:hsl(var(--muted)/0.1)', border: 'border-color:hsl(var(--muted)/0.15)' };
 const GAUGE_ARC_OUTER_RADIUS = 65;
 const GAUGE_ARC_INNER_RADIUS = 45;
-const CHART_LABEL_MAX_LEN = 12;
 
 function buildGauge(card: GaugeCard): SafeHtml {
   const themeStyle = gaugeThemeConfig[card.theme] ?? GAUGE_THEME_FALLBACK;
@@ -90,128 +85,6 @@ function getTimeOfDay(): string {
   return 'evening';
 }
 
-// ── Chart data transformations ────────────────
-
-const ideaPipelineConfig: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'hsl(var(--muted-foreground))' },
-  scored: { label: 'Scored', color: 'hsl(var(--info))' },
-  pending_review: { label: 'Under Review', color: 'hsl(var(--warning))' },
-  approved: { label: 'Approved', color: 'hsl(var(--success))' },
-  rejected: { label: 'Rejected', color: 'hsl(var(--error))' },
-};
-
-const projectHealthConfig: Record<string, { label: string; color: string }> = {
-  approved: { label: 'Approved', color: 'hsl(var(--success))' },
-  under_review: { label: 'Under Review', color: 'hsl(var(--warning))' },
-  sent_back: { label: 'Sent Back', color: 'hsl(var(--error))' },
-};
-
-function computePipelineData(ideas: Idea[]) {
-  const groups = Object.groupBy(ideas, idea => idea.status);
-  return Object.entries(groups).map(([status, items]) => ({
-    label: ideaPipelineConfig[status]?.label || status,
-    value: items?.length ?? 0,
-    color: ideaPipelineConfig[status]?.color,
-  }));
-}
-
-function computeProjectHealthData(projects: Project[]) {
-  const groups = Object.groupBy(projects, project => project.status);
-  return Object.entries(groups).map(([status, items]) => ({
-    label: projectHealthConfig[status]?.label || status,
-    value: items?.length ?? 0,
-    color: projectHealthConfig[status]?.color,
-  }));
-}
-
-function computeScoreData(ideas: Idea[]) {
-  return [...ideas]
-    .sort((a, b) => a.score - b.score)
-    .map(idea => ({ label: idea.title.slice(0, CHART_LABEL_MAX_LEN), value: idea.score }));
-}
-
-function computeAvailabilityData(members: TeamMember[]) {
-  return members.map(member => ({
-    label: member.name.split(' ')[0] ?? '',
-    value: member.availability,
-  }));
-}
-
-function mutateSvgToFit(container: HTMLElement): void {
-  const svg = container.querySelector('svg');
-  if (svg) {
-    svg.style.width = '100%';
-    svg.style.height = 'auto';
-    svg.style.maxWidth = svg.getAttribute('width') + 'px';
-  }
-}
-
-// ── Chart rendering ────────────────
-
-function mutateCharts(ideas: Idea[], projects: Project[], members: TeamMember[]): void {
-  populateIcons([
-    ['#chart-pipeline-icon', iconLightbulb(16, 'text-primary')],
-    ['#chart-health-icon', iconFolderKanban(16, 'text-success')],
-    ['#chart-scores-icon', iconBarChart(16, 'text-warning')],
-    ['#chart-availability-icon', iconUsers(16, 'text-primary')],
-  ]);
-
-  // 1. Idea Pipeline (Donut)
-  const pipelineEl = $('#chart-pipeline');
-  if (pipelineEl) {
-    const pipelineData = computePipelineData(ideas);
-    const total = pipelineData.reduce((sum, datum) => sum + datum.value, 0);
-    setHtml(pipelineEl, html`${buildDonutChart(pipelineData, {
-      width: 140,
-      colors: pipelineData.map(datum => datum.color || ''),
-      accessibleLabel: 'Idea pipeline distribution',
-    })}<div class="donut-legend">${pipelineData.map(datum =>
-      html`<span class="donut-legend-item">
-        <span class="donut-legend-dot" style="background:${datum.color}"></span>
-        ${datum.label} <strong>${datum.value}</strong> <span class="text-muted">(${Math.round(datum.value / total * 100)}%)</span>
-      </span>`
-    )}</div>`);
-    mutateSvgToFit(pipelineEl);
-  }
-
-  // 2. Project Health (Bar)
-  const healthEl = $('#chart-health');
-  if (healthEl) {
-    setHtml(healthEl, buildBarChart(computeProjectHealthData(projects), {
-      width: 300,
-      height: 180,
-      colors: Object.values(projectHealthConfig).map(config => config.color),
-      accessibleLabel: 'Project health by status',
-    }));
-    mutateSvgToFit(healthEl);
-  }
-
-  // 3. Idea Scores (Area)
-  const scoresEl = $('#chart-scores');
-  if (scoresEl) {
-    setHtml(scoresEl, buildAreaChart(computeScoreData(ideas), {
-      width: 300,
-      height: 180,
-      id: 'dashboard-scores',
-      colors: ['hsl(var(--warning))'],
-      accessibleLabel: 'Idea scores distribution',
-    }));
-    mutateSvgToFit(scoresEl);
-  }
-
-  // 4. Team Availability (Bar)
-  const availEl = $('#chart-availability');
-  if (availEl) {
-    setHtml(availEl, buildBarChart(computeAvailabilityData(members), {
-      width: 300,
-      height: 180,
-      colors: ['hsl(var(--primary))'],
-      accessibleLabel: 'Team member availability',
-    }));
-    mutateSvgToFit(availEl);
-  }
-}
-
 function setupHero(user: { name: string; company: string }, stats: Array<{ value: number; label: string; trend: string }>): void {
   populateIcons([['#hero-icon', iconSparkles(28, 'text-primary-fg')]]);
 
@@ -266,7 +139,7 @@ export async function init(): Promise<void> {
   let rawProjects: import('../../api/types').ProjectEntity[] = [];
   let user, gauges, quickActions, stats;
   try {
-    // Fetch raw entities once to share across gauge/stats builders and charts
+    // Fetch raw entities once to share across gauge/stats builders
     [rawIdeas, rawProjects] = await Promise.all([
       GET('ideas') as Promise<import('../../api/types').IdeaEntity[]>,
       GET('projects') as Promise<import('../../api/types').ProjectEntity[]>,
@@ -289,16 +162,4 @@ export async function init(): Promise<void> {
   setupHero(user, stats);
   if (gaugeContainer) setHtml(gaugeContainer, html`${gauges.map(buildGauge)}`);
   setupQuickActions(actionsEl, quickActions);
-
-  // Charts — fetch chart data in parallel (non-blocking for main dashboard)
-  try {
-    const [ideas, projects, members] = await Promise.all([
-      getIdeas(rawIdeas),
-      getProjects(rawProjects),
-      getTeamMembers(),
-    ]);
-    mutateCharts(ideas, projects, members);
-  } catch (err) {
-    log.warn('Failed to mutate dashboard charts', 'dashboard', err);
-  }
 }
