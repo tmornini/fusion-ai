@@ -3,8 +3,7 @@
 // Wipe, reload, upload/download snapshot operations.
 // ============================================
 
-import { GET, POST, PUT, DELETE } from '../../api/api';
-import type { UserEntity } from '../../api/types';
+import { deleteSchema, createSchema, loadMockData, importSnapshot, exportSnapshot, hasData } from '../app/adapters';
 import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -14,9 +13,9 @@ import { iconTrash, iconDownload, iconUpload, iconDatabase, iconInfo } from '../
 const BANNER_ID = 'empty-banner';
 
 async function updateEmptyBanner(root: HTMLElement): Promise<void> {
-  const users = await GET('users') as UserEntity[];
+  const hasExistingData = await hasData();
   const existing = document.getElementById(BANNER_ID);
-  if (users.length === 0) {
+  if (!hasExistingData) {
     if (!existing) {
       const banner = document.createElement('div');
       banner.id = BANNER_ID;
@@ -42,7 +41,7 @@ async function withWipeAndReload(
   button.disabled = true;
   button.textContent = 'Working...';
   try {
-    await DELETE('snapshots/schema');
+    await deleteSchema();
     await action();
     navigateTo('dashboard');
   } catch {
@@ -114,7 +113,7 @@ export async function init(): Promise<void> {
     wipeBtn.addEventListener('click', () => withWipeAndReload(
       wipeBtn,
       'Create pristine environment',
-      async () => { await POST('snapshots/schema', {}); },
+      async () => { await createSchema(); },
       'Are you sure you want to create a pristine environment? All existing data will be removed. This cannot be undone.',
     ));
   }
@@ -125,7 +124,7 @@ export async function init(): Promise<void> {
     reloadBtn.addEventListener('click', () => withWipeAndReload(
       reloadBtn,
       'Load mock data',
-      async () => { await POST('snapshots/schema', {}); await POST('snapshots/mock-data', {}); },
+      async () => { await createSchema(); await loadMockData(); },
     ));
   }
 
@@ -136,8 +135,8 @@ export async function init(): Promise<void> {
     if (!file) return;
     try {
       const text = await file.text();
-      await DELETE('snapshots/schema');
-      await PUT('snapshots/import', { json: text });
+      await deleteSchema();
+      await importSnapshot(text);
       navigateTo('dashboard');
     } catch {
       showToast('Failed to upload snapshot. Check file format.', 'error');
@@ -148,7 +147,7 @@ export async function init(): Promise<void> {
   // Download snapshot
   $('#download-btn')?.addEventListener('click', async () => {
     try {
-      const json = await GET('snapshots/schema') as string;
+      const json = await exportSnapshot();
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const downloadLink = document.createElement('a');

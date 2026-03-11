@@ -27,8 +27,12 @@ interface AppState {
 
 type StateListener = () => void;
 
+function isValidTheme(value: string | null): value is AppState['theme'] {
+  return value === 'light' || value === 'dark' || value === 'system';
+}
+
 const _state: AppState = {
-  theme: (() => { const raw = localStorage.getItem(STORAGE_KEY_THEME); return raw === 'light' || raw === 'dark' || raw === 'system' ? raw : 'system'; })(),
+  theme: (() => { const raw = localStorage.getItem(STORAGE_KEY_THEME); return isValidTheme(raw) ? raw : 'system'; })(),
   isMobile: window.matchMedia('(max-width: 768px)').matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
@@ -90,13 +94,11 @@ window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
 
 // Sync theme across tabs via StorageEvent
 window.addEventListener('storage', (e) => {
-  if (e.key === STORAGE_KEY_THEME && e.newValue) {
-    if (e.newValue === 'light' || e.newValue === 'dark' || e.newValue === 'system') {
-      setState({ theme: e.newValue });
-      applyTheme();
-    }
+  if (e.key === STORAGE_KEY_THEME && isValidTheme(e.newValue)) {
+    setState({ theme: e.newValue });
+    applyTheme();
   }
 });
 
 export type { AppState };
-export { STORAGE_KEY_THEME, STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme };
+export { STORAGE_KEY_THEME, STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme, isValidTheme };

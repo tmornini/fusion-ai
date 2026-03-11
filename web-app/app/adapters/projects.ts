@@ -1,4 +1,4 @@
-import { GET } from '../../../api/api';
+import { GET, PUT } from '../../../api/api';
 import type {
   ProjectEntity, ProjectTeamEntity, MilestoneEntity, ProjectTaskEntity,
   DiscussionEntity, ProjectVersionEntity,
@@ -203,4 +203,14 @@ export async function getClarificationsByProjectId(projectId: string, cachedUser
     ...(clarification.answered_by_id ? { answeredBy: userName(userMap, clarification.answered_by_id) } : {}),
     ...(clarification.answered_at ? { answeredAt: clarification.answered_at } : {}),
   }));
+}
+
+// ── Write Operations ───────────────────────
+
+export async function putProject(id: string, entity: Partial<ProjectEntity>): Promise<void> {
+  await PUT(`projects/${id}`, entity as Record<string, unknown>);
+}
+
+export async function putMilestone(projectId: string, milestoneId: string, entity: Partial<MilestoneEntity>): Promise<void> {
+  await PUT(`projects/${projectId}/milestones/${milestoneId}`, entity as Record<string, unknown>);
 }

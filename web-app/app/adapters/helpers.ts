@@ -71,7 +71,7 @@ export async function getEdgeDataByIdeaId(ideaId: string, cachedUserMap?: Map<Id
 
 // ── Edge Data with Confidence ───────────────
 
-export function createDefaultEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
+export function buildDefaultEdgeData(): EdgeData & { confidence: ConfidenceLevel } {
   return {
     outcomes: [],
     impact: { shortTerm: '', midTerm: '', longTerm: '' },
@@ -85,7 +85,7 @@ export async function getEdgeDataWithConfidence(
   cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData & { confidence: ConfidenceLevel }> {
   const edgeData = await getEdgeDataByIdeaId(ideaId, cachedUserMap);
-  if (!edgeData) return createDefaultEdgeData();
+  if (!edgeData) return buildDefaultEdgeData();
   return {
     ...edgeData,
     confidence: edgeData.confidence ?? 'medium',

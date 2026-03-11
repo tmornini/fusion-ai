@@ -37,6 +37,20 @@ function styleForMilestone(status: string): string {
   }
 }
 
+function styleForTaskPriority(priority: string): string {
+  switch (priority) {
+    case 'High': return 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))';
+    case 'Medium': return 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))';
+    default: return 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
+  }
+}
+
+const KPI_ON_TRACK_RATIO = 0.9;
+
+function isKpiOnTrack(current: number, target: number, unit: string): boolean {
+  return unit === '$' ? current <= target : current >= target * KPI_ON_TRACK_RATIO;
+}
+
 function buildProjectSummary(project: ProjectDetail): SafeHtml {
   return html`
     <div class="card p-6">
@@ -117,7 +131,7 @@ function buildEdgeKPIs(project: ProjectDetail): SafeHtml {
               ${outcome.metrics.map(kpi => {
                 const target = parseFloat(kpi.target);
                 const current = parseFloat(kpi.current);
-                const isOnTrack = kpi.unit === '$' ? current <= target : current >= target * 0.9;
+                const isOnTrack = isKpiOnTrack(current, target, kpi.unit);
                 return html`
                   <div class="flex items-center justify-between gap-2" style="padding:0.5rem;border-radius:0.25rem;background:hsl(var(--background));border:1px solid hsl(var(--border))">
                     <div class="flex items-center gap-2">${iconGauge(16, 'text-muted')} <span class="text-sm">${kpi.name}</span></div>
@@ -175,7 +189,7 @@ function buildProjectTabs(project: ProjectDetail): SafeHtml {
       <div id="tab-tasks" class="tab-panel">
         <div style="display:flex;flex-direction:column;gap:0.75rem">
           ${project.tasks.map(task => {
-            const prioColor = task.priority === 'High' ? 'background:hsl(var(--error-soft));color:hsl(var(--error-text));border:1px solid hsl(var(--error-border))' : task.priority === 'Medium' ? 'background:hsl(var(--warning-soft));color:hsl(var(--warning-text));border:1px solid hsl(var(--warning-border))' : 'background:hsl(var(--muted)/0.5);color:hsl(var(--muted-foreground));border:1px solid hsl(var(--border))';
+            const prioColor = styleForTaskPriority(task.priority);
             return html`
             <div class="card" style="padding:1rem">
               <div class="flex items-start justify-between gap-3 mb-2">

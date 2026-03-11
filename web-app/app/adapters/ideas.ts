@@ -1,4 +1,4 @@
-import { GET } from '../../../api/api';
+import { GET, PUT } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel, PriorityLevel, Id } from '../../../api/types';
 import { User, computePriority } from '../../../api/types';
 import { buildUserMap, userName, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
@@ -170,4 +170,14 @@ export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id,
 
 export async function getEdgeForApproval(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<ApprovalEdge> {
   return getEdgeDataWithConfidence(ideaId, cachedUserMap);
+}
+
+// ── Write Operations ───────────────────────
+
+export async function getIdea(id: string): Promise<IdeaEntity> {
+  return GET(`ideas/${id}`) as Promise<IdeaEntity>;
+}
+
+export async function putIdea(id: string, entity: Partial<IdeaEntity>): Promise<void> {
+  await PUT(`ideas/${id}`, entity as Record<string, unknown>);
 }

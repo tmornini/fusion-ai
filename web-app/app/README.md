@@ -30,15 +30,16 @@ Domain-specific adapter functions organized by module:
 
 | Module | Exports |
 |--------|---------|
-| `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `createDefaultEdgeData`, `getEdgeDataWithConfidence` |
+| `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `buildDefaultEdgeData`, `getEdgeDataWithConfidence` |
 | `shared.ts` | `getCurrentUser`, `getNotifications` |
 | `dashboard.ts` | `getDashboardGauges`, `getDashboardStats` |
-| `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval` |
-| `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId` |
+| `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval`, `getIdea`, `putIdea` |
+| `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId`, `putProject`, `putMilestone` |
 | `teams.ts` | `getTeamMembers`, `getManagedUsers` |
 | `edges.ts` | `getIdeaForEdge`, `getEdgeList` |
 | `tools.ts` | `getCrunchColumns`, `getFlow` |
 | `admin.ts` | `getAccount`, `getProfile`, `getCompanySettings`, `getActivityFeed`, `getNotificationCategories` |
+| `snapshots.ts` | `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot`, `hasData` |
 | `index.ts` | Barrel re-export of all modules |
 
 All page modules import from `'../../app/adapters'` — with `moduleResolution: "bundler"`, this resolves to `adapters/index.ts` automatically.

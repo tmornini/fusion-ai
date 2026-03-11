@@ -2,7 +2,6 @@ import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/loading-states';
 import { iconDollarSign, iconClock, iconZap } from '../app/icons';
-import { GET } from '../../api/api';
 import { getDashboardGauges, type GaugeCard } from '../app/adapters';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
@@ -99,8 +98,7 @@ export async function init(): Promise<void> {
 
   let gauges: GaugeCard[];
   try {
-    const rawProjects = await GET('projects') as import('../../api/types').ProjectEntity[];
-    gauges = await getDashboardGauges(rawProjects);
+    gauges = await getDashboardGauges();
   } catch {
     if (gaugeContainer) {
       setHtml(gaugeContainer, buildErrorState('Failed to load dashboard data.'));

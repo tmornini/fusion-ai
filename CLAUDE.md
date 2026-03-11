@@ -64,6 +64,22 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 `core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
 
+**Page modules never import from `api/api.ts`** — all data access (reads and writes) goes through the adapter layer (`adapters/`). Only adapter modules import from the API layer directly.
+
+### Naming Conventions
+
+- `build*` — construct and return a value (data structure, HTML, chart)
+- `mutate*` — find existing DOM element(s) and update their content (side-effecting)
+- `init*` — set up event listeners and initial behavior
+- `styleFor*` — map a status/value to a CSS inline style string
+- `compute*` — pure calculation returning a derived value
+- `get*` — adapter functions that fetch and transform data (reads)
+- `put*` — adapter functions that write entity data (writes)
+- Adapter function names use **domain nouns** (`getIdea`, `putProject`), never internal type names like `Entity` — the return type already communicates the shape
+- `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot` — snapshot lifecycle operations in `adapters/snapshots.ts`
+- Boolean variables: `is*`, `has*`, `needs*` (use the prefix that reads naturally in English)
+- Config objects: `Record<StatusType, { label, className }>` in `config.ts`
+
 ### Adapter Conventions
 
 - **User-name fallback**: When a user ID can't resolve to a name, return `'Unknown'` (never empty string).

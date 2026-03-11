@@ -8,9 +8,7 @@ import {
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { getIdeaForConversion, type ConversionIdea } from '../app/adapters';
-import { PUT, GET } from '../../api/api';
-import type { IdeaEntity } from '../../api/types';
+import { getIdeaForConversion, getIdea, putIdea, putProject, putMilestone, type ConversionIdea } from '../app/adapters';
 
 const requiredFields = ['project-name', 'project-lead', 'start-date', 'target-end-date', 'budget', 'priority'];
 
@@ -235,7 +233,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
 
     const projectId = crypto.randomUUID();
     try {
-      await PUT(`projects/${projectId}`, {
+      await putProject(projectId, {
         title: projectDetails['project-name'],
         description: projectDetails['success-criteria'] || '',
         status: 'approved',
@@ -257,12 +255,12 @@ export async function init(params?: Record<string, string>): Promise<void> {
         budget_label: projectDetails['budget'] || '',
       });
 
-      const existingIdea = await GET(`ideas/${ideaId}`) as IdeaEntity;
-      await PUT(`ideas/${ideaId}`, { ...existingIdea, status: 'approved' });
+      const existingIdea = await getIdea(ideaId);
+      await putIdea(ideaId, { ...existingIdea, status: 'approved' });
 
       if (projectDetails['first-milestone']?.trim()) {
         const milestoneId = crypto.randomUUID();
-        await PUT(`projects/${projectId}/milestones/${milestoneId}`, {
+        await putMilestone(projectId, milestoneId, {
           title: projectDetails['first-milestone'],
           status: 'pending',
           date: projectDetails['target-end-date'] || '',

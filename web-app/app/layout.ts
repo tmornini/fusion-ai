@@ -1,5 +1,5 @@
 import type { AppState } from './state';
-import { STORAGE_KEY_SIDEBAR, state, setState, setTheme } from './state';
+import { STORAGE_KEY_SIDEBAR, state, setState, setTheme, isValidTheme } from './state';
 import { $, $$, } from './dom';
 import { html, setHtml } from './safe-html';
 import { iconSun, iconMoon, iconMonitor } from './icons';
@@ -162,7 +162,7 @@ function initThemeAndDropdowns(): void {
   $$('[data-theme-set]').forEach(themeButton => {
     themeButton.addEventListener('click', () => {
       const theme = themeButton.getAttribute('data-theme-set');
-      if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      if (isValidTheme(theme)) {
         setTheme(theme);
         mutateThemeToggleIcon();
         $$('.dropdown-content').forEach(dropdown => dropdown.classList.add('hidden'));
@@ -230,18 +230,12 @@ function initMobileDrawer(): void {
 async function mutateHeaderInfo(): Promise<void> {
   try {
     const { getCurrentUser, getDashboardStats, getTimeOfDay } = await import('./adapters');
-    const { GET } = await import('../../api/api');
     const { html, setHtml } = await import('./safe-html');
-    type IdeaEntity = import('../../api/types').IdeaEntity;
-    type ProjectEntity = import('../../api/types').ProjectEntity;
 
-    const [user, rawIdeas, rawProjects] = await Promise.all([
+    const [user, stats] = await Promise.all([
       getCurrentUser(),
-      GET('ideas') as Promise<IdeaEntity[]>,
-      GET('projects') as Promise<ProjectEntity[]>,
+      getDashboardStats(),
     ]);
-
-    const stats = await getDashboardStats(rawIdeas, rawProjects);
 
     const greetingEl = document.getElementById('header-greeting');
     if (greetingEl) {

@@ -5,7 +5,7 @@ import {
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { PUT } from '../../api/api';
+import { putIdea } from '../app/adapters';
 
 const steps = [
   { id: 1, title: 'The Problem', icon: iconAlertCircle, description: 'What challenge are you trying to solve?' },
@@ -195,7 +195,7 @@ function bindWizardEvents() {
     if (currentStep < 3) { currentStep++; mutateWizard(); }
     else {
       const ideaId = crypto.randomUUID();
-      await PUT(`ideas/${ideaId}`, {
+      await putIdea(ideaId, {
         title: formData.title,
         problem_statement: formData.problemStatement,
         proposed_solution: formData.proposedSolution,

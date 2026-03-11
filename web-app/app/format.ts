@@ -10,8 +10,10 @@ function styleForScore(score: number): string {
   return 'color:hsl(var(--error))';
 }
 
+const SECONDS_PER_DAY = 86400;
+
 function durationInDays(seconds: number): number {
-  return Math.ceil(seconds / 86400);
+  return Math.ceil(seconds / SECONDS_PER_DAY);
 }
 
 function formatCompactCurrency(value: number): string {
