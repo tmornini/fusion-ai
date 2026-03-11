@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { UserEntity, NotificationEntity } from '../../../api/types';
+import type { UserEntity, NotificationEntity, CompanySettingsEntity } from '../../../api/types';
 import { toBool, User } from '../../../api/types';
 export interface CurrentUser {
   id: string;
@@ -19,14 +19,16 @@ export interface Notification {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
-  const row = await GET('current-user') as UserEntity | null;
-  if (!row) return { id: 'current', name: 'Tony Stark', email: 'demo@example.com', role: 'Admin', company: 'Stark Industries' };
+  const [row, settings] = await Promise.all([
+    GET('current-user') as Promise<UserEntity>,
+    GET('company-settings') as Promise<CompanySettingsEntity>,
+  ]);
   return {
     id: row.id,
     name: new User(row).fullName(),
     email: row.email,
     role: row.role,
-    company: 'Stark Industries',
+    company: settings.name,
   };
 }
 

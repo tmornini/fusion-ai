@@ -18,7 +18,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: '8', first_name: 'David', last_name: 'Kim', email: 'david.kim@company.com', role: 'member', department: 'Engineering', status: 'active', availability: 75, performance_score: 83, projects_completed: 4, current_projects: 2, strengths: ['Frontend Development', 'React', 'TypeScript'], team_dimensions: { driver: 60, analytical: 78, expressive: 55, amiable: 65 }, phone: '', bio: '', last_active: '' },
     { id: '9', first_name: 'Lisa', last_name: 'Wang', email: 'lisa@acmecorp.com', role: 'viewer', department: 'Sales', status: 'active', availability: 70, performance_score: 80, projects_completed: 3, current_projects: 1, strengths: ['Sales Strategy', 'Client Relations'], team_dimensions: { driver: 80, analytical: 55, expressive: 85, amiable: 75 }, phone: '', bio: '', last_active: '1 day ago' },
     { id: '10', first_name: 'James', last_name: 'Miller', email: 'james@acmecorp.com', role: 'member', department: 'Engineering', status: 'deactivated', availability: 0, performance_score: 78, projects_completed: 6, current_projects: 0, strengths: ['Backend Development', 'Python'], team_dimensions: { driver: 55, analytical: 82, expressive: 40, amiable: 50 }, phone: '', bio: '', last_active: '1 week ago' },
-    { id: 'current', first_name: 'Demo', last_name: 'User', email: 'demo@example.com', role: 'Admin', department: 'Product', status: 'active', availability: 100, performance_score: 95, projects_completed: 20, current_projects: 5, strengths: ['Strategic Planning', 'Data Analysis', 'Stakeholder Management'], team_dimensions: { driver: 80, analytical: 80, expressive: 80, amiable: 80 }, phone: '+1 (555) 123-4567', bio: 'Passionate about building products that solve real problems.', last_active: '' },
+    { id: 'current', first_name: 'Tony', last_name: 'Stark', email: 'demo@example.com', role: 'Admin', department: 'Product', status: 'active', availability: 100, performance_score: 95, projects_completed: 20, current_projects: 5, strengths: ['Strategic Planning', 'Data Analysis', 'Stakeholder Management'], team_dimensions: { driver: 80, analytical: 80, expressive: 80, amiable: 80 }, phone: '+1 (555) 123-4567', bio: 'Passionate about building products that solve real problems.', last_active: '' },
   ];
 
   // Batch 1: Users (no foreign keys)
@@ -74,7 +74,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
       department: 'Customer Success',
     }),
     adapter.companySettings.put({
-      name: 'Acme Corporation',
+      name: 'Stark Industries',
       domain: 'acmecorp.com',
       industry: 'Technology',
       size: '51-200',

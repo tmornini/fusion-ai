@@ -23,7 +23,6 @@ interface AppState {
   isSidebarOpen: boolean;
   isSearchOpen: boolean;
   searchQuery: string;
-  user: { name: string; email: string; company: string } | null;
 }
 
 type StateListener = () => void;
@@ -35,7 +34,6 @@ const _state: AppState = {
   isSidebarOpen: false,
   isSearchOpen: false,
   searchQuery: '',
-  user: { name: 'Tony Stark', email: 'demo@example.com', company: 'Stark Industries' },
 };
 
 const state: Readonly<AppState> = _state;
