@@ -22,6 +22,7 @@ export const ideaStatusConfig: Record<IdeaStatus, { label: string; className: st
 
 export const projectStatusConfig: Record<string, { label: string; className: string }> = {
   approved:     { label: 'Approved',     className: 'badge-success' },
+  completed:    { label: 'Completed',    className: 'badge-primary' },
   under_review: { label: 'Under Review', className: 'badge-warning' },
   sent_back:    { label: 'Sent Back',    className: 'badge-error' },
 };
