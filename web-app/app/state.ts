@@ -35,7 +35,7 @@ const _state: AppState = {
   isSidebarOpen: false,
   isSearchOpen: false,
   searchQuery: '',
-  user: { name: 'Demo User', email: 'demo@example.com', company: 'Demo Company' },
+  user: { name: 'Tony Stark', email: 'demo@example.com', company: 'Stark Industries' },
 };
 
 const state: Readonly<AppState> = _state;

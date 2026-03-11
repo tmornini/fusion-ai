@@ -26,6 +26,19 @@ function mutateThemeToggleIcon(): void {
   });
 }
 
+async function mutateSidebarUser(): Promise<void> {
+  const { getCurrentUser } = await import('./adapters');
+  const user = await getCurrentUser();
+  for (const id of ['sidebar-user-name', 'mobile-sidebar-user-name']) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = user.name;
+  }
+  for (const id of ['sidebar-user-company', 'mobile-sidebar-user-company']) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = user.company;
+  }
+}
+
 async function mutateNotifications(): Promise<void> {
   const { getNotifications } = await import('./adapters');
   const notifications = await getNotifications();
@@ -220,6 +233,7 @@ function initDashboardLayout(): void {
   initThemeAndDropdowns();
   initMobileDrawer();
   mutateThemeToggleIcon();
+  mutateSidebarUser();
   mutateNotifications();
 }
 

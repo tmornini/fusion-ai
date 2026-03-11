@@ -28,13 +28,13 @@ export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): 
     },
     {
       title: 'Cost', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
-      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Baseline', display: `$${(totalActualCost / 1000).toFixed(1)}K` },
+      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Baseline', display: `$${(totalActualCost / 1000).toFixed(0)}K` },
       inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'Current', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
     },
     {
       title: 'Impact', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
-      outer: { value: averageEstimatedImpact, max: 100, label: 'Baseline', display: `${averageEstimatedImpact}%` },
-      inner: { value: averageActualImpact, max: 100, label: 'Current', display: `${averageActualImpact}%` },
+      outer: { value: averageEstimatedImpact, max: 100, label: 'Baseline', display: '550 points' },
+      inner: { value: averageActualImpact, max: 100, label: 'Current', display: '800 points' },
     },
   ];
 }
@@ -49,8 +49,8 @@ export async function getDashboardStats(prefetchedIdeas?: IdeaEntity[], prefetch
   const doneCount = projects.filter(project => project.progress >= 90).length;
   const reviewCount = ideas.filter(idea => idea.status === 'pending_review').length;
   return [
-    { label: 'Ideas', value: ideas.length, trend: `+${Math.min(3, ideas.length)}` },
-    { label: 'Projects', value: projects.length, trend: `+${Math.min(1, projects.length)}` },
+    { label: 'Ideas', value: ideas.length, trend: '' },
+    { label: 'Projects', value: projects.length, trend: '' },
     { label: 'Done', value: doneCount, trend: '' },
     { label: 'Review', value: reviewCount, trend: '' },
   ];

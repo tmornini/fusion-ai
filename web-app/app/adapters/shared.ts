@@ -20,13 +20,13 @@ export interface Notification {
 
 export async function getCurrentUser(): Promise<CurrentUser> {
   const row = await GET('current-user') as UserEntity | null;
-  if (!row) return { id: 'current', name: 'Demo User', email: 'demo@example.com', role: 'Admin', company: 'Demo Company' };
+  if (!row) return { id: 'current', name: 'Tony Stark', email: 'demo@example.com', role: 'Admin', company: 'Stark Industries' };
   return {
     id: row.id,
     name: new User(row).fullName(),
     email: row.email,
     role: row.role,
-    company: 'Demo Company',
+    company: 'Stark Industries',
   };
 }
 
