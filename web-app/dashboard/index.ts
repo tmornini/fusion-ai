@@ -16,17 +16,37 @@ const gaugeIconConfig: Record<string, (size?: number, cssClass?: string) => Safe
 };
 
 const GAUGE_THEME_FALLBACK = { bg: 'background:hsl(var(--muted)/0.04)', iconBg: 'background:hsl(var(--muted)/0.1)', border: 'border-color:hsl(var(--muted)/0.15)' };
-const GAUGE_ARC_OUTER_RADIUS = 65;
-const GAUGE_ARC_INNER_RADIUS = 45;
+const BASELINE_BAR_PCT = 66;
 
 function buildGauge(card: GaugeCard): SafeHtml {
   const themeStyle = gaugeThemeConfig[card.theme] ?? GAUGE_THEME_FALLBACK;
-  const elementId = card.title.replace(/\s+/g, '-').toLowerCase();
-  const outerPct = Math.min((card.outer.value / card.outer.max) * 100, 100);
-  const innerPct = Math.min((card.inner.value / card.inner.max) * 100, 100);
-  const outerArc = Math.PI * GAUGE_ARC_OUTER_RADIUS;
-  const innerArc = Math.PI * GAUGE_ARC_INNER_RADIUS;
   const iconFn = gaugeIconConfig[card.icon] || iconDollarSign;
+
+  const ratio = card.baseline.value > 0 ? card.current.value / card.baseline.value : 0;
+  const currentBarPct = Math.min(ratio * BASELINE_BAR_PCT, 100);
+
+  // Bar styles
+  let currentBarStyle: string;
+  let flashStyle = '';
+
+  if (card.hasOverrunWarning) {
+    // Green up to baseline marker, gradient to red beyond
+    const greenStopPct = currentBarPct > 0 ? Math.min((BASELINE_BAR_PCT / currentBarPct) * 100, 100) : 100;
+    currentBarStyle = `background:linear-gradient(to right,hsl(var(--success)) 0%,hsl(var(--success)) ${greenStopPct}%,red ${Math.min(greenStopPct + 10, 100)}%,red 100%)`;
+
+    // Flash when bar exceeds 100% width (current > baseline * 100/66)
+    if (currentBarPct >= 100) {
+      // Interpolate flash duration: 1s at ratio=100/66, 0.333s at ratio=200/66*100
+      const overrunRatio = ratio / (100 / BASELINE_BAR_PCT);
+      const flashDuration = Math.max(0.333, 1 - (overrunRatio - 1) * 0.667);
+      flashStyle = `animation:gauge-flash ${flashDuration.toFixed(3)}s infinite`;
+    }
+  } else {
+    // Impact: solid green, no gradient or flash
+    currentBarStyle = 'background:hsl(var(--success))';
+  }
+
+  const barTrackStyle = 'height:0.75rem;border-radius:0.375rem;background:hsl(var(--muted)/0.3);overflow:hidden';
 
   return html`
     <div class="card" style="border:2px solid transparent;${themeStyle.border};${themeStyle.bg};border-radius:0.75rem;padding:1.5rem;transition:all 0.3s">
@@ -36,38 +56,38 @@ function buildGauge(card: GaugeCard): SafeHtml {
         </div>
         <h3 class="text-sm font-semibold">${card.title}</h3>
       </div>
-      <div style="display:flex;justify-content:center;margin-bottom:1.25rem">
-        <svg width="180" height="95" viewBox="0 0 180 95" style="overflow:visible">
-          <defs>
-            <linearGradient id="outer-${elementId}" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="hsl(var(--primary))" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="hsl(var(--primary))" stop-opacity="1"/>
-            </linearGradient>
-            <linearGradient id="inner-${elementId}" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="hsl(var(--success))" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="hsl(var(--success))" stop-opacity="1"/>
-            </linearGradient>
-          </defs>
-          <path d="M 25 85 A 65 65 0 0 1 155 85" fill="none" stroke="hsl(var(--muted))" stroke-width="14" stroke-linecap="round" opacity="0.3"/>
-          <path d="M 25 85 A 65 65 0 0 1 155 85" fill="none" stroke="url(#outer-${elementId})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${outerArc}" stroke-dashoffset="${outerArc - (outerPct / 100) * outerArc}"/>
-          <path d="M 45 85 A 45 45 0 0 1 135 85" fill="none" stroke="hsl(var(--muted))" stroke-width="14" stroke-linecap="round" opacity="0.3"/>
-          <path d="M 45 85 A 45 45 0 0 1 135 85" fill="none" stroke="url(#inner-${elementId})" stroke-width="14" stroke-linecap="round" stroke-dasharray="${innerArc}" stroke-dashoffset="${innerArc - (innerPct / 100) * innerArc}"/>
-        </svg>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-muted" style="font-weight:500">Baseline</span>
+          </div>
+          <div style="${barTrackStyle}">
+            <div style="width:${BASELINE_BAR_PCT}%;height:100%;border-radius:0.375rem;background:hsl(var(--primary))"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-muted" style="font-weight:500">Current</span>
+          </div>
+          <div style="${barTrackStyle}">
+            <div style="width:${currentBarPct}%;height:100%;border-radius:0.375rem;${currentBarStyle};${flashStyle}"></div>
+          </div>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div style="text-align:center;padding:0.75rem;border-radius:0.5rem;background:hsl(var(--card)/0.8);border:1px solid hsl(var(--border)/0.5)">
           <div class="flex items-center justify-center gap-2" style="margin-bottom:0.25rem">
             <div style="width:0.625rem;height:0.625rem;border-radius:9999px;background:hsl(var(--primary))"></div>
-            <span class="text-xs text-muted" style="font-weight:500">${card.outer.label}</span>
+            <span class="text-xs text-muted" style="font-weight:500">Baseline</span>
           </div>
-          <p class="text-2xl font-bold">${card.outer.display}</p>
+          <p class="text-2xl font-bold">${card.baseline.display}</p>
         </div>
         <div style="text-align:center;padding:0.75rem;border-radius:0.5rem;background:hsl(var(--card)/0.8);border:1px solid hsl(var(--border)/0.5)">
           <div class="flex items-center justify-center gap-2" style="margin-bottom:0.25rem">
             <div style="width:0.625rem;height:0.625rem;border-radius:9999px;background:hsl(var(--success))"></div>
-            <span class="text-xs text-muted" style="font-weight:500">${card.inner.label}</span>
+            <span class="text-xs text-muted" style="font-weight:500">Current</span>
           </div>
-          <p class="text-2xl font-bold">${card.inner.display}</p>
+          <p class="text-2xl font-bold">${card.current.display}</p>
         </div>
       </div>
     </div>`;

@@ -193,6 +193,11 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes gauge-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
 .animate-fade-in { animation: fade-in var(--duration-normal) var(--ease-out) forwards; }
 .animate-fade-in-up { animation: fade-in-up var(--duration-slow) var(--ease-out) forwards; }
 .animate-fade-in-down { animation: fade-in-down var(--duration-slow) var(--ease-out) forwards; }

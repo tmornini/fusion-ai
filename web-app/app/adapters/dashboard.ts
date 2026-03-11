@@ -1,40 +1,49 @@
 import { GET } from '../../../api/api';
 import type { IdeaEntity, ProjectEntity } from '../../../api/types';
+import { durationInDays, formatCompactCurrency } from '../format';
 
 export interface GaugeCard {
   title: string;
   icon: string;
   iconCssClass: string;
   theme: 'blue' | 'green' | 'amber';
-  outer: { value: number; max: number; label: string; display: string };
-  inner: { value: number; max: number; label: string; display: string };
+  baseline: { value: number; display: string };
+  current: { value: number; display: string };
+  hasOverrunWarning: boolean;
 }
 
 export async function getDashboardGauges(prefetchedProjects?: ProjectEntity[]): Promise<GaugeCard[]> {
-  const projects = prefetchedProjects ?? await GET('projects') as ProjectEntity[];
-  const totalEstimatedTime = projects.reduce((sum, project) => sum + project.estimated_time, 0);
-  const totalActualTime = projects.reduce((sum, project) => sum + project.actual_time, 0);
-  const totalEstimatedCost = projects.reduce((sum, project) => sum + project.estimated_cost, 0);
-  const totalActualCost = projects.reduce((sum, project) => sum + project.actual_cost, 0);
-  const averageEstimatedImpact = projects.length ? Math.round(projects.reduce((sum, project) => sum + project.estimated_impact, 0) / projects.length) : 0;
-  const projectsWithActualImpact = projects.filter(project => project.actual_impact > 0);
-  const averageActualImpact = projectsWithActualImpact.length ? Math.round(projectsWithActualImpact.reduce((sum, project) => sum + project.actual_impact, 0) / projectsWithActualImpact.length) : 0;
+  const allProjects = prefetchedProjects ?? await GET('projects') as ProjectEntity[];
+  const projects = allProjects.filter(p => p.status === 'approved');
+
+  const sumEstimatedDuration = projects.reduce((sum, p) => sum + p.estimated_duration, 0);
+  const sumActualDuration = projects.reduce((sum, p) => sum + p.actual_duration, 0);
+  const sumEstimatedCost = projects.reduce((sum, p) => sum + p.estimated_cost, 0);
+  const sumActualCost = projects.reduce((sum, p) => sum + p.actual_cost, 0);
+  const sumEstimatedImpact = projects.reduce((sum, p) => sum + p.estimated_impact, 0);
+  const sumActualImpact = projects.reduce((sum, p) => sum + p.actual_impact, 0);
+
+  const baselineDurationDays = durationInDays(sumEstimatedDuration);
+  const currentDurationDays = durationInDays(sumActualDuration);
 
   return [
     {
       title: 'Time', icon: 'clock', iconCssClass: 'text-success', theme: 'green',
-      outer: { value: Math.round(totalActualTime / 24), max: Math.round(totalEstimatedTime / 24), label: 'Baseline', display: `${Math.round(totalEstimatedTime / 24)}d` },
-      inner: { value: Math.round(totalActualTime / 48), max: Math.round(totalEstimatedTime / 24), label: 'Current', display: `${Math.round(totalActualTime / 48)}d` },
+      baseline: { value: baselineDurationDays, display: `${baselineDurationDays}d` },
+      current: { value: currentDurationDays, display: `${currentDurationDays}d` },
+      hasOverrunWarning: true,
     },
     {
       title: 'Cost', icon: 'dollarSign', iconCssClass: 'text-primary', theme: 'blue',
-      outer: { value: totalActualCost, max: totalEstimatedCost, label: 'Baseline', display: `$${(totalActualCost / 1000).toFixed(0)}K` },
-      inner: { value: Math.round(totalActualCost * 0.6), max: totalEstimatedCost, label: 'Current', display: `$${(totalActualCost * 0.6 / 1000).toFixed(0)}K` },
+      baseline: { value: Math.ceil(sumEstimatedCost), display: formatCompactCurrency(Math.ceil(sumEstimatedCost)) },
+      current: { value: Math.ceil(sumActualCost), display: formatCompactCurrency(Math.ceil(sumActualCost)) },
+      hasOverrunWarning: true,
     },
     {
       title: 'Impact', icon: 'zap', iconCssClass: 'text-warning', theme: 'amber',
-      outer: { value: averageEstimatedImpact, max: 100, label: 'Baseline', display: '550 points' },
-      inner: { value: averageActualImpact, max: 100, label: 'Current', display: '800 points' },
+      baseline: { value: sumEstimatedImpact, display: `${sumEstimatedImpact}` },
+      current: { value: sumActualImpact, display: `${sumActualImpact}` },
+      hasOverrunWarning: false,
     },
   ];
 }
