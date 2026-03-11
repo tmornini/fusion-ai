@@ -1,7 +1,7 @@
 // ============================================
 // FUSION AI — Build-time HTML Composition
 // Combines app/layout.html with per-page index.html
-// to produce standalone dashboard index.html files.
+// to produce standalone sidebar-layout index.html files.
 // Also copies standalone pages to output directory.
 // ============================================
 
@@ -12,9 +12,9 @@ import { PAGE_REGISTRY } from './page-registry';
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
 const OUT = process.argv[2] || ROOT;
 
-// Derive dashboard and standalone page lists from the single registry
-const dashboardPages = Object.entries(PAGE_REGISTRY)
-  .filter(([, entry]) => entry.layout === 'dashboard')
+// Derive sidebar and standalone page lists from the single registry
+const sidebarPages = Object.entries(PAGE_REGISTRY)
+  .filter(([, entry]) => entry.layout === 'sidebar')
   .map(([name, entry]) => ({ name, title: entry.title }));
 
 const standalonePages = Object.entries(PAGE_REGISTRY)
@@ -28,7 +28,7 @@ function compose(): void {
   const missing: string[] = [];
   let composed = 0;
 
-  for (const { name, title } of dashboardPages) {
+  for (const { name, title } of sidebarPages) {
     const pageHtmlPath = join(ROOT, name, 'index.html');
 
     if (!existsSync(pageHtmlPath)) {
@@ -51,7 +51,7 @@ function compose(): void {
     composed++;
   }
 
-  console.log(`Composed ${composed} dashboard pages.`);
+  console.log(`Composed ${composed} sidebar pages.`);
 
   // Copy standalone pages
   let copied = 0;

@@ -1,8 +1,8 @@
 /* ==========================================
-   22. LAYOUT: DASHBOARD
+   22. LAYOUT: SIDEBAR
    ========================================== */
 
-.dashboard-layout {
+.sidebar-layout {
   display: flex;
   min-height: 100vh;
   background-color: hsl(var(--background));
@@ -190,7 +190,7 @@
 .search-wrapper {
   position: relative;
   width: 100%;
-  max-width: 28rem;
+  max-width: 20rem;
 }
 
 .search-icon {
@@ -210,6 +210,45 @@
 .search-input:focus {
   border-color: hsl(var(--border));
   background-color: hsl(var(--background));
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius);
+  background-color: hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.5);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header-info:empty { display: none; }
+
+.header-stat-divider {
+  width: 1px;
+  height: 1rem;
+  background: hsl(var(--border));
+  flex-shrink: 0;
+}
+
+.header-stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.header-stat-value {
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.header-stat-label {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
 }
 
 .header-actions {
@@ -262,6 +301,10 @@
   #mobile-sheet { display: none !important; }
   #mobile-sheet-backdrop { display: none !important; }
   #mobile-search-bar { display: none !important; }
+}
+
+@media (max-width: 1023px) {
+  #header-stats { display: none; }
 }
 
 @media (max-width: 767px) {

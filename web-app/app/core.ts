@@ -7,7 +7,7 @@ import { applyTheme } from './state';
 import { html, setHtml } from './safe-html';
 import { buildErrorState, errorMessage } from './loading-states';
 import { navigateTo, getPageName, getParams, initPrefetch } from './navigation';
-import { initDashboardLayout } from './layout';
+import { initSidebarLayout } from './layout';
 
 // Re-export for backward compatibility — page modules import from '../app/core'
 export { navigateTo } from './navigation';
@@ -86,9 +86,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const pageName = getPageName();
 
-  // For pages with dashboard layout, init layout behavior
-  if (document.querySelector('.dashboard-layout')) {
-    initDashboardLayout();
+  // For pages with sidebar layout, init layout behavior
+  if (document.querySelector('.sidebar-layout')) {
+    initSidebarLayout();
   }
 
   // Init command palette (works on all pages)

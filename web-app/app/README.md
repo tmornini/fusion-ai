@@ -21,7 +21,7 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
 | `compose.ts` | Build-time script that merges `layout.html` with each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
-| `layout.html` | Shared dashboard layout template (sidebar, header, search, notifications, theme toggle) |
+| `layout.html` | Shared sidebar layout template (sidebar, header, search, notifications, theme toggle) |
 | `tsconfig.json` | TypeScript compiler configuration |
 
 ## Adapter Modules (`adapters/`)
@@ -45,7 +45,7 @@ All page modules import from `'../../app/adapters'` — with `moduleResolution: 
 
 ## Build-Time Composition
 
-`compose.ts` reads `layout.html` and each dashboard page's `index.html`, then:
+`compose.ts` reads `layout.html` and each sidebar-layout page's `index.html`, then:
 
 1. Finds the `<!-- PAGE_CONTENT -->` placeholder in the layout
 2. Inserts the page's HTML content

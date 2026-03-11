@@ -227,7 +227,35 @@ function initMobileDrawer(): void {
   });
 }
 
-function initDashboardLayout(): void {
+async function mutateHeaderInfo(): Promise<void> {
+  try {
+    const { getCurrentUser, getDashboardStats, getTimeOfDay } = await import('./adapters');
+    const { GET } = await import('../../api/api');
+    const { html, setHtml } = await import('./safe-html');
+    type IdeaEntity = import('../../api/types').IdeaEntity;
+    type ProjectEntity = import('../../api/types').ProjectEntity;
+
+    const [user, rawIdeas, rawProjects] = await Promise.all([
+      getCurrentUser(),
+      GET('ideas') as Promise<IdeaEntity[]>,
+      GET('projects') as Promise<ProjectEntity[]>,
+    ]);
+
+    const stats = await getDashboardStats(rawIdeas, rawProjects);
+
+    const greetingEl = document.getElementById('header-greeting');
+    if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}, ${user.name}`;
+
+    const statsEl = document.getElementById('header-stats');
+    if (statsEl) {
+      setHtml(statsEl, html`<span class="header-stat-label">${user.company}</span>${stats.map((stat, i) => html`<div class="header-stat-divider"></div><div class="header-stat-item"><span class="header-stat-value">${stat.value}</span><span class="header-stat-label">${stat.label}</span></div>`)}`);
+    }
+  } catch {
+    // Header info boxes stay empty/hidden via :empty
+  }
+}
+
+function initSidebarLayout(): void {
   initActiveNavItem();
   initSidebar();
   initThemeAndDropdowns();
@@ -235,6 +263,7 @@ function initDashboardLayout(): void {
   mutateThemeToggleIcon();
   mutateSidebarUser();
   mutateNotifications();
+  mutateHeaderInfo();
 }
 
-export { initDashboardLayout };
+export { initSidebarLayout };

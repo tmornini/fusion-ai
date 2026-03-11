@@ -1,14 +1,9 @@
-import { $, populateIcons } from '../app/dom';
+import { $ } from '../app/dom';
 import { html, setHtml, SafeHtml } from '../app/safe-html';
 import { buildSkeleton, buildErrorState } from '../app/loading-states';
-import {
-  iconSparkles, iconDollarSign, iconClock, iconZap,
-} from '../app/icons';
+import { iconDollarSign, iconClock, iconZap } from '../app/icons';
 import { GET } from '../../api/api';
-import {
-  getCurrentUser, getDashboardGauges, getDashboardStats,
-  type GaugeCard,
-} from '../app/adapters';
+import { getDashboardGauges, type GaugeCard } from '../app/adapters';
 
 const gaugeThemeConfig: Record<string, { bg: string; iconBg: string; border: string }> = {
   blue:  { bg: 'background:hsl(var(--primary)/0.04)', iconBg: 'background:linear-gradient(135deg,hsl(var(--primary)/0.2),hsl(var(--primary)/0.1))', border: 'border-color:hsl(var(--primary)/0.15)' },
@@ -78,56 +73,14 @@ function buildGauge(card: GaugeCard): SafeHtml {
     </div>`;
 }
 
-function getTimeOfDay(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 18) return 'afternoon';
-  return 'evening';
-}
-
-function setupHero(user: { name: string; company: string }, stats: Array<{ value: number; label: string; trend: string }>): void {
-  populateIcons([['#hero-icon', iconSparkles(28, 'text-primary-fg')]]);
-
-  const greetingEl = $('#hero-greeting');
-  if (greetingEl) greetingEl.textContent = `Good ${getTimeOfDay()}`;
-  const userName = $('#hero-user-name');
-  if (userName) userName.textContent = user.name;
-  const company = $('#hero-company');
-  if (company) company.textContent = user.company;
-
-  const statsEl = $('#hero-stats');
-  if (statsEl) {
-    setHtml(statsEl, html`${stats.map((stat, statIndex) => html`
-      <div style="text-align:center">
-        <div class="flex items-baseline justify-center gap-1">
-          <span class="text-2xl font-bold">${stat.value}</span>
-          ${stat.trend ? html`<span class="text-xs font-semibold text-success">${stat.trend}</span>` : html``}
-        </div>
-        <p class="text-xs text-muted" style="font-weight:500;margin-top:0.125rem">${stat.label}</p>
-      </div>
-      ${statIndex < stats.length - 1 ? html`<div style="height:2rem;width:1px;background:hsl(var(--border))"></div>` : html``}
-    `)}`);
-  }
-}
-
 export async function init(): Promise<void> {
-  // Show skeletons
   const gaugeContainer = $('#gauge-container');
   if (gaugeContainer) setHtml(gaugeContainer, buildSkeleton('card-grid', { count: 3 }));
-  let rawIdeas: import('../../api/types').IdeaEntity[] = [];
-  let rawProjects: import('../../api/types').ProjectEntity[] = [];
-  let user, gauges, stats;
+
+  let gauges: GaugeCard[];
   try {
-    // Fetch raw entities once to share across gauge/stats builders
-    [rawIdeas, rawProjects] = await Promise.all([
-      GET('ideas') as Promise<import('../../api/types').IdeaEntity[]>,
-      GET('projects') as Promise<import('../../api/types').ProjectEntity[]>,
-    ]);
-    [user, gauges, stats] = await Promise.all([
-      getCurrentUser(),
-      getDashboardGauges(rawProjects),
-      getDashboardStats(rawIdeas, rawProjects),
-    ]);
+    const rawProjects = await GET('projects') as import('../../api/types').ProjectEntity[];
+    gauges = await getDashboardGauges(rawProjects);
   } catch {
     if (gaugeContainer) {
       setHtml(gaugeContainer, buildErrorState('Failed to load dashboard data.'));
@@ -137,6 +90,5 @@ export async function init(): Promise<void> {
     return;
   }
 
-  setupHero(user, stats);
   if (gaugeContainer) setHtml(gaugeContainer, html`${gauges.map(buildGauge)}`);
 }
