@@ -66,6 +66,21 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
       description: 'End-to-end process for onboarding new enterprise customers',
       department: 'Customer Success',
     }),
+    adapter.processes.put('2', {
+      name: 'Sales Pipeline Qualification',
+      description: 'Qualify and advance leads through the sales pipeline from initial contact to closed deal',
+      department: 'Sales',
+    }),
+    adapter.processes.put('3', {
+      name: 'Bug Triage & Resolution',
+      description: 'Classify, prioritize, and resolve reported bugs through structured engineering workflow',
+      department: 'Engineering',
+    }),
+    adapter.processes.put('4', {
+      name: 'Quarterly Planning',
+      description: 'Cross-functional planning cycle to set OKRs, allocate resources, and align team priorities',
+      department: 'Operations',
+    }),
     adapter.companySettings.put({
       name: 'Stark Industries',
       domain: 'acmecorp.com',
@@ -146,6 +161,24 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     { id: 'ps3', process_id: '1', title: 'Schedule kickoff call', description: 'Reach out to customer to schedule implementation kickoff', owner: 'Customer Success', role: 'Implementation Specialist', tools: JSON.stringify(['Email', 'Phone']), duration: '1 day', sort_order: 3, type: 'action' },
     { id: 'ps4', process_id: '1', title: 'Conduct kickoff meeting', description: 'Review goals, timeline, and assign customer contacts', owner: 'Customer Success', role: 'Implementation Specialist', tools: JSON.stringify(['Chat', 'Document']), duration: '1 hour', sort_order: 4, type: 'action' },
     { id: 'ps5', process_id: '1', title: 'Technical setup complete', description: 'Engineering confirms environment is ready for customer use', owner: 'Engineering', role: 'Solutions Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '2 days', sort_order: 5, type: 'action' },
+    // Sales Pipeline Qualification
+    { id: 'ps6', process_id: '2', title: 'Receive inbound lead', description: 'New lead enters the system via form submission, referral, or marketing campaign', owner: 'Marketing', role: 'Marketing Ops', tools: JSON.stringify(['Email', 'Database']), duration: 'Immediate', sort_order: 1, type: 'start' },
+    { id: 'ps7', process_id: '2', title: 'Initial lead scoring', description: 'Automatically score lead based on firmographics, engagement, and fit criteria', owner: 'Marketing', role: 'Marketing Ops', tools: JSON.stringify(['Database']), duration: '5 minutes', sort_order: 2, type: 'action' },
+    { id: 'ps8', process_id: '2', title: 'Sales development outreach', description: 'SDR contacts lead via email and phone to qualify interest and budget', owner: 'Sales', role: 'Sales Development Rep', tools: JSON.stringify(['Email', 'Phone']), duration: '1-2 days', sort_order: 3, type: 'action' },
+    { id: 'ps9', process_id: '2', title: 'Discovery call', description: 'Conduct structured discovery call to understand pain points and decision process', owner: 'Sales', role: 'Account Executive', tools: JSON.stringify(['Phone', 'Chat', 'Document']), duration: '45 minutes', sort_order: 4, type: 'action' },
+    { id: 'ps10', process_id: '2', title: 'Proposal and negotiation', description: 'Prepare and present tailored proposal, negotiate terms and pricing', owner: 'Sales', role: 'Account Executive', tools: JSON.stringify(['Document', 'Email']), duration: '3-5 days', sort_order: 5, type: 'action' },
+    // Bug Triage & Resolution
+    { id: 'ps11', process_id: '3', title: 'Bug reported', description: 'Bug is submitted via issue tracker with reproduction steps and severity', owner: 'QA', role: 'QA Engineer', tools: JSON.stringify(['Database', 'Document']), duration: '15 minutes', sort_order: 1, type: 'start' },
+    { id: 'ps12', process_id: '3', title: 'Triage and classify', description: 'Engineering lead reviews bug, assigns severity, priority, and owning team', owner: 'Engineering', role: 'Engineering Lead', tools: JSON.stringify(['Database']), duration: '30 minutes', sort_order: 2, type: 'decision' },
+    { id: 'ps13', process_id: '3', title: 'Reproduce and diagnose', description: 'Developer reproduces the issue locally and identifies root cause', owner: 'Engineering', role: 'Software Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '1-4 hours', sort_order: 3, type: 'action' },
+    { id: 'ps14', process_id: '3', title: 'Implement fix', description: 'Write code fix with unit tests, open pull request for review', owner: 'Engineering', role: 'Software Engineer', tools: JSON.stringify(['Database', 'Document']), duration: '2-8 hours', sort_order: 4, type: 'action' },
+    { id: 'ps15', process_id: '3', title: 'Code review and QA', description: 'Peer review of fix, QA verifies resolution in staging environment', owner: 'Engineering', role: 'Senior Engineer', tools: JSON.stringify(['Database', 'Website']), duration: '1 day', sort_order: 5, type: 'action' },
+    { id: 'ps16', process_id: '3', title: 'Deploy and close', description: 'Merge to main, deploy to production, close issue and notify reporter', owner: 'Engineering', role: 'DevOps Engineer', tools: JSON.stringify(['Database', 'Email']), duration: '1 hour', sort_order: 6, type: 'end' },
+    // Quarterly Planning
+    { id: 'ps17', process_id: '4', title: 'Gather retrospective data', description: 'Collect performance metrics, OKR results, and team feedback from previous quarter', owner: 'Operations', role: 'Chief of Staff', tools: JSON.stringify(['Database', 'Document']), duration: '3 days', sort_order: 1, type: 'start' },
+    { id: 'ps18', process_id: '4', title: 'Leadership strategy session', description: 'Executive team aligns on company priorities, resource allocation, and key initiatives', owner: 'Leadership', role: 'VP of Operations', tools: JSON.stringify(['Chat', 'Document']), duration: '4 hours', sort_order: 2, type: 'action' },
+    { id: 'ps19', process_id: '4', title: 'Team OKR drafting', description: 'Each department drafts quarterly OKRs aligned with company strategy', owner: 'All Departments', role: 'Department Leads', tools: JSON.stringify(['Document']), duration: '1 week', sort_order: 3, type: 'action' },
+    { id: 'ps20', process_id: '4', title: 'Cross-functional review and finalize', description: 'Review OKRs across teams for alignment and dependencies, finalize commitments', owner: 'Operations', role: 'Chief of Staff', tools: JSON.stringify(['Chat', 'Document']), duration: '2 days', sort_order: 4, type: 'end' },
   ];
 
   // Batch 3: Idea scores, projects, edges, activities, crunch columns, process steps

@@ -32,6 +32,28 @@ export async function getCrunchColumns(): Promise<CrunchColumn[]> {
 
 // ── Flow ─────────────────────────────────────
 
+export interface FlowListItem {
+  id: string;
+  name: string;
+  description: string;
+  department: string;
+  stepsCount: number;
+}
+
+export async function getFlows(): Promise<FlowListItem[]> {
+  const processes = await GET('processes') as ProcessEntity[];
+  return Promise.all(processes.map(async (process) => {
+    const steps = await GET(`processes/${process.id}/steps`) as ProcessStepEntity[];
+    return {
+      id: process.id,
+      name: process.name,
+      description: process.description,
+      department: process.department,
+      stepsCount: steps.length,
+    };
+  }));
+}
+
 export interface ProcessStep {
   id: string;
   title: string;
@@ -51,14 +73,13 @@ export interface Flow {
   steps: ProcessStep[];
 }
 
-export async function getFlow(): Promise<Flow> {
-  const processes = await GET('processes') as ProcessEntity[];
-  const process = processes[0];
+export async function getFlow(processId: string): Promise<Flow> {
+  const process = await GET(`processes/${processId}`) as ProcessEntity | undefined;
   if (!process) {
     return { name: '', description: '', department: '', steps: [] };
   }
 
-  const steps = await GET(`processes/${process.id}/steps`) as ProcessStepEntity[];
+  const steps = await GET(`processes/${processId}/steps`) as ProcessStepEntity[];
 
   return {
     name: process.name,

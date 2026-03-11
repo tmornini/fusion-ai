@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, ProjectEntity, ProcessEntity, ProcessStepEntity } from '../../../api/types';
+import type { IdeaEntity, ProjectEntity, ProcessEntity } from '../../../api/types';
 import { durationInDays, formatCompactCurrency } from '../format';
 
 export interface GaugeCard {
@@ -58,16 +58,9 @@ export async function getDashboardStats(): Promise<{ label: string; value: numbe
     GET('processes') as Promise<ProcessEntity[]>,
   ]);
 
-  const firstProcess = processes[0];
-  let flowStepCount = 0;
-  if (firstProcess) {
-    const steps = await GET(`processes/${firstProcess.id}/steps`) as ProcessStepEntity[];
-    flowStepCount = steps.length;
-  }
-
   return [
     { label: 'Ideas', value: ideas.filter(i => i.status !== 'deleted').length, trend: '' },
     { label: 'Projects', value: projects.filter(p => p.status !== 'deleted').length, trend: '' },
-    { label: 'Flow', value: flowStepCount, trend: '' },
+    { label: 'Flow', value: processes.length, trend: '' },
   ];
 }
