@@ -203,7 +203,7 @@ function bindWizardEvents() {
         description: formData.targetUsers,
         status: 'scored',
         submitted_by_id: '1',
-        score: 0, estimated_impact: 0, estimated_time: 0, estimated_cost: 0,
+        score: 0, estimated_impact: 0, estimated_duration: 0, estimated_cost: 0,
         priority: 0, edge_status: 'missing', category: '', readiness: '',
         waiting_days: 0, impact_label: '', effort_label: '', submitted_at: new Date().toISOString(),
       });

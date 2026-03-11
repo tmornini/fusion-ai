@@ -68,7 +68,7 @@ function buildConversionPage(idea: ConversionIdea, ideaId: string): SafeHtml {
               <div style="border-top:1px solid hsl(var(--border));padding-top:1rem;display:flex;flex-direction:column;gap:0.75rem">
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconClock(16)} <span class="text-sm">Est. Time</span></span>
-                  <span class="font-medium">${idea.estimatedTime}</span>
+                  <span class="font-medium">${idea.estimatedDuration}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="flex items-center gap-2 text-muted">${iconDollarSign(16)} <span class="text-sm">Est. Cost</span></span>
@@ -243,8 +243,8 @@ export async function init(params?: Record<string, string>): Promise<void> {
         start_date: projectDetails['start-date'],
         target_end_date: projectDetails['target-end-date'],
         lead_id: leadMap[projectDetails['project-lead'] ?? ''] ?? '1',
-        estimated_time: 0,
-        actual_time: 0,
+        estimated_duration: 0,
+        actual_duration: 0,
         estimated_cost: 0,
         actual_cost: 0,
         estimated_impact: 0,

@@ -139,7 +139,7 @@
 
 - [ ] **E3** Page loads with project summary card (description, dates, progress bar), baseline vs. current metrics, and Edge KPI card. PASS: all cards render with data. Baseline/current metrics show "—" (em-dash) when values are zero or missing.
 - [ ] **E4** Four quick-action cards visible (Engineering, Team, Flow, Crunch). PASS: clicking "Engineering" navigates to `engineering-requirements/?projectId=1`.
-- [ ] **E5** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and hours. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
+- [ ] **E5** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and days. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
 - [ ] **E6** **Discussion tab**: shows 3 seeded comments with author avatars/names. Comment composer textarea + "Post Comment" button (disabled when empty, enabled when text entered). PASS: all elements render.
 - [ ] **E7** **History tab**: shows 3 version entries (v1.0, v1.1, v1.2) with latest highlighted. PASS: version list renders in order.
 - [ ] **E8** **Linked Data tab**: shows empty state "No linked data yet" with "Link Data Source" button. PASS: empty state renders cleanly.

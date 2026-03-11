@@ -119,7 +119,7 @@ export interface IdeaEntity {
   title: string;
   score: number;
   estimated_impact: number;
-  estimated_time: number;
+  estimated_duration: number;
   estimated_cost: number;
   priority: number;
   status: IdeaStatus;
@@ -138,7 +138,7 @@ export interface IdeaEntity {
   risks: string; // JSON array
   assumptions: string; // JSON array
   alignments: string; // JSON array
-  effort_time_estimate: string;
+  effort_duration_estimate: string;
   effort_team_size: string;
   cost_estimate: string;
   cost_breakdown: string;
@@ -154,7 +154,7 @@ export interface IdeaScoreEntity {
   feasibility_breakdown: string; // JSON array
   efficiency_score: number;
   efficiency_breakdown: string; // JSON array
-  estimated_time: string;
+  estimated_duration: string;
   estimated_cost: string;
   recommendation: string;
 }
@@ -168,8 +168,8 @@ export interface ProjectEntity {
   start_date: string;
   target_end_date: string;
   lead_id: Id;
-  estimated_time: number;
-  actual_time: number;
+  estimated_duration: number; // seconds
+  actual_duration: number; // seconds
   estimated_cost: number;
   actual_cost: number;
   estimated_impact: number;
@@ -206,7 +206,7 @@ export interface ProjectTaskEntity {
   priority: string;
   description: string;
   skills: string; // JSON array
-  hours: number;
+  duration: number; // seconds
   assigned_to_id: Id;
 }
 

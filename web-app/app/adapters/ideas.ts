@@ -2,13 +2,14 @@ import { GET } from '../../../api/api';
 import type { IdeaEntity, IdeaScoreEntity, IdeaStatus, EdgeStatus, ConfidenceLevel, PriorityLevel, Id } from '../../../api/types';
 import { User, computePriority } from '../../../api/types';
 import { buildUserMap, userName, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
+import { durationInDays } from '../format';
 
 export interface Idea {
   id: string;
   title: string;
   score: number;
   estimatedImpact: number;
-  estimatedTime: number;
+  estimatedDuration: number;
   estimatedCost: number;
   priority: number;
   status: IdeaStatus;
@@ -27,7 +28,7 @@ export async function getIdeas(prefetchedIdeas?: IdeaEntity[], cachedUserMap?: M
       title: idea.title,
       score: idea.score,
       estimatedImpact: idea.estimated_impact,
-      estimatedTime: idea.estimated_time,
+      estimatedDuration: durationInDays(idea.estimated_duration),
       estimatedCost: idea.estimated_cost,
       priority: idea.priority,
       status: idea.status,
@@ -86,7 +87,7 @@ export interface ConversionIdea {
   proposedSolution: string;
   expectedOutcome: string;
   score: number;
-  estimatedTime: string;
+  estimatedDuration: string;
   estimatedCost: string;
 }
 
@@ -102,7 +103,7 @@ export async function getIdeaForConversion(ideaId: string): Promise<ConversionId
     proposedSolution: idea.proposed_solution || '',
     expectedOutcome: idea.expected_outcome || '',
     score: scoreRow?.overall || idea.score,
-    estimatedTime: scoreRow?.estimated_time || '',
+    estimatedDuration: scoreRow?.estimated_duration || '',
     estimatedCost: scoreRow?.estimated_cost || '',
   };
 }
@@ -119,7 +120,7 @@ export interface ApprovalIdea {
   score: number;
   category: string;
   impact: { level: string; description: string };
-  effort: { level: string; timeEstimate: string; teamSize: string };
+  effort: { level: string; durationEstimate: string; teamSize: string };
   cost: { estimate: string; breakdown: string };
   risks: { title: string; severity: 'high' | 'medium' | 'low'; mitigation: string }[];
   assumptions: string[];
@@ -154,7 +155,7 @@ export async function getIdeaForApproval(ideaId: string, cachedUserMap?: Map<Id,
     },
     effort: {
       level: idea.effort_label || '',
-      timeEstimate: idea.effort_time_estimate || '',
+      durationEstimate: idea.effort_duration_estimate || '',
       teamSize: idea.effort_team_size || '',
     },
     cost: {

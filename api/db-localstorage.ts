@@ -159,6 +159,46 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     localStorage.removeItem(oldPrefsKey);
   }
 
+  // Migrate ideas: estimated_time → estimated_duration (hours→seconds), effort_time_estimate → effort_duration_estimate
+  const ideasKey = KEY_PREFIX + 'ideas';
+  const ideasRaw = localStorage.getItem(ideasKey);
+  if (ideasRaw !== null) {
+    try {
+      const ideas = JSON.parse(ideasRaw);
+      if (Array.isArray(ideas) && ideas.some((r: Record<string, unknown>) => 'estimated_time' in r)) {
+        for (const idea of ideas) {
+          if ('estimated_time' in idea) {
+            idea.estimated_duration = (idea.estimated_time as number) * 3600;
+            delete idea.estimated_time;
+          }
+          if ('effort_time_estimate' in idea) {
+            idea.effort_duration_estimate = idea.effort_time_estimate;
+            delete idea.effort_time_estimate;
+          }
+        }
+        localStorage.setItem(ideasKey, JSON.stringify(ideas));
+      }
+    } catch { /* corrupt data handled by readTable */ }
+  }
+
+  // Migrate idea_scores: estimated_time → estimated_duration
+  const scoresKey = KEY_PREFIX + 'idea_scores';
+  const scoresRaw = localStorage.getItem(scoresKey);
+  if (scoresRaw !== null) {
+    try {
+      const scores = JSON.parse(scoresRaw);
+      if (Array.isArray(scores) && scores.some((r: Record<string, unknown>) => 'estimated_time' in r)) {
+        for (const score of scores) {
+          if ('estimated_time' in score) {
+            score.estimated_duration = score.estimated_time;
+            delete score.estimated_time;
+          }
+        }
+        localStorage.setItem(scoresKey, JSON.stringify(scores));
+      }
+    } catch { /* corrupt data handled by readTable */ }
+  }
+
   const edgeStore = createEntityStore<EdgeEntity>('edges');
   const milestoneStore = createEntityStore<MilestoneEntity>('milestones');
   const projectTaskStore = createEntityStore<ProjectTaskEntity>('project_tasks');

@@ -56,7 +56,7 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;text-align:center">
               <div><p class="text-sm text-muted mb-1">Impact</p><p class="text-xl font-semibold">${idea.impact.level}</p></div>
               <div><p class="text-sm text-muted mb-1">Effort</p><p class="text-xl font-semibold">${idea.effort.level}</p></div>
-              <div><p class="text-sm text-muted mb-1">Timeline</p><p class="text-xl font-semibold">${idea.effort.timeEstimate}</p></div>
+              <div><p class="text-sm text-muted mb-1">Timeline</p><p class="text-xl font-semibold">${idea.effort.durationEstimate}</p></div>
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@ function buildApprovalPage(idea: ApprovalIdea, edge: ApprovalEdge): SafeHtml {
           <div class="card p-6">
             <h3 class="font-semibold mb-3 flex items-center gap-2">${iconClock(20)} Effort Required</h3>
             <div style="display:flex;flex-direction:column;gap:0.75rem">
-              <div class="flex justify-between"><span class="text-sm text-muted">Timeline</span><span class="text-sm font-medium">${idea.effort.timeEstimate}</span></div>
+              <div class="flex justify-between"><span class="text-sm text-muted">Timeline</span><span class="text-sm font-medium">${idea.effort.durationEstimate}</span></div>
               <div class="flex justify-between"><span class="text-sm text-muted">Team Size</span><span class="text-sm font-medium">${idea.effort.teamSize}</span></div>
             </div>
           </div>

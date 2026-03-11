@@ -54,7 +54,7 @@ function buildIdeaCard(idea: Idea, view: string): SafeHtml {
                 </div>
                 <div>
                   <p class="text-xs text-muted">Time</p>
-                  <p class="text-sm font-medium">${idea.estimatedTime ? `${idea.estimatedTime}h` : '—'}</p>
+                  <p class="text-sm font-medium">${idea.estimatedDuration ? `${idea.estimatedDuration}d` : '—'}</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">

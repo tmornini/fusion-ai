@@ -71,7 +71,7 @@ function buildBaselineComparison(project: ProjectDetail): SafeHtml {
       </div>
       <div class="score-grid">
         ${[
-          { label: 'Time', icon: iconClock, baseline: project.metrics.time.baseline, current: project.metrics.time.current, unit: 'h', prefix: '', isLowerBetter: true },
+          { label: 'Time', icon: iconClock, baseline: project.metrics.time.baseline, current: project.metrics.time.current, unit: 'd', prefix: '', isLowerBetter: true },
           { label: 'Cost', icon: iconDollarSign, baseline: project.metrics.cost.baseline / 1000, current: project.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
           { label: 'Impact', icon: iconTrendingUp, baseline: project.metrics.impact.baseline, current: project.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
         ].map(metric => html`
@@ -188,7 +188,7 @@ function buildProjectTabs(project: ProjectDetail): SafeHtml {
                   <p class="text-xs text-muted mb-2">${task.description}</p>
                   <div class="flex flex-wrap gap-1.5">
                     ${task.skills.map(skill => html`<span class="pill-tag" style="background:hsl(var(--muted)/0.5)">${skill}</span>`)}
-                    <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.hours}h est.</span>
+                    <span class="text-xs text-muted" style="margin-left:0.25rem">${iconClock(12)} ${task.duration}d est.</span>
                   </div>
                 </div>
                 <button class="btn btn-outline btn-sm text-xs">${task.assigned ? task.assigned : 'Assign'}</button>

@@ -11,7 +11,7 @@ import { initSidebarLayout } from './layout';
 
 // Re-export for backward compatibility — page modules import from '../app/core'
 export { navigateTo } from './navigation';
-export { initials, styleForScore } from './format';
+export { initials, styleForScore, durationInDays, formatCompactCurrency } from './format';
 export { openDialog, closeDialog, initTabs } from './dialog';
 
 // ------------------------------------

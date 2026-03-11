@@ -2,6 +2,8 @@
 
 22 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
+**Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
+
 ## Core
 
 ### users
@@ -33,7 +35,7 @@
 | title | TEXT | '' |
 | score | INTEGER | 0 |
 | estimated_impact | INTEGER | 0 |
-| estimated_time | INTEGER | 0 |
+| estimated_duration | INTEGER (seconds) | 0 |
 | estimated_cost | INTEGER | 0 |
 | priority | INTEGER | 0 |
 | status | TEXT | 'draft' |
@@ -52,7 +54,7 @@
 | risks | TEXT (JSON array) | '[]' |
 | assumptions | TEXT (JSON array) | '[]' |
 | alignments | TEXT (JSON array) | '[]' |
-| effort_time_estimate | TEXT | '' |
+| effort_duration_estimate | TEXT | '' |
 | effort_team_size | TEXT | '' |
 | cost_estimate | TEXT | '' |
 | cost_breakdown | TEXT | '' |
@@ -70,7 +72,7 @@
 | feasibility_breakdown | TEXT (JSON array) | '[]' |
 | efficiency_score | INTEGER | 0 |
 | efficiency_breakdown | TEXT (JSON array) | '[]' |
-| estimated_time | TEXT | '' |
+| estimated_duration | TEXT | '' |
 | estimated_cost | TEXT | '' |
 | recommendation | TEXT | '' |
 
@@ -86,8 +88,8 @@
 | start_date | TEXT | '' |
 | target_end_date | TEXT | '' |
 | lead_id | TEXT (FK → users) | '' |
-| estimated_time | INTEGER | 0 |
-| actual_time | INTEGER | 0 |
+| estimated_duration | INTEGER (seconds) | 0 |
+| actual_duration | INTEGER (seconds) | 0 |
 | estimated_cost | INTEGER | 0 |
 | actual_cost | INTEGER | 0 |
 | estimated_impact | INTEGER | 0 |
@@ -130,7 +132,7 @@
 | priority | TEXT | '' |
 | description | TEXT | '' |
 | skills | TEXT (JSON array) | '[]' |
-| hours | INTEGER | 0 |
+| duration | INTEGER (seconds) | 0 |
 | assigned_to_id | TEXT | '' |
 
 ### discussions

@@ -50,7 +50,7 @@ function buildProjectCard(project: Project, view: string): SafeHtml {
             <div class="project-metrics-grid" style="flex:1">
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconClock(16, 'text-primary')}</div>
-                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${project.estimatedTime ? html`${project.actualTime}h <span class="text-xs text-muted">/ ${project.estimatedTime}h</span>` : html`—`}</p></div>
+                <div><p class="text-xs text-muted">Time</p><p class="text-sm font-medium">${project.estimatedDuration ? html`${project.actualDuration}d <span class="text-xs text-muted">/ ${project.estimatedDuration}d</span>` : html`—`}</p></div>
               </div>
               <div class="flex items-center gap-2">
                 <div style="width:2rem;height:2rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1);display:flex;align-items:center;justify-content:center">${iconDollarSign(16, 'text-primary')}</div>

@@ -5,6 +5,7 @@ import type {
   IdeaEntity, ClarificationEntity, ConfidenceLevel, Id,
 } from '../../../api/types';
 import { User } from '../../../api/types';
+import { durationInDays } from '../format';
 import { buildUserMap, userName, parseJson, getEdgeDataWithConfidence, type Metric } from './helpers';
 
 export interface Project {
@@ -12,8 +13,8 @@ export interface Project {
   title: string;
   status: 'approved' | 'under_review' | 'sent_back';
   priorityScore: number;
-  estimatedTime: number;
-  actualTime: number;
+  estimatedDuration: number;
+  actualDuration: number;
   estimatedCost: number;
   actualCost: number;
   estimatedImpact: number;
@@ -29,8 +30,8 @@ export async function getProjects(prefetchedProjects?: ProjectEntity[]): Promise
     title: row.title,
     status: row.status as Project['status'],
     priorityScore: row.priority_score,
-    estimatedTime: row.estimated_time,
-    actualTime: row.actual_time,
+    estimatedDuration: durationInDays(row.estimated_duration),
+    actualDuration: durationInDays(row.actual_duration),
     estimatedCost: row.estimated_cost,
     actualCost: row.actual_cost,
     estimatedImpact: row.estimated_impact,
@@ -66,7 +67,7 @@ export interface ProjectDetail {
   milestones: { id: string; title: string; status: string; date: string }[];
   versions: { id: string; version: string; date: string; changes: string; author: string }[];
   discussions: { id: string; author: string; date: string; message: string }[];
-  tasks: { name: string; priority: string; description: string; skills: string[]; hours: number; assigned: string }[];
+  tasks: { name: string; priority: string; description: string; skills: string[]; duration: number; assigned: string }[];
 }
 
 export async function getProjectById(projectId: string): Promise<ProjectDetail> {
@@ -92,7 +93,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     targetEndDate: project.target_end_date,
     projectLead: userName(userMap, project.lead_id),
     metrics: {
-      time: { baseline: project.estimated_time, current: project.actual_time },
+      time: { baseline: durationInDays(project.estimated_duration), current: durationInDays(project.actual_duration) },
       cost: { baseline: project.estimated_cost, current: project.actual_cost },
       impact: { baseline: project.estimated_impact, current: project.actual_impact },
     },
@@ -116,7 +117,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     tasks: taskRows.map(task => ({
       name: task.name, priority: task.priority, description: task.description,
       skills: parseJson<string[]>(task.skills, []),
-      hours: task.hours,
+      duration: durationInDays(task.duration),
       assigned: userName(userMap, task.assigned_to_id),
     })),
   };
