@@ -191,12 +191,11 @@ web-app/
   crunch/                   # Data labeling tool
   flow/                     # Process documentation list
   flow-detail/              # Process detail with view/edit
-  team/                     # Team roster
+  team/                     # Team roster + activity feed (activity-feed.ts/activity-feed.html)
   account/                  # Account overview
   profile/                  # Profile settings
   settings/                 # Company settings
   manage-users/             # User administration
-  activity-feed/            # Activity feed
   snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
   design-system/            # Component gallery
   landing/                  # Landing page (standalone)

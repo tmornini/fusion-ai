@@ -48,7 +48,7 @@ const pages: PageEntry[] = [
   { title: 'Profile', icon: iconUser(16), href: '../profile/index.html', keywords: 'profile settings personal' },
   { title: 'Company Settings', icon: iconSettings(16), href: '../settings/index.html', keywords: 'company organization settings' },
   { title: 'Manage Users', icon: iconUsers(16), href: '../manage-users/index.html', keywords: 'users invite admin' },
-  { title: 'Activity Feed', icon: iconActivity(16), href: '../activity-feed/index.html', keywords: 'activity feed log' },
+  { title: 'Activity Feed', icon: iconActivity(16), href: '../team/activity-feed.html', keywords: 'activity feed log' },
   { title: 'Design System', icon: iconPalette(16), href: '../design-system/index.html', keywords: 'components ui reference' },
 ];
 

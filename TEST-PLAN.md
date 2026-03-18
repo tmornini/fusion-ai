@@ -212,9 +212,9 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **G11** Deactivated user (James Miller) is visually distinguished. PASS: different styling or badge for deactivated status.
 - [ ] **G12** "Add User" or invite action is available. PASS: button/link is visible and clickable.
 
-### Activity Feed (`activity-feed/`)
+### Activity Feed (`team/activity-feed.html`)
 
-- [ ] **G13** Navigate to `activity-feed/`. PASS: shows 10 seeded activity entries with type icons and timestamps.
+- [ ] **G13** Navigate to `team/activity-feed.html`. PASS: shows 10 seeded activity entries with type icons and timestamps.
 - [ ] **G14** Activity types include idea_scored, task_completed, idea_created, comment_added, user_joined, status_changed, idea_converted, project_created. PASS: multiple distinct types visible with appropriate icons.
 
 ### Snapshots (`snapshots/`) — Run These Last

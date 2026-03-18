@@ -3,7 +3,7 @@ import { html, setHtml, SafeHtml, trusted } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import {
-  iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase,
+  iconUsers, iconSearch, iconStar, iconTrendingUp, iconAward, iconBriefcase, iconActivity,
   iconChevronRight, iconPlus, iconBarChart, iconCheckCircle2, iconAlertCircle,
   iconZap, iconBrain, iconTarget, iconHeart, iconX,
 } from '../app/icons';
@@ -160,6 +160,7 @@ export async function init(): Promise<void> {
   members = result;
 
   populateIcons([
+    ['#activity-feed-btn-icon', iconActivity(16)],
     ['#add-member-btn-icon', iconPlus(16)],
     ['#search-field-icon', iconSearch(16)],
   ]);

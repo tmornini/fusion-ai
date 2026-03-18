@@ -23,7 +23,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   profile:                    { title: 'Profile',                  layout: 'sidebar' },
   settings:                   { title: 'Company Settings',         layout: 'sidebar' },
   'manage-users':             { title: 'Manage Users',             layout: 'sidebar' },
-  'activity-feed':            { title: 'Activity Feed',            layout: 'sidebar' },
+  'activity-feed':            { title: 'Activity Feed',            layout: 'sidebar',    sourceDir: 'team', sourceFile: 'activity-feed' },
   snapshots:                  { title: 'Snapshots',                layout: 'sidebar' },
   'design-system':            { title: 'Design System',            layout: 'sidebar' },
   'idea-create':              { title: 'Create Idea',              layout: 'standalone', sourceDir: 'ideas', sourceFile: 'create' },
