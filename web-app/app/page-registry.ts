@@ -11,7 +11,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   'idea-detail':              { title: 'Idea Detail',              layout: 'sidebar',    sourceDir: 'ideas', sourceFile: 'detail' },
   projects:                   { title: 'Projects',                 layout: 'sidebar' },
   'project-detail':           { title: 'Project Detail',           layout: 'sidebar' },
-  'engineering-requirements':  { title: 'Engineering Requirements',  layout: 'sidebar' },
+  'engineering-requirements':  { title: 'Engineering Requirements',  layout: 'sidebar', sourceDir: 'projects', sourceFile: 'engineering-requirements' },
   'idea-review-queue':        { title: 'Review Queue',             layout: 'sidebar',    sourceDir: 'ideas', sourceFile: 'review-queue' },
   edge:                       { title: 'Edge Definition',          layout: 'sidebar' },
   'edge-list':                { title: 'Edge List',                layout: 'sidebar',    sourceDir: 'edge', sourceFile: 'list' },
