@@ -1,4 +1,4 @@
-import { GET } from '../../../api/api';
+import { GET, PUT } from '../../../api/api';
 import type { CrunchColumnEntity, ProcessEntity, ProcessStepEntity } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
@@ -97,4 +97,14 @@ export async function getFlow(processId: string): Promise<Flow> {
       type: step.type as ProcessStep['type'],
     })),
   };
+}
+
+// ── Write Operations ───────────────────────
+
+export async function putProcess(id: string, entity: Partial<ProcessEntity>): Promise<void> {
+  await PUT(`processes/${id}`, entity as Record<string, unknown>);
+}
+
+export async function putProcessStep(processId: string, stepId: string, entity: Partial<ProcessStepEntity>): Promise<void> {
+  await PUT(`processes/${processId}/steps/${stepId}`, entity as Record<string, unknown>);
 }

@@ -7,10 +7,10 @@ import {
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
   iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
-  iconArrowLeft,
+  iconArrowLeft, iconSave,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { getFlow, type ProcessStep, type Flow } from '../app/adapters';
+import { getFlow, putProcess, putProcessStep, type ProcessStep, type Flow } from '../app/adapters';
 
 const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
@@ -21,6 +21,7 @@ let processSteps: ProcessStep[] = [];
 let flowName = '';
 let flowDescription = '';
 let flowDepartment = '';
+let currentProcessId = '1';
 let viewMode: 'edit' | 'preview' = 'edit';
 let expandedStepId: string | null = null;
 
@@ -179,6 +180,7 @@ function buildFlowDetailPage(): SafeHtml {
         <div class="flex items-center gap-2">
           <button class="btn ${viewMode === 'edit' ? 'btn-primary' : 'btn-outline'} btn-sm gap-2" data-flow-mode="edit">${iconEdit(14)} Edit</button>
           <button class="btn ${viewMode === 'preview' ? 'btn-primary' : 'btn-outline'} btn-sm gap-2" data-flow-mode="preview">${iconEye(14)} Preview</button>
+          <button class="btn btn-primary gap-2" id="flow-save-btn">${iconSave(16)} Save</button>
         </div>
       </div>
 
@@ -270,15 +272,37 @@ function bindFlowDetailEvents(): void {
     expandedStepId = processSteps[processSteps.length - 1]!.id;
     mutateFlowDetailPage();
   });
+
+  $('#flow-save-btn')?.addEventListener('click', async () => {
+    syncFormFields();
+    try {
+      await putProcess(currentProcessId, { name: flowName, description: flowDescription, department: flowDepartment });
+      for (const step of processSteps) {
+        await putProcessStep(currentProcessId, step.id, {
+          title: step.title,
+          description: step.description,
+          owner: step.owner,
+          role: step.role,
+          tools: JSON.stringify(step.tools),
+          duration: step.duration,
+          sort_order: step.sortOrder,
+          type: step.type,
+        } as Record<string, unknown>);
+      }
+      showToast('Process saved', 'success');
+    } catch {
+      showToast('Failed to save process', 'error');
+    }
+  });
 }
 
 export async function init(params?: Record<string, string>): Promise<void> {
   const root = $('#flow-detail-content');
   if (!root) return;
 
-  const processId = params?.processId ?? '1';
+  currentProcessId = params?.processId ?? '1';
 
-  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), () => getFlow(processId), init);
+  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), () => getFlow(currentProcessId), init);
   if (!flowData) return;
 
   if (flowData.steps.length === 0) {
