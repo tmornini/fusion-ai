@@ -25,7 +25,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 - **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~30 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~45 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 - **Durations**: All numeric durations are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
@@ -62,7 +62,7 @@ import { iconPlus, iconTrash } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
 ```
 
-`core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `styleForScore`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
+`core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `styleForScore`, `durationInDays`, `formatCompactCurrency`, `SECONDS_PER_DAY`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
 
 **Page modules never import from `api/api.ts`** — all data access (reads and writes) goes through the adapter layer (`adapters/`). Only adapter modules import from the API layer directly.
 
@@ -76,7 +76,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 - `get*` — adapter functions that fetch and transform data (reads)
 - `put*` — adapter functions that write entity data (writes)
 - Adapter function names use **domain nouns** (`getIdea`, `putProject`), never internal type names like `Entity` — the return type already communicates the shape
-- `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot` — snapshot lifecycle operations in `adapters/snapshots.ts`
+- `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot`, `hasData` — snapshot lifecycle operations in `adapters/snapshots.ts`
 - Boolean variables: `is*`, `has*`, `needs*` (use the prefix that reads naturally in English)
 - Config objects: `Record<StatusType, { label, className }>` in `config.ts`
 
@@ -136,9 +136,9 @@ web-app/
     tsconfig.json             # TypeScript config
     layout.html               # Shared sidebar layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
-    core.ts                   # Page dispatch + re-exports from format.ts, layout.ts, navigation.ts, dialog.ts
+    core.ts                   # Page dispatch + re-exports from format.ts, navigation.ts, dialog.ts
     page-registry.ts          # PAGE_REGISTRY: maps page names → sidebar/standalone classification
-    format.ts                 # initials(), styleForScore() formatting utilities
+    format.ts                 # initials(), styleForScore(), durationInDays(), formatCompactCurrency(), SECONDS_PER_DAY
     layout.ts                 # Sidebar layout initialization and sidebar behavior
     navigation.ts             # navigateTo(), getPageName(), URL construction, link prefetch
     dialog.ts                 # openDialog(), closeDialog(), initTabs() dialog/tab helpers
@@ -149,18 +149,19 @@ web-app/
     dom.ts                    # querySelector wrappers ($, $$) and escapeHtml
     toast.ts                  # showToast() auto-dismiss notifications
     config.ts                 # edgeStatusConfig mapping
+    logger.ts                 # Lightweight logger respecting fusion-ai:log-level in localStorage
     safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()
     loading-states.ts         # Loading skeletons, error states, empty states, withLoadingState()
-    adapters/                 # ~30 adapter functions (API → frontend shapes)
+    adapters/                 # ~45 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence, shared Metric type
       shared.ts               # getCurrentUser
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
-      ideas.ts                # getIdeas, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval
+      ideas.ts                # getIdeas, getIdeaDetail, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval, getIdea, putIdea
       projects.ts             # getProjects, getProjectById, getProjectForEngineering, getClarificationsByProjectId
       teams.ts                # getTeamMembers, getManagedUsers
       edges.ts                # getIdeaForEdge, getEdgeList
-      tools.ts                # getCrunchColumns, getFlow
+      tools.ts                # getCrunchColumns, getFlows, getFlow, putProcess, putProcessStep
       admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
@@ -177,9 +178,10 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 25 page directories, each with index.ts + index.html
+  # Pages — 27 page directories, each with index.ts + index.html
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list
+  idea-detail/              # Idea detail with view/edit
   idea-create/              # Multi-step idea wizard (standalone)
   idea-convert/             # Idea-to-project conversion (standalone)
   idea-review-queue/        # Review queue
@@ -190,7 +192,8 @@ web-app/
   edge/                     # Edge definition (per-idea)
   edge-list/                # Edge list view
   crunch/                   # Data labeling tool
-  flow/                     # Process documentation
+  flow/                     # Process documentation list
+  flow-detail/              # Process detail with view/edit
   team/                     # Team roster
   account/                  # Account overview
   profile/                  # Profile settings
@@ -214,7 +217,7 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 ## Build
 
 Build steps (requires clean git working directory):
-1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each sidebar-layout page's `index.html`, producing 19 composed files in a temp build directory. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each sidebar-layout page's `index.html`, producing 20 composed files in a temp build directory. Exits with error if any page is missing.
 2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
 4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
