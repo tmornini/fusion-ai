@@ -65,11 +65,21 @@ function buildProjectSummary(project: ProjectDetail): SafeHtml {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5)">
           ${iconCalendar(20, 'text-primary')}
-          <div><p class="text-xs text-muted">Start Date</p><p class="text-sm font-medium">${project.startDate}</p></div>
+          <div>
+            <p class="text-xs text-muted">Start Date</p>
+            ${isEditing
+              ? html`<input type="date" id="project-edit-start-date" value="${project.startDate}" class="input" style="margin-top:0.25rem" />`
+              : html`<p class="text-sm font-medium">${project.startDate}</p>`}
+          </div>
         </div>
         <div class="flex items-center gap-3" style="padding:0.75rem;border-radius:0.5rem;background:hsl(var(--muted)/0.5)">
           ${iconTarget(20, 'text-primary')}
-          <div><p class="text-xs text-muted">Target End</p><p class="text-sm font-medium">${project.targetEndDate}</p></div>
+          <div>
+            <p class="text-xs text-muted">Target End</p>
+            ${isEditing
+              ? html`<input type="date" id="project-edit-end-date" value="${project.targetEndDate}" class="input" style="margin-top:0.25rem" />`
+              : html`<p class="text-sm font-medium">${project.targetEndDate}</p>`}
+          </div>
         </div>
       </div>
       <div style="margin-top:1.5rem">
@@ -91,15 +101,23 @@ function buildBaselineComparison(project: ProjectDetail): SafeHtml {
       </div>
       <div class="score-grid">
         ${[
-          { label: 'Time', icon: iconClock, baseline: project.metrics.time.baseline, current: project.metrics.time.current, unit: 'd', prefix: '', isLowerBetter: true },
-          { label: 'Cost', icon: iconDollarSign, baseline: project.metrics.cost.baseline / 1000, current: project.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
-          { label: 'Impact', icon: iconTrendingUp, baseline: project.metrics.impact.baseline, current: project.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
+          { label: 'Time', inputId: 'time', icon: iconClock, baseline: project.metrics.time.baseline, current: project.metrics.time.current, unit: 'd', prefix: '', isLowerBetter: true },
+          { label: 'Cost', inputId: 'cost', icon: iconDollarSign, baseline: project.metrics.cost.baseline / 1000, current: project.metrics.cost.current / 1000, unit: 'k', prefix: '$', isLowerBetter: true },
+          { label: 'Impact', inputId: 'impact', icon: iconTrendingUp, baseline: project.metrics.impact.baseline, current: project.metrics.impact.current, unit: ' pts', prefix: '', isLowerBetter: false },
         ].map(metric => html`
           <div style="padding:1rem;border-radius:0.75rem;background:hsl(var(--muted)/0.3);border:1px solid hsl(var(--border))">
             <div class="flex items-center gap-2 mb-3">${metric.icon(20, 'text-primary')} <span class="font-medium">${metric.label}</span></div>
             <div style="display:flex;flex-direction:column;gap:0.5rem">
-              <div class="flex items-center justify-between"><span class="text-xs text-muted">Baseline</span><span class="text-sm font-medium">${metric.baseline ? `${metric.prefix}${metric.baseline}${metric.unit}` : '—'}</span></div>
-              <div class="flex items-center justify-between"><span class="text-xs text-muted">Current</span><span class="text-sm font-medium">${metric.current ? `${metric.prefix}${metric.current}${metric.unit}` : '—'}</span></div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-muted">Baseline</span>
+                ${isEditing
+                  ? html`<input type="number" id="project-edit-${metric.inputId}-baseline" value="${String(metric.baseline)}" class="input" style="width:5rem;text-align:right" min="0" step="any" />`
+                  : html`<span class="text-sm font-medium">${metric.baseline ? `${metric.prefix}${metric.baseline}${metric.unit}` : '—'}</span>`}
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-muted">Current</span>
+                <span class="text-sm font-medium">${metric.current ? `${metric.prefix}${metric.current}${metric.unit}` : '—'}</span>
+              </div>
               <div style="padding-top:0.5rem;border-top:1px solid hsl(var(--border))" class="flex items-center justify-between">
                 <span class="text-xs font-medium text-muted">Variance</span>
                 ${buildVariance(metric.baseline, metric.current, metric.isLowerBetter, metric.unit, metric.prefix)}
@@ -412,8 +430,20 @@ function bindProjectEvents(project: ProjectDetail, projectId: string): void {
     const title = $input('#project-edit-title')?.value ?? project.title;
     const description = $textarea('#project-edit-description')?.value ?? project.description;
     const status = ($select('#project-edit-status')?.value ?? project.status) as ProjectStatus;
+    const startDate = $input('#project-edit-start-date')?.value ?? project.startDate;
+    const targetEndDate = $input('#project-edit-end-date')?.value ?? project.targetEndDate;
+    const timeBaseline = Number($input('#project-edit-time-baseline')?.value ?? project.metrics.time.baseline);
+    const costBaseline = Number($input('#project-edit-cost-baseline')?.value ?? project.metrics.cost.baseline / 1000);
+    const impactBaseline = Number($input('#project-edit-impact-baseline')?.value ?? project.metrics.impact.baseline);
     try {
-      await putProject(projectId, { title, description, status });
+      await putProject(projectId, {
+        title, description, status,
+        start_date: startDate,
+        target_end_date: targetEndDate,
+        estimated_duration: timeBaseline * 86400,
+        estimated_cost: costBaseline * 1000,
+        estimated_impact: impactBaseline,
+      });
       showToast('Project saved', 'success');
       const updated = await getProjectById(projectId);
       isEditing = false;
