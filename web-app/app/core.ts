@@ -21,6 +21,7 @@ export { openDialog, closeDialog, initTabs } from './dialog';
 const pageModules: Record<string, () => Promise<{ init: (params?: Record<string, string>) => void | Promise<void> }>> = {
   dashboard: () => import('../dashboard/index'),
   ideas: () => import('../ideas/index'),
+  'idea-detail': () => import('../idea-detail/index'),
   projects: () => import('../projects/index'),
   'project-detail': () => import('../project-detail/index'),
   'engineering-requirements': () => import('../engineering-requirements/index'),

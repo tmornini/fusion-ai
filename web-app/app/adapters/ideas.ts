@@ -38,6 +38,50 @@ export async function getIdeas(prefetchedIdeas?: IdeaEntity[], cachedUserMap?: M
     }));
 }
 
+// ── Idea Detail ─────────────────────────────
+
+export interface IdeaDetail {
+  id: string;
+  title: string;
+  description: string;
+  status: IdeaStatus;
+  edgeStatus: EdgeStatus | 'incomplete';
+  score: number;
+  category: string;
+  submittedBy: string;
+  submittedAt: string;
+  problemStatement: string;
+  proposedSolution: string;
+  expectedOutcome: string;
+  estimatedImpact: number;
+  estimatedDuration: number;
+  estimatedCost: number;
+}
+
+export async function getIdeaDetail(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<IdeaDetail> {
+  const [idea, userMap] = await Promise.all([
+    GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
+    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
+  ]);
+  return {
+    id: idea.id,
+    title: idea.title,
+    description: idea.description || '',
+    status: idea.status,
+    edgeStatus: (idea.edge_status || 'incomplete') as IdeaDetail['edgeStatus'],
+    score: idea.score,
+    category: idea.category || '',
+    submittedBy: userName(userMap, idea.submitted_by_id),
+    submittedAt: idea.submitted_at || '',
+    problemStatement: idea.problem_statement || '',
+    proposedSolution: idea.proposed_solution || '',
+    expectedOutcome: idea.expected_outcome || '',
+    estimatedImpact: idea.estimated_impact,
+    estimatedDuration: durationInDays(idea.estimated_duration),
+    estimatedCost: idea.estimated_cost,
+  };
+}
+
 // ── Idea Review Queue ───────────────────────
 
 export interface ReviewIdea {

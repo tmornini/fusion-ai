@@ -6,6 +6,7 @@ export interface PageEntry {
 export const PAGE_REGISTRY: Record<string, PageEntry> = {
   dashboard:                  { title: 'Dashboard',                layout: 'sidebar' },
   ideas:                      { title: 'Ideas',                    layout: 'sidebar' },
+  'idea-detail':              { title: 'Idea Detail',              layout: 'sidebar' },
   projects:                   { title: 'Projects',                 layout: 'sidebar' },
   'project-detail':           { title: 'Project Detail',           layout: 'sidebar' },
   'engineering-requirements':  { title: 'Engineering Requirements',  layout: 'sidebar' },

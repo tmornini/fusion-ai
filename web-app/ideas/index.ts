@@ -170,14 +170,14 @@ export async function init(): Promise<void> {
     if (!(e.target instanceof Element)) return;
     const actionButton = e.target.closest<HTMLElement>('[data-idea-view], [data-idea-edge], [data-idea-review], [data-idea-convert]');
     if (actionButton) {
-      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-convert', { ideaId: attr(actionButton, 'data-idea-view') });
+      if (actionButton.hasAttribute('data-idea-view')) navigateTo('idea-detail', { ideaId: attr(actionButton, 'data-idea-view') });
       else if (actionButton.hasAttribute('data-idea-edge')) navigateTo('edge', { ideaId: attr(actionButton, 'data-idea-edge') });
       else if (actionButton.hasAttribute('data-idea-review')) navigateTo('approval-detail', { id: attr(actionButton, 'data-idea-review') });
       else if (actionButton.hasAttribute('data-idea-convert')) navigateTo('idea-convert', { ideaId: attr(actionButton, 'data-idea-convert') });
       return;
     }
     const card = e.target.closest<HTMLElement>('[data-idea-card]');
-    if (card) navigateTo('idea-convert', { ideaId: attr(card, 'data-idea-card') });
+    if (card) navigateTo('idea-detail', { ideaId: attr(card, 'data-idea-card') });
   });
 
   mutateList();
