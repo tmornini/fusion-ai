@@ -53,6 +53,7 @@ export interface IdeaDetail {
   problemStatement: string;
   proposedSolution: string;
   expectedOutcome: string;
+  successMetrics: string;
   estimatedImpact: number;
   estimatedDuration: number;
   estimatedCost: number;
@@ -76,6 +77,7 @@ export async function getIdeaDetail(ideaId: string, cachedUserMap?: Map<Id, User
     problemStatement: idea.problem_statement || '',
     proposedSolution: idea.proposed_solution || '',
     expectedOutcome: idea.expected_outcome || '',
+    successMetrics: idea.success_metrics || '',
     estimatedImpact: idea.estimated_impact,
     estimatedDuration: durationInDays(idea.estimated_duration),
     estimatedCost: idea.estimated_cost,

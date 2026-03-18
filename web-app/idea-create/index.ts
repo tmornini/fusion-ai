@@ -200,6 +200,7 @@ function bindWizardEvents() {
         problem_statement: formData.problemStatement,
         proposed_solution: formData.proposedSolution,
         expected_outcome: formData.expectedOutcome,
+        success_metrics: formData.successMetrics,
         description: formData.targetUsers,
         status: 'active',
         submitted_by_id: '1',

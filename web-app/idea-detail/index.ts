@@ -19,37 +19,6 @@ function styleForScoreBadge(score: number): string {
   return 'color:hsl(var(--error));background:hsl(var(--error-soft))';
 }
 
-function buildOverviewCard(idea: IdeaDetail): SafeHtml {
-  return html`
-    <div class="card p-6">
-      <h2 class="text-lg font-display font-semibold mb-4">Overview</h2>
-      <div style="display:flex;flex-direction:column;gap:1rem">
-        <div>
-          <p class="text-xs text-muted mb-1">Description</p>
-          ${isEditing
-            ? html`<textarea class="textarea" id="idea-edit-description" rows="3" style="resize:none">${idea.description}</textarea>`
-            : html`<p class="text-sm">${idea.description || '—'}</p>`}
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-          <div>
-            <p class="text-xs text-muted mb-1">Category</p>
-            ${isEditing
-              ? html`<input class="input" id="idea-edit-category" value="${idea.category}" />`
-              : html`<p class="text-sm font-medium">${idea.category || '—'}</p>`}
-          </div>
-          <div>
-            <p class="text-xs text-muted mb-1">Submitted by</p>
-            <p class="text-sm font-medium">${idea.submittedBy}</p>
-          </div>
-        </div>
-        <div>
-          <p class="text-xs text-muted mb-1">Submitted at</p>
-          <p class="text-sm font-medium">${idea.submittedAt || '—'}</p>
-        </div>
-      </div>
-    </div>`;
-}
-
 function buildProblemSolutionCard(idea: IdeaDetail): SafeHtml {
   return html`
     <div class="card p-6">
@@ -62,6 +31,12 @@ function buildProblemSolutionCard(idea: IdeaDetail): SafeHtml {
             : html`<p class="text-sm">${idea.problemStatement || '—'}</p>`}
         </div>
         <div>
+          <p class="text-xs text-muted mb-1">Target Users</p>
+          ${isEditing
+            ? html`<textarea class="textarea" id="idea-edit-target-users" rows="2" style="resize:none">${idea.description}</textarea>`
+            : html`<p class="text-sm">${idea.description || '—'}</p>`}
+        </div>
+        <div>
           <p class="text-xs text-muted mb-1">Proposed Solution</p>
           ${isEditing
             ? html`<textarea class="textarea" id="idea-edit-solution" rows="3" style="resize:none">${idea.proposedSolution}</textarea>`
@@ -72,6 +47,35 @@ function buildProblemSolutionCard(idea: IdeaDetail): SafeHtml {
           ${isEditing
             ? html`<textarea class="textarea" id="idea-edit-outcome" rows="3" style="resize:none">${idea.expectedOutcome}</textarea>`
             : html`<p class="text-sm">${idea.expectedOutcome || '—'}</p>`}
+        </div>
+        <div>
+          <p class="text-xs text-muted mb-1">Success Metrics</p>
+          ${isEditing
+            ? html`<textarea class="textarea" id="idea-edit-metrics" rows="3" style="resize:none">${idea.successMetrics}</textarea>`
+            : html`<p class="text-sm">${idea.successMetrics || '—'}</p>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildDetailsCard(idea: IdeaDetail): SafeHtml {
+  return html`
+    <div class="card p-6">
+      <h2 class="text-lg font-display font-semibold mb-4">Details</h2>
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div>
+          <p class="text-xs text-muted mb-1">Category</p>
+          ${isEditing
+            ? html`<input class="input" id="idea-edit-category" value="${idea.category}" />`
+            : html`<p class="text-sm font-medium">${idea.category || '—'}</p>`}
+        </div>
+        <div>
+          <p class="text-xs text-muted mb-1">Submitted by</p>
+          <p class="text-sm font-medium">${idea.submittedBy}</p>
+        </div>
+        <div>
+          <p class="text-xs text-muted mb-1">Submitted at</p>
+          <p class="text-sm font-medium">${idea.submittedAt || '—'}</p>
         </div>
       </div>
     </div>`;
@@ -151,8 +155,8 @@ function buildIdeaDetail(idea: IdeaDetail, ideaId: string): SafeHtml {
       </div>
 
       <div style="display:flex;flex-direction:column;gap:1.5rem">
-        ${buildOverviewCard(idea)}
         ${buildProblemSolutionCard(idea)}
+        ${buildDetailsCard(idea)}
         ${buildEstimatesCard(idea)}
       </div>
     </div>`;
@@ -173,11 +177,12 @@ function bindIdeaEvents(idea: IdeaDetail, ideaId: string): void {
 
   $('#idea-save-btn')?.addEventListener('click', async () => {
     const title = $input('#idea-edit-title')?.value ?? idea.title;
-    const description = $textarea('#idea-edit-description')?.value ?? idea.description;
+    const description = $textarea('#idea-edit-target-users')?.value ?? idea.description;
     const category = $input('#idea-edit-category')?.value ?? idea.category;
     const problemStatement = $textarea('#idea-edit-problem')?.value ?? idea.problemStatement;
     const proposedSolution = $textarea('#idea-edit-solution')?.value ?? idea.proposedSolution;
     const expectedOutcome = $textarea('#idea-edit-outcome')?.value ?? idea.expectedOutcome;
+    const successMetrics = $textarea('#idea-edit-metrics')?.value ?? idea.successMetrics;
     const impact = Number($input('#idea-edit-impact')?.value ?? idea.estimatedImpact);
     const duration = Number($input('#idea-edit-duration')?.value ?? idea.estimatedDuration);
     const cost = Number($input('#idea-edit-cost')?.value ?? idea.estimatedCost);
@@ -190,6 +195,7 @@ function bindIdeaEvents(idea: IdeaDetail, ideaId: string): void {
         problem_statement: problemStatement,
         proposed_solution: proposedSolution,
         expected_outcome: expectedOutcome,
+        success_metrics: successMetrics,
         estimated_impact: impact,
         estimated_duration: duration * 86400,
         estimated_cost: cost,

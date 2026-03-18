@@ -145,6 +145,7 @@ export interface IdeaEntity {
   effort_team_size: string;
   cost_estimate: string;
   cost_breakdown: string;
+  success_metrics: string;
 }
 
 export interface IdeaScoreEntity {

@@ -58,6 +58,7 @@
 | effort_team_size | TEXT | '' |
 | cost_estimate | TEXT | '' |
 | cost_breakdown | TEXT | '' |
+| success_metrics | TEXT | '' |
 
 ### idea_scores
 
