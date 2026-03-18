@@ -198,7 +198,7 @@ web-app/
   team/                     # Team roster
   account/                  # Account overview
   profile/                  # Profile settings
-  company-settings/         # Company settings
+  settings/                 # Company settings
   manage-users/             # User administration
   activity-feed/            # Activity feed
   snapshots/                # Snapshots (wipe, reload, upload/download snapshots)

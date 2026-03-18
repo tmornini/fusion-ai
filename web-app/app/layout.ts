@@ -40,7 +40,7 @@ async function mutateSidebarUser(): Promise<void> {
 }
 
 const NAV_GROUP_CHILDREN: Record<string, string[]> = {
-  account: ['profile', 'company-settings', 'manage-users', 'activity-feed', 'snapshots'],
+  account: ['profile', 'settings', 'manage-users', 'activity-feed', 'snapshots'],
   ideas: ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'],
   projects: ['project-detail', 'engineering-requirements'],
   'edge-list': ['edge'],

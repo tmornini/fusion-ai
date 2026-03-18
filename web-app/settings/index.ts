@@ -28,7 +28,7 @@ function buildToggleRow(id: string, label: string, description: string, checked:
 }
 
 export async function init(): Promise<void> {
-  const container = $('#company-settings-content');
+  const container = $('#settings-content');
   if (!container) return;
   let settings: Awaited<ReturnType<typeof getCompanySettings>>;
   try {

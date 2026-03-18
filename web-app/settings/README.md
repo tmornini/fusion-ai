@@ -5,7 +5,7 @@
 Organization-wide configuration and security settings.
 
 - **Type**: composed
-- **Route**: `/company-settings/index.html`
+- **Route**: `/settings/index.html`
 
 ## Features
 

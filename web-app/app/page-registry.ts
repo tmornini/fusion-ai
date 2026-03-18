@@ -20,7 +20,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   team:                       { title: 'Teams',                    layout: 'sidebar' },
   account:                    { title: 'Account',                  layout: 'sidebar' },
   profile:                    { title: 'Profile',                  layout: 'sidebar' },
-  'company-settings':         { title: 'Company Settings',         layout: 'sidebar' },
+  settings:                   { title: 'Company Settings',         layout: 'sidebar' },
   'manage-users':             { title: 'Manage Users',             layout: 'sidebar' },
   'activity-feed':            { title: 'Activity Feed',            layout: 'sidebar' },
   snapshots:                  { title: 'Snapshots',                layout: 'sidebar' },

@@ -30,7 +30,7 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 | [activity-feed](activity-feed/README.md) | composed | Activity feed |
 | [approval-detail](approval-detail/README.md) | standalone | Review decision page |
 | [auth](auth/README.md) | standalone | Login/signup |
-| [company-settings](company-settings/README.md) | composed | Company settings |
+| [settings](settings/README.md) | composed | Company settings |
 | [crunch](crunch/README.md) | composed | Data labeling tool |
 | [dashboard](dashboard/README.md) | composed | Dashboard with gauge cards |
 | [design-system](design-system/README.md) | composed | Component gallery |

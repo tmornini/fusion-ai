@@ -200,9 +200,9 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **G5** Navigate to `profile/`. PASS: shows profile form for the current user (Demo User / demo@example.com).
 - [ ] **G6** Edit a field (e.g. bio or phone) and save. PASS: success toast appears, or save action completes without error.
 
-### Company Settings (`company-settings/`)
+### Company Settings (`settings/`)
 
-- [ ] **G7** Navigate to `company-settings/`. PASS: shows company info (Acme Corporation, acmecorp.com, Technology, 51-200).
+- [ ] **G7** Navigate to `settings/`. PASS: shows company info (Acme Corporation, acmecorp.com, Technology, 51-200).
 - [ ] **G8** Security settings visible: SSO (off), 2FA (on), IP Whitelist (off). PASS: toggle/indicator states match seed data.
 - [ ] **G9** Edit a setting (e.g. timezone or language) and save. PASS: success toast or save completes without error.
 

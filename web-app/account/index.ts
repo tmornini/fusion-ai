@@ -68,7 +68,7 @@ export async function init(): Promise<void> {
             <p class="text-xs text-muted">Personal settings</p>
           </div>
         </button>
-        <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem" data-nav-to="company-settings">
+        <button class="btn btn-outline" style="height:auto;padding:0.75rem 1rem;justify-content:flex-start;gap:0.75rem" data-nav-to="settings">
           <div style="width:2.5rem;height:2.5rem;border-radius:var(--radius-lg);background:hsl(var(--info-soft));display:flex;align-items:center;justify-content:center;color:hsl(var(--info-text))">${iconSettings(20)}</div>
           <div class="text-left">
             <p class="font-medium text-sm">Company Settings</p>
