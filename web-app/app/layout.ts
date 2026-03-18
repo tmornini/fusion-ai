@@ -43,7 +43,7 @@ const NAV_GROUP_CHILDREN: Record<string, string[]> = {
   account: ['profile', 'settings', 'manage-users', 'snapshots'],
   ideas: ['idea-create', 'idea-convert', 'idea-review-queue', 'approval-detail'],
   projects: ['project-detail', 'engineering-requirements'],
-  team: ['activity-feed'],
+  teams: ['activity-feed'],
   'edge-list': ['edge'],
 };
 

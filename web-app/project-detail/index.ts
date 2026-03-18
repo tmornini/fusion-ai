@@ -379,7 +379,7 @@ function buildProjectDetail(project: ProjectDetail, projectId: string): SafeHtml
             <div style="min-width:0"><p class="font-medium text-sm">Engineering</p><p class="text-xs text-muted hidden-mobile">Requirements & clarifications</p></div>
           </div>
         </a>
-        <a href="../team/index.html" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
+        <a href="../teams/index.html" class="card card-hover" style="padding:1rem;text-decoration:none;color:inherit">
           <div class="flex items-center gap-3">
             <div style="padding:0.5rem;border-radius:0.5rem;background:hsl(var(--primary)/0.1)">${iconUsers(20, 'text-primary')}</div>
             <div style="min-width:0"><p class="font-medium text-sm">Team</p><p class="text-xs text-muted hidden-mobile">Manage assignments</p></div>

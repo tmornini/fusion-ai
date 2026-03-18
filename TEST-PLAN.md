@@ -185,9 +185,9 @@ This test is covered by E4 (navigation) — verify the page loads:
 
 ## G. Admin Pages
 
-### Team (`team/`)
+### Team (`teams/`)
 
-- [ ] **G1** Navigate to `team/`. PASS: shows roster of seeded users with names, roles, departments, and status indicators.
+- [ ] **G1** Navigate to `teams/`. PASS: shows roster of seeded users with names, roles, departments, and status indicators.
 - [ ] **G2** User status badges render with distinct styling (available, busy, limited, active, deactivated). PASS: at least 3 different statuses visible.
 
 ### Account (`account/`)
@@ -212,9 +212,9 @@ This test is covered by E4 (navigation) — verify the page loads:
 - [ ] **G11** Deactivated user (James Miller) is visually distinguished. PASS: different styling or badge for deactivated status.
 - [ ] **G12** "Add User" or invite action is available. PASS: button/link is visible and clickable.
 
-### Activity Feed (`team/activity-feed.html`)
+### Activity Feed (`teams/activity-feed.html`)
 
-- [ ] **G13** Navigate to `team/activity-feed.html`. PASS: shows 10 seeded activity entries with type icons and timestamps.
+- [ ] **G13** Navigate to `teams/activity-feed.html`. PASS: shows 10 seeded activity entries with type icons and timestamps.
 - [ ] **G14** Activity types include idea_scored, task_completed, idea_created, comment_added, user_joined, status_changed, idea_converted, project_created. PASS: multiple distinct types visible with appropriate icons.
 
 ### Snapshots (`snapshots/`) — Run These Last

@@ -5,7 +5,7 @@
 Team roster showing all members with their roles and performance.
 
 - **Type**: composed
-- **Route**: `/team/index.html`
+- **Route**: `/teams/index.html`
 
 ## Features
 

@@ -191,7 +191,7 @@ web-app/
   crunch/                   # Data labeling tool
   flow/                     # Process documentation list
   flow-detail/              # Process detail with view/edit
-  team/                     # Team roster + activity feed (activity-feed.ts/activity-feed.html)
+  teams/                    # Team roster + activity feed (activity-feed.ts/activity-feed.html)
   account/                  # Account overview
   profile/                  # Profile settings
   settings/                 # Company settings

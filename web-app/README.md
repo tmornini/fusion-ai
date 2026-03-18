@@ -50,4 +50,4 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 | [project-detail](project-detail/README.md) | composed | Project detail (tabbed) |
 | [projects](projects/README.md) | composed | Projects list |
 | [snapshots](snapshots/README.md) | composed | Database snapshots |
-| [team](team/README.md) | composed | Team roster |
+| [teams](teams/README.md) | composed | Team roster |
