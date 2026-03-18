@@ -9,7 +9,7 @@ import {
   iconArrowDownRight, iconMinus, iconListTodo, iconGitBranch, iconDatabase,
   iconCode, iconShield, iconBarChart, iconGauge, iconEdit, iconSave, iconX,
 } from '../app/icons';
-import { navigateTo, initials, initTabs } from '../app/core';
+import { navigateTo, initials, initTabs, SECONDS_PER_DAY } from '../app/core';
 import { getProjectById, putProject, type ProjectDetail } from '../app/adapters';
 import { projectStatusConfig, UNKNOWN_STATUS } from '../app/config';
 import type { ProjectStatus } from '../../api/types';
@@ -440,7 +440,7 @@ function bindProjectEvents(project: ProjectDetail, projectId: string): void {
         title, description, status,
         start_date: startDate,
         target_end_date: targetEndDate,
-        estimated_duration: timeBaseline * 86400,
+        estimated_duration: timeBaseline * SECONDS_PER_DAY,
         estimated_cost: costBaseline * 1000,
         estimated_impact: impactBaseline,
       });

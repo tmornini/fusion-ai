@@ -6,7 +6,7 @@ import {
   iconArrowLeft, iconEdit, iconSave, iconX, iconClock, iconDollarSign,
   iconTrendingUp, iconStar, iconTarget, iconArrowRight, iconClipboardCheck,
 } from '../app/icons';
-import { navigateTo } from '../app/core';
+import { navigateTo, SECONDS_PER_DAY } from '../app/core';
 import { getIdeaDetail, putIdea, type IdeaDetail } from '../app/adapters';
 import { ideaStatusConfig, edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
 import { SCORE_BADGE_HIGH, SCORE_BADGE_MEDIUM } from '../../api/types';
@@ -197,7 +197,7 @@ function bindIdeaEvents(idea: IdeaDetail, ideaId: string): void {
         expected_outcome: expectedOutcome,
         success_metrics: successMetrics,
         estimated_impact: impact,
-        estimated_duration: duration * 86400,
+        estimated_duration: duration * SECONDS_PER_DAY,
         estimated_cost: cost,
       });
       showToast('Idea saved', 'success');

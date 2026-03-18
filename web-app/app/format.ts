@@ -23,4 +23,4 @@ function formatCompactCurrency(value: number): string {
   return `$${value}`;
 }
 
-export { initials, styleForScore, durationInDays, formatCompactCurrency };
+export { initials, styleForScore, durationInDays, formatCompactCurrency, SECONDS_PER_DAY };
