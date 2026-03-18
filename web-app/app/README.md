@@ -20,8 +20,9 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | [`styles/`](styles/README.md) | CSS modules in cascade order: fonts, tokens, dark-mode, base, components, layout, utilities, responsive, pages, command-palette |
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
-| `compose.ts` | Build-time script that merges `side-bar.html` with each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
-| `side-bar.html` | Shared sidebar layout template (sidebar, header, search, theme toggle) |
+| `compose.ts` | Build-time script that assembles `components-layout.html` with `component-*.html` files and each page's `index.html` to produce composed standalone pages. Exits with error if any page is missing. |
+| `components-layout.html` | Layout skeleton with component placeholders |
+| `component-*.html` | UI components (sidebar, top-bar, mobile-header, mobile-sidebar) |
 | `tsconfig.json` | TypeScript compiler configuration |
 
 ## Adapter Modules (`adapters/`)
@@ -46,10 +47,10 @@ All page modules import from `'../../app/adapters'` — with `moduleResolution: 
 
 ## Build-Time Composition
 
-`compose.ts` reads `side-bar.html` and each sidebar-layout page's `index.html`, then:
+`compose.ts` reads `components-layout.html`, injects `component-*.html` files, then for each sidebar-layout page:
 
-1. Finds the `<!-- PAGE_CONTENT -->` placeholder in the layout
-2. Inserts the page's HTML content
+1. Substitutes `<!-- COMPONENT_* -->` placeholders with component content
+2. Substitutes `<!-- PAGE_CONTENT -->` with the page's HTML content
 3. Writes the composed file to the build output directory
 
 This produces 19 composed pages. The remaining 7 standalone pages are copied directly.

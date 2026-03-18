@@ -15,7 +15,7 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 
 ## Page Types
 
-- **Composed** — `index.html` contains only page content; at build time, `app/compose.ts` merges it with `app/side-bar.html` to produce a complete HTML file with sidebar, header, search, and theme toggle
+- **Composed** — `index.html` contains only page content; at build time, `app/compose.ts` assembles it with `app/components-layout.html` and `component-*.html` files to produce a complete HTML file with sidebar, header, search, and theme toggle
 - **Standalone** — `index.html` is a complete hand-written HTML file with `<div id="page-root">` that `init()` renders into
 
 ## Entry Point

@@ -1,6 +1,6 @@
 // ============================================
 // FUSION AI — Build-time HTML Composition
-// Combines app/side-bar.html with per-page index.html
+// Combines components-layout.html and component-*.html with per-page index.html
 // to produce standalone sidebar-layout index.html files.
 // Also copies standalone pages to output directory.
 // ============================================
@@ -21,9 +21,23 @@ const standalonePages = Object.entries(PAGE_REGISTRY)
   .filter(([, entry]) => entry.layout === 'standalone')
   .map(([name]) => name);
 
+// Component files injected into layout
+const COMPONENTS = [
+  { placeholder: '<!-- COMPONENT_SIDEBAR -->', file: 'component-sidebar.html' },
+  { placeholder: '<!-- COMPONENT_TOP_BAR -->', file: 'component-top-bar.html' },
+  { placeholder: '<!-- COMPONENT_MOBILE_HEADER -->', file: 'component-mobile-header.html' },
+  { placeholder: '<!-- COMPONENT_MOBILE_SIDEBAR -->', file: 'component-mobile-sidebar.html' },
+] as const;
+
 function compose(): void {
-  const layoutPath = join(ROOT, 'app', 'side-bar.html');
-  const layout = readFileSync(layoutPath, 'utf-8');
+  const appDir = join(ROOT, 'app');
+  let layout = readFileSync(join(appDir, 'components-layout.html'), 'utf-8');
+
+  // Assemble layout by injecting component files
+  for (const { placeholder, file } of COMPONENTS) {
+    const content = readFileSync(join(appDir, file), 'utf-8');
+    layout = layout.replace(placeholder, content);
+  }
 
   const missing: string[] = [];
   let composed = 0;
