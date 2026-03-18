@@ -10,7 +10,7 @@ Create a new `idea-detail/` sidebar-layout page following the `project-detail/` 
 
 ## Page: `idea-detail`
 
-**Layout**: Sidebar (composed with `layout.html`)
+**Layout**: Sidebar (composed with `side-bar.html`)
 **URL parameter**: `?ideaId=X`
 **Back navigation**: Ideas list
 

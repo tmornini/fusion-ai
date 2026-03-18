@@ -20,7 +20,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 
 ### Key Layers
 
-- **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/layout.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
+- **HTML Composition**: A build step (`web-app/app/compose.ts`) merges `web-app/app/side-bar.html` (shared sidebar/header) with each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
@@ -134,7 +134,7 @@ web-app/
   index.html                  # Redirects to landing/index.html
   app/                        # All source code (TypeScript + CSS)
     tsconfig.json             # TypeScript config
-    layout.html               # Shared sidebar layout template (sidebar, header)
+    side-bar.html             # Shared sidebar layout template (sidebar, header)
     compose.ts                # Build-time script: layout + page → composed index.html
     core.ts                   # Page dispatch + re-exports from format.ts, navigation.ts, dialog.ts
     page-registry.ts          # PAGE_REGISTRY: maps page names → sidebar/standalone classification
@@ -217,7 +217,7 @@ Each page directory contains `index.ts` + `index.html`. Build output goes to a t
 ## Build
 
 Build steps (requires clean git working directory):
-1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `layout.html` with each sidebar-layout page's `index.html`, producing 20 composed files in a temp build directory. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to merge `side-bar.html` with each sidebar-layout page's `index.html`, producing 20 composed files in a temp build directory. Exits with error if any page is missing.
 2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
 4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
