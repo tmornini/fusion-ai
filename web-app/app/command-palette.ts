@@ -37,8 +37,8 @@ interface PageEntry {
 const pages: PageEntry[] = [
   { title: 'Dashboard', icon: iconHome(16), href: '../dashboard/index.html', keywords: 'home overview' },
   { title: 'Ideas', icon: iconLightbulb(16), href: '../ideas/index.html', keywords: 'ideas list innovation' },
-  { title: 'Create Idea', icon: iconLightbulb(16), href: '../idea-create/index.html', keywords: 'new idea submit' },
-  { title: 'Review Queue', icon: iconClipboardCheck(16), href: '../idea-review-queue/index.html', keywords: 'review approve reject' },
+  { title: 'Create Idea', icon: iconLightbulb(16), href: '../ideas/create.html', keywords: 'new idea submit' },
+  { title: 'Review Queue', icon: iconClipboardCheck(16), href: '../ideas/review-queue.html', keywords: 'review approve reject' },
   { title: 'Projects', icon: iconFolderKanban(16), href: '../projects/index.html', keywords: 'projects list kanban' },
   { title: 'Edge List', icon: iconTarget(16), href: '../edge/list.html', keywords: 'edge outcomes metrics' },
   { title: 'Crunch', icon: iconDatabase(16), href: '../crunch/index.html', keywords: 'data labeling columns' },
@@ -101,7 +101,7 @@ async function loadSearchIndex(): Promise<void> {
       meta: `Score: ${idea.score} · ${idea.status.replace(/-/g, ' ')}`,
       category: 'ideas',
       icon: iconLightbulb(16),
-      href: `../idea-convert/index.html?ideaId=${idea.id}`,
+      href: `../ideas/convert.html?ideaId=${idea.id}`,
       keywords: `${idea.submittedBy} ${idea.status}`,
     }));
 

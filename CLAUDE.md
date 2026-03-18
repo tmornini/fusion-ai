@@ -182,11 +182,7 @@ web-app/
 
   # Pages — 27 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
-  ideas/                    # Ideas list
-    detail/                 # Idea detail with view/edit
-    create/                 # Multi-step idea wizard (standalone)
-    convert/                # Idea-to-project conversion (standalone)
-    review-queue/           # Review queue
+  ideas/                    # Ideas list + detail, create, convert, review-queue (named files)
   approval-detail/          # Review decision page (standalone)
   projects/                 # Projects list
   project-detail/           # Project detail (tabbed)
