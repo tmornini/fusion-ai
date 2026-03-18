@@ -24,6 +24,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
 - **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`. Pages with `sourceDir` in `PAGE_REGISTRY` have source files at a different path than their page name. The build script reads from `sourceDir`, outputs to the page name. This allows source nesting without changing page names or URLs.
+- **Source = Output Alignment**: Build output paths mirror source paths. A page at `web-app/edge/list.html` produces output at `edge/list.html`. The `sourceFile` property in `PAGE_REGISTRY` enables named files (e.g., `list.html`) alongside the default `index.html` convention. When `sourceFile` is set, compose.ts reads from and writes to `{sourceDir}/{sourceFile}.html`, and `navigateTo()` derives the correct URL automatically. This keeps the developer's mental model simple: the file you edit is the file the browser loads.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~45 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
@@ -44,7 +45,7 @@ The `DbAdapter` interface is designed for easy migration to Postgres or other ba
 
 ### Page Module Pattern
 
-All page folders uniformly contain `index.ts` and `index.html`. Each `index.ts` exports:
+Page folders contain `index.ts` and `index.html` by default. When `sourceFile` is set in `PAGE_REGISTRY`, the page uses `{sourceFile}.ts` and `{sourceFile}.html` instead (e.g., `edge/list.ts` + `edge/list.html`). Each page module exports:
 - `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
 
 Sidebar-layout pages have `index.html` containing page content that gets composed with the layout template. Standalone pages have a complete hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
@@ -138,7 +139,7 @@ web-app/
     component-*.html          # UI components (sidebar, top-bar, mobile-header, mobile-sidebar)
     compose.ts                # Build-time script: layout + page → composed index.html
     core.ts                   # Page dispatch + re-exports from format.ts, navigation.ts, dialog.ts
-    page-registry.ts          # PAGE_REGISTRY: maps page names → sidebar/standalone classification
+    page-registry.ts          # PAGE_REGISTRY: maps page names → sidebar/standalone classification + sourceDir/sourceFile overrides
     format.ts                 # initials(), styleForScore(), durationInDays(), formatCompactCurrency(), SECONDS_PER_DAY
     layout.ts                 # Sidebar layout initialization and sidebar behavior
     navigation.ts             # navigateTo(), getPageName(), URL construction, link prefetch
@@ -179,7 +180,7 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 27 page directories, each with index.ts + index.html
+  # Pages — 27 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list
     detail/                 # Idea detail with view/edit
@@ -190,8 +191,7 @@ web-app/
   projects/                 # Projects list
   project-detail/           # Project detail (tabbed)
   engineering-requirements/ # Engineering requirements
-  edge/                     # Edge definition (per-idea)
-  edge-list/                # Edge list view
+  edge/                     # Edge definition (per-idea) + Edge list (list.ts/list.html)
   crunch/                   # Data labeling tool
   flow/                     # Process documentation list
   flow-detail/              # Process detail with view/edit
@@ -213,12 +213,12 @@ DESIGN-SYSTEM.md              # Design system specification
 TEST-PLAN.md                  # Human-executable test plan (146 cases)
 ```
 
-Each page directory contains `index.ts` + `index.html`. Build output goes to a temp directory — no build artifacts in the repo.
+Most pages use `index.ts` + `index.html`. Pages with `sourceFile` in `PAGE_REGISTRY` use named files (e.g., `list.ts` + `list.html`). Build output goes to a temp directory — no build artifacts in the repo.
 
 ## Build
 
 Build steps (requires clean git working directory):
-1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's `index.html`, producing 20 composed files in a temp build directory. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 20 composed files in a temp build directory. Respects `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
 2. Copies 7 standalone pages' `index.html` to the build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
 4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
@@ -235,7 +235,7 @@ No build artifacts are created in the repo — everything is assembled in `/tmp/
 - **Non-critical writes swallowed**: localStorage writes for theme and sidebar state are wrapped in try/catch with empty catch — quota errors don't break the app.
 - **Snapshots wipe-first**: All snapshot operations (pristine, mock data, import) call `DELETE('snapshots/schema')` before writing — there is no merge, only replace.
 - **Score thresholds**: `SCORE_THRESHOLD_HIGH = 80` and `SCORE_THRESHOLD_MEDIUM = 60` in `api/types.ts` determine `PriorityLevel` computation.
-- **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. All page URLs use `../pageName/index.html` relative paths.
+- **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use `../pageName/index.html` relative paths, or `../dir/file.html` for pages with `sourceFile`.
 
 ## Worktrees
 

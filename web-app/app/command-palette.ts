@@ -40,7 +40,7 @@ const pages: PageEntry[] = [
   { title: 'Create Idea', icon: iconLightbulb(16), href: '../idea-create/index.html', keywords: 'new idea submit' },
   { title: 'Review Queue', icon: iconClipboardCheck(16), href: '../idea-review-queue/index.html', keywords: 'review approve reject' },
   { title: 'Projects', icon: iconFolderKanban(16), href: '../projects/index.html', keywords: 'projects list kanban' },
-  { title: 'Edge List', icon: iconTarget(16), href: '../edge-list/index.html', keywords: 'edge outcomes metrics' },
+  { title: 'Edge List', icon: iconTarget(16), href: '../edge/list.html', keywords: 'edge outcomes metrics' },
   { title: 'Crunch', icon: iconDatabase(16), href: '../crunch/index.html', keywords: 'data labeling columns' },
   { title: 'Flow', icon: iconGitBranch(16), href: '../flow/index.html', keywords: 'process workflow steps' },
   { title: 'Team', icon: iconUsers(16), href: '../team/index.html', keywords: 'team members roster' },

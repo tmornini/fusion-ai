@@ -1,3 +1,5 @@
+import { PAGE_REGISTRY } from './page-registry';
+
 function getPageName(): string {
   return document.documentElement.getAttribute('data-page') || '';
 }
@@ -9,7 +11,13 @@ function getParams(): Record<string, string> {
 }
 
 function navigateTo(page: string, params?: Record<string, string>): void {
-  let url = '../' + page + '/index.html';
+  const entry = PAGE_REGISTRY[page];
+  let url: string;
+  if (entry?.sourceFile) {
+    url = `../${entry.sourceDir || page}/${entry.sourceFile}.html`;
+  } else {
+    url = `../${page}/index.html`;
+  }
   if (params && Object.keys(params).length > 0) {
     url += '?' + new URLSearchParams(params).toString();
   }
@@ -24,7 +32,7 @@ function initPrefetch(): void {
     const anchor = e.target.closest<HTMLAnchorElement>('a[href]');
     if (!anchor) return;
     const href = anchor.getAttribute('href');
-    if (href && href.endsWith('/index.html') && !href.startsWith('http') && !prefetched.has(href)) {
+    if (href && href.endsWith('.html') && !href.startsWith('http') && !prefetched.has(href)) {
       prefetched.add(href);
       const link = document.createElement('link');
       link.rel = 'prefetch';

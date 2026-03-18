@@ -2,6 +2,7 @@ export interface PageEntry {
   title: string;
   layout: 'sidebar' | 'standalone';
   sourceDir?: string;
+  sourceFile?: string;  // basename without extension; defaults to 'index'
 }
 
 export const PAGE_REGISTRY: Record<string, PageEntry> = {
@@ -13,7 +14,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   'engineering-requirements':  { title: 'Engineering Requirements',  layout: 'sidebar' },
   'idea-review-queue':        { title: 'Review Queue',             layout: 'sidebar',    sourceDir: 'ideas/review-queue' },
   edge:                       { title: 'Edge Definition',          layout: 'sidebar' },
-  'edge-list':                { title: 'Edge List',                layout: 'sidebar' },
+  'edge-list':                { title: 'Edge List',                layout: 'sidebar',    sourceDir: 'edge', sourceFile: 'list' },
   crunch:                     { title: 'Crunch',                   layout: 'sidebar' },
   flow:                       { title: 'Flow',                     layout: 'sidebar' },
   'flow-detail':              { title: 'Flow Detail',              layout: 'sidebar' },
