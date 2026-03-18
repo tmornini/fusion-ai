@@ -110,7 +110,7 @@
 - [ ] **D23** At least one idea with `pending_review` status appears in the queue. PASS: idea 7 ("AI-Powered Customer Support Chatbot") or similar is listed.
 - [ ] **D24** Click a review item. PASS: navigates to `approval-detail/?id=<ideaId>`.
 
-### Approval Detail (`approval-detail/`)
+### Approval Detail (`ideas/approval-detail.html`)
 
 - [ ] **D25** Navigate to `approval-detail/?id=7`. PASS: page loads with full idea details for idea 7.
 - [ ] **D26** Page shows the idea title, problem statement, proposed solution, and expected outcome. PASS: all text fields populated.

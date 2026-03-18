@@ -182,8 +182,7 @@ web-app/
 
   # Pages — 27 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
-  ideas/                    # Ideas list + detail, create, convert, review-queue (named files)
-  approval-detail/          # Review decision page (standalone)
+  ideas/                    # Ideas list + detail, create, convert, review-queue, approval-detail (named files)
   projects/                 # Projects list + detail, engineering-requirements (named files)
   edge/                     # Edge definition (per-idea) + Edge list (list.ts/list.html)
   crunch/                   # Data labeling tool

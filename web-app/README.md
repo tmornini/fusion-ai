@@ -28,7 +28,7 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 |------|------|-------------|
 | [account](account/README.md) | composed | Account overview |
 | [activity-feed](activity-feed/README.md) | composed | Activity feed |
-| [approval-detail](approval-detail/README.md) | standalone | Review decision page |
+| approval-detail | standalone | Review decision page (in `ideas/`) |
 | [auth](auth/README.md) | standalone | Login/signup |
 | [settings](settings/README.md) | composed | Company settings |
 | [crunch](crunch/README.md) | composed | Data labeling tool |

@@ -28,7 +28,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   'design-system':            { title: 'Design System',            layout: 'sidebar' },
   'idea-create':              { title: 'Create Idea',              layout: 'standalone', sourceDir: 'ideas', sourceFile: 'create' },
   'idea-convert':             { title: 'Convert Idea',             layout: 'standalone', sourceDir: 'ideas', sourceFile: 'convert' },
-  'approval-detail':          { title: 'Approval Detail',          layout: 'standalone' },
+  'approval-detail':          { title: 'Approval Detail',          layout: 'standalone', sourceDir: 'ideas', sourceFile: 'approval-detail' },
   auth:                       { title: 'Authentication',           layout: 'standalone' },
   landing:                    { title: 'Landing',                  layout: 'standalone' },
   onboarding:                 { title: 'Onboarding',               layout: 'standalone' },
