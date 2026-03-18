@@ -5,7 +5,7 @@ import { buildSkeleton, buildEmptyState, withLoadingState } from '../app/loading
 import {
   iconGitBranch, iconPlus, iconTrash, iconCheck, iconUsers, iconClock,
   iconChevronRight, iconChevronDown, iconChevronUp, iconGripVertical,
-  iconShare, iconDownload, iconEye, iconEdit, iconFileText, iconMail,
+  iconFileText, iconMail,
   iconDatabase, iconGlobe, iconPhone, iconMessageSquare, iconFolderOpen,
   iconArrowLeft, iconSave,
 } from '../app/icons';
@@ -22,7 +22,6 @@ let flowName = '';
 let flowDescription = '';
 let flowDepartment = '';
 let currentProcessId = '1';
-let viewMode: 'edit' | 'preview' = 'edit';
 let expandedStepId: string | null = null;
 
 function styleForStepType(type: string): string {
@@ -127,43 +126,6 @@ function buildEditMode(): SafeHtml {
     </div>`;
 }
 
-function buildPreviewMode(): SafeHtml {
-  return html`
-    <div style="display:flex;flex-direction:column;gap:1.5rem">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="text-lg font-display font-semibold">${flowName}</h2>
-        <div class="flex items-center gap-2">
-          <button class="btn btn-outline btn-sm gap-2">${iconShare(14)} Share</button>
-          <button class="btn btn-outline btn-sm gap-2">${iconDownload(14)} Export</button>
-        </div>
-      </div>
-      <p class="text-sm text-muted">${flowDescription}</p>
-      <div style="position:relative;padding-left:1.5rem">
-        <div style="position:absolute;left:0.75rem;top:0;bottom:0;width:2px;background:hsl(var(--border))"></div>
-        ${processSteps.map((step, i) => html`
-          <div style="position:relative;padding-bottom:${i < processSteps.length - 1 ? '2rem' : '0'}">
-            <div style="position:absolute;left:0;width:1.5rem;height:1.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;transform:translateX(calc(-50% - 1px));${trusted(styleForStepType(step.type))};background:hsl(var(--background))">
-              <span style="font-size:0.625rem;font-weight:700">${i + 1}</span>
-            </div>
-            <div class="card" style="margin-left:1.5rem;padding:1rem">
-              <h4 class="font-medium text-sm mb-1">${step.title}</h4>
-              <p class="text-xs text-muted mb-2">${step.description}</p>
-              <div class="flex flex-wrap items-center gap-3 text-xs text-muted">
-                <span class="flex items-center gap-1">${iconUsers(12)} ${step.owner} (${step.role})</span>
-                <span class="flex items-center gap-1">${iconClock(12)} ${step.duration}</span>
-              </div>
-              ${step.tools.length ? html`
-                <div class="flex flex-wrap gap-1.5" style="margin-top:0.75rem">
-                  ${step.tools.map(toolName => html`<span class="pill-tag" style="font-size:0.625rem">${toolIconConfig[toolName]?.(12) || html``} ${toolName}</span>`)}
-                </div>
-              ` : html``}
-            </div>
-          </div>
-        `)}
-      </div>
-    </div>`;
-}
-
 function buildFlowDetailPage(): SafeHtml {
   const deptOptions = ['Sales', 'Customer Success', 'Engineering', 'Operations', 'Finance', 'HR'];
   return html`
@@ -177,11 +139,7 @@ function buildFlowDetailPage(): SafeHtml {
             <p class="text-sm text-muted" style="max-width:32rem">${flowDescription}</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="btn ${viewMode === 'edit' ? 'btn-primary' : 'btn-outline'} btn-sm gap-2" data-flow-mode="edit">${iconEdit(14)} Edit</button>
-          <button class="btn ${viewMode === 'preview' ? 'btn-primary' : 'btn-outline'} btn-sm gap-2" data-flow-mode="preview">${iconEye(14)} Preview</button>
-          <button class="btn btn-primary gap-2" id="flow-save-btn">${iconSave(16)} Save</button>
-        </div>
+        <button class="btn btn-primary gap-2" id="flow-save-btn">${iconSave(16)} Save</button>
       </div>
 
       <div class="card" style="padding:1.5rem;margin-bottom:1.5rem">
@@ -196,7 +154,7 @@ function buildFlowDetailPage(): SafeHtml {
         </div>
       </div>
 
-      ${viewMode === 'edit' ? buildEditMode() : buildPreviewMode()}
+      ${buildEditMode()}
     </div>`;
 }
 
@@ -209,14 +167,6 @@ function mutateFlowDetailPage(): void {
 
 function bindFlowDetailEvents(): void {
   $('#flow-detail-back-btn')?.addEventListener('click', () => navigateTo('flow'));
-
-  $$('[data-flow-mode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      syncFormFields();
-      viewMode = btn.getAttribute('data-flow-mode') as 'edit' | 'preview';
-      mutateFlowDetailPage();
-    });
-  });
 
   $$('[data-step-header]').forEach(el => {
     el.addEventListener('click', () => {
@@ -314,7 +264,6 @@ export async function init(params?: Record<string, string>): Promise<void> {
   flowDescription = flowData.description;
   flowDepartment = flowData.department;
   processSteps = flowData.steps;
-  viewMode = 'edit';
   expandedStepId = null;
   mutateFlowDetailPage();
 }
