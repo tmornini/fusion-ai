@@ -47,7 +47,6 @@ Frontend application containing all pages and shared infrastructure for the Fusi
 | [not-found](not-found/README.md) | standalone | 404 page |
 | [onboarding](onboarding/README.md) | standalone | Welcome screen |
 | [profile](profile/README.md) | composed | Profile settings |
-| [project-detail](project-detail/README.md) | composed | Project detail (tabbed) |
-| [projects](projects/README.md) | composed | Projects list |
+| [projects](projects/README.md) | composed | Projects list + detail (named files) |
 | [snapshots](snapshots/README.md) | composed | Database snapshots |
 | [teams](teams/README.md) | composed | Team roster |

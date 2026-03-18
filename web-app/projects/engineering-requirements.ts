@@ -67,7 +67,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
     <div style="max-width:56rem;margin:0 auto">
       <div class="flex items-center gap-2 text-sm text-muted mb-4">
         <a href="../projects/index.html" class="hover-link">Projects</a><span>/</span>
-        <a href="../project-detail/index.html?projectId=${projectId}" class="hover-link">${project.title}</a><span>/</span>
+        <a href="../projects/detail.html?projectId=${projectId}" class="hover-link">${project.title}</a><span>/</span>
         <span>Engineering Requirements</span>
       </div>
 

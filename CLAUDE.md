@@ -184,9 +184,7 @@ web-app/
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list + detail, create, convert, review-queue (named files)
   approval-detail/          # Review decision page (standalone)
-  projects/                 # Projects list
-  project-detail/           # Project detail (tabbed)
-  engineering-requirements/ # Engineering requirements
+  projects/                 # Projects list + detail, engineering-requirements (named files)
   edge/                     # Edge definition (per-idea) + Edge list (list.ts/list.html)
   crunch/                   # Data labeling tool
   flow/                     # Process documentation list + detail (detail.ts/detail.html)

@@ -10,7 +10,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   ideas:                      { title: 'Ideas',                    layout: 'sidebar' },
   'idea-detail':              { title: 'Idea Detail',              layout: 'sidebar',    sourceDir: 'ideas', sourceFile: 'detail' },
   projects:                   { title: 'Projects',                 layout: 'sidebar' },
-  'project-detail':           { title: 'Project Detail',           layout: 'sidebar' },
+  'project-detail':           { title: 'Project Detail',           layout: 'sidebar', sourceDir: 'projects', sourceFile: 'detail' },
   'engineering-requirements':  { title: 'Engineering Requirements',  layout: 'sidebar', sourceDir: 'projects', sourceFile: 'engineering-requirements' },
   'idea-review-queue':        { title: 'Review Queue',             layout: 'sidebar',    sourceDir: 'ideas', sourceFile: 'review-queue' },
   edge:                       { title: 'Edge Definition',          layout: 'sidebar' },

@@ -111,7 +111,7 @@ async function loadSearchIndex(): Promise<void> {
       meta: `Progress: ${project.progress}% · ${project.status.replace(/-/g, ' ')}`,
       category: 'projects',
       icon: iconFolderKanban(16),
-      href: `../project-detail/index.html?projectId=${project.id}`,
+      href: `../projects/detail.html?projectId=${project.id}`,
       keywords: `${project.status}`,
     }));
 
