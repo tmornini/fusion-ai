@@ -49,8 +49,8 @@ export async function init(): Promise<void> {
   setHtml(container, html`
     <div style="max-width:64rem;margin:0 auto">
       <div class="mb-8">
-        <h1 class="text-3xl font-display font-bold mb-2">Account Overview</h1>
-        <p class="text-muted">Manage your organization, users, and billing settings</p>
+        <h1 class="text-3xl font-display font-bold mb-2">Administration</h1>
+        <p class="text-muted">Manage your organization, users, and billing</p>
       </div>
 
       <!-- Quick Actions -->

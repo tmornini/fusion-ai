@@ -70,7 +70,7 @@ export async function init(): Promise<void> {
   setHtml(container, html`
     <div style="max-width:72rem;margin:0 auto">
       <nav class="flex items-center gap-2 text-sm text-muted mb-6">
-        <a href="../account/index.html" class="text-primary">Account</a>
+        <a href="index.html" class="text-primary">Administration</a>
         ${iconChevronRight(14)} <span>Manage Users</span>
       </nav>
 

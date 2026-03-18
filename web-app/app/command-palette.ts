@@ -44,10 +44,10 @@ const pages: PageEntry[] = [
   { title: 'Crunch', icon: iconDatabase(16), href: '../crunch/index.html', keywords: 'data labeling columns' },
   { title: 'Flow', icon: iconGitBranch(16), href: '../flow/index.html', keywords: 'process workflow steps' },
   { title: 'Team', icon: iconUsers(16), href: '../teams/index.html', keywords: 'team members roster' },
-  { title: 'Account', icon: iconSettings(16), href: '../account/index.html', keywords: 'account billing plan' },
+  { title: 'Administration', icon: iconSettings(16), href: '../administration/index.html', keywords: 'account administration billing plan' },
   { title: 'Profile', icon: iconUser(16), href: '../profile/index.html', keywords: 'profile settings personal' },
   { title: 'Company Settings', icon: iconSettings(16), href: '../settings/index.html', keywords: 'company organization settings' },
-  { title: 'Manage Users', icon: iconUsers(16), href: '../manage-users/index.html', keywords: 'users invite admin' },
+  { title: 'Manage Users', icon: iconUsers(16), href: '../administration/manage-users.html', keywords: 'users invite admin' },
   { title: 'Activity Feed', icon: iconActivity(16), href: '../teams/activity-feed.html', keywords: 'activity feed log' },
   { title: 'Design System', icon: iconPalette(16), href: '../design-system/index.html', keywords: 'components ui reference' },
 ];
