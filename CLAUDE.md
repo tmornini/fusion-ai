@@ -23,7 +23,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 - **HTML Composition**: A build step (`web-app/app/compose.ts`) assembles `web-app/app/components-layout.html` (layout skeleton) with `component-*.html` files and each page's `index.html` to produce standalone composed `index.html` files in a temp build directory. 7 standalone pages have hand-written `index.html` that are copied directly to the build output.
 - **Navigation**: Standard `<a href>` links between pages. Parameterized pages use query strings (`?ideaId=1`). `navigateTo(page, params?)` helper constructs relative URLs for programmatic navigation.
 - **Layout**: Sidebar-layout pages share a layout template with sidebar, header, search, and theme toggle. Mobile layout uses CSS media queries (not JS) to swap between desktop sidebar and mobile drawer.
-- **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`.
+- **Page Detection**: `page-registry.ts` defines `PAGE_REGISTRY` mapping page names to `'sidebar'` or `'standalone'` layout type. `<html data-page="dashboard">` attribute is read by JS on `DOMContentLoaded` to dispatch to the correct page module's `init()`. Pages with `sourceDir` in `PAGE_REGISTRY` have source files at a different path than their page name. The build script reads from `sourceDir`, outputs to the page name. This allows source nesting without changing page names or URLs.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~45 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
@@ -182,10 +182,10 @@ web-app/
   # Pages — 27 page directories, each with index.ts + index.html
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list
-  idea-detail/              # Idea detail with view/edit
-  idea-create/              # Multi-step idea wizard (standalone)
-  idea-convert/             # Idea-to-project conversion (standalone)
-  idea-review-queue/        # Review queue
+    detail/                 # Idea detail with view/edit
+    create/                 # Multi-step idea wizard (standalone)
+    convert/                # Idea-to-project conversion (standalone)
+    review-queue/           # Review queue
   approval-detail/          # Review decision page (standalone)
   projects/                 # Projects list
   project-detail/           # Project detail (tabbed)

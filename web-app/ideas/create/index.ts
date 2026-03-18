@@ -1,11 +1,11 @@
-import { $, $input, $textarea } from '../app/dom';
-import { html, setHtml, SafeHtml } from '../app/safe-html';
+import { $, $input, $textarea } from '../../app/dom';
+import { html, setHtml, SafeHtml } from '../../app/safe-html';
 import {
   iconSparkles, iconArrowLeft, iconArrowRight, iconLightbulb,
   iconTarget, iconAlertCircle, iconTrendingUp, iconWand, iconCheck,
-} from '../app/icons';
-import { navigateTo } from '../app/core';
-import { putIdea } from '../app/adapters';
+} from '../../app/icons';
+import { navigateTo } from '../../app/core';
+import { putIdea } from '../../app/adapters';
 
 const steps = [
   { id: 1, title: 'The Problem', icon: iconAlertCircle, description: 'What challenge are you trying to solve?' },

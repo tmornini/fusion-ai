@@ -1,14 +1,14 @@
-import { $, $input, $select, attr } from '../app/dom';
-import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, withLoadingState } from '../app/loading-states';
+import { $, $input, $select, attr } from '../../app/dom';
+import { html, setHtml, SafeHtml } from '../../app/safe-html';
+import { buildSkeleton, withLoadingState } from '../../app/loading-states';
 import {
   iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
   iconCheckCircle2, iconMessageSquare, iconSearch,
   iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
-} from '../app/icons';
-import { navigateTo, styleForScore } from '../app/core';
-import { getReviewQueue, type ReviewIdea } from '../app/adapters';
-import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
+} from '../../app/icons';
+import { navigateTo, styleForScore } from '../../app/core';
+import { getReviewQueue, type ReviewIdea } from '../../app/adapters';
+import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../../app/config';
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
   high: { label: 'High Priority', className: 'badge-error' },

@@ -1,14 +1,14 @@
-import { $ } from '../app/dom';
-import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/loading-states';
+import { $ } from '../../app/dom';
+import { html, setHtml, SafeHtml } from '../../app/safe-html';
+import { showToast } from '../../app/toast';
+import { buildSkeleton, buildErrorState } from '../../app/loading-states';
 import {
   iconArrowLeft, iconArrowRight, iconRocket, iconCalendar, iconUsers,
   iconTarget, iconDollarSign, iconClock, iconTrendingUp,
   iconCheckCircle2, iconAlertCircle, iconLoader, iconFolderKanban,
-} from '../app/icons';
-import { navigateTo } from '../app/core';
-import { getIdeaForConversion, getIdea, putIdea, putProject, putMilestone, type ConversionIdea } from '../app/adapters';
+} from '../../app/icons';
+import { navigateTo } from '../../app/core';
+import { getIdeaForConversion, getIdea, putIdea, putProject, putMilestone, type ConversionIdea } from '../../app/adapters';
 
 const requiredFields = ['project-name', 'project-lead', 'start-date', 'target-end-date', 'budget', 'priority'];
 

@@ -15,11 +15,11 @@ const OUT = process.argv[2] || ROOT;
 // Derive sidebar and standalone page lists from the single registry
 const sidebarPages = Object.entries(PAGE_REGISTRY)
   .filter(([, entry]) => entry.layout === 'sidebar')
-  .map(([name, entry]) => ({ name, title: entry.title }));
+  .map(([name, entry]) => ({ name, title: entry.title, sourceDir: entry.sourceDir }));
 
 const standalonePages = Object.entries(PAGE_REGISTRY)
   .filter(([, entry]) => entry.layout === 'standalone')
-  .map(([name]) => name);
+  .map(([name, entry]) => ({ name, sourceDir: entry.sourceDir }));
 
 // Component files injected into layout
 const COMPONENTS = [
@@ -42,8 +42,8 @@ function compose(): void {
   const missing: string[] = [];
   let composed = 0;
 
-  for (const { name, title } of sidebarPages) {
-    const pageHtmlPath = join(ROOT, name, 'index.html');
+  for (const { name, title, sourceDir } of sidebarPages) {
+    const pageHtmlPath = join(ROOT, sourceDir || name, 'index.html');
 
     if (!existsSync(pageHtmlPath)) {
       missing.push(name);
@@ -69,8 +69,8 @@ function compose(): void {
 
   // Copy standalone pages
   let copied = 0;
-  for (const name of standalonePages) {
-    const srcPath = join(ROOT, name, 'index.html');
+  for (const { name, sourceDir } of standalonePages) {
+    const srcPath = join(ROOT, sourceDir || name, 'index.html');
     if (!existsSync(srcPath)) {
       missing.push(name);
       continue;

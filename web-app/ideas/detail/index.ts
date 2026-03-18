@@ -1,15 +1,15 @@
-import { $, $input, $textarea } from '../app/dom';
-import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/loading-states';
+import { $, $input, $textarea } from '../../app/dom';
+import { html, setHtml, SafeHtml } from '../../app/safe-html';
+import { showToast } from '../../app/toast';
+import { buildSkeleton, buildErrorState } from '../../app/loading-states';
 import {
   iconArrowLeft, iconEdit, iconSave, iconX, iconClock, iconDollarSign,
   iconTrendingUp, iconStar, iconTarget, iconArrowRight, iconClipboardCheck,
-} from '../app/icons';
-import { navigateTo, SECONDS_PER_DAY } from '../app/core';
-import { getIdeaDetail, putIdea, type IdeaDetail } from '../app/adapters';
-import { ideaStatusConfig, edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
-import { SCORE_BADGE_HIGH, SCORE_BADGE_MEDIUM } from '../../api/types';
+} from '../../app/icons';
+import { navigateTo, SECONDS_PER_DAY } from '../../app/core';
+import { getIdeaDetail, putIdea, type IdeaDetail } from '../../app/adapters';
+import { ideaStatusConfig, edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../../app/config';
+import { SCORE_BADGE_HIGH, SCORE_BADGE_MEDIUM } from '../../../api/types';
 
 let isEditing = false;
 
