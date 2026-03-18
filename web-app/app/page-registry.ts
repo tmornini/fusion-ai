@@ -17,7 +17,7 @@ export const PAGE_REGISTRY: Record<string, PageEntry> = {
   'edge-list':                { title: 'Edge List',                layout: 'sidebar',    sourceDir: 'edge', sourceFile: 'list' },
   crunch:                     { title: 'Crunch',                   layout: 'sidebar' },
   flow:                       { title: 'Flow',                     layout: 'sidebar' },
-  'flow-detail':              { title: 'Flow Detail',              layout: 'sidebar' },
+  'flow-detail':              { title: 'Flow Detail',              layout: 'sidebar',    sourceDir: 'flow', sourceFile: 'detail' },
   teams:                      { title: 'Teams',                    layout: 'sidebar' },
   account:                    { title: 'Account',                  layout: 'sidebar' },
   profile:                    { title: 'Profile',                  layout: 'sidebar' },

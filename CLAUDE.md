@@ -189,8 +189,7 @@ web-app/
   engineering-requirements/ # Engineering requirements
   edge/                     # Edge definition (per-idea) + Edge list (list.ts/list.html)
   crunch/                   # Data labeling tool
-  flow/                     # Process documentation list
-  flow-detail/              # Process detail with view/edit
+  flow/                     # Process documentation list + detail (detail.ts/detail.html)
   teams/                    # Team roster + activity feed (activity-feed.ts/activity-feed.html)
   account/                  # Account overview
   profile/                  # Profile settings
