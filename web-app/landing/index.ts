@@ -248,4 +248,8 @@ export async function init(): Promise<void> {
       window.location.href = '../auth/index.html';
     });
   });
+
+  setTimeout(() => {
+    window.location.href = '../dashboard/index.html';
+  }, 2000);
 }
