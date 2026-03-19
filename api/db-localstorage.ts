@@ -160,27 +160,31 @@ function createEntityStore<
             }
 
             writeTable(tableName, rows);
-            return rows[
-                index >= 0
-                    ? index
-                    : rows.length - 1
-            ]!;
+            const pos = index >= 0
+                ? index
+                : rows.length - 1;
+            const written = rows[pos];
+            if (!written) {
+                throw new Error(
+                    'Internal error: entity'
+                    + ' not found after write',
+                );
+            }
+            return written;
         },
         async delete(id: string): Promise<void> {
             const rows = readTable<T>(
                 tableName,
                 true,
             );
-            const entity = rows.find(
+            const idx = rows.findIndex(
                 e => e.id === id,
             );
-            if (entity) {
-                (
-                    entity as Record<
-                        string,
-                        unknown
-                    >
-                ).deleted_at = nowUtc();
+            if (idx >= 0) {
+                rows[idx] = {
+                    ...rows[idx]!,
+                    deleted_at: nowUtc(),
+                } as T;
                 writeTable(tableName, rows);
             }
         },
@@ -227,11 +231,17 @@ function createSingletonStore<
             }
 
             writeTable(tableName, rows);
-            return rows[
-                index >= 0
-                    ? index
-                    : rows.length - 1
-            ]!;
+            const pos = index >= 0
+                ? index
+                : rows.length - 1;
+            const written = rows[pos];
+            if (!written) {
+                throw new Error(
+                    'Internal error: entity'
+                    + ' not found after write',
+                );
+            }
+            return written;
         },
     };
 }
@@ -626,11 +636,18 @@ export async function createLocalStorageAdapter(
                     'idea_scores',
                     rows,
                 );
-                return rows[
-                    index >= 0
-                        ? index
-                        : rows.length - 1
-                ]!;
+                const pos = index >= 0
+                    ? index
+                    : rows.length - 1;
+                const written = rows[pos];
+                if (!written) {
+                    throw new Error(
+                        'Internal error: entity'
+                        + ' not found after'
+                        + ' write',
+                    );
+                }
+                return written;
             },
         },
 
@@ -705,11 +722,18 @@ export async function createLocalStorageAdapter(
                     'project_team',
                     rows,
                 );
-                return rows[
-                    index >= 0
-                        ? index
-                        : rows.length - 1
-                ]!;
+                const pos = index >= 0
+                    ? index
+                    : rows.length - 1;
+                const written = rows[pos];
+                if (!written) {
+                    throw new Error(
+                        'Internal error: entity'
+                        + ' not found after'
+                        + ' write',
+                    );
+                }
+                return written;
             },
         },
 
