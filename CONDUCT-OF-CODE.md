@@ -36,6 +36,7 @@ We adore:
 - S.O.L.I.D. techniques (<https://en.wikipedia.org/wiki/SOLID>)
 - tell, don't ask
   - we tell objects what we need or what to do
+  - this allows us to exploit polymorphism, which allows generality
 - relationship entities storing relationships between nouns
   - should only store noun IDs and when the relationship was formed
 - being informed or notified of state changes
