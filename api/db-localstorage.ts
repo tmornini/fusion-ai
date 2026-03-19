@@ -118,6 +118,46 @@ function generateCompositeId(
     return `${prefix}-${parts.join('-')}`;
 }
 
+function migrateRenamedFields(
+    tableName: string,
+    renames: {
+        from: string;
+        to: string;
+        transform?: (v: unknown) => unknown;
+    }[],
+): void {
+    const key = KEY_PREFIX + tableName;
+    const raw = localStorage.getItem(key);
+    if (raw === null) return;
+    try {
+        const rows = JSON.parse(raw);
+        if (!Array.isArray(rows)) return;
+        const needsMigration = rows.some(
+            (r: Record<string, unknown>) =>
+                renames.some(re => re.from in r),
+        );
+        if (!needsMigration) return;
+        for (const row of rows) {
+            for (const { from, to, transform }
+                of renames) {
+                if (from in row) {
+                    row[to] = transform
+                        ? transform(row[from])
+                        : row[from];
+                    delete row[from];
+                }
+            }
+        }
+        localStorage.setItem(
+            key,
+            JSON.stringify(rows),
+        );
+    } catch {
+        /* corrupt JSON — readTable will
+           throw when the page loads */
+    }
+}
+
 function createEntityStore<
     T extends { id: string },
 >(tableName: string): EntityStore<T> {
@@ -288,105 +328,23 @@ export async function createLocalStorageAdapter(
         localStorage.removeItem(oldAccountKey);
     }
 
-    // Migrate ideas: estimated_time →
-    // estimated_duration (hours→seconds),
-    // effort_time_estimate →
-    // effort_duration_estimate
-    const ideasKey = KEY_PREFIX + 'ideas';
-    const ideasRaw =
-        localStorage.getItem(ideasKey);
-    if (ideasRaw !== null) {
-        try {
-            const ideas = JSON.parse(ideasRaw);
-            if (
-                Array.isArray(ideas)
-                && ideas.some(
-                    (
-                        r: Record<
-                            string,
-                            unknown
-                        >,
-                    ) => 'estimated_time' in r,
-                )
-            ) {
-                for (const idea of ideas) {
-                    if (
-                        'estimated_time' in idea
-                    ) {
-                        const et = idea
-                            .estimated_time;
-                        idea
-                            .estimated_duration
-                            = (et as number)
-                            * 3600;
-                        delete idea
-                            .estimated_time;
-                    }
-                    if (
-                        'effort_time_estimate'
-                            in idea
-                    ) {
-                        idea
-                            .effort_duration_estimate =
-                            idea
-                                .effort_time_estimate;
-                        delete idea
-                            .effort_time_estimate;
-                    }
-                }
-                localStorage.setItem(
-                    ideasKey,
-                    JSON.stringify(ideas),
-                );
-            }
-        } catch {
-            /* corrupt JSON — readTable will
-               throw when the page loads */
-        }
-    }
-
-    // Migrate idea_scores:
-    // estimated_time → estimated_duration
-    const scoresKey =
-        KEY_PREFIX + 'idea_scores';
-    const scoresRaw =
-        localStorage.getItem(scoresKey);
-    if (scoresRaw !== null) {
-        try {
-            const scores =
-                JSON.parse(scoresRaw);
-            if (
-                Array.isArray(scores)
-                && scores.some(
-                    (
-                        r: Record<
-                            string,
-                            unknown
-                        >,
-                    ) => 'estimated_time' in r,
-                )
-            ) {
-                for (const score of scores) {
-                    if (
-                        'estimated_time' in score
-                    ) {
-                        score
-                            .estimated_duration =
-                            score.estimated_time;
-                        delete score
-                            .estimated_time;
-                    }
-                }
-                localStorage.setItem(
-                    scoresKey,
-                    JSON.stringify(scores),
-                );
-            }
-        } catch {
-            /* corrupt JSON — readTable will
-               throw when the page loads */
-        }
-    }
+    migrateRenamedFields('ideas', [
+        {
+            from: 'estimated_time',
+            to: 'estimated_duration',
+            transform: v => (v as number) * 3600,
+        },
+        {
+            from: 'effort_time_estimate',
+            to: 'effort_duration_estimate',
+        },
+    ]);
+    migrateRenamedFields('idea_scores', [
+        {
+            from: 'estimated_time',
+            to: 'estimated_duration',
+        },
+    ]);
 
     const edgeStore =
         createEntityStore<EdgeEntity>('edges');

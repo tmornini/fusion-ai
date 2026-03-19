@@ -18,7 +18,10 @@ import {
     getIdeaForEdge, getEdgeDataByIdeaId,
     putEdgeData, type EdgeIdea, type EdgeData,
 } from '../app/adapters';
-import type { ConfidenceLevel } from '../../api/types';
+import {
+    isConfidenceLevel,
+    type ConfidenceLevel,
+} from '../../api/types';
 
 const outcomeTemplates = [
     'Reduce operational cost',
@@ -571,10 +574,13 @@ function syncFormFields() {
     edgeData.impact.longTerm =
         $textarea('#edge-impact-long-term')
             ?.value ?? '';
-    edgeData.confidence = (
+    const confidenceValue =
         $select('#edge-confidence-select')
-            ?.value || null
-    ) as ConfidenceLevel | null;
+            ?.value ?? '';
+    edgeData.confidence =
+        isConfidenceLevel(confidenceValue)
+            ? confidenceValue
+            : null;
     edgeData.owner =
         $input('#edge-owner-input')?.value ?? '';
     document.querySelectorAll<HTMLInputElement>(
@@ -832,7 +838,8 @@ function bindEdgeEvents(ideaId: string) {
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const ideaId = params?.ideaId || '1';
+    const ideaId = params?.ideaId;
+    if (!ideaId) { navigateTo('ideas'); return; }
     const container = $('#edge-content');
     if (!container) return;
 

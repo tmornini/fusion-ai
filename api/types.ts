@@ -6,6 +6,16 @@ export type PriorityLevel = 'high' | 'medium' | 'low';
 
 export type EdgeStatus = 'complete' | 'draft' | 'missing';
 
+export type FlowStepType =
+    | 'action'
+    | 'decision'
+    | 'start'
+    | 'end';
+
+export type ClarificationStatus =
+    | 'pending'
+    | 'answered';
+
 export type IdeaStatus =
     | 'active'
     | 'in-review'
@@ -52,6 +62,40 @@ export function toBool(
 ): boolean {
     return value === 1
         || value === true;
+}
+
+const CONFIDENCE_LEVELS: readonly ConfidenceLevel[]
+    = ['high', 'medium', 'low'];
+
+export function isConfidenceLevel(
+    v: string,
+): v is ConfidenceLevel {
+    return (CONFIDENCE_LEVELS as readonly string[])
+        .includes(v);
+}
+
+const FLOW_STEP_TYPES: readonly FlowStepType[]
+    = ['action', 'decision', 'start', 'end'];
+
+export function isFlowStepType(
+    v: string,
+): v is FlowStepType {
+    return (FLOW_STEP_TYPES as readonly string[])
+        .includes(v);
+}
+
+const PROJECT_STATUSES: readonly ProjectStatus[]
+    = [
+        'submitted', 'under-review', 'sent-back',
+        'approved', 'declined', 'completed',
+        'deleted',
+    ];
+
+export function isProjectStatus(
+    v: string,
+): v is ProjectStatus {
+    return (PROJECT_STATUSES as readonly string[])
+        .includes(v);
 }
 
 export const SECONDS_PER_DAY = 86400;
@@ -159,7 +203,7 @@ export interface IdeaEntity {
   priority: number;
   status: IdeaStatus;
   submitted_by_id: Id;
-  edge_status: string;
+  edge_status: EdgeStatus | 'incomplete';
   problem_statement: string;
   proposed_solution: string;
   expected_outcome: string;
@@ -308,7 +352,7 @@ export interface ClarificationEntity {
   question: string;
   asked_by_id: Id;
   asked_at: string;
-  status: string;
+  status: ClarificationStatus;
   answer: string | null;
   answered_by_id: Id | null;
   answered_at: string | null;
@@ -342,7 +386,7 @@ export interface FlowStepEntity {
   tools: string; // JSON array
   duration: string;
   sort_order: number;
-  type: string;
+  type: FlowStepType;
 }
 
 export interface CompanySettingsEntity {
@@ -561,7 +605,7 @@ export interface FlowStepCreationFields {
     process_id: Id;
     title: string;
     sort_order: number;
-    type?: string;
+    type?: FlowStepType;
     description?: string;
     owner?: string;
     role?: string;
@@ -747,9 +791,8 @@ export class Idea {
             entity.estimated_cost;
         this.priority = entity.priority;
         this.status = entity.status;
-        this.edgeStatus = (
-            entity.edge_status || 'incomplete'
-        ) as EdgeStatus | 'incomplete';
+        this.edgeStatus =
+            entity.edge_status || 'incomplete';
         this.submittedById =
             entity.submitted_by_id;
         this.problemStatement =

@@ -9,7 +9,8 @@ import {
 function initials(name: string): string {
     return name
         .split(' ')
-        .map(word => word[0])
+        .filter(Boolean)
+        .map(word => word.charAt(0))
         .join('');
 }
 

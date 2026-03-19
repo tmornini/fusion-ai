@@ -51,13 +51,24 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
 
 // ── Manage Users ──────────────────
 
+export type UserRole =
+    | 'admin'
+    | 'manager'
+    | 'member'
+    | 'viewer';
+
+export type UserAccountStatus =
+    | 'active'
+    | 'pending'
+    | 'deactivated';
+
 export interface ManagedUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'member' | 'viewer';
+  role: string;
   department: string;
-  status: 'active' | 'pending' | 'deactivated';
+  status: string;
   lastActive: string;
 }
 
@@ -69,9 +80,9 @@ export async function getManagedUsers(): Promise<ManagedUser[]> {
       id: user.id,
       name: new User(user).fullName(),
       email: user.email,
-      role: user.role as ManagedUser['role'],
+      role: user.role,
       department: user.department,
-      status: user.status as ManagedUser['status'],
+      status: user.status,
       lastActive: user.last_active,
     }));
 }

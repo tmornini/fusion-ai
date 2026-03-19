@@ -32,8 +32,9 @@ import {
 import {
   projectStatusConfig, UNKNOWN_STATUS,
 } from '../app/config';
-import type {
-  ProjectStatus,
+import {
+  isProjectStatus,
+  type ProjectStatus,
 } from '../../api/types';
 
 let isEditing = false;
@@ -1185,10 +1186,12 @@ function bindProjectEvents(
         $textarea(
             '#project-edit-description',
         )?.value ?? project.description;
-    const status = (
-        $select('#project-edit-status')
-          ?.value ?? project.status
-    ) as ProjectStatus;
+    const statusValue =
+        $select('#project-edit-status')?.value;
+    const status: ProjectStatus =
+        statusValue && isProjectStatus(statusValue)
+            ? statusValue
+            : project.status;
     const startDate =
         $input(
             '#project-edit-start-date',
@@ -1313,8 +1316,8 @@ function mutateProjectPage(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-  const projectId =
-      params?.projectId || '1';
+  const projectId = params?.projectId;
+  if (!projectId) { navigateTo('projects'); return; }
   isEditing = false;
 
   const container = $(

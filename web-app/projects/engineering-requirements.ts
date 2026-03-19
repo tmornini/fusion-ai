@@ -103,8 +103,8 @@ function buildClarification(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-  const projectId =
-      params?.['projectId'] || '1';
+  const projectId = params?.['projectId'];
+  if (!projectId) { navigateTo('projects'); return; }
 
   const root = $(
       '#engineering-requirements-content',

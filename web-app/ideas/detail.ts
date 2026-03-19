@@ -557,8 +557,8 @@ function mutateIdeaPage(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const ideaId =
-        params?.ideaId || '1';
+    const ideaId = params?.ideaId;
+    if (!ideaId) { navigateTo('ideas'); return; }
     isEditing = false;
 
     const container = $(

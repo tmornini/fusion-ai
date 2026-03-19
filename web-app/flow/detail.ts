@@ -23,6 +23,7 @@ import {
     getFlow, putFlow, putFlowStep,
     type FlowStep, type Flow,
 } from '../app/adapters';
+import { isFlowStepType } from '../../api/types';
 
 const toolIconConfig: Record<
     string,
@@ -127,9 +128,8 @@ function syncFormFields(): void {
         if (durationInput) {
             step.duration = durationInput.value;
         }
-        if (type) {
-            step.type =
-                type.value as FlowStep['type'];
+        if (type && isFlowStepType(type.value)) {
+            step.type = type.value;
         }
     });
 }
@@ -869,9 +869,10 @@ export async function init(
     const root = $('#flow-detail-content');
     if (!root) return;
 
-    currentFlowId =
-        params?.flowId
-        ?? params?.processId ?? '1';
+    const flowId =
+        params?.flowId ?? params?.processId;
+    if (!flowId) { navigateTo('flow'); return; }
+    currentFlowId = flowId;
 
     const flowData = await withLoadingState(
         root,

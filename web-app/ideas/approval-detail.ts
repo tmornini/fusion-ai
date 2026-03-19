@@ -965,7 +965,8 @@ function mutateApprovalPage(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const id = params?.['id'] || '1';
+    const id = params?.['id'];
+    if (!id) { navigateTo('idea-review-queue'); return; }
     isEditingIdea = false;
 
     const root = $('#page-root');

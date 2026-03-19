@@ -134,8 +134,7 @@ export async function getFlow(
             ),
             duration: step.duration,
             sortOrder: step.sort_order,
-            type: step.type as
-                FlowStep['type'],
+            type: step.type,
         })),
     };
 }

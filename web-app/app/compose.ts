@@ -24,26 +24,31 @@ const COMPONENTS = [
 
 function compose(): void {
   const appDir = join(ROOT, 'app');
-  let layout = readFileSync(join(appDir, 'components-layout.html'), 'utf-8');
 
-  // Assemble layout by injecting component files
+  // Phase 1: Validate all inputs exist
+  const missing: string[] = [];
+  for (const { name, sourceDir, sourceFile } of [...sidebarPages, ...standalonePages]) {
+    const file = sourceFile || 'index';
+    const path = join(ROOT, sourceDir || name, `${file}.html`);
+    if (!existsSync(path)) missing.push(name);
+  }
+  if (missing.length > 0) {
+    console.error(`ERROR: ${missing.length} page(s) not found:\n  ${missing.join('\n  ')}`);
+    process.exit(1);
+  }
+
+  // Phase 2: Read layout and inject components
+  let layout = readFileSync(join(appDir, 'components-layout.html'), 'utf-8');
   for (const { placeholder, file } of COMPONENTS) {
     const content = readFileSync(join(appDir, file), 'utf-8');
     layout = layout.replace(placeholder, content);
   }
 
-  const missing: string[] = [];
+  // Phase 3: Write all outputs
   let composed = 0;
-
   for (const { name, title, sourceDir, sourceFile } of sidebarPages) {
     const file = sourceFile || 'index';
     const pageHtmlPath = join(ROOT, sourceDir || name, `${file}.html`);
-
-    if (!existsSync(pageHtmlPath)) {
-      missing.push(name);
-      continue;
-    }
-
     const pageContent = readFileSync(pageHtmlPath, 'utf-8');
 
     let html = layout
@@ -61,15 +66,10 @@ function compose(): void {
 
   console.log(`Composed ${composed} sidebar pages.`);
 
-  // Copy standalone pages
   let copied = 0;
   for (const { name, sourceDir, sourceFile } of standalonePages) {
     const file = sourceFile || 'index';
     const srcPath = join(ROOT, sourceDir || name, `${file}.html`);
-    if (!existsSync(srcPath)) {
-      missing.push(name);
-      continue;
-    }
 
     const outDir = join(OUT, sourceFile ? (sourceDir || name) : name);
     if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
@@ -79,11 +79,6 @@ function compose(): void {
   }
 
   console.log(`Copied ${copied} standalone pages.`);
-
-  if (missing.length > 0) {
-    console.error(`ERROR: ${missing.length} page(s) not found:\n  ${missing.join('\n  ')}`);
-    process.exit(1);
-  }
 }
 
 compose();

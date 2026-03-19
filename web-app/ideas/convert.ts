@@ -666,8 +666,8 @@ function buildConversionPage(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const ideaId =
-        params?.['ideaId'] || '1';
+    const ideaId = params?.['ideaId'];
+    if (!ideaId) { navigateTo('ideas'); return; }
 
     const root = $('#page-root');
     if (!root) return;

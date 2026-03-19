@@ -9,6 +9,7 @@ import type {
     IdeaEntity,
     ClarificationEntity,
     ConfidenceLevel,
+    ProjectStatus,
 } from '../../../api/types';
 import {
     Project,
@@ -42,7 +43,7 @@ export interface ProjectDetail {
     id: string;
     title: string;
     description: string;
-    status: string;
+    status: ProjectStatus;
     progress: number;
     startDate: string;
     targetEndDate: string;
@@ -357,8 +358,7 @@ getClarificationsByProjectId(
             c.asked_by_id,
         ),
         askedAt: c.asked_at,
-        status: c.status as
-            Clarification['status'],
+        status: c.status,
         ...(c.answer
             ? { answer: c.answer }
             : {}),
