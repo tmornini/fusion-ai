@@ -40,7 +40,7 @@ const _state: AppState = {
     return isValidTheme(raw) ? raw : 'system';
   })(),
   isMobile: window.matchMedia(
-    '(max-width: ${MOBILE_BREAKPOINT_PX}px)',
+    `(max-width: ${MOBILE_BREAKPOINT_PX}px)`,
   ).matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
@@ -112,7 +112,7 @@ window.matchMedia(darkQuery)
 // ------------------------------------
 
 const mobileQuery =
-  '(max-width: ${MOBILE_BREAKPOINT_PX}px)';
+  `(max-width: ${MOBILE_BREAKPOINT_PX}px)`;
 window.matchMedia(mobileQuery)
   .addEventListener('change', (e) => {
   setState({ isMobile: e.matches });
