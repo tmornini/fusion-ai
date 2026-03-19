@@ -1,4 +1,8 @@
-import { SafeHtml, trusted } from './safe-html';
+import {
+    SafeHtml,
+    trusted,
+    escapeForHtml,
+} from './safe-html';
 
 export interface ChartDatum {
     label: string;
@@ -147,14 +151,15 @@ export function buildBarChart(
                 + ' fill="currentColor"'
                 + ' font-size="10"'
                 + ' opacity="0.6">'
-                + datum.label
+                + escapeForHtml(datum.label)
                 + '</text>';
         }
     });
 
-    const label =
+    const label = escapeForHtml(
         config?.accessibleLabel
-        ?? 'Bar chart';
+        ?? 'Bar chart',
+    );
     return trusted(
         '<svg'
         + ` width="${width}"`
@@ -216,9 +221,10 @@ export function buildLineChart(
             + ` fill="${color}"/>`;
     });
 
-    const label =
+    const label = escapeForHtml(
         config?.accessibleLabel
-        ?? 'Line chart';
+        ?? 'Line chart',
+    );
     return trusted(
         '<svg'
         + ` width="${width}"`
@@ -294,9 +300,10 @@ export function buildDonutChart(
         offset += dash;
     });
 
-    const label =
+    const label = escapeForHtml(
         config?.accessibleLabel
-        ?? 'Donut chart';
+        ?? 'Donut chart',
+    );
     return trusted(
         '<svg'
         + ` width="${size}"`
@@ -362,9 +369,10 @@ export function buildAreaChart(
     const gradientId =
         `area-grad-${config.id}`;
 
-    const label =
+    const label = escapeForHtml(
         config?.accessibleLabel
-        ?? 'Area chart';
+        ?? 'Area chart',
+    );
     return trusted(
         '<svg'
         + ` width="${width}"`

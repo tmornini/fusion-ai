@@ -14,7 +14,7 @@ export function trusted(rawHtml: string): SafeHtml {
   return new SafeHtml(rawHtml);
 }
 
-function escapeForHtml(str: string): string {
+export function escapeForHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
