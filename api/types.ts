@@ -53,6 +53,28 @@ export function toBool(value: unknown): boolean {
   return value === 1 || value === true;
 }
 
+// ── Formatting Utilities ─────────────────────
+
+export const SECONDS_PER_DAY = 86400;
+
+export function durationInDays(
+    seconds: number,
+): number {
+    return Math.ceil(seconds / SECONDS_PER_DAY);
+}
+
+export function formatCompactCurrency(
+    value: number,
+): string {
+    if (value >= 1_000_000_000)
+        return `$${(value / 1_000_000_000).toFixed(2)}B`;
+    if (value >= 1_000_000)
+        return `$${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000)
+        return `$${Math.round(value / 1_000)}K`;
+    return `$${value}`;
+}
+
 // ── Entity Types ─────────────────────────────
 
 export interface UserEntity {
@@ -346,4 +368,518 @@ export interface AccountEntity {
   health_status: string;
   last_activity: string;
   active_users: number;
+}
+
+// ── Status Display Configuration ─────────────
+
+interface StatusDisplay {
+    label: string;
+    className: string;
+}
+
+const UNKNOWN_CONFIG: StatusDisplay = {
+    label: 'Unknown',
+    className: 'badge-default',
+};
+
+const IDEA_STATUS_CONFIG: Record<
+    IdeaStatus,
+    StatusDisplay
+> = {
+    'active': {
+        label: 'Active',
+        className: 'badge-success',
+    },
+    'in-review': {
+        label: 'In Review',
+        className: 'badge-warning',
+    },
+    'approved': {
+        label: 'Approved',
+        className: 'badge-primary',
+    },
+    'promoted': {
+        label: 'Promoted',
+        className: 'badge-primary',
+    },
+    'archived': {
+        label: 'Archived',
+        className: 'badge-default',
+    },
+    'deleted': {
+        label: 'Deleted',
+        className: 'badge-default',
+    },
+};
+
+const EDGE_STATUS_CONFIG: Record<
+    EdgeStatus | 'incomplete',
+    StatusDisplay
+> = {
+    missing: {
+        label: 'Edge Missing',
+        className: 'badge-error',
+    },
+    incomplete: {
+        label: 'Edge Missing',
+        className: 'badge-error',
+    },
+    draft: {
+        label: 'Edge Draft',
+        className: 'badge-warning',
+    },
+    complete: {
+        label: 'Edge Complete',
+        className: 'badge-success',
+    },
+};
+
+const PROJECT_STATUS_CONFIG: Record<
+    ProjectStatus,
+    StatusDisplay
+> = {
+    'submitted': {
+        label: 'Submitted',
+        className: 'badge-default',
+    },
+    'under-review': {
+        label: 'Under Review',
+        className: 'badge-warning',
+    },
+    'sent-back': {
+        label: 'Sent Back',
+        className: 'badge-warning',
+    },
+    'approved': {
+        label: 'Approved',
+        className: 'badge-success',
+    },
+    'declined': {
+        label: 'Declined',
+        className: 'badge-error',
+    },
+    'completed': {
+        label: 'Completed',
+        className: 'badge-primary',
+    },
+    'deleted': {
+        label: 'Deleted',
+        className: 'badge-default',
+    },
+};
+
+const CONFIDENCE_CONFIG: Record<
+    ConfidenceLevel,
+    StatusDisplay
+> = {
+    high: {
+        label: 'High',
+        className: 'text-success',
+    },
+    medium: {
+        label: 'Medium',
+        className: 'text-warning',
+    },
+    low: {
+        label: 'Low',
+        className: 'text-error',
+    },
+};
+
+// ── Domain Classes ───────────────────────────
+
+/** Domain object wrapping an IdeaEntity. */
+export class Idea {
+    readonly id: string;
+    readonly title: string;
+    readonly score: number;
+    readonly estimatedImpact: number;
+    readonly estimatedDuration: number;
+    readonly estimatedCost: number;
+    readonly priority: number;
+    readonly status: IdeaStatus;
+    readonly edgeStatus: EdgeStatus | 'incomplete';
+    readonly submittedById: Id;
+    readonly problemStatement: string;
+    readonly proposedSolution: string;
+    readonly expectedOutcome: string;
+    readonly category: string;
+    readonly readiness: string;
+    readonly waitingDays: number;
+    readonly impactLabel: string;
+    readonly effortLabel: string;
+    readonly description: string;
+    readonly submittedAt: string;
+    readonly risks: string;
+    readonly assumptions: string;
+    readonly alignments: string;
+    readonly effortDurationEstimate: string;
+    readonly effortTeamSize: string;
+    readonly costEstimate: string;
+    readonly costBreakdown: string;
+    readonly successMetrics: string;
+    readonly submittedBy: string;
+
+    constructor(
+        entity: IdeaEntity,
+        submittedBy: string = 'Unknown',
+    ) {
+        this.id = entity.id;
+        this.title = entity.title;
+        this.score = entity.score;
+        this.estimatedImpact =
+            entity.estimated_impact;
+        this.estimatedDuration =
+            entity.estimated_duration;
+        this.estimatedCost =
+            entity.estimated_cost;
+        this.priority = entity.priority;
+        this.status = entity.status;
+        this.edgeStatus = (
+            entity.edge_status || 'incomplete'
+        ) as EdgeStatus | 'incomplete';
+        this.submittedById =
+            entity.submitted_by_id;
+        this.problemStatement =
+            entity.problem_statement;
+        this.proposedSolution =
+            entity.proposed_solution;
+        this.expectedOutcome =
+            entity.expected_outcome;
+        this.category = entity.category;
+        this.readiness = entity.readiness;
+        this.waitingDays = entity.waiting_days;
+        this.impactLabel = entity.impact_label;
+        this.effortLabel = entity.effort_label;
+        this.description = entity.description;
+        this.submittedAt = entity.submitted_at;
+        this.risks = entity.risks;
+        this.assumptions = entity.assumptions;
+        this.alignments = entity.alignments;
+        this.effortDurationEstimate =
+            entity.effort_duration_estimate;
+        this.effortTeamSize =
+            entity.effort_team_size;
+        this.costEstimate = entity.cost_estimate;
+        this.costBreakdown =
+            entity.cost_breakdown;
+        this.successMetrics =
+            entity.success_metrics;
+        this.submittedBy = submittedBy;
+    }
+
+    isDeleted(): boolean {
+        return this.status === 'deleted';
+    }
+
+    isInReview(): boolean {
+        return this.status === 'in-review';
+    }
+
+    isReviewable(): boolean {
+        return this.status === 'in-review'
+            && this.edgeStatus === 'complete';
+    }
+
+    isConvertible(): boolean {
+        return this.status === 'approved';
+    }
+
+    needsEdgeDefinition(): boolean {
+        return this.edgeStatus !== 'complete'
+            && this.status === 'active';
+    }
+
+    durationInDays(): number {
+        return Math.ceil(
+            this.estimatedDuration
+                / SECONDS_PER_DAY,
+        );
+    }
+
+    priorityLevel(): PriorityLevel {
+        return computePriority(this.score);
+    }
+
+    scoreStyle(): string {
+        if (this.score >= SCORE_BADGE_HIGH)
+            return 'color:hsl(var(--success))'
+                + ';background:'
+                + 'hsl(var(--success-soft))';
+        if (this.score >= SCORE_BADGE_MEDIUM)
+            return 'color:hsl(var(--warning))'
+                + ';background:'
+                + 'hsl(var(--warning-soft))';
+        return 'color:hsl(var(--error))'
+            + ';background:'
+            + 'hsl(var(--error-soft))';
+    }
+
+    scoreColor(): string {
+        if (this.score >= SCORE_THRESHOLD_HIGH)
+            return 'color:hsl(var(--success))';
+        if (this.score >= SCORE_THRESHOLD_MEDIUM)
+            return 'color:hsl(var(--warning))';
+        return 'color:hsl(var(--error))';
+    }
+
+    statusLabel(): string {
+        return (
+            IDEA_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).label;
+    }
+
+    statusClassName(): string {
+        return (
+            IDEA_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).className;
+    }
+
+    edgeStatusLabel(): string {
+        return (
+            EDGE_STATUS_CONFIG[this.edgeStatus]
+                ?? UNKNOWN_CONFIG
+        ).label;
+    }
+
+    edgeStatusClassName(): string {
+        return (
+            EDGE_STATUS_CONFIG[this.edgeStatus]
+                ?? UNKNOWN_CONFIG
+        ).className;
+    }
+}
+
+/** Domain object wrapping a ProjectEntity. */
+export class Project {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string;
+    readonly status: ProjectStatus;
+    readonly progress: number;
+    readonly startDate: string;
+    readonly targetEndDate: string;
+    readonly leadId: Id;
+    readonly estimatedDuration: number;
+    readonly actualDuration: number;
+    readonly estimatedCost: number;
+    readonly actualCost: number;
+    readonly estimatedImpact: number;
+    readonly actualImpact: number;
+    readonly priority: number;
+    readonly priorityScore: number;
+    readonly linkedIdeaId: Id;
+    readonly businessContext: string;
+    readonly timelineLabel: string;
+    readonly budgetLabel: string;
+
+    constructor(entity: ProjectEntity) {
+        this.id = entity.id;
+        this.title = entity.title;
+        this.description = entity.description;
+        this.status = entity.status;
+        this.progress = entity.progress;
+        this.startDate = entity.start_date;
+        this.targetEndDate =
+            entity.target_end_date;
+        this.leadId = entity.lead_id;
+        this.estimatedDuration =
+            entity.estimated_duration;
+        this.actualDuration =
+            entity.actual_duration;
+        this.estimatedCost =
+            entity.estimated_cost;
+        this.actualCost = entity.actual_cost;
+        this.estimatedImpact =
+            entity.estimated_impact;
+        this.actualImpact =
+            entity.actual_impact;
+        this.priority = entity.priority;
+        this.priorityScore =
+            entity.priority_score;
+        this.linkedIdeaId =
+            entity.linked_idea_id;
+        this.businessContext =
+            entity.business_context;
+        this.timelineLabel =
+            entity.timeline_label;
+        this.budgetLabel = entity.budget_label;
+    }
+
+    isDeleted(): boolean {
+        return this.status === 'deleted';
+    }
+
+    isOverBudget(): boolean {
+        return this.actualCost
+            > this.estimatedCost;
+    }
+
+    isOverdue(): boolean {
+        return this.actualDuration
+            > this.estimatedDuration;
+    }
+
+    estimatedDurationDays(): number {
+        return durationInDays(
+            this.estimatedDuration,
+        );
+    }
+
+    actualDurationDays(): number {
+        return durationInDays(
+            this.actualDuration,
+        );
+    }
+
+    formattedCost(): string {
+        return formatCompactCurrency(
+            this.estimatedCost,
+        );
+    }
+
+    priorityLevel(): PriorityLevel {
+        return computePriority(
+            this.priorityScore,
+        );
+    }
+
+    leadName(
+        userMap: Map<Id, User>,
+    ): string {
+        return userMap.get(this.leadId)
+            ?.fullName() ?? 'Unknown';
+    }
+
+    statusLabel(): string {
+        return (
+            PROJECT_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).label;
+    }
+
+    statusClassName(): string {
+        return (
+            PROJECT_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).className;
+    }
+}
+
+/** Domain object wrapping an EdgeEntity. */
+export class Edge {
+    readonly id: string;
+    readonly ideaId: Id;
+    readonly status: EdgeStatus;
+    readonly confidence: ConfidenceLevel | null;
+    readonly ownerId: Id;
+    readonly impactShortTerm: string;
+    readonly impactMidTerm: string;
+    readonly impactLongTerm: string;
+    readonly updatedAt: string;
+
+    constructor(entity: EdgeEntity) {
+        this.id = entity.id;
+        this.ideaId = entity.idea_id;
+        this.status = entity.status;
+        this.confidence = entity.confidence;
+        this.ownerId = entity.owner_id;
+        this.impactShortTerm =
+            entity.impact_short_term;
+        this.impactMidTerm =
+            entity.impact_mid_term;
+        this.impactLongTerm =
+            entity.impact_long_term;
+        this.updatedAt = entity.updated_at;
+    }
+
+    isComplete(): boolean {
+        return this.status === 'complete';
+    }
+
+    isDraft(): boolean {
+        return this.status === 'draft';
+    }
+
+    isMissing(): boolean {
+        return this.status === 'missing';
+    }
+
+    statusLabel(): string {
+        return (
+            EDGE_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).label;
+    }
+
+    statusClassName(): string {
+        return (
+            EDGE_STATUS_CONFIG[this.status]
+                ?? UNKNOWN_CONFIG
+        ).className;
+    }
+
+    confidenceLabel(): string {
+        if (!this.confidence) return 'Unknown';
+        return (
+            CONFIDENCE_CONFIG[this.confidence]
+                ?? UNKNOWN_CONFIG
+        ).label;
+    }
+
+    confidenceClassName(): string {
+        if (!this.confidence)
+            return 'text-muted';
+        return (
+            CONFIDENCE_CONFIG[this.confidence]
+                ?? { className: 'text-muted' }
+        ).className;
+    }
+}
+
+/** Domain object wrapping an ActivityEntity. */
+export class Activity {
+    readonly id: string;
+    readonly type: string;
+    readonly actorId: Id;
+    readonly action: string;
+    readonly target: string;
+    readonly timestamp: string;
+    readonly score: number | null;
+    readonly status: string | null;
+    readonly comment: string | null;
+    readonly actor: string;
+
+    constructor(
+        entity: ActivityEntity,
+        actor: string = 'Unknown',
+    ) {
+        this.id = entity.id;
+        this.type = entity.type;
+        this.actorId = entity.actor_id;
+        this.action = entity.action;
+        this.target = entity.target;
+        this.timestamp = entity.timestamp;
+        this.score = entity.score;
+        this.status = entity.status;
+        this.comment = entity.comment;
+        this.actor = actor;
+    }
+
+    actorName(
+        userMap: Map<Id, User>,
+    ): string {
+        return userMap.get(this.actorId)
+            ?.fullName() ?? 'Unknown';
+    }
+
+    formattedDescription(
+        userMap: Map<Id, User>,
+    ): string {
+        return `${this.actorName(userMap)}`
+            + ` ${this.action}`
+            + ` ${this.target}`;
+    }
 }

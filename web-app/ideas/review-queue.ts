@@ -1,33 +1,107 @@
 import { $, $input, $select, attr } from '../app/dom';
-import { html, setHtml, SafeHtml } from '../app/safe-html';
-import { buildSkeleton, withLoadingState } from '../app/loading-states';
 import {
-  iconArrowLeft, iconClock, iconTrendingUp, iconAlertCircle,
-  iconCheckCircle2, iconMessageSquare, iconSearch,
-  iconChevronRight, iconTarget, iconShield, iconClipboardCheck,
+    html,
+    setHtml,
+    SafeHtml,
+} from '../app/safe-html';
+import {
+    buildSkeleton,
+    withLoadingState,
+} from '../app/loading-states';
+import {
+    iconArrowLeft,
+    iconClock,
+    iconTrendingUp,
+    iconAlertCircle,
+    iconCheckCircle2,
+    iconMessageSquare,
+    iconSearch,
+    iconChevronRight,
+    iconTarget,
+    iconShield,
+    iconClipboardCheck,
 } from '../app/icons';
-import { navigateTo, styleForScore } from '../app/core';
-import { getReviewQueue, type ReviewIdea } from '../app/adapters';
-import { edgeStatusConfig, UNKNOWN_STATUS, UNKNOWN_EDGE_STATUS } from '../app/config';
+import {
+    navigateTo,
+    styleForScore,
+} from '../app/core';
+import {
+    getReviewQueue,
+    type Idea,
+} from '../app/adapters';
+import {
+    edgeStatusConfig,
+    UNKNOWN_EDGE_STATUS,
+} from '../app/config';
 
-const priorityConfig: Record<string, { label: string; className: string }> = {
-  high: { label: 'High Priority', className: 'badge-error' },
-  medium: { label: 'Medium', className: 'badge-warning' },
-  low: { label: 'Low', className: 'badge-default' },
+const priorityConfig: Record<
+    string,
+    { label: string; className: string }
+> = {
+    high: {
+        label: 'High Priority',
+        className: 'badge-error',
+    },
+    medium: {
+        label: 'Medium',
+        className: 'badge-warning',
+    },
+    low: {
+        label: 'Low',
+        className: 'badge-default',
+    },
 };
 
-const readinessConfig: Record<string, { label: string; icon: (size?: number) => SafeHtml; className: string }> = {
-  ready: { label: 'Ready for Review', icon: iconCheckCircle2, className: 'text-success' },
-  'needs-info': { label: 'Needs Info', icon: iconMessageSquare, className: 'text-warning' },
-  incomplete: { label: 'Incomplete', icon: iconAlertCircle, className: 'text-error' },
+const readinessConfig: Record<
+    string,
+    {
+        label: string;
+        icon: (size?: number) => SafeHtml;
+        className: string;
+    }
+> = {
+    ready: {
+        label: 'Ready for Review',
+        icon: iconCheckCircle2,
+        className: 'text-success',
+    },
+    'needs-info': {
+        label: 'Needs Info',
+        icon: iconMessageSquare,
+        className: 'text-warning',
+    },
+    incomplete: {
+        label: 'Incomplete',
+        icon: iconAlertCircle,
+        className: 'text-error',
+    },
 };
 
-function buildReviewCard(idea: ReviewIdea): SafeHtml {
-  const readinessDisplay = readinessConfig[idea.readiness] ?? { label: 'Unknown', icon: iconAlertCircle, className: 'text-muted' };
-  const priorityDisplay = priorityConfig[idea.priority] ?? UNKNOWN_STATUS;
-  const edgeDisplay = edgeStatusConfig[idea.edgeStatus] ?? UNKNOWN_EDGE_STATUS;
-  return html`
-    <div class="card card-hover p-4" style="cursor:pointer" data-review-card="${idea.id}">
+function buildReviewCard(
+    idea: Idea,
+): SafeHtml {
+    const readinessDisplay =
+        readinessConfig[idea.readiness]
+        ?? {
+            label: 'Unknown',
+            icon: iconAlertCircle,
+            className: 'text-muted',
+        };
+    const priorityDisplay =
+        priorityConfig[idea.priorityLevel()]
+        ?? {
+            label: 'Unknown',
+            className: 'badge-default',
+        };
+    const edgeDisplay =
+        edgeStatusConfig[
+            idea.edgeStatus as
+                keyof typeof edgeStatusConfig
+        ] ?? UNKNOWN_EDGE_STATUS;
+    return html`
+    <div class="card card-hover p-4"
+        style="cursor:pointer"
+        data-review-card="${idea.id}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
           <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -47,9 +121,9 @@ function buildReviewCard(idea: ReviewIdea): SafeHtml {
         <div class="flex items-center gap-6">
           <div class="text-right hidden-mobile">
             <div class="flex items-center gap-4 text-sm">
-              <div><p class="text-muted">Score</p><p class="font-semibold" style="${styleForScore(idea.score)}">${idea.score}</p></div>
-              <div><p class="text-muted">Impact</p><p class="font-medium">${idea.impact}</p></div>
-              <div><p class="text-muted">Effort</p><p class="font-medium">${idea.effort}</p></div>
+              <div><p class="text-muted">Score</p><p class="font-semibold" style="${idea.scoreColor()}">${idea.score}</p></div>
+              <div><p class="text-muted">Impact</p><p class="font-medium">${idea.impactLabel}</p></div>
+              <div><p class="text-muted">Effort</p><p class="font-medium">${idea.effortLabel}</p></div>
             </div>
           </div>
           ${iconChevronRight(20, 'text-muted')}
@@ -58,28 +132,52 @@ function buildReviewCard(idea: ReviewIdea): SafeHtml {
     </div>`;
 }
 
-let allIdeas: ReviewIdea[] = [];
+let allIdeas: Idea[] = [];
 
 export async function init(): Promise<void> {
-  const root = $('#review-queue-content');
-  if (!root) return;
+    const root = $(
+        '#review-queue-content',
+    );
+    if (!root) return;
 
-  const result = await withLoadingState(root, html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`, getReviewQueue, init, {
-    icon: iconClipboardCheck(24),
-    title: 'Review Queue Empty',
-    description: 'All ideas have been reviewed. Check back later for new submissions.',
-  });
-  if (!result) return;
-  allIdeas = result;
+    const result = await withLoadingState(
+        root,
+        html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`,
+        getReviewQueue,
+        init,
+        {
+            icon: iconClipboardCheck(24),
+            title: 'Review Queue Empty',
+            description:
+                'All ideas have been reviewed.'
+                + ' Check back later for'
+                + ' new submissions.',
+        },
+    );
+    if (!result) return;
+    allIdeas = result;
 
-  const stats = {
-    total: allIdeas.length,
-    ready: allIdeas.filter(idea => idea.readiness === 'ready').length,
-    highPriority: allIdeas.filter(idea => idea.priority === 'high').length,
-    avgWait: Math.round(allIdeas.reduce((sum, idea) => sum + idea.waitingDays, 0) / allIdeas.length),
-  };
+    const stats = {
+        total: allIdeas.length,
+        ready: allIdeas.filter(
+            idea =>
+                idea.readiness === 'ready',
+        ).length,
+        highPriority: allIdeas.filter(
+            idea =>
+                idea.priorityLevel()
+                    === 'high',
+        ).length,
+        avgWait: Math.round(
+            allIdeas.reduce(
+                (sum, idea) =>
+                    sum + idea.waitingDays,
+                0,
+            ) / allIdeas.length,
+        ),
+    };
 
-  setHtml(root, html`
+    setHtml(root, html`
     <div class="flex items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="page-title">Review Queue</h1>
@@ -134,33 +232,108 @@ export async function init(): Promise<void> {
       <p class="text-muted">Try adjusting your search or filter criteria</p>
     </div>`);
 
-  function mutateFilteredList() {
-    const search = ($input('#review-queue-search')?.value ?? '').toLowerCase();
-    const priority = $select('#review-queue-priority-filter')?.value ?? 'all';
-    const readiness = $select('#review-queue-readiness-filter')?.value ?? 'all';
+    function mutateFilteredList() {
+        const search = (
+            $input(
+                '#review-queue-search',
+            )?.value ?? ''
+        ).toLowerCase();
+        const priority =
+            $select(
+                '#review-queue-priority-filter',
+            )?.value ?? 'all';
+        const readiness =
+            $select(
+                '#review-queue-readiness-filter',
+            )?.value ?? 'all';
 
-    const filtered = allIdeas.filter(idea => {
-      const matchesSearch = idea.title.toLowerCase().includes(search) || idea.submittedBy.toLowerCase().includes(search);
-      const matchesPriority = priority === 'all' || idea.priority === priority;
-      const matchesReadiness = readiness === 'all' || idea.readiness === readiness;
-      return matchesSearch && matchesPriority && matchesReadiness;
-    });
+        const filtered = allIdeas.filter(
+            idea => {
+                const matchesSearch =
+                    idea.title
+                        .toLowerCase()
+                        .includes(search)
+                    || idea.submittedBy
+                        .toLowerCase()
+                        .includes(search);
+                const matchesPriority =
+                    priority === 'all'
+                    || idea.priorityLevel()
+                        === priority;
+                const matchesReadiness =
+                    readiness === 'all'
+                    || idea.readiness
+                        === readiness;
+                return matchesSearch
+                    && matchesPriority
+                    && matchesReadiness;
+            },
+        );
 
-    const list = $('#review-queue-list');
-    const empty = $('#review-queue-empty');
-    if (list) setHtml(list, html`${filtered.map(buildReviewCard)}`);
-    if (list) list.style.display = filtered.length ? '' : 'none';
-    if (empty) empty.style.display = filtered.length ? 'none' : '';
-  }
+        const list = $(
+            '#review-queue-list',
+        );
+        const empty = $(
+            '#review-queue-empty',
+        );
+        if (list)
+            setHtml(
+                list,
+                html`${filtered.map(
+                    buildReviewCard,
+                )}`,
+            );
+        if (list)
+            list.style.display =
+                filtered.length ? '' : 'none';
+        if (empty)
+            empty.style.display =
+                filtered.length
+                    ? 'none' : '';
+    }
 
-  $('#review-queue-list')?.addEventListener('click', (e) => {
-    if (!(e.target instanceof Element)) return;
-    const card = e.target.closest<HTMLElement>('[data-review-card]');
-    if (card) navigateTo('approval-detail', { id: attr(card, 'data-review-card') });
-  });
+    $('#review-queue-list')
+        ?.addEventListener(
+            'click',
+            (e) => {
+                if (
+                    !(e.target
+                        instanceof Element)
+                ) return;
+                const card =
+                    e.target
+                        .closest<HTMLElement>(
+                            '[data-review-card]',
+                        );
+                if (card)
+                    navigateTo(
+                        'approval-detail',
+                        {
+                            id: attr(
+                                card,
+                                'data-review-card',
+                            ),
+                        },
+                    );
+            },
+        );
 
-  $('#review-queue-search')?.addEventListener('input', mutateFilteredList);
-  $('#review-queue-priority-filter')?.addEventListener('change', mutateFilteredList);
-  $('#review-queue-readiness-filter')?.addEventListener('change', mutateFilteredList);
-  mutateFilteredList();
+    $('#review-queue-search')
+        ?.addEventListener(
+            'input',
+            mutateFilteredList,
+        );
+    $(
+        '#review-queue-priority-filter',
+    )?.addEventListener(
+        'change',
+        mutateFilteredList,
+    );
+    $(
+        '#review-queue-readiness-filter',
+    )?.addEventListener(
+        'change',
+        mutateFilteredList,
+    );
+    mutateFilteredList();
 }
