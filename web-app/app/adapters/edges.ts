@@ -133,18 +133,27 @@ export async function putEdgeData(
 
   await PUT(`edges/${edge.id}`, {
     confidence: data.confidence,
-    impact_short_term: data.impact.shortTerm,
-    impact_mid_term: data.impact.midTerm,
-    impact_long_term: data.impact.longTerm,
-    status: 'complete',
-  } as Record<string, unknown>);
+    impact_short_term:
+      data.impact.shortTerm,
+    impact_mid_term:
+      data.impact.midTerm,
+    impact_long_term:
+      data.impact.longTerm,
+    status: 'complete' as const,
+  });
 
   for (const outcome of data.outcomes) {
-    await PUT(`edges/${edge.id}/outcomes/${outcome.id}`, {
-      description: outcome.description,
-      edge_id: edge.id,
-    } as Record<string, unknown>);
-    for (const metric of outcome.metrics) {
+    await PUT(
+      `edges/${edge.id}`
+        + `/outcomes/${outcome.id}`,
+      {
+        description: outcome.description,
+        edge_id: edge.id,
+      },
+    );
+    for (
+      const metric of outcome.metrics
+    ) {
       const metricUrl =
         `edges/${edge.id}`
         + `/outcomes/${outcome.id}`
@@ -155,7 +164,7 @@ export async function putEdgeData(
         unit: metric.unit,
         current: metric.current,
         outcome_id: outcome.id,
-      } as Record<string, unknown>);
+      });
     }
   }
 }

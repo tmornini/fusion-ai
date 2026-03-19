@@ -1,4 +1,13 @@
 import type { DbAdapter } from './db';
+import type {
+    IdeaEntity,
+    ProjectEntity,
+    EdgeEntity,
+    ActivityEntity,
+    CrunchColumnEntity,
+    FlowStepEntity,
+    ClarificationEntity,
+} from './types';
 
 export async function populateMockData(
     adapter: DbAdapter,
@@ -323,7 +332,7 @@ export async function populateMockData(
     ));
 
     // -- Ideas ----------------------------
-    const ideas = [
+    const ideas: IdeaEntity[] = [
         {
             id: '1',
             title: 'AI-Powered Customer'
@@ -940,7 +949,7 @@ export async function populateMockData(
     ]);
 
     // -- Projects -------------------------
-    const projects = [
+    const projects: ProjectEntity[] = [
         {
             id: '1',
             title: 'AI-Powered Customer'
@@ -1129,7 +1138,7 @@ export async function populateMockData(
         },
     ];
 
-    const edges = [
+    const edges: EdgeEntity[] = [
         {
             id: '1',
             idea_id: '1',
@@ -1229,7 +1238,7 @@ export async function populateMockData(
         },
     ];
 
-    const activities = [
+    const activities: ActivityEntity[] = [
         {
             id: '1',
             type: 'idea_scored',
@@ -1362,7 +1371,8 @@ export async function populateMockData(
         },
     ];
 
-    const crunchColumns = [
+    const crunchColumns:
+        CrunchColumnEntity[] = [
         {
             id: '1',
             original_name: 'CUST_ID',
@@ -1444,7 +1454,8 @@ export async function populateMockData(
         },
     ];
 
-    const processSteps = [
+    const processSteps:
+        FlowStepEntity[] = [
         {
             id: 'ps1',
             process_id: '1',
@@ -2228,7 +2239,8 @@ export async function populateMockData(
         },
     ];
 
-    const clarifications = [
+    const clarifications:
+        ClarificationEntity[] = [
         {
             id: 'c1',
             project_id: '1',

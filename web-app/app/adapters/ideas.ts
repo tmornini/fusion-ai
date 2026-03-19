@@ -239,8 +239,5 @@ export async function putIdea(
     id: string,
     entity: Partial<IdeaEntity>,
 ): Promise<void> {
-    await PUT(
-        `ideas/${id}`,
-        entity as Record<string, unknown>,
-    );
+    await PUT(`ideas/${id}`, entity);
 }

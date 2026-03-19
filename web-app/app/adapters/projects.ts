@@ -382,10 +382,7 @@ export async function putProject(
     id: string,
     entity: Partial<ProjectEntity>,
 ): Promise<void> {
-    await PUT(
-        `projects/${id}`,
-        entity as Record<string, unknown>,
-    );
+    await PUT(`projects/${id}`, entity);
 }
 
 export async function putMilestone(
@@ -396,6 +393,6 @@ export async function putMilestone(
     await PUT(
         `projects/${projectId}`
             + `/milestones/${milestoneId}`,
-        entity as Record<string, unknown>,
+        entity,
     );
 }

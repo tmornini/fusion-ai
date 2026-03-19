@@ -145,10 +145,7 @@ export async function putFlow(
     id: string,
     entity: Partial<FlowEntity>,
 ): Promise<void> {
-    await PUT(
-        `processes/${id}`,
-        entity as Record<string, unknown>,
-    );
+    await PUT(`processes/${id}`, entity);
 }
 
 export async function putFlowStep(
@@ -159,6 +156,6 @@ export async function putFlowStep(
     await PUT(
         `processes/${flowId}`
             + `/steps/${stepId}`,
-        entity as Record<string, unknown>,
+        entity,
     );
 }

@@ -99,14 +99,21 @@ function serializeValue(value: unknown): unknown {
     return value;
 }
 
-function serializeRecord(
-    record: Record<string, unknown>,
+function serializeRecord<T>(
+    record: Partial<T>,
 ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(
-        record,
-    )) {
-        result[key] = serializeValue(value);
+    for (
+        const [key, value]
+        of Object.entries(
+            record as Record<
+                string,
+                unknown
+            >,
+        )
+    ) {
+        result[key] =
+            serializeValue(value);
     }
     return result;
 }
@@ -177,7 +184,7 @@ function createEntityStore<
         },
         async put(
             id: string,
-            fields: Record<string, unknown>,
+            fields: Partial<T>,
         ): Promise<T> {
             const rows = readTable<T>(tableName);
             const index = rows.findIndex(
@@ -248,7 +255,7 @@ function createSingletonStore<
             return defaultEntity;
         },
         async put(
-            fields: Record<string, unknown>,
+            fields: Partial<T>,
         ): Promise<T> {
             const rows = readTable<T>(tableName);
             const serialized =
@@ -548,9 +555,8 @@ export async function createLocalStorageAdapter(
             },
             async put(
                 ideaId: string,
-                fields: Record<
-                    string,
-                    unknown
+                fields: Partial<
+                    IdeaScoreEntity
                 >,
             ): Promise<IdeaScoreEntity> {
                 const rows =
@@ -629,9 +635,8 @@ export async function createLocalStorageAdapter(
             async put(
                 projectId: string,
                 userId: string,
-                fields: Record<
-                    string,
-                    unknown
+                fields: Partial<
+                    ProjectTeamEntity
                 >,
             ): Promise<ProjectTeamEntity> {
                 const rows =
