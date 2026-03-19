@@ -40,7 +40,7 @@ import {
     getTeamMembers,
 } from './adapters';
 
-// ── Types ────────────────────────────────
+// -- Types ----------------------------
 
 interface SearchItem {
     id: string;
@@ -65,7 +65,7 @@ interface PageEntry {
 
 const DEBOUNCE_MS = 100;
 
-// ── Page registry ───────────────────────
+// -- Page registry ---------------------
 
 const pages: PageEntry[] = [
     {
@@ -168,7 +168,7 @@ const pages: PageEntry[] = [
     },
 ];
 
-// ── Encapsulated State ──────────────────
+// -- Encapsulated State ----------------
 
 interface CommandPaletteState {
     isOpen: boolean;
@@ -203,7 +203,7 @@ const state: CommandPaletteState = {
     previousFocusElement: null,
 };
 
-// ── Data loading ────────────────────────
+// -- Data loading ----------------------
 
 async function loadSearchIndex(
 ): Promise<void> {
@@ -296,7 +296,7 @@ async function loadSearchIndex(
     }
 }
 
-// ── Search ──────────────────────────────
+// -- Search ----------------------------
 
 function search(
     query: string,
@@ -340,7 +340,7 @@ function buildHighlightedMatch(
     );
 }
 
-// ── Rendering ───────────────────────────
+// -- Rendering -------------------------
 
 const categoryOrder:
     SearchItem['category'][] = [
@@ -368,7 +368,9 @@ function mutateResults(
     if (state.filteredItems.length === 0) {
         setHtml(
             state.list,
-            html`<div class="command-palette-empty">No results found for "${query}"</div>`,
+            html`<div
+class="command-palette-empty"
+>No results found for "${query}"</div>`,
         );
         if (state.liveRegion)
             state.liveRegion.textContent =
@@ -398,17 +400,38 @@ function mutateResults(
         if (!items?.length) continue;
 
         markup.push(
-            html`<div class="command-palette-group-label">${categoryLabels[category]}</div>`,
+            html`<div
+class="command-palette-group-label">${
+categoryLabels[category]}</div>`,
         );
         for (const item of items) {
             markup.push(
-                html`<div class="command-palette-item" role="option" id="command-palette-item-${item.id}" data-item-id="${item.id}" data-href="${item.href}" aria-posinset="${posIndex + 1}" aria-setsize="${state.filteredItems.length}" ${posIndex === 0 ? trusted('aria-selected="true"') : trusted('')}>
-        <div class="command-palette-item-icon">${item.icon}</div>
-        <div class="command-palette-item-content">
-          <div class="command-palette-item-title">${buildHighlightedMatch(item.title, query)}</div>
-          <div class="command-palette-item-meta">${item.meta}</div>
-        </div>
-      </div>`,
+                html`<div
+class="command-palette-item"
+role="option"
+id="command-palette-item-${item.id}"
+data-item-id="${item.id}"
+data-href="${item.href}"
+aria-posinset="${posIndex + 1}"
+aria-setsize="${
+state.filteredItems.length}"
+${posIndex === 0
+    ? trusted('aria-selected="true"')
+    : trusted('')}>
+<div class="command-palette-item-icon">${
+  item.icon}</div>
+<div class="command-palette-item-content">
+  <div
+    class="command-palette-item-title">${
+    buildHighlightedMatch(
+        item.title,
+        query,
+    )}</div>
+  <div
+    class="command-palette-item-meta">${
+    item.meta}</div>
+</div>
+</div>`,
             );
             posIndex++;
         }
@@ -462,7 +485,7 @@ function mutateActiveItem(): void {
     }
 }
 
-// ── Navigation ──────────────────────────
+// -- Navigation ------------------------
 
 function navigateToItem(
     index: number,
@@ -474,7 +497,7 @@ function navigateToItem(
     window.location.href = item.href;
 }
 
-// ── Open / Close ────────────────────────
+// -- Open / Close ----------------------
 
 function open(): void {
     if (state.isOpen) return;
@@ -510,7 +533,7 @@ function close(): void {
         state.previousFocusElement.focus();
 }
 
-// ── DOM injection ───────────────────────
+// -- DOM injection ---------------------
 
 function initCommandPaletteDOM(): void {
     state.backdrop =
@@ -538,20 +561,53 @@ function initCommandPaletteDOM(): void {
     );
 
     setHtml(state.dialog, html`
-    <div class="command-palette-input-wrapper">
+    <div
+      class="command-palette-input-wrapper">
       ${iconSearch(20)}
-      <input class="command-palette-input" placeholder="Search ideas, projects, people, pages..." type="text" role="combobox" aria-expanded="true" aria-controls="command-palette-listbox" aria-autocomplete="list" />
-      <button class="btn btn-ghost btn-icon btn-xs" aria-label="Close" id="command-palette-close">${iconX(16)}</button>
+      <input
+        class="command-palette-input"
+        placeholder="Search ideas, projects, people, pages..."
+        type="text"
+        role="combobox"
+        aria-expanded="true"
+        aria-controls="command-palette-listbox"
+        aria-autocomplete="list" />
+      <button
+        class="btn btn-ghost btn-icon btn-xs"
+        aria-label="Close"
+        id="command-palette-close">${
+        iconX(16)}</button>
     </div>
-    <div class="command-palette-list" id="command-palette-listbox" role="listbox" aria-label="Search results"></div>
+    <div class="command-palette-list"
+      id="command-palette-listbox"
+      role="listbox"
+      aria-label="Search results"></div>
     <div class="command-palette-footer">
       <div class="flex items-center gap-3">
-        ${trusted('<span class="flex items-center gap-1"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>')}
-        ${trusted('<span class="flex items-center gap-1"><kbd>↵</kbd> Open</span>')}
-        ${trusted('<span class="flex items-center gap-1"><kbd>Esc</kbd> Close</span>')}
+        ${trusted(
+            '<span'
+            + ' class="flex items-center'
+            + ' gap-1"><kbd>\u2191</kbd>'
+            + '<kbd>\u2193</kbd>'
+            + ' Navigate</span>',
+        )}
+        ${trusted(
+            '<span'
+            + ' class="flex items-center'
+            + ' gap-1"><kbd>\u21B5</kbd>'
+            + ' Open</span>',
+        )}
+        ${trusted(
+            '<span'
+            + ' class="flex items-center'
+            + ' gap-1"><kbd>Esc</kbd>'
+            + ' Close</span>',
+        )}
       </div>
     </div>
-    <div class="command-palette-live" role="status" aria-live="polite" aria-atomic="true"></div>`);
+    <div class="command-palette-live"
+      role="status" aria-live="polite"
+      aria-atomic="true"></div>`);
 
     state.input =
         state.dialog
@@ -725,7 +781,7 @@ function initCommandPaletteDOM(): void {
     );
 }
 
-// ── Public init ─────────────────────────
+// -- Public init -----------------------
 
 export function initCommandPalette(
 ): void {

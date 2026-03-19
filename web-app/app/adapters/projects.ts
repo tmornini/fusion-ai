@@ -39,7 +39,7 @@ export async function getProjects(
         .map(row => new Project(row));
 }
 
-// ── Project Detail ──────────────────────────
+// ── Project Detail ─────────────────
 
 export interface ProjectDetail {
     id: string;
@@ -233,7 +233,7 @@ export async function getProjectById(
     };
 }
 
-// ── Engineering Requirements ────────────────
+// ── Engineering Requirements ──────────────
 
 export interface Clarification {
     id: string;
@@ -388,7 +388,7 @@ getClarificationsByProjectId(
     }));
 }
 
-// ── Write Operations ───────────────────────
+// ── Write Operations ─────────────────
 
 export async function putProject(
     id: string,

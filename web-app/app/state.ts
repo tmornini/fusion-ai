@@ -34,8 +34,14 @@ function isValidTheme(value: string | null): value is AppState['theme'] {
 }
 
 const _state: AppState = {
-  theme: (() => { const raw = localStorage.getItem(STORAGE_KEY_THEME); return isValidTheme(raw) ? raw : 'system'; })(),
-  isMobile: window.matchMedia('(max-width: ${MOBILE_BREAKPOINT_PX}px)').matches,
+  theme: (() => {
+    const raw = localStorage
+      .getItem(STORAGE_KEY_THEME);
+    return isValidTheme(raw) ? raw : 'system';
+  })(),
+  isMobile: window.matchMedia(
+    '(max-width: ${MOBILE_BREAKPOINT_PX}px)',
+  ).matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
   isSearchOpen: false,
@@ -62,7 +68,11 @@ function subscribe(fn: StateListener): () => void {
 
 function computeTheme(): 'light' | 'dark' {
   if (state.theme === 'system') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const query =
+      '(prefers-color-scheme: dark)';
+    return window.matchMedia(query).matches
+      ? 'dark'
+      : 'light';
   }
   return state.theme;
 }
@@ -75,13 +85,25 @@ function applyTheme(): void {
 }
 
 function setTheme(theme: AppState['theme']): void {
-  try { localStorage.setItem(STORAGE_KEY_THEME, theme); } catch { log.debug('Failed to save theme preference', 'state'); }
+  try {
+    localStorage.setItem(
+      STORAGE_KEY_THEME,
+      theme,
+    );
+  } catch {
+    log.debug(
+      'Failed to save theme preference',
+      'state',
+    );
+  }
   setState({ theme });
   applyTheme();
 }
 
 // Listen for system theme changes
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+const darkQuery = '(prefers-color-scheme: dark)';
+window.matchMedia(darkQuery)
+  .addEventListener('change', () => {
   if (state.theme === 'system') applyTheme();
 });
 
@@ -89,7 +111,10 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 // Mobile Detection
 // ------------------------------------
 
-window.matchMedia('(max-width: ${MOBILE_BREAKPOINT_PX}px)').addEventListener('change', (e) => {
+const mobileQuery =
+  '(max-width: ${MOBILE_BREAKPOINT_PX}px)';
+window.matchMedia(mobileQuery)
+  .addEventListener('change', (e) => {
   setState({ isMobile: e.matches });
   if (!e.matches) setState({ isSidebarOpen: false, isSearchOpen: false });
 });
@@ -103,4 +128,14 @@ window.addEventListener('storage', (e) => {
 });
 
 export type { AppState };
-export { STORAGE_KEY_THEME, STORAGE_KEY_SIDEBAR, state, setState, subscribe, computeTheme, applyTheme, setTheme, isValidTheme };
+export {
+    STORAGE_KEY_THEME,
+    STORAGE_KEY_SIDEBAR,
+    state,
+    setState,
+    subscribe,
+    computeTheme,
+    applyTheme,
+    setTheme,
+    isValidTheme,
+};

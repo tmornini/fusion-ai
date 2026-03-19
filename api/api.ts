@@ -33,7 +33,7 @@ export function getDbAdapter(): DbAdapter {
     return adapter;
 }
 
-// ── Route Registry ────────────────────
+// ── Route Registry ─────────────────
 
 type GetHandler = (
     adapter: DbAdapter,
@@ -97,7 +97,7 @@ function param(
 }
 
 const routes: Route[] = [
-    // ── Collections ──────────────────
+    // ── Collections ────────────────
     route('users', {
         get: (db) => db.users.getAll(),
     }),
@@ -129,7 +129,7 @@ const routes: Route[] = [
             db.edgeMetrics.getAll(),
     }),
 
-    // ── Singletons ───────────────────
+    // ── Singletons ─────────────────
     route('company-settings', {
         get: (db) =>
             db.companySettings.get(),
@@ -436,7 +436,7 @@ const routes: Route[] = [
         },
     ),
 
-    // ── Snapshots ────────────────────
+    // ── Snapshots ──────────────────
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())
@@ -460,7 +460,7 @@ const routes: Route[] = [
     }),
 ];
 
-// ── Route Matching ────────────────────
+// ── Route Matching ─────────────────
 
 function matchRoute(
     pathSegments: string[],

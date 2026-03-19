@@ -1,5 +1,13 @@
 import { GET, PUT } from '../../../api/api';
-import type { IdeaEntity, EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, EdgeStatus, ConfidenceLevel, Id } from '../../../api/types';
+import type {
+    IdeaEntity,
+    EdgeEntity,
+    EdgeOutcomeEntity,
+    EdgeMetricEntity,
+    EdgeStatus,
+    ConfidenceLevel,
+    Id,
+} from '../../../api/types';
 import type { EdgeData } from './helpers';
 import { User } from '../../../api/types';
 import { buildUserMap, userName } from './helpers';
@@ -12,7 +20,10 @@ export interface EdgeIdea {
   score: number;
 }
 
-export async function getIdeaForEdge(ideaId: string, cachedUserMap?: Map<Id, User>): Promise<EdgeIdea> {
+export async function getIdeaForEdge(
+  ideaId: string,
+  cachedUserMap?: Map<Id, User>,
+): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
     GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
@@ -26,7 +37,7 @@ export async function getIdeaForEdge(ideaId: string, cachedUserMap?: Map<Id, Use
   };
 }
 
-// ── Edge List ───────────────────────────────
+// ── Edge List ───────────────────
 
 export interface EdgeListItem {
   id: string;
@@ -40,8 +51,13 @@ export interface EdgeListItem {
   updatedAt: string;
 }
 
-export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeListItem[]> {
-  const [edgeRows, ideaRows, userMap, allOutcomes, allMetrics] = await Promise.all([
+export async function getEdgeList(
+  cachedUserMap?: Map<Id, User>,
+): Promise<EdgeListItem[]> {
+  const [
+    edgeRows, ideaRows, userMap,
+    allOutcomes, allMetrics,
+  ] = await Promise.all([
     GET('edges') as Promise<EdgeEntity[]>,
     GET('ideas') as Promise<IdeaEntity[]>,
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
@@ -50,12 +66,17 @@ export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeLi
   ]);
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
 
-  const outcomesByEdgeId = Map.groupBy(allOutcomes, outcome => outcome.edge_id);
+  const outcomesByEdgeId = Map.groupBy(
+    allOutcomes,
+    outcome => outcome.edge_id,
+  );
 
   return edgeRows.map(edge => {
     const outcomes = outcomesByEdgeId.get(edge.id) || [];
     const outcomeIds = new Set(outcomes.map(outcome => outcome.id));
-    const metricsCount = allMetrics.filter(metric => outcomeIds.has(metric.outcome_id)).length;
+    const metricsCount = allMetrics
+      .filter(m => outcomeIds.has(m.outcome_id))
+      .length;
 
     const idea = ideaMap.get(edge.idea_id);
     return {
@@ -72,9 +93,12 @@ export async function getEdgeList(cachedUserMap?: Map<Id, User>): Promise<EdgeLi
   });
 }
 
-// ── Write Operations ───────────────────────
+// ── Write Operations ─────────────────
 
-export async function putEdgeData(ideaId: string, data: EdgeData): Promise<void> {
+export async function putEdgeData(
+  ideaId: string,
+  data: EdgeData,
+): Promise<void> {
   const edge = await GET(`ideas/${ideaId}/edge`) as EdgeEntity | null;
   if (!edge) return;
 
@@ -92,7 +116,11 @@ export async function putEdgeData(ideaId: string, data: EdgeData): Promise<void>
       edge_id: edge.id,
     } as Record<string, unknown>);
     for (const metric of outcome.metrics) {
-      await PUT(`edges/${edge.id}/outcomes/${outcome.id}/metrics/${metric.id}`, {
+      const metricUrl =
+        `edges/${edge.id}`
+        + `/outcomes/${outcome.id}`
+        + `/metrics/${metric.id}`;
+      await PUT(metricUrl, {
         name: metric.name,
         target: metric.target,
         unit: metric.unit,

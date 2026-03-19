@@ -19,7 +19,14 @@ function dismissToast(
     );
 }
 
-export function showToast(message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
+export function showToast(
+  message: string,
+  variant:
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'info' = 'info',
+): void {
   const container = document.getElementById('toast-container');
   if (!container) return;
 

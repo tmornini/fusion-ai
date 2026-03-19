@@ -104,10 +104,22 @@ function buildReviewCard(
         data-review-card="${idea.id}">
       <div class="flex items-start justify-between gap-4">
         <div style="flex:1;min-width:0">
-          <div class="flex flex-wrap items-center gap-2 mb-2">
-            <span class="badge ${priorityDisplay.className} text-xs">${priorityDisplay.label}</span>
-            <span class="flex items-center gap-1 text-sm ${readinessDisplay.className}">${readinessDisplay.icon(16)} ${readinessDisplay.label}</span>
-            <span class="badge ${edgeDisplay.className} text-xs">${iconTarget(12)} ${edgeDisplay.label}</span>
+          <div class="flex flex-wrap
+            items-center gap-2 mb-2">
+            <span class="badge
+              ${priorityDisplay.className}
+              text-xs">${priorityDisplay.label
+            }</span>
+            <span class="flex items-center
+              gap-1 text-sm
+              ${readinessDisplay.className}">${
+              readinessDisplay.icon(16)
+            } ${readinessDisplay.label
+            }</span>
+            <span class="badge
+              ${edgeDisplay.className}
+              text-xs">${iconTarget(12)
+            } ${edgeDisplay.label}</span>
           </div>
           <h3 class="font-semibold mb-1">${idea.title}</h3>
           <div class="flex items-center gap-4 text-sm text-muted">
@@ -115,15 +127,30 @@ function buildReviewCard(
             <span>•</span>
             <span>${idea.category}</span>
             <span>•</span>
-            <span style="color:hsl(var(--warning))">${idea.waitingDays} days waiting</span>
+            <span style="color:hsl(var(--warning))">${
+              idea.waitingDays
+            } days waiting</span>
           </div>
         </div>
         <div class="flex items-center gap-6">
           <div class="text-right hidden-mobile">
             <div class="flex items-center gap-4 text-sm">
-              <div><p class="text-muted">Score</p><p class="font-semibold" style="${idea.scoreColor()}">${idea.score}</p></div>
-              <div><p class="text-muted">Impact</p><p class="font-medium">${idea.impactLabel}</p></div>
-              <div><p class="text-muted">Effort</p><p class="font-medium">${idea.effortLabel}</p></div>
+              <div>
+                <p class="text-muted">Score</p>
+                <p class="font-semibold"
+                  style="${idea.scoreColor()}">${
+                  idea.score}</p>
+              </div>
+              <div>
+                <p class="text-muted">Impact</p>
+                <p class="font-medium">${
+                  idea.impactLabel}</p>
+              </div>
+              <div>
+                <p class="text-muted">Effort</p>
+                <p class="font-medium">${
+                  idea.effortLabel}</p>
+              </div>
             </div>
           </div>
           ${iconChevronRight(20, 'text-muted')}
@@ -142,7 +169,9 @@ export async function init(): Promise<void> {
 
     const result = await withLoadingState(
         root,
-        html`${buildSkeleton('stats-row')}${buildSkeleton('card-list', { count: 4 })}`,
+        html`${buildSkeleton('stats-row')}${
+            buildSkeleton('card-list', { count: 4 })
+        }`,
         getReviewQueue,
         init,
         {
@@ -186,36 +215,86 @@ export async function init(): Promise<void> {
     </div>
 
     <div class="stats-grid mb-8">
-      <div class="card p-4"><div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg" style="background:hsl(var(--primary)/0.1)">${iconClock(20, 'text-primary')}</div>
-        <div><p class="text-2xl font-bold">${stats.total}</p><p class="text-sm text-muted">Pending Review</p></div>
-      </div></div>
-      <div class="card p-4"><div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg" style="background:hsl(var(--success-soft))">${iconCheckCircle2(20, 'text-success')}</div>
-        <div><p class="text-2xl font-bold">${stats.ready}</p><p class="text-sm text-muted">Ready to Decide</p></div>
-      </div></div>
-      <div class="card p-4"><div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg" style="background:hsl(var(--error-soft))">${iconAlertCircle(20, 'text-error')}</div>
-        <div><p class="text-2xl font-bold">${stats.highPriority}</p><p class="text-sm text-muted">High Priority</p></div>
-      </div></div>
-      <div class="card p-4"><div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg" style="background:hsl(var(--warning-soft))">${iconTrendingUp(20, 'text-warning')}</div>
-        <div><p class="text-2xl font-bold">${stats.avgWait}d</p><p class="text-sm text-muted">Avg. Wait Time</p></div>
-      </div></div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg"
+            style="background:hsl(var(--primary)/0.1)">${
+            iconClock(20, 'text-primary')
+          }</div>
+          <div>
+            <p class="text-2xl font-bold">${
+              stats.total}</p>
+            <p class="text-sm text-muted"
+              >Pending Review</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg"
+            style="background:hsl(var(--success-soft))">${
+            iconCheckCircle2(20, 'text-success')
+          }</div>
+          <div>
+            <p class="text-2xl font-bold">${
+              stats.ready}</p>
+            <p class="text-sm text-muted"
+              >Ready to Decide</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg"
+            style="background:hsl(var(--error-soft))">${
+            iconAlertCircle(20, 'text-error')
+          }</div>
+          <div>
+            <p class="text-2xl font-bold">${
+              stats.highPriority}</p>
+            <p class="text-sm text-muted"
+              >High Priority</p>
+          </div>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg"
+            style="background:hsl(var(--warning-soft))">${
+            iconTrendingUp(20, 'text-warning')
+          }</div>
+          <div>
+            <p class="text-2xl font-bold">${
+              stats.avgWait}d</p>
+            <p class="text-sm text-muted"
+              >Avg. Wait Time</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="flex gap-4 mb-6">
       <div class="search-wrapper" style="flex:1">
         <span class="search-icon">${iconSearch(16)}</span>
-        <input class="input search-input" placeholder="Search ideas or submitters..." id="review-queue-search" aria-label="Search ideas or submitters" />
+        <input class="input search-input"
+          placeholder="Search ideas or submitters..."
+          id="review-queue-search"
+          aria-label="Search ideas or submitters"
+        />
       </div>
-      <select class="input" style="width:10rem" id="review-queue-priority-filter" aria-label="Filter by priority">
+      <select class="input"
+        style="width:10rem"
+        id="review-queue-priority-filter"
+        aria-label="Filter by priority">
         <option value="all">All Priority</option>
         <option value="high">High</option>
         <option value="medium">Medium</option>
         <option value="low">Low</option>
       </select>
-      <select class="input" style="width:10rem" id="review-queue-readiness-filter" aria-label="Filter by readiness">
+      <select class="input"
+        style="width:10rem"
+        id="review-queue-readiness-filter"
+        aria-label="Filter by readiness">
         <option value="all">All Status</option>
         <option value="ready">Ready</option>
         <option value="needs-info">Needs Info</option>
@@ -223,12 +302,16 @@ export async function init(): Promise<void> {
       </select>
     </div>
 
-    <div id="review-queue-list" style="display:flex;flex-direction:column;gap:0.75rem">
+    <div id="review-queue-list"
+      style="display:flex;flex-direction:column;gap:0.75rem">
       ${allIdeas.map(buildReviewCard)}
     </div>
-    <div id="review-queue-empty" class="text-center" style="display:none;padding:3rem 0">
+    <div id="review-queue-empty"
+      class="text-center"
+      style="display:none;padding:3rem 0">
       ${iconClock(48, 'text-muted')}
-      <h3 class="text-lg font-semibold mt-4 mb-2">No ideas match your filters</h3>
+      <h3 class="text-lg font-semibold mt-4 mb-2"
+        >No ideas match your filters</h3>
       <p class="text-muted">Try adjusting your search or filter criteria</p>
     </div>`);
 

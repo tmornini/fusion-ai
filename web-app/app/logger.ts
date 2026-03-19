@@ -25,16 +25,52 @@ function formatPrefix(level: Level, context?: string): string {
 }
 
 export const log = {
-  debug(message: string, context?: string, ...data: unknown[]): void {
-    if (shouldLog('debug')) console.debug(formatPrefix('debug', context), message, ...data);
+  debug(
+    message: string,
+    context?: string,
+    ...data: unknown[]
+  ): void {
+    if (shouldLog('debug'))
+      console.debug(
+        formatPrefix('debug', context),
+        message,
+        ...data,
+      );
   },
-  info(message: string, context?: string, ...data: unknown[]): void {
-    if (shouldLog('info')) console.info(formatPrefix('info', context), message, ...data);
+  info(
+    message: string,
+    context?: string,
+    ...data: unknown[]
+  ): void {
+    if (shouldLog('info'))
+      console.info(
+        formatPrefix('info', context),
+        message,
+        ...data,
+      );
   },
-  warn(message: string, context?: string, ...data: unknown[]): void {
-    if (shouldLog('warn')) console.warn(formatPrefix('warn', context), message, ...data);
+  warn(
+    message: string,
+    context?: string,
+    ...data: unknown[]
+  ): void {
+    if (shouldLog('warn'))
+      console.warn(
+        formatPrefix('warn', context),
+        message,
+        ...data,
+      );
   },
-  error(message: string, context?: string, ...data: unknown[]): void {
-    if (shouldLog('error')) console.error(formatPrefix('error', context), message, ...data);
+  error(
+    message: string,
+    context?: string,
+    ...data: unknown[]
+  ): void {
+    if (shouldLog('error'))
+      console.error(
+        formatPrefix('error', context),
+        message,
+        ...data,
+      );
   },
 };

@@ -7,7 +7,7 @@ import type {
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
-// ── Crunch ──────────────────────────────────
+// ── Crunch ────────────────────
 
 export interface CrunchColumn {
     id: string;
@@ -41,7 +41,7 @@ export async function getCrunchColumns(
     }));
 }
 
-// ── Flow ────────────────────────────────────
+// ── Flow ─────────────────────
 
 export interface FlowListItem {
     id: string;
@@ -137,7 +137,7 @@ export async function getFlow(
     };
 }
 
-// ── Write Operations ───────────────────────
+// ── Write Operations ─────────────────
 
 export async function putFlow(
     id: string,

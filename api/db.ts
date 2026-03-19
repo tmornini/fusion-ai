@@ -36,12 +36,19 @@ export interface DbAdapter {
   ideas: EntityStore<IdeaEntity>;
   ideaScores: {
     getByIdeaId(ideaId: string): Promise<IdeaScoreEntity | null>;
-    put(ideaId: string, fields: Record<string, unknown>): Promise<IdeaScoreEntity>;
+    put(
+      ideaId: string,
+      fields: Record<string, unknown>,
+    ): Promise<IdeaScoreEntity>;
   };
   projects: EntityStore<ProjectEntity>;
   projectTeam: {
     getByProjectId(projectId: string): Promise<ProjectTeamEntity[]>;
-    put(projectId: string, userId: string, fields: Record<string, unknown>): Promise<ProjectTeamEntity>;
+    put(
+      projectId: string,
+      userId: string,
+      fields: Record<string, unknown>,
+    ): Promise<ProjectTeamEntity>;
   };
   milestones: EntityStore<MilestoneEntity> & {
     getByProjectId(projectId: string): Promise<MilestoneEntity[]>;

@@ -6,8 +6,16 @@
     </head>
     <body>
         <script>
-            var hasSchema = Object.keys(localStorage).some(function(k) { return k.indexOf('fusion-ai:') === 0; });
-            window.location.href = hasSchema ? 'landing/index.html' : 'snapshots/index.html';
+            var hasSchema =
+                Object.keys(localStorage)
+                .some(function(k) {
+                    return k.indexOf(
+                        'fusion-ai:'
+                    ) === 0;
+                });
+            window.location.href = hasSchema
+                ? 'landing/index.html'
+                : 'snapshots/index.html';
         </script>
     </body>
 </html>

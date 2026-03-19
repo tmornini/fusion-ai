@@ -15,7 +15,7 @@ import { buildUserMap, userName } from './helpers';
 
 const RECENT_ACTIVITY_COUNT = 3;
 
-// ── Account ─────────────────────────────────
+// ── Account ────────────────────
 
 export interface Account {
     company: {
@@ -145,7 +145,7 @@ export async function getAccount(
     };
 }
 
-// ── Profile ─────────────────────────────────
+// ── Profile ────────────────────
 
 export interface Profile {
     firstName: string;
@@ -198,7 +198,7 @@ export async function getProfile(
     };
 }
 
-// ── Company Settings ────────────────────────
+// ── Company Settings ─────────────────
 
 export interface CompanySettings {
     name: string;
@@ -239,7 +239,7 @@ export async function getCompanySettings(
     };
 }
 
-// ── Activity Feed ───────────────────────────
+// ── Activity Feed ──────────────────
 
 export { Activity } from '../../../api/types';
 

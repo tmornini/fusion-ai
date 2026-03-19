@@ -6,25 +6,45 @@
 import { applyTheme } from './state';
 import { html, setHtml } from './safe-html';
 import { buildErrorState, errorMessage } from './loading-states';
-import { navigateTo, getPageName, getParams, initPrefetch } from './navigation';
+import {
+    navigateTo,
+    getPageName,
+    getParams,
+    initPrefetch,
+} from './navigation';
 import { initSidebarLayout } from './layout';
 
-// Re-export for backward compatibility — page modules import from '../app/core'
+// Re-export for backward compatibility
+// — page modules import from '../app/core'
 export { navigateTo } from './navigation';
-export { initials, styleForScore, durationInDays, formatCompactCurrency, SECONDS_PER_DAY } from './format';
+export {
+    initials,
+    styleForScore,
+    durationInDays,
+    formatCompactCurrency,
+    SECONDS_PER_DAY,
+} from './format';
 export { openDialog, closeDialog, initTabs } from './dialog';
 
 // ------------------------------------
 // Page Module Dispatch
 // ------------------------------------
 
-const pageModules: Record<string, () => Promise<{ init: (params?: Record<string, string>) => void | Promise<void> }>> = {
+const pageModules: Record<
+    string,
+    () => Promise<{
+        init: (
+            params?: Record<string, string>,
+        ) => void | Promise<void>;
+    }>
+> = {
   dashboard: () => import('../dashboard/index'),
   ideas: () => import('../ideas/index'),
   'idea-detail': () => import('../ideas/detail'),
   projects: () => import('../projects/index'),
   'project-detail': () => import('../projects/detail'),
-  'engineering-requirements': () => import('../projects/engineering-requirements'),
+  'engineering-requirements': () =>
+    import('../projects/engineering-requirements'),
   'idea-create': () => import('../ideas/create'),
   'idea-convert': () => import('../ideas/convert'),
   'idea-review-queue': () => import('../ideas/review-queue'),
@@ -58,18 +78,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize database before any page modules
   try {
-    const { createLocalStorageAdapter } = await import('../../api/db-localstorage');
+    const { createLocalStorageAdapter } =
+      await import('../../api/db-localstorage');
     const { initApi, GET } = await import('../../api/api');
 
     const adapter = await createLocalStorageAdapter();
     await adapter.initialize();
     initApi(adapter);
 
-    // If no schema exists, redirect to snapshots so user can choose what to load
+    // If no schema exists, redirect to snapshots
+    // so user can choose what to load
     const snapshot = await GET('snapshots/schema') as string | null;
     if (snapshot === null) {
       const page = getPageName();
-      const skipRedirect = ['snapshots', 'auth', 'onboarding', 'not-found', 'design-system', 'landing'];
+      const skipRedirect = [
+        'snapshots',
+        'auth',
+        'onboarding',
+        'not-found',
+        'design-system',
+        'landing',
+      ];
       if (!skipRedirect.includes(page)) {
         navigateTo('snapshots');
         return;
@@ -77,10 +106,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (err) {
     console.error('Database initialization failed:', err);
-    setHtml(document.body, html`<div style="padding:2rem;font-family:sans-serif;max-width:40rem">
-      <h1 style="color:hsl(0 72% 51%)">Failed to initialize database</h1>
-      <pre style="background:hsl(0 100% 97%);padding:1rem;border-radius:0.5rem;overflow:auto;white-space:pre-wrap">${errorMessage(err, 'Unknown database error')}</pre>
-      <p>Try clearing site data and reloading.</p>
+    setHtml(document.body, html`<div
+      style="padding:2rem;
+        font-family:sans-serif;
+        max-width:40rem">
+      <h1 style="color:hsl(0 72% 51%)">
+        Failed to initialize database
+      </h1>
+      <pre style="background:hsl(0 100% 97%);
+        padding:1rem;
+        border-radius:0.5rem;
+        overflow:auto;
+        white-space:pre-wrap"
+>${errorMessage(err, 'Unknown database error')}</pre>
+      <p>Try clearing site data
+        and reloading.</p>
     </div>`);
     return;
   }
@@ -112,7 +152,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       setHtml(container, buildErrorState(
         errorMessage(err, 'This page failed to load.'),
       ));
-      container.querySelector('[data-retry-btn]')?.addEventListener('click', () => location.reload());
+      container
+        .querySelector('[data-retry-btn]')
+        ?.addEventListener(
+          'click',
+          () => location.reload(),
+        );
     }
   }
 });

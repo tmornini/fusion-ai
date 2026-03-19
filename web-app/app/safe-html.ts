@@ -36,7 +36,10 @@ function interpolate(value: unknown): string {
   return escapeForHtml(String(value));
 }
 
-export function html(strings: TemplateStringsArray, ...values: unknown[]): SafeHtml {
+export function html(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): SafeHtml {
   let result = strings[0]!;
   for (let i = 0; i < values.length; i++) {
     result += interpolate(values[i]) + strings[i + 1]!;
@@ -44,7 +47,8 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): SafeH
   return new SafeHtml(result);
 }
 
-// Safe: only accepts SafeHtml (auto-escaped by html tag or explicitly trusted).
+// Safe: only accepts SafeHtml
+// (auto-escaped by html tag or explicitly trusted).
 // TypeScript rejects plain strings at compile time.
 export function setHtml(element: HTMLElement, content: SafeHtml): void {
   element.innerHTML = content.toString();

@@ -47,7 +47,7 @@ export async function getIdeas(
         ));
 }
 
-// ── Idea Detail ─────────────────────────────
+// ── Idea Detail ──────────────────
 
 export async function getIdeaDetail(
     ideaId: string,
@@ -70,7 +70,7 @@ export async function getIdeaDetail(
     );
 }
 
-// ── Idea Review Queue ───────────────────────
+// ── Idea Review Queue ────────────────
 
 export async function getReviewQueue(
     cachedUserMap?: Map<Id, User>,
@@ -95,7 +95,7 @@ export async function getReviewQueue(
         ));
 }
 
-// ── Idea Convert ────────────────────────────
+// ── Idea Convert ──────────────────
 
 export interface ConversionIdea {
     id: string;
@@ -136,7 +136,7 @@ export async function getIdeaForConversion(
     };
 }
 
-// ── Approval Detail ─────────────────────────
+// ── Approval Detail ─────────────────
 
 export interface ApprovalIdea {
     id: string;
@@ -252,7 +252,7 @@ export async function getEdgeForApproval(
     );
 }
 
-// ── Write Operations ───────────────────────
+// ── Write Operations ─────────────────
 
 export async function getIdea(
     id: string,

@@ -6,7 +6,11 @@ function getPageName(): string {
 
 function getParams(): Record<string, string> {
   const params: Record<string, string> = {};
-  new URLSearchParams(window.location.search).forEach((value, key) => { params[key] = value; });
+  new URLSearchParams(
+    window.location.search,
+  ).forEach((value, key) => {
+    params[key] = value;
+  });
   return params;
 }
 
@@ -32,7 +36,12 @@ function initPrefetch(): void {
     const anchor = e.target.closest<HTMLAnchorElement>('a[href]');
     if (!anchor) return;
     const href = anchor.getAttribute('href');
-    if (href && href.endsWith('.html') && !href.startsWith('http') && !prefetched.has(href)) {
+    if (
+      href
+      && href.endsWith('.html')
+      && !href.startsWith('http')
+      && !prefetched.has(href)
+    ) {
       prefetched.add(href);
       const link = document.createElement('link');
       link.rel = 'prefetch';

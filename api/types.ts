@@ -4,7 +4,7 @@
 // and utility functions.
 // ============================================
 
-// ── Shared Type Aliases ─────────────────────
+// ── Shared Type Aliases ────────────────
 
 /** Semantic alias for entity ID strings
  *  used as map keys and function params.
@@ -65,7 +65,7 @@ export function computePriority(
 /** Stored boolean in localStorage (0 or 1 integer). */
 export type StoredBoolean = 0 | 1;
 
-// ── Utility ──────────────────────────────────
+// ── Utility ────────────────────
 
 /** Convert 0/1/boolean to boolean.
  *  Handles localStorage int vs JSON bool.
@@ -77,7 +77,7 @@ export function toBool(
         || value === true;
 }
 
-// ── Formatting Utilities ─────────────────────
+// ── Formatting Utilities ───────────────
 
 export const SECONDS_PER_DAY = 86400;
 
@@ -99,7 +99,7 @@ export function formatCompactCurrency(
     return `$${value}`;
 }
 
-// ── Timestamp Utility ────────────────────────
+// ── Timestamp Utility ────────────────
 
 /**
  * Returns current UTC time as RFC-3339 Zulu
@@ -115,7 +115,7 @@ export function nowUtc(): string {
     );
 }
 
-// ── Entity Types ─────────────────────────────
+// ── Entity Types ──────────────────
 
 export interface UserEntity {
   id: Id;
@@ -410,7 +410,7 @@ export interface AccountEntity {
   active_users: number;
 }
 
-// ── Entity Factory Functions ─────────────────
+// ── Entity Factory Functions ──────────────
 
 export interface IdeaCreationFields {
     id: Id;
@@ -735,7 +735,7 @@ const CONFIDENCE_CONFIG: Record<
     },
 };
 
-// ── Domain Classes ───────────────────────────
+// ── Domain Classes ─────────────────
 
 /** Domain object wrapping an IdeaEntity. */
 export class Idea {

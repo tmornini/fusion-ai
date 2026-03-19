@@ -9,7 +9,7 @@ import type { DbAdapter } from './db';
 export async function populateMockData(
     adapter: DbAdapter,
 ): Promise<void> {
-    // ── Users ──────────────────────────────
+    // -- Users ----------------------------
     const users = [
         {
             id: '1',
@@ -328,7 +328,7 @@ export async function populateMockData(
         }),
     ));
 
-    // ── Ideas ──────────────────────────────
+    // -- Ideas ----------------------------
     const ideas = [
         {
             id: '1',
@@ -945,7 +945,7 @@ export async function populateMockData(
         }),
     ]);
 
-    // ── Projects ──────────────────────────
+    // -- Projects -------------------------
     const projects = [
         {
             id: '1',

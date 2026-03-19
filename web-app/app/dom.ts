@@ -7,37 +7,57 @@
 import type { SafeHtml } from './safe-html';
 import { setHtml } from './safe-html';
 
-export function $(selector: string, parent: ParentNode = document): HTMLElement | null {
+export function $(
+  selector: string,
+  parent: ParentNode = document,
+): HTMLElement | null {
   return parent.querySelector(selector);
 }
 
-export function $$(selector: string, parent: ParentNode = document): HTMLElement[] {
+export function $$(
+  selector: string,
+  parent: ParentNode = document,
+): HTMLElement[] {
   return Array.from(parent.querySelectorAll(selector));
 }
 
-// ── Typed element selectors ─────────────────
+// ── Typed element selectors ──────────────
 // Eliminates unsafe `as HTMLInputElement` casts at call sites.
 
-export function $input(selector: string, parent: ParentNode = document): HTMLInputElement | null {
-  return parent.querySelector<HTMLInputElement>(selector);
+export function $input(
+  selector: string,
+  parent: ParentNode = document,
+): HTMLInputElement | null {
+  return parent
+    .querySelector<HTMLInputElement>(selector);
 }
 
-export function $select(selector: string, parent: ParentNode = document): HTMLSelectElement | null {
-  return parent.querySelector<HTMLSelectElement>(selector);
+export function $select(
+  selector: string,
+  parent: ParentNode = document,
+): HTMLSelectElement | null {
+  return parent
+    .querySelector<HTMLSelectElement>(selector);
 }
 
-export function $textarea(selector: string, parent: ParentNode = document): HTMLTextAreaElement | null {
-  return parent.querySelector<HTMLTextAreaElement>(selector);
+export function $textarea(
+  selector: string,
+  parent: ParentNode = document,
+): HTMLTextAreaElement | null {
+  return parent
+    .querySelector<HTMLTextAreaElement>(
+      selector,
+    );
 }
 
-// ── Safe getAttribute ───────────────────────
+// ── Safe getAttribute ────────────────
 // Returns '' instead of null, eliminating getAttribute()! patterns.
 
 export function attr(el: Element, name: string): string {
   return el.getAttribute(name) ?? '';
 }
 
-// ── Batch icon population ───────────────────
+// ── Batch icon population ───────────────
 // Eliminates repetitive if-check-then-setHtml boilerplate.
 
 export function populateIcons(entries: Array<[string, SafeHtml]>): void {
