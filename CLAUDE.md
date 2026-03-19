@@ -150,7 +150,7 @@ web-app/
     state.ts                  # AppState, theme, mobile detection, pub-sub
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
     command-palette.ts        # Cmd+K search overlay with keyboard navigation
-    dom.ts                    # querySelector wrappers ($, $$) and escapeHtml
+    dom.ts                    # querySelector wrappers ($, $$)
     toast.ts                  # showToast() auto-dismiss notifications
     config.ts                 # edgeStatusConfig mapping
     logger.ts                 # Lightweight logger respecting fusion-ai:log-level in localStorage

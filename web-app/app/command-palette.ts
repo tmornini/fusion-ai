@@ -1,13 +1,13 @@
 import {
     $,
     $input,
-    escapeHtml,
 } from './dom';
 import {
     html,
     setHtml,
     SafeHtml,
     trusted,
+    escapeForHtml,
 } from './safe-html';
 import {
     icons,
@@ -232,10 +232,10 @@ function buildHighlightedMatch(
     query: string,
 ): SafeHtml {
     if (!query.trim())
-        return trusted(escapeHtml(text));
-    const escaped = escapeHtml(text);
+        return trusted(escapeForHtml(text));
+    const escaped = escapeForHtml(text);
     const escapedQuery =
-        escapeHtml(query);
+        escapeForHtml(query);
     const highlightPattern = new RegExp(
         `(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
         'gi',

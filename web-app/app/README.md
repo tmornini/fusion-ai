@@ -11,7 +11,7 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | `core.ts` | Page dispatch, navigation helpers, toast notifications, sidebar/mobile behavior, skeleton rendering |
 | `icons.ts` | ~100 SVG icon functions and `icons` lookup map (re-exported from `core.ts`) |
 | `state.ts` | AppState interface, theme persistence, mobile detection, pub-sub (`subscribe`/`setState`) |
-| `dom.ts` | querySelector wrappers ($, $$) and escapeHtml |
+| `dom.ts` | querySelector wrappers ($, $$) |
 | `toast.ts` | showToast() auto-dismiss notifications |
 | `config.ts` | edgeStatusConfig mapping |
 | `safe-html.ts` | SafeHtml class, html tagged template, trusted(), setHtml() |
