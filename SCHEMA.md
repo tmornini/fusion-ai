@@ -168,7 +168,7 @@
 | id | TEXT | — |
 | idea_id | TEXT (FK → ideas) | — |
 | status | TEXT | '' |
-| confidence | TEXT | null |
+| confidence | TEXT | '' |
 | owner_id | TEXT | '' |
 | impact_short_term | TEXT | '' |
 | impact_mid_term | TEXT | '' |
@@ -243,9 +243,9 @@
 | action | TEXT | '' |
 | target | TEXT | '' |
 | timestamp | TEXT | '' |
-| score | INTEGER | null |
-| status | TEXT | null |
-| comment | TEXT | null |
+| score | INTEGER | 0 |
+| status | TEXT | '' |
+| comment | TEXT | '' |
 
 ### clarifications
 
@@ -257,9 +257,9 @@
 | asked_by_id | TEXT | '' |
 | asked_at | TEXT | '' |
 | status | TEXT | 'pending' |
-| answer | TEXT | null |
-| answered_by_id | TEXT | null |
-| answered_at | TEXT | null |
+| answer | TEXT | '' |
+| answered_by_id | TEXT | '' |
+| answered_at | TEXT | '' |
 
 ## Admin
 

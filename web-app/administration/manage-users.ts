@@ -18,7 +18,7 @@ import {
 } from '../app/core';
 import {
   getManagedUsers,
-  type ManagedUser,
+  type User,
 } from '../app/adapters';
 
 const roleLabels: Record<string, {
@@ -40,14 +40,14 @@ const roleLabels: Record<string, {
 };
 
 function buildStatusBadge(
-    status: string,
+    user: User,
 ): SafeHtml {
-  if (status === 'active')
+  if (user.isActive())
     return html`<span
         class="status-badge-success">
       ${iconCheckCircle2(14)} Active
     </span>`;
-  if (status === 'pending')
+  if (user.isPending())
     return html`<span
         class="status-badge-warning">
       ${iconClock(14)} Pending
@@ -75,11 +75,11 @@ function buildRoleBadge(
 }
 
 function buildUserRow(
-    user: ManagedUser,
+    user: User,
 ): SafeHtml {
   return html`
     <div class="flex items-center gap-4 p-4
-        ${user.status === 'deactivated'
+        ${user.isDeactivated()
           ? 'opacity-50' : ''}"
         style="border-bottom:1px solid
             hsl(var(--border))">
@@ -99,12 +99,12 @@ function buildUserRow(
             flex-shrink:0">
           <span
               class="text-sm font-bold text-primary">
-            ${initials(user.name)}
+            ${initials(user.fullName())}
           </span>
         </div>
         <div style="min-width:0">
           <p class="font-medium truncate">
-            ${user.name}
+            ${user.fullName()}
           </p>
           <p
               class="text-xs text-muted truncate">
@@ -120,9 +120,9 @@ function buildUserRow(
         ${user.department}
       </div>
       <div style="flex:1">
-        ${buildStatusBadge(user.status)}
+        ${buildStatusBadge(user)}
         <p class="text-xs text-muted mt-1">
-          ${user.status === 'pending'
+          ${user.isPending()
             ? 'Invite sent'
             : 'Last active '
                 + user.lastActive}
@@ -162,10 +162,10 @@ export async function init(): Promise<void> {
   if (!users) return;
 
   const activeCount = users.filter(
-      user => user.status === 'active',
+      user => user.isActive(),
   ).length;
   const pendingCount = users.filter(
-      user => user.status === 'pending',
+      user => user.isPending(),
   ).length;
 
   setHtml(container, html`

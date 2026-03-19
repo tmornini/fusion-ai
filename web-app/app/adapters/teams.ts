@@ -3,6 +3,7 @@ import type {
     UserEntity,
 } from '../../../api/types';
 import { User } from '../../../api/types';
+export { User } from '../../../api/types';
 import { parseJson } from './helpers';
 
 export interface TeamMember {
@@ -74,34 +75,13 @@ export type UserAccountStatus =
     | 'pending'
     | 'deactivated';
 
-export interface ManagedUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: string;
-  lastActive: string;
-}
-
 export async function getManagedUsers(
-): Promise<ManagedUser[]> {
+): Promise<User[]> {
   const rows =
     await GET<UserEntity[]>('users');
   return rows
     .filter(
       entity => entity.id !== 'current',
     )
-    .map(entity => {
-      const user = new User(entity);
-      return {
-        id: user.id,
-        name: user.fullName(),
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        status: user.status,
-        lastActive: user.lastActive,
-      };
-    });
+    .map(entity => new User(entity));
 }

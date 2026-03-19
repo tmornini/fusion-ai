@@ -31,13 +31,17 @@ import {
 } from '../app/adapters';
 import {
   PROJECT_STATUS_CONFIG, UNKNOWN_CONFIG,
-} from '../../api/types';
-import {
+  MILESTONE_STATUS_CONFIG,
+  MILESTONE_STATUS_DEFAULT,
+  TASK_PRIORITY_CONFIG,
+  TASK_PRIORITY_DEFAULT,
   isProjectStatus,
   type ProjectStatus,
 } from '../../api/types';
 
-let isEditing = false;
+const state = {
+    isEditing: false,
+};
 
 function buildVariance(
     baseline: number,
@@ -64,68 +68,52 @@ function buildVariance(
     >${icon} ${prefix}${Math.abs(diff)}${unit}</span>`;
 }
 
+const MILESTONE_ICON_MAP: Record<
+    string,
+    {
+        iconFn: (
+            s?: number,
+            c?: string,
+        ) => SafeHtml;
+        iconClass: string;
+    }
+> = {
+    completed: {
+        iconFn: iconCheckCircle2,
+        iconClass: 'text-primary-fg',
+    },
+    in_progress: {
+        iconFn: iconAlertCircle,
+        iconClass: 'text-primary-fg',
+    },
+};
+
+const MILESTONE_ICON_DEFAULT = {
+    iconFn: iconClock,
+    iconClass: 'text-muted',
+};
+
 function buildMilestoneIcon(
     status: string,
 ): SafeHtml {
-  const base = 'width:1.5rem;height:1.5rem;'
-    + 'border-radius:9999px;display:flex;'
-    + 'align-items:center;'
-    + 'justify-content:center';
-  switch (status) {
-    case 'completed':
-      return html`<div style="${base};background:hsl(var(--success))"
-        >${iconCheckCircle2(
-          12,
-          'text-primary-fg',
+    const base =
+        'width:1.5rem;height:1.5rem;'
+        + 'border-radius:9999px;'
+        + 'display:flex;'
+        + 'align-items:center;'
+        + 'justify-content:center';
+    const cfg =
+        MILESTONE_STATUS_CONFIG[status]
+        ?? MILESTONE_STATUS_DEFAULT;
+    const icon =
+        MILESTONE_ICON_MAP[status]
+        ?? MILESTONE_ICON_DEFAULT;
+    return html`<div
+        style="${base};background:${
+            cfg.iconBackground}"
+        >${icon.iconFn(
+            12, icon.iconClass,
         )}</div>`;
-    case 'in_progress':
-      return html`<div style="${base};background:hsl(var(--warning))"
-        >${iconAlertCircle(
-          12,
-          'text-primary-fg',
-        )}</div>`;
-    default:
-      return html`<div style="${base};background:hsl(var(--muted))"
-        >${iconClock(
-          12,
-          'text-muted',
-        )}</div>`;
-  }
-}
-
-function styleForMilestone(
-    status: string,
-): string {
-  switch (status) {
-    case 'completed':
-      return 'color:hsl(var(--success))';
-    case 'in_progress':
-      return 'color:hsl(var(--warning))';
-    default:
-      return 'color:hsl(var(--muted-foreground))';
-  }
-}
-
-function styleForTaskPriority(
-    priority: string,
-): string {
-  switch (priority) {
-    case 'High':
-      return 'background:hsl(var(--error-soft));'
-        + 'color:hsl(var(--error-text));'
-        + 'border:1px solid '
-        + 'hsl(var(--error-border))';
-    case 'Medium':
-      return 'background:hsl(var(--warning-soft));'
-        + 'color:hsl(var(--warning-text));'
-        + 'border:1px solid '
-        + 'hsl(var(--warning-border))';
-    default:
-      return 'background:hsl(var(--muted)/0.5);'
-        + 'color:hsl(var(--muted-foreground));'
-        + 'border:1px solid '
-        + 'hsl(var(--border))';
-  }
 }
 
 const KPI_ON_TRACK_RATIO = 0.9;
@@ -149,7 +137,7 @@ function buildProjectSummary(
           font-semibold mb-4">
         Project Summary
       </h2>
-      ${isEditing
+      ${state.isEditing
         ? html`<textarea class="textarea mb-6"
             id="project-edit-description"
             rows="3"
@@ -169,7 +157,7 @@ function buildProjectSummary(
             <p class="text-xs text-muted">
               Start Date
             </p>
-            ${isEditing
+            ${state.isEditing
               ? html`<input type="date"
                   id="project-edit-start-date"
                   value="${project.startDate}"
@@ -189,7 +177,7 @@ function buildProjectSummary(
             <p class="text-xs text-muted">
               Target End
             </p>
-            ${isEditing
+            ${state.isEditing
               ? html`<input type="date"
                   id="project-edit-end-date"
                   value="${project.targetEndDate}"
@@ -295,7 +283,7 @@ function buildBaselineComparison(
                 <span class="text-xs text-muted">
                   Baseline
                 </span>
-                ${isEditing
+                ${state.isEditing
                   ? html`<input type="number"
                       id="project-edit-${metric.inputId}-baseline"
                       value="${String(metric.baseline)}"
@@ -602,10 +590,12 @@ function buildProjectTabs(
             flex-direction:column;
             gap:0.75rem">
           ${project.tasks.map(task => {
-            const prioColor =
-                styleForTaskPriority(
-                    task.priority,
-                );
+            const prioColor = (
+                TASK_PRIORITY_CONFIG[
+                    task.priority
+                ]
+                ?? TASK_PRIORITY_DEFAULT
+            ).style;
             return html`
             <div class="card"
                 style="padding:1rem">
@@ -918,9 +908,12 @@ function buildProjectSidebar(
                       padding-bottom:0.5rem">
                 <p
                     class="text-sm font-medium"
-                    style="${styleForMilestone(
-                        milestone.status,
-                    )}">
+                    style="${(
+                        MILESTONE_STATUS_CONFIG[
+                            milestone.status
+                        ]
+                        ?? MILESTONE_STATUS_DEFAULT
+                    ).textStyle}">
                   ${milestone.title}
                 </p>
                 <p class="text-xs text-muted">
@@ -977,7 +970,7 @@ function buildProjectDetail(
           <div>
             <div class="flex flex-wrap
                 items-center gap-3 mb-2">
-              ${isEditing
+              ${state.isEditing
                 ? html`<input class="input"
                     id="project-edit-title"
                     value="${project.title}"
@@ -987,7 +980,7 @@ function buildProjectDetail(
                     class="text-xl font-display font-bold">
                   ${project.title}
                 </h1>`}
-              ${isEditing
+              ${state.isEditing
                 ? html`<select class="input"
                     id="project-edit-status"
                     style="width:auto">
@@ -1006,7 +999,7 @@ function buildProjectDetail(
             </p>
           </div>
         </div>
-        ${isEditing
+        ${state.isEditing
           ? html`<div class="flex gap-2">
               <button
                   class="btn btn-outline gap-2"
@@ -1161,7 +1154,7 @@ function bindProjectEvents(
   // Edit / Save / Cancel
   $('#project-edit-btn')
     ?.addEventListener('click', () => {
-      isEditing = true;
+      state.isEditing = true;
       mutateProjectPage(
           project, projectId,
       );
@@ -1169,7 +1162,7 @@ function bindProjectEvents(
 
   $('#project-cancel-btn')
     ?.addEventListener('click', () => {
-      isEditing = false;
+      state.isEditing = false;
       mutateProjectPage(
           project, projectId,
       );
@@ -1237,7 +1230,7 @@ function bindProjectEvents(
       );
       const updated =
           await getProjectById(projectId);
-      isEditing = false;
+      state.isEditing = false;
       mutateProjectPage(
           updated, projectId,
       );
@@ -1318,7 +1311,7 @@ export async function init(
 ): Promise<void> {
   const projectId = params?.projectId;
   if (!projectId) { navigateTo('projects'); return; }
-  isEditing = false;
+  state.isEditing = false;
 
   const container = $(
       '#project-detail-content',

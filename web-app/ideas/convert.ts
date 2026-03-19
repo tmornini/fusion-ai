@@ -33,13 +33,15 @@ const requiredFields = [
     'priority',
 ];
 
-let projectDetails:
-    Record<string, string> = {};
+const state = {
+    projectDetails: {} as
+        Record<string, string>,
+};
 
 function completedFieldCount(): number {
     return requiredFields.filter(
         (field) =>
-            projectDetails[field]?.trim(),
+            state.projectDetails[field]?.trim(),
     ).length;
 }
 
@@ -51,7 +53,7 @@ function isReadyToConvert(): boolean {
 function fieldCheckIcon(
     field: string,
 ): SafeHtml {
-    return projectDetails[field]?.trim()
+    return state.projectDetails[field]?.trim()
         ? html`<span
             style=${'color:'
                 + 'hsl(var(--success))'}>
@@ -71,7 +73,7 @@ function buildConversionPage(
             / requiredFields.length)
         * 100;
     const leadVal =
-        projectDetails['project-lead'];
+        state.projectDetails['project-lead'];
 
     return html`
     <div style=${'min-height:100vh;'
@@ -297,7 +299,7 @@ function buildConversionPage(
                     id=${'convert'
                         + '-project-name'}
                     value="${
-                        projectDetails[
+                        state.projectDetails[
                             'project-name'
                         ] || ''
                     }"
@@ -382,7 +384,7 @@ function buildConversionPage(
                       id=${'convert'
                           + '-start-date'}
                       value="${
-                          projectDetails[
+                          state.projectDetails[
                               'start-date'
                           ] || ''
                       }" />
@@ -406,7 +408,7 @@ function buildConversionPage(
                           + '-target'
                           + '-end-date'}
                       value="${
-                          projectDetails[
+                          state.projectDetails[
                               'target'
                               + '-end-date'
                           ] || ''
@@ -521,7 +523,7 @@ function buildConversionPage(
                         + ' Complete data'
                         + ' pipeline setup'}
                     value="${
-                        projectDetails[
+                        state.projectDetails[
                             'first-milestone'
                         ] || ''
                     }" />
@@ -549,7 +551,7 @@ function buildConversionPage(
                         + ' successful?'}
                     rows="4"
                     style="resize:none">${
-                        projectDetails[
+                        state.projectDetails[
                             'success-criteria'
                         ] || ''
                   }</textarea>
@@ -696,7 +698,7 @@ export async function init(
         return;
     }
 
-    projectDetails = {
+    state.projectDetails = {
         'project-name': idea.title,
         'project-lead': '',
         'start-date': '',
@@ -730,7 +732,7 @@ export async function init(
                     || el instanceof
                         HTMLTextAreaElement
                 ) {
-                    projectDetails[field] =
+                    state.projectDetails[field] =
                         el.value;
                 }
             });
@@ -826,7 +828,7 @@ export async function init(
                     crypto.randomUUID();
                 try {
                     const pd =
-                        projectDetails;
+                        state.projectDetails;
                     await putProject(
                         projectId,
                         {

@@ -235,7 +235,42 @@ export class User {
   }
 
   fullName(): string {
-    return `${this.firstName} ${this.lastName}`.trim();
+    return (
+        `${this.firstName}`
+        + ` ${this.lastName}`
+    ).trim();
+  }
+
+  isActive(): boolean {
+    return this.status === 'active';
+  }
+
+  isPending(): boolean {
+    return this.status === 'pending';
+  }
+
+  isDeactivated(): boolean {
+    return this.status === 'deactivated';
+  }
+
+  statusLabel(): string {
+    if (this.status === 'active')
+        return 'Active';
+    if (this.status === 'pending')
+        return 'Pending';
+    if (this.status === 'deactivated')
+        return 'Deactivated';
+    return 'Unknown';
+  }
+
+  statusClassName(): string {
+    if (this.status === 'active')
+        return 'badge-success';
+    if (this.status === 'pending')
+        return 'badge-warning';
+    if (this.status === 'deactivated')
+        return 'badge-default';
+    return 'badge-default';
   }
 }
 
@@ -682,6 +717,11 @@ export interface StatusDisplay {
     className: string;
 }
 
+export interface InlineStyleDisplay {
+    label: string;
+    style: string;
+}
+
 export const UNKNOWN_CONFIG: StatusDisplay = {
     label: 'Unknown',
     className: 'badge-default',
@@ -797,6 +837,140 @@ export const CONFIDENCE_CONFIG: Record<
     },
 };
 
+export const FLOW_STEP_TYPE_CONFIG: Record<
+    FlowStepType,
+    InlineStyleDisplay
+> = {
+    start: {
+        label: 'Start',
+        style: 'background:hsl(var('
+            + '--success) / 0.1);border:'
+            + '2px solid hsl(var(--success)'
+            + ' / 0.3);color:hsl(var('
+            + '--success))',
+    },
+    end: {
+        label: 'End',
+        style: 'background:hsl(var('
+            + '--error)/0.1);border:2px'
+            + ' solid hsl(var(--error)'
+            + '/0.3);color:hsl(var('
+            + '--error))',
+    },
+    decision: {
+        label: 'Decision',
+        style: 'background:hsl(var('
+            + '--warning)/0.1);border:2px'
+            + ' solid hsl(var(--warning)'
+            + '/0.3);color:hsl(var('
+            + '--warning))',
+    },
+    action: {
+        label: 'Action',
+        style: 'background:hsl(var('
+            + '--primary)/0.1);border:2px'
+            + ' solid hsl(var(--primary)'
+            + '/0.3);color:hsl(var('
+            + '--primary))',
+    },
+};
+
+export const FLOW_STEP_TYPE_DEFAULT:
+    InlineStyleDisplay
+    = FLOW_STEP_TYPE_CONFIG.action;
+
+export interface MilestoneDisplay {
+    label: string;
+    textStyle: string;
+    iconBackground: string;
+}
+
+export const MILESTONE_STATUS_CONFIG:
+    Record<string, MilestoneDisplay>
+= {
+    completed: {
+        label: 'Completed',
+        textStyle:
+            'color:hsl(var(--success))',
+        iconBackground:
+            'hsl(var(--success))',
+    },
+    in_progress: {
+        label: 'In Progress',
+        textStyle:
+            'color:hsl(var(--warning))',
+        iconBackground:
+            'hsl(var(--warning))',
+    },
+};
+
+export const MILESTONE_STATUS_DEFAULT:
+    MilestoneDisplay = {
+        label: 'Pending',
+        textStyle: 'color:hsl(var('
+            + '--muted-foreground))',
+        iconBackground:
+            'hsl(var(--muted))',
+    };
+
+export const TASK_PRIORITY_CONFIG:
+    Record<string, InlineStyleDisplay>
+= {
+    High: {
+        label: 'High',
+        style: 'background:hsl(var('
+            + '--error-soft));'
+            + 'color:hsl(var('
+            + '--error-text));'
+            + 'border:1px solid '
+            + 'hsl(var(--error-border))',
+    },
+    Medium: {
+        label: 'Medium',
+        style: 'background:hsl(var('
+            + '--warning-soft));'
+            + 'color:hsl(var('
+            + '--warning-text));'
+            + 'border:1px solid '
+            + 'hsl(var(--warning-border))',
+    },
+};
+
+export const TASK_PRIORITY_DEFAULT:
+    InlineStyleDisplay = {
+        label: 'Low',
+        style: 'background:hsl(var('
+            + '--muted)/0.5);'
+            + 'color:hsl(var('
+            + '--muted-foreground));'
+            + 'border:1px solid '
+            + 'hsl(var(--border))',
+    };
+
+export const READINESS_CONFIG: Record<
+    string,
+    StatusDisplay
+> = {
+    ready: {
+        label: 'Ready for Review',
+        className: 'text-success',
+    },
+    'needs-info': {
+        label: 'Needs Info',
+        className: 'text-warning',
+    },
+    incomplete: {
+        label: 'Incomplete',
+        className: 'text-error',
+    },
+};
+
+export const UNKNOWN_READINESS_CONFIG:
+    StatusDisplay = {
+        label: 'Unknown',
+        className: 'text-muted',
+    };
+
 export class Idea {
     readonly id: string;
     readonly title: string;
@@ -897,6 +1071,10 @@ export class Idea {
             && this.status === 'active';
     }
 
+    isReady(): boolean {
+        return this.readiness === 'ready';
+    }
+
     durationInDays(): number {
         return Math.ceil(
             this.estimatedDuration
@@ -961,6 +1139,20 @@ export class Idea {
         return (
             EDGE_STATUS_CONFIG[this.edgeStatus]
                 ?? UNKNOWN_CONFIG
+        ).className;
+    }
+
+    readinessLabel(): string {
+        return (
+            READINESS_CONFIG[this.readiness]
+                ?? UNKNOWN_READINESS_CONFIG
+        ).label;
+    }
+
+    readinessClassName(): string {
+        return (
+            READINESS_CONFIG[this.readiness]
+                ?? UNKNOWN_READINESS_CONFIG
         ).className;
     }
 }
