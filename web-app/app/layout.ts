@@ -36,8 +36,7 @@ function mutateThemeToggleIcon(): void {
         'theme-toggle',
         'mobile-theme-toggle',
     ].forEach(id => {
-        const button =
-            document.getElementById(id);
+        const button = $(`#${id}`);
         if (button) {
             setHtml(button, themeIcon);
             button.setAttribute(
@@ -58,8 +57,7 @@ async function mutateSidebarUser(
         'sidebar-user-name',
         'mobile-sidebar-user-name',
     ]) {
-        const el =
-            document.getElementById(id);
+        const el = $(`#${id}`);
         if (el)
             el.textContent = user.name;
     }
@@ -67,8 +65,7 @@ async function mutateSidebarUser(
         'sidebar-user-company',
         'mobile-sidebar-user-company',
     ]) {
-        const el =
-            document.getElementById(id);
+        const el = $(`#${id}`);
         if (el)
             el.textContent = user.company;
     }
@@ -124,9 +121,7 @@ function initActiveNavItem(): void {
 
 function initSidebar(): void {
     const sidebar =
-        document.getElementById(
-            'desktop-sidebar',
-        );
+        $('#desktop-sidebar');
     const mainContent =
         $('.main-content');
 
@@ -146,9 +141,7 @@ function initSidebar(): void {
         });
     }
 
-    document.getElementById(
-        'sidebar-collapse',
-    )?.addEventListener(
+    $('#sidebar-collapse')?.addEventListener(
         'click',
         () => {
             sidebar?.classList.add(
@@ -174,9 +167,7 @@ function initSidebar(): void {
             }
         },
     );
-    document.getElementById(
-        'sidebar-expand',
-    )?.addEventListener(
+    $('#sidebar-expand')?.addEventListener(
         'click',
         () => {
             sidebar?.classList.remove(
@@ -248,12 +239,8 @@ function initDropdown(
     toggleId: string,
     contentId: string,
 ): void {
-    const toggle =
-        document.getElementById(toggleId);
-    const content =
-        document.getElementById(
-            contentId,
-        );
+    const toggle = $(`#${toggleId}`);
+    const content = $(`#${contentId}`);
     if (!toggle || !content) return;
 
     toggle.addEventListener(
@@ -337,13 +324,9 @@ function initThemeAndDropdowns(): void {
 
 function initMobileDrawer(): void {
     const sheet =
-        document.getElementById(
-            'mobile-sheet',
-        );
+        $('#mobile-sheet');
     const backdrop =
-        document.getElementById(
-            'mobile-sheet-backdrop',
-        );
+        $('#mobile-sheet-backdrop');
     let drawerPreviousFocus:
         HTMLElement | null = null;
 
@@ -378,8 +361,8 @@ function initMobileDrawer(): void {
         drawerPreviousFocus = null;
     }
 
-    document.getElementById(
-        'mobile-sidebar-open',
+    $(
+        '#mobile-sidebar-open',
     )?.addEventListener(
         'click',
         openDrawer,
@@ -444,23 +427,23 @@ function initMobileDrawer(): void {
         },
     );
 
-    document.getElementById(
-        'mobile-search-toggle',
+    $(
+        '#mobile-search-toggle',
     )?.addEventListener(
         'click',
         () => {
-            document.getElementById(
-                'mobile-search-bar',
+            $(
+                '#mobile-search-bar',
             )?.classList.remove('hidden');
         },
     );
-    document.getElementById(
-        'mobile-search-close',
+    $(
+        '#mobile-search-close',
     )?.addEventListener(
         'click',
         () => {
-            document.getElementById(
-                'mobile-search-bar',
+            $(
+                '#mobile-search-bar',
             )?.classList.add('hidden');
         },
     );
@@ -484,9 +467,7 @@ async function mutateHeaderInfo(
             ]);
 
         const greetingEl =
-            document.getElementById(
-                'header-greeting',
-            );
+            $('#header-greeting');
         if (greetingEl) {
             setHtml(
                 greetingEl,
@@ -502,9 +483,7 @@ getTimeOfDay()},</span> ${user.name}`,
         }
 
         const statsEl =
-            document.getElementById(
-                'header-stats',
-            );
+            $('#header-stats');
         if (statsEl) {
             setHtml(
                 statsEl,
