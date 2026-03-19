@@ -31,6 +31,7 @@ import type {
     AccountEntity,
 } from './types';
 import { nowUtc } from './types';
+import { log } from '../web-app/app/logger';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -47,9 +48,11 @@ function readTable<T>(
     try {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) {
-            console.warn(
-                'fusion-ai: table "' + tableName
-                + '" is not an array, resetting.',
+            log.warn(
+                'table "' + tableName
+                + '" is not an array,'
+                + ' resetting.',
+                'db',
             );
             return [];
         }
@@ -61,9 +64,11 @@ function readTable<T>(
         }
         return parsed as T[];
     } catch {
-        console.warn(
-            'fusion-ai: table "' + tableName
-            + '" has corrupt JSON, resetting.',
+        log.warn(
+            'table "' + tableName
+            + '" has corrupt JSON,'
+            + ' resetting.',
+            'db',
         );
         return [];
     }

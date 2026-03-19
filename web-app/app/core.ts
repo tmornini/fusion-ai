@@ -4,6 +4,7 @@
 // ============================================
 
 import { applyTheme } from './state';
+import { log } from './logger';
 import { html, setHtml } from './safe-html';
 import { buildErrorState, errorMessage } from './loading-states';
 import {
@@ -105,7 +106,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch (err) {
-    console.error('Database initialization failed:', err);
+    log.error(
+      'Database initialization failed:',
+      'core',
+      err,
+    );
     setHtml(document.body, html`<div
       style="padding:2rem;
         font-family:sans-serif;
@@ -145,7 +150,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const mod = await loader();
     await mod.init(getParams());
   } catch (err) {
-    console.error(`Page "${pageName}" failed to initialize:`, err);
+    log.error(
+      `Page "${pageName}" failed to init:`,
+      'core',
+      err,
+    );
     const container = document.querySelector<HTMLElement>('.page-content')
       || document.getElementById('page-root');
     if (container) {
