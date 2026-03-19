@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — Command Palette (Cmd+K)
-// Self-contained module: search, keyboard
-// nav, rendering
-// ============================================
-
 import {
     $,
     $input,
@@ -33,8 +27,6 @@ import {
 } from './page-registry';
 import { buildPageUrl } from './navigation';
 
-// -- Types ----------------------------
-
 interface SearchItem {
     id: string;
     title: string;
@@ -57,8 +49,6 @@ interface PalettePageEntry {
 }
 
 const DEBOUNCE_MS = 100;
-
-// -- Page list from registry -----------
 
 function buildPageList(
 ): PalettePageEntry[] {
@@ -87,8 +77,6 @@ function buildPageList(
 
 const pages: PalettePageEntry[] =
     buildPageList();
-
-// -- Encapsulated State ----------------
 
 interface CommandPaletteState {
     isOpen: boolean;
@@ -122,8 +110,6 @@ const state: CommandPaletteState = {
     liveRegion: null,
     previousFocusElement: null,
 };
-
-// -- Data loading ----------------------
 
 async function loadSearchIndex(
 ): Promise<void> {
@@ -220,8 +206,6 @@ async function loadSearchIndex(
     }
 }
 
-// -- Search ----------------------------
-
 function search(
     query: string,
 ): SearchItem[] {
@@ -263,8 +247,6 @@ function buildHighlightedMatch(
         ),
     );
 }
-
-// -- Rendering -------------------------
 
 const categoryOrder:
     SearchItem['category'][] = [
@@ -409,8 +391,6 @@ function mutateActiveItem(): void {
     }
 }
 
-// -- Navigation ------------------------
-
 function navigateToItem(
     index: number,
 ): void {
@@ -420,8 +400,6 @@ function navigateToItem(
     close();
     window.location.href = item.href;
 }
-
-// -- Open / Close ----------------------
 
 function open(): void {
     if (state.isOpen) return;
@@ -456,8 +434,6 @@ function close(): void {
     if (state.previousFocusElement)
         state.previousFocusElement.focus();
 }
-
-// -- DOM injection ---------------------
 
 function initCommandPaletteDOM(): void {
     state.backdrop =
@@ -704,8 +680,6 @@ function initCommandPaletteDOM(): void {
         state.dialog,
     );
 }
-
-// -- Public init -----------------------
 
 export function initCommandPalette(
 ): void {

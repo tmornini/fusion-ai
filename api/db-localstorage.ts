@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — localStorage Database Implementation
-// Pure localStorage with JSON serialization.
-// Works on file:/// and http(s):// protocols.
-// ============================================
-
 import type {
     DbAdapter,
     EntityStore,
@@ -34,8 +28,6 @@ import { nowUtc } from './types';
 import { log } from '../web-app/app/logger';
 
 const KEY_PREFIX = 'fusion-ai:';
-
-// -- Helpers ------------------------------
 
 function readTable<T>(
     tableName: string,
@@ -127,8 +119,6 @@ function generateCompositeId(
 ): string {
     return `${prefix}-${parts.join('-')}`;
 }
-
-// ── Generic store factories ──────────────
 
 function createEntityStore<
     T extends { id: string },
@@ -248,8 +238,6 @@ function createSingletonStore<
     };
 }
 
-// ── Table list for bulk operations ─────────
-
 export const TABLE_NAMES = [
     'users',
     'ideas',
@@ -271,8 +259,6 @@ export const TABLE_NAMES = [
     'company_settings',
     'account',
 ];
-
-// -- Adapter factory ----------------------
 
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {

@@ -1,7 +1,3 @@
-// ============================================
-// FUSION AI — Database Abstraction Interface
-// ============================================
-
 import type {
   UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,

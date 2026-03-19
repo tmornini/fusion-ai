@@ -1,8 +1,3 @@
-// ============================================
-// FUSION AI — SVG Chart Rendering
-// Bar, Line, Donut, Area charts as SafeHtml.
-// ============================================
-
 import { SafeHtml, trusted } from './safe-html';
 
 export interface ChartDatum {

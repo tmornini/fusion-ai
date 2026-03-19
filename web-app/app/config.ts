@@ -1,16 +1,3 @@
-// ============================================
-// FUSION AI — Shared Configuration
-// Status display configs used across pages.
-// ============================================
-//
-// Status display logic is now owned by
-// entity classes in api/types.ts.
-// Use entity methods like idea.statusLabel(),
-// idea.statusClassName(), etc.
-//
-// This file retains exports for backward
-// compatibility during the transition.
-
 import type {
     EdgeStatus,
     IdeaStatus,

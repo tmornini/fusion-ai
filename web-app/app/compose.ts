@@ -1,10 +1,3 @@
-// ============================================
-// FUSION AI — Build-time HTML Composition
-// Combines components-layout.html and component-*.html with per-page index.html
-// to produce standalone sidebar-layout index.html files.
-// Also copies standalone pages to output directory.
-// ============================================
-
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { PAGE_REGISTRY } from './page-registry';

@@ -1,9 +1,3 @@
-// ==========================================
-// FUSION AI — Seed Data
-// Populates database with mock data on
-// first run.
-// ==========================================
-
 import type { DbAdapter } from './db';
 
 export async function populateMockData(

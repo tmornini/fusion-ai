@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — Snapshots Page
-// Wipe, reload, upload/download snapshot
-// operations.
-// ============================================
-
 import {
     deleteSchema,
     createSchema,

@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — Lightweight Logger
-// Respects `fusion-ai:log-level` in localStorage.
-// Levels: debug < info < warn < error
-// ============================================
-
 const STORAGE_KEY_LOG_LEVEL =
     'fusion-ai:log-level';
 const LEVELS = { debug: 0, info: 1, warn: 2, error: 3 } as const;

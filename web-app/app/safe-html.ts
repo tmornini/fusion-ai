@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — Safe HTML Templating
-// Tagged template that auto-escapes interpolated
-// values. Makes XSS impossible at compile time.
-// ============================================
-
 export class SafeHtml {
   readonly #value: string;
 
@@ -47,9 +41,6 @@ export function html(
   return new SafeHtml(result);
 }
 
-// Safe: only accepts SafeHtml
-// (auto-escaped by html tag or explicitly trusted).
-// TypeScript rejects plain strings at compile time.
 export function setHtml(element: HTMLElement, content: SafeHtml): void {
   element.innerHTML = content.toString();
 }

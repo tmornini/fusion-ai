@@ -1,8 +1,3 @@
-// ============================================
-// FUSION AI — Core Application Orchestrator
-// Dispatches page modules, initializes layout
-// ============================================
-
 import { applyTheme } from './state';
 import { log } from './logger';
 import { html, setHtml } from './safe-html';
@@ -26,10 +21,6 @@ export {
     SECONDS_PER_DAY,
 } from './format';
 export { openDialog, closeDialog, initDialog, initTabs } from './dialog';
-
-// ------------------------------------
-// Page Module Dispatch
-// ------------------------------------
 
 const pageModules: Record<
     string,
@@ -68,10 +59,6 @@ const pageModules: Record<
   onboarding: () => import('../onboarding/index'),
   'not-found': () => import('../not-found/index'),
 };
-
-// ------------------------------------
-// Initialize
-// ------------------------------------
 
 document.addEventListener('DOMContentLoaded', async () => {
   applyTheme();

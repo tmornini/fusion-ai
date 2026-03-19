@@ -73,7 +73,7 @@ web-app/      # Frontend pages, styles, scripts, layout templates
 |----------|-------------|
 | [api/](api/README.md) | REST-style API layer and database abstraction |
 | [web-app/](web-app/README.md) | Frontend pages, styles, scripts, and layout |
-| [SCHEMA.md](SCHEMA.md) | Database schema (22 tables) |
+| [SCHEMA.md](SCHEMA.md) | Database schema (19 tables) |
 | [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) | Design system specification |
 | [TEST-PLAN.md](TEST-PLAN.md) | Human-executable test plan |
 | [CLAUDE.md](CLAUDE.md) | Claude Code project guidance |

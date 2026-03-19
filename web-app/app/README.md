@@ -15,8 +15,8 @@ All TypeScript and CSS source code for the application. Static assets (fonts, fa
 | `toast.ts` | showToast() auto-dismiss notifications |
 | `config.ts` | edgeStatusConfig mapping |
 | `safe-html.ts` | SafeHtml class, html tagged template, trusted(), setHtml() |
-| `skeleton.ts` | Loading skeletons, error states, empty states, withLoadingState() |
-| [`adapters/`](adapters/README.md) | ~30 adapter functions split into domain modules with barrel re-export (`adapters/index.ts`) |
+| `loading-states.ts` | Loading skeletons, error states, empty states, withLoadingState() |
+| [`adapters/`](adapters/README.md) | ~45 adapter functions split into domain modules with barrel re-export (`adapters/index.ts`) |
 | [`styles/`](styles/README.md) | CSS modules in cascade order: fonts, tokens, dark-mode, base, components, layout, utilities, responsive, pages, command-palette |
 | `charts.ts` | SVG chart rendering functions (bar, line, donut, area) |
 | `command-palette.ts` | Cmd+K search overlay with keyboard navigation and result rendering |
@@ -31,14 +31,14 @@ Domain-specific adapter functions organized by module:
 
 | Module | Exports |
 |--------|---------|
-| `helpers.ts` | `groupBy`, `buildUserMap`, `parseJson`, `getEdgeDataByIdeaId`, `buildDefaultEdgeData`, `getEdgeDataWithConfidence` |
-| `shared.ts` | `getCurrentUser` |
+| `helpers.ts` | `buildUserMap`, `userName`, `parseJson`, `getEdgeDataByIdeaId`, `buildDefaultEdgeData`, `getEdgeDataWithConfidence` |
+| `shared.ts` | `getTimeOfDay`, `getCurrentUser` |
 | `dashboard.ts` | `getDashboardGauges`, `getDashboardStats` |
-| `ideas.ts` | `getIdeas`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval`, `getIdea`, `putIdea` |
-| `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `getClarificationsByProjectId`, `putProject`, `putMilestone` |
+| `ideas.ts` | `getIdeas`, `getIdeaDetail`, `getReviewQueue`, `getIdeaForConversion`, `getIdeaForApproval`, `getEdgeForApproval`, `getIdea`, `putIdea` |
+| `projects.ts` | `getProjects`, `getProjectById`, `getProjectForEngineering`, `putProject`, `putMilestone` |
 | `teams.ts` | `getTeamMembers`, `getManagedUsers` |
-| `edges.ts` | `getIdeaForEdge`, `getEdgeList` |
-| `tools.ts` | `getCrunchColumns`, `getFlow` |
+| `edges.ts` | `getIdeaForEdge`, `getEdgeList`, `putEdgeData` |
+| `tools.ts` | `getCrunchColumns`, `getFlows`, `getFlow`, `putFlow`, `putFlowStep` |
 | `admin.ts` | `getAccount`, `getProfile`, `getCompanySettings`, `getActivityFeed` |
 | `snapshots.ts` | `deleteSchema`, `createSchema`, `loadMockData`, `importSnapshot`, `exportSnapshot`, `hasData` |
 | `index.ts` | Barrel re-export of all modules |
@@ -53,7 +53,7 @@ All page modules import from `'../../app/adapters'` — with `moduleResolution: 
 2. Substitutes `<!-- PAGE_CONTENT -->` with the page's HTML content
 3. Writes the composed file to the build output directory
 
-This produces 19 composed pages. The remaining 7 standalone pages are copied directly.
+This produces 20 composed pages. The remaining 7 standalone pages are copied directly.
 
 ## Key Exports from `core.ts`
 

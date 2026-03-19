@@ -1,22 +1,9 @@
-// ============================================
-// FUSION AI — State Management
-// App state, pub-sub, theme, mobile detection
-// ============================================
-
-// ------------------------------------
-// localStorage Key Constants
-// ------------------------------------
-
 import { log } from './logger';
 
 const STORAGE_KEY_THEME = 'fusion-theme';
 const STORAGE_KEY_SIDEBAR =
     'fusion-sidebar-collapsed';
 const MOBILE_BREAKPOINT_PX = 768;
-
-// ------------------------------------
-// State Management
-// ------------------------------------
 
 interface AppState {
   theme: 'light' | 'dark' | 'system';
@@ -62,10 +49,6 @@ function subscribe(fn: StateListener): () => void {
   return () => { listeners.delete(fn); };
 }
 
-// ------------------------------------
-// Theme
-// ------------------------------------
-
 function computeTheme(): 'light' | 'dark' {
   if (state.theme === 'system') {
     const query =
@@ -80,7 +63,6 @@ function computeTheme(): 'light' | 'dark' {
 function applyTheme(): void {
   const resolved = computeTheme();
   document.documentElement.setAttribute('data-theme', resolved);
-  // Also set class for any CSS that uses .dark selector
   document.documentElement.classList.toggle('dark', resolved === 'dark');
 }
 
@@ -100,16 +82,11 @@ function setTheme(theme: AppState['theme']): void {
   applyTheme();
 }
 
-// Listen for system theme changes
 const darkQuery = '(prefers-color-scheme: dark)';
 window.matchMedia(darkQuery)
   .addEventListener('change', () => {
   if (state.theme === 'system') applyTheme();
 });
-
-// ------------------------------------
-// Mobile Detection
-// ------------------------------------
 
 const mobileQuery =
   `(max-width: ${MOBILE_BREAKPOINT_PX}px)`;
@@ -119,7 +96,6 @@ window.matchMedia(mobileQuery)
   if (!e.matches) setState({ isSidebarOpen: false, isSearchOpen: false });
 });
 
-// Sync theme across tabs via StorageEvent
 window.addEventListener('storage', (e) => {
   if (e.key === STORAGE_KEY_THEME && isValidTheme(e.newValue)) {
     setState({ theme: e.newValue });

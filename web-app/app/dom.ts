@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — DOM Helpers
-// Query selectors, typed element selectors,
-// and HTML escaping.
-// ============================================
-
 import type { SafeHtml } from './safe-html';
 import { setHtml } from './safe-html';
 
@@ -20,9 +14,6 @@ export function $$(
 ): HTMLElement[] {
   return Array.from(parent.querySelectorAll(selector));
 }
-
-// ── Typed element selectors ──────────────
-// Eliminates unsafe `as HTMLInputElement` casts at call sites.
 
 export function $input(
   selector: string,
@@ -50,15 +41,9 @@ export function $textarea(
     );
 }
 
-// ── Safe getAttribute ────────────────
-// Returns '' instead of null, eliminating getAttribute()! patterns.
-
 export function attr(el: Element, name: string): string {
   return el.getAttribute(name) ?? '';
 }
-
-// ── Batch icon population ───────────────
-// Eliminates repetitive if-check-then-setHtml boilerplate.
 
 export function populateIcons(entries: Array<[string, SafeHtml]>): void {
   for (const [selector, icon] of entries) {
@@ -66,9 +51,6 @@ export function populateIcons(entries: Array<[string, SafeHtml]>): void {
     if (el) setHtml(el, icon);
   }
 }
-
-// ── Active class toggle on button groups ────
-// Eliminates view toggle duplication across list pages.
 
 export function initToggleGroup(
   selector: string,

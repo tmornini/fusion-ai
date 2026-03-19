@@ -1,9 +1,3 @@
-// ============================================
-// FUSION AI — REST-style API
-// GET/PUT/DELETE/POST routing for the
-// database adapter.
-// ============================================
-
 import type { DbAdapter } from './db';
 
 export class ApiError extends Error {
@@ -80,8 +74,6 @@ function route(
     };
 }
 
-// Safe route param access — eliminates
-// non-null assertions in route handlers
 function param(
     params: string[],
     index: number,

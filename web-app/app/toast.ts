@@ -1,8 +1,3 @@
-// ============================================
-// FUSION AI — Toast Notifications
-// Auto-dismiss toast messages.
-// ============================================
-
 const MAX_TOASTS = 5;
 const TOAST_DURATION_MS = 3000;
 const TOAST_TRANSITION_MS = 300;
@@ -30,7 +25,6 @@ export function showToast(
   const container = document.getElementById('toast-container');
   if (!container) return;
 
-  // Enforce max visible toasts — remove oldest when exceeded
   while (container.children.length >= MAX_TOASTS) {
     container.firstElementChild?.remove();
   }

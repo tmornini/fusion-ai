@@ -1,8 +1,3 @@
-// ============================================
-// FUSION AI — Icons (inline SVG — Lucide-compatible)
-// Each returns SafeHtml; inherits currentColor.
-// ============================================
-
 import { SafeHtml } from './safe-html';
 
 function icon(

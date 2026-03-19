@@ -1,26 +1,11 @@
-// ============================================
-// FUSION AI — API Type Definitions
-// Row types (snake_case), shared type aliases,
-// and utility functions.
-// ============================================
-
-// ── Shared Type Aliases ────────────────
-
-/** Semantic alias for entity ID strings
- *  used as map keys and function params.
- */
 export type Id = string;
 
-/** Confidence level used across Edge, ideas, and projects. */
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
-/** Computed priority from score (distinct from confidence). */
 export type PriorityLevel = 'high' | 'medium' | 'low';
 
-/** Edge definition completion status. */
 export type EdgeStatus = 'complete' | 'draft' | 'missing';
 
-/** Idea lifecycle status. */
 export type IdeaStatus =
     | 'active'
     | 'in-review'
@@ -29,7 +14,6 @@ export type IdeaStatus =
     | 'archived'
     | 'deleted';
 
-/** Project lifecycle status. */
 export type ProjectStatus =
     | 'submitted'
     | 'under-review'
@@ -39,19 +23,15 @@ export type ProjectStatus =
     | 'completed'
     | 'deleted';
 
-/** Score thresholds for priority classification. */
 export const SCORE_THRESHOLD_HIGH = 80;
 export const SCORE_THRESHOLD_MEDIUM = 60;
 
-/** Score badge thresholds for UI display (ideas list). */
 export const SCORE_BADGE_HIGH = 85;
 export const SCORE_BADGE_MEDIUM = 70;
 
-/** Team availability thresholds for UI display (team page). */
 export const AVAILABILITY_HIGH = 70;
 export const AVAILABILITY_LOW = 40;
 
-/** Compute priority level from a numeric score. */
 export function computePriority(
     score: number,
 ): PriorityLevel {
@@ -62,10 +42,7 @@ export function computePriority(
     return 'low';
 }
 
-/** Stored boolean in localStorage (0 or 1 integer). */
 export type StoredBoolean = 0 | 1;
-
-// ── Utility ────────────────────
 
 /** Convert 0/1/boolean to boolean.
  *  Handles localStorage int vs JSON bool.
@@ -76,8 +53,6 @@ export function toBool(
     return value === 1
         || value === true;
 }
-
-// ── Formatting Utilities ───────────────
 
 export const SECONDS_PER_DAY = 86400;
 
@@ -99,8 +74,6 @@ export function formatCompactCurrency(
     return `$${value}`;
 }
 
-// ── Timestamp Utility ────────────────
-
 /**
  * Returns current UTC time as RFC-3339 Zulu
  * with microsecond resolution.
@@ -114,8 +87,6 @@ export function nowUtc(): string {
         '.$1000Z',
     );
 }
-
-// ── Entity Types ──────────────────
 
 export interface UserEntity {
   id: Id;
@@ -136,7 +107,6 @@ export interface UserEntity {
   last_active: string;
 }
 
-/** Domain object wrapping a UserEntity with camelCase accessors. */
 export class User {
   readonly id: string;
   readonly firstName: string;
@@ -410,8 +380,6 @@ export interface AccountEntity {
   active_users: number;
 }
 
-// ── Entity Factory Functions ──────────────
-
 export interface IdeaCreationFields {
     id: Id;
     title: string;
@@ -619,8 +587,6 @@ export function createFlowStep(
     };
 }
 
-// ── Status Display Configuration ─────────────
-
 interface StatusDisplay {
     label: string;
     className: string;
@@ -735,9 +701,6 @@ const CONFIDENCE_CONFIG: Record<
     },
 };
 
-// ── Domain Classes ─────────────────
-
-/** Domain object wrapping an IdeaEntity. */
 export class Idea {
     readonly id: string;
     readonly title: string;
@@ -901,7 +864,6 @@ export class Idea {
     }
 }
 
-/** Domain object wrapping a ProjectEntity. */
 export class Project {
     readonly id: string;
     readonly title: string;
@@ -1017,7 +979,6 @@ export class Project {
     }
 }
 
-/** Domain object wrapping an EdgeEntity. */
 export class Edge {
     readonly id: string;
     readonly ideaId: Id;
@@ -1088,7 +1049,6 @@ export class Edge {
     }
 }
 
-/** Domain object wrapping an ActivityEntity. */
 export class Activity {
     readonly id: string;
     readonly type: string;

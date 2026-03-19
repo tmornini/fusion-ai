@@ -1,10 +1,3 @@
-// ==========================================
-// FUSION AI — Skeleton / Loading / Error /
-// Empty
-// Loading placeholders and state display
-// helpers.
-// ==========================================
-
 import { iconAlertTriangle } from './icons';
 import {
     SafeHtml,
