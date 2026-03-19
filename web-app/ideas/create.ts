@@ -11,7 +11,10 @@ import {
     iconTrendingUp, iconWand, iconCheck,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { putIdea } from '../app/adapters';
+import {
+    putIdea,
+    putIdeaSubmission,
+} from '../app/adapters';
 import { nowUtc } from '../../api/types';
 
 const steps = [
@@ -618,18 +621,20 @@ function bindWizardEvents() {
                     await putIdea(ideaId, {
                         title: fd.title,
                         problem_statement:
-                            fd.problemStatement,
+                            fd
+                            .problemStatement,
                         proposed_solution:
-                            fd.proposedSolution,
+                            fd
+                            .proposedSolution,
                         expected_outcome:
-                            fd.expectedOutcome,
+                            fd
+                            .expectedOutcome,
                         success_metrics:
-                            fd.successMetrics,
+                            fd
+                            .successMetrics,
                         description:
                             fd.targetUsers,
                         status: 'active',
-                        submitted_by_id:
-                            '1',
                         score: 0,
                         estimated_impact:
                             0,
@@ -647,6 +652,10 @@ function bindWizardEvents() {
                         submitted_at:
                             nowUtc(),
                     });
+                    await putIdeaSubmission(
+                        ideaId,
+                        '1',
+                    );
                     navigateTo('ideas');
                 }
             },

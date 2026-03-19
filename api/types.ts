@@ -283,7 +283,6 @@ export interface IdeaEntity {
   estimated_cost: number;
   priority: number;
   status: IdeaStatus;
-  submitted_by_id: Id;
   edge_status: EdgeStatus | 'incomplete';
   problem_statement: string;
   proposed_solution: string;
@@ -328,7 +327,6 @@ export interface ProjectEntity {
   progress: number;
   start_date: string;
   target_end_date: string;
-  lead_id: Id;
   estimated_duration: number; // seconds
   actual_duration: number; // seconds
   estimated_cost: number;
@@ -337,7 +335,6 @@ export interface ProjectEntity {
   actual_impact: number;
   priority: number;
   priority_score: number;
-  linked_idea_id: Id;
   business_context: string; // JSON object
   timeline_label: string;
   budget_label: string;
@@ -368,13 +365,11 @@ export interface ProjectTaskEntity {
   description: string;
   skills: string; // JSON array
   duration: number; // seconds
-  assigned_to_id: Id;
 }
 
 export interface DiscussionEntity {
   id: Id;
   project_id: Id;
-  author_id: Id;
   date: string;
   message: string;
 }
@@ -385,7 +380,6 @@ export interface ProjectVersionEntity {
   version: string;
   date: string;
   changes: string;
-  author_id: Id;
 }
 
 export interface EdgeEntity {
@@ -393,7 +387,6 @@ export interface EdgeEntity {
   idea_id: Id;
   status: EdgeStatus;
   confidence: ConfidenceLevel;
-  owner_id: Id;
   impact_short_term: string;
   impact_mid_term: string;
   impact_long_term: string;
@@ -418,7 +411,6 @@ export interface EdgeMetricEntity {
 export interface ActivityEntity {
   id: Id;
   type: string;
-  actor_id: Id;
   action: string;
   target: string;
   timestamp: string;
@@ -431,11 +423,9 @@ export interface ClarificationEntity {
   id: Id;
   project_id: Id;
   question: string;
-  asked_by_id: Id;
   asked_at: string;
   status: ClarificationStatus;
   answer: string;
-  answered_by_id: Id;
   answered_at: string;
 }
 
@@ -505,10 +495,72 @@ export interface AccountEntity {
   active_users: number;
 }
 
+export interface IdeaSubmissionEntity {
+    id: Id;
+    idea_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface IdeaProjectLinkEntity {
+    id: Id;
+    idea_id: Id;
+    project_id: Id;
+    created_at: string;
+}
+
+export interface EdgeOwnershipEntity {
+    id: Id;
+    edge_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface TaskAssignmentEntity {
+    id: Id;
+    task_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface DiscussionAuthorshipEntity {
+    id: Id;
+    discussion_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface VersionAuthorshipEntity {
+    id: Id;
+    version_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface ActivityActorEntity {
+    id: Id;
+    activity_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface ClarificationAskerEntity {
+    id: Id;
+    clarification_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
+export interface ClarificationAnswererEntity {
+    id: Id;
+    clarification_id: Id;
+    user_id: Id;
+    created_at: string;
+}
+
 export interface IdeaCreationFields {
     id: Id;
     title: string;
-    submitted_by_id: Id;
     score?: number;
     estimated_impact?: number;
     estimated_duration?: number;
@@ -537,8 +589,6 @@ export function createIdea(
             fields.estimated_cost ?? 0,
         priority: fields.priority ?? 0,
         status: fields.status ?? 'active',
-        submitted_by_id:
-            fields.submitted_by_id,
         edge_status: 'missing',
         problem_statement:
             fields.problem_statement ?? '',
@@ -568,8 +618,6 @@ export function createIdea(
 export interface ProjectCreationFields {
     id: Id;
     title: string;
-    lead_id: Id;
-    linked_idea_id?: Id;
     description?: string;
     status?: ProjectStatus;
     estimated_duration?: number;
@@ -590,7 +638,6 @@ export function createProject(
         progress: 0,
         start_date: nowUtc(),
         target_end_date: '',
-        lead_id: fields.lead_id,
         estimated_duration:
             fields.estimated_duration ?? 0,
         actual_duration: 0,
@@ -602,8 +649,6 @@ export function createProject(
         actual_impact: 0,
         priority: 0,
         priority_score: 0,
-        linked_idea_id:
-            fields.linked_idea_id ?? '',
         business_context: '{}',
         timeline_label: '',
         budget_label: '',
@@ -613,7 +658,6 @@ export function createProject(
 export interface EdgeCreationFields {
     id: Id;
     idea_id: Id;
-    owner_id: Id;
     status?: EdgeStatus;
     confidence?: ConfidenceLevel;
 }
@@ -627,7 +671,6 @@ export function createEdge(
         status: fields.status ?? 'draft',
         confidence:
             fields.confidence ?? 'medium',
-        owner_id: fields.owner_id,
         impact_short_term: '',
         impact_mid_term: '',
         impact_long_term: '',
@@ -638,7 +681,6 @@ export function createEdge(
 export interface ActivityCreationFields {
     id: Id;
     type: string;
-    actor_id: Id;
     action: string;
     target: string;
     score?: number;
@@ -652,7 +694,6 @@ export function createActivity(
     return {
         id: fields.id,
         type: fields.type,
-        actor_id: fields.actor_id,
         action: fields.action,
         target: fields.target,
         timestamp: nowUtc(),
@@ -981,7 +1022,6 @@ export class Idea {
     readonly priority: number;
     readonly status: IdeaStatus;
     readonly edgeStatus: EdgeStatus | 'incomplete';
-    readonly submittedById: Id;
     readonly problemStatement: string;
     readonly proposedSolution: string;
     readonly expectedOutcome: string;
@@ -1019,8 +1059,6 @@ export class Idea {
         this.status = entity.status;
         this.edgeStatus =
             entity.edge_status || 'incomplete';
-        this.submittedById =
-            entity.submitted_by_id;
         this.problemStatement =
             entity.problem_statement;
         this.proposedSolution =
@@ -1165,7 +1203,6 @@ export class Project {
     readonly progress: number;
     readonly startDate: string;
     readonly targetEndDate: string;
-    readonly leadId: Id;
     readonly estimatedDuration: number;
     readonly actualDuration: number;
     readonly estimatedCost: number;
@@ -1174,7 +1211,6 @@ export class Project {
     readonly actualImpact: number;
     readonly priority: number;
     readonly priorityScore: number;
-    readonly linkedIdeaId: Id;
     readonly businessContext: string;
     readonly timelineLabel: string;
     readonly budgetLabel: string;
@@ -1188,7 +1224,6 @@ export class Project {
         this.startDate = entity.start_date;
         this.targetEndDate =
             entity.target_end_date;
-        this.leadId = entity.lead_id;
         this.estimatedDuration =
             entity.estimated_duration;
         this.actualDuration =
@@ -1203,8 +1238,6 @@ export class Project {
         this.priority = entity.priority;
         this.priorityScore =
             entity.priority_score;
-        this.linkedIdeaId =
-            entity.linked_idea_id;
         this.businessContext =
             entity.business_context;
         this.timelineLabel =
@@ -1250,13 +1283,6 @@ export class Project {
         );
     }
 
-    leadName(
-        userMap: Map<Id, User>,
-    ): string {
-        return userMap.get(this.leadId)
-            ?.fullName() ?? 'Unknown';
-    }
-
     statusLabel(): string {
         return (
             PROJECT_STATUS_CONFIG[this.status]
@@ -1277,7 +1303,6 @@ export class Edge {
     readonly ideaId: Id;
     readonly status: EdgeStatus;
     readonly confidence: ConfidenceLevel;
-    readonly ownerId: Id;
     readonly impactShortTerm: string;
     readonly impactMidTerm: string;
     readonly impactLongTerm: string;
@@ -1288,7 +1313,6 @@ export class Edge {
         this.ideaId = entity.idea_id;
         this.status = entity.status;
         this.confidence = entity.confidence;
-        this.ownerId = entity.owner_id;
         this.impactShortTerm =
             entity.impact_short_term;
         this.impactMidTerm =
@@ -1342,7 +1366,6 @@ export class Edge {
 export class Activity {
     readonly id: string;
     readonly type: string;
-    readonly actorId: Id;
     readonly action: string;
     readonly target: string;
     readonly timestamp: string;
@@ -1357,7 +1380,6 @@ export class Activity {
     ) {
         this.id = entity.id;
         this.type = entity.type;
-        this.actorId = entity.actor_id;
         this.action = entity.action;
         this.target = entity.target;
         this.timestamp = entity.timestamp;
@@ -1367,17 +1389,8 @@ export class Activity {
         this.actor = actor;
     }
 
-    actorName(
-        userMap: Map<Id, User>,
-    ): string {
-        return userMap.get(this.actorId)
-            ?.fullName() ?? 'Unknown';
-    }
-
-    formattedDescription(
-        userMap: Map<Id, User>,
-    ): string {
-        return `${this.actorName(userMap)}`
+    formattedDescription(): string {
+        return `${this.actor}`
             + ` ${this.action}`
             + ` ${this.target}`;
     }

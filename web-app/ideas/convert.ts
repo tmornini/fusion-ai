@@ -21,6 +21,8 @@ import {
     putIdea,
     putProject,
     putMilestone,
+    putProjectTeamMember,
+    putIdeaProjectLink,
     type ConversionIdea,
 } from '../app/adapters';
 
@@ -829,6 +831,13 @@ export async function init(
                 try {
                     const pd =
                         state.projectDetails;
+                    const leadUserId =
+                        leadMap[
+                            pd[
+                                'project'
+                                + '-lead'
+                            ] ?? ''
+                        ] ?? '1';
                     await putProject(
                         projectId,
                         {
@@ -855,13 +864,6 @@ export async function init(
                                     + '-end'
                                     + '-date'
                                 ] ?? '',
-                            lead_id:
-                                leadMap[
-                                    pd[
-                                        'project'
-                                        + '-lead'
-                                    ] ?? ''
-                                ] ?? '1',
                             estimated_duration:
                                 0,
                             actual_duration:
@@ -880,8 +882,6 @@ export async function init(
                                 ] ?? 3,
                             priority_score:
                                 0,
-                            linked_idea_id:
-                                ideaId,
                             business_context:
                                 '{}',
                             timeline_label:
@@ -891,6 +891,19 @@ export async function init(
                                 || '',
                         },
                     );
+
+                    await Promise.all([
+                        putProjectTeamMember(
+                            projectId,
+                            leadUserId,
+                            'lead',
+                            'internal',
+                        ),
+                        putIdeaProjectLink(
+                            ideaId,
+                            projectId,
+                        ),
+                    ]);
 
                     const existingIdea =
                         await getIdea(

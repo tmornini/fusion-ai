@@ -1,10 +1,14 @@
 import { GET } from '../../../api/api';
-import type { Id, ConfidenceLevel } from '../../../api/types';
+import type {
+    Id,
+    ConfidenceLevel,
+} from '../../../api/types';
 import type {
     UserEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
     EdgeMetricEntity,
+    EdgeOwnershipEntity,
 } from '../../../api/types';
 import { User } from '../../../api/types';
 import { log } from '../logger';
@@ -67,43 +71,69 @@ export interface EdgeData {
 }
 
 export async function getEdgeDataByIdeaId(
-  ideaId: string,
+    ideaId: string,
 ): Promise<EdgeData | null> {
-  const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
-  if (!edge) return null;
+    const edge = await GET<EdgeEntity | null>(
+        `ideas/${ideaId}/edge`,
+    );
+    if (!edge) return null;
 
-  const [outcomes, allMetrics, userMap] = await Promise.all([
-    GET<EdgeOutcomeEntity[]>(`edges/${edge.id}/outcomes`),
-    GET<EdgeMetricEntity[]>('edge-metrics'),
-    buildUserMap(),
-  ]);
+    const [
+        outcomes, allMetrics,
+        userMap, ownerships,
+    ] = await Promise.all([
+        GET<EdgeOutcomeEntity[]>(
+            `edges/${edge.id}/outcomes`,
+        ),
+        GET<EdgeMetricEntity[]>(
+            'edge-metrics',
+        ),
+        buildUserMap(),
+        GET<EdgeOwnershipEntity[]>(
+            'edge-ownerships',
+        ),
+    ]);
 
-  const metricsByOutcomeId = Map.groupBy(
-    allMetrics,
-    metric => metric.outcome_id,
-  );
+    const metricsByOutcomeId = Map.groupBy(
+        allMetrics,
+        metric => metric.outcome_id,
+    );
 
-  return {
-    outcomes: outcomes.map(outcome => ({
-      id: outcome.id,
-      description: outcome.description,
-      metrics: (metricsByOutcomeId.get(outcome.id) || [])
-        .map(metric => ({
-          id: metric.id,
-          name: metric.name,
-          target: metric.target,
-          unit: metric.unit,
-          current: metric.current,
+    const ownership = ownerships.find(
+        o => o.edge_id === edge.id,
+    );
+
+    return {
+        outcomes: outcomes.map(outcome => ({
+            id: outcome.id,
+            description:
+                outcome.description,
+            metrics: (
+                metricsByOutcomeId.get(
+                    outcome.id,
+                ) || []
+            ).map(metric => ({
+                id: metric.id,
+                name: metric.name,
+                target: metric.target,
+                unit: metric.unit,
+                current: metric.current,
+            })),
         })),
-    })),
-    impact: {
-      shortTerm: edge.impact_short_term,
-      midTerm: edge.impact_mid_term,
-      longTerm: edge.impact_long_term,
-    },
-    confidence: edge.confidence,
-    owner: userName(userMap, edge.owner_id),
-  };
+        impact: {
+            shortTerm:
+                edge.impact_short_term,
+            midTerm:
+                edge.impact_mid_term,
+            longTerm:
+                edge.impact_long_term,
+        },
+        confidence: edge.confidence,
+        owner: userName(
+            userMap,
+            ownership?.user_id ?? '',
+        ),
+    };
 }
 
 // ── Edge Data with Confidence ────────────

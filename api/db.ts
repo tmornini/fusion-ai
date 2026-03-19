@@ -1,9 +1,32 @@
 import type {
-  UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
-  MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
-  EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity,
-  ClarificationEntity, CrunchColumnEntity, FlowEntity, FlowStepEntity,
-  CompanySettingsEntity, AccountEntity,
+    UserEntity,
+    IdeaEntity,
+    IdeaScoreEntity,
+    ProjectEntity,
+    ProjectTeamEntity,
+    MilestoneEntity,
+    ProjectTaskEntity,
+    DiscussionEntity,
+    ProjectVersionEntity,
+    EdgeEntity,
+    EdgeOutcomeEntity,
+    EdgeMetricEntity,
+    ActivityEntity,
+    ClarificationEntity,
+    CrunchColumnEntity,
+    FlowEntity,
+    FlowStepEntity,
+    CompanySettingsEntity,
+    AccountEntity,
+    IdeaSubmissionEntity,
+    IdeaProjectLinkEntity,
+    EdgeOwnershipEntity,
+    TaskAssignmentEntity,
+    DiscussionAuthorshipEntity,
+    VersionAuthorshipEntity,
+    ActivityActorEntity,
+    ClarificationAskerEntity,
+    ClarificationAnswererEntity,
 } from './types';
 
 export interface EntityStore<T> {
@@ -80,4 +103,13 @@ export interface DbAdapter {
   };
   companySettings: SingletonStore<CompanySettingsEntity>;
   account: SingletonStore<AccountEntity>;
+  ideaSubmissions: EntityStore<IdeaSubmissionEntity>;
+  ideaProjectLinks: EntityStore<IdeaProjectLinkEntity>;
+  edgeOwnerships: EntityStore<EdgeOwnershipEntity>;
+  taskAssignments: EntityStore<TaskAssignmentEntity>;
+  discussionAuthorships: EntityStore<DiscussionAuthorshipEntity>;
+  versionAuthorships: EntityStore<VersionAuthorshipEntity>;
+  activityActors: EntityStore<ActivityActorEntity>;
+  clarificationAskers: EntityStore<ClarificationAskerEntity>;
+  clarificationAnswerers: EntityStore<ClarificationAnswererEntity>;
 }

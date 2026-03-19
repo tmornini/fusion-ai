@@ -23,6 +23,15 @@ import type {
     FlowStepEntity,
     CompanySettingsEntity,
     AccountEntity,
+    IdeaSubmissionEntity,
+    IdeaProjectLinkEntity,
+    EdgeOwnershipEntity,
+    TaskAssignmentEntity,
+    DiscussionAuthorshipEntity,
+    VersionAuthorshipEntity,
+    ActivityActorEntity,
+    ClarificationAskerEntity,
+    ClarificationAnswererEntity,
 } from './types';
 import { nowUtc } from './types';
 
@@ -313,6 +322,15 @@ export const TABLE_NAMES = [
     'process_steps',
     'company_settings',
     'account',
+    'idea_submissions',
+    'idea_project_links',
+    'edge_ownerships',
+    'task_assignments',
+    'discussion_authorships',
+    'version_authorships',
+    'activity_actors',
+    'clarification_askers',
+    'clarification_answerers',
 ];
 
 export async function createLocalStorageAdapter(
@@ -910,6 +928,43 @@ export async function createLocalStorageAdapter(
             createSingletonStore<AccountEntity>(
                 'account',
             ),
+
+        ideaSubmissions:
+            createEntityStore<
+                IdeaSubmissionEntity
+            >('idea_submissions'),
+        ideaProjectLinks:
+            createEntityStore<
+                IdeaProjectLinkEntity
+            >('idea_project_links'),
+        edgeOwnerships:
+            createEntityStore<
+                EdgeOwnershipEntity
+            >('edge_ownerships'),
+        taskAssignments:
+            createEntityStore<
+                TaskAssignmentEntity
+            >('task_assignments'),
+        discussionAuthorships:
+            createEntityStore<
+                DiscussionAuthorshipEntity
+            >('discussion_authorships'),
+        versionAuthorships:
+            createEntityStore<
+                VersionAuthorshipEntity
+            >('version_authorships'),
+        activityActors:
+            createEntityStore<
+                ActivityActorEntity
+            >('activity_actors'),
+        clarificationAskers:
+            createEntityStore<
+                ClarificationAskerEntity
+            >('clarification_askers'),
+        clarificationAnswerers:
+            createEntityStore<
+                ClarificationAnswererEntity
+            >('clarification_answerers'),
     };
 
     return adapter;

@@ -1,6 +1,6 @@
 # Database Schema
 
-19 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+28 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -41,7 +41,6 @@
 | estimated_cost | INTEGER | 0 |
 | priority | INTEGER | 0 |
 | status | TEXT | 'draft' |
-| submitted_by_id | TEXT (FK → users) | '' |
 | edge_status | TEXT | 'incomplete' |
 | problem_statement | TEXT | '' |
 | proposed_solution | TEXT | '' |
@@ -90,7 +89,6 @@
 | progress | INTEGER | 0 |
 | start_date | TEXT | '' |
 | target_end_date | TEXT | '' |
-| lead_id | TEXT (FK → users) | '' |
 | estimated_duration | INTEGER (seconds) | 0 |
 | actual_duration | INTEGER (seconds) | 0 |
 | estimated_cost | INTEGER | 0 |
@@ -99,7 +97,6 @@
 | actual_impact | INTEGER | 0 |
 | priority | INTEGER | 0 |
 | priority_score | INTEGER | 0 |
-| linked_idea_id | TEXT | '' |
 | business_context | TEXT (JSON object) | '{}' |
 | timeline_label | TEXT | '' |
 | budget_label | TEXT | '' |
@@ -136,7 +133,6 @@
 | description | TEXT | '' |
 | skills | TEXT (JSON array) | '[]' |
 | duration | INTEGER (seconds) | 0 |
-| assigned_to_id | TEXT | '' |
 
 ### discussions
 
@@ -144,7 +140,6 @@
 |--------|------|---------|
 | id | TEXT | — |
 | project_id | TEXT (FK → projects) | — |
-| author_id | TEXT (FK → users) | — |
 | date | TEXT | '' |
 | message | TEXT | '' |
 
@@ -157,7 +152,6 @@
 | version | TEXT | '' |
 | date | TEXT | '' |
 | changes | TEXT | '' |
-| author_id | TEXT | '' |
 
 ## Tools
 
@@ -169,7 +163,6 @@
 | idea_id | TEXT (FK → ideas) | — |
 | status | TEXT | '' |
 | confidence | TEXT | '' |
-| owner_id | TEXT | '' |
 | impact_short_term | TEXT | '' |
 | impact_mid_term | TEXT | '' |
 | impact_long_term | TEXT | '' |
@@ -239,7 +232,6 @@
 |--------|------|---------|
 | id | TEXT | — |
 | type | TEXT | '' |
-| actor_id | TEXT (FK → users) | '' |
 | action | TEXT | '' |
 | target | TEXT | '' |
 | timestamp | TEXT | '' |
@@ -254,11 +246,9 @@
 | id | TEXT | — |
 | project_id | TEXT (FK → projects) | — |
 | question | TEXT | '' |
-| asked_by_id | TEXT | '' |
 | asked_at | TEXT | '' |
 | status | TEXT | 'pending' |
 | answer | TEXT | '' |
-| answered_by_id | TEXT | '' |
 | answered_at | TEXT | '' |
 
 ## Admin
@@ -305,3 +295,86 @@ Singleton table (single row, `id = '1'`).
 | health_status | TEXT | '' |
 | last_activity | TEXT | '' |
 | active_users | INTEGER | 0 |
+
+## Relationships
+
+### idea_submissions
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| idea_id | TEXT (FK → ideas) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### idea_project_links
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| idea_id | TEXT (FK → ideas) | — |
+| project_id | TEXT (FK → projects) | — |
+| created_at | TEXT | '' |
+
+### edge_ownerships
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| edge_id | TEXT (FK → edges) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### task_assignments
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| task_id | TEXT (FK → project_tasks) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### discussion_authorships
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| discussion_id | TEXT (FK → discussions) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### version_authorships
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| version_id | TEXT (FK → project_versions) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### activity_actors
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| activity_id | TEXT (FK → activities) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### clarification_askers
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| clarification_id | TEXT (FK → clarifications) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### clarification_answerers
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| clarification_id | TEXT (FK → clarifications) | — |
+| user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |

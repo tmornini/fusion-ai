@@ -124,6 +124,45 @@ const routes: Route[] = [
         get: (db) =>
             db.flowSteps.getAll(),
     }),
+    route('idea-submissions', {
+        get: (db) =>
+            db.ideaSubmissions.getAll(),
+    }),
+    route('idea-project-links', {
+        get: (db) =>
+            db.ideaProjectLinks.getAll(),
+    }),
+    route('edge-ownerships', {
+        get: (db) =>
+            db.edgeOwnerships.getAll(),
+    }),
+    route('task-assignments', {
+        get: (db) =>
+            db.taskAssignments.getAll(),
+    }),
+    route('discussion-authorships', {
+        get: (db) =>
+            db.discussionAuthorships
+                .getAll(),
+    }),
+    route('version-authorships', {
+        get: (db) =>
+            db.versionAuthorships.getAll(),
+    }),
+    route('activity-actors', {
+        get: (db) =>
+            db.activityActors.getAll(),
+    }),
+    route('clarification-askers', {
+        get: (db) =>
+            db.clarificationAskers
+                .getAll(),
+    }),
+    route('clarification-answerers', {
+        get: (db) =>
+            db.clarificationAnswerers
+                .getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {
@@ -232,6 +271,69 @@ const routes: Route[] = [
     route('crunch-columns/:id', {
         put: (db, p, payload) =>
             db.crunchColumns.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('idea-submissions/:id', {
+        put: (db, p, payload) =>
+            db.ideaSubmissions.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('idea-project-links/:id', {
+        put: (db, p, payload) =>
+            db.ideaProjectLinks.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('edge-ownerships/:id', {
+        put: (db, p, payload) =>
+            db.edgeOwnerships.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('task-assignments/:id', {
+        put: (db, p, payload) =>
+            db.taskAssignments.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('discussion-authorships/:id', {
+        put: (db, p, payload) =>
+            db.discussionAuthorships.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('version-authorships/:id', {
+        put: (db, p, payload) =>
+            db.versionAuthorships.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('activity-actors/:id', {
+        put: (db, p, payload) =>
+            db.activityActors.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('clarification-askers/:id', {
+        put: (db, p, payload) =>
+            db.clarificationAskers.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('clarification-answerers/:id', {
+        put: (db, p, payload) =>
+            db.clarificationAnswerers.put(
                 param(p, 0),
                 payload,
             ),

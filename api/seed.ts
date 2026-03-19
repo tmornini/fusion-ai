@@ -7,6 +7,15 @@ import type {
     CrunchColumnEntity,
     FlowStepEntity,
     ClarificationEntity,
+    IdeaSubmissionEntity,
+    IdeaProjectLinkEntity,
+    EdgeOwnershipEntity,
+    TaskAssignmentEntity,
+    DiscussionAuthorshipEntity,
+    VersionAuthorshipEntity,
+    ActivityActorEntity,
+    ClarificationAskerEntity,
+    ClarificationAnswererEntity,
 } from './types';
 
 export async function populateMockData(
@@ -343,7 +352,6 @@ export async function populateMockData(
             estimated_cost: 45000,
             priority: 1,
             status: 'in-review',
-            submitted_by_id: '1',
             edge_status: 'complete',
             problem_statement:
                 'Marketing team spends 20+'
@@ -393,7 +401,6 @@ export async function populateMockData(
             estimated_cost: 32000,
             priority: 2,
             status: 'promoted',
-            submitted_by_id: '2',
             edge_status: 'complete',
             problem_statement:
                 'Analysts spend 15+ hours'
@@ -446,7 +453,6 @@ export async function populateMockData(
             estimated_cost: 75000,
             priority: 3,
             status: 'active',
-            submitted_by_id: '5',
             edge_status: 'draft',
             problem_statement:
                 'Unplanned equipment'
@@ -496,7 +502,6 @@ export async function populateMockData(
             estimated_cost: 28000,
             priority: 4,
             status: 'in-review',
-            submitted_by_id: '8',
             edge_status: 'complete',
             problem_statement:
                 'Leadership relies on'
@@ -549,7 +554,6 @@ export async function populateMockData(
             estimated_cost: 38000,
             priority: 5,
             status: 'active',
-            submitted_by_id: '9',
             edge_status: 'incomplete',
             problem_statement:
                 'Excess inventory ties up'
@@ -601,7 +605,6 @@ export async function populateMockData(
             estimated_cost: 35000,
             priority: 6,
             status: 'archived',
-            submitted_by_id: '3',
             edge_status: 'incomplete',
             problem_statement:
                 'New hire onboarding takes'
@@ -652,7 +655,6 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 8,
             status: 'in-review',
-            submitted_by_id: '1',
             edge_status: 'complete',
             problem_statement: '',
             proposed_solution: '',
@@ -753,7 +755,6 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 10,
             status: 'in-review',
-            submitted_by_id: '7',
             edge_status: 'draft',
             problem_statement: '',
             proposed_solution: '',
@@ -784,7 +785,6 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 9,
             status: 'in-review',
-            submitted_by_id: '5',
             edge_status: 'complete',
             problem_statement: '',
             proposed_solution: '',
@@ -815,7 +815,6 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 11,
             status: 'in-review',
-            submitted_by_id: '8',
             edge_status: 'missing',
             problem_statement: '',
             proposed_solution: '',
@@ -846,7 +845,6 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 7,
             status: 'in-review',
-            submitted_by_id: '9',
             edge_status: 'complete',
             problem_statement: '',
             proposed_solution: '',
@@ -967,7 +965,6 @@ export async function populateMockData(
                 '2024-01-15T00:00:00.000000Z',
             target_end_date:
                 '2024-04-15T00:00:00.000000Z',
-            lead_id: '1',
             estimated_duration: 432000,
             actual_duration: 306000,
             estimated_cost: 45000,
@@ -976,7 +973,6 @@ export async function populateMockData(
             actual_impact: 78,
             priority: 1,
             priority_score: 92,
-            linked_idea_id: '1',
             business_context: JSON.stringify({
                 problem:
                     'Current manual'
@@ -1030,7 +1026,6 @@ export async function populateMockData(
             progress: 85,
             start_date: '',
             target_end_date: '',
-            lead_id: '2',
             estimated_duration: 288000,
             actual_duration: 216000,
             estimated_cost: 32000,
@@ -1039,7 +1034,6 @@ export async function populateMockData(
             actual_impact: 82,
             priority: 2,
             priority_score: 87,
-            linked_idea_id: '2',
             business_context: '{}',
             timeline_label: '',
             budget_label: '',
@@ -1053,7 +1047,6 @@ export async function populateMockData(
             progress: 22,
             start_date: '',
             target_end_date: '',
-            lead_id: '5',
             estimated_duration: 720000,
             actual_duration: 162000,
             estimated_cost: 75000,
@@ -1062,7 +1055,6 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 3,
             priority_score: 84,
-            linked_idea_id: '3',
             business_context: '{}',
             timeline_label: '',
             budget_label: '',
@@ -1076,7 +1068,6 @@ export async function populateMockData(
             progress: 95,
             start_date: '',
             target_end_date: '',
-            lead_id: '8',
             estimated_duration: 216000,
             actual_duration: 198000,
             estimated_cost: 28000,
@@ -1085,7 +1076,6 @@ export async function populateMockData(
             actual_impact: 70,
             priority: 4,
             priority_score: 81,
-            linked_idea_id: '4',
             business_context: '{}',
             timeline_label: '',
             budget_label: '',
@@ -1099,7 +1089,6 @@ export async function populateMockData(
             progress: 15,
             start_date: '',
             target_end_date: '',
-            lead_id: '9',
             estimated_duration: 360000,
             actual_duration: 108000,
             estimated_cost: 38000,
@@ -1108,7 +1097,6 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 5,
             priority_score: 78,
-            linked_idea_id: '5',
             business_context: '{}',
             timeline_label: '',
             budget_label: '',
@@ -1122,7 +1110,6 @@ export async function populateMockData(
             progress: 18,
             start_date: '',
             target_end_date: '',
-            lead_id: '3',
             estimated_duration: 324000,
             actual_duration: 72000,
             estimated_cost: 35000,
@@ -1131,7 +1118,6 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 6,
             priority_score: 74,
-            linked_idea_id: '6',
             business_context: '{}',
             timeline_label: '',
             budget_label: '',
@@ -1144,7 +1130,6 @@ export async function populateMockData(
             idea_id: '1',
             status: 'complete',
             confidence: 'high',
-            owner_id: '1',
             impact_short_term:
                 'Automated segmentation'
                 + ' reduces manual effort'
@@ -1170,7 +1155,6 @@ export async function populateMockData(
             idea_id: '2',
             status: 'complete',
             confidence: 'medium',
-            owner_id: '2',
             impact_short_term: '',
             impact_mid_term: '',
             impact_long_term: '',
@@ -1182,7 +1166,6 @@ export async function populateMockData(
             idea_id: '3',
             status: 'draft',
             confidence: 'low',
-            owner_id: '5',
             impact_short_term: '',
             impact_mid_term: '',
             impact_long_term: '',
@@ -1194,7 +1177,6 @@ export async function populateMockData(
             idea_id: '4',
             status: 'complete',
             confidence: 'high',
-            owner_id: '8',
             impact_short_term: '',
             impact_mid_term: '',
             impact_long_term: '',
@@ -1206,7 +1188,6 @@ export async function populateMockData(
             idea_id: '5',
             status: 'missing',
             confidence: 'medium',
-            owner_id: '',
             impact_short_term: '',
             impact_mid_term: '',
             impact_long_term: '',
@@ -1217,7 +1198,6 @@ export async function populateMockData(
             idea_id: '7',
             status: 'complete',
             confidence: 'high',
-            owner_id: '1',
             impact_short_term:
                 'Handle 60% of tier-1'
                 + ' inquiries automatically.'
@@ -1242,7 +1222,6 @@ export async function populateMockData(
         {
             id: '1',
             type: 'idea_scored',
-            actor_id: '1',
             action: 'scored',
             target: 'AI-Powered Customer'
                 + ' Support Bot',
@@ -1255,7 +1234,6 @@ export async function populateMockData(
         {
             id: '2',
             type: 'task_completed',
-            actor_id: '7',
             action: 'completed task',
             target: 'Design system audit',
             timestamp:
@@ -1267,7 +1245,6 @@ export async function populateMockData(
         {
             id: '3',
             type: 'idea_created',
-            actor_id: '5',
             action: 'submitted new idea',
             target: 'Mobile App Redesign',
             timestamp:
@@ -1279,7 +1256,6 @@ export async function populateMockData(
         {
             id: '4',
             type: 'comment_added',
-            actor_id: '4',
             action: 'commented on',
             target:
                 'Q1 Analytics Dashboard',
@@ -1294,7 +1270,6 @@ export async function populateMockData(
         {
             id: '5',
             type: 'user_joined',
-            actor_id: '6',
             action: 'joined the team',
             target: 'Product Innovation',
             timestamp:
@@ -1306,7 +1281,6 @@ export async function populateMockData(
         {
             id: '6',
             type: 'status_changed',
-            actor_id: '9',
             action: 'changed status of',
             target:
                 'Customer Feedback Portal',
@@ -1319,7 +1293,6 @@ export async function populateMockData(
         {
             id: '7',
             type: 'idea_converted',
-            actor_id: '10',
             action:
                 'converted idea to project',
             target: 'Automated Testing'
@@ -1333,7 +1306,6 @@ export async function populateMockData(
         {
             id: '8',
             type: 'project_created',
-            actor_id: '1',
             action: 'created new project',
             target: 'Performance'
                 + ' Optimization Initiative',
@@ -1346,7 +1318,6 @@ export async function populateMockData(
         {
             id: '9',
             type: 'task_completed',
-            actor_id: '5',
             action: 'completed task',
             target:
                 'API documentation update',
@@ -1359,7 +1330,6 @@ export async function populateMockData(
         {
             id: '10',
             type: 'idea_scored',
-            actor_id: '7',
             action: 'scored',
             target: 'Data Pipeline'
                 + ' Modernization',
@@ -1992,7 +1962,7 @@ export async function populateMockData(
             id: 'pt-1-1',
             project_id: '1',
             user_id: '1',
-            role: 'Project Lead',
+            role: 'lead',
             type: 'business',
         },
         {
@@ -2015,6 +1985,41 @@ export async function populateMockData(
             user_id: '4',
             role: 'Backend Developer',
             type: 'engineering',
+        },
+        {
+            id: 'pt-2-lead',
+            project_id: '2',
+            user_id: '2',
+            role: 'lead',
+            type: 'business',
+        },
+        {
+            id: 'pt-3-lead',
+            project_id: '3',
+            user_id: '5',
+            role: 'lead',
+            type: 'business',
+        },
+        {
+            id: 'pt-4-lead',
+            project_id: '4',
+            user_id: '8',
+            role: 'lead',
+            type: 'business',
+        },
+        {
+            id: 'pt-5-lead',
+            project_id: '5',
+            user_id: '9',
+            role: 'lead',
+            type: 'business',
+        },
+        {
+            id: 'pt-6-lead',
+            project_id: '6',
+            user_id: '3',
+            role: 'lead',
+            type: 'business',
         },
     ];
 
@@ -2089,7 +2094,6 @@ export async function populateMockData(
                 'SQL',
             ]),
             duration: 86400,
-            assigned_to_id: '2',
         },
         {
             id: 'task-2',
@@ -2106,7 +2110,6 @@ export async function populateMockData(
                 'scikit-learn',
             ]),
             duration: 144000,
-            assigned_to_id: '',
         },
         {
             id: 'task-3',
@@ -2123,7 +2126,6 @@ export async function populateMockData(
                 'CSS',
             ]),
             duration: 115200,
-            assigned_to_id: '',
         },
         {
             id: 'task-4',
@@ -2140,7 +2142,6 @@ export async function populateMockData(
                 'PostgreSQL',
             ]),
             duration: 72000,
-            assigned_to_id: '',
         },
         {
             id: 'task-5',
@@ -2156,7 +2157,6 @@ export async function populateMockData(
                 'Markdown',
             ]),
             duration: 43200,
-            assigned_to_id: '',
         },
     ];
 
@@ -2164,7 +2164,6 @@ export async function populateMockData(
         {
             id: 'd1',
             project_id: '1',
-            author_id: '1',
             date:
                 '2024-02-28'
                 + 'T14:00:00.000000Z',
@@ -2177,7 +2176,6 @@ export async function populateMockData(
         {
             id: 'd2',
             project_id: '1',
-            author_id: '2',
             date:
                 '2024-02-25'
                 + 'T10:30:00.000000Z',
@@ -2190,7 +2188,6 @@ export async function populateMockData(
         {
             id: 'd3',
             project_id: '1',
-            author_id: '4',
             date:
                 '2024-02-20'
                 + 'T16:00:00.000000Z',
@@ -2212,7 +2209,6 @@ export async function populateMockData(
             changes:
                 'Added real-time'
                 + ' segmentation capability',
-            author_id: '2',
         },
         {
             id: 'v2',
@@ -2224,7 +2220,6 @@ export async function populateMockData(
             changes:
                 'Improved model accuracy'
                 + ' by 12%',
-            author_id: '3',
         },
         {
             id: 'v3',
@@ -2235,7 +2230,6 @@ export async function populateMockData(
                 + 'T09:00:00.000000Z',
             changes:
                 'Initial model deployment',
-            author_id: '1',
         },
     ];
 
@@ -2252,7 +2246,6 @@ export async function populateMockData(
                 + ' understand the data'
                 + ' pipeline before'
                 + ' designing the ML model.',
-            asked_by_id: '2',
             asked_at:
                 '2024-02-20'
                 + 'T10:00:00.000000Z',
@@ -2266,7 +2259,6 @@ export async function populateMockData(
                 + ' metrics from Mailchimp.'
                 + ' All can be accessed'
                 + ' via APIs.',
-            answered_by_id: '1',
             answered_at:
                 '2024-02-21'
                 + 'T14:00:00.000000Z',
@@ -2281,7 +2273,6 @@ export async function populateMockData(
                 + ' free to discover optimal'
                 + ' segments through'
                 + ' clustering?',
-            asked_by_id: '3',
             asked_at:
                 '2024-02-22'
                 + 'T09:30:00.000000Z',
@@ -2295,7 +2286,6 @@ export async function populateMockData(
                 + ' compatibility but'
                 + ' welcome additional'
                 + ' discovered segments.',
-            answered_by_id: '1',
             answered_at:
                 '2024-02-22'
                 + 'T16:00:00.000000Z',
@@ -2311,13 +2301,11 @@ export async function populateMockData(
                 + ' processing has'
                 + ' significant architecture'
                 + ' implications.',
-            asked_by_id: '4',
             asked_at:
                 '2024-02-25'
                 + 'T11:00:00.000000Z',
             status: 'pending',
             answer: '',
-            answered_by_id: '',
             answered_at: '',
         },
     ];
@@ -2547,5 +2535,400 @@ export async function populateMockData(
             unit: '%',
             current: '',
         }),
+    ]);
+
+    // Batch 6: Relationship entities
+    // (extracted from noun FK fields)
+
+    const ideaSubmissions:
+        IdeaSubmissionEntity[] = [
+        {
+            id: 'is-1',
+            idea_id: '1',
+            user_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'is-2',
+            idea_id: '2',
+            user_id: '2',
+            created_at:
+                '2024-01-20T09:00:00.000000Z',
+        },
+        {
+            id: 'is-3',
+            idea_id: '3',
+            user_id: '5',
+            created_at:
+                '2024-01-25T09:00:00.000000Z',
+        },
+        {
+            id: 'is-4',
+            idea_id: '4',
+            user_id: '8',
+            created_at:
+                '2024-02-01T09:00:00.000000Z',
+        },
+        {
+            id: 'is-5',
+            idea_id: '5',
+            user_id: '9',
+            created_at:
+                '2024-02-05T09:00:00.000000Z',
+        },
+        {
+            id: 'is-6',
+            idea_id: '6',
+            user_id: '3',
+            created_at:
+                '2024-02-10T09:00:00.000000Z',
+        },
+        {
+            id: 'is-7',
+            idea_id: '7',
+            user_id: '1',
+            created_at:
+                '2024-01-15T10:00:00.000000Z',
+        },
+        {
+            id: 'is-8',
+            idea_id: '8',
+            user_id: '7',
+            created_at:
+                '2024-02-15T09:00:00.000000Z',
+        },
+        {
+            id: 'is-9',
+            idea_id: '9',
+            user_id: '5',
+            created_at:
+                '2024-02-18T09:00:00.000000Z',
+        },
+        {
+            id: 'is-10',
+            idea_id: '10',
+            user_id: '8',
+            created_at:
+                '2024-02-20T09:00:00.000000Z',
+        },
+        {
+            id: 'is-11',
+            idea_id: '11',
+            user_id: '9',
+            created_at:
+                '2024-02-22T09:00:00.000000Z',
+        },
+    ];
+
+    const ideaProjectLinks:
+        IdeaProjectLinkEntity[] = [
+        {
+            id: 'ipl-1',
+            idea_id: '1',
+            project_id: '1',
+            created_at:
+                '2024-01-15T00:00:00.000000Z',
+        },
+        {
+            id: 'ipl-2',
+            idea_id: '2',
+            project_id: '2',
+            created_at:
+                '2024-01-20T00:00:00.000000Z',
+        },
+        {
+            id: 'ipl-3',
+            idea_id: '3',
+            project_id: '3',
+            created_at:
+                '2024-01-25T00:00:00.000000Z',
+        },
+        {
+            id: 'ipl-4',
+            idea_id: '4',
+            project_id: '4',
+            created_at:
+                '2024-02-01T00:00:00.000000Z',
+        },
+        {
+            id: 'ipl-5',
+            idea_id: '5',
+            project_id: '5',
+            created_at:
+                '2024-02-05T00:00:00.000000Z',
+        },
+        {
+            id: 'ipl-6',
+            idea_id: '6',
+            project_id: '6',
+            created_at:
+                '2024-02-10T00:00:00.000000Z',
+        },
+    ];
+
+    const edgeOwnerships:
+        EdgeOwnershipEntity[] = [
+        {
+            id: 'eo-own-1',
+            edge_id: '1',
+            user_id: '1',
+            created_at:
+                '2024-02-28T14:30:00.000000Z',
+        },
+        {
+            id: 'eo-own-2',
+            edge_id: '2',
+            user_id: '2',
+            created_at:
+                '2024-02-25T10:00:00.000000Z',
+        },
+        {
+            id: 'eo-own-3',
+            edge_id: '3',
+            user_id: '5',
+            created_at:
+                '2024-02-20T09:00:00.000000Z',
+        },
+        {
+            id: 'eo-own-4',
+            edge_id: '4',
+            user_id: '8',
+            created_at:
+                '2024-02-18T11:00:00.000000Z',
+        },
+        {
+            id: 'eo-own-6',
+            edge_id: '6',
+            user_id: '1',
+            created_at:
+                '2024-02-28T14:30:00.000000Z',
+        },
+    ];
+
+    const taskAssignments:
+        TaskAssignmentEntity[] = [
+        {
+            id: 'ta-1',
+            task_id: 'task-1',
+            user_id: '2',
+            created_at:
+                '2024-01-15T00:00:00.000000Z',
+        },
+    ];
+
+    const discussionAuthorships:
+        DiscussionAuthorshipEntity[] = [
+        {
+            id: 'da-1',
+            discussion_id: 'd1',
+            user_id: '1',
+            created_at:
+                '2024-02-28T14:00:00.000000Z',
+        },
+        {
+            id: 'da-2',
+            discussion_id: 'd2',
+            user_id: '2',
+            created_at:
+                '2024-02-25T10:30:00.000000Z',
+        },
+        {
+            id: 'da-3',
+            discussion_id: 'd3',
+            user_id: '4',
+            created_at:
+                '2024-02-20T16:00:00.000000Z',
+        },
+    ];
+
+    const versionAuthorships:
+        VersionAuthorshipEntity[] = [
+        {
+            id: 'va-1',
+            version_id: 'v1',
+            user_id: '2',
+            created_at:
+                '2024-02-28T09:00:00.000000Z',
+        },
+        {
+            id: 'va-2',
+            version_id: 'v2',
+            user_id: '3',
+            created_at:
+                '2024-02-15T09:00:00.000000Z',
+        },
+        {
+            id: 'va-3',
+            version_id: 'v3',
+            user_id: '1',
+            created_at:
+                '2024-01-30T09:00:00.000000Z',
+        },
+    ];
+
+    const activityActors:
+        ActivityActorEntity[] = [
+        {
+            id: 'aa-1',
+            activity_id: '1',
+            user_id: '1',
+            created_at:
+                '2024-02-28T17:50:00.000000Z',
+        },
+        {
+            id: 'aa-2',
+            activity_id: '2',
+            user_id: '7',
+            created_at:
+                '2024-02-28T17:35:00.000000Z',
+        },
+        {
+            id: 'aa-3',
+            activity_id: '3',
+            user_id: '5',
+            created_at:
+                '2024-02-28T17:00:00.000000Z',
+        },
+        {
+            id: 'aa-4',
+            activity_id: '4',
+            user_id: '4',
+            created_at:
+                '2024-02-28T16:00:00.000000Z',
+        },
+        {
+            id: 'aa-5',
+            activity_id: '5',
+            user_id: '6',
+            created_at:
+                '2024-02-28T15:00:00.000000Z',
+        },
+        {
+            id: 'aa-6',
+            activity_id: '6',
+            user_id: '9',
+            created_at:
+                '2024-02-28T14:00:00.000000Z',
+        },
+        {
+            id: 'aa-7',
+            activity_id: '7',
+            user_id: '10',
+            created_at:
+                '2024-02-28T13:00:00.000000Z',
+        },
+        {
+            id: 'aa-8',
+            activity_id: '8',
+            user_id: '1',
+            created_at:
+                '2024-02-28T12:00:00.000000Z',
+        },
+        {
+            id: 'aa-9',
+            activity_id: '9',
+            user_id: '5',
+            created_at:
+                '2024-02-27T18:00:00.000000Z',
+        },
+        {
+            id: 'aa-10',
+            activity_id: '10',
+            user_id: '7',
+            created_at:
+                '2024-02-27T15:00:00.000000Z',
+        },
+    ];
+
+    const clarificationAskers:
+        ClarificationAskerEntity[] = [
+        {
+            id: 'ca-1',
+            clarification_id: 'c1',
+            user_id: '2',
+            created_at:
+                '2024-02-20T10:00:00.000000Z',
+        },
+        {
+            id: 'ca-2',
+            clarification_id: 'c2',
+            user_id: '3',
+            created_at:
+                '2024-02-22T09:30:00.000000Z',
+        },
+        {
+            id: 'ca-3',
+            clarification_id: 'c3',
+            user_id: '4',
+            created_at:
+                '2024-02-25T11:00:00.000000Z',
+        },
+    ];
+
+    const clarificationAnswerers:
+        ClarificationAnswererEntity[] = [
+        {
+            id: 'cans-1',
+            clarification_id: 'c1',
+            user_id: '1',
+            created_at:
+                '2024-02-21T14:00:00.000000Z',
+        },
+        {
+            id: 'cans-2',
+            clarification_id: 'c2',
+            user_id: '1',
+            created_at:
+                '2024-02-22T16:00:00.000000Z',
+        },
+    ];
+
+    await Promise.all([
+        ...ideaSubmissions.map(r =>
+            adapter.ideaSubmissions.put(
+                r.id, r,
+            ),
+        ),
+        ...ideaProjectLinks.map(r =>
+            adapter.ideaProjectLinks.put(
+                r.id, r,
+            ),
+        ),
+        ...edgeOwnerships.map(r =>
+            adapter.edgeOwnerships.put(
+                r.id, r,
+            ),
+        ),
+        ...taskAssignments.map(r =>
+            adapter.taskAssignments.put(
+                r.id, r,
+            ),
+        ),
+        ...discussionAuthorships.map(r =>
+            adapter.discussionAuthorships.put(
+                r.id, r,
+            ),
+        ),
+        ...versionAuthorships.map(r =>
+            adapter.versionAuthorships.put(
+                r.id, r,
+            ),
+        ),
+        ...activityActors.map(r =>
+            adapter.activityActors.put(
+                r.id, r,
+            ),
+        ),
+        ...clarificationAskers.map(r =>
+            adapter.clarificationAskers.put(
+                r.id, r,
+            ),
+        ),
+        ...clarificationAnswerers.map(r =>
+            adapter.clarificationAnswerers.put(
+                r.id, r,
+            ),
+        ),
     ]);
 }
