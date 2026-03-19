@@ -64,38 +64,56 @@ export function toBool(
         || value === true;
 }
 
-const CONFIDENCE_LEVELS: readonly ConfidenceLevel[]
+function includes<T extends string>(
+    values: readonly T[],
+    v: string,
+): v is T {
+    return (values as readonly string[])
+        .includes(v);
+}
+
+const CONFIDENCE_LEVELS:
+    readonly ConfidenceLevel[]
     = ['high', 'medium', 'low'];
 
 export function isConfidenceLevel(
     v: string,
 ): v is ConfidenceLevel {
-    return (CONFIDENCE_LEVELS as readonly string[])
-        .includes(v);
+    return includes(
+        CONFIDENCE_LEVELS, v,
+    );
 }
 
-const FLOW_STEP_TYPES: readonly FlowStepType[]
-    = ['action', 'decision', 'start', 'end'];
+const FLOW_STEP_TYPES:
+    readonly FlowStepType[]
+    = [
+        'action', 'decision',
+        'start', 'end',
+    ];
 
 export function isFlowStepType(
     v: string,
 ): v is FlowStepType {
-    return (FLOW_STEP_TYPES as readonly string[])
-        .includes(v);
+    return includes(
+        FLOW_STEP_TYPES, v,
+    );
 }
 
-const PROJECT_STATUSES: readonly ProjectStatus[]
+const PROJECT_STATUSES:
+    readonly ProjectStatus[]
     = [
-        'submitted', 'under-review', 'sent-back',
-        'approved', 'declined', 'completed',
+        'submitted', 'under-review',
+        'sent-back', 'approved',
+        'declined', 'completed',
         'deleted',
     ];
 
 export function isProjectStatus(
     v: string,
 ): v is ProjectStatus {
-    return (PROJECT_STATUSES as readonly string[])
-        .includes(v);
+    return includes(
+        PROJECT_STATUSES, v,
+    );
 }
 
 export const SECONDS_PER_DAY = 86400;
