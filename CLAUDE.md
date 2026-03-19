@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**All work must follow [CONDUCT-OF-CODE.md](CONDUCT-OF-CODE.md)** — read it before making changes.
+
 ## Build & Dev Commands
 
 ```bash
