@@ -16,22 +16,11 @@ import {
     trusted,
 } from './safe-html';
 import {
+    icons,
     iconSearch,
     iconLightbulb,
     iconFolderKanban,
     iconUser,
-    iconHome,
-    iconTarget,
-    iconDatabase,
-    iconGitBranch,
-    iconSettings,
-    iconUsers,
-    iconActivity,
-    iconBarChart,
-    iconBrain,
-    iconPalette,
-    iconClipboardCheck,
-    iconFileText,
     iconX,
 } from './icons';
 import {
@@ -39,6 +28,10 @@ import {
     getProjects,
     getTeamMembers,
 } from './adapters';
+import {
+    PAGE_REGISTRY,
+} from './page-registry';
+import { buildPageUrl } from './navigation';
 
 // -- Types ----------------------------
 
@@ -56,7 +49,7 @@ interface SearchItem {
     keywords: string;
 }
 
-interface PageEntry {
+interface PalettePageEntry {
     title: string;
     icon: SafeHtml;
     href: string;
@@ -65,108 +58,35 @@ interface PageEntry {
 
 const DEBOUNCE_MS = 100;
 
-// -- Page registry ---------------------
+// -- Page list from registry -----------
 
-const pages: PageEntry[] = [
-    {
-        title: 'Dashboard',
-        icon: iconHome(16),
-        href: '../dashboard/index.html',
-        keywords: 'home overview',
-    },
-    {
-        title: 'Ideas',
-        icon: iconLightbulb(16),
-        href: '../ideas/index.html',
-        keywords: 'ideas list innovation',
-    },
-    {
-        title: 'Create Idea',
-        icon: iconLightbulb(16),
-        href: '../ideas/create.html',
-        keywords: 'new idea submit',
-    },
-    {
-        title: 'Review Queue',
-        icon: iconClipboardCheck(16),
-        href: '../ideas/review-queue.html',
-        keywords: 'review approve reject',
-    },
-    {
-        title: 'Projects',
-        icon: iconFolderKanban(16),
-        href: '../projects/index.html',
-        keywords: 'projects list kanban',
-    },
-    {
-        title: 'Edge List',
-        icon: iconTarget(16),
-        href: '../edge/list.html',
-        keywords: 'edge outcomes metrics',
-    },
-    {
-        title: 'Crunch',
-        icon: iconDatabase(16),
-        href: '../crunch/index.html',
-        keywords: 'data labeling columns',
-    },
-    {
-        title: 'Flow',
-        icon: iconGitBranch(16),
-        href: '../flow/index.html',
-        keywords: 'process workflow steps',
-    },
-    {
-        title: 'Team',
-        icon: iconUsers(16),
-        href: '../teams/index.html',
-        keywords: 'team members roster',
-    },
-    {
-        title: 'Administration',
-        icon: iconSettings(16),
-        href: '../administration/index.html',
-        keywords:
-            'account administration'
-            + ' billing plan',
-    },
-    {
-        title: 'Profile',
-        icon: iconUser(16),
-        href: '../profile/index.html',
-        keywords:
-            'profile settings personal',
-    },
-    {
-        title: 'Company Settings',
-        icon: iconSettings(16),
-        href: '../settings/index.html',
-        keywords:
-            'company organization settings',
-    },
-    {
-        title: 'Manage Users',
-        icon: iconUsers(16),
-        href:
-            '../administration'
-            + '/manage-users.html',
-        keywords: 'users invite admin',
-    },
-    {
-        title: 'Activity Feed',
-        icon: iconActivity(16),
-        href:
-            '../teams/activity-feed.html',
-        keywords: 'activity feed log',
-    },
-    {
-        title: 'Design System',
-        icon: iconPalette(16),
-        href: '../design-system/index.html',
-        keywords:
-            'components ui reference',
-    },
-];
+function buildPageList(
+): PalettePageEntry[] {
+    const result: PalettePageEntry[] = [];
+    for (
+        const [name, entry]
+        of Object.entries(PAGE_REGISTRY)
+    ) {
+        if (entry.searchable === false)
+            continue;
+        const iconFn = entry.icon
+            ? icons[entry.icon]
+            : undefined;
+        result.push({
+            title: entry.title,
+            icon: iconFn
+                ? iconFn(16)
+                : iconSearch(16),
+            href: buildPageUrl(name),
+            keywords:
+                entry.keywords || '',
+        });
+    }
+    return result;
+}
+
+const pages: PalettePageEntry[] =
+    buildPageList();
 
 // -- Encapsulated State ----------------
 
@@ -212,8 +132,8 @@ async function loadSearchIndex(
 
     // Start with pages immediately
     state.allItems = pages.map(
-        (page) => ({
-            id: `page-${page.href.split('/').slice(-2, -1)[0]!}`,
+        (page, i) => ({
+            id: `page-${i}`,
             title: page.title,
             meta: 'Page',
             category: 'pages' as const,
@@ -241,9 +161,10 @@ async function loadSearchIndex(
                     + ` · ${idea.status.replace(/-/g, ' ')}`,
                 category: 'ideas',
                 icon: iconLightbulb(16),
-                href:
-                    '../ideas/convert.html'
-                    + `?ideaId=${idea.id}`,
+                href: buildPageUrl(
+                    'idea-convert',
+                    { ideaId: idea.id },
+                ),
                 keywords:
                     `${idea.submittedBy}`
                     + ` ${idea.status}`,
@@ -260,10 +181,13 @@ async function loadSearchIndex(
                     + ` · ${project.status.replace(/-/g, ' ')}`,
                 category: 'projects',
                 icon: iconFolderKanban(16),
-                href:
-                    '../projects/detail.html'
-                    + `?projectId=`
-                    + `${project.id}`,
+                href: buildPageUrl(
+                    'project-detail',
+                    {
+                        projectId:
+                            project.id,
+                    },
+                ),
                 keywords:
                     `${project.status}`,
             }));
@@ -277,7 +201,7 @@ async function loadSearchIndex(
                     + ` · ${member.department}`,
                 category: 'people',
                 icon: iconUser(16),
-                href: '../teams/index.html',
+                href: buildPageUrl('teams'),
                 keywords:
                     `${member.role}`
                     + ` ${member.department}`

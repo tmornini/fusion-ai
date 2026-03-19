@@ -14,7 +14,10 @@ function getParams(): Record<string, string> {
   return params;
 }
 
-function navigateTo(page: string, params?: Record<string, string>): void {
+function buildPageUrl(
+  page: string,
+  params?: Record<string, string>,
+): string {
   const entry = PAGE_REGISTRY[page];
   let url: string;
   if (entry?.sourceFile) {
@@ -25,7 +28,15 @@ function navigateTo(page: string, params?: Record<string, string>): void {
   if (params && Object.keys(params).length > 0) {
     url += '?' + new URLSearchParams(params).toString();
   }
-  window.location.href = url;
+  return url;
+}
+
+function navigateTo(
+  page: string,
+  params?: Record<string, string>,
+): void {
+  window.location.href =
+    buildPageUrl(page, params);
 }
 
 function initPrefetch(): void {
@@ -51,4 +62,4 @@ function initPrefetch(): void {
   }, { capture: true });
 }
 
-export { navigateTo, getPageName, getParams, initPrefetch };
+export { buildPageUrl, navigateTo, getPageName, getParams, initPrefetch };
