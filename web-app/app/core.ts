@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // If no schema exists, redirect to snapshots
     // so user can choose what to load
-    const snapshot = await GET('snapshots/schema') as string | null;
+    const snapshot = await GET<string | null>('snapshots/schema');
     if (snapshot === null) {
       const page = getPageName();
       const skipRedirect = [

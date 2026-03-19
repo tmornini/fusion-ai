@@ -664,13 +664,13 @@ export async function handleRequest(
 
 // ── GET / PUT / DELETE / POST ─────────
 
-async function unwrapResponse(
+async function unwrapResponse<T>(
     response: Response,
-): Promise<unknown> {
+): Promise<T> {
     if (response.ok) {
-        return response.status === 204
+        return (response.status === 204
             ? undefined
-            : response.json();
+            : await response.json()) as T;
     }
     const { error } =
         (await response.json()) as {
@@ -681,10 +681,10 @@ async function unwrapResponse(
     );
 }
 
-export async function GET(
+export async function GET<T>(
     resource: string,
-): Promise<unknown> {
-    return unwrapResponse(
+): Promise<T> {
+    return unwrapResponse<T>(
         await handleRequest(
             new Request(
                 `${BASE_URL}/${resource}`,
@@ -693,11 +693,11 @@ export async function GET(
     );
 }
 
-export async function PUT(
+export async function PUT<T>(
     resource: string,
     payload: Record<string, unknown>,
-): Promise<unknown> {
-    return unwrapResponse(
+): Promise<T> {
+    return unwrapResponse<T>(
         await handleRequest(
             new Request(
                 `${BASE_URL}/${resource}`,
@@ -729,11 +729,11 @@ export async function DELETE(
     );
 }
 
-export async function POST(
+export async function POST<T>(
     resource: string,
     payload: Record<string, unknown>,
-): Promise<unknown> {
-    return unwrapResponse(
+): Promise<T> {
+    return unwrapResponse<T>(
         await handleRequest(
             new Request(
                 `${BASE_URL}/${resource}`,

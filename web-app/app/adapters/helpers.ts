@@ -10,7 +10,7 @@ import { User } from '../../../api/types';
 import { log } from '../logger';
 
 export async function buildUserMap(): Promise<Map<Id, User>> {
-  const users = await GET('users') as UserEntity[];
+  const users = await GET<UserEntity[]>('users');
   return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
 
@@ -56,12 +56,12 @@ export async function getEdgeDataByIdeaId(
   ideaId: string,
   cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData | null> {
-  const edge = await GET(`ideas/${ideaId}/edge`) as EdgeEntity | null;
+  const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
   if (!edge) return null;
 
   const [outcomes, allMetrics, userMap] = await Promise.all([
-    GET(`edges/${edge.id}/outcomes`) as Promise<EdgeOutcomeEntity[]>,
-    GET('edge-metrics') as Promise<EdgeMetricEntity[]>,
+    GET<EdgeOutcomeEntity[]>(`edges/${edge.id}/outcomes`),
+    GET<EdgeMetricEntity[]>('edge-metrics'),
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
 

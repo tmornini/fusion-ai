@@ -23,8 +23,9 @@ export interface CrunchColumn {
 export async function getCrunchColumns(
 ): Promise<CrunchColumn[]> {
     const rows =
-        await GET('crunch-columns') as
-            CrunchColumnEntity[];
+        await GET<CrunchColumnEntity[]>(
+            'crunch-columns',
+        );
     return rows.map(row => ({
         id: row.id,
         originalName: row.original_name,
@@ -54,14 +55,15 @@ export interface FlowListItem {
 export async function getFlows(
 ): Promise<FlowListItem[]> {
     const flows =
-        await GET('processes') as
-            FlowEntity[];
+        await GET<FlowEntity[]>(
+            'processes',
+        );
     return Promise.all(
         flows.map(async (flow) => {
             const steps =
-                await GET(
+                await GET<FlowStepEntity[]>(
                     `processes/${flow.id}/steps`,
-                ) as FlowStepEntity[];
+                );
             return {
                 id: flow.id,
                 name: flow.name,
@@ -99,8 +101,9 @@ export async function getFlow(
     flowId: string,
 ): Promise<Flow> {
     const flow =
-        await GET(`processes/${flowId}`) as
-            FlowEntity | undefined;
+        await GET<FlowEntity | undefined>(
+            `processes/${flowId}`,
+        );
     if (!flow) {
         return {
             name: '',
@@ -111,9 +114,9 @@ export async function getFlow(
     }
 
     const steps =
-        await GET(
+        await GET<FlowStepEntity[]>(
             `processes/${flowId}/steps`,
-        ) as FlowStepEntity[];
+        );
 
     return {
         name: flow.name,

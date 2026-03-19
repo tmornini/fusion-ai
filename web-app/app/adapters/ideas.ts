@@ -27,9 +27,7 @@ export async function getIdeas(
     const [ideas, userMap] = await Promise.all([
         prefetchedIdeas
             ? Promise.resolve(prefetchedIdeas)
-            : GET('ideas') as Promise<
-                IdeaEntity[]
-            >,
+            : GET<IdeaEntity[]>('ideas'),
         cachedUserMap
             ? Promise.resolve(cachedUserMap)
             : buildUserMap(),
@@ -54,9 +52,7 @@ export async function getIdeaDetail(
     cachedUserMap?: Map<Id, User>,
 ): Promise<Idea> {
     const [idea, userMap] = await Promise.all([
-        GET(`ideas/${ideaId}`) as Promise<
-            IdeaEntity
-        >,
+        GET<IdeaEntity>(`ideas/${ideaId}`),
         cachedUserMap
             ? Promise.resolve(cachedUserMap)
             : buildUserMap(),
@@ -76,7 +72,7 @@ export async function getReviewQueue(
     cachedUserMap?: Map<Id, User>,
 ): Promise<Idea[]> {
     const [ideas, userMap] = await Promise.all([
-        GET('ideas') as Promise<IdeaEntity[]>,
+        GET<IdeaEntity[]>('ideas'),
         cachedUserMap
             ? Promise.resolve(cachedUserMap)
             : buildUserMap(),
@@ -112,12 +108,10 @@ export async function getIdeaForConversion(
     ideaId: string,
 ): Promise<ConversionIdea> {
     const [idea, scoreRow] = await Promise.all([
-        GET(`ideas/${ideaId}`) as Promise<
-            IdeaEntity
-        >,
-        GET(`ideas/${ideaId}/score`) as Promise<
-            IdeaScoreEntity | null
-        >,
+        GET<IdeaEntity>(`ideas/${ideaId}`),
+        GET<IdeaScoreEntity | null>(
+            `ideas/${ideaId}/score`,
+        ),
     ]);
     return {
         id: idea.id,
@@ -189,9 +183,7 @@ export async function getIdeaForApproval(
     cachedUserMap?: Map<Id, User>,
 ): Promise<ApprovalIdea> {
     const [idea, userMap] = await Promise.all([
-        GET(`ideas/${ideaId}`) as Promise<
-            IdeaEntity
-        >,
+        GET<IdeaEntity>(`ideas/${ideaId}`),
         cachedUserMap
             ? Promise.resolve(cachedUserMap)
             : buildUserMap(),
@@ -257,9 +249,7 @@ export async function getEdgeForApproval(
 export async function getIdea(
     id: string,
 ): Promise<IdeaEntity> {
-    return GET(`ideas/${id}`) as Promise<
-        IdeaEntity
-    >;
+    return GET<IdeaEntity>(`ideas/${id}`);
 }
 
 export async function putIdea(

@@ -25,7 +25,7 @@ export async function getIdeaForEdge(
   cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
-    GET(`ideas/${ideaId}`) as Promise<IdeaEntity>,
+    GET<IdeaEntity>(`ideas/${ideaId}`),
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
   ]);
   return {
@@ -58,11 +58,11 @@ export async function getEdgeList(
     edgeRows, ideaRows, userMap,
     allOutcomes, allMetrics,
   ] = await Promise.all([
-    GET('edges') as Promise<EdgeEntity[]>,
-    GET('ideas') as Promise<IdeaEntity[]>,
+    GET<EdgeEntity[]>('edges'),
+    GET<IdeaEntity[]>('ideas'),
     cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
-    GET('edge-outcomes') as Promise<EdgeOutcomeEntity[]>,
-    GET('edge-metrics') as Promise<EdgeMetricEntity[]>,
+    GET<EdgeOutcomeEntity[]>('edge-outcomes'),
+    GET<EdgeMetricEntity[]>('edge-metrics'),
   ]);
   const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
 
@@ -99,7 +99,7 @@ export async function putEdgeData(
   ideaId: string,
   data: EdgeData,
 ): Promise<void> {
-  const edge = await GET(`ideas/${ideaId}/edge`) as EdgeEntity | null;
+  const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
   if (!edge) return;
 
   await PUT(`edges/${edge.id}`, {

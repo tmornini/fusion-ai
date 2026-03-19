@@ -30,8 +30,9 @@ export async function getProjects(
     prefetchedProjects?: ProjectEntity[],
 ): Promise<Project[]> {
     const rows = prefetchedProjects
-        ?? await GET('projects') as
-            ProjectEntity[];
+        ?? await GET<ProjectEntity[]>(
+            'projects',
+        );
     return rows
         .filter(
             row => row.status !== 'deleted',
@@ -120,21 +121,24 @@ export async function getProjectById(
         taskRows, discussionRows, versionRows,
         userMap,
     ] = await Promise.all([
-        GET(`projects/${projectId}`) as
-            Promise<ProjectEntity>,
-        GET(`projects/${projectId}/team`) as
-            Promise<ProjectTeamEntity[]>,
-        GET(
+        GET<ProjectEntity>(
+            `projects/${projectId}`,
+        ),
+        GET<ProjectTeamEntity[]>(
+            `projects/${projectId}/team`,
+        ),
+        GET<MilestoneEntity[]>(
             `projects/${projectId}/milestones`,
-        ) as Promise<MilestoneEntity[]>,
-        GET(`projects/${projectId}/tasks`) as
-            Promise<ProjectTaskEntity[]>,
-        GET(
+        ),
+        GET<ProjectTaskEntity[]>(
+            `projects/${projectId}/tasks`,
+        ),
+        GET<DiscussionEntity[]>(
             `projects/${projectId}/discussions`,
-        ) as Promise<DiscussionEntity[]>,
-        GET(
+        ),
+        GET<ProjectVersionEntity[]>(
             `projects/${projectId}/versions`,
-        ) as Promise<ProjectVersionEntity[]>,
+        ),
         buildUserMap(),
     ]);
 
@@ -277,11 +281,12 @@ export async function getProjectForEngineering(
 ): Promise<EngineeringProject> {
     const [project, teamRows, userMap] =
         await Promise.all([
-            GET(`projects/${projectId}`) as
-                Promise<ProjectEntity>,
-            GET(
+            GET<ProjectEntity>(
+                `projects/${projectId}`,
+            ),
+            GET<ProjectTeamEntity[]>(
                 `projects/${projectId}/team`,
-            ) as Promise<ProjectTeamEntity[]>,
+            ),
             cachedUserMap
                 ? Promise.resolve(
                     cachedUserMap,
@@ -298,10 +303,10 @@ export async function getProjectForEngineering(
 
     const linkedIdea =
         project.linked_idea_id
-            ? await GET(
+            ? await GET<IdeaEntity | null>(
                 `ideas/`
                     + project.linked_idea_id,
-            ) as IdeaEntity | null
+            )
             : null;
 
     return {
@@ -349,12 +354,10 @@ getClarificationsByProjectId(
 ): Promise<Clarification[]> {
     const [clarificationRows, userMap] =
         await Promise.all([
-            GET(
+            GET<ClarificationEntity[]>(
                 `projects/${projectId}`
                     + `/clarifications`,
-            ) as Promise<
-                ClarificationEntity[]
-            >,
+            ),
             cachedUserMap
                 ? Promise.resolve(
                     cachedUserMap,

@@ -34,8 +34,9 @@ export async function getDashboardGauges(
 ): Promise<GaugeCard[]> {
     const allProjects =
         prefetchedProjects
-        ?? await GET('projects') as
-            ProjectEntity[];
+        ?? await GET<ProjectEntity[]>(
+            'projects',
+        );
     const projects = allProjects.filter(
         p => p.status === 'approved',
     );
@@ -171,12 +172,9 @@ export async function getDashboardStats(
 > {
     const [ideas, projects, processes] =
         await Promise.all([
-            GET('ideas') as
-                Promise<IdeaEntity[]>,
-            GET('projects') as
-                Promise<ProjectEntity[]>,
-            GET('processes') as
-                Promise<FlowEntity[]>,
+            GET<IdeaEntity[]>('ideas'),
+            GET<ProjectEntity[]>('projects'),
+            GET<FlowEntity[]>('processes'),
         ]);
 
     return [

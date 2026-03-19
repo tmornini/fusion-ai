@@ -21,7 +21,7 @@ export interface TeamMember {
 const TOP_MEMBERS_COUNT = 6;
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
-  const rows = await GET('users') as UserEntity[];
+  const rows = await GET<UserEntity[]>('users');
   return rows
     .filter(user =>
       user.id !== 'current'
@@ -62,7 +62,7 @@ export interface ManagedUser {
 }
 
 export async function getManagedUsers(): Promise<ManagedUser[]> {
-  const rows = await GET('users') as UserEntity[];
+  const rows = await GET<UserEntity[]>('users');
   return rows
     .filter(user => user.id !== 'current')
     .map(user => ({

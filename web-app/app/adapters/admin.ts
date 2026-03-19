@@ -66,15 +66,11 @@ export async function getAccount(
         activities,
         userMap,
     ] = await Promise.all([
-        GET('account') as Promise<
-            AccountEntity
-        >,
-        GET('company-settings') as Promise<
-            CompanySettingsEntity
-        >,
-        GET('activities') as Promise<
-            ActivityEntity[]
-        >,
+        GET<AccountEntity>('account'),
+        GET<CompanySettingsEntity>(
+            'company-settings',
+        ),
+        GET<ActivityEntity[]>('activities'),
         cachedUserMap
             ? Promise.resolve(cachedUserMap)
             : buildUserMap(),
@@ -172,8 +168,10 @@ export const allStrengths = [
 
 export async function getProfile(
 ): Promise<Profile> {
-    const user = await GET('current-user') as
-        UserEntity | null;
+    const user =
+        await GET<UserEntity | null>(
+            'current-user',
+        );
     if (!user)
         return {
             firstName: 'Alex',
@@ -216,8 +214,9 @@ export interface CompanySettings {
 export async function getCompanySettings(
 ): Promise<CompanySettings> {
     const row =
-        await GET('company-settings') as
-            CompanySettingsEntity;
+        await GET<CompanySettingsEntity>(
+            'company-settings',
+        );
     return {
         name: row.name,
         domain: row.domain,
@@ -248,9 +247,9 @@ export async function getActivityFeed(
 ): Promise<Activity[]> {
     const [activities, userMap] =
         await Promise.all([
-            GET('activities') as Promise<
-                ActivityEntity[]
-            >,
+            GET<ActivityEntity[]>(
+                'activities',
+            ),
             cachedUserMap
                 ? Promise.resolve(
                     cachedUserMap,
