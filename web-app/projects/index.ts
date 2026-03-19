@@ -364,7 +364,7 @@ export async function init(): Promise<void> {
                     + ' text-xs'
                 }">${
                     icon(14)
-                } ${items!.length}</span>`;
+                } ${items?.length ?? 0}</span>`;
             });
         setHtml(
             badgesEl,

@@ -572,9 +572,11 @@ export async function createLocalStorageAdapter(
                 );
                 const fid =
                     fields.id as string;
+                const existing =
+                    rows[index];
                 const id =
-                    index >= 0
-                        ? rows[index]!.id
+                    existing
+                        ? existing.id
                         : (fid
                             ?? generateCompositeId(
                                 'score',
@@ -654,9 +656,11 @@ export async function createLocalStorageAdapter(
                 );
                 const fid =
                     fields.id as string;
+                const existing =
+                    rows[index];
                 const id =
-                    index >= 0
-                        ? rows[index]!.id
+                    existing
+                        ? existing.id
                         : (fid
                             ?? generateCompositeId(
                                 'pt',

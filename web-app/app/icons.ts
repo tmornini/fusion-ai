@@ -1498,8 +1498,10 @@ for (const fn of _allIcons) {
         (c, i) =>
             (i ? '-' : '') + c.toLowerCase(),
     ).replace(/(\d+)/g, '-$1');
+    const firstChar = pascalName[0];
+    if (!firstChar) continue;
     const camelName =
-        pascalName[0]!.toLowerCase()
+        firstChar.toLowerCase()
         + pascalName.slice(1);
     icons[kebabName] = fn;
     if (camelName !== kebabName) {

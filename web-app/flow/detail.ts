@@ -804,10 +804,12 @@ function bindFlowDetailEvents(): void {
                     flowSteps.length + 1,
                 type: 'action',
             });
-            expandedStepId =
-                flowSteps[
-                    flowSteps.length - 1
-                ]!.id;
+            const lastStep = flowSteps[
+                flowSteps.length - 1
+            ];
+            if (lastStep)
+                expandedStepId =
+                    lastStep.id;
             mutateFlowDetailPage();
         },
     );

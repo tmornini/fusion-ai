@@ -292,9 +292,10 @@ class="command-palette-empty"
         >
     > = {};
     state.filteredItems.forEach(item => {
-        if (!grouped[item.category])
-            grouped[item.category] = [];
-        grouped[item.category]!.push(item);
+        const group =
+            grouped[item.category] ?? [];
+        grouped[item.category] = group;
+        group.push(item);
     });
 
     const markup: SafeHtml[] = [];
@@ -412,12 +413,14 @@ function open(): void {
 
     if (!state.backdrop)
         initCommandPaletteDOM();
-    state.backdrop!
-        .classList.remove('hidden');
-    state.dialog!
-        .classList.remove('hidden');
-    state.input!.value = '';
-    state.input!.focus();
+    state.backdrop
+        ?.classList.remove('hidden');
+    state.dialog
+        ?.classList.remove('hidden');
+    if (state.input) {
+        state.input.value = '';
+        state.input.focus();
+    }
 
     loadSearchIndex().then(
         () => mutateResults(''),
@@ -603,7 +606,7 @@ function initCommandPaletteDOM(): void {
     );
 
     // Mouse hover sets active
-    state.list!.addEventListener(
+    state.list?.addEventListener(
         'mousemove',
         (e: Event) => {
             if (
@@ -641,7 +644,7 @@ function initCommandPaletteDOM(): void {
     );
 
     // Click to navigate
-    state.list!.addEventListener(
+    state.list?.addEventListener(
         'click',
         (e: Event) => {
             if (
