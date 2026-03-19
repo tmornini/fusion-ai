@@ -34,7 +34,7 @@ import { nowUtc } from './types';
 
 const KEY_PREFIX = 'fusion-ai:';
 
-// ── Helpers ────────────────────────────────
+// ── Helpers ─────────────────────────────
 
 function readTable<T>(
     tableName: string,
@@ -267,7 +267,7 @@ export const TABLE_NAMES = [
     'account',
 ];
 
-// ── Adapter factory ──────────────────────
+// ── Adapter factory ───────────────────
 
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {

@@ -33,7 +33,7 @@ export function getDbAdapter(): DbAdapter {
     return adapter;
 }
 
-// ── Route Registry ──────────────────────────
+// ── Route Registry ────────────────────
 
 type GetHandler = (
     adapter: DbAdapter,
@@ -97,7 +97,7 @@ function param(
 }
 
 const routes: Route[] = [
-    // ── Collections ────────────────────────
+    // ── Collections ──────────────────
     route('users', {
         get: (db) => db.users.getAll(),
     }),
@@ -129,7 +129,7 @@ const routes: Route[] = [
             db.edgeMetrics.getAll(),
     }),
 
-    // ── Singletons ────────────────────────
+    // ── Singletons ───────────────────
     route('company-settings', {
         get: (db) =>
             db.companySettings.get(),
@@ -146,7 +146,7 @@ const routes: Route[] = [
             db.users.getById('current'),
     }),
 
-    // ── Items by ID ───────────────────────
+    // ── Items by ID ─────────────────
     route('users/:id', {
         get: (db, p) =>
             db.users.getById(param(p, 0)),
@@ -436,7 +436,7 @@ const routes: Route[] = [
         },
     ),
 
-    // ── Snapshots ─────────────────────────
+    // ── Snapshots ────────────────────
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())
@@ -460,7 +460,7 @@ const routes: Route[] = [
     }),
 ];
 
-// ── Route Matching ──────────────────────────
+// ── Route Matching ────────────────────
 
 function matchRoute(
     pathSegments: string[],
@@ -662,7 +662,7 @@ export async function handleRequest(
     }
 }
 
-// ── GET / PUT / DELETE / POST ───────────────
+// ── GET / PUT / DELETE / POST ─────────
 
 async function unwrapResponse(
     response: Response,
