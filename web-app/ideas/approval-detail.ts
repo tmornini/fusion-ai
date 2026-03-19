@@ -18,7 +18,7 @@ import {
     iconGauge, iconEdit, iconSave, iconX,
 } from '../app/icons';
 import {
-    navigateTo, openDialog, closeDialog,
+    navigateTo, initDialog, closeDialog,
 } from '../app/core';
 import {
     getIdeaForApproval,
@@ -884,25 +884,10 @@ function bindApprovalEvents(
         );
 
     // Reject dialog
-    const openReject = () =>
-        openDialog('approval-reject');
-    const closeReject = () =>
-        closeDialog('approval-reject');
-    $('#approval-reject-btn')
-        ?.addEventListener(
-            'click',
-            openReject,
-        );
-    $('#approval-reject-cancel')
-        ?.addEventListener(
-            'click',
-            closeReject,
-        );
-    $('#approval-reject-backdrop')
-        ?.addEventListener(
-            'click',
-            closeReject,
-        );
+    initDialog('approval-reject', {
+        openBtnId:
+            'approval-reject-btn',
+    });
     $('#approval-reject-confirm')
         ?.addEventListener(
             'click',
@@ -918,7 +903,9 @@ function bindApprovalEvents(
                     + ' for revision',
                     'info',
                 );
-                closeReject();
+                closeDialog(
+                    'approval-reject',
+                );
                 navigateTo(
                     'idea-review-queue',
                 );
@@ -926,25 +913,10 @@ function bindApprovalEvents(
         );
 
     // Clarify dialog
-    const openClarify = () =>
-        openDialog('approval-clarify');
-    const closeClarify = () =>
-        closeDialog('approval-clarify');
-    $('#approval-clarify-btn')
-        ?.addEventListener(
-            'click',
-            openClarify,
-        );
-    $('#approval-clarify-cancel')
-        ?.addEventListener(
-            'click',
-            closeClarify,
-        );
-    $('#approval-clarify-backdrop')
-        ?.addEventListener(
-            'click',
-            closeClarify,
-        );
+    initDialog('approval-clarify', {
+        openBtnId:
+            'approval-clarify-btn',
+    });
     $('#approval-clarify-confirm')
         ?.addEventListener(
             'click',
@@ -954,7 +926,9 @@ function bindApprovalEvents(
                     + ' requested',
                     'info',
                 );
-                closeClarify();
+                closeDialog(
+                    'approval-clarify',
+                );
             },
         );
 
@@ -963,8 +937,12 @@ function bindApprovalEvents(
         'keydown',
         (e) => {
             if (e.key === 'Escape') {
-                closeReject();
-                closeClarify();
+                closeDialog(
+                    'approval-reject',
+                );
+                closeDialog(
+                    'approval-clarify',
+                );
             }
         },
     );

@@ -25,7 +25,7 @@ export {
     formatCompactCurrency,
     SECONDS_PER_DAY,
 } from './format';
-export { openDialog, closeDialog, initTabs } from './dialog';
+export { openDialog, closeDialog, initDialog, initTabs } from './dialog';
 
 // ------------------------------------
 // Page Module Dispatch

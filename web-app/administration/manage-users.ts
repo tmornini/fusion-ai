@@ -14,7 +14,7 @@ import {
   iconClock, iconChevronRight, iconSend,
 } from '../app/icons';
 import {
-  initials, openDialog, closeDialog,
+  initials, initDialog, closeDialog,
 } from '../app/core';
 import {
   getManagedUsers,
@@ -384,45 +384,33 @@ export async function init(): Promise<void> {
     </div>`);
 
   // Invite modal
-  const openInvite = () =>
-      openDialog('invite');
-  const closeInvite = () =>
-      closeDialog('invite');
-  $('#invite-btn')
-    ?.addEventListener(
-        'click', openInvite,
-    );
-  $('#invite-cancel')
-    ?.addEventListener(
-        'click', closeInvite,
-    );
-  $('#invite-backdrop')
-    ?.addEventListener(
-        'click', closeInvite,
-    );
-  $('#invite-submit')
-    ?.addEventListener('click', () => {
-      const email =
-          $input('#invite-email')?.value;
-      if (!email) {
-        showToast(
-            'Please enter an email'
-            + ' address',
-            'error',
-        );
-        return;
-      }
-      showToast(
-          `Invitation sent to ${email}`,
-          'success',
-      );
-      closeInvite();
-    });
+  initDialog('invite', {
+      openBtnId: 'invite-btn',
+      onSubmit: () => {
+          const email =
+              $input('#invite-email')
+                  ?.value;
+          if (!email) {
+              showToast(
+                  'Please enter an'
+                  + ' email address',
+                  'error',
+              );
+              return;
+          }
+          showToast(
+              'Invitation sent to '
+              + email,
+              'success',
+          );
+          closeDialog('invite');
+      },
+  });
   document.addEventListener(
       'keydown',
       (e) => {
-        if (e.key === 'Escape')
-          closeInvite();
+          if (e.key === 'Escape')
+              closeDialog('invite');
       },
   );
 }

@@ -17,7 +17,7 @@ import {
     iconTarget, iconHeart, iconX,
 } from '../app/icons';
 import {
-    initials, initTabs, openDialog,
+    initials, initTabs, initDialog,
     closeDialog,
 } from '../app/core';
 import {
@@ -509,22 +509,9 @@ export async function init(): Promise<void> {
     );
 
     // Add member dialog
-    $('#team-add-btn')?.addEventListener(
-        'click',
-        () => { openDialog('add-member'); },
-    );
-    $('#add-member-cancel')?.addEventListener(
-        'click',
-        () => { closeDialog('add-member'); },
-    );
-    $('#add-member-backdrop')?.addEventListener(
-        'click',
-        (e) => {
-            if (e.target === e.currentTarget) {
-                closeDialog('add-member');
-            }
-        },
-    );
+    initDialog('add-member', {
+        openBtnId: 'team-add-btn',
+    });
     $('#add-member-send')?.addEventListener(
         'click',
         () => {

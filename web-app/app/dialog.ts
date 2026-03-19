@@ -105,4 +105,53 @@ function initTabs(
   });
 }
 
-export { openDialog, closeDialog, initTabs };
+interface InitDialogOptions {
+    openBtnId?: string;
+    cancelBtnId?: string;
+    onSubmit?: () => void;
+}
+
+function initDialog(
+    dialogId: string,
+    options?: InitDialogOptions,
+): void {
+    const openId = options?.openBtnId
+        ?? `${dialogId}-btn`;
+    const cancelId = options?.cancelBtnId
+        ?? `${dialogId}-cancel`;
+
+    $(`#${openId}`)?.addEventListener(
+        'click',
+        () => openDialog(dialogId),
+    );
+    $(`#${cancelId}`)?.addEventListener(
+        'click',
+        () => closeDialog(dialogId),
+    );
+    $(`#${dialogId}-backdrop`)
+        ?.addEventListener(
+            'click',
+            (e) => {
+                if (
+                    e.target
+                    === e.currentTarget
+                ) {
+                    closeDialog(dialogId);
+                }
+            },
+        );
+    if (options?.onSubmit) {
+        $(`#${dialogId}-submit`)
+            ?.addEventListener(
+                'click',
+                options.onSubmit,
+            );
+    }
+}
+
+export {
+    openDialog,
+    closeDialog,
+    initDialog,
+    initTabs,
+};
