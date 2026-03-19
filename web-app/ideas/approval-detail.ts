@@ -6,7 +6,7 @@ import {
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
-    buildSkeleton, buildErrorState,
+    buildSkeleton, withLoadingState,
 } from '../app/loading-states';
 import {
     iconArrowLeft, iconAlertTriangle,
@@ -992,31 +992,19 @@ export async function init(
 
     const root = $('#page-root');
     if (!root) return;
-    setHtml(root, buildSkeleton('detail'));
 
-    let idea: ApprovalIdea;
-    let edge: ApprovalEdge;
-    try {
-        [idea, edge] = await Promise.all([
-            getIdeaForApproval(id),
-            getEdgeForApproval(id),
-        ]);
-    } catch {
-        setHtml(
+    const result =
+        await withLoadingState(
             root,
-            buildErrorState(
-                'Failed to load'
-                + ' approval details.',
-            ),
-        );
-        root.querySelector(
-            '[data-retry-btn]',
-        )?.addEventListener(
-            'click',
+            buildSkeleton('detail'),
+            () => Promise.all([
+                getIdeaForApproval(id),
+                getEdgeForApproval(id),
+            ]),
             () => init(),
         );
-        return;
-    }
+    if (!result) return;
+    const [idea, edge] = result;
 
     mutateApprovalPage(idea, edge, id);
 }

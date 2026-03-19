@@ -9,7 +9,7 @@ import {
 import { showToast } from '../app/toast';
 import {
     buildSkeleton,
-    buildErrorState,
+    withLoadingState,
 } from '../app/loading-states';
 import {
     iconArrowLeft,
@@ -565,35 +565,14 @@ export async function init(
         '#idea-detail-content',
     );
     if (!container) return;
-    setHtml(
+
+    const idea = await withLoadingState(
         container,
         buildSkeleton('detail'),
+        () => getIdeaDetail(ideaId),
+        () => init(params),
     );
-
-    let idea: Idea;
-    try {
-        idea =
-            await getIdeaDetail(ideaId);
-    } catch {
-        setHtml(
-            container,
-            buildErrorState(
-                'Failed to load idea'
-                + ' details.'
-                + ' The idea may not'
-                + ' exist.',
-            ),
-        );
-        container
-            .querySelector(
-                '[data-retry-btn]',
-            )
-            ?.addEventListener(
-                'click',
-                () => init(params),
-            );
-        return;
-    }
+    if (!idea) return;
 
     mutateIdeaPage(idea, ideaId);
 }

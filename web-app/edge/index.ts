@@ -6,7 +6,7 @@ import {
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
-    buildSkeleton, buildErrorState,
+    buildSkeleton, withLoadingState,
 } from '../app/loading-states';
 import {
     iconArrowLeft, iconTarget, iconTrendingUp,
@@ -834,34 +834,16 @@ export async function init(
 ): Promise<void> {
     const ideaId = params?.ideaId || '1';
     const container = $('#edge-content');
-    if (container) {
-        setHtml(
-            container,
-            buildSkeleton('detail'),
-        );
-    }
+    if (!container) return;
 
-    try {
-        currentIdea =
-            await getIdeaForEdge(ideaId);
-    } catch {
-        if (container) {
-            setHtml(
-                container,
-                buildErrorState(
-                    'Failed to load'
-                    + ' Edge definition.',
-                ),
-            );
-            container.querySelector(
-                '[data-retry-btn]',
-            )?.addEventListener(
-                'click',
-                () => init(params),
-            );
-        }
-        return;
-    }
+    const idea = await withLoadingState(
+        container,
+        buildSkeleton('detail'),
+        () => getIdeaForEdge(ideaId),
+        () => init(params),
+    );
+    if (!idea) return;
+    currentIdea = idea;
 
     const saved =
         await getEdgeDataByIdeaId(ideaId);

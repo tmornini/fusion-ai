@@ -6,7 +6,7 @@ import {
 } from '../app/safe-html';
 import {
     buildSkeleton,
-    buildErrorState,
+    withLoadingState,
 } from '../app/loading-states';
 import {
     iconDollarSign,
@@ -331,47 +331,23 @@ function buildGauge(
 }
 
 export async function init(): Promise<void> {
-    const gaugeContainer =
+    const container =
         $('#gauge-container');
-    if (gaugeContainer) {
-        setHtml(
-            gaugeContainer,
+    if (!container) return;
+
+    const gauges =
+        await withLoadingState(
+            container,
             buildSkeleton('card-grid', {
                 count: 3,
             }),
+            () => getDashboardGauges(),
+            () => init(),
         );
-    }
+    if (!gauges) return;
 
-    let gauges: GaugeCard[];
-    try {
-        gauges = await getDashboardGauges();
-    } catch {
-        if (gaugeContainer) {
-            setHtml(
-                gaugeContainer,
-                buildErrorState(
-                    'Failed to load'
-                    + ' dashboard data.',
-                ),
-            );
-            const retryBtn =
-                gaugeContainer.querySelector(
-                    '[data-retry-btn]',
-                );
-            if (retryBtn) {
-                retryBtn.addEventListener(
-                    'click',
-                    () => init(),
-                );
-            }
-        }
-        return;
-    }
-
-    if (gaugeContainer) {
-        setHtml(
-            gaugeContainer,
-            html`${gauges.map(buildGauge)}`,
-        );
-    }
+    setHtml(
+        container,
+        html`${gauges.map(buildGauge)}`,
+    );
 }
