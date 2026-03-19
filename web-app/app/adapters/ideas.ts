@@ -12,6 +12,8 @@ import {
     buildUserMap,
     userName,
     parseJson,
+    isNotDeleted,
+    isInReview,
     getEdgeDataWithConfidence,
     type Metric,
 } from './helpers';
@@ -25,9 +27,7 @@ export async function getIdeas(
         buildUserMap(),
     ]);
     return ideas
-        .filter(
-            idea => idea.status !== 'deleted',
-        )
+        .filter(isNotDeleted)
         .map(idea => new Idea(
             idea,
             userName(
@@ -65,9 +65,7 @@ export async function getReviewQueue(
     ]);
 
     return ideas
-        .filter(
-            idea => idea.status === 'in-review',
-        )
+        .filter(isInReview)
         .map(idea => new Idea(
             idea,
             userName(

@@ -8,6 +8,7 @@ import {
     durationInDays,
     formatCompactCurrency,
 } from '../format';
+import { isNotDeleted } from './helpers';
 
 export interface GaugeCard {
     title: string;
@@ -178,18 +179,14 @@ export async function getDashboardStats(
     return [
         {
             label: 'Ideas',
-            value: ideas.filter(
-                i =>
-                    i.status !== 'deleted',
-            ).length,
+            value: ideas
+                .filter(isNotDeleted).length,
             trend: '',
         },
         {
             label: 'Projects',
-            value: projects.filter(
-                p =>
-                    p.status !== 'deleted',
-            ).length,
+            value: projects
+                .filter(isNotDeleted).length,
             trend: '',
         },
         {

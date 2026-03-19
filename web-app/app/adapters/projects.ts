@@ -18,6 +18,7 @@ import {
     buildUserMap,
     userName,
     parseJson,
+    isNotDeleted,
     getEdgeDataWithConfidence,
     type Metric,
 } from './helpers';
@@ -31,9 +32,7 @@ export async function getProjects(
             'projects',
         );
     return rows
-        .filter(
-            row => row.status !== 'deleted',
-        )
+        .filter(isNotDeleted)
         .map(row => new Project(row));
 }
 
