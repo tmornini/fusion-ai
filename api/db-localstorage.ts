@@ -12,6 +12,7 @@ import type {
   ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
   CompanySettingsEntity, AccountEntity,
 } from './types';
+import { nowUtc } from './types';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -94,7 +95,7 @@ function createEntityStore<T extends { id: string }>(tableName: string): EntityS
       const rows = readTable<T>(tableName, true);
       const entity = rows.find(e => e.id === id);
       if (entity) {
-        (entity as Record<string, unknown>).deleted_at = new Date().toISOString();
+        (entity as Record<string, unknown>).deleted_at = nowUtc();
         writeTable(tableName, rows);
       }
     },

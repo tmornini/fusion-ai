@@ -75,6 +75,22 @@ export function formatCompactCurrency(
     return `$${value}`;
 }
 
+// ── Timestamp Utility ────────────────────────
+
+/**
+ * Returns current UTC time as RFC-3339 Zulu
+ * with microsecond resolution.
+ */
+export function nowUtc(): string {
+    const iso = new Date().toISOString();
+    // toISOString gives 3 decimal places;
+    // pad to 6 for microsecond resolution
+    return iso.replace(
+        /\.(\d{3})Z$/,
+        '.$1000Z',
+    );
+}
+
 // ── Entity Types ─────────────────────────────
 
 export interface UserEntity {
