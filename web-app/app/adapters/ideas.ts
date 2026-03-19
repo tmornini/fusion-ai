@@ -4,10 +4,7 @@ import type {
     IdeaScoreEntity,
     ConfidenceLevel,
 } from '../../../api/types';
-import {
-    Idea,
-    computePriority,
-} from '../../../api/types';
+import { Idea } from '../../../api/types';
 import {
     buildUserMap,
     userName,
@@ -91,26 +88,33 @@ export interface ConversionIdea {
 export async function getIdeaForConversion(
     ideaId: string,
 ): Promise<ConversionIdea> {
-    const [idea, scoreRow] = await Promise.all([
-        GET<IdeaEntity>(`ideas/${ideaId}`),
-        GET<IdeaScoreEntity | null>(
-            `ideas/${ideaId}/score`,
-        ),
-    ]);
+    const [entity, scoreRow] =
+        await Promise.all([
+            GET<IdeaEntity>(
+                `ideas/${ideaId}`,
+            ),
+            GET<IdeaScoreEntity | null>(
+                `ideas/${ideaId}/score`,
+            ),
+        ]);
+    const idea = new Idea(entity);
     return {
         id: idea.id,
         title: idea.title,
         problemStatement:
-            idea.problem_statement || '',
+            idea.problemStatement,
         proposedSolution:
-            idea.proposed_solution || '',
+            idea.proposedSolution,
         expectedOutcome:
-            idea.expected_outcome || '',
-        score: scoreRow?.overall || idea.score,
+            idea.expectedOutcome,
+        score: idea.resolvedScore(
+            scoreRow?.overall,
+        ),
         estimatedDuration:
-            scoreRow?.estimated_duration || '',
+            scoreRow?.estimated_duration
+                ?? '',
         estimatedCost:
-            scoreRow?.estimated_cost || '',
+            scoreRow?.estimated_cost ?? '',
     };
 }
 
@@ -165,41 +169,43 @@ export interface ApprovalEdge {
 export async function getIdeaForApproval(
     ideaId: string,
 ): Promise<ApprovalIdea> {
-    const [idea, userMap] = await Promise.all([
-        GET<IdeaEntity>(`ideas/${ideaId}`),
-        buildUserMap(),
-    ]);
+    const [entity, userMap] =
+        await Promise.all([
+            GET<IdeaEntity>(
+                `ideas/${ideaId}`,
+            ),
+            buildUserMap(),
+        ]);
+    const idea = new Idea(
+        entity,
+        userName(
+            userMap,
+            entity.submitted_by_id,
+        ),
+    );
 
     return {
         id: idea.id,
         title: idea.title,
-        description: idea.description || '',
-        submittedBy: userName(
-            userMap,
-            idea.submitted_by_id,
-        ),
-        submittedAt: idea.submitted_at || '',
-        priority: computePriority(idea.score),
+        description: idea.description,
+        submittedBy: idea.submittedBy,
+        submittedAt: idea.submittedAt,
+        priority: idea.priorityLevel(),
         score: idea.score,
-        category: idea.category || '',
+        category: idea.category,
         impact: {
-            level: idea.impact_label || '',
-            description:
-                idea.description || '',
+            level: idea.impactLabel,
+            description: idea.description,
         },
         effort: {
-            level: idea.effort_label || '',
+            level: idea.effortLabel,
             durationEstimate:
-                idea.effort_duration_estimate
-                    || '',
-            teamSize:
-                idea.effort_team_size || '',
+                idea.effortDurationEstimate,
+            teamSize: idea.effortTeamSize,
         },
         cost: {
-            estimate:
-                idea.cost_estimate || '',
-            breakdown:
-                idea.cost_breakdown || '',
+            estimate: idea.costEstimate,
+            breakdown: idea.costBreakdown,
         },
         risks: parseJson<
             ApprovalIdea['risks']

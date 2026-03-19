@@ -1,5 +1,7 @@
 import { GET } from '../../../api/api';
-import type { UserEntity } from '../../../api/types';
+import type {
+    UserEntity,
+} from '../../../api/types';
 import { User } from '../../../api/types';
 import { parseJson } from './helpers';
 
@@ -20,33 +22,43 @@ export interface TeamMember {
 
 const TOP_MEMBERS_COUNT = 6;
 
-export async function getTeamMembers(): Promise<TeamMember[]> {
-  const rows = await GET<UserEntity[]>('users');
+export async function getTeamMembers(
+): Promise<TeamMember[]> {
+  const rows =
+    await GET<UserEntity[]>('users');
   return rows
-    .filter(user =>
-      user.id !== 'current'
-      && user.department !== ''
-      && user.performance_score > 0,
+    .filter(entity =>
+      entity.id !== 'current'
+      && entity.department !== ''
+      && entity.performance_score > 0,
     )
     .slice(0, TOP_MEMBERS_COUNT)
-    .map(user => ({
-      id: user.id,
-      name: new User(user).fullName(),
-      role: user.role,
-      department: user.department,
-      email: user.email,
-      availability: user.availability,
-      performanceScore: user.performance_score,
-      projectsCompleted: user.projects_completed,
-      currentProjects: user.current_projects,
-      strengths: parseJson<string[]>(user.strengths, []),
-      teamDimensions:
-        parseJson<Record<string, number>>(
-          user.team_dimensions,
-          {},
+    .map(entity => {
+      const user = new User(entity);
+      return {
+        id: user.id,
+        name: user.fullName(),
+        role: user.role,
+        department: user.department,
+        email: user.email,
+        availability: user.availability,
+        performanceScore:
+          user.performanceScore,
+        projectsCompleted:
+          user.projectsCompleted,
+        currentProjects:
+          user.currentProjects,
+        strengths: parseJson<string[]>(
+          user.strengths,
+          [],
         ),
-      status: user.status,
-    }));
+        teamDimensions:
+          parseJson<
+            Record<string, number>
+          >(user.teamDimensions, {}),
+        status: user.status,
+      };
+    });
 }
 
 // ── Manage Users ──────────────────
@@ -72,17 +84,24 @@ export interface ManagedUser {
   lastActive: string;
 }
 
-export async function getManagedUsers(): Promise<ManagedUser[]> {
-  const rows = await GET<UserEntity[]>('users');
+export async function getManagedUsers(
+): Promise<ManagedUser[]> {
+  const rows =
+    await GET<UserEntity[]>('users');
   return rows
-    .filter(user => user.id !== 'current')
-    .map(user => ({
-      id: user.id,
-      name: new User(user).fullName(),
-      email: user.email,
-      role: user.role,
-      department: user.department,
-      status: user.status,
-      lastActive: user.last_active,
-    }));
+    .filter(
+      entity => entity.id !== 'current',
+    )
+    .map(entity => {
+      const user = new User(entity);
+      return {
+        id: user.id,
+        name: user.fullName(),
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        status: user.status,
+        lastActive: user.lastActive,
+      };
+    });
 }

@@ -7,8 +7,12 @@ import type {
     EdgeStatus,
     ConfidenceLevel,
 } from '../../../api/types';
+import { Idea, Edge } from '../../../api/types';
 import type { EdgeData } from './helpers';
-import { buildUserMap, userName } from './helpers';
+import {
+    buildUserMap,
+    userName,
+} from './helpers';
 
 export interface EdgeIdea {
   title: string;
@@ -21,15 +25,23 @@ export interface EdgeIdea {
 export async function getIdeaForEdge(
   ideaId: string,
 ): Promise<EdgeIdea> {
-  const [idea, userMap] = await Promise.all([
-    GET<IdeaEntity>(`ideas/${ideaId}`),
-    buildUserMap(),
-  ]);
+  const [entity, userMap] =
+    await Promise.all([
+      GET<IdeaEntity>(`ideas/${ideaId}`),
+      buildUserMap(),
+    ]);
+  const idea = new Idea(
+    entity,
+    userName(
+      userMap,
+      entity.submitted_by_id,
+    ),
+  );
   return {
     title: idea.title,
-    problem: idea.problem_statement || '',
-    solution: idea.proposed_solution || '',
-    submittedBy: userName(userMap, idea.submitted_by_id),
+    problem: idea.problemStatement,
+    solution: idea.proposedSolution,
+    submittedBy: idea.submittedBy,
     score: idea.score,
   };
 }
@@ -57,34 +69,55 @@ export async function getEdgeList(
     GET<EdgeEntity[]>('edges'),
     GET<IdeaEntity[]>('ideas'),
     buildUserMap(),
-    GET<EdgeOutcomeEntity[]>('edge-outcomes'),
-    GET<EdgeMetricEntity[]>('edge-metrics'),
+    GET<EdgeOutcomeEntity[]>(
+      'edge-outcomes',
+    ),
+    GET<EdgeMetricEntity[]>(
+      'edge-metrics',
+    ),
   ]);
-  const ideaMap = new Map(ideaRows.map(idea => [idea.id, idea]));
+  const ideaMap = new Map(
+    ideaRows.map(
+      idea => [idea.id, idea],
+    ),
+  );
 
   const outcomesByEdgeId = Map.groupBy(
     allOutcomes,
     outcome => outcome.edge_id,
   );
 
-  return edgeRows.map(edge => {
-    const outcomes = outcomesByEdgeId.get(edge.id) || [];
-    const outcomeIds = new Set(outcomes.map(outcome => outcome.id));
+  return edgeRows.map(entity => {
+    const edge = new Edge(entity);
+    const outcomes =
+      outcomesByEdgeId.get(edge.id)
+        || [];
+    const outcomeIds = new Set(
+      outcomes.map(
+        outcome => outcome.id,
+      ),
+    );
     const metricsCount = allMetrics
-      .filter(m => outcomeIds.has(m.outcome_id))
+      .filter(
+        m => outcomeIds.has(m.outcome_id),
+      )
       .length;
 
-    const idea = ideaMap.get(edge.idea_id);
+    const idea =
+      ideaMap.get(edge.ideaId);
     return {
       id: edge.id,
-      ideaId: edge.idea_id,
-      ideaTitle: idea?.title || '',
-      status: edge.status || 'missing',
+      ideaId: edge.ideaId,
+      ideaTitle: idea?.title ?? '',
+      status: edge.status,
       outcomesCount: outcomes.length,
       metricsCount,
       confidence: edge.confidence,
-      owner: userName(userMap, edge.owner_id),
-      updatedAt: edge.updated_at,
+      owner: userName(
+        userMap,
+        edge.ownerId,
+      ),
+      updatedAt: edge.updatedAt,
     };
   });
 }

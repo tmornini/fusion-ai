@@ -852,6 +852,12 @@ export class Idea {
         );
     }
 
+    resolvedScore(
+        scoreOverride?: number,
+    ): number {
+        return scoreOverride ?? this.score;
+    }
+
     priorityLevel(): PriorityLevel {
         return computePriority(this.score);
     }
