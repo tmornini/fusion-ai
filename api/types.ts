@@ -6,7 +6,9 @@
 
 // ── Shared Type Aliases ─────────────────────
 
-/** Semantic alias for entity ID strings used as map keys and function params. */
+/** Semantic alias for entity ID strings
+ *  used as map keys and function params.
+ */
 export type Id = string;
 
 /** Confidence level used across Edge, ideas, and projects. */
@@ -19,10 +21,23 @@ export type PriorityLevel = 'high' | 'medium' | 'low';
 export type EdgeStatus = 'complete' | 'draft' | 'missing';
 
 /** Idea lifecycle status. */
-export type IdeaStatus = 'active' | 'in-review' | 'approved' | 'promoted' | 'archived' | 'deleted';
+export type IdeaStatus =
+    | 'active'
+    | 'in-review'
+    | 'approved'
+    | 'promoted'
+    | 'archived'
+    | 'deleted';
 
 /** Project lifecycle status. */
-export type ProjectStatus = 'submitted' | 'under-review' | 'sent-back' | 'approved' | 'declined' | 'completed' | 'deleted';
+export type ProjectStatus =
+    | 'submitted'
+    | 'under-review'
+    | 'sent-back'
+    | 'approved'
+    | 'declined'
+    | 'completed'
+    | 'deleted';
 
 /** Score thresholds for priority classification. */
 export const SCORE_THRESHOLD_HIGH = 80;
@@ -37,10 +52,14 @@ export const AVAILABILITY_HIGH = 70;
 export const AVAILABILITY_LOW = 40;
 
 /** Compute priority level from a numeric score. */
-export function computePriority(score: number): PriorityLevel {
-  if (score >= SCORE_THRESHOLD_HIGH) return 'high';
-  if (score >= SCORE_THRESHOLD_MEDIUM) return 'medium';
-  return 'low';
+export function computePriority(
+    score: number,
+): PriorityLevel {
+    if (score >= SCORE_THRESHOLD_HIGH)
+        return 'high';
+    if (score >= SCORE_THRESHOLD_MEDIUM)
+        return 'medium';
+    return 'low';
 }
 
 /** Stored boolean in localStorage (0 or 1 integer). */
@@ -48,9 +67,14 @@ export type StoredBoolean = 0 | 1;
 
 // ── Utility ──────────────────────────────────
 
-/** Convert 0/1/boolean to boolean (handles localStorage int vs JSON boolean). */
-export function toBool(value: unknown): boolean {
-  return value === 1 || value === true;
+/** Convert 0/1/boolean to boolean.
+ *  Handles localStorage int vs JSON bool.
+ */
+export function toBool(
+    value: unknown,
+): boolean {
+    return value === 1
+        || value === true;
 }
 
 // ── Formatting Utilities ─────────────────────
