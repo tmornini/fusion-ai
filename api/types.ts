@@ -386,6 +386,215 @@ export interface AccountEntity {
   active_users: number;
 }
 
+// ── Entity Factory Functions ─────────────────
+
+export interface IdeaCreationFields {
+    id: Id;
+    title: string;
+    submitted_by_id: Id;
+    score?: number;
+    estimated_impact?: number;
+    estimated_duration?: number;
+    estimated_cost?: number;
+    priority?: number;
+    status?: IdeaStatus;
+    category?: string;
+    description?: string;
+    problem_statement?: string;
+    proposed_solution?: string;
+    expected_outcome?: string;
+}
+
+export function createIdea(
+    fields: IdeaCreationFields,
+): IdeaEntity {
+    return {
+        id: fields.id,
+        title: fields.title,
+        score: fields.score ?? 0,
+        estimated_impact:
+            fields.estimated_impact ?? 0,
+        estimated_duration:
+            fields.estimated_duration ?? 0,
+        estimated_cost:
+            fields.estimated_cost ?? 0,
+        priority: fields.priority ?? 0,
+        status: fields.status ?? 'active',
+        submitted_by_id:
+            fields.submitted_by_id,
+        edge_status: 'missing',
+        problem_statement:
+            fields.problem_statement ?? '',
+        proposed_solution:
+            fields.proposed_solution ?? '',
+        expected_outcome:
+            fields.expected_outcome ?? '',
+        category: fields.category ?? '',
+        readiness: 'incomplete',
+        waiting_days: 0,
+        impact_label: '',
+        effort_label: '',
+        description:
+            fields.description ?? '',
+        submitted_at: nowUtc(),
+        risks: '[]',
+        assumptions: '[]',
+        alignments: '[]',
+        effort_duration_estimate: '',
+        effort_team_size: '',
+        cost_estimate: '',
+        cost_breakdown: '',
+        success_metrics: '',
+    };
+}
+
+export interface ProjectCreationFields {
+    id: Id;
+    title: string;
+    lead_id: Id;
+    linked_idea_id?: Id;
+    description?: string;
+    status?: ProjectStatus;
+    estimated_duration?: number;
+    estimated_cost?: number;
+    estimated_impact?: number;
+}
+
+export function createProject(
+    fields: ProjectCreationFields,
+): ProjectEntity {
+    return {
+        id: fields.id,
+        title: fields.title,
+        description:
+            fields.description ?? '',
+        status:
+            fields.status ?? 'submitted',
+        progress: 0,
+        start_date: nowUtc(),
+        target_end_date: '',
+        lead_id: fields.lead_id,
+        estimated_duration:
+            fields.estimated_duration ?? 0,
+        actual_duration: 0,
+        estimated_cost:
+            fields.estimated_cost ?? 0,
+        actual_cost: 0,
+        estimated_impact:
+            fields.estimated_impact ?? 0,
+        actual_impact: 0,
+        priority: 0,
+        priority_score: 0,
+        linked_idea_id:
+            fields.linked_idea_id ?? '',
+        business_context: '{}',
+        timeline_label: '',
+        budget_label: '',
+    };
+}
+
+export interface EdgeCreationFields {
+    id: Id;
+    idea_id: Id;
+    owner_id: Id;
+    status?: EdgeStatus;
+    confidence?: ConfidenceLevel | null;
+}
+
+export function createEdge(
+    fields: EdgeCreationFields,
+): EdgeEntity {
+    return {
+        id: fields.id,
+        idea_id: fields.idea_id,
+        status: fields.status ?? 'draft',
+        confidence:
+            fields.confidence ?? null,
+        owner_id: fields.owner_id,
+        impact_short_term: '',
+        impact_mid_term: '',
+        impact_long_term: '',
+        updated_at: nowUtc(),
+    };
+}
+
+export interface ActivityCreationFields {
+    id: Id;
+    type: string;
+    actor_id: Id;
+    action: string;
+    target: string;
+    score?: number | null;
+    status?: string | null;
+    comment?: string | null;
+}
+
+export function createActivity(
+    fields: ActivityCreationFields,
+): ActivityEntity {
+    return {
+        id: fields.id,
+        type: fields.type,
+        actor_id: fields.actor_id,
+        action: fields.action,
+        target: fields.target,
+        timestamp: nowUtc(),
+        score: fields.score ?? null,
+        status: fields.status ?? null,
+        comment: fields.comment ?? null,
+    };
+}
+
+export interface FlowCreationFields {
+    id: Id;
+    name: string;
+    department: string;
+    description?: string;
+}
+
+export function createFlow(
+    fields: FlowCreationFields,
+): FlowEntity {
+    return {
+        id: fields.id,
+        name: fields.name,
+        description:
+            fields.description ?? '',
+        department: fields.department,
+    };
+}
+
+export interface FlowStepCreationFields {
+    id: Id;
+    process_id: Id;
+    title: string;
+    sort_order: number;
+    type?: string;
+    description?: string;
+    owner?: string;
+    role?: string;
+    tools?: string;
+    duration?: string;
+}
+
+export function createFlowStep(
+    fields: FlowStepCreationFields,
+): FlowStepEntity {
+    return {
+        id: fields.id,
+        process_id: fields.process_id,
+        title: fields.title,
+        description:
+            fields.description ?? '',
+        owner: fields.owner ?? '',
+        role: fields.role ?? '',
+        tools: fields.tools ?? '[]',
+        duration: fields.duration ?? '',
+        sort_order: fields.sort_order,
+        type: fields.type ?? 'action',
+    };
+}
+
 // ── Status Display Configuration ─────────────
 
 interface StatusDisplay {
