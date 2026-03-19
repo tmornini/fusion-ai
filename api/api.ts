@@ -67,7 +67,7 @@ const routes: Route[] = [
     get: (db) => db.crunchColumns.getAll(),
   }),
   route('processes', {
-    get: (db) => db.processes.getAll(),
+    get: (db) => db.flows.getAll(),
   }),
   route('edge-outcomes', {
     get: (db) => db.edgeOutcomes.getAll(),
@@ -110,16 +110,16 @@ const routes: Route[] = [
     delete: (db, p) => db.edges.delete(param(p, 0)),
   }),
   route('processes/:id', {
-    get: (db, p) => db.processes.getById(param(p, 0)),
-    put: (db, p, payload) => db.processes.put(param(p, 0), payload),
-    delete: (db, p) => db.processes.delete(param(p, 0)),
+    get: (db, p) => db.flows.getById(param(p, 0)),
+    put: (db, p, payload) => db.flows.put(param(p, 0), payload),
+    delete: (db, p) => db.flows.delete(param(p, 0)),
   }),
   route('processes/:processId/steps', {
-    get: (db, p) => db.processSteps.getByProcessId(param(p, 0)),
+    get: (db, p) => db.flowSteps.getByFlowId(param(p, 0)),
   }),
   route('processes/:processId/steps/:stepId', {
-    get: (db, p) => db.processSteps.getById(param(p, 1)),
-    put: (db, p, payload) => db.processSteps.put(param(p, 1), { ...payload, process_id: param(p, 0) }),
+    get: (db, p) => db.flowSteps.getById(param(p, 1)),
+    put: (db, p, payload) => db.flowSteps.put(param(p, 1), { ...payload, process_id: param(p, 0) }),
   }),
   route('activities/:id', {
     put: (db, p, payload) => db.activities.put(param(p, 0), payload),

@@ -331,14 +331,14 @@ export interface CrunchColumnEntity {
   acronym_expansion: string;
 }
 
-export interface ProcessEntity {
+export interface FlowEntity {
   id: Id;
   name: string;
   description: string;
   department: string;
 }
 
-export interface ProcessStepEntity {
+export interface FlowStepEntity {
   id: Id;
   process_id: Id;
   title: string;

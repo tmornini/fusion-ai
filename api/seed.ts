@@ -61,22 +61,22 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
   // Batch 2: Ideas, processes, company settings, account (reference users)
   await Promise.all([
     ...ideas.map(idea => adapter.ideas.put(idea.id, idea)),
-    adapter.processes.put('1', {
+    adapter.flows.put('1', {
       name: 'Customer Onboarding',
       description: 'End-to-end process for onboarding new enterprise customers',
       department: 'Customer Success',
     }),
-    adapter.processes.put('2', {
+    adapter.flows.put('2', {
       name: 'Sales Pipeline Qualification',
       description: 'Qualify and advance leads through the sales pipeline from initial contact to closed deal',
       department: 'Sales',
     }),
-    adapter.processes.put('3', {
+    adapter.flows.put('3', {
       name: 'Bug Triage & Resolution',
       description: 'Classify, prioritize, and resolve reported bugs through structured engineering workflow',
       department: 'Engineering',
     }),
-    adapter.processes.put('4', {
+    adapter.flows.put('4', {
       name: 'Quarterly Planning',
       description: 'Cross-functional planning cycle to set OKRs, allocate resources, and align team priorities',
       department: 'Operations',
@@ -212,7 +212,7 @@ export async function populateMockData(adapter: DbAdapter): Promise<void> {
     ...edges.map(edge => adapter.edges.put(edge.id, edge)),
     ...activities.map(activity => adapter.activities.put(activity.id, activity)),
     ...crunchColumns.map(column => adapter.crunchColumns.put(column.id, column)),
-    ...processSteps.map(step => adapter.processSteps.put(step.id, step)),
+    ...processSteps.map(step => adapter.flowSteps.put(step.id, step)),
   ]);
 
   // Batch 4: Project team, milestones, project tasks, discussions, project versions, clarifications, edge outcomes

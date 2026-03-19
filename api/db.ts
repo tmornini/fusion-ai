@@ -6,7 +6,7 @@ import type {
   UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
   EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity,
-  ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
+  ClarificationEntity, CrunchColumnEntity, FlowEntity, FlowStepEntity,
   CompanySettingsEntity, AccountEntity,
 } from './types';
 
@@ -67,9 +67,9 @@ export interface DbAdapter {
     getByProjectId(projectId: string): Promise<ClarificationEntity[]>;
   };
   crunchColumns: EntityStore<CrunchColumnEntity>;
-  processes: EntityStore<ProcessEntity>;
-  processSteps: EntityStore<ProcessStepEntity> & {
-    getByProcessId(processId: string): Promise<ProcessStepEntity[]>;
+  flows: EntityStore<FlowEntity>;
+  flowSteps: EntityStore<FlowStepEntity> & {
+    getByFlowId(processId: string): Promise<FlowStepEntity[]>;
   };
   companySettings: SingletonStore<CompanySettingsEntity>;
   account: SingletonStore<AccountEntity>;

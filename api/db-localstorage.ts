@@ -9,7 +9,7 @@ import type {
   UserEntity, IdeaEntity, IdeaScoreEntity, ProjectEntity, ProjectTeamEntity,
   MilestoneEntity, ProjectTaskEntity, DiscussionEntity, ProjectVersionEntity,
   EdgeEntity, EdgeOutcomeEntity, EdgeMetricEntity, ActivityEntity,
-  ClarificationEntity, CrunchColumnEntity, ProcessEntity, ProcessStepEntity,
+  ClarificationEntity, CrunchColumnEntity, FlowEntity, FlowStepEntity,
   CompanySettingsEntity, AccountEntity,
 } from './types';
 import { nowUtc } from './types';
@@ -197,7 +197,7 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
   const projectVersionStore = createEntityStore<ProjectVersionEntity>('project_versions');
   const edgeOutcomeStore = createEntityStore<EdgeOutcomeEntity>('edge_outcomes');
   const clarificationStore = createEntityStore<ClarificationEntity>('clarifications');
-  const processStepStore = createEntityStore<ProcessStepEntity>('process_steps');
+  const flowStepStore = createEntityStore<FlowStepEntity>('process_steps');
 
   const adapter: DbAdapter = {
     async initialize(): Promise<void> {
@@ -368,11 +368,11 @@ export async function createLocalStorageAdapter(): Promise<DbAdapter> {
     }),
 
     crunchColumns: createEntityStore<CrunchColumnEntity>('crunch_columns'),
-    processes: createEntityStore<ProcessEntity>('processes'),
+    flows: createEntityStore<FlowEntity>('processes'),
 
-    processSteps: Object.assign(processStepStore, {
-      async getByProcessId(processId: string): Promise<ProcessStepEntity[]> {
-        return readTable<ProcessStepEntity>('process_steps')
+    flowSteps: Object.assign(flowStepStore, {
+      async getByFlowId(processId: string): Promise<FlowStepEntity[]> {
+        return readTable<FlowStepEntity>('process_steps')
           .filter(entity => entity.process_id === processId)
           .sort((a, b) => a.sort_order - b.sort_order);
       },

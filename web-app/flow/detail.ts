@@ -10,18 +10,18 @@ import {
   iconArrowLeft, iconSave,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { getFlow, putProcess, putProcessStep, type ProcessStep, type Flow } from '../app/adapters';
+import { getFlow, putFlow, putFlowStep, type FlowStep, type Flow } from '../app/adapters';
 
 const toolIconConfig: Record<string, (size?: number, cssClass?: string) => SafeHtml> = {
   Email: iconMail, Database: iconDatabase, Website: iconGlobe,
   Phone: iconPhone, Chat: iconMessageSquare, Files: iconFolderOpen, Document: iconFileText,
 };
 
-let processSteps: ProcessStep[] = [];
+let flowSteps: FlowStep[] = [];
 let flowName = '';
 let flowDescription = '';
 let flowDepartment = '';
-let currentProcessId = '1';
+let currentFlowId = '1';
 let expandedStepId: string | null = null;
 
 function styleForStepType(type: string): string {
@@ -41,7 +41,7 @@ function syncFormFields(): void {
   if (descriptionInput) flowDescription = descriptionInput.value;
   if (dept) flowDepartment = dept.value;
 
-  processSteps.forEach(step => {
+  flowSteps.forEach(step => {
     const title = $input(`[data-step-id="${step.id}"][data-field-name="title"]`);
     const descriptionField = $textarea(`[data-step-id="${step.id}"][data-field-name="description"]`);
     const owner = $input(`[data-step-id="${step.id}"][data-field-name="owner"]`);
@@ -53,7 +53,7 @@ function syncFormFields(): void {
     if (owner) step.owner = owner.value;
     if (role) step.role = role.value;
     if (durationInput) step.duration = durationInput.value;
-    if (type) step.type = type.value as ProcessStep['type'];
+    if (type) step.type = type.value as FlowStep['type'];
   });
 }
 
@@ -62,13 +62,13 @@ function buildEditMode(): SafeHtml {
     <div style="display:flex;flex-direction:column;gap:0.75rem">
       <div class="flex items-center justify-between">
         <h2 class="text-lg font-display font-semibold">Process Steps</h2>
-        <span class="text-sm text-muted">${processSteps.length} steps</span>
+        <span class="text-sm text-muted">${flowSteps.length} steps</span>
       </div>
-      ${processSteps.map((step, i) => {
+      ${flowSteps.map((step, i) => {
         const isExpanded = expandedStepId === step.id;
         return html`
           <div style="position:relative">
-            ${i < processSteps.length - 1 ? html`<div style="position:absolute;left:1.5rem;top:100%;width:2px;height:0.75rem;background:hsl(var(--border));z-index:0"></div>` : html``}
+            ${i < flowSteps.length - 1 ? html`<div style="position:absolute;left:1.5rem;top:100%;width:2px;height:0.75rem;background:hsl(var(--border));z-index:0"></div>` : html``}
             <div class="card" style="${trusted(isExpanded ? 'box-shadow:0 0 0 2px hsl(var(--primary))' : '')};overflow:hidden">
               <div style="padding:1rem;cursor:pointer" data-step-header="${step.id}">
                 <div class="flex items-center gap-3">
@@ -85,7 +85,7 @@ function buildEditMode(): SafeHtml {
                   </div>
                   <div class="flex items-center gap-1">
                     <button class="btn btn-ghost btn-icon btn-sm" data-action="move-step" data-step-id="${step.id}" data-direction="up" ${trusted(i === 0 ? 'disabled' : '')}>${iconChevronUp(16)}</button>
-                    <button class="btn btn-ghost btn-icon btn-sm" data-action="move-step" data-step-id="${step.id}" data-direction="down" ${trusted(i === processSteps.length - 1 ? 'disabled' : '')}>${iconChevronDown(16)}</button>
+                    <button class="btn btn-ghost btn-icon btn-sm" data-action="move-step" data-step-id="${step.id}" data-direction="down" ${trusted(i === flowSteps.length - 1 ? 'disabled' : '')}>${iconChevronDown(16)}</button>
                     <button class="btn btn-ghost btn-icon btn-sm" data-remove-step="${step.id}" style="color:hsl(var(--error))">${iconTrash(16)}</button>
                     ${isExpanded ? iconChevronDown(20, 'text-muted') : iconChevronRight(20, 'text-muted')}
                   </div>
@@ -183,11 +183,11 @@ function bindFlowDetailEvents(): void {
       syncFormFields();
       const id = el.getAttribute('data-step-id');
       const dir = el.getAttribute('data-direction');
-      const stepIndex = processSteps.findIndex(step => step.id === id);
+      const stepIndex = flowSteps.findIndex(step => step.id === id);
       if (stepIndex < 0) return;
       const targetIndex = dir === 'up' ? stepIndex - 1 : stepIndex + 1;
-      if (targetIndex < 0 || targetIndex >= processSteps.length) return;
-      [processSteps[stepIndex], processSteps[targetIndex]] = [processSteps[targetIndex]!, processSteps[stepIndex]!];
+      if (targetIndex < 0 || targetIndex >= flowSteps.length) return;
+      [flowSteps[stepIndex], flowSteps[targetIndex]] = [flowSteps[targetIndex]!, flowSteps[stepIndex]!];
       mutateFlowDetailPage();
     });
   });
@@ -196,7 +196,7 @@ function bindFlowDetailEvents(): void {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       syncFormFields();
-      processSteps = processSteps.filter(step => step.id !== el.getAttribute('data-remove-step'));
+      flowSteps = flowSteps.filter(step => step.id !== el.getAttribute('data-remove-step'));
       mutateFlowDetailPage();
     });
   });
@@ -206,7 +206,7 @@ function bindFlowDetailEvents(): void {
       syncFormFields();
       const stepId = el.getAttribute('data-step-id') ?? '';
       const tool = el.getAttribute('data-tool-name') ?? '';
-      const step = processSteps.find(candidate => candidate.id === stepId);
+      const step = flowSteps.find(candidate => candidate.id === stepId);
       if (!step) return;
       step.tools = step.tools.includes(tool) ? step.tools.filter(toolName => toolName !== tool) : [...step.tools, tool];
       mutateFlowDetailPage();
@@ -215,20 +215,20 @@ function bindFlowDetailEvents(): void {
 
   $('#flow-add-step')?.addEventListener('click', () => {
     syncFormFields();
-    processSteps.push({
+    flowSteps.push({
       id: crypto.randomUUID(), title: '', description: '', owner: '', role: '',
-      tools: [], duration: '', sortOrder: processSteps.length + 1, type: 'action',
+      tools: [], duration: '', sortOrder: flowSteps.length + 1, type: 'action',
     });
-    expandedStepId = processSteps[processSteps.length - 1]!.id;
+    expandedStepId = flowSteps[flowSteps.length - 1]!.id;
     mutateFlowDetailPage();
   });
 
   $('#flow-save-btn')?.addEventListener('click', async () => {
     syncFormFields();
     try {
-      await putProcess(currentProcessId, { name: flowName, description: flowDescription, department: flowDepartment });
-      for (const step of processSteps) {
-        await putProcessStep(currentProcessId, step.id, {
+      await putFlow(currentFlowId, { name: flowName, description: flowDescription, department: flowDepartment });
+      for (const step of flowSteps) {
+        await putFlowStep(currentFlowId, step.id, {
           title: step.title,
           description: step.description,
           owner: step.owner,
@@ -239,9 +239,9 @@ function bindFlowDetailEvents(): void {
           type: step.type,
         } as Record<string, unknown>);
       }
-      showToast('Process saved', 'success');
+      showToast('Flow saved', 'success');
     } catch {
-      showToast('Failed to save process', 'error');
+      showToast('Failed to save flow', 'error');
     }
   });
 }
@@ -250,9 +250,10 @@ export async function init(params?: Record<string, string>): Promise<void> {
   const root = $('#flow-detail-content');
   if (!root) return;
 
-  currentProcessId = params?.processId ?? '1';
+  currentFlowId = params?.flowId
+    ?? params?.processId ?? '1';
 
-  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), () => getFlow(currentProcessId), init);
+  const flowData = await withLoadingState(root, buildSkeleton('card-list', { count: 4 }), () => getFlow(currentFlowId), init);
   if (!flowData) return;
 
   if (flowData.steps.length === 0) {
@@ -263,7 +264,7 @@ export async function init(params?: Record<string, string>): Promise<void> {
   flowName = flowData.name;
   flowDescription = flowData.description;
   flowDepartment = flowData.department;
-  processSteps = flowData.steps;
+  flowSteps = flowData.steps;
   expandedStepId = null;
   mutateFlowDetailPage();
 }

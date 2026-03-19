@@ -1,5 +1,5 @@
 import { GET } from '../../../api/api';
-import type { IdeaEntity, ProjectEntity, ProcessEntity } from '../../../api/types';
+import type { IdeaEntity, ProjectEntity, FlowEntity } from '../../../api/types';
 import { durationInDays, formatCompactCurrency } from '../format';
 
 export interface GaugeCard {
@@ -55,7 +55,7 @@ export async function getDashboardStats(): Promise<{ label: string; value: numbe
   const [ideas, projects, processes] = await Promise.all([
     GET('ideas') as Promise<IdeaEntity[]>,
     GET('projects') as Promise<ProjectEntity[]>,
-    GET('processes') as Promise<ProcessEntity[]>,
+    GET('processes') as Promise<FlowEntity[]>,
   ]);
 
   return [
