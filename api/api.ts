@@ -120,6 +120,10 @@ const routes: Route[] = [
         get: (db) =>
             db.edgeMetrics.getAll(),
     }),
+    route('process-steps', {
+        get: (db) =>
+            db.flowSteps.getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {

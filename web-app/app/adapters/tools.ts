@@ -54,25 +54,26 @@ export interface FlowListItem {
 
 export async function getFlows(
 ): Promise<FlowListItem[]> {
-    const flows =
-        await GET<FlowEntity[]>(
-            'processes',
-        );
-    return Promise.all(
-        flows.map(async (flow) => {
-            const steps =
-                await GET<FlowStepEntity[]>(
-                    `processes/${flow.id}/steps`,
-                );
-            return {
-                id: flow.id,
-                name: flow.name,
-                description: flow.description,
-                department: flow.department,
-                stepsCount: steps.length,
-            };
-        }),
+    const [flows, allSteps] =
+        await Promise.all([
+            GET<FlowEntity[]>('processes'),
+            GET<FlowStepEntity[]>(
+                'process-steps',
+            ),
+        ]);
+    const stepsByFlowId = Map.groupBy(
+        allSteps,
+        step => step.process_id,
     );
+    return flows.map(flow => ({
+        id: flow.id,
+        name: flow.name,
+        description: flow.description,
+        department: flow.department,
+        stepsCount:
+            stepsByFlowId.get(flow.id)
+                ?.length ?? 0,
+    }));
 }
 
 export interface FlowStep {
