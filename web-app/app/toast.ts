@@ -4,11 +4,19 @@
 // ============================================
 
 const MAX_TOASTS = 5;
+const TOAST_DURATION_MS = 3000;
+const TOAST_TRANSITION_MS = 300;
 
-function dismissToast(toast: HTMLElement): void {
-  toast.style.opacity = '0';
-  toast.style.transition = 'opacity 300ms ease';
-  setTimeout(() => toast.remove(), 300);
+function dismissToast(
+    toast: HTMLElement,
+): void {
+    toast.style.opacity = '0';
+    toast.style.transition =
+        `opacity ${TOAST_TRANSITION_MS}ms ease`;
+    setTimeout(
+        () => toast.remove(),
+        TOAST_TRANSITION_MS,
+    );
 }
 
 export function showToast(message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info'): void {
@@ -37,5 +45,8 @@ export function showToast(message: string, variant: 'success' | 'error' | 'warni
   toast.appendChild(closeBtn);
 
   container.appendChild(toast);
-  setTimeout(() => dismissToast(toast), 3000);
+  setTimeout(
+      () => dismissToast(toast),
+      TOAST_DURATION_MS,
+  );
 }

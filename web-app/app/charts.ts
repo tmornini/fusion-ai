@@ -21,6 +21,10 @@ export interface ChartConfig {
   accessibleLabel?: string;
 }
 
+const CHART_DEFAULT_WIDTH = 300;
+const CHART_DEFAULT_HEIGHT = 200;
+const CHART_PADDING = 40;
+
 const defaultColors = [
   'hsl(var(--primary))',
   'hsl(var(--success))',
@@ -30,10 +34,16 @@ const defaultColors = [
   'hsl(var(--chart-6))',
 ];
 
-function computeChartLayout(data: ChartDatum[], config?: ChartConfig) {
-  const width = config?.width ?? 300;
-  const height = config?.height ?? 200;
-  const padding = config?.padding ?? 40;
+function computeChartLayout(
+    data: ChartDatum[],
+    config?: ChartConfig,
+) {
+    const width =
+        config?.width ?? CHART_DEFAULT_WIDTH;
+    const height =
+        config?.height ?? CHART_DEFAULT_HEIGHT;
+    const padding =
+        config?.padding ?? CHART_PADDING;
   const colors = config?.colors ?? defaultColors;
   const maxValue = Math.max(...data.map(datum => datum.value));
   const chartHeight = height - padding * 2;

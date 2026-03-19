@@ -52,6 +52,8 @@ const pages: PageEntry[] = [
   { title: 'Design System', icon: iconPalette(16), href: '../design-system/index.html', keywords: 'components ui reference' },
 ];
 
+const DEBOUNCE_MS = 100;
+
 // ── State ────────────────────────────────
 
 let isOpen = false;
@@ -287,7 +289,7 @@ function initCommandPaletteDOM(): void {
     if (debounceTimeoutId) clearTimeout(debounceTimeoutId);
     debounceTimeoutId = setTimeout(() => {
       mutateResults(input?.value ?? '');
-    }, 100);
+    }, DEBOUNCE_MS);
   });
 
   // Close button

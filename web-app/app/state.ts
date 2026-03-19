@@ -10,7 +10,9 @@
 import { log } from './logger';
 
 const STORAGE_KEY_THEME = 'fusion-theme';
-const STORAGE_KEY_SIDEBAR = 'fusion-sidebar-collapsed';
+const STORAGE_KEY_SIDEBAR =
+    'fusion-sidebar-collapsed';
+const MOBILE_BREAKPOINT_PX = 768;
 
 // ------------------------------------
 // State Management
@@ -33,7 +35,7 @@ function isValidTheme(value: string | null): value is AppState['theme'] {
 
 const _state: AppState = {
   theme: (() => { const raw = localStorage.getItem(STORAGE_KEY_THEME); return isValidTheme(raw) ? raw : 'system'; })(),
-  isMobile: window.matchMedia('(max-width: 768px)').matches,
+  isMobile: window.matchMedia('(max-width: ${MOBILE_BREAKPOINT_PX}px)').matches,
   isSidebarCollapsed: false,
   isSidebarOpen: false,
   isSearchOpen: false,
@@ -87,7 +89,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 // Mobile Detection
 // ------------------------------------
 
-window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
+window.matchMedia('(max-width: ${MOBILE_BREAKPOINT_PX}px)').addEventListener('change', (e) => {
   setState({ isMobile: e.matches });
   if (!e.matches) setState({ isSidebarOpen: false, isSearchOpen: false });
 });
