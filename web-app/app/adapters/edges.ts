@@ -43,7 +43,7 @@ export interface EdgeListItem {
   status: EdgeStatus;
   outcomesCount: number;
   metricsCount: number;
-  confidence: ConfidenceLevel | null;
+  confidence: ConfidenceLevel;
   owner: string;
   updatedAt: string;
 }
@@ -82,7 +82,7 @@ export async function getEdgeList(
       status: edge.status || 'missing',
       outcomesCount: outcomes.length,
       metricsCount,
-      confidence: edge.confidence || null,
+      confidence: edge.confidence,
       owner: userName(userMap, edge.owner_id),
       updatedAt: edge.updated_at,
     };

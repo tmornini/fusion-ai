@@ -62,7 +62,7 @@ export interface Metric {
 export interface EdgeData {
   outcomes: { id: string; description: string; metrics: Metric[] }[];
   impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: ConfidenceLevel | null;
+  confidence: ConfidenceLevel;
   owner: string;
 }
 
@@ -101,7 +101,7 @@ export async function getEdgeDataByIdeaId(
       midTerm: edge.impact_mid_term,
       longTerm: edge.impact_long_term,
     },
-    confidence: edge.confidence ?? null,
+    confidence: edge.confidence,
     owner: userName(userMap, edge.owner_id),
   };
 }
@@ -109,7 +109,7 @@ export async function getEdgeDataByIdeaId(
 // ── Edge Data with Confidence ────────────
 
 export function buildDefaultEdgeData(
-): EdgeData & { confidence: ConfidenceLevel } {
+): EdgeData {
   return {
     outcomes: [],
     impact: { shortTerm: '', midTerm: '', longTerm: '' },
@@ -120,11 +120,9 @@ export function buildDefaultEdgeData(
 
 export async function getEdgeDataWithConfidence(
   ideaId: string,
-): Promise<EdgeData & { confidence: ConfidenceLevel }> {
-  const edgeData = await getEdgeDataByIdeaId(ideaId);
+): Promise<EdgeData> {
+  const edgeData =
+    await getEdgeDataByIdeaId(ideaId);
   if (!edgeData) return buildDefaultEdgeData();
-  return {
-    ...edgeData,
-    confidence: edgeData.confidence ?? 'medium',
-  };
+  return edgeData;
 }

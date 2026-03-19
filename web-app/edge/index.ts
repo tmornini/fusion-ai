@@ -36,7 +36,7 @@ let edgeData: EdgeData = {
         midTerm: '',
         longTerm: '',
     },
-    confidence: null,
+    confidence: 'medium',
     owner: 'Sarah Chen',
 };
 let currentIdea: EdgeIdea | null = null;
@@ -56,7 +56,7 @@ function computeCompletionStatus() {
     const hasOwner =
         edgeData.owner.trim() !== '';
     const hasConfidence =
-        edgeData.confidence !== null;
+        edgeData.confidence.length > 0;
     const completionPercent = [
         hasOutcomes,
         allOutcomesHaveMetrics,
@@ -580,7 +580,7 @@ function syncFormFields() {
     edgeData.confidence =
         isConfidenceLevel(confidenceValue)
             ? confidenceValue
-            : null;
+            : edgeData.confidence;
     edgeData.owner =
         $input('#edge-owner-input')?.value ?? '';
     document.querySelectorAll<HTMLInputElement>(
@@ -869,7 +869,7 @@ export async function init(
                 midTerm: '',
                 longTerm: '',
             },
-            confidence: null,
+            confidence: 'medium',
             owner: 'Sarah Chen',
         };
     }

@@ -73,13 +73,9 @@ function buildEdgeCard(
             icon: iconAlertCircle,
         };
     const confidenceDisplay =
-        edge.confidence
-            ? (
-                confidenceLevelConfig[
-                    edge.confidence
-                ] ?? UNKNOWN_CONFIDENCE
-            )
-            : null;
+        confidenceLevelConfig[
+            edge.confidence
+        ] ?? UNKNOWN_CONFIDENCE;
     return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
@@ -92,16 +88,14 @@ function buildEdgeCard(
               text-xs">${
               statusDisplay.icon(12)
             } ${statusDisplay.label}</span>
-            ${confidenceDisplay
-                ? html`<span
-                    class="flex items-center
-                      gap-1 text-xs
-                      ${confidenceDisplay
-                        .className}">${
-                    iconShield(14)
-                  } ${confidenceDisplay.label
-                  } Confidence</span>`
-                : html``}
+            <span
+                class="flex items-center
+                  gap-1 text-xs
+                  ${confidenceDisplay
+                    .className}">${
+                iconShield(14)
+              } ${confidenceDisplay.label
+              } Confidence</span>
           </div>
           <h3 class="font-semibold mb-1">${edge.ideaTitle}</h3>
           <div class="flex flex-wrap items-center gap-3 text-sm text-muted">

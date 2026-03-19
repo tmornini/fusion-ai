@@ -311,7 +311,7 @@ export interface EdgeEntity {
   id: Id;
   idea_id: Id;
   status: EdgeStatus;
-  confidence: ConfidenceLevel | null;
+  confidence: ConfidenceLevel;
   owner_id: Id;
   impact_short_term: string;
   impact_mid_term: string;
@@ -341,9 +341,9 @@ export interface ActivityEntity {
   action: string;
   target: string;
   timestamp: string;
-  score: number | null;
-  status: string | null;
-  comment: string | null;
+  score: number;
+  status: string;
+  comment: string;
 }
 
 export interface ClarificationEntity {
@@ -353,9 +353,9 @@ export interface ClarificationEntity {
   asked_by_id: Id;
   asked_at: string;
   status: ClarificationStatus;
-  answer: string | null;
-  answered_by_id: Id | null;
-  answered_at: string | null;
+  answer: string;
+  answered_by_id: Id;
+  answered_at: string;
 }
 
 export interface CrunchColumnEntity {
@@ -534,7 +534,7 @@ export interface EdgeCreationFields {
     idea_id: Id;
     owner_id: Id;
     status?: EdgeStatus;
-    confidence?: ConfidenceLevel | null;
+    confidence?: ConfidenceLevel;
 }
 
 export function createEdge(
@@ -545,7 +545,7 @@ export function createEdge(
         idea_id: fields.idea_id,
         status: fields.status ?? 'draft',
         confidence:
-            fields.confidence ?? null,
+            fields.confidence ?? 'medium',
         owner_id: fields.owner_id,
         impact_short_term: '',
         impact_mid_term: '',
@@ -560,9 +560,9 @@ export interface ActivityCreationFields {
     actor_id: Id;
     action: string;
     target: string;
-    score?: number | null;
-    status?: string | null;
-    comment?: string | null;
+    score?: number;
+    status?: string;
+    comment?: string;
 }
 
 export function createActivity(
@@ -575,9 +575,9 @@ export function createActivity(
         action: fields.action,
         target: fields.target,
         timestamp: nowUtc(),
-        score: fields.score ?? null,
-        status: fields.status ?? null,
-        comment: fields.comment ?? null,
+        score: fields.score ?? 0,
+        status: fields.status ?? '',
+        comment: fields.comment ?? '',
     };
 }
 
@@ -1026,7 +1026,7 @@ export class Edge {
     readonly id: string;
     readonly ideaId: Id;
     readonly status: EdgeStatus;
-    readonly confidence: ConfidenceLevel | null;
+    readonly confidence: ConfidenceLevel;
     readonly ownerId: Id;
     readonly impactShortTerm: string;
     readonly impactMidTerm: string;
@@ -1075,7 +1075,6 @@ export class Edge {
     }
 
     confidenceLabel(): string {
-        if (!this.confidence) return 'Unknown';
         return (
             CONFIDENCE_CONFIG[this.confidence]
                 ?? UNKNOWN_CONFIG
@@ -1083,11 +1082,9 @@ export class Edge {
     }
 
     confidenceClassName(): string {
-        if (!this.confidence)
-            return 'text-muted';
         return (
             CONFIDENCE_CONFIG[this.confidence]
-                ?? { className: 'text-muted' }
+                ?? UNKNOWN_CONFIG
         ).className;
     }
 }
@@ -1099,9 +1096,9 @@ export class Activity {
     readonly action: string;
     readonly target: string;
     readonly timestamp: string;
-    readonly score: number | null;
-    readonly status: string | null;
-    readonly comment: string | null;
+    readonly score: number;
+    readonly status: string;
+    readonly comment: string;
     readonly actor: string;
 
     constructor(

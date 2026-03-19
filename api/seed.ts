@@ -1196,7 +1196,7 @@ export async function populateMockData(
             id: '5',
             idea_id: '5',
             status: 'missing',
-            confidence: null,
+            confidence: 'medium',
             owner_id: '',
             impact_short_term: '',
             impact_mid_term: '',
@@ -1240,8 +1240,8 @@ export async function populateMockData(
             timestamp:
                 '2024-02-28T17:50:00.000000Z',
             score: 87,
-            status: null,
-            comment: null,
+            status: '',
+            comment: '',
         },
         {
             id: '2',
@@ -1251,9 +1251,9 @@ export async function populateMockData(
             target: 'Design system audit',
             timestamp:
                 '2024-02-28T17:35:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '3',
@@ -1263,9 +1263,9 @@ export async function populateMockData(
             target: 'Mobile App Redesign',
             timestamp:
                 '2024-02-28T17:00:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '4',
@@ -1276,8 +1276,8 @@ export async function populateMockData(
                 'Q1 Analytics Dashboard',
             timestamp:
                 '2024-02-28T16:00:00.000000Z',
-            score: null,
-            status: null,
+            score: 0,
+            status: '',
             comment:
                 'Great progress on the'
                 + ' charts!',
@@ -1290,9 +1290,9 @@ export async function populateMockData(
             target: 'Product Innovation',
             timestamp:
                 '2024-02-28T15:00:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '6',
@@ -1303,9 +1303,9 @@ export async function populateMockData(
                 'Customer Feedback Portal',
             timestamp:
                 '2024-02-28T14:00:00.000000Z',
-            score: null,
+            score: 0,
             status: 'In Progress',
-            comment: null,
+            comment: '',
         },
         {
             id: '7',
@@ -1317,9 +1317,9 @@ export async function populateMockData(
                 + ' Framework',
             timestamp:
                 '2024-02-28T13:00:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '8',
@@ -1330,9 +1330,9 @@ export async function populateMockData(
                 + ' Optimization Initiative',
             timestamp:
                 '2024-02-28T12:00:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '9',
@@ -1343,9 +1343,9 @@ export async function populateMockData(
                 'API documentation update',
             timestamp:
                 '2024-02-27T18:00:00.000000Z',
-            score: null,
-            status: null,
-            comment: null,
+            score: 0,
+            status: '',
+            comment: '',
         },
         {
             id: '10',
@@ -1357,8 +1357,8 @@ export async function populateMockData(
             timestamp:
                 '2024-02-27T15:00:00.000000Z',
             score: 92,
-            status: null,
-            comment: null,
+            status: '',
+            comment: '',
         },
     ];
 
@@ -2304,9 +2304,9 @@ export async function populateMockData(
                 '2024-02-25'
                 + 'T11:00:00.000000Z',
             status: 'pending',
-            answer: null,
-            answered_by_id: null,
-            answered_at: null,
+            answer: '',
+            answered_by_id: '',
+            answered_at: '',
         },
     ];
 
