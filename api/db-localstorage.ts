@@ -25,7 +25,6 @@ import type {
     AccountEntity,
 } from './types';
 import { nowUtc } from './types';
-import { log } from '../web-app/app/logger';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -40,13 +39,12 @@ function readTable<T>(
     try {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) {
-            log.warn(
-                'table "' + tableName
-                + '" is not an array,'
-                + ' resetting.',
-                'db',
+            throw new Error(
+                'Table "' + tableName
+                + '" is not an array.'
+                + ' Clear data or import'
+                + ' a valid snapshot.',
             );
-            return [];
         }
         if (!includeDeleted) {
             return parsed.filter(
@@ -55,14 +53,14 @@ function readTable<T>(
             ) as T[];
         }
         return parsed as T[];
-    } catch {
-        log.warn(
-            'table "' + tableName
-            + '" has corrupt JSON,'
-            + ' resetting.',
-            'db',
+    } catch (e) {
+        if (e instanceof Error) throw e;
+        throw new Error(
+            'Table "' + tableName
+            + '" has corrupt JSON.'
+            + ' Clear data or import'
+            + ' a valid snapshot.',
         );
-        return [];
     }
 }
 
@@ -332,8 +330,8 @@ export async function createLocalStorageAdapter(
                 );
             }
         } catch {
-            /* corrupt data handled by
-               readTable */
+            /* corrupt JSON — readTable will
+               throw when the page loads */
         }
     }
 
@@ -375,8 +373,8 @@ export async function createLocalStorageAdapter(
                 );
             }
         } catch {
-            /* corrupt data handled by
-               readTable */
+            /* corrupt JSON — readTable will
+               throw when the page loads */
         }
     }
 
