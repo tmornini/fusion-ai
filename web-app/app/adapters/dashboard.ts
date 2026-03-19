@@ -30,11 +30,9 @@ export interface GaugeCard {
 }
 
 export async function getDashboardGauges(
-    prefetchedProjects?: ProjectEntity[],
 ): Promise<GaugeCard[]> {
     const allProjects =
-        prefetchedProjects
-        ?? await GET<ProjectEntity[]>(
+        await GET<ProjectEntity[]>(
             'projects',
         );
     const projects = allProjects.filter(

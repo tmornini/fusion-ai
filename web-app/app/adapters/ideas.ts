@@ -3,10 +3,8 @@ import type {
     IdeaEntity,
     IdeaScoreEntity,
     ConfidenceLevel,
-    Id,
 } from '../../../api/types';
 import {
-    User,
     Idea,
     computePriority,
 } from '../../../api/types';
@@ -21,16 +19,10 @@ import {
 export { Idea } from '../../../api/types';
 
 export async function getIdeas(
-    prefetchedIdeas?: IdeaEntity[],
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Idea[]> {
     const [ideas, userMap] = await Promise.all([
-        prefetchedIdeas
-            ? Promise.resolve(prefetchedIdeas)
-            : GET<IdeaEntity[]>('ideas'),
-        cachedUserMap
-            ? Promise.resolve(cachedUserMap)
-            : buildUserMap(),
+        GET<IdeaEntity[]>('ideas'),
+        buildUserMap(),
     ]);
     return ideas
         .filter(
@@ -49,13 +41,10 @@ export async function getIdeas(
 
 export async function getIdeaDetail(
     ideaId: string,
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Idea> {
     const [idea, userMap] = await Promise.all([
         GET<IdeaEntity>(`ideas/${ideaId}`),
-        cachedUserMap
-            ? Promise.resolve(cachedUserMap)
-            : buildUserMap(),
+        buildUserMap(),
     ]);
     return new Idea(
         idea,
@@ -69,13 +58,10 @@ export async function getIdeaDetail(
 // ── Idea Review Queue ────────────────
 
 export async function getReviewQueue(
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Idea[]> {
     const [ideas, userMap] = await Promise.all([
         GET<IdeaEntity[]>('ideas'),
-        cachedUserMap
-            ? Promise.resolve(cachedUserMap)
-            : buildUserMap(),
+        buildUserMap(),
     ]);
 
     return ideas
@@ -180,13 +166,10 @@ export interface ApprovalEdge {
 
 export async function getIdeaForApproval(
     ideaId: string,
-    cachedUserMap?: Map<Id, User>,
 ): Promise<ApprovalIdea> {
     const [idea, userMap] = await Promise.all([
         GET<IdeaEntity>(`ideas/${ideaId}`),
-        cachedUserMap
-            ? Promise.resolve(cachedUserMap)
-            : buildUserMap(),
+        buildUserMap(),
     ]);
 
     return {
@@ -236,12 +219,8 @@ export async function getIdeaForApproval(
 
 export async function getEdgeForApproval(
     ideaId: string,
-    cachedUserMap?: Map<Id, User>,
 ): Promise<ApprovalEdge> {
-    return getEdgeDataWithConfidence(
-        ideaId,
-        cachedUserMap,
-    );
+    return getEdgeDataWithConfidence(ideaId);
 }
 
 // ── Write Operations ─────────────────

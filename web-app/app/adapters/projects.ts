@@ -9,10 +9,8 @@ import type {
     IdeaEntity,
     ClarificationEntity,
     ConfidenceLevel,
-    Id,
 } from '../../../api/types';
 import {
-    User,
     Project,
     durationInDays,
 } from '../../../api/types';
@@ -27,10 +25,9 @@ import {
 export { Project } from '../../../api/types';
 
 export async function getProjects(
-    prefetchedProjects?: ProjectEntity[],
 ): Promise<Project[]> {
-    const rows = prefetchedProjects
-        ?? await GET<ProjectEntity[]>(
+    const rows =
+        await GET<ProjectEntity[]>(
             'projects',
         );
     return rows
@@ -146,7 +143,6 @@ export async function getProjectById(
         await getEdgeDataWithConfidence(
             project.linked_idea_id
                 || projectId,
-            userMap,
         );
 
     return {
@@ -277,7 +273,6 @@ export interface EngineeringProject {
 
 export async function getProjectForEngineering(
     projectId: string,
-    cachedUserMap?: Map<Id, User>,
 ): Promise<EngineeringProject> {
     const [project, teamRows, userMap] =
         await Promise.all([
@@ -287,11 +282,7 @@ export async function getProjectForEngineering(
             GET<ProjectTeamEntity[]>(
                 `projects/${projectId}/team`,
             ),
-            cachedUserMap
-                ? Promise.resolve(
-                    cachedUserMap,
-                )
-                : buildUserMap(),
+            buildUserMap(),
         ]);
 
     const businessContext = parseJson<{
@@ -350,7 +341,6 @@ export async function getProjectForEngineering(
 export async function
 getClarificationsByProjectId(
     projectId: string,
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Clarification[]> {
     const [clarificationRows, userMap] =
         await Promise.all([
@@ -358,11 +348,7 @@ getClarificationsByProjectId(
                 `projects/${projectId}`
                     + `/clarifications`,
             ),
-            cachedUserMap
-                ? Promise.resolve(
-                    cachedUserMap,
-                )
-                : buildUserMap(),
+            buildUserMap(),
         ]);
     return clarificationRows.map(c => ({
         id: c.id,

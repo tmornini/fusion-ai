@@ -25,7 +25,6 @@ import {
     getEdgeForApproval,
     getIdea,
     putIdea,
-    buildUserMap,
     type ApprovalIdea,
     type ApprovalEdge,
     type Metric,
@@ -861,20 +860,12 @@ function bindApprovalEvents(
                         'Idea saved',
                         'success',
                     );
-                    const userMap =
-                        await buildUserMap();
                     const [
                         updatedIdea,
                         updatedEdge,
                     ] = await Promise.all([
-                        getIdeaForApproval(
-                            id,
-                            userMap,
-                        ),
-                        getEdgeForApproval(
-                            id,
-                            userMap,
-                        ),
+                        getIdeaForApproval(id),
+                        getEdgeForApproval(id),
                     ]);
                     isEditingIdea = false;
                     mutateApprovalPage(
@@ -1006,17 +997,9 @@ export async function init(
     let idea: ApprovalIdea;
     let edge: ApprovalEdge;
     try {
-        const userMap =
-            await buildUserMap();
         [idea, edge] = await Promise.all([
-            getIdeaForApproval(
-                id,
-                userMap,
-            ),
-            getEdgeForApproval(
-                id,
-                userMap,
-            ),
+            getIdeaForApproval(id),
+            getEdgeForApproval(id),
         ]);
     } catch {
         setHtml(

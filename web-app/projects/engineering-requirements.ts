@@ -19,7 +19,6 @@ import { navigateTo } from '../app/core';
 import {
   getProjectForEngineering,
   getClarificationsByProjectId,
-  buildUserMap,
   type EngineeringProject,
   type Clarification,
 } from '../app/adapters';
@@ -116,14 +115,13 @@ export async function init(
   let project: EngineeringProject;
   let clarifications: Clarification[];
   try {
-    const userMap = await buildUserMap();
     [project, clarifications] =
         await Promise.all([
           getProjectForEngineering(
-              projectId, userMap,
+              projectId,
           ),
           getClarificationsByProjectId(
-              projectId, userMap,
+              projectId,
           ),
         ]);
   } catch {

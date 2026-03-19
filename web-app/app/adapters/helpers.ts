@@ -54,7 +54,6 @@ export interface EdgeData {
 
 export async function getEdgeDataByIdeaId(
   ideaId: string,
-  cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData | null> {
   const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
   if (!edge) return null;
@@ -62,7 +61,7 @@ export async function getEdgeDataByIdeaId(
   const [outcomes, allMetrics, userMap] = await Promise.all([
     GET<EdgeOutcomeEntity[]>(`edges/${edge.id}/outcomes`),
     GET<EdgeMetricEntity[]>('edge-metrics'),
-    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
+    buildUserMap(),
   ]);
 
   const metricsByOutcomeId = Map.groupBy(
@@ -107,9 +106,8 @@ export function buildDefaultEdgeData(
 
 export async function getEdgeDataWithConfidence(
   ideaId: string,
-  cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeData & { confidence: ConfidenceLevel }> {
-  const edgeData = await getEdgeDataByIdeaId(ideaId, cachedUserMap);
+  const edgeData = await getEdgeDataByIdeaId(ideaId);
   if (!edgeData) return buildDefaultEdgeData();
   return {
     ...edgeData,

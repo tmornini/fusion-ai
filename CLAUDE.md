@@ -87,7 +87,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 - **User-name fallback**: When a user ID can't resolve to a name, return `'Unknown'` (never empty string).
 - **Absent values**: Use `null` for semantically absent values (e.g., `confidence: ConfidenceLevel | null`), not empty string.
-- **Shared userMap**: When a page calls multiple adapter functions that need user names, call `buildUserMap()` once and pass it via the `cachedUserMap` parameter to avoid redundant localStorage deserialization.
+- **No adapter caching**: Each adapter function fetches its own data directly via `buildUserMap()`. No `cachedUserMap` or `prefetched*` parameters — simplicity over micro-optimization of localStorage reads.
 - **Shared types**: The `Metric` interface (`{ id, name, target, unit, current }`) is defined in `helpers.ts` and used across adapters. `PriorityLevel` (computed from score) is distinct from `ConfidenceLevel` (user-selected).
 
 ### Dark Mode

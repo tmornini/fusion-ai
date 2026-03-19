@@ -6,10 +6,8 @@ import type {
     EdgeMetricEntity,
     EdgeStatus,
     ConfidenceLevel,
-    Id,
 } from '../../../api/types';
 import type { EdgeData } from './helpers';
-import { User } from '../../../api/types';
 import { buildUserMap, userName } from './helpers';
 
 export interface EdgeIdea {
@@ -22,11 +20,10 @@ export interface EdgeIdea {
 
 export async function getIdeaForEdge(
   ideaId: string,
-  cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeIdea> {
   const [idea, userMap] = await Promise.all([
     GET<IdeaEntity>(`ideas/${ideaId}`),
-    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
+    buildUserMap(),
   ]);
   return {
     title: idea.title,
@@ -52,7 +49,6 @@ export interface EdgeListItem {
 }
 
 export async function getEdgeList(
-  cachedUserMap?: Map<Id, User>,
 ): Promise<EdgeListItem[]> {
   const [
     edgeRows, ideaRows, userMap,
@@ -60,7 +56,7 @@ export async function getEdgeList(
   ] = await Promise.all([
     GET<EdgeEntity[]>('edges'),
     GET<IdeaEntity[]>('ideas'),
-    cachedUserMap ? Promise.resolve(cachedUserMap) : buildUserMap(),
+    buildUserMap(),
     GET<EdgeOutcomeEntity[]>('edge-outcomes'),
     GET<EdgeMetricEntity[]>('edge-metrics'),
   ]);

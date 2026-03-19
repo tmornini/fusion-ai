@@ -4,11 +4,9 @@ import type {
     AccountEntity,
     CompanySettingsEntity,
     ActivityEntity,
-    Id,
 } from '../../../api/types';
 import {
     toBool,
-    User,
     Activity,
 } from '../../../api/types';
 import { buildUserMap, userName } from './helpers';
@@ -58,7 +56,6 @@ export interface Account {
 }
 
 export async function getAccount(
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Account> {
     const [
         account,
@@ -71,9 +68,7 @@ export async function getAccount(
             'company-settings',
         ),
         GET<ActivityEntity[]>('activities'),
-        cachedUserMap
-            ? Promise.resolve(cachedUserMap)
-            : buildUserMap(),
+        buildUserMap(),
     ]);
 
     return {
@@ -243,18 +238,13 @@ export async function getCompanySettings(
 export { Activity } from '../../../api/types';
 
 export async function getActivityFeed(
-    cachedUserMap?: Map<Id, User>,
 ): Promise<Activity[]> {
     const [activities, userMap] =
         await Promise.all([
             GET<ActivityEntity[]>(
                 'activities',
             ),
-            cachedUserMap
-                ? Promise.resolve(
-                    cachedUserMap,
-                )
-                : buildUserMap(),
+            buildUserMap(),
         ]);
     return activities.map(a =>
         new Activity(
