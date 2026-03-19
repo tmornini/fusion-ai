@@ -29,7 +29,10 @@
   --border-strong: var(--gray-600);
   --input: var(--gray-700);
 
+  --destructive-hover: 0 72% 55%;
+
   --success: 152 55% 50%;
+  --success-hover: 152 55% 45%;
   --success-foreground: 152 60% 10%;
   --success-soft: 152 40% 15%;
   --success-border: 152 40% 30%;

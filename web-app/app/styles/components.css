@@ -66,13 +66,13 @@
   background-color: hsl(var(--destructive));
   color: hsl(var(--destructive-foreground));
 }
-.btn-destructive:hover { background-color: hsl(0 72% 45%); }
+.btn-destructive:hover { background-color: hsl(var(--destructive-hover)); }
 
 .btn-success {
   background-color: hsl(var(--success));
   color: hsl(var(--success-foreground));
 }
-.btn-success:hover { background-color: hsl(152 60% 35%); }
+.btn-success:hover { background-color: hsl(var(--success-hover)); }
 
 .btn-destructive:focus-visible,
 .btn-success:focus-visible {

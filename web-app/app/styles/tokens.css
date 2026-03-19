@@ -71,6 +71,7 @@
 
   /* Semantic: Destructive */
   --destructive: 0 72% 51%;
+  --destructive-hover: 0 72% 45%;
   --destructive-foreground: 0 0% 100%;
 
   /* Semantic: Interactive */
@@ -81,6 +82,7 @@
 
   /* Status: Success */
   --success: 152 60% 40%;
+  --success-hover: 152 60% 35%;
   --success-foreground: 0 0% 100%;
   --success-soft: 152 50% 95%;
   --success-border: 152 45% 75%;
