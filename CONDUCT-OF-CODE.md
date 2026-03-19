@@ -15,10 +15,32 @@ In order of importance, from most to least importance:
 - atomic - avoid at all costs, thank your God for giving it to you when you can't
 - snappy - low latency is godliness, essential for UI and high frequency serial ops
 - general - never before exploratory duplication, snappiness development progress rules
-- efficient - true if above are adhered to
+- efficient - true if above are adhered to, disasterous when focused on prematurely
 - perfect - asymptotically achievable, generally many years of considerations and iteration
 
-We handle timestamps uniformly:
+We detest:
+
+- global variables
+- asking, don't tell
+  - we never ask objects for internal attribute values
+- nullable attributes in persisted nouns
+- foreign keys in nouns
+- obscurity
+- cleverness
+- magical values
+- premature optimization
+- polling for state changes
+
+We adore:
+
+- S.O.L.I.D. techniques (<https://en.wikipedia.org/wiki/SOLID>)
+- tell, don't ask
+  - we tell objects what we need or what to do
+- relationship entities storing relationships between nouns
+  - should only store noun IDs and when the relationship was formed
+- being informed or notified of state changes
+
+We handle and persist timestamps uniformly:
 
 - store times in UTC with microsecond resolution
 - convert to local time for UI display only
@@ -30,13 +52,6 @@ We create UIs that are:
 - accessible
 - beautiful
 - avoid configurability
-
-We detest all forms of:
-
-- obscurity
-- cleverness
-- magical values
-- premature optimization
 
 We write and maintain comments when code is:
 
@@ -52,11 +67,3 @@ We format code:
   - indent with 4 spaces 
   - no trailing whitespace, other than newline
   - newline required after last line in file
-
-We adore:
-
-- S.O.L.I.D. techniques (<https://en.wikipedia.org/wiki/SOLID>)
-
-We detest:
-
-- global variables
