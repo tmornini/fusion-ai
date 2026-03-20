@@ -113,6 +113,8 @@ export const PAGE_REGISTRY: Record<
     teams: {
         title: 'Teams',
         layout: 'sidebar',
+        sourceDir: 'administration',
+        sourceFile: 'teams',
         icon: 'users',
         keywords: 'team members roster',
     },
@@ -151,7 +153,7 @@ export const PAGE_REGISTRY: Record<
     'activity-feed': {
         title: 'Activity Feed',
         layout: 'sidebar',
-        sourceDir: 'teams',
+        sourceDir: 'administration',
         sourceFile: 'activity-feed',
         icon: 'activity',
         keywords: 'activity feed log',
