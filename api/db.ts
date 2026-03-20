@@ -24,6 +24,8 @@ import type {
     ClarificationAnswerEntity,
     ClarificationAnswerClarificationEntity,
     CrunchColumnEntity,
+    CrunchColumnAcronymEntity,
+    CrunchColumnAcronymLinkEntity,
     FlowEntity,
     FlowStepEntity,
     CompanySettingsEntity,
@@ -128,6 +130,12 @@ export interface DbAdapter {
         >;
     clarificationProjects: EntityStore<ClarificationProjectEntity>;
     crunchColumns: EntityStore<CrunchColumnEntity>;
+    crunchColumnAcronyms:
+        EntityStore<CrunchColumnAcronymEntity>;
+    crunchColumnAcronymLinks:
+        EntityStore<
+            CrunchColumnAcronymLinkEntity
+        >;
     flows: EntityStore<FlowEntity>;
     flowSteps: EntityStore<FlowStepEntity>;
     processStepProcesses: EntityStore<ProcessStepProcessEntity>;

@@ -29,6 +29,8 @@ import type {
     ClarificationAnswerEntity,
     ClarificationAnswerClarificationEntity,
     CrunchColumnEntity,
+    CrunchColumnAcronymEntity,
+    CrunchColumnAcronymLinkEntity,
     FlowEntity,
     FlowStepEntity,
     CompanySettingsEntity,
@@ -339,6 +341,8 @@ export const TABLE_NAMES = [
     'clarification_answers',
     'clarification_answer_clarifications',
     'crunch_columns',
+    'crunch_column_acronyms',
+    'crunch_column_acronym_links',
     'processes',
     'process_steps',
     'company_settings',
@@ -435,6 +439,80 @@ function migrateClarificationAnswers(
     }
 }
 
+function migrateCrunchColumnAcronyms(
+): void {
+    const key =
+        KEY_PREFIX + 'crunch_columns';
+    const raw = localStorage.getItem(key);
+    if (raw === null) return;
+    try {
+        const rows = JSON.parse(raw);
+        if (!Array.isArray(rows)) return;
+        const needsMigration = rows.some(
+            (r: Record<string, unknown>) =>
+                'is_acronym' in r,
+        );
+        if (!needsMigration) return;
+        const acronyms: Record<
+            string,
+            unknown
+        >[] = [];
+        const links: Record<
+            string,
+            unknown
+        >[] = [];
+        for (const row of rows) {
+            if (
+                row.is_acronym === 1
+                || row.is_acronym === true
+            ) {
+                const acronymId =
+                    `cca-${row.id}`;
+                acronyms.push({
+                    id: acronymId,
+                    expansion:
+                        typeof row
+                            .acronym_expansion
+                            === 'string'
+                            ? row
+                                .acronym_expansion
+                            : '',
+                });
+                links.push({
+                    id: `ccal-${row.id}`,
+                    crunch_column_acronym_id:
+                        acronymId,
+                    crunch_column_id:
+                        row.id,
+                    created_at: nowUtc(),
+                });
+            }
+            delete row.is_acronym;
+            delete row.acronym_expansion;
+        }
+        localStorage.setItem(
+            key,
+            JSON.stringify(rows),
+        );
+        if (acronyms.length > 0) {
+            localStorage.setItem(
+                KEY_PREFIX
+                    + 'crunch_column_acronyms',
+                JSON.stringify(acronyms),
+            );
+            localStorage.setItem(
+                KEY_PREFIX
+                    + 'crunch_column'
+                    + '_acronym_links',
+                JSON.stringify(links),
+            );
+        }
+    } catch {
+        /* corrupt JSON — readTable will
+           throw when the page loads */
+    }
+}
+
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {
     const oldAccountKey =
@@ -473,6 +551,7 @@ export async function createLocalStorageAdapter(
     ]);
 
     migrateClarificationAnswers();
+    migrateCrunchColumnAcronyms();
 
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {
@@ -735,6 +814,14 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 CrunchColumnEntity
             >('crunch_columns'),
+        crunchColumnAcronyms:
+            createEntityStore<
+                CrunchColumnAcronymEntity
+            >('crunch_column_acronyms'),
+        crunchColumnAcronymLinks:
+            createEntityStore<
+                CrunchColumnAcronymLinkEntity
+            >('crunch_column_acronym_links'),
         flows:
             createEntityStore<FlowEntity>(
                 'processes',

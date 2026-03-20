@@ -187,8 +187,13 @@
 | data_type | TEXT | '' |
 | description | TEXT | '' |
 | sample_values | TEXT (JSON array) | '[]' |
-| is_acronym | INTEGER | 0 |
-| acronym_expansion | TEXT | '' |
+
+### crunch_column_acronyms
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| expansion | TEXT | '' |
 
 ### processes
 
@@ -442,6 +447,15 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | — |
 | project_task_id | TEXT (FK → project_tasks) | — |
 | project_id | TEXT (FK → projects) | — |
+| created_at | TEXT | '' |
+
+### crunch_column_acronym_links
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| crunch_column_acronym_id | TEXT (FK → crunch_column_acronyms) | — |
+| crunch_column_id | TEXT (FK → crunch_columns) | — |
 | created_at | TEXT | '' |
 
 ### process_step_processes

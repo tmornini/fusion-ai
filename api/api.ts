@@ -118,6 +118,16 @@ const routes: Route[] = [
         get: (db) =>
             db.crunchColumns.getAll(),
     }),
+    route('crunch-column-acronyms', {
+        get: (db) =>
+            db.crunchColumnAcronyms
+                .getAll(),
+    }),
+    route('crunch-column-acronym-links', {
+        get: (db) =>
+            db.crunchColumnAcronymLinks
+                .getAll(),
+    }),
     route('processes', {
         get: (db) => db.flows.getAll(),
     }),
@@ -377,6 +387,24 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('crunch-column-acronyms/:id', {
+        put: (db, p, payload) =>
+            db.crunchColumnAcronyms.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route(
+        'crunch-column-acronym-links/:id',
+        {
+            put: (db, p, payload) =>
+                db.crunchColumnAcronymLinks
+                    .put(
+                        param(p, 0),
+                        payload,
+                    ),
+        },
+    ),
     route('idea-submissions/:id', {
         put: (db, p, payload) =>
             db.ideaSubmissions.put(
