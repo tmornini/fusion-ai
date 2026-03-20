@@ -4,7 +4,9 @@ import type {
     IdeaScoreEntity,
     IdeaScoreIdeaEntity,
     ProjectEntity,
-    ProjectTeamEntity,
+    TeamMembershipEntity,
+    TeamMembershipProjectEntity,
+    TeamMembershipUserEntity,
     MilestoneEntity,
     MilestoneProjectEntity,
     ProjectTaskEntity,
@@ -65,16 +67,16 @@ export interface DbAdapter {
     ideaScoreIdeas:
         EntityStore<IdeaScoreIdeaEntity>;
     projects: EntityStore<ProjectEntity>;
-    projectTeam: {
-        getByProjectId(
-            projectId: string,
-        ): Promise<ProjectTeamEntity[]>;
-        put(
-            projectId: string,
-            userId: string,
-            fields: Partial<ProjectTeamEntity>,
-        ): Promise<ProjectTeamEntity>;
-    };
+    teamMemberships:
+        EntityStore<TeamMembershipEntity>;
+    teamMembershipProjects:
+        EntityStore<
+            TeamMembershipProjectEntity
+        >;
+    teamMembershipUsers:
+        EntityStore<
+            TeamMembershipUserEntity
+        >;
     milestones:
         EntityStore<MilestoneEntity>;
     milestoneProjects:

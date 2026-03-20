@@ -198,6 +198,20 @@ const routes: Route[] = [
             db.projectVersionProjects
                 .getAll(),
     }),
+    route('team-memberships', {
+        get: (db) =>
+            db.teamMemberships.getAll(),
+    }),
+    route('team-membership-projects', {
+        get: (db) =>
+            db.teamMembershipProjects
+                .getAll(),
+    }),
+    route('team-membership-users', {
+        get: (db) =>
+            db.teamMembershipUsers
+                .getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {
@@ -446,6 +460,35 @@ const routes: Route[] = [
                     ),
         },
     ),
+    route('team-memberships/:id', {
+        put: (db, p, payload) =>
+            db.teamMemberships.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route(
+        'team-membership-projects/:id',
+        {
+            put: (db, p, payload) =>
+                db.teamMembershipProjects
+                    .put(
+                        param(p, 0),
+                        payload,
+                    ),
+        },
+    ),
+    route(
+        'team-membership-users/:id',
+        {
+            put: (db, p, payload) =>
+                db.teamMembershipUsers
+                    .put(
+                        param(p, 0),
+                        payload,
+                    ),
+        },
+    ),
     // ── Nested: idea children ─────────────
     route('ideas/:ideaId/edge', {
         get: (db, p) =>
@@ -506,10 +549,56 @@ const routes: Route[] = [
 
     // ── Nested: project children (GET) ────
     route('projects/:projectId/team', {
-        get: (db, p) =>
-            db.projectTeam.getByProjectId(
-                param(p, 0),
-            ),
+        get: async (db, p) => {
+            const pid = param(p, 0);
+            const [
+                tmProjects,
+                memberships,
+                tmUsers,
+            ] = await Promise.all([
+                db.teamMembershipProjects
+                    .getAll(),
+                db.teamMemberships
+                    .getAll(),
+                db.teamMembershipUsers
+                    .getAll(),
+            ]);
+            const membershipIds = new Set(
+                tmProjects
+                    .filter(
+                        l => l.project_id
+                            === pid,
+                    )
+                    .map(
+                        l =>
+                            l.team_membership_id,
+                    ),
+            );
+            const userByMembership = new Map(
+                tmUsers.map(
+                    u => [
+                        u.team_membership_id,
+                        u.user_id,
+                    ],
+                ),
+            );
+            return memberships
+                .filter(
+                    m =>
+                        membershipIds.has(
+                            m.id,
+                        ),
+                )
+                .map(m => ({
+                    id: m.id,
+                    user_id:
+                        userByMembership
+                            .get(m.id)
+                        ?? '',
+                    role: m.role,
+                    type: m.type,
+                }));
+        },
     }),
     route(
         'projects/:projectId/milestones',
@@ -687,12 +776,54 @@ const routes: Route[] = [
     route(
         'projects/:projectId/team/:userId',
         {
-            put: (db, p, payload) =>
-                db.projectTeam.put(
-                    param(p, 0),
-                    param(p, 1),
-                    payload,
-                ),
+            put: async (db, p, payload) => {
+                const pid = param(p, 0);
+                const uid = param(p, 1);
+                const tmId =
+                    `tm-${pid}-${uid}`;
+                const membership =
+                    await db.teamMemberships
+                        .put(tmId, {
+                            id: tmId,
+                            role:
+                                typeof payload
+                                    .role
+                                === 'string'
+                                    ? payload.role
+                                    : '',
+                            type:
+                                typeof payload
+                                    .type
+                                === 'string'
+                                    ? payload.type
+                                    : '',
+                        });
+                const projLinkId =
+                    `tmp-${tmId}`;
+                const userLinkId =
+                    `tmu-${tmId}`;
+                await Promise.all([
+                    db.teamMembershipProjects
+                        .put(projLinkId, {
+                            id: projLinkId,
+                            team_membership_id:
+                                tmId,
+                            project_id: pid,
+                            created_at:
+                                nowUtc(),
+                        }),
+                    db.teamMembershipUsers
+                        .put(userLinkId, {
+                            id: userLinkId,
+                            team_membership_id:
+                                tmId,
+                            user_id: uid,
+                            created_at:
+                                nowUtc(),
+                        }),
+                ]);
+                return membership;
+            },
         },
     ),
     route(

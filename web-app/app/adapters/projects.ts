@@ -1,7 +1,6 @@
 import { GET, PUT } from '../../../api/api';
 import type {
     ProjectEntity,
-    ProjectTeamEntity,
     MilestoneEntity,
     ProjectTaskEntity,
     DiscussionEntity,
@@ -32,6 +31,13 @@ import {
 } from './helpers';
 
 export { Project } from '../../../api/types';
+
+interface TeamMemberRow {
+    id: string;
+    user_id: string;
+    role: string;
+    type: string;
+}
 
 export async function getProjects(
 ): Promise<Project[]> {
@@ -132,7 +138,7 @@ export async function getProjectById(
         GET<ProjectEntity>(
             `projects/${projectId}`,
         ),
-        GET<ProjectTeamEntity[]>(
+        GET<TeamMemberRow[]>(
             `projects/${projectId}/team`,
         ),
         GET<MilestoneEntity[]>(
@@ -347,7 +353,7 @@ getProjectForEngineering(
         GET<ProjectEntity>(
             `projects/${projectId}`,
         ),
-        GET<ProjectTeamEntity[]>(
+        GET<TeamMemberRow[]>(
             `projects/${projectId}/team`,
         ),
         buildUserMap(),

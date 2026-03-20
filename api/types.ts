@@ -348,12 +348,24 @@ export interface ProjectEntity {
     budget_label: string;
 }
 
-export interface ProjectTeamEntity {
+export interface TeamMembershipEntity {
     id: Id;
-    project_id: Id;
-    user_id: Id;
     role: string;
     type: string;
+}
+
+export interface TeamMembershipProjectEntity {
+    id: Id;
+    team_membership_id: Id;
+    project_id: Id;
+    created_at: string;
+}
+
+export interface TeamMembershipUserEntity {
+    id: Id;
+    team_membership_id: Id;
+    user_id: Id;
+    created_at: string;
 }
 
 export interface MilestoneEntity {

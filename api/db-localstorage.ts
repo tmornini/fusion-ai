@@ -9,7 +9,9 @@ import type {
     IdeaScoreEntity,
     IdeaScoreIdeaEntity,
     ProjectEntity,
-    ProjectTeamEntity,
+    TeamMembershipEntity,
+    TeamMembershipProjectEntity,
+    TeamMembershipUserEntity,
     MilestoneEntity,
     MilestoneProjectEntity,
     ProjectTaskEntity,
@@ -315,7 +317,9 @@ export const TABLE_NAMES = [
     'idea_scores',
     'idea_score_ideas',
     'projects',
-    'project_team',
+    'team_memberships',
+    'team_membership_projects',
+    'team_membership_users',
     'milestones',
     'project_tasks',
     'discussions',
@@ -558,89 +562,18 @@ export async function createLocalStorageAdapter(
                 'projects',
             ),
 
-        projectTeam: {
-            async getByProjectId(
-                projectId: string,
-            ): Promise<ProjectTeamEntity[]> {
-                return readTable<
-                    ProjectTeamEntity
-                >('project_team').filter(
-                    entity =>
-                        entity.project_id
-                        === projectId,
-                );
-            },
-            async put(
-                projectId: string,
-                userId: string,
-                fields: Partial<
-                    ProjectTeamEntity
-                >,
-            ): Promise<ProjectTeamEntity> {
-                const rows =
-                    readTable<
-                        ProjectTeamEntity
-                    >('project_team');
-                const serialized =
-                    serializeRecord(fields);
-                const index = rows.findIndex(
-                    entity =>
-                        entity.project_id
-                            === projectId
-                        && entity.user_id
-                            === userId,
-                );
-                const fid =
-                    typeof fields.id === 'string'
-                        ? fields.id
-                        : undefined;
-                const existing =
-                    rows[index];
-                const id =
-                    existing
-                        ? existing.id
-                        : (fid
-                            ?? generateCompositeId(
-                                'pt',
-                                projectId,
-                                userId,
-                            ));
-
-                if (index >= 0) {
-                    rows[index] = {
-                        ...rows[index]!,
-                        ...serialized,
-                        id,
-                        project_id: projectId,
-                        user_id: userId,
-                    } as ProjectTeamEntity;
-                } else {
-                    rows.push({
-                        id,
-                        ...serialized,
-                        project_id: projectId,
-                        user_id: userId,
-                    } as ProjectTeamEntity);
-                }
-
-                writeTable(
-                    'project_team',
-                    rows,
-                );
-                const pos = index >= 0
-                    ? index
-                    : rows.length - 1;
-                const written = rows[pos];
-                if (!written) {
-                    throw new Error(
-                        'Internal error: entity'
-                        + ' not found after'
-                        + ' write',
-                    );
-                }
-                return written;
-            },
-        },
+        teamMemberships:
+            createEntityStore<
+                TeamMembershipEntity
+            >('team_memberships'),
+        teamMembershipProjects:
+            createEntityStore<
+                TeamMembershipProjectEntity
+            >('team_membership_projects'),
+        teamMembershipUsers:
+            createEntityStore<
+                TeamMembershipUserEntity
+            >('team_membership_users'),
 
         milestones:
             createEntityStore<MilestoneEntity>(

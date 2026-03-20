@@ -2106,65 +2106,71 @@ export async function populateMockData(
     // project tasks, discussions, project
     // versions, clarifications, edge
     // outcomes
-    const teamMembers = [
+    const teamMemberships: {
+        id: string;
+        project_id: string;
+        user_id: string;
+        role: string;
+        type: string;
+    }[] = [
         {
-            id: 'pt-1-1',
+            id: 'tm-1-1',
             project_id: '1',
             user_id: '1',
             role: 'lead',
             type: 'business',
         },
         {
-            id: 'pt-1-2',
+            id: 'tm-1-2',
             project_id: '1',
             user_id: '2',
             role: 'ML Engineer',
             type: 'engineering',
         },
         {
-            id: 'pt-1-3',
+            id: 'tm-1-3',
             project_id: '1',
             user_id: '3',
             role: 'Data Scientist',
             type: 'engineering',
         },
         {
-            id: 'pt-1-4',
+            id: 'tm-1-4',
             project_id: '1',
             user_id: '4',
             role: 'Backend Developer',
             type: 'engineering',
         },
         {
-            id: 'pt-2-lead',
+            id: 'tm-2-lead',
             project_id: '2',
             user_id: '2',
             role: 'lead',
             type: 'business',
         },
         {
-            id: 'pt-3-lead',
+            id: 'tm-3-lead',
             project_id: '3',
             user_id: '5',
             role: 'lead',
             type: 'business',
         },
         {
-            id: 'pt-4-lead',
+            id: 'tm-4-lead',
             project_id: '4',
             user_id: '8',
             role: 'lead',
             type: 'business',
         },
         {
-            id: 'pt-5-lead',
+            id: 'tm-5-lead',
             project_id: '5',
             user_id: '9',
             role: 'lead',
             type: 'business',
         },
         {
-            id: 'pt-6-lead',
+            id: 'tm-6-lead',
             project_id: '6',
             user_id: '3',
             role: 'lead',
@@ -2485,12 +2491,42 @@ export async function populateMockData(
     ];
 
     await Promise.all([
-        ...teamMembers.map(tm =>
-            adapter.projectTeam.put(
-                tm.project_id,
-                tm.user_id,
-                tm,
+        ...teamMemberships.map(tm =>
+            adapter.teamMemberships.put(
+                tm.id,
+                {
+                    id: tm.id,
+                    role: tm.role,
+                    type: tm.type,
+                },
             ),
+        ),
+        ...teamMemberships.map(tm =>
+            adapter.teamMembershipProjects
+                .put(`tmp-${tm.id}`, {
+                    id: `tmp-${tm.id}`,
+                    team_membership_id:
+                        tm.id,
+                    project_id:
+                        tm.project_id,
+                    created_at:
+                        '2024-01-15'
+                        + 'T09:00:00'
+                        + '.000000Z',
+                }),
+        ),
+        ...teamMemberships.map(tm =>
+            adapter.teamMembershipUsers
+                .put(`tmu-${tm.id}`, {
+                    id: `tmu-${tm.id}`,
+                    team_membership_id:
+                        tm.id,
+                    user_id: tm.user_id,
+                    created_at:
+                        '2024-01-15'
+                        + 'T09:00:00'
+                        + '.000000Z',
+                }),
         ),
         ...milestones.map(milestone =>
             adapter.milestones.put(
