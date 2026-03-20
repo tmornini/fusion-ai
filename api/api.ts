@@ -10,22 +10,33 @@ export class ApiError extends Error {
     }
 }
 
-let adapter: DbAdapter | null = null;
+const apiModule = (() => {
+    let db: DbAdapter | null = null;
+    return {
+        init(dbAdapter: DbAdapter): void {
+            db = dbAdapter;
+        },
+        get(): DbAdapter {
+            if (!db) {
+                throw new Error(
+                    'API not initialized.'
+                    + ' Call initApi()'
+                    + ' first.',
+                );
+            }
+            return db;
+        },
+    };
+})();
 
 export function initApi(
     dbAdapter: DbAdapter,
 ): void {
-    adapter = dbAdapter;
+    apiModule.init(dbAdapter);
 }
 
 export function getDbAdapter(): DbAdapter {
-    if (!adapter) {
-        throw new Error(
-            'API not initialized.'
-            + ' Call initApi() first.',
-        );
-    }
-    return adapter;
+    return apiModule.get();
 }
 
 // ── Route Registry ─────────────────
