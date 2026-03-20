@@ -122,7 +122,10 @@ export interface DbAdapter {
     activities: EntityStore<ActivityEntity>;
     clarifications: EntityStore<ClarificationEntity>;
     clarificationAnswers: EntityStore<ClarificationAnswerEntity>;
-    clarificationAnswerClarifications: EntityStore<ClarificationAnswerClarificationEntity>;
+    clarificationAnswerClarifications:
+        EntityStore<
+            ClarificationAnswerClarificationEntity
+        >;
     clarificationProjects: EntityStore<ClarificationProjectEntity>;
     crunchColumns: EntityStore<CrunchColumnEntity>;
     flows: EntityStore<FlowEntity>;
