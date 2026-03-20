@@ -113,18 +113,18 @@ export const PAGE_REGISTRY: Record<
     teams: {
         title: 'Teams',
         layout: 'sidebar',
-        sourceDir: 'administration',
+        sourceDir: 'organization',
         sourceFile: 'teams',
         icon: 'users',
         keywords: 'team members roster',
     },
     account: {
-        title: 'Administration',
+        title: 'Organization',
         layout: 'sidebar',
-        sourceDir: 'administration',
+        sourceDir: 'organization',
         icon: 'settings',
         keywords:
-            'account administration'
+            'account organization'
             + ' billing plan',
     },
     profile: {
@@ -145,7 +145,7 @@ export const PAGE_REGISTRY: Record<
     users: {
         title: 'Users',
         layout: 'sidebar',
-        sourceDir: 'administration',
+        sourceDir: 'organization',
         sourceFile: 'users',
         icon: 'users',
         keywords: 'users invite manage admin',
@@ -153,7 +153,7 @@ export const PAGE_REGISTRY: Record<
     'activity-feed': {
         title: 'Activity Feed',
         layout: 'sidebar',
-        sourceDir: 'administration',
+        sourceDir: 'organization',
         sourceFile: 'activity-feed',
         icon: 'activity',
         keywords: 'activity feed log',
@@ -209,7 +209,7 @@ export const PAGE_REGISTRY: Record<
     onboarding: {
         title: 'Onboarding',
         layout: 'standalone',
-        sourceDir: 'administration',
+        sourceDir: 'organization',
         sourceFile: 'onboarding',
         searchable: false,
     },
