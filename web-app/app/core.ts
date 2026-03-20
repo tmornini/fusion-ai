@@ -56,7 +56,7 @@ const pageModules: Record<
     'design-system': () => import('../design-system/index'),
     landing: () => import('../landing/index'),
     auth: () => import('../auth/index'),
-    onboarding: () => import('../onboarding/index'),
+    onboarding: () => import('../administration/onboarding'),
     'not-found': () => import('../not-found/index'),
 };
 

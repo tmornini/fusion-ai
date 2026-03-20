@@ -207,6 +207,8 @@ export const PAGE_REGISTRY: Record<
     onboarding: {
         title: 'Onboarding',
         layout: 'standalone',
+        sourceDir: 'administration',
+        sourceFile: 'onboarding',
         searchable: false,
     },
     'not-found': {
