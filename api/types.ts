@@ -445,8 +445,14 @@ export interface EdgeIdeaEntity {
 
 export interface EdgeOutcomeEntity {
     id: Id;
-    edge_id: Id;
     description: string;
+}
+
+export interface EdgeOutcomeEdgeEntity {
+    id: Id;
+    edge_outcome_id: Id;
+    edge_id: Id;
+    created_at: string;
 }
 
 export interface EdgeMetricEntity {

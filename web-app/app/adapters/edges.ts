@@ -4,6 +4,7 @@ import type {
     EdgeEntity,
     EdgeIdeaEntity,
     EdgeOutcomeEntity,
+    EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
     EdgeStatus,
     ConfidenceLevel,
@@ -77,7 +78,8 @@ export async function getEdgeList(
 ): Promise<EdgeListItem[]> {
     const [
         edgeRows, ideaRows, userMap,
-        allOutcomes, allMetrics,
+        allOutcomes, outcomeEdgeLinks,
+        allMetrics,
         ownerships, edgeIdeaLinks,
     ] = await Promise.all([
         GET<EdgeEntity[]>('edges'),
@@ -85,6 +87,9 @@ export async function getEdgeList(
         buildUserMap(),
         GET<EdgeOutcomeEntity[]>(
             'edge-outcomes',
+        ),
+        GET<EdgeOutcomeEdgeEntity[]>(
+            'edge-outcome-edges',
         ),
         GET<EdgeMetricEntity[]>(
             'edge-metrics',
@@ -112,10 +117,34 @@ export async function getEdgeList(
         ),
     );
 
-    const outcomesByEdgeId = Map.groupBy(
-        allOutcomes,
-        outcome => outcome.edge_id,
+    const outcomeMap = new Map(
+        allOutcomes.map(
+            o => [o.id, o],
+        ),
     );
+    const outcomesByEdgeId = new Map<
+        string,
+        EdgeOutcomeEntity[]
+    >();
+    for (const link of outcomeEdgeLinks) {
+        const outcome =
+            outcomeMap.get(
+                link.edge_outcome_id,
+            );
+        if (!outcome) continue;
+        const list =
+            outcomesByEdgeId.get(
+                link.edge_id,
+            );
+        if (list) {
+            list.push(outcome);
+        } else {
+            outcomesByEdgeId.set(
+                link.edge_id,
+                [outcome],
+            );
+        }
+    }
 
     return edgeRows.map(entity => {
         const edge = new Edge(entity);
@@ -191,8 +220,8 @@ export async function putEdgeData(
                 `edges/${edge.id}`
                     + `/outcomes/${outcome.id}`,
                 {
-                    description: outcome.description,
-                    edge_id: edge.id,
+                    description:
+                        outcome.description,
                 },
             );
             await Promise.all(

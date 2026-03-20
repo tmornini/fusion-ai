@@ -12,6 +12,7 @@ import type {
     IdeaProjectLinkEntity,
     EdgeIdeaEntity,
     EdgeOwnershipEntity,
+    EdgeOutcomeEdgeEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
     DiscussionProjectEntity,
@@ -2554,57 +2555,47 @@ export async function populateMockData(
             ),
         ),
         adapter.edgeOutcomes.put('eo1', {
-            edge_id: '1',
             description:
                 'Reduce customer churn'
                 + ' rate',
         }),
         adapter.edgeOutcomes.put('eo2', {
-            edge_id: '1',
             description:
                 'Increase marketing ROI',
         }),
         adapter.edgeOutcomes.put('eo3', {
-            edge_id: '2',
             description:
                 'Automate report'
                 + ' generation',
         }),
         adapter.edgeOutcomes.put('eo4', {
-            edge_id: '2',
             description:
                 'Reduce manual effort',
         }),
         adapter.edgeOutcomes.put('eo5', {
-            edge_id: '2',
             description:
                 'Improve data quality',
         }),
         adapter.edgeOutcomes.put('eo6', {
-            edge_id: '3',
             description:
                 'Predict equipment'
                 + ' failures',
         }),
         adapter.edgeOutcomes.put('eo7', {
-            edge_id: '4',
             description:
                 'Real-time data'
                 + ' visibility',
         }),
         adapter.edgeOutcomes.put('eo8', {
-            edge_id: '4',
             description:
                 'Improve decision speed',
         }),
         adapter.edgeOutcomes.put('eo9', {
-            edge_id: '6',
             description:
                 'Reduce support ticket'
                 + ' volume',
         }),
         adapter.edgeOutcomes.put('eo10', {
-            edge_id: '6',
             description:
                 'Improve customer'
                 + ' satisfaction',
@@ -2963,6 +2954,90 @@ export async function populateMockData(
         },
     ];
 
+    const edgeOutcomeEdges:
+        EdgeOutcomeEdgeEntity[] = [
+        {
+            id: 'eoe-eo1',
+            edge_outcome_id: 'eo1',
+            edge_id: '1',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'eoe-eo2',
+            edge_outcome_id: 'eo2',
+            edge_id: '1',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'eoe-eo3',
+            edge_outcome_id: 'eo3',
+            edge_id: '2',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo4',
+            edge_outcome_id: 'eo4',
+            edge_id: '2',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo5',
+            edge_outcome_id: 'eo5',
+            edge_id: '2',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo6',
+            edge_outcome_id: 'eo6',
+            edge_id: '3',
+            created_at:
+                '2024-02-20'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo7',
+            edge_outcome_id: 'eo7',
+            edge_id: '4',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo8',
+            edge_outcome_id: 'eo8',
+            edge_id: '4',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'eoe-eo9',
+            edge_outcome_id: 'eo9',
+            edge_id: '6',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'eoe-eo10',
+            edge_outcome_id: 'eo10',
+            edge_id: '6',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+    ];
+
     const taskAssignments:
         TaskAssignmentEntity[] = [
         {
@@ -3293,6 +3368,11 @@ export async function populateMockData(
         ),
         ...edgeOwnerships.map(r =>
             adapter.edgeOwnerships.put(
+                r.id, r,
+            ),
+        ),
+        ...edgeOutcomeEdges.map(r =>
+            adapter.edgeOutcomeEdges.put(
                 r.id, r,
             ),
         ),

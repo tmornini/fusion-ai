@@ -21,6 +21,7 @@ import type {
     ProjectVersionProjectEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
+    EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
     ActivityEntity,
     ClarificationEntity,
@@ -327,6 +328,7 @@ export const TABLE_NAMES = [
     'project_versions',
     'edges',
     'edge_outcomes',
+    'edge_outcome_edges',
     'edge_metrics',
     'activities',
     'clarifications',
@@ -391,10 +393,6 @@ export async function createLocalStorageAdapter(
         },
     ]);
 
-    const edgeOutcomeStore =
-        createEntityStore<EdgeOutcomeEntity>(
-            'edge_outcomes',
-        );
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {
             // No schema needed — tables
@@ -620,24 +618,14 @@ export async function createLocalStorageAdapter(
                 EdgeIdeaEntity
             >('edge_ideas'),
 
-        edgeOutcomes: Object.assign(
-            edgeOutcomeStore,
-            {
-                async getByEdgeId(
-                    edgeId: string,
-                ): Promise<
-                    EdgeOutcomeEntity[]
-                > {
-                    return readTable<
-                        EdgeOutcomeEntity
-                    >('edge_outcomes').filter(
-                        entity =>
-                            entity.edge_id
-                            === edgeId,
-                    );
-                },
-            },
-        ),
+        edgeOutcomes:
+            createEntityStore<
+                EdgeOutcomeEntity
+            >('edge_outcomes'),
+        edgeOutcomeEdges:
+            createEntityStore<
+                EdgeOutcomeEdgeEntity
+            >('edge_outcome_edges'),
 
         edgeMetrics:
             createEntityStore<EdgeMetricEntity>(

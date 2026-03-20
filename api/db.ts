@@ -16,6 +16,7 @@ import type {
     ProjectVersionProjectEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
+    EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
     ActivityEntity,
     ClarificationEntity,
@@ -103,10 +104,14 @@ export interface DbAdapter {
     edges: EntityStore<EdgeEntity>;
     edgeIdeas:
         EntityStore<EdgeIdeaEntity>;
-    edgeOutcomes: EntityStore<EdgeOutcomeEntity> & {
-        getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]>;
-    };
-    edgeMetrics: EntityStore<EdgeMetricEntity>;
+    edgeOutcomes:
+        EntityStore<EdgeOutcomeEntity>;
+    edgeOutcomeEdges:
+        EntityStore<
+            EdgeOutcomeEdgeEntity
+        >;
+    edgeMetrics:
+        EntityStore<EdgeMetricEntity>;
     activities: EntityStore<ActivityEntity>;
     clarifications: EntityStore<ClarificationEntity>;
     clarificationProjects: EntityStore<ClarificationProjectEntity>;

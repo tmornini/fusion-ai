@@ -117,6 +117,10 @@ const routes: Route[] = [
         get: (db) =>
             db.edgeOutcomes.getAll(),
     }),
+    route('edge-outcome-edges', {
+        get: (db) =>
+            db.edgeOutcomeEdges.getAll(),
+    }),
     route('edge-metrics', {
         get: (db) =>
             db.edgeMetrics.getAll(),
@@ -372,6 +376,13 @@ const routes: Route[] = [
     route('edge-ownerships/:id', {
         put: (db, p, payload) =>
             db.edgeOwnerships.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('edge-outcome-edges/:id', {
+        put: (db, p, payload) =>
+            db.edgeOutcomeEdges.put(
                 param(p, 0),
                 payload,
             ),
@@ -1023,24 +1034,75 @@ const routes: Route[] = [
 
     // ── Nested: edge children ─────────────
     route('edges/:edgeId/outcomes', {
-        get: (db, p) =>
-            db.edgeOutcomes.getByEdgeId(
-                param(p, 0),
-            ),
+        get: async (db, p) => {
+            const edgeId = param(p, 0);
+            const [links, outcomes] =
+                await Promise.all([
+                    db.edgeOutcomeEdges
+                        .getAll(),
+                    db.edgeOutcomes
+                        .getAll(),
+                ]);
+            const outcomeIds = new Set(
+                links
+                    .filter(
+                        l => l.edge_id
+                            === edgeId,
+                    )
+                    .map(
+                        l =>
+                            l.edge_outcome_id,
+                    ),
+            );
+            return outcomes.filter(
+                o => outcomeIds.has(o.id),
+            );
+        },
     }),
     route(
         'edges/:edgeId'
         + '/outcomes/:outcomeId',
         {
-            put: (db, p, payload) =>
-                db.edgeOutcomes.put(
-                    param(p, 1),
-                    {
-                        ...payload,
-                        edge_id:
-                            param(p, 0),
-                    },
-                ),
+            put: async (db, p, payload) => {
+                const edgeId =
+                    param(p, 0);
+                const outcomeId =
+                    param(p, 1);
+                const result =
+                    await db.edgeOutcomes
+                        .put(
+                            outcomeId,
+                            payload,
+                        );
+                const links =
+                    await db
+                        .edgeOutcomeEdges
+                        .getAll();
+                const hasLink =
+                    links.some(
+                        l =>
+                            l.edge_outcome_id
+                                === outcomeId
+                            && l.edge_id
+                                === edgeId,
+                    );
+                if (!hasLink) {
+                    const linkId =
+                        `eoe-${outcomeId}`;
+                    await db
+                        .edgeOutcomeEdges
+                        .put(linkId, {
+                            id: linkId,
+                            edge_outcome_id:
+                                outcomeId,
+                            edge_id:
+                                edgeId,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
     route(
