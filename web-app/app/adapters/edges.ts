@@ -17,11 +17,11 @@ import {
 } from './helpers';
 
 export interface EdgeIdea {
-  title: string;
-  problem: string;
-  solution: string;
-  submittedBy: string;
-  score: number;
+    title: string;
+    problem: string;
+    solution: string;
+    submittedBy: string;
+    score: number;
 }
 
 export async function getIdeaForEdge(
@@ -59,17 +59,17 @@ export async function getIdeaForEdge(
 // ── Edge List ───────────────────
 
 export interface EdgeListItem {
-  id: string;
-  ideaId: string;
-  ideaTitle: string;
-  status: EdgeStatus;
-  outcomesCount: number;
-  metricsCount: number;
-  confidence: ConfidenceLevel;
-  confidenceLabel: string;
-  confidenceClassName: string;
-  owner: string;
-  updatedAt: string;
+    id: string;
+    ideaId: string;
+    ideaTitle: string;
+    status: EdgeStatus;
+    outcomesCount: number;
+    metricsCount: number;
+    confidence: ConfidenceLevel;
+    confidenceLabel: string;
+    confidenceClassName: string;
+    owner: string;
+    updatedAt: string;
 }
 
 export async function getEdgeList(
@@ -156,49 +156,49 @@ export async function getEdgeList(
 // ── Write Operations ─────────────────
 
 export async function putEdgeData(
-  ideaId: string,
-  data: EdgeData,
+    ideaId: string,
+    data: EdgeData,
 ): Promise<void> {
-  const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
-  if (!edge) return;
+    const edge = await GET<EdgeEntity | null>(`ideas/${ideaId}/edge`);
+    if (!edge) return;
 
-  await PUT(`edges/${edge.id}`, {
-    confidence: data.confidence,
-    impact_short_term:
-      data.impact.shortTerm,
-    impact_mid_term:
-      data.impact.midTerm,
-    impact_long_term:
-      data.impact.longTerm,
-    status: 'complete' as const,
-  });
+    await PUT(`edges/${edge.id}`, {
+        confidence: data.confidence,
+        impact_short_term:
+            data.impact.shortTerm,
+        impact_mid_term:
+            data.impact.midTerm,
+        impact_long_term:
+            data.impact.longTerm,
+        status: 'complete' as const,
+    });
 
-  await Promise.all(
-    data.outcomes.map(async outcome => {
-      await PUT(
-        `edges/${edge.id}`
-          + `/outcomes/${outcome.id}`,
-        {
-          description: outcome.description,
-          edge_id: edge.id,
-        },
-      );
-      await Promise.all(
-        outcome.metrics.map(metric =>
-          PUT(
-            `edges/${edge.id}`
-            + `/outcomes/${outcome.id}`
-            + `/metrics/${metric.id}`,
-            {
-              name: metric.name,
-              target: metric.target,
-              unit: metric.unit,
-              current: metric.current,
-              outcome_id: outcome.id,
-            },
-          ),
-        ),
-      );
-    }),
-  );
+    await Promise.all(
+        data.outcomes.map(async outcome => {
+            await PUT(
+                `edges/${edge.id}`
+                    + `/outcomes/${outcome.id}`,
+                {
+                    description: outcome.description,
+                    edge_id: edge.id,
+                },
+            );
+            await Promise.all(
+                outcome.metrics.map(metric =>
+                    PUT(
+                        `edges/${edge.id}`
+                        + `/outcomes/${outcome.id}`
+                        + `/metrics/${metric.id}`,
+                        {
+                            name: metric.name,
+                            target: metric.target,
+                            unit: metric.unit,
+                            current: metric.current,
+                            outcome_id: outcome.id,
+                        },
+                    ),
+                ),
+            );
+        }),
+    );
 }

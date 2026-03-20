@@ -14,27 +14,27 @@ import { User } from '../../../api/types';
 import { log } from '../logger';
 
 export async function buildUserMap(): Promise<Map<Id, User>> {
-  const users = await GET<UserEntity[]>('users');
-  return new Map(users.map(entity => [entity.id, new User(entity)]));
+    const users = await GET<UserEntity[]>('users');
+    return new Map(users.map(entity => [entity.id, new User(entity)]));
 }
 
 export function userName(userMap: Map<Id, User>, userId: string): string {
-  return userMap.get(userId)?.fullName() ?? 'Unknown';
+    return userMap.get(userId)?.fullName() ?? 'Unknown';
 }
 
 export function parseJson<T>(value: string | T, fallback: T): T {
-  if (typeof value === 'string') {
-    try { return JSON.parse(value) as T; }
-    catch {
-      log.warn(
-        `Failed to parse JSON value:`
-        + ` ${value.slice(0, 100)}`,
-        'parseJson',
-      );
-      return fallback;
+    if (typeof value === 'string') {
+        try { return JSON.parse(value) as T; }
+        catch {
+            log.warn(
+                `Failed to parse JSON value:`
+                + ` ${value.slice(0, 100)}`,
+                'parseJson',
+            );
+            return fallback;
+        }
     }
-  }
-  return value;
+    return value;
 }
 
 // ── Status Predicates ────────────
@@ -54,20 +54,20 @@ export function isInReview(
 // ── Shared Types ──────────────────
 
 export interface Metric {
-  id: string;
-  name: string;
-  target: string;
-  unit: string;
-  current: string;
+    id: string;
+    name: string;
+    target: string;
+    unit: string;
+    current: string;
 }
 
 // ── Shared Edge Data Fetching ────────────
 
 export interface EdgeData {
-  outcomes: { id: string; description: string; metrics: Metric[] }[];
-  impact: { shortTerm: string; midTerm: string; longTerm: string };
-  confidence: ConfidenceLevel;
-  owner: string;
+    outcomes: { id: string; description: string; metrics: Metric[] }[];
+    impact: { shortTerm: string; midTerm: string; longTerm: string };
+    confidence: ConfidenceLevel;
+    owner: string;
 }
 
 export async function getEdgeDataByIdeaId(
@@ -140,19 +140,19 @@ export async function getEdgeDataByIdeaId(
 
 export function buildDefaultEdgeData(
 ): EdgeData {
-  return {
-    outcomes: [],
-    impact: { shortTerm: '', midTerm: '', longTerm: '' },
-    confidence: 'medium',
-    owner: '',
-  };
+    return {
+        outcomes: [],
+        impact: { shortTerm: '', midTerm: '', longTerm: '' },
+        confidence: 'medium',
+        owner: '',
+    };
 }
 
 export async function getEdgeDataWithConfidence(
-  ideaId: string,
+    ideaId: string,
 ): Promise<EdgeData> {
-  const edgeData =
-    await getEdgeDataByIdeaId(ideaId);
-  if (!edgeData) return buildDefaultEdgeData();
-  return edgeData;
+    const edgeData =
+        await getEdgeDataByIdeaId(ideaId);
+    if (!edgeData) return buildDefaultEdgeData();
+    return edgeData;
 }
