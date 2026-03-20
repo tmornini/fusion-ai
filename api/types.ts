@@ -54,6 +54,30 @@ export function computePriority(
 
 export type StoredBoolean = 0 | 1;
 
+export type JsonArrayField = string & {
+    readonly __brand: 'JsonArrayField';
+};
+
+export type JsonObjectField = string & {
+    readonly __brand: 'JsonObjectField';
+};
+
+export function jsonArrayField(
+    value: unknown[],
+): JsonArrayField {
+    return JSON.stringify(
+        value,
+    ) as JsonArrayField;
+}
+
+export function jsonObjectField(
+    value: Record<string, unknown>,
+): JsonObjectField {
+    return JSON.stringify(
+        value,
+    ) as JsonObjectField;
+}
+
 export function toBool(
     value: unknown,
 ): boolean {
