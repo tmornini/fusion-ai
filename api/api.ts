@@ -133,6 +133,10 @@ const routes: Route[] = [
         get: (db) =>
             db.ideaProjectLinks.getAll(),
     }),
+    route('edge-ideas', {
+        get: (db) =>
+            db.edgeIdeas.getAll(),
+    }),
     route('edge-ownerships', {
         get: (db) =>
             db.edgeOwnerships.getAll(),
@@ -358,6 +362,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('edge-ideas/:id', {
+        put: (db, p, payload) =>
+            db.edgeIdeas.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     route('edge-ownerships/:id', {
         put: (db, p, payload) =>
             db.edgeOwnerships.put(
@@ -491,10 +502,19 @@ const routes: Route[] = [
     ),
     // ── Nested: idea children ─────────────
     route('ideas/:ideaId/edge', {
-        get: (db, p) =>
-            db.edges.getByIdeaId(
-                param(p, 0),
-            ),
+        get: async (db, p) => {
+            const ideaId = param(p, 0);
+            const links =
+                await db.edgeIdeas
+                    .getAll();
+            const link = links.find(
+                l => l.idea_id === ideaId,
+            );
+            if (!link) return null;
+            return db.edges.getById(
+                link.edge_id,
+            );
+        },
     }),
     route('ideas/:ideaId/score', {
         get: async (db, p) => {

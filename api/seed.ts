@@ -10,6 +10,7 @@ import type {
     ClarificationEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
+    EdgeIdeaEntity,
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
@@ -1134,7 +1135,6 @@ export async function populateMockData(
     const edges: EdgeEntity[] = [
         {
             id: '1',
-            idea_id: '1',
             status: 'complete',
             confidence: 'high',
             impact_short_term:
@@ -1159,7 +1159,6 @@ export async function populateMockData(
         },
         {
             id: '2',
-            idea_id: '2',
             status: 'complete',
             confidence: 'medium',
             impact_short_term: '',
@@ -1170,7 +1169,6 @@ export async function populateMockData(
         },
         {
             id: '3',
-            idea_id: '3',
             status: 'draft',
             confidence: 'low',
             impact_short_term: '',
@@ -1181,7 +1179,6 @@ export async function populateMockData(
         },
         {
             id: '4',
-            idea_id: '4',
             status: 'complete',
             confidence: 'high',
             impact_short_term: '',
@@ -1192,7 +1189,6 @@ export async function populateMockData(
         },
         {
             id: '5',
-            idea_id: '5',
             status: 'missing',
             confidence: 'medium',
             impact_short_term: '',
@@ -1202,7 +1198,6 @@ export async function populateMockData(
         },
         {
             id: '6',
-            idea_id: '7',
             status: 'complete',
             confidence: 'high',
             impact_short_term:
@@ -2877,6 +2872,58 @@ export async function populateMockData(
         },
     ];
 
+    const edgeIdeas:
+        EdgeIdeaEntity[] = [
+        {
+            id: 'ei-1',
+            edge_id: '1',
+            idea_id: '1',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'ei-2',
+            edge_id: '2',
+            idea_id: '2',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'ei-3',
+            edge_id: '3',
+            idea_id: '3',
+            created_at:
+                '2024-02-20'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ei-4',
+            edge_id: '4',
+            idea_id: '4',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'ei-5',
+            edge_id: '5',
+            idea_id: '5',
+            created_at:
+                '2024-02-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ei-6',
+            edge_id: '6',
+            idea_id: '7',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+    ];
+
     const edgeOwnerships:
         EdgeOwnershipEntity[] = [
         {
@@ -3236,6 +3283,11 @@ export async function populateMockData(
         ),
         ...ideaProjectLinks.map(r =>
             adapter.ideaProjectLinks.put(
+                r.id, r,
+            ),
+        ),
+        ...edgeIdeas.map(r =>
+            adapter.edgeIdeas.put(
                 r.id, r,
             ),
         ),

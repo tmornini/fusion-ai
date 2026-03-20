@@ -428,13 +428,19 @@ export interface ProjectVersionProjectEntity {
 
 export interface EdgeEntity {
     id: Id;
-    idea_id: Id;
     status: EdgeStatus;
     confidence: ConfidenceLevel;
     impact_short_term: string;
     impact_mid_term: string;
     impact_long_term: string;
     updated_at: string;
+}
+
+export interface EdgeIdeaEntity {
+    id: Id;
+    edge_id: Id;
+    idea_id: Id;
+    created_at: string;
 }
 
 export interface EdgeOutcomeEntity {
@@ -713,7 +719,6 @@ export function createProject(
 
 export interface EdgeCreationFields {
     id: Id;
-    idea_id: Id;
     status?: EdgeStatus;
     confidence?: ConfidenceLevel;
 }
@@ -723,7 +728,6 @@ export function createEdge(
 ): EdgeEntity {
     return {
         id: fields.id,
-        idea_id: fields.idea_id,
         status: fields.status ?? 'draft',
         confidence:
             fields.confidence ?? 'medium',
@@ -1354,7 +1358,6 @@ export class Project {
 
 export class Edge {
     readonly id: string;
-    readonly ideaId: Id;
     readonly status: EdgeStatus;
     readonly confidence: ConfidenceLevel;
     readonly impactShortTerm: string;
@@ -1364,7 +1367,6 @@ export class Edge {
 
     constructor(entity: EdgeEntity) {
         this.id = entity.id;
-        this.ideaId = entity.idea_id;
         this.status = entity.status;
         this.confidence = entity.confidence;
         this.impactShortTerm =

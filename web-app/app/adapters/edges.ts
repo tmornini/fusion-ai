@@ -2,6 +2,7 @@ import { GET, PUT } from '../../../api/api';
 import type {
     IdeaEntity,
     EdgeEntity,
+    EdgeIdeaEntity,
     EdgeOutcomeEntity,
     EdgeMetricEntity,
     EdgeStatus,
@@ -77,7 +78,7 @@ export async function getEdgeList(
     const [
         edgeRows, ideaRows, userMap,
         allOutcomes, allMetrics,
-        ownerships,
+        ownerships, edgeIdeaLinks,
     ] = await Promise.all([
         GET<EdgeEntity[]>('edges'),
         GET<IdeaEntity[]>('ideas'),
@@ -91,6 +92,9 @@ export async function getEdgeList(
         GET<EdgeOwnershipEntity[]>(
             'edge-ownerships',
         ),
+        GET<EdgeIdeaEntity[]>(
+            'edge-ideas',
+        ),
     ]);
     const ideaMap = new Map(
         ideaRows.map(
@@ -100,6 +104,11 @@ export async function getEdgeList(
     const ownerMap = new Map(
         ownerships.map(
             o => [o.edge_id, o.user_id],
+        ),
+    );
+    const edgeIdeaMap = new Map(
+        edgeIdeaLinks.map(
+            l => [l.edge_id, l.idea_id],
         ),
     );
 
@@ -126,11 +135,14 @@ export async function getEdgeList(
             )
             .length;
 
+        const ideaId =
+            edgeIdeaMap.get(edge.id)
+                ?? '';
         const idea =
-            ideaMap.get(edge.ideaId);
+            ideaMap.get(ideaId);
         return {
             id: edge.id,
-            ideaId: edge.ideaId,
+            ideaId,
             ideaTitle:
                 idea?.title ?? '',
             status: edge.status,

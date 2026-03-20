@@ -26,6 +26,7 @@ import type {
     AccountEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
+    EdgeIdeaEntity,
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
@@ -99,9 +100,9 @@ export interface DbAdapter {
         EntityStore<
             ProjectVersionProjectEntity
         >;
-    edges: EntityStore<EdgeEntity> & {
-        getByIdeaId(ideaId: string): Promise<EdgeEntity | null>;
-    };
+    edges: EntityStore<EdgeEntity>;
+    edgeIdeas:
+        EntityStore<EdgeIdeaEntity>;
     edgeOutcomes: EntityStore<EdgeOutcomeEntity> & {
         getByEdgeId(edgeId: string): Promise<EdgeOutcomeEntity[]>;
     };

@@ -31,6 +31,7 @@ import type {
     AccountEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
+    EdgeIdeaEntity,
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
@@ -336,6 +337,7 @@ export const TABLE_NAMES = [
     'account',
     'idea_submissions',
     'idea_project_links',
+    'edge_ideas',
     'edge_ownerships',
     'task_assignments',
     'discussion_authorships',
@@ -389,8 +391,6 @@ export async function createLocalStorageAdapter(
         },
     ]);
 
-    const edgeStore =
-        createEntityStore<EdgeEntity>('edges');
     const edgeOutcomeStore =
         createEntityStore<EdgeOutcomeEntity>(
             'edge_outcomes',
@@ -611,21 +611,14 @@ export async function createLocalStorageAdapter(
                 ProjectVersionProjectEntity
             >('project_version_projects'),
 
-        edges: Object.assign(edgeStore, {
-            async getByIdeaId(
-                ideaId: string,
-            ): Promise<EdgeEntity | null> {
-                return (
-                    readTable<EdgeEntity>(
-                        'edges',
-                    ).find(
-                        entity =>
-                            entity.idea_id
-                            === ideaId,
-                    ) ?? null
-                );
-            },
-        }),
+        edges:
+            createEntityStore<EdgeEntity>(
+                'edges',
+            ),
+        edgeIdeas:
+            createEntityStore<
+                EdgeIdeaEntity
+            >('edge_ideas'),
 
         edgeOutcomes: Object.assign(
             edgeOutcomeStore,
