@@ -163,6 +163,11 @@ const routes: Route[] = [
             db.clarificationAnswerers
                 .getAll(),
     }),
+    route('process-step-processes', {
+        get: (db) =>
+            db.processStepProcesses
+                .getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {
@@ -238,10 +243,34 @@ const routes: Route[] = [
             db.flows.delete(param(p, 0)),
     }),
     route('processes/:processId/steps', {
-        get: (db, p) =>
-            db.flowSteps.getByFlowId(
-                param(p, 0),
-            ),
+        get: async (db, p) => {
+            const pid = param(p, 0);
+            const [links, steps] =
+                await Promise.all([
+                    db.processStepProcesses
+                        .getAll(),
+                    db.flowSteps.getAll(),
+                ]);
+            const stepIds = new Set(
+                links
+                    .filter(
+                        l => l.process_id
+                            === pid,
+                    )
+                    .map(
+                        l => l.process_step_id,
+                    ),
+            );
+            return steps
+                .filter(
+                    s => stepIds.has(s.id),
+                )
+                .sort(
+                    (a, b) =>
+                        a.sort_order
+                        - b.sort_order,
+                );
+        },
     }),
     route(
         'processes/:processId/steps/:stepId',
@@ -253,11 +282,7 @@ const routes: Route[] = [
             put: (db, p, payload) =>
                 db.flowSteps.put(
                     param(p, 1),
-                    {
-                        ...payload,
-                        process_id:
-                            param(p, 0),
-                    },
+                    payload,
                 ),
         },
     ),
@@ -334,6 +359,13 @@ const routes: Route[] = [
     route('clarification-answerers/:id', {
         put: (db, p, payload) =>
             db.clarificationAnswerers.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('process-step-processes/:id', {
+        put: (db, p, payload) =>
+            db.processStepProcesses.put(
                 param(p, 0),
                 payload,
             ),

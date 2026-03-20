@@ -16,6 +16,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ProcessStepProcessEntity,
 } from './types';
 
 export async function populateMockData(
@@ -1428,7 +1429,6 @@ export async function populateMockData(
         FlowStepEntity[] = [
         {
             id: 'ps1',
-            process_id: '1',
             title:
                 'Receive signed contract',
             description:
@@ -1446,7 +1446,6 @@ export async function populateMockData(
         },
         {
             id: 'ps2',
-            process_id: '1',
             title:
                 'Create customer record',
             description:
@@ -1464,7 +1463,6 @@ export async function populateMockData(
         },
         {
             id: 'ps3',
-            process_id: '1',
             title:
                 'Schedule kickoff call',
             description:
@@ -1483,7 +1481,6 @@ export async function populateMockData(
         },
         {
             id: 'ps4',
-            process_id: '1',
             title:
                 'Conduct kickoff meeting',
             description:
@@ -1502,7 +1499,6 @@ export async function populateMockData(
         },
         {
             id: 'ps5',
-            process_id: '1',
             title:
                 'Technical setup complete',
             description:
@@ -1521,7 +1517,6 @@ export async function populateMockData(
         // Sales Pipeline Qualification
         {
             id: 'ps6',
-            process_id: '2',
             title: 'Receive inbound lead',
             description:
                 'New lead enters the'
@@ -1539,7 +1534,6 @@ export async function populateMockData(
         },
         {
             id: 'ps7',
-            process_id: '2',
             title: 'Initial lead scoring',
             description:
                 'Automatically score lead'
@@ -1557,7 +1551,6 @@ export async function populateMockData(
         },
         {
             id: 'ps8',
-            process_id: '2',
             title:
                 'Sales development'
                 + ' outreach',
@@ -1577,7 +1570,6 @@ export async function populateMockData(
         },
         {
             id: 'ps9',
-            process_id: '2',
             title: 'Discovery call',
             description:
                 'Conduct structured'
@@ -1595,7 +1587,6 @@ export async function populateMockData(
         },
         {
             id: 'ps10',
-            process_id: '2',
             title:
                 'Proposal and negotiation',
             description:
@@ -1615,7 +1606,6 @@ export async function populateMockData(
         // Bug Triage & Resolution
         {
             id: 'ps11',
-            process_id: '3',
             title: 'Bug reported',
             description:
                 'Bug is submitted via'
@@ -1633,7 +1623,6 @@ export async function populateMockData(
         },
         {
             id: 'ps12',
-            process_id: '3',
             title: 'Triage and classify',
             description:
                 'Engineering lead reviews'
@@ -1651,7 +1640,6 @@ export async function populateMockData(
         },
         {
             id: 'ps13',
-            process_id: '3',
             title:
                 'Reproduce and diagnose',
             description:
@@ -1669,7 +1657,6 @@ export async function populateMockData(
         },
         {
             id: 'ps14',
-            process_id: '3',
             title: 'Implement fix',
             description:
                 'Write code fix with unit'
@@ -1686,7 +1673,6 @@ export async function populateMockData(
         },
         {
             id: 'ps15',
-            process_id: '3',
             title: 'Code review and QA',
             description:
                 'Peer review of fix, QA'
@@ -1703,7 +1689,6 @@ export async function populateMockData(
         },
         {
             id: 'ps16',
-            process_id: '3',
             title: 'Deploy and close',
             description:
                 'Merge to main, deploy to'
@@ -1721,7 +1706,6 @@ export async function populateMockData(
         // Quarterly Planning
         {
             id: 'ps17',
-            process_id: '4',
             title:
                 'Gather retrospective data',
             description:
@@ -1740,7 +1724,6 @@ export async function populateMockData(
         },
         {
             id: 'ps18',
-            process_id: '4',
             title:
                 'Leadership strategy'
                 + ' session',
@@ -1760,7 +1743,6 @@ export async function populateMockData(
         },
         {
             id: 'ps19',
-            process_id: '4',
             title: 'Team OKR drafting',
             description:
                 'Each department drafts'
@@ -1777,7 +1759,6 @@ export async function populateMockData(
         },
         {
             id: 'ps20',
-            process_id: '4',
             title:
                 'Cross-functional review'
                 + ' and finalize',
@@ -1794,6 +1775,150 @@ export async function populateMockData(
             duration: '2 days',
             sort_order: 4,
             type: 'end',
+        },
+    ];
+
+    const processStepProcesses:
+        ProcessStepProcessEntity[] = [
+        {
+            id: 'psp-ps1',
+            process_step_id: 'ps1',
+            process_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps2',
+            process_step_id: 'ps2',
+            process_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps3',
+            process_step_id: 'ps3',
+            process_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps4',
+            process_step_id: 'ps4',
+            process_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps5',
+            process_step_id: 'ps5',
+            process_id: '1',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps6',
+            process_step_id: 'ps6',
+            process_id: '2',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps7',
+            process_step_id: 'ps7',
+            process_id: '2',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps8',
+            process_step_id: 'ps8',
+            process_id: '2',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps9',
+            process_step_id: 'ps9',
+            process_id: '2',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps10',
+            process_step_id: 'ps10',
+            process_id: '2',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps11',
+            process_step_id: 'ps11',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps12',
+            process_step_id: 'ps12',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps13',
+            process_step_id: 'ps13',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps14',
+            process_step_id: 'ps14',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps15',
+            process_step_id: 'ps15',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps16',
+            process_step_id: 'ps16',
+            process_id: '3',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps17',
+            process_step_id: 'ps17',
+            process_id: '4',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps18',
+            process_step_id: 'ps18',
+            process_id: '4',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps19',
+            process_step_id: 'ps19',
+            process_id: '4',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
+        },
+        {
+            id: 'psp-ps20',
+            process_step_id: 'ps20',
+            process_id: '4',
+            created_at:
+                '2024-01-15T09:30:00.000000Z',
         },
     ];
 
@@ -1949,6 +2074,11 @@ export async function populateMockData(
             adapter.flowSteps.put(
                 step.id,
                 step,
+            ),
+        ),
+        ...processStepProcesses.map(link =>
+            adapter.processStepProcesses.put(
+                link.id, link,
             ),
         ),
     ]);

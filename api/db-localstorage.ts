@@ -32,6 +32,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ProcessStepProcessEntity,
 } from './types';
 import { nowUtc } from './types';
 
@@ -331,6 +332,7 @@ export const TABLE_NAMES = [
     'activity_actors',
     'clarification_askers',
     'clarification_answerers',
+    'process_step_processes',
 ];
 
 export async function createLocalStorageAdapter(
@@ -397,11 +399,6 @@ export async function createLocalStorageAdapter(
         createEntityStore<ClarificationEntity>(
             'clarifications',
         );
-    const flowStepStore =
-        createEntityStore<FlowStepEntity>(
-            'process_steps',
-        );
-
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {
             // No schema needed — tables
@@ -895,29 +892,14 @@ export async function createLocalStorageAdapter(
                 'processes',
             ),
 
-        flowSteps: Object.assign(
-            flowStepStore,
-            {
-                async getByFlowId(
-                    processId: string,
-                ): Promise<FlowStepEntity[]> {
-                    return readTable<
-                        FlowStepEntity
-                    >('process_steps')
-                        .filter(
-                            entity =>
-                                entity
-                                    .process_id
-                                === processId,
-                        )
-                        .sort(
-                            (a, b) =>
-                                a.sort_order
-                                - b.sort_order,
-                        );
-                },
-            },
-        ),
+        flowSteps:
+            createEntityStore<FlowStepEntity>(
+                'process_steps',
+            ),
+        processStepProcesses:
+            createEntityStore<
+                ProcessStepProcessEntity
+            >('process_step_processes'),
 
         companySettings:
             createSingletonStore<

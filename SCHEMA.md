@@ -1,6 +1,6 @@
 # Database Schema
 
-28 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+29 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -214,7 +214,6 @@
 | Column | Type | Default |
 |--------|------|---------|
 | id | TEXT | — |
-| process_id | TEXT (FK → processes) | — |
 | title | TEXT | '' |
 | description | TEXT | '' |
 | owner | TEXT | '' |
@@ -377,4 +376,13 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | — |
 | clarification_id | TEXT (FK → clarifications) | — |
 | user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### process_step_processes
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| process_step_id | TEXT (FK → process_steps) | — |
+| process_id | TEXT (FK → processes) | — |
 | created_at | TEXT | '' |

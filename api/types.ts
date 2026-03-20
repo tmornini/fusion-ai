@@ -451,7 +451,6 @@ export interface FlowEntity {
 
 export interface FlowStepEntity {
     id: Id;
-    process_id: Id;
     title: string;
     description: string;
     owner: string;
@@ -557,6 +556,13 @@ export interface ClarificationAnswererEntity {
     id: Id;
     clarification_id: Id;
     user_id: Id;
+    created_at: string;
+}
+
+export interface ProcessStepProcessEntity {
+    id: Id;
+    process_step_id: Id;
+    process_id: Id;
     created_at: string;
 }
 
@@ -726,7 +732,6 @@ export function createFlow(
 
 export interface FlowStepCreationFields {
     id: Id;
-    process_id: Id;
     title: string;
     sort_order: number;
     type?: FlowStepType;
@@ -742,7 +747,6 @@ export function createFlowStep(
 ): FlowStepEntity {
     return {
         id: fields.id,
-        process_id: fields.process_id,
         title: fields.title,
         description:
             fields.description ?? '',

@@ -27,6 +27,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ProcessStepProcessEntity,
 } from './types';
 
 export interface EntityStore<T> {
@@ -98,9 +99,8 @@ export interface DbAdapter {
     };
     crunchColumns: EntityStore<CrunchColumnEntity>;
     flows: EntityStore<FlowEntity>;
-    flowSteps: EntityStore<FlowStepEntity> & {
-        getByFlowId(processId: string): Promise<FlowStepEntity[]>;
-    };
+    flowSteps: EntityStore<FlowStepEntity>;
+    processStepProcesses: EntityStore<ProcessStepProcessEntity>;
     companySettings: SingletonStore<CompanySettingsEntity>;
     account: SingletonStore<AccountEntity>;
     ideaSubmissions: EntityStore<IdeaSubmissionEntity>;
