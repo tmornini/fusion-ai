@@ -20,6 +20,7 @@ import type {
     ClarificationProjectEntity,
     ProcessStepProcessEntity,
     MilestoneProjectEntity,
+    ProjectTaskProjectEntity,
 } from './types';
 
 export async function populateMockData(
@@ -2266,7 +2267,6 @@ export async function populateMockData(
     const tasks = [
         {
             id: 'task-1',
-            project_id: '1',
             name: 'Set up data pipeline',
             priority: 'High',
             description:
@@ -2282,7 +2282,6 @@ export async function populateMockData(
         },
         {
             id: 'task-2',
-            project_id: '1',
             name: 'Train ML model',
             priority: 'High',
             description:
@@ -2298,7 +2297,6 @@ export async function populateMockData(
         },
         {
             id: 'task-3',
-            project_id: '1',
             name: 'Design dashboard UI',
             priority: 'Medium',
             description:
@@ -2314,7 +2312,6 @@ export async function populateMockData(
         },
         {
             id: 'task-4',
-            project_id: '1',
             name: 'Build API endpoints',
             priority: 'Medium',
             description:
@@ -2330,7 +2327,6 @@ export async function populateMockData(
         },
         {
             id: 'task-5',
-            project_id: '1',
             name: 'Create documentation',
             priority: 'Low',
             description:
@@ -2895,7 +2891,52 @@ export async function populateMockData(
             task_id: 'task-1',
             user_id: '2',
             created_at:
-                '2024-01-15T00:00:00.000000Z',
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
+        },
+    ];
+
+    const projectTaskProjects:
+        ProjectTaskProjectEntity[] = [
+        {
+            id: 'ptp-1',
+            project_task_id: 'task-1',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'ptp-2',
+            project_task_id: 'task-2',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'ptp-3',
+            project_task_id: 'task-3',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'ptp-4',
+            project_task_id: 'task-4',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'ptp-5',
+            project_task_id: 'task-5',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T00:00:00.000000Z',
         },
     ];
 
@@ -3117,6 +3158,11 @@ export async function populateMockData(
         ),
         ...taskAssignments.map(r =>
             adapter.taskAssignments.put(
+                r.id, r,
+            ),
+        ),
+        ...projectTaskProjects.map(r =>
+            adapter.projectTaskProjects.put(
                 r.id, r,
             ),
         ),

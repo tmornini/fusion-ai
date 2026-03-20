@@ -373,12 +373,18 @@ export interface MilestoneProjectEntity {
 
 export interface ProjectTaskEntity {
     id: Id;
-    project_id: Id;
     name: string;
     priority: string;
     description: string;
     skills: string; // JSON array
     duration: number; // seconds
+}
+
+export interface ProjectTaskProjectEntity {
+    id: Id;
+    project_task_id: Id;
+    project_id: Id;
+    created_at: string;
 }
 
 export interface DiscussionEntity {

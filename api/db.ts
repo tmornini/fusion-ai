@@ -8,6 +8,7 @@ import type {
     MilestoneEntity,
     MilestoneProjectEntity,
     ProjectTaskEntity,
+    ProjectTaskProjectEntity,
     DiscussionEntity,
     ProjectVersionEntity,
     EdgeEntity,
@@ -76,9 +77,12 @@ export interface DbAdapter {
         EntityStore<MilestoneEntity>;
     milestoneProjects:
         EntityStore<MilestoneProjectEntity>;
-    projectTasks: EntityStore<ProjectTaskEntity> & {
-        getByProjectId(projectId: string): Promise<ProjectTaskEntity[]>;
-    };
+    projectTasks:
+        EntityStore<ProjectTaskEntity>;
+    projectTaskProjects:
+        EntityStore<
+            ProjectTaskProjectEntity
+        >;
     discussions: EntityStore<DiscussionEntity> & {
         getByProjectId(projectId: string): Promise<DiscussionEntity[]>;
     };

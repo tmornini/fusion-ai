@@ -173,6 +173,11 @@ const routes: Route[] = [
         get: (db) =>
             db.ideaScoreIdeas.getAll(),
     }),
+    route('project-task-projects', {
+        get: (db) =>
+            db.projectTaskProjects
+                .getAll(),
+    }),
     route('process-step-processes', {
         get: (db) =>
             db.processStepProcesses
@@ -392,6 +397,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('project-task-projects/:id', {
+        put: (db, p, payload) =>
+            db.projectTaskProjects.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     route('process-step-processes/:id', {
         put: (db, p, payload) =>
             db.processStepProcesses.put(
@@ -508,10 +520,31 @@ const routes: Route[] = [
         },
     ),
     route('projects/:projectId/tasks', {
-        get: (db, p) =>
-            db.projectTasks.getByProjectId(
-                param(p, 0),
-            ),
+        get: async (db, p) => {
+            const pid = param(p, 0);
+            const [links, all] =
+                await Promise.all([
+                    db.projectTaskProjects
+                        .getAll(),
+                    db.projectTasks
+                        .getAll(),
+                ]);
+            const ids = new Set(
+                links
+                    .filter(
+                        l =>
+                            l.project_id
+                            === pid,
+                    )
+                    .map(
+                        l =>
+                            l.project_task_id,
+                    ),
+            );
+            return all.filter(
+                t => ids.has(t.id),
+            );
+        },
     }),
     route(
         'projects/:projectId/discussions',
@@ -620,15 +653,40 @@ const routes: Route[] = [
         'projects/:projectId'
         + '/tasks/:taskId',
         {
-            put: (db, p, payload) =>
-                db.projectTasks.put(
-                    param(p, 1),
-                    {
-                        ...payload,
-                        project_id:
-                            param(p, 0),
-                    },
-                ),
+            put: async (db, p, payload) => {
+                const pid = param(p, 0);
+                const tid = param(p, 1);
+                const result =
+                    await db.projectTasks
+                        .put(tid, payload);
+                const links =
+                    await db
+                        .projectTaskProjects
+                        .getAll();
+                const hasLink = links.some(
+                    l =>
+                        l.project_task_id
+                            === tid
+                        && l.project_id
+                            === pid,
+                );
+                if (!hasLink) {
+                    const linkId =
+                        `ptp-${tid}`;
+                    await db
+                        .projectTaskProjects
+                        .put(linkId, {
+                            id: linkId,
+                            project_task_id:
+                                tid,
+                            project_id:
+                                pid,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
     route(

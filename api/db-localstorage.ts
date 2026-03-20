@@ -13,6 +13,7 @@ import type {
     MilestoneEntity,
     MilestoneProjectEntity,
     ProjectTaskEntity,
+    ProjectTaskProjectEntity,
     DiscussionEntity,
     ProjectVersionEntity,
     EdgeEntity,
@@ -337,6 +338,7 @@ export const TABLE_NAMES = [
     'clarification_askers',
     'clarification_answerers',
     'clarification_projects',
+    'project_task_projects',
     'process_step_processes',
     'milestone_projects',
 ];
@@ -381,10 +383,6 @@ export async function createLocalStorageAdapter(
 
     const edgeStore =
         createEntityStore<EdgeEntity>('edges');
-    const projectTaskStore =
-        createEntityStore<ProjectTaskEntity>(
-            'project_tasks',
-        );
     const discussionStore =
         createEntityStore<DiscussionEntity>(
             'discussions',
@@ -657,24 +655,14 @@ export async function createLocalStorageAdapter(
                 MilestoneProjectEntity
             >('milestone_projects'),
 
-        projectTasks: Object.assign(
-            projectTaskStore,
-            {
-                async getByProjectId(
-                    projectId: string,
-                ): Promise<
-                    ProjectTaskEntity[]
-                > {
-                    return readTable<
-                        ProjectTaskEntity
-                    >('project_tasks').filter(
-                        entity =>
-                            entity.project_id
-                            === projectId,
-                    );
-                },
-            },
-        ),
+        projectTasks:
+            createEntityStore<
+                ProjectTaskEntity
+            >('project_tasks'),
+        projectTaskProjects:
+            createEntityStore<
+                ProjectTaskProjectEntity
+            >('project_task_projects'),
 
         discussions: Object.assign(
             discussionStore,
