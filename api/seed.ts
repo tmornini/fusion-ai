@@ -6,6 +6,8 @@ import type {
     EdgeEntity,
     ActivityEntity,
     CrunchColumnEntity,
+    CrunchColumnAcronymEntity,
+    CrunchColumnAcronymLinkEntity,
     FlowStepEntity,
     ClarificationEntity,
     ClarificationAnswerEntity,
@@ -1355,8 +1357,6 @@ export async function populateMockData(
             sample_values: jsonArrayField(
                 ['C001', 'C002', 'C003'],
             ),
-            is_acronym: 1,
-            acronym_expansion: '',
         },
         {
             id: '2',
@@ -1372,8 +1372,6 @@ export async function populateMockData(
                 '2024-01-17'
                     + 'T00:00:00.000000Z',
             ]),
-            is_acronym: 1,
-            acronym_expansion: '',
         },
         {
             id: '3',
@@ -1384,8 +1382,6 @@ export async function populateMockData(
             sample_values: jsonArrayField(
                 ['150.00', '299.99', '75.50'],
             ),
-            is_acronym: 1,
-            acronym_expansion: '',
         },
         {
             id: '4',
@@ -1398,8 +1394,6 @@ export async function populateMockData(
                 'Apparel',
                 'Home',
             ]),
-            is_acronym: 1,
-            acronym_expansion: '',
         },
         {
             id: '5',
@@ -1410,8 +1404,6 @@ export async function populateMockData(
             sample_values: jsonArrayField(
                 ['R101', 'R102', 'R103'],
             ),
-            is_acronym: 1,
-            acronym_expansion: '',
         },
         {
             id: '6',
@@ -1422,8 +1414,64 @@ export async function populateMockData(
             sample_values: jsonArrayField(
                 ['COMP', 'PEND', 'CANC'],
             ),
-            is_acronym: 0,
-            acronym_expansion: '',
+        },
+    ];
+
+    const crunchColumnAcronyms:
+        CrunchColumnAcronymEntity[] = [
+        { id: 'cca-1', expansion: '' },
+        { id: 'cca-2', expansion: '' },
+        { id: 'cca-3', expansion: '' },
+        { id: 'cca-4', expansion: '' },
+        { id: 'cca-5', expansion: '' },
+    ];
+
+    const crunchColumnAcronymLinks:
+        CrunchColumnAcronymLinkEntity[] = [
+        {
+            id: 'ccal-1',
+            crunch_column_acronym_id:
+                'cca-1',
+            crunch_column_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ccal-2',
+            crunch_column_acronym_id:
+                'cca-2',
+            crunch_column_id: '2',
+            created_at:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ccal-3',
+            crunch_column_acronym_id:
+                'cca-3',
+            crunch_column_id: '3',
+            created_at:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ccal-4',
+            crunch_column_acronym_id:
+                'cca-4',
+            crunch_column_id: '4',
+            created_at:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'ccal-5',
+            crunch_column_acronym_id:
+                'cca-5',
+            crunch_column_id: '5',
+            created_at:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
         },
     ];
 
@@ -2065,6 +2113,15 @@ export async function populateMockData(
                 column.id,
                 column,
             ),
+        ),
+        ...crunchColumnAcronyms.map(a =>
+            adapter.crunchColumnAcronyms.put(
+                a.id, a,
+            ),
+        ),
+        ...crunchColumnAcronymLinks.map(l =>
+            adapter.crunchColumnAcronymLinks
+                .put(l.id, l),
         ),
         ...processSteps.map(step =>
             adapter.flowSteps.put(
