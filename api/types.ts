@@ -402,10 +402,16 @@ export interface DiscussionProjectEntity {
 
 export interface ProjectVersionEntity {
     id: Id;
-    project_id: Id;
     version: string;
     date: string;
     changes: string;
+}
+
+export interface ProjectVersionProjectEntity {
+    id: Id;
+    project_version_id: Id;
+    project_id: Id;
+    created_at: string;
 }
 
 export interface EdgeEntity {

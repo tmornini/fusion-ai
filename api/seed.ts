@@ -22,6 +22,7 @@ import type {
     ProcessStepProcessEntity,
     MilestoneProjectEntity,
     ProjectTaskProjectEntity,
+    ProjectVersionProjectEntity,
 } from './types';
 
 export async function populateMockData(
@@ -2380,7 +2381,6 @@ export async function populateMockData(
     const versions = [
         {
             id: 'v1',
-            project_id: '1',
             version: 'v1.2',
             date:
                 '2024-02-28'
@@ -2391,7 +2391,6 @@ export async function populateMockData(
         },
         {
             id: 'v2',
-            project_id: '1',
             version: 'v1.1',
             date:
                 '2024-02-15'
@@ -2402,7 +2401,6 @@ export async function populateMockData(
         },
         {
             id: 'v3',
-            project_id: '1',
             version: 'v1.0',
             date:
                 '2024-01-30'
@@ -3016,6 +3014,34 @@ export async function populateMockData(
         },
     ];
 
+    const projectVersionProjects:
+        ProjectVersionProjectEntity[] = [
+        {
+            id: 'pvp-v1',
+            project_version_id: 'v1',
+            project_id: '1',
+            created_at:
+                '2024-02-28'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'pvp-v2',
+            project_version_id: 'v2',
+            project_id: '1',
+            created_at:
+                '2024-02-15'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'pvp-v3',
+            project_version_id: 'v3',
+            project_id: '1',
+            created_at:
+                '2024-01-30'
+                + 'T09:00:00.000000Z',
+        },
+    ];
+
     const activityActors:
         ActivityActorEntity[] = [
         {
@@ -3231,6 +3257,11 @@ export async function populateMockData(
             adapter.milestoneProjects.put(
                 r.id, r,
             ),
+        ),
+        ...projectVersionProjects.map(r =>
+            adapter
+                .projectVersionProjects
+                .put(r.id, r),
         ),
     ]);
 }

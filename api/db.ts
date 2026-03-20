@@ -11,6 +11,7 @@ import type {
     ProjectTaskProjectEntity,
     DiscussionEntity,
     ProjectVersionEntity,
+    ProjectVersionProjectEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
     EdgeMetricEntity,
@@ -90,9 +91,12 @@ export interface DbAdapter {
         EntityStore<
             DiscussionProjectEntity
         >;
-    projectVersions: EntityStore<ProjectVersionEntity> & {
-        getByProjectId(projectId: string): Promise<ProjectVersionEntity[]>;
-    };
+    projectVersions:
+        EntityStore<ProjectVersionEntity>;
+    projectVersionProjects:
+        EntityStore<
+            ProjectVersionProjectEntity
+        >;
     edges: EntityStore<EdgeEntity> & {
         getByIdeaId(ideaId: string): Promise<EdgeEntity | null>;
     };

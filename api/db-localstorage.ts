@@ -16,6 +16,7 @@ import type {
     ProjectTaskProjectEntity,
     DiscussionEntity,
     ProjectVersionEntity,
+    ProjectVersionProjectEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
     EdgeMetricEntity,
@@ -343,6 +344,7 @@ export const TABLE_NAMES = [
     'project_task_projects',
     'process_step_processes',
     'milestone_projects',
+    'project_version_projects',
 ];
 
 export async function createLocalStorageAdapter(
@@ -385,10 +387,6 @@ export async function createLocalStorageAdapter(
 
     const edgeStore =
         createEntityStore<EdgeEntity>('edges');
-    const projectVersionStore =
-        createEntityStore<ProjectVersionEntity>(
-            'project_versions',
-        );
     const edgeOutcomeStore =
         createEntityStore<EdgeOutcomeEntity>(
             'edge_outcomes',
@@ -671,31 +669,14 @@ export async function createLocalStorageAdapter(
                 DiscussionProjectEntity
             >('discussion_projects'),
 
-        projectVersions: Object.assign(
-            projectVersionStore,
-            {
-                async getByProjectId(
-                    projectId: string,
-                ): Promise<
-                    ProjectVersionEntity[]
-                > {
-                    return readTable<
-                        ProjectVersionEntity
-                    >('project_versions')
-                        .filter(
-                            entity =>
-                                entity
-                                    .project_id
-                                === projectId,
-                        )
-                        .sort((a, b) =>
-                            b.date.localeCompare(
-                                a.date,
-                            ),
-                        );
-                },
-            },
-        ),
+        projectVersions:
+            createEntityStore<
+                ProjectVersionEntity
+            >('project_versions'),
+        projectVersionProjects:
+            createEntityStore<
+                ProjectVersionProjectEntity
+            >('project_version_projects'),
 
         edges: Object.assign(edgeStore, {
             async getByIdeaId(

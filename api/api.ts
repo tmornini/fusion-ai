@@ -193,6 +193,11 @@ const routes: Route[] = [
             db.milestoneProjects
                 .getAll(),
     }),
+    route('project-version-projects', {
+        get: (db) =>
+            db.projectVersionProjects
+                .getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {
@@ -430,6 +435,17 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route(
+        'project-version-projects/:id',
+        {
+            put: (db, p, payload) =>
+                db.projectVersionProjects
+                    .put(
+                        param(p, 0),
+                        payload,
+                    ),
+        },
+    ),
     // ── Nested: idea children ─────────────
     route('ideas/:ideaId/edge', {
         get: (db, p) =>
@@ -599,11 +615,41 @@ const routes: Route[] = [
     route(
         'projects/:projectId/versions',
         {
-            get: (db, p) =>
-                db.projectVersions
-                    .getByProjectId(
-                        param(p, 0),
-                    ),
+            get: async (db, p) => {
+                const pid = param(p, 0);
+                const [links, all] =
+                    await Promise.all([
+                        db
+                            .projectVersionProjects
+                            .getAll(),
+                        db.projectVersions
+                            .getAll(),
+                    ]);
+                const ids = new Set(
+                    links
+                        .filter(
+                            l =>
+                                l.project_id
+                                === pid,
+                        )
+                        .map(
+                            l =>
+                                l
+                                    .project_version_id,
+                        ),
+                );
+                return all
+                    .filter(
+                        v => ids.has(v.id),
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.date
+                                .localeCompare(
+                                    a.date,
+                                ),
+                    );
+            },
         },
     ),
     route(
@@ -773,15 +819,42 @@ const routes: Route[] = [
         'projects/:projectId'
         + '/versions/:versionId',
         {
-            put: (db, p, payload) =>
-                db.projectVersions.put(
-                    param(p, 1),
-                    {
-                        ...payload,
-                        project_id:
-                            param(p, 0),
-                    },
-                ),
+            put: async (db, p, payload) => {
+                const pid = param(p, 0);
+                const vid = param(p, 1);
+                const result =
+                    await db.projectVersions
+                        .put(vid, payload);
+                const links =
+                    await db
+                        .projectVersionProjects
+                        .getAll();
+                const hasLink =
+                    links.some(
+                        l =>
+                            l
+                                .project_version_id
+                                === vid
+                            && l.project_id
+                                === pid,
+                    );
+                if (!hasLink) {
+                    const linkId =
+                        `pvp-${vid}`;
+                    await db
+                        .projectVersionProjects
+                        .put(linkId, {
+                            id: linkId,
+                            project_version_id:
+                                vid,
+                            project_id:
+                                pid,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
     route(
