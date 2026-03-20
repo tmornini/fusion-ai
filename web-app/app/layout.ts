@@ -96,7 +96,7 @@ const NAV_GROUP_CHILDREN:
         account: [
             'profile',
             'settings',
-            'manage-users',
+            'users',
         ],
         ideas: [
             'idea-create',

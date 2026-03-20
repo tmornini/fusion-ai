@@ -50,7 +50,7 @@ const pageModules: Record<
     account: () => import('../administration/index'),
     profile: () => import('../profile/index'),
     settings: () => import('../settings/index'),
-    'manage-users': () => import('../administration/manage-users'),
+    users: () => import('../administration/users'),
     'activity-feed': () => import('../teams/activity-feed'),
     snapshots: () => import('../snapshots/index'),
     'design-system': () => import('../design-system/index'),

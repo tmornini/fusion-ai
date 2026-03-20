@@ -140,13 +140,13 @@ export const PAGE_REGISTRY: Record<
             'company organization'
             + ' settings',
     },
-    'manage-users': {
-        title: 'Manage Users',
+    users: {
+        title: 'Users',
         layout: 'sidebar',
         sourceDir: 'administration',
-        sourceFile: 'manage-users',
+        sourceFile: 'users',
         icon: 'users',
-        keywords: 'users invite admin',
+        keywords: 'users invite manage admin',
     },
     'activity-feed': {
         title: 'Activity Feed',
