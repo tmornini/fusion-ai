@@ -73,20 +73,20 @@ export const PAGE_REGISTRY: Record<
         icon: 'clipboardCheck',
         keywords: 'review approve reject',
     },
-    edge: {
-        title: 'Edge Definition',
+    edges: {
+        title: 'Edges',
         layout: 'sidebar',
-        icon: 'target',
-        searchable: false,
-    },
-    'edge-list': {
-        title: 'Edge List',
-        layout: 'sidebar',
-        sourceDir: 'edge',
-        sourceFile: 'list',
         icon: 'target',
         keywords:
             'edge outcomes metrics',
+    },
+    'edge-detail': {
+        title: 'Edge Detail',
+        layout: 'sidebar',
+        sourceDir: 'edges',
+        sourceFile: 'detail',
+        icon: 'target',
+        searchable: false,
     },
     crunch: {
         title: 'Crunch',
