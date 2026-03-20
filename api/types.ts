@@ -507,8 +507,18 @@ export interface ClarificationEntity {
     question: string;
     asked_at: string;
     status: ClarificationStatus;
+}
+
+export interface ClarificationAnswerEntity {
+    id: Id;
     answer: string;
-    answered_at: string;
+}
+
+export interface ClarificationAnswerClarificationEntity {
+    id: Id;
+    clarification_answer_id: Id;
+    clarification_id: Id;
+    created_at: string;
 }
 
 export interface CrunchColumnEntity {

@@ -180,6 +180,20 @@ const routes: Route[] = [
         get: (db) =>
             db.activityActors.getAll(),
     }),
+    route('clarification-answers', {
+        get: (db) =>
+            db.clarificationAnswers
+                .getAll(),
+    }),
+    route(
+        'clarification-answer-clarifications',
+        {
+            get: (db) =>
+                db
+                    .clarificationAnswerClarifications
+                    .getAll(),
+        },
+    ),
     route('clarification-askers', {
         get: (db) =>
             db.clarificationAskers
@@ -440,6 +454,26 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('clarification-answers/:id', {
+        put: (db, p, payload) =>
+            db.clarificationAnswers.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route(
+        'clarification-answer'
+        + '-clarifications/:id',
+        {
+            put: (db, p, payload) =>
+                db
+                    .clarificationAnswerClarifications
+                    .put(
+                        param(p, 0),
+                        payload,
+                    ),
+        },
+    ),
     route('clarification-askers/:id', {
         put: (db, p, payload) =>
             db.clarificationAskers.put(

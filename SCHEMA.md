@@ -236,8 +236,13 @@
 | question | TEXT | '' |
 | asked_at | TEXT | '' |
 | status | TEXT | 'pending' |
+
+### clarification_answers
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
 | answer | TEXT | '' |
-| answered_at | TEXT | '' |
 
 ## Admin
 
@@ -401,6 +406,15 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | — |
 | clarification_id | TEXT (FK → clarifications) | — |
 | project_id | TEXT (FK → projects) | — |
+| created_at | TEXT | '' |
+
+### clarification_answer_clarifications
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| clarification_answer_id | TEXT (FK → clarification_answers) | — |
+| clarification_id | TEXT (FK → clarifications) | — |
 | created_at | TEXT | '' |
 
 ### clarification_askers
