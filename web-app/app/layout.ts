@@ -452,8 +452,9 @@ async function mutateHeaderInfo(
         const {
             getCurrentUser,
             getDashboardStats,
-            getTimeOfDay,
         } = await import('./adapters');
+        const { getTimeOfDay } =
+            await import('./format');
         const { html, setHtml } =
             await import('./safe-html');
 
