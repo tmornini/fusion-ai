@@ -8,6 +8,7 @@ import type {
     EdgeEntity,
     EdgeOutcomeEntity,
     EdgeMetricEntity,
+    EdgeMetricOutcomeEntity,
     EdgeOwnershipEntity,
 } from '../../../api/types';
 import { User } from '../../../api/types';
@@ -80,6 +81,7 @@ export async function getEdgeDataByIdeaId(
 
     const [
         outcomes, allMetrics,
+        metricOutcomeLinks,
         userMap, ownerships,
     ] = await Promise.all([
         GET<EdgeOutcomeEntity[]>(
@@ -88,16 +90,44 @@ export async function getEdgeDataByIdeaId(
         GET<EdgeMetricEntity[]>(
             'edge-metrics',
         ),
+        GET<EdgeMetricOutcomeEntity[]>(
+            'edge-metric-outcomes',
+        ),
         buildUserMap(),
         GET<EdgeOwnershipEntity[]>(
             'edge-ownerships',
         ),
     ]);
 
-    const metricsByOutcomeId = Map.groupBy(
-        allMetrics,
-        metric => metric.outcome_id,
+    const metricMap = new Map(
+        allMetrics.map(
+            m => [m.id, m],
+        ),
     );
+    const metricsByOutcomeId = new Map<
+        string,
+        EdgeMetricEntity[]
+    >();
+    for (
+        const link of metricOutcomeLinks
+    ) {
+        const metric = metricMap.get(
+            link.edge_metric_id,
+        );
+        if (!metric) continue;
+        const list =
+            metricsByOutcomeId.get(
+                link.outcome_id,
+            );
+        if (list) {
+            list.push(metric);
+        } else {
+            metricsByOutcomeId.set(
+                link.outcome_id,
+                [metric],
+            );
+        }
+    }
 
     const ownership = ownerships.find(
         o => o.edge_id === edge.id,

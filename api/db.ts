@@ -18,6 +18,7 @@ import type {
     EdgeOutcomeEntity,
     EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
+    EdgeMetricOutcomeEntity,
     ActivityEntity,
     ClarificationEntity,
     CrunchColumnEntity,
@@ -112,6 +113,10 @@ export interface DbAdapter {
         >;
     edgeMetrics:
         EntityStore<EdgeMetricEntity>;
+    edgeMetricOutcomes:
+        EntityStore<
+            EdgeMetricOutcomeEntity
+        >;
     activities: EntityStore<ActivityEntity>;
     clarifications: EntityStore<ClarificationEntity>;
     clarificationProjects: EntityStore<ClarificationProjectEntity>;

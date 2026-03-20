@@ -1,6 +1,6 @@
 # Database Schema
 
-39 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+40 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -172,7 +172,6 @@
 | Column | Type | Default |
 |--------|------|---------|
 | id | TEXT | — |
-| outcome_id | TEXT (FK → edge_outcomes) | — |
 | name | TEXT | '' |
 | target | TEXT | '' |
 | unit | TEXT | '' |
@@ -339,6 +338,15 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | — |
 | edge_outcome_id | TEXT (FK → edge_outcomes) | — |
 | edge_id | TEXT (FK → edges) | — |
+| created_at | TEXT | '' |
+
+### edge_metric_outcomes
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| edge_metric_id | TEXT (FK → edge_metrics) | — |
+| outcome_id | TEXT (FK → edge_outcomes) | — |
 | created_at | TEXT | '' |
 
 ### task_assignments

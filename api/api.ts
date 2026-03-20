@@ -125,6 +125,11 @@ const routes: Route[] = [
         get: (db) =>
             db.edgeMetrics.getAll(),
     }),
+    route('edge-metric-outcomes', {
+        get: (db) =>
+            db.edgeMetricOutcomes
+                .getAll(),
+    }),
     route('process-steps', {
         get: (db) =>
             db.flowSteps.getAll(),
@@ -383,6 +388,13 @@ const routes: Route[] = [
     route('edge-outcome-edges/:id', {
         put: (db, p, payload) =>
             db.edgeOutcomeEdges.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
+    route('edge-metric-outcomes/:id', {
+        put: (db, p, payload) =>
+            db.edgeMetricOutcomes.put(
                 param(p, 0),
                 payload,
             ),
@@ -1110,11 +1122,46 @@ const routes: Route[] = [
         + '/outcomes/:outcomeId'
         + '/metrics/:metricId',
         {
-            put: (db, p, payload) =>
-                db.edgeMetrics.put(
-                    param(p, 2),
-                    payload,
-                ),
+            put: async (db, p, payload) => {
+                const outcomeId =
+                    param(p, 1);
+                const metricId =
+                    param(p, 2);
+                const result =
+                    await db.edgeMetrics
+                        .put(
+                            metricId,
+                            payload,
+                        );
+                const links =
+                    await db
+                        .edgeMetricOutcomes
+                        .getAll();
+                const hasLink =
+                    links.some(
+                        l =>
+                            l.edge_metric_id
+                                === metricId
+                            && l.outcome_id
+                                === outcomeId,
+                    );
+                if (!hasLink) {
+                    const linkId =
+                        `emo-${metricId}`;
+                    await db
+                        .edgeMetricOutcomes
+                        .put(linkId, {
+                            id: linkId,
+                            edge_metric_id:
+                                metricId,
+                            outcome_id:
+                                outcomeId,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
 

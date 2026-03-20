@@ -457,11 +457,17 @@ export interface EdgeOutcomeEdgeEntity {
 
 export interface EdgeMetricEntity {
     id: Id;
-    outcome_id: Id;
     name: string;
     target: string;
     unit: string;
     current: string;
+}
+
+export interface EdgeMetricOutcomeEntity {
+    id: Id;
+    edge_metric_id: Id;
+    outcome_id: Id;
+    created_at: string;
 }
 
 export interface ActivityEntity {

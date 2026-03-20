@@ -6,6 +6,7 @@ import type {
     EdgeOutcomeEntity,
     EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
+    EdgeMetricOutcomeEntity,
     EdgeStatus,
     ConfidenceLevel,
     IdeaSubmissionEntity,
@@ -79,7 +80,7 @@ export async function getEdgeList(
     const [
         edgeRows, ideaRows, userMap,
         allOutcomes, outcomeEdgeLinks,
-        allMetrics,
+        allMetrics, metricOutcomeLinks,
         ownerships, edgeIdeaLinks,
     ] = await Promise.all([
         GET<EdgeEntity[]>('edges'),
@@ -93,6 +94,9 @@ export async function getEdgeList(
         ),
         GET<EdgeMetricEntity[]>(
             'edge-metrics',
+        ),
+        GET<EdgeMetricOutcomeEntity[]>(
+            'edge-metric-outcomes',
         ),
         GET<EdgeOwnershipEntity[]>(
             'edge-ownerships',
@@ -146,23 +150,44 @@ export async function getEdgeList(
         }
     }
 
+    const metricIdsByOutcome = new Map<
+        string,
+        Set<string>
+    >();
+    for (
+        const link of metricOutcomeLinks
+    ) {
+        const set =
+            metricIdsByOutcome.get(
+                link.outcome_id,
+            );
+        if (set) {
+            set.add(link.edge_metric_id);
+        } else {
+            metricIdsByOutcome.set(
+                link.outcome_id,
+                new Set([
+                    link.edge_metric_id,
+                ]),
+            );
+        }
+    }
+
     return edgeRows.map(entity => {
         const edge = new Edge(entity);
         const outcomes =
             outcomesByEdgeId.get(edge.id)
                 || [];
-        const outcomeIds = new Set(
-            outcomes.map(
-                outcome => outcome.id,
-            ),
-        );
-        const metricsCount = allMetrics
-            .filter(
-                m => outcomeIds.has(
-                    m.outcome_id,
-                ),
-            )
-            .length;
+        let metricsCount = 0;
+        for (const outcome of outcomes) {
+            const ids =
+                metricIdsByOutcome.get(
+                    outcome.id,
+                );
+            if (ids) {
+                metricsCount += ids.size;
+            }
+        }
 
         const ideaId =
             edgeIdeaMap.get(edge.id)
@@ -228,14 +253,17 @@ export async function putEdgeData(
                 outcome.metrics.map(metric =>
                     PUT(
                         `edges/${edge.id}`
-                        + `/outcomes/${outcome.id}`
-                        + `/metrics/${metric.id}`,
+                        + `/outcomes/`
+                        + `${outcome.id}`
+                        + `/metrics/`
+                        + `${metric.id}`,
                         {
                             name: metric.name,
-                            target: metric.target,
+                            target:
+                                metric.target,
                             unit: metric.unit,
-                            current: metric.current,
-                            outcome_id: outcome.id,
+                            current:
+                                metric.current,
                         },
                     ),
                 ),

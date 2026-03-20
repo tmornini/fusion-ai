@@ -13,6 +13,7 @@ import type {
     EdgeIdeaEntity,
     EdgeOwnershipEntity,
     EdgeOutcomeEdgeEntity,
+    EdgeMetricOutcomeEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
     DiscussionProjectEntity,
@@ -2606,126 +2607,108 @@ export async function populateMockData(
     // (reference edge outcomes)
     await Promise.all([
         adapter.edgeMetrics.put('em1', {
-            outcome_id: 'eo1',
             name: 'Churn Rate Reduction',
             target: '15',
             unit: '%',
             current: '12',
         }),
         adapter.edgeMetrics.put('em2', {
-            outcome_id: 'eo1',
             name: 'Customer Retention',
             target: '85',
             unit: '%',
             current: '82',
         }),
         adapter.edgeMetrics.put('em3', {
-            outcome_id: 'eo2',
             name: 'Campaign Conversion',
             target: '25',
             unit: '%',
             current: '28',
         }),
         adapter.edgeMetrics.put('em4', {
-            outcome_id: 'eo2',
             name: 'Cost per Acquisition',
             target: '45',
             unit: '$',
             current: '42',
         }),
         adapter.edgeMetrics.put('em5', {
-            outcome_id: 'eo3',
             name: 'Report Time',
             target: '5',
             unit: 'min',
             current: '8',
         }),
         adapter.edgeMetrics.put('em6', {
-            outcome_id: 'eo3',
             name: 'Accuracy',
             target: '99',
             unit: '%',
             current: '95',
         }),
         adapter.edgeMetrics.put('em7', {
-            outcome_id: 'eo4',
             name: 'Effort Reduction',
             target: '80',
             unit: '%',
             current: '60',
         }),
         adapter.edgeMetrics.put('em8', {
-            outcome_id: 'eo5',
             name: 'Data Quality',
             target: '95',
             unit: '%',
             current: '88',
         }),
         adapter.edgeMetrics.put('em9', {
-            outcome_id: 'eo5',
             name: 'Error Rate',
             target: '1',
             unit: '%',
             current: '3',
         }),
         adapter.edgeMetrics.put('em10', {
-            outcome_id: 'eo6',
             name: 'Detection Rate',
             target: '90',
             unit: '%',
             current: '45',
         }),
         adapter.edgeMetrics.put('em11', {
-            outcome_id: 'eo6',
             name: 'False Positive Rate',
             target: '5',
             unit: '%',
             current: '15',
         }),
         adapter.edgeMetrics.put('em12', {
-            outcome_id: 'eo7',
             name: 'Dashboard Load',
             target: '2',
             unit: 's',
             current: '3',
         }),
         adapter.edgeMetrics.put('em13', {
-            outcome_id: 'eo8',
             name: 'Decision Time',
             target: '1',
             unit: 'hr',
             current: '4',
         }),
         adapter.edgeMetrics.put('em14', {
-            outcome_id: 'eo8',
             name: 'Data Freshness',
             target: '5',
             unit: 'min',
             current: '30',
         }),
         adapter.edgeMetrics.put('em15', {
-            outcome_id: 'eo9',
             name: 'Ticket Reduction',
             target: '40',
             unit: '%',
             current: '',
         }),
         adapter.edgeMetrics.put('em16', {
-            outcome_id: 'eo9',
             name: 'First Response Time',
             target: '1',
             unit: 'min',
             current: '',
         }),
         adapter.edgeMetrics.put('em17', {
-            outcome_id: 'eo10',
             name: 'CSAT Score',
             target: '4.5',
             unit: '/5',
             current: '',
         }),
         adapter.edgeMetrics.put('em18', {
-            outcome_id: 'eo10',
             name: 'Resolution Rate',
             target: '85',
             unit: '%',
@@ -3032,6 +3015,154 @@ export async function populateMockData(
             id: 'eoe-eo10',
             edge_outcome_id: 'eo10',
             edge_id: '6',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+    ];
+
+    const edgeMetricOutcomes:
+        EdgeMetricOutcomeEntity[] = [
+        {
+            id: 'emo-em1',
+            edge_metric_id: 'em1',
+            outcome_id: 'eo1',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em2',
+            edge_metric_id: 'em2',
+            outcome_id: 'eo1',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em3',
+            edge_metric_id: 'em3',
+            outcome_id: 'eo2',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em4',
+            edge_metric_id: 'em4',
+            outcome_id: 'eo2',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em5',
+            edge_metric_id: 'em5',
+            outcome_id: 'eo3',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'emo-em6',
+            edge_metric_id: 'em6',
+            outcome_id: 'eo3',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'emo-em7',
+            edge_metric_id: 'em7',
+            outcome_id: 'eo4',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'emo-em8',
+            edge_metric_id: 'em8',
+            outcome_id: 'eo5',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'emo-em9',
+            edge_metric_id: 'em9',
+            outcome_id: 'eo5',
+            created_at:
+                '2024-02-25'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'emo-em10',
+            edge_metric_id: 'em10',
+            outcome_id: 'eo6',
+            created_at:
+                '2024-02-20'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'emo-em11',
+            edge_metric_id: 'em11',
+            outcome_id: 'eo6',
+            created_at:
+                '2024-02-20'
+                + 'T09:00:00.000000Z',
+        },
+        {
+            id: 'emo-em12',
+            edge_metric_id: 'em12',
+            outcome_id: 'eo7',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'emo-em13',
+            edge_metric_id: 'em13',
+            outcome_id: 'eo8',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'emo-em14',
+            edge_metric_id: 'em14',
+            outcome_id: 'eo8',
+            created_at:
+                '2024-02-18'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'emo-em15',
+            edge_metric_id: 'em15',
+            outcome_id: 'eo9',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em16',
+            edge_metric_id: 'em16',
+            outcome_id: 'eo9',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em17',
+            edge_metric_id: 'em17',
+            outcome_id: 'eo10',
+            created_at:
+                '2024-02-28'
+                + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'emo-em18',
+            edge_metric_id: 'em18',
+            outcome_id: 'eo10',
             created_at:
                 '2024-02-28'
                 + 'T14:30:00.000000Z',
@@ -3373,6 +3504,11 @@ export async function populateMockData(
         ),
         ...edgeOutcomeEdges.map(r =>
             adapter.edgeOutcomeEdges.put(
+                r.id, r,
+            ),
+        ),
+        ...edgeMetricOutcomes.map(r =>
+            adapter.edgeMetricOutcomes.put(
                 r.id, r,
             ),
         ),

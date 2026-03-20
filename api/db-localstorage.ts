@@ -23,6 +23,7 @@ import type {
     EdgeOutcomeEntity,
     EdgeOutcomeEdgeEntity,
     EdgeMetricEntity,
+    EdgeMetricOutcomeEntity,
     ActivityEntity,
     ClarificationEntity,
     CrunchColumnEntity,
@@ -330,6 +331,7 @@ export const TABLE_NAMES = [
     'edge_outcomes',
     'edge_outcome_edges',
     'edge_metrics',
+    'edge_metric_outcomes',
     'activities',
     'clarifications',
     'crunch_columns',
@@ -631,6 +633,10 @@ export async function createLocalStorageAdapter(
             createEntityStore<EdgeMetricEntity>(
                 'edge_metrics',
             ),
+        edgeMetricOutcomes:
+            createEntityStore<
+                EdgeMetricOutcomeEntity
+            >('edge_metric_outcomes'),
         activities:
             createEntityStore<ActivityEntity>(
                 'activities',
