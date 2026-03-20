@@ -1499,7 +1499,7 @@ export function projectIsApproved(
 }
 
 export function clarificationIsPending(
-    e: ClarificationEntity,
+    e: { status: ClarificationStatus },
 ): boolean {
     return e.status === 'pending';
 }
