@@ -163,6 +163,11 @@ const routes: Route[] = [
             db.clarificationAnswerers
                 .getAll(),
     }),
+    route('clarification-projects', {
+        get: (db) =>
+            db.clarificationProjects
+                .getAll(),
+    }),
     route('process-step-processes', {
         get: (db) =>
             db.processStepProcesses
@@ -363,6 +368,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('clarification-projects/:id', {
+        put: (db, p, payload) =>
+            db.clarificationProjects.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     route('process-step-processes/:id', {
         put: (db, p, payload) =>
             db.processStepProcesses.put(
@@ -434,11 +446,31 @@ const routes: Route[] = [
     route(
         'projects/:projectId/clarifications',
         {
-            get: (db, p) =>
-                db.clarifications
-                    .getByProjectId(
-                        param(p, 0),
-                    ),
+            get: async (db, p) => {
+                const pid = param(p, 0);
+                const [links, all] =
+                    await Promise.all([
+                        db.clarificationProjects
+                            .getAll(),
+                        db.clarifications
+                            .getAll(),
+                    ]);
+                const ids = new Set(
+                    links
+                        .filter(
+                            l =>
+                                l.project_id
+                                === pid,
+                        )
+                        .map(
+                            l =>
+                                l.clarification_id,
+                        ),
+                );
+                return all.filter(
+                    c => ids.has(c.id),
+                );
+            },
         },
     ),
 
@@ -522,11 +554,7 @@ const routes: Route[] = [
             put: (db, p, payload) =>
                 db.clarifications.put(
                     param(p, 1),
-                    {
-                        ...payload,
-                        project_id:
-                            param(p, 0),
-                    },
+                    payload,
                 ),
         },
     ),

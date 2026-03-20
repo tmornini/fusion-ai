@@ -16,6 +16,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ClarificationProjectEntity,
     ProcessStepProcessEntity,
 } from './types';
 
@@ -2367,7 +2368,6 @@ export async function populateMockData(
         ClarificationEntity[] = [
         {
             id: 'c1',
-            project_id: '1',
             question:
                 'What data sources are'
                 + ' currently available for'
@@ -2395,7 +2395,6 @@ export async function populateMockData(
         },
         {
             id: 'c2',
-            project_id: '1',
             question:
                 'Are there any existing'
                 + ' segment definitions we'
@@ -2422,7 +2421,6 @@ export async function populateMockData(
         },
         {
             id: 'c3',
-            project_id: '1',
             question:
                 "What's the expected"
                 + ' latency requirement for'
@@ -2971,6 +2969,34 @@ export async function populateMockData(
         },
     ];
 
+    const clarificationProjects:
+        ClarificationProjectEntity[] = [
+        {
+            id: 'cp-c1',
+            clarification_id: 'c1',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T09:30:00.000000Z',
+        },
+        {
+            id: 'cp-c2',
+            clarification_id: 'c2',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T09:30:00.000000Z',
+        },
+        {
+            id: 'cp-c3',
+            clarification_id: 'c3',
+            project_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T09:30:00.000000Z',
+        },
+    ];
+
     const clarificationAskers:
         ClarificationAskerEntity[] = [
         {
@@ -3047,6 +3073,11 @@ export async function populateMockData(
         ),
         ...activityActors.map(r =>
             adapter.activityActors.put(
+                r.id, r,
+            ),
+        ),
+        ...clarificationProjects.map(r =>
+            adapter.clarificationProjects.put(
                 r.id, r,
             ),
         ),

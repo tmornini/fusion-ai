@@ -32,6 +32,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ClarificationProjectEntity,
     ProcessStepProcessEntity,
 } from './types';
 import { nowUtc } from './types';
@@ -332,6 +333,7 @@ export const TABLE_NAMES = [
     'activity_actors',
     'clarification_askers',
     'clarification_answerers',
+    'clarification_projects',
     'process_step_processes',
 ];
 
@@ -394,10 +396,6 @@ export async function createLocalStorageAdapter(
     const edgeOutcomeStore =
         createEntityStore<EdgeOutcomeEntity>(
             'edge_outcomes',
-        );
-    const clarificationStore =
-        createEntityStore<ClarificationEntity>(
-            'clarifications',
         );
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {
@@ -862,26 +860,14 @@ export async function createLocalStorageAdapter(
                 'activities',
             ),
 
-        clarifications: Object.assign(
-            clarificationStore,
-            {
-                async getByProjectId(
-                    projectId: string,
-                ): Promise<
-                    ClarificationEntity[]
-                > {
-                    return readTable<
-                        ClarificationEntity
-                    >(
-                        'clarifications',
-                    ).filter(
-                        entity =>
-                            entity.project_id
-                            === projectId,
-                    );
-                },
-            },
-        ),
+        clarifications:
+            createEntityStore<
+                ClarificationEntity
+            >('clarifications'),
+        clarificationProjects:
+            createEntityStore<
+                ClarificationProjectEntity
+            >('clarification_projects'),
 
         crunchColumns:
             createEntityStore<

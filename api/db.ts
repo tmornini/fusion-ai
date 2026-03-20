@@ -27,6 +27,7 @@ import type {
     ActivityActorEntity,
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
+    ClarificationProjectEntity,
     ProcessStepProcessEntity,
 } from './types';
 
@@ -94,9 +95,8 @@ export interface DbAdapter {
     };
     edgeMetrics: EntityStore<EdgeMetricEntity>;
     activities: EntityStore<ActivityEntity>;
-    clarifications: EntityStore<ClarificationEntity> & {
-        getByProjectId(projectId: string): Promise<ClarificationEntity[]>;
-    };
+    clarifications: EntityStore<ClarificationEntity>;
+    clarificationProjects: EntityStore<ClarificationProjectEntity>;
     crunchColumns: EntityStore<CrunchColumnEntity>;
     flows: EntityStore<FlowEntity>;
     flowSteps: EntityStore<FlowStepEntity>;

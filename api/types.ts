@@ -423,7 +423,6 @@ export interface ActivityEntity {
 
 export interface ClarificationEntity {
     id: Id;
-    project_id: Id;
     question: string;
     asked_at: string;
     status: ClarificationStatus;
@@ -556,6 +555,13 @@ export interface ClarificationAnswererEntity {
     id: Id;
     clarification_id: Id;
     user_id: Id;
+    created_at: string;
+}
+
+export interface ClarificationProjectEntity {
+    id: Id;
+    clarification_id: Id;
+    project_id: Id;
     created_at: string;
 }
 

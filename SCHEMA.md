@@ -1,6 +1,6 @@
 # Database Schema
 
-29 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+30 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -243,7 +243,6 @@
 | Column | Type | Default |
 |--------|------|---------|
 | id | TEXT | — |
-| project_id | TEXT (FK → projects) | — |
 | question | TEXT | '' |
 | asked_at | TEXT | '' |
 | status | TEXT | 'pending' |
@@ -358,6 +357,15 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | — |
 | activity_id | TEXT (FK → activities) | — |
 | user_id | TEXT (FK → users) | — |
+| created_at | TEXT | '' |
+
+### clarification_projects
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| clarification_id | TEXT (FK → clarifications) | — |
+| project_id | TEXT (FK → projects) | — |
 | created_at | TEXT | '' |
 
 ### clarification_askers
