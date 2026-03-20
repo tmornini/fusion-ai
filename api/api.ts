@@ -146,6 +146,11 @@ const routes: Route[] = [
             db.discussionAuthorships
                 .getAll(),
     }),
+    route('discussion-projects', {
+        get: (db) =>
+            db.discussionProjects
+                .getAll(),
+    }),
     route('version-authorships', {
         get: (db) =>
             db.versionAuthorships.getAll(),
@@ -355,6 +360,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('discussion-projects/:id', {
+        put: (db, p, payload) =>
+            db.discussionProjects.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     route('version-authorships/:id', {
         put: (db, p, payload) =>
             db.versionAuthorships.put(
@@ -549,11 +561,39 @@ const routes: Route[] = [
     route(
         'projects/:projectId/discussions',
         {
-            get: (db, p) =>
-                db.discussions
-                    .getByProjectId(
-                        param(p, 0),
-                    ),
+            get: async (db, p) => {
+                const pid = param(p, 0);
+                const [links, all] =
+                    await Promise.all([
+                        db.discussionProjects
+                            .getAll(),
+                        db.discussions
+                            .getAll(),
+                    ]);
+                const ids = new Set(
+                    links
+                        .filter(
+                            l =>
+                                l.project_id
+                                === pid,
+                        )
+                        .map(
+                            l =>
+                                l.discussion_id,
+                        ),
+                );
+                return all
+                    .filter(
+                        d => ids.has(d.id),
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.date
+                                .localeCompare(
+                                    a.date,
+                                ),
+                    );
+            },
         },
     ),
     route(
@@ -693,15 +733,40 @@ const routes: Route[] = [
         'projects/:projectId'
         + '/discussions/:discussionId',
         {
-            put: (db, p, payload) =>
-                db.discussions.put(
-                    param(p, 1),
-                    {
-                        ...payload,
-                        project_id:
-                            param(p, 0),
-                    },
-                ),
+            put: async (db, p, payload) => {
+                const pid = param(p, 0);
+                const did = param(p, 1);
+                const result =
+                    await db.discussions
+                        .put(did, payload);
+                const links =
+                    await db
+                        .discussionProjects
+                        .getAll();
+                const hasLink = links.some(
+                    l =>
+                        l.discussion_id
+                            === did
+                        && l.project_id
+                            === pid,
+                );
+                if (!hasLink) {
+                    const linkId =
+                        `dp-${did}`;
+                    await db
+                        .discussionProjects
+                        .put(linkId, {
+                            id: linkId,
+                            discussion_id:
+                                did,
+                            project_id:
+                                pid,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
     route(

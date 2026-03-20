@@ -26,6 +26,7 @@ import type {
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
+    DiscussionProjectEntity,
     VersionAuthorshipEntity,
     ActivityActorEntity,
     ClarificationAskerEntity,
@@ -83,9 +84,12 @@ export interface DbAdapter {
         EntityStore<
             ProjectTaskProjectEntity
         >;
-    discussions: EntityStore<DiscussionEntity> & {
-        getByProjectId(projectId: string): Promise<DiscussionEntity[]>;
-    };
+    discussions:
+        EntityStore<DiscussionEntity>;
+    discussionProjects:
+        EntityStore<
+            DiscussionProjectEntity
+        >;
     projectVersions: EntityStore<ProjectVersionEntity> & {
         getByProjectId(projectId: string): Promise<ProjectVersionEntity[]>;
     };

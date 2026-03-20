@@ -389,9 +389,15 @@ export interface ProjectTaskProjectEntity {
 
 export interface DiscussionEntity {
     id: Id;
-    project_id: Id;
     date: string;
     message: string;
+}
+
+export interface DiscussionProjectEntity {
+    id: Id;
+    discussion_id: Id;
+    project_id: Id;
+    created_at: string;
 }
 
 export interface ProjectVersionEntity {

@@ -13,6 +13,7 @@ import type {
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
+    DiscussionProjectEntity,
     VersionAuthorshipEntity,
     ActivityActorEntity,
     ClarificationAskerEntity,
@@ -2344,7 +2345,6 @@ export async function populateMockData(
     const discussions = [
         {
             id: 'd1',
-            project_id: '1',
             date:
                 '2024-02-28'
                 + 'T14:00:00.000000Z',
@@ -2356,7 +2356,6 @@ export async function populateMockData(
         },
         {
             id: 'd2',
-            project_id: '1',
             date:
                 '2024-02-25'
                 + 'T10:30:00.000000Z',
@@ -2368,7 +2367,6 @@ export async function populateMockData(
         },
         {
             id: 'd3',
-            project_id: '1',
             date:
                 '2024-02-20'
                 + 'T16:00:00.000000Z',
@@ -2965,6 +2963,34 @@ export async function populateMockData(
         },
     ];
 
+    const discussionProjects:
+        DiscussionProjectEntity[] = [
+        {
+            id: 'dp-d1',
+            discussion_id: 'd1',
+            project_id: '1',
+            created_at:
+                '2024-02-28'
+                + 'T14:00:00.000000Z',
+        },
+        {
+            id: 'dp-d2',
+            discussion_id: 'd2',
+            project_id: '1',
+            created_at:
+                '2024-02-25'
+                + 'T10:30:00.000000Z',
+        },
+        {
+            id: 'dp-d3',
+            discussion_id: 'd3',
+            project_id: '1',
+            created_at:
+                '2024-02-20'
+                + 'T16:00:00.000000Z',
+        },
+    ];
+
     const versionAuthorships:
         VersionAuthorshipEntity[] = [
         {
@@ -3168,6 +3194,11 @@ export async function populateMockData(
         ),
         ...discussionAuthorships.map(r =>
             adapter.discussionAuthorships.put(
+                r.id, r,
+            ),
+        ),
+        ...discussionProjects.map(r =>
+            adapter.discussionProjects.put(
                 r.id, r,
             ),
         ),

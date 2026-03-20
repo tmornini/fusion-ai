@@ -31,6 +31,7 @@ import type {
     EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
+    DiscussionProjectEntity,
     VersionAuthorshipEntity,
     ActivityActorEntity,
     ClarificationAskerEntity,
@@ -333,6 +334,7 @@ export const TABLE_NAMES = [
     'edge_ownerships',
     'task_assignments',
     'discussion_authorships',
+    'discussion_projects',
     'version_authorships',
     'activity_actors',
     'clarification_askers',
@@ -383,10 +385,6 @@ export async function createLocalStorageAdapter(
 
     const edgeStore =
         createEntityStore<EdgeEntity>('edges');
-    const discussionStore =
-        createEntityStore<DiscussionEntity>(
-            'discussions',
-        );
     const projectVersionStore =
         createEntityStore<ProjectVersionEntity>(
             'project_versions',
@@ -664,31 +662,14 @@ export async function createLocalStorageAdapter(
                 ProjectTaskProjectEntity
             >('project_task_projects'),
 
-        discussions: Object.assign(
-            discussionStore,
-            {
-                async getByProjectId(
-                    projectId: string,
-                ): Promise<
-                    DiscussionEntity[]
-                > {
-                    return readTable<
-                        DiscussionEntity
-                    >('discussions')
-                        .filter(
-                            entity =>
-                                entity
-                                    .project_id
-                                === projectId,
-                        )
-                        .sort((a, b) =>
-                            b.date.localeCompare(
-                                a.date,
-                            ),
-                        );
-                },
-            },
-        ),
+        discussions:
+            createEntityStore<
+                DiscussionEntity
+            >('discussions'),
+        discussionProjects:
+            createEntityStore<
+                DiscussionProjectEntity
+            >('discussion_projects'),
 
         projectVersions: Object.assign(
             projectVersionStore,
