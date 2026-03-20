@@ -26,6 +26,16 @@ import {
     type ConversionIdea,
 } from '../app/adapters';
 
+const PRIORITY_RANKS: Record<
+    string,
+    number
+> = {
+    critical: 1,
+    high: 2,
+    medium: 3,
+    low: 4,
+};
+
 const requiredFields = [
     'project-name',
     'project-lead',
@@ -816,16 +826,6 @@ export async function init(
                     jessica: '3',
                     david: '4',
                 };
-                const priorityMap: Record<
-                    string,
-                    number
-                > = {
-                    critical: 1,
-                    high: 2,
-                    medium: 3,
-                    low: 4,
-                };
-
                 const projectId =
                     crypto.randomUUID();
                 try {
@@ -875,7 +875,7 @@ export async function init(
                                 0,
                             actual_impact: 0,
                             priority:
-                                priorityMap[
+                                PRIORITY_RANKS[
                                     pd[
                                         'priority'
                                     ] ?? ''
