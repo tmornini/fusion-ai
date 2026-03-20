@@ -8,6 +8,8 @@ import type {
     CrunchColumnEntity,
     FlowStepEntity,
     ClarificationEntity,
+    ClarificationAnswerEntity,
+    ClarificationAnswerClarificationEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
     EdgeIdeaEntity,
@@ -2416,18 +2418,6 @@ export async function populateMockData(
                 '2024-02-20'
                 + 'T10:00:00.000000Z',
             status: 'answered',
-            answer:
-                'We have event tracking'
-                + ' via Segment, transaction'
-                + ' data in our data'
-                + ' warehouse (Snowflake),'
-                + ' and email engagement'
-                + ' metrics from Mailchimp.'
-                + ' All can be accessed'
-                + ' via APIs.',
-            answered_at:
-                '2024-02-21'
-                + 'T14:00:00.000000Z',
         },
         {
             id: 'c2',
@@ -2442,18 +2432,6 @@ export async function populateMockData(
                 '2024-02-22'
                 + 'T09:30:00.000000Z',
             status: 'answered',
-            answer:
-                'Marketing has 5 legacy'
-                + ' segments they use today'
-                + ' (High Value, Growth,'
-                + ' At-Risk, New, Dormant).'
-                + " We'd like to preserve"
-                + ' compatibility but'
-                + ' welcome additional'
-                + ' discovered segments.',
-            answered_at:
-                '2024-02-22'
-                + 'T16:00:00.000000Z',
         },
         {
             id: 'c3',
@@ -2469,10 +2447,59 @@ export async function populateMockData(
                 '2024-02-25'
                 + 'T11:00:00.000000Z',
             status: 'pending',
-            answer: '',
-            answered_at: '',
         },
     ];
+
+    const clarificationAnswers:
+        ClarificationAnswerEntity[] = [
+        {
+            id: 'ca-c1',
+            answer:
+                'We have event tracking'
+                + ' via Segment, transaction'
+                + ' data in our data'
+                + ' warehouse (Snowflake),'
+                + ' and email engagement'
+                + ' metrics from Mailchimp.'
+                + ' All can be accessed'
+                + ' via APIs.',
+        },
+        {
+            id: 'ca-c2',
+            answer:
+                'Marketing has 5 legacy'
+                + ' segments they use today'
+                + ' (High Value, Growth,'
+                + ' At-Risk, New, Dormant).'
+                + " We'd like to preserve"
+                + ' compatibility but'
+                + ' welcome additional'
+                + ' discovered segments.',
+        },
+    ];
+
+    const clarificationAnswerClarifications:
+        ClarificationAnswerClarificationEntity[]
+        = [
+            {
+                id: 'cac-c1',
+                clarification_answer_id:
+                    'ca-c1',
+                clarification_id: 'c1',
+                created_at:
+                    '2024-02-21'
+                    + 'T14:00:00.000000Z',
+            },
+            {
+                id: 'cac-c2',
+                clarification_answer_id:
+                    'ca-c2',
+                clarification_id: 'c2',
+                created_at:
+                    '2024-02-22'
+                    + 'T16:00:00.000000Z',
+            },
+        ];
 
     await Promise.all([
         ...teamMemberships.map(tm =>
@@ -3534,6 +3561,17 @@ export async function populateMockData(
                 r.id, r,
             ),
         ),
+        ...clarificationAnswers.map(r =>
+            adapter.clarificationAnswers.put(
+                r.id, r,
+            ),
+        ),
+        ...clarificationAnswerClarifications
+            .map(r =>
+                adapter
+                    .clarificationAnswerClarifications
+                    .put(r.id, r),
+            ),
         ...clarificationAnswerers.map(r =>
             adapter.clarificationAnswerers.put(
                 r.id, r,
