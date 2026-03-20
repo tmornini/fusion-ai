@@ -166,12 +166,14 @@ export function formatCompactCurrency(
 
 /**
  * Returns current UTC time as RFC-3339 Zulu
- * with microsecond resolution.
+ * with 6-digit fractional seconds.
  */
 export function nowUtc(): string {
     const iso = new Date().toISOString();
     // toISOString gives 3 decimal places;
-    // pad to 6 for microsecond resolution
+    // pad to 6 for RFC-3339 format compliance
+    // (true microsecond precision is
+    // unavailable in the JS runtime)
     return iso.replace(
         /\.(\d{3})Z$/,
         '.$1000Z',
