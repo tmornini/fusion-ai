@@ -19,6 +19,7 @@ import type {
     ClarificationAnswererEntity,
     ClarificationProjectEntity,
     ProcessStepProcessEntity,
+    MilestoneProjectEntity,
 } from './types';
 
 export async function populateMockData(
@@ -2171,7 +2172,6 @@ export async function populateMockData(
     const milestones = [
         {
             id: 'm1',
-            project_id: '1',
             title: 'Data Pipeline Setup',
             status: 'completed',
             date:
@@ -2181,7 +2181,6 @@ export async function populateMockData(
         },
         {
             id: 'm2',
-            project_id: '1',
             title:
                 'Model Training Complete',
             status: 'completed',
@@ -2192,7 +2191,6 @@ export async function populateMockData(
         },
         {
             id: 'm3',
-            project_id: '1',
             title: 'Integration Testing',
             status: 'in_progress',
             date:
@@ -2202,7 +2200,6 @@ export async function populateMockData(
         },
         {
             id: 'm4',
-            project_id: '1',
             title:
                 'User Acceptance Testing',
             status: 'pending',
@@ -2213,13 +2210,56 @@ export async function populateMockData(
         },
         {
             id: 'm5',
-            project_id: '1',
             title: 'Production Deployment',
             status: 'pending',
             date:
                 '2024-04-01'
                 + 'T00:00:00.000000Z',
             sort_order: 5,
+        },
+    ];
+
+    const milestoneProjects:
+        MilestoneProjectEntity[] = [
+        {
+            id: 'mp-m1',
+            milestone_id: 'm1',
+            project_id: '1',
+            created_at:
+                '2024-01-30'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'mp-m2',
+            milestone_id: 'm2',
+            project_id: '1',
+            created_at:
+                '2024-02-15'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'mp-m3',
+            milestone_id: 'm3',
+            project_id: '1',
+            created_at:
+                '2024-03-01'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'mp-m4',
+            milestone_id: 'm4',
+            project_id: '1',
+            created_at:
+                '2024-03-20'
+                + 'T00:00:00.000000Z',
+        },
+        {
+            id: 'mp-m5',
+            milestone_id: 'm5',
+            project_id: '1',
+            created_at:
+                '2024-04-01'
+                + 'T00:00:00.000000Z',
         },
     ];
 
@@ -3107,6 +3147,11 @@ export async function populateMockData(
         ),
         ...clarificationAnswerers.map(r =>
             adapter.clarificationAnswerers.put(
+                r.id, r,
+            ),
+        ),
+        ...milestoneProjects.map(r =>
+            adapter.milestoneProjects.put(
                 r.id, r,
             ),
         ),

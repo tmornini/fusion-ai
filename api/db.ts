@@ -6,6 +6,7 @@ import type {
     ProjectEntity,
     ProjectTeamEntity,
     MilestoneEntity,
+    MilestoneProjectEntity,
     ProjectTaskEntity,
     DiscussionEntity,
     ProjectVersionEntity,
@@ -71,9 +72,10 @@ export interface DbAdapter {
             fields: Partial<ProjectTeamEntity>,
         ): Promise<ProjectTeamEntity>;
     };
-    milestones: EntityStore<MilestoneEntity> & {
-        getByProjectId(projectId: string): Promise<MilestoneEntity[]>;
-    };
+    milestones:
+        EntityStore<MilestoneEntity>;
+    milestoneProjects:
+        EntityStore<MilestoneProjectEntity>;
     projectTasks: EntityStore<ProjectTaskEntity> & {
         getByProjectId(projectId: string): Promise<ProjectTaskEntity[]>;
     };

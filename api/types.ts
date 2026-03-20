@@ -358,11 +358,17 @@ export interface ProjectTeamEntity {
 
 export interface MilestoneEntity {
     id: Id;
-    project_id: Id;
     title: string;
     status: string;
     date: string;
     sort_order: number;
+}
+
+export interface MilestoneProjectEntity {
+    id: Id;
+    milestone_id: Id;
+    project_id: Id;
+    created_at: string;
 }
 
 export interface ProjectTaskEntity {

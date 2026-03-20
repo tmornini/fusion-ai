@@ -178,6 +178,11 @@ const routes: Route[] = [
             db.processStepProcesses
                 .getAll(),
     }),
+    route('milestone-projects', {
+        get: (db) =>
+            db.milestoneProjects
+                .getAll(),
+    }),
 
     // ── Singletons ─────────────────
     route('company-settings', {
@@ -394,6 +399,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('milestone-projects/:id', {
+        put: (db, p, payload) =>
+            db.milestoneProjects.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     // ── Nested: idea children ─────────────
     route('ideas/:ideaId/edge', {
         get: (db, p) =>
@@ -462,10 +474,37 @@ const routes: Route[] = [
     route(
         'projects/:projectId/milestones',
         {
-            get: (db, p) =>
-                db.milestones.getByProjectId(
-                    param(p, 0),
-                ),
+            get: async (db, p) => {
+                const pid = param(p, 0);
+                const [links, all] =
+                    await Promise.all([
+                        db.milestoneProjects
+                            .getAll(),
+                        db.milestones
+                            .getAll(),
+                    ]);
+                const ids = new Set(
+                    links
+                        .filter(
+                            l =>
+                                l.project_id
+                                === pid,
+                        )
+                        .map(
+                            l =>
+                                l.milestone_id,
+                        ),
+                );
+                return all
+                    .filter(
+                        m => ids.has(m.id),
+                    )
+                    .sort(
+                        (a, b) =>
+                            a.sort_order
+                            - b.sort_order,
+                    );
+            },
         },
     ),
     route('projects/:projectId/tasks', {
@@ -541,15 +580,40 @@ const routes: Route[] = [
         'projects/:projectId'
         + '/milestones/:milestoneId',
         {
-            put: (db, p, payload) =>
-                db.milestones.put(
-                    param(p, 1),
-                    {
-                        ...payload,
-                        project_id:
-                            param(p, 0),
-                    },
-                ),
+            put: async (db, p, payload) => {
+                const pid = param(p, 0);
+                const mid = param(p, 1);
+                const result =
+                    await db.milestones.put(
+                        mid, payload,
+                    );
+                const links =
+                    await db.milestoneProjects
+                        .getAll();
+                const hasLink = links.some(
+                    l =>
+                        l.milestone_id
+                            === mid
+                        && l.project_id
+                            === pid,
+                );
+                if (!hasLink) {
+                    const linkId =
+                        `mp-${mid}`;
+                    await db
+                        .milestoneProjects
+                        .put(linkId, {
+                            id: linkId,
+                            milestone_id:
+                                mid,
+                            project_id:
+                                pid,
+                            created_at:
+                                nowUtc(),
+                        });
+                }
+                return result;
+            },
         },
     ),
     route(
