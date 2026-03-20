@@ -308,7 +308,6 @@ export interface IdeaEntity {
 
 export interface IdeaScoreEntity {
     id: Id;
-    idea_id: Id;
     overall: number;
     impact_score: number;
     impact_breakdown: string; // JSON array
@@ -319,6 +318,13 @@ export interface IdeaScoreEntity {
     estimated_duration: string;
     estimated_cost: string;
     recommendation: string;
+}
+
+export interface IdeaScoreIdeaEntity {
+    id: Id;
+    idea_score_id: Id;
+    idea_id: Id;
+    created_at: string;
 }
 
 export interface ProjectEntity {

@@ -1,6 +1,6 @@
 # Database Schema
 
-30 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
+31 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -66,7 +66,6 @@
 | Column | Type | Default |
 |--------|------|---------|
 | id | TEXT | — |
-| idea_id | TEXT (FK → ideas) | — |
 | overall | INTEGER | 0 |
 | impact_score | INTEGER | 0 |
 | impact_breakdown | TEXT (JSON array) | '[]' |
@@ -295,6 +294,15 @@ Singleton table (single row, `id = '1'`).
 | active_users | INTEGER | 0 |
 
 ## Relationships
+
+### idea_score_ideas
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | TEXT | — |
+| idea_score_id | TEXT (FK → idea_scores) | — |
+| idea_id | TEXT (FK → ideas) | — |
+| created_at | TEXT | '' |
 
 ### idea_submissions
 

@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db';
+import { nowUtc } from './types';
 
 export class ApiError extends Error {
     constructor(
@@ -167,6 +168,10 @@ const routes: Route[] = [
         get: (db) =>
             db.clarificationProjects
                 .getAll(),
+    }),
+    route('idea-score-ideas', {
+        get: (db) =>
+            db.ideaScoreIdeas.getAll(),
     }),
     route('process-step-processes', {
         get: (db) =>
@@ -375,6 +380,13 @@ const routes: Route[] = [
                 payload,
             ),
     }),
+    route('idea-score-ideas/:id', {
+        put: (db, p, payload) =>
+            db.ideaScoreIdeas.put(
+                param(p, 0),
+                payload,
+            ),
+    }),
     route('process-step-processes/:id', {
         put: (db, p, payload) =>
             db.processStepProcesses.put(
@@ -390,15 +402,54 @@ const routes: Route[] = [
             ),
     }),
     route('ideas/:ideaId/score', {
-        get: (db, p) =>
-            db.ideaScores.getByIdeaId(
-                param(p, 0),
-            ),
-        put: (db, p, payload) =>
-            db.ideaScores.put(
-                param(p, 0),
-                payload,
-            ),
+        get: async (db, p) => {
+            const ideaId = param(p, 0);
+            const links =
+                await db.ideaScoreIdeas
+                    .getAll();
+            const link = links.find(
+                l => l.idea_id === ideaId,
+            );
+            if (!link) return null;
+            return db.ideaScores.getById(
+                link.idea_score_id,
+            );
+        },
+        put: async (db, p, payload) => {
+            const ideaId = param(p, 0);
+            const links =
+                await db.ideaScoreIdeas
+                    .getAll();
+            const existing = links.find(
+                l => l.idea_id === ideaId,
+            );
+            const scoreId =
+                typeof payload.id === 'string'
+                    ? payload.id
+                    : (existing
+                        ?.idea_score_id
+                        ?? `score-${ideaId}`);
+            const score =
+                await db.ideaScores.put(
+                    scoreId, payload,
+                );
+            if (!existing) {
+                const linkId =
+                    `isi-${ideaId}`;
+                await db.ideaScoreIdeas.put(
+                    linkId,
+                    {
+                        id: linkId,
+                        idea_score_id:
+                            scoreId,
+                        idea_id: ideaId,
+                        created_at:
+                            nowUtc(),
+                    },
+                );
+            }
+            return score;
+        },
     }),
 
     // ── Nested: project children (GET) ────

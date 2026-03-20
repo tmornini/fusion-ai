@@ -7,6 +7,7 @@ import type {
     UserEntity,
     IdeaEntity,
     IdeaScoreEntity,
+    IdeaScoreIdeaEntity,
     ProjectEntity,
     ProjectTeamEntity,
     MilestoneEntity,
@@ -308,6 +309,7 @@ export const TABLE_NAMES = [
     'users',
     'ideas',
     'idea_scores',
+    'idea_score_ideas',
     'projects',
     'project_team',
     'milestones',
@@ -550,87 +552,14 @@ export async function createLocalStorageAdapter(
                 'ideas',
             ),
 
-        ideaScores: {
-            async getByIdeaId(
-                ideaId: string,
-            ): Promise<IdeaScoreEntity | null> {
-                const rows =
-                    readTable<IdeaScoreEntity>(
-                        'idea_scores',
-                    );
-                return (
-                    rows.find(
-                        entity =>
-                            entity.idea_id
-                            === ideaId,
-                    ) ?? null
-                );
-            },
-            async put(
-                ideaId: string,
-                fields: Partial<
-                    IdeaScoreEntity
-                >,
-            ): Promise<IdeaScoreEntity> {
-                const rows =
-                    readTable<IdeaScoreEntity>(
-                        'idea_scores',
-                    );
-                const serialized =
-                    serializeRecord(fields);
-                const index = rows.findIndex(
-                    entity =>
-                        entity.idea_id
-                        === ideaId,
-                );
-                const fid =
-                    typeof fields.id === 'string'
-                        ? fields.id
-                        : undefined;
-                const existing =
-                    rows[index];
-                const id =
-                    existing
-                        ? existing.id
-                        : (fid
-                            ?? generateCompositeId(
-                                'score',
-                                ideaId,
-                            ));
-
-                if (index >= 0) {
-                    rows[index] = {
-                        ...rows[index]!,
-                        ...serialized,
-                        id,
-                        idea_id: ideaId,
-                    } as IdeaScoreEntity;
-                } else {
-                    rows.push({
-                        id,
-                        ...serialized,
-                        idea_id: ideaId,
-                    } as IdeaScoreEntity);
-                }
-
-                writeTable(
-                    'idea_scores',
-                    rows,
-                );
-                const pos = index >= 0
-                    ? index
-                    : rows.length - 1;
-                const written = rows[pos];
-                if (!written) {
-                    throw new Error(
-                        'Internal error: entity'
-                        + ' not found after'
-                        + ' write',
-                    );
-                }
-                return written;
-            },
-        },
+        ideaScores:
+            createEntityStore<
+                IdeaScoreEntity
+            >('idea_scores'),
+        ideaScoreIdeas:
+            createEntityStore<
+                IdeaScoreIdeaEntity
+            >('idea_score_ideas'),
 
         projects:
             createEntityStore<ProjectEntity>(

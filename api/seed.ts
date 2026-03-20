@@ -1,6 +1,7 @@
 import type { DbAdapter } from './db';
 import type {
     IdeaEntity,
+    IdeaScoreIdeaEntity,
     ProjectEntity,
     EdgeEntity,
     ActivityEntity,
@@ -1927,7 +1928,7 @@ export async function populateMockData(
     // edges, activities, crunch columns,
     // process steps
     await Promise.all([
-        adapter.ideaScores.put('1', {
+        adapter.ideaScores.put('score-1', {
             id: 'score-1',
             overall: 82,
             impact_score: 88,
@@ -2083,6 +2084,19 @@ export async function populateMockData(
             ),
         ),
     ]);
+
+    const ideaScoreIdeas:
+        IdeaScoreIdeaEntity[]
+    = [
+        {
+            id: 'isi-1',
+            idea_score_id: 'score-1',
+            idea_id: '1',
+            created_at:
+                '2024-01-15'
+                + 'T09:30:00.000000Z',
+        },
+    ];
 
     // Batch 4: Project team, milestones,
     // project tasks, discussions, project
@@ -3041,6 +3055,11 @@ export async function populateMockData(
     ];
 
     await Promise.all([
+        ...ideaScoreIdeas.map(r =>
+            adapter.ideaScoreIdeas.put(
+                r.id, r,
+            ),
+        ),
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
                 r.id, r,
