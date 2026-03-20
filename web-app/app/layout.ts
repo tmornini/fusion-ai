@@ -20,6 +20,7 @@ import {
     navigateTo,
 } from './navigation';
 import { log } from './logger';
+import { showToast } from './toast';
 
 const THEME_TOGGLE_IDS = [
     'theme-toggle',
@@ -181,10 +182,10 @@ function initSidebar(): void {
                 String(collapsed),
             );
         } catch {
-            log.warn(
+            showToast(
                 'Failed to save'
-                + ' sidebar state',
-                'layout',
+                + ' sidebar state.',
+                'error',
             );
         }
     }
