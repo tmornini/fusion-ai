@@ -390,18 +390,18 @@ getProjectForEngineering(
         businessContext: {
             problem:
                 businessContext.problem
-                    || '',
+                    ?? '',
             expectedOutcome:
                 businessContext
                     .expectedOutcome
-                    || '',
+                    ?? '',
             successMetrics:
                 businessContext
                     .successMetrics
-                    || [],
+                    ?? [],
             constraints:
                 businessContext
-                    .constraints || [],
+                    .constraints ?? [],
         },
         team: teamRows.map(member => ({
             id: member.user_id,
