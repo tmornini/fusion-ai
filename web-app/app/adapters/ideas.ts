@@ -123,7 +123,7 @@ export async function getIdeaForConversion(
                 `ideas/${ideaId}/score`,
             ),
         ]);
-    const idea = new Idea(entity);
+    const idea = new Idea(entity, '');
     return {
         id: idea.id,
         title: idea.title,

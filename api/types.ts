@@ -281,7 +281,7 @@ export class User {
             return 'Pending';
         if (this.status === 'deactivated')
             return 'Deactivated';
-        return 'Unknown';
+        return '';
     }
 
     statusClassName(): string {
@@ -689,17 +689,6 @@ export interface InlineStyleDisplay {
     style: string;
 }
 
-export const UNKNOWN_CONFIG: StatusDisplay = {
-    label: 'Unknown',
-    className: 'badge-default',
-};
-
-export const UNKNOWN_CONFIDENCE_CONFIG:
-    StatusDisplay = {
-        label: 'Unknown',
-        className: 'text-muted',
-    };
-
 export const IDEA_STATUS_CONFIG: Record<
     IdeaStatus,
     StatusDisplay
@@ -928,12 +917,6 @@ export const READINESS_CONFIG: Record<
     },
 };
 
-export const UNKNOWN_READINESS_CONFIG:
-    StatusDisplay = {
-        label: 'Unknown',
-        className: 'text-muted',
-    };
-
 export class Idea {
     readonly id: string;
     readonly title: string;
@@ -966,7 +949,7 @@ export class Idea {
 
     constructor(
         entity: IdeaEntity,
-        submittedBy: string = 'Unknown',
+        submittedBy: string,
     ) {
         this.id = entity.id;
         this.title = entity.title;
@@ -1077,43 +1060,37 @@ export class Idea {
     statusLabel(): string {
         return (
             IDEA_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).label;
+        )!.label;
     }
 
     statusClassName(): string {
         return (
             IDEA_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).className;
+        )!.className;
     }
 
     edgeStatusLabel(): string {
         return (
             EDGE_STATUS_CONFIG[this.edgeStatus]
-                ?? UNKNOWN_CONFIG
-        ).label;
+        )!.label;
     }
 
     edgeStatusClassName(): string {
         return (
             EDGE_STATUS_CONFIG[this.edgeStatus]
-                ?? UNKNOWN_CONFIG
-        ).className;
+        )!.className;
     }
 
     readinessLabel(): string {
         return (
             READINESS_CONFIG[this.readiness]
-                ?? UNKNOWN_READINESS_CONFIG
-        ).label;
+        )!.label;
     }
 
     readinessClassName(): string {
         return (
             READINESS_CONFIG[this.readiness]
-                ?? UNKNOWN_READINESS_CONFIG
-        ).className;
+        )!.className;
     }
 }
 
@@ -1208,15 +1185,13 @@ export class Project {
     statusLabel(): string {
         return (
             PROJECT_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).label;
+        )!.label;
     }
 
     statusClassName(): string {
         return (
             PROJECT_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).className;
+        )!.className;
     }
 }
 
@@ -1257,29 +1232,25 @@ export class Edge {
     statusLabel(): string {
         return (
             EDGE_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).label;
+        )!.label;
     }
 
     statusClassName(): string {
         return (
             EDGE_STATUS_CONFIG[this.status]
-                ?? UNKNOWN_CONFIG
-        ).className;
+        )!.className;
     }
 
     confidenceLabel(): string {
         return (
             CONFIDENCE_CONFIG[this.confidence]
-                ?? UNKNOWN_CONFIG
-        ).label;
+        )!.label;
     }
 
     confidenceClassName(): string {
         return (
             CONFIDENCE_CONFIG[this.confidence]
-                ?? UNKNOWN_CONFIG
-        ).className;
+        )!.className;
     }
 }
 
@@ -1296,7 +1267,7 @@ export class Activity {
 
     constructor(
         entity: ActivityEntity,
-        actor: string = 'Unknown',
+        actor: string,
     ) {
         this.id = entity.id;
         this.type = entity.type;

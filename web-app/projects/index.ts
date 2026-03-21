@@ -33,7 +33,6 @@ import {
 } from '../app/adapters';
 import {
     PROJECT_STATUS_CONFIG,
-    UNKNOWN_CONFIG,
 } from '../../api/types';
 
 const projectStatusIcons: Record<
@@ -391,7 +390,7 @@ export async function init(): Promise<void> {
                 const cfg =
                     PROJECT_STATUS_CONFIG[
                         status as keyof typeof PROJECT_STATUS_CONFIG
-                    ] ?? UNKNOWN_CONFIG;
+                    ]!;
                 const icon =
                     projectStatusIcons[
                         status

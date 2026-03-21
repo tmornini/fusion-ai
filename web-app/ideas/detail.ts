@@ -213,7 +213,8 @@ function buildDetailsCard(
                 <p class="${
                     'text-sm font-medium'
                 }">
-                    ${idea.submittedBy}
+                    ${idea.submittedBy
+                        || '\u2014'}
                 </p>
             </div>
             <div>
@@ -408,7 +409,8 @@ function buildIdeaDetail(
                         'text-sm text-muted'
                     }">
                         Submitted by
-                        ${idea.submittedBy}
+                        ${idea.submittedBy
+                            || '\u2014'}
                     </p>
                 </div>
             </div>

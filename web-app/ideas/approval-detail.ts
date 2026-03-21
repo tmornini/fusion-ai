@@ -188,7 +188,8 @@ export async function init(
                         style=${'color:'
                             + 'hsl(var('
                             + '--foreground))'}>
-                        ${idea.submittedBy}
+                        ${idea.submittedBy
+                            || '\u2014'}
                     </span>
                 </span>
                 <span

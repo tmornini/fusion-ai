@@ -30,7 +30,7 @@ import {
     type ProjectDetail,
 } from '../app/adapters';
 import {
-    PROJECT_STATUS_CONFIG, UNKNOWN_CONFIG,
+    PROJECT_STATUS_CONFIG,
     MILESTONE_STATUS_CONFIG,
     MILESTONE_STATUS_DEFAULT,
     TASK_PRIORITY_CONFIG,
@@ -1873,7 +1873,7 @@ function buildProjectDetail(
             PROJECT_STATUS_CONFIG[
                 project.status as
                         keyof typeof PROJECT_STATUS_CONFIG
-            ] ?? UNKNOWN_CONFIG;
+            ]!;
     const statusOptions =
             Object.entries(
                 PROJECT_STATUS_CONFIG,

@@ -67,10 +67,7 @@ function buildReviewCard(
     const priorityDisplay =
         priorityConfig[
             idea.priorityLevel()
-        ] ?? {
-            label: 'Unknown',
-            className: 'badge-default',
-        };
+        ]!;
     return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
@@ -114,6 +111,7 @@ function buildReviewCard(
                 }">
                     <span>by ${
                         idea.submittedBy
+                        || '\u2014'
                     }</span>
                     <span>${
                         '\u2022'

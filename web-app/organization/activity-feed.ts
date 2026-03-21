@@ -134,7 +134,8 @@ function buildActivity(
         <div style="flex:1;min-width:0">
             <p class="text-sm">
                 <span class="font-medium">${
-                    activity.actor}</span>
+                    activity.actor
+                    || '\u2014'}</span>
                 <span class="text-muted"> ${
                     activity.action} </span>
                 <span class="font-medium">${

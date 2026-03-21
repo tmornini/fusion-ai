@@ -20,7 +20,7 @@ export async function buildUserMap(): Promise<Map<Id, User>> {
 }
 
 export function userName(userMap: Map<Id, User>, userId: string): string {
-    return userMap.get(userId)?.fullName() ?? 'Unknown';
+    return userMap.get(userId)?.fullName() ?? '';
 }
 
 export function parseJson<T>(value: string | T, fallback: T): T {

@@ -597,6 +597,7 @@ function buildEdgePage(
                         <p class="text-sm"
                             >${
                                 idea.submittedBy
+                                || '\u2014'
                         }</p>
                     </div>
                 </div>

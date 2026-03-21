@@ -110,6 +110,7 @@ function buildIdeaCard(
                             <span>
                                 by ${
                                     idea.submittedBy
+                                    || '\u2014'
                                 }
                             </span>
                         </div>
