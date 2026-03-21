@@ -4,7 +4,7 @@
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
-**Timestamp convention:** TEXT columns storing timestamps use RFC-3339 Zulu format (e.g., `2024-01-15T09:30:00.000000Z`). See CONDUCT-OF-CODE.md.
+**Timestamp convention:** TEXT columns storing timestamps use RFC-3339 Zulu format (e.g., `2024-01-15T09:30:00.000000Z`). Empty string `''` means the event has not yet occurred. All timestamps for events that have occurred must be RFC-3339 Zulu. See CONDUCT-OF-CODE.md.
 
 ## Core
 
