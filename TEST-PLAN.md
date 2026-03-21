@@ -26,7 +26,7 @@
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
 - [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 26 page directories each with `index.html`.
 - [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
-- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` when data has been loaded.
+- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `dashboard/index.html` when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
 ---
@@ -66,9 +66,9 @@
 ## C. Core: Dashboard
 
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
-- [ ] **C2** Sidebar shows navigation links for all sections (Dashboard, Ideas, Projects, Edge List, Crunch, Flow, Team, Activity Feed, Settings group). PASS: all links present and styled.
-- [ ] **C3** Header shows user avatar area and theme toggle. PASS: elements visible and styled.
-- [ ] **C4** Dashboard displays gauge/metric cards with numerical values. PASS: at least 3 metric cards render with non-zero values.
+- [ ] **C2** Sidebar shows navigation links grouped under Journey (Dashboard, Ideas, Projects, Teams), Tools (Edge, Crunch, Flow), and Settings (Organization, Snapshots, Design System). PASS: all links present and styled.
+- [ ] **C3** Header shows search bar, greeting ("Good evening, Tony Stark"), company stats ("Stark Industries · 11 Ideas · 6 Projects · 4 Flow"), and theme toggle. PASS: elements visible and styled.
+- [ ] **C4** Dashboard displays 3 gauge/metric cards (Time, Cost, Impact) with baseline and current values. PASS: cards render with non-zero values and concentric arc gauges.
 - [ ] **C5** Dashboard displays at least one chart (bar, line, donut, or area). PASS: SVG chart renders with visible data.
 - [ ] **C6** Quick-action cards or links are present. PASS: clicking one navigates to the expected page.
 - [ ] **C7** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
@@ -81,7 +81,7 @@
 ### Ideas List (`ideas/`)
 
 - [ ] **D1** Navigate to `ideas/`. PASS: table/list shows 11 seeded ideas with title, score, priority, status, and Time/Cost/Impact stats. Ideas without estimates show "—" (em-dash) instead of zero values.
-- [ ] **D2** Each idea row shows a status badge (pending_review, approved, scored, draft, or rejected). PASS: badges render with distinct colors.
+- [ ] **D2** Each idea row shows a status badge (In Review, Promoted, Active, Archived, or Rejected) and an edge status badge (Edge Complete, Edge Draft, or Edge Missing). PASS: badges render with distinct colors.
 - [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
 - [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `idea-create/index.html`.
 
@@ -122,11 +122,11 @@
 ### Idea Review Queue (`idea-review-queue/`)
 
 - [ ] **D22** Navigate to `idea-review-queue/`. PASS: page shows stats cards (Pending Review, Ready to Decide, High Priority, Avg. Wait Time) and a list of ideas pending review.
-- [ ] **D22b** Each review card shows priority badge, readiness status (Ready/Needs Info/Incomplete), edge status badge, title, submitter, category, days waiting, score, impact, and effort. PASS: all fields render with data.
+- [ ] **D22b** Each review card shows priority badge (High Priority/Medium), readiness status (Ready for Review/Needs Info/Unknown), edge status badge, title, submitter, category, days waiting, score, impact, and effort. PASS: all fields render with data.
 - [ ] **D23** At least one idea with `pending_review` status appears in the queue. PASS: idea 7 ("AI-Powered Customer Support Chatbot") or similar is listed.
 - [ ] **D23b** Type a search term in the search input. PASS: review cards filter by title or submitter name in real-time.
 - [ ] **D23c** Select "High" from the priority filter dropdown. PASS: list shows only high-priority items. Reset to "All Priority" → full list returns.
-- [ ] **D23d** Select "Ready" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
+- [ ] **D23d** Select "Ready for Review" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
 - [ ] **D23e** Apply search + filter that matches no items. PASS: empty state shows "No ideas match your filters" message.
 - [ ] **D24** Click a review item. PASS: navigates to `approval-detail/?id=<ideaId>`.
 
@@ -192,7 +192,7 @@
 
 ### Edge List (`edges/`)
 
-- [ ] **F6** Navigate to `edges/`. PASS: shows stats cards (Total Ideas, Complete, In Draft) and edge cards with status badges (complete, draft, missing), confidence level, and idea titles.
+- [ ] **F6** Navigate to `edges/`. PASS: shows stats cards (Total Ideas, Complete, In Draft, Missing) and edge cards with status badges (Edge Complete, Edge Draft, Edge Missing), confidence level (High/Medium/Low Confidence), owner, outcome/metric counts, and idea titles.
 - [ ] **F6b** Type in the search input. PASS: filters edge cards by idea title or owner name in real-time.
 - [ ] **F6c** Select a status from the filter dropdown (e.g. "Complete"). PASS: list shows only edges with that status. Reset to "All Status" → full list returns.
 - [ ] **F6d** Apply search + filter that matches no items. PASS: empty state shows "No Edge definitions found" with "Try adjusting your search or filter criteria".
@@ -207,7 +207,7 @@
 
 ### Flow List (`flow/`)
 
-- [ ] **F11** Navigate to `flow/`. PASS: page shows stats cards (Total Flows, Total Steps) and flow cards with name, description, department badge, and step count.
+- [ ] **F11** Navigate to `flow/`. PASS: page shows stats cards (Total Flows, Total Steps, Departments) and flow cards with name, description, department badge, and step count.
 - [ ] **F12** Type in the search input. PASS: filters flow cards by name or description in real-time.
 - [ ] **F12b** Select a department from the filter dropdown. PASS: list shows only flows in that department. Reset to "All Departments" → full list returns.
 - [ ] **F12c** Apply search + filter that matches no items. PASS: empty state shows "No processes found" with "Try adjusting your search or filter criteria".
@@ -229,11 +229,11 @@
 
 ### Team (`teams/`)
 
-- [ ] **G1** Navigate to `teams/`. PASS: shows roster of seeded team members with initials avatars, names, roles, email, availability badges (high/medium/low), and status dots (available/busy/limited).
-- [ ] **G1b** Click a team member card. PASS: detail modal opens showing member name, role, email, and large avatar with initials.
-- [ ] **G1c** Modal shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches, showing dimension scores or performance metrics respectively.
-- [ ] **G1d** Close the modal (click close button). PASS: modal closes, focus returns to the member list.
-- [ ] **G2** Member status indicators render with distinct styling (available, busy, limited). PASS: at least 2 different statuses visible with color-coded dots.
+- [ ] **G1** Navigate to `teams/`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
+- [ ] **G1b** Click a team member card. PASS: right-side detail panel populates with member name, role, email, and large avatar with initials.
+- [ ] **G1c** Detail panel shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches — Dimensions shows Driver/Analytical/Expressive/Amiable scores with progress bars.
+- [ ] **G1d** Click a different team member card. PASS: detail panel updates to show the newly selected member's information.
+- [ ] **G2** Member status dots render with distinct colors (green for available, yellow for busy, red for limited). PASS: at least 2 different statuses visible.
 
 ### Account (`account/`)
 
@@ -242,9 +242,9 @@
 
 ### Profile (`profile/`)
 
-- [ ] **G5** Navigate to `profile/`. PASS: shows profile form with avatar (initials), name, email, phone, and role fields for the current user (Demo User / demo@example.com).
+- [ ] **G5** Navigate to `profile/`. PASS: shows profile form with avatar (initials), First Name, Last Name, Email, Phone, Role, Department (dropdown), and Bio fields for the current user (Tony Stark / demo@example.com).
 - [ ] **G5b** Strength chips are displayed with pre-selected strengths shown in primary style with checkmark icons. Click an unselected chip. PASS: chip toggles to primary/selected style. Click a selected chip. PASS: chip toggles to secondary/unselected style.
-- [ ] **G6** Edit a field (e.g. phone), toggle strengths, and click "Save". PASS: toast "Profile saved successfully" appears.
+- [ ] **G6** Edit a field (e.g. phone), toggle strengths, and click "Save Changes". PASS: toast "Profile saved successfully" appears.
 
 ### Company Settings (`settings/`)
 
@@ -254,16 +254,16 @@
 
 ### Manage Users (`manage-users/`)
 
-- [ ] **G10** Navigate to `manage-users/`. PASS: shows user table with avatar, name, email, role badge (with icon for Admin/Manager/Member/Viewer), department, status badge (Active/Pending/Deactivated), and last active time.
-- [ ] **G10b** Type in the search input. PASS: filters user list by name or email in real-time.
+- [ ] **G10** Navigate to `manage-users/`. PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
+- [ ] **G10b** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list.
 - [ ] **G11** Deactivated user (James Miller) is visually distinguished with "Deactivated" badge (X icon), strikethrough or opacity styling. PASS: clearly different from active users.
 - [ ] **G11b** Pending users show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active users.
-- [ ] **G12** "Invite New User" button is visible. PASS: clicking it opens the invite dialog with email input and role selector.
+- [ ] **G12** "Invite User" button is visible. PASS: clicking it opens the invite dialog with email input and role selector.
 
 ### Activity Feed (`teams/activity-feed.html`)
 
-- [ ] **G13** Navigate to `activity-feed/`. PASS: shows 10 seeded activity entries with type icons and timestamps.
-- [ ] **G14** Activity types include idea_scored, task_completed, idea_created, comment_added, user_joined, status_changed, idea_converted, project_created. PASS: multiple distinct types visible with appropriate icons (lightbulb, star, folder, checkmark, chat bubble, user-plus, edit, arrow-right).
+- [ ] **G13** Navigate to `activity-feed/`. PASS: shows seeded activity entries with type icons and timestamps. Search input ("Search activity...") and type filter dropdown ("All Activity") visible.
+- [ ] **G14** Activity types include scored, completed task, submitted new idea, commented on, joined the team, changed status, converted idea to project. PASS: multiple distinct types visible with appropriate icons (star, checkmark, lightbulb, chat bubble, user-plus, edit, arrow-right).
 - [ ] **G14b** Each activity entry shows actor name, action verb, target name, and meta info (score badge, status badge, or quoted comment text). PASS: entries have full context.
 
 ### Engineering Requirements
