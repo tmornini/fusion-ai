@@ -76,7 +76,7 @@ export async function init(): Promise<void> {
                             + 'justify-content:'
                             + 'center'
                         }">
-                            ${iconSparkles(24)}
+                            ${iconSparkles(24, '')}
                         </div>
                         <span class="${
                             'text-3xl '
@@ -204,7 +204,7 @@ export async function init(): Promise<void> {
                         'width:2.5rem;'
                         + 'height:2.5rem'
                     }">
-                        ${iconSparkles(20)}
+                        ${iconSparkles(20, '')}
                     </div>
                     <span class="${
                         'text-2xl font-display '
@@ -347,7 +347,7 @@ export async function init(): Promise<void> {
                                 + 'base)'
                             }" id="submit-btn">
                             Sign in ${
-                                iconArrowRight(20)
+                                iconArrowRight(20, '')
                             }
                         </button>
                     </form>
@@ -476,7 +476,7 @@ export async function init(): Promise<void> {
                 isLogin
                     ? 'Sign in'
                     : 'Create account'
-            } ${iconArrowRight(20)}`,
+            } ${iconArrowRight(20, '')}`,
         );
         emailInput.setAttribute(
             'autocomplete',

@@ -66,8 +66,8 @@ const gaugeThemeConfig: Record<
 const gaugeIconConfig: Record<
     string,
     (
-        size?: number,
-        cssClass?: string,
+        size: number,
+        cssClass: string,
     ) => SafeHtml
 > = {
     dollarSign: iconDollarSign,

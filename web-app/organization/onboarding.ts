@@ -61,7 +61,7 @@ export async function init(): Promise<void> {
                     }"
                     id="go-dashboard">
                     Go to Dashboard
-                    ${iconArrowRight(16)}
+                    ${iconArrowRight(16, '')}
                 </button>
             </div>
         </div>`);

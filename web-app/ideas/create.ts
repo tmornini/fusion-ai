@@ -167,8 +167,8 @@ export async function init():
                 + 'center;'
                 + bgStyle}>
                 ${isCompleted
-                    ? iconCheck(20)
-                    : step.icon(20)}
+                    ? iconCheck(20, '')
+                    : step.icon(20, '')}
             </div>
             <span
                 class="mt-2 text-sm
@@ -472,7 +472,7 @@ export async function init():
                                 btn-icon"
                             id=${'idea-create'
                                 + '-back-btn'}>
-                            ${iconArrowLeft(20)}
+                            ${iconArrowLeft(20, '')}
                         </button>
                         <div class="flex
                             items-center gap-3">
@@ -495,7 +495,7 @@ export async function init():
                                     + '-foreground'
                                     + '))'}>
                                 ${iconSparkles(
-                                    20,
+                                    20, '',
                                 )}
                             </div>
                             <span class="${
@@ -513,7 +513,7 @@ export async function init():
                             + ' btn-sm gap-2'
                             + ' text-primary'
                         }">
-                        ${iconWand(16)}
+                        ${iconWand(16, '')}
                         <span
                             class="${
                                 'hidden-mobile'
@@ -573,7 +573,7 @@ export async function init():
                         }"
                         id=${'idea-create'
                             + '-step-back'}>
-                        ${iconArrowLeft(16)}
+                        ${iconArrowLeft(16, '')}
                         ${state.currentStep
                             === 1
                             ? 'Cancel'
@@ -599,10 +599,10 @@ export async function init():
                             === 3
                             ? html`${'Submit'
                                 + ' Idea'}
-                                ${iconCheck(16)}`
+                                ${iconCheck(16, '')}`
                             : html`Continue
                                 ${iconArrowRight(
-                                    16,
+                                    16, '',
                                 )}`}
                     </button>
                 </div>

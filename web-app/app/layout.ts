@@ -40,10 +40,10 @@ const SIDEBAR_USER_COMPANY_IDS = [
 function mutateThemeToggleIcon(): void {
     const themeIcon =
         state.theme === 'dark'
-            ? iconMoon(20)
+            ? iconMoon(20, '')
             : state.theme === 'light'
-                ? iconSun(20)
-                : iconMonitor(20);
+                ? iconSun(20, '')
+                : iconMonitor(20, '');
     const themeLabel =
         state.theme === 'dark'
             ? 'Switch to light theme'

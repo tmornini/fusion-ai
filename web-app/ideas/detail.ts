@@ -348,7 +348,7 @@ function buildIdeaDetail(
                         'btn btn-ghost btn-icon'
                     }"
                     id="idea-back-btn">
-                    ${iconArrowLeft(20)}
+                    ${iconArrowLeft(20, '')}
                 </button>
                 <div>
                     <div class="flex flex-wrap
@@ -387,7 +387,7 @@ function buildIdeaDetail(
                             ${idea
                                 .edgeStatusClassName()}
                             text-xs">
-                            ${iconTarget(12)}
+                            ${iconTarget(12, '')}
                             ${idea
                                 .edgeStatusLabel()}
                         </span>
@@ -401,7 +401,7 @@ function buildIdeaDetail(
                             + 'font-size:'
                             + '0.875rem;'
                         }${idea.scoreStyle()}">
-                            ${iconStar(14)}
+                            ${iconStar(14, '')}
                             ${idea.score}
                         </div>
                     </div>
@@ -432,7 +432,7 @@ function buildIdeaDetail(
                         + 'var(--primary))'
                     }"
                     id="idea-edge-btn">
-                    ${iconTarget(16)}
+                    ${iconTarget(16, '')}
                     Define Edge
                 </button>` : html``}
                 ${idea.isReviewable()
@@ -449,7 +449,7 @@ function buildIdeaDetail(
                         + 'var(--warning))'
                     }"
                     id="idea-review-btn">
-                    ${iconClipboardCheck(16)}
+                    ${iconClipboardCheck(16, '')}
                     Review
                 </button>` : html``}
                 ${idea.isConvertible()
@@ -460,7 +460,7 @@ function buildIdeaDetail(
                         + ' btn-sm gap-2'
                     }"
                     id="idea-convert-btn">
-                    ${iconArrowRight(16)}
+                    ${iconArrowRight(16, '')}
                     Convert
                 </button>` : html``}
                 ${state.isEditing
@@ -474,7 +474,7 @@ function buildIdeaDetail(
                             id="${
                                 'idea-cancel-btn'
                             }">
-                            ${iconX(16)} Cancel
+                            ${iconX(16, '')} Cancel
                         </button>
                         <button
                             class="${
@@ -484,7 +484,7 @@ function buildIdeaDetail(
                             id="${
                                 'idea-save-btn'
                             }">
-                            ${iconSave(16)} Save
+                            ${iconSave(16, '')} Save
                         </button>
                     </div>`
                     : html`<button
@@ -493,7 +493,7 @@ function buildIdeaDetail(
                             + ' gap-2'
                         }"
                         id="idea-edit-btn">
-                        ${iconEdit(16)} Edit
+                        ${iconEdit(16, '')} Edit
                     </button>`}
             </div>
         </div>

@@ -54,13 +54,13 @@ function buildVariance(
     if (diff === 0)
         return html`<span
             class="text-muted"
-            >${iconMinus(16)} 0</span>`;
+            >${iconMinus(16, '')} 0</span>`;
     const good = isLowerBetter
         ? diff < 0
         : diff > 0;
     const icon = diff < 0
-        ? iconArrowDownRight(16)
-        : iconArrowUpRight(16);
+        ? iconArrowDownRight(16, '')
+        : iconArrowUpRight(16, '');
     const color = good
         ? 'color:hsl(var(--success))'
         : 'color:hsl(var(--error))';
@@ -80,8 +80,8 @@ const MILESTONE_ICON_MAP: Record<
     string,
     {
         iconFn: (
-            s?: number,
-            c?: string,
+            s: number,
+            c: string,
         ) => SafeHtml;
         iconClass: string;
     }
@@ -617,7 +617,7 @@ function buildEdgeKPIs(
                         + 'badge-success '
                         + 'text-xs'
                     }">
-                    ${iconShield(12)
+                    ${iconShield(12, '')
                     } High Confidence
                 </span>
             </div>
@@ -1085,7 +1085,7 @@ function buildProjectTabs(
                         data-tab="${
                             tab.id
                         }">
-                        ${tab.icon(16)
+                        ${tab.icon(16, '')
                         } ${tab.label}
                     </button>
                 `)}
@@ -1171,7 +1171,7 @@ function buildProjectTabs(
                                                 }">
                                                 ${
                                                     iconUsers(
-                                                        10,
+                                                        10, '',
                                                     )
                                                 }
                                                 AI
@@ -1236,7 +1236,7 @@ function buildProjectTabs(
                                             }">
                                             ${
                                                 iconClock(
-                                                    12,
+                                                    12, '',
                                                 )
                                             }
                                             ${
@@ -1639,7 +1639,7 @@ function buildProjectTabs(
                             'btn btn-outline'
                             + ' btn-sm gap-2'
                         }">
-                        ${iconPlus(16)
+                        ${iconPlus(16, '')
                         } Link Data Source
                     </button>
                 </div>
@@ -1672,7 +1672,7 @@ function buildProjectSidebar(
                             'btn btn-ghost '
                             + 'btn-sm gap-1'
                         }">
-                        ${iconPlus(14)} Add
+                        ${iconPlus(14, '')} Add
                     </button>
                 </div>
                 <div style="${
@@ -1940,7 +1940,7 @@ function buildProjectDetail(
                         id="${
                             'project-back-btn'
                         }">
-                        ${iconArrowLeft(20)}
+                        ${iconArrowLeft(20, '')}
                     </button>
                     <div>
                         <div class="${
@@ -2011,7 +2011,7 @@ function buildProjectDetail(
                                     }">
                                     ${
                                         iconCheckCircle2(
-                                            14,
+                                            14, '',
                                         )
                                     }
                                     ${
@@ -2051,7 +2051,7 @@ function buildProjectDetail(
                                 'project-'
                                 + 'cancel-btn'
                             }">
-                            ${iconX(16)
+                            ${iconX(16, '')
                             } Cancel
                         </button>
                         <button
@@ -2064,7 +2064,7 @@ function buildProjectDetail(
                                 'project-'
                                 + 'save-btn'
                             }">
-                            ${iconSave(16)
+                            ${iconSave(16, '')
                             } Save
                         </button>
                     </div>`
@@ -2078,7 +2078,7 @@ function buildProjectDetail(
                             'project-'
                             + 'edit-btn'
                         }">
-                        ${iconEdit(16)
+                        ${iconEdit(16, '')
                         } Edit
                     </button>`}
             </div>

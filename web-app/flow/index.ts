@@ -76,7 +76,7 @@ function buildFlowCard(
                         + ' items-center'
                         + ' gap-1'
                     }">${
-                        iconListTodo(14)
+                        iconListTodo(14, '')
                     } ${
                         flow.stepsCount
                     } ${
@@ -111,7 +111,7 @@ export async function init(): Promise<void> {
         getFlows,
         init,
         {
-            icon: iconGitBranch(24),
+            icon: iconGitBranch(24, ''),
             title:
                 'No Processes Documented',
             description:
@@ -133,12 +133,12 @@ export async function init(): Promise<void> {
         [
             '#page-badge',
             html`${
-                iconGitBranch(14)
+                iconGitBranch(14, '')
             } Process Documentation`,
         ],
         [
             '#search-field-icon',
-            iconSearch(16),
+            iconSearch(16, ''),
         ],
     ]);
     $('#page-badge')?.classList

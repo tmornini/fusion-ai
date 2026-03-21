@@ -51,7 +51,7 @@ export async function init(): Promise<void> {
     ${
         isActive
             ? html`${
-                iconCheckCircle2(12)
+                iconCheckCircle2(12, '')
             } `
             : html``
     }${name}
@@ -86,28 +86,28 @@ export async function init(): Promise<void> {
     populateIcons([
         [
             '#profile-breadcrumb-separator',
-            iconChevronRight(14),
+            iconChevronRight(14, ''),
         ],
         [
             '#profile-save-btn-icon',
-            iconSave(16),
+            iconSave(16, ''),
         ],
         [
             '#profile-avatar-btn',
-            iconCamera(14),
+            iconCamera(14, ''),
         ],
         [
             '#profile-email-label',
-            html`${iconMail(16)} Email`,
+            html`${iconMail(16, '')} Email`,
         ],
         [
             '#profile-phone-label',
-            html`${iconPhone(16)} Phone`,
+            html`${iconPhone(16, '')} Phone`,
         ],
         [
             '#profile-role-label',
             html`${
-                iconBriefcase(16)
+                iconBriefcase(16, '')
             } Role`,
         ],
         [
@@ -208,7 +208,7 @@ export async function init(): Promise<void> {
                                 chip,
                                 html`${
                                     iconCheckCircle2(
-                                        12,
+                                        12, '',
                                     )
                                 } ${name}`,
                             );
@@ -230,7 +230,7 @@ export async function init(): Promise<void> {
             setHtml(
                 btn,
                 html`${
-                    iconCheckCircle2(16)
+                    iconCheckCircle2(16, '')
                 } Saved!`,
             );
             btn.removeAttribute('disabled');
@@ -242,7 +242,7 @@ export async function init(): Promise<void> {
                 setHtml(
                     btn,
                     html`${
-                        iconSave(16)
+                        iconSave(16, '')
                     } Save Changes`,
                 );
             }, 2000);

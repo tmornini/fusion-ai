@@ -58,7 +58,7 @@ async function updateEmptyBanner(
                     + 'hsl(var(--primary));'
                     + 'flex-shrink:0'
                 }">${
-                    iconInfo(20)
+                    iconInfo(20, '')
                 }</span>
                 <p class="text-sm"
                     style="margin:0">${
@@ -180,7 +180,7 @@ export async function init(): Promise<void> {
         }">
             <div style="${
                 iconBoxStyle('success')
-            }">${iconDownload(20)}</div>
+            }">${iconDownload(20, '')}</div>
             <div>
                 <h3 class="${
                     'text-sm font-semibold'
@@ -207,7 +207,7 @@ export async function init(): Promise<void> {
         }">
             <div style="${
                 iconBoxStyle('success')
-            }">${iconUpload(20)}</div>
+            }">${iconUpload(20, '')}</div>
             <div>
                 <h3 class="${
                     'text-sm font-semibold'
@@ -245,7 +245,7 @@ export async function init(): Promise<void> {
         }">
             <div style="${
                 iconBoxStyle('warning')
-            }">${iconDatabase(20)}</div>
+            }">${iconDatabase(20, '')}</div>
             <div>
                 <h3 class="${
                     'text-sm font-semibold'
@@ -274,7 +274,7 @@ export async function init(): Promise<void> {
         }">
             <div style="${
                 iconBoxStyle('error')
-            }">${iconTrash(20)}</div>
+            }">${iconTrash(20, '')}</div>
             <div>
                 <h3 class="${
                     'text-sm font-semibold'

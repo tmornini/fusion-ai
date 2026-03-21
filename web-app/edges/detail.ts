@@ -91,13 +91,13 @@ function buildCompletionIcon(
             style="${
                 'color:'
                 + 'hsl(var(--success))'
-            }">${iconCheck(14)}</span>`
+            }">${iconCheck(14, '')}</span>`
         : html`<span
             style="${
                 'color:hsl(var('
                 + '--muted-foreground))'
             }">${
-                iconAlertCircle(14)
+                iconAlertCircle(14, '')
             }</span>`;
 }
 
@@ -215,7 +215,7 @@ function buildEdgePage(
                         data-remove-outcome="${
                             outcome.id
                         }">${
-                            iconTrash(16)
+                            iconTrash(16, '')
                     }</button>
                 </div>
                 <div style="${
@@ -239,7 +239,7 @@ function buildEdgePage(
                             data-add-metric="${
                                 outcome.id
                             }">${
-                                iconPlus(12)
+                                iconPlus(12, '')
                             } Add Metric
                         </button>
                     </div>
@@ -399,7 +399,7 @@ function buildEdgePage(
                                             .id
                                     }">${
                                         iconTrash(
-                                            14,
+                                            14, '',
                                         )
                                 }</button>
                             </div>
@@ -422,14 +422,14 @@ function buildEdgePage(
                 }"
                     id="edge-back-btn"
                     >${
-                        iconArrowLeft(20)
+                        iconArrowLeft(20, '')
                 }</button>
                 <div>
                     <div class="${
                         'badge badge-primary '
                         + 'text-sm mb-2'
                     }">${
-                        iconTarget(14)
+                        iconTarget(14, '')
                     } Business Case
                         Definition</div>
                     <div class="${
@@ -464,7 +464,7 @@ function buildEdgePage(
                         ? ''
                         : 'disabled',
                 )}>
-                ${iconSave(16)
+                ${iconSave(16, '')
                 } Save &amp; Continue
             </button>
         </div>
@@ -635,7 +635,7 @@ function buildEdgePage(
                                 'edge-add'
                                 + '-outcome'
                             }">${
-                                iconPlus(16)
+                                iconPlus(16, '')
                             } Add
                             Outcome</button>
                     </div>
@@ -668,7 +668,7 @@ function buildEdgePage(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                                iconClock(14)
+                                iconClock(14, '')
                             } Short-term
                                 (0-3
                                 months)</label>
@@ -703,7 +703,7 @@ function buildEdgePage(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                                iconClock(14)
+                                iconClock(14, '')
                             } Mid-term
                                 (3-12
                                 months)</label>
@@ -738,7 +738,7 @@ function buildEdgePage(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                                iconClock(14)
+                                iconClock(14, '')
                             } Long-term
                                 (12+
                                 months)</label>
@@ -858,7 +858,7 @@ function buildEdgePage(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                                iconUser(14)
+                                iconUser(14, '')
                             } Edge
                                 Owner</label>
                             <input

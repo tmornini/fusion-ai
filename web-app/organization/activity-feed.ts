@@ -34,7 +34,7 @@ function buildActivityIcon(
     const iconMap: Record<
         string,
         {
-            icon: (size?: number) => SafeHtml;
+            icon: (size: number, cssClass: string) => SafeHtml;
             bg: string;
         }
     > = {
@@ -106,7 +106,7 @@ function buildActivityIcon(
 height:2.5rem;border-radius:var(--radius-lg);
 display:flex;align-items:center;
 justify-content:center;flex-shrink:0;
-${entry.bg}">${entry.icon(20)}</div>`;
+${entry.bg}">${entry.icon(20, '')}</div>`;
 }
 
 function buildActivity(
@@ -115,7 +115,7 @@ function buildActivity(
     const meta = activity.score
         ? html`<div
                 class="badge badge-default text-xs mt-1">${
-                iconStar(12)
+                iconStar(12, '')
             } Score: ${activity.score}</div>`
         : activity.status
             ? html`<div
@@ -165,7 +165,7 @@ export async function init(
             getActivityFeed,
             () => init(),
             {
-                icon: iconActivity(24),
+                icon: iconActivity(24, ''),
                 title: 'No Activity Yet',
                 description:
                     'Activity from your'
@@ -185,7 +185,7 @@ export async function init(
             <div class="search-wrapper"
                 style="flex:1">
                 <span class="search-icon">${
-                    iconSearch(16)}</span>
+                    iconSearch(16, '')}</span>
                 <input class="input search-input"
                     placeholder="Search activity..."
                     id="activity-search"

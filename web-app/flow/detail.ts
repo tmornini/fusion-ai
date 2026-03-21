@@ -31,7 +31,7 @@ import {
 
 const toolIconConfig: Record<
     string,
-    (size?: number, cssClass?: string) => SafeHtml
+    (size: number, cssClass: string) => SafeHtml
 > = {
     Email: iconMail,
     Database: iconDatabase,
@@ -277,7 +277,7 @@ export async function init(
                                     }"
                                 >${
                                     iconGripVertical(
-                                        16,
+                                        16, '',
                                     )
                                 }</div>
                                 <div
@@ -407,7 +407,7 @@ export async function init(
                                     >
                                         ${
                                             iconUsers(
-                                                12,
+                                                12, '',
                                             )
                                         }
                                         <span>
@@ -429,7 +429,7 @@ export async function init(
                                         }</span>
                                         ${
                                             iconClock(
-                                                12,
+                                                12, '',
                                             )
                                         }
                                         <span
@@ -483,7 +483,7 @@ export async function init(
                                         )}
                                     >${
                                         iconChevronUp(
-                                            16,
+                                            16, '',
                                         )
                                     }</button>
                                     <button
@@ -514,7 +514,7 @@ export async function init(
                                     >
                                         ${
                                             iconChevronDown(
-                                                16,
+                                                16, '',
                                             )
                                         }
                                     </button>
@@ -541,7 +541,7 @@ export async function init(
                                         )}"
                                     >${
                                         iconTrash(
-                                            16,
+                                            16, '',
                                         )
                                     }</button>
                                     ${isExpanded
@@ -975,7 +975,7 @@ export async function init(
                                         >
                                             ${
                                                 iconFn(
-                                                    14,
+                                                    14, '',
                                                 )
                                             }
                                             ${name}
@@ -998,7 +998,7 @@ export async function init(
                     + 'border-style:dashed'
                 }"
                 id="flow-add-step"
-            >${iconPlus(16)} Add Step</button>
+            >${iconPlus(16, '')} Add Step</button>
         </div>`;
     }
 
@@ -1049,7 +1049,7 @@ export async function init(
                             + '-back-btn'
                         }"
                     >${
-                        iconArrowLeft(20)
+                        iconArrowLeft(20, '')
                     }</button>
                     <div>
                         <div
@@ -1061,7 +1061,7 @@ export async function init(
                                 + ' mb-3'
                             }"
                         >
-                            ${iconGitBranch(14)}
+                            ${iconGitBranch(14, '')}
                             ${'Process'
                                 + ' Documentation'}
                         </div>
@@ -1098,7 +1098,7 @@ export async function init(
                     }"
                     id="flow-save-btn"
                 >${
-                    iconSave(16)
+                    iconSave(16, '')
                 } Save</button>
             </div>
 
@@ -1507,7 +1507,7 @@ export async function init(
         setHtml(
             root,
             buildEmptyState(
-                iconGitBranch(24),
+                iconGitBranch(24, ''),
                 'No Process Documented',
                 'Start documenting your'
                 + ' processes to improve'

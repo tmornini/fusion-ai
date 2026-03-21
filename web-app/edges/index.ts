@@ -38,10 +38,10 @@ function statusIcon(
     edge: EdgeListItem,
 ): SafeHtml {
     if (edge.isComplete)
-        return iconCheckCircle2(12);
+        return iconCheckCircle2(12, '');
     if (edge.isDraft)
-        return iconClock(12);
-    return iconAlertCircle(12);
+        return iconClock(12, '');
+    return iconAlertCircle(12, '');
 }
 
 function buildEdgeCard(
@@ -79,7 +79,7 @@ function buildEdgeCard(
                             + edge
                                 .confidenceClassName
                         }">${
-                            iconShield(14)
+                            iconShield(14, '')
                         } ${
                             edge
                                 .confidenceLabel
@@ -100,7 +100,7 @@ function buildEdgeCard(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                            iconUser(14)
+                            iconUser(14, '')
                         } ${
                             edge.owner
                         }</span>`
@@ -112,7 +112,7 @@ function buildEdgeCard(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                            iconTrendingUp(14)
+                            iconTrendingUp(14, '')
                         } ${
                             edge.outcomesCount
                         } ${
@@ -126,7 +126,7 @@ function buildEdgeCard(
                                 + 'items-center'
                                 + ' gap-1'
                             }">${
-                            iconBarChart(14)
+                            iconBarChart(14, '')
                         } ${
                             edge.metricsCount
                         } ${
@@ -171,7 +171,7 @@ export async function init(): Promise<void> {
         getEdgeList,
         init,
         {
-            icon: iconTarget(24),
+            icon: iconTarget(24, ''),
             title: 'No Edge Definitions',
             description:
                 'Create Edge definitions'
@@ -190,12 +190,12 @@ export async function init(): Promise<void> {
         [
             '#page-badge',
             html`${
-                iconTarget(14)
+                iconTarget(14, '')
             } Business Case Definition`,
         ],
         [
             '#search-field-icon',
-            iconSearch(16),
+            iconSearch(16, ''),
         ],
     ]);
     $('#page-badge')?.classList

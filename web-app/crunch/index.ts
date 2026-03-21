@@ -90,13 +90,13 @@ function buildUploadStep(): SafeHtml {
                 <span class="${
                     'flex items-center gap-1'
                 }">
-                    ${iconFileSpreadsheet(14)}
+                    ${iconFileSpreadsheet(14, '')}
                     Spreadsheets
                 </span>
                 <span class="${
                     'flex items-center gap-1'
                 }">
-                    ${iconFileText(14)} CSV Files
+                    ${iconFileText(14, '')} CSV Files
                 </span>
             </div>
         </div>
@@ -300,8 +300,8 @@ export async function init(): Promise<void> {
                     )}"
                 >
                     ${isComplete
-                        ? iconCheck(16)
-                        : s.icon(16)}
+                        ? iconCheck(16, '')
+                        : s.icon(16, '')}
                     <span
                         class="${
                             'text-sm'
@@ -971,7 +971,7 @@ export async function init(): Promise<void> {
                     )}
                 >
                     Continue to Review
-                    ${iconChevronRight(16)}
+                    ${iconChevronRight(16, '')}
                 </button>
             </div>
         </div>`;
@@ -1042,7 +1042,7 @@ export async function init(): Promise<void> {
                 <div
                     class="badge badge-primary
                            text-sm mb-3"
-                >${iconTable(14)
+                >${iconTable(14, '')
                     } Data Translation
                     Tool</div>
                 <h1

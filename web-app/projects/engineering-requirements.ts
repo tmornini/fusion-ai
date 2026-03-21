@@ -249,7 +249,7 @@ export async function init(
                     id="${
                         'requirements-back'
                     }">
-                    ${iconArrowLeft(20)}
+                    ${iconArrowLeft(20, '')}
                 </button>
                 <div>
                     <h1 class="${
@@ -876,7 +876,7 @@ export async function init(
                                 + '-send'
                             }"
                             disabled>
-                            ${iconSend(16)
+                            ${iconSend(16, '')
                             } Send Question
                         </button>
                     </div>
@@ -950,7 +950,7 @@ export async function init(
                             'requirements-'
                             + 'complete'
                         }">
-                        ${iconCheckCircle2(16)}
+                        ${iconCheckCircle2(16, '')}
                         Mark Requirements
                         Complete
                     </button>

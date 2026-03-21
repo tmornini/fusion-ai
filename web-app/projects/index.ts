@@ -38,8 +38,8 @@ import {
 const projectStatusIcons: Record<
     string,
     (
-        size?: number,
-        cssClass?: string,
+        size: number,
+        cssClass: string,
     ) => SafeHtml
 > = {
     'submitted': iconClock,
@@ -126,7 +126,7 @@ function buildProjectCard(
             }" style="${
                 'margin-top:0.25rem;'
                 + 'cursor:grab'
-            }">${iconGripVertical(20)}</div>
+            }">${iconGripVertical(20, '')}</div>
             <div style="flex:1;min-width:0">
                 <div class="${
                     'flex items-start '
@@ -160,7 +160,7 @@ function buildProjectCard(
                                     .statusClassName()
                                 + ' text-xs'
                             }">${
-                                statusIcon(14)
+                                statusIcon(14, '')
                             } ${project
                                 .statusLabel()
                             }</span>
@@ -317,7 +317,7 @@ function buildProjectCard(
                         + 'btn-sm gap-2'
                     }" data-view-project="${
                         project.id
-                    }">${iconEye(16)
+                    }">${iconEye(16, '')
                     } <span class="${
                         'hidden-mobile'
                     }">View Details</span
@@ -341,7 +341,7 @@ export async function init(): Promise<void> {
         getProjects,
         init,
         {
-            icon: iconFolderKanban(24),
+            icon: iconFolderKanban(24, ''),
             title: 'No Projects Yet',
             description:
                 'Convert approved ideas'
@@ -364,11 +364,11 @@ export async function init(): Promise<void> {
     populateIcons([
         [
             '#priority-view-icon',
-            iconLayoutGrid(16),
+            iconLayoutGrid(16, ''),
         ],
         [
             '#performance-view-icon',
-            iconBarChart(16),
+            iconBarChart(16, ''),
         ],
     ]);
 
@@ -400,7 +400,7 @@ export async function init(): Promise<void> {
                     + cfg.className
                     + ' text-xs'
                 }">${
-                    icon(14)
+                    icon(14, '')
                 } ${items?.length ?? 0}</span>`;
             });
         setHtml(

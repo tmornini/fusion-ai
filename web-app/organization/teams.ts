@@ -71,7 +71,7 @@ function buildStatusDot(
 
 const dimensionIconConfig: Record<
     string,
-    (size?: number, cssClass?: string) => SafeHtml
+    (size: number, cssClass: string) => SafeHtml
 > = {
     driver: iconTarget,
     analytical: iconBrain,
@@ -329,7 +329,7 @@ function buildMemberCard(
                            --muted)/0.5);
                            font-size:0.625rem"
                 >
-                    ${iconStar(10)} ${strength}
+                    ${iconStar(10, '')} ${strength}
                 </span>
                     `)}
                 </div>
@@ -348,7 +348,7 @@ function buildMemberCard(
                     <span
                         class="flex items-center gap-1"
                     >
-                        ${iconBriefcase(14)}
+                        ${iconBriefcase(14, '')}
                         ${member.currentProjects} active
                     </span>
                     <span
@@ -453,7 +453,7 @@ export async function init(): Promise<void> {
         getTeamMembers,
         init,
         {
-            icon: iconUsers(24),
+            icon: iconUsers(24, ''),
             title: 'No Team Members',
             description:
                 'Invite team members to start'
@@ -466,15 +466,15 @@ export async function init(): Promise<void> {
     populateIcons([
         [
             '#activity-feed-btn-icon',
-            iconActivity(16),
+            iconActivity(16, ''),
         ],
         [
             '#add-member-btn-icon',
-            iconPlus(16),
+            iconPlus(16, ''),
         ],
         [
             '#search-field-icon',
-            iconSearch(16),
+            iconSearch(16, ''),
         ],
     ]);
 

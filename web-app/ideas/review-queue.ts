@@ -50,7 +50,7 @@ const priorityConfig: Record<
 
 const readinessIcon: Record<
     string,
-    (size?: number) => SafeHtml
+    (size: number, cssClass: string) => SafeHtml
 > = {
     ready: iconCheckCircle2,
     'needs-info': iconMessageSquare,
@@ -88,7 +88,7 @@ function buildReviewCard(
                         + ' gap-1 text-sm '
                         + idea
                             .readinessClassName()
-                    }">${rIcon(16)
+                    }">${rIcon(16, '')
                     } ${idea
                         .readinessLabel()
                     }</span>
@@ -96,7 +96,7 @@ function buildReviewCard(
                         ${idea
                             .edgeStatusClassName()}
                         text-xs">${
-                        iconTarget(12)
+                        iconTarget(12, '')
                     } ${idea
                         .edgeStatusLabel()
                     }</span>
@@ -200,7 +200,7 @@ export async function init(): Promise<void> {
         getReviewQueue,
         init,
         {
-            icon: iconClipboardCheck(24),
+            icon: iconClipboardCheck(24, ''),
             title: 'Review Queue Empty',
             description:
                 'All ideas have been reviewed.'
@@ -351,7 +351,7 @@ export async function init(): Promise<void> {
         <div class="search-wrapper"
             style="flex:1">
             <span class="search-icon">${
-                iconSearch(16)
+                iconSearch(16, '')
             }</span>
             <input class="input search-input"
                 placeholder="${

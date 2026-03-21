@@ -132,7 +132,7 @@ export async function init(): Promise<void> {
                            align-items:center;
                            justify-content:center;
                            color:hsl(var(--primary))"
-                >${iconUser(20)}</div>
+                >${iconUser(20, '')}</div>
                 <div class="text-left">
                     <p class="font-medium text-sm">
                         My Profile
@@ -160,7 +160,7 @@ export async function init(): Promise<void> {
                            justify-content:center;
                            color:hsl(var(
                            --info-text))"
-                >${iconSettings(20)}</div>
+                >${iconSettings(20, '')}</div>
                 <div class="text-left">
                     <p class="font-medium text-sm">
                         Company Settings
@@ -188,7 +188,7 @@ export async function init(): Promise<void> {
                            justify-content:center;
                            color:hsl(var(
                            --success-text))"
-                >${iconCreditCard(20)}</div>
+                >${iconCreditCard(20, '')}</div>
                 <div class="text-left">
                     <p class="font-medium text-sm">
                         Billing
@@ -225,7 +225,7 @@ export async function init(): Promise<void> {
                                justify-content:center;
                                color:hsl(var(
                                --primary))"
-                    >${iconBuilding(28)}</div>
+                    >${iconBuilding(28, '')}</div>
                     <div>
                         <h2
                             class="text-xl font-display
@@ -239,13 +239,13 @@ export async function init(): Promise<void> {
                                 class="badge badge-default
                                        text-xs"
                             >
-                                ${iconCrown(12)}
+                                ${iconCrown(12, '')}
                                 ${account.company.plan} Plan
                             </span>
                             <span
                                 class="status-badge-success"
                             >
-                                ${iconCheckCircle2(12)}
+                                ${iconCheckCircle2(12, '')}
                                 Active
                             </span>
                         </div>
@@ -259,7 +259,7 @@ export async function init(): Promise<void> {
                     <div
                         class="flex items-center gap-2"
                     >
-                        ${iconActivity(16)}
+                        ${iconActivity(16, '')}
                         <span class="text-sm font-medium">
                             ${account.health.status}
                         </span>
@@ -284,7 +284,7 @@ export async function init(): Promise<void> {
                         class="flex items-center gap-2
                                text-muted mb-1"
                     >
-                        ${iconUsers(16)}
+                        ${iconUsers(16, '')}
                         <span class="text-xs">
                             Active Users
                         </span>
@@ -305,7 +305,7 @@ export async function init(): Promise<void> {
                         class="flex items-center gap-2
                                text-muted mb-1"
                     >
-                        ${iconFolderKanban(16)}
+                        ${iconFolderKanban(16, '')}
                         <span class="text-xs">
                             Projects
                         </span>
@@ -323,7 +323,7 @@ export async function init(): Promise<void> {
                         class="flex items-center gap-2
                                text-muted mb-1"
                     >
-                        ${iconLightbulb(16)}
+                        ${iconLightbulb(16, '')}
                         <span class="text-xs">
                             Ideas
                         </span>
@@ -341,7 +341,7 @@ export async function init(): Promise<void> {
                         class="flex items-center gap-2
                                text-muted mb-1"
                     >
-                        ${iconCalendar(16)}
+                        ${iconCalendar(16, '')}
                         <span class="text-xs">
                             Next Billing
                         </span>
@@ -359,7 +359,7 @@ export async function init(): Promise<void> {
                 class="font-display font-semibold
                        mb-4 flex items-center gap-2"
             >
-                ${iconTrendingUp(20)}
+                ${iconTrendingUp(20, '')}
                 Usage Overview
             </h3>
             <div class="flex flex-col gap-4">
@@ -408,7 +408,7 @@ export async function init(): Promise<void> {
                     <span
                         style="color:hsl(var(
                                --muted-foreground))"
-                    >${iconUsers(20)}</span>
+                    >${iconUsers(20, '')}</span>
                     <div style="flex:1;min-width:0">
                         <p class="font-medium text-sm">
                             Users
@@ -421,13 +421,13 @@ export async function init(): Promise<void> {
                                 + ' team members'}
                         </p>
                     </div>
-                    ${iconExternalLink(16)}
+                    ${iconExternalLink(16, '')}
                 </button>
                 <button class="admin-link-card">
                     <span
                         style="color:hsl(var(
                                --muted-foreground))"
-                    >${iconCreditCard(20)}</span>
+                    >${iconCreditCard(20, '')}</span>
                     <div style="flex:1;min-width:0">
                         <p class="font-medium text-sm">
                             Billing History
@@ -440,7 +440,7 @@ export async function init(): Promise<void> {
                                 + ' and payments'}
                         </p>
                     </div>
-                    ${iconExternalLink(16)}
+                    ${iconExternalLink(16, '')}
                 </button>
             </div>
         </div>

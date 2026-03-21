@@ -177,7 +177,7 @@ export function buildErrorState(
     class="state-container">
     <div class="state-icon
         state-icon-error">${
-        iconAlertTriangle(24)}</div>
+        iconAlertTriangle(24, '')}</div>
     <p class="state-title"
         >Something went wrong</p>
     <p class="state-description">${
