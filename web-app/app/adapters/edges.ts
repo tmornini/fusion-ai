@@ -49,6 +49,7 @@ export async function getIdeaForEdge(
             userMap,
             submission?.user_id ?? '',
         ),
+        'missing',
     );
     return {
         title: idea.title,

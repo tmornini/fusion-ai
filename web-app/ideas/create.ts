@@ -760,8 +760,6 @@ export async function init():
                                     0,
                                 priority:
                                     0,
-                                edge_status:
-                                    'missing',
                                 category:
                                     '',
                                 readiness:

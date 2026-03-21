@@ -367,7 +367,7 @@ export async function populateMockData(
             estimated_cost: 45000,
             priority: 1,
             status: 'in-review',
-            edge_status: 'complete',
+
             problem_statement:
                 'Marketing team spends 20+'
                 + ' hours weekly manually'
@@ -416,7 +416,7 @@ export async function populateMockData(
             estimated_cost: 32000,
             priority: 2,
             status: 'promoted',
-            edge_status: 'complete',
+
             problem_statement:
                 'Analysts spend 15+ hours'
                 + ' per week manually'
@@ -468,7 +468,7 @@ export async function populateMockData(
             estimated_cost: 75000,
             priority: 3,
             status: 'active',
-            edge_status: 'draft',
+
             problem_statement:
                 'Unplanned equipment'
                 + ' downtime costs $50K per'
@@ -517,7 +517,7 @@ export async function populateMockData(
             estimated_cost: 28000,
             priority: 4,
             status: 'in-review',
-            edge_status: 'complete',
+
             problem_statement:
                 'Leadership relies on'
                 + ' weekly batch reports'
@@ -569,7 +569,7 @@ export async function populateMockData(
             estimated_cost: 38000,
             priority: 5,
             status: 'active',
-            edge_status: 'missing',
+
             problem_statement:
                 'Excess inventory ties up'
                 + ' $2M in capital while'
@@ -620,7 +620,7 @@ export async function populateMockData(
             estimated_cost: 35000,
             priority: 6,
             status: 'archived',
-            edge_status: 'missing',
+
             problem_statement:
                 'New hire onboarding takes'
                 + ' 6 weeks on average, with'
@@ -669,7 +669,7 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 8,
             status: 'in-review',
-            edge_status: 'complete',
+
             problem_statement: '',
             proposed_solution: '',
             expected_outcome: '',
@@ -769,7 +769,7 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 10,
             status: 'in-review',
-            edge_status: 'draft',
+
             problem_statement: '',
             proposed_solution: '',
             expected_outcome: '',
@@ -799,7 +799,7 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 9,
             status: 'in-review',
-            edge_status: 'complete',
+
             problem_statement: '',
             proposed_solution: '',
             expected_outcome: '',
@@ -829,7 +829,7 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 11,
             status: 'in-review',
-            edge_status: 'missing',
+
             problem_statement: '',
             proposed_solution: '',
             expected_outcome: '',
@@ -859,7 +859,7 @@ export async function populateMockData(
             estimated_cost: 0,
             priority: 7,
             status: 'in-review',
-            edge_status: 'complete',
+
             problem_statement: '',
             proposed_solution: '',
             expected_outcome: '',
@@ -1220,6 +1220,39 @@ export async function populateMockData(
                 + ' complex cases only.',
             updated_at:
                 '2024-02-28T14:30:00.000000Z',
+        },
+        {
+            id: '7',
+            status: 'draft',
+            confidence: 'medium',
+            impact_short_term: '',
+            impact_mid_term: '',
+            impact_long_term: '',
+            updated_at:
+                '2024-02-22'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: '8',
+            status: 'complete',
+            confidence: 'high',
+            impact_short_term: '',
+            impact_mid_term: '',
+            impact_long_term: '',
+            updated_at:
+                '2024-02-24'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: '9',
+            status: 'complete',
+            confidence: 'medium',
+            impact_short_term: '',
+            impact_mid_term: '',
+            impact_long_term: '',
+            updated_at:
+                '2024-02-26'
+                + 'T09:00:00.000000Z',
         },
     ];
 
@@ -2961,6 +2994,30 @@ export async function populateMockData(
             created_at:
                 '2024-02-28'
                 + 'T14:30:00.000000Z',
+        },
+        {
+            id: 'ei-7',
+            edge_id: '7',
+            idea_id: '8',
+            created_at:
+                '2024-02-22'
+                + 'T10:00:00.000000Z',
+        },
+        {
+            id: 'ei-8',
+            edge_id: '8',
+            idea_id: '9',
+            created_at:
+                '2024-02-24'
+                + 'T11:00:00.000000Z',
+        },
+        {
+            id: 'ei-9',
+            edge_id: '9',
+            idea_id: '11',
+            created_at:
+                '2024-02-26'
+                + 'T09:00:00.000000Z',
         },
     ];
 

@@ -312,7 +312,6 @@ export interface IdeaEntity {
     estimated_cost: number;
     priority: number;
     status: IdeaStatus;
-    edge_status: EdgeStatus;
     problem_statement: string;
     proposed_solution: string;
     expected_outcome: string;
@@ -950,6 +949,7 @@ export class Idea {
     constructor(
         entity: IdeaEntity,
         submittedBy: string,
+        edgeStatus: EdgeStatus,
     ) {
         this.id = entity.id;
         this.title = entity.title;
@@ -962,8 +962,7 @@ export class Idea {
             entity.estimated_cost;
         this.priority = entity.priority;
         this.status = entity.status;
-        this.edgeStatus =
-            entity.edge_status || 'missing';
+        this.edgeStatus = edgeStatus;
         this.problemStatement =
             entity.problem_statement;
         this.proposedSolution =

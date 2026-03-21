@@ -4,6 +4,8 @@ import type {
     IdeaScoreEntity,
     ConfidenceLevel,
     IdeaSubmissionEntity,
+    EdgeIdeaEntity,
+    EdgeEntity,
 } from '../../../api/types';
 import {
     Idea, nowUtc,
@@ -13,6 +15,7 @@ import {
 import {
     buildUserMap,
     userName,
+    computeEdgeStatus,
     parseJson,
     getEdgeDataWithConfidence,
     type Metric,
@@ -22,14 +25,20 @@ export { Idea } from '../../../api/types';
 
 export async function getIdeas(
 ): Promise<Idea[]> {
-    const [ideas, userMap, submissions] =
-        await Promise.all([
-            GET<IdeaEntity[]>('ideas'),
-            buildUserMap(),
-            GET<IdeaSubmissionEntity[]>(
-                'idea-submissions',
-            ),
-        ]);
+    const [
+        ideas, userMap, submissions,
+        edgeIdeas, edges,
+    ] = await Promise.all([
+        GET<IdeaEntity[]>('ideas'),
+        buildUserMap(),
+        GET<IdeaSubmissionEntity[]>(
+            'idea-submissions',
+        ),
+        GET<EdgeIdeaEntity[]>(
+            'edge-ideas',
+        ),
+        GET<EdgeEntity[]>('edges'),
+    ]);
     const submitterMap = new Map(
         submissions.map(
             s => [s.idea_id, s.user_id],
@@ -44,22 +53,33 @@ export async function getIdeas(
                 submitterMap.get(idea.id)
                     ?? '',
             ),
+            computeEdgeStatus(
+                idea.id,
+                edgeIdeas,
+                edges,
+            ),
         ));
 }
 
 export async function getIdeaDetail(
     ideaId: string,
 ): Promise<Idea> {
-    const [idea, userMap, submissions] =
-        await Promise.all([
-            GET<IdeaEntity>(
-                `ideas/${ideaId}`,
-            ),
-            buildUserMap(),
-            GET<IdeaSubmissionEntity[]>(
-                'idea-submissions',
-            ),
-        ]);
+    const [
+        idea, userMap, submissions,
+        edgeIdeas, edges,
+    ] = await Promise.all([
+        GET<IdeaEntity>(
+            `ideas/${ideaId}`,
+        ),
+        buildUserMap(),
+        GET<IdeaSubmissionEntity[]>(
+            'idea-submissions',
+        ),
+        GET<EdgeIdeaEntity[]>(
+            'edge-ideas',
+        ),
+        GET<EdgeEntity[]>('edges'),
+    ]);
     const submission = submissions.find(
         s => s.idea_id === ideaId,
     );
@@ -69,19 +89,30 @@ export async function getIdeaDetail(
             userMap,
             submission?.user_id ?? '',
         ),
+        computeEdgeStatus(
+            ideaId,
+            edgeIdeas,
+            edges,
+        ),
     );
 }
 
 export async function getReviewQueue(
 ): Promise<Idea[]> {
-    const [ideas, userMap, submissions] =
-        await Promise.all([
-            GET<IdeaEntity[]>('ideas'),
-            buildUserMap(),
-            GET<IdeaSubmissionEntity[]>(
-                'idea-submissions',
-            ),
-        ]);
+    const [
+        ideas, userMap, submissions,
+        edgeIdeas, edges,
+    ] = await Promise.all([
+        GET<IdeaEntity[]>('ideas'),
+        buildUserMap(),
+        GET<IdeaSubmissionEntity[]>(
+            'idea-submissions',
+        ),
+        GET<EdgeIdeaEntity[]>(
+            'edge-ideas',
+        ),
+        GET<EdgeEntity[]>('edges'),
+    ]);
     const submitterMap = new Map(
         submissions.map(
             s => [s.idea_id, s.user_id],
@@ -96,6 +127,11 @@ export async function getReviewQueue(
                 userMap,
                 submitterMap.get(idea.id)
                     ?? '',
+            ),
+            computeEdgeStatus(
+                idea.id,
+                edgeIdeas,
+                edges,
             ),
         ));
 }
@@ -123,7 +159,9 @@ export async function getIdeaForConversion(
                 `ideas/${ideaId}/score`,
             ),
         ]);
-    const idea = new Idea(entity, '');
+    const idea = new Idea(
+        entity, '', 'missing',
+    );
     return {
         id: idea.id,
         title: idea.title,
@@ -212,6 +250,7 @@ export async function getIdeaForApproval(
             userMap,
             submission?.user_id ?? '',
         ),
+        'missing',
     );
 
     return {

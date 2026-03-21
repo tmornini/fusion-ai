@@ -2,6 +2,8 @@ import { GET } from '../../../api/api';
 import type {
     Id,
     ConfidenceLevel,
+    EdgeStatus,
+    EdgeIdeaEntity,
 } from '../../../api/types';
 import type {
     UserEntity,
@@ -21,6 +23,22 @@ export async function buildUserMap(): Promise<Map<Id, User>> {
 
 export function userName(userMap: Map<Id, User>, userId: string): string {
     return userMap.get(userId)?.fullName() ?? '';
+}
+
+export function computeEdgeStatus(
+    ideaId: string,
+    edgeIdeas: EdgeIdeaEntity[],
+    edges: EdgeEntity[],
+): EdgeStatus {
+    const link = edgeIdeas.find(
+        ei => ei.idea_id === ideaId,
+    );
+    if (!link) return 'missing';
+    const edge = edges.find(
+        e => e.id === link.edge_id,
+    );
+    if (!edge) return 'missing';
+    return edge.status;
 }
 
 export function parseJson<T>(value: string | T, fallback: T): T {
