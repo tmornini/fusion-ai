@@ -173,15 +173,21 @@ export function durationInDays(
     return Math.ceil(seconds / SECONDS_PER_DAY);
 }
 
+const BILLION = 1_000_000_000;
+const MILLION = 1_000_000;
+const THOUSAND = 1_000;
+const BILLION_PRECISION = 2;
+const MILLION_PRECISION = 1;
+
 export function formatCompactCurrency(
     value: number,
 ): string {
-    if (value >= 1_000_000_000)
-        return `$${(value / 1_000_000_000).toFixed(2)}B`;
-    if (value >= 1_000_000)
-        return `$${(value / 1_000_000).toFixed(1)}M`;
-    if (value >= 1_000)
-        return `$${Math.round(value / 1_000)}K`;
+    if (value >= BILLION)
+        return `$${(value / BILLION).toFixed(BILLION_PRECISION)}B`;
+    if (value >= MILLION)
+        return `$${(value / MILLION).toFixed(MILLION_PRECISION)}M`;
+    if (value >= THOUSAND)
+        return `$${Math.round(value / THOUSAND)}K`;
     return `$${value}`;
 }
 
