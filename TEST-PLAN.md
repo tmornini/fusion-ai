@@ -2,6 +2,15 @@
 
 > **Encoding:** `- [ ]` = pending, `- [x]` = PASS, `- [FAIL]` = failure (add note)
 
+### Protocol Coverage
+
+All test sections (B through I) must be executed under **both** protocols:
+
+1. **HTTP** — serve the unzipped build via a local HTTP server (e.g. `python3 -m http.server 8080`)
+2. **`file://`** — open the unzipped build directory directly in the browser (e.g. `file:///tmp/fusion-test/index.html`)
+
+Section J covers `file://`-specific edge cases (asset loading, navigation quirks). The rest of the suite applies identically to both protocols.
+
 ## Summary
 
 | Section | Tests |
@@ -15,9 +24,9 @@
 | G. Admin Pages | 28 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 18 |
-| J. Protocol B: `file://` Retest | 14 |
+| J. `file://` Edge Cases | 7 |
 | K. Teardown | 3 |
-| **Total** | **179** |
+| **Total** | **172** |
 
 ---
 
@@ -330,32 +339,17 @@
 
 ---
 
-## J. Protocol B: `file://` Retest
+## J. `file://` Edge Cases
 
-> Open the unzipped build directory directly in the browser via `file://` protocol (e.g. `file:///tmp/fusion-test/index.html`). The app uses localStorage for persistence, which works on `file://` across all major browsers.
+> These cases verify `file://`-specific behavior that differs from HTTP. All other test sections (B–I) also apply under `file://` — see **Protocol Coverage** above.
 
-### Static Pages (No DB Required)
-
-- [ ] **J1** Open `file:///.../index.html` (root). PASS: redirects or links to landing page.
-- [ ] **J2** Open `file:///.../landing/index.html`. PASS: landing page renders with full layout and styling.
-- [ ] **J3** Open `file:///.../auth/index.html`. PASS: auth form renders, validation works (test empty submit → error messages appear).
-- [ ] **J4** Open `file:///.../onboarding/index.html`. PASS: page renders with content.
-- [ ] **J5** Open `file:///.../not-found/index.html`. PASS: 404 page renders.
-- [ ] **J6** Open `file:///.../design-system/index.html`. PASS: component gallery renders.
-- [ ] **J7** Verify CSS loads: pages are styled (not unstyled HTML). PASS: fonts, colors, and layout apply correctly.
-- [ ] **J8** Verify `assets/app.js` loads: interactive elements work (e.g. theme toggle, auth form validation). PASS: JavaScript executes.
-
-### Database-Dependent Pages
-
-- [ ] **J9** Open `file:///.../dashboard/index.html`. PASS: dashboard renders (redirects to snapshots if no data loaded yet).
-- [ ] **J10** Navigate to `snapshots/index.html`, click "Reload Mock Data". PASS: mock data loads. Navigate to `ideas/index.html`. PASS: ideas list renders with seed data.
-- [ ] **J11** Navigate to `snapshots/index.html` and click "Download Snapshot". PASS: download triggers.
-- [ ] **J12** Navigate between 3+ database-dependent pages (dashboard, ideas, projects). PASS: data persists across page navigations via localStorage.
-
-### Navigation Under `file://`
-
-- [ ] **J13** Click sidebar navigation links between pages. PASS: links work (note: relative paths resolve correctly under `file://`).
-- [ ] **J14** Test `Cmd+K` command palette. PASS: palette opens and closes. Navigation from palette results may or may not work depending on URL resolution under `file://`.
+- [ ] **J1** Open `file:///.../index.html` (root). PASS: redirects to landing page (or snapshots when no data exists).
+- [ ] **J2** Verify CSS loads under `file://`: pages are styled (not unstyled HTML). PASS: fonts, colors, and layout apply correctly.
+- [ ] **J3** Verify `assets/app.js` loads under `file://`: interactive elements work (e.g. theme toggle, auth form validation). PASS: JavaScript executes.
+- [ ] **J4** Link prefetching is disabled under `file://` (no `<link rel="prefetch">` elements created). PASS: no prefetch-related errors in console.
+- [ ] **J5** Navigate between 3+ database-dependent pages (dashboard, ideas, projects) under `file://`. PASS: data persists across page navigations via localStorage.
+- [ ] **J6** Click sidebar navigation links between pages under `file://`. PASS: relative paths resolve correctly.
+- [ ] **J7** Test `Cmd+K` command palette under `file://`. PASS: palette opens and closes. Navigation from palette results may not resolve correctly under `file://`.
 
 ---
 
