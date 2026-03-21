@@ -49,7 +49,6 @@
 | impact_label | TEXT | '' |
 | effort_label | TEXT | '' |
 | description | TEXT | '' |
-| submitted_at | TEXT | '' |
 | risks | TEXT (JSON array) | '[]' |
 | assumptions | TEXT (JSON array) | '[]' |
 | alignments | TEXT (JSON array) | '[]' |

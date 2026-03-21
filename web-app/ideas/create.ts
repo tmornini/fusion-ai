@@ -15,7 +15,6 @@ import {
     putIdea,
     putIdeaSubmission,
 } from '../app/adapters';
-import { nowUtc } from '../../api/types';
 
 const steps = [
     {
@@ -768,8 +767,6 @@ export async function init():
                                     '',
                                 effort_label:
                                     '',
-                                submitted_at:
-                                    nowUtc(),
                             },
                         );
                         await putIdeaSubmission(

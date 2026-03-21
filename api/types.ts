@@ -320,7 +320,6 @@ export interface IdeaEntity {
     impact_label: string;
     effort_label: string;
     description: string;
-    submitted_at: string;
     risks: JsonArrayField;
     assumptions: JsonArrayField;
     alignments: JsonArrayField;
@@ -949,6 +948,7 @@ export class Idea {
         entity: IdeaEntity,
         submittedBy: string,
         edgeStatus: EdgeStatus,
+        submittedAt: string,
     ) {
         this.id = entity.id;
         this.title = entity.title;
@@ -973,7 +973,7 @@ export class Idea {
         this.impactLabel = entity.impact_label;
         this.effortLabel = entity.effort_label;
         this.description = entity.description;
-        this.submittedAt = entity.submitted_at;
+        this.submittedAt = submittedAt;
         this.waitingDays = this.submittedAt
             ? Math.max(0, Math.ceil(
                 (Date.now()

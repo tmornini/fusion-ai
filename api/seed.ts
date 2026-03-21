@@ -391,7 +391,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -443,7 +443,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -492,7 +492,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -543,7 +543,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -595,7 +595,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -645,7 +645,7 @@ export async function populateMockData(
             impact_label: '',
             effort_label: '',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -690,8 +690,6 @@ export async function populateMockData(
                 + ' ticket data to provide'
                 + ' accurate, context-aware'
                 + ' responses.',
-            submitted_at:
-                '2024-01-15T10:00:00.000000Z',
             risks: jsonArrayField([
                 {
                     title:
@@ -779,7 +777,7 @@ export async function populateMockData(
             impact_label: 'Medium',
             effort_label: 'Low',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -809,7 +807,7 @@ export async function populateMockData(
             impact_label: 'High',
             effort_label: 'High',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -839,7 +837,7 @@ export async function populateMockData(
             impact_label: 'Medium',
             effort_label: 'Medium',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -869,7 +867,7 @@ export async function populateMockData(
             impact_label: 'High',
             effort_label: 'Medium',
             description: '',
-            submitted_at: '',
+
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),

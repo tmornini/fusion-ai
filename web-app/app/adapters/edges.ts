@@ -50,6 +50,7 @@ export async function getIdeaForEdge(
             submission?.user_id ?? '',
         ),
         'missing',
+        submission!.created_at,
     );
     return {
         title: idea.title,

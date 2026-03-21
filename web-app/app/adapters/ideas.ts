@@ -44,6 +44,14 @@ export async function getIdeas(
             s => [s.idea_id, s.user_id],
         ),
     );
+    const submittedAtMap = new Map(
+        submissions.map(
+            s => [
+                s.idea_id,
+                s.created_at,
+            ],
+        ),
+    );
     return ideas
         .filter(ideaIsNotDeleted)
         .map(idea => new Idea(
@@ -58,6 +66,7 @@ export async function getIdeas(
                 edgeIdeas,
                 edges,
             ),
+            submittedAtMap.get(idea.id)!,
         ));
 }
 
@@ -94,6 +103,7 @@ export async function getIdeaDetail(
             edgeIdeas,
             edges,
         ),
+        submission!.created_at,
     );
 }
 
@@ -118,6 +128,14 @@ export async function getReviewQueue(
             s => [s.idea_id, s.user_id],
         ),
     );
+    const submittedAtMap = new Map(
+        submissions.map(
+            s => [
+                s.idea_id,
+                s.created_at,
+            ],
+        ),
+    );
 
     return ideas
         .filter(ideaIsInReview)
@@ -133,6 +151,7 @@ export async function getReviewQueue(
                 edgeIdeas,
                 edges,
             ),
+            submittedAtMap.get(idea.id)!,
         ));
 }
 
@@ -160,7 +179,7 @@ export async function getIdeaForConversion(
             ),
         ]);
     const idea = new Idea(
-        entity, '', 'missing',
+        entity, '', 'missing', '',
     );
     return {
         id: idea.id,
@@ -251,6 +270,7 @@ export async function getIdeaForApproval(
             submission?.user_id ?? '',
         ),
         'missing',
+        submission!.created_at,
     );
 
     return {
