@@ -71,7 +71,7 @@ function buildPageList(
                 : iconSearch(16, ''),
             href: buildPageUrl(name),
             keywords:
-                entry.keywords || '',
+                entry.keywords ?? '',
         });
     }
     return result;
