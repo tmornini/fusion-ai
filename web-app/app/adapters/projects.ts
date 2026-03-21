@@ -341,7 +341,7 @@ export interface EngineeringProject {
         id: string;
         title: string;
         score: number;
-    };
+    } | null;
     timeline: string;
     budget: string;
 }
@@ -418,11 +418,7 @@ getProjectForEngineering(
                 title: linkedIdea.title,
                 score: linkedIdea.score,
             }
-            : {
-                id: '',
-                title: '',
-                score: 0,
-            },
+            : null,
         timeline:
             project.timeline_label,
         budget: project.budget_label,

@@ -718,6 +718,7 @@ export async function init(
                 </div>
             </div>
 
+            ${project.linkedIdea ? html`
             <div class="${
                 'card p-6 mb-8'
             }">
@@ -816,6 +817,7 @@ export async function init(
                     </div>
                 </a>
             </div>
+            ` : html``}
 
             <div style="${
                 'margin-bottom:2rem'
