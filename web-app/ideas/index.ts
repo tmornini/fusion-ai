@@ -393,14 +393,12 @@ function buildIdeaCard(
 }
 
 export async function init(): Promise<void> {
-    const listContainer = $('#ideas-list');
+    const listContainer = $('#ideas-list', document);
     if (!listContainer) return;
 
     const result = await withLoadingState(
         listContainer,
-        buildSkeleton(
-            'card-list', { count: 4 },
-        ),
+        buildSkeleton('card-list', 4),
         getIdeas,
         init,
         {
@@ -420,7 +418,7 @@ export async function init(): Promise<void> {
             },
             onEmpty: () => {
                 $(
-                    '#create-idea-btn',
+                    '#create-idea-btn', document,
                 )?.remove();
             },
         },
@@ -446,7 +444,7 @@ export async function init(): Promise<void> {
         ],
     ]);
 
-    const flowEl = $('#flow-indicator');
+    const flowEl = $('#flow-indicator', document);
     if (flowEl) {
         setHtml(flowEl, html`
         ${iconLightbulb(16, 'text-primary')}
@@ -475,7 +473,7 @@ export async function init(): Promise<void> {
         .filter(idea => idea.isInReview())
         .length;
     const reviewBtnEl = $(
-        '#review-queue-btn',
+        '#review-queue-btn', document,
     );
     if (reviewBtnEl
         && pendingReviewCount > 0) {
@@ -491,7 +489,7 @@ export async function init(): Promise<void> {
                 Review Queue
             </span> (${pendingReviewCount})
         </button>`);
-        $('#review-queue-nav')
+        $('#review-queue-nav', document)
             ?.addEventListener(
                 'click',
                 () => navigateTo(
@@ -500,7 +498,7 @@ export async function init(): Promise<void> {
             );
     }
 
-    $('#create-idea-btn')
+    $('#create-idea-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo(
@@ -521,7 +519,7 @@ export async function init(): Promise<void> {
                         b.score - a.score,
                 );
 
-        const list = $('#ideas-list');
+        const list = $('#ideas-list', document);
         if (list)
             setHtml(list, html`${sorted.map(
                 idea => buildIdeaCard(
@@ -530,7 +528,7 @@ export async function init(): Promise<void> {
                 ),
             )}`);
 
-        const count = $('#ideas-count');
+        const count = $('#ideas-count', document);
         if (count)
             count.textContent =
                 `${sorted.length} `
@@ -551,7 +549,7 @@ export async function init(): Promise<void> {
         },
     );
 
-    $('#ideas-list')?.addEventListener(
+    $('#ideas-list', document)?.addEventListener(
         'click',
         (e) => {
             if (

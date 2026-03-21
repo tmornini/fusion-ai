@@ -512,13 +512,13 @@ function bindIdeaEvents(
     idea: Idea,
     ideaId: string,
 ): void {
-    $('#idea-back-btn')
+    $('#idea-back-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo('ideas'),
         );
 
-    $('#idea-edit-btn')
+    $('#idea-edit-btn', document)
         ?.addEventListener(
             'click',
             () => {
@@ -529,7 +529,7 @@ function bindIdeaEvents(
             },
         );
 
-    $('#idea-cancel-btn')
+    $('#idea-cancel-btn', document)
         ?.addEventListener(
             'click',
             () => {
@@ -540,60 +540,60 @@ function bindIdeaEvents(
             },
         );
 
-    $('#idea-save-btn')
+    $('#idea-save-btn', document)
         ?.addEventListener(
             'click',
             async () => {
                 const title =
                     $input(
-                        '#idea-edit-title',
+                        '#idea-edit-title', document,
                     )?.value
                     ?? idea.title;
                 const description =
                     $textarea(
-                        '#idea-edit-target-users',
+                        '#idea-edit-target-users', document,
                     )?.value
                     ?? idea.description;
                 const category =
                     $input(
-                        '#idea-edit-category',
+                        '#idea-edit-category', document,
                     )?.value
                     ?? idea.category;
                 const problemStatement =
                     $textarea(
-                        '#idea-edit-problem',
+                        '#idea-edit-problem', document,
                     )?.value
                     ?? idea.problemStatement;
                 const proposedSolution =
                     $textarea(
-                        '#idea-edit-solution',
+                        '#idea-edit-solution', document,
                     )?.value
                     ?? idea.proposedSolution;
                 const expectedOutcome =
                     $textarea(
-                        '#idea-edit-outcome',
+                        '#idea-edit-outcome', document,
                     )?.value
                     ?? idea.expectedOutcome;
                 const successMetrics =
                     $textarea(
-                        '#idea-edit-metrics',
+                        '#idea-edit-metrics', document,
                     )?.value
                     ?? idea.successMetrics;
                 const impact = Number(
                     $input(
-                        '#idea-edit-impact',
+                        '#idea-edit-impact', document,
                     )?.value
                     ?? idea.estimatedImpact,
                 );
                 const duration = Number(
                     $input(
-                        '#idea-edit-duration',
+                        '#idea-edit-duration', document,
                     )?.value
                     ?? idea.durationInDays(),
                 );
                 const cost = Number(
                     $input(
-                        '#idea-edit-cost',
+                        '#idea-edit-cost', document,
                     )?.value
                     ?? idea.estimatedCost,
                 );
@@ -642,7 +642,7 @@ function bindIdeaEvents(
             },
         );
 
-    $('#idea-edge-btn')
+    $('#idea-edge-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo(
@@ -650,7 +650,7 @@ function bindIdeaEvents(
                 { ideaId },
             ),
         );
-    $('#idea-review-btn')
+    $('#idea-review-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo(
@@ -658,7 +658,7 @@ function bindIdeaEvents(
                 { id: ideaId },
             ),
         );
-    $('#idea-convert-btn')
+    $('#idea-convert-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo(
@@ -673,7 +673,7 @@ function mutateIdeaPage(
     ideaId: string,
 ): void {
     const container = $(
-        '#idea-detail-content',
+        '#idea-detail-content', document,
     );
     if (!container) return;
     setHtml(
@@ -691,13 +691,13 @@ export async function init(
     state.isEditing = false;
 
     const container = $(
-        '#idea-detail-content',
+        '#idea-detail-content', document,
     );
     if (!container) return;
 
     const idea = await withLoadingState(
         container,
-        buildSkeleton('detail'),
+        buildSkeleton('detail', 4),
         () => getIdeaDetail(ideaId),
         () => init(params),
     );

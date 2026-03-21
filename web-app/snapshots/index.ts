@@ -119,7 +119,7 @@ function withWipeAndReload(
         pendingButton = button;
         pendingLabel = label;
         const msg =
-            $('#confirm-wipe-message');
+            $('#confirm-wipe-message', document);
         if (msg) {
             msg.textContent =
                 confirmMessage;
@@ -168,7 +168,7 @@ function buildOutlineBtn(
 }
 
 export async function init(): Promise<void> {
-    const root = $('#snapshots-content');
+    const root = $('#snapshots-content', document);
     if (!root) return;
 
     setHtml(root, html`
@@ -372,7 +372,7 @@ export async function init(): Promise<void> {
         },
     );
 
-    $('#download-btn')?.addEventListener(
+    $('#download-btn', document)?.addEventListener(
         'click',
         async () => {
             try {
@@ -415,14 +415,14 @@ export async function init(): Promise<void> {
         },
     );
 
-    $('#confirm-wipe-cancel')
+    $('#confirm-wipe-cancel', document)
         ?.addEventListener('click', () => {
             pendingAction = null;
             pendingButton = null;
             pendingLabel = '';
             closeDialog('confirm-wipe');
         });
-    $('#confirm-wipe-backdrop')
+    $('#confirm-wipe-backdrop', document)
         ?.addEventListener('click', (e) => {
             if (e.target === e.currentTarget) {
                 pendingAction = null;
@@ -431,7 +431,7 @@ export async function init(): Promise<void> {
                 closeDialog('confirm-wipe');
             }
         });
-    $('#confirm-wipe-submit')
+    $('#confirm-wipe-submit', document)
         ?.addEventListener(
             'click',
             () => void executePendingAction(),

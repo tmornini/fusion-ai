@@ -3,21 +3,21 @@ import { setHtml } from './safe-html';
 
 export function $(
     selector: string,
-    parent: ParentNode = document,
+    parent: ParentNode,
 ): HTMLElement | null {
     return parent.querySelector(selector);
 }
 
 export function $$(
     selector: string,
-    parent: ParentNode = document,
+    parent: ParentNode,
 ): HTMLElement[] {
     return Array.from(parent.querySelectorAll(selector));
 }
 
 export function $input(
     selector: string,
-    parent: ParentNode = document,
+    parent: ParentNode,
 ): HTMLInputElement | null {
     return parent
         .querySelector<HTMLInputElement>(selector);
@@ -25,7 +25,7 @@ export function $input(
 
 export function $select(
     selector: string,
-    parent: ParentNode = document,
+    parent: ParentNode,
 ): HTMLSelectElement | null {
     return parent
         .querySelector<HTMLSelectElement>(selector);
@@ -33,7 +33,7 @@ export function $select(
 
 export function $textarea(
     selector: string,
-    parent: ParentNode = document,
+    parent: ParentNode,
 ): HTMLTextAreaElement | null {
     return parent
         .querySelector<HTMLTextAreaElement>(
@@ -47,7 +47,7 @@ export function attr(el: Element, name: string): string {
 
 export function populateIcons(entries: Array<[string, SafeHtml]>): void {
     for (const [selector, icon] of entries) {
-        const el = $(selector);
+        const el = $(selector, document);
         if (el) setHtml(el, icon);
     }
 }
@@ -62,7 +62,7 @@ export function initToggleGroup(
     attrName: string,
     onChange: (value: string) => void,
 ): void {
-    const buttons = $$(selector);
+    const buttons = $$(selector, document);
     for (const btn of buttons) {
         btn.addEventListener('click', () => {
             const value = btn.getAttribute(attrName) ?? '';

@@ -195,15 +195,13 @@ function buildUserRow(
 
 export async function init(): Promise<void> {
     const container = $(
-            '#manage-users-content',
+            '#manage-users-content', document,
     );
     if (!container) return;
 
     const users = await withLoadingState(
             container,
-            buildSkeleton(
-                    'table', { count: 5 },
-            ),
+            buildSkeleton('table', 5),
             getManagedUsers,
             init,
             {
@@ -604,7 +602,7 @@ export async function init(): Promise<void> {
             openBtnId: 'invite-btn',
             onSubmit: () => {
                     const email =
-                            $input('#invite-email')
+                            $input('#invite-email', document)
                                     ?.value;
                     if (!email) {
                             showToast(

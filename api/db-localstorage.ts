@@ -55,7 +55,7 @@ const KEY_PREFIX = 'fusion-ai:';
 
 function readTable<T>(
     tableName: string,
-    includeDeleted = false,
+    includeDeleted: boolean,
 ): T[] {
     const raw = localStorage.getItem(
         KEY_PREFIX + tableName,
@@ -165,12 +165,14 @@ function createEntityStore<
 >(tableName: string): EntityStore<T> {
     return {
         async getAll(): Promise<T[]> {
-            return readTable<T>(tableName);
+            return readTable<T>(tableName, false);
         },
         async getById(
             id: string,
         ): Promise<T | null> {
-            const rows = readTable<T>(tableName);
+            const rows = readTable<T>(
+                tableName, false,
+            );
             return (
                 rows.find(
                     entity => entity.id === id,
@@ -181,7 +183,9 @@ function createEntityStore<
             id: string,
             fields: Partial<T>,
         ): Promise<T> {
-            const rows = readTable<T>(tableName);
+            const rows = readTable<T>(
+                tableName, false,
+            );
             const index = rows.findIndex(
                 entity => entity.id === id,
             );
@@ -239,7 +243,9 @@ function createSingletonStore<
 >(tableName: string): SingletonStore<T> {
     return {
         async get(): Promise<T> {
-            const rows = readTable<T>(tableName);
+            const rows = readTable<T>(
+                tableName, false,
+            );
             const row = rows.find(
                 entity => entity.id === '1',
             );
@@ -253,7 +259,9 @@ function createSingletonStore<
         async put(
             fields: Partial<T>,
         ): Promise<T> {
-            const rows = readTable<T>(tableName);
+            const rows = readTable<T>(
+                tableName, false,
+            );
             const serialized = serializeRecord(
                 fields, tableName,
             );

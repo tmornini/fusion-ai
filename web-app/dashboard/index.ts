@@ -395,15 +395,13 @@ function buildGauge(
 
 export async function init(): Promise<void> {
     const container =
-        $('#gauge-container');
+        $('#gauge-container', document);
     if (!container) return;
 
     const gauges =
         await withLoadingState(
             container,
-            buildSkeleton('card-grid', {
-                count: 3,
-            }),
+            buildSkeleton('card-grid', 3),
             () => getDashboardGauges(),
             () => init(),
         );

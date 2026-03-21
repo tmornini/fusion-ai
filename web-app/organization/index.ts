@@ -69,10 +69,10 @@ function buildUsageBar(
 }
 
 export async function init(): Promise<void> {
-    const container = $('#account-content');
+    const container = $('#account-content', document);
     if (!container) return;
 
-    setHtml(container, buildSkeleton('detail'));
+    setHtml(container, buildSkeleton('detail', 4));
 
     let account: Account;
     try {
@@ -82,6 +82,7 @@ export async function init(): Promise<void> {
             container,
             buildErrorState(
                 'Failed to load account data.',
+                'Try Again',
             ),
         );
         container
@@ -446,7 +447,7 @@ export async function init(): Promise<void> {
         </div>
     </div>`);
 
-    $$('[data-nav-to]').forEach(navButton => {
+    $$('[data-nav-to]', document).forEach(navButton => {
         navButton.addEventListener(
             'click',
             () => navigateTo(

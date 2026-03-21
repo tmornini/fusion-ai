@@ -1005,7 +1005,7 @@ export async function init(
         edge: ApprovalEdge | null,
         id: string,
     ): void {
-        $('#approval-approve-btn')
+        $('#approval-approve-btn', document)
             ?.addEventListener(
                 'click',
                 async () => {
@@ -1026,7 +1026,7 @@ export async function init(
                 },
             );
 
-        $('#approval-back-btn')
+        $('#approval-back-btn', document)
             ?.addEventListener(
                 'click',
                 () => navigateTo(
@@ -1034,7 +1034,7 @@ export async function init(
                 ),
             );
 
-        $('#approval-edit-btn')
+        $('#approval-edit-btn', document)
             ?.addEventListener(
                 'click',
                 () => {
@@ -1048,7 +1048,7 @@ export async function init(
                 },
             );
 
-        $('#approval-cancel-edit-btn')
+        $('#approval-cancel-edit-btn', document)
             ?.addEventListener(
                 'click',
                 () => {
@@ -1062,18 +1062,18 @@ export async function init(
                 },
             );
 
-        $('#approval-save-edit-btn')
+        $('#approval-save-edit-btn', document)
             ?.addEventListener(
                 'click',
                 async () => {
                     const titleEl = $input(
                         '#approval-edit'
-                        + '-title',
+                        + '-title', document,
                     );
                     const descEl =
                         $textarea(
                             '#approval-edit'
-                            + '-description',
+                            + '-description', document,
                         );
                     const title =
                         titleEl?.value
@@ -1128,7 +1128,7 @@ export async function init(
             openBtnId:
                 'approval-reject-btn',
         });
-        $('#approval-reject-confirm')
+        $('#approval-reject-confirm', document)
             ?.addEventListener(
                 'click',
                 async () => {
@@ -1156,7 +1156,7 @@ export async function init(
             openBtnId:
                 'approval-clarify-btn',
         });
-        $('#approval-clarify-confirm')
+        $('#approval-clarify-confirm', document)
             ?.addEventListener(
                 'click',
                 () => {
@@ -1191,7 +1191,7 @@ export async function init(
         edge: ApprovalEdge | null,
         id: string,
     ): void {
-        const root = $('#page-root');
+        const root = $('#page-root', document);
         if (!root) return;
         setHtml(
             root,
@@ -1204,13 +1204,13 @@ export async function init(
         );
     }
 
-    const root = $('#page-root');
+    const root = $('#page-root', document);
     if (!root) return;
 
     const result =
         await withLoadingState(
             root,
-            buildSkeleton('detail'),
+            buildSkeleton('detail', 4),
             () => Promise.all([
                 getIdeaForApproval(id),
                 getEdgeForApproval(id),

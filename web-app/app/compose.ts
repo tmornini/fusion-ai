@@ -9,7 +9,8 @@ import { join, dirname } from 'path';
 import { PAGE_REGISTRY } from './page-registry';
 
 const ROOT = join(dirname(new URL(import.meta.url).pathname), '..');
-const OUT = process.argv[2] || ROOT;
+const outArg = process.argv[2];
+const OUT = outArg !== undefined ? outArg : ROOT;
 
 const sidebarPages = Object.entries(PAGE_REGISTRY)
     .filter(([, entry]) => entry.layout === 'sidebar')

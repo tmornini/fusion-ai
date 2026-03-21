@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (container) {
             setHtml(container, buildErrorState(
                 errorMessage(err, 'This page failed to load.'),
+                'Try Again',
             ));
             container
                 .querySelector('[data-retry-btn]')

@@ -69,9 +69,8 @@ function buildSkeletonStatsRow(
 
 export function buildSkeleton(
     type: SkeletonType,
-    options?: { count?: number },
+    count: number,
 ): SafeHtml {
-    const count = options?.count ?? 4;
     switch (type) {
         case 'card-grid':
             return html`<div
@@ -171,7 +170,7 @@ border-bottom:1px solid hsl(var(--border))">
 
 export function buildErrorState(
     message: string,
-    retryLabel = 'Try Again',
+    retryLabel: string,
 ): SafeHtml {
     return html`<div
     class="state-container">
@@ -292,6 +291,7 @@ export async function withLoadingState<T>(
             container,
             buildErrorState(
                 errorMessage(e),
+                'Try Again',
             ),
         );
         const retryBtn =

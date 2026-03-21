@@ -186,16 +186,14 @@ function buildReviewCard(
 
 export async function init(): Promise<void> {
     const root = $(
-        '#review-queue-content',
+        '#review-queue-content', document,
     );
     if (!root) return;
 
     const result = await withLoadingState(
         root,
-        html`${buildSkeleton('stats-row')}${
-            buildSkeleton('card-list', {
-                count: 4,
-            })
+        html`${buildSkeleton('stats-row', 4)}${
+            buildSkeleton('card-list', 4)
         }`,
         getReviewQueue,
         init,
@@ -439,16 +437,16 @@ export async function init(): Promise<void> {
     function mutateFilteredList() {
         const search = (
             $input(
-                '#review-queue-search',
+                '#review-queue-search', document,
             )?.value ?? ''
         ).toLowerCase();
         const priority =
             $select(
-                '#review-queue-priority-filter',
+                '#review-queue-priority-filter', document,
             )?.value ?? 'all';
         const readiness =
             $select(
-                '#review-queue-readiness-filter',
+                '#review-queue-readiness-filter', document,
             )?.value ?? 'all';
 
         const filtered = allIdeas.filter(
@@ -475,10 +473,10 @@ export async function init(): Promise<void> {
         );
 
         const list = $(
-            '#review-queue-list',
+            '#review-queue-list', document,
         );
         const empty = $(
-            '#review-queue-empty',
+            '#review-queue-empty', document,
         );
         if (list)
             setHtml(
@@ -496,7 +494,7 @@ export async function init(): Promise<void> {
                     ? 'none' : '';
     }
 
-    $('#review-queue-list')
+    $('#review-queue-list', document)
         ?.addEventListener(
             'click',
             (e) => {
@@ -522,19 +520,19 @@ export async function init(): Promise<void> {
             },
         );
 
-    $('#review-queue-search')
+    $('#review-queue-search', document)
         ?.addEventListener(
             'input',
             mutateFilteredList,
         );
     $(
-        '#review-queue-priority-filter',
+        '#review-queue-priority-filter', document,
     )?.addEventListener(
         'change',
         mutateFilteredList,
     );
     $(
-        '#review-queue-readiness-filter',
+        '#review-queue-readiness-filter', document,
     )?.addEventListener(
         'change',
         mutateFilteredList,

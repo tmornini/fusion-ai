@@ -612,7 +612,7 @@ export async function init():
     }
 
     function mutateWizard() {
-        const root = $('#page-root');
+        const root = $('#page-root', document);
         if (root) {
             setHtml(
                 root,
@@ -629,19 +629,19 @@ export async function init():
                 title:
                     $input(
                         '#idea-create'
-                        + '-field-title',
+                        + '-field-title', document,
                     )?.value ?? '',
                 problemStatement:
                     $textarea(
                         '#idea-create'
                         + '-field'
-                        + '-problem',
+                        + '-problem', document,
                     )?.value ?? '',
                 targetUsers:
                     $input(
                         '#idea-create'
                         + '-field'
-                        + '-target',
+                        + '-target', document,
                     )?.value ?? '',
             };
         } else if (
@@ -653,7 +653,7 @@ export async function init():
                     $textarea(
                         '#idea-create'
                         + '-field'
-                        + '-solution',
+                        + '-solution', document,
                     )?.value ?? '',
             };
         } else if (
@@ -665,13 +665,13 @@ export async function init():
                     $textarea(
                         '#idea-create'
                         + '-field'
-                        + '-outcome',
+                        + '-outcome', document,
                     )?.value ?? '',
                 successMetrics:
                     $textarea(
                         '#idea-create'
                         + '-field'
-                        + '-metrics',
+                        + '-metrics', document,
                     )?.value ?? '',
             };
         }
@@ -690,18 +690,18 @@ export async function init():
             }
         };
 
-        $('#idea-create-back-btn')
+        $('#idea-create-back-btn', document)
             ?.addEventListener(
                 'click',
                 goBack,
             );
-        $('#idea-create-step-back')
+        $('#idea-create-step-back', document)
             ?.addEventListener(
                 'click',
                 goBack,
             );
 
-        $('#idea-create-step-next')
+        $('#idea-create-step-next', document)
             ?.addEventListener(
                 'click',
                 async () => {
@@ -802,7 +802,7 @@ export async function init():
                                 '#idea'
                                 + '-create'
                                 + '-step'
-                                + '-next',
+                                + '-next', document,
                             );
                         if (
                             nextBtn

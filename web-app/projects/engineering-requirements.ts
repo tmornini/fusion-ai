@@ -163,10 +163,10 @@ export async function init(
     if (!projectId) { navigateTo('projects'); return; }
 
     const root = $(
-            '#engineering-requirements-content',
+            '#engineering-requirements-content', document,
     );
     if (!root) return;
-    setHtml(root, buildSkeleton('detail'));
+    setHtml(root, buildSkeleton('detail', 4));
 
     let project: EngineeringProject;
     let clarifications: Clarification[];
@@ -186,6 +186,7 @@ export async function init(
                 buildErrorState(
                         'Failed to load engineering'
                         + ' requirements.',
+                        'Try Again',
                 ),
         );
         root
@@ -959,10 +960,10 @@ export async function init(
         </div>`);
 
     const questionField = $textarea(
-            '#requirements-question',
+            '#requirements-question', document,
     );
     const sendButton = $(
-            '#requirements-send',
+            '#requirements-send', document,
     );
     questionField?.addEventListener(
             'input',
@@ -992,7 +993,7 @@ export async function init(
             },
     );
 
-    $('#requirements-complete')
+    $('#requirements-complete', document)
         ?.addEventListener('click', () => {
             showToast(
                     'Requirements marked as complete',
@@ -1003,7 +1004,7 @@ export async function init(
             );
         });
 
-    $('#requirements-back')
+    $('#requirements-back', document)
         ?.addEventListener(
                 'click',
                 () => navigateTo(
@@ -1011,7 +1012,7 @@ export async function init(
                         { projectId },
                 ),
         );
-    $('#requirements-back-footer')
+    $('#requirements-back-footer', document)
         ?.addEventListener(
                 'click',
                 () => navigateTo(

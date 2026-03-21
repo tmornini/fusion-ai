@@ -159,15 +159,12 @@ function buildEdgeCard(
 }
 
 export async function init(): Promise<void> {
-    const listEl = $('#edge-list');
+    const listEl = $('#edge-list', document);
     if (!listEl) return;
 
     const result = await withLoadingState(
         listEl,
-        buildSkeleton(
-            'card-list',
-            { count: 4 },
-        ),
+        buildSkeleton('card-list', 4),
         getEdgeList,
         init,
         {
@@ -198,7 +195,7 @@ export async function init(): Promise<void> {
             iconSearch(16, ''),
         ],
     ]);
-    $('#page-badge')?.classList
+    $('#page-badge', document)?.classList
         .remove('hidden');
     const stats = {
         total: edges.length,
@@ -212,7 +209,7 @@ export async function init(): Promise<void> {
             edge => edge.isMissing,
         ).length,
     };
-    const statsEl = $('#edge-stats');
+    const statsEl = $('#edge-stats', document);
     if (statsEl) {
         setHtml(statsEl, html`
             <div class="card p-4">
@@ -346,7 +343,7 @@ export async function init(): Promise<void> {
             </div>`);
     }
 
-    const emptyEl = $('#edge-empty');
+    const emptyEl = $('#edge-empty', document);
     if (emptyEl)
         setHtml(emptyEl, html`${
             iconTarget(48, 'text-muted')
@@ -360,12 +357,12 @@ criteria</p>`);
 
     function mutateFilteredList() {
         const search = (
-            $input('#edge-search')?.value
+            $input('#edge-search', document)?.value
                 ?? ''
         ).toLowerCase();
         const status =
             $select(
-                '#edge-status-filter',
+                '#edge-status-filter', document,
             )?.value ?? 'all';
         const filtered = edges.filter(
             edge => {
@@ -383,8 +380,8 @@ criteria</p>`);
                     && matchesStatus;
             },
         );
-        const list = $('#edge-list');
-        const empty = $('#edge-empty');
+        const list = $('#edge-list', document);
+        const empty = $('#edge-empty', document);
         if (list)
             setHtml(
                 list,
@@ -422,12 +419,12 @@ criteria</p>`);
         },
     );
 
-    $('#edge-search')
+    $('#edge-search', document)
         ?.addEventListener(
             'input',
             mutateFilteredList,
         );
-    $('#edge-status-filter')
+    $('#edge-status-filter', document)
         ?.addEventListener(
             'change',
             mutateFilteredList,

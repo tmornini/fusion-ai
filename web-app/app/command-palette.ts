@@ -837,7 +837,7 @@ ${posIndex === 0
     );
 
     const searchInput = $(
-        '#search-input',
+        '#search-input', document,
     );
     searchInput?.addEventListener(
         'focus',
@@ -849,7 +849,7 @@ ${posIndex === 0
     );
 
     const mobileSearchToggle = $(
-        '#mobile-search-toggle',
+        '#mobile-search-toggle', document,
     );
     if (mobileSearchToggle) {
         const newToggle =

@@ -565,7 +565,7 @@ function buildFooter(): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-    const root = $('#page-root');
+    const root = $('#page-root', document);
     if (!root) return;
 
     setHtml(root, html`
@@ -583,8 +583,8 @@ export async function init(): Promise<void> {
     </div>`);
 
     const toggle =
-        $('#mobile-menu-toggle');
-    const menu = $('#mobile-menu');
+        $('#mobile-menu-toggle', document);
+    const menu = $('#mobile-menu', document);
     if (toggle && menu) {
         toggle.addEventListener(
             'click',

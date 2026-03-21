@@ -4,7 +4,7 @@ import { iconSparkles, iconArrowRight } from '../app/icons';
 import { navigateTo } from '../app/core';
 
 export async function init(): Promise<void> {
-    const root = $('#page-root');
+    const root = $('#page-root', document);
     if (!root) return;
 
     setHtml(root, html`
@@ -66,7 +66,7 @@ export async function init(): Promise<void> {
             </div>
         </div>`);
 
-    $('#go-dashboard')?.addEventListener(
+    $('#go-dashboard', document)?.addEventListener(
         'click',
         () => navigateTo('dashboard'),
     );

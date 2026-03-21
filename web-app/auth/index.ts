@@ -42,7 +42,7 @@ function validatePassword(
 }
 
 export async function init(): Promise<void> {
-    const root = $('#page-root');
+    const root = $('#page-root', document);
     if (!root) return;
 
     setHtml(root, html`
@@ -402,24 +402,24 @@ export async function init(): Promise<void> {
 
     let isLogin = true;
 
-    const form = $('#auth-form');
-    const emailInput = $input('#email');
+    const form = $('#auth-form', document);
+    const emailInput = $input('#email', document);
     const passwordInput =
-        $input('#password');
-    const emailError = $('#email-error');
+        $input('#password', document);
+    const emailError = $('#email-error', document);
     const passwordError =
-        $('#password-error');
+        $('#password-error', document);
     const companyField =
-        $('#company-field');
-    const toggleMode = $('#toggle-mode');
+        $('#company-field', document);
+    const toggleMode = $('#toggle-mode', document);
     const togglePrompt =
-        $('#toggle-prompt');
-    const authTitle = $('#auth-title');
+        $('#toggle-prompt', document);
+    const authTitle = $('#auth-title', document);
     const authSubtitle =
-        $('#auth-subtitle');
-    const submitBtn = $('#submit-btn');
+        $('#auth-subtitle', document);
+    const submitBtn = $('#submit-btn', document);
 
-    const branding = $('#auth-branding');
+    const branding = $('#auth-branding', document);
     if (
         branding
         && window.innerWidth >= 1024
@@ -427,7 +427,7 @@ export async function init(): Promise<void> {
         branding.classList.remove('hidden');
         branding.style.display = '';
     }
-    const mobileLogo = $('#mobile-logo');
+    const mobileLogo = $('#mobile-logo', document);
     if (
         mobileLogo
         && window.innerWidth >= 1024

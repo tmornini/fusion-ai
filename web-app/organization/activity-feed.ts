@@ -151,17 +151,14 @@ function buildActivity(
 export async function init(
 ): Promise<void> {
     const container = $(
-        '#activity-feed-content',
+        '#activity-feed-content', document,
     );
     if (!container) return;
 
     const activities =
         await withLoadingState(
             container,
-            buildSkeleton(
-                'card-list',
-                { count: 6 },
-            ),
+            buildSkeleton('card-list', 6),
             getActivityFeed,
             () => init(),
             {

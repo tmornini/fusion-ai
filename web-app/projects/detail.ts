@@ -2337,13 +2337,13 @@ function bindProjectEvents(
     project: ProjectDetail,
     projectId: string,
 ): void {
-    $('#project-back-btn')
+    $('#project-back-btn', document)
         ?.addEventListener(
                 'click',
                 () => navigateTo('projects'),
         );
 
-    $('#project-edit-btn')
+    $('#project-edit-btn', document)
         ?.addEventListener('click', () => {
             state.isEditing = true;
             mutateProjectPage(
@@ -2351,7 +2351,7 @@ function bindProjectEvents(
             );
         });
 
-    $('#project-cancel-btn')
+    $('#project-cancel-btn', document)
         ?.addEventListener('click', () => {
             state.isEditing = false;
             mutateProjectPage(
@@ -2359,47 +2359,47 @@ function bindProjectEvents(
             );
         });
 
-    $('#project-save-btn')
+    $('#project-save-btn', document)
         ?.addEventListener(
                 'click',
                 async () => {
         const title =
-                $input('#project-edit-title')
+                $input('#project-edit-title', document)
                     ?.value ?? project.title;
         const description =
                 $textarea(
-                        '#project-edit-description',
+                        '#project-edit-description', document,
                 )?.value ?? project.description;
         const statusValue =
-                $select('#project-edit-status')?.value;
+                $select('#project-edit-status', document)?.value;
         const status: ProjectStatus =
                 statusValue && isProjectStatus(statusValue)
                         ? statusValue
                         : project.status;
         const startDate =
                 $input(
-                        '#project-edit-start-date',
+                        '#project-edit-start-date', document,
                 )?.value ?? project.startDate;
         const targetEndDate =
                 $input(
-                        '#project-edit-end-date',
+                        '#project-edit-end-date', document,
                 )?.value ?? project.targetEndDate;
         const timeBaseline = Number(
                 $input(
-                        '#project-edit-time-baseline',
+                        '#project-edit-time-baseline', document,
                 )?.value
                 ?? project.metrics.time.baseline,
         );
         const costBaseline = Number(
                 $input(
-                        '#project-edit-cost-baseline',
+                        '#project-edit-cost-baseline', document,
                 )?.value
                 ?? project.metrics.cost.baseline
                         / 1000,
         );
         const impactBaseline = Number(
                 $input(
-                        '#project-edit-impact-baseline',
+                        '#project-edit-impact-baseline', document,
                 )?.value
                 ?? project.metrics.impact.baseline,
         );
@@ -2433,7 +2433,7 @@ function bindProjectEvents(
         }
     });
 
-    $$('[data-navigate-to-engineering]')
+    $$('[data-navigate-to-engineering]', document)
         .forEach(el => {
             el.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2444,13 +2444,13 @@ function bindProjectEvents(
             });
         });
 
-    initTabs('.tab[data-tab]', '.tab-panel');
+    initTabs('.tab[data-tab]', '.tab-panel', 'active');
 
     const comment = $textarea(
-            '#project-discussion-comment',
+            '#project-discussion-comment', document,
     );
     const postBtn = $(
-            '#project-discussion-post-btn',
+            '#project-discussion-post-btn', document,
     );
     comment?.addEventListener(
             'input',
@@ -2480,7 +2480,7 @@ function mutateProjectPage(
     projectId: string,
 ): void {
     const container = $(
-            '#project-detail-content',
+            '#project-detail-content', document,
     );
     if (!container) return;
     setHtml(
@@ -2502,12 +2502,12 @@ export async function init(
     state.isEditing = false;
 
     const container = $(
-            '#project-detail-content',
+            '#project-detail-content', document,
     );
     if (!container) return;
     setHtml(
             container,
-            buildSkeleton('detail'),
+            buildSkeleton('detail', 4),
     );
 
     let project: ProjectDetail;
@@ -2521,6 +2521,7 @@ export async function init(
                         'Failed to load project'
                         + ' details. The project'
                         + ' may not exist.',
+                        'Try Again',
                 ),
         );
         container

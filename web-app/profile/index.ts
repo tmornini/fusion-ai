@@ -58,7 +58,7 @@ export async function init(): Promise<void> {
     </button>`;
     }
 
-    const container = $('.page-content');
+    const container = $('.page-content', document);
     if (!container) return;
     let profile: Awaited<
         ReturnType<typeof getProfile>
@@ -70,6 +70,7 @@ export async function init(): Promise<void> {
             container,
             buildErrorState(
                 'Failed to load profile.',
+                'Try Again',
             ),
         );
         container
@@ -119,7 +120,7 @@ export async function init(): Promise<void> {
     ]);
 
     const avatarInitials = $(
-        '#profile-avatar-initials',
+        '#profile-avatar-initials', document,
     );
     if (avatarInitials) {
         avatarInitials.textContent =
@@ -127,42 +128,42 @@ export async function init(): Promise<void> {
             + (profile.lastName[0] ?? '');
     }
     const firstName = $input(
-        '#profile-first-name',
+        '#profile-first-name', document,
     );
     if (firstName) {
         firstName.value = profile.firstName;
     }
     const lastName = $input(
-        '#profile-last-name',
+        '#profile-last-name', document,
     );
     if (lastName) {
         lastName.value = profile.lastName;
     }
-    const email = $input('#profile-email');
+    const email = $input('#profile-email', document);
     if (email) {
         email.value = profile.email;
     }
-    const phone = $input('#profile-phone');
+    const phone = $input('#profile-phone', document);
     if (phone) {
         phone.value = profile.phone;
     }
-    const role = $input('#profile-role');
+    const role = $input('#profile-role', document);
     if (role) {
         role.value = profile.role;
     }
     const department = $select(
-        '#profile-department',
+        '#profile-department', document,
     );
     if (department) {
         department.value =
             profile.department;
     }
-    const bio = $textarea('#profile-bio');
+    const bio = $textarea('#profile-bio', document);
     if (bio) {
         bio.value = profile.bio;
     }
     const strengthsContainer = $(
-        '#profile-strengths',
+        '#profile-strengths', document,
     );
     if (strengthsContainer) {
         setHtml(
@@ -219,10 +220,10 @@ export async function init(): Promise<void> {
     }
 
     $(
-        '#profile-save-btn',
+        '#profile-save-btn', document,
     )?.addEventListener('click', () => {
         const btn = $(
-            '#profile-save-btn',
+            '#profile-save-btn', document,
         )!;
         btn.textContent = 'Saving...';
         btn.setAttribute('disabled', '');

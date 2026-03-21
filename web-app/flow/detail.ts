@@ -63,7 +63,7 @@ interface FlowDetailState {
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const root = $('#flow-detail-content');
+    const root = $('#flow-detail-content', document);
     if (!root) return;
 
     const flowId =
@@ -84,11 +84,11 @@ export async function init(
 
     function syncFormFields(): void {
         const nameInput =
-            $input('#flow-name');
+            $input('#flow-name', document);
         const descInput =
-            $textarea('#flow-description');
+            $textarea('#flow-description', document);
         const dept =
-            $select('#flow-department');
+            $select('#flow-department', document);
         if (nameInput) {
             state.flowName =
                 nameInput.value;
@@ -107,33 +107,33 @@ export async function init(
                 const title = $input(
                     buildStepFieldSelector(
                         step.id, 'title',
-                    ),
+                    ), document,
                 );
                 const desc = $textarea(
                     buildStepFieldSelector(
                         step.id,
                         'description',
-                    ),
+                    ), document,
                 );
                 const owner = $input(
                     buildStepFieldSelector(
                         step.id, 'owner',
-                    ),
+                    ), document,
                 );
                 const role = $input(
                     buildStepFieldSelector(
                         step.id, 'role',
-                    ),
+                    ), document,
                 );
                 const dur = $input(
                     buildStepFieldSelector(
                         step.id, 'duration',
-                    ),
+                    ), document,
                 );
                 const type = $select(
                     buildStepFieldSelector(
                         step.id, 'type',
-                    ),
+                    ), document,
                 );
                 return {
                     ...step,
@@ -1225,13 +1225,13 @@ export async function init(
     }
 
     function bindFlowDetailEvents(): void {
-        $('#flow-detail-back-btn')
+        $('#flow-detail-back-btn', document)
             ?.addEventListener(
                 'click',
                 () => navigateTo('flow'),
             );
 
-        $$('[data-step-header]').forEach(
+        $$('[data-step-header]', document).forEach(
             el => {
                 el.addEventListener(
                     'click',
@@ -1254,7 +1254,7 @@ export async function init(
             },
         );
 
-        $$('[data-action="move-step"]')
+        $$('[data-action="move-step"]', document)
             .forEach(el => {
                 el.addEventListener(
                     'click',
@@ -1315,7 +1315,7 @@ export async function init(
                 );
             });
 
-        $$('[data-remove-step]').forEach(
+        $$('[data-remove-step]', document).forEach(
             el => {
                 el.addEventListener(
                     'click',
@@ -1340,7 +1340,7 @@ export async function init(
             },
         );
 
-        $$('[data-action="toggle-tool"]')
+        $$('[data-action="toggle-tool"]', document)
             .forEach(el => {
                 el.addEventListener(
                     'click',
@@ -1390,7 +1390,7 @@ export async function init(
                 );
             });
 
-        $('#flow-add-step')?.addEventListener(
+        $('#flow-add-step', document)?.addEventListener(
             'click',
             () => {
                 syncFormFields();
@@ -1417,7 +1417,7 @@ export async function init(
             },
         );
 
-        $('#flow-save-btn')?.addEventListener(
+        $('#flow-save-btn', document)?.addEventListener(
             'click',
             async () => {
                 syncFormFields();
@@ -1495,9 +1495,7 @@ export async function init(
 
     const flowData = await withLoadingState(
         root,
-        buildSkeleton(
-            'card-list', { count: 4 },
-        ),
+        buildSkeleton('card-list', 4),
         () => getFlow(state.currentFlowId),
         init,
     );

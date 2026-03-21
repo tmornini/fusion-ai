@@ -1010,9 +1010,9 @@ export async function init(
     const ideaId = params?.['ideaId'];
     if (!ideaId) { navigateTo('ideas'); return; }
 
-    const root = $('#page-root');
+    const root = $('#page-root', document);
     if (!root) return;
-    setHtml(root, buildSkeleton('detail'));
+    setHtml(root, buildSkeleton('detail', 4));
 
     let idea: ConversionIdea;
     let users: User[];
@@ -1027,6 +1027,7 @@ export async function init(
             buildErrorState(
                 'Failed to load idea'
                 + ' for conversion.',
+                'Try Again',
             ),
         );
         root.querySelector(
@@ -1064,7 +1065,7 @@ export async function init(
             ])
             .forEach(field => {
                 const el = $(
-                    `#convert-${field}`,
+                    `#convert-${field}`, document,
                 );
                 if (
                     el instanceof
@@ -1093,7 +1094,7 @@ export async function init(
                     syncFormFields();
                     const btn = $(
                         '#convert'
-                        + '-submit-btn',
+                        + '-submit-btn', document,
                     );
                     if (
                         btn instanceof
@@ -1110,7 +1111,7 @@ export async function init(
                     syncFormFields();
                     const btn = $(
                         '#convert'
-                        + '-submit-btn',
+                        + '-submit-btn', document,
                     );
                     if (
                         btn instanceof
@@ -1123,7 +1124,7 @@ export async function init(
             );
         });
 
-    $('#convert-submit-btn')
+    $('#convert-submit-btn', document)
         ?.addEventListener(
             'click',
             async () => {
@@ -1132,7 +1133,7 @@ export async function init(
                     return;
                 }
                 const btn = $(
-                    '#convert-submit-btn',
+                    '#convert-submit-btn', document,
                 );
                 if (!btn) return;
                 setHtml(
@@ -1295,12 +1296,12 @@ export async function init(
             },
         );
 
-    $('#convert-back-to-ideas')
+    $('#convert-back-to-ideas', document)
         ?.addEventListener(
             'click',
             () => navigateTo('ideas'),
         );
-    $('#convert-back-to-ideas-2')
+    $('#convert-back-to-ideas-2', document)
         ?.addEventListener(
             'click',
             () => navigateTo('ideas'),

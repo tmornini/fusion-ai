@@ -330,14 +330,12 @@ function buildProjectCard(
 
 export async function init(): Promise<void> {
     const listContainer =
-        $('#projects-list');
+        $('#projects-list', document);
     if (!listContainer) return;
 
     const result = await withLoadingState(
         listContainer,
-        buildSkeleton('card-list', {
-            count: 4,
-        }),
+        buildSkeleton('card-list', 4),
         getProjects,
         init,
         {
@@ -376,7 +374,7 @@ export async function init(): Promise<void> {
         projects,
         p => p.status,
     );
-    const badgesEl = $('#status-badges');
+    const badgesEl = $('#status-badges', document);
     if (badgesEl) {
         const badgeFragments = Object.entries(
             statusGroups,
@@ -411,7 +409,7 @@ export async function init(): Promise<void> {
 
     function mutateList(): void {
         const container =
-            $('#projects-list');
+            $('#projects-list', document);
         const sorted = [...projects].sort(
             (a, b) =>
                 currentView === 'priority'
@@ -431,7 +429,7 @@ export async function init(): Promise<void> {
                 )}`,
             );
         }
-        const info = $('#projects-info');
+        const info = $('#projects-info', document);
         if (info) {
             info.textContent =
                 projects.length

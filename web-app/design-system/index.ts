@@ -76,7 +76,7 @@ function buildShadowBox(
 }
 
 export async function init(): Promise<void> {
-    const root = $('#design-system-content');
+    const root = $('#design-system-content', document);
     if (!root) return;
 
     const borderHr = 'border:none'

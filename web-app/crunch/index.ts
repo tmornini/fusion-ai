@@ -207,7 +207,7 @@ function buildReviewStep(): SafeHtml {
 }
 
 export async function init(): Promise<void> {
-    const container = $('#crunch-content');
+    const container = $('#crunch-content', document);
     if (!container) return;
 
     const state: CrunchState = {
@@ -1025,7 +1025,7 @@ export async function init(): Promise<void> {
             }
         });
         const contextField =
-            $textarea('#crunch-context');
+            $textarea('#crunch-context', document);
         if (contextField) {
             state.businessContext =
                 contextField.value;
@@ -1091,7 +1091,7 @@ export async function init(): Promise<void> {
     }
 
     function mutateCrunchPage(): void {
-        const root = $('#crunch-content');
+        const root = $('#crunch-content', document);
         if (!root) return;
         setHtml(root, buildCrunchPage());
         bindCrunchEvents();
@@ -1100,7 +1100,7 @@ export async function init(): Promise<void> {
     function bindCrunchEvents(): void {
         if (state.step === 'upload') {
             const dropzone =
-                $('#crunch-dropzone');
+                $('#crunch-dropzone', document);
             dropzone?.addEventListener(
                 'click',
                 () => {
@@ -1119,7 +1119,7 @@ export async function init(): Promise<void> {
 
         if (state.step === 'label') {
             $$(
-                '[data-column-toggle]',
+                '[data-column-toggle]', document,
             ).forEach(el => {
                 el.addEventListener(
                     'click',
@@ -1144,7 +1144,7 @@ export async function init(): Promise<void> {
 
             $$(
                 '[data-column-id]'
-                + '[data-field-name]',
+                + '[data-field-name]', document,
             ).forEach(el => {
                 el.addEventListener(
                     'input',
@@ -1153,7 +1153,7 @@ export async function init(): Promise<void> {
                         const reviewBtn =
                             $(
                                 '#crunch-to'
-                                + '-review',
+                                + '-review', document,
                             );
                         if (
                             reviewBtn
@@ -1169,7 +1169,7 @@ export async function init(): Promise<void> {
                 );
             });
 
-            $('#crunch-back-upload')
+            $('#crunch-back-upload', document)
                 ?.addEventListener(
                     'click',
                     () => {
@@ -1179,7 +1179,7 @@ export async function init(): Promise<void> {
                         mutateCrunchPage();
                     },
                 );
-            $('#crunch-to-review')
+            $('#crunch-to-review', document)
                 ?.addEventListener(
                     'click',
                     () => {
@@ -1192,7 +1192,7 @@ export async function init(): Promise<void> {
         }
 
         if (state.step === 'review') {
-            $('#crunch-edit-labels')
+            $('#crunch-edit-labels', document)
                 ?.addEventListener(
                     'click',
                     () => {
@@ -1201,7 +1201,7 @@ export async function init(): Promise<void> {
                         mutateCrunchPage();
                     },
                 );
-            $('#crunch-to-dashboard')
+            $('#crunch-to-dashboard', document)
                 ?.addEventListener(
                     'click',
                     () => navigateTo(
@@ -1221,6 +1221,7 @@ export async function init(): Promise<void> {
             buildErrorState(
                 'Failed to load'
                 + ' Crunch data.',
+                'Try Again',
             ),
         );
         container

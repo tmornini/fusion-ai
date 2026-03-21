@@ -1024,7 +1024,7 @@ function buildMetricUpdates():
 
 function syncFormFields() {
     const confidenceValue =
-        $select('#edge-confidence-select')
+        $select('#edge-confidence-select', document)
             ?.value ?? '';
     const descUpdates =
         buildDescriptionUpdates();
@@ -1035,15 +1035,15 @@ function syncFormFields() {
         impact: {
             shortTerm:
                 $textarea(
-                    '#edge-impact-short-term',
+                    '#edge-impact-short-term', document,
                 )?.value ?? '',
             midTerm:
                 $textarea(
-                    '#edge-impact-mid-term',
+                    '#edge-impact-mid-term', document,
                 )?.value ?? '',
             longTerm:
                 $textarea(
-                    '#edge-impact-long-term',
+                    '#edge-impact-long-term', document,
                 )?.value ?? '',
         },
         confidence:
@@ -1051,7 +1051,7 @@ function syncFormFields() {
                 ? confidenceValue
                 : state.edgeData.confidence,
         owner:
-            $input('#edge-owner-input')
+            $input('#edge-owner-input', document)
                 ?.value ?? '',
         outcomes:
             state.edgeData.outcomes.map(
@@ -1086,7 +1086,7 @@ function syncFormFields() {
 }
 
 function mutateEdgePage(ideaId: string) {
-    const container = $('#edge-content');
+    const container = $('#edge-content', document);
     if (container) {
         setHtml(
             container,
@@ -1097,12 +1097,12 @@ function mutateEdgePage(ideaId: string) {
 }
 
 function bindEdgeEvents(ideaId: string) {
-    $('#edge-back-btn')?.addEventListener(
+    $('#edge-back-btn', document)?.addEventListener(
         'click',
         () => navigateTo('ideas'),
     );
 
-    $('#edge-add-outcome')?.addEventListener(
+    $('#edge-add-outcome', document)?.addEventListener(
         'click',
         () => {
             syncFormFields();
@@ -1121,7 +1121,7 @@ function bindEdgeEvents(ideaId: string) {
         },
     );
 
-    $$('[data-add-template]').forEach(
+    $$('[data-add-template]', document).forEach(
         templateButton => {
             templateButton.addEventListener(
                 'click',
@@ -1151,7 +1151,7 @@ function bindEdgeEvents(ideaId: string) {
         },
     );
 
-    $$('[data-remove-outcome]').forEach(
+    $$('[data-remove-outcome]', document).forEach(
         removeButton => {
             removeButton.addEventListener(
                 'click',
@@ -1180,7 +1180,7 @@ function bindEdgeEvents(ideaId: string) {
         },
     );
 
-    $$('[data-add-metric]').forEach(
+    $$('[data-add-metric]', document).forEach(
         addButton => {
             addButton.addEventListener(
                 'click',
@@ -1219,7 +1219,7 @@ function bindEdgeEvents(ideaId: string) {
         },
     );
 
-    $$('[data-action="remove-metric"]').forEach(
+    $$('[data-action="remove-metric"]', document).forEach(
         removeButton => {
             removeButton.addEventListener(
                 'click',
@@ -1312,12 +1312,12 @@ export async function init(
 ): Promise<void> {
     const ideaId = params?.ideaId;
     if (!ideaId) { navigateTo('ideas'); return; }
-    const container = $('#edge-content');
+    const container = $('#edge-content', document);
     if (!container) return;
 
     const idea = await withLoadingState(
         container,
-        buildSkeleton('detail'),
+        buildSkeleton('detail', 4),
         () => getIdeaForEdge(ideaId),
         () => init(params),
     );

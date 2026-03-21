@@ -80,7 +80,7 @@ function buildToggleRow(
 
 export async function init(): Promise<void> {
     const container =
-        $('#settings-content');
+        $('#settings-content', document);
     if (!container) return;
     let settings: Awaited<
         ReturnType<typeof getCompanySettings>
@@ -94,6 +94,7 @@ export async function init(): Promise<void> {
             buildErrorState(
                 'Failed to load'
                 + ' company settings.',
+                'Try Again',
             ),
         );
         container
@@ -338,7 +339,7 @@ export async function init(): Promise<void> {
         });
 
     $(
-        '#company-settings-save-btn',
+        '#company-settings-save-btn', document,
     )?.addEventListener('click', () => {
         showToast(
             'Company settings saved'
