@@ -136,6 +136,8 @@ export async function init(): Promise<void> {
             iconSearch(16),
         ],
     ]);
+    $('#page-badge')?.classList
+        .remove('hidden');
     const totalSteps = flows.reduce(
         (sum, flow) =>
             sum + flow.stepsCount,
