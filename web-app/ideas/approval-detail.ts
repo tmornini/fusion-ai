@@ -19,6 +19,7 @@ import {
 } from '../app/icons';
 import {
     navigateTo, initDialog, closeDialog,
+    displayText,
 } from '../app/core';
 import {
     getIdeaForApproval,
@@ -188,8 +189,9 @@ export async function init(
                         style=${'color:'
                             + 'hsl(var('
                             + '--foreground))'}>
-                        ${idea.submittedBy
-                            || '\u2014'}
+                        ${displayText(
+                            idea.submittedBy,
+                        )}
                     </span>
                 </span>
                 <span

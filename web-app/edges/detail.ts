@@ -13,7 +13,9 @@ import {
     iconShield, iconPlus, iconTrash, iconCheck,
     iconAlertCircle, iconClock, iconUser, iconSave,
 } from '../app/icons';
-import { navigateTo } from '../app/core';
+import {
+    navigateTo, displayText,
+} from '../app/core';
 import {
     getIdeaForEdge, getEdgeDataByIdeaId,
     putEdgeData, type EdgeIdea, type EdgeData,
@@ -596,8 +598,9 @@ function buildEdgePage(
                         }">Submitted by</p>
                         <p class="text-sm"
                             >${
-                                idea.submittedBy
-                                || '\u2014'
+                                displayText(
+                                    idea.submittedBy,
+                                )
                         }</p>
                     </div>
                 </div>

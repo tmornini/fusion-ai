@@ -24,6 +24,7 @@ import {
 import {
     navigateTo,
     styleForScore,
+    displayText,
 } from '../app/core';
 import {
     getReviewQueue,
@@ -110,8 +111,9 @@ function buildReviewCard(
                     + ' text-muted'
                 }">
                     <span>by ${
-                        idea.submittedBy
-                        || '\u2014'
+                        displayText(
+                            idea.submittedBy,
+                        )
                     }</span>
                     <span>${
                         '\u2022'

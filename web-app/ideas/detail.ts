@@ -26,7 +26,7 @@ import {
 } from '../app/icons';
 import {
     navigateTo, formatDate,
-    SECONDS_PER_DAY,
+    SECONDS_PER_DAY, displayText,
 } from '../app/core';
 import {
     getIdeaDetail,
@@ -66,9 +66,10 @@ function buildProblemSolutionCard(
                             .problemStatement
                         }</textarea>`
                     : html`<p class="text-sm">
-                        ${idea
-                            .problemStatement
-                            || '\u2014'}
+                        ${displayText(
+                            idea
+                                .problemStatement,
+                        )}
                         </p>`}
             </div>
             <div>
@@ -90,8 +91,9 @@ function buildProblemSolutionCard(
                             .description
                         }</textarea>`
                     : html`<p class="text-sm">
-                        ${idea.description
-                            || '\u2014'}
+                        ${displayText(
+                            idea.description,
+                        )}
                         </p>`}
             </div>
             <div>
@@ -113,9 +115,10 @@ function buildProblemSolutionCard(
                             .proposedSolution
                         }</textarea>`
                     : html`<p class="text-sm">
-                        ${idea
-                            .proposedSolution
-                            || '\u2014'}
+                        ${displayText(
+                            idea
+                                .proposedSolution,
+                        )}
                         </p>`}
             </div>
             <div>
@@ -137,9 +140,10 @@ function buildProblemSolutionCard(
                             .expectedOutcome
                         }</textarea>`
                     : html`<p class="text-sm">
-                        ${idea
-                            .expectedOutcome
-                            || '\u2014'}
+                        ${displayText(
+                            idea
+                                .expectedOutcome,
+                        )}
                         </p>`}
             </div>
             <div>
@@ -161,9 +165,10 @@ function buildProblemSolutionCard(
                             .successMetrics
                         }</textarea>`
                     : html`<p class="text-sm">
-                        ${idea
-                            .successMetrics
-                            || '\u2014'}
+                        ${displayText(
+                            idea
+                                .successMetrics,
+                        )}
                         </p>`}
             </div>
         </div>
@@ -200,8 +205,9 @@ function buildDetailsCard(
                         class="${
                             'text-sm font-medium'
                         }">
-                        ${idea.category
-                            || '\u2014'}
+                        ${displayText(
+                            idea.category,
+                        )}
                     </p>`}
             </div>
             <div>
@@ -213,8 +219,9 @@ function buildDetailsCard(
                 <p class="${
                     'text-sm font-medium'
                 }">
-                    ${idea.submittedBy
-                        || '\u2014'}
+                    ${displayText(
+                        idea.submittedBy,
+                    )}
                 </p>
             </div>
             <div>
@@ -230,7 +237,7 @@ function buildDetailsCard(
                         ? formatDate(
                             idea.submittedAt,
                         )
-                        : '\u2014'}
+                        : displayText('')}
                 </p>
             </div>
         </div>
@@ -409,8 +416,9 @@ function buildIdeaDetail(
                         'text-sm text-muted'
                     }">
                         Submitted by
-                        ${idea.submittedBy
-                            || '\u2014'}
+                        ${displayText(
+                            idea.submittedBy,
+                        )}
                     </p>
                 </div>
             </div>

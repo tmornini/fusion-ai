@@ -30,7 +30,9 @@ import {
     iconLightbulb,
     iconTarget,
 } from '../app/icons';
-import { navigateTo } from '../app/core';
+import {
+    navigateTo, displayText,
+} from '../app/core';
 import {
     getIdeas,
     type Idea,
@@ -109,8 +111,9 @@ function buildIdeaCard(
                                 : html``}
                             <span>
                                 by ${
-                                    idea.submittedBy
-                                    || '\u2014'
+                                    displayText(
+                                        idea.submittedBy,
+                                    )
                                 }
                             </span>
                         </div>
@@ -282,9 +285,13 @@ function buildIdeaCard(
                                         + ' font-'
                                         + 'medium'
                                     }">
-                                    ${idea
-                                        .estimatedImpact
-                                        || '\u2014'}
+                                    ${displayText(
+                                        String(
+                                            idea
+                                                .estimatedImpact
+                                            || '',
+                                        ),
+                                    )}
                                 </p>
                             </div>
                         </div>

@@ -22,7 +22,9 @@ import {
     buildSkeleton,
     withLoadingState,
 } from '../app/loading-states';
-import { formatDate } from '../app/core';
+import {
+    formatDate, displayText,
+} from '../app/core';
 import {
     getActivityFeed,
     type Activity,
@@ -134,8 +136,9 @@ function buildActivity(
         <div style="flex:1;min-width:0">
             <p class="text-sm">
                 <span class="font-medium">${
-                    activity.actor
-                    || '\u2014'}</span>
+                    displayText(
+                        activity.actor,
+                    )}</span>
                 <span class="text-muted"> ${
                     activity.action} </span>
                 <span class="font-medium">${

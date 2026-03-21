@@ -12,6 +12,7 @@ import { initSidebarLayout } from './layout';
 
 export { navigateTo } from './navigation';
 export {
+    displayText,
     formatDate,
     getTimeOfDay,
     initials,

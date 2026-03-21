@@ -26,7 +26,9 @@ import {
     iconGripVertical,
     iconFolderKanban,
 } from '../app/icons';
-import { navigateTo } from '../app/core';
+import {
+    navigateTo, displayText,
+} from '../app/core';
 import {
     getProjects,
     type Project,
@@ -277,11 +279,15 @@ function buildProjectCard(
                                     'text-sm'
                                     + ' font-medium'
                                 }">${
-                                    project
-                                        .actualImpact
-                                    || project
-                                        .estimatedImpact
-                                    || '\u2014'
+                                    displayText(
+                                        String(
+                                            project
+                                                .actualImpact
+                                            || project
+                                                .estimatedImpact
+                                            || '',
+                                        ),
+                                    )
                                 }</p>
                             </div>
                         </div>
