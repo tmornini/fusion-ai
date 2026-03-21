@@ -57,8 +57,8 @@ function compose(): void {
             ...standalonePages,
     ];
     for (const { name, sourceDir, sourceFile } of allPages) {
-        const file = sourceFile || 'index';
-        const path = join(ROOT, sourceDir || name, `${file}.html`);
+        const file = sourceFile;
+        const path = join(ROOT, sourceDir, `${file}.html`);
         if (!existsSync(path)) missing.push(name);
     }
     if (missing.length > 0) {
@@ -81,8 +81,8 @@ function compose(): void {
 
     let composed = 0;
     for (const { name, title, sourceDir, sourceFile } of sidebarPages) {
-        const file = sourceFile || 'index';
-        const pageHtmlPath = join(ROOT, sourceDir || name, `${file}.html`);
+        const file = sourceFile;
+        const pageHtmlPath = join(ROOT, sourceDir, `${file}.html`);
         const pageContent = readFileSync(pageHtmlPath, 'utf-8');
 
         let html = layout
@@ -90,7 +90,7 @@ function compose(): void {
             .replace('{{PAGE_TITLE}}', title)
             .replace('<!-- PAGE_CONTENT -->', pageContent);
 
-        const outDir = join(OUT, sourceDir || name);
+        const outDir = join(OUT, sourceDir);
         if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
         const outPath = join(outDir, `${file}.html`);
@@ -102,10 +102,10 @@ function compose(): void {
 
     let copied = 0;
     for (const { name, sourceDir, sourceFile } of standalonePages) {
-        const file = sourceFile || 'index';
-        const srcPath = join(ROOT, sourceDir || name, `${file}.html`);
+        const file = sourceFile;
+        const srcPath = join(ROOT, sourceDir, `${file}.html`);
 
-        const outDir = join(OUT, sourceDir || name);
+        const outDir = join(OUT, sourceDir);
         if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
         copyFileSync(srcPath, join(outDir, `${file}.html`));
