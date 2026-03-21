@@ -176,21 +176,17 @@ export async function getIdeaForConversion(
                 `ideas/${ideaId}/score`,
             ),
         ]);
-    const idea = new Idea(
-        entity, '', 'missing', '',
-    );
     return {
-        id: idea.id,
-        title: idea.title,
+        id: entity.id,
+        title: entity.title,
         problemStatement:
-            idea.problemStatement,
+            entity.problem_statement,
         proposedSolution:
-            idea.proposedSolution,
+            entity.proposed_solution,
         expectedOutcome:
-            idea.expectedOutcome,
-        score: idea.resolvedScore(
-            scoreRow?.overall,
-        ),
+            entity.expected_outcome,
+        score: scoreRow?.overall
+            ?? entity.score,
         estimatedDuration:
             scoreRow?.estimated_duration
                 ?? '',
