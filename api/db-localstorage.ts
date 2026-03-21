@@ -114,9 +114,17 @@ function writeTable<T>(
     }
 }
 
-function serializeValue(value: unknown): unknown {
+function serializeValue(
+    value: unknown,
+    key: string,
+    tableName: string,
+): unknown {
     if (value === null || value === undefined) {
-        return null;
+        throw new Error(
+            `NOT NULL violation: "${key}"`
+            + ` in "${tableName}" is`
+            + ` ${String(value)}.`,
+        );
     }
     if (typeof value === 'boolean') {
         return value ? 1 : 0;
@@ -126,6 +134,7 @@ function serializeValue(value: unknown): unknown {
 
 function serializeRecord<T>(
     record: Partial<T>,
+    tableName: string,
 ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     for (
@@ -137,8 +146,9 @@ function serializeRecord<T>(
             >,
         )
     ) {
-        result[key] =
-            serializeValue(value);
+        result[key] = serializeValue(
+            value, key, tableName,
+        );
     }
     return result;
 }
@@ -175,8 +185,9 @@ function createEntityStore<
             const index = rows.findIndex(
                 entity => entity.id === id,
             );
-            const serialized =
-                serializeRecord(fields);
+            const serialized = serializeRecord(
+                fields, tableName,
+            );
 
             if (index >= 0) {
                 rows[index] = {
@@ -233,18 +244,19 @@ function createSingletonStore<
                 entity => entity.id === '1',
             );
             if (row) return row;
-            const defaultEntity = {
-                id: '1',
-            } as T;
-            writeTable(tableName, [defaultEntity]);
-            return defaultEntity;
+            throw new Error(
+                'Singleton "' + tableName
+                + '" not found. Load data'
+                + ' via snapshots.',
+            );
         },
         async put(
             fields: Partial<T>,
         ): Promise<T> {
             const rows = readTable<T>(tableName);
-            const serialized =
-                serializeRecord(fields);
+            const serialized = serializeRecord(
+                fields, tableName,
+            );
             const index = rows.findIndex(
                 entity => entity.id === '1',
             );
