@@ -93,7 +93,9 @@ export async function populateMockData(
             },
             phone: '',
             bio: '',
-            last_active: '',
+            last_active:
+                '2024-02-27'
+                + 'T15:30:00.000000Z',
         },
         {
             id: '3',
@@ -176,7 +178,9 @@ export async function populateMockData(
             },
             phone: '',
             bio: '',
-            last_active: '',
+            last_active:
+                '2024-02-28'
+                + 'T09:15:00.000000Z',
         },
         {
             id: '6',
@@ -203,7 +207,9 @@ export async function populateMockData(
             },
             phone: '',
             bio: '',
-            last_active: '',
+            last_active:
+                '2024-02-28'
+                + 'T11:45:00.000000Z',
         },
         {
             id: '7',
@@ -257,7 +263,9 @@ export async function populateMockData(
             },
             phone: '',
             bio: '',
-            last_active: '',
+            last_active:
+                '2024-02-26'
+                + 'T14:00:00.000000Z',
         },
         {
             id: '9',
@@ -340,7 +348,9 @@ export async function populateMockData(
             bio: 'Passionate about building'
                 + ' products that solve'
                 + ' real problems.',
-            last_active: '',
+            last_active:
+                '2024-02-28'
+                + 'T18:00:00.000000Z',
         },
     ];
 
@@ -1033,8 +1043,12 @@ export async function populateMockData(
             description: '',
             status: 'approved',
             progress: 85,
-            start_date: '',
-            target_end_date: '',
+            start_date:
+                '2024-01-08'
+                + 'T09:00:00.000000Z',
+            target_end_date:
+                '2024-02-10'
+                + 'T09:00:00.000000Z',
             estimated_duration: 288000,
             actual_duration: 216000,
             estimated_cost: 32000,
@@ -1054,8 +1068,12 @@ export async function populateMockData(
             description: '',
             status: 'under-review',
             progress: 22,
-            start_date: '',
-            target_end_date: '',
+            start_date:
+                '2024-02-01'
+                + 'T09:00:00.000000Z',
+            target_end_date:
+                '2024-04-15'
+                + 'T09:00:00.000000Z',
             estimated_duration: 720000,
             actual_duration: 162000,
             estimated_cost: 75000,
@@ -1075,8 +1093,12 @@ export async function populateMockData(
             description: '',
             status: 'approved',
             progress: 95,
-            start_date: '',
-            target_end_date: '',
+            start_date:
+                '2024-01-15'
+                + 'T09:00:00.000000Z',
+            target_end_date:
+                '2024-02-12'
+                + 'T09:00:00.000000Z',
             estimated_duration: 216000,
             actual_duration: 198000,
             estimated_cost: 28000,
@@ -1096,8 +1118,12 @@ export async function populateMockData(
             description: '',
             status: 'sent-back',
             progress: 15,
-            start_date: '',
-            target_end_date: '',
+            start_date:
+                '2024-02-05'
+                + 'T09:00:00.000000Z',
+            target_end_date:
+                '2024-03-20'
+                + 'T09:00:00.000000Z',
             estimated_duration: 360000,
             actual_duration: 108000,
             estimated_cost: 38000,
@@ -1117,8 +1143,12 @@ export async function populateMockData(
             description: '',
             status: 'under-review',
             progress: 18,
-            start_date: '',
-            target_end_date: '',
+            start_date:
+                '2024-02-12'
+                + 'T09:00:00.000000Z',
+            target_end_date:
+                '2024-03-25'
+                + 'T09:00:00.000000Z',
             estimated_duration: 324000,
             actual_duration: 72000,
             estimated_cost: 35000,
@@ -1195,7 +1225,9 @@ export async function populateMockData(
             impact_short_term: '',
             impact_mid_term: '',
             impact_long_term: '',
-            updated_at: '',
+            updated_at:
+                '2024-02-15'
+                + 'T09:00:00.000000Z',
         },
         {
             id: '6',
