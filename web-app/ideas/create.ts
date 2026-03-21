@@ -764,8 +764,6 @@ export async function init():
                                     '',
                                 readiness:
                                     '',
-                                waiting_days:
-                                    0,
                                 impact_label:
                                     '',
                                 effort_label:

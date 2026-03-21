@@ -317,7 +317,6 @@ export interface IdeaEntity {
     expected_outcome: string;
     category: string;
     readiness: string;
-    waiting_days: number;
     impact_label: string;
     effort_label: string;
     description: string;
@@ -971,11 +970,20 @@ export class Idea {
             entity.expected_outcome;
         this.category = entity.category;
         this.readiness = entity.readiness;
-        this.waitingDays = entity.waiting_days;
         this.impactLabel = entity.impact_label;
         this.effortLabel = entity.effort_label;
         this.description = entity.description;
         this.submittedAt = entity.submitted_at;
+        this.waitingDays = this.submittedAt
+            ? Math.max(0, Math.ceil(
+                (Date.now()
+                    - new Date(
+                        this.submittedAt,
+                    ).getTime())
+                / SECONDS_PER_DAY
+                / 1000,
+            ))
+            : 0;
         this.risks = entity.risks;
         this.assumptions = entity.assumptions;
         this.alignments = entity.alignments;

@@ -387,7 +387,7 @@ export async function populateMockData(
                 + ' by 25%.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -439,7 +439,7 @@ export async function populateMockData(
                 + ' minutes.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -488,7 +488,7 @@ export async function populateMockData(
                 + ' annually.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -539,7 +539,7 @@ export async function populateMockData(
                 + ' 5 days to under 1 hour.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -591,7 +591,7 @@ export async function populateMockData(
                 + ' satisfaction scores.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -641,7 +641,7 @@ export async function populateMockData(
                 + ' quarter.',
             category: '',
             readiness: '',
-            waiting_days: 0,
+
             impact_label: '',
             effort_label: '',
             description: '',
@@ -675,7 +675,7 @@ export async function populateMockData(
             expected_outcome: '',
             category: 'Customer Experience',
             readiness: 'ready',
-            waiting_days: 3,
+
             impact_label: 'High',
             effort_label: 'Medium',
             description:
@@ -775,7 +775,7 @@ export async function populateMockData(
             expected_outcome: '',
             category: 'Product',
             readiness: 'needs-info',
-            waiting_days: 4,
+
             impact_label: 'Medium',
             effort_label: 'Low',
             description: '',
@@ -805,7 +805,7 @@ export async function populateMockData(
             expected_outcome: '',
             category: 'Operations',
             readiness: 'ready',
-            waiting_days: 6,
+
             impact_label: 'High',
             effort_label: 'High',
             description: '',
@@ -835,7 +835,7 @@ export async function populateMockData(
             expected_outcome: '',
             category: 'HR',
             readiness: 'incomplete',
-            waiting_days: 8,
+
             impact_label: 'Medium',
             effort_label: 'Medium',
             description: '',
@@ -865,7 +865,7 @@ export async function populateMockData(
             expected_outcome: '',
             category: 'Operations',
             readiness: 'ready',
-            waiting_days: 5,
+
             impact_label: 'High',
             effort_label: 'Medium',
             description: '',

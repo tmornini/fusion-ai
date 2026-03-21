@@ -46,7 +46,6 @@
 | expected_outcome | TEXT | '' |
 | category | TEXT | '' |
 | readiness | TEXT | '' |
-| waiting_days | INTEGER | 0 |
 | impact_label | TEXT | '' |
 | effort_label | TEXT | '' |
 | description | TEXT | '' |
