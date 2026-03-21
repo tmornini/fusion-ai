@@ -21,7 +21,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 
 ## Architecture
 
-**Vanilla TypeScript** with zero runtime dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file that works via both HTTP server and `file:///` protocol.
+**Vanilla TypeScript** with zero runtime dependencies. This is an enterprise innovation management platform with modules for ideas, projects, teams, and analytics (Edge, Crunch, Flow). Every page is a standalone HTML file served via HTTP. The code also supports `file:///` protocol locally, but testing is HTTP-only.
 
 ### Key Layers
 
@@ -227,7 +227,7 @@ No build artifacts are created in the repo — everything is assembled in `/tmp/
 - **Non-critical writes logged at warn**: localStorage writes for theme and sidebar state are wrapped in try/catch that log at `warn` level — quota errors don't break the app but are observable via the logger.
 - **Snapshots wipe-first**: All snapshot operations (pristine, mock data, import) call `DELETE('snapshots/schema')` before writing — there is no merge, only replace.
 - **Score thresholds**: `SCORE_THRESHOLD_HIGH = 80` and `SCORE_THRESHOLD_MEDIUM = 60` in `api/types.ts` determine `PriorityLevel` computation.
-- **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use `../${sourceDir || pageName}/index.html` relative paths, or `../dir/file.html` for pages with `sourceFile`.
+- **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use relative paths. Code supports `file:///` locally but testing is HTTP-only.
 
 ## Worktrees
 
