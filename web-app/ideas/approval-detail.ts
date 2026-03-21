@@ -52,7 +52,7 @@ export async function init(
 
     function buildApprovalPage(
         idea: ApprovalIdea,
-        edge: ApprovalEdge,
+        edge: ApprovalEdge | null,
     ): SafeHtml {
         return html`
     <div style=${'min-height:100vh;'
@@ -434,6 +434,7 @@ export async function init(
                 }</p>
             </div>
 
+            ${edge ? html`
             <div class="card p-6 mb-6"
                 style=${'background:'
                     + 'linear-gradient('
@@ -678,6 +679,7 @@ export async function init(
                     }</span>
                 </div>
             </div>
+            ` : html``}
 
             ${idea.risks.length
                 ? html`
@@ -1000,7 +1002,7 @@ export async function init(
 
     function bindApprovalEvents(
         idea: ApprovalIdea,
-        edge: ApprovalEdge,
+        edge: ApprovalEdge | null,
         id: string,
     ): void {
         $('#approval-approve-btn')
@@ -1186,7 +1188,7 @@ export async function init(
 
     function mutateApprovalPage(
         idea: ApprovalIdea,
-        edge: ApprovalEdge,
+        edge: ApprovalEdge | null,
         id: string,
     ): void {
         const root = $('#page-root');

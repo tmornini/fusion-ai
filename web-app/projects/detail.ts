@@ -560,6 +560,14 @@ function buildBaselineComparison(
 function buildEdgeKPIs(
     project: ProjectDetail,
 ): SafeHtml {
+    if (!project.edge) {
+        return html`
+        <div class="card p-6">
+            <p class="text-muted text-sm">
+                No edge data available.
+            </p>
+        </div>`;
+    }
     return html`
         <div class="card p-6">
             <div class="${

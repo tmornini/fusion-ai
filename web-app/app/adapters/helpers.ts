@@ -166,21 +166,8 @@ export async function getEdgeDataByIdeaId(
     };
 }
 
-export function buildDefaultEdgeData(
-): EdgeData {
-    return {
-        outcomes: [],
-        impact: { shortTerm: '', midTerm: '', longTerm: '' },
-        confidence: 'medium',
-        owner: '',
-    };
-}
-
 export async function getEdgeDataWithConfidence(
     ideaId: string,
-): Promise<EdgeData> {
-    const edgeData =
-        await getEdgeDataByIdeaId(ideaId);
-    if (!edgeData) return buildDefaultEdgeData();
-    return edgeData;
+): Promise<EdgeData | null> {
+    return getEdgeDataByIdeaId(ideaId);
 }

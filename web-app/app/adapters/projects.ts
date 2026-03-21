@@ -94,7 +94,7 @@ export interface ProjectDetail {
         };
         confidence: ConfidenceLevel;
         owner: string;
-    };
+    } | null;
     team: {
         id: string;
         name: string;

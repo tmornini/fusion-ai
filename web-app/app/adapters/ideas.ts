@@ -312,7 +312,7 @@ export async function getIdeaForApproval(
 
 export async function getEdgeForApproval(
     ideaId: string,
-): Promise<ApprovalEdge> {
+): Promise<ApprovalEdge | null> {
     return getEdgeDataWithConfidence(ideaId);
 }
 

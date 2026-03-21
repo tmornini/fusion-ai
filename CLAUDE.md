@@ -160,7 +160,7 @@ web-app/
     loading-states.ts         # Loading skeletons, error states, empty states, withLoadingState()
     adapters/                 # ~45 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
-      helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence, shared Metric type
+      helpers.ts              # buildUserMap, parseJson, getEdgeDataByIdeaId, getEdgeDataWithConfidence (returns null when no edge), shared Metric type
       shared.ts               # getCurrentUser
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
       ideas.ts                # getIdeas, getIdeaDetail, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getEdgeForApproval, getIdea, putIdea
