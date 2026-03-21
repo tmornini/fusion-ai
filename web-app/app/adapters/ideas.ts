@@ -58,8 +58,7 @@ export async function getIdeas(
             idea,
             userName(
                 userMap,
-                submitterMap.get(idea.id)
-                    ?? '',
+                submitterMap.get(idea.id)!,
             ),
             computeEdgeStatus(
                 idea.id,
@@ -96,7 +95,7 @@ export async function getIdeaDetail(
         idea,
         userName(
             userMap,
-            submission?.user_id ?? '',
+            submission!.user_id,
         ),
         computeEdgeStatus(
             ideaId,
@@ -143,8 +142,7 @@ export async function getReviewQueue(
             idea,
             userName(
                 userMap,
-                submitterMap.get(idea.id)
-                    ?? '',
+                submitterMap.get(idea.id)!,
             ),
             computeEdgeStatus(
                 idea.id,
@@ -267,7 +265,7 @@ export async function getIdeaForApproval(
         entity,
         userName(
             userMap,
-            submission?.user_id ?? '',
+            submission!.user_id,
         ),
         'missing',
         submission!.created_at,

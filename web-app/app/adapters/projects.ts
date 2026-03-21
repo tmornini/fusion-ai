@@ -221,7 +221,7 @@ export async function getProjectById(
             project.target_end_date,
         projectLead: userName(
             userMap,
-            leadRow?.user_id ?? '',
+            leadRow?.user_id,
         ),
         metrics: {
             time: {
@@ -273,7 +273,7 @@ export async function getProjectById(
                 userMap,
                 versionAuthorMap.get(
                     v.id,
-                ) ?? '',
+                )!,
             ),
         })),
         discussions:
@@ -285,7 +285,7 @@ export async function getProjectById(
                     userMap,
                     discussionAuthorMap.get(
                         d.id,
-                    ) ?? '',
+                    )!,
                 ),
             })),
         tasks: taskRows.map(task => ({
@@ -304,7 +304,7 @@ export async function getProjectById(
                 userMap,
                 taskAssignmentMap.get(
                     task.id,
-                ) ?? '',
+                ),
             ),
         })),
     };
@@ -504,8 +504,7 @@ getClarificationsByProjectId(
             question: c.question,
             askedBy: userName(
                 userMap,
-                askerMap.get(c.id)
-                    ?? '',
+                askerMap.get(c.id),
             ),
             askedAt: c.asked_at,
             status: c.status,

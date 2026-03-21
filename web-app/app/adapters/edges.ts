@@ -47,7 +47,7 @@ export async function getIdeaForEdge(
         entity,
         userName(
             userMap,
-            submission?.user_id ?? '',
+            submission!.user_id,
         ),
         'missing',
         submission!.created_at,
@@ -195,15 +195,14 @@ export async function getEdgeList(
         }
 
         const ideaId =
-            edgeIdeaMap.get(edge.id)
-                ?? '';
+            edgeIdeaMap.get(edge.id)!;
         const idea =
             ideaMap.get(ideaId);
         return {
             id: edge.id,
             ideaId,
             ideaTitle:
-                idea?.title ?? '',
+                idea!.title,
             status: edge.status,
             statusLabel:
                 edge.statusLabel(),
