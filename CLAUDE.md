@@ -88,8 +88,8 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 ### Adapter Conventions
 
-- **User-name fallback**: When a user ID can't resolve to a name, return `'Unknown'` (never empty string).
-- **Absent values**: Use `null` for semantically absent values (e.g., `confidence: ConfidenceLevel | null`), not empty string.
+- **User-name fallback**: When a user ID can't resolve to a name, return `''` (empty string). UI renders `'\u2014'` (em dash) for display. Never use magical fallback strings like `'Unknown'`.
+- **Absent values**: Use `null` for semantically absent values in adapter return types (e.g., `confidence: ConfidenceLevel | null`). Persisted noun entities never use `null` — see CONDUCT-OF-CODE.md.
 - **No adapter caching**: Each adapter function fetches its own data directly via `buildUserMap()`. No `cachedUserMap` or `prefetched*` parameters — simplicity over micro-optimization of localStorage reads.
 - **Shared types**: The `Metric` interface (`{ id, name, target, unit, current }`) is defined in `helpers.ts` and used across adapters. `PriorityLevel` (computed from score) is distinct from `ConfidenceLevel` (user-selected).
 
