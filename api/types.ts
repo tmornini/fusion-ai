@@ -281,7 +281,7 @@ export class User {
             return 'Pending';
         if (this.status === 'deactivated')
             return 'Deactivated';
-        return '';
+        return this.status;
     }
 
     statusClassName(): string {
