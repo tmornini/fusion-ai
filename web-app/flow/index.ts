@@ -119,6 +119,11 @@ export async function init(): Promise<void> {
                 + ' business processes to'
                 + ' improve visibility'
                 + ' and consistency.',
+            action: {
+                label: 'View Ideas',
+                href:
+                    '../ideas/index.html',
+            },
         },
     );
     if (!result) return;
