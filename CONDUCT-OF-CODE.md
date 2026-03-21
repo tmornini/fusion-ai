@@ -31,6 +31,7 @@ We detest:
 - obscurity
 - cleverness
 - magical values
+- default values
 - premature optimization
 - polling for state changes
 
