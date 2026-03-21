@@ -41,8 +41,18 @@ export function $textarea(
         );
 }
 
-export function attr(el: Element, name: string): string {
-    return el.getAttribute(name) ?? '';
+export function attr(
+    el: Element,
+    name: string,
+): string {
+    const value = el.getAttribute(name);
+    if (value === null) {
+        throw new Error(
+            `Missing attribute "${name}"`
+            + ` on <${el.tagName.toLowerCase()}>`,
+        );
+    }
+    return value;
 }
 
 export function populateIcons(entries: Array<[string, SafeHtml]>): void {
@@ -65,7 +75,7 @@ export function initToggleGroup(
     const buttons = $$(selector, document);
     for (const btn of buttons) {
         btn.addEventListener('click', () => {
-            const value = btn.getAttribute(attrName) ?? '';
+            const value = attr(btn, attrName);
             for (const b of buttons) b.classList.toggle('active', b === btn);
             onChange(value);
         });
