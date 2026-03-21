@@ -824,10 +824,6 @@ export const FLOW_STEP_TYPE_CONFIG: Record<
     },
 };
 
-export const FLOW_STEP_TYPE_DEFAULT:
-    InlineStyleDisplay
-    = FLOW_STEP_TYPE_CONFIG.action;
-
 export interface MilestoneDisplay {
     label: string;
     textStyle: string;
@@ -853,7 +849,7 @@ export const MILESTONE_STATUS_CONFIG:
     },
 };
 
-export const MILESTONE_STATUS_DEFAULT:
+export const MILESTONE_STATUS_PENDING:
     MilestoneDisplay = {
         label: 'Pending',
         textStyle: 'color:hsl(var('
@@ -885,7 +881,7 @@ export const TASK_PRIORITY_CONFIG:
     },
 };
 
-export const TASK_PRIORITY_DEFAULT:
+export const TASK_PRIORITY_LOW:
     InlineStyleDisplay = {
         label: 'Low',
         style: 'background:hsl(var('

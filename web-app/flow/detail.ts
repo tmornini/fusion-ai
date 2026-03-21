@@ -26,7 +26,6 @@ import {
 import {
     isFlowStepType,
     FLOW_STEP_TYPE_CONFIG,
-    FLOW_STEP_TYPE_DEFAULT,
     type FlowStepType,
 } from '../../api/types';
 
@@ -305,8 +304,7 @@ export async function init(
                                         FLOW_STEP_TYPE_CONFIG[
                                             step
                                             .type
-                                        ]
-                                        ?? FLOW_STEP_TYPE_DEFAULT
+                                        ]!
                                         ).style
                                     )}"
                                 >

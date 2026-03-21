@@ -32,9 +32,9 @@ import {
 import {
     PROJECT_STATUS_CONFIG,
     MILESTONE_STATUS_CONFIG,
-    MILESTONE_STATUS_DEFAULT,
+    MILESTONE_STATUS_PENDING,
     TASK_PRIORITY_CONFIG,
-    TASK_PRIORITY_DEFAULT,
+    TASK_PRIORITY_LOW,
     isProjectStatus,
     type ProjectStatus,
 } from '../../api/types';
@@ -112,7 +112,7 @@ function buildMilestoneIcon(
         + 'justify-content:center';
     const cfg =
         MILESTONE_STATUS_CONFIG[status]
-        ?? MILESTONE_STATUS_DEFAULT;
+        ?? MILESTONE_STATUS_PENDING;
     const icon =
         MILESTONE_ICON_MAP[status]
         ?? MILESTONE_ICON_DEFAULT;
@@ -1105,7 +1105,7 @@ function buildProjectTabs(
                             TASK_PRIORITY_CONFIG[
                                 task.priority
                             ]
-                            ?? TASK_PRIORITY_DEFAULT
+                            ?? TASK_PRIORITY_LOW
                         ).style;
                         return html`
                         <div class="card"
@@ -1849,7 +1849,7 @@ function buildProjectSidebar(
                                             milestone
                                                 .status
                                         ]
-                                        ?? MILESTONE_STATUS_DEFAULT
+                                        ?? MILESTONE_STATUS_PENDING
                                     ).textStyle
                                     }">
                                     ${milestone
