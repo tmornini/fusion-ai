@@ -312,7 +312,7 @@ export interface IdeaEntity {
     estimated_cost: number;
     priority: number;
     status: IdeaStatus;
-    edge_status: EdgeStatus | 'incomplete';
+    edge_status: EdgeStatus;
     problem_statement: string;
     proposed_solution: string;
     expected_outcome: string;
@@ -923,14 +923,10 @@ export const IDEA_STATUS_CONFIG: Record<
 };
 
 export const EDGE_STATUS_CONFIG: Record<
-    EdgeStatus | 'incomplete',
+    EdgeStatus,
     StatusDisplay
 > = {
     missing: {
-        label: 'Edge Missing',
-        className: 'badge-error',
-    },
-    incomplete: {
         label: 'Edge Missing',
         className: 'badge-error',
     },
@@ -1139,7 +1135,7 @@ export class Idea {
     readonly estimatedCost: number;
     readonly priority: number;
     readonly status: IdeaStatus;
-    readonly edgeStatus: EdgeStatus | 'incomplete';
+    readonly edgeStatus: EdgeStatus;
     readonly problemStatement: string;
     readonly proposedSolution: string;
     readonly expectedOutcome: string;
@@ -1176,7 +1172,7 @@ export class Idea {
         this.priority = entity.priority;
         this.status = entity.status;
         this.edgeStatus =
-            entity.edge_status || 'incomplete';
+            entity.edge_status || 'missing';
         this.problemStatement =
             entity.problem_statement;
         this.proposedSolution =
