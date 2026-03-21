@@ -1591,7 +1591,7 @@ function buildProjectTabs(
                                         version
                                             .author
                                     }
-                                    &bull; ${
+                                    • ${
                                         version
                                             .date
                                     }
@@ -2010,7 +2010,7 @@ function buildProjectDetail(
                                 project
                                     .projectLead
                             }
-                            &bull; ${
+                            • ${
                                 project
                                     .progress
                             }%
