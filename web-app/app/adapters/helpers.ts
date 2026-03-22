@@ -4,8 +4,6 @@ import type {
     ConfidenceLevel,
     EdgeStatus,
     EdgeIdeaEntity,
-} from '../../../api/types';
-import type {
     UserEntity,
     EdgeEntity,
     EdgeOutcomeEntity,
