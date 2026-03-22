@@ -37,6 +37,9 @@ We detest:
   - fallback objects and factories
   - silent coercion (`?? ''`, `|| fallback`)
   - default values mask absence of real data
+  - this does not apply to display formatting
+    that renders absence visually (e.g. em-dash)
+    — presentation transforms are not coercion
 - premature optimization
 - polling for state changes
 
