@@ -59,7 +59,8 @@ function computeCompletionStatus() {
         || edgeData.impact.midTerm !== ''
         || edgeData.impact.longTerm !== '';
     const hasOwner =
-        edgeData.owner.trim() !== '';
+        edgeData.owner !== null
+        && edgeData.owner.trim() !== '';
     const hasConfidence =
         edgeData.confidence.length > 0;
     const completionPercent = [

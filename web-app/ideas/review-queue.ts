@@ -457,7 +457,7 @@ export async function init(): Promise<void> {
                     idea.title
                         .toLowerCase()
                         .includes(search)
-                    || idea.submittedBy
+                    || (idea.submittedBy ?? '')
                         .toLowerCase()
                         .includes(search);
                 const matchesPriority =

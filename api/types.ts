@@ -937,11 +937,11 @@ export class Idea {
     readonly costEstimate: string;
     readonly costBreakdown: string;
     readonly successMetrics: string;
-    readonly submittedBy: string;
+    readonly submittedBy: string | null;
 
     constructor(
         entity: IdeaEntity,
-        submittedBy: string,
+        submittedBy: string | null,
         edgeStatus: EdgeStatus,
         submittedAt: string,
     ) {
@@ -1265,11 +1265,11 @@ export class Activity {
     readonly score: number;
     readonly status: string;
     readonly comment: string;
-    readonly actor: string;
+    readonly actor: string | null;
 
     constructor(
         entity: ActivityEntity,
-        actor: string,
+        actor: string | null,
     ) {
         this.id = entity.id;
         this.type = entity.type;
@@ -1283,7 +1283,7 @@ export class Activity {
     }
 
     formattedDescription(): string {
-        return `${this.actor}`
+        return `${this.actor ?? ''}`
             + ` ${this.action}`
             + ` ${this.target}`;
     }

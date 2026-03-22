@@ -370,7 +370,7 @@ criteria</p>`);
                     edge.ideaTitle
                         .toLowerCase()
                         .includes(search)
-                    || edge.owner
+                    || (edge.owner ?? '')
                         .toLowerCase()
                         .includes(search);
                 const matchesStatus =
