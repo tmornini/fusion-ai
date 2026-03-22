@@ -2363,44 +2363,51 @@ function bindProjectEvents(
                 'click',
                 async () => {
         const title =
-                $input('#project-edit-title', document)
-                    ?.value ?? project.title;
+                $input(
+                    '#project-edit-title',
+                    document,
+                )!.value;
         const description =
                 $textarea(
-                        '#project-edit-description', document,
-                )?.value ?? project.description;
+                    '#project-edit-description',
+                    document,
+                )!.value;
         const statusValue =
-                $select('#project-edit-status', document)?.value;
+                $select(
+                    '#project-edit-status',
+                    document,
+                )!.value;
         const status: ProjectStatus =
-                statusValue && isProjectStatus(statusValue)
+                isProjectStatus(statusValue)
                         ? statusValue
                         : project.status;
         const startDate =
                 $input(
-                        '#project-edit-start-date', document,
-                )?.value ?? project.startDate;
+                    '#project-edit-start-date',
+                    document,
+                )!.value;
         const targetEndDate =
                 $input(
-                        '#project-edit-end-date', document,
-                )?.value ?? project.targetEndDate;
+                    '#project-edit-end-date',
+                    document,
+                )!.value;
         const timeBaseline = Number(
                 $input(
-                        '#project-edit-time-baseline', document,
-                )?.value
-                ?? project.metrics.time.baseline,
+                    '#project-edit-time-baseline',
+                    document,
+                )!.value,
         );
         const costBaseline = Number(
                 $input(
-                        '#project-edit-cost-baseline', document,
-                )?.value
-                ?? project.metrics.cost.baseline
-                        / 1000,
+                    '#project-edit-cost-baseline',
+                    document,
+                )!.value,
         );
         const impactBaseline = Number(
                 $input(
-                        '#project-edit-impact-baseline', document,
-                )?.value
-                ?? project.metrics.impact.baseline,
+                    '#project-edit-impact-baseline',
+                    document,
+                )!.value,
         );
         try {
             await putProject(projectId, {

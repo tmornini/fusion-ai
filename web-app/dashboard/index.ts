@@ -113,7 +113,7 @@ function buildGauge(
         Math.PI * GAUGE_ARC_INNER_RADIUS;
     const iconFn =
         gaugeIconConfig[card.icon]
-        || iconDollarSign;
+        ?? iconDollarSign;
 
     const isOverrun =
         card.hasOverrunWarning

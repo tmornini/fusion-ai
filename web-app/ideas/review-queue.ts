@@ -437,19 +437,21 @@ export async function init(): Promise<void> {
     </div>`);
 
     function mutateFilteredList() {
-        const search = (
+        const search =
             $input(
-                '#review-queue-search', document,
-            )?.value ?? ''
-        ).toLowerCase();
+                '#review-queue-search',
+                document,
+            )!.value.toLowerCase();
         const priority =
             $select(
-                '#review-queue-priority-filter', document,
-            )?.value ?? 'all';
+                '#review-queue-priority-filter',
+                document,
+            )!.value;
         const readiness =
             $select(
-                '#review-queue-readiness-filter', document,
-            )?.value ?? 'all';
+                '#review-queue-readiness-filter',
+                document,
+            )!.value;
 
         const filtered = allIdeas.filter(
             idea => {

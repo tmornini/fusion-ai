@@ -356,14 +356,14 @@ class="${
 criteria</p>`);
 
     function mutateFilteredList() {
-        const search = (
-            $input('#edge-search', document)?.value
-                ?? ''
-        ).toLowerCase();
+        const search =
+            $input('#edge-search', document)!
+                .value.toLowerCase();
         const status =
             $select(
-                '#edge-status-filter', document,
-            )?.value ?? 'all';
+                '#edge-status-filter',
+                document,
+            )!.value;
         const filtered = edges.filter(
             edge => {
                 const matchesSearch =
