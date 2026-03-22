@@ -192,11 +192,7 @@ export function formatCompactCurrency(
 }
 
 export function nowUtc(): string {
-    const iso = new Date().toISOString();
-    return iso.replace(
-        /\.(\d{3})Z$/,
-        '.$1000Z',
-    );
+    return new Date().toISOString();
 }
 
 export interface UserEntity {
