@@ -297,6 +297,19 @@ export class User {
     hasPerformanceScore(): boolean {
         return this.performanceScore > 0;
     }
+
+    parsedStrengths(): string[] {
+        return JSON.parse(
+            this.strengths,
+        ) as string[];
+    }
+
+    parsedTeamDimensions():
+        Record<string, number> {
+        return JSON.parse(
+            this.teamDimensions,
+        ) as Record<string, number>;
+    }
 }
 
 export interface IdeaEntity {
@@ -1093,6 +1106,28 @@ export class Idea {
         return (
             READINESS_CONFIG[this.readiness]
         )!.className;
+    }
+
+    parsedRisks(): { title: string;
+        severity: string;
+        mitigation: string }[] {
+        return JSON.parse(
+            this.risks,
+        ) as { title: string;
+            severity: string;
+            mitigation: string }[];
+    }
+
+    parsedAssumptions(): string[] {
+        return JSON.parse(
+            this.assumptions,
+        ) as string[];
+    }
+
+    parsedAlignments(): string[] {
+        return JSON.parse(
+            this.alignments,
+        ) as string[];
     }
 }
 
