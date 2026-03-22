@@ -44,16 +44,21 @@ export function computeEdgeStatus(
     return edge.status;
 }
 
-export function parseJson<T>(value: string | T, fallback: T): T {
+export function parseJson<T>(
+    value: string | T,
+    recoveryShape: T,
+): T {
     if (typeof value === 'string') {
-        try { return JSON.parse(value) as T; }
-        catch {
+        try {
+            return JSON.parse(value) as T;
+        } catch {
             log.warn(
-                `Failed to parse JSON value:`
-                + ` ${value.slice(0, 100)}`,
+                'Failed to parse JSON'
+                + ' value: '
+                + value.slice(0, 100),
                 'parseJson',
             );
-            return fallback;
+            return recoveryShape;
         }
     }
     return value;
