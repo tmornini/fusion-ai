@@ -2,7 +2,6 @@ import { GET, PUT } from '../../../api/api';
 import type {
     IdeaEntity,
     IdeaScoreEntity,
-    ConfidenceLevel,
     IdeaSubmissionEntity,
     EdgeIdeaEntity,
     EdgeEntity,
@@ -16,9 +15,8 @@ import {
     buildUserMap,
     userName,
     computeEdgeStatus,
-    parseJson,
     getEdgeDataWithConfidence,
-    type Metric,
+    type EdgeData,
 } from './helpers';
 
 export { Idea } from '../../../api/types';
@@ -199,55 +197,9 @@ export async function getIdeaForConversion(
     };
 }
 
-export interface ApprovalIdea {
-    id: string;
-    title: string;
-    description: string;
-    submittedBy: string | null;
-    submittedAt: string;
-    priority: string;
-    score: number;
-    category: string;
-    impact: {
-        level: string;
-        description: string;
-    };
-    effort: {
-        level: string;
-        durationEstimate: string;
-        teamSize: string;
-    };
-    cost: {
-        estimate: string;
-        breakdown: string;
-    };
-    risks: {
-        title: string;
-        severity: 'high' | 'medium' | 'low';
-        mitigation: string;
-    }[];
-    assumptions: string[];
-    alignments: string[];
-}
-
-export interface ApprovalEdge {
-    outcomes: {
-        id: string;
-        description: string;
-        metrics: Omit<Metric, 'current'>[];
-    }[];
-    impact: {
-        shortTerm: string;
-        midTerm: string;
-        longTerm: string;
-    };
-    confidence: ConfidenceLevel;
-    owner: string | null;
-}
-
 export async function getIdeaForApproval(
     ideaId: string,
-): Promise<ApprovalIdea> {
+): Promise<Idea> {
     const [entity, userMap, submissions] =
         await Promise.all([
             GET<IdeaEntity>(
@@ -261,7 +213,7 @@ export async function getIdeaForApproval(
     const submission = submissions.find(
         s => s.idea_id === ideaId,
     );
-    const idea = new Idea(
+    return new Idea(
         entity,
         userName(
             userMap,
@@ -270,47 +222,11 @@ export async function getIdeaForApproval(
         'missing',
         submission!.created_at,
     );
-
-    return {
-        id: idea.id,
-        title: idea.title,
-        description: idea.description,
-        submittedBy: idea.submittedBy,
-        submittedAt: idea.submittedAt,
-        priority: idea.priorityLevel(),
-        score: idea.score,
-        category: idea.category,
-        impact: {
-            level: idea.impactLabel,
-            description: idea.description,
-        },
-        effort: {
-            level: idea.effortLabel,
-            durationEstimate:
-                idea.effortDurationEstimate,
-            teamSize: idea.effortTeamSize,
-        },
-        cost: {
-            estimate: idea.costEstimate,
-            breakdown: idea.costBreakdown,
-        },
-        risks: parseJson<
-            ApprovalIdea['risks']
-        >(idea.risks, []),
-        assumptions: parseJson<string[]>(
-            idea.assumptions,
-            [],
-        ),
-        alignments: parseJson<string[]>(
-            idea.alignments,
-            [],
-        ),
-    };
 }
 
 export async function getEdgeForApproval(
     ideaId: string,
-): Promise<ApprovalEdge | null> {
+): Promise<EdgeData | null> {
     return getEdgeDataWithConfidence(ideaId);
 }
 
