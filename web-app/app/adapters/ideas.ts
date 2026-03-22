@@ -154,40 +154,43 @@ export async function getReviewQueue(
         ));
 }
 
-export interface ConversionIdea {
-    id: string;
-    title: string;
-    problemStatement: string;
-    proposedSolution: string;
-    expectedOutcome: string;
-    score: number;
+export interface ConversionData {
+    idea: Idea;
     estimatedDuration: string | null;
     estimatedCost: string | null;
 }
 
 export async function getIdeaForConversion(
     ideaId: string,
-): Promise<ConversionIdea> {
-    const [entity, scoreRow] =
-        await Promise.all([
-            GET<IdeaEntity>(
-                `ideas/${ideaId}`,
-            ),
-            GET<IdeaScoreEntity | null>(
-                `ideas/${ideaId}/score`,
-            ),
-        ]);
+): Promise<ConversionData> {
+    const [
+        entity, scoreRow,
+        userMap, submissions,
+    ] = await Promise.all([
+        GET<IdeaEntity>(
+            `ideas/${ideaId}`,
+        ),
+        GET<IdeaScoreEntity | null>(
+            `ideas/${ideaId}/score`,
+        ),
+        buildUserMap(),
+        GET<IdeaSubmissionEntity[]>(
+            'idea-submissions',
+        ),
+    ]);
+    const submission = submissions.find(
+        s => s.idea_id === ideaId,
+    );
     return {
-        id: entity.id,
-        title: entity.title,
-        problemStatement:
-            entity.problem_statement,
-        proposedSolution:
-            entity.proposed_solution,
-        expectedOutcome:
-            entity.expected_outcome,
-        score: scoreRow?.overall
-            ?? entity.score,
+        idea: new Idea(
+            entity,
+            userName(
+                userMap,
+                submission!.user_id,
+            ),
+            'missing',
+            submission!.created_at,
+        ),
         estimatedDuration:
             scoreRow?.estimated_duration
                 ?? null,
