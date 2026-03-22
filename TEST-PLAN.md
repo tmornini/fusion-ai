@@ -32,7 +32,7 @@ All test sections (B through I) are executed via HTTP:
 - [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 14 page directories containing 27 HTML page files total.
 - [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
-- [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: no application JavaScript errors (CSS View Transition API `InvalidStateError`/`AbortError` exceptions during navigation are expected and harmless).
+- [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
 ---
 
