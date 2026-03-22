@@ -1291,6 +1291,30 @@ export class Edge {
     }
 }
 
+export class EdgeListEntry extends Edge {
+    readonly ideaId: string;
+    readonly ideaTitle: string;
+    readonly outcomesCount: number;
+    readonly metricsCount: number;
+    readonly owner: string | null;
+
+    constructor(
+        entity: EdgeEntity,
+        ideaId: string,
+        ideaTitle: string,
+        outcomesCount: number,
+        metricsCount: number,
+        owner: string | null,
+    ) {
+        super(entity);
+        this.ideaId = ideaId;
+        this.ideaTitle = ideaTitle;
+        this.outcomesCount = outcomesCount;
+        this.metricsCount = metricsCount;
+        this.owner = owner;
+    }
+}
+
 export class Activity {
     readonly id: string;
     readonly type: string;
