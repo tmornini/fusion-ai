@@ -75,7 +75,7 @@ const gaugeIconConfig: Record<
     zap: iconZap,
 };
 
-const GAUGE_THEME_FALLBACK = {
+const GAUGE_THEME_NEUTRAL = {
     bg:
         'background:'
         + 'hsl(var(--muted)/0.04)',
@@ -94,7 +94,7 @@ function buildGauge(
 ): SafeHtml {
     const themeStyle =
         gaugeThemeConfig[card.theme]
-        ?? GAUGE_THEME_FALLBACK;
+        ?? GAUGE_THEME_NEUTRAL;
     const elementId = card.title
         .replace(/\s+/g, '-')
         .toLowerCase();

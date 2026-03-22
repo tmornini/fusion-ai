@@ -96,7 +96,7 @@ const MILESTONE_ICON_MAP: Record<
     },
 };
 
-const MILESTONE_ICON_DEFAULT = {
+const MILESTONE_ICON_PENDING = {
     iconFn: iconClock,
     iconClass: 'text-muted',
 };
@@ -115,7 +115,7 @@ function buildMilestoneIcon(
         ?? MILESTONE_STATUS_PENDING;
     const icon =
         MILESTONE_ICON_MAP[status]
-        ?? MILESTONE_ICON_DEFAULT;
+        ?? MILESTONE_ICON_PENDING;
     return html`<div
         style="${base};background:${
             cfg.iconBackground}"

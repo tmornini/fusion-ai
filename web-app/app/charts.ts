@@ -20,11 +20,11 @@ export interface ChartConfig {
     accessibleLabel?: string;
 }
 
-const CHART_DEFAULT_WIDTH = 300;
-const CHART_DEFAULT_HEIGHT = 200;
+const CHART_WIDTH = 300;
+const CHART_HEIGHT = 200;
 const CHART_PADDING = 40;
 
-const defaultColors = [
+const CHART_COLORS = [
     'hsl(var(--primary))',
     'hsl(var(--success))',
     'hsl(var(--warning))',
@@ -38,14 +38,14 @@ function computeChartLayout(
     config?: ChartConfig,
 ) {
     const width =
-        config?.width ?? CHART_DEFAULT_WIDTH;
+        config?.width ?? CHART_WIDTH;
     const height =
         config?.height
-        ?? CHART_DEFAULT_HEIGHT;
+        ?? CHART_HEIGHT;
     const padding =
         config?.padding ?? CHART_PADDING;
     const colors =
-        config?.colors ?? defaultColors;
+        config?.colors ?? CHART_COLORS;
     const maxValue = Math.max(
         ...data.map(datum => datum.value),
     );
@@ -257,7 +257,7 @@ export function buildDonutChart(
 ): SafeHtml {
     const size = config?.width ?? 160;
     const colors =
-        config?.colors ?? defaultColors;
+        config?.colors ?? CHART_COLORS;
     if (!data.length) return trusted('');
 
     const cx = size / 2;
