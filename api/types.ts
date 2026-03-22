@@ -826,8 +826,13 @@ export interface MilestoneDisplay {
     iconBackground: string;
 }
 
+export type MilestoneStatus =
+    'completed'
+    | 'in_progress'
+    | 'pending';
+
 export const MILESTONE_STATUS_CONFIG:
-    Record<string, MilestoneDisplay>
+    Record<MilestoneStatus, MilestoneDisplay>
 = {
     completed: {
         label: 'Completed',
@@ -843,16 +848,14 @@ export const MILESTONE_STATUS_CONFIG:
         iconBackground:
             'hsl(var(--warning))',
     },
-};
-
-export const MILESTONE_STATUS_PENDING:
-    MilestoneDisplay = {
+    pending: {
         label: 'Pending',
         textStyle: 'color:hsl(var('
             + '--muted-foreground))',
         iconBackground:
             'hsl(var(--muted))',
-    };
+    },
+};
 
 export const TASK_PRIORITY_CONFIG:
     Record<string, InlineStyleDisplay>

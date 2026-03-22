@@ -32,7 +32,7 @@ import {
 import {
     PROJECT_STATUS_CONFIG,
     MILESTONE_STATUS_CONFIG,
-    MILESTONE_STATUS_PENDING,
+    type MilestoneStatus,
     TASK_PRIORITY_CONFIG,
     TASK_PRIORITY_LOW,
     isProjectStatus,
@@ -76,15 +76,17 @@ function buildVariance(
         }</span>`;
 }
 
+type MilestoneIconEntry = {
+    iconFn: (
+        s: number,
+        c: string,
+    ) => SafeHtml;
+    iconClass: string;
+};
+
 const MILESTONE_ICON_MAP: Record<
-    string,
-    {
-        iconFn: (
-            s: number,
-            c: string,
-        ) => SafeHtml;
-        iconClass: string;
-    }
+    MilestoneStatus,
+    MilestoneIconEntry
 > = {
     completed: {
         iconFn: iconCheckCircle2,
@@ -94,15 +96,14 @@ const MILESTONE_ICON_MAP: Record<
         iconFn: iconAlertCircle,
         iconClass: 'text-primary-fg',
     },
-};
-
-const MILESTONE_ICON_PENDING = {
-    iconFn: iconClock,
-    iconClass: 'text-muted',
+    pending: {
+        iconFn: iconClock,
+        iconClass: 'text-muted',
+    },
 };
 
 function buildMilestoneIcon(
-    status: string,
+    status: MilestoneStatus,
 ): SafeHtml {
     const base =
         'width:1.5rem;height:1.5rem;'
@@ -111,11 +112,9 @@ function buildMilestoneIcon(
         + 'align-items:center;'
         + 'justify-content:center';
     const cfg =
-        MILESTONE_STATUS_CONFIG[status]
-        ?? MILESTONE_STATUS_PENDING;
+        MILESTONE_STATUS_CONFIG[status];
     const icon =
-        MILESTONE_ICON_MAP[status]
-        ?? MILESTONE_ICON_PENDING;
+        MILESTONE_ICON_MAP[status];
     return html`<div
         style="${base};background:${
             cfg.iconBackground}"
@@ -1775,9 +1774,15 @@ function buildProjectSidebar(
                     'position:relative'
                 }">
                     ${project.milestones.map(
-                        (milestone,
-                            milestoneIndex) =>
-                        html`
+                        ({
+                            status, title,
+                            date,
+                        },
+                            milestoneIndex,
+                        ) => {
+                        const ms = status as
+                            MilestoneStatus;
+                        return html`
                         <div class="${
                             'flex gap-3'
                         }"
@@ -1803,8 +1808,7 @@ function buildProjectSidebar(
                             }">
                                 ${
                                     buildMilestoneIcon(
-                                        milestone
-                                            .status,
+                                        ms,
                                     )
                                 }
                                 ${milestoneIndex
@@ -1844,16 +1848,12 @@ function buildProjectSidebar(
                                         + ' font-'
                                         + 'medium'
                                     }"
-                                    style="${(
+                                    style="${
                                         MILESTONE_STATUS_CONFIG[
-                                            milestone
-                                                .status
-                                        ]
-                                        ?? MILESTONE_STATUS_PENDING
-                                    ).textStyle
+                                            ms
+                                        ].textStyle
                                     }">
-                                    ${milestone
-                                        .title}
+                                    ${title}
                                 </p>
                                 <p class="${
                                     'text-xs '
@@ -1861,13 +1861,12 @@ function buildProjectSidebar(
                                     + 'muted'
                                 }">
                                     ${formatDate(
-                                        milestone
-                                            .date,
+                                        date,
                                     )}
                                 </p>
                             </div>
                         </div>
-                    `)}
+                    `; })}
                 </div>
             </div>
         </div>`;
