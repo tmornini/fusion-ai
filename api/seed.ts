@@ -465,7 +465,7 @@ export async function populateMockData(
             estimated_duration: 288000,
             estimated_cost: 32000,
             priority: 2,
-            status: 'promoted',
+            status: 'approved',
 
             problem_statement:
                 'Analysts spend 15+ hours'
