@@ -1255,6 +1255,14 @@ const routes: Route[] = [
             await populateMockData(db);
         },
     }),
+    route('snapshots/bootstrap', {
+        post: async (db) => {
+            const {
+                populateBootstrapData,
+            } = await import('./mock-data');
+            await populateBootstrapData(db);
+        },
+    }),
     route('snapshots/import', {
         put: (db, _, payload) => {
             if (
