@@ -461,12 +461,7 @@ function buildEdgePage(
             <button class="${
                 'btn btn-hero gap-2'
             }"
-                id="edge-save-btn"
-                ${trusted(
-                    completion.isComplete
-                        ? ''
-                        : 'disabled',
-                )}>
+                id="edge-save-btn">
                 ${iconSave(16, '')
                 } Save &amp; Continue
             </button>
