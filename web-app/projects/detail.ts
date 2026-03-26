@@ -27,7 +27,11 @@ import {
 } from '../app/core';
 import {
     getProjectById, putProject,
+    getWorkflowsByProject, postWorkflow,
     ProjectView,
+} from '../app/adapters';
+import type {
+    WorkflowListItem,
 } from '../app/adapters';
 import {
     PROJECT_STATUS_CONFIG,
@@ -1864,9 +1868,159 @@ function buildProjectSidebar(
         </div>`;
 }
 
+function buildWorkflowsSection(
+    workflows: WorkflowListItem[],
+    projectId: string,
+): SafeHtml {
+    const header = html`
+        <div class="${
+            'flex items-center '
+            + 'justify-between mb-4'
+        }">
+            <h2 class="${
+                'text-lg font-display '
+                + 'font-semibold'
+            }">
+                Workflows
+            </h2>
+            <button
+                id="new-workflow-btn"
+                class="${
+                    'btn btn-primary '
+                    + 'btn-sm gap-2'
+                }">
+                ${iconPlus(14, '')}
+                New Workflow
+            </button>
+        </div>`;
+
+    if (workflows.length === 0) {
+        return html`
+            <div class="card p-6">
+                ${header}
+                <div style="${
+                    'text-align:center;'
+                    + 'padding:2rem 0'
+                }">
+                    ${iconGitBranch(
+                        48, 'text-muted',
+                    )}
+                    <p class="${
+                        'text-muted mt-4'
+                    }">
+                        No workflows yet
+                    </p>
+                </div>
+            </div>`;
+    }
+
+    return html`
+        <div class="card p-6">
+            ${header}
+            <div style="${
+                'display:flex;'
+                + 'flex-direction:column;'
+                + 'gap:0.75rem'
+            }">
+                ${workflows.map(wf =>
+                    html`
+                    <a
+                        href="#"
+                        data-workflow-id="${
+                            wf.id
+                        }"
+                        class="${
+                            'card card-hover'
+                        }"
+                        style="${
+                            'padding:1rem;'
+                            + 'text-decoration'
+                            + ':none;'
+                            + 'color:inherit;'
+                            + 'display:block'
+                        }">
+                        <div class="${
+                            'flex '
+                            + 'items-center '
+                            + 'gap-3'
+                        }">
+                            <div style="${
+                                'padding:'
+                                + '0.5rem;'
+                                + 'border-'
+                                + 'radius:'
+                                + '0.5rem;'
+                                + 'background:'
+                                + 'hsl(var('
+                                + '--primary)'
+                                + '/0.1)'
+                            }">
+                                ${iconGitBranch(
+                                    20,
+                                    'text-primary',
+                                )}
+                            </div>
+                            <div style="${
+                                'min-width:0;'
+                                + 'flex:1'
+                            }">
+                                <p class="${
+                                    'font-medium'
+                                    + ' text-sm'
+                                }">
+                                    ${wf.name}
+                                </p>
+                                ${wf.description
+                                    ? html`<p
+                                        class="${
+                                            'text-xs'
+                                            + ' text-'
+                                            + 'muted'
+                                        }">${
+                                            wf
+                                            .description
+                                        }</p>`
+                                    : html``}
+                            </div>
+                            <div class="${
+                                'flex gap-3'
+                            }">
+                                <span
+                                    class="${
+                                        'badge'
+                                        + ' badge-'
+                                        + 'muted'
+                                        + ' text-xs'
+                                    }">
+                                    ${String(
+                                        wf
+                                        .nodeCount,
+                                    )} nodes
+                                </span>
+                                <span
+                                    class="${
+                                        'badge'
+                                        + ' badge-'
+                                        + 'muted'
+                                        + ' text-xs'
+                                    }">
+                                    ${String(
+                                        wf
+                                        .edgeCount,
+                                    )} edges
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                `)}
+            </div>
+        </div>`;
+}
+
 function buildProjectView(
     project: ProjectView,
     projectId: string,
+    workflows: WorkflowListItem[],
 ): SafeHtml {
     const statusOptions =
             Object.entries(
@@ -2311,6 +2465,10 @@ function buildProjectView(
                     ${buildProjectTabs(
                         project,
                     )}
+                    ${buildWorkflowsSection(
+                        workflows,
+                        projectId,
+                    )}
                 </div>
                 ${buildProjectSidebar(
                     project,
@@ -2322,6 +2480,7 @@ function buildProjectView(
 function bindProjectEvents(
     project: ProjectView,
     projectId: string,
+    workflows: WorkflowListItem[],
 ): void {
     $('#project-back-btn', document)
         ?.addEventListener(
@@ -2334,6 +2493,7 @@ function bindProjectEvents(
             state.isEditing = true;
             mutateProjectPage(
                     project, projectId,
+                    workflows,
             );
         });
 
@@ -2342,6 +2502,7 @@ function bindProjectEvents(
             state.isEditing = false;
             mutateProjectPage(
                     project, projectId,
+                    workflows,
             );
         });
 
@@ -2412,11 +2573,19 @@ function bindProjectEvents(
             showToast(
                     'Project saved', 'success',
             );
-            const updated =
-                    await getProjectById(projectId);
+            const [updated, updatedWfs] =
+                    await Promise.all([
+                        getProjectById(
+                            projectId,
+                        ),
+                        getWorkflowsByProject(
+                            projectId,
+                        ),
+                    ]);
             state.isEditing = false;
             mutateProjectPage(
                     updated, projectId,
+                    updatedWfs,
             );
         } catch {
             showToast(
@@ -2466,11 +2635,56 @@ function bindProjectEvents(
         )
             postBtn.disabled = true;
     });
+
+    $('#new-workflow-btn', document)
+        ?.addEventListener(
+            'click',
+            async () => {
+                try {
+                    const wfId =
+                        await postWorkflow(
+                            projectId,
+                            'New Workflow',
+                            '',
+                        );
+                    navigateTo(
+                        'flow-detail',
+                        { workflowId: wfId },
+                    );
+                } catch {
+                    showToast(
+                        'Failed to create'
+                        + ' workflow',
+                        'error',
+                    );
+                }
+            },
+        );
+
+    $$('[data-workflow-id]', document)
+        .forEach(el => {
+            el.addEventListener(
+                'click',
+                (e) => {
+                    e.preventDefault();
+                    const wfId =
+                        el.getAttribute(
+                            'data-workflow-id',
+                        );
+                    if (!wfId) return;
+                    navigateTo(
+                        'flow-detail',
+                        { workflowId: wfId },
+                    );
+                },
+            );
+        });
 }
 
 function mutateProjectPage(
     project: ProjectView,
     projectId: string,
+    workflows: WorkflowListItem[],
 ): void {
     const container = $(
             '#project-detail-content', document,
@@ -2480,10 +2694,11 @@ function mutateProjectPage(
             container,
             buildProjectView(
                     project, projectId,
+                    workflows,
             ),
     );
     bindProjectEvents(
-            project, projectId,
+            project, projectId, workflows,
     );
 }
 
@@ -2504,9 +2719,15 @@ export async function init(
     );
 
     let project: ProjectView;
+    let workflows: WorkflowListItem[];
     try {
-        project =
-                await getProjectById(projectId);
+        [project, workflows] =
+            await Promise.all([
+                getProjectById(projectId),
+                getWorkflowsByProject(
+                    projectId,
+                ),
+            ]);
     } catch {
         setHtml(
                 container,
@@ -2526,5 +2747,7 @@ export async function init(
         return;
     }
 
-    mutateProjectPage(project, projectId);
+    mutateProjectPage(
+        project, projectId, workflows,
+    );
 }
