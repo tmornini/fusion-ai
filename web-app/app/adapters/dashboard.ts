@@ -2,7 +2,7 @@ import { GET } from '../../../api/api';
 import type {
     IdeaEntity,
     ProjectEntity,
-    FlowEntity,
+    WorkflowEntity,
 } from '../../../api/types';
 import {
     ideaIsNotDeleted,
@@ -176,11 +176,13 @@ export async function getDashboardStats(
 ): Promise<
     { label: string; value: number }[]
 > {
-    const [ideas, projects, processes] =
+    const [ideas, projects, workflows] =
         await Promise.all([
             GET<IdeaEntity[]>('ideas'),
             GET<ProjectEntity[]>('projects'),
-            GET<FlowEntity[]>('processes'),
+            GET<WorkflowEntity[]>(
+                'workflows',
+            ),
         ]);
 
     return [
@@ -197,8 +199,8 @@ export async function getDashboardStats(
                 .length,
         },
         {
-            label: 'Flow',
-            value: processes.length,
+            label: 'Workflows',
+            value: workflows.length,
         },
     ];
 }

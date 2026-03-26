@@ -26,8 +26,10 @@ import type {
     CrunchColumnEntity,
     CrunchColumnAcronymEntity,
     CrunchColumnAcronymLinkEntity,
-    FlowEntity,
-    FlowStepEntity,
+    WorkflowEntity,
+    WfNodeEntity,
+    WfEdgeEntity,
+    WfFieldEntity,
     CompanySettingsEntity,
     AccountEntity,
     IdeaSubmissionEntity,
@@ -42,7 +44,10 @@ import type {
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
     ClarificationProjectEntity,
-    ProcessStepProcessEntity,
+    ProjectWorkflowEntity,
+    WfWorkflowNodeEntity,
+    WfNodeEdgeEntity,
+    WfNodeFieldEntity,
 } from './types';
 
 export interface EntityStore<T> {
@@ -136,9 +141,26 @@ export interface DbAdapter {
         EntityStore<
             CrunchColumnAcronymLinkEntity
         >;
-    flows: EntityStore<FlowEntity>;
-    flowSteps: EntityStore<FlowStepEntity>;
-    processStepProcesses: EntityStore<ProcessStepProcessEntity>;
+    workflows:
+        EntityStore<WorkflowEntity>;
+    wfNodes:
+        EntityStore<WfNodeEntity>;
+    wfEdges:
+        EntityStore<WfEdgeEntity>;
+    wfFields:
+        EntityStore<WfFieldEntity>;
+    projectWorkflows:
+        EntityStore<
+            ProjectWorkflowEntity
+        >;
+    wfWorkflowNodes:
+        EntityStore<
+            WfWorkflowNodeEntity
+        >;
+    wfNodeEdges:
+        EntityStore<WfNodeEdgeEntity>;
+    wfNodeFields:
+        EntityStore<WfNodeFieldEntity>;
     companySettings: SingletonStore<CompanySettingsEntity>;
     account: SingletonStore<AccountEntity>;
     ideaSubmissions: EntityStore<IdeaSubmissionEntity>;
