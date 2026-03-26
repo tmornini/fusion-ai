@@ -2375,7 +2375,7 @@ function buildProjectView(
                                 'font-medium '
                                 + 'text-sm'
                             }">
-                                Flow
+                                Workflows
                             </p>
                             <p class="${
                                 'text-xs '
@@ -2383,8 +2383,8 @@ function buildProjectView(
                                 + 'hidden-'
                                 + 'mobile'
                             }">
-                                Document
-                                processes
+                                Design
+                                workflows
                             </p>
                         </div>
                     </div>
