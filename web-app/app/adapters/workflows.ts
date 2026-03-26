@@ -6,6 +6,7 @@ import type {
     WfNodeEntity,
     WfEdgeEntity,
     WfFieldEntity,
+    ProjectEntity,
     ProjectWorkflowEntity,
     WfWorkflowNodeEntity,
     WfNodeEdgeEntity,
@@ -24,6 +25,11 @@ export interface WorkflowListItem {
     description: string;
     nodeCount: number;
     edgeCount: number;
+}
+
+export interface WorkflowSummary
+    extends WorkflowListItem {
+    projectName: string;
 }
 
 export interface GraphField {
@@ -60,6 +66,108 @@ export interface WorkflowGraph {
     description: string;
     nodes: GraphNode[];
     edges: GraphEdge[];
+}
+
+export async function getWorkflows(
+): Promise<WorkflowSummary[]> {
+    const [
+        workflows, projectWorkflows,
+        projects, workflowNodes,
+        nodeEdges,
+    ] = await Promise.all([
+        GET<WorkflowEntity[]>(
+            'workflows',
+        ),
+        GET<ProjectWorkflowEntity[]>(
+            'project-workflows',
+        ),
+        GET<ProjectEntity[]>('projects'),
+        GET<WfWorkflowNodeEntity[]>(
+            'wf-workflow-nodes',
+        ),
+        GET<WfNodeEdgeEntity[]>(
+            'wf-node-edges',
+        ),
+    ]);
+
+    const projectMap = new Map(
+        projects.map(p => [p.id, p.title]),
+    );
+
+    const projectByWorkflow = new Map<
+        string, string
+    >();
+    for (const pw of projectWorkflows) {
+        projectByWorkflow.set(
+            pw.workflow_id,
+            projectMap.get(
+                pw.project_id,
+            ) ?? '',
+        );
+    }
+
+    const nodeIdsByWorkflow = new Map<
+        string, Set<string>
+    >();
+    for (const wn of workflowNodes) {
+        const existing =
+            nodeIdsByWorkflow.get(
+                wn.workflow_id,
+            );
+        if (existing) {
+            existing.add(wn.node_id);
+        } else {
+            nodeIdsByWorkflow.set(
+                wn.workflow_id,
+                new Set([wn.node_id]),
+            );
+        }
+    }
+
+    const edgeCountByWorkflow = new Map<
+        string, number
+    >();
+    for (const wf of workflows) {
+        const nodeIds =
+            nodeIdsByWorkflow.get(wf.id);
+        if (!nodeIds) {
+            edgeCountByWorkflow.set(
+                wf.id, 0,
+            );
+            continue;
+        }
+        let count = 0;
+        for (const ne of nodeEdges) {
+            if (
+                nodeIds.has(
+                    ne.from_node_id,
+                )
+                || nodeIds.has(
+                    ne.to_node_id,
+                )
+            ) {
+                count++;
+            }
+        }
+        edgeCountByWorkflow.set(
+            wf.id, count,
+        );
+    }
+
+    return workflows.map(wf => ({
+        id: wf.id,
+        name: wf.name,
+        description: wf.description,
+        projectName:
+            projectByWorkflow.get(wf.id)
+                ?? '',
+        nodeCount:
+            nodeIdsByWorkflow
+                .get(wf.id)?.size ?? 0,
+        edgeCount:
+            edgeCountByWorkflow
+                .get(wf.id) ?? 0,
+    }));
 }
 
 export async function getWorkflowsByProject(
