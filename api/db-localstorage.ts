@@ -31,8 +31,10 @@ import type {
     CrunchColumnEntity,
     CrunchColumnAcronymEntity,
     CrunchColumnAcronymLinkEntity,
-    FlowEntity,
-    FlowStepEntity,
+    WorkflowEntity,
+    WfNodeEntity,
+    WfEdgeEntity,
+    WfFieldEntity,
     CompanySettingsEntity,
     AccountEntity,
     IdeaSubmissionEntity,
@@ -47,7 +49,10 @@ import type {
     ClarificationAskerEntity,
     ClarificationAnswererEntity,
     ClarificationProjectEntity,
-    ProcessStepProcessEntity,
+    ProjectWorkflowEntity,
+    WfWorkflowNodeEntity,
+    WfNodeEdgeEntity,
+    WfNodeFieldEntity,
 } from './types';
 import { nowUtc } from './types';
 
@@ -323,8 +328,14 @@ export const TABLE_NAMES = [
     'crunch_columns',
     'crunch_column_acronyms',
     'crunch_column_acronym_links',
-    'processes',
-    'process_steps',
+    'workflows',
+    'wf_nodes',
+    'wf_edges',
+    'wf_fields',
+    'project_workflows',
+    'wf_workflow_nodes',
+    'wf_node_edges',
+    'wf_node_fields',
     'company_settings',
     'account',
     'idea_submissions',
@@ -340,7 +351,6 @@ export const TABLE_NAMES = [
     'clarification_answerers',
     'clarification_projects',
     'project_task_projects',
-    'process_step_processes',
     'milestone_projects',
     'project_version_projects',
 ];
@@ -617,19 +627,38 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 CrunchColumnAcronymLinkEntity
             >('crunch_column_acronym_links'),
-        flows:
-            createEntityStore<FlowEntity>(
-                'processes',
-            ),
-
-        flowSteps:
-            createEntityStore<FlowStepEntity>(
-                'process_steps',
-            ),
-        processStepProcesses:
+        workflows:
             createEntityStore<
-                ProcessStepProcessEntity
-            >('process_step_processes'),
+                WorkflowEntity
+            >('workflows'),
+        wfNodes:
+            createEntityStore<
+                WfNodeEntity
+            >('wf_nodes'),
+        wfEdges:
+            createEntityStore<
+                WfEdgeEntity
+            >('wf_edges'),
+        wfFields:
+            createEntityStore<
+                WfFieldEntity
+            >('wf_fields'),
+        projectWorkflows:
+            createEntityStore<
+                ProjectWorkflowEntity
+            >('project_workflows'),
+        wfWorkflowNodes:
+            createEntityStore<
+                WfWorkflowNodeEntity
+            >('wf_workflow_nodes'),
+        wfNodeEdges:
+            createEntityStore<
+                WfNodeEdgeEntity
+            >('wf_node_edges'),
+        wfNodeFields:
+            createEntityStore<
+                WfNodeFieldEntity
+            >('wf_node_fields'),
 
         companySettings:
             createSingletonStore<
