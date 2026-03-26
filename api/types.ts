@@ -6,11 +6,21 @@ export type PriorityLevel = 'high' | 'medium' | 'low';
 
 export type EdgeStatus = 'complete' | 'draft' | 'missing';
 
-export type FlowStepType =
-    | 'action'
-    | 'decision'
-    | 'start'
-    | 'end';
+export type WfFieldType =
+    | 'text'
+    | 'textarea'
+    | 'number'
+    | 'date'
+    | 'select'
+    | 'checkbox'
+    | 'file'
+    | 'email'
+    | 'url'
+    | 'phone'
+    | 'currency'
+    | 'multi_select'
+    | 'radio'
+    | 'image';
 
 export type UserStatus =
     | 'active'
@@ -120,18 +130,22 @@ export function isConfidenceLevel(
     );
 }
 
-const FLOW_STEP_TYPES:
-    readonly FlowStepType[]
+const WF_FIELD_TYPES:
+    readonly WfFieldType[]
     = [
-        'action', 'decision',
-        'start', 'end',
+        'text', 'textarea', 'number',
+        'date', 'select', 'checkbox',
+        'file', 'email', 'url',
+        'phone', 'currency',
+        'multi_select', 'radio',
+        'image',
     ];
 
-export function isFlowStepType(
+export function isWfFieldType(
     v: string,
-): v is FlowStepType {
+): v is WfFieldType {
     return includes(
-        FLOW_STEP_TYPES, v,
+        WF_FIELD_TYPES, v,
     );
 }
 
@@ -596,23 +610,40 @@ export interface CrunchColumnAcronymLinkEntity {
     created_at: string;
 }
 
-export interface FlowEntity {
+export interface WorkflowEntity {
     id: Id;
     name: string;
     description: string;
-    department: string;
+    created_at: string;
+    updated_at: string;
 }
 
-export interface FlowStepEntity {
+export interface WfNodeEntity {
     id: Id;
-    title: string;
+    name: string;
     description: string;
-    owner: string;
-    role: string;
-    tools: JsonArrayField;
-    duration: string;
+    position_x: number;
+    position_y: number;
+    is_start: StoredBoolean;
+    is_complete: StoredBoolean;
+    created_at: string;
+}
+
+export interface WfEdgeEntity {
+    id: Id;
+    name: string;
+    description: string;
+    created_at: string;
+}
+
+export interface WfFieldEntity {
+    id: Id;
+    name: string;
+    field_type: WfFieldType;
     sort_order: number;
-    type: FlowStepType;
+    is_required: StoredBoolean;
+    options: JsonArrayField;
+    created_at: string;
 }
 
 export interface CompanySettingsEntity {
@@ -720,10 +751,32 @@ export interface ClarificationProjectEntity {
     created_at: string;
 }
 
-export interface ProcessStepProcessEntity {
+export interface ProjectWorkflowEntity {
     id: Id;
-    process_step_id: Id;
-    process_id: Id;
+    project_id: Id;
+    workflow_id: Id;
+    created_at: string;
+}
+
+export interface WfWorkflowNodeEntity {
+    id: Id;
+    workflow_id: Id;
+    node_id: Id;
+    created_at: string;
+}
+
+export interface WfNodeEdgeEntity {
+    id: Id;
+    wf_edge_id: Id;
+    from_node_id: Id;
+    to_node_id: Id;
+    created_at: string;
+}
+
+export interface WfNodeFieldEntity {
+    id: Id;
+    node_id: Id;
+    field_id: Id;
     created_at: string;
 }
 
@@ -852,44 +905,6 @@ export const CONFIDENCE_CONFIG: Record<
     low: {
         label: 'Low',
         className: 'text-error',
-    },
-};
-
-export const FLOW_STEP_TYPE_CONFIG: Record<
-    FlowStepType,
-    InlineStyleDisplay
-> = {
-    start: {
-        label: 'Start',
-        style: 'background:hsl(var('
-            + '--success) / 0.1);border:'
-            + '2px solid hsl(var(--success)'
-            + ' / 0.3);color:hsl(var('
-            + '--success))',
-    },
-    end: {
-        label: 'End',
-        style: 'background:hsl(var('
-            + '--error)/0.1);border:2px'
-            + ' solid hsl(var(--error)'
-            + '/0.3);color:hsl(var('
-            + '--error))',
-    },
-    decision: {
-        label: 'Decision',
-        style: 'background:hsl(var('
-            + '--warning)/0.1);border:2px'
-            + ' solid hsl(var(--warning)'
-            + '/0.3);color:hsl(var('
-            + '--warning))',
-    },
-    action: {
-        label: 'Action',
-        style: 'background:hsl(var('
-            + '--primary)/0.1);border:2px'
-            + ' solid hsl(var(--primary)'
-            + '/0.3);color:hsl(var('
-            + '--primary))',
     },
 };
 
