@@ -8,7 +8,6 @@ import {
 import {
     html,
     setHtml,
-    type SafeHtml,
 } from '../app/safe-html';
 import {
     buildSkeleton,
@@ -18,145 +17,14 @@ import {
     iconTarget,
     iconSearch,
     iconCheckCircle2,
-    iconAlertCircle,
     iconClock,
-    iconChevronRight,
-    iconTrendingUp,
-    iconShield,
-    iconBarChart,
-    iconUser,
+    iconAlertCircle,
 } from '../app/icons';
-import {
-    navigateTo, formatDate,
-} from '../app/core';
+import { navigateTo } from '../app/core';
 import { getEdgeList } from '../app/adapters';
 import {
-    type EdgeListEntry,
-} from '../../api/types';
-
-function statusIcon(
-    edge: EdgeListEntry,
-): SafeHtml {
-    if (edge.isComplete())
-        return iconCheckCircle2(12, '');
-    if (edge.isDraft())
-        return iconClock(12, '');
-    return iconAlertCircle(12, '');
-}
-
-function buildEdgeCard(
-    edge: EdgeListEntry,
-): SafeHtml {
-    return html`
-    <div class="card card-hover p-4"
-        style="cursor:pointer"
-        data-edge-card="${edge.ideaId}">
-        <div class="${
-            'flex items-start '
-            + 'justify-between gap-4'
-        }">
-            <div style="${
-                'flex:1;min-width:0'
-            }">
-                <div class="${
-                    'flex flex-wrap '
-                    + 'items-center '
-                    + 'gap-2 mb-2'
-                }">
-                    <span class="${
-                        'badge '
-                        + edge.statusClassName()
-                        + ' text-xs'
-                    }">${
-                        statusIcon(edge)
-                    } ${
-                        edge.statusLabel()
-                    }</span>
-                    <span
-                        class="${
-                            'flex items-center'
-                            + ' gap-1 text-xs '
-                            + edge
-                                .confidenceClassName()
-                        }">${
-                            iconShield(14, '')
-                        } ${
-                            edge
-                                .confidenceLabel()
-                        } Confidence</span>
-                </div>
-                <h3 class="${
-                    'font-semibold mb-1'
-                }">${edge.ideaTitle}</h3>
-                <div class="${
-                    'flex flex-wrap '
-                    + 'items-center gap-3 '
-                    + 'text-sm text-muted'
-                }">
-                    ${edge.owner
-                        ? html`<span
-                            class="${
-                                'flex '
-                                + 'items-center'
-                                + ' gap-1'
-                            }">${
-                            iconUser(14, '')
-                        } ${
-                            edge.owner
-                        }</span>`
-                        : html``}
-                    ${!edge.isMissing
-                        ? html`<span
-                            class="${
-                                'flex '
-                                + 'items-center'
-                                + ' gap-1'
-                            }">${
-                            iconTrendingUp(14, '')
-                        } ${
-                            edge.outcomesCount
-                        } ${
-                            edge.outcomesCount
-                                === 1
-                                ? 'outcome'
-                                : 'outcomes'
-                        }</span><span
-                            class="${
-                                'flex '
-                                + 'items-center'
-                                + ' gap-1'
-                            }">${
-                            iconBarChart(14, '')
-                        } ${
-                            edge.metricsCount
-                        } ${
-                            edge.metricsCount
-                                === 1
-                                ? 'metric'
-                                : 'metrics'
-                        }</span>`
-                        : html``}
-                    ${edge.updatedAt
-                        ? html`<span
-                            class="text-xs"
-                            >Updated ${
-                            formatDate(
-                                edge.updatedAt,
-                            )
-                        }</span>`
-                        : html``}
-                </div>
-            </div>
-            <div class="${
-                'flex items-center'
-            }">${
-                iconChevronRight(
-                    20, 'text-muted',
-                )
-            }</div>
-        </div>
-    </div>`;
-}
+    EdgePresenter,
+} from '../app/presenters';
 
 export async function init(): Promise<void> {
     const listEl = $('#edge-list', document);
@@ -181,7 +49,9 @@ export async function init(): Promise<void> {
         },
     );
     if (!result) return;
-    const edges = result;
+    const edges = result.map(
+        e => new EdgePresenter(e),
+    );
 
     populateIcons([
         [
@@ -200,13 +70,13 @@ export async function init(): Promise<void> {
     const stats = {
         total: edges.length,
         complete: edges.filter(
-            edge => edge.isComplete(),
+            e => e.isComplete(),
         ).length,
         draft: edges.filter(
-            edge => edge.isDraft(),
+            e => e.isDraft(),
         ).length,
         missing: edges.filter(
-            edge => edge.isMissing(),
+            e => e.isMissing(),
         ).length,
     };
     const statsEl = $('#edge-stats', document);
@@ -365,25 +235,21 @@ criteria</p>`);
                 document,
             )!.value;
         const filtered = edges.filter(
-            edge => {
-                const matchesSearch =
-                    edge.matchesSearch(
-                        search,
-                    );
-                const matchesStatus =
-                    status === 'all'
-                    || edge.status === status;
-                return matchesSearch
-                    && matchesStatus;
-            },
+            e => e.matchesFilter(
+                search, status,
+            ),
         );
-        const list = $('#edge-list', document);
-        const empty = $('#edge-empty', document);
+        const list = $(
+            '#edge-list', document,
+        );
+        const empty = $(
+            '#edge-empty', document,
+        );
         if (list)
             setHtml(
                 list,
                 html`${filtered.map(
-                    buildEdgeCard,
+                    e => e.buildCard(),
                 )}`,
             );
         if (list)
