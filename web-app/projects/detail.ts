@@ -42,10 +42,6 @@ import {
     type ProjectStatus,
 } from '../../api/types';
 
-const state = {
-    isEditing: false,
-};
-
 function buildVariance(
     baseline: number,
     current: number,
@@ -140,6 +136,7 @@ function isKpiOnTrack(
 
 function buildProjectSummary(
     project: ProjectView,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
         <div class="card p-6">
@@ -149,7 +146,7 @@ function buildProjectSummary(
             }">
                 Project Summary
             </h2>
-            ${state.isEditing
+            ${isEditing
                 ? html`<textarea
                     class="${
                         'textarea mb-6'
@@ -198,7 +195,7 @@ function buildProjectSummary(
                         }">
                             Start Date
                         </p>
-                        ${state.isEditing
+                        ${isEditing
                             ? html`<input
                                 type="date"
                                 id="${
@@ -251,7 +248,7 @@ function buildProjectSummary(
                         }">
                             Target End
                         </p>
-                        ${state.isEditing
+                        ${isEditing
                             ? html`<input
                                 type="date"
                                 id="${
@@ -319,6 +316,7 @@ function buildProjectSummary(
 
 function buildBaselineComparison(
     project: ProjectView,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
         <div class="card p-6">
@@ -430,8 +428,7 @@ function buildBaselineComparison(
                                 }">
                                     Baseline
                                 </span>
-                                ${state
-                                    .isEditing
+                                ${isEditing
                                     ? html`<input
                                         type="${
                                             'number'
@@ -1048,6 +1045,7 @@ function buildEdgeKPIs(
 
 function buildProjectTabs(
     project: ProjectView,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
         <div class="card p-6">
@@ -2021,6 +2019,7 @@ function buildProjectView(
     project: ProjectView,
     projectId: string,
     workflows: WorkflowListItem[],
+    isEditing: boolean,
 ): SafeHtml {
     const statusOptions =
             Object.entries(
@@ -2088,7 +2087,7 @@ function buildProjectView(
                             + 'items-center '
                             + 'gap-3 mb-2'
                         }">
-                            ${state.isEditing
+                            ${isEditing
                                 ? html`<input
                                     class="${
                                         'input'
@@ -2124,7 +2123,7 @@ function buildProjectView(
                                             .title
                                     }
                                 </h1>`}
-                            ${state.isEditing
+                            ${isEditing
                                 ? html`<select
                                     class="${
                                         'input'
@@ -2176,7 +2175,7 @@ function buildProjectView(
                         </p>
                     </div>
                 </div>
-                ${state.isEditing
+                ${isEditing
                     ? html`<div
                         class="${
                             'flex gap-2'
@@ -2455,15 +2454,18 @@ function buildProjectView(
                 }">
                     ${buildProjectSummary(
                         project,
+                        isEditing,
                     )}
                     ${buildBaselineComparison(
                         project,
+                        isEditing,
                     )}
                     ${buildEdgeKPIs(
                         project,
                     )}
                     ${buildProjectTabs(
                         project,
+                        isEditing,
                     )}
                     ${buildWorkflowsSection(
                         workflows,
@@ -2481,6 +2483,7 @@ function bindProjectEvents(
     project: ProjectView,
     projectId: string,
     workflows: WorkflowListItem[],
+    isEditing: boolean,
 ): void {
     $('#project-back-btn', document)
         ?.addEventListener(
@@ -2489,22 +2492,22 @@ function bindProjectEvents(
         );
 
     $('#project-edit-btn', document)
-        ?.addEventListener('click', () => {
-            state.isEditing = true;
-            mutateProjectPage(
-                    project, projectId,
-                    workflows,
-            );
-        });
+        ?.addEventListener(
+            'click',
+            () => mutateProjectPage(
+                project, projectId,
+                workflows, true,
+            ),
+        );
 
     $('#project-cancel-btn', document)
-        ?.addEventListener('click', () => {
-            state.isEditing = false;
-            mutateProjectPage(
-                    project, projectId,
-                    workflows,
-            );
-        });
+        ?.addEventListener(
+            'click',
+            () => mutateProjectPage(
+                project, projectId,
+                workflows, false,
+            ),
+        );
 
     $('#project-save-btn', document)
         ?.addEventListener(
@@ -2582,10 +2585,9 @@ function bindProjectEvents(
                             projectId,
                         ),
                     ]);
-            state.isEditing = false;
             mutateProjectPage(
                     updated, projectId,
-                    updatedWfs,
+                    updatedWfs, false,
             );
         } catch {
             showToast(
@@ -2685,6 +2687,7 @@ function mutateProjectPage(
     project: ProjectView,
     projectId: string,
     workflows: WorkflowListItem[],
+    isEditing: boolean,
 ): void {
     const container = $(
             '#project-detail-content', document,
@@ -2694,11 +2697,12 @@ function mutateProjectPage(
             container,
             buildProjectView(
                     project, projectId,
-                    workflows,
+                    workflows, isEditing,
             ),
     );
     bindProjectEvents(
-            project, projectId, workflows,
+            project, projectId,
+            workflows, isEditing,
     );
 }
 
@@ -2707,7 +2711,6 @@ export async function init(
 ): Promise<void> {
     const projectId = params?.projectId;
     if (!projectId) { navigateTo('projects'); return; }
-    state.isEditing = false;
 
     const container = $(
             '#project-detail-content', document,
@@ -2748,6 +2751,7 @@ export async function init(
     }
 
     mutateProjectPage(
-        project, projectId, workflows,
+        project, projectId,
+        workflows, false,
     );
 }
