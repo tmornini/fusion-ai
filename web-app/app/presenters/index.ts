@@ -16,3 +16,6 @@ export {
 export {
     UserPresenter,
 } from './user';
+export {
+    WorkflowPresenter,
+} from './workflow';
