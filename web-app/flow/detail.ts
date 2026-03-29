@@ -521,25 +521,29 @@ async function handleEdgeCreated(
     fromNodeId: string,
     toNodeId: string,
 ): Promise<void> {
+    let edgeId: string;
     try {
-        const edgeId = await postEdge(
-            'Transition', fromNodeId, toNodeId,
-        );
-        state.edges.push({
-            id: edgeId,
-            name: 'Transition',
-            description: '',
+        edgeId = await postEdge(
+            'Transition',
             fromNodeId,
             toNodeId,
-        });
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
+        );
     } catch {
         showToast(
             'Failed to create transition',
             'error',
         );
+        return;
     }
+    state.edges.push({
+        id: edgeId,
+        name: 'Transition',
+        description: '',
+        fromNodeId,
+        toNodeId,
+    });
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 function bindToolbarActions(
@@ -630,33 +634,35 @@ async function handleAddState(
     container: HTMLElement,
     state: DesignerState,
 ): Promise<void> {
+    const x = START_X
+        + (state.nodes.length - 1)
+        * (NODE_WIDTH + 120);
+    const y = START_Y + 100;
+    let nodeId: string;
     try {
-        const x = START_X
-            + (state.nodes.length - 1)
-            * (NODE_WIDTH + 120);
-        const y = START_Y + 100;
-        const nodeId = await postNode(
+        nodeId = await postNode(
             state.workflowId,
             'New State', x, y,
         );
-        state.nodes.push({
-            id: nodeId,
-            name: 'New State',
-            description: '',
-            positionX: x,
-            positionY: y,
-            isStart: false,
-            isComplete: false,
-            fields: [],
-        });
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
     } catch {
         showToast(
             'Failed to add state',
             'error',
         );
+        return;
     }
+    state.nodes.push({
+        id: nodeId,
+        name: 'New State',
+        description: '',
+        positionX: x,
+        positionY: y,
+        isStart: false,
+        isComplete: false,
+        fields: [],
+    });
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 function handleRelayout(
@@ -690,42 +696,49 @@ function handleRelayout(
     renderDesigner(container, state);
 }
 
+async function persistWorkflow(
+    state: DesignerState,
+): Promise<void> {
+    await putWorkflow(
+        state.workflowId,
+        {
+            name: state.workflowName,
+            description:
+                state.workflowDescription,
+        },
+    );
+    for (const node of state.nodes) {
+        await putNode(node.id, {
+            name: node.name,
+            description: node.description,
+            position_x: node.positionX,
+            position_y: node.positionY,
+        });
+    }
+    for (const edge of state.edges) {
+        await putWfEdge(edge.id, {
+            name: edge.name,
+            description: edge.description,
+        });
+    }
+}
+
 async function handleSave(
     container: HTMLElement,
     state: DesignerState,
 ): Promise<void> {
     try {
-        await putWorkflow(
-            state.workflowId,
-            {
-                name: state.workflowName,
-                description:
-                    state.workflowDescription,
-            },
-        );
-        for (const node of state.nodes) {
-            await putNode(node.id, {
-                name: node.name,
-                description: node.description,
-                position_x: node.positionX,
-                position_y: node.positionY,
-            });
-        }
-        for (const edge of state.edges) {
-            await putWfEdge(edge.id, {
-                name: edge.name,
-                description: edge.description,
-            });
-        }
-        state.hasUnsavedChanges = false;
-        showToast('Workflow saved', 'success');
-        renderDesigner(container, state);
+        await persistWorkflow(state);
     } catch {
         showToast(
             'Failed to save workflow',
             'error',
         );
+        return;
     }
+    state.hasUnsavedChanges = false;
+    showToast('Workflow saved', 'success');
+    renderDesigner(container, state);
 }
 
 function bindPanelActions(
@@ -862,23 +875,23 @@ async function handleDeleteNode(
         await deleteNode(
             nodeId, state.workflowId,
         );
-        state.nodes = state.nodes.filter(
-            n => n.id !== nodeId,
-        );
-        state.edges = state.edges.filter(
-            e => e.fromNodeId !== nodeId
-                && e.toNodeId !== nodeId,
-        );
-        state.interaction.selectedNodeId =
-            null;
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
     } catch {
         showToast(
             'Failed to delete state',
             'error',
         );
+        return;
     }
+    state.nodes = state.nodes.filter(
+        n => n.id !== nodeId,
+    );
+    state.edges = state.edges.filter(
+        e => e.fromNodeId !== nodeId
+            && e.toNodeId !== nodeId,
+    );
+    state.interaction.selectedNodeId = null;
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 async function handleDeleteEdge(
@@ -890,19 +903,19 @@ async function handleDeleteEdge(
     if (!edgeId) return;
     try {
         await deleteEdge(edgeId);
-        state.edges = state.edges.filter(
-            e => e.id !== edgeId,
-        );
-        state.interaction.selectedEdgeId =
-            null;
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
     } catch {
         showToast(
             'Failed to delete transition',
             'error',
         );
+        return;
     }
+    state.edges = state.edges.filter(
+        e => e.id !== edgeId,
+    );
+    state.interaction.selectedEdgeId = null;
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 function bindFieldActions(
@@ -1008,27 +1021,29 @@ async function handleSaveField(
     );
     if (!node) return;
     const sortOrder = node.fields.length;
+    let fieldId: string;
     try {
-        const fieldId = await postField(
+        fieldId = await postField(
             nodeId, fieldName, fieldType,
             sortOrder, isRequired, options,
         );
-        node.fields.push({
-            id: fieldId,
-            name: fieldName,
-            fieldType,
-            sortOrder,
-            isRequired,
-            options,
-        });
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
     } catch {
         showToast(
             'Failed to add field',
             'error',
         );
+        return;
     }
+    node.fields.push({
+        id: fieldId,
+        name: fieldName,
+        fieldType,
+        sortOrder,
+        isRequired,
+        options,
+    });
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 async function handleDeleteField(
@@ -1041,22 +1056,23 @@ async function handleDeleteField(
     if (!nodeId) return;
     try {
         await deleteField(fieldId, nodeId);
-        const node = state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (node) {
-            node.fields = node.fields.filter(
-                f => f.id !== fieldId,
-            );
-        }
-        state.hasUnsavedChanges = true;
-        renderDesigner(container, state);
     } catch {
         showToast(
             'Failed to delete field',
             'error',
         );
+        return;
     }
+    const node = state.nodes.find(
+        n => n.id === nodeId,
+    );
+    if (node) {
+        node.fields = node.fields.filter(
+            f => f.id !== fieldId,
+        );
+    }
+    state.hasUnsavedChanges = true;
+    renderDesigner(container, state);
 }
 
 export async function init(

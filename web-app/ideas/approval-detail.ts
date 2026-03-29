@@ -31,6 +31,19 @@ import {
     type Metric,
 } from '../app/adapters';
 
+async function saveIdea(
+    id: string,
+    title: string,
+    description: string,
+): Promise<void> {
+    const existing = await getIdea(id);
+    await putIdea(id, {
+        ...existing,
+        title,
+        description,
+    });
+}
+
 type Severity =
     | 'high'
     | 'medium'
@@ -1067,37 +1080,10 @@ export async function init(
                             document,
                         )!.value;
                     try {
-                        const existing =
-                            await getIdea(
-                                id,
-                            );
-                        await putIdea(id, {
-                            ...existing,
+                        await saveIdea(
+                            id,
                             title,
                             description,
-                        });
-                        showToast(
-                            'Idea saved',
-                            'success',
-                        );
-                        const [
-                            updatedIdea,
-                            updatedEdge,
-                        ] = await Promise
-                            .all([
-                            getIdeaForApproval(
-                                id,
-                            ),
-                            getEdgeForApproval(
-                                id,
-                            ),
-                        ]);
-                        state.isEditingIdea
-                            = false;
-                        mutateApprovalPage(
-                            updatedIdea,
-                            updatedEdge,
-                            id,
                         );
                     } catch {
                         showToast(
@@ -1105,7 +1091,31 @@ export async function init(
                             + ' save idea',
                             'error',
                         );
+                        return;
                     }
+                    showToast(
+                        'Idea saved',
+                        'success',
+                    );
+                    const [
+                        updatedIdea,
+                        updatedEdge,
+                    ] = await Promise
+                        .all([
+                        getIdeaForApproval(
+                            id,
+                        ),
+                        getEdgeForApproval(
+                            id,
+                        ),
+                    ]);
+                    state.isEditingIdea
+                        = false;
+                    mutateApprovalPage(
+                        updatedIdea,
+                        updatedEdge,
+                        id,
+                    );
                 },
             );
 

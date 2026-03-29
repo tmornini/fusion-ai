@@ -81,6 +81,21 @@ const pending = {
     label: null as string | null,
 };
 
+async function wipeAndRun(
+    action: () => Promise<void>,
+): Promise<void> {
+    await deleteSchema();
+    await action();
+}
+
+async function parseAndImport(
+    file: File,
+): Promise<void> {
+    const text = await file.text();
+    await deleteSchema();
+    await importSnapshot(text);
+}
+
 async function executePendingAction(
 ): Promise<void> {
     const button = pending.button;
@@ -97,9 +112,7 @@ async function executePendingAction(
     button.disabled = true;
     button.textContent = 'Working...';
     try {
-        await deleteSchema();
-        await action();
-        navigateTo('dashboard');
+        await wipeAndRun(action);
     } catch {
         showToast(
             'Failed to '
@@ -109,7 +122,9 @@ async function executePendingAction(
         );
         button.disabled = false;
         button.textContent = originalText;
+        return;
     }
+    navigateTo('dashboard');
 }
 
 function withWipeAndReload(
@@ -360,11 +375,7 @@ export async function init(): Promise<void> {
                 importInput.files?.[0];
             if (!file) return;
             try {
-                const text =
-                    await file.text();
-                await deleteSchema();
-                await importSnapshot(text);
-                navigateTo('dashboard');
+                await parseAndImport(file);
             } catch {
                 showToast(
                     'Failed to upload'
@@ -372,51 +383,53 @@ export async function init(): Promise<void> {
                     + ' file format.',
                     'error',
                 );
+                importInput.value = '';
+                return;
             }
             importInput.value = '';
+            navigateTo('dashboard');
         },
     );
 
     $('#download-btn', document)?.addEventListener(
         'click',
         async () => {
+            let json: string;
             try {
-                const json =
-                    await exportSnapshot();
-                const blob = new Blob(
-                    [json],
-                    {
-                        type:
-                            'application/json',
-                    },
-                );
-                const url =
-                    URL.createObjectURL(blob);
-                const downloadLink =
-                    document.createElement(
-                        'a',
-                    );
-                downloadLink.href = url;
-                const date = nowUtc()
-                    .split('T')[0];
-                downloadLink.download =
-                    'fusion-ai-snapshot-'
-                    + date
-                    + '.json';
-                downloadLink.click();
-                URL.revokeObjectURL(url);
-                showToast(
-                    'Snapshot downloaded'
-                    + ' successfully.',
-                    'success',
-                );
+                json = await exportSnapshot();
             } catch {
                 showToast(
                     'Failed to download'
                     + ' snapshot.',
                     'error',
                 );
+                return;
             }
+            const blob = new Blob(
+                [json],
+                {
+                    type:
+                        'application/json',
+                },
+            );
+            const url =
+                URL.createObjectURL(blob);
+            const downloadLink =
+                document.createElement('a');
+            downloadLink.href = url;
+            const date = nowUtc()
+                .split('T')[0];
+            downloadLink.download =
+                'fusion-ai-snapshot-'
+                + date
+                + '.json';
+            downloadLink.click();
+            URL.revokeObjectURL(url);
+            showToast(
+                'Snapshot downloaded'
+                + ' successfully.',
+                'success',
+            );
         },
     );
 
