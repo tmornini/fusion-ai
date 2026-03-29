@@ -2,7 +2,7 @@ import {
     $, $input, $select,
 } from '../app/dom';
 import {
-    html, setHtml, SafeHtml, trusted,
+    html, setHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -10,198 +10,22 @@ import {
 } from '../app/loading-states';
 import {
     iconUsers, iconUserPlus, iconSearch,
-    iconMoreHorizontal, iconCrown,
-    iconUserCheck, iconUser, iconEye,
-    iconMail, iconUserX, iconCheckCircle2,
-    iconClock, iconChevronRight, iconSend,
+    iconChevronRight, iconSend,
 } from '../app/icons';
 import {
-    initials, initDialog, closeDialog,
-    navigateTo, formatDate,
+    initDialog, closeDialog, navigateTo,
 } from '../app/core';
 import {
     getManagedUsers, putUser,
-    type User,
 } from '../app/adapters';
+import {
+    UserPresenter,
+} from '../app/presenters';
 import {
     jsonArrayField,
     jsonObjectField,
     nowUtc,
 } from '../../api/types';
-
-const roleLabels: Record<string, {
-    label: string;
-    icon: (size: number, cssClass: string) => SafeHtml;
-}> = {
-    admin: {
-        label: 'Admin', icon: iconCrown,
-    },
-    manager: {
-        label: 'Manager', icon: iconUserCheck,
-    },
-    member: {
-        label: 'Member', icon: iconUser,
-    },
-    viewer: {
-        label: 'Viewer', icon: iconEye,
-    },
-};
-
-function buildStatusBadge(
-    user: User,
-): SafeHtml {
-    if (user.isActive())
-        return html`<span
-                class="${
-                    'status-badge-success'
-                }">
-            ${iconCheckCircle2(14, '')} Active
-        </span>`;
-    if (user.isPending())
-        return html`<span
-                class="${
-                    'status-badge-warning'
-                }">
-            ${iconClock(14, '')} Pending
-        </span>`;
-    return html`<span
-            class="${
-                'status-badge-error'
-            }">
-        ${iconUserX(14, '')} Deactivated
-    </span>`;
-}
-
-function buildRoleBadge(
-    role: string,
-): SafeHtml {
-    const roleConfig = roleLabels[role];
-    if (!roleConfig)
-        return html`<span
-                class="${
-                    'badge badge-secondary'
-                }">
-            ${role}
-        </span>`;
-    return html`<span
-            class="${
-                'badge badge-secondary'
-            }">
-        ${roleConfig.icon(12, '')}
-        ${roleConfig.label}
-    </span>`;
-}
-
-function buildUserRow(
-    user: User,
-): SafeHtml {
-    return html`
-        <div class="${
-            'flex items-center '
-            + 'gap-4 p-4 '
-            + (user.isDeactivated()
-                ? 'opacity-50' : '')
-        }"
-            style="${
-                'border-bottom:'
-                + '1px solid '
-                + 'hsl(var(--border))'
-            }">
-            <div style="${
-                'flex:2;display:flex;'
-                + 'align-items:center;'
-                + 'gap:0.75rem;'
-                + 'min-width:0'
-            }">
-                <div style="${
-                    'width:2.5rem;'
-                    + 'height:2.5rem;'
-                    + 'border-radius:'
-                    + '9999px;'
-                    + 'background:'
-                    + 'linear-gradient('
-                    + '135deg,'
-                    + 'hsl(var(--primary)'
-                    + '/0.2),'
-                    + 'hsl(var(--primary)'
-                    + '/0.05));'
-                    + 'display:flex;'
-                    + 'align-items:center;'
-                    + 'justify-content:'
-                    + 'center;'
-                    + 'flex-shrink:0'
-                }">
-                    <span
-                        class="${
-                            'text-sm '
-                            + 'font-bold '
-                            + 'text-primary'
-                        }">
-                        ${initials(
-                            user.fullName(),
-                        )}
-                    </span>
-                </div>
-                <div style="${
-                    'min-width:0'
-                }">
-                    <p class="${
-                        'font-medium '
-                        + 'truncate'
-                    }">
-                        ${user.fullName()}
-                    </p>
-                    <p
-                        class="${
-                            'text-xs '
-                            + 'text-muted '
-                            + 'truncate'
-                        }">
-                        ${user.email}
-                    </p>
-                </div>
-            </div>
-            <div style="flex:1">
-                ${buildRoleBadge(
-                    user.role,
-                )}
-            </div>
-            <div style="flex:1"
-                class="${
-                    'text-sm text-muted'
-                }">
-                ${user.department}
-            </div>
-            <div style="flex:1">
-                ${buildStatusBadge(user)}
-                <p class="${
-                    'text-xs text-muted'
-                    + ' mt-1'
-                }">
-                    ${user.isPending()
-                        ? 'Invite sent'
-                        : 'Last active '
-                            + formatDate(
-                                user
-                                    .lastActive,
-                            )}
-                </p>
-            </div>
-            <div style="${
-                'flex:0 0 auto'
-            }">
-                <button
-                    class="${
-                        'btn btn-ghost '
-                        + 'btn-icon btn-sm'
-                    }">
-                    ${iconMoreHorizontal(
-                        16, '',
-                    )}
-                </button>
-            </div>
-        </div>`;
-}
 
 export async function init(): Promise<void> {
     const container = $(
@@ -231,6 +55,9 @@ export async function init(): Promise<void> {
     const pendingCount = users.filter(
             user => user.isPending(),
     ).length;
+    const presenters = users.map(
+        u => new UserPresenter(u),
+    );
 
     setHtml(container, html`
         <div style="${
@@ -427,8 +254,8 @@ export async function init(): Promise<void> {
                     </div>
                 </div>
                 <div id="user-list">
-                    ${users.map(
-                        buildUserRow,
+                    ${presenters.map(
+                        p => p.buildUserRow(),
                     )}
                 </div>
             </div>
@@ -808,25 +635,21 @@ export async function init(): Promise<void> {
         const role = roleFilter.value;
         const status =
             statusFilter.value;
-        const filtered = users!.filter(u => {
-            if (query && !u.fullName()
-                .toLowerCase()
-                .includes(query)
-                && !u.email.toLowerCase()
-                    .includes(query))
-                return false;
-            if (role !== 'all'
-                && u.role !== role)
-                return false;
-            if (status !== 'all'
-                && u.status !== status)
-                return false;
-            return true;
-        });
+        const filtered =
+            presenters.filter(p =>
+                (!query
+                    || p.matchesUserSearch(
+                        query,
+                    ))
+                && p.matchesRoleFilter(role)
+                && p.matchesStatusFilter(
+                    status,
+                ),
+            );
         setHtml(
             userList,
             html`${filtered.map(
-                buildUserRow,
+                p => p.buildUserRow(),
             )}`,
         );
     }

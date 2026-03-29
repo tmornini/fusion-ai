@@ -13,3 +13,6 @@ export {
 export {
     ActivityPresenter,
 } from './activity';
+export {
+    UserPresenter,
+} from './user';
