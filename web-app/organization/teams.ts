@@ -78,10 +78,6 @@ const dimensionIconConfig: Record<
     amiable: iconHeart,
 };
 
-const state = {
-    members: [] as User[],
-    selectedMemberId: null as string | null,
-};
 
 function buildMemberDetail(
     member: User,
@@ -261,9 +257,10 @@ function buildMemberDetail(
 
 function buildMemberCard(
     member: User,
+    selectedMemberId: string | null,
 ): SafeHtml {
     const cardStyle =
-        state.selectedMemberId === member.id
+        selectedMemberId === member.id
             ? 'box-shadow:0 0 0 2px'
               + ' hsl(var(--primary))'
             : '';
@@ -365,11 +362,14 @@ function buildMemberCard(
     </div>`;
 }
 
-function mutateList(): void {
+function mutateList(
+    members: readonly User[],
+    selectedMemberId: string | null,
+): void {
     const search =
         $input('#team-search', document)!
             .value.toLowerCase();
-    const filtered = state.members.filter(
+    const filtered = members.filter(
         member =>
             member.fullName()
                 .toLowerCase()
@@ -386,17 +386,21 @@ function mutateList(): void {
         setHtml(
             list,
             html`${filtered.map(
-                    buildMemberCard,
+                m => buildMemberCard(
+                    m, selectedMemberId,
+                ),
             )}`,
         );
     }
 
-    const panel = $('#team-detail-panel', document);
-    const member = state.selectedMemberId
-        ? state.members.find(
+    const panel = $(
+        '#team-detail-panel', document,
+    );
+    const member = selectedMemberId
+        ? members.find(
             candidate =>
                 candidate.id
-                === state.selectedMemberId,
+                === selectedMemberId,
         )
         : null;
     if (panel) {
@@ -420,20 +424,25 @@ function mutateList(): void {
             </div>`,
         );
     }
-    bindCards();
+    bindCards(members);
     bindDetailTabs();
 }
 
-function bindCards(): void {
-    $$('[data-member-card]', document).forEach(card => {
-        card.addEventListener('click', () => {
-            state.selectedMemberId =
-                card.getAttribute(
-                    'data-member-card',
-                );
-            mutateList();
+function bindCards(
+    members: readonly User[],
+): void {
+    $$('[data-member-card]', document)
+        .forEach(card => {
+            card.addEventListener(
+                'click',
+                () => mutateList(
+                    members,
+                    card.getAttribute(
+                        'data-member-card',
+                    ),
+                ),
+            );
         });
-    });
 }
 
 function bindDetailTabs(): void {
@@ -494,17 +503,20 @@ export async function init(): Promise<void> {
     );
 
     if (!result) return;
-    state.members = result;
+    const members = result;
 
-    const summaryEl = $('#team-summary', document);
+    const summaryEl = $(
+        '#team-summary', document,
+    );
     if (summaryEl) {
         const word =
-            state.members.length === 1
+            members.length === 1
                 ? 'member'
                 : 'members';
         summaryEl.textContent =
-            state.members.length + ' ' + word
-            + ' \u2022 Manage roles, strengths,'
+            members.length + ' ' + word
+            + ' \u2022 Manage roles,'
+            + ' strengths,'
             + ' and availability';
     }
 
@@ -522,9 +534,13 @@ export async function init(): Promise<void> {
             </p>`);
     }
 
-    $('#team-search', document)?.addEventListener(
-        'input', mutateList,
-    );
+    $('#team-search', document)
+        ?.addEventListener(
+            'input',
+            () => mutateList(
+                members, null,
+            ),
+        );
 
-    mutateList();
+    mutateList(members, null);
 }
