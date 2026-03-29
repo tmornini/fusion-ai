@@ -32,21 +32,14 @@ const outcomeTemplates = [
     'Improve delivery speed',
 ];
 
-const state = {
-    edgeData: {
-        outcomes: [],
-        impact: {
-            shortTerm: '',
-            midTerm: '',
-            longTerm: '',
-        },
-        confidence: 'medium',
-        owner: '',
-    } as EdgeData,
-    currentIdea: null as Idea | null,
-};
+interface EdgePageState {
+    edgeData: EdgeData;
+    currentIdea: Idea;
+}
 
-function computeCompletionStatus() {
+function computeCompletionStatus(
+    state: EdgePageState,
+) {
     const { edgeData } = state;
     const hasOutcomes =
         edgeData.outcomes.length > 0;
@@ -107,11 +100,12 @@ function buildCompletionIcon(
 
 function buildEdgePage(
     ideaId: string,
+    state: EdgePageState,
 ): SafeHtml {
     const { edgeData } = state;
-    const idea = state.currentIdea!;
+    const idea = state.currentIdea;
     const completion =
-        computeCompletionStatus();
+        computeCompletionStatus(state);
     const statusLabel =
         completion.isComplete
             ? 'Complete'
@@ -1021,7 +1015,9 @@ function buildMetricUpdates():
     return updates;
 }
 
-function syncFormFields() {
+function syncFormFields(
+    state: EdgePageState,
+) {
     const confidenceValue =
         $select(
             '#edge-confidence-select',
@@ -1090,18 +1086,26 @@ function syncFormFields() {
     };
 }
 
-function mutateEdgePage(ideaId: string) {
-    const container = $('#edge-content', document);
+function mutateEdgePage(
+    ideaId: string,
+    state: EdgePageState,
+) {
+    const container = $(
+        '#edge-content', document,
+    );
     if (container) {
         setHtml(
             container,
-            buildEdgePage(ideaId),
+            buildEdgePage(ideaId, state),
         );
-        bindEdgeEvents(ideaId);
+        bindEdgeEvents(ideaId, state);
     }
 }
 
-function bindEdgeEvents(ideaId: string) {
+function bindEdgeEvents(
+    ideaId: string,
+    state: EdgePageState,
+) {
     $('#edge-back-btn', document)?.addEventListener(
         'click',
         () => navigateTo('ideas'),
@@ -1110,7 +1114,7 @@ function bindEdgeEvents(ideaId: string) {
     $('#edge-add-outcome', document)?.addEventListener(
         'click',
         () => {
-            syncFormFields();
+            syncFormFields(state);
             state.edgeData = {
                 ...state.edgeData,
                 outcomes: [
@@ -1122,7 +1126,7 @@ function bindEdgeEvents(ideaId: string) {
                     },
                 ],
             };
-            mutateEdgePage(ideaId);
+            mutateEdgePage(ideaId, state);
         },
     );
 
@@ -1131,7 +1135,7 @@ function bindEdgeEvents(ideaId: string) {
             templateButton.addEventListener(
                 'click',
                 () => {
-                    syncFormFields();
+                    syncFormFields(state);
                     state.edgeData = {
                         ...state.edgeData,
                         outcomes: [
@@ -1150,7 +1154,7 @@ function bindEdgeEvents(ideaId: string) {
                             },
                         ],
                     };
-                    mutateEdgePage(ideaId);
+                    mutateEdgePage(ideaId, state);
                 },
             );
         },
@@ -1161,7 +1165,7 @@ function bindEdgeEvents(ideaId: string) {
             removeButton.addEventListener(
                 'click',
                 () => {
-                    syncFormFields();
+                    syncFormFields(state);
                     const removeId =
                         removeButton
                             .getAttribute(
@@ -1179,7 +1183,7 @@ function bindEdgeEvents(ideaId: string) {
                                         !== removeId,
                                 ),
                     };
-                    mutateEdgePage(ideaId);
+                    mutateEdgePage(ideaId, state);
                 },
             );
         },
@@ -1190,7 +1194,7 @@ function bindEdgeEvents(ideaId: string) {
             addButton.addEventListener(
                 'click',
                 () => {
-                    syncFormFields();
+                    syncFormFields(state);
                     const outcomeId = attr(
                         addButton,
                         'data-add-metric',
@@ -1218,7 +1222,7 @@ function bindEdgeEvents(ideaId: string) {
                                         },
                                 ),
                     };
-                    mutateEdgePage(ideaId);
+                    mutateEdgePage(ideaId, state);
                 },
             );
         },
@@ -1229,7 +1233,7 @@ function bindEdgeEvents(ideaId: string) {
             removeButton.addEventListener(
                 'click',
                 () => {
-                    syncFormFields();
+                    syncFormFields(state);
                     const outcomeId =
                         removeButton
                             .getAttribute(
@@ -1257,7 +1261,7 @@ function bindEdgeEvents(ideaId: string) {
                                         },
                                 ),
                     };
-                    mutateEdgePage(ideaId);
+                    mutateEdgePage(ideaId, state);
                 },
             );
         },
@@ -1270,10 +1274,11 @@ function bindEdgeEvents(ideaId: string) {
     saveBtn?.addEventListener(
         'click',
         async () => {
-            syncFormFields();
+            syncFormFields(state);
             if (
-                !computeCompletionStatus()
-                    .isComplete
+                !computeCompletionStatus(
+                    state,
+                ).isComplete
             ) {
                 showToast(
                     'Please complete all'
@@ -1391,28 +1396,31 @@ export async function init(
         () => init(params),
     );
     if (!idea) return;
-    state.currentIdea = idea;
 
     const saved =
         await getEdgeDataByIdeaId(ideaId);
-    if (saved && saved.outcomes.length > 0) {
-        state.edgeData = {
-            outcomes: saved.outcomes,
-            impact: saved.impact,
-            confidence: saved.confidence,
-            owner: saved.owner,
-        };
-    } else {
-        state.edgeData = {
-            outcomes: [],
-            impact: {
-                shortTerm: '',
-                midTerm: '',
-                longTerm: '',
-            },
-            confidence: 'medium',
-            owner: '',
-        };
-    }
-    mutateEdgePage(ideaId);
+    const edgeData: EdgeData =
+        saved && saved.outcomes.length > 0
+            ? {
+                outcomes: saved.outcomes,
+                impact: saved.impact,
+                confidence:
+                    saved.confidence,
+                owner: saved.owner,
+            }
+            : {
+                outcomes: [],
+                impact: {
+                    shortTerm: '',
+                    midTerm: '',
+                    longTerm: '',
+                },
+                confidence: 'medium',
+                owner: '',
+            };
+    const state: EdgePageState = {
+        edgeData,
+        currentIdea: idea,
+    };
+    mutateEdgePage(ideaId, state);
 }
