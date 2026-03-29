@@ -10,8 +10,45 @@ import {
     iconClipboardCheck,
     iconArrowRight,
     iconTarget,
+    iconCheckCircle2,
+    iconMessageSquare,
+    iconAlertCircle,
+    iconChevronRight,
 } from '../icons';
-import type { Idea } from '../../../api/types';
+import type {
+    Idea,
+    ReadinessLevel,
+} from '../../../api/types';
+
+const PRIORITY_CONFIG: Record<
+    string,
+    { label: string; className: string }
+> = {
+    high: {
+        label: 'High Priority',
+        className: 'badge-error',
+    },
+    medium: {
+        label: 'Medium',
+        className: 'badge-warning',
+    },
+    low: {
+        label: 'Low',
+        className: 'badge-default',
+    },
+};
+
+const READINESS_ICONS: Record<
+    ReadinessLevel,
+    (
+        size: number,
+        cssClass: string,
+    ) => SafeHtml
+> = {
+    ready: iconCheckCircle2,
+    'needs-info': iconMessageSquare,
+    incomplete: iconAlertCircle,
+};
 
 export class IdeaPresenter {
     readonly #idea: Idea;
@@ -41,6 +78,30 @@ export class IdeaPresenter {
     ): boolean {
         return this.#idea
             .matchesSearch(term);
+    }
+
+    isReady(): boolean {
+        return this.#idea.isReady();
+    }
+
+    matchesPriorityFilter(
+        priority: string,
+    ): boolean {
+        return priority === 'all'
+            || this.#idea.priorityLevel()
+                === priority;
+    }
+
+    matchesReadinessFilter(
+        readiness: string,
+    ): boolean {
+        return readiness === 'all'
+            || this.#idea.readiness
+                === readiness;
+    }
+
+    waitingDays(): number {
+        return this.#idea.waitingDays;
     }
 
     buildCard(view: string): SafeHtml {
@@ -367,5 +428,138 @@ export class IdeaPresenter {
                 </span>
             </button>` : html``}
         </div>`;
+    }
+
+    buildReviewCard(): SafeHtml {
+        const idea = this.#idea;
+        const rIcon = READINESS_ICONS[
+            idea.readiness
+        ]!;
+        const pd = PRIORITY_CONFIG[
+            idea.priorityLevel()
+        ]!;
+        return html`
+    <div class="card card-hover p-4"
+        style="cursor:pointer"
+        data-review-card="${idea.id}">
+        <div class="flex items-start
+            justify-between gap-4">
+            <div style="${
+                'flex:1;min-width:0'
+            }">
+                <div class="${
+                    'flex flex-wrap'
+                    + ' items-center'
+                    + ' gap-2 mb-2'
+                }">
+                    <span class="${
+                        'badge '
+                        + pd.className
+                        + ' text-xs'
+                    }">${pd.label}</span>
+                    <span class="${
+                        'flex items-center'
+                        + ' gap-1 text-sm '
+                        + idea
+                            .readinessClassName()
+                    }">${
+                        rIcon(16, '')
+                    } ${
+                        idea.readinessLabel()
+                    }</span>
+                    <span class="${
+                        'badge '
+                        + idea
+                            .edgeStatusClassName()
+                        + ' text-xs'
+                    }">${
+                        iconTarget(12, '')
+                    } ${
+                        idea.edgeStatusLabel()
+                    }</span>
+                </div>
+                <h3 class="${
+                    'font-semibold mb-1'
+                }">${idea.title}</h3>
+                <div class="${
+                    'flex items-center'
+                    + ' gap-4 text-sm'
+                    + ' text-muted'
+                }">
+                    <span>by ${
+                        displayText(
+                            idea.submittedBy,
+                        )
+                    }</span>
+                    <span>${
+                        '\u2022'
+                    }</span>
+                    <span>${
+                        idea.category
+                    }</span>
+                    <span>${
+                        '\u2022'
+                    }</span>
+                    <span style="${
+                        'color:hsl('
+                        + 'var(--warning))'
+                    }">${
+                        idea.waitingDays
+                    } days waiting</span>
+                </div>
+            </div>
+            <div class="${
+                'flex items-center gap-6'
+            }">
+                <div class="${
+                    'text-right'
+                    + ' hidden-mobile'
+                }">
+                    <div class="${
+                        'flex items-center'
+                        + ' gap-4 text-sm'
+                    }">
+                        <div>
+                            <p class="${
+                                'text-muted'
+                            }">Score</p>
+                            <p class="${
+                                'font-semibold'
+                            }"
+                                style="${
+                                    idea
+                                    .scoreColor()
+                                }">${
+                                idea.score
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="${
+                                'text-muted'
+                            }">Impact</p>
+                            <p class="${
+                                'font-medium'
+                            }">${
+                                idea.impactLabel
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="${
+                                'text-muted'
+                            }">Effort</p>
+                            <p class="${
+                                'font-medium'
+                            }">${
+                                idea.effortLabel
+                            }</p>
+                        </div>
+                    </div>
+                </div>
+                ${iconChevronRight(
+                    20, 'text-muted',
+                )}
+            </div>
+        </div>
+    </div>`;
     }
 }

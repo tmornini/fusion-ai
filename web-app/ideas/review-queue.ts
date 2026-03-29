@@ -1,191 +1,27 @@
-import { $, $input, $select, attr } from '../app/dom';
+import {
+    $, $input, $select, attr,
+} from '../app/dom';
 import {
     html,
     setHtml,
-    SafeHtml,
 } from '../app/safe-html';
 import {
     buildSkeleton,
     withLoadingState,
 } from '../app/loading-states';
 import {
-    iconArrowLeft,
     iconClock,
     iconTrendingUp,
     iconAlertCircle,
     iconCheckCircle2,
-    iconMessageSquare,
     iconSearch,
-    iconChevronRight,
-    iconTarget,
-    iconShield,
     iconClipboardCheck,
 } from '../app/icons';
+import { navigateTo } from '../app/core';
+import { getReviewQueue } from '../app/adapters';
 import {
-    navigateTo,
-    styleForScore,
-    displayText,
-} from '../app/core';
-import {
-    getReviewQueue,
-    type Idea,
-} from '../app/adapters';
-import type {
-    ReadinessLevel,
-} from '../../api/types';
-
-const priorityConfig: Record<
-    string,
-    { label: string; className: string }
-> = {
-    high: {
-        label: 'High Priority',
-        className: 'badge-error',
-    },
-    medium: {
-        label: 'Medium',
-        className: 'badge-warning',
-    },
-    low: {
-        label: 'Low',
-        className: 'badge-default',
-    },
-};
-
-const readinessIcon: Record<
-    ReadinessLevel,
-    (size: number, cssClass: string) => SafeHtml
-> = {
-    ready: iconCheckCircle2,
-    'needs-info': iconMessageSquare,
-    incomplete: iconAlertCircle,
-};
-
-function buildReviewCard(
-    idea: Idea,
-): SafeHtml {
-    const rIcon =
-        readinessIcon[idea.readiness]!;
-    const priorityDisplay =
-        priorityConfig[
-            idea.priorityLevel()
-        ]!;
-    return html`
-    <div class="card card-hover p-4"
-        style="cursor:pointer"
-        data-review-card="${idea.id}">
-        <div class="flex items-start
-            justify-between gap-4">
-            <div style="flex:1;min-width:0">
-                <div class="flex flex-wrap
-                    items-center gap-2 mb-2">
-                    <span class="badge
-                        ${priorityDisplay
-                            .className}
-                        text-xs">${
-                        priorityDisplay.label
-                    }</span>
-                    <span class="${
-                        'flex items-center'
-                        + ' gap-1 text-sm '
-                        + idea
-                            .readinessClassName()
-                    }">${rIcon(16, '')
-                    } ${idea
-                        .readinessLabel()
-                    }</span>
-                    <span class="badge
-                        ${idea
-                            .edgeStatusClassName()}
-                        text-xs">${
-                        iconTarget(12, '')
-                    } ${idea
-                        .edgeStatusLabel()
-                    }</span>
-                </div>
-                <h3 class="${
-                    'font-semibold mb-1'
-                }">${idea.title}</h3>
-                <div class="${
-                    'flex items-center'
-                    + ' gap-4 text-sm'
-                    + ' text-muted'
-                }">
-                    <span>by ${
-                        displayText(
-                            idea.submittedBy,
-                        )
-                    }</span>
-                    <span>${
-                        '\u2022'
-                    }</span>
-                    <span>${
-                        idea.category
-                    }</span>
-                    <span>${
-                        '\u2022'
-                    }</span>
-                    <span style="${
-                        'color:hsl('
-                        + 'var(--warning))'
-                    }">${
-                        idea.waitingDays
-                    } days waiting</span>
-                </div>
-            </div>
-            <div class="${
-                'flex items-center gap-6'
-            }">
-                <div class="${
-                    'text-right hidden-mobile'
-                }">
-                    <div class="${
-                        'flex items-center'
-                        + ' gap-4 text-sm'
-                    }">
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Score</p>
-                            <p class="${
-                                'font-semibold'
-                            }"
-                                style="${
-                                    idea
-                                    .scoreColor()
-                                }">${
-                                idea.score
-                            }</p>
-                        </div>
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Impact</p>
-                            <p class="${
-                                'font-medium'
-                            }">${
-                                idea.impactLabel
-                            }</p>
-                        </div>
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Effort</p>
-                            <p class="${
-                                'font-medium'
-                            }">${
-                                idea.effortLabel
-                            }</p>
-                        </div>
-                    </div>
-                </div>
-                ${iconChevronRight(
-                    20, 'text-muted',
-                )}
-            </div>
-        </div>
-    </div>`;
-}
+    IdeaPresenter,
+} from '../app/presenters';
 
 export async function init(): Promise<void> {
     const root = $(
@@ -210,22 +46,24 @@ export async function init(): Promise<void> {
         },
     );
     if (!result) return;
-    const allIdeas = result;
+    const allIdeas = result.map(
+        i => new IdeaPresenter(i),
+    );
 
     const stats = {
         total: allIdeas.length,
         ready: allIdeas.filter(
-            idea => idea.isReady(),
+            i => i.isReady(),
         ).length,
         highPriority: allIdeas.filter(
-            idea =>
-                idea.priorityLevel()
-                    === 'high',
+            i => i.matchesPriorityFilter(
+                'high',
+            ),
         ).length,
         avgWait: Math.round(
             allIdeas.reduce(
-                (sum, idea) =>
-                    sum + idea.waitingDays,
+                (sum, i) =>
+                    sum + i.waitingDays(),
                 0,
             ) / allIdeas.length,
         ),
@@ -418,7 +256,9 @@ export async function init(): Promise<void> {
             + 'flex-direction:column;'
             + 'gap:0.75rem'
         }">
-        ${allIdeas.map(buildReviewCard)}
+        ${allIdeas.map(
+            i => i.buildReviewCard(),
+        )}
     </div>
     <div id="review-queue-empty"
         class="text-center"
@@ -455,23 +295,14 @@ export async function init(): Promise<void> {
             )!.value;
 
         const filtered = allIdeas.filter(
-            idea => {
-                const matchesSearch =
-                    idea.matchesSearch(
-                        search,
-                    );
-                const matchesPriority =
-                    priority === 'all'
-                    || idea.priorityLevel()
-                        === priority;
-                const matchesReadiness =
-                    readiness === 'all'
-                    || idea.readiness
-                        === readiness;
-                return matchesSearch
-                    && matchesPriority
-                    && matchesReadiness;
-            },
+            i =>
+                i.matchesSearch(search)
+                && i.matchesPriorityFilter(
+                    priority,
+                )
+                && i.matchesReadinessFilter(
+                    readiness,
+                ),
         );
 
         const list = $(
@@ -484,7 +315,7 @@ export async function init(): Promise<void> {
             setHtml(
                 list,
                 html`${filtered.map(
-                    buildReviewCard,
+                    i => i.buildReviewCard(),
                 )}`,
             );
         if (list)
