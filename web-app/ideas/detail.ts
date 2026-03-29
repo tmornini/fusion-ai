@@ -34,12 +34,9 @@ import {
     type Idea,
 } from '../app/adapters';
 
-const state = {
-    isEditing: false,
-};
-
 function buildProblemSolutionCard(
     idea: Idea,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
     <div class="card p-6">
@@ -56,7 +53,7 @@ function buildProblemSolutionCard(
                 }">
                     Problem Statement
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<textarea
                         class="textarea"
                         id="idea-edit-problem"
@@ -78,7 +75,7 @@ function buildProblemSolutionCard(
                 }">
                     Target Users
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<textarea
                         class="textarea"
                         id="${
@@ -102,7 +99,7 @@ function buildProblemSolutionCard(
                 }">
                     Proposed Solution
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<textarea
                         class="textarea"
                         id="${
@@ -127,7 +124,7 @@ function buildProblemSolutionCard(
                 }">
                     Expected Outcome
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<textarea
                         class="textarea"
                         id="${
@@ -152,7 +149,7 @@ function buildProblemSolutionCard(
                 }">
                     Success Metrics
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<textarea
                         class="textarea"
                         id="${
@@ -177,6 +174,7 @@ function buildProblemSolutionCard(
 
 function buildDetailsCard(
     idea: Idea,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
     <div class="card p-6">
@@ -193,7 +191,7 @@ function buildDetailsCard(
                 }">
                     Category
                 </p>
-                ${state.isEditing
+                ${isEditing
                     ? html`<input class="input"
                         id="${
                             'idea-edit-category'
@@ -246,6 +244,7 @@ function buildDetailsCard(
 
 function buildEstimatesCard(
     idea: Idea,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
     <div class="card p-6">
@@ -306,7 +305,7 @@ function buildEstimatesCard(
                         ${metric.label}
                     </span>
                 </div>
-                ${state.isEditing
+                ${isEditing
                     ? html`<input
                         type="number"
                         id="${
@@ -337,6 +336,7 @@ function buildEstimatesCard(
 function buildIdeaDetail(
     idea: Idea,
     ideaId: string,
+    isEditing: boolean,
 ): SafeHtml {
     return html`
     <div
@@ -368,7 +368,7 @@ function buildIdeaDetail(
                 <div>
                     <div class="flex flex-wrap
                         items-center gap-3 mb-2">
-                        ${state.isEditing
+                        ${isEditing
                             ? html`<input
                                 class="input"
                                 id="${
@@ -495,7 +495,7 @@ function buildIdeaDetail(
                     ${iconArrowRight(16, '')}
                     Convert
                 </button>` : html``}
-                ${state.isEditing
+                ${isEditing
                     ? html`<div
                         class="flex gap-2">
                         <button
@@ -533,9 +533,15 @@ function buildIdeaDetail(
         <div style="display:flex;
             flex-direction:column;
             gap:1.5rem">
-            ${buildProblemSolutionCard(idea)}
-            ${buildDetailsCard(idea)}
-            ${buildEstimatesCard(idea)}
+            ${buildProblemSolutionCard(
+                idea, isEditing,
+            )}
+            ${buildDetailsCard(
+                idea, isEditing,
+            )}
+            ${buildEstimatesCard(
+                idea, isEditing,
+            )}
         </div>
     </div>`;
 }
@@ -543,6 +549,7 @@ function buildIdeaDetail(
 function bindIdeaEvents(
     idea: Idea,
     ideaId: string,
+    isEditing: boolean,
 ): void {
     $('#idea-back-btn', document)
         ?.addEventListener(
@@ -553,23 +560,17 @@ function bindIdeaEvents(
     $('#idea-edit-btn', document)
         ?.addEventListener(
             'click',
-            () => {
-                state.isEditing = true;
-                mutateIdeaPage(
-                    idea, ideaId,
-                );
-            },
+            () => mutateIdeaPage(
+                idea, ideaId, true,
+            ),
         );
 
     $('#idea-cancel-btn', document)
         ?.addEventListener(
             'click',
-            () => {
-                state.isEditing = false;
-                mutateIdeaPage(
-                    idea, ideaId,
-                );
-            },
+            () => mutateIdeaPage(
+                idea, ideaId, false,
+            ),
         );
 
     $('#idea-save-btn', document)
@@ -666,10 +667,10 @@ function bindIdeaEvents(
                         await getIdeaDetail(
                             ideaId,
                         );
-                    state.isEditing = false;
                     mutateIdeaPage(
                         updated,
                         ideaId,
+                        false,
                     );
                 } catch {
                     showToast(
@@ -725,6 +726,7 @@ function bindIdeaEvents(
                     );
                 mutateIdeaPage(
                     updated, ideaId,
+                    false,
                 );
             } catch {
                 showToast(
@@ -739,6 +741,7 @@ function bindIdeaEvents(
 function mutateIdeaPage(
     idea: Idea,
     ideaId: string,
+    isEditing: boolean,
 ): void {
     const container = $(
         '#idea-detail-content', document,
@@ -746,9 +749,13 @@ function mutateIdeaPage(
     if (!container) return;
     setHtml(
         container,
-        buildIdeaDetail(idea, ideaId),
+        buildIdeaDetail(
+            idea, ideaId, isEditing,
+        ),
     );
-    bindIdeaEvents(idea, ideaId);
+    bindIdeaEvents(
+        idea, ideaId, isEditing,
+    );
 }
 
 export async function init(
@@ -756,7 +763,6 @@ export async function init(
 ): Promise<void> {
     const ideaId = params?.ideaId;
     if (!ideaId) { navigateTo('ideas'); return; }
-    state.isEditing = false;
 
     const container = $(
         '#idea-detail-content', document,
@@ -771,5 +777,5 @@ export async function init(
     );
     if (!idea) return;
 
-    mutateIdeaPage(idea, ideaId);
+    mutateIdeaPage(idea, ideaId, false);
 }
