@@ -19,3 +19,6 @@ export {
 export {
     WorkflowPresenter,
 } from './workflow';
+export {
+    ProjectDetailPresenter,
+} from './project-detail';
