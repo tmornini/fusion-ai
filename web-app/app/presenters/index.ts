@@ -10,3 +10,6 @@ export {
 export {
     GaugePresenter,
 } from './gauge';
+export {
+    ActivityPresenter,
+} from './activity';
