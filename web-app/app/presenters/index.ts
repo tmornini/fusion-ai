@@ -22,3 +22,6 @@ export {
 export {
     ProjectDetailPresenter,
 } from './project-detail';
+export {
+    EdgeDetailPresenter,
+} from './edge-detail';
