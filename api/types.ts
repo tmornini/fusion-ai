@@ -1024,11 +1024,11 @@ export class Idea {
     readonly costEstimate: string;
     readonly costBreakdown: string;
     readonly successMetrics: string;
-    readonly submittedBy: string | null;
+    readonly submittedBy: string;
 
     constructor(
         entity: IdeaEntity,
-        submittedBy: string | null,
+        submittedBy: string,
         edgeStatus: EdgeStatus,
         submittedAt: string,
     ) {
@@ -1204,10 +1204,9 @@ export class Idea {
             this.title
                 .toLowerCase()
                 .includes(t)
-            || (this.submittedBy !== null
-                && this.submittedBy
-                    .toLowerCase()
-                    .includes(t))
+            || this.submittedBy
+                .toLowerCase()
+                .includes(t)
         );
     }
 }
@@ -1377,7 +1376,7 @@ export class EdgeListEntry extends Edge {
     readonly ideaTitle: string;
     readonly outcomesCount: number;
     readonly metricsCount: number;
-    readonly owner: string | null;
+    readonly owner: string;
 
     constructor(
         entity: EdgeEntity,
@@ -1385,7 +1384,7 @@ export class EdgeListEntry extends Edge {
         ideaTitle: string,
         outcomesCount: number,
         metricsCount: number,
-        owner: string | null,
+        owner: string,
     ) {
         super(entity);
         this.ideaId = ideaId;
@@ -1401,10 +1400,9 @@ export class EdgeListEntry extends Edge {
             this.ideaTitle
                 .toLowerCase()
                 .includes(t)
-            || (this.owner !== null
-                && this.owner
-                    .toLowerCase()
-                    .includes(t))
+            || this.owner
+                .toLowerCase()
+                .includes(t)
         );
     }
 }
@@ -1418,11 +1416,11 @@ export class Activity {
     readonly score: number;
     readonly status: string;
     readonly comment: string;
-    readonly actor: string | null;
+    readonly actor: string;
 
     constructor(
         entity: ActivityEntity,
-        actor: string | null,
+        actor: string,
     ) {
         this.id = entity.id;
         this.type = entity.type;

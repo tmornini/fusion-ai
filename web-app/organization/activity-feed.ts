@@ -267,7 +267,7 @@ export async function init(
         const filtered =
             activities!.filter(a => {
                 if (query
-                    && !(a.actor ?? '')
+                    && !a.actor
                         .toLowerCase()
                         .includes(query)
                     && !a.target

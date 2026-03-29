@@ -292,7 +292,7 @@ function buildIdeaCard(
                                             idea
                                             .estimatedImpact,
                                         )
-                                        : null,
+                                        : '',
                                     )}
                                 </p>
                             </div>

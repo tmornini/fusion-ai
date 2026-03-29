@@ -291,7 +291,7 @@ function buildProjectCard(
                                             || project
                                             .estimatedImpact,
                                         )
-                                        : null,
+                                        : '',
                                     )
                                 }</p>
                             </div>

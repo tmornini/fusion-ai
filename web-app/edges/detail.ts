@@ -41,7 +41,7 @@ const state = {
             longTerm: '',
         },
         confidence: 'medium',
-        owner: null,
+        owner: '',
     } as EdgeData,
     currentIdea: null as Idea | null,
 };
@@ -1411,7 +1411,7 @@ export async function init(
                 longTerm: '',
             },
             confidence: 'medium',
-            owner: null,
+            owner: '',
         };
     }
     mutateEdgePage(ideaId);

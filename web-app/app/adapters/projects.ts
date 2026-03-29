@@ -65,7 +65,7 @@ export async function getProjects(
 
 export interface DetailTeamMember {
     readonly id: string;
-    readonly name: string | null;
+    readonly name: string;
     readonly role: string;
 }
 
@@ -81,12 +81,12 @@ export interface DetailVersion {
     readonly version: string;
     readonly date: string;
     readonly changes: string;
-    readonly author: string | null;
+    readonly author: string;
 }
 
 export interface DetailDiscussion {
     readonly id: string;
-    readonly author: string | null;
+    readonly author: string;
     readonly date: string;
     readonly message: string;
 }
@@ -97,14 +97,14 @@ export interface DetailTask {
     readonly description: string;
     readonly skills: readonly string[];
     readonly duration: number;
-    readonly assigned: string | null;
+    readonly assigned: string;
 }
 
 const COST_DIVISOR = 1000;
 
 export class ProjectView {
     private readonly project: Project;
-    readonly projectLead: string | null;
+    readonly projectLead: string;
     readonly edge: EdgeData | null;
     readonly team:
         readonly DetailTeamMember[];
@@ -119,7 +119,7 @@ export class ProjectView {
 
     constructor(
         project: Project,
-        projectLead: string | null,
+        projectLead: string,
         edge: EdgeData | null,
         team: readonly DetailTeamMember[],
         milestones:
@@ -369,17 +369,17 @@ export async function getProjectById(
 export interface Clarification {
     id: string;
     question: string;
-    askedBy: string | null;
+    askedBy: string;
     askedAt: string;
     status: 'pending' | 'answered';
     answer?: string;
-    answeredBy?: string | null;
+    answeredBy?: string;
     answeredAt?: string;
 }
 
 export interface EngTeamMember {
     readonly id: string;
-    readonly name: string | null;
+    readonly name: string;
     readonly role: string;
     readonly type: string;
 }
