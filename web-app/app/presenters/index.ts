@@ -7,3 +7,6 @@ export {
 export {
     EdgePresenter,
 } from './edge';
+export {
+    GaugePresenter,
+} from './gauge';
