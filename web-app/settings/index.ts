@@ -349,11 +349,11 @@ export async function init(): Promise<void> {
             const sel = (id: string) =>
                 $select(
                     '#' + id, document,
-                )?.value ?? '';
+                )!.value;
             const inp = (id: string) =>
                 $input(
                     '#' + id, document,
-                )?.value ?? '';
+                )!.value;
             const sw = (id: string) =>
                 $(
                     '#switch-' + id,

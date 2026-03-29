@@ -134,39 +134,32 @@ export async function init(): Promise<void> {
     }
     const firstName = $input(
         '#profile-first-name', document,
-    );
-    if (firstName) {
-        firstName.value = profile.firstName;
-    }
+    )!;
+    firstName.value = profile.firstName;
     const lastName = $input(
         '#profile-last-name', document,
-    );
-    if (lastName) {
-        lastName.value = profile.lastName;
-    }
-    const email = $input('#profile-email', document);
-    if (email) {
-        email.value = profile.email;
-    }
-    const phone = $input('#profile-phone', document);
-    if (phone) {
-        phone.value = profile.phone;
-    }
-    const role = $input('#profile-role', document);
-    if (role) {
-        role.value = profile.role;
-    }
+    )!;
+    lastName.value = profile.lastName;
+    const email = $input(
+        '#profile-email', document,
+    )!;
+    email.value = profile.email;
+    const phone = $input(
+        '#profile-phone', document,
+    )!;
+    phone.value = profile.phone;
+    const role = $input(
+        '#profile-role', document,
+    )!;
+    role.value = profile.role;
     const department = $select(
         '#profile-department', document,
-    );
-    if (department) {
-        department.value =
-            profile.department;
-    }
-    const bio = $textarea('#profile-bio', document);
-    if (bio) {
-        bio.value = profile.bio;
-    }
+    )!;
+    department.value = profile.department;
+    const bio = $textarea(
+        '#profile-bio', document,
+    )!;
+    bio.value = profile.bio;
     const strengthsContainer = $(
         '#profile-strengths', document,
     );
@@ -240,22 +233,15 @@ export async function init(): Promise<void> {
             try {
                 await putProfile({
                     first_name:
-                        firstName?.value
-                        ?? '',
+                        firstName.value,
                     last_name:
-                        lastName?.value
-                        ?? '',
-                    email:
-                        email?.value ?? '',
-                    phone:
-                        phone?.value ?? '',
-                    role:
-                        role?.value ?? '',
+                        lastName.value,
+                    email: email.value,
+                    phone: phone.value,
+                    role: role.value,
                     department:
-                        department?.value
-                        ?? '',
-                    bio:
-                        bio?.value ?? '',
+                        department.value,
+                    bio: bio.value,
                     strengths:
                         jsonArrayField(
                             [...selectedStrengths],

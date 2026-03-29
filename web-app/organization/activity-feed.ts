@@ -236,11 +236,11 @@ export async function init(
     const searchInput =
         container.querySelector<
             HTMLInputElement
-        >('#activity-search');
+        >('#activity-search')!;
     const typeFilter =
         container.querySelector<
             HTMLSelectElement
-        >('#activity-filter');
+        >('#activity-filter')!;
 
     const typeMap: Record<string, string[]> = {
         idea: [
@@ -259,11 +259,10 @@ export async function init(
 
     function filterActivities(): void {
         if (!activityList) return;
-        const query = (
-            searchInput?.value ?? ''
-        ).toLowerCase();
-        const typeVal =
-            typeFilter?.value ?? 'all';
+        const query =
+            searchInput.value
+                .toLowerCase();
+        const typeVal = typeFilter.value;
         const filtered =
             activities!.filter(a => {
                 if (query
@@ -293,10 +292,10 @@ export async function init(
         );
     }
 
-    searchInput?.addEventListener(
+    searchInput.addEventListener(
         'input', filterActivities,
     );
-    typeFilter?.addEventListener(
+    typeFilter.addEventListener(
         'change', filterActivities,
     );
 }

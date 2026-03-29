@@ -792,23 +792,22 @@ export async function init(): Promise<void> {
     );
     const searchInput = $input(
         '#user-search', document,
-    );
+    )!;
     const roleFilter = $select(
         '#role-filter', document,
-    );
+    )!;
     const statusFilter = $select(
         '#status-filter', document,
-    );
+    )!;
 
     function filterUsers(): void {
         if (!userList) return;
-        const query = (
-            searchInput?.value ?? ''
-        ).toLowerCase();
-        const role =
-            roleFilter?.value ?? 'all';
+        const query =
+            searchInput.value
+                .toLowerCase();
+        const role = roleFilter.value;
         const status =
-            statusFilter?.value ?? 'all';
+            statusFilter.value;
         const filtered = users!.filter(u => {
             if (query && !u.fullName()
                 .toLowerCase()
@@ -832,13 +831,13 @@ export async function init(): Promise<void> {
         );
     }
 
-    searchInput?.addEventListener(
+    searchInput.addEventListener(
         'input', filterUsers,
     );
-    roleFilter?.addEventListener(
+    roleFilter.addEventListener(
         'change', filterUsers,
     );
-    statusFilter?.addEventListener(
+    statusFilter.addEventListener(
         'change', filterUsers,
     );
 
@@ -846,13 +845,13 @@ export async function init(): Promise<void> {
         async () => {
             const first = $input(
                 '#invite-first', document,
-            )?.value ?? '';
+            )!.value;
             const last = $input(
                 '#invite-last', document,
-            )?.value ?? '';
+            )!.value;
             const email = $input(
                 '#invite-email', document,
-            )?.value ?? '';
+            )!.value;
             if (!first || !last || !email) {
                 showToast(
                     'Name and email'
@@ -863,36 +862,34 @@ export async function init(): Promise<void> {
             }
             const role = $select(
                 '#invite-role', document,
-            )?.value ?? 'member';
+            )!.value;
             const dept = $select(
                 '#invite-department',
                 document,
-            )?.value ?? '';
+            )!.value;
             const status = $select(
                 '#invite-status',
                 document,
-            )?.value ?? 'active';
+            )!.value;
             const phone = $input(
                 '#invite-phone', document,
-            )?.value ?? '';
+            )!.value;
             const avail = Number(
                 $input(
                     '#invite-avail',
                     document,
-                )?.value ?? '0',
+                )!.value,
             );
             const perf = Number(
                 $input(
                     '#invite-perf',
                     document,
-                )?.value ?? '0',
+                )!.value,
             );
-            const bio = (
+            const bio =
                 document.querySelector<
                     HTMLTextAreaElement
-                >('#invite-bio')
-                    ?.value ?? ''
-            );
+                >('#invite-bio')!.value;
             const id = crypto.randomUUID();
             try {
                 await putUser(id, {
