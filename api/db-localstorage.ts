@@ -58,6 +58,17 @@ import { nowUtc } from './types';
 
 const KEY_PREFIX = 'fusion-ai:';
 
+function isRowShaped(
+    row: unknown,
+): row is { id: string } {
+    return typeof row === 'object'
+        && row !== null
+        && 'id' in row
+        && typeof (
+            row as { id: unknown }
+        ).id === 'string';
+}
+
 function readTable<T>(
     tableName: string,
     includeDeleted: boolean,
@@ -76,10 +87,19 @@ function readTable<T>(
                 + ' a valid snapshot.',
             );
         }
+        if (!parsed.every(isRowShaped)) {
+            throw new Error(
+                'Table "' + tableName
+                + '" has malformed row(s).'
+                + ' Clear data or import'
+                + ' a valid snapshot.',
+            );
+        }
         if (!includeDeleted) {
             return parsed.filter(
-                (row: Record<string, unknown>) =>
-                    !row.deleted_at,
+                (row: Record<
+                    string, unknown
+                >) => !row.deleted_at,
             ) as T[];
         }
         return parsed as T[];
@@ -198,6 +218,9 @@ function createEntityStore<
                 fields, tableName,
             );
 
+            // ASSERT: spread merges validated
+            // row with serialized fields; id
+            // ensures T constraint is met
             if (index >= 0) {
                 rows[index] = {
                     ...rows[index]!,
@@ -233,6 +256,9 @@ function createEntityStore<
                 e => e.id === id,
             );
             if (idx >= 0) {
+                // ASSERT: spread preserves
+                // complete T; deleted_at is
+                // an event-table convention
                 rows[idx] = {
                     ...rows[idx]!,
                     deleted_at: nowUtc(),
@@ -274,6 +300,9 @@ function createSingletonStore<
                 entity => entity.id === '1',
             );
 
+            // ASSERT: spread merges validated
+            // singleton with serialized fields;
+            // id: '1' ensures T constraint
             if (index >= 0) {
                 rows[index] = {
                     ...rows[index]!,
@@ -441,6 +470,8 @@ export async function createLocalStorageAdapter(
                     + ' keys.',
                 );
             }
+            // ASSERT: typeof/null/Array
+            // guards above prove this shape
             const record = snapshot as Record<
                 string,
                 unknown

@@ -61,6 +61,37 @@ const pageModules: Record<
     'not-found': () => import('../not-found/index'),
 };
 
+async function initDatabase(
+): Promise<boolean> {
+    const { createLocalStorageAdapter } =
+        await import(
+            '../../api/db-localstorage'
+        );
+    const { initApi, GET } =
+        await import('../../api/api');
+    const adapter =
+        await createLocalStorageAdapter();
+    await adapter.initialize();
+    initApi(adapter);
+    const schema =
+        await GET<string | null>(
+            'snapshots/schema',
+        );
+    return schema !== null;
+}
+
+async function loadAndInitPage(
+    pageName: string,
+): Promise<void> {
+    const loader = pageModules[pageName];
+    if (!loader) {
+        navigateTo('not-found');
+        return;
+    }
+    const mod = await loader();
+    await mod.init(getParams());
+}
+
 window.addEventListener('unhandledrejection', event => {
     const name = (event.reason as DOMException)?.name;
     if (name === 'InvalidStateError'
@@ -73,31 +104,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyTheme();
     initPrefetch();
 
+    let hasSchema: boolean;
     try {
-        const { createLocalStorageAdapter } =
-            await import('../../api/db-localstorage');
-        const { initApi, GET } = await import('../../api/api');
-
-        const adapter = await createLocalStorageAdapter();
-        await adapter.initialize();
-        initApi(adapter);
-
-        const snapshot = await GET<string | null>('snapshots/schema');
-        if (snapshot === null) {
-            const page = getPageName();
-            const skipRedirect = [
-                'snapshots',
-                'auth',
-                'onboarding',
-                'not-found',
-                'design-system',
-                'landing',
-            ];
-            if (!skipRedirect.includes(page)) {
-                navigateTo('snapshots');
-                return;
-            }
-        }
+        hasSchema = await initDatabase();
     } catch (err) {
         log.error(
             'Database initialization failed:',
@@ -123,6 +132,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
     }
 
+    if (!hasSchema) {
+        const page = getPageName();
+        const skipRedirect = [
+            'snapshots',
+            'auth',
+            'onboarding',
+            'not-found',
+            'design-system',
+            'landing',
+        ];
+        if (!skipRedirect.includes(page)) {
+            navigateTo('snapshots');
+            return;
+        }
+    }
+
     const pageName = getPageName();
 
     if (document.querySelector('.sidebar-layout')) {
@@ -137,14 +162,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             err,
         ));
 
-    const loader = pageModules[pageName];
-    if (!loader) {
-        navigateTo('not-found');
-        return;
-    }
     try {
-        const mod = await loader();
-        await mod.init(getParams());
+        await loadAndInitPage(pageName);
     } catch (err) {
         log.error(
             `Page "${pageName}" failed to init:`,
