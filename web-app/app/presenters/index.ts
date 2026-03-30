@@ -12,9 +12,6 @@ export {
 export {
     IdeaCreatePresenter,
 } from './idea-create';
-export type {
-    ConversionFormState,
-} from './idea-conversion';
 export {
     ProjectPresenter,
     ProjectListPresenter,

@@ -1,4 +1,6 @@
-import { html, SafeHtml } from '../safe-html';
+import {
+    html, SafeHtml, trusted,
+} from '../safe-html';
 import {
     iconClock,
     iconDollarSign,
@@ -11,6 +13,7 @@ import {
     iconCalendar,
     iconUsers,
     iconFolderKanban,
+    iconCheckCircle2,
 } from '../icons';
 import type {
     Idea,
@@ -29,17 +32,27 @@ type ConversionField =
     | 'first-milestone'
     | 'success-criteria';
 
-export interface ConversionFormState {
-    projectDetails: Record<
-        ConversionField, string
-    >;
-    completedCount: number;
-    requiredCount: number;
-    isReady: boolean;
-    fieldChecks: Record<
-        ConversionField, SafeHtml
-    >;
-}
+const REQUIRED_FIELDS:
+    ConversionField[] = [
+    'project-name',
+    'project-lead',
+    'start-date',
+    'target-end-date',
+    'budget',
+    'priority',
+];
+
+const ALL_FIELDS:
+    ConversionField[] = [
+    'project-name',
+    'project-lead',
+    'start-date',
+    'target-end-date',
+    'budget',
+    'priority',
+    'first-milestone',
+    'success-criteria',
+];
 
 interface LeadOption {
     readonly id: string;
@@ -53,8 +66,19 @@ export class IdeaConversionPresenter {
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
     readonly #score: number;
+    readonly #estimatedDuration: string;
+    readonly #estimatedCost: string;
+    readonly #leadOptions: LeadOption[];
+    #fields: Record<
+        ConversionField, string
+    >;
 
-    constructor(idea: Idea) {
+    constructor(
+        idea: Idea,
+        estimatedDuration: string,
+        estimatedCost: string,
+        users: User[],
+    ) {
         this.#title = idea.title;
         this.#problemStatement =
             idea.problemStatement;
@@ -63,48 +87,79 @@ export class IdeaConversionPresenter {
         this.#expectedOutcome =
             idea.expectedOutcome;
         this.#score = idea.score;
+        this.#estimatedDuration =
+            estimatedDuration;
+        this.#estimatedCost =
+            estimatedCost;
+        this.#leadOptions = users
+            .filter(u => u.isActive())
+            .map(u => ({
+                id: u.id,
+                fullName: u.fullName(),
+                role: u.role,
+            }));
+        this.#fields = {
+            'project-name': idea.title,
+            'project-lead': '',
+            'start-date': '',
+            'target-end-date': '',
+            'budget': '',
+            'priority': '',
+            'first-milestone': '',
+            'success-criteria': '',
+        };
     }
 
-    defaultProjectName(): string {
-        return this.#title;
+    syncFields(
+        fields: Partial<Record<
+            ConversionField, string
+        >>,
+    ): void {
+        this.#fields = {
+            ...this.#fields,
+            ...fields,
+        };
     }
 
-    #buildLeadOptions(
-        users: User[],
-        selectedId: string,
-    ): SafeHtml[] {
-        const options: LeadOption[] =
-            users
-                .filter(u => u.isActive())
-                .map(u => ({
-                    id: u.id,
-                    fullName: u.fullName(),
-                    role: u.role,
-                }));
-        return options
-            .map(o => html`<option
-                value="${o.id}" ${
-                    o.id === selectedId
-                        ? 'selected'
-                        : ''
-                }>${o.fullName} -
-                ${o.role}</option>`);
+    projectDetails(): Record<
+        ConversionField, string
+    > {
+        return { ...this.#fields };
     }
 
-    buildConversionPage(
-        estimatedDuration: string,
-        estimatedCost: string,
-        users: User[],
-        form: ConversionFormState,
+    isReady(): boolean {
+        return REQUIRED_FIELDS.every(
+            f => this.#fields[f].trim(),
+        );
+    }
+
+    #completedCount(): number {
+        return REQUIRED_FIELDS.filter(
+            f => this.#fields[f].trim(),
+        ).length;
+    }
+
+    #fieldCheck(
+        field: ConversionField,
     ): SafeHtml {
+        return this.#fields[field].trim()
+            ? html`<span
+                style=${'color:'
+                    + 'hsl(var('
+                    + '--success))'}>
+                ${iconCheckCircle2(16, '')}
+                </span>`
+            : html``;
+    }
+
+    render(): SafeHtml {
+        const completed =
+            this.#completedCount();
+        const required =
+            REQUIRED_FIELDS.length;
         const percent =
-            (form.completedCount
-                / form.requiredCount)
+            (completed / required)
             * 100;
-        const leadVal =
-            form.projectDetails[
-                'project-lead'
-            ];
 
         return html`
         <div class="${
@@ -167,9 +222,9 @@ export class IdeaConversionPresenter {
                 <span class="${
                     'text-muted'
                 }">${
-                    form.completedCount
+                    completed
                 }/${
-                    form.requiredCount
+                    required
                 } required fields${
                     ''
                 }</span>
@@ -201,25 +256,12 @@ export class IdeaConversionPresenter {
                 style=${'grid-template-'
                     + 'columns:'
                     + '2fr 3fr;gap:2rem'}>
-                ${this
-                    .#buildConvSummary(
-                    estimatedDuration,
-                    estimatedCost,
-                )}
-                ${this
-                    .#buildConvForm(
-                    estimatedCost,
-                    users,
-                    leadVal,
-                    form,
-                )}
+                ${this.#buildSummary()}
+                ${this.#buildForm()}
             </div>`;
     }
 
-    #buildConvSummary(
-        estimatedDuration: string,
-        estimatedCost: string,
-    ): SafeHtml {
+    #buildSummary(): SafeHtml {
         return html`
             <div>
                 <div class="card p-6"
@@ -316,125 +358,82 @@ export class IdeaConversionPresenter {
                         + 'column;'
                         + 'gap:0.75rem'
                     }>
-                        <div class="flex
-                            items-center
-                            justify-between">
-                            <span class="${
-                                'flex'
-                                + ' items-center'
-                                + ' gap-2'
-                                + ' text-muted'
-                            }">
-                                ${iconClock(
-                                    16, '',
-                                )}
-                                <span class="${
-                                    'text-sm'
-                                }">
-                                    Est. Time
-                                </span>
-                            </span>
-                            <span
-                                class="${
-                                    'font-medium'
-                                }">${
-                                estimatedDuration
-                            }</span>
-                        </div>
-                        <div class="flex
-                            items-center
-                            justify-between">
-                            <span class="${
-                                'flex'
-                                + ' items-center'
-                                + ' gap-2'
-                                + ' text-muted'
-                            }">
-                                ${iconDollarSign(
-                                    16, '',
-                                )}
-                                <span class="${
-                                    'text-sm'
-                                }">
-                                    Est. Cost
-                                </span>
-                            </span>
-                            <span
-                                class="${
-                                    'font-medium'
-                                }">${
-                                estimatedCost
-                            }</span>
-                        </div>
-                        <div class="flex
-                            items-center
-                            justify-between">
-                            <span class="${
-                                'flex'
-                                + ' items-center'
-                                + ' gap-2'
-                                + ' text-muted'
-                            }">
-                                ${iconTrendingUp(
-                                    16, '',
-                                )}
-                                <span class="${
-                                    'text-sm'
-                                }">
-                                    ${'Priority'
-                                        + ' Score'}
-                                </span>
-                            </span>
-                            <span
-                                class="${
-                                    'font-bold'
-                                }"
-                                style=${
-                                    'color:'
-                                    + 'hsl(var('
-                                    + '--success'
-                                    + '))'
-                                }>
-                                ${this.#score
-                                }/100
-                            </span>
-                        </div>
+                        ${this.#buildMetric(
+                            iconClock(16, ''),
+                            'Est. Time',
+                            this
+                            .#estimatedDuration,
+                            '',
+                        )}
+                        ${this.#buildMetric(
+                            iconDollarSign(
+                                16, '',
+                            ),
+                            'Est. Cost',
+                            this
+                            .#estimatedCost,
+                            '',
+                        )}
+                        ${this.#buildMetric(
+                            iconTrendingUp(
+                                16, '',
+                            ),
+                            'Priority Score',
+                            this.#score
+                                + '/100',
+                            'color:hsl(var('
+                                + '--success))',
+                        )}
                     </div>
                 </div>
             </div>`;
     }
 
-    #buildConvForm(
-        estimatedCost: string,
-        users: User[],
-        leadVal: string,
-        form: ConversionFormState,
+    #buildMetric(
+        icon: SafeHtml,
+        label: string,
+        value: string | number,
+        style: string,
     ): SafeHtml {
+        return html`
+        <div class="flex
+            items-center
+            justify-between">
+            <span class="${
+                'flex items-center'
+                + ' gap-2 text-muted'
+            }">
+                ${icon}
+                <span class="${
+                    'text-sm'
+                }">
+                    ${label}
+                </span>
+            </span>
+            <span
+                class="${
+                    'font-medium'
+                }"
+                style="${style}">${
+                value
+            }</span>
+        </div>`;
+    }
+
+    #buildForm(): SafeHtml {
         return html`
             <div style=${'display:flex;'
                 + 'flex-direction:column;'
                 + 'gap:1.5rem'}>
-                ${this.#buildConvRequired(
-                    estimatedCost,
-                    users,
-                    leadVal,
-                    form,
-                )}
-                ${this.#buildConvOptional(
-                    form,
-                )}
-                ${this.#buildConvConfirm(
-                    form,
-                )}
+                ${this.#buildRequired()}
+                ${this.#buildOptional()}
+                ${this.#buildConfirm()}
             </div>`;
     }
 
-    #buildConvRequired(
-        estimatedCost: string,
-        users: User[],
-        leadVal: string,
-        form: ConversionFormState,
-    ): SafeHtml {
+    #buildRequired(): SafeHtml {
+        const f = this.#fields;
+        const lo = this.#leadOptions;
         return html`
             <div class="card p-6">
                 <div class="flex
@@ -468,19 +467,17 @@ export class IdeaConversionPresenter {
                             + ' gap-2'
                         }">
                             Project Name
-                            ${form
-                            .fieldChecks[
-                            'project-name'
-                            ]}
+                            ${this.#fieldCheck(
+                                'project-name',
+                            )}
                         </label>
                         <input
                             class="input"
-                            id=${
-                            'convert-project-name'
-                            }
+                            id=${'convert'
+                                + '-project'
+                                + '-name'}
                             value="${
-                                form
-                                .projectDetails[
+                                f[
                                 'project-name'
                                 ]
                             }"
@@ -501,16 +498,15 @@ export class IdeaConversionPresenter {
                             + ' gap-2'
                         }">
                             Project Lead
-                            ${form
-                            .fieldChecks[
-                            'project-lead'
-                            ]}
+                            ${this.#fieldCheck(
+                                'project-lead',
+                            )}
                         </label>
                         <select
                             class="input"
-                            id=${
-                            'convert-project-lead'
-                            }>
+                            id=${'convert'
+                                + '-project'
+                                + '-lead'}>
                             <option
                                 value="">
                                 ${'Who will'
@@ -518,11 +514,21 @@ export class IdeaConversionPresenter {
                                     + ' this'
                                     + ' project?'}
                             </option>
-                            ${this
-                            .#buildLeadOptions(
-                                users,
-                                leadVal,
-                            )}
+                            ${lo.map(
+                                o => html`
+                            <option
+                                value="${o.id}"
+                                ${trusted(
+                                    o.id ===
+                                    f[
+                                    'project-lead'
+                                    ]
+                                        ? 'selected'
+                                        : '',
+                                )}>
+                                ${o.fullName}
+                                - ${o.role}
+                            </option>`)}
                         </select>
                     </div>
                     <div style=${
@@ -545,20 +551,19 @@ export class IdeaConversionPresenter {
                                     'text-muted',
                                 )}
                                 Start Date
-                                ${form
-                                .fieldChecks[
-                                'start-date'
-                                ]}
+                                ${this
+                                .#fieldCheck(
+                                'start-date',
+                                )}
                             </label>
                             <input
                                 class="input"
                                 type="date"
-                                id=${
-                                'convert-start-date'
-                                }
+                                id=${'convert'
+                                    + '-start'
+                                    + '-date'}
                                 value="${
-                                    form
-                                    .projectDetails[
+                                    f[
                                     'start-date'
                                     ]
                                 }" />
@@ -577,20 +582,20 @@ export class IdeaConversionPresenter {
                                 )}
                                 ${'Target End'
                                     + ' Date'}
-                                ${form
-                                .fieldChecks[
-                                'target-end-date'
-                                ]}
+                                ${this
+                                .#fieldCheck(
+                                'target-end-date',
+                                )}
                             </label>
                             <input
                                 class="input"
                                 type="date"
-                                id=${
-                                'convert-target-end-date'
-                                }
+                                id=${'convert'
+                                    + '-target'
+                                    + '-end'
+                                    + '-date'}
                                 value="${
-                                    form
-                                    .projectDetails[
+                                    f[
                                     'target-end-date'
                                     ]
                                 }" />
@@ -610,10 +615,9 @@ export class IdeaConversionPresenter {
                             )}
                             ${'Allocated'
                                 + ' Budget'}
-                            ${form
-                            .fieldChecks[
-                            'budget'
-                            ]}
+                            ${this.#fieldCheck(
+                                'budget',
+                            )}
                         </label>
                         <select
                             class="input"
@@ -663,7 +667,8 @@ export class IdeaConversionPresenter {
                             + ' mt-1'
                         }">
                             AI estimate:
-                            ${estimatedCost}
+                            ${this
+                            .#estimatedCost}
                         </p>
                     </div>
                     <div>
@@ -675,10 +680,9 @@ export class IdeaConversionPresenter {
                             + ' gap-2'
                         }">
                             Priority Level
-                            ${form
-                            .fieldChecks[
-                            'priority'
-                            ]}
+                            ${this.#fieldCheck(
+                                'priority',
+                            )}
                         </label>
                         <select
                             class="input"
@@ -726,9 +730,8 @@ export class IdeaConversionPresenter {
             </div>`;
     }
 
-    #buildConvOptional(
-        form: ConversionFormState,
-    ): SafeHtml {
+    #buildOptional(): SafeHtml {
+        const f = this.#fields;
         return html`
             <div class="card p-6">
                 <div class="flex
@@ -778,8 +781,7 @@ export class IdeaConversionPresenter {
                                 + ' setup'
                             }
                             value="${
-                                form
-                                .projectDetails[
+                                f[
                                 'first-milestone'
                                 ]
                             }" />
@@ -822,8 +824,7 @@ export class IdeaConversionPresenter {
                             style="${
                                 'resize:none'
                             }">${
-                            form
-                            .projectDetails[
+                            f[
                             'success-criteria'
                             ]
                         }</textarea>
@@ -832,12 +833,11 @@ export class IdeaConversionPresenter {
             </div>`;
     }
 
-    #buildConvConfirm(
-        form: ConversionFormState,
-    ): SafeHtml {
+    #buildConfirm(): SafeHtml {
+        const isReady = this.isReady();
         const remaining =
-            form.requiredCount
-            - form.completedCount;
+            REQUIRED_FIELDS.length
+            - this.#completedCount();
         return html`
             <div class="card p-6"
                 id=${'convert'
@@ -845,13 +845,13 @@ export class IdeaConversionPresenter {
                     + '-section'}
                 style=${'border:'
                     + '2px solid '
-                    + (form.isReady
+                    + (isReady
                         ? 'hsl(var('
                             + '--success)'
                             + ' / 0.3)'
                         : 'transparent')
                     + ';'
-                    + (form.isReady
+                    + (isReady
                         ? 'background:'
                             + 'hsl(var('
                             + '--success)'
@@ -870,7 +870,7 @@ export class IdeaConversionPresenter {
                         + 'justify-'
                         + 'content:'
                         + 'center;'
-                        + (form.isReady
+                        + (isReady
                             ? 'background:'
                                 + 'hsl(var('
                                 + '--success'
@@ -897,7 +897,7 @@ export class IdeaConversionPresenter {
                                 'font-semibold'
                                 + ' mb-1'
                             }">
-                            ${form.isReady
+                            ${isReady
                                 ? 'Ready to'
                                     + ' Create'
                                     + ' Project'
@@ -910,7 +910,7 @@ export class IdeaConversionPresenter {
                             + ' text-muted'
                             + ' mb-4'
                         }">
-                            ${form.isReady
+                            ${isReady
                                 ? 'All required'
                                     + ' info has'
                                     + ' been'
@@ -961,10 +961,11 @@ export class IdeaConversionPresenter {
                                     + '-submit'
                                     + '-btn'
                                 }
-                                ${form.isReady
-                                    ? ''
-                                    : 'disabled'
-                                }>
+                                ${trusted(
+                                    isReady
+                                        ? ''
+                                        : 'disabled',
+                                )}>
                                 ${'Create'
                                     + ' Project'}
                                 ${iconArrowRight(
