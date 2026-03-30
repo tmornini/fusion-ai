@@ -432,17 +432,26 @@ export class AccountPresenter {
     </div>`;
     }
 
+    static readonly USAGE_DANGER = 90;
+    static readonly USAGE_WARNING = 70;
+
     #styleForUsageLevel(
         current: number,
         limit: number,
     ): string {
         const percentage =
             (current / limit) * 100;
-        if (percentage >= 90) {
+        if (percentage
+            >= AccountPresenter
+                .USAGE_DANGER
+        ) {
             return 'background:'
                 + 'hsl(var(--error))';
         }
-        if (percentage >= 70) {
+        if (percentage
+            >= AccountPresenter
+                .USAGE_WARNING
+        ) {
             return 'background:'
                 + 'hsl(var(--warning))';
         }

@@ -27,6 +27,8 @@ import {
     nowUtc,
 } from '../../api/types';
 
+const DEFAULT_DIM = 50;
+
 export async function init(): Promise<void> {
     const container = $(
             '#manage-users-content', document,
@@ -734,10 +736,14 @@ export async function init(): Promise<void> {
                         jsonArrayField([]),
                     team_dimensions:
                         jsonObjectField({
-                            driver: 50,
-                            analytical: 50,
-                            expressive: 50,
-                            amiable: 50,
+                            driver:
+                                DEFAULT_DIM,
+                            analytical:
+                                DEFAULT_DIM,
+                            expressive:
+                                DEFAULT_DIM,
+                            amiable:
+                                DEFAULT_DIM,
                         }),
                     phone,
                     bio,

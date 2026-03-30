@@ -19,6 +19,13 @@ import {
 } from '../../../api/types';
 import { parseJson } from './helpers';
 
+const DEFAULT_START_NAME = 'New';
+const DEFAULT_COMPLETE_NAME = 'Complete';
+const DEFAULT_START_X = 40;
+const DEFAULT_START_Y = 30;
+const DEFAULT_COMPLETE_X = 680;
+const DEFAULT_COMPLETE_Y = 370;
+
 export interface WorkflowListItem {
     id: string;
     name: string;
@@ -427,20 +434,20 @@ export async function postWorkflow(
     await Promise.all([
         POST<void>('wf-nodes', {
             id: startNodeId,
-            name: 'New',
+            name: DEFAULT_START_NAME,
             description: '',
-            position_x: 40,
-            position_y: 30,
+            position_x: DEFAULT_START_X,
+            position_y: DEFAULT_START_Y,
             is_start: 1,
             is_complete: 0,
             created_at: now,
         }),
         POST<void>('wf-nodes', {
             id: completeNodeId,
-            name: 'Complete',
+            name: DEFAULT_COMPLETE_NAME,
             description: '',
-            position_x: 680,
-            position_y: 370,
+            position_x: DEFAULT_COMPLETE_X,
+            position_y: DEFAULT_COMPLETE_Y,
             is_start: 0,
             is_complete: 1,
             created_at: now,
