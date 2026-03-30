@@ -114,35 +114,38 @@ function bindProjectEvents(
                 description,
                 status,
                 start_date: startDate,
-                target_end_date: targetEndDate,
+                target_end_date:
+                    targetEndDate,
                 estimated_duration:
-                        timeBaseline * SECONDS_PER_DAY,
+                    timeBaseline
+                    * SECONDS_PER_DAY,
                 estimated_cost:
-                        costBaseline * COST_DIVISOR,
-                estimated_impact: impactBaseline,
+                    costBaseline
+                    * COST_DIVISOR,
+                estimated_impact:
+                    impactBaseline,
             });
-            showToast(
-                    'Project saved', 'success',
-            );
-            const [updated, updatedWfs] =
-                    await Promise.all([
-                        getProjectById(
-                            projectId,
-                        ),
-                        getWorkflowsByProject(
-                            projectId,
-                        ),
-                    ]);
-            mutateProjectPage(
-                    updated, projectId,
-                    updatedWfs, false,
-            );
         } catch {
             showToast(
-                    'Failed to save project',
-                    'error',
+                'Failed to save project',
+                'error',
             );
+            return;
         }
+        showToast(
+            'Project saved', 'success',
+        );
+        const [updated, updatedWfs] =
+            await Promise.all([
+                getProjectById(projectId),
+                getWorkflowsByProject(
+                    projectId,
+                ),
+            ]);
+        mutateProjectPage(
+            updated, projectId,
+            updatedWfs, false,
+        );
     });
 
     $$('[data-navigate-to-engineering]', document)
@@ -190,24 +193,26 @@ function bindProjectEvents(
         ?.addEventListener(
             'click',
             async () => {
+                let wfId: string;
                 try {
-                    const wfId =
+                    wfId =
                         await postWorkflow(
                             projectId,
                             'New Workflow',
                             '',
                         );
-                    navigateTo(
-                        'flow-detail',
-                        { workflowId: wfId },
-                    );
                 } catch {
                     showToast(
                         'Failed to create'
                         + ' workflow',
                         'error',
                     );
+                    return;
                 }
+                navigateTo(
+                    'flow-detail',
+                    { workflowId: wfId },
+                );
             },
         );
 

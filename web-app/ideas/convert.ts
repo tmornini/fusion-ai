@@ -45,6 +45,98 @@ const PRIORITY_RANKS: Record<
     low: 4,
 };
 
+async function performConversion(
+    ideaId: string,
+    projectId: string,
+): Promise<void> {
+    const pd = state.projectDetails;
+    const leadUserId =
+        pd['project-lead'];
+    await putProject(
+        projectId,
+        {
+            title: pd[
+                'project-name'
+            ],
+            description: pd[
+                'success-criteria'
+            ],
+            status:
+                'submitted',
+            progress: 0,
+            start_date: pd[
+                'start-date'
+            ],
+            target_end_date: pd[
+                'target-end-date'
+            ],
+            estimated_duration:
+                0,
+            actual_duration:
+                0,
+            estimated_cost:
+                0,
+            actual_cost: 0,
+            estimated_impact:
+                0,
+            actual_impact: 0,
+            priority:
+                PRIORITY_RANKS[
+                    pd[
+                        'priority'
+                    ] as
+                    PriorityRank
+                ]!,
+            priority_score:
+                0,
+            business_context:
+                jsonObjectField(
+                    {},
+                ),
+            timeline_label:
+                '',
+            budget_label:
+                pd['budget'],
+        },
+    );
+    await Promise.all([
+        putProjectTeamMember(
+            projectId,
+            leadUserId,
+            'lead',
+            'internal',
+        ),
+        putIdeaProjectLink(
+            ideaId,
+            projectId,
+        ),
+    ]);
+    const existingIdea =
+        await getIdea(ideaId);
+    await putIdea(ideaId, {
+        ...existingIdea,
+        status: 'promoted',
+    });
+    const mTitle =
+        pd['first-milestone'];
+    if (mTitle?.trim()) {
+        const milestoneId =
+            crypto.randomUUID();
+        await putMilestone(
+            projectId,
+            milestoneId,
+            {
+                title: mTitle,
+                status: 'pending',
+                date: pd[
+                    'target-end-date'
+                ],
+                sort_order: 1,
+            },
+        );
+    }
+}
+
 type ConversionField =
     | 'project-name'
     | 'project-lead'
@@ -301,118 +393,15 @@ export async function init(
                 const projectId =
                     crypto.randomUUID();
                 try {
-                    const pd =
-                        state.projectDetails;
-                    const leadUserId =
-                        pd['project-lead'];
-                    await putProject(
+                    await performConversion(
+                        ideaId,
                         projectId,
-                        {
-                            title: pd[
-                                'project-name'
-                            ],
-                            description: pd[
-                                'success-criteria'
-                            ],
-                            status:
-                                'submitted',
-                            progress: 0,
-                            start_date: pd[
-                                'start-date'
-                            ],
-                            target_end_date: pd[
-                                'target-end-date'
-                            ],
-                            estimated_duration:
-                                0,
-                            actual_duration:
-                                0,
-                            estimated_cost:
-                                0,
-                            actual_cost: 0,
-                            estimated_impact:
-                                0,
-                            actual_impact: 0,
-                            priority:
-                                PRIORITY_RANKS[
-                                    pd[
-                                        'priority'
-                                    ] as
-                                    PriorityRank
-                                ]!,
-                            priority_score:
-                                0,
-                            business_context:
-                                jsonObjectField(
-                                    {},
-                                ),
-                            timeline_label:
-                                '',
-                            budget_label:
-                                pd['budget'],
-                        },
-                    );
-
-                    await Promise.all([
-                        putProjectTeamMember(
-                            projectId,
-                            leadUserId,
-                            'lead',
-                            'internal',
-                        ),
-                        putIdeaProjectLink(
-                            ideaId,
-                            projectId,
-                        ),
-                    ]);
-
-                    const existingIdea =
-                        await getIdea(
-                            ideaId,
-                        );
-                    await putIdea(ideaId, {
-                        ...existingIdea,
-                        status: 'promoted',
-                    });
-
-                    const mTitle =
-                        pd[
-                            'first-milestone'
-                        ];
-                    if (mTitle?.trim()) {
-                        const milestoneId =
-                            crypto
-                                .randomUUID();
-                        await putMilestone(
-                            projectId,
-                            milestoneId,
-                            {
-                                title:
-                                    mTitle,
-                                status:
-                                    'pending',
-                                date: pd[
-                                    'target-end-date'
-                                ],
-                                sort_order:
-                                    1,
-                            },
-                        );
-                    }
-
-                    showToast(
-                        'Project created'
-                        + ' successfully!',
-                        'success',
-                    );
-                    navigateTo(
-                        'project-detail',
-                        { projectId },
                     );
                 } catch {
                     showToast(
                         'Failed to create'
-                        + ' project. Please'
+                        + ' project.'
+                        + ' Please'
                         + ' try again.',
                         'error',
                     );
@@ -428,9 +417,20 @@ export async function init(
                         btn instanceof
                             HTMLButtonElement
                     ) {
-                        btn.disabled = false;
+                        btn.disabled =
+                            false;
                     }
+                    return;
                 }
+                showToast(
+                    'Project created'
+                    + ' successfully!',
+                    'success',
+                );
+                navigateTo(
+                    'project-detail',
+                    { projectId },
+                );
             },
         );
 

@@ -132,26 +132,27 @@ function bindIdeaEvents(
                         estimated_cost:
                             cost,
                     });
-                    showToast(
-                        'Idea saved',
-                        'success',
-                    );
-                    const updated =
-                        await getIdeaDetail(
-                            ideaId,
-                        );
-                    mutateIdeaPage(
-                        updated,
-                        ideaId,
-                        false,
-                    );
                 } catch {
                     showToast(
                         'Failed to save'
                         + ' idea',
                         'error',
                     );
+                    return;
                 }
+                showToast(
+                    'Idea saved',
+                    'success',
+                );
+                const updated =
+                    await getIdeaDetail(
+                        ideaId,
+                    );
+                mutateIdeaPage(
+                    updated,
+                    ideaId,
+                    false,
+                );
             },
         );
 
@@ -189,24 +190,25 @@ function bindIdeaEvents(
                 await putIdea(ideaId, {
                     status: 'in-review',
                 });
-                showToast(
-                    'Submitted for review',
-                    'success',
-                );
-                const updated =
-                    await getIdeaDetail(
-                        ideaId,
-                    );
-                mutateIdeaPage(
-                    updated, ideaId,
-                    false,
-                );
             } catch {
                 showToast(
                     'Failed to submit',
                     'error',
                 );
+                return;
             }
+            showToast(
+                'Submitted for review',
+                'success',
+            );
+            const updated =
+                await getIdeaDetail(
+                    ideaId,
+                );
+            mutateIdeaPage(
+                updated, ideaId,
+                false,
+            );
         },
     );
 }
