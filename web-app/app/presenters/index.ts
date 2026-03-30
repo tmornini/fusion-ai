@@ -49,3 +49,6 @@ export {
 export {
     EngineeringPresenter,
 } from './engineering';
+export {
+    FlowDesignerPresenter,
+} from './flow-designer';
