@@ -17,10 +17,11 @@ import {
     iconZap,
     iconShield,
 } from '../icons';
-import type { User } from '../../../api/types';
-
-const AVAILABILITY_HIGH = 70;
-const AVAILABILITY_LOW = 40;
+import {
+    AVAILABILITY_HIGH,
+    AVAILABILITY_LOW,
+    type User,
+} from '../../../api/types';
 
 function styleForAvailability(
     availability: number,

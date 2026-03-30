@@ -1,9 +1,10 @@
 import type { AppState } from './state';
 import {
-    STORAGE_KEY_SIDEBAR,
     state,
     setState,
     setTheme,
+    setSidebarCollapsed
+        as persistSidebarCollapsed,
     isValidTheme,
 } from './state';
 import {
@@ -168,20 +169,13 @@ function initSidebar(): void {
     const mainContent =
         $('.main-content', document);
 
-    if (
-        localStorage.getItem(
-            STORAGE_KEY_SIDEBAR,
-        ) === 'true'
-    ) {
+    if (state.isSidebarCollapsed) {
         sidebar?.classList.add(
             'sidebar-collapsed',
         );
         mainContent?.classList.add(
             'sidebar-collapsed',
         );
-        setState({
-            isSidebarCollapsed: true,
-        });
     }
 
     function setSidebarCollapsed(
@@ -195,21 +189,7 @@ function initSidebar(): void {
         mainContent?.classList[action](
             'sidebar-collapsed',
         );
-        setState({
-            isSidebarCollapsed: collapsed,
-        });
-        try {
-            localStorage.setItem(
-                STORAGE_KEY_SIDEBAR,
-                String(collapsed),
-            );
-        } catch {
-            showToast(
-                'Failed to save'
-                + ' sidebar state.',
-                'error',
-            );
-        }
+        persistSidebarCollapsed(collapsed);
     }
 
     $('#sidebar-collapse', document)?.addEventListener(

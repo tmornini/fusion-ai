@@ -116,19 +116,15 @@ export async function getWorkflows(
     const nodeIdsByWorkflow = new Map<
         string, Set<string>
     >();
+    for (const wf of workflows) {
+        nodeIdsByWorkflow.set(
+            wf.id, new Set(),
+        );
+    }
     for (const wn of workflowNodes) {
-        const existing =
-            nodeIdsByWorkflow.get(
-                wn.workflow_id,
-            );
-        if (existing) {
-            existing.add(wn.node_id);
-        } else {
-            nodeIdsByWorkflow.set(
-                wn.workflow_id,
-                new Set([wn.node_id]),
-            );
-        }
+        nodeIdsByWorkflow
+            .get(wn.workflow_id)
+            ?.add(wn.node_id);
     }
 
     const edgeCountByWorkflow = new Map<
@@ -136,13 +132,7 @@ export async function getWorkflows(
     >();
     for (const wf of workflows) {
         const nodeIds =
-            nodeIdsByWorkflow.get(wf.id);
-        if (!nodeIds) {
-            edgeCountByWorkflow.set(
-                wf.id, 0,
-            );
-            continue;
-        }
+            nodeIdsByWorkflow.get(wf.id)!;
         let count = 0;
         for (const ne of nodeEdges) {
             if (
@@ -170,10 +160,10 @@ export async function getWorkflows(
                 ?? null,
         nodeCount:
             nodeIdsByWorkflow
-                .get(wf.id)?.size ?? 0,
+                .get(wf.id)!.size,
         edgeCount:
             edgeCountByWorkflow
-                .get(wf.id) ?? 0,
+                .get(wf.id)!,
     }));
 }
 
@@ -215,21 +205,15 @@ export async function getWorkflowsByProject(
     const nodeIdsByWorkflow = new Map<
         string, Set<string>
     >();
+    for (const wfId of workflowIds) {
+        nodeIdsByWorkflow.set(
+            wfId, new Set(),
+        );
+    }
     for (const wn of workflowNodes) {
-        if (!workflowIds.has(wn.workflow_id))
-            continue;
-        const existing =
-            nodeIdsByWorkflow.get(
-                wn.workflow_id,
-            );
-        if (existing) {
-            existing.add(wn.node_id);
-        } else {
-            nodeIdsByWorkflow.set(
-                wn.workflow_id,
-                new Set([wn.node_id]),
-            );
-        }
+        nodeIdsByWorkflow
+            .get(wn.workflow_id)
+            ?.add(wn.node_id);
     }
 
     const edgeCountByWorkflow = new Map<
@@ -237,11 +221,7 @@ export async function getWorkflowsByProject(
     >();
     for (const wfId of workflowIds) {
         const nodeIds =
-            nodeIdsByWorkflow.get(wfId);
-        if (!nodeIds) {
-            edgeCountByWorkflow.set(wfId, 0);
-            continue;
-        }
+            nodeIdsByWorkflow.get(wfId)!;
         let count = 0;
         for (const ne of nodeEdges) {
             if (
@@ -270,10 +250,10 @@ export async function getWorkflowsByProject(
             description: wf.description,
             nodeCount:
                 nodeIdsByWorkflow
-                    .get(wfId)?.size ?? 0,
+                    .get(wfId)!.size,
             edgeCount:
                 edgeCountByWorkflow
-                    .get(wfId) ?? 0,
+                    .get(wfId)!,
         });
     }
     return result;
@@ -330,33 +310,27 @@ export async function getWorkflowGraph(
     const fieldsByNodeId = new Map<
         string, GraphField[]
     >();
+    for (const nodeId of nodeIds) {
+        fieldsByNodeId.set(nodeId, []);
+    }
     for (const nf of allNodeFields) {
         if (!nodeIds.has(nf.node_id))
             continue;
         const field =
             fieldMap.get(nf.field_id);
         if (!field) continue;
-        const graphField: GraphField = {
-            id: field.id,
-            name: field.name,
-            fieldType: field.field_type,
-            sortOrder: field.sort_order,
-            isRequired:
-                toBool(field.is_required),
-            options: parseJson<string[]>(
-                field.options, [],
-            ),
-        };
-        const existing =
-            fieldsByNodeId.get(nf.node_id);
-        if (existing) {
-            existing.push(graphField);
-        } else {
-            fieldsByNodeId.set(
-                nf.node_id,
-                [graphField],
-            );
-        }
+        fieldsByNodeId.get(nf.node_id)!
+            .push({
+                id: field.id,
+                name: field.name,
+                fieldType: field.field_type,
+                sortOrder: field.sort_order,
+                isRequired:
+                    toBool(field.is_required),
+                options: parseJson<string[]>(
+                    field.options, [],
+                ),
+            });
     }
 
     const nodes: GraphNode[] = [];
@@ -364,7 +338,7 @@ export async function getWorkflowGraph(
         const node = nodeMap.get(nodeId);
         if (!node) continue;
         const fields =
-            fieldsByNodeId.get(nodeId) ?? [];
+            fieldsByNodeId.get(nodeId)!;
         fields.sort(
             (a, b) =>
                 a.sortOrder - b.sortOrder,

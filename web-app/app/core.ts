@@ -92,6 +92,70 @@ async function loadAndInitPage(
     await mod.init(getParams());
 }
 
+function handleDatabaseError(
+    err: unknown,
+): void {
+    log.error(
+        'Database initialization failed:',
+        'core',
+        err,
+    );
+    setHtml(document.body, html`<div
+        style="padding:2rem;
+            font-family:sans-serif;
+            max-width:40rem">
+        <h1 style="color:hsl(0 72% 51%)">
+            Failed to initialize database
+        </h1>
+        <pre style="background:hsl(0 100% 97%);
+            padding:1rem;
+            border-radius:0.5rem;
+            overflow:auto;
+            white-space:pre-wrap"
+>${errorMessage(err, 'Unknown database error')}</pre>
+      <p>Try clearing site data
+        and reloading.</p>
+    </div>`);
+}
+
+function handlePageLoadError(
+    pageName: string,
+    err: unknown,
+): void {
+    log.error(
+        `Page "${pageName}" failed to init:`,
+        'core',
+        err,
+    );
+    const container =
+        document.querySelector<HTMLElement>(
+            '.page-content',
+        )
+        || document.getElementById(
+            'page-root',
+        );
+    if (container) {
+        setHtml(
+            container,
+            buildErrorState(
+                errorMessage(
+                    err,
+                    'This page failed to load.',
+                ),
+                'Try Again',
+            ),
+        );
+        container
+            .querySelector(
+                '[data-retry-btn]',
+            )
+            ?.addEventListener(
+                'click',
+                () => location.reload(),
+            );
+    }
+}
+
 window.addEventListener('unhandledrejection', event => {
     const name = (event.reason as DOMException)?.name;
     if (name === 'InvalidStateError'
@@ -108,28 +172,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         hasSchema = await initDatabase();
     } catch (err) {
-        log.error(
-            'Database initialization failed:',
-            'core',
-            err,
-        );
-        setHtml(document.body, html`<div
-            style="padding:2rem;
-                font-family:sans-serif;
-                max-width:40rem">
-            <h1 style="color:hsl(0 72% 51%)">
-                Failed to initialize database
-            </h1>
-            <pre style="background:hsl(0 100% 97%);
-                padding:1rem;
-                border-radius:0.5rem;
-                overflow:auto;
-                white-space:pre-wrap"
->${errorMessage(err, 'Unknown database error')}</pre>
-      <p>Try clearing site data
-        and reloading.</p>
-    </div>`);
-    return;
+        handleDatabaseError(err);
+        return;
     }
 
     if (!hasSchema) {
@@ -165,24 +209,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadAndInitPage(pageName);
     } catch (err) {
-        log.error(
-            `Page "${pageName}" failed to init:`,
-            'core',
-            err,
-        );
-        const container = document.querySelector<HTMLElement>('.page-content')
-            || document.getElementById('page-root');
-        if (container) {
-            setHtml(container, buildErrorState(
-                errorMessage(err, 'This page failed to load.'),
-                'Try Again',
-            ));
-            container
-                .querySelector('[data-retry-btn]')
-                ?.addEventListener(
-                    'click',
-                    () => location.reload(),
-                );
-        }
+        handlePageLoadError(pageName, err);
     }
 });

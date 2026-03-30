@@ -416,15 +416,15 @@ export class Clarification {
     }
 
     answerText(): string {
-        return this.answer ?? '';
+        return this.answer!;
     }
 
     answeredByName(): string {
-        return this.answeredBy ?? '';
+        return this.answeredBy!;
     }
 
     answeredAtDate(): string {
-        return this.answeredAt ?? '';
+        return this.answeredAt!;
     }
 }
 
@@ -520,19 +520,18 @@ export class EngineeringView {
     }
 
     linkedIdeaHref(): string {
-        if (!this.idea) return '';
         return '../idea-convert/'
             + 'index.html'
             + '?ideaId='
-            + this.idea.id;
+            + this.idea!.id;
     }
 
     linkedIdeaTitle(): string {
-        return this.idea?.title ?? '';
+        return this.idea!.title;
     }
 
     linkedIdeaScore(): number {
-        return this.idea?.score ?? 0;
+        return this.idea!.score;
     }
 }
 
