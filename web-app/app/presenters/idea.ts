@@ -24,6 +24,8 @@ import {
 import type {
     Idea,
     ReadinessLevel,
+    PriorityLevel,
+    IdeaStatus,
 } from '../../../api/types';
 import {
     COST_DIVISOR,
@@ -60,44 +62,137 @@ const READINESS_ICONS: Record<
 };
 
 export class IdeaPresenter {
-    readonly #idea: Idea;
+    readonly #id: string;
+    readonly #title: string;
+    readonly #score: number;
+    readonly #priority: number;
+    readonly #status: IdeaStatus;
+    readonly #statusClassName: string;
+    readonly #statusLabel: string;
+    readonly #edgeStatusClassName: string;
+    readonly #edgeStatusLabel: string;
+    readonly #submittedBy: string;
+    readonly #submittedAt: string;
+    readonly #category: string;
+    readonly #problemStatement: string;
+    readonly #description: string;
+    readonly #proposedSolution: string;
+    readonly #expectedOutcome: string;
+    readonly #successMetrics: string;
+    readonly #durationInDays: number;
+    readonly #estimatedCost: number;
+    readonly #estimatedImpact: number;
+    readonly #scoreStyle: string;
+    readonly #needsEdgeDefinition: boolean;
+    readonly #isReviewable: boolean;
+    readonly #isConvertible: boolean;
+    readonly #isInReview: boolean;
+    readonly #isReady: boolean;
+    readonly #readiness: ReadinessLevel;
+    readonly #readinessClassName: string;
+    readonly #readinessLabel: string;
+    readonly #waitingDays: number;
+    readonly #priorityLevel: PriorityLevel;
+    readonly #scoreColor: string;
+    readonly #impactLabel: string;
+    readonly #effortLabel: string;
+    readonly #searchTitle: string;
+    readonly #searchSubmittedBy: string;
 
     constructor(idea: Idea) {
-        this.#idea = idea;
+        this.#id = idea.id;
+        this.#title = idea.title;
+        this.#score = idea.score;
+        this.#priority = idea.priority;
+        this.#status = idea.status;
+        this.#statusClassName =
+            idea.statusClassName();
+        this.#statusLabel =
+            idea.statusLabel();
+        this.#edgeStatusClassName =
+            idea.edgeStatusClassName();
+        this.#edgeStatusLabel =
+            idea.edgeStatusLabel();
+        this.#submittedBy = idea.submittedBy;
+        this.#submittedAt = idea.submittedAt;
+        this.#category = idea.category;
+        this.#problemStatement =
+            idea.problemStatement;
+        this.#description = idea.description;
+        this.#proposedSolution =
+            idea.proposedSolution;
+        this.#expectedOutcome =
+            idea.expectedOutcome;
+        this.#successMetrics =
+            idea.successMetrics;
+        this.#durationInDays =
+            idea.durationInDays();
+        this.#estimatedCost =
+            idea.estimatedCost;
+        this.#estimatedImpact =
+            idea.estimatedImpact;
+        this.#scoreStyle = idea.scoreStyle();
+        this.#needsEdgeDefinition =
+            idea.needsEdgeDefinition();
+        this.#isReviewable =
+            idea.isReviewable();
+        this.#isConvertible =
+            idea.isConvertible();
+        this.#isInReview = idea.isInReview();
+        this.#isReady = idea.isReady();
+        this.#readiness = idea.readiness;
+        this.#readinessClassName =
+            idea.readinessClassName();
+        this.#readinessLabel =
+            idea.readinessLabel();
+        this.#waitingDays = idea.waitingDays;
+        this.#priorityLevel =
+            idea.priorityLevel();
+        this.#scoreColor = idea.scoreColor();
+        this.#impactLabel = idea.impactLabel;
+        this.#effortLabel = idea.effortLabel;
+        this.#searchTitle =
+            idea.title.toLowerCase();
+        this.#searchSubmittedBy =
+            idea.submittedBy.toLowerCase();
     }
 
     idForLink(): string {
-        return this.#idea.id;
+        return this.#id;
     }
 
     prioritySortKey(): number {
-        return this.#idea.priority;
+        return this.#priority;
     }
 
     scoreSortKey(): number {
-        return this.#idea.score;
+        return this.#score;
     }
 
     isInReview(): boolean {
-        return this.#idea.isInReview();
+        return this.#isInReview;
     }
 
     matchesSearch(
         term: string,
     ): boolean {
-        return this.#idea
-            .matchesSearch(term);
+        const t = term.toLowerCase();
+        return (
+            this.#searchTitle.includes(t)
+            || this.#searchSubmittedBy
+                .includes(t)
+        );
     }
 
     isReady(): boolean {
-        return this.#idea.isReady();
+        return this.#isReady;
     }
 
     matchesPriorityFilter(
         priority: string,
     ): boolean {
         return priority === 'all'
-            || this.#idea.priorityLevel()
+            || this.#priorityLevel
                 === priority;
     }
 
@@ -105,21 +200,19 @@ export class IdeaPresenter {
         readiness: string,
     ): boolean {
         return readiness === 'all'
-            || this.#idea.readiness
+            || this.#readiness
                 === readiness;
     }
 
     waitingDays(): number {
-        return this.#idea.waitingDays;
+        return this.#waitingDays;
     }
 
     buildCard(view: string): SafeHtml {
         return html`
     <div class="card card-hover p-5"
         style="cursor:pointer"
-        data-idea-card="${
-            this.#idea.id
-        }">
+        data-idea-card="${this.#id}">
         <div class="flex items-start gap-4">
             <div class="hidden-mobile"
                 style="color:hsl(
@@ -168,25 +261,22 @@ export class IdeaPresenter {
                 + ' font-semibold'
                 + ' truncate'
             }">
-                ${this.#idea.title}
+                ${this.#title}
             </h3>
             <span class="${
                 'badge '
-                + this.#idea
-                    .statusClassName()
+                + this.#statusClassName
                 + ' text-xs'
             }">
-                ${this.#idea.statusLabel()}
+                ${this.#statusLabel}
             </span>
             <span class="${
                 'badge '
-                + this.#idea
-                    .edgeStatusClassName()
+                + this.#edgeStatusClassName
                 + ' text-xs'
             }">
                 ${iconTarget(12, '')}
-                ${this.#idea
-                    .edgeStatusLabel()}
+                ${this.#edgeStatusLabel}
             </span>
         </div>
         <div class="${
@@ -197,9 +287,7 @@ export class IdeaPresenter {
             ${view === 'priority'
                 ? html`<span>${
                     'Priority'
-                    } #${
-                    this.#idea.priority
-                    }
+                    } #${this.#priority}
                 </span><span>${
                     '\u2022'
                 }</span>`
@@ -207,8 +295,7 @@ export class IdeaPresenter {
             <span>
                 by ${
                     displayText(
-                        this.#idea
-                            .submittedBy,
+                        this.#submittedBy,
                     )
                 }
             </span>
@@ -224,9 +311,9 @@ export class IdeaPresenter {
             + '--radius-lg);'
             + 'font-weight:600;'
             + 'font-size:0.875rem;'
-        }${this.#idea.scoreStyle()}">
+        }${this.#scoreStyle}">
             ${iconStar(14, '')
-            } ${this.#idea.score}
+            } ${this.#score}
         </div>`;
     }
 
@@ -247,12 +334,9 @@ export class IdeaPresenter {
             + 'justify-'
             + 'content:'
             + 'center';
-        const days =
-            this.#idea.durationInDays();
-        const cost =
-            this.#idea.estimatedCost;
-        const impact =
-            this.#idea.estimatedImpact;
+        const days = this.#durationInDays;
+        const cost = this.#estimatedCost;
+        const impact = this.#estimatedImpact;
         return html`
         <div style="display:grid;
             grid-template-columns:
@@ -354,8 +438,7 @@ export class IdeaPresenter {
                     'btn btn-outline'
                     + ' btn-sm gap-2'
                 }"
-                data-idea-view="${
-                    this.#idea.id}">
+                data-idea-view="${this.#id}">
                 ${iconEye(16, '')}
                 <span class="${
                     'hidden-mobile'
@@ -363,8 +446,7 @@ export class IdeaPresenter {
                     View
                 </span>
             </button>
-            ${this.#idea
-                .needsEdgeDefinition()
+            ${this.#needsEdgeDefinition
                 ? html`
             <button
                 class="${
@@ -379,8 +461,7 @@ export class IdeaPresenter {
                     + 'color:hsl('
                     + 'var(--primary))'
                 }"
-                data-idea-edge="${
-                    this.#idea.id}">
+                data-idea-edge="${this.#id}">
                 ${iconTarget(16, '')}
                 <span
                     class="${
@@ -390,7 +471,7 @@ export class IdeaPresenter {
                     Define Edge
                 </span>
             </button>` : html``}
-            ${this.#idea.isReviewable()
+            ${this.#isReviewable
                 ? html`
             <button
                 class="${
@@ -405,8 +486,7 @@ export class IdeaPresenter {
                     + 'color:hsl('
                     + 'var(--warning))'
                 }"
-                data-idea-review="${
-                    this.#idea.id}">
+                data-idea-review="${this.#id}">
                 ${iconClipboardCheck(
                     16, '',
                 )}
@@ -418,7 +498,7 @@ export class IdeaPresenter {
                     Review
                 </span>
             </button>` : html``}
-            ${this.#idea.isConvertible()
+            ${this.#isConvertible
                 ? html`
             <button
                 class="${
@@ -426,7 +506,7 @@ export class IdeaPresenter {
                     + ' btn-sm gap-2'
                 }"
                 data-idea-convert="${
-                    this.#idea.id}">
+                    this.#id}">
                 ${iconArrowRight(16, '')}
                 <span
                     class="${
@@ -440,17 +520,16 @@ export class IdeaPresenter {
     }
 
     buildReviewCard(): SafeHtml {
-        const idea = this.#idea;
         const rIcon = READINESS_ICONS[
-            idea.readiness
+            this.#readiness
         ]!;
         const pd = PRIORITY_CONFIG[
-            idea.priorityLevel()
+            this.#priorityLevel
         ]!;
         return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
-        data-review-card="${idea.id}">
+        data-review-card="${this.#id}">
         <div class="flex items-start
             justify-between gap-4">
             <div style="${
@@ -469,27 +548,27 @@ export class IdeaPresenter {
                     <span class="${
                         'flex items-center'
                         + ' gap-1 text-sm '
-                        + idea
-                            .readinessClassName()
+                        + this
+                            .#readinessClassName
                     }">${
                         rIcon(16, '')
                     } ${
-                        idea.readinessLabel()
+                        this.#readinessLabel
                     }</span>
                     <span class="${
                         'badge '
-                        + idea
-                            .edgeStatusClassName()
+                        + this
+                            .#edgeStatusClassName
                         + ' text-xs'
                     }">${
                         iconTarget(12, '')
                     } ${
-                        idea.edgeStatusLabel()
+                        this.#edgeStatusLabel
                     }</span>
                 </div>
                 <h3 class="${
                     'font-semibold mb-1'
-                }">${idea.title}</h3>
+                }">${this.#title}</h3>
                 <div class="${
                     'flex items-center'
                     + ' gap-4 text-sm'
@@ -497,14 +576,14 @@ export class IdeaPresenter {
                 }">
                     <span>by ${
                         displayText(
-                            idea.submittedBy,
+                            this.#submittedBy,
                         )
                     }</span>
                     <span>${
                         '\u2022'
                     }</span>
                     <span>${
-                        idea.category
+                        this.#category
                     }</span>
                     <span>${
                         '\u2022'
@@ -513,7 +592,7 @@ export class IdeaPresenter {
                         'color:hsl('
                         + 'var(--warning))'
                     }">${
-                        idea.waitingDays
+                        this.#waitingDays
                     } days waiting</span>
                 </div>
             </div>
@@ -536,10 +615,10 @@ export class IdeaPresenter {
                                 'font-semibold'
                             }"
                                 style="${
-                                    idea
-                                    .scoreColor()
+                                    this
+                                    .#scoreColor
                                 }">${
-                                idea.score
+                                this.#score
                             }</p>
                         </div>
                         <div>
@@ -549,7 +628,8 @@ export class IdeaPresenter {
                             <p class="${
                                 'font-medium'
                             }">${
-                                idea.impactLabel
+                                this
+                                    .#impactLabel
                             }</p>
                         </div>
                         <div>
@@ -559,7 +639,8 @@ export class IdeaPresenter {
                             <p class="${
                                 'font-medium'
                             }">${
-                                idea.effortLabel
+                                this
+                                    .#effortLabel
                             }</p>
                         </div>
                     </div>
@@ -576,7 +657,6 @@ export class IdeaPresenter {
         ideaId: string,
         isEditing: boolean,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
     <div
         style="max-width:48rem;
@@ -588,7 +668,7 @@ export class IdeaPresenter {
                 Ideas
             </a>
             <span>/</span>
-            <span>${idea.title}</span>
+            <span>${this.#title}</span>
         </div>
 
         <div class="flex items-start
@@ -617,7 +697,7 @@ export class IdeaPresenter {
                                     + '-title'
                                 }"
                                 value="${
-                                    idea.title
+                                    this.#title
                                 }"
                                 style="${
                                     'font-size:'
@@ -631,23 +711,24 @@ export class IdeaPresenter {
                                     + ' font-display'
                                     + ' font-bold'
                                 }">
-                                ${idea.title}
+                                ${this.#title}
                             </h1>`}
                         <span class="badge
-                            ${idea
-                                .statusClassName()}
+                            ${this
+                                .#statusClassName}
                             text-xs">
-                            ${idea.statusLabel()}
+                            ${this
+                                .#statusLabel}
                         </span>
                         <span class="badge
-                            ${idea
-                                .edgeStatusClassName()}
+                            ${this
+                                .#edgeStatusClassName}
                             text-xs">
                             ${iconTarget(
                                 12, '',
                             )}
-                            ${idea
-                                .edgeStatusLabel()}
+                            ${this
+                                .#edgeStatusLabel}
                         </span>
                         <div style="${
                             'padding:0.25rem'
@@ -658,9 +739,9 @@ export class IdeaPresenter {
                             + 'font-weight:600;'
                             + 'font-size:'
                             + '0.875rem;'
-                        }${idea.scoreStyle()}">
+                        }${this.#scoreStyle}">
                             ${iconStar(14, '')}
-                            ${idea.score}
+                            ${this.#score}
                         </div>
                     </div>
                     <p class="${
@@ -668,7 +749,7 @@ export class IdeaPresenter {
                     }">
                         Submitted by
                         ${displayText(
-                            idea.submittedBy,
+                            this.#submittedBy,
                         )}
                     </p>
                 </div>
@@ -677,7 +758,7 @@ export class IdeaPresenter {
                 class="${
                     'flex items-center gap-2'
                 }">
-                ${idea.needsEdgeDefinition()
+                ${this.#needsEdgeDefinition
                     ? html`
                 <button
                     class="${
@@ -695,7 +776,7 @@ export class IdeaPresenter {
                     ${iconTarget(16, '')}
                     Define Edge
                 </button>` : html``}
-                ${idea.status === 'active'
+                ${this.#status === 'active'
                     ? html`
                 <button
                     class="${
@@ -711,7 +792,7 @@ export class IdeaPresenter {
                     )}
                     Submit for Review
                 </button>` : html``}
-                ${idea.isReviewable()
+                ${this.#isReviewable
                     ? html`
                 <button
                     class="${
@@ -731,7 +812,7 @@ export class IdeaPresenter {
                     )}
                     Review
                 </button>` : html``}
-                ${idea.isConvertible()
+                ${this.#isConvertible
                     ? html`
                 <button
                     class="${
@@ -803,7 +884,6 @@ export class IdeaPresenter {
     #buildProblemSolutionCard(
         isEditing: boolean,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
     <div class="card p-6">
         <h2 class="text-lg font-display
@@ -825,13 +905,13 @@ export class IdeaPresenter {
                         id="idea-edit-problem"
                         rows="3"
                         style="resize:none"
-                        >${idea
-                            .problemStatement
+                        >${this
+                            .#problemStatement
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            idea
-                                .problemStatement,
+                            this
+                                .#problemStatement,
                         )}
                         </p>`}
             </div>
@@ -850,12 +930,12 @@ export class IdeaPresenter {
                         }"
                         rows="2"
                         style="resize:none"
-                        >${idea
-                            .description
+                        >${this
+                            .#description
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            idea.description,
+                            this.#description,
                         )}
                         </p>`}
             </div>
@@ -874,13 +954,13 @@ export class IdeaPresenter {
                         }"
                         rows="3"
                         style="resize:none"
-                        >${idea
-                            .proposedSolution
+                        >${this
+                            .#proposedSolution
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            idea
-                                .proposedSolution,
+                            this
+                                .#proposedSolution,
                         )}
                         </p>`}
             </div>
@@ -899,13 +979,13 @@ export class IdeaPresenter {
                         }"
                         rows="3"
                         style="resize:none"
-                        >${idea
-                            .expectedOutcome
+                        >${this
+                            .#expectedOutcome
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            idea
-                                .expectedOutcome,
+                            this
+                                .#expectedOutcome,
                         )}
                         </p>`}
             </div>
@@ -924,13 +1004,13 @@ export class IdeaPresenter {
                         }"
                         rows="3"
                         style="resize:none"
-                        >${idea
-                            .successMetrics
+                        >${this
+                            .#successMetrics
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            idea
-                                .successMetrics,
+                            this
+                                .#successMetrics,
                         )}
                         </p>`}
             </div>
@@ -941,7 +1021,6 @@ export class IdeaPresenter {
     #buildDetailsCard(
         isEditing: boolean,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
     <div class="card p-6">
         <h2 class="text-lg font-display
@@ -963,14 +1042,14 @@ export class IdeaPresenter {
                             'idea-edit-category'
                         }"
                         value="${
-                            idea.category
+                            this.#category
                         }" />`
                     : html`<p
                         class="${
                             'text-sm font-medium'
                         }">
                         ${displayText(
-                            idea.category,
+                            this.#category,
                         )}
                     </p>`}
             </div>
@@ -984,7 +1063,7 @@ export class IdeaPresenter {
                     'text-sm font-medium'
                 }">
                     ${displayText(
-                        idea.submittedBy,
+                        this.#submittedBy,
                     )}
                 </p>
             </div>
@@ -997,9 +1076,9 @@ export class IdeaPresenter {
                 <p class="${
                     'text-sm font-medium'
                 }">
-                    ${idea.submittedAt
+                    ${this.#submittedAt
                         ? formatDate(
-                            idea.submittedAt,
+                            this.#submittedAt,
                         )
                         : displayText('')}
                 </p>
@@ -1011,7 +1090,6 @@ export class IdeaPresenter {
     #buildEstimatesCard(
         isEditing: boolean,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
     <div class="card p-6">
         <h2 class="text-lg font-display
@@ -1024,7 +1102,7 @@ export class IdeaPresenter {
                   label: 'Score',
                   inputId: 'score',
                   icon: iconStar,
-                  value: idea.score,
+                  value: this.#score,
                   unit: '',
                   prefix: '#',
               },
@@ -1033,7 +1111,7 @@ export class IdeaPresenter {
                   inputId: 'impact',
                   icon: iconTrendingUp,
                   value:
-                      idea.estimatedImpact,
+                      this.#estimatedImpact,
                   unit: ' pts',
                   prefix: '',
               },
@@ -1042,7 +1120,7 @@ export class IdeaPresenter {
                   inputId: 'duration',
                   icon: iconClock,
                   value:
-                      idea.durationInDays(),
+                      this.#durationInDays,
                   unit: 'd',
                   prefix: '',
               },
@@ -1051,7 +1129,7 @@ export class IdeaPresenter {
                   inputId: 'cost',
                   icon: iconDollarSign,
                   value:
-                      idea.estimatedCost,
+                      this.#estimatedCost,
                   unit: '',
                   prefix: '$',
               },

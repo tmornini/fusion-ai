@@ -20,22 +20,77 @@ type CrunchStep =
     | 'label'
     | 'review';
 
-interface CrunchRenderState {
-    readonly step: CrunchStep;
-    readonly columns:
-        readonly CrunchColumn[];
-    readonly expandedColumnId:
-        string | null;
-    readonly businessContext: string;
-}
-
 export class CrunchPresenter {
-    readonly #state: CrunchRenderState;
+    #step: CrunchStep;
+    #columns: CrunchColumn[];
+    #expandedColumnId: string | null;
+    #businessContext: string;
+    #mockColumns: CrunchColumn[];
 
-    constructor(
-        state: CrunchRenderState,
-    ) {
-        this.#state = state;
+    constructor() {
+        this.#step = 'upload';
+        this.#columns = [];
+        this.#expandedColumnId = null;
+        this.#businessContext = '';
+        this.#mockColumns = [];
+    }
+
+    loadMockData(
+        columns: CrunchColumn[],
+    ): void {
+        this.#mockColumns = columns;
+    }
+
+    simulateUpload(): void {
+        this.#columns =
+            this.#mockColumns
+                .map(c => ({ ...c }));
+        this.#step = 'label';
+    }
+
+    goToUpload(): void {
+        this.#step = 'upload';
+        this.#columns = [];
+    }
+
+    goToReview(): void {
+        this.#step = 'review';
+    }
+
+    goToLabel(): void {
+        this.#step = 'label';
+    }
+
+    toggleColumn(id: string): void {
+        this.#expandedColumnId =
+            this.#expandedColumnId === id
+                ? null
+                : id;
+    }
+
+    syncFields(
+        columns: CrunchColumn[],
+        context: string,
+    ): void {
+        this.#columns = columns;
+        this.#businessContext = context;
+    }
+
+    isUploadStep(): boolean {
+        return this.#step === 'upload';
+    }
+
+    isLabelStep(): boolean {
+        return this.#step === 'label';
+    }
+
+    isReviewStep(): boolean {
+        return this.#step === 'review';
+    }
+
+    currentColumns():
+        readonly CrunchColumn[] {
+        return this.#columns;
     }
 
     buildPage(): SafeHtml {
@@ -88,10 +143,10 @@ export class CrunchPresenter {
                 ${this.#buildStepIndicator()}
             </div>
 
-            ${this.#state.step === 'upload'
+            ${this.#step === 'upload'
                 ? CrunchPresenter
                     .#buildUploadStep()
-                : this.#state.step === 'label'
+                : this.#step === 'label'
                     ? this.#buildLabelStep()
                     : CrunchPresenter
                         .#buildReviewStep()}
@@ -99,7 +154,7 @@ export class CrunchPresenter {
     }
 
     completionPercent(): number {
-        const cols = this.#state.columns;
+        const cols = this.#columns;
         if (!cols.length) return 0;
         const labeledCount =
             cols.filter(
@@ -321,11 +376,11 @@ export class CrunchPresenter {
         ];
         return html`${steps.map((s, i) => {
             const isActive =
-                s.key === this.#state.step;
+                s.key === this.#step;
             const isComplete =
-                (this.#state.step === 'label'
+                (this.#step === 'label'
                     && i === 0)
-                || (this.#state.step
+                || (this.#step
                         === 'review'
                     && i <= 1);
             const activeStyle =
@@ -389,7 +444,7 @@ export class CrunchPresenter {
     #buildLabelStep(): SafeHtml {
         const percent =
             this.completionPercent();
-        const cols = this.#state.columns;
+        const cols = this.#columns;
         const labeled = cols.filter(
             column =>
                 column.friendlyName
@@ -569,8 +624,7 @@ export class CrunchPresenter {
                         + ' report...'}"
                     style="min-height:5rem;
                            resize:none"
-                >${this.#state
-                    .businessContext
+                >${this.#businessContext
                 }</textarea>
             </div>
 
@@ -585,8 +639,8 @@ export class CrunchPresenter {
                 </h3>
                 ${cols.map(column => {
                     const isExpanded =
-                        this.#state
-                            .expandedColumnId
+                        this
+                            .#expandedColumnId
                             === column.id;
                     const isLabeled =
                         column.friendlyName

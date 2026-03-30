@@ -70,10 +70,70 @@ function isKpiOnTrack(
 }
 
 export class ProjectDetailPresenter {
-    readonly #view: ProjectView;
+    readonly #title: string;
+    readonly #description: string;
+    readonly #status: string;
+    readonly #statusLabel: string;
+    readonly #statusClassName: string;
+    readonly #progress: number;
+    readonly #startDate: string;
+    readonly #targetEndDate: string;
+    readonly #projectLead: string;
+    readonly #edge: ProjectView['edge'];
+    readonly #team: ProjectView['team'];
+    readonly #milestones:
+        ProjectView['milestones'];
+    readonly #versions:
+        ProjectView['versions'];
+    readonly #discussions:
+        ProjectView['discussions'];
+    readonly #tasks: ProjectView['tasks'];
+    readonly #timeBaselineDays: number;
+    readonly #timeCurrentDays: number;
+    readonly #costBaselineK: number;
+    readonly #costCurrentK: number;
+    readonly #impactBaseline: number;
+    readonly #impactCurrent: number;
+    readonly #assignedTaskCount: number;
+    readonly #unassignedTaskCount: number;
 
     constructor(view: ProjectView) {
-        this.#view = view;
+        this.#title = view.title;
+        this.#description = view.description;
+        this.#status = view.status;
+        this.#statusLabel =
+            view.statusLabel();
+        this.#statusClassName =
+            view.statusClassName();
+        this.#progress = view.progress;
+        this.#startDate = view.startDate;
+        this.#targetEndDate =
+            view.targetEndDate;
+        this.#projectLead =
+            view.projectLead;
+        this.#edge = view.edge;
+        this.#team = view.team;
+        this.#milestones = view.milestones;
+        this.#versions = view.versions;
+        this.#discussions =
+            view.discussions;
+        this.#tasks = view.tasks;
+        this.#timeBaselineDays =
+            view.timeBaselineDays();
+        this.#timeCurrentDays =
+            view.timeCurrentDays();
+        this.#costBaselineK =
+            view.costBaselineK();
+        this.#costCurrentK =
+            view.costCurrentK();
+        this.#impactBaseline =
+            view.impactBaseline();
+        this.#impactCurrent =
+            view.impactCurrent();
+        this.#assignedTaskCount =
+            view.assignedTaskCount();
+        this.#unassignedTaskCount =
+            view.unassignedTaskCount();
     }
 
     #buildVariance(
@@ -135,7 +195,7 @@ export class ProjectDetailPresenter {
     #buildProjectSummary(
         isEditing: boolean,
     ): SafeHtml {
-        const p = this.#view;
+
         return html`
             <div class="card p-6">
                 <h2 class="${
@@ -157,13 +217,13 @@ export class ProjectDetailPresenter {
                         style="${
                             'resize:none'
                         }">${
-                            p.description
+                            this.#description
                         }</textarea>`
                     : html`<p class="${
                         'text-sm '
                         + 'text-muted mb-6'
                     }">${
-                        p.description
+                        this.#description
                     }</p>`}
                 <div style="${
                     'display:grid;'
@@ -203,8 +263,8 @@ export class ProjectDetailPresenter {
                                         + 'date'
                                     }"
                                     value="${
-                                        p
-                                            .startDate
+                                        this
+                                            .#startDate
                                     }"
                                     class="input"
                                     style="${
@@ -218,8 +278,8 @@ export class ProjectDetailPresenter {
                                         + 'medium'
                                     }">${
                                         formatDate(
-                                            p
-                                                .startDate,
+                                            this
+                                                .#startDate,
                                         )
                                     }</p>`}
                         </div>
@@ -255,8 +315,8 @@ export class ProjectDetailPresenter {
                                         + 'end-date'
                                     }"
                                     value="${
-                                        p
-                                            .targetEndDate
+                                        this
+                                            .#targetEndDate
                                     }"
                                     class="input"
                                     style="${
@@ -270,8 +330,8 @@ export class ProjectDetailPresenter {
                                         + 'medium'
                                     }">${
                                         formatDate(
-                                            p
-                                                .targetEndDate,
+                                            this
+                                                .#targetEndDate,
                                         )
                                     }</p>`}
                         </div>
@@ -295,7 +355,7 @@ export class ProjectDetailPresenter {
                                 + 'font-bold '
                                 + 'text-primary'
                             }">${
-                                p.progress
+                                this.#progress
                             }%</span>
                     </div>
                     <div class="${
@@ -305,7 +365,7 @@ export class ProjectDetailPresenter {
                             'progress-fill'
                         }"
                         style="width:${
-                            p.progress
+                            this.#progress
                         }%"
                         ></div></div>
                 </div>
@@ -315,7 +375,7 @@ export class ProjectDetailPresenter {
     #buildBaselineComparison(
         isEditing: boolean,
     ): SafeHtml {
-        const p = this.#view;
+
         return html`
             <div class="card p-6">
                 <div class="${
@@ -341,11 +401,11 @@ export class ProjectDetailPresenter {
                             inputId: 'time',
                             icon: iconClock,
                             baseline:
-                                p
-                                    .timeBaselineDays(),
+                                this
+                                    .#timeBaselineDays,
                             current:
-                                p
-                                    .timeCurrentDays(),
+                                this
+                                    .#timeCurrentDays,
                             unit: 'd',
                             prefix: '',
                             isLowerBetter: true,
@@ -355,11 +415,11 @@ export class ProjectDetailPresenter {
                             inputId: 'cost',
                             icon: iconDollarSign,
                             baseline:
-                                p
-                                    .costBaselineK(),
+                                this
+                                    .#costBaselineK,
                             current:
-                                p
-                                    .costCurrentK(),
+                                this
+                                    .#costCurrentK,
                             unit: 'k',
                             prefix: '$',
                             isLowerBetter: true,
@@ -369,11 +429,11 @@ export class ProjectDetailPresenter {
                             inputId: 'impact',
                             icon: iconTrendingUp,
                             baseline:
-                                p
-                                    .impactBaseline(),
+                                this
+                                    .#impactBaseline,
                             current:
-                                p
-                                    .impactCurrent(),
+                                this
+                                    .#impactCurrent,
                             unit: ' pts',
                             prefix: '',
                             isLowerBetter: false,
@@ -552,8 +612,8 @@ export class ProjectDetailPresenter {
     }
 
     #buildEdgeKPIs(): SafeHtml {
-        const p = this.#view;
-        if (!p.edge) {
+
+        if (!this.#edge) {
             return html`
             <div class="card p-6">
                 <p class="${
@@ -634,7 +694,7 @@ export class ProjectDetailPresenter {
                         Business Outcomes
                         &amp; Metrics
                     </h3>
-                    ${p.edge.outcomes.map(
+                    ${this.#edge.outcomes.map(
                         (outcome, oi) => html`
                         <div style="${
                             'padding:1rem;'
@@ -937,7 +997,7 @@ export class ProjectDetailPresenter {
                             <p class="${
                                 'text-xs'
                             }">
-                                ${p.edge
+                                ${this.#edge
                                     .impact
                                     .shortTerm}
                             </p>
@@ -975,7 +1035,7 @@ export class ProjectDetailPresenter {
                             <p class="${
                                 'text-xs'
                             }">
-                                ${p.edge
+                                ${this.#edge
                                     .impact
                                     .midTerm}
                             </p>
@@ -1013,7 +1073,7 @@ export class ProjectDetailPresenter {
                             <p class="${
                                 'text-xs'
                             }">
-                                ${p.edge
+                                ${this.#edge
                                     .impact
                                     .longTerm}
                             </p>
@@ -1039,7 +1099,7 @@ export class ProjectDetailPresenter {
                     <span class="${
                         'text-sm font-medium'
                     }">
-                        ${p.edge.owner}
+                        ${this.#edge.owner}
                     </span>
                 </div>
             </div>`;
@@ -1048,7 +1108,7 @@ export class ProjectDetailPresenter {
     #buildProjectTabs(
         isEditing: boolean,
     ): SafeHtml {
-        const p = this.#view;
+
         return html`
             <div class="card p-6">
                 <div class="tabs"
@@ -1097,7 +1157,7 @@ export class ProjectDetailPresenter {
                         + 'column;'
                         + 'gap:0.75rem'
                     }">
-                        ${p.tasks.map(
+                        ${this.#tasks.map(
                             task => {
                             const prioColor = (
                                 TASK_PRIORITY_CONFIG[
@@ -1275,11 +1335,11 @@ export class ProjectDetailPresenter {
                         <span class="${
                             'text-sm text-muted'
                         }">
-                            ${p
-                                .assignedTaskCount()
+                            ${this
+                                .#assignedTaskCount
                             } assigned,
-                            ${p
-                                .unassignedTaskCount()
+                            ${this
+                                .#unassignedTaskCount
                             } unassigned
                         </span>
                         <button
@@ -1395,7 +1455,7 @@ export class ProjectDetailPresenter {
                             + 'column;'
                             + 'gap:1rem'
                         }">
-                            ${p.discussions
+                            ${this.#discussions
                                 .map(
                                     discussion =>
                                         html`
@@ -1503,7 +1563,7 @@ export class ProjectDetailPresenter {
                         + 'column;'
                         + 'gap:0.75rem'
                     }">
-                        ${p.versions.map(
+                        ${this.#versions.map(
                             (version,
                                 versionIndex) =>
                                 html`
@@ -1645,7 +1705,7 @@ export class ProjectDetailPresenter {
     }
 
     #buildProjectSidebar(): SafeHtml {
-        const p = this.#view;
+
         return html`
             <div style="${
                 'display:flex;'
@@ -1678,7 +1738,7 @@ export class ProjectDetailPresenter {
                         + 'column;'
                         + 'gap:0.75rem'
                     }">
-                        ${p.team.map(
+                        ${this.#team.map(
                             teamMember => html`
                             <div
                                 class="${
@@ -1771,7 +1831,7 @@ export class ProjectDetailPresenter {
                     <div style="${
                         'position:relative'
                     }">
-                        ${p.milestones.map(
+                        ${this.#milestones.map(
                             ({
                                 status, title,
                                 date,
@@ -1788,8 +1848,8 @@ export class ProjectDetailPresenter {
                                     'padding-'
                                     + 'bottom:'
                                     + (msIndex
-                                        < p
-                                            .milestones
+                                        < this
+                                            .#milestones
                                             .length
                                             - 1
                                         ? '1rem'
@@ -1811,8 +1871,8 @@ export class ProjectDetailPresenter {
                                         )
                                     }
                                     ${msIndex
-                                        < p
-                                            .milestones
+                                        < this
+                                            .#milestones
                                             .length
                                             - 1
                                         ? html`<div
@@ -2025,7 +2085,6 @@ export class ProjectDetailPresenter {
         workflows: WorkflowListItem[],
         isEditing: boolean,
     ): SafeHtml {
-        const p = this.#view;
         const statusOptions =
                 Object.entries(
                     PROJECT_STATUS_CONFIG,
@@ -2035,8 +2094,8 @@ export class ProjectDetailPresenter {
                             value="${key}"
                             ${trusted(
                                 key
-                                    === p
-                                        .status
+                                    === this
+                                        .#status
                                     ? 'selected'
                                     : '',
                             )}>${
@@ -2062,7 +2121,7 @@ export class ProjectDetailPresenter {
                     </a>
                     <span>/</span>
                     <span>${
-                        p.title
+                        this.#title
                     }</span>
                 </div>
 
@@ -2105,8 +2164,8 @@ export class ProjectDetailPresenter {
                                             + 'title'
                                         }"
                                         value="${
-                                            p
-                                                .title
+                                            this
+                                                .#title
                                         }"
                                         style="${
                                             'font-'
@@ -2126,8 +2185,8 @@ export class ProjectDetailPresenter {
                                             + 'bold'
                                         }">
                                         ${
-                                            p
-                                                .title
+                                            this
+                                                .#title
                                         }
                                     </h1>`}
                                 ${isEditing
@@ -2151,8 +2210,8 @@ export class ProjectDetailPresenter {
                                     : html`<span
                                         class="${
                                             'badge '
-                                            + p
-                                                .statusClassName()
+                                            + this
+                                                .#statusClassName
                                             + ' text-xs'
                                         }">
                                         ${
@@ -2161,8 +2220,8 @@ export class ProjectDetailPresenter {
                                             )
                                         }
                                         ${
-                                            p
-                                                .statusLabel()
+                                            this
+                                                .#statusLabel
                                         }
                                     </span>`}
                             </div>
@@ -2171,12 +2230,12 @@ export class ProjectDetailPresenter {
                                 + 'text-muted'
                             }">
                                 Led by ${
-                                    p
-                                        .projectLead
+                                    this
+                                        .#projectLead
                                 }
                                 &#x2022; ${
-                                    p
-                                        .progress
+                                    this
+                                        .#progress
                                 }%
                                 complete
                             </p>

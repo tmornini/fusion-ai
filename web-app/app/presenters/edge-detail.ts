@@ -37,14 +37,25 @@ interface CompletionStatus {
 
 export class EdgeDetailPresenter {
     #edgeData: EdgeData;
-    readonly #idea: Idea;
+    readonly #ideaTitle: string;
+    readonly #ideaScore: number;
+    readonly #ideaProblemStatement: string;
+    readonly #ideaProposedSolution: string;
+    readonly #ideaSubmittedBy: string;
 
     constructor(
         edgeData: EdgeData,
         idea: Idea,
     ) {
         this.#edgeData = edgeData;
-        this.#idea = idea;
+        this.#ideaTitle = idea.title;
+        this.#ideaScore = idea.score;
+        this.#ideaProblemStatement =
+            idea.problemStatement;
+        this.#ideaProposedSolution =
+            idea.proposedSolution;
+        this.#ideaSubmittedBy =
+            idea.submittedBy;
     }
 
     addOutcome(
@@ -698,7 +709,6 @@ export class EdgeDetailPresenter {
     }
 
     #buildIdeaSummary(): SafeHtml {
-        const idea = this.#idea;
         return html`
             <div>
                 <div class="card p-5"
@@ -717,12 +727,14 @@ export class EdgeDetailPresenter {
                     )} Linked Idea</h3>
                     <h4 class="${
                         'font-medium mb-1'
-                    }">${idea.title}</h4>
+                    }">${
+                        this.#ideaTitle
+                    }</h4>
                     <p class="${
                         'text-xs '
                         + 'text-muted mb-4'
                     }">Score: ${
-                        idea.score
+                        this.#ideaScore
                     }</p>
                     <p class="${
                         'text-xs '
@@ -731,7 +743,8 @@ export class EdgeDetailPresenter {
                     <p class="${
                         'text-sm mb-3'
                     }">${
-                        idea.problemStatement
+                        this
+                            .#ideaProblemStatement
                     }</p>
                     <p class="${
                         'text-xs '
@@ -740,7 +753,8 @@ export class EdgeDetailPresenter {
                     <p class="${
                         'text-sm mb-3'
                     }">${
-                        idea.proposedSolution
+                        this
+                            .#ideaProposedSolution
                     }</p>
                     <div style="${
                         'padding-top:0.75rem;'
@@ -755,8 +769,8 @@ export class EdgeDetailPresenter {
                         <p class="text-sm"
                             >${
                                 displayText(
-                                    idea
-                                    .submittedBy,
+                                    this
+                                    .#ideaSubmittedBy,
                                 )
                         }</p>
                     </div>

@@ -35,34 +35,68 @@ const STATUS_ICONS: Record<
 };
 
 export class ProjectPresenter {
-    readonly #project: Project;
+    readonly #id: string;
+    readonly #title: string;
+    readonly #status: ProjectStatus;
+    readonly #statusClassName: string;
+    readonly #statusLabel: string;
+    readonly #priority: number;
+    readonly #priorityScore: number;
+    readonly #progress: number;
+    readonly #estimatedDuration: number;
+    readonly #actualDurationDays: number;
+    readonly #estimatedDurationDays: number;
+    readonly #actualCost: number;
+    readonly #actualImpact: number;
+    readonly #estimatedImpact: number;
 
     constructor(project: Project) {
-        this.#project = project;
+        this.#id = project.id;
+        this.#title = project.title;
+        this.#status = project.status;
+        this.#statusClassName =
+            project.statusClassName();
+        this.#statusLabel =
+            project.statusLabel();
+        this.#priority = project.priority;
+        this.#priorityScore =
+            project.priorityScore;
+        this.#progress = project.progress;
+        this.#estimatedDuration =
+            project.estimatedDuration;
+        this.#actualDurationDays =
+            project.actualDurationDays();
+        this.#estimatedDurationDays =
+            project.estimatedDurationDays();
+        this.#actualCost = project.actualCost;
+        this.#actualImpact =
+            project.actualImpact;
+        this.#estimatedImpact =
+            project.estimatedImpact;
     }
 
     idForLink(): string {
-        return this.#project.id;
+        return this.#id;
     }
 
     prioritySortKey(): number {
-        return this.#project.priority;
+        return this.#priority;
     }
 
     scoreSortKey(): number {
-        return this.#project.priorityScore;
+        return this.#priorityScore;
     }
 
     statusGroup(): ProjectStatus {
-        return this.#project.status;
+        return this.#status;
     }
 
     buildStatusBadge(): SafeHtml {
         const cfg = PROJECT_STATUS_CONFIG[
-            this.#project.status
+            this.#status
         ]!;
         const icon = STATUS_ICONS[
-            this.#project.status
+            this.#status
         ]!;
         return html`<span class="${
             'badge '
@@ -75,7 +109,7 @@ export class ProjectPresenter {
 
     buildCard(view: string): SafeHtml {
         const statusIcon = STATUS_ICONS[
-            this.#project.status
+            this.#status
         ]!;
         const metricBoxStyle =
             'width:2rem;height:2rem;'
@@ -88,9 +122,7 @@ export class ProjectPresenter {
         return html`
     <div class="card card-hover"
         style="padding:1.25rem"
-        data-project-card="${
-            this.#project.id
-        }">
+        data-project-card="${this.#id}">
         <div class="${
             'flex items-start gap-4'
         }">
@@ -127,21 +159,20 @@ export class ProjectPresenter {
                                 + 'text-overflow'
                                 + ':ellipsis'
                             }">${
-                                this.#project
-                                    .title
+                                this.#title
                             }</h3>
                             <span class="${
                                 'badge '
-                                + this.#project
-                                    .statusClassName()
+                                + this
+                                    .#statusClassName
                                 + ' text-xs'
                             }">${
                                 statusIcon(
                                     14, '',
                                 )
                             } ${
-                                this.#project
-                                    .statusLabel()
+                                this
+                                    .#statusLabel
                             }</span>
                         </div>
                         ${view === 'priority'
@@ -150,8 +181,7 @@ export class ProjectPresenter {
                                     'text-xs'
                                     + ' text-muted'
                                 }">Priority #${
-                                    this.#project
-                                        .priority
+                                    this.#priority
                                 }</span>`
                             : html``}
                     </div>
@@ -168,7 +198,7 @@ export class ProjectPresenter {
                         'btn btn-outline '
                         + 'btn-sm gap-2'
                     }" data-view-project="${
-                        this.#project.id
+                        this.#id
                     }">${
                         iconEye(16, '')
                     } <span class="${
@@ -182,8 +212,7 @@ export class ProjectPresenter {
     }
 
     #buildProgressRing(): SafeHtml {
-        const percent =
-            this.#project.progress;
+        const percent = this.#progress;
         const radius = 20;
         const center = 24;
         const circumference =
@@ -234,11 +263,10 @@ export class ProjectPresenter {
     #buildMetrics(
         boxStyle: string,
     ): SafeHtml {
-        const p = this.#project;
-        const cost = p.actualCost;
+        const cost = this.#actualCost;
         const impact =
-            p.actualImpact
-            || p.estimatedImpact;
+            this.#actualImpact
+            || this.#estimatedImpact;
         return html`
     <div class="${
         'project-metrics-grid'
@@ -256,13 +284,15 @@ export class ProjectPresenter {
                 <p class="${
                     'text-sm font-medium'
                 }">${
-                    p.estimatedDuration
+                    this.#estimatedDuration
                     ? html`${
-                        p.actualDurationDays()
+                        this
+                            .#actualDurationDays
                     }d <span class="${
                         'text-xs text-muted'
                     }">/ ${
-                        p.estimatedDurationDays()
+                        this
+                            .#estimatedDurationDays
                     }d</span>`
                     : html`&mdash;`
                 }</p>
@@ -330,7 +360,7 @@ export class ProjectPresenter {
                 <p class="${
                     'text-sm font-medium'
                 }">${
-                    p.priorityScore
+                    this.#priorityScore
                 }</p>
             </div>
         </div>
