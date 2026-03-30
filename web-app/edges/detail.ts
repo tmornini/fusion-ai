@@ -24,6 +24,65 @@ interface EdgePageState {
     currentIdea: Idea;
 }
 
+async function persistEdgeData(
+    ideaId: string,
+    edgeData: EdgeData,
+): Promise<void> {
+    const edge = await putEdge(
+        ideaId,
+        {
+            confidence:
+                edgeData.confidence,
+            impact_short_term:
+                edgeData.impact.shortTerm,
+            impact_mid_term:
+                edgeData.impact.midTerm,
+            impact_long_term:
+                edgeData.impact.longTerm,
+            status: 'complete',
+        },
+    );
+    await Promise.all(
+        edgeData.outcomes.map(
+            async outcome => {
+                await putEdgeOutcome(
+                    edge.id,
+                    outcome.id,
+                    {
+                        description:
+                            outcome
+                                .description,
+                    },
+                );
+                await Promise.all(
+                    outcome.metrics.map(
+                        metric =>
+                            putEdgeMetric(
+                                edge.id,
+                                outcome.id,
+                                metric.id,
+                                {
+                                    name:
+                                        metric
+                                        .name,
+                                    target:
+                                        metric
+                                        .target,
+                                    unit:
+                                        metric
+                                        .unit,
+                                    current:
+                                        metric
+                                        .current,
+                                },
+                            ),
+                    ),
+                );
+            },
+        ),
+    );
+}
+
 function buildDescriptionUpdates():
     Map<string, string> {
     const updates = new Map<string, string>();
@@ -412,82 +471,9 @@ function bindEdgeEvents(
             saveBtn.textContent =
                 'Saving...';
             try {
-                const edge = await putEdge(
+                await persistEdgeData(
                     ideaId,
-                    {
-                        confidence:
-                            state.edgeData
-                                .confidence,
-                        impact_short_term:
-                            state.edgeData
-                                .impact
-                                .shortTerm,
-                        impact_mid_term:
-                            state.edgeData
-                                .impact
-                                .midTerm,
-                        impact_long_term:
-                            state.edgeData
-                                .impact
-                                .longTerm,
-                        status:
-                            'complete',
-                    },
-                );
-                await Promise.all(
-                    state.edgeData
-                        .outcomes
-                        .map(
-                            async outcome => {
-                                await putEdgeOutcome(
-                                    edge.id,
-                                    outcome.id,
-                                    {
-                                        description:
-                                            outcome
-                                            .description,
-                                    },
-                                );
-                                await Promise
-                                    .all(
-                                    outcome
-                                        .metrics
-                                        .map(
-                                        metric =>
-                                        putEdgeMetric(
-                                            edge.id,
-                                            outcome
-                                                .id,
-                                            metric
-                                                .id,
-                                            {
-                                                name:
-                                                    metric
-                                                    .name,
-                                                target:
-                                                    metric
-                                                    .target,
-                                                unit:
-                                                    metric
-                                                    .unit,
-                                                current:
-                                                    metric
-                                                    .current,
-                                            },
-                                        ),
-                                    ),
-                                );
-                            },
-                        ),
-                );
-                showToast(
-                    'Edge data saved'
-                    + ' successfully',
-                    'success',
-                );
-                navigateTo(
-                    'approval-detail',
-                    { id: ideaId },
+                    state.edgeData,
                 );
             } catch {
                 showToast(
@@ -498,7 +484,17 @@ function bindEdgeEvents(
                 saveBtn.disabled = false;
                 saveBtn.textContent =
                     'Save & Continue';
+                return;
             }
+            showToast(
+                'Edge data saved'
+                + ' successfully',
+                'success',
+            );
+            navigateTo(
+                'approval-detail',
+                { id: ideaId },
+            );
         },
     );
 }
