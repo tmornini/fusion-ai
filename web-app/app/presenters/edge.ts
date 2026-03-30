@@ -22,15 +22,15 @@ export class EdgePresenter {
     }
 
     isComplete(): boolean {
-        return this.#edge.isComplete();
+        return this.#edge.edge.isComplete();
     }
 
     isDraft(): boolean {
-        return this.#edge.isDraft();
+        return this.#edge.edge.isDraft();
     }
 
     isMissing(): boolean {
-        return this.#edge.isMissing();
+        return this.#edge.edge.isMissing();
     }
 
     matchesFilter(
@@ -38,10 +38,12 @@ export class EdgePresenter {
         status: string,
     ): boolean {
         const matchesSearch =
-            this.#edge.matchesSearch(search);
+            this.#edge
+                .matchesSearch(search);
         const matchesStatus =
             status === 'all'
-            || this.#edge.status === status;
+            || this.#edge.edge.status
+                === status;
         return matchesSearch
             && matchesStatus;
     }
@@ -80,14 +82,16 @@ export class EdgePresenter {
     }
 
     #buildStatusIcon(): SafeHtml {
-        if (this.#edge.isComplete())
+        const edge = this.#edge.edge;
+        if (edge.isComplete())
             return iconCheckCircle2(12, '');
-        if (this.#edge.isDraft())
+        if (edge.isDraft())
             return iconClock(12, '');
         return iconAlertCircle(12, '');
     }
 
     #buildBadges(): SafeHtml {
+        const edge = this.#edge.edge;
         return html`
         <div class="${
             'flex flex-wrap '
@@ -96,24 +100,23 @@ export class EdgePresenter {
         }">
             <span class="${
                 'badge '
-                + this.#edge
-                    .statusClassName()
+                + edge.statusClassName()
                 + ' text-xs'
             }">${
                 this.#buildStatusIcon()
             } ${
-                this.#edge.statusLabel()
+                edge.statusLabel()
             }</span>
             <span
                 class="${
                     'flex items-center'
                     + ' gap-1 text-xs '
-                    + this.#edge
+                    + edge
                         .confidenceClassName()
                 }">${
                     iconShield(14, '')
                 } ${
-                    this.#edge
+                    edge
                         .confidenceLabel()
                 } Confidence</span>
         </div>`;
@@ -137,7 +140,7 @@ export class EdgePresenter {
                     iconUser(14, '')
                 } ${e.owner}</span>`
                 : html``}
-            ${!e.isMissing()
+            ${!e.edge.isMissing()
                 ? html`<span
                     class="${
                         'flex '
@@ -166,12 +169,12 @@ export class EdgePresenter {
                         : 'metrics'
                 }</span>`
                 : html``}
-            ${e.updatedAt
+            ${e.edge.updatedAt
                 ? html`<span
                     class="text-xs"
                     >Updated ${
                     formatDate(
-                        e.updatedAt,
+                        e.edge.updatedAt,
                     )
                 }</span>`
                 : html``}

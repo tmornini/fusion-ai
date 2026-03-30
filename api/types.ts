@@ -1373,7 +1373,8 @@ export class Edge {
     }
 }
 
-export class EdgeListEntry extends Edge {
+export class EdgeListEntry {
+    readonly edge: Edge;
     readonly ideaId: string;
     readonly ideaTitle: string;
     readonly outcomesCount: number;
@@ -1388,7 +1389,7 @@ export class EdgeListEntry extends Edge {
         metricsCount: number,
         owner: string,
     ) {
-        super(entity);
+        this.edge = new Edge(entity);
         this.ideaId = ideaId;
         this.ideaTitle = ideaTitle;
         this.outcomesCount = outcomesCount;
@@ -1396,7 +1397,9 @@ export class EdgeListEntry extends Edge {
         this.owner = owner;
     }
 
-    matchesSearch(term: string): boolean {
+    matchesSearch(
+        term: string,
+    ): boolean {
         const t = term.toLowerCase();
         return (
             this.ideaTitle
