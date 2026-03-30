@@ -14,7 +14,6 @@ import {
     getEdgeForApproval,
     getIdea,
     putIdea,
-    Idea,
     type EdgeData,
 } from '../app/adapters';
 import {
@@ -37,21 +36,35 @@ async function saveIdea(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const id = params?.['id'];
-    if (!id) {
+    const rawId = params?.['id'];
+    if (!rawId) {
         navigateTo('idea-review-queue');
         return;
     }
+    const id: string = rawId;
 
-    const state = {
-        isEditingIdea: false,
-    };
+    let presenter:
+        IdeaApprovalPresenter;
+    let currentEdge:
+        EdgeData | null;
 
-    function bindApprovalEvents(
-        idea: Idea,
-        edge: EdgeData | null,
-        id: string,
-    ): void {
+    function renderPage(): void {
+        const root = $(
+            '#approval-content',
+            document,
+        );
+        if (!root) return;
+        setHtml(
+            root,
+            presenter
+                .buildApprovalPage(
+                    currentEdge,
+                ),
+        );
+        bindEvents();
+    }
+
+    function bindEvents(): void {
         $(
             '#approval-approve-btn',
             document,
@@ -91,13 +104,9 @@ export async function init(
         )?.addEventListener(
             'click',
             () => {
-                state.isEditingIdea
-                    = true;
-                mutateApprovalPage(
-                    idea,
-                    edge,
-                    id,
-                );
+                presenter
+                    .setEditing(true);
+                renderPage();
             },
         );
 
@@ -107,13 +116,9 @@ export async function init(
         )?.addEventListener(
             'click',
             () => {
-                state.isEditingIdea
-                    = false;
-                mutateApprovalPage(
-                    idea,
-                    edge,
-                    id,
-                );
+                presenter
+                    .setEditing(false);
+                renderPage();
             },
         );
 
@@ -165,13 +170,13 @@ export async function init(
                         id,
                     ),
                 ]);
-                state.isEditingIdea
-                    = false;
-                mutateApprovalPage(
-                    updatedIdea,
-                    updatedEdge,
-                    id,
-                );
+                presenter =
+                    new IdeaApprovalPresenter(
+                        updatedIdea,
+                    );
+                currentEdge =
+                    updatedEdge;
+                renderPage();
             },
         );
 
@@ -241,31 +246,6 @@ export async function init(
         );
     }
 
-    function mutateApprovalPage(
-        idea: Idea,
-        edge: EdgeData | null,
-        id: string,
-    ): void {
-        const root = $(
-            '#approval-content',
-            document,
-        );
-        if (!root) return;
-        setHtml(
-            root,
-            new IdeaApprovalPresenter(idea)
-                .buildApprovalPage(
-                    edge,
-                    state.isEditingIdea,
-                ),
-        );
-        bindApprovalEvents(
-            idea,
-            edge,
-            id,
-        );
-    }
-
     const root = $(
         '#approval-content',
         document,
@@ -285,5 +265,8 @@ export async function init(
     if (!result) return;
     const [idea, edge] = result;
 
-    mutateApprovalPage(idea, edge, id);
+    presenter =
+        new IdeaApprovalPresenter(idea);
+    currentEdge = edge;
+    renderPage();
 }

@@ -52,6 +52,7 @@ type Risk = {
 };
 
 export class IdeaApprovalPresenter {
+    #isEditing = false;
     readonly #title: string;
     readonly #submittedBy: string;
     readonly #submittedAt: string;
@@ -103,10 +104,14 @@ export class IdeaApprovalPresenter {
             idea.parsedAlignments();
     }
 
+    setEditing(editing: boolean): void {
+        this.#isEditing = editing;
+    }
+
     buildApprovalPage(
         edge: EdgeData | null,
-        isEditing: boolean,
     ): SafeHtml {
+        const isEditing = this.#isEditing;
         return html`
     <div class="${
         'flex items-center'
