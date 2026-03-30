@@ -24,6 +24,7 @@ import {
 import {
     isProjectStatus,
     type ProjectStatus,
+    COST_DIVISOR,
 } from '../../api/types';
 
 function bindProjectEvents(
@@ -117,7 +118,7 @@ function bindProjectEvents(
                 estimated_duration:
                         timeBaseline * SECONDS_PER_DAY,
                 estimated_cost:
-                        costBaseline * 1000,
+                        costBaseline * COST_DIVISOR,
                 estimated_impact: impactBaseline,
             });
             showToast(

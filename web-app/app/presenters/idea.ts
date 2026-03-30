@@ -39,7 +39,10 @@ import type {
     Idea,
     ReadinessLevel,
 } from '../../../api/types';
-import { User } from '../../../api/types';
+import {
+    User,
+    COST_DIVISOR,
+} from '../../../api/types';
 import type {
     EdgeData,
     Metric,
@@ -354,7 +357,7 @@ export class IdeaPresenter {
                             ? '$'
                                 + (
                                     cost
-                                    / 1000
+                                    / COST_DIVISOR
                                 ).toFixed(0)
                                 + 'k'
                             : '\u2014'}

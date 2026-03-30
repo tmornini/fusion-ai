@@ -15,6 +15,7 @@ import {
     type Project,
     type ProjectStatus,
     PROJECT_STATUS_CONFIG,
+    COST_DIVISOR,
 } from '../../../api/types';
 
 const STATUS_ICONS: Record<
@@ -284,7 +285,7 @@ export class ProjectPresenter {
                 }">${
                     cost
                     ? '$'
-                        + (cost / 1000)
+                        + (cost / COST_DIVISOR)
                             .toFixed(0)
                         + 'k'
                     : '\u2014'

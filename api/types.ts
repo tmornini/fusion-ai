@@ -229,7 +229,9 @@ export function isTaskPriority(
     );
 }
 
+export const MS_PER_SECOND = 1000;
 export const SECONDS_PER_DAY = 86400;
+export const COST_DIVISOR = 1000;
 
 export function durationInDays(
     seconds: number,
@@ -1062,8 +1064,8 @@ export class Idea {
                     - new Date(
                         this.submittedAt,
                     ).getTime())
-                / SECONDS_PER_DAY
-                / 1000,
+                / MS_PER_SECOND
+                / SECONDS_PER_DAY,
             ))
             : 0;
         this.risks = entity.risks;

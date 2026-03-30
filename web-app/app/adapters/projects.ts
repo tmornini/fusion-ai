@@ -23,6 +23,7 @@ import {
     projectIsNotDeleted,
     durationInDays,
     nowUtc,
+    COST_DIVISOR,
 } from '../../../api/types';
 import {
     buildUserMap,
@@ -99,8 +100,6 @@ export interface DetailTask {
     readonly duration: number;
     readonly assigned: string;
 }
-
-const COST_DIVISOR = 1000;
 
 export class ProjectView {
     private readonly project: Project;
