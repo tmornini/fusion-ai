@@ -274,9 +274,13 @@ export async function init(
         return;
     }
 
+    const presenter =
+        new IdeaConversionPresenter(
+            conversionData.idea,
+        );
     state.projectDetails = {
         'project-name':
-            conversionData.idea.title,
+            presenter.defaultProjectName(),
         'project-lead': '',
         'start-date': '',
         'target-end-date': '',
@@ -286,10 +290,6 @@ export async function init(
         'success-criteria': '',
     };
 
-    const presenter =
-        new IdeaConversionPresenter(
-            conversionData.idea,
-        );
     setHtml(
         root,
         presenter.buildConversionPage(

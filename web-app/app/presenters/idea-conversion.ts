@@ -48,6 +48,10 @@ export class IdeaConversionPresenter {
         this.#idea = idea;
     }
 
+    defaultProjectName(): string {
+        return this.#idea.title;
+    }
+
     #buildLeadOptions(
         users: User[],
         selectedId: string,
