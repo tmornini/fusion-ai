@@ -9,28 +9,60 @@ import {
     iconShield,
     iconBarChart,
     iconUser,
+    iconTarget,
+    iconSearch,
 } from '../icons';
 import type {
     EdgeListEntry,
+    EdgeStatus,
 } from '../../../api/types';
 
 export class EdgePresenter {
-    readonly #edge: EdgeListEntry;
+    readonly #ideaId: string;
+    readonly #ideaTitle: string;
+    readonly #owner: string;
+    readonly #outcomesCount: number;
+    readonly #metricsCount: number;
+    readonly #status: EdgeStatus;
+    readonly #statusLabel: string;
+    readonly #statusClassName: string;
+    readonly #confidenceLabel: string;
+    readonly #confidenceClassName: string;
+    readonly #updatedAt: string;
+    readonly #isComplete: boolean;
+    readonly #isDraft: boolean;
+    readonly #isMissing: boolean;
+    readonly #searchText: string;
 
-    constructor(edge: EdgeListEntry) {
-        this.#edge = edge;
-    }
-
-    isComplete(): boolean {
-        return this.#edge.edge.isComplete();
-    }
-
-    isDraft(): boolean {
-        return this.#edge.edge.isDraft();
-    }
-
-    isMissing(): boolean {
-        return this.#edge.edge.isMissing();
+    constructor(entry: EdgeListEntry) {
+        this.#ideaId = entry.ideaId;
+        this.#ideaTitle = entry.ideaTitle;
+        this.#owner = entry.owner;
+        this.#outcomesCount =
+            entry.outcomesCount;
+        this.#metricsCount =
+            entry.metricsCount;
+        this.#status = entry.edge.status;
+        this.#statusLabel =
+            entry.edge.statusLabel();
+        this.#statusClassName =
+            entry.edge.statusClassName();
+        this.#confidenceLabel =
+            entry.edge.confidenceLabel();
+        this.#confidenceClassName =
+            entry.edge.confidenceClassName();
+        this.#updatedAt =
+            entry.edge.updatedAt;
+        this.#isComplete =
+            entry.edge.isComplete();
+        this.#isDraft =
+            entry.edge.isDraft();
+        this.#isMissing =
+            entry.edge.isMissing();
+        this.#searchText =
+            (entry.ideaTitle + ' '
+                + entry.owner)
+                .toLowerCase();
     }
 
     matchesFilter(
@@ -38,12 +70,11 @@ export class EdgePresenter {
         status: string,
     ): boolean {
         const matchesSearch =
-            this.#edge
-                .matchesSearch(search);
+            this.#searchText
+                .includes(search);
         const matchesStatus =
             status === 'all'
-            || this.#edge.edge.status
-                === status;
+            || this.#status === status;
         return matchesSearch
             && matchesStatus;
     }
@@ -52,9 +83,7 @@ export class EdgePresenter {
         return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
-        data-edge-card="${
-            this.#edge.ideaId
-        }">
+        data-edge-card="${this.#ideaId}">
         <div class="${
             'flex items-start '
             + 'justify-between gap-4'
@@ -66,7 +95,7 @@ export class EdgePresenter {
                 <h3 class="${
                     'font-semibold mb-1'
                 }">${
-                    this.#edge.ideaTitle
+                    this.#ideaTitle
                 }</h3>
                 ${this.#buildMeta()}
             </div>
@@ -82,16 +111,14 @@ export class EdgePresenter {
     }
 
     #buildStatusIcon(): SafeHtml {
-        const edge = this.#edge.edge;
-        if (edge.isComplete())
+        if (this.#isComplete)
             return iconCheckCircle2(12, '');
-        if (edge.isDraft())
+        if (this.#isDraft)
             return iconClock(12, '');
         return iconAlertCircle(12, '');
     }
 
     #buildBadges(): SafeHtml {
-        const edge = this.#edge.edge;
         return html`
         <div class="${
             'flex flex-wrap '
@@ -100,37 +127,35 @@ export class EdgePresenter {
         }">
             <span class="${
                 'badge '
-                + edge.statusClassName()
+                + this.#statusClassName
                 + ' text-xs'
             }">${
                 this.#buildStatusIcon()
             } ${
-                edge.statusLabel()
+                this.#statusLabel
             }</span>
             <span
                 class="${
                     'flex items-center'
                     + ' gap-1 text-xs '
-                    + edge
-                        .confidenceClassName()
+                    + this
+                        .#confidenceClassName
                 }">${
                     iconShield(14, '')
                 } ${
-                    edge
-                        .confidenceLabel()
+                    this.#confidenceLabel
                 } Confidence</span>
         </div>`;
     }
 
     #buildMeta(): SafeHtml {
-        const e = this.#edge;
         return html`
         <div class="${
             'flex flex-wrap '
             + 'items-center gap-3 '
             + 'text-sm text-muted'
         }">
-            ${e.owner
+            ${this.#owner
                 ? html`<span
                     class="${
                         'flex '
@@ -138,9 +163,9 @@ export class EdgePresenter {
                         + ' gap-1'
                     }">${
                     iconUser(14, '')
-                } ${e.owner}</span>`
+                } ${this.#owner}</span>`
                 : html``}
-            ${!e.edge.isMissing()
+            ${!this.#isMissing
                 ? html`<span
                     class="${
                         'flex '
@@ -149,9 +174,9 @@ export class EdgePresenter {
                     }">${
                     iconTrendingUp(14, '')
                 } ${
-                    e.outcomesCount
+                    this.#outcomesCount
                 } ${
-                    e.outcomesCount === 1
+                    this.#outcomesCount === 1
                         ? 'outcome'
                         : 'outcomes'
                 }</span><span
@@ -162,22 +187,166 @@ export class EdgePresenter {
                     }">${
                     iconBarChart(14, '')
                 } ${
-                    e.metricsCount
+                    this.#metricsCount
                 } ${
-                    e.metricsCount === 1
+                    this.#metricsCount === 1
                         ? 'metric'
                         : 'metrics'
                 }</span>`
                 : html``}
-            ${e.edge.updatedAt
+            ${this.#updatedAt
                 ? html`<span
                     class="text-xs"
                     >Updated ${
                     formatDate(
-                        e.edge.updatedAt,
+                        this.#updatedAt,
                     )
                 }</span>`
                 : html``}
         </div>`;
+    }
+}
+
+export class EdgeListPresenter {
+    readonly #edges: EdgePresenter[];
+    readonly #completeCount: number;
+    readonly #draftCount: number;
+    readonly #missingCount: number;
+    #search = '';
+    #statusFilter = 'all';
+
+    constructor(
+        entries: EdgeListEntry[],
+    ) {
+        this.#edges = entries.map(
+            e => new EdgePresenter(e),
+        );
+        let complete = 0;
+        let draft = 0;
+        let missing = 0;
+        for (const e of entries) {
+            if (e.edge.isComplete())
+                complete++;
+            else if (e.edge.isDraft())
+                draft++;
+            else missing++;
+        }
+        this.#completeCount = complete;
+        this.#draftCount = draft;
+        this.#missingCount = missing;
+    }
+
+    setSearch(query: string): void {
+        this.#search = query.toLowerCase();
+    }
+
+    setStatusFilter(
+        status: string,
+    ): void {
+        this.#statusFilter = status;
+    }
+
+    render(): {
+        stats: SafeHtml;
+        list: SafeHtml;
+        empty: SafeHtml;
+        hasResults: boolean;
+    } {
+        const filtered = this.#edges.filter(
+            e => e.matchesFilter(
+                this.#search,
+                this.#statusFilter,
+            ),
+        );
+        return {
+            stats: this.#buildStats(),
+            list: html`${filtered.map(
+                e => e.buildCard(),
+            )}`,
+            empty: this.#buildEmpty(),
+            hasResults: filtered.length > 0,
+        };
+    }
+
+    #buildStats(): SafeHtml {
+        const total = this.#edges.length;
+        return html`
+            ${EdgeListPresenter.#buildStat(
+                iconTarget(
+                    20, 'text-primary',
+                ),
+                'hsl(var(--primary)/0.1)',
+                total,
+                'Total Ideas',
+            )}
+            ${EdgeListPresenter.#buildStat(
+                iconCheckCircle2(
+                    20, 'text-success',
+                ),
+                'hsl(var(--success-soft))',
+                this.#completeCount,
+                'Complete',
+            )}
+            ${EdgeListPresenter.#buildStat(
+                iconClock(
+                    20, 'text-warning',
+                ),
+                'hsl(var(--warning-soft))',
+                this.#draftCount,
+                'In Draft',
+            )}
+            ${EdgeListPresenter.#buildStat(
+                iconAlertCircle(
+                    20, 'text-error',
+                ),
+                'hsl(var(--error-soft))',
+                this.#missingCount,
+                'Missing',
+            )}`;
+    }
+
+    static #buildStat(
+        icon: SafeHtml,
+        bgColor: string,
+        count: number,
+        label: string,
+    ): SafeHtml {
+        return html`
+            <div class="card p-4">
+                <div class="${
+                    'flex items-center '
+                    + 'gap-3'
+                }">
+                    <div class="${
+                        'p-2 rounded-lg'
+                    }"
+                        style="${
+                            'background:'
+                            + bgColor
+                        }">${icon}</div>
+                    <div>
+                        <p class="${
+                            'text-2xl '
+                            + 'font-bold'
+                        }">${count}</p>
+                        <p class="${
+                            'text-sm '
+                            + 'text-muted'
+                        }">${label}</p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    #buildEmpty(): SafeHtml {
+        return html`${
+            iconTarget(48, 'text-muted')
+        }<h3
+class="${
+    'text-lg font-semibold mt-4 mb-2'
+}">No Edge definitions found</h3>
+<p class="text-muted"
+>Try adjusting your search or filter
+criteria</p>`;
     }
 }

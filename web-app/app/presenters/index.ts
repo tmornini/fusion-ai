@@ -15,6 +15,7 @@ export {
 } from './project';
 export {
     EdgePresenter,
+    EdgeListPresenter,
 } from './edge';
 export {
     GaugePresenter,
