@@ -1182,3 +1182,171 @@ export class IdeaPresenter {
     </div>`;
     }
 }
+
+export class IdeaListPresenter {
+    readonly #ideas: IdeaPresenter[];
+    readonly #pendingReviewCount: number;
+    #view = 'priority';
+
+    constructor(ideas: Idea[]) {
+        this.#ideas = ideas.map(
+            i => new IdeaPresenter(i),
+        );
+        this.#pendingReviewCount =
+            this.#ideas.filter(
+                i => i.isInReview(),
+            ).length;
+    }
+
+    setView(view: string): void {
+        this.#view = view;
+    }
+
+    currentView(): string {
+        return this.#view;
+    }
+
+    pendingReviewCount(): number {
+        return this.#pendingReviewCount;
+    }
+
+    totalCount(): number {
+        return this.#ideas.length;
+    }
+
+    renderList(): SafeHtml {
+        const sorted =
+            this.#view === 'priority'
+                ? [...this.#ideas].sort(
+                    (a, b) =>
+                        a.prioritySortKey()
+                        - b.prioritySortKey(),
+                )
+                : [...this.#ideas].sort(
+                    (a, b) =>
+                        b.scoreSortKey()
+                        - a.scoreSortKey(),
+                );
+        return html`${sorted.map(
+            idea => idea.buildCard(
+                this.#view,
+            ),
+        )}`;
+    }
+
+    countLabel(): string {
+        const n = this.#ideas.length;
+        return `${n} `
+            + `${n === 1
+                ? 'idea' : 'ideas'}`
+            + ` \u2022 ${this.#view
+                === 'priority'
+                ? 'by priority'
+                : 'by score'}`;
+    }
+}
+
+export class ReviewQueuePresenter {
+    readonly #ideas: IdeaPresenter[];
+    readonly #totalCount: number;
+    readonly #readyCount: number;
+    readonly #highPriorityCount: number;
+    readonly #avgWaitDays: number;
+    #search = '';
+    #priorityFilter = 'all';
+    #readinessFilter = 'all';
+
+    constructor(ideas: Idea[]) {
+        this.#ideas = ideas.map(
+            i => new IdeaPresenter(i),
+        );
+        this.#totalCount =
+            this.#ideas.length;
+        this.#readyCount =
+            this.#ideas.filter(
+                i => i.isReady(),
+            ).length;
+        this.#highPriorityCount =
+            this.#ideas.filter(
+                i => i.matchesPriorityFilter(
+                    'high',
+                ),
+            ).length;
+        this.#avgWaitDays =
+            this.#ideas.length > 0
+                ? Math.round(
+                    this.#ideas.reduce(
+                        (sum, i) =>
+                            sum
+                            + i.waitingDays(),
+                        0,
+                    ) / this.#ideas.length,
+                )
+                : 0;
+    }
+
+    setSearch(query: string): void {
+        this.#search = query.toLowerCase();
+    }
+
+    setPriorityFilter(
+        priority: string,
+    ): void {
+        this.#priorityFilter = priority;
+    }
+
+    setReadinessFilter(
+        readiness: string,
+    ): void {
+        this.#readinessFilter = readiness;
+    }
+
+    stats(): {
+        total: number;
+        ready: number;
+        highPriority: number;
+        avgWait: number;
+    } {
+        return {
+            total: this.#totalCount,
+            ready: this.#readyCount,
+            highPriority:
+                this.#highPriorityCount,
+            avgWait: this.#avgWaitDays,
+        };
+    }
+
+    renderList(): SafeHtml {
+        const filtered =
+            this.#ideas.filter(
+                i =>
+                    i.matchesSearch(
+                        this.#search,
+                    )
+                    && i.matchesPriorityFilter(
+                        this.#priorityFilter,
+                    )
+                    && i.matchesReadinessFilter(
+                        this.#readinessFilter,
+                    ),
+            );
+        return html`${filtered.map(
+            i => i.buildReviewCard(),
+        )}`;
+    }
+
+    hasFilteredResults(): boolean {
+        return this.#ideas.some(
+            i =>
+                i.matchesSearch(
+                    this.#search,
+                )
+                && i.matchesPriorityFilter(
+                    this.#priorityFilter,
+                )
+                && i.matchesReadinessFilter(
+                    this.#readinessFilter,
+                ),
+        );
+    }
+}

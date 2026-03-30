@@ -26,11 +26,12 @@ import {
 } from '../app/core';
 import { getIdeas } from '../app/adapters';
 import {
-    IdeaPresenter,
+    IdeaListPresenter,
 } from '../app/presenters';
 
 export async function init(): Promise<void> {
-    const listContainer = $('#ideas-list', document);
+    const listContainer =
+        $('#ideas-list', document);
     if (!listContainer) return;
 
     const result = await withLoadingState(
@@ -60,14 +61,14 @@ export async function init(): Promise<void> {
         },
     );
     if (!result) return;
-    const ideas = result.map(
-        idea => new IdeaPresenter(idea),
-    );
-
-    let currentView = 'priority';
+    const presenter =
+        new IdeaListPresenter(result);
 
     populateIcons([
-        ['#create-btn-icon', iconPlus(16, '')],
+        [
+            '#create-btn-icon',
+            iconPlus(16, ''),
+        ],
         [
             '#create-btn-accent',
             iconWand(16, ''),
@@ -82,7 +83,8 @@ export async function init(): Promise<void> {
         ],
     ]);
 
-    const flowEl = $('#flow-indicator', document);
+    const flowEl =
+        $('#flow-indicator', document);
     if (flowEl) {
         setHtml(flowEl, html`
         ${iconLightbulb(16, 'text-primary')}
@@ -107,10 +109,8 @@ export async function init(): Promise<void> {
         )}`);
     }
 
-    const pendingReviewCount = ideas
-        .filter(
-            idea => idea.isInReview(),
-        ).length;
+    const pendingReviewCount =
+        presenter.pendingReviewCount();
     const reviewBtnEl = $(
         '#review-queue-btn', document,
     );
@@ -145,143 +145,133 @@ export async function init(): Promise<void> {
             ),
         );
 
-    function mutateList() {
-        const sorted =
-            currentView === 'priority'
-                ? [...ideas].sort(
-                    (a, b) =>
-                        a.prioritySortKey()
-                        - b.prioritySortKey(),
-                )
-                : [...ideas].sort(
-                    (a, b) =>
-                        b.scoreSortKey()
-                        - a.scoreSortKey(),
-                );
-
+    function renderList(): void {
         const list = $(
             '#ideas-list', document,
         );
         if (list)
-            setHtml(list, html`${sorted.map(
-                idea => idea.buildCard(
-                    currentView,
-                ),
-            )}`);
+            setHtml(
+                list,
+                presenter.renderList(),
+            );
 
-        const count = $('#ideas-count', document);
+        const count =
+            $('#ideas-count', document);
         if (count)
             count.textContent =
-                `${sorted.length} `
-                + `${sorted.length === 1
-                    ? 'idea' : 'ideas'}`
-                + ` \u2022 ${currentView
-                    === 'priority'
-                    ? 'by priority'
-                    : 'by score'}`;
+                presenter.countLabel();
     }
 
     initToggleGroup(
         '.view-toggle-btn',
         'data-view',
         (view) => {
-            currentView = view;
-            mutateList();
+            presenter.setView(view);
+            renderList();
         },
     );
 
-    $('#ideas-list', document)?.addEventListener(
-        'click',
-        (e) => {
-            if (
-                !(e.target
-                    instanceof Element)
-            ) return;
-            const actionButton =
-                e.target
-                    .closest<HTMLElement>(
-                    '[data-idea-view],'
-                    + ' [data-idea-edge],'
-                    + ' [data-idea-review],'
-                    + ' [data-idea-convert]',
-                );
-            if (actionButton) {
+    $('#ideas-list', document)
+        ?.addEventListener(
+            'click',
+            (e) => {
                 if (
-                    actionButton
-                        .hasAttribute(
-                        'data-idea-view',
+                    !(e.target
+                        instanceof Element)
+                ) return;
+                const actionButton =
+                    e.target
+                        .closest<HTMLElement>(
+                        '[data-idea-view],'
+                        + ' [data-idea-edge],'
+                        + ' [data-idea-review],'
+                        + ' [data-idea-convert]',
+                    );
+                if (actionButton) {
+                    if (
+                        actionButton
+                            .hasAttribute(
+                            'data-idea-view',
+                        )
                     )
-                )
+                        navigateTo(
+                            'idea-detail',
+                            {
+                                ideaId: attr(
+                                    actionButton,
+                                    'data-idea'
+                                    + '-view',
+                                ),
+                            },
+                        );
+                    else if (
+                        actionButton
+                            .hasAttribute(
+                            'data-idea-edge',
+                        )
+                    )
+                        navigateTo(
+                            'edge-detail',
+                            {
+                                ideaId: attr(
+                                    actionButton,
+                                    'data-idea'
+                                    + '-edge',
+                                ),
+                            },
+                        );
+                    else if (
+                        actionButton
+                            .hasAttribute(
+                            'data-idea-review',
+                        )
+                    )
+                        navigateTo(
+                            'approval-detail',
+                            {
+                                id: attr(
+                                    actionButton,
+                                    'data-idea'
+                                    + '-review',
+                                ),
+                            },
+                        );
+                    else if (
+                        actionButton
+                            .hasAttribute(
+                            'data-idea-convert',
+                        )
+                    )
+                        navigateTo(
+                            'idea-convert',
+                            {
+                                ideaId: attr(
+                                    actionButton,
+                                    'data-idea'
+                                    + '-convert',
+                                ),
+                            },
+                        );
+                    return;
+                }
+                const card =
+                    e.target
+                        .closest<HTMLElement>(
+                            '[data-idea-card]',
+                        );
+                if (card)
                     navigateTo(
                         'idea-detail',
                         {
                             ideaId: attr(
-                                actionButton,
-                                'data-idea-view',
+                                card,
+                                'data-idea'
+                                + '-card',
                             ),
                         },
                     );
-                else if (
-                    actionButton
-                        .hasAttribute(
-                        'data-idea-edge',
-                    )
-                )
-                    navigateTo('edge-detail', {
-                        ideaId: attr(
-                            actionButton,
-                            'data-idea-edge',
-                        ),
-                    });
-                else if (
-                    actionButton
-                        .hasAttribute(
-                        'data-idea-review',
-                    )
-                )
-                    navigateTo(
-                        'approval-detail',
-                        {
-                            id: attr(
-                                actionButton,
-                                'data-idea-review',
-                            ),
-                        },
-                    );
-                else if (
-                    actionButton
-                        .hasAttribute(
-                        'data-idea-convert',
-                    )
-                )
-                    navigateTo(
-                        'idea-convert',
-                        {
-                            ideaId: attr(
-                                actionButton,
-                                'data-idea-convert',
-                            ),
-                        },
-                    );
-                return;
-            }
-            const card =
-                e.target
-                    .closest<HTMLElement>(
-                        '[data-idea-card]',
-                    );
-            if (card)
-                navigateTo(
-                    'idea-detail',
-                    {
-                        ideaId: attr(
-                            card,
-                            'data-idea-card',
-                        ),
-                    },
-                );
-        },
-    );
+            },
+        );
 
-    mutateList();
+    renderList();
 }

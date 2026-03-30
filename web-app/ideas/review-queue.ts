@@ -18,9 +18,11 @@ import {
     iconClipboardCheck,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
-import { getReviewQueue } from '../app/adapters';
 import {
-    IdeaPresenter,
+    getReviewQueue,
+} from '../app/adapters';
+import {
+    ReviewQueuePresenter,
 } from '../app/presenters';
 
 export async function init(): Promise<void> {
@@ -46,28 +48,9 @@ export async function init(): Promise<void> {
         },
     );
     if (!result) return;
-    const allIdeas = result.map(
-        i => new IdeaPresenter(i),
-    );
-
-    const stats = {
-        total: allIdeas.length,
-        ready: allIdeas.filter(
-            i => i.isReady(),
-        ).length,
-        highPriority: allIdeas.filter(
-            i => i.matchesPriorityFilter(
-                'high',
-            ),
-        ).length,
-        avgWait: Math.round(
-            allIdeas.reduce(
-                (sum, i) =>
-                    sum + i.waitingDays(),
-                0,
-            ) / allIdeas.length,
-        ),
-    };
+    const presenter =
+        new ReviewQueuePresenter(result);
+    const stats = presenter.stats();
 
     setHtml(root, html`
     <div class="${
@@ -256,9 +239,6 @@ export async function init(): Promise<void> {
             + 'flex-direction:column;'
             + 'gap:0.75rem'
         }">
-        ${allIdeas.map(
-            i => i.buildReviewCard(),
-        )}
     </div>
     <div id="review-queue-empty"
         class="text-center"
@@ -277,53 +257,26 @@ export async function init(): Promise<void> {
         }</p>
     </div>`);
 
-    function mutateFilteredList() {
-        const search =
-            $input(
-                '#review-queue-search',
-                document,
-            )!.value.toLowerCase();
-        const priority =
-            $select(
-                '#review-queue-priority-filter',
-                document,
-            )!.value;
-        const readiness =
-            $select(
-                '#review-queue-readiness-filter',
-                document,
-            )!.value;
-
-        const filtered = allIdeas.filter(
-            i =>
-                i.matchesSearch(search)
-                && i.matchesPriorityFilter(
-                    priority,
-                )
-                && i.matchesReadinessFilter(
-                    readiness,
-                ),
-        );
-
+    function renderList(): void {
         const list = $(
             '#review-queue-list', document,
         );
         const empty = $(
             '#review-queue-empty', document,
         );
+        const hasResults =
+            presenter.hasFilteredResults();
         if (list)
             setHtml(
                 list,
-                html`${filtered.map(
-                    i => i.buildReviewCard(),
-                )}`,
+                presenter.renderList(),
             );
         if (list)
             list.style.display =
-                filtered.length ? '' : 'none';
+                hasResults ? '' : 'none';
         if (empty)
             empty.style.display =
-                filtered.length
+                hasResults
                     ? 'none' : '';
     }
 
@@ -346,7 +299,8 @@ export async function init(): Promise<void> {
                         {
                             id: attr(
                                 card,
-                                'data-review-card',
+                                'data-review'
+                                + '-card',
                             ),
                         },
                     );
@@ -356,19 +310,48 @@ export async function init(): Promise<void> {
     $('#review-queue-search', document)
         ?.addEventListener(
             'input',
-            mutateFilteredList,
+            () => {
+                presenter.setSearch(
+                    $input(
+                        '#review-queue'
+                        + '-search',
+                        document,
+                    )!.value,
+                );
+                renderList();
+            },
         );
     $(
-        '#review-queue-priority-filter', document,
+        '#review-queue-priority-filter',
+        document,
     )?.addEventListener(
         'change',
-        mutateFilteredList,
+        () => {
+            presenter.setPriorityFilter(
+                $select(
+                    '#review-queue'
+                    + '-priority-filter',
+                    document,
+                )!.value,
+            );
+            renderList();
+        },
     );
     $(
-        '#review-queue-readiness-filter', document,
+        '#review-queue-readiness-filter',
+        document,
     )?.addEventListener(
         'change',
-        mutateFilteredList,
+        () => {
+            presenter.setReadinessFilter(
+                $select(
+                    '#review-queue'
+                    + '-readiness-filter',
+                    document,
+                )!.value,
+            );
+            renderList();
+        },
     );
-    mutateFilteredList();
+    renderList();
 }

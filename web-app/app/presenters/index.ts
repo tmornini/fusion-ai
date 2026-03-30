@@ -1,5 +1,7 @@
 export {
     IdeaPresenter,
+    IdeaListPresenter,
+    ReviewQueuePresenter,
 } from './idea';
 export {
     IdeaApprovalPresenter,
@@ -15,6 +17,7 @@ export type {
 } from './idea-conversion';
 export {
     ProjectPresenter,
+    ProjectListPresenter,
 } from './project';
 export {
     EdgePresenter,

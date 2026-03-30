@@ -367,3 +367,76 @@ export class ProjectPresenter {
     </div>`;
     }
 }
+
+export class ProjectListPresenter {
+    readonly #projects: ProjectPresenter[];
+    readonly #statusBadges: SafeHtml;
+    #view: 'priority' | 'performance' =
+        'priority';
+
+    constructor(projects: Project[]) {
+        this.#projects = projects.map(
+            p => new ProjectPresenter(p),
+        );
+        const groups = Object.groupBy(
+            this.#projects,
+            p => p.statusGroup(),
+        );
+        const badges =
+            Object.values(groups)
+                .filter(
+                    items =>
+                        items
+                        && items.length > 0,
+                )
+                .map(items =>
+                    items![0]!
+                        .buildStatusBadge(),
+                );
+        this.#statusBadges =
+            html`${badges}`;
+    }
+
+    setView(
+        view: 'priority' | 'performance',
+    ): void {
+        this.#view = view;
+    }
+
+    currentView():
+        'priority' | 'performance' {
+        return this.#view;
+    }
+
+    renderStatusBadges(): SafeHtml {
+        return this.#statusBadges;
+    }
+
+    renderList(): SafeHtml {
+        const sorted =
+            [...this.#projects].sort(
+                (a, b) =>
+                    this.#view === 'priority'
+                        ? a.prioritySortKey()
+                            - b.prioritySortKey()
+                        : b.scoreSortKey()
+                            - a.scoreSortKey(),
+            );
+        return html`${sorted.map(
+            p => p.buildCard(this.#view),
+        )}`;
+    }
+
+    countLabel(): string {
+        const n = this.#projects.length;
+        return n
+            + ' '
+            + (n === 1
+                ? 'project'
+                : 'projects')
+            + ' \u2022 '
+            + (this.#view === 'priority'
+                ? 'by priority'
+                : 'by score');
+    }
+}

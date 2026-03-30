@@ -5,8 +5,8 @@ import {
     initToggleGroup,
 } from '../app/dom';
 import {
-    html,
     setHtml,
+    html,
 } from '../app/safe-html';
 import {
     buildSkeleton,
@@ -20,7 +20,7 @@ import {
 import { navigateTo } from '../app/core';
 import { getProjects } from '../app/adapters';
 import {
-    ProjectPresenter,
+    ProjectListPresenter,
 } from '../app/presenters';
 
 export async function init(): Promise<void> {
@@ -48,13 +48,8 @@ export async function init(): Promise<void> {
         },
     );
     if (!result) return;
-    const projects = result.map(
-        p => new ProjectPresenter(p),
-    );
-
-    let currentView:
-        | 'priority'
-        | 'performance' = 'priority';
+    const presenter =
+        new ProjectListPresenter(result);
 
     populateIcons([
         [
@@ -67,66 +62,30 @@ export async function init(): Promise<void> {
         ],
     ]);
 
-    const statusGroups = Object.groupBy(
-        projects,
-        p => p.statusGroup(),
-    );
     const badgesEl = $(
         '#status-badges', document,
     );
     if (badgesEl) {
-        const badgeFragments =
-            Object.values(statusGroups)
-                .filter(
-                    items =>
-                        items
-                        && items.length > 0,
-                )
-                .map(items => {
-                    const first = items![0]!;
-                    return html`${
-                        first.buildStatusBadge()
-                    }`;
-                });
         setHtml(
             badgesEl,
-            html`${badgeFragments}`,
+            presenter.renderStatusBadges(),
         );
     }
 
-    function mutateList(): void {
+    function renderList(): void {
         const container =
             $('#projects-list', document);
-        const sorted = [...projects].sort(
-            (a, b) =>
-                currentView === 'priority'
-                    ? a.prioritySortKey()
-                        - b.prioritySortKey()
-                    : b.scoreSortKey()
-                        - a.scoreSortKey(),
-        );
         if (container) {
             setHtml(
                 container,
-                html`${sorted.map(
-                    p => p.buildCard(
-                        currentView,
-                    ),
-                )}`,
+                presenter.renderList(),
             );
         }
-        const info = $('#projects-info', document);
+        const info =
+            $('#projects-info', document);
         if (info) {
             info.textContent =
-                projects.length
-                + ' '
-                + (projects.length === 1
-                    ? 'project'
-                    : 'projects')
-                + ' \u2022 '
-                + (currentView === 'priority'
-                    ? 'by priority'
-                    : 'by score');
+                presenter.countLabel();
         }
     }
 
@@ -134,7 +93,8 @@ export async function init(): Promise<void> {
         'click',
         (e) => {
             if (
-                !(e.target instanceof Element)
+                !(e.target
+                    instanceof Element)
             ) return;
             const viewBtn =
                 e.target
@@ -148,7 +108,8 @@ export async function init(): Promise<void> {
                     {
                         projectId: attr(
                             viewBtn,
-                            'data-view-project',
+                            'data-view'
+                            + '-project',
                         ),
                     },
                 );
@@ -165,7 +126,8 @@ export async function init(): Promise<void> {
                     {
                         projectId: attr(
                             card,
-                            'data-project-card',
+                            'data-project'
+                            + '-card',
                         ),
                     },
                 );
@@ -176,12 +138,14 @@ export async function init(): Promise<void> {
         '.view-toggle-btn',
         'data-view',
         (view) => {
-            currentView = view as
-                | 'priority'
-                | 'performance';
-            mutateList();
+            presenter.setView(
+                view as
+                    | 'priority'
+                    | 'performance',
+            );
+            renderList();
         },
     );
 
-    mutateList();
+    renderList();
 }
