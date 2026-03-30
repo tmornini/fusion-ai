@@ -10,6 +10,7 @@ import {
     iconCalendar, iconTrendingUp,
     iconExternalLink,
 } from '../icons';
+import { formatDate } from '../core';
 import type { Account } from '../adapters';
 
 export class AccountPresenter {
@@ -19,9 +20,10 @@ export class AccountPresenter {
         this.#account = account;
     }
 
-    buildPage(
-        billingDate: string,
-    ): SafeHtml {
+    buildPage(): SafeHtml {
+        const billingDate = formatDate(
+            this.#account.nextBilling,
+        );
         const a = this.#account;
         return html`
     <div style="max-width:64rem;margin:0 auto">

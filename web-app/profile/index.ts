@@ -1,11 +1,11 @@
 import {
     $,
-    $input,
-    $select,
-    $textarea,
     populateIcons,
     attr,
 } from '../app/dom';
+import {
+    ProfilePresenter,
+} from '../app/presenters';
 import {
     html,
     setHtml,
@@ -85,9 +85,11 @@ export async function init(): Promise<void> {
         return;
     }
 
-    for (const s of profile.strengths) {
-        selectedStrengths.add(s);
-    }
+    const presenter =
+        new ProfilePresenter(profile);
+    presenter.initStrengths(
+        selectedStrengths,
+    );
 
     populateIcons([
         [
@@ -124,42 +126,28 @@ export async function init(): Promise<void> {
         ],
     ]);
 
-    const avatarInitials = $(
-        '#profile-avatar-initials', document,
-    );
-    if (avatarInitials) {
-        avatarInitials.textContent =
-            profile.firstName.charAt(0)
-            + profile.lastName.charAt(0);
-    }
-    const firstName = $input(
+    presenter.populateForm();
+    const firstName = $(
         '#profile-first-name', document,
-    )!;
-    firstName.value = profile.firstName;
-    const lastName = $input(
+    )! as HTMLInputElement;
+    const lastName = $(
         '#profile-last-name', document,
-    )!;
-    lastName.value = profile.lastName;
-    const email = $input(
+    )! as HTMLInputElement;
+    const email = $(
         '#profile-email', document,
-    )!;
-    email.value = profile.email;
-    const phone = $input(
+    )! as HTMLInputElement;
+    const phone = $(
         '#profile-phone', document,
-    )!;
-    phone.value = profile.phone;
-    const role = $input(
+    )! as HTMLInputElement;
+    const role = $(
         '#profile-role', document,
-    )!;
-    role.value = profile.role;
-    const department = $select(
+    )! as HTMLInputElement;
+    const department = $(
         '#profile-department', document,
-    )!;
-    department.value = profile.department;
-    const bio = $textarea(
+    )! as HTMLSelectElement;
+    const bio = $(
         '#profile-bio', document,
-    )!;
-    bio.value = profile.bio;
+    )! as HTMLTextAreaElement;
     const strengthsContainer = $(
         '#profile-strengths', document,
     );

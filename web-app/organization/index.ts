@@ -4,7 +4,7 @@ import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
 import {
-    navigateTo, formatDate,
+    navigateTo,
 } from '../app/core';
 import {
     getAccount,
@@ -47,14 +47,11 @@ export async function init(): Promise<void> {
         return;
     }
 
-    const billingDate = formatDate(
-        account.nextBilling,
-    );
     const presenter =
         new AccountPresenter(account);
     setHtml(
         container,
-        presenter.buildPage(billingDate),
+        presenter.buildPage(),
     );
 
     $$('[data-nav-to]', document).forEach(

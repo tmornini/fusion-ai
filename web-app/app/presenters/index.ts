@@ -40,3 +40,9 @@ export {
 export {
     AccountPresenter,
 } from './account';
+export {
+    ProfilePresenter,
+} from './profile';
+export {
+    SettingsPresenter,
+} from './settings';
