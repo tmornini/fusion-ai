@@ -156,8 +156,8 @@ export async function getReviewQueue(
 
 export interface ConversionData {
     idea: Idea;
-    estimatedDuration: string;
-    estimatedCost: string;
+    estimatedDuration: string | null;
+    estimatedCost: string | null;
 }
 
 export async function getIdeaForConversion(
@@ -193,10 +193,10 @@ export async function getIdeaForConversion(
         ),
         estimatedDuration:
             scoreRow?.estimated_duration
-                ?? '',
+                ?? null,
         estimatedCost:
             scoreRow?.estimated_cost
-                ?? '',
+                ?? null,
     };
 }
 

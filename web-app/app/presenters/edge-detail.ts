@@ -790,9 +790,7 @@ export class EdgeDetailPresenter {
                                     + '?'
                                 }"
                                 value="${
-                                    ed
-                                        .owner
-                                        ?? ''
+                                    ed.owner
                                 }" />
                         </div>
                     </div>

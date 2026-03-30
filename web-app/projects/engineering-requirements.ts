@@ -150,8 +150,7 @@ function buildClarification(
                         }">
                             ${formatDate(
                                 clarification
-                                    .answeredAt
-                                    ?? '',
+                                    .answeredAt!,
                             )}
                         </span>
                     </div>

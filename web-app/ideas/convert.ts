@@ -294,9 +294,11 @@ export async function init(
         root,
         presenter.buildConversionPage(
             conversionData
-                .estimatedDuration,
+                .estimatedDuration
+                ?? '',
             conversionData
-                .estimatedCost,
+                .estimatedCost
+                ?? '',
             users,
             buildFormState(),
         ),

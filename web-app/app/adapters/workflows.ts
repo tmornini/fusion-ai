@@ -36,7 +36,7 @@ export interface WorkflowListItem {
 
 export interface WorkflowSummary
     extends WorkflowListItem {
-    projectName: string;
+    projectName: string | null;
 }
 
 export interface GraphField {
@@ -102,14 +102,14 @@ export async function getWorkflows(
     );
 
     const projectByWorkflow = new Map<
-        string, string
+        string, string | null
     >();
     for (const pw of projectWorkflows) {
         projectByWorkflow.set(
             pw.workflow_id,
             projectMap.get(
                 pw.project_id,
-            ) ?? '',
+            ) ?? null,
         );
     }
 
@@ -167,7 +167,7 @@ export async function getWorkflows(
         description: wf.description,
         projectName:
             projectByWorkflow.get(wf.id)
-                ?? '',
+                ?? null,
         nodeCount:
             nodeIdsByWorkflow
                 .get(wf.id)?.size ?? 0,

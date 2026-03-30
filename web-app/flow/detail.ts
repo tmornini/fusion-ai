@@ -1079,8 +1079,8 @@ export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
     const workflowId =
-        params?.workflowId ?? '';
-    if (workflowId.length === 0) {
+        params?.workflowId;
+    if (!workflowId) {
         navigateTo('flow');
         return;
     }
