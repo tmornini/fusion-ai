@@ -26,8 +26,8 @@ import {
     type ConversionData,
 } from '../app/adapters';
 import {
-    IdeaPresenter,
-} from '../app/presenters/idea';
+    IdeaConversionPresenter,
+} from '../app/presenters/idea-conversion';
 
 type PriorityRank =
     | 'critical'
@@ -233,7 +233,7 @@ function buildFormState(
 
 type ConversionFormState =
     import(
-        '../app/presenters/idea'
+        '../app/presenters/idea-conversion'
     ).ConversionFormState;
 
 export async function init(
@@ -287,7 +287,7 @@ export async function init(
     };
 
     const presenter =
-        new IdeaPresenter(
+        new IdeaConversionPresenter(
             conversionData.idea,
         );
     setHtml(

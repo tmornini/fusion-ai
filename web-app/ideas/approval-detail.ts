@@ -18,8 +18,8 @@ import {
     type EdgeData,
 } from '../app/adapters';
 import {
-    IdeaPresenter,
-} from '../app/presenters/idea';
+    IdeaApprovalPresenter,
+} from '../app/presenters/idea-approval';
 
 async function saveIdea(
     id: string,
@@ -253,7 +253,7 @@ export async function init(
         if (!root) return;
         setHtml(
             root,
-            new IdeaPresenter(idea)
+            new IdeaApprovalPresenter(idea)
                 .buildApprovalPage(
                     edge,
                     state.isEditingIdea,
