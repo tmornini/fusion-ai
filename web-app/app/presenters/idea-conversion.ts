@@ -41,30 +41,54 @@ export interface ConversionFormState {
     >;
 }
 
+interface LeadOption {
+    readonly id: string;
+    readonly fullName: string;
+    readonly role: string;
+}
+
 export class IdeaConversionPresenter {
-    readonly #idea: Idea;
+    readonly #title: string;
+    readonly #problemStatement: string;
+    readonly #proposedSolution: string;
+    readonly #expectedOutcome: string;
+    readonly #score: number;
 
     constructor(idea: Idea) {
-        this.#idea = idea;
+        this.#title = idea.title;
+        this.#problemStatement =
+            idea.problemStatement;
+        this.#proposedSolution =
+            idea.proposedSolution;
+        this.#expectedOutcome =
+            idea.expectedOutcome;
+        this.#score = idea.score;
     }
 
     defaultProjectName(): string {
-        return this.#idea.title;
+        return this.#title;
     }
 
     #buildLeadOptions(
         users: User[],
         selectedId: string,
     ): SafeHtml[] {
-        return users
-            .filter(u => u.isActive())
-            .map(u => html`<option
-                value="${u.id}" ${
-                    u.id === selectedId
+        const options: LeadOption[] =
+            users
+                .filter(u => u.isActive())
+                .map(u => ({
+                    id: u.id,
+                    fullName: u.fullName(),
+                    role: u.role,
+                }));
+        return options
+            .map(o => html`<option
+                value="${o.id}" ${
+                    o.id === selectedId
                         ? 'selected'
                         : ''
-                }>${u.fullName()} -
-                ${u.role}</option>`);
+                }>${o.fullName} -
+                ${o.role}</option>`);
     }
 
     buildConversionPage(
@@ -196,7 +220,6 @@ export class IdeaConversionPresenter {
         estimatedDuration: string,
         estimatedCost: string,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
             <div>
                 <div class="card p-6"
@@ -221,7 +244,7 @@ export class IdeaConversionPresenter {
                         + ' font-bold'
                         + ' mb-4'
                     }">${
-                        idea.title
+                        this.#title
                     }</h2>
                     <div style=${
                         'display:flex;'
@@ -243,8 +266,8 @@ export class IdeaConversionPresenter {
                             <p class="${
                                 'text-sm'
                             }">${
-                                idea
-                                .problemStatement
+                                this
+                                .#problemStatement
                             }</p>
                         </div>
                         <div>
@@ -259,8 +282,8 @@ export class IdeaConversionPresenter {
                             <p class="${
                                 'text-sm'
                             }">${
-                                idea
-                                .proposedSolution
+                                this
+                                .#proposedSolution
                             }</p>
                         </div>
                         <div>
@@ -276,8 +299,8 @@ export class IdeaConversionPresenter {
                             <p class="${
                                 'text-sm'
                             }">${
-                                idea
-                                .expectedOutcome
+                                this
+                                .#expectedOutcome
                             }</p>
                         </div>
                     </div>
@@ -372,7 +395,7 @@ export class IdeaConversionPresenter {
                                     + '--success'
                                     + '))'
                                 }>
-                                ${idea.score
+                                ${this.#score
                                 }/100
                             </span>
                         </div>

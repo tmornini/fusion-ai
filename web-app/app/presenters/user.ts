@@ -99,26 +99,65 @@ const ROLE_LABELS: Record<
 };
 
 export class UserPresenter {
-    readonly #user: User;
+    readonly #id: string;
+    readonly #fullName: string;
+    readonly #email: string;
+    readonly #role: string;
+    readonly #department: string;
+    readonly #status: string;
+    readonly #availability: number;
+    readonly #performanceScore: number;
+    readonly #projectsCompleted: number;
+    readonly #currentProjects: number;
+    readonly #lastActive: string;
+    readonly #isActive: boolean;
+    readonly #isPending: boolean;
+    readonly #isDeactivated: boolean;
+    readonly #strengths:
+        readonly string[];
+    readonly #teamDimensions:
+        Record<string, number>;
 
     constructor(user: User) {
-        this.#user = user;
+        this.#id = user.id;
+        this.#fullName = user.fullName();
+        this.#email = user.email;
+        this.#role = user.role;
+        this.#department = user.department;
+        this.#status = user.status;
+        this.#availability =
+            user.availability;
+        this.#performanceScore =
+            user.performanceScore;
+        this.#projectsCompleted =
+            user.projectsCompleted;
+        this.#currentProjects =
+            user.currentProjects;
+        this.#lastActive = user.lastActive;
+        this.#isActive = user.isActive();
+        this.#isPending = user.isPending();
+        this.#isDeactivated =
+            user.isDeactivated();
+        this.#strengths =
+            user.parsedStrengths();
+        this.#teamDimensions =
+            user.parsedTeamDimensions();
     }
 
     idForLink(): string {
-        return this.#user.id;
+        return this.#id;
     }
 
     matchesSearch(
         query: string,
     ): boolean {
-        return this.#user.fullName()
+        return this.#fullName
             .toLowerCase()
             .includes(query)
-            || this.#user.role
+            || this.#role
                 .toLowerCase()
                 .includes(query)
-            || this.#user.department
+            || this.#department
                 .toLowerCase()
                 .includes(query);
     }
@@ -126,10 +165,10 @@ export class UserPresenter {
     matchesUserSearch(
         query: string,
     ): boolean {
-        return this.#user.fullName()
+        return this.#fullName
             .toLowerCase()
             .includes(query)
-            || this.#user.email
+            || this.#email
                 .toLowerCase()
                 .includes(query);
     }
@@ -138,22 +177,21 @@ export class UserPresenter {
         role: string,
     ): boolean {
         return role === 'all'
-            || this.#user.role === role;
+            || this.#role === role;
     }
 
     matchesStatusFilter(
         status: string,
     ): boolean {
         return status === 'all'
-            || this.#user.status === status;
+            || this.#status === status;
     }
 
     buildMemberCard(
         selectedId: string | null,
     ): SafeHtml {
-        const u = this.#user;
         const cardStyle =
-            selectedId === u.id
+            selectedId === this.#id
                 ? 'box-shadow:0 0 0 2px'
                   + ' hsl(var(--primary))'
                 : '';
@@ -162,7 +200,7 @@ export class UserPresenter {
         class="card card-hover"
         style="padding:1.25rem;
             cursor:pointer;${cardStyle}"
-        data-member-card="${u.id}"
+        data-member-card="${this.#id}"
     >
         <div class="flex items-start gap-4">
             <div
@@ -194,11 +232,13 @@ export class UserPresenter {
                             + ' text-primary'
                         }"
                     >${
-                        initials(u.fullName())
+                        initials(
+                            this.#fullName,
+                        )
                     }</span>
                 </div>
                 ${buildStatusDot(
-                    u.availability,
+                    this.#availability,
                 )}
             </div>
             <div style="flex:1;min-width:0">
@@ -213,22 +253,25 @@ export class UserPresenter {
                         'font-semibold'
                         + ' text-sm'
                     }">
-                        ${u.fullName()}
+                        ${this.#fullName}
                     </h3>
                     <span
                         class="pill"
                         style="${
                             styleForAvailability(
-                                u.availability,
+                                this
+                                .#availability,
                             )
                         }"
-                    >${u.availability}%</span>
+                    >${
+                        this.#availability
+                    }%</span>
                 </div>
                 <p class="${
                     'text-xs text-muted mb-2'
                 }">
-                    ${u.role}
-                    \u2022 ${u.department}
+                    ${this.#role}
+                    \u2022 ${this.#department}
                 </p>
                 <div
                     class="${
@@ -236,7 +279,7 @@ export class UserPresenter {
                         + ' gap-1.5 mb-2'
                     }"
                 >
-                    ${u.parsedStrengths()
+                    ${this.#strengths
                         .slice(0, 3)
                         .map(s => html`
                     <span
@@ -270,7 +313,8 @@ export class UserPresenter {
                         ${iconTrendingUp(
                             14, 'text-success',
                         )}
-                        ${u.performanceScore}%
+                        ${this
+                            .#performanceScore}%
                     </span>
                     <span
                         class="${
@@ -279,7 +323,8 @@ export class UserPresenter {
                         }"
                     >
                         ${iconBriefcase(14, '')}
-                        ${u.currentProjects
+                        ${this
+                            .#currentProjects
                         } active
                     </span>
                     <span
@@ -292,7 +337,8 @@ export class UserPresenter {
                         ${iconAward(
                             14, 'text-primary',
                         )}
-                        ${u.projectsCompleted}
+                        ${this
+                            .#projectsCompleted}
                         completed
                     </span>
                 </div>
@@ -305,7 +351,6 @@ export class UserPresenter {
     }
 
     buildMemberDetail(): SafeHtml {
-        const u = this.#user;
         return html`
     <div style="padding:1.5rem">
         <div
@@ -336,7 +381,9 @@ export class UserPresenter {
                         + ' text-primary'
                     }"
                 >${
-                    initials(u.fullName())
+                    initials(
+                        this.#fullName,
+                    )
                 }</span>
             </div>
             <h3
@@ -344,12 +391,12 @@ export class UserPresenter {
                     'text-lg font-display'
                     + ' font-semibold'
                 }"
-            >${u.fullName()}</h3>
+            >${this.#fullName}</h3>
             <p class="text-sm text-muted">
-                ${u.role}
+                ${this.#role}
             </p>
             <p class="text-xs text-muted">
-                ${u.email}
+                ${this.#email}
             </p>
         </div>
         ${this.#buildDimensionsTab()}
@@ -358,12 +405,11 @@ export class UserPresenter {
     }
 
     buildUserRow(): SafeHtml {
-        const u = this.#user;
         return html`
         <div class="${
             'flex items-center '
             + 'gap-4 p-4 '
-            + (u.isDeactivated()
+            + (this.#isDeactivated
                 ? 'opacity-50' : '')
         }"
             style="${
@@ -402,7 +448,7 @@ export class UserPresenter {
                             + 'text-primary'
                         }">
                         ${initials(
-                            u.fullName(),
+                            this.#fullName,
                         )}
                     </span>
                 </div>
@@ -413,7 +459,7 @@ export class UserPresenter {
                         'font-medium '
                         + 'truncate'
                     }">
-                        ${u.fullName()}
+                        ${this.#fullName}
                     </p>
                     <p
                         class="${
@@ -421,7 +467,7 @@ export class UserPresenter {
                             + 'text-muted '
                             + 'truncate'
                         }">
-                        ${u.email}
+                        ${this.#email}
                     </p>
                 </div>
             </div>
@@ -432,7 +478,7 @@ export class UserPresenter {
                 class="${
                     'text-sm text-muted'
                 }">
-                ${u.department}
+                ${this.#department}
             </div>
             <div style="flex:1">
                 ${this.#buildStatusBadge()}
@@ -440,11 +486,12 @@ export class UserPresenter {
                     'text-xs text-muted'
                     + ' mt-1'
                 }">
-                    ${u.isPending()
+                    ${this.#isPending
                         ? 'Invite sent'
                         : 'Last active '
                             + formatDate(
-                                u.lastActive,
+                                this
+                                .#lastActive,
                             )}
                 </p>
             </div>
@@ -457,7 +504,7 @@ export class UserPresenter {
                         + 'btn-icon btn-sm'
                     }"
                     data-edit-user="${
-                        u.id
+                        this.#id
                     }">
                     ${iconStar(16, '')}
                 </button>
@@ -466,8 +513,7 @@ export class UserPresenter {
     }
 
     #buildStatusBadge(): SafeHtml {
-        const u = this.#user;
-        if (u.isActive())
+        if (this.#isActive)
             return html`<span
                 class="${
                     'status-badge-success'
@@ -475,7 +521,7 @@ export class UserPresenter {
                 ${iconCheckCircle2(14, '')}
                 Active
             </span>`;
-        if (u.isPending())
+        if (this.#isPending)
             return html`<span
                 class="${
                     'status-badge-warning'
@@ -494,13 +540,13 @@ export class UserPresenter {
 
     #buildRoleBadge(): SafeHtml {
         const cfg =
-            ROLE_LABELS[this.#user.role];
+            ROLE_LABELS[this.#role];
         if (!cfg)
             return html`<span
                 class="${
                     'badge badge-secondary'
                 }">
-                ${this.#user.role}
+                ${this.#role}
             </span>`;
         return html`<span
             class="${
@@ -512,8 +558,6 @@ export class UserPresenter {
     }
 
     #buildDimensionsTab(): SafeHtml {
-        const dims = this.#user
-            .parsedTeamDimensions();
         return html`
         <div
             class="tabs"
@@ -545,8 +589,9 @@ export class UserPresenter {
                 Team Dimensions Assessment
                 Results
             </p>
-            ${Object.entries(dims)
-                .map(([key, value]) =>
+            ${Object.entries(
+                this.#teamDimensions,
+            ).map(([key, value]) =>
                     html`
             <div style="${
                 'margin-bottom:1rem'
@@ -609,7 +654,6 @@ export class UserPresenter {
     }
 
     #buildPerformanceTab(): SafeHtml {
-        const u = this.#user;
         return html`
         <div
             id="tab-performance"
@@ -642,7 +686,9 @@ export class UserPresenter {
                     style="${
                         'margin:0.5rem 0'
                     }"
-                >${u.performanceScore}%</div>
+                >${
+                    this.#performanceScore
+                }%</div>
                 <p class="${
                     'text-xs text-muted'
                 }">
@@ -681,7 +727,8 @@ export class UserPresenter {
                             + '0.25rem 0'
                         }"
                     >${
-                        u.projectsCompleted
+                        this
+                            .#projectsCompleted
                     }</div>
                     <p class="${
                         'text-xs text-muted'
@@ -713,7 +760,8 @@ export class UserPresenter {
                             + '0.25rem 0'
                         }"
                     >${
-                        u.currentProjects
+                        this
+                            .#currentProjects
                     }</div>
                     <p class="${
                         'text-xs text-muted'

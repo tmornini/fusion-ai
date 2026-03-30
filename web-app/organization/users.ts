@@ -51,15 +51,21 @@ export async function init(): Promise<void> {
     );
     if (!users) return;
 
-    const activeCount = users.filter(
-            user => user.isActive(),
-    ).length;
-    const pendingCount = users.filter(
-            user => user.isPending(),
-    ).length;
     const presenters = users.map(
         u => new UserPresenter(u),
     );
+    const activeCount =
+        presenters.filter(
+            p => p.matchesStatusFilter(
+                'active',
+            ),
+        ).length;
+    const pendingCount =
+        presenters.filter(
+            p => p.matchesStatusFilter(
+                'pending',
+            ),
+        ).length;
 
     setHtml(container, html`
         <div style="${

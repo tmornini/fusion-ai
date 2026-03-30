@@ -24,6 +24,7 @@ import {
 } from '../icons';
 import type {
     Idea,
+    PriorityLevel,
 } from '../../../api/types';
 import type {
     EdgeData,
@@ -44,18 +45,68 @@ const SEVERITY_CONFIG: Record<
     low: 'badge-default',
 };
 
+type Risk = {
+    title: string;
+    severity: string;
+    mitigation: string;
+};
+
 export class IdeaApprovalPresenter {
-    readonly #idea: Idea;
+    readonly #title: string;
+    readonly #submittedBy: string;
+    readonly #submittedAt: string;
+    readonly #category: string;
+    readonly #description: string;
+    readonly #score: number;
+    readonly #impactLabel: string;
+    readonly #effortLabel: string;
+    readonly #effortDurationEstimate: string;
+    readonly #effortTeamSize: string;
+    readonly #costEstimate: string;
+    readonly #costBreakdown: string;
+    readonly #priorityLevel: PriorityLevel;
+    readonly #risks: readonly Risk[];
+    readonly #assumptions:
+        readonly string[];
+    readonly #alignments:
+        readonly string[];
 
     constructor(idea: Idea) {
-        this.#idea = idea;
+        this.#title = idea.title;
+        this.#submittedBy =
+            idea.submittedBy;
+        this.#submittedAt =
+            idea.submittedAt;
+        this.#category = idea.category;
+        this.#description =
+            idea.description;
+        this.#score = idea.score;
+        this.#impactLabel =
+            idea.impactLabel;
+        this.#effortLabel =
+            idea.effortLabel;
+        this.#effortDurationEstimate =
+            idea.effortDurationEstimate;
+        this.#effortTeamSize =
+            idea.effortTeamSize;
+        this.#costEstimate =
+            idea.costEstimate;
+        this.#costBreakdown =
+            idea.costBreakdown;
+        this.#priorityLevel =
+            idea.priorityLevel();
+        this.#risks =
+            idea.parsedRisks();
+        this.#assumptions =
+            idea.parsedAssumptions();
+        this.#alignments =
+            idea.parsedAlignments();
     }
 
     buildApprovalPage(
         edge: EdgeData | null,
         isEditing: boolean,
     ): SafeHtml {
-        const idea = this.#idea;
         return html`
     <div class="${
         'flex items-center'
@@ -90,7 +141,7 @@ export class IdeaApprovalPresenter {
                             + '-title'
                         }"
                         value="${
-                            idea.title
+                            this.#title
                         }"
                         style=${
                             'font-size:'
@@ -105,7 +156,7 @@ export class IdeaApprovalPresenter {
                             + ' font-bold'
                             + ' truncate'
                         }">
-                        ${idea.title}
+                        ${this.#title}
                     </h1>`}
             </div>
         </div>
@@ -151,7 +202,7 @@ export class IdeaApprovalPresenter {
                 class="badge
                     badge-error
                     text-xs">
-                ${idea.priorityLevel()}
+                ${this.#priorityLevel}
             </span>`}
         </div>
     </div>
@@ -170,7 +221,7 @@ export class IdeaApprovalPresenter {
                             + 'hsl(var('
                             + '--foreground))'}>
                         ${displayText(
-                            idea.submittedBy,
+                            this.#submittedBy,
                         )}
                     </span>
                 </span>
@@ -178,13 +229,13 @@ export class IdeaApprovalPresenter {
                     class="flex items-center
                         gap-1">
                     ${iconCalendar(16, '')}
-                    ${idea.submittedAt}
+                    ${this.#submittedAt}
                 </span>
                 <span
                     class="flex items-center
                         gap-1">
                     ${iconTarget(16, '')}
-                    ${idea.category}
+                    ${this.#category}
                 </span>
                 <span
                     class="flex items-center
@@ -225,13 +276,13 @@ export class IdeaApprovalPresenter {
                         rows="4"
                         style="resize:none"
                         >${
-                            idea.description
+                            this.#description
                         }</textarea>`
                     : html`<p class="${
                         'text-sm'
                         + ' leading-relaxed'
                     }">${
-                        idea.description
+                        this.#description
                     }</p>`}
             </div>
 
@@ -254,12 +305,12 @@ export class IdeaApprovalPresenter {
                     'text-2xl font-bold'
                     + ' mb-1'
                 }">${
-                    idea.costEstimate
+                    this.#costEstimate
                 }</p>
                 <p class="${
                     'text-sm text-muted'
                 }">${
-                    idea.costBreakdown
+                    this.#costBreakdown
                 }</p>
             </div>
 
@@ -281,7 +332,6 @@ export class IdeaApprovalPresenter {
     }
 
     #buildApprovalScoreCard(): SafeHtml {
-        const idea = this.#idea;
         return html`
             <div class="card p-6 mb-6"
                 style=${'background:'
@@ -312,7 +362,7 @@ export class IdeaApprovalPresenter {
                                 + ' font-bold'
                                 + ' text-primary'
                             }">
-                                ${idea.score}
+                                ${this.#score}
                             </span>
                             <span class="${
                                 'text-muted'
@@ -342,8 +392,8 @@ export class IdeaApprovalPresenter {
                                 + ' font-'
                                 + 'semibold'
                             }">
-                                ${idea
-                                    .impactLabel}
+                                ${this
+                                    .#impactLabel}
                             </p>
                         </div>
                         <div>
@@ -359,8 +409,8 @@ export class IdeaApprovalPresenter {
                                 + ' font-'
                                 + 'semibold'
                             }">
-                                ${idea
-                                    .effortLabel}
+                                ${this
+                                    .#effortLabel}
                             </p>
                         </div>
                         <div>
@@ -376,8 +426,8 @@ export class IdeaApprovalPresenter {
                                 + ' font-'
                                 + 'semibold'
                             }">
-                                ${idea
-                                    .effortDurationEstimate}
+                                ${this
+                                    .#effortDurationEstimate}
                             </p>
                         </div>
                     </div>
@@ -386,7 +436,6 @@ export class IdeaApprovalPresenter {
     }
 
     #buildApprovalImpactGrid(): SafeHtml {
-        const idea = this.#idea;
         return html`
             <div class="detail-grid mb-6"
                 style=${'grid-template-'
@@ -404,7 +453,7 @@ export class IdeaApprovalPresenter {
                         Expected Impact
                     </h3>
                     <p class="text-sm">${
-                        idea.description
+                        this.#description
                     }</p>
                 </div>
                 <div class="card p-6">
@@ -435,8 +484,8 @@ export class IdeaApprovalPresenter {
                                 'text-sm'
                                 + ' font-medium'
                             }">${
-                                idea
-                                    .effortDurationEstimate
+                                this
+                                    .#effortDurationEstimate
                             }</span>
                         </div>
                         <div
@@ -452,8 +501,8 @@ export class IdeaApprovalPresenter {
                                 'text-sm'
                                 + ' font-medium'
                             }">${
-                                idea
-                                    .effortTeamSize
+                                this
+                                    .#effortTeamSize
                             }</span>
                         </div>
                     </div>
@@ -780,8 +829,7 @@ export class IdeaApprovalPresenter {
     }
 
     #buildApprovalRisks(): SafeHtml {
-        const idea = this.#idea;
-        if (!idea.parsedRisks().length) {
+        if (!this.#risks.length) {
             return html``;
         }
         return html`
@@ -802,14 +850,9 @@ export class IdeaApprovalPresenter {
                     + 'column;'
                     + 'gap:0.75rem'
                 }>
-                    ${idea.parsedRisks()
+                    ${this.#risks
                         .map((
-                        risk:
-                            { title: string;
-                                severity:
-                                    string;
-                                mitigation:
-                                    string },
+                        risk: Risk,
                     ) => {
                     const s = (
                         risk.severity
@@ -869,11 +912,8 @@ export class IdeaApprovalPresenter {
 
     #buildApprovalAssumptions(
     ): SafeHtml {
-        const idea = this.#idea;
         if (
-            !idea
-                .parsedAssumptions()
-                .length
+            !this.#assumptions.length
         ) {
             return html``;
         }
@@ -890,8 +930,7 @@ export class IdeaApprovalPresenter {
                     + 'column;'
                     + 'gap:0.5rem'
                 }>
-                    ${idea
-                        .parsedAssumptions()
+                    ${this.#assumptions
                         .map((
                             assumption:
                                 string,
@@ -913,11 +952,8 @@ export class IdeaApprovalPresenter {
 
     #buildApprovalAlignments(
     ): SafeHtml {
-        const idea = this.#idea;
         if (
-            !idea
-                .parsedAlignments()
-                .length
+            !this.#alignments.length
         ) {
             return html``;
         }
@@ -938,8 +974,7 @@ export class IdeaApprovalPresenter {
                     'flex flex-wrap'
                     + ' gap-2'
                 }">
-                    ${idea
-                        .parsedAlignments()
+                    ${this.#alignments
                         .map((
                             alignment:
                                 string,

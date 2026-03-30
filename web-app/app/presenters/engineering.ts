@@ -19,32 +19,129 @@ import {
     Clarification,
 } from '../adapters/projects';
 
+interface ClarificationData {
+    readonly questionText: string;
+    readonly askerName: string;
+    readonly askedAtDate: string;
+    readonly isPending: boolean;
+    readonly hasAnswer: boolean;
+    readonly answerText: string;
+    readonly answeredByName: string;
+    readonly answeredAtDate: string;
+}
+
 export class EngineeringPresenter {
-    readonly #view: EngineeringView;
+    readonly #title: string;
+    readonly #timeline: string;
+    readonly #budget: string;
+    readonly #problemStatement: string;
+    readonly #expectedOutcome: string;
+    readonly #successMetrics:
+        readonly string[];
+    readonly #constraints:
+        readonly string[];
+    readonly #teamMembers:
+        readonly EngTeamMember[];
+    readonly #hasLinkedIdea: boolean;
+    readonly #linkedIdeaHref: string;
+    readonly #linkedIdeaTitle: string;
+    readonly #linkedIdeaScore: number;
+    readonly #pendingCount: number;
+    readonly #answeredCount: number;
     readonly #clarifications:
-        readonly Clarification[];
+        readonly ClarificationData[];
 
     constructor(
         view: EngineeringView,
         clarifications:
             readonly Clarification[],
     ) {
-        this.#view = view;
+        this.#title = view.title;
+        this.#timeline = view.timeline();
+        this.#budget = view.budget();
+        this.#problemStatement =
+            view.problemStatement();
+        this.#expectedOutcome =
+            view.expectedOutcome();
+        this.#successMetrics =
+            view.successMetrics();
+        this.#constraints =
+            view.constraints();
+        this.#teamMembers =
+            view.teamMembers();
+        this.#hasLinkedIdea =
+            view.hasLinkedIdea();
+        this.#linkedIdeaHref =
+            view.linkedIdeaHref();
+        this.#linkedIdeaTitle =
+            view.linkedIdeaTitle();
+        this.#linkedIdeaScore =
+            view.linkedIdeaScore();
+        const pending =
+            clarifications.filter(
+                clarificationIsPending,
+            ).length;
+        this.#pendingCount = pending;
+        this.#answeredCount =
+            clarifications.length
+            - pending;
         this.#clarifications =
-            clarifications;
+            clarifications.map(c => ({
+                questionText:
+                    c.questionText(),
+                askerName:
+                    c.askerName(),
+                askedAtDate:
+                    c.askedAtDate(),
+                isPending:
+                    clarificationIsPending(
+                        c,
+                    ),
+                hasAnswer:
+                    c.hasAnswer(),
+                answerText:
+                    c.answerText(),
+                answeredByName:
+                    c.answeredByName(),
+                answeredAtDate:
+                    c.answeredAtDate(),
+            }));
+    }
+
+    title(): string {
+        return this.#title;
+    }
+
+    timeline(): string {
+        return this.#timeline;
+    }
+
+    budget(): string {
+        return this.#budget;
+    }
+
+    problemStatement(): string {
+        return this.#problemStatement;
+    }
+
+    expectedOutcome(): string {
+        return this.#expectedOutcome;
+    }
+
+    successMetrics(): readonly string[] {
+        return this.#successMetrics;
+    }
+
+    constraints(): readonly string[] {
+        return this.#constraints;
     }
 
     pendingCount(): number {
-        return this.#clarifications
-            .filter(
-                clarificationIsPending,
-            ).length;
+        return this.#pendingCount;
     }
 
     answeredCount(): number {
-        return this.#clarifications
-            .length
-            - this.pendingCount();
+        return this.#answeredCount;
     }
 
     #buildTeamMember(
@@ -155,8 +252,7 @@ export class EngineeringPresenter {
                     style="${
                         'gap:0.75rem'
                     }">
-                    ${this.#view
-                        .teamMembers()
+                    ${this.#teamMembers
                         .map(
                             m => this
                                 .#buildTeamMember(
@@ -168,7 +264,7 @@ export class EngineeringPresenter {
     }
 
     buildLinkedIdeaCard(): SafeHtml {
-        if (!this.#view.hasLinkedIdea())
+        if (!this.#hasLinkedIdea)
             return html``;
         return html`
             <div class="${
@@ -186,8 +282,7 @@ export class EngineeringPresenter {
                     Source Idea
                 </h3>
                 <a href="${
-                    this.#view
-                        .linkedIdeaHref()
+                    this.#linkedIdeaHref
                 }"
                     class="${
                         'flex items-center '
@@ -230,8 +325,8 @@ export class EngineeringPresenter {
                             <p class="${
                                 'font-medium'
                             }">
-                                ${this.#view
-                                    .linkedIdeaTitle()}
+                                ${this
+                                    .#linkedIdeaTitle}
                             </p>
                             <p class="${
                                 'text-xs '
@@ -256,8 +351,8 @@ export class EngineeringPresenter {
                                 + 'text-xs'
                             }">
                             Score:
-                            ${this.#view
-                                .linkedIdeaScore()}
+                            ${this
+                                .#linkedIdeaScore}
                         </span>
                         ${iconChevronRight(
                             20, 'text-muted',
@@ -268,9 +363,9 @@ export class EngineeringPresenter {
     }
 
     #buildAnswer(
-        c: Clarification,
+        c: ClarificationData,
     ): SafeHtml {
-        if (!c.hasAnswer())
+        if (!c.hasAnswer)
             return html``;
         return html`
             <div style="${
@@ -293,33 +388,30 @@ export class EngineeringPresenter {
                     <span class="${
                         'font-medium'
                     }">
-                        ${c
-                            .answeredByName()}
+                        ${c.answeredByName}
                     </span>
                     <span class="${
                         'text-xs '
                         + 'text-muted'
                     }">
                         ${formatDate(
-                            c.answeredAtDate(),
+                            c.answeredAtDate,
                         )}
                     </span>
                 </div>
                 <p>${
-                    c.answerText()
+                    c.answerText
                 }</p>
             </div>`;
     }
 
     buildClarification(
-        c: Clarification,
+        c: ClarificationData,
     ): SafeHtml {
-        const isPending =
-            clarificationIsPending(c);
-        const borderColor = isPending
+        const borderColor = c.isPending
             ? 'hsl(var(--warning)/0.3)'
             : 'hsl(var(--border))';
-        const bgStyle = isPending
+        const bgStyle = c.isPending
             ? 'background:'
                 + 'hsl(var(--warning)'
                 + '/0.05)'
@@ -341,7 +433,7 @@ export class EngineeringPresenter {
                         'padding:0.5rem;'
                         + 'border-radius:'
                         + '9999px;'
-                        + (isPending
+                        + (c.isPending
                             ? 'background:'
                                 + 'hsl(var('
                                 + '--warning'
@@ -352,7 +444,7 @@ export class EngineeringPresenter {
                     }">
                         ${iconMessageSquare(
                             16,
-                            isPending
+                            c.isPending
                                 ? 'text-'
                                     + 'warning'
                                 : 'text-'
@@ -368,34 +460,33 @@ export class EngineeringPresenter {
                             <span class="${
                                 'font-medium'
                             }">
-                                ${c
-                                    .askerName()}
+                                ${c.askerName}
                             </span>
                             <span class="${
                                 'text-xs '
                                 + 'text-muted'
                             }">
                                 ${formatDate(
-                                    c.askedAtDate(),
+                                    c.askedAtDate,
                                 )}
                             </span>
                             <span class="${
                                 'badge '
-                                + (isPending
+                                + (c.isPending
                                     ? 'badge-'
                                         + 'warning'
                                     : 'badge-'
                                         + 'success')
                                 + ' text-xs'
                             }">
-                                ${isPending
+                                ${c.isPending
                                     ? 'Awaiting'
                                         + ' response'
                                     : 'Answered'}
                             </span>
                         </div>
                         <p>${
-                            c.questionText()
+                            c.questionText
                         }</p>
                     </div>
                 </div>

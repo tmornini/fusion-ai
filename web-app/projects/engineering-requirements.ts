@@ -18,7 +18,6 @@ import { navigateTo } from '../app/core';
 import {
     getProjectForEngineering,
     getClarificationsByProjectId,
-    EngineeringView,
 } from '../app/adapters';
 import {
     EngineeringPresenter,
@@ -45,7 +44,6 @@ export async function init(
         buildSkeleton('detail', 4),
     );
 
-    let project: EngineeringView;
     let presenter:
         EngineeringPresenter;
     try {
@@ -58,7 +56,6 @@ export async function init(
                     projectId,
                 ),
             ]);
-        project = view;
         presenter =
             new EngineeringPresenter(
                 view, clarifications,
@@ -113,7 +110,7 @@ export async function init(
                     + projectId
                 }"
                     class="hover-link">
-                    ${project.title}
+                    ${presenter.title()}
                 </a><span>/</span>
                 <span>
                     Engineering
@@ -153,7 +150,7 @@ export async function init(
                         Business context
                         and clarifications
                         for
-                        ${project.title}
+                        ${presenter.title()}
                     </p>
                 </div>
             </div>
@@ -188,7 +185,7 @@ export async function init(
                                 'text-lg '
                                 + 'font-bold'
                             }">
-                                ${project
+                                ${presenter
                                     .timeline()}
                             </p>
                             <p class="${
@@ -227,7 +224,7 @@ export async function init(
                                 'text-lg '
                                 + 'font-bold'
                             }">
-                                ${project
+                                ${presenter
                                     .budget()}
                             </p>
                             <p class="${
@@ -351,7 +348,7 @@ export async function init(
                         <p class="${
                             'text-muted'
                         }">
-                            ${project
+                            ${presenter
                                 .problemStatement()}
                         </p>
                     </div>
@@ -368,7 +365,7 @@ export async function init(
                         <p class="${
                             'text-muted'
                         }">
-                            ${project
+                            ${presenter
                                 .expectedOutcome()}
                         </p>
                     </div>
@@ -395,7 +392,7 @@ export async function init(
                     + 'column;'
                     + 'gap:0.5rem'
                 }">
-                    ${project
+                    ${presenter
                         .successMetrics()
                         .map(
                         (m: string) => html`
@@ -437,7 +434,7 @@ export async function init(
                     + 'column;'
                     + 'gap:0.5rem'
                 }">
-                    ${project
+                    ${presenter
                         .constraints()
                         .map(
                         (c: string) => html`
