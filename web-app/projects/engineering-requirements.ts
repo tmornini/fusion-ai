@@ -1,6 +1,6 @@
 import { $, $textarea } from '../app/dom';
 import {
-    html, setHtml, SafeHtml,
+    html, setHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -8,208 +8,86 @@ import {
 } from '../app/loading-states';
 import {
     iconArrowLeft, iconLightbulb,
-    iconTarget, iconUsers,
+    iconTarget,
     iconMessageSquare, iconAlertTriangle,
     iconCheckCircle2, iconSend,
-    iconFileText, iconClock,
-    iconDollarSign, iconUser,
-    iconChevronRight,
+    iconClock,
+    iconDollarSign,
 } from '../app/icons';
-import {
-    navigateTo, formatDate,
-} from '../app/core';
-import {
-    clarificationIsPending,
-} from '../../api/types';
+import { navigateTo } from '../app/core';
 import {
     getProjectForEngineering,
     getClarificationsByProjectId,
     EngineeringView,
-    type Clarification,
 } from '../app/adapters';
-
-type TeamMember =
-    EngineeringView['team'][number];
-
-function buildClarification(
-    clarification: Clarification,
-): SafeHtml {
-    const isPending =
-            clarificationIsPending(
-                clarification,
-            );
-    const borderColor = isPending
-            ? 'hsl(var(--warning)/0.3)'
-            : 'hsl(var(--border))';
-    const bgStyle = isPending
-            ? 'background:'
-                + 'hsl(var(--warning)/0.05)'
-            : '';
-    return html`
-        <div class="card"
-            style="${
-                'border:1px solid '
-                + borderColor + ';'
-                + bgStyle
-                + ';padding:1rem'
-            }">
-            <div
-                class="${
-                    'flex items-start '
-                    + 'gap-3 mb-3'
-                }">
-                <div style="${
-                    'padding:0.5rem;'
-                    + 'border-radius:'
-                    + '9999px;'
-                    + (isPending
-                        ? 'background:'
-                            + 'hsl(var('
-                            + '--warning)'
-                            + '/0.1)'
-                        : 'background:'
-                            + 'hsl(var('
-                            + '--muted))')
-                }">
-                    ${iconMessageSquare(
-                        16,
-                        isPending
-                            ? 'text-warning'
-                            : 'text-muted',
-                    )}
-                </div>
-                <div style="flex:1">
-                    <div class="${
-                        'flex items-center '
-                        + 'gap-2 mb-1'
-                    }">
-                        <span class="${
-                            'font-medium'
-                        }">
-                            ${clarification
-                                .askedBy}
-                        </span>
-                        <span class="${
-                            'text-xs '
-                            + 'text-muted'
-                        }">
-                            ${formatDate(
-                                clarification
-                                    .askedAt,
-                            )}
-                        </span>
-                        <span class="${
-                            'badge '
-                            + (isPending
-                                ? 'badge-'
-                                    + 'warning'
-                                : 'badge-'
-                                    + 'success')
-                            + ' text-xs'
-                        }">
-                            ${isPending
-                                ? 'Awaiting'
-                                    + ' response'
-                                : 'Answered'}
-                        </span>
-                    </div>
-                    <p>${
-                        clarification
-                            .question
-                    }</p>
-                </div>
-            </div>
-            ${clarification.answer
-                ? html`
-                <div style="${
-                    'margin-left:2.5rem;'
-                    + 'margin-top:1rem;'
-                    + 'padding:0.75rem;'
-                    + 'border-radius:'
-                    + '0.5rem;'
-                    + 'background:'
-                    + 'hsl(var(--muted)'
-                    + '/0.5);'
-                    + 'border-left:'
-                    + '2px solid '
-                    + 'hsl(var(--primary))'
-                }">
-                    <div class="${
-                        'flex items-center '
-                        + 'gap-2 mb-1'
-                    }">
-                        <span class="${
-                            'font-medium'
-                        }">
-                            ${clarification
-                                .answeredBy!}
-                        </span>
-                        <span class="${
-                            'text-xs '
-                            + 'text-muted'
-                        }">
-                            ${formatDate(
-                                clarification
-                                    .answeredAt!,
-                            )}
-                        </span>
-                    </div>
-                    <p>${
-                        clarification.answer
-                    }</p>
-                </div>
-            ` : html``}
-        </div>`;
-}
+import {
+    EngineeringPresenter,
+} from '../app/presenters';
 
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const projectId = params?.['projectId'];
-    if (!projectId) { navigateTo('projects'); return; }
+    const projectId =
+        params?.['projectId'];
+    if (!projectId) {
+        navigateTo('projects');
+        return;
+    }
 
     const root = $(
-            '#engineering-requirements-content', document,
+        '#engineering-requirements'
+            + '-content',
+        document,
     );
     if (!root) return;
-    setHtml(root, buildSkeleton('detail', 4));
+    setHtml(
+        root,
+        buildSkeleton('detail', 4),
+    );
 
     let project: EngineeringView;
-    let clarifications: Clarification[];
+    let presenter:
+        EngineeringPresenter;
     try {
-        [project, clarifications] =
-                await Promise.all([
-                    getProjectForEngineering(
-                            projectId,
-                    ),
-                    getClarificationsByProjectId(
-                            projectId,
-                    ),
-                ]);
+        const [view, clarifications] =
+            await Promise.all([
+                getProjectForEngineering(
+                    projectId,
+                ),
+                getClarificationsByProjectId(
+                    projectId,
+                ),
+            ]);
+        project = view;
+        presenter =
+            new EngineeringPresenter(
+                view, clarifications,
+            );
     } catch {
         setHtml(
-                root,
-                buildErrorState(
-                        'Failed to load engineering'
-                        + ' requirements.',
-                        'Try Again',
-                ),
+            root,
+            buildErrorState(
+                'Failed to load'
+                + ' engineering'
+                + ' requirements.',
+                'Try Again',
+            ),
         );
         root
-            .querySelector('[data-retry-btn]')
+            .querySelector(
+                '[data-retry-btn]',
+            )
             ?.addEventListener(
-                    'click', () => init(),
+                'click',
+                () => init(),
             );
         return;
     }
 
     const pendingCount =
-            clarifications.filter(
-                    clarificationIsPending,
-            ).length;
+        presenter.pendingCount();
     const answeredCount =
-            clarifications.length
-            - pendingCount;
+        presenter.answeredCount();
 
     setHtml(root, html`
         <div style="${
@@ -256,7 +134,9 @@ export async function init(
                     id="${
                         'requirements-back'
                     }">
-                    ${iconArrowLeft(20, '')}
+                    ${iconArrowLeft(
+                        20, '',
+                    )}
                 </button>
                 <div>
                     <h1 class="${
@@ -267,7 +147,9 @@ export async function init(
                         Engineering
                         Requirements
                     </h1>
-                    <p class="text-muted">
+                    <p class="${
+                        'text-muted'
+                    }">
                         Business context
                         and clarifications
                         for
@@ -280,12 +162,11 @@ export async function init(
                 'stats-grid mb-8'
             }">
                 <div class="card p-4">
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
+                    <div class="${
+                        'flex '
+                        + 'items-center '
+                        + 'gap-3'
+                    }">
                         <div style="${
                             'padding:'
                             + '0.5rem;'
@@ -320,12 +201,11 @@ export async function init(
                     </div>
                 </div>
                 <div class="card p-4">
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
+                    <div class="${
+                        'flex '
+                        + 'items-center '
+                        + 'gap-3'
+                    }">
                         <div style="${
                             'padding:'
                             + '0.5rem;'
@@ -360,12 +240,11 @@ export async function init(
                     </div>
                 </div>
                 <div class="card p-4">
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
+                    <div class="${
+                        'flex '
+                        + 'items-center '
+                        + 'gap-3'
+                    }">
                         <div style="${
                             'padding:'
                             + '0.5rem;'
@@ -387,9 +266,7 @@ export async function init(
                                 'text-lg '
                                 + 'font-bold'
                             }">
-                                ${
-                                    pendingCount
-                                }
+                                ${pendingCount}
                             </p>
                             <p class="${
                                 'text-xs '
@@ -402,12 +279,11 @@ export async function init(
                     </div>
                 </div>
                 <div class="card p-4">
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
+                    <div class="${
+                        'flex '
+                        + 'items-center '
+                        + 'gap-3'
+                    }">
                         <div style="${
                             'padding:'
                             + '0.5rem;'
@@ -419,22 +295,17 @@ export async function init(
                             + '--success-'
                             + 'soft))'
                         }">
-                            ${
-                                iconCheckCircle2(
-                                    20,
-                                    'text-'
-                                    + 'success',
-                                )
-                            }
+                            ${iconCheckCircle2(
+                                20,
+                                'text-success',
+                            )}
                         </div>
                         <div>
                             <p class="${
                                 'text-lg '
                                 + 'font-bold'
                             }">
-                                ${
-                                    answeredCount
-                                }
+                                ${answeredCount}
                             </p>
                             <p class="${
                                 'text-xs '
@@ -468,13 +339,12 @@ export async function init(
                     + 'gap:1.5rem'
                 }">
                     <div>
-                        <h4
-                            class="${
-                                'text-sm '
-                                + 'font-'
-                                + 'semibold '
-                                + 'mb-2'
-                            }">
+                        <h4 class="${
+                            'text-sm '
+                            + 'font-'
+                            + 'semibold '
+                            + 'mb-2'
+                        }">
                             Problem
                             Statement
                         </h4>
@@ -486,13 +356,12 @@ export async function init(
                         </p>
                     </div>
                     <div>
-                        <h4
-                            class="${
-                                'text-sm '
-                                + 'font-'
-                                + 'semibold '
-                                + 'mb-2'
-                            }">
+                        <h4 class="${
+                            'text-sm '
+                            + 'font-'
+                            + 'semibold '
+                            + 'mb-2'
+                        }">
                             Expected
                             Outcome
                         </h4>
@@ -529,23 +398,18 @@ export async function init(
                     ${project
                         .successMetrics()
                         .map(
-                            (metric: string) =>
-                                html`
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-start'
-                                + ' gap-2'
-                            }">
-                            ${
-                                iconCheckCircle2(
-                                    16,
-                                    'text-'
-                                    + 'success',
-                                )
-                            }
+                        (m: string) => html`
+                        <div class="${
+                            'flex '
+                            + 'items-start'
+                            + ' gap-2'
+                        }">
+                            ${iconCheckCircle2(
+                                16,
+                                'text-success',
+                            )}
                             <span>${
-                                metric
+                                m
                             }</span>
                         </div>
                     `)}
@@ -574,259 +438,37 @@ export async function init(
                     + 'gap:0.5rem'
                 }">
                     ${project
-                        .constraints().map(
-                            (constraint:
-                                string) =>
-                                html`
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-start'
-                                + ' gap-2'
-                            }">
+                        .constraints()
+                        .map(
+                        (c: string) => html`
+                        <div class="${
+                            'flex '
+                            + 'items-start'
+                            + ' gap-2'
+                        }">
                             <span class="${
                                 'text-warning'
-                            }">
-                                •
-                            </span>
+                            }">&bull;</span>
                             <span>${
-                                constraint
+                                c
                             }</span>
                         </div>
                     `)}
                 </div>
             </div>
 
-            <div class="${
-                'card p-6 mb-6'
-            }">
-                <h3 class="${
-                    'flex items-center '
-                    + 'gap-2 text-lg '
-                    + 'font-display '
-                    + 'font-semibold mb-4'
-                }">
-                    ${iconUsers(
-                        20, 'text-primary',
-                    )}
-                    Team Contacts
-                </h3>
-                <div class="${
-                    'convert-grid'
-                }"
-                    style="${
-                        'gap:0.75rem'
-                    }">
-                    ${project.team.map(
-                        (teamMember:
-                            TeamMember) =>
-                        html`
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-center'
-                                + ' gap-3'
-                            }"
-                            style="${
-                                'padding:'
-                                + '0.75rem;'
-                                + 'border-'
-                                + 'radius:'
-                                + '0.5rem;'
-                                + 'background:'
-                                + 'hsl(var('
-                                + '--muted)'
-                                + '/0.3)'
-                            }">
-                            <div style="${
-                                'width:'
-                                + '2.5rem;'
-                                + 'height:'
-                                + '2.5rem;'
-                                + 'border-'
-                                + 'radius:'
-                                + '9999px;'
-                                + 'display:'
-                                + 'flex;'
-                                + 'align-'
-                                + 'items:'
-                                + 'center;'
-                                + 'justify-'
-                                + 'content:'
-                                + 'center;'
-                                + 'background:'
-                                + (teamMember
-                                    .type
-                                    === 'business'
-                                    ? 'hsl(var('
-                                        + '--primary'
-                                        + ')/0.1)'
-                                    : 'hsl(var('
-                                        + '--success'
-                                        + '-soft))')
-                            }">
-                                ${iconUser(
-                                    20,
-                                    teamMember
-                                        .type
-                                        === 'business'
-                                        ? 'text-'
-                                            + 'primary'
-                                        : 'text-'
-                                            + 'success',
-                                )}
-                            </div>
-                            <div
-                                style="${
-                                    'flex:1;'
-                                    + 'min-'
-                                    + 'width:0'
-                                }">
-                                <p class="${
-                                    'font-'
-                                    + 'medium'
-                                }">
-                                    ${
-                                        teamMember
-                                            .name
-                                    }
-                                </p>
-                                <p class="${
-                                    'text-xs '
-                                    + 'text-'
-                                    + 'muted'
-                                }">
-                                    ${
-                                        teamMember
-                                            .role
-                                    }
-                                </p>
-                            </div>
-                            <span class="${
-                                'badge '
-                                + (teamMember
-                                    .type
-                                    === 'business'
-                                    ? 'badge-'
-                                        + 'primary'
-                                    : 'badge-'
-                                        + 'success')
-                                + ' text-xs'
-                            }">
-                                ${teamMember
-                                    .type}
-                            </span>
-                        </div>
-                    `)}
-                </div>
-            </div>
+            ${presenter
+                .buildTeamGrid()}
 
-            ${project.linkedIdea ? html`
-            <div class="${
-                'card p-6 mb-8'
-            }">
-                <h3 class="${
-                    'flex items-center '
-                    + 'gap-2 text-lg '
-                    + 'font-display '
-                    + 'font-semibold mb-4'
-                }">
-                    ${iconFileText(
-                        20, 'text-primary',
-                    )}
-                    Source Idea
-                </h3>
-                <a href="${
-                    '../idea-convert/'
-                    + 'index.html'
-                    + '?ideaId='
-                    + project.linkedIdea.id
-                }"
-                    class="${
-                        'flex items-center '
-                        + 'justify-between'
-                    }"
-                    style="${
-                        'padding:1rem;'
-                        + 'border-radius:'
-                        + '0.5rem;'
-                        + 'background:'
-                        + 'hsl(var(--muted)'
-                        + '/0.3);'
-                        + 'text-decoration:'
-                        + 'none;'
-                        + 'color:inherit'
-                    }">
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
-                        <div style="${
-                            'padding:'
-                            + '0.5rem;'
-                            + 'border-'
-                            + 'radius:'
-                            + '0.5rem;'
-                            + 'background:'
-                            + 'hsl(var('
-                            + '--primary)'
-                            + '/0.1)'
-                        }">
-                            ${iconLightbulb(
-                                20,
-                                'text-primary',
-                            )}
-                        </div>
-                        <div>
-                            <p class="${
-                                'font-medium'
-                            }">
-                                ${project
-                                    .linkedIdea
-                                    .title}
-                            </p>
-                            <p class="${
-                                'text-xs '
-                                + 'text-muted'
-                            }">
-                                View original
-                                idea
-                            </p>
-                        </div>
-                    </div>
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
-                        <span
-                            class="${
-                                'badge '
-                                + 'badge-'
-                                + 'success '
-                                + 'text-xs'
-                            }">
-                            Score:
-                            ${project
-                                .linkedIdea
-                                .score}
-                        </span>
-                        ${iconChevronRight(
-                            20, 'text-muted',
-                        )}
-                    </div>
-                </a>
-            </div>
-            ` : html``}
+            ${presenter
+                .buildLinkedIdeaCard()}
 
             <div style="${
                 'margin-bottom:2rem'
             }">
                 <h2 class="${
-                    'text-xl font-display '
+                    'text-xl '
+                    + 'font-display '
                     + 'font-semibold mb-4 '
                     + 'flex items-center '
                     + 'gap-2'
@@ -859,13 +501,15 @@ export async function init(
                             'min-height:'
                             + '5rem;'
                             + 'resize:none;'
-                            + 'margin-bottom'
+                            + 'margin-'
+                            + 'bottom'
                             + ':0.75rem'
                         }">
                     </textarea>
                     <div style="${
                         'display:flex;'
-                        + 'justify-content:'
+                        + 'justify-'
+                        + 'content:'
                         + 'flex-end'
                     }">
                         <button
@@ -879,23 +523,24 @@ export async function init(
                                 + '-send'
                             }"
                             disabled>
-                            ${iconSend(16, '')
-                            } Send Question
+                            ${iconSend(
+                                16, '',
+                            )} Send Question
                         </button>
                     </div>
                 </div>
                 <div style="${
                     'display:flex;'
                     + 'flex-direction:'
-                    + 'column;gap:1rem'
+                    + 'column;'
+                    + 'gap:1rem'
                 }"
                     id="${
                         'requirements-'
                         + 'thread'
                     }">
-                    ${clarifications.map(
-                        buildClarification,
-                    )}
+                    ${presenter
+                        .buildClarificationList()}
                 </div>
             </div>
 
@@ -917,16 +562,15 @@ export async function init(
                     'text-sm text-muted'
                 }">
                     ${pendingCount > 0
-                        ? `${pendingCount} `
-                            + `${
-                                pendingCount
-                                    === 1
-                                    ? 'question'
-                                    : 'questions'
-                            }`
-                            + ` awaiting`
-                            + ` business`
-                            + ` response`
+                        ? pendingCount
+                            + ' '
+                            + (pendingCount
+                                === 1
+                                ? 'question'
+                                : 'questions')
+                            + ' awaiting'
+                            + ' business'
+                            + ' response'
                         : 'All questions '
                             + 'have been'
                             + ' answered'}
@@ -953,7 +597,9 @@ export async function init(
                             'requirements-'
                             + 'complete'
                         }">
-                        ${iconCheckCircle2(16, '')}
+                        ${iconCheckCircle2(
+                            16, '',
+                        )}
                         Mark Requirements
                         Complete
                     </button>
@@ -962,64 +608,80 @@ export async function init(
         </div>`);
 
     const questionField = $textarea(
-            '#requirements-question', document,
+        '#requirements-question',
+        document,
     );
     const sendButton = $(
-            '#requirements-send', document,
+        '#requirements-send',
+        document,
     );
     questionField?.addEventListener(
-            'input',
-            () => {
-                if (
-                    sendButton
-                            instanceof HTMLButtonElement
-                )
-                    sendButton.disabled =
-                            !questionField.value.trim();
-            },
+        'input',
+        () => {
+            if (
+                sendButton instanceof
+                    HTMLButtonElement
+            )
+                sendButton.disabled =
+                    !questionField
+                        .value.trim();
+        },
     );
     sendButton?.addEventListener(
-            'click',
-            () => {
-                showToast(
-                        'Question sent to business team',
-                        'success',
-                );
-                if (questionField)
-                    questionField.value = '';
-                if (
-                    sendButton
-                            instanceof HTMLButtonElement
-                )
-                    sendButton.disabled = true;
-            },
+        'click',
+        () => {
+            showToast(
+                'Question sent to'
+                + ' business team',
+                'success',
+            );
+            if (questionField)
+                questionField.value = '';
+            if (
+                sendButton instanceof
+                    HTMLButtonElement
+            )
+                sendButton.disabled =
+                    true;
+        },
     );
 
-    $('#requirements-complete', document)
-        ?.addEventListener('click', () => {
+    $(
+        '#requirements-complete',
+        document,
+    )?.addEventListener(
+        'click',
+        () => {
             showToast(
-                    'Requirements marked as complete',
-                    'success',
+                'Requirements marked'
+                + ' as complete',
+                'success',
             );
             navigateTo(
-                    'project-detail', { projectId },
+                'project-detail',
+                { projectId },
             );
-        });
+        },
+    );
 
-    $('#requirements-back', document)
-        ?.addEventListener(
-                'click',
-                () => navigateTo(
-                        'project-detail',
-                        { projectId },
-                ),
-        );
-    $('#requirements-back-footer', document)
-        ?.addEventListener(
-                'click',
-                () => navigateTo(
-                        'project-detail',
-                        { projectId },
-                ),
-        );
+    $(
+        '#requirements-back',
+        document,
+    )?.addEventListener(
+        'click',
+        () => navigateTo(
+            'project-detail',
+            { projectId },
+        ),
+    );
+    $(
+        '#requirements-back-footer',
+        document,
+    )?.addEventListener(
+        'click',
+        () => navigateTo(
+            'project-detail',
+            { projectId },
+        ),
+    );
 }

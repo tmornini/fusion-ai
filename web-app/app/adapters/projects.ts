@@ -365,15 +365,67 @@ export async function getProjectById(
     );
 }
 
-export interface Clarification {
-    id: string;
-    question: string;
-    askedBy: string;
-    askedAt: string;
-    status: 'pending' | 'answered';
-    answer?: string;
-    answeredBy?: string;
-    answeredAt?: string;
+export class Clarification {
+    readonly id: string;
+    private readonly question: string;
+    private readonly askedBy: string;
+    private readonly askedAt: string;
+    readonly status:
+        'pending' | 'answered';
+    private readonly answer:
+        string | undefined;
+    private readonly answeredBy:
+        string | undefined;
+    private readonly answeredAt:
+        string | undefined;
+
+    constructor(data: {
+        id: string;
+        question: string;
+        askedBy: string;
+        askedAt: string;
+        status: 'pending' | 'answered';
+        answer?: string;
+        answeredBy?: string;
+        answeredAt?: string;
+    }) {
+        this.id = data.id;
+        this.question = data.question;
+        this.askedBy = data.askedBy;
+        this.askedAt = data.askedAt;
+        this.status = data.status;
+        this.answer = data.answer;
+        this.answeredBy = data.answeredBy;
+        this.answeredAt = data.answeredAt;
+    }
+
+    questionText(): string {
+        return this.question;
+    }
+
+    askerName(): string {
+        return this.askedBy;
+    }
+
+    askedAtDate(): string {
+        return this.askedAt;
+    }
+
+    hasAnswer(): boolean {
+        return this.answer !== undefined;
+    }
+
+    answerText(): string {
+        return this.answer ?? '';
+    }
+
+    answeredByName(): string {
+        return this.answeredBy ?? '';
+    }
+
+    answeredAtDate(): string {
+        return this.answeredAt ?? '';
+    }
 }
 
 export interface EngTeamMember {
@@ -402,9 +454,9 @@ export class EngineeringView {
     private readonly project: Project;
     private readonly context:
         BusinessContext;
-    readonly team:
+    private readonly team:
         readonly EngTeamMember[];
-    readonly linkedIdea:
+    private readonly idea:
         LinkedIdea | null;
 
     constructor(
@@ -416,7 +468,7 @@ export class EngineeringView {
         this.project = project;
         this.context = context;
         this.team = team;
-        this.linkedIdea = linkedIdea;
+        this.idea = linkedIdea;
     }
 
     get id(): string {
@@ -456,6 +508,31 @@ export class EngineeringView {
 
     constraints(): readonly string[] {
         return this.context.constraints;
+    }
+
+    teamMembers():
+        readonly EngTeamMember[] {
+        return this.team;
+    }
+
+    hasLinkedIdea(): boolean {
+        return this.idea !== null;
+    }
+
+    linkedIdeaHref(): string {
+        if (!this.idea) return '';
+        return '../idea-convert/'
+            + 'index.html'
+            + '?ideaId='
+            + this.idea.id;
+    }
+
+    linkedIdeaTitle(): string {
+        return this.idea?.title ?? '';
+    }
+
+    linkedIdeaScore(): number {
+        return this.idea?.score ?? 0;
     }
 }
 
@@ -593,7 +670,7 @@ getClarificationsByProjectId(
                     .clarification_answer_id,
             )
             : undefined;
-        return {
+        return new Clarification({
             id: c.id,
             question: c.question,
             askedBy: userName(
@@ -619,7 +696,7 @@ getClarificationsByProjectId(
                         answerLink.created_at,
                 }
                 : {}),
-        };
+        });
     });
 }
 
