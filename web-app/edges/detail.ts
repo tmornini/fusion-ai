@@ -13,16 +13,8 @@ import {
     type EdgeData,
 } from '../app/adapters';
 import {
-    isConfidenceLevel, Idea,
-} from '../../api/types';
-import {
     EdgeDetailPresenter,
 } from '../app/presenters';
-
-interface EdgePageState {
-    edgeData: EdgeData;
-    currentIdea: Idea;
-}
 
 async function persistEdgeData(
     ideaId: string,
@@ -83,147 +75,157 @@ async function persistEdgeData(
     );
 }
 
-function buildDescriptionUpdates():
-    Map<string, string> {
-    const updates = new Map<string, string>();
-    document.querySelectorAll<HTMLInputElement>(
-        '[data-outcome-description]',
-    ).forEach(descriptionInput => {
-        const outcomeId = attr(
-            descriptionInput,
-            'data-outcome-description',
-        );
-        updates.set(
-            outcomeId,
-            descriptionInput.value,
-        );
-    });
-    return updates;
-}
-
-function buildMetricUpdates():
-    Map<string, Record<string, string>> {
-    const updates =
-        new Map<
-            string,
-            Record<string, string>
-        >();
-    document.querySelectorAll<HTMLInputElement>(
-        '[data-metric-field]',
-    ).forEach(metricInput => {
-        const metricId = attr(
-            metricInput, 'data-metric-id',
-        );
-        const field = attr(
-            metricInput, 'data-metric-field',
-        );
-        const existing =
-            updates.get(metricId) ?? {};
-        updates.set(metricId, {
-            ...existing,
-            [field]: metricInput.value,
+function readFormData(
+): {
+    confidence: string | undefined;
+    owner: string | undefined;
+    shortTerm: string | undefined;
+    midTerm: string | undefined;
+    longTerm: string | undefined;
+    outcomes: Array<{
+        id: string;
+        description: string;
+        metrics: Array<{
+            id: string;
+            name: string;
+            target: string;
+            unit: string;
+            current: string;
+        }>;
+    }> | undefined;
+} {
+    const confSelect = $select(
+        '#edge-confidence-select',
+        document,
+    );
+    const ownerInput = $input(
+        '#edge-owner-input',
+        document,
+    );
+    const shortTermEl = $textarea(
+        '#edge-impact-short-term',
+        document,
+    );
+    const midTermEl = $textarea(
+        '#edge-impact-mid-term',
+        document,
+    );
+    const longTermEl = $textarea(
+        '#edge-impact-long-term',
+        document,
+    );
+    const outcomeMap =
+        new Map<string, {
+            id: string;
+            description: string;
+            metrics: Map<string, {
+                id: string;
+                name: string;
+                target: string;
+                unit: string;
+                current: string;
+            }>;
+        }>();
+    document
+        .querySelectorAll<HTMLInputElement>(
+            '[data-outcome-description]',
+        ).forEach(el => {
+            const oid = attr(
+                el,
+                'data-outcome-description',
+            );
+            outcomeMap.set(oid, {
+                id: oid,
+                description: el.value,
+                metrics: new Map(),
+            });
         });
-    });
-    return updates;
+    document
+        .querySelectorAll<HTMLInputElement>(
+            '[data-metric-field]',
+        ).forEach(el => {
+            const oid = attr(
+                el, 'data-outcome-id',
+            );
+            const mid = attr(
+                el, 'data-metric-id',
+            );
+            const field = attr(
+                el, 'data-metric-field',
+            );
+            const outcome =
+                outcomeMap.get(oid);
+            if (!outcome) return;
+            const existing =
+                outcome.metrics.get(mid)
+                ?? {
+                    id: mid,
+                    name: '',
+                    target: '',
+                    unit: '',
+                    current: '',
+                };
+            existing[
+                field as keyof
+                    typeof existing
+            ] = el.value;
+            outcome.metrics.set(
+                mid, existing,
+            );
+        });
+    const outcomes = [
+        ...outcomeMap.values(),
+    ].map(o => ({
+        id: o.id,
+        description: o.description,
+        metrics: [
+            ...o.metrics.values(),
+        ],
+    }));
+    return {
+        confidence:
+            confSelect?.value,
+        owner:
+            ownerInput?.value,
+        shortTerm:
+            shortTermEl?.value,
+        midTerm:
+            midTermEl?.value,
+        longTerm:
+            longTermEl?.value,
+        outcomes:
+            outcomes.length > 0
+                ? outcomes
+                : undefined,
+    };
 }
 
-function syncFormFields(
-    state: EdgePageState,
-) {
-    const confidenceValue =
-        $select(
-            '#edge-confidence-select',
-            document,
-        )!.value;
-    const descUpdates =
-        buildDescriptionUpdates();
-    const metricUpdates =
-        buildMetricUpdates();
-    state.edgeData = {
-        ...state.edgeData,
-        impact: {
-            shortTerm:
-                $textarea(
-                    '#edge-impact-short-term',
-                    document,
-                )!.value,
-            midTerm:
-                $textarea(
-                    '#edge-impact-mid-term',
-                    document,
-                )!.value,
-            longTerm:
-                $textarea(
-                    '#edge-impact-long-term',
-                    document,
-                )!.value,
-        },
-        confidence:
-            isConfidenceLevel(confidenceValue)
-                ? confidenceValue
-                : state.edgeData.confidence,
-        owner:
-            $input(
-                '#edge-owner-input', document,
-            )!.value,
-        outcomes:
-            state.edgeData.outcomes.map(
-                outcome => ({
-                    ...outcome,
-                    description:
-                        descUpdates.get(
-                            outcome.id,
-                        )
-                        ?? outcome.description,
-                    metrics:
-                        outcome.metrics.map(
-                            metric => {
-                                const mu =
-                                    metricUpdates
-                                        .get(
-                                            metric
-                                                .id,
-                                        );
-                                if (!mu) {
-                                    return metric;
-                                }
-                                return {
-                                    ...metric,
-                                    ...mu,
-                                };
-                            },
-                        ),
-                }),
-            ),
-    };
+function syncPresenter(
+    presenter: EdgeDetailPresenter,
+): void {
+    presenter.syncFromForm(readFormData());
 }
 
 function mutateEdgePage(
     ideaId: string,
-    state: EdgePageState,
+    presenter: EdgeDetailPresenter,
 ) {
     const container = $(
         '#edge-content', document,
     );
-    if (container) {
-        const presenter =
-            new EdgeDetailPresenter(
-                state.edgeData,
-                state.currentIdea,
-            );
-        setHtml(
-            container,
-            presenter.buildDetailView(
-                ideaId,
-            ),
-        );
-        bindEdgeEvents(ideaId, state);
-    }
+    if (!container) return;
+    setHtml(
+        container,
+        presenter.buildDetailView(
+            ideaId,
+        ),
+    );
+    bindEdgeEvents(ideaId, presenter);
 }
 
 function bindEdgeEvents(
     ideaId: string,
-    state: EdgePageState,
+    presenter: EdgeDetailPresenter,
 ) {
     $('#edge-back-btn', document)
         ?.addEventListener(
@@ -235,22 +237,10 @@ function bindEdgeEvents(
         ?.addEventListener(
             'click',
             () => {
-                syncFormFields(state);
-                state.edgeData = {
-                    ...state.edgeData,
-                    outcomes: [
-                        ...state.edgeData
-                            .outcomes,
-                        {
-                            id: crypto
-                                .randomUUID(),
-                            description: '',
-                            metrics: [],
-                        },
-                    ],
-                };
+                syncPresenter(presenter);
+                presenter.addOutcome();
                 mutateEdgePage(
-                    ideaId, state,
+                    ideaId, presenter,
                 );
             },
         );
@@ -262,33 +252,20 @@ function bindEdgeEvents(
                     .addEventListener(
                         'click',
                         () => {
-                            syncFormFields(
-                                state,
+                            syncPresenter(
+                                presenter,
                             );
-                            state.edgeData = {
-                                ...state
-                                    .edgeData,
-                                outcomes: [
-                                    ...state
-                                        .edgeData
-                                        .outcomes,
-                                    {
-                                        id: crypto
-                                            .randomUUID(),
-                                        description:
-                                            attr(
-                                                templateButton,
-                                                'data-add'
-                                                + '-template',
-                                            ),
-                                        metrics:
-                                            [],
-                                    },
-                                ],
-                            };
+                            presenter
+                                .addOutcome(
+                                    attr(
+                                        templateButton,
+                                        'data-add'
+                                        + '-template',
+                                    ),
+                                );
                             mutateEdgePage(
                                 ideaId,
-                                state,
+                                presenter,
                             );
                         },
                     );
@@ -302,33 +279,22 @@ function bindEdgeEvents(
                     .addEventListener(
                         'click',
                         () => {
-                            syncFormFields(
-                                state,
+                            syncPresenter(
+                                presenter,
                             );
                             const removeId =
-                                removeButton
-                                    .getAttribute(
-                                        'data-'
-                                        + 'remove'
-                                        + '-outcome',
-                                    );
-                            state.edgeData = {
-                                ...state
-                                    .edgeData,
-                                outcomes:
-                                    state
-                                        .edgeData
-                                        .outcomes
-                                        .filter(
-                                            outcome =>
-                                                outcome
-                                                    .id
-                                                !== removeId,
-                                        ),
-                            };
+                                attr(
+                                    removeButton,
+                                    'data-remove'
+                                    + '-outcome',
+                                );
+                            presenter
+                                .removeOutcome(
+                                    removeId,
+                                );
                             mutateEdgePage(
                                 ideaId,
-                                state,
+                                presenter,
                             );
                         },
                     );
@@ -342,44 +308,22 @@ function bindEdgeEvents(
                     .addEventListener(
                         'click',
                         () => {
-                            syncFormFields(
-                                state,
+                            syncPresenter(
+                                presenter,
                             );
-                            const outcomeId =
+                            const oid =
                                 attr(
                                     addButton,
                                     'data-add'
                                     + '-metric',
                                 );
-                            state.edgeData = {
-                                ...state
-                                    .edgeData,
-                                outcomes:
-                                    state
-                                        .edgeData
-                                        .outcomes
-                                        .map(
-                                    o => o.id
-                                        !== outcomeId
-                                        ? o
-                                        : {
-                                            ...o,
-                                            metrics: [
-                                                ...o.metrics,
-                                                {
-                                                    id: crypto.randomUUID(),
-                                                    name: '',
-                                                    target: '',
-                                                    unit: '',
-                                                    current: '',
-                                                },
-                                            ],
-                                        },
-                                ),
-                            };
+                            presenter
+                                .addMetric(
+                                    oid,
+                                );
                             mutateEdgePage(
                                 ideaId,
-                                state,
+                                presenter,
                             );
                         },
                     );
@@ -395,46 +339,30 @@ function bindEdgeEvents(
                 .addEventListener(
                     'click',
                     () => {
-                        syncFormFields(
-                            state,
+                        syncPresenter(
+                            presenter,
                         );
-                        const outcomeId =
-                            removeButton
-                                .getAttribute(
-                                    'data-'
-                                    + 'outcome'
-                                    + '-id',
-                                );
-                        const metricId =
-                            removeButton
-                                .getAttribute(
-                                    'data-'
-                                    + 'metric'
-                                    + '-id',
-                                );
-                        state.edgeData = {
-                            ...state
-                                .edgeData,
-                            outcomes:
-                                state
-                                    .edgeData
-                                    .outcomes
-                                    .map(
-                                o => o.id
-                                    !== outcomeId
-                                    ? o
-                                    : {
-                                        ...o,
-                                        metrics:
-                                            o.metrics.filter(
-                                                m => m.id !== metricId,
-                                            ),
-                                    },
-                            ),
-                        };
+                        const oid =
+                            attr(
+                                removeButton,
+                                'data-'
+                                + 'outcome'
+                                + '-id',
+                            );
+                        const mid =
+                            attr(
+                                removeButton,
+                                'data-'
+                                + 'metric'
+                                + '-id',
+                            );
+                        presenter
+                            .removeMetric(
+                                oid, mid,
+                            );
                         mutateEdgePage(
                             ideaId,
-                            state,
+                            presenter,
                         );
                     },
                 );
@@ -449,12 +377,7 @@ function bindEdgeEvents(
     saveBtn?.addEventListener(
         'click',
         async () => {
-            syncFormFields(state);
-            const presenter =
-                new EdgeDetailPresenter(
-                    state.edgeData,
-                    state.currentIdea,
-                );
+            syncPresenter(presenter);
             if (
                 !presenter
                     .computeCompletion()
@@ -473,7 +396,8 @@ function bindEdgeEvents(
             try {
                 await persistEdgeData(
                     ideaId,
-                    state.edgeData,
+                    presenter
+                        .getEdgeDataForSave(),
                 );
             } catch {
                 showToast(
@@ -541,9 +465,9 @@ export async function init(
                 confidence: 'medium',
                 owner: '',
             };
-    const state: EdgePageState = {
-        edgeData,
-        currentIdea: idea,
-    };
-    mutateEdgePage(ideaId, state);
+    const presenter =
+        new EdgeDetailPresenter(
+            edgeData, idea,
+        );
+    mutateEdgePage(ideaId, presenter);
 }

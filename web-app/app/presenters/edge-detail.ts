@@ -12,7 +12,12 @@ import { displayText } from '../core';
 import type {
     EdgeData,
 } from '../adapters/helpers';
-import type { Idea } from '../../../api/types';
+import type {
+    Idea,
+} from '../../../api/types';
+import {
+    isConfidenceLevel,
+} from '../../../api/types';
 
 const outcomeTemplates = [
     'Reduce operational cost',
@@ -31,7 +36,7 @@ interface CompletionStatus {
 }
 
 export class EdgeDetailPresenter {
-    readonly #edgeData: EdgeData;
+    #edgeData: EdgeData;
     readonly #idea: Idea;
 
     constructor(
@@ -40,6 +45,209 @@ export class EdgeDetailPresenter {
     ) {
         this.#edgeData = edgeData;
         this.#idea = idea;
+    }
+
+    addOutcome(
+        description = '',
+    ): void {
+        this.#edgeData = {
+            ...this.#edgeData,
+            outcomes: [
+                ...this.#edgeData
+                    .outcomes,
+                {
+                    id: crypto
+                        .randomUUID(),
+                    description,
+                    metrics: [],
+                },
+            ],
+        };
+    }
+
+    removeOutcome(
+        outcomeId: string,
+    ): void {
+        this.#edgeData = {
+            ...this.#edgeData,
+            outcomes:
+                this.#edgeData
+                    .outcomes
+                    .filter(
+                        o => o.id
+                            !== outcomeId,
+                    ),
+        };
+    }
+
+    addMetric(
+        outcomeId: string,
+    ): void {
+        this.#edgeData = {
+            ...this.#edgeData,
+            outcomes:
+                this.#edgeData
+                    .outcomes
+                    .map(
+                        o => o.id
+                            !== outcomeId
+                            ? o
+                            : {
+                                ...o,
+                                metrics: [
+                                    ...o.metrics,
+                                    {
+                                        id: crypto
+                                            .randomUUID(),
+                                        name: '',
+                                        target: '',
+                                        unit: '',
+                                        current: '',
+                                    },
+                                ],
+                            },
+                    ),
+        };
+    }
+
+    removeMetric(
+        outcomeId: string,
+        metricId: string,
+    ): void {
+        this.#edgeData = {
+            ...this.#edgeData,
+            outcomes:
+                this.#edgeData
+                    .outcomes
+                    .map(
+                        o => o.id
+                            !== outcomeId
+                            ? o
+                            : {
+                                ...o,
+                                metrics:
+                                    o.metrics
+                                        .filter(
+                                            m =>
+                                                m.id
+                                                !== metricId,
+                                        ),
+                            },
+                    ),
+        };
+    }
+
+    syncFromForm(
+        formData: {
+            confidence:
+                string | undefined;
+            owner:
+                string | undefined;
+            shortTerm:
+                string | undefined;
+            midTerm:
+                string | undefined;
+            longTerm:
+                string | undefined;
+            outcomes:
+                Array<{
+                    id: string;
+                    description: string;
+                    metrics: Array<{
+                        id: string;
+                        name: string;
+                        target: string;
+                        unit: string;
+                        current: string;
+                    }>;
+                }> | undefined;
+        },
+    ): void {
+        const ed = this.#edgeData;
+        const confValue =
+            formData.confidence;
+        const confidence =
+            confValue !== undefined
+            && isConfidenceLevel(confValue)
+                ? confValue
+                : ed.confidence;
+        const descMap =
+            new Map<string, string>();
+        const metricMap =
+            new Map<
+                string,
+                Record<string, string>
+            >();
+        if (formData.outcomes) {
+            for (
+                const o of formData.outcomes
+            ) {
+                descMap.set(
+                    o.id, o.description,
+                );
+                for (const m of o.metrics) {
+                    metricMap.set(m.id, {
+                        name: m.name,
+                        target: m.target,
+                        unit: m.unit,
+                        current: m.current,
+                    });
+                }
+            }
+        }
+        this.#edgeData = {
+            ...ed,
+            impact: {
+                shortTerm:
+                    formData.shortTerm
+                    ?? ed.impact.shortTerm,
+                midTerm:
+                    formData.midTerm
+                    ?? ed.impact.midTerm,
+                longTerm:
+                    formData.longTerm
+                    ?? ed.impact.longTerm,
+            },
+            confidence,
+            owner:
+                formData.owner
+                ?? ed.owner,
+            outcomes:
+                ed.outcomes.map(
+                    outcome => ({
+                        ...outcome,
+                        description:
+                            descMap.get(
+                                outcome.id,
+                            )
+                            ?? outcome
+                                .description,
+                        metrics:
+                            outcome.metrics
+                                .map(
+                                    metric => {
+                                        const mu =
+                                            metricMap
+                                                .get(
+                                                    metric
+                                                        .id,
+                                                );
+                                        if (!mu) {
+                                            return metric;
+                                        }
+                                        return {
+                                            ...metric,
+                                            ...mu,
+                                        };
+                                    },
+                                ),
+                    }),
+                ),
+        };
+    }
+
+    getEdgeDataForSave(): EdgeData {
+        return this.#edgeData;
     }
 
     computeCompletion(): CompletionStatus {
