@@ -11,52 +11,102 @@ const BLUE = '#4B6CA1';
 const WARN = '#d97706';
 const GREEN = '#16a34a';
 
+const GRID_CELL = 24;
+const GRID_DOT_RADIUS = 0.7;
+
+const ARROW_VIEWBOX = 10;
+const ARROW_MIDPOINT = 5;
+const ARROW_MARKER = 8;
+
+const GLOW_SPREAD = 4;
+const GLOW_OPACITY = 0.6;
+
+const PORT_RADIUS = 6;
+
+const STROKE_NORMAL = 2;
+const STROKE_START = 2.5;
+const STROKE_COMPLETE = 3;
+
+const NODE_RADIUS = 10;
+const COMPLETE_INSET = 4;
+const COMPLETE_INNER_RADIUS = 7;
+const COMPLETE_INNER_STROKE = 1.5;
+
+const NODE_LABEL_Y = 22;
+const NODE_LABEL_FONT = 14;
+const NODE_META_Y = 40;
+const NODE_META_FONT = 11;
+
+const EDGE_STROKE = 2;
+const EDGE_STROKE_SELECTED = 3;
+const HIT_TARGET_WIDTH = 12;
+const CURVE_TENSION = 0.4;
+const BEZIER_MIDPOINT = 0.5;
+
+const CYCLE_DROP = 60;
+const CYCLE_LEFT_OFFSET = 40;
+const CYCLE_DASH = '6 3';
+
+const LABEL_CHAR_WIDTH = 7;
+const LABEL_PADDING = 12;
+const LABEL_MIN_WIDTH = 36;
+const LABEL_HEIGHT = 20;
+const LABEL_RADIUS = 4;
+const LABEL_BG_OPACITY = 0.9;
+const LABEL_TEXT_OFFSET_Y = 4;
+const LABEL_FONT = 11;
+
 function buildDefs(): string {
+    const gridCenter = GRID_CELL / 2;
+    const arrowPath =
+        `M 0 0 L ${ARROW_VIEWBOX}`
+        + ` ${ARROW_MIDPOINT}`
+        + ` L 0 ${ARROW_VIEWBOX} z`;
+    const markerAttrs =
+        ` viewBox="0 0`
+        + ` ${ARROW_VIEWBOX}`
+        + ` ${ARROW_VIEWBOX}"`
+        + ` refX="${ARROW_VIEWBOX}"`
+        + ` refY="${ARROW_MIDPOINT}"`
+        + ` markerWidth="${ARROW_MARKER}"`
+        + ` markerHeight="${ARROW_MARKER}"`
+        + ' orient="auto-start-reverse">';
     return '<defs>'
         + '<pattern id="wf-grid"'
-        + ' width="24" height="24"'
+        + ` width="${GRID_CELL}"`
+        + ` height="${GRID_CELL}"`
         + ' patternUnits='
         + '"userSpaceOnUse">'
-        + '<circle cx="12" cy="12"'
-        + ' r="0.7"'
+        + `<circle cx="${gridCenter}"`
+        + ` cy="${gridCenter}"`
+        + ` r="${GRID_DOT_RADIUS}"`
         + ' fill="var('
         + '--color-muted-foreground,'
         + ' #5a6480)"/>'
         + '</pattern>'
         + '<marker id="wf-arrow"'
-        + ' viewBox="0 0 10 10"'
-        + ' refX="10" refY="5"'
-        + ' markerWidth="8"'
-        + ' markerHeight="8"'
-        + ' orient="auto-start-reverse">'
-        + `<path d="M 0 0 L 10 5 L 0 10 z"`
+        + markerAttrs
+        + `<path d="${arrowPath}"`
         + ` fill="${BLUE}"/>`
         + '</marker>'
         + '<marker id="wf-arrow-warn"'
-        + ' viewBox="0 0 10 10"'
-        + ' refX="10" refY="5"'
-        + ' markerWidth="8"'
-        + ' markerHeight="8"'
-        + ' orient="auto-start-reverse">'
-        + `<path d="M 0 0 L 10 5 L 0 10 z"`
+        + markerAttrs
+        + `<path d="${arrowPath}"`
         + ` fill="${WARN}"/>`
         + '</marker>'
         + '<marker id="wf-arrow-ok"'
-        + ' viewBox="0 0 10 10"'
-        + ' refX="10" refY="5"'
-        + ' markerWidth="8"'
-        + ' markerHeight="8"'
-        + ' orient="auto-start-reverse">'
-        + `<path d="M 0 0 L 10 5 L 0 10 z"`
+        + markerAttrs
+        + `<path d="${arrowPath}"`
         + ` fill="${GREEN}"/>`
         + '</marker>'
         + '<filter id="wf-glow"'
         + ' x="-20%" y="-20%"'
         + ' width="140%" height="140%">'
         + '<feDropShadow'
-        + ' dx="0" dy="0" stdDeviation="4"'
+        + ' dx="0" dy="0"'
+        + ` stdDeviation="${GLOW_SPREAD}"`
         + ` flood-color="${BLUE}"`
-        + ' flood-opacity="0.6"/>'
+        + ` flood-opacity="${GLOW_OPACITY}"/>`
         + '</filter>'
         + '</defs>';
 }
@@ -84,7 +134,7 @@ function buildPort(
     return '<circle'
         + ` cx="${cx}"`
         + ` cy="${cy}"`
-        + ' r="6"'
+        + ` r="${PORT_RADIUS}"`
         + ` fill="${color}"`
         + ` data-port="${label}"/>`;
 }
@@ -98,10 +148,12 @@ function buildNode(
     const halfW = NODE_WIDTH / 2;
 
     let borderColor = BLUE;
-    let strokeW = 2;
+    let strokeW = STROKE_NORMAL;
     if (node.isStart || node.isComplete) {
         borderColor = GREEN;
-        strokeW = node.isComplete ? 3 : 2.5;
+        strokeW = node.isComplete
+            ? STROKE_COMPLETE
+            : STROKE_START;
     }
 
     const filterAttr = isSelected
@@ -113,7 +165,7 @@ function buildNode(
     inner += '<rect'
         + ` width="${NODE_WIDTH}"`
         + ` height="${NODE_HEIGHT}"`
-        + ' rx="10"'
+        + ` rx="${NODE_RADIUS}"`
         + ' fill="var('
         + '--color-card-bg, #232940)"'
         + ` stroke="${borderColor}"`
@@ -121,13 +173,21 @@ function buildNode(
 
     if (node.isComplete) {
         inner += '<rect'
-            + ` x="4" y="4"`
-            + ` width="${NODE_WIDTH - 8}"`
-            + ` height="${NODE_HEIGHT - 8}"`
-            + ' rx="7"'
+            + ` x="${COMPLETE_INSET}"`
+            + ` y="${COMPLETE_INSET}"`
+            + ` width="${
+                NODE_WIDTH
+                - COMPLETE_INSET * 2
+            }"`
+            + ` height="${
+                NODE_HEIGHT
+                - COMPLETE_INSET * 2
+            }"`
+            + ` rx="${COMPLETE_INNER_RADIUS}"`
             + ' fill="none"'
             + ` stroke="${GREEN}"`
-            + ' stroke-width="1.5"/>';
+            + ` stroke-width="`
+            + `${COMPLETE_INNER_STROKE}"/>`;
     }
 
     const meta = node.isStart
@@ -142,9 +202,9 @@ function buildNode(
     const nameEsc = escapeForHtml(node.name);
     inner += '<text'
         + ` x="${halfW}"`
-        + ' y="22"'
+        + ` y="${NODE_LABEL_Y}"`
         + ' text-anchor="middle"'
-        + ' font-size="14"'
+        + ` font-size="${NODE_LABEL_FONT}"`
         + ' font-weight="600"'
         + ' fill="var('
         + '--color-foreground, #e0e4ef)">'
@@ -152,9 +212,9 @@ function buildNode(
 
     inner += '<text'
         + ` x="${halfW}"`
-        + ' y="40"'
+        + ` y="${NODE_META_Y}"`
         + ' text-anchor="middle"'
-        + ' font-size="11"'
+        + ` font-size="${NODE_META_FONT}"`
         + ' fill="var('
         + '--color-muted-foreground,'
         + ' #5a6480)">'
@@ -227,14 +287,16 @@ function buildEdge(
             + NODE_HEIGHT / 2;
         const dropY =
             Math.max(botFromY, leftToY)
-            + 60;
+            + CYCLE_DROP;
         pathD = 'M '
             + String(botFromX) + ' '
             + String(botFromY)
             + ' C '
             + String(botFromX) + ' '
             + String(dropY) + ', '
-            + String(leftToX - 40) + ' '
+            + String(
+                leftToX - CYCLE_LEFT_OFFSET,
+            ) + ' '
             + String(dropY) + ', '
             + String(leftToX) + ' '
             + String(leftToY);
@@ -242,10 +304,11 @@ function buildEdge(
         markerUrl =
             'url(#wf-arrow-warn)';
         dashAttr =
-            ' stroke-dasharray="6 3"';
+            ` stroke-dasharray="${CYCLE_DASH}"`;
     } else {
         const dx = endX - startX;
-        const cpOffset = Math.abs(dx) * 0.4;
+        const cpOffset =
+            Math.abs(dx) * CURVE_TENSION;
         pathD = 'M '
             + String(startX) + ' '
             + String(startY)
@@ -261,7 +324,9 @@ function buildEdge(
         dashAttr = '';
     }
 
-    const sw = isSelected ? 3 : 2;
+    const sw = isSelected
+        ? EDGE_STROKE_SELECTED
+        : EDGE_STROKE;
     const opacity = isSelected
         ? ' opacity="1"' : '';
 
@@ -269,7 +334,8 @@ function buildEdge(
         + ` d="${pathD}"`
         + ' fill="none"'
         + ' stroke="transparent"'
-        + ' stroke-width="12"'
+        + ` stroke-width="`
+        + `${HIT_TARGET_WIDTH}"`
         + ' style="cursor:pointer"/>';
 
     const visPath = '<path'
@@ -293,27 +359,33 @@ function buildEdge(
     const labelEsc =
         escapeForHtml(edge.name);
     const labelLen = edge.name.length;
-    const labelW =
-        Math.max(labelLen * 7 + 12, 36);
-    const labelH = 20;
+    const labelW = Math.max(
+        labelLen * LABEL_CHAR_WIDTH
+            + LABEL_PADDING,
+        LABEL_MIN_WIDTH,
+    );
 
     const labelBg = '<rect'
         + ` x="${midX - labelW / 2}"`
-        + ` y="${midY - labelH / 2}"`
+        + ` y="${
+            midY - LABEL_HEIGHT / 2
+        }"`
         + ` width="${labelW}"`
-        + ` height="${labelH}"`
-        + ' rx="4"'
+        + ` height="${LABEL_HEIGHT}"`
+        + ` rx="${LABEL_RADIUS}"`
         + ' fill="var('
         + '--color-card-bg, #232940)"'
         + ` stroke="${color}"`
         + ' stroke-width="1"'
-        + ' opacity="0.9"/>';
+        + ` opacity="${LABEL_BG_OPACITY}"/>`;
 
     const labelText = '<text'
         + ` x="${midX}"`
-        + ` y="${midY + 4}"`
+        + ` y="${
+            midY + LABEL_TEXT_OFFSET_Y
+        }"`
         + ' text-anchor="middle"'
-        + ' font-size="11"'
+        + ` font-size="${LABEL_FONT}"`
         + ' fill="var('
         + '--color-foreground,'
         + ' #e0e4ef)">'
@@ -346,7 +418,7 @@ function computeMidpoint(
     const cp1x = coords[2]!;
     const cp2x = coords[4]!;
     const p1x = coords[6]!;
-    const t = 0.5;
+    const t = BEZIER_MIDPOINT;
     const u = 1 - t;
     return u * u * u * p0x
         + 3 * u * u * t * cp1x
@@ -368,7 +440,7 @@ function computeMidpointY(
     const cp1y = coords[3]!;
     const cp2y = coords[5]!;
     const p1y = coords[7]!;
-    const t = 0.5;
+    const t = BEZIER_MIDPOINT;
     const u = 1 - t;
     return u * u * u * p0y
         + 3 * u * u * t * cp1y
