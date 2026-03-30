@@ -12,7 +12,8 @@ import {
 } from '../app/core';
 import {
     getProjectById, putProject,
-    getWorkflowsByProject, postWorkflow,
+    getWorkflowsByProject,
+    postWorkflowCreation,
     ProjectView,
 } from '../app/adapters';
 import type {
@@ -193,14 +194,18 @@ function bindProjectEvents(
         ?.addEventListener(
             'click',
             async () => {
-                let wfId: string;
+                const wfId =
+                    crypto.randomUUID();
                 try {
-                    wfId =
-                        await postWorkflow(
+                    await postWorkflowCreation(
+                        {
+                            workflowId: wfId,
                             projectId,
-                            'New Workflow',
-                            '',
-                        );
+                            name:
+                                'New Workflow',
+                            description: '',
+                        },
+                    );
                 } catch {
                     showToast(
                         'Failed to create'

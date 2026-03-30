@@ -410,13 +410,41 @@ export async function getWorkflowGraph(
     };
 }
 
-export async function postWorkflow(
-    projectId: string,
-    name: string,
-    description: string,
-): Promise<string> {
-    const workflowId =
-        crypto.randomUUID();
+export interface WorkflowCreationContext {
+    workflowId: string;
+    projectId: string;
+    name: string;
+    description: string;
+}
+
+export interface NodeAdditionContext {
+    nodeId: string;
+    workflowId: string;
+    name: string;
+    positionX: number;
+    positionY: number;
+}
+
+export interface EdgeConnectionContext {
+    edgeId: string;
+    name: string;
+    fromNodeId: string;
+    toNodeId: string;
+}
+
+export interface FieldAdditionContext {
+    fieldId: string;
+    nodeId: string;
+    name: string;
+    fieldType: string;
+    sortOrder: number;
+    isRequired: boolean;
+    options: string[];
+}
+
+export async function postWorkflowCreation(
+    ctx: WorkflowCreationContext,
+): Promise<void> {
     const startNodeId =
         crypto.randomUUID();
     const completeNodeId =
@@ -424,9 +452,9 @@ export async function postWorkflow(
     const now = nowUtc();
 
     await POST<void>('workflows', {
-        id: workflowId,
-        name,
-        description,
+        id: ctx.workflowId,
+        name: ctx.name,
+        description: ctx.description,
         created_at: now,
         updated_at: now,
     });
@@ -457,42 +485,36 @@ export async function postWorkflow(
     await Promise.all([
         POST<void>('project-workflows', {
             id: crypto.randomUUID(),
-            project_id: projectId,
-            workflow_id: workflowId,
+            project_id: ctx.projectId,
+            workflow_id: ctx.workflowId,
             created_at: now,
         }),
         POST<void>('wf-workflow-nodes', {
             id: crypto.randomUUID(),
-            workflow_id: workflowId,
+            workflow_id: ctx.workflowId,
             node_id: startNodeId,
             created_at: now,
         }),
         POST<void>('wf-workflow-nodes', {
             id: crypto.randomUUID(),
-            workflow_id: workflowId,
+            workflow_id: ctx.workflowId,
             node_id: completeNodeId,
             created_at: now,
         }),
     ]);
-
-    return workflowId;
 }
 
-export async function postNode(
-    workflowId: string,
-    name: string,
-    positionX: number,
-    positionY: number,
-): Promise<string> {
-    const nodeId = crypto.randomUUID();
+export async function postNodeAddition(
+    ctx: NodeAdditionContext,
+): Promise<void> {
     const now = nowUtc();
 
     await POST<void>('wf-nodes', {
-        id: nodeId,
-        name,
+        id: ctx.nodeId,
+        name: ctx.name,
         description: '',
-        position_x: positionX,
-        position_y: positionY,
+        position_x: ctx.positionX,
+        position_y: ctx.positionY,
         is_start: 0,
         is_complete: 0,
         created_at: now,
@@ -502,70 +524,57 @@ export async function postNode(
         'wf-workflow-nodes',
         {
             id: crypto.randomUUID(),
-            workflow_id: workflowId,
-            node_id: nodeId,
+            workflow_id: ctx.workflowId,
+            node_id: ctx.nodeId,
             created_at: now,
         },
     );
-
-    return nodeId;
 }
 
-export async function postEdge(
-    name: string,
-    fromNodeId: string,
-    toNodeId: string,
-): Promise<string> {
-    const edgeId = crypto.randomUUID();
+export async function postEdgeConnection(
+    ctx: EdgeConnectionContext,
+): Promise<void> {
     const now = nowUtc();
 
     await POST<void>('wf-edges', {
-        id: edgeId,
-        name,
+        id: ctx.edgeId,
+        name: ctx.name,
         description: '',
         created_at: now,
     });
 
     await POST<void>('wf-node-edges', {
         id: crypto.randomUUID(),
-        wf_edge_id: edgeId,
-        from_node_id: fromNodeId,
-        to_node_id: toNodeId,
+        wf_edge_id: ctx.edgeId,
+        from_node_id: ctx.fromNodeId,
+        to_node_id: ctx.toNodeId,
         created_at: now,
     });
-
-    return edgeId;
 }
 
-export async function postField(
-    nodeId: string,
-    name: string,
-    fieldType: string,
-    sortOrder: number,
-    isRequired: boolean,
-    options: string[],
-): Promise<string> {
-    const fieldId = crypto.randomUUID();
+export async function postFieldAddition(
+    ctx: FieldAdditionContext,
+): Promise<void> {
     const now = nowUtc();
 
     await POST<void>('wf-fields', {
-        id: fieldId,
-        name,
-        field_type: fieldType,
-        sort_order: sortOrder,
-        is_required: isRequired ? 1 : 0,
-        options: jsonArrayField(options),
+        id: ctx.fieldId,
+        name: ctx.name,
+        field_type: ctx.fieldType,
+        sort_order: ctx.sortOrder,
+        is_required:
+            ctx.isRequired ? 1 : 0,
+        options:
+            jsonArrayField(ctx.options),
         created_at: now,
     });
 
     await POST<void>('wf-node-fields', {
         id: crypto.randomUUID(),
-        node_id: nodeId,
-        field_id: fieldId,
+        node_id: ctx.nodeId,
+        field_id: ctx.fieldId,
         created_at: now,
     });
-
-    return fieldId;
 }
 
 export async function putWorkflow(

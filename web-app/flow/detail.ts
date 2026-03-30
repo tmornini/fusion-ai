@@ -16,9 +16,9 @@ import {
     putWorkflow,
     putNode,
     putWfEdge,
-    postNode,
-    postEdge,
-    postField,
+    postNodeAddition,
+    postEdgeConnection,
+    postFieldAddition,
     deleteNode,
     deleteEdge,
     deleteField,
@@ -521,13 +521,14 @@ async function handleEdgeCreated(
     fromNodeId: string,
     toNodeId: string,
 ): Promise<void> {
-    let edgeId: string;
+    const edgeId = crypto.randomUUID();
     try {
-        edgeId = await postEdge(
-            'Transition',
+        await postEdgeConnection({
+            edgeId,
+            name: 'Transition',
             fromNodeId,
             toNodeId,
-        );
+        });
     } catch {
         showToast(
             'Failed to create transition',
@@ -638,12 +639,15 @@ async function handleAddState(
         + (state.nodes.length - 1)
         * (NODE_WIDTH + 120);
     const y = START_Y + 100;
-    let nodeId: string;
+    const nodeId = crypto.randomUUID();
     try {
-        nodeId = await postNode(
-            state.workflowId,
-            'New State', x, y,
-        );
+        await postNodeAddition({
+            nodeId,
+            workflowId: state.workflowId,
+            name: 'New State',
+            positionX: x,
+            positionY: y,
+        });
     } catch {
         showToast(
             'Failed to add state',
@@ -1021,12 +1025,17 @@ async function handleSaveField(
     );
     if (!node) return;
     const sortOrder = node.fields.length;
-    let fieldId: string;
+    const fieldId = crypto.randomUUID();
     try {
-        fieldId = await postField(
-            nodeId, fieldName, fieldType,
-            sortOrder, isRequired, options,
-        );
+        await postFieldAddition({
+            fieldId,
+            nodeId,
+            name: fieldName,
+            fieldType,
+            sortOrder,
+            isRequired,
+            options,
+        });
     } catch {
         showToast(
             'Failed to add field',
