@@ -10,18 +10,27 @@ import type {
 } from '../adapters/workflows';
 
 export class WorkflowPresenter {
-    readonly #wf: WorkflowSummary;
+    readonly #id: string;
+    readonly #name: string;
+    readonly #description: string;
+    readonly #nodeCount: number;
+    readonly #edgeCount: number;
+    readonly #projectName: string | null;
 
     constructor(wf: WorkflowSummary) {
-        this.#wf = wf;
+        this.#id = wf.id;
+        this.#name = wf.name;
+        this.#description = wf.description;
+        this.#nodeCount = wf.nodeCount;
+        this.#edgeCount = wf.edgeCount;
+        this.#projectName = wf.projectName;
     }
 
     buildCard(): SafeHtml {
-        const wf = this.#wf;
         return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
-        data-workflow-card="${wf.id}">
+        data-workflow-card="${this.#id}">
         <div class="${
             'flex items-start '
             + 'justify-between gap-4'
@@ -34,7 +43,7 @@ export class WorkflowPresenter {
                     + 'items-center'
                     + ' gap-2 mb-2'
                 }">
-                    ${wf.projectName
+                    ${this.#projectName
                         ? html`<span
                             class="${
                                 'badge'
@@ -45,18 +54,20 @@ export class WorkflowPresenter {
                                 12, '',
                             )
                         } ${
-                            wf.projectName
+                            this.#projectName
                         }</span>`
                         : html``}
                 </div>
                 <h3 class="${
                     'font-semibold mb-1'
-                }">${wf.name}</h3>
+                }">${this.#name}</h3>
                 <p class="${
                     'text-sm'
                     + ' text-muted mb-2'
                     + ' truncate'
-                }">${wf.description}</p>
+                }">${
+                    this.#description
+                }</p>
                 <div class="${
                     'flex flex-wrap '
                     + 'items-center'
@@ -71,9 +82,9 @@ export class WorkflowPresenter {
                     }">${
                         iconCircle(14, '')
                     } ${
-                        wf.nodeCount
+                        this.#nodeCount
                     } ${
-                        wf.nodeCount === 1
+                        this.#nodeCount === 1
                             ? 'state'
                             : 'states'
                     }</span>
@@ -84,9 +95,9 @@ export class WorkflowPresenter {
                     }">${
                         iconShare(14, '')
                     } ${
-                        wf.edgeCount
+                        this.#edgeCount
                     } ${
-                        wf.edgeCount === 1
+                        this.#edgeCount === 1
                             ? 'transition'
                             : 'transitions'
                     }</span>

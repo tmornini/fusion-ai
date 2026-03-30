@@ -11,12 +11,38 @@ import type {
 } from '../adapters';
 
 export class SettingsPresenter {
-    readonly #settings: CompanySettings;
+    readonly #name: string;
+    readonly #domain: string;
+    readonly #industry: string;
+    readonly #size: string;
+    readonly #timezone: string;
+    readonly #language: string;
+    readonly #isSsoEnforced: boolean;
+    readonly #isTwoFactorEnabled: boolean;
+    readonly #isIpWhitelistEnabled: boolean;
+    readonly #dataRetention: string;
 
     constructor(
         settings: CompanySettings,
     ) {
-        this.#settings = settings;
+        this.#name = settings.name;
+        this.#domain = settings.domain;
+        this.#industry =
+            settings.industry;
+        this.#size = settings.size;
+        this.#timezone =
+            settings.timezone;
+        this.#language =
+            settings.language;
+        this.#isSsoEnforced =
+            settings.isSsoEnforced;
+        this.#isTwoFactorEnabled =
+            settings.isTwoFactorEnabled;
+        this.#isIpWhitelistEnabled =
+            settings
+                .isIpWhitelistEnabled;
+        this.#dataRetention =
+            settings.dataRetention;
     }
 
     #buildSelectField(
@@ -78,7 +104,6 @@ export class SettingsPresenter {
     }
 
     buildPage(): SafeHtml {
-        const s = this.#settings;
         return html`
     <div style="${
         'max-width:48rem;'
@@ -144,7 +169,7 @@ export class SettingsPresenter {
                             + '-name'
                         }"
                         value="${
-                            s.name
+                            this.#name
                         }" />
                 </div>
                 <div>
@@ -161,7 +186,7 @@ export class SettingsPresenter {
                             + '-domain'
                         }"
                         value="${
-                            s.domain
+                            this.#domain
                         }" />
                 </div>
             </div>
@@ -172,7 +197,7 @@ export class SettingsPresenter {
                     'company-settings'
                     + '-industry',
                     'Industry',
-                    s.industry,
+                    this.#industry,
                     [
                         'Technology',
                         'Healthcare',
@@ -185,7 +210,7 @@ export class SettingsPresenter {
                 ${this.#buildSelectField(
                     'company-settings-size',
                     'Company Size',
-                    s.size,
+                    this.#size,
                     [
                         '1-10',
                         '11-50',
@@ -211,7 +236,7 @@ export class SettingsPresenter {
                     'company-settings'
                     + '-timezone',
                     'Timezone',
-                    s.timezone,
+                    this.#timezone,
                     [
                         'America/New_York',
                         'America/Chicago',
@@ -226,7 +251,7 @@ export class SettingsPresenter {
                     'company-settings'
                     + '-language',
                     'Language',
-                    s.language,
+                    this.#language,
                     [
                         'English',
                         'Spanish',
@@ -253,28 +278,31 @@ export class SettingsPresenter {
                 'Enforce SSO',
                 'Require Single Sign-On'
                 + ' for all users',
-                s.isSsoEnforced,
+                this.#isSsoEnforced,
             )}
             ${this.#buildToggleRow(
                 'company-settings-2fa',
                 'Two-Factor Authentication',
-                'Require 2FA for all users',
-                s.isTwoFactorEnabled,
+                'Require 2FA'
+                + ' for all users',
+                this.#isTwoFactorEnabled,
             )}
             ${this.#buildToggleRow(
                 'company-settings'
                 + '-ip-whitelist',
                 'IP Whitelist',
-                'Restrict access to specific'
+                'Restrict access'
+                + ' to specific'
                 + ' IP addresses',
-                s.isIpWhitelistEnabled,
+                this
+                    .#isIpWhitelistEnabled,
             )}
             <div class="pt-4">
                 ${this.#buildSelectField(
                     'company-settings'
                     + '-retention',
                     'Data Retention Period',
-                    s.dataRetention,
+                    this.#dataRetention,
                     [
                         '6 months',
                         '12 months',

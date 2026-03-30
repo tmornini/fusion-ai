@@ -93,57 +93,82 @@ const ICON_MAP: Record<
 };
 
 export class ActivityPresenter {
-    readonly #activity: Activity;
+    readonly #type: string;
+    readonly #action: string;
+    readonly #target: string;
+    readonly #timestamp: string;
+    readonly #score: number;
+    readonly #status: string;
+    readonly #comment: string;
+    readonly #actor: string;
 
     constructor(activity: Activity) {
-        this.#activity = activity;
+        this.#type = activity.type;
+        this.#action = activity.action;
+        this.#target = activity.target;
+        this.#timestamp =
+            activity.timestamp;
+        this.#score = activity.score;
+        this.#status = activity.status;
+        this.#comment = activity.comment;
+        this.#actor = activity.actor;
     }
 
     matchesFilter(
         query: string,
-        types: readonly string[] | undefined,
+        types:
+            readonly string[]
+            | undefined,
     ): boolean {
-        const a = this.#activity;
         if (query
-            && !a.actor
+            && !this.#actor
                 .toLowerCase()
                 .includes(query)
-            && !a.target
+            && !this.#target
                 .toLowerCase()
                 .includes(query))
             return false;
         if (types
-            && !types.includes(a.type))
+            && !types.includes(
+                this.#type,
+            ))
             return false;
         return true;
     }
 
     buildActivity(): SafeHtml {
-        const a = this.#activity;
-        const meta = a.score
+        const meta = this.#score
             ? html`<div
                 class="${
                     'badge badge-default'
                     + ' text-xs mt-1'
                 }">${
                 iconStar(12, '')
-            } Score: ${a.score}</div>`
-            : a.status
+            } Score: ${
+                this.#score
+            }</div>`
+            : this.#status
                 ? html`<div
                     class="${
                         'badge badge-default'
                         + ' text-xs mt-1'
-                    }">${a.status}</div>`
-                : a.comment
+                    }">${
+                    this.#status
+                }</div>`
+                : this.#comment
                     ? html`<p
                         class="${
-                            'text-sm text-muted'
+                            'text-sm'
+                            + ' text-muted'
                             + ' mt-1'
                         }"
                         style="${
-                            'font-style:italic'
+                            'font-style'
+                            + ':italic'
                         }"
-                        >"${a.comment}"</p>`
+                        >"${
+                        this.#comment
+                    }"</p>`
                     : html``;
         return html`
     <div class="flex items-start gap-4
@@ -151,29 +176,41 @@ export class ActivityPresenter {
         ${this.#buildIcon()}
         <div style="flex:1;min-width:0">
             <p class="text-sm">
-                <span class="font-medium">${
-                    displayText(a.actor)
+                <span class="${
+                    'font-medium'
+                }">${
+                    displayText(
+                        this.#actor,
+                    )
                 }</span>
-                <span class="text-muted"> ${
-                    a.action} </span>
-                <span class="font-medium">${
-                    a.target}</span>
+                <span class="${
+                    'text-muted'
+                }"> ${
+                    this.#action
+                } </span>
+                <span class="${
+                    'font-medium'
+                }">${
+                    this.#target
+                }</span>
             </p>
             ${meta}
             <p class="${
                 'text-xs text-muted mt-1'
             }">${
-                formatDate(a.timestamp)
+                formatDate(
+                    this.#timestamp,
+                )
             }</p>
         </div>
     </div>`;
     }
 
     #buildIcon(): SafeHtml {
-        const t = this.#activity.type;
         const actType =
-            t as ActivityType;
-        const entry = ICON_MAP[actType]!;
+            this.#type as ActivityType;
+        const entry =
+            ICON_MAP[actType]!;
         return html`<div style="${
             'width:2.5rem;'
             + 'height:2.5rem;'
@@ -184,6 +221,8 @@ export class ActivityPresenter {
             + 'justify-content:center;'
             + 'flex-shrink:0;'
             + entry.bg
-        }">${entry.icon(20, '')}</div>`;
+        }">${
+            entry.icon(20, '')
+        }</div>`;
     }
 }
