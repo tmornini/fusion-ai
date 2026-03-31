@@ -232,7 +232,13 @@ export class IdeaPresenter {
                             view,
                         )}
                     </div>
-                    ${this.#buildScoreBadge()}
+                    <div class="${
+                        'flex items-center'
+                        + ' gap-2'
+                    }">
+                        ${this.#buildBadges()}
+                        ${this.#buildScoreBadge()}
+                    </div>
                 </div>
                 <div style="display:grid;
                     grid-template-columns:
@@ -251,34 +257,14 @@ export class IdeaPresenter {
         view: string,
     ): SafeHtml {
         return html`
-        <div class="${
-            'flex flex-wrap'
-            + ' items-center'
-            + ' gap-2 mb-1'
+        <h3 class="${
+            'font-display'
+            + ' font-semibold'
+            + ' truncate'
+            + ' mb-1'
         }">
-            <h3 class="${
-                'font-display'
-                + ' font-semibold'
-                + ' truncate'
-            }">
-                ${this.#title}
-            </h3>
-            <span class="${
-                'badge '
-                + this.#statusClassName
-                + ' text-xs'
-            }">
-                ${this.#statusLabel}
-            </span>
-            <span class="${
-                'badge '
-                + this.#edgeStatusClassName
-                + ' text-xs'
-            }">
-                ${iconTarget(12, '')}
-                ${this.#edgeStatusLabel}
-            </span>
-        </div>
+            ${this.#title}
+        </h3>
         <div class="${
             'flex items-center'
             + ' gap-2 text-xs'
@@ -300,6 +286,25 @@ export class IdeaPresenter {
                 }
             </span>
         </div>`;
+    }
+
+    #buildBadges(): SafeHtml {
+        return html`
+        <span class="${
+            'badge '
+            + this.#statusClassName
+            + ' text-xs'
+        }">
+            ${this.#statusLabel}
+        </span>
+        <span class="${
+            'badge '
+            + this.#edgeStatusClassName
+            + ' text-xs'
+        }">
+            ${iconTarget(12, '')}
+            ${this.#edgeStatusLabel}
+        </span>`;
     }
 
     #buildScoreBadge(): SafeHtml {
