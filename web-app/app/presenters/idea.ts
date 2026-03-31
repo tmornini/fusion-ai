@@ -232,20 +232,15 @@ export class IdeaPresenter {
                             view,
                         )}
                     </div>
-                    <div class="${
-                        'flex items-center'
-                        + ' gap-2'
-                    }">
-                        ${this.#buildBadges()}
-                        ${this.#buildScoreBadge()}
-                    </div>
+                    ${this.#buildScoreBadge()}
                 </div>
                 <div style="display:grid;
                     grid-template-columns:
-                        3fr 2fr;
+                        3fr auto 2fr;
                     gap:1rem;
-                    align-items:end">
+                    align-items:center">
                     ${this.#buildEstimates()}
+                    ${this.#buildBadges()}
                     ${this.#buildActions()}
                 </div>
             </div>
@@ -290,21 +285,28 @@ export class IdeaPresenter {
 
     #buildBadges(): SafeHtml {
         return html`
-        <span class="${
-            'badge '
-            + this.#statusClassName
-            + ' text-xs'
+        <div style="${
+            'display:flex;'
+            + 'flex-direction:column;'
+            + 'align-items:center;'
+            + 'gap:0.25rem'
         }">
-            ${this.#statusLabel}
-        </span>
-        <span class="${
-            'badge '
-            + this.#edgeStatusClassName
-            + ' text-xs'
-        }">
-            ${iconTarget(12, '')}
-            ${this.#edgeStatusLabel}
-        </span>`;
+            <span class="${
+                'badge '
+                + this.#statusClassName
+                + ' text-xs'
+            }">
+                ${this.#statusLabel}
+            </span>
+            <span class="${
+                'badge '
+                + this.#edgeStatusClassName
+                + ' text-xs'
+            }">
+                ${iconTarget(12, '')}
+                ${this.#edgeStatusLabel}
+            </span>
+        </div>`;
     }
 
     #buildScoreBadge(): SafeHtml {
