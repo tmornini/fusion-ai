@@ -10,7 +10,7 @@ import {
     iconHash, iconCalendar, iconType,
     iconToggleLeft,
 } from '../icons';
-import { displayText } from '../core';
+import { displayText, formatDate } from '../core';
 import type {
     CrunchColumn,
 } from '../adapters';
@@ -880,6 +880,15 @@ export class CrunchPresenter {
                                     .slice(
                                         0,
                                         2,
+                                    )
+                                    .map(v =>
+                                        column
+                                            .dataType
+                                            === 'date'
+                                            ? formatDate(
+                                                v,
+                                            )
+                                            : v,
                                     )
                                     .join(
                                         ', ',

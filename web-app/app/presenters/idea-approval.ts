@@ -1,5 +1,5 @@
 import { html, SafeHtml } from '../safe-html';
-import { displayText } from '../core';
+import { displayText, formatDate } from '../core';
 import {
     iconClock,
     iconDollarSign,
@@ -58,6 +58,7 @@ export class IdeaApprovalPresenter {
     readonly #submittedAt: string;
     readonly #category: string;
     readonly #description: string;
+    readonly #expectedOutcome: string;
     readonly #score: number;
     readonly #impactLabel: string;
     readonly #effortLabel: string;
@@ -81,6 +82,8 @@ export class IdeaApprovalPresenter {
         this.#category = idea.category;
         this.#description =
             idea.description;
+        this.#expectedOutcome =
+            idea.expectedOutcome;
         this.#score = idea.score;
         this.#impactLabel =
             idea.impactLabel;
@@ -234,7 +237,9 @@ export class IdeaApprovalPresenter {
                     class="flex items-center
                         gap-1">
                     ${iconCalendar(16, '')}
-                    ${this.#submittedAt}
+                    ${formatDate(
+                        this.#submittedAt,
+                    )}
                 </span>
                 <span
                     class="flex items-center
@@ -458,7 +463,7 @@ export class IdeaApprovalPresenter {
                         Expected Impact
                     </h3>
                     <p class="text-sm">${
-                        this.#description
+                        this.#expectedOutcome
                     }</p>
                 </div>
                 <div class="card p-6">
