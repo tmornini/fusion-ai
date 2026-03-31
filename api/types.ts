@@ -1107,8 +1107,7 @@ export class Idea {
     }
 
     needsEdgeDefinition(): boolean {
-        return this.edgeStatus !== 'complete'
-            && this.status !== 'archived';
+        return this.edgeStatus === 'missing';
     }
 
     isReady(): boolean {
