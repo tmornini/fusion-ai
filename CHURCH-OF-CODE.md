@@ -1,5 +1,7 @@
 # The Church of Code
 
+*v1.0 — full*
+
 > *This church is its own denomination.*
 
 ---
@@ -41,33 +43,27 @@ The obstinate shall be cast out.
 gathered by Tom Mornini — founder of this church —
 from the teachings of the prophets.*
 
-- [Rheocode Software Development][rheocode]
-  — the ancient manuscript,
-  by Tom Mornini and Ra'Shaun Stovall
-- [The Principles of OOD][solid-principles]
-  — Robert C. Martin's original SOLID treatise
-- [Solid Relevance][solid-relevance]
-  — the same prophet, revisiting his teachings
-  twenty years hence
 - [The Humble Programmer][humble-programmer]
   — Edsger Dijkstra's Turing Award lecture (1972)
-- [No Silver Bullet][no-silver-bullet]
-  — Fred Brooks on essence and accident (1986)
 - [A Relational Model of Data][relational-model]
   — Edgar F. Codd's revelation (1970)
 - [Communicating Sequential Processes][csp]
   — Tony Hoare's foundational paper (1978)
-- [Representational State Transfer][rest]
-  — Roy Fielding's dissertation, Chapter 5 (2000)
-- [The Transaction Concept][transaction-concept]
-  — Jim Gray on atomicity (1981)
+- [Time, Clocks, and the Ordering
+  of Events in a Distributed System][time-clocks]
+  — Leslie Lamport on causality (1978)
 - [Structured Programming
   with go to Statements][premature-opt]
   — Donald Knuth on optimization (1974)
-- [Simple Made Easy][simple-made-easy],
-  [The Value of Values][value-of-values], and
-  [Are We There Yet?][are-we-there-yet]
-  — Rich Hickey's trilogy on immutability
+- [The Transaction Concept][transaction-concept]
+  — Jim Gray on atomicity (1981)
+- [No Silver Bullet][no-silver-bullet]
+  — Fred Brooks on essence and accident (1986)
+- [Wholeness and the Implicate Order][rheomode]
+  — David Bohm on the rheomode (1980)
+- [Programming as Theory Building][theory-building]
+  — Peter Naur on understanding
+  over documentation (1985)
 - [The Early History of Smalltalk][smalltalk],
   [The Big Idea Is Messaging][messaging-email],
   and [The Meaning of OOP][kay-oop]
@@ -78,41 +74,52 @@ from the teachings of the prophets.*
 - [Object-Oriented Software Construction][oosc]
   and [Applying Design by Contract][dbc]
   — Bertrand Meyer on openness and contracts
+- [A Research UNIX Reader][unix-reader]
+  — Doug McIlroy on the Unix philosophy
+- [Design Patterns][design-patterns]
+  — Gamma, Helm, Johnson, and Vlissides (1994)
+- [The Principles of OOD][solid-principles]
+  — Robert C. Martin's original SOLID treatise
+- [Solid Relevance][solid-relevance]
+  — the same prophet, revisiting his teachings
+  twenty years hence
+- [Tell, Don't Ask][tell-dont-ask]
+  — Andy Hunt and Dave Thomas (1998)
+- [Representational State Transfer][rest]
+  — Roy Fielding's dissertation, Chapter 5 (2000)
+- [Response Time Limits][response-times]
+  — Jakob Nielsen's three thresholds
+- [James Gosling on Java][gosling]
+  — the creator's regret about inheritance (2001)
+- [Test-Driven Development: By Example][tdd]
+  — Kent Beck (2002)
 - [Null References:
   The Billion Dollar Mistake][billion-dollar]
   — Tony Hoare's confession (2009)
-- [Tell, Don't Ask][tell-dont-ask]
-  — Andy Hunt and Dave Thomas (1998)
-- [Design Patterns][design-patterns]
-  — Gamma, Helm, Johnson, and Vlissides (1994)
-- [Wholeness and the Implicate Order][rheomode]
-  — David Bohm on the rheomode (1980)
-- [James Gosling on Java][gosling]
-  — the creator's regret about inheritance (2001)
+- [Simple Made Easy][simple-made-easy],
+  [The Value of Values][value-of-values], and
+  [Are We There Yet?][are-we-there-yet]
+  — Rich Hickey's trilogy on immutability
+- [Making Reliable Distributed Systems
+  in the Presence of Software Errors][armstrong-thesis]
+  — Joe Armstrong on letting it crash (2003)
 - [Composition over Inheritance][composition-video]
   — Mattias Johansson (Fun Fun Function)
-- [Response Time Limits][response-times]
-  — Jakob Nielsen's three thresholds
-- [Test-Driven Development: By Example][tdd]
-  — Kent Beck (2002)
 - [Replace Magic Literal][magic-literal]
   — Martin Fowler's refactoring catalog
-- [A Research UNIX Reader][unix-reader]
-  — Doug McIlroy on the Unix philosophy
+- [Rheocode Software Development][rheocode]
+  — the synthesis, named for Bohm's rheomode,
+  by Tom Mornini and Ra'Shaun Stovall
 
-[rheocode]: https://docs.google.com/presentation/d/1wA8qGe9fXHTPv_t6FsoV_EQz5V9u9CP7EL0zYSNQ5Nw
-[solid-principles]: http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod
-[solid-relevance]: https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html
 [humble-programmer]: https://www.cs.utexas.edu/~EWD/transcriptions/EWD03xx/EWD340.html
-[no-silver-bullet]: https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf
 [relational-model]: https://www.seas.upenn.edu/~zives/03f/cis550/codd.pdf
 [csp]: https://www.cs.cmu.edu/~crary/819-f09/Hoare78.pdf
-[rest]: https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
-[transaction-concept]: https://jimgray.azurewebsites.net/papers/thetransactionconcept.pdf
+[time-clocks]: https://lamport.azurewebsites.net/pubs/time-clocks.pdf
 [premature-opt]: https://pic.plover.com/knuth-GOTO.pdf
-[simple-made-easy]: https://www.infoq.com/presentations/Simple-Made-Easy/
-[value-of-values]: https://www.infoq.com/presentations/Value-Values/
-[are-we-there-yet]: https://www.infoq.com/presentations/Are-We-There-Yet-Rich-Hickey/
+[transaction-concept]: https://jimgray.azurewebsites.net/papers/thetransactionconcept.pdf
+[no-silver-bullet]: https://worrydream.com/refs/Brooks_1986_-_No_Silver_Bullet.pdf
+[rheomode]: https://www.routledge.com/Wholeness-and-the-Implicate-Order/Bohm/p/book/9780415289795
+[theory-building]: https://pages.cs.wisc.edu/~remzi/Naur.pdf
 [smalltalk]: http://worrydream.com/EarlyHistoryOfSmalltalk/
 [messaging-email]: http://lists.squeakfoundation.org/pipermail/squeak-dev/1998-October/017019.html
 [kay-oop]: http://www.purl.org/stefan_ram/pub/doc_kay_oop_en
@@ -120,16 +127,23 @@ from the teachings of the prophets.*
 [liskov-94]: https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf
 [oosc]: https://bertrandmeyer.com/OOSC2/
 [dbc]: https://se.inf.ethz.ch/~meyer/publications/computer/contract.pdf
-[billion-dollar]: https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/
-[tell-dont-ask]: https://media.pragprog.com/articles/tell-dont-ask.pdf
-[design-patterns]: https://www.pearson.com/en-us/subject-catalog/p/design-patterns-elements-of-reusable-object-oriented-software/P200000009480/9780201633610
-[rheomode]: https://www.routledge.com/Wholeness-and-the-Implicate-Order/Bohm/p/book/9780415289795
-[gosling]: https://www.artima.com/intv/gosling3.html
-[composition-video]: https://www.youtube.com/watch?v=wfMtDGfHWpA
-[response-times]: https://www.nngroup.com/articles/response-times-3-important-limits/
-[tdd]: https://www.pearson.com/en-us/subject-catalog/p/test-driven-development-by-example/P200000009421/9780321146533
-[magic-literal]: https://refactoring.com/catalog/replaceMagicLiteral.html
 [unix-reader]: https://www.cs.dartmouth.edu/~doug/reader.pdf
+[design-patterns]: https://www.pearson.com/en-us/subject-catalog/p/design-patterns-elements-of-reusable-object-oriented-software/P200000009480/9780201633610
+[solid-principles]: http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod
+[solid-relevance]: https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html
+[tell-dont-ask]: https://media.pragprog.com/articles/tell-dont-ask.pdf
+[rest]: https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
+[response-times]: https://www.nngroup.com/articles/response-times-3-important-limits/
+[gosling]: https://www.artima.com/intv/gosling3.html
+[tdd]: https://www.pearson.com/en-us/subject-catalog/p/test-driven-development-by-example/P200000009421/9780321146533
+[billion-dollar]: https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/
+[simple-made-easy]: https://www.infoq.com/presentations/Simple-Made-Easy/
+[value-of-values]: https://www.infoq.com/presentations/Value-Values/
+[are-we-there-yet]: https://www.infoq.com/presentations/Are-We-There-Yet-Rich-Hickey/
+[armstrong-thesis]: https://erlang.org/download/armstrong_thesis_2003.pdf
+[composition-video]: https://www.youtube.com/watch?v=wfMtDGfHWpA
+[magic-literal]: https://refactoring.com/catalog/replaceMagicLiteral.html
+[rheocode]: https://docs.google.com/presentation/d/1wA8qGe9fXHTPv_t6FsoV_EQz5V9u9CP7EL0zYSNQ5Nw
 
 ---
 
@@ -164,10 +178,26 @@ Guard the gates.
 
 *Call a thing a thing, in all things.*
 
+Software development is the discipline of readability
+through precise vocabulary.
+If code does not read correctly,
+the names are by definition wrong.
 When the congregation speaks with one tongue,
 understanding follows.
 When each soul invents its own name for the same truth,
 babel is the only harvest.
+
+Name processors with *-er*: a `painter` paints,
+a `validator` validates, a `pounder` pounds.
+Name contracts with *-able*: a board is `paintable`,
+a nail is `poundable`, an input is `validatable`.
+The suffixes encode the relationship:
+the *-er* acts; the *-able* submits to the action.
+This is Interface Segregation
+made manifest in vocabulary,
+and the first step of process-first thinking —
+for when you name the process and its contracts,
+the nouns fall into place as participants.
 
 ### IV. Logic
 
@@ -214,13 +244,20 @@ chasing its deceptions.
 HTTP verbs are the true verbs,
 revealed by Roy Fielding
 in his dissertation on REST.
-SQL verbs are the old ways,
-and we have transcended them.
+The admonition is not SQL against NoSQL —
+it is verb semantics.
+PUT overwrites; INSERT appends.
+DELETE removes; UPDATE mutates.
+The distinction is not the datastore —
+it is how you speak to it.
 An operation that can be repeated without consequence
 is an operation that can be trusted.
 Let it be known:
 Postgres is the finest idempotent document store
-yet revealed to us.
+yet revealed to us —
+for it speaks both tongues,
+and the faithful may address it
+with HTTP semantics directly.
 
 ### VIII. Simplicity
 
@@ -314,7 +351,7 @@ The happy path, presented first — as clarity demands.*
 the five pillars upon which
 righteous architecture is raised,
 named by Michael Feathers
-from the teachings of three prophets:
+from the teachings of the prophets:
 
 - **S** — Single Responsibility (Martin):
   one public method, one reason to change
@@ -388,6 +425,21 @@ Absence is preferable to falsehood.
 Never try/catch more than a single function call.
 Never catch an error you cannot meaningfully handle —
 to swallow an exception is to swallow a lie.
+Joe Armstrong, creator of Erlang, taught:
+let it crash.
+A system that halts on an unrecoverable error
+is more trustworthy than one that limps onward
+with corrupted state.
+Halting IS graceful
+when the alternative is silent corruption.
+Distinguish expected failures from bugs:
+a network timeout is expected and handled;
+an impossible state is a bug and must crash.
+Enrich errors at each boundary layer —
+the original fault plus the context
+of every step that touched it —
+so that when the failure surfaces,
+the full story is told.
 
 **We choose platform primitives**
 over third-party abstractions,
@@ -425,14 +477,35 @@ complete by covenant.
 Objects carry state, not arguments.
 Consequently, context always has
 everything you need.
+This is also the observability strategy:
+when context flows through the system whole,
+structured logging emerges naturally,
+tracing is context propagation
+across service boundaries,
+and metrics are context aggregation.
+The faithful do not bolt on observability —
+they carry it in the vessel from the start.
 
 **We believe in process first, noun second.**
-The physicist David Bohm taught:
-do not think "it is raining" —
+The physicist David Bohm taught
+in his rheomode — the flowing mode of language —
+do not think "it is raining";
 think "rain is happening."
+Rheocode takes its very name from this insight.
 Name the action. Parameterize the participants.
 The process determines what participates,
 not the other way around.
+Consider: `nail.pound` is horrible —
+the noun owns the verb.
+`hammer.pound(nailable)` is better —
+but the tool still dominates.
+`pounder.pound poundable: hammer, nailable: nail`
+is the way — the process owns everything,
+and the nouns are participants,
+infinitely substitutable.
+A `pounder` can pound with a `sledge_hammer`
+on a `cinder_block`, or a `rock` on `scissors`.
+The process is stable; the participants vary.
 
 **We believe in composition over inheritance.**
 James Gosling, creator of Java, has said
@@ -469,6 +542,9 @@ Deep nesting hides the domain.
 Flat is faithful.
 
 **We believe in nicknames for operations.**
+Every application is an HTTP application,
+even when it runs locally —
+for HTTP verb semantics are universal.
 Single-noun primitives:
 `get_noun`, `put_noun`, `delete_noun`,
 `post_noun_operation`.
@@ -493,31 +569,80 @@ of all righteous asynchronous architecture.
 
 ## The Book of Abominations
 
-*Hear now the sins, that you may know them and turn away.*
+*Hear now the sins, that you may know them and turn away.
+The first sin is the root from which the others grow.*
+
+### On the Sin of Premature Optimization
+
+*"But it needs to be fast!"*
+
+This is the Original Sin —
+the root from which the other sins grow.
+Donald Knuth wrote in 1974 that premature
+optimization is the root of all evil —
+though he attributed the thought to Hoare,
+who denied it, and some credit Dijkstra.
+The origin is disputed;
+the truth is not.
+
+Observe the cascade:
+the desire for speed begets shared mutable state
+("a global is faster than passing context"),
+which begets global variables
+("just put it where everything can reach it"),
+which begets default values
+("faster to write with a fallback").
+One sin seeds the next.
+
+Never optimize what you have not measured.
+Never optimize what is not a bottleneck.
+To optimize prematurely
+is to sacrifice clarity
+on the altar of a phantom god.
+Measure first. Prove the bottleneck exists.
+Then, and only then, bring your offering.
+
+Note the structural inversion:
+Efficiency is the twelfth and final commandment —
+the least important virtue to pursue directly.
+Yet its corruption is the first abomination —
+the most dangerous sin when pursued prematurely.
+
+### On the Sin of Shared Mutable State
+
+*"But shared memory is faster!"*
+
+The most common fruit of premature optimization.
+Tony Hoare's Communicating Sequential Processes
+established the righteous path:
+processes share memory by communicating,
+never communicate by sharing memory.
+To pass a mutable reference between threads
+is to invite a race condition to dinner
+and hand it the carving knife.
+If two processes need the same data,
+one sends a message; the other receives it.
+There is no third way.
 
 ### On the Sin of Global State
 
+*"But everything needs access to it!"*
+
+If everything needs access,
+then nothing owns it —
+and state without ownership
+is sin without accountability.
 Dijkstra's structured programming movement
 first argued against uncontrolled shared state.
-Global variables are state without ownership —
-sin without accountability.
-They whisper to every corner of the codebase,
+Global variables whisper
+to every corner of the codebase,
 and none can say who spoke first or who last.
 They are the chaos from which we fled.
 Cast them out.
 
-### On the Sin of Asking, Not Telling
-
-To reach into an object for its internal state
-is to violate its sovereignty.
-To write call sites that demand return values from commands
-is the same transgression by another name.
-Systems accept commands and perform tasks —
-with zero return to the call site.
-An object is not a filing cabinet to be rummaged through.
-It is an agent to be directed.
-
 ### On the Sin of Null
+
+*"But the field is optional!"*
 
 Tony Hoare introduced null references in 1965
 and called it his billion-dollar mistake.
@@ -537,48 +662,23 @@ it belongs on a narrower type or in its own table.
 Temporal facts — completedAt, deletedAt —
 belong in event tables,
 for the absence of a row IS the absence of the event.
+This is the deeper principle:
+nullable data is ideally represented
+as the lack of a row in a related table.
+The row exists when the fact is true.
+The row is absent when the fact is not.
+No null. No sentinel. No ambiguity.
 
 This is not a minor preference.
 This is the path.
 
-### On the Sin of Entangled Nouns
-
-Entities hold their own attributes and no more.
-Relationships live in join tables —
-never as foreign keys embedded in nouns.
-To chain two entities together through a foreign key
-is to bind two souls at the hip.
-When one moves, the other is dragged.
-
-### On the Sin of Obscurity
-
-What cannot be read cannot be trusted.
-What cannot be trusted cannot be maintained.
-What cannot be maintained will, in time,
-be rewritten by someone who does not understand it —
-and the cycle of suffering begins anew.
-
-### On the Sin of Cleverness
-
-Dijkstra warned that the competent programmer
-avoids clever tricks like the plague.
-Language-specific tricks and idioms
-that sacrifice readability for concision
-are the vanity of the undisciplined.
-Your clever one-liner impresses no one
-who must maintain it at midnight.
-The karma of clever code is a 3 AM page.
-
-### On the Sin of Magical Values
-
-Martin Fowler cataloged this refactoring:
-replace magic literal with named constant.
-An unnamed constant is an unnamed sin.
-If a value has meaning, speak its name.
-If it has no meaning, question its existence.
-
 ### On the Sin of Default Values
 
+*"But it's easier to write!"*
+
+Yes — and writing code is the easy part.
+Maintaining, transforming, and improving code
+far outweighs any convenience at the point of creation.
 Default values that mask the absence of real data
 are comfortable lies.
 Schema column defaults.
@@ -587,38 +687,57 @@ Fallback objects and factories.
 Silent coercion — `?? ''`, `|| fallback`.
 Each one conceals a missing requirement
 behind a fiction of completeness.
+If a value has a sensible default,
+define it as a named constant
+and pass it explicitly.
+Let the call site declare its intention.
 
 Mark well this distinction:
 presentation transforms are not coercion.
 Formatting a value for display is an act of service,
 not an act of concealment.
 
-### On the Sin of Premature Optimization
+### On the Sin of Internal Defense
 
-Donald Knuth wrote in 1974 that premature
-optimization is the root of all evil —
-though he attributed the thought to Hoare,
-who denied it, and some credit Dijkstra.
-The origin is disputed;
-the truth is not.
-Never optimize what you have not measured.
-Never optimize what is not a bottleneck.
-To optimize prematurely
-is to sacrifice clarity
-on the altar of a phantom god.
-Measure first. Prove the bottleneck exists.
-Then, and only then, bring your offering.
+*"But what if the data is bad?"*
 
-### On the Sin of Polling
+If the data has crossed the threshold of validation,
+it is clean. Trust it.
+To check a NOT NULL column for null downstream
+is to confess that you do not believe
+in your own validation rites.
+Internal defensive coding —
+guard clauses deep inside trusted boundaries,
+redundant nil checks on validated fields,
+"just in case" fallbacks within your own walls —
+is not prudence. It is faithlessness.
+It clutters the code with doubt,
+obscures the true logic,
+and teaches the next reader
+that the system's own contracts
+cannot be relied upon.
+Validate at the gates.
+Trust within the walls.
 
-Polling for state changes
-is the anxious ritual of the faithless —
-checking the mailbox every thirty seconds
-when the mail carrier has not yet left the depot.
-Subscribe. Listen. Be notified.
-The faithful do not pace; they trust the bell.
+### On the Sin of Entangled Nouns
+
+*"But a foreign key is just a reference!"*
+
+Entities hold their own attributes and no more.
+Relationships live in join tables —
+never as foreign keys embedded in nouns.
+To chain two entities together through a foreign key
+is to bind two souls at the hip.
+When one moves, the other is dragged.
+When one is deleted, the other is orphaned
+or cascaded into oblivion.
+A join table holds only the identities of the joined
+and the moment of their union —
+a relationship worthy of the name.
 
 ### On the Sin of Inheritance
+
+*"But it captures the IS-A relationship!"*
 
 To derive when you should compose
 is to chain your future to your ancestor's past.
@@ -638,28 +757,175 @@ and they were prepared.
 
 ### On the Sin of Coupling
 
+*"But the library does everything we need!"*
+
 To call a third-party service
 without an adapter boundary
 is to weld your hull to the dock.
 When the dock is demolished,
 your ship sinks with it.
+Ra'Shaun Stovall taught:
+it is not how fast you can marry a technology —
+it is how fast you can divorce it.
 Every external dependency —
 library, service, framework —
 gets an adapter.
 No exceptions.
 
-### On the Sin of Shared Mutable State
+### On the Sin of Swallowed Failures
 
-Tony Hoare's Communicating Sequential Processes
-established the righteous path:
-processes share memory by communicating,
-never communicate by sharing memory.
-To pass a mutable reference between threads
-is to invite a race condition to dinner
-and hand it the carving knife.
-If two processes need the same data,
-one sends a message; the other receives it.
-There is no third way.
+*"But the user shouldn't see errors!"*
+
+A system that swallows exceptions and continues
+is a system that lies about its health.
+An empty catch block is not error handling —
+it is evidence destruction.
+A `log-and-continue` is a lie
+whispered to the next request,
+which will inherit corrupted state
+and fail in ways far harder to diagnose.
+Joe Armstrong, creator of Erlang, taught:
+let it crash.
+A process that halts on an unrecoverable error
+and is restarted clean
+is more trustworthy than one that limps onward
+with wounds it refuses to acknowledge.
+Halting IS graceful
+when the alternative is silent corruption.
+
+### On the Sin of Asking, Not Telling
+
+*"But I need the return value!"*
+
+To reach into an object for its internal state
+is to violate its sovereignty.
+To write call sites that demand return values from commands
+is the same transgression by another name.
+Systems accept commands and perform tasks —
+with zero return to the call site.
+An object is not a filing cabinet to be rummaged through.
+It is an agent to be directed.
+
+### On the Sin of Polling
+
+*"But I need to know when it's ready!"*
+
+Polling for state changes
+is the anxious ritual of the faithless —
+checking the mailbox every thirty seconds
+when the mail carrier has not yet left the depot.
+Subscribe. Listen. Be notified.
+The faithful do not pace; they trust the bell.
+
+### On the Sin of Scattered Context
+
+*"But I only need part of the data!"*
+
+Code execution should be a relay race:
+the baton is passed whole
+from runner to runner,
+not dismembered and reassembled at each handoff.
+Reading a value here,
+writing it there,
+passing three fields to this function
+and four to that —
+this is the rally, not the drag race.
+Context is the single vessel.
+Pass it whole. Enrich it as you go.
+When every method receives the full context,
+no method must wonder
+what was left behind.
+
+### On the Sin of Noun-First Thinking
+
+*"But I need to understand the data model
+before I can build anything!"*
+
+You understand the data model
+BY understanding the processes.
+The process determines what participates,
+not the other way around.
+
+Consider: `nail.pound` — horrible.
+The noun owns the verb,
+and nobody knows who is doing the pounding.
+`hammer.pound(nailable)` — better,
+but the tool still dominates.
+`pounder.pound poundable: hammer, nailable: nail`
+— the process owns everything.
+The nouns are participants,
+infinitely substitutable:
+a `sledge_hammer` on a `cinder_block`,
+a `pneumatic_hammer` on a `two_penny_nail`,
+a `rock` on `scissors`.
+The process is stable;
+the participants vary.
+This is polymorphism, composition,
+and tell-don't-ask
+emerging from a single insight.
+
+### On the Sin of Obscurity
+
+*"But the code works!"*
+
+Working is not enough.
+Code that cannot be read cannot be trusted.
+Code that cannot be trusted cannot be maintained.
+Code that cannot be maintained will, in time,
+be rewritten by someone who does not understand it —
+and the cycle of suffering begins anew.
+Peter Naur taught that programming
+is theory building:
+the program is not the artifact —
+the understanding is.
+When that understanding is lost,
+the code is a tomb with no inscription.
+Write so that the next reader —
+who may be you, six months hence —
+can rebuild the theory from the text alone.
+
+### On the Sin of Cleverness
+
+*"But it's elegant!"*
+
+Dijkstra warned that the competent programmer
+avoids clever tricks like the plague.
+Language-specific tricks and idioms
+that sacrifice readability for concision
+are the vanity of the undisciplined.
+Your clever one-liner impresses no one
+who must maintain it at midnight.
+Elegance is not concision —
+elegance is clarity under pressure.
+The karma of clever code is a 3 AM page.
+
+### On the Sin of Magical Values
+
+*"But everyone knows what 200 means!"*
+
+Martin Fowler cataloged this refactoring:
+replace magic literal with named constant.
+An unnamed constant is an unnamed sin —
+a violation of the third commandment:
+call a thing a thing, in all things.
+If a value has meaning, speak its name.
+If it has no meaning, question its existence.
+
+### On the Sin of Deep Nesting
+
+*"But I need to organize by category!"*
+
+Robert C. Martin taught that the top level
+of a project should give you a rough idea
+of what type of app it is —
+as the first page of a blueprint
+reveals the building.
+You should not need to descend five directories
+to discover the domain.
+Deep nesting is taxonomy masquerading as architecture.
+It buries the important beneath layers
+of the incidental.
+Flat is faithful.
 
 ---
 
@@ -677,8 +943,10 @@ As the body requires hygiene, so does the code.
   - Unless language or format compel otherwise
   - Links and URLs are exempt —
     a reference must not be broken
-- No tabs — indent with four spaces
-  - Tabs are a schism we do not entertain
+- Prefer spaces — four of them — for indentation
+  - Unless the language or toolchain compels otherwise:
+    Go's `gofmt` has spoken; Makefiles have their syntax
+  - When the choice is yours, choose spaces
 - No trailing whitespace, save the final newline
 - A newline shall follow the last line in every file
 
@@ -695,13 +963,14 @@ for the build demands a clean working directory.
 
 Commit in tiny, semantically contiguous bits:
 
-- Code must build, function properly,
-  and pass tests at each commit
-  - You may commit broken code —
+- Code on the main branch must build,
+  function properly, and pass tests at each commit
+  - You may commit broken code locally
+    or to a private branch —
     some code is too precious
     to exist in a single copy —
-    but push a broken commit only in extremis,
-    and always on a branch
+    but never push a broken commit to main.
+    The main branch is consecrated ground
 - Each message: a single line,
   approximately fifty characters
   - A high-level description that completes:
@@ -787,38 +1056,65 @@ rather than annotate our way around them.
 
 ---
 
+## The Unwritten Scrolls
+
+*Principles not yet fully articulated,
+acknowledged here so that their absence
+is intentional, not ignorant.*
+
+The temporal dimension of data modeling —
+migrations, schema evolution, versioning,
+and the management of change over time —
+is a discipline the faithful practice
+but this scripture has not yet codified.
+Future scrolls will address it.
+
+---
+
 ## The Benediction
 
 Go forth and write code that is clean.
 
-Let your variables be named
-and your state be owned.
-Let your functions tell and never ask.
-Let your messages flow
-and your context be complete.
-Let your objects be composed
-and your adapters be thin.
-Let your processes communicate through channels
-and your tests be isolated
-and your commits be small.
+You will be tempted.
+The nullable column will whisper convenience.
+The global shortcut will promise speed.
+The clever trick will flatter your intelligence.
+The premature optimization will disguise itself
+as diligence.
+The inheritance hierarchy will offer
+the comfort of taxonomy.
+The coupled dependency will arrive
+wrapped in a well-documented API.
 
-The discipline is demanding
-and the temptations are many —
-the nullable column, the global shortcut,
-the clever trick, the premature optimization,
-the inheritance hierarchy,
-the coupled dependency.
+Resist.
+
+Name your variables and own your state.
+Tell your objects what to do
+and never ask what they contain.
+Let your messages flow
+and your context travel whole.
+Compose your capabilities
+and insulate your boundaries.
+Let your processes communicate through channels,
+your tests stand alone,
+and your commits be small and consecrated.
+
+The discipline is demanding.
+The asymptote of perfection recedes
+with every step toward it.
 But the faithful persist,
-and their software endures.
+and their software endures
+long after the fashions have turned to dust.
 
 We stand on the shoulders of prophets:
-Dijkstra and Kay, Hoare and Fielding,
-Codd and Gray, Knuth and Pascal,
-Liskov and Meyer, Beck and Fowler,
-Brooks and Gosling and McIlroy,
-Hunt and Thomas and Bohm,
-Martin and Feathers and Johansson
-and Stovall.
+Dijkstra and Codd, Hoare and Lamport,
+Knuth and Gray, Brooks and Bohm,
+Naur and Kay, Liskov and Meyer,
+McIlroy and Fielding, Martin and Beck,
+Hunt and Thomas and Pascal,
+Gosling and Hickey and Armstrong,
+Fowler and Johansson and Nielsen,
+Feathers and Stovall.
 Their teachings are our foundation.
 Their scrolls are our inheritance —
 the only inheritance we permit.
