@@ -732,7 +732,7 @@ export async function populateMockData(
             estimated_duration: 324000,
             estimated_cost: 35000,
             priority: 6,
-            status: 'archived',
+            status: 'sent-back',
 
             problem_statement:
                 'New hire onboarding takes'

@@ -194,7 +194,7 @@ export async function init(
                     await getIdea(id);
                 await putIdea(id, {
                     ...existingIdea,
-                    status: 'archived',
+                    status: 'sent-back',
                 });
                 showToast(
                     'Idea sent back'

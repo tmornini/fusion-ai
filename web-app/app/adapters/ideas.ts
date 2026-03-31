@@ -8,7 +8,7 @@ import type {
 } from '../../../api/types';
 import {
     Idea, nowUtc,
-    ideaIsNotDeleted,
+    ideaIsVisible,
     ideaIsInReview,
 } from '../../../api/types';
 import {
@@ -51,7 +51,7 @@ export async function getIdeas(
         ),
     );
     return ideas
-        .filter(ideaIsNotDeleted)
+        .filter(ideaIsVisible)
         .map(idea => new Idea(
             idea,
             userName(

@@ -5,7 +5,7 @@ import type {
     WorkflowEntity,
 } from '../../../api/types';
 import {
-    ideaIsNotDeleted,
+    ideaIsVisible,
     projectIsApproved,
     projectIsNotDeleted,
 } from '../../../api/types';
@@ -189,7 +189,7 @@ export async function getDashboardStats(
         {
             label: 'Ideas',
             value: ideas
-                .filter(ideaIsNotDeleted)
+                .filter(ideaIsVisible)
                 .length,
         },
         {

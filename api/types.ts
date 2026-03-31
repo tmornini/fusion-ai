@@ -46,6 +46,7 @@ export type IdeaStatus =
     | 'in-review'
     | 'approved'
     | 'promoted'
+    | 'sent-back'
     | 'archived'
     | 'deleted';
 
@@ -171,7 +172,8 @@ const IDEA_STATUSES:
     = [
         'active', 'in-review',
         'approved', 'promoted',
-        'archived', 'deleted',
+        'sent-back', 'archived',
+        'deleted',
     ];
 
 export function isIdeaStatus(
@@ -829,6 +831,10 @@ export const IDEA_STATUS_CONFIG: Record<
     'promoted': {
         label: 'Promoted',
         className: 'badge-primary',
+    },
+    'sent-back': {
+        label: 'Sent Back',
+        className: 'badge-error',
     },
     'archived': {
         label: 'Archived',
@@ -1575,10 +1581,11 @@ export class Account {
     }
 }
 
-export function ideaIsNotDeleted(
+export function ideaIsVisible(
     e: IdeaEntity,
 ): boolean {
-    return e.status !== 'deleted';
+    return e.status !== 'archived'
+        && e.status !== 'deleted';
 }
 
 export function ideaIsInReview(
