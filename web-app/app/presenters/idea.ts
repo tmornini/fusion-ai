@@ -238,7 +238,7 @@ export class IdeaPresenter {
                     grid-template-columns:
                         3fr auto 2fr;
                     gap:1rem;
-                    align-items:center">
+                    align-items:start">
                     ${this.#buildEstimates()}
                     ${this.#buildBadges()}
                     ${this.#buildActions()}
