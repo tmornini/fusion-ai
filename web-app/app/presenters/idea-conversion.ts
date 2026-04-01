@@ -5,7 +5,6 @@ import {
     iconClock,
     iconDollarSign,
     iconTrendingUp,
-    iconAlertCircle,
     iconArrowRight,
     iconArrowLeft,
     iconTarget,
@@ -131,28 +130,43 @@ export class IdeaConversionPresenter {
         );
     }
 
-    #completedCount(): number {
+    fieldReady(
+        field: ConversionField,
+    ): boolean {
+        return !!this.#fields[field]
+            .trim();
+    }
+
+    completedCount(): number {
         return REQUIRED_FIELDS.filter(
             f => this.#fields[f].trim(),
         ).length;
     }
 
+    requiredCount(): number {
+        return REQUIRED_FIELDS.length;
+    }
+
     #fieldCheck(
         field: ConversionField,
     ): SafeHtml {
-        return this.#fields[field].trim()
-            ? html`<span
-                style=${'color:'
-                    + 'hsl(var('
-                    + '--success))'}>
-                ${iconCheckCircle2(16, '')}
-                </span>`
-            : html``;
+        const isSet =
+            this.#fields[field].trim();
+        return html`<span
+            id="check-${field}"
+            style=${'color:'
+                + 'hsl(var('
+                + '--success));'
+                + (isSet
+                    ? ''
+                    : 'display:none')}>
+            ${iconCheckCircle2(16, '')}
+        </span>`;
     }
 
     render(): SafeHtml {
         const completed =
-            this.#completedCount();
+            this.completedCount();
         const required =
             REQUIRED_FIELDS.length;
         const percent =
@@ -217,7 +231,11 @@ export class IdeaConversionPresenter {
                 + ' gap-2'
                 + ' text-sm'
             }">
-                <span class="${
+                <span
+                    id=${'convert'
+                        + '-progress'
+                        + '-text'}
+                    class="${
                     'text-muted'
                 }">${
                     completed
@@ -236,7 +254,11 @@ export class IdeaConversionPresenter {
                     + '9999px;'
                     + 'overflow:'
                     + 'hidden'}>
-                    <div style=${
+                    <div
+                        id=${'convert'
+                            + '-progress'
+                            + '-fill'}
+                        style=${
                         'height:100%;'
                         + 'background:'
                         + 'hsl(var('
@@ -427,17 +449,14 @@ export class IdeaConversionPresenter {
                 <div class="flex
                     items-center
                     gap-2 mb-6">
-                    ${iconAlertCircle(
+                    ${iconTarget(
                         20,
-                        'text-warning',
+                        'text-primary',
                     )}
                     <span class="${
                         'font-medium'
                     }">
-                        ${'Complete these'
-                            + ' details'
-                            + ' to create'
-                            + ' a project'}
+                        Project Details
                     </span>
                 </div>
                 <div style=${
@@ -607,48 +626,52 @@ export class IdeaConversionPresenter {
                                 'budget',
                             )}
                         </label>
-                        <select
-                            class="input"
-                            id="${
-                                'convert'
-                                + '-budget'
-                            }">
-                            <option
-                                value="">
-                                ${'Select'
+                        <div style=${
+                            'position:'
+                            + 'relative'
+                        }>
+                            <span style=${
+                                'position:'
+                                + 'absolute;'
+                                + 'left:'
+                                + '0.75rem;'
+                                + 'top:50%;'
+                                + 'transform:'
+                                + 'translateY'
+                                + '(-50%);'
+                                + 'color:'
+                                + 'hsl(var('
+                                + '--muted-'
+                                + 'foreground'
+                                + '));'
+                                + 'pointer-'
+                                + 'events:'
+                                + 'none'
+                            }>$</span>
+                            <input
+                                class="input"
+                                type="text"
+                                inputmode=${
+                                    'numeric'
+                                }
+                                id="${
+                                    'convert'
+                                    + '-budget'
+                                }"
+                                placeholder=${
+                                    'Enter'
                                     + ' budget'
-                                    + ' range'}
-                            </option>
-                            <option
-                                value="0-25k">
-                                ${'Under'
-                                    + ' $25,000'}
-                            </option>
-                            <option
-                                value="25-50k">
-                                ${'$25,000'
-                                    + ' - $50,'
-                                    + '000'}
-                            </option>
-                            <option
-                                value="50-100k">
-                                ${'$50,000'
-                                    + ' - $100,'
-                                    + '000'}
-                            </option>
-                            <option
+                                    + ' amount'
+                                }
                                 value="${
-                                    '100-250k'
-                                }">
-                                ${'$100,000'
-                                    + ' - $250,'
-                                    + '000'}
-                            </option>
-                            <option
-                                value="250k+">
-                                $250,000+
-                            </option>
-                        </select>
+                                    f['budget']
+                                }"
+                                style=${
+                                    'padding-'
+                                    + 'left:'
+                                    + '1.75rem'
+                                } />
+                        </div>
                         <p class="${
                             'text-xs'
                             + ' text-muted'
@@ -686,28 +709,60 @@ export class IdeaConversionPresenter {
                             <option
                                 value="${
                                     'critical'
-                                }">
+                                }"
+                                ${trusted(
+                                    f[
+                                    'priority'
+                                    ] ===
+                                    'critical'
+                                    ? 'selected'
+                                    : '',
+                                )}>
                                 ${'Critical'
                                     + ' - Must'
                                     + ' start'
                                     + ' immediately'}
                             </option>
                             <option
-                                value="high">
+                                value="high"
+                                ${trusted(
+                                    f[
+                                    'priority'
+                                    ] ===
+                                    'high'
+                                    ? 'selected'
+                                    : '',
+                                )}>
                                 ${'High'
                                     + ' - Start'
                                     + ' within'
                                     + ' 2 weeks'}
                             </option>
                             <option
-                                value="medium">
+                                value="medium"
+                                ${trusted(
+                                    f[
+                                    'priority'
+                                    ] ===
+                                    'medium'
+                                    ? 'selected'
+                                    : '',
+                                )}>
                                 ${'Medium'
                                     + ' - Start'
                                     + ' within'
                                     + ' 1 month'}
                             </option>
                             <option
-                                value="low">
+                                value="low"
+                                ${trusted(
+                                    f[
+                                    'priority'
+                                    ] ===
+                                    'low'
+                                    ? 'selected'
+                                    : '',
+                                )}>
                                 ${'Low - Can'
                                     + ' wait for'
                                     + ' capacity'}
@@ -825,7 +880,7 @@ export class IdeaConversionPresenter {
         const isReady = this.isReady();
         const remaining =
             REQUIRED_FIELDS.length
-            - this.#completedCount();
+            - this.completedCount();
         return html`
             <div class="card p-6"
                 id=${'convert'
@@ -847,7 +902,11 @@ export class IdeaConversionPresenter {
                         : '')}>
                 <div class="flex
                     items-start gap-4">
-                    <div style=${
+                    <div
+                        id=${'convert'
+                            + '-confirm'
+                            + '-icon'}
+                        style=${
                         'width:3rem;'
                         + 'height:3rem;'
                         + 'border-radius:'
@@ -881,6 +940,9 @@ export class IdeaConversionPresenter {
                     </div>
                     <div style="flex:1">
                         <h3
+                            id=${'convert'
+                                + '-confirm'
+                                + '-heading'}
                             class="${
                                 'font-semibold'
                                 + ' mb-1'
@@ -893,7 +955,11 @@ export class IdeaConversionPresenter {
                                     + ' Required'
                                     + ' Fields'}
                         </h3>
-                        <p class="${
+                        <p
+                            id=${'convert'
+                                + '-confirm'
+                                + '-sub'}
+                            class="${
                             'text-sm'
                             + ' text-muted'
                             + ' mb-4'
