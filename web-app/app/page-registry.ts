@@ -55,15 +55,6 @@ export const PAGE_REGISTRY: Record<
         icon: 'folderKanban',
         searchable: false,
     },
-    'engineering-requirements': {
-        title: 'Engineering Requirements',
-        layout: 'sidebar',
-        sourceDir: 'projects',
-        sourceFile:
-            'engineering-requirements',
-        icon: 'fileText',
-        searchable: false,
-    },
     'idea-review-queue': {
         title: 'Review Queue',
         layout: 'sidebar',

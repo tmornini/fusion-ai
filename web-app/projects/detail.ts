@@ -149,17 +149,6 @@ function bindProjectEvents(
         );
     });
 
-    $$('[data-navigate-to-engineering]', document)
-        .forEach(el => {
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                navigateTo(
-                        'engineering-requirements',
-                        { projectId },
-                );
-            });
-        });
-
     initTabs('.tab[data-tab]', '.tab-panel', 'active');
 
     const comment = $textarea(

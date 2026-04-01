@@ -35,8 +35,6 @@ const pageModules: Record<
     'idea-detail': () => import('../ideas/detail'),
     projects: () => import('../projects/index'),
     'project-detail': () => import('../projects/detail'),
-    'engineering-requirements': () =>
-        import('../projects/engineering-requirements'),
     'idea-create': () => import('../ideas/create'),
     'idea-convert': () => import('../ideas/convert'),
     'idea-review-queue': () => import('../ideas/review-queue'),

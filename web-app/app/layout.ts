@@ -126,7 +126,6 @@ const NAV_GROUP_CHILDREN:
         ],
         projects: [
             'project-detail',
-            'engineering-requirements',
         ],
     };
 

@@ -11,7 +11,6 @@ import {
     iconArrowUpRight, iconArrowDownRight,
     iconMinus, iconListTodo,
     iconGitBranch, iconDatabase,
-    iconCode,
     iconEdit, iconSave, iconX,
 } from '../icons';
 import {
@@ -1786,59 +1785,6 @@ export class ProjectDetailPresenter {
                     style="${
                         'gap:0.75rem'
                     }">
-                    <a href="#"
-                        class="${
-                            'card card-hover'
-                        }"
-                        style="${
-                            'padding:1rem;'
-                            + 'text-decoration:'
-                            + 'none;'
-                            + 'color:inherit'
-                        }"
-                        data-navigate-to-engineering>
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-center '
-                                + 'gap-3'
-                            }">
-                            <div style="${
-                                'padding:0.5rem;'
-                                + 'border-radius:'
-                                + '0.5rem;'
-                                + 'background:'
-                                + 'hsl(var('
-                                + '--primary)'
-                                + '/0.1)'
-                            }">
-                                ${iconCode(
-                                    20,
-                                    'text-primary',
-                                )}
-                            </div>
-                            <div style="${
-                                'min-width:0'
-                            }">
-                                <p class="${
-                                    'font-medium '
-                                    + 'text-sm'
-                                }">
-                                    Engineering
-                                </p>
-                                <p class="${
-                                    'text-xs '
-                                    + 'text-muted '
-                                    + 'hidden-'
-                                    + 'mobile'
-                                }">
-                                    Requirements
-                                    &amp;
-                                    clarifications
-                                </p>
-                            </div>
-                        </div>
-                    </a>
                     <a href="${
                         '../organization/'
                         + 'teams.html'
