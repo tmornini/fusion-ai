@@ -85,6 +85,21 @@ export async function init():
         }
     }
 
+    function mutateNextButton(): void {
+        const btn = $(
+            '#idea-create-step-next',
+            document,
+        );
+        if (
+            btn instanceof
+            HTMLButtonElement
+        ) {
+            btn.disabled =
+                !presenter
+                    .isStepComplete();
+        }
+    }
+
     function bindEvents(): void {
         const goBack = () => {
             syncFormFields();
@@ -211,7 +226,7 @@ export async function init():
                     'input',
                     () => {
                         syncFormFields();
-                        renderPage();
+                        mutateNextButton();
                     },
                 );
             });

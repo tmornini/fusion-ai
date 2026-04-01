@@ -59,7 +59,7 @@ export class IdeaCreatePresenter {
     #form: FormData = { ...EMPTY_FORM };
 
     nextStep(): boolean {
-        if (!this.#isStepComplete())
+        if (!this.isStepComplete())
             return false;
         if (this.#step < STEPS.length) {
             this.#step++;
@@ -101,7 +101,7 @@ export class IdeaCreatePresenter {
         return this.#step;
     }
 
-    #isStepComplete(): boolean {
+    isStepComplete(): boolean {
         switch (this.#step) {
             case 1:
                 return this.#form
@@ -252,7 +252,7 @@ export class IdeaCreatePresenter {
                 id=${'idea-create'
                     + '-step-next'}
                 ${trusted(
-                    this.#isStepComplete()
+                    this.isStepComplete()
                         ? ''
                         : 'disabled',
                 )}>
