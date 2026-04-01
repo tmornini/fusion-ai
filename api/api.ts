@@ -212,10 +212,6 @@ const routes: Route[] = [
             db.clarificationProjects
                 .getAll(),
     }),
-    route('idea-score-ideas', {
-        get: (db) =>
-            db.ideaScoreIdeas.getAll(),
-    }),
     route('project-task-projects', {
         get: (db) =>
             db.projectTaskProjects
@@ -635,13 +631,6 @@ const routes: Route[] = [
                 payload,
             ),
     }),
-    route('idea-score-ideas/:id', {
-        put: (db, p, payload) =>
-            db.ideaScoreIdeas.put(
-                param(p, 0),
-                payload,
-            ),
-    }),
     route('project-task-projects/:id', {
         put: (db, p, payload) =>
             db.projectTaskProjects.put(
@@ -746,57 +735,6 @@ const routes: Route[] = [
             return result;
         },
     }),
-    route('ideas/:ideaId/score', {
-        get: async (db, p) => {
-            const ideaId = param(p, 0);
-            const links =
-                await db.ideaScoreIdeas
-                    .getAll();
-            const link = links.find(
-                l => l.idea_id === ideaId,
-            );
-            if (!link) return null;
-            return db.ideaScores.getById(
-                link.idea_score_id,
-            );
-        },
-        put: async (db, p, payload) => {
-            const ideaId = param(p, 0);
-            const links =
-                await db.ideaScoreIdeas
-                    .getAll();
-            const existing = links.find(
-                l => l.idea_id === ideaId,
-            );
-            const scoreId =
-                typeof payload.id === 'string'
-                    ? payload.id
-                    : (existing
-                        ?.idea_score_id
-                        ?? `score-${ideaId}`);
-            const score =
-                await db.ideaScores.put(
-                    scoreId, payload,
-                );
-            if (!existing) {
-                const linkId =
-                    `isi-${ideaId}`;
-                await db.ideaScoreIdeas.put(
-                    linkId,
-                    {
-                        id: linkId,
-                        idea_score_id:
-                            scoreId,
-                        idea_id: ideaId,
-                        created_at:
-                            nowUtc(),
-                    },
-                );
-            }
-            return score;
-        },
-    }),
-
     route('projects/:projectId/team', {
         get: async (db, p) => {
             const pid = param(p, 0);

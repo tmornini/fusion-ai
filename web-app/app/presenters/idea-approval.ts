@@ -4,7 +4,6 @@ import {
     iconClock,
     iconDollarSign,
     iconTrendingUp,
-    iconStar,
     iconCheckCircle,
     iconXCircle,
     iconMessageSquare,
@@ -24,7 +23,6 @@ import {
 } from '../icons';
 import type {
     Idea,
-    PriorityLevel,
 } from '../../../api/types';
 import type {
     EdgeData,
@@ -59,14 +57,12 @@ export class IdeaApprovalPresenter {
     readonly #category: string;
     readonly #description: string;
     readonly #expectedOutcome: string;
-    readonly #score: number;
     readonly #impactLabel: string;
     readonly #effortLabel: string;
     readonly #effortDurationEstimate: string;
     readonly #effortTeamSize: string;
     readonly #costEstimate: string;
     readonly #costBreakdown: string;
-    readonly #priorityLevel: PriorityLevel;
     readonly #risks: readonly Risk[];
     readonly #assumptions:
         readonly string[];
@@ -84,7 +80,6 @@ export class IdeaApprovalPresenter {
             idea.description;
         this.#expectedOutcome =
             idea.expectedOutcome;
-        this.#score = idea.score;
         this.#impactLabel =
             idea.impactLabel;
         this.#effortLabel =
@@ -97,8 +92,6 @@ export class IdeaApprovalPresenter {
             idea.costEstimate;
         this.#costBreakdown =
             idea.costBreakdown;
-        this.#priorityLevel =
-            idea.priorityLevel();
         this.#risks =
             idea.parsedRisks();
         this.#assumptions =
@@ -205,13 +198,7 @@ export class IdeaApprovalPresenter {
                     + '-edit-btn'
                 }">
                 ${iconEdit(16, '')} Edit
-            </button>
-            <span
-                class="badge
-                    badge-error
-                    text-xs">
-                ${this.#priorityLevel}
-            </span>`}
+            </button>`}
         </div>
     </div>
 
@@ -262,9 +249,6 @@ export class IdeaApprovalPresenter {
                     7 comments
                 </span>
             </div>
-
-            ${this
-                .#buildApprovalScoreCard()}
 
             <div class="card p-6 mb-6">
                 <h3 class="${
@@ -339,110 +323,6 @@ export class IdeaApprovalPresenter {
 
         ${this.#buildApprovalFooter()}
         ${this.#buildApprovalDialogs()}`;
-    }
-
-    #buildApprovalScoreCard(): SafeHtml {
-        return html`
-            <div class="card p-6 mb-6"
-                style=${'background:'
-                    + 'linear-gradient('
-                    + 'to right,'
-                    + 'hsl(var(--primary)'
-                    + '/0.05),'
-                    + 'hsl(var(--primary)'
-                    + '/0.1));'
-                    + 'border-color:'
-                    + 'hsl(var(--primary)'
-                    + '/0.2)'}>
-                <div class="flex items-center
-                    justify-between gap-4">
-                    <div>
-                        <p class="${
-                            'text-sm'
-                            + ' text-muted'
-                            + ' mb-1'
-                        }">
-                            Innovation Score
-                        </p>
-                        <div class="flex
-                            items-baseline
-                            gap-2">
-                            <span class="${
-                                'text-4xl'
-                                + ' font-bold'
-                                + ' text-primary'
-                            }">
-                                ${this.#score}
-                            </span>
-                            <span class="${
-                                'text-muted'
-                            }">
-                                /100
-                            </span>
-                        </div>
-                    </div>
-                    <div style=${
-                        'display:grid;'
-                        + 'grid-template-'
-                        + 'columns:'
-                        + 'repeat(3,1fr);'
-                        + 'gap:2rem;'
-                        + 'text-align:center'
-                    }>
-                        <div>
-                            <p class="${
-                                'text-sm'
-                                + ' text-muted'
-                                + ' mb-1'
-                            }">
-                                Impact
-                            </p>
-                            <p class="${
-                                'text-xl'
-                                + ' font-'
-                                + 'semibold'
-                            }">
-                                ${this
-                                    .#impactLabel}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="${
-                                'text-sm'
-                                + ' text-muted'
-                                + ' mb-1'
-                            }">
-                                Effort
-                            </p>
-                            <p class="${
-                                'text-xl'
-                                + ' font-'
-                                + 'semibold'
-                            }">
-                                ${this
-                                    .#effortLabel}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="${
-                                'text-sm'
-                                + ' text-muted'
-                                + ' mb-1'
-                            }">
-                                Timeline
-                            </p>
-                            <p class="${
-                                'text-xl'
-                                + ' font-'
-                                + 'semibold'
-                            }">
-                                ${this
-                                    .#effortDurationEstimate}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
     }
 
     #buildApprovalImpactGrid(): SafeHtml {

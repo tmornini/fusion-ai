@@ -1,6 +1,4 @@
 import {
-    SCORE_THRESHOLD_HIGH,
-    SCORE_THRESHOLD_MEDIUM,
     SECONDS_PER_DAY,
     durationInDays,
     formatCompactCurrency,
@@ -30,14 +28,6 @@ function formatDate(iso: string): string {
     });
 }
 
-function styleForScore(score: number): string {
-    if (score >= SCORE_THRESHOLD_HIGH)
-        return 'color:hsl(var(--success))';
-    if (score >= SCORE_THRESHOLD_MEDIUM)
-        return 'color:hsl(var(--warning))';
-    return 'color:hsl(var(--error))';
-}
-
 function displayText(
     value: string,
 ): string {
@@ -49,7 +39,6 @@ export {
     formatDate,
     getTimeOfDay,
     initials,
-    styleForScore,
     durationInDays,
     formatCompactCurrency,
     SECONDS_PER_DAY,

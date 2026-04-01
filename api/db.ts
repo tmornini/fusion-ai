@@ -1,8 +1,6 @@
 import type {
     UserEntity,
     IdeaEntity,
-    IdeaScoreEntity,
-    IdeaScoreIdeaEntity,
     ProjectEntity,
     TeamMembershipEntity,
     TeamMembershipProjectEntity,
@@ -74,10 +72,6 @@ export interface DbAdapter {
 
     users: EntityStore<UserEntity>;
     ideas: EntityStore<IdeaEntity>;
-    ideaScores:
-        EntityStore<IdeaScoreEntity>;
-    ideaScoreIdeas:
-        EntityStore<IdeaScoreIdeaEntity>;
     projects: EntityStore<ProjectEntity>;
     teamMemberships:
         EntityStore<TeamMembershipEntity>;

@@ -2,7 +2,6 @@ import {
     $,
     attr,
     populateIcons,
-    initToggleGroup,
 } from '../app/dom';
 import {
     html,
@@ -15,8 +14,6 @@ import {
 import {
     iconPlus,
     iconWand,
-    iconLayoutGrid,
-    iconBarChart,
     iconClipboardCheck,
     iconChevronRight,
     iconLightbulb,
@@ -72,14 +69,6 @@ export async function init(): Promise<void> {
         [
             '#create-btn-accent',
             iconWand(16, ''),
-        ],
-        [
-            '#priority-view-icon',
-            iconLayoutGrid(16, ''),
-        ],
-        [
-            '#performance-view-icon',
-            iconBarChart(16, ''),
         ],
     ]);
 
@@ -161,15 +150,6 @@ export async function init(): Promise<void> {
             count.textContent =
                 presenter.countLabel();
     }
-
-    initToggleGroup(
-        '.view-toggle-btn',
-        'data-view',
-        (view) => {
-            presenter.setView(view);
-            renderList();
-        },
-    );
 
     $('#ideas-list', document)
         ?.addEventListener(

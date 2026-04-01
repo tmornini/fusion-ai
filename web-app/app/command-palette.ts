@@ -202,9 +202,11 @@ export function initCommandPalette(
                 id: `idea-${idea.id}`,
                 title: idea.title,
                 meta:
-                    `Score: `
-                    + `${idea.score}`
-                    + ` · ${idea.status.replace(/-/g, ' ')}`,
+                    idea.status
+                        .replace(
+                            /-/g,
+                            ' ',
+                        ),
                 category: 'ideas',
                 icon:
                     iconLightbulb(16, ''),

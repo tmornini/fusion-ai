@@ -16,7 +16,6 @@ export {
     formatDate,
     getTimeOfDay,
     initials,
-    styleForScore,
     durationInDays,
     formatCompactCurrency,
     SECONDS_PER_DAY,

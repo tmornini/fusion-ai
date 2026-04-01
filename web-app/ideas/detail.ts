@@ -85,12 +85,6 @@ function bindIdeaEvents(
                         '#idea-edit-metrics',
                         document,
                     )!.value;
-                const score = Number(
-                    $input(
-                        '#idea-edit-score',
-                        document,
-                    )!.value,
-                );
                 const impact = Number(
                     $input(
                         '#idea-edit-impact',
@@ -123,7 +117,6 @@ function bindIdeaEvents(
                             expectedOutcome,
                         success_metrics:
                             successMetrics,
-                        score,
                         estimated_impact:
                             impact,
                         estimated_duration:

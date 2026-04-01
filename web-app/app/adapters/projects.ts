@@ -438,7 +438,6 @@ export interface EngTeamMember {
 export interface LinkedIdea {
     readonly id: string;
     readonly title: string;
-    readonly score: number;
 }
 
 interface BusinessContext {
@@ -529,10 +528,6 @@ export class EngineeringView {
     linkedIdeaTitle(): string {
         return this.idea!.title;
     }
-
-    linkedIdeaScore(): number {
-        return this.idea!.score;
-    }
 }
 
 export async function
@@ -593,7 +588,6 @@ getProjectForEngineering(
             ? {
                 id: ideaEntity.id,
                 title: ideaEntity.title,
-                score: ideaEntity.score,
             }
             : null,
     );

@@ -65,7 +65,6 @@ export class IdeaConversionPresenter {
     readonly #problemStatement: string;
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
-    readonly #score: number;
     readonly #estimatedDuration: string;
     readonly #estimatedCost: string;
     readonly #leadOptions: LeadOption[];
@@ -86,7 +85,6 @@ export class IdeaConversionPresenter {
             idea.proposedSolution;
         this.#expectedOutcome =
             idea.expectedOutcome;
-        this.#score = idea.score;
         this.#estimatedDuration =
             estimatedDuration;
         this.#estimatedCost =
@@ -373,16 +371,6 @@ export class IdeaConversionPresenter {
                             this
                             .#estimatedCost,
                             '',
-                        )}
-                        ${this.#buildMetric(
-                            iconTrendingUp(
-                                16, '',
-                            ),
-                            'Priority Score',
-                            this.#score
-                                + '/100',
-                            'color:hsl(var('
-                                + '--success))',
                         )}
                     </div>
                 </div>

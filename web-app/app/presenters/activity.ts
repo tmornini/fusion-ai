@@ -2,7 +2,6 @@ import { html, SafeHtml } from '../safe-html';
 import { formatDate, displayText } from '../core';
 import {
     iconLightbulb,
-    iconStar,
     iconFolderKanban,
     iconCheckCircle2,
     iconMessageSquare,
@@ -14,7 +13,6 @@ import type { Activity } from '../../../api/types';
 
 type ActivityType =
     | 'idea_created'
-    | 'idea_scored'
     | 'project_created'
     | 'task_completed'
     | 'comment_added'
@@ -40,13 +38,6 @@ const ICON_MAP: Record<
             + 'hsl(var(--warning-soft));'
             + 'color:'
             + 'hsl(var(--warning-text))',
-    },
-    idea_scored: {
-        icon: iconStar,
-        bg: 'background:'
-            + 'hsl(var(--info-soft));'
-            + 'color:'
-            + 'hsl(var(--info-text))',
     },
     project_created: {
         icon: iconFolderKanban,
@@ -97,7 +88,6 @@ export class ActivityPresenter {
     readonly #action: string;
     readonly #target: string;
     readonly #timestamp: string;
-    readonly #score: number;
     readonly #status: string;
     readonly #comment: string;
     readonly #actor: string;
@@ -108,7 +98,6 @@ export class ActivityPresenter {
         this.#target = activity.target;
         this.#timestamp =
             activity.timestamp;
-        this.#score = activity.score;
         this.#status = activity.status;
         this.#comment = activity.comment;
         this.#actor = activity.actor;
@@ -137,17 +126,7 @@ export class ActivityPresenter {
     }
 
     buildActivity(): SafeHtml {
-        const meta = this.#score
-            ? html`<div
-                class="${
-                    'badge badge-default'
-                    + ' text-xs mt-1'
-                }">${
-                iconStar(12, '')
-            } Score: ${
-                this.#score
-            }</div>`
-            : this.#status
+        const meta = this.#status
                 ? html`<div
                     class="${
                         'badge badge-default'
@@ -210,7 +189,8 @@ export class ActivityPresenter {
         const actType =
             this.#type as ActivityType;
         const entry =
-            ICON_MAP[actType]!;
+            ICON_MAP[actType]
+            ?? ICON_MAP.idea_created;
         return html`<div style="${
             'width:2.5rem;'
             + 'height:2.5rem;'

@@ -6,7 +6,6 @@ import type {
     TaskPriority,
     MilestoneStatus,
     IdeaEntity,
-    IdeaScoreIdeaEntity,
     ProjectEntity,
     EdgeEntity,
     ActivityEntity,
@@ -424,7 +423,6 @@ export async function populateMockData(
             id: '1',
             title: 'AI-Powered Customer'
                 + ' Segmentation',
-            score: 92,
             estimated_impact: 85,
             estimated_duration: 432000,
             estimated_cost: 45000,
@@ -483,7 +481,6 @@ export async function populateMockData(
             id: '2',
             title: 'Automated Report'
                 + ' Generation',
-            score: 87,
             estimated_impact: 78,
             estimated_duration: 288000,
             estimated_cost: 32000,
@@ -545,7 +542,6 @@ export async function populateMockData(
             id: '3',
             title: 'Predictive Maintenance'
                 + ' System',
-            score: 84,
             estimated_impact: 90,
             estimated_duration: 720000,
             estimated_cost: 75000,
@@ -604,7 +600,6 @@ export async function populateMockData(
             id: '4',
             title: 'Real-time Analytics'
                 + ' Dashboard',
-            score: 81,
             estimated_impact: 72,
             estimated_duration: 216000,
             estimated_cost: 28000,
@@ -666,7 +661,6 @@ export async function populateMockData(
             id: '5',
             title: 'Smart Inventory'
                 + ' Optimization',
-            score: 78,
             estimated_impact: 68,
             estimated_duration: 360000,
             estimated_cost: 38000,
@@ -727,7 +721,6 @@ export async function populateMockData(
             id: '6',
             title: 'Employee Training'
                 + ' Assistant',
-            score: 74,
             estimated_impact: 65,
             estimated_duration: 324000,
             estimated_cost: 35000,
@@ -786,7 +779,6 @@ export async function populateMockData(
             id: '7',
             title: 'AI-Powered Customer'
                 + ' Support Chatbot',
-            score: 87,
             estimated_impact: 0,
             estimated_duration: 0,
             estimated_cost: 0,
@@ -903,7 +895,6 @@ export async function populateMockData(
             id: '8',
             title: 'Mobile App Push'
                 + ' Notification Revamp',
-            score: 72,
             estimated_impact: 0,
             estimated_duration: 0,
             estimated_cost: 0,
@@ -958,7 +949,6 @@ export async function populateMockData(
             id: '9',
             title: 'Sustainability Dashboard'
                 + ' for Operations',
-            score: 81,
             estimated_impact: 0,
             estimated_duration: 0,
             estimated_cost: 0,
@@ -1015,7 +1005,6 @@ export async function populateMockData(
             id: '10',
             title: 'Employee Wellness'
                 + ' Program Integration',
-            score: 45,
             estimated_impact: 0,
             estimated_duration: 0,
             estimated_cost: 0,
@@ -1073,7 +1062,6 @@ export async function populateMockData(
             id: '11',
             title: 'Real-time Inventory'
                 + ' Tracking System',
-            score: 91,
             estimated_impact: 0,
             estimated_duration: 0,
             estimated_cost: 0,
@@ -1605,20 +1593,6 @@ export async function populateMockData(
 
     const activities: ActivityEntity[] = [
         {
-            id: '1',
-            type: 'idea_scored',
-            action: 'scored',
-            target: 'AI-Powered Customer'
-                + ' Support Bot',
-            timestamp:
-                '2024-02-28T17:50:00.000000Z',
-            score: 87,
-            status: 'high',
-            comment:
-                'Strong potential for'
-                + ' cost reduction.',
-        },
-        {
             id: '2',
             type: 'task_completed',
             action: 'completed task',
@@ -1727,20 +1701,6 @@ export async function populateMockData(
             comment:
                 'All endpoints documented'
                 + ' with examples.',
-        },
-        {
-            id: '10',
-            type: 'idea_scored',
-            action: 'scored',
-            target: 'Data Pipeline'
-                + ' Modernization',
-            timestamp:
-                '2024-02-27T15:00:00.000000Z',
-            score: 92,
-            status: 'high',
-            comment:
-                'Top priority for Q2'
-                + ' roadmap.',
         },
     ];
 
@@ -2234,126 +2194,6 @@ export async function populateMockData(
     ];
 
     await Promise.all([
-        adapter.ideaScores.put('score-1', {
-            id: 'score-1',
-            overall: 82,
-            impact_score: 88,
-            impact_breakdown:
-                jsonArrayField([
-                    {
-                        label:
-                            'Business Value',
-                        score: 9,
-                        maxScore: 10,
-                        reason:
-                            'Direct revenue'
-                            + ' impact through'
-                            + ' improved'
-                            + ' conversions',
-                    },
-                    {
-                        label:
-                            'Strategic'
-                            + ' Alignment',
-                        score: 8,
-                        maxScore: 10,
-                        reason:
-                            'Supports digital'
-                            + ' transformation'
-                            + ' goals',
-                    },
-                    {
-                        label:
-                            'User Benefit',
-                        score: 9,
-                        maxScore: 10,
-                        reason:
-                            'Saves significant'
-                            + ' time for'
-                            + ' marketing team',
-                    },
-                ]),
-            feasibility_score: 75,
-            feasibility_breakdown:
-                jsonArrayField([
-                    {
-                        label:
-                            'Technical'
-                            + ' Complexity',
-                        score: 7,
-                        maxScore: 10,
-                        reason:
-                            'Requires ML'
-                            + ' expertise and'
-                            + ' data pipeline',
-                    },
-                    {
-                        label:
-                            'Resource'
-                            + ' Availability',
-                        score: 8,
-                        maxScore: 10,
-                        reason:
-                            'Team has relevant'
-                            + ' skills',
-                    },
-                    {
-                        label:
-                            'Integration'
-                            + ' Effort',
-                        score: 8,
-                        maxScore: 10,
-                        reason:
-                            'Works with'
-                            + ' existing CRM',
-                    },
-                ]),
-            efficiency_score: 85,
-            efficiency_breakdown:
-                jsonArrayField([
-                    {
-                        label:
-                            'Time to Value',
-                        score: 9,
-                        maxScore: 10,
-                        reason:
-                            'MVP deliverable'
-                            + ' in 6-8 weeks',
-                    },
-                    {
-                        label:
-                            'Cost Efficiency',
-                        score: 8,
-                        maxScore: 10,
-                        reason:
-                            'Reasonable'
-                            + ' investment for'
-                            + ' expected'
-                            + ' returns',
-                    },
-                    {
-                        label:
-                            'Scalability',
-                        score: 9,
-                        maxScore: 10,
-                        reason:
-                            'Can expand to'
-                            + ' other use cases',
-                    },
-                ]),
-            estimated_duration: '6-8 weeks',
-            estimated_cost:
-                '$45,000 - $65,000',
-            recommendation:
-                'Strong candidate for'
-                + ' immediate'
-                + ' prioritization. High'
-                + ' impact with manageable'
-                + ' complexity. Recommend'
-                + ' starting with a focused'
-                + ' pilot on top customer'
-                + ' segment.',
-        }),
         ...projects.map(project =>
             adapter.projects.put(
                 project.id,
@@ -2408,19 +2248,6 @@ export async function populateMockData(
             ),
         ),
     ]);
-
-    const ideaScoreIdeas:
-        IdeaScoreIdeaEntity[]
-    = [
-        {
-            id: 'isi-1',
-            idea_score_id: 'score-1',
-            idea_id: '1',
-            created_at:
-                '2024-01-15'
-                + 'T09:30:00.000000Z',
-        },
-    ];
 
     const teamMemberships: {
         id: string;
@@ -3840,11 +3667,6 @@ export async function populateMockData(
     ];
 
     await Promise.all([
-        ...ideaScoreIdeas.map(r =>
-            adapter.ideaScoreIdeas.put(
-                r.id, r,
-            ),
-        ),
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
                 r.id, r,

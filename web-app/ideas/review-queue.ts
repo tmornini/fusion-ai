@@ -12,7 +12,6 @@ import {
 import {
     iconClock,
     iconTrendingUp,
-    iconAlertCircle,
     iconCheckCircle2,
     iconSearch,
     iconClipboardCheck,
@@ -125,31 +124,6 @@ export async function init(): Promise<void> {
                 <div class="p-2 rounded-lg"
                     style="${
                         'background:hsl('
-                        + 'var(--error-soft))'
-                    }">${
-                    iconAlertCircle(
-                        20, 'text-error',
-                    )
-                }</div>
-                <div>
-                    <p class="${
-                        'text-2xl font-bold'
-                    }">${
-                        stats.highPriority
-                    }</p>
-                    <p class="${
-                        'text-sm text-muted'
-                    }">High Priority</p>
-                </div>
-            </div>
-        </div>
-        <div class="card p-4">
-            <div class="${
-                'flex items-center gap-3'
-            }">
-                <div class="p-2 rounded-lg"
-                    style="${
-                        'background:hsl('
                         + 'var(--warning-soft))'
                     }">${
                     iconTrendingUp(
@@ -187,28 +161,6 @@ export async function init(): Promise<void> {
                 }"
             />
         </div>
-        <select class="input"
-            style="width:10rem"
-            id="${
-                'review-queue-'
-                + 'priority-filter'
-            }"
-            aria-label="${
-                'Filter by priority'
-            }">
-            <option value="all">${
-                'All Priority'
-            }</option>
-            <option value="high">${
-                'High'
-            }</option>
-            <option value="medium">${
-                'Medium'
-            }</option>
-            <option value="low">${
-                'Low'
-            }</option>
-        </select>
         <select class="input"
             style="width:10rem"
             id="${
@@ -321,22 +273,6 @@ export async function init(): Promise<void> {
                 renderList();
             },
         );
-    $(
-        '#review-queue-priority-filter',
-        document,
-    )?.addEventListener(
-        'change',
-        () => {
-            presenter.setPriorityFilter(
-                $select(
-                    '#review-queue'
-                    + '-priority-filter',
-                    document,
-                )!.value,
-            );
-            renderList();
-        },
-    );
     $(
         '#review-queue-readiness-filter',
         document,

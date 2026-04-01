@@ -45,7 +45,6 @@ export class EngineeringPresenter {
     readonly #hasLinkedIdea: boolean;
     readonly #linkedIdeaHref: string;
     readonly #linkedIdeaTitle: string;
-    readonly #linkedIdeaScore: number;
     readonly #pendingCount: number;
     readonly #answeredCount: number;
     readonly #clarifications:
@@ -75,8 +74,6 @@ export class EngineeringPresenter {
             view.linkedIdeaHref();
         this.#linkedIdeaTitle =
             view.linkedIdeaTitle();
-        this.#linkedIdeaScore =
-            view.linkedIdeaScore();
         const pending =
             clarifications.filter(
                 clarificationIsPending,
@@ -337,27 +334,9 @@ export class EngineeringPresenter {
                             </p>
                         </div>
                     </div>
-                    <div
-                        class="${
-                            'flex '
-                            + 'items-center '
-                            + 'gap-3'
-                        }">
-                        <span
-                            class="${
-                                'badge '
-                                + 'badge-'
-                                + 'success '
-                                + 'text-xs'
-                            }">
-                            Score:
-                            ${this
-                                .#linkedIdeaScore}
-                        </span>
-                        ${iconChevronRight(
-                            20, 'text-muted',
-                        )}
-                    </div>
+                    ${iconChevronRight(
+                        20, 'text-muted',
+                    )}
                 </a>
             </div>`;
     }

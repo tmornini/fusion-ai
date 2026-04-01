@@ -148,7 +148,6 @@ export async function init():
                             .targetUsers,
                         status:
                             'active',
-                        score: 0,
                         estimated_impact:
                             0,
                         estimated_duration:

@@ -62,9 +62,6 @@ export type ProjectStatus =
 export const SCORE_THRESHOLD_HIGH = 80;
 export const SCORE_THRESHOLD_MEDIUM = 60;
 
-export const SCORE_BADGE_HIGH = 85;
-export const SCORE_BADGE_MEDIUM = 70;
-
 export const AVAILABILITY_HIGH = 70;
 export const AVAILABILITY_LOW = 40;
 
@@ -375,7 +372,6 @@ export class User {
 export interface IdeaEntity {
     id: Id;
     title: string;
-    score: number;
     estimated_impact: number;
     estimated_duration: number;
     estimated_cost: number;
@@ -397,27 +393,6 @@ export interface IdeaEntity {
     cost_estimate: string;
     cost_breakdown: string;
     success_metrics: string;
-}
-
-export interface IdeaScoreEntity {
-    id: Id;
-    overall: number;
-    impact_score: number;
-    impact_breakdown: JsonArrayField;
-    feasibility_score: number;
-    feasibility_breakdown: JsonArrayField;
-    efficiency_score: number;
-    efficiency_breakdown: JsonArrayField;
-    estimated_duration: string;
-    estimated_cost: string;
-    recommendation: string;
-}
-
-export interface IdeaScoreIdeaEntity {
-    id: Id;
-    idea_score_id: Id;
-    idea_id: Id;
-    created_at: string;
 }
 
 export interface ProjectEntity {
@@ -1007,7 +982,6 @@ export const READINESS_CONFIG: Record<
 export class Idea {
     readonly id: string;
     readonly title: string;
-    readonly score: number;
     readonly estimatedImpact: number;
     readonly estimatedDuration: number;
     readonly estimatedCost: number;
@@ -1042,7 +1016,6 @@ export class Idea {
     ) {
         this.id = entity.id;
         this.title = entity.title;
-        this.score = entity.score;
         this.estimatedImpact =
             entity.estimated_impact;
         this.estimatedDuration =
@@ -1120,32 +1093,6 @@ export class Idea {
             this.estimatedDuration
                 / SECONDS_PER_DAY,
         );
-    }
-
-    priorityLevel(): PriorityLevel {
-        return computePriority(this.score);
-    }
-
-    scoreStyle(): string {
-        if (this.score >= SCORE_BADGE_HIGH)
-            return 'color:hsl(var(--success))'
-                + ';background:'
-                + 'hsl(var(--success-soft))';
-        if (this.score >= SCORE_BADGE_MEDIUM)
-            return 'color:hsl(var(--warning))'
-                + ';background:'
-                + 'hsl(var(--warning-soft))';
-        return 'color:hsl(var(--error))'
-            + ';background:'
-            + 'hsl(var(--error-soft))';
-    }
-
-    scoreColor(): string {
-        if (this.score >= SCORE_THRESHOLD_HIGH)
-            return 'color:hsl(var(--success))';
-        if (this.score >= SCORE_THRESHOLD_MEDIUM)
-            return 'color:hsl(var(--warning))';
-        return 'color:hsl(var(--error))';
     }
 
     statusLabel(): string {

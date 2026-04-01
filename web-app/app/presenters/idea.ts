@@ -7,7 +7,6 @@ import {
     iconClock,
     iconDollarSign,
     iconTrendingUp,
-    iconStar,
     iconEye,
     iconClipboardCheck,
     iconArrowRight,
@@ -24,30 +23,11 @@ import {
 import type {
     Idea,
     ReadinessLevel,
-    PriorityLevel,
     IdeaStatus,
 } from '../../../api/types';
 import {
     COST_DIVISOR,
 } from '../../../api/types';
-
-const PRIORITY_CONFIG: Record<
-    string,
-    { label: string; className: string }
-> = {
-    high: {
-        label: 'High Priority',
-        className: 'badge-error',
-    },
-    medium: {
-        label: 'Medium',
-        className: 'badge-warning',
-    },
-    low: {
-        label: 'Low',
-        className: 'badge-default',
-    },
-};
 
 const READINESS_ICONS: Record<
     ReadinessLevel,
@@ -64,7 +44,6 @@ const READINESS_ICONS: Record<
 export class IdeaPresenter {
     readonly #id: string;
     readonly #title: string;
-    readonly #score: number;
     readonly #priority: number;
     readonly #status: IdeaStatus;
     readonly #statusClassName: string;
@@ -82,7 +61,6 @@ export class IdeaPresenter {
     readonly #durationInDays: number;
     readonly #estimatedCost: number;
     readonly #estimatedImpact: number;
-    readonly #scoreStyle: string;
     readonly #needsEdgeDefinition: boolean;
     readonly #isReviewable: boolean;
     readonly #isConvertible: boolean;
@@ -92,8 +70,6 @@ export class IdeaPresenter {
     readonly #readinessClassName: string;
     readonly #readinessLabel: string;
     readonly #waitingDays: number;
-    readonly #priorityLevel: PriorityLevel;
-    readonly #scoreColor: string;
     readonly #impactLabel: string;
     readonly #effortLabel: string;
     readonly #searchTitle: string;
@@ -102,7 +78,6 @@ export class IdeaPresenter {
     constructor(idea: Idea) {
         this.#id = idea.id;
         this.#title = idea.title;
-        this.#score = idea.score;
         this.#priority = idea.priority;
         this.#status = idea.status;
         this.#statusClassName =
@@ -131,7 +106,6 @@ export class IdeaPresenter {
             idea.estimatedCost;
         this.#estimatedImpact =
             idea.estimatedImpact;
-        this.#scoreStyle = idea.scoreStyle();
         this.#needsEdgeDefinition =
             idea.needsEdgeDefinition();
         this.#isReviewable =
@@ -146,9 +120,6 @@ export class IdeaPresenter {
         this.#readinessLabel =
             idea.readinessLabel();
         this.#waitingDays = idea.waitingDays;
-        this.#priorityLevel =
-            idea.priorityLevel();
-        this.#scoreColor = idea.scoreColor();
         this.#impactLabel = idea.impactLabel;
         this.#effortLabel = idea.effortLabel;
         this.#searchTitle =
@@ -163,10 +134,6 @@ export class IdeaPresenter {
 
     prioritySortKey(): number {
         return this.#priority;
-    }
-
-    scoreSortKey(): number {
-        return this.#score;
     }
 
     isInReview(): boolean {
@@ -186,14 +153,6 @@ export class IdeaPresenter {
 
     isReady(): boolean {
         return this.#isReady;
-    }
-
-    matchesPriorityFilter(
-        priority: string,
-    ): boolean {
-        return priority === 'all'
-            || this.#priorityLevel
-                === priority;
     }
 
     matchesReadinessFilter(
@@ -232,7 +191,6 @@ export class IdeaPresenter {
                             view,
                         )}
                     </div>
-                    ${this.#buildScoreBadge()}
                 </div>
                 <div style="display:grid;
                     grid-template-columns:
@@ -306,21 +264,6 @@ export class IdeaPresenter {
                 ${iconTarget(12, '')}
                 ${this.#edgeStatusLabel}
             </span>
-        </div>`;
-    }
-
-    #buildScoreBadge(): SafeHtml {
-        return html`
-        <div style="${
-            'padding:0.25rem'
-            + ' 0.75rem;'
-            + 'border-radius:var('
-            + '--radius-lg);'
-            + 'font-weight:600;'
-            + 'font-size:0.875rem;'
-        }${this.#scoreStyle}">
-            ${iconStar(14, '')
-            } ${this.#score}
         </div>`;
     }
 
@@ -433,13 +376,12 @@ export class IdeaPresenter {
     #buildActions(): SafeHtml {
         return html`
         <div
-            class="${
-                'flex items-center'
-                + ' gap-2'
-                + ' idea-actions'
-            }"
-            style="justify-content:
-                flex-end">
+            class="flex idea-actions"
+            style="${
+                'flex-direction:column;'
+                + 'align-items:flex-end;'
+                + 'gap:0.5rem'
+            }">
             <button
                 class="${
                     'btn btn-outline'
@@ -530,9 +472,6 @@ export class IdeaPresenter {
         const rIcon = READINESS_ICONS[
             this.#readiness
         ]!;
-        const pd = PRIORITY_CONFIG[
-            this.#priorityLevel
-        ]!;
         return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
@@ -547,11 +486,6 @@ export class IdeaPresenter {
                     + ' items-center'
                     + ' gap-2 mb-2'
                 }">
-                    <span class="${
-                        'badge '
-                        + pd.className
-                        + ' text-xs'
-                    }">${pd.label}</span>
                     <span class="${
                         'flex items-center'
                         + ' gap-1 text-sm '
@@ -614,20 +548,6 @@ export class IdeaPresenter {
                         'flex items-center'
                         + ' gap-4 text-sm'
                     }">
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Score</p>
-                            <p class="${
-                                'font-semibold'
-                            }"
-                                style="${
-                                    this
-                                    .#scoreColor
-                                }">${
-                                this.#score
-                            }</p>
-                        </div>
                         <div>
                             <p class="${
                                 'text-muted'
@@ -737,19 +657,6 @@ export class IdeaPresenter {
                             ${this
                                 .#edgeStatusLabel}
                         </span>
-                        <div style="${
-                            'padding:0.25rem'
-                            + ' 0.75rem;'
-                            + 'border-radius:'
-                            + 'var('
-                            + '--radius-lg);'
-                            + 'font-weight:600;'
-                            + 'font-size:'
-                            + '0.875rem;'
-                        }${this.#scoreStyle}">
-                            ${iconStar(14, '')}
-                            ${this.#score}
-                        </div>
                     </div>
                     <p class="${
                         'text-sm text-muted'
@@ -1106,14 +1013,6 @@ export class IdeaPresenter {
         <div class="score-grid">
             ${[
               {
-                  label: 'Score',
-                  inputId: 'score',
-                  icon: iconStar,
-                  value: this.#score,
-                  unit: '',
-                  prefix: '#',
-              },
-              {
                   label: 'Impact',
                   inputId: 'impact',
                   icon: iconTrendingUp,
@@ -1193,7 +1092,6 @@ export class IdeaPresenter {
 export class IdeaListPresenter {
     readonly #ideas: IdeaPresenter[];
     readonly #pendingReviewCount: number;
-    #view = 'priority';
 
     constructor(ideas: Idea[]) {
         this.#ideas = ideas.map(
@@ -1203,14 +1101,6 @@ export class IdeaListPresenter {
             this.#ideas.filter(
                 i => i.isInReview(),
             ).length;
-    }
-
-    setView(view: string): void {
-        this.#view = view;
-    }
-
-    currentView(): string {
-        return this.#view;
     }
 
     pendingReviewCount(): number {
@@ -1223,20 +1113,14 @@ export class IdeaListPresenter {
 
     renderList(): SafeHtml {
         const sorted =
-            this.#view === 'priority'
-                ? [...this.#ideas].sort(
-                    (a, b) =>
-                        a.prioritySortKey()
-                        - b.prioritySortKey(),
-                )
-                : [...this.#ideas].sort(
-                    (a, b) =>
-                        b.scoreSortKey()
-                        - a.scoreSortKey(),
-                );
+            [...this.#ideas].sort(
+                (a, b) =>
+                    a.prioritySortKey()
+                    - b.prioritySortKey(),
+            );
         return html`${sorted.map(
             idea => idea.buildCard(
-                this.#view,
+                'priority',
             ),
         )}`;
     }
@@ -1246,10 +1130,7 @@ export class IdeaListPresenter {
         return `${n} `
             + `${n === 1
                 ? 'idea' : 'ideas'}`
-            + ` \u2022 ${this.#view
-                === 'priority'
-                ? 'by priority'
-                : 'by score'}`;
+            + ' \u2022 by priority';
     }
 }
 
@@ -1257,10 +1138,8 @@ export class ReviewQueuePresenter {
     readonly #ideas: IdeaPresenter[];
     readonly #totalCount: number;
     readonly #readyCount: number;
-    readonly #highPriorityCount: number;
     readonly #avgWaitDays: number;
     #search = '';
-    #priorityFilter = 'all';
     #readinessFilter = 'all';
 
     constructor(ideas: Idea[]) {
@@ -1272,12 +1151,6 @@ export class ReviewQueuePresenter {
         this.#readyCount =
             this.#ideas.filter(
                 i => i.isReady(),
-            ).length;
-        this.#highPriorityCount =
-            this.#ideas.filter(
-                i => i.matchesPriorityFilter(
-                    'high',
-                ),
             ).length;
         this.#avgWaitDays =
             this.#ideas.length > 0
@@ -1296,12 +1169,6 @@ export class ReviewQueuePresenter {
         this.#search = query.toLowerCase();
     }
 
-    setPriorityFilter(
-        priority: string,
-    ): void {
-        this.#priorityFilter = priority;
-    }
-
     setReadinessFilter(
         readiness: string,
     ): void {
@@ -1311,14 +1178,11 @@ export class ReviewQueuePresenter {
     stats(): {
         total: number;
         ready: number;
-        highPriority: number;
         avgWait: number;
     } {
         return {
             total: this.#totalCount,
             ready: this.#readyCount,
-            highPriority:
-                this.#highPriorityCount,
             avgWait: this.#avgWaitDays,
         };
     }
@@ -1329,9 +1193,6 @@ export class ReviewQueuePresenter {
                 i =>
                     i.matchesSearch(
                         this.#search,
-                    )
-                    && i.matchesPriorityFilter(
-                        this.#priorityFilter,
                     )
                     && i.matchesReadinessFilter(
                         this.#readinessFilter,
@@ -1347,9 +1208,6 @@ export class ReviewQueuePresenter {
             i =>
                 i.matchesSearch(
                     this.#search,
-                )
-                && i.matchesPriorityFilter(
-                    this.#priorityFilter,
                 )
                 && i.matchesReadinessFilter(
                     this.#readinessFilter,

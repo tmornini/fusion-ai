@@ -6,8 +6,6 @@ import type {
 import type {
     UserEntity,
     IdeaEntity,
-    IdeaScoreEntity,
-    IdeaScoreIdeaEntity,
     ProjectEntity,
     TeamMembershipEntity,
     TeamMembershipProjectEntity,
@@ -335,8 +333,6 @@ function createSingletonStore<
 export const TABLE_NAMES = [
     'users',
     'ideas',
-    'idea_scores',
-    'idea_score_ideas',
     'projects',
     'team_memberships',
     'team_membership_projects',
@@ -531,15 +527,6 @@ export async function createLocalStorageAdapter(
             createEntityStore<IdeaEntity>(
                 'ideas',
             ),
-
-        ideaScores:
-            createEntityStore<
-                IdeaScoreEntity
-            >('idea_scores'),
-        ideaScoreIdeas:
-            createEntityStore<
-                IdeaScoreIdeaEntity
-            >('idea_score_ideas'),
 
         projects:
             createEntityStore<ProjectEntity>(

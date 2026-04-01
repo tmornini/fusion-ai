@@ -38,7 +38,6 @@ interface CompletionStatus {
 export class EdgeDetailPresenter {
     #edgeData: EdgeData;
     readonly #ideaTitle: string;
-    readonly #ideaScore: number;
     readonly #ideaProblemStatement: string;
     readonly #ideaProposedSolution: string;
     readonly #ideaSubmittedBy: string;
@@ -49,7 +48,6 @@ export class EdgeDetailPresenter {
     ) {
         this.#edgeData = edgeData;
         this.#ideaTitle = idea.title;
-        this.#ideaScore = idea.score;
         this.#ideaProblemStatement =
             idea.problemStatement;
         this.#ideaProposedSolution =
@@ -726,16 +724,10 @@ export class EdgeDetailPresenter {
                         20, 'text-primary',
                     )} Linked Idea</h3>
                     <h4 class="${
-                        'font-medium mb-1'
+                        'font-medium mb-3'
                     }">${
                         this.#ideaTitle
                     }</h4>
-                    <p class="${
-                        'text-xs '
-                        + 'text-muted mb-4'
-                    }">Score: ${
-                        this.#ideaScore
-                    }</p>
                     <p class="${
                         'text-xs '
                         + 'text-muted mb-1'

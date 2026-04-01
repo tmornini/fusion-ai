@@ -106,7 +106,6 @@ export async function init(
     const typeMap: Record<string, string[]> = {
         idea: [
             'idea_created',
-            'idea_scored',
             'idea_converted',
         ],
         project: ['project_created'],
