@@ -20,7 +20,6 @@ import {
     putIdea,
     putProject,
     putProjectTeamMember,
-    putIdeaProjectLink,
 } from '../app/adapters';
 import {
     IdeaConversionPresenter,
@@ -469,18 +468,12 @@ async function performConversion(
                 pd['budget']!,
         },
     );
-    await Promise.all([
-        putProjectTeamMember(
-            projectId,
-            leadUserId,
-            'lead',
-            'internal',
-        ),
-        putIdeaProjectLink(
-            ideaId,
-            projectId,
-        ),
-    ]);
+    await putProjectTeamMember(
+        projectId,
+        leadUserId,
+        'lead',
+        'internal',
+    );
     const existingIdea =
         await getIdea(ideaId);
     await putIdea(ideaId, {
