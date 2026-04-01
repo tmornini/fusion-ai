@@ -7,7 +7,7 @@ import {
     iconClock,
     iconDollarSign,
     iconTrendingUp,
-    iconEye,
+
     iconClipboardCheck,
     iconArrowRight,
     iconArrowLeft,
@@ -244,15 +244,16 @@ export class IdeaPresenter {
     #buildBadges(): SafeHtml {
         return html`
         <div style="${
-            'display:flex;'
-            + 'flex-direction:column;'
-            + 'align-items:center;'
-            + 'gap:0.25rem'
+            'display:grid;'
+            + 'gap:0.25rem;'
+            + 'align-self:center'
         }">
             <span class="${
                 'badge '
                 + this.#statusClassName
                 + ' text-xs'
+            }" style="${
+                'justify-content:center'
             }">
                 ${this.#statusLabel}
             </span>
@@ -260,6 +261,8 @@ export class IdeaPresenter {
                 'badge '
                 + this.#edgeStatusClassName
                 + ' text-xs'
+            }" style="${
+                'justify-content:center'
             }">
                 ${iconTarget(12, '')}
                 ${this.#edgeStatusLabel}
@@ -382,19 +385,6 @@ export class IdeaPresenter {
                 + 'align-items:flex-end;'
                 + 'gap:0.5rem'
             }">
-            <button
-                class="${
-                    'btn btn-outline'
-                    + ' btn-sm gap-2'
-                }"
-                data-idea-view="${this.#id}">
-                ${iconEye(16, '')}
-                <span class="${
-                    'hidden-mobile'
-                }">
-                    View
-                </span>
-            </button>
             ${this.#needsEdgeDefinition
                 ? html`
             <button

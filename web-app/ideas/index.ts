@@ -162,29 +162,12 @@ export async function init(): Promise<void> {
                 const actionButton =
                     e.target
                         .closest<HTMLElement>(
-                        '[data-idea-view],'
-                        + ' [data-idea-edge],'
+                        '[data-idea-edge],'
                         + ' [data-idea-review],'
                         + ' [data-idea-convert]',
                     );
                 if (actionButton) {
                     if (
-                        actionButton
-                            .hasAttribute(
-                            'data-idea-view',
-                        )
-                    )
-                        navigateTo(
-                            'idea-detail',
-                            {
-                                ideaId: attr(
-                                    actionButton,
-                                    'data-idea'
-                                    + '-view',
-                                ),
-                            },
-                        );
-                    else if (
                         actionButton
                             .hasAttribute(
                             'data-idea-edge',
