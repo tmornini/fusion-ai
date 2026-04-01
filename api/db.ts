@@ -12,18 +12,10 @@ import type {
     DiscussionEntity,
     ProjectVersionEntity,
     ProjectVersionProjectEntity,
-    EdgeEntity,
-    EdgeOutcomeEntity,
-    EdgeOutcomeEdgeEntity,
-    EdgeMetricEntity,
-    EdgeMetricOutcomeEntity,
     ActivityEntity,
     ClarificationEntity,
     ClarificationAnswerEntity,
     ClarificationAnswerClarificationEntity,
-    CrunchColumnEntity,
-    CrunchColumnAcronymEntity,
-    CrunchColumnAcronymLinkEntity,
     WorkflowEntity,
     WfNodeEntity,
     WfEdgeEntity,
@@ -32,8 +24,6 @@ import type {
     AccountEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
-    EdgeIdeaEntity,
-    EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
     DiscussionProjectEntity,
@@ -105,21 +95,6 @@ export interface DbAdapter {
         EntityStore<
             ProjectVersionProjectEntity
         >;
-    edges: EntityStore<EdgeEntity>;
-    edgeIdeas:
-        EntityStore<EdgeIdeaEntity>;
-    edgeOutcomes:
-        EntityStore<EdgeOutcomeEntity>;
-    edgeOutcomeEdges:
-        EntityStore<
-            EdgeOutcomeEdgeEntity
-        >;
-    edgeMetrics:
-        EntityStore<EdgeMetricEntity>;
-    edgeMetricOutcomes:
-        EntityStore<
-            EdgeMetricOutcomeEntity
-        >;
     activities: EntityStore<ActivityEntity>;
     clarifications: EntityStore<ClarificationEntity>;
     clarificationAnswers: EntityStore<ClarificationAnswerEntity>;
@@ -128,13 +103,6 @@ export interface DbAdapter {
             ClarificationAnswerClarificationEntity
         >;
     clarificationProjects: EntityStore<ClarificationProjectEntity>;
-    crunchColumns: EntityStore<CrunchColumnEntity>;
-    crunchColumnAcronyms:
-        EntityStore<CrunchColumnAcronymEntity>;
-    crunchColumnAcronymLinks:
-        EntityStore<
-            CrunchColumnAcronymLinkEntity
-        >;
     workflows:
         EntityStore<WorkflowEntity>;
     wfNodes:
@@ -159,7 +127,6 @@ export interface DbAdapter {
     account: SingletonStore<AccountEntity>;
     ideaSubmissions: EntityStore<IdeaSubmissionEntity>;
     ideaProjectLinks: EntityStore<IdeaProjectLinkEntity>;
-    edgeOwnerships: EntityStore<EdgeOwnershipEntity>;
     taskAssignments: EntityStore<TaskAssignmentEntity>;
     discussionAuthorships: EntityStore<DiscussionAuthorshipEntity>;
     versionAuthorships: EntityStore<VersionAuthorshipEntity>;

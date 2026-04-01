@@ -17,18 +17,10 @@ import type {
     DiscussionEntity,
     ProjectVersionEntity,
     ProjectVersionProjectEntity,
-    EdgeEntity,
-    EdgeOutcomeEntity,
-    EdgeOutcomeEdgeEntity,
-    EdgeMetricEntity,
-    EdgeMetricOutcomeEntity,
     ActivityEntity,
     ClarificationEntity,
     ClarificationAnswerEntity,
     ClarificationAnswerClarificationEntity,
-    CrunchColumnEntity,
-    CrunchColumnAcronymEntity,
-    CrunchColumnAcronymLinkEntity,
     WorkflowEntity,
     WfNodeEntity,
     WfEdgeEntity,
@@ -37,8 +29,6 @@ import type {
     AccountEntity,
     IdeaSubmissionEntity,
     IdeaProjectLinkEntity,
-    EdgeIdeaEntity,
-    EdgeOwnershipEntity,
     TaskAssignmentEntity,
     DiscussionAuthorshipEntity,
     DiscussionProjectEntity,
@@ -341,18 +331,10 @@ export const TABLE_NAMES = [
     'project_tasks',
     'discussions',
     'project_versions',
-    'edges',
-    'edge_outcomes',
-    'edge_outcome_edges',
-    'edge_metrics',
-    'edge_metric_outcomes',
     'activities',
     'clarifications',
     'clarification_answers',
     'clarification_answer_clarifications',
-    'crunch_columns',
-    'crunch_column_acronyms',
-    'crunch_column_acronym_links',
     'workflows',
     'wf_nodes',
     'wf_edges',
@@ -365,8 +347,6 @@ export const TABLE_NAMES = [
     'account',
     'idea_submissions',
     'idea_project_links',
-    'edge_ideas',
-    'edge_ownerships',
     'task_assignments',
     'discussion_authorships',
     'discussion_projects',
@@ -582,32 +562,6 @@ export async function createLocalStorageAdapter(
                 ProjectVersionProjectEntity
             >('project_version_projects'),
 
-        edges:
-            createEntityStore<EdgeEntity>(
-                'edges',
-            ),
-        edgeIdeas:
-            createEntityStore<
-                EdgeIdeaEntity
-            >('edge_ideas'),
-
-        edgeOutcomes:
-            createEntityStore<
-                EdgeOutcomeEntity
-            >('edge_outcomes'),
-        edgeOutcomeEdges:
-            createEntityStore<
-                EdgeOutcomeEdgeEntity
-            >('edge_outcome_edges'),
-
-        edgeMetrics:
-            createEntityStore<EdgeMetricEntity>(
-                'edge_metrics',
-            ),
-        edgeMetricOutcomes:
-            createEntityStore<
-                EdgeMetricOutcomeEntity
-            >('edge_metric_outcomes'),
         activities:
             createEntityStore<ActivityEntity>(
                 'activities',
@@ -633,18 +587,6 @@ export async function createLocalStorageAdapter(
                 ClarificationProjectEntity
             >('clarification_projects'),
 
-        crunchColumns:
-            createEntityStore<
-                CrunchColumnEntity
-            >('crunch_columns'),
-        crunchColumnAcronyms:
-            createEntityStore<
-                CrunchColumnAcronymEntity
-            >('crunch_column_acronyms'),
-        crunchColumnAcronymLinks:
-            createEntityStore<
-                CrunchColumnAcronymLinkEntity
-            >('crunch_column_acronym_links'),
         workflows:
             createEntityStore<
                 WorkflowEntity
@@ -696,10 +638,6 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 IdeaProjectLinkEntity
             >('idea_project_links'),
-        edgeOwnerships:
-            createEntityStore<
-                EdgeOwnershipEntity
-            >('edge_ownerships'),
         taskAssignments:
             createEntityStore<
                 TaskAssignmentEntity

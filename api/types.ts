@@ -4,8 +4,6 @@ export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
 export type PriorityLevel = 'high' | 'medium' | 'low';
 
-export type EdgeStatus = 'complete' | 'draft' | 'missing';
-
 export type WfFieldType =
     | 'text'
     | 'textarea'
@@ -178,18 +176,6 @@ export function isIdeaStatus(
 ): v is IdeaStatus {
     return includes(
         IDEA_STATUSES, v,
-    );
-}
-
-const EDGE_STATUSES:
-    readonly EdgeStatus[]
-    = ['complete', 'draft', 'missing'];
-
-export function isEdgeStatus(
-    v: string,
-): v is EdgeStatus {
-    return includes(
-        EDGE_STATUSES, v,
     );
 }
 
@@ -494,50 +480,6 @@ export interface ProjectVersionProjectEntity {
     created_at: string;
 }
 
-export interface EdgeEntity {
-    id: Id;
-    status: EdgeStatus;
-    confidence: ConfidenceLevel;
-    impact_short_term: string;
-    impact_mid_term: string;
-    impact_long_term: string;
-    updated_at: string;
-}
-
-export interface EdgeIdeaEntity {
-    id: Id;
-    edge_id: Id;
-    idea_id: Id;
-    created_at: string;
-}
-
-export interface EdgeOutcomeEntity {
-    id: Id;
-    description: string;
-}
-
-export interface EdgeOutcomeEdgeEntity {
-    id: Id;
-    edge_outcome_id: Id;
-    edge_id: Id;
-    created_at: string;
-}
-
-export interface EdgeMetricEntity {
-    id: Id;
-    name: string;
-    target: string;
-    unit: string;
-    current: string;
-}
-
-export interface EdgeMetricOutcomeEntity {
-    id: Id;
-    edge_metric_id: Id;
-    outcome_id: Id;
-    created_at: string;
-}
-
 export interface ActivityEntity {
     id: Id;
     type: string;
@@ -565,27 +507,6 @@ export interface ClarificationAnswerClarificationEntity {
     id: Id;
     clarification_answer_id: Id;
     clarification_id: Id;
-    created_at: string;
-}
-
-export interface CrunchColumnEntity {
-    id: Id;
-    original_name: string;
-    friendly_name: string;
-    data_type: string;
-    description: string;
-    sample_values: JsonArrayField;
-}
-
-export interface CrunchColumnAcronymEntity {
-    id: Id;
-    expansion: string;
-}
-
-export interface CrunchColumnAcronymLinkEntity {
-    id: Id;
-    crunch_column_acronym_id: Id;
-    crunch_column_id: Id;
     created_at: string;
 }
 
@@ -671,13 +592,6 @@ export interface IdeaProjectLinkEntity {
     id: Id;
     idea_id: Id;
     project_id: Id;
-    created_at: string;
-}
-
-export interface EdgeOwnershipEntity {
-    id: Id;
-    edge_id: Id;
-    user_id: Id;
     created_at: string;
 }
 
@@ -818,24 +732,6 @@ export const IDEA_STATUS_CONFIG: Record<
     'deleted': {
         label: 'Deleted',
         className: 'badge-default',
-    },
-};
-
-export const EDGE_STATUS_CONFIG: Record<
-    EdgeStatus,
-    StatusDisplay
-> = {
-    missing: {
-        label: 'Edge Missing',
-        className: 'badge-error',
-    },
-    draft: {
-        label: 'Edge Draft',
-        className: 'badge-warning',
-    },
-    complete: {
-        label: 'Edge Complete',
-        className: 'badge-success',
     },
 };
 
@@ -1243,104 +1139,6 @@ export class Project {
         return (
             PROJECT_STATUS_CONFIG[this.status]
         )!.className;
-    }
-}
-
-export class Edge {
-    readonly id: string;
-    readonly status: EdgeStatus;
-    readonly confidence: ConfidenceLevel;
-    readonly impactShortTerm: string;
-    readonly impactMidTerm: string;
-    readonly impactLongTerm: string;
-    readonly updatedAt: string;
-
-    constructor(entity: EdgeEntity) {
-        this.id = entity.id;
-        this.status = entity.status;
-        this.confidence = entity.confidence;
-        this.impactShortTerm =
-            entity.impact_short_term;
-        this.impactMidTerm =
-            entity.impact_mid_term;
-        this.impactLongTerm =
-            entity.impact_long_term;
-        this.updatedAt = entity.updated_at;
-    }
-
-    isComplete(): boolean {
-        return this.status === 'complete';
-    }
-
-    isDraft(): boolean {
-        return this.status === 'draft';
-    }
-
-    isMissing(): boolean {
-        return this.status === 'missing';
-    }
-
-    statusLabel(): string {
-        return (
-            EDGE_STATUS_CONFIG[this.status]
-        )!.label;
-    }
-
-    statusClassName(): string {
-        return (
-            EDGE_STATUS_CONFIG[this.status]
-        )!.className;
-    }
-
-    confidenceLabel(): string {
-        return (
-            CONFIDENCE_CONFIG[this.confidence]
-        )!.label;
-    }
-
-    confidenceClassName(): string {
-        return (
-            CONFIDENCE_CONFIG[this.confidence]
-        )!.className;
-    }
-}
-
-export class EdgeListEntry {
-    readonly edge: Edge;
-    readonly ideaId: string;
-    readonly ideaTitle: string;
-    readonly outcomesCount: number;
-    readonly metricsCount: number;
-    readonly owner: string;
-
-    constructor(
-        entity: EdgeEntity,
-        ideaId: string,
-        ideaTitle: string,
-        outcomesCount: number,
-        metricsCount: number,
-        owner: string,
-    ) {
-        this.edge = new Edge(entity);
-        this.ideaId = ideaId;
-        this.ideaTitle = ideaTitle;
-        this.outcomesCount = outcomesCount;
-        this.metricsCount = metricsCount;
-        this.owner = owner;
-    }
-
-    matchesSearch(
-        term: string,
-    ): boolean {
-        const t = term.toLowerCase();
-        return (
-            this.ideaTitle
-                .toLowerCase()
-                .includes(t)
-            || this.owner
-                .toLowerCase()
-                .includes(t)
-        );
     }
 }
 
