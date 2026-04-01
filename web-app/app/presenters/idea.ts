@@ -395,7 +395,9 @@ export class IdeaPresenter {
                 'flex-direction:column;'
                 + 'align-items:stretch;'
                 + 'gap:0.5rem;'
-                + 'min-width:8rem'
+                + 'min-width:8rem;'
+                + 'padding-bottom:'
+                + '0.5rem'
             }">
             ${this.#needsEdgeDefinition
                 ? html`
