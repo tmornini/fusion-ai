@@ -144,13 +144,13 @@ export class IdeaApprovalPresenter {
                         value="${
                             this.#title
                         }"
-                        style=${
+                        style="${
                             'font-size:'
                             + '1.125rem;'
                             + 'font-'
                             + 'weight:'
                             + '700'
-                        } />`
+                        }" />`
                     : html`<h1
                         class="${
                             'text-lg'
@@ -212,9 +212,10 @@ export class IdeaApprovalPresenter {
                     ${iconUser(16, '')}
                     <span
                         class="font-medium"
-                        style=${'color:'
+                        style="${'color:'
                             + 'hsl(var('
-                            + '--foreground))'}>
+                            + '--foreground))'
+                        }">
                         ${displayText(
                             this.#submittedBy,
                         )}
@@ -328,9 +329,9 @@ export class IdeaApprovalPresenter {
     #buildApprovalImpactGrid(): SafeHtml {
         return html`
             <div class="detail-grid mb-6"
-                style=${'grid-template-'
+                style="${'grid-template-'
                     + 'columns:'
-                    + '1fr 1fr'}>
+                    + '1fr 1fr'}">
                 <div class="card p-6">
                     <h3 class="${
                         'font-semibold mb-3'
@@ -355,12 +356,12 @@ export class IdeaApprovalPresenter {
                         ${iconClock(20, '')}
                         Effort Required
                     </h3>
-                    <div style=${
+                    <div style="${
                         'display:flex;'
                         + 'flex-direction:'
                         + 'column;'
                         + 'gap:0.75rem'
-                    }>
+                    }">
                         <div
                             class="flex
                                 justify-between">
@@ -405,7 +406,7 @@ export class IdeaApprovalPresenter {
     ): SafeHtml {
         return html`
             <div class="card p-6 mb-6"
-                style=${'background:'
+                style="${'background:'
                     + 'linear-gradient('
                     + 'to right,'
                     + 'hsl(var(--primary)'
@@ -414,7 +415,7 @@ export class IdeaApprovalPresenter {
                     + '/0.1));'
                     + 'border-color:'
                     + 'hsl(var(--primary)'
-                    + '/0.2)'}>
+                    + '/0.2)'}">
                 <div class="flex items-center
                     justify-between mb-4">
                     <h3 class="${
@@ -458,10 +459,10 @@ export class IdeaApprovalPresenter {
                     class="flex items-center
                         justify-between
                         mt-3 pt-3"
-                    style=${'border-top:'
+                    style="${'border-top:'
                         + '1px solid'
                         + ' hsl(var('
-                        + '--border))'}>
+                        + '--border))'}">
                     <span class="text-xs
                         text-muted">
                         Edge Owner
@@ -483,15 +484,15 @@ export class IdeaApprovalPresenter {
         return html`
                 <div
                     class="p-4 rounded-lg mb-3"
-                    style=${'background:'
+                    style="${'background:'
                         + 'hsl(var('
                         + '--background));'
                         + 'border:1px solid'
                         + ' hsl(var('
-                        + '--border))'}>
+                        + '--border))'}">
                     <div class="flex
                         items-start gap-2 mb-3">
-                        <div style=${
+                        <div style="${
                             'width:'
                             + '1.25rem;'
                             + 'height:1.25rem;'
@@ -515,7 +516,7 @@ export class IdeaApprovalPresenter {
                             + 'hsl(var('
                             + '--primary));'
                             + 'flex-shrink:0'
-                        }>${
+                        }">${
                             outcomeIndex + 1
                         }</div>
                         <p class="${
@@ -527,9 +528,9 @@ export class IdeaApprovalPresenter {
                         }</p>
                     </div>
                     <div
-                        style=${'padding-'
+                        style="${'padding-'
                             + 'left:'
-                            + '1.75rem'}
+                            + '1.75rem'}"
                         class="${
                             'flex flex-wrap'
                             + ' gap-2'
@@ -546,7 +547,7 @@ export class IdeaApprovalPresenter {
                                 + ' gap-2'
                                 + ' text-sm'
                             }"
-                            style=${
+                            style="${
                                 'padding:'
                                 + '0.375rem'
                                 + ' 0.75rem;'
@@ -561,7 +562,7 @@ export class IdeaApprovalPresenter {
                                 + '1px solid'
                                 + ' hsl(var('
                                 + '--border))'
-                            }>
+                            }">
                             ${iconGauge(
                                 14,
                                 'text-primary',
@@ -587,19 +588,19 @@ export class IdeaApprovalPresenter {
         edge: EdgeData,
     ): SafeHtml {
         return html`
-                <div style=${
+                <div style="${
                     'display:grid;'
                     + 'grid-template-'
                     + 'columns:'
                     + 'repeat(3,1fr);'
                     + 'gap:0.75rem;'
                     + 'margin-top:0.5rem'
-                }>
+                }">
                     <div
                         class="${
                             'p-3 rounded-lg'
                         }"
-                        style=${'background:'
+                        style="${'background:'
                             + 'hsl(var('
                             + '--success-'
                             + 'soft));'
@@ -607,7 +608,7 @@ export class IdeaApprovalPresenter {
                             + '1px solid'
                             + ' hsl(var('
                             + '--success)'
-                            + '/0.2)'}>
+                            + '/0.2)'}">
                         <div class="flex
                             items-center
                             gap-1 mb-2">
@@ -617,11 +618,12 @@ export class IdeaApprovalPresenter {
                                     + ' font-'
                                     + 'medium'
                                 }"
-                                style=${
+                                style="${
                                     'color:'
                                     + 'hsl(var('
                                     + '--success'
-                                    + '))'}>
+                                    + '))'
+                                }">
                                 ${iconClock(
                                     14, '',
                                 )}
@@ -640,7 +642,7 @@ export class IdeaApprovalPresenter {
                         class="${
                             'p-3 rounded-lg'
                         }"
-                        style=${'background:'
+                        style="${'background:'
                             + 'hsl(var('
                             + '--warning-'
                             + 'soft));'
@@ -648,7 +650,7 @@ export class IdeaApprovalPresenter {
                             + '1px solid'
                             + ' hsl(var('
                             + '--warning)'
-                            + '/0.2)'}>
+                            + '/0.2)'}">
                         <div class="flex
                             items-center
                             gap-1 mb-2">
@@ -658,11 +660,12 @@ export class IdeaApprovalPresenter {
                                     + ' font-'
                                     + 'medium'
                                 }"
-                                style=${
+                                style="${
                                     'color:'
                                     + 'hsl(var('
                                     + '--warning'
-                                    + '))'}>
+                                    + '))'
+                                }">
                                 ${iconClock(
                                     14, '',
                                 )}
@@ -682,14 +685,14 @@ export class IdeaApprovalPresenter {
                         class="${
                             'p-3 rounded-lg'
                         }"
-                        style=${'background:'
+                        style="${'background:'
                             + 'hsl(var('
                             + '--info-soft));'
                             + 'border:'
                             + '1px solid'
                             + ' hsl(var('
                             + '--primary)'
-                            + '/0.2)'}>
+                            + '/0.2)'}">
                         <div class="flex
                             items-center
                             gap-1 mb-2">
@@ -734,12 +737,12 @@ export class IdeaApprovalPresenter {
                     )}
                     Identified Risks
                 </h3>
-                <div style=${
+                <div style="${
                     'display:flex;'
                     + 'flex-direction:'
                     + 'column;'
                     + 'gap:0.75rem'
-                }>
+                }">
                     ${this.#risks
                         .map((
                         risk: Risk,
@@ -756,14 +759,14 @@ export class IdeaApprovalPresenter {
                         class="${
                             'p-4 rounded-lg'
                         }"
-                        style=${'background:'
+                        style="${'background:'
                             + 'hsl(var('
                             + '--muted)'
                             + '/0.3);'
                             + 'border:'
                             + '1px solid'
                             + ' hsl(var('
-                            + '--border))'}>
+                            + '--border))'}">
                         <div class="flex
                             items-center
                             justify-between
@@ -814,12 +817,12 @@ export class IdeaApprovalPresenter {
                 }">
                     Key Assumptions
                 </h3>
-                <ul style=${
+                <ul style="${
                     'display:flex;'
                     + 'flex-direction:'
                     + 'column;'
                     + 'gap:0.5rem'
-                }>
+                }">
                     ${this.#assumptions
                         .map((
                             assumption:
@@ -1007,14 +1010,14 @@ export class IdeaApprovalPresenter {
                     id=${'approval'
                         + '-reject'
                         + '-feedback'}
-                    placeholder=${
+                    placeholder="${
                         'Explain what'
                         + ' changes or'
                         + ' additional'
                         + ' information'
                         + ' is'
                         + ' needed...'
-                    }
+                    }"
                     rows="4">
                 </textarea>
             </div>
@@ -1082,12 +1085,12 @@ export class IdeaApprovalPresenter {
                     id=${'approval'
                         + '-clarify'
                         + '-feedback'}
-                    placeholder=${
+                    placeholder="${
                         'What additional'
                         + ' information'
                         + ' do you'
                         + ' need?'
-                    }
+                    }"
                     rows="4">
                 </textarea>
             </div>

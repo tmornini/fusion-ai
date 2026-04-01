@@ -154,12 +154,12 @@ export class IdeaConversionPresenter {
             this.#fields[field].trim();
         return html`<span
             id="check-${field}"
-            style=${'color:'
+            style="${'color:'
                 + 'hsl(var('
                 + '--success));'
                 + (isSet
                     ? ''
-                    : 'display:none')}>
+                    : 'display:none')}">
             ${iconCheckCircle2(16, '')}
         </span>`;
     }
@@ -204,7 +204,8 @@ export class IdeaConversionPresenter {
                             + ' justify-'
                             + 'center'
                         }"
-                        style=${'width:'
+                        style="${
+                            'width:'
                             + '2.25rem;'
                             + 'height:'
                             + '2.25rem;'
@@ -212,7 +213,8 @@ export class IdeaConversionPresenter {
                             + 'hsl(var('
                             + '--primary'
                             + '-foreground'
-                            + '))'}>
+                            + '))'
+                        }">
                         ${iconRocket(20, '')}
                     </div>
                     <span class="${
@@ -244,7 +246,8 @@ export class IdeaConversionPresenter {
                 } required fields${
                     ''
                 }</span>
-                <div style=${'width:'
+                <div style="${
+                    'width:'
                     + '6rem;'
                     + 'height:0.5rem;'
                     + 'background:'
@@ -253,12 +256,13 @@ export class IdeaConversionPresenter {
                     + 'border-radius:'
                     + '9999px;'
                     + 'overflow:'
-                    + 'hidden'}>
+                    + 'hidden'
+                }">
                     <div
                         id=${'convert'
                             + '-progress'
                             + '-fill'}
-                        style=${
+                        style="${
                         'height:100%;'
                         + 'background:'
                         + 'hsl(var('
@@ -268,14 +272,17 @@ export class IdeaConversionPresenter {
                         + 'width:'
                         + percent
                         + '%'
-                    }></div>
+                    }"></div>
                 </div>
             </div>
         </div>
             <div class="convert-grid"
-                style=${'grid-template-'
+                style="${
+                    'grid-template-'
                     + 'columns:'
-                    + '2fr 3fr;gap:2rem'}>
+                    + '2fr 3fr;'
+                    + 'gap:2rem'
+                }">
                 ${this.#buildSummary()}
                 ${this.#buildForm()}
             </div>`;
@@ -285,9 +292,11 @@ export class IdeaConversionPresenter {
         return html`
             <div>
                 <div class="card p-6"
-                    style=${'position:'
+                    style="${
+                        'position:'
                         + 'sticky;'
-                        + 'top:6rem'}>
+                        + 'top:6rem'
+                    }">
                     <div class="${
                         'flex items-center'
                         + ' gap-2 text-sm'
@@ -308,14 +317,14 @@ export class IdeaConversionPresenter {
                     }">${
                         this.#title
                     }</h2>
-                    <div style=${
+                    <div style="${
                         'display:flex;'
                         + 'flex-direction:'
                         + 'column;'
                         + 'gap:1rem;'
                         + 'margin-bottom:'
                         + '1.5rem'
-                    }>
+                    }">
                         <div>
                             <h4 class="${
                                 'text-sm'
@@ -366,7 +375,7 @@ export class IdeaConversionPresenter {
                             }</p>
                         </div>
                     </div>
-                    <div style=${
+                    <div style="${
                         'border-top:'
                         + '1px solid'
                         + ' hsl(var('
@@ -377,7 +386,7 @@ export class IdeaConversionPresenter {
                         + 'flex-direction:'
                         + 'column;'
                         + 'gap:0.75rem'
-                    }>
+                    }">
                         ${this.#buildMetric(
                             iconClock(16, ''),
                             'Est. Time',
@@ -432,9 +441,12 @@ export class IdeaConversionPresenter {
 
     #buildForm(): SafeHtml {
         return html`
-            <div style=${'display:flex;'
-                + 'flex-direction:column;'
-                + 'gap:1.5rem'}>
+            <div style="${
+                'display:flex;'
+                + 'flex-direction:'
+                + 'column;'
+                + 'gap:1.5rem'
+            }">
                 ${this.#buildRequired()}
                 ${this.#buildOptional()}
                 ${this.#buildConfirm()}
@@ -459,12 +471,12 @@ export class IdeaConversionPresenter {
                         Project Details
                     </span>
                 </div>
-                <div style=${
+                <div style="${
                     'display:flex;'
                     + 'flex-direction:'
                     + 'column;'
                     + 'gap:1.5rem'
-                }>
+                }">
                     <div>
                         <label class="${
                             'label mb-2'
@@ -488,12 +500,12 @@ export class IdeaConversionPresenter {
                                 'project-name'
                                 ]
                             }"
-                            placeholder=${
+                            placeholder="${
                                 'Give your'
                                 + ' project'
                                 + ' a clear'
                                 + ' name'
-                            }
+                            }"
                         />
                     </div>
                     <div>
@@ -538,13 +550,13 @@ export class IdeaConversionPresenter {
                             </option>`)}
                         </select>
                     </div>
-                    <div style=${
+                    <div style="${
                         'display:grid;'
                         + 'grid-template-'
                         + 'columns:'
                         + '1fr 1fr;'
                         + 'gap:1rem'
-                    }>
+                    }">
                         <div>
                             <label class="${
                                 'label mb-2'
@@ -626,11 +638,11 @@ export class IdeaConversionPresenter {
                                 'budget',
                             )}
                         </label>
-                        <div style=${
+                        <div style="${
                             'position:'
                             + 'relative'
-                        }>
-                            <span style=${
+                        }">
+                            <span style="${
                                 'position:'
                                 + 'absolute;'
                                 + 'left:'
@@ -647,30 +659,30 @@ export class IdeaConversionPresenter {
                                 + 'pointer-'
                                 + 'events:'
                                 + 'none'
-                            }>$</span>
+                            }">$</span>
                             <input
                                 class="input"
                                 type="text"
-                                inputmode=${
+                                inputmode="${
                                     'numeric'
-                                }
+                                }"
                                 id="${
                                     'convert'
                                     + '-budget'
                                 }"
-                                placeholder=${
+                                placeholder="${
                                     'Enter'
                                     + ' budget'
                                     + ' amount'
-                                }
+                                }"
                                 value="${
                                     f['budget']
                                 }"
-                                style=${
+                                style="${
                                     'padding-'
                                     + 'left:'
                                     + '1.75rem'
-                                } />
+                                }" />
                         </div>
                         <p class="${
                             'text-xs'
@@ -797,12 +809,12 @@ export class IdeaConversionPresenter {
                         (Optional)
                     </span>
                 </div>
-                <div style=${
+                <div style="${
                     'display:flex;'
                     + 'flex-direction:'
                     + 'column;'
                     + 'gap:1.5rem'
-                }>
+                }">
                     <div>
                         <label class="${
                             'label mb-2'
@@ -816,13 +828,13 @@ export class IdeaConversionPresenter {
                             id=${'convert'
                                 + '-first'
                                 + '-milestone'}
-                            placeholder=${
+                            placeholder="${
                                 'e.g.,'
                                 + ' Complete'
                                 + ' data'
                                 + ' pipeline'
                                 + ' setup'
-                            }
+                            }"
                             value="${
                                 f[
                                 'first-milestone'
@@ -854,7 +866,7 @@ export class IdeaConversionPresenter {
                             id=${'convert'
                                 + '-success'
                                 + '-criteria'}
-                            placeholder=${
+                            placeholder="${
                                 'How will you'
                                 + ' know when'
                                 + ' this'
@@ -862,7 +874,7 @@ export class IdeaConversionPresenter {
                                 + ' complete'
                                 + ' and'
                                 + ' successful?'
-                            }
+                            }"
                             rows="4"
                             style="${
                                 'resize:none'
@@ -886,7 +898,7 @@ export class IdeaConversionPresenter {
                 id=${'convert'
                     + '-confirm'
                     + '-section'}
-                style=${'border:'
+                style="${'border:'
                     + '2px solid '
                     + (isReady
                         ? 'hsl(var('
@@ -899,14 +911,14 @@ export class IdeaConversionPresenter {
                             + 'hsl(var('
                             + '--success)'
                             + ' / 0.05)'
-                        : '')}>
+                        : '')}">
                 <div class="flex
                     items-start gap-4">
                     <div
                         id=${'convert'
                             + '-confirm'
                             + '-icon'}
-                        style=${
+                        style="${
                         'width:3rem;'
                         + 'height:3rem;'
                         + 'border-radius:'
@@ -935,7 +947,7 @@ export class IdeaConversionPresenter {
                                 + '--muted-'
                                 + 'foreground'
                                 + '))')
-                    }>
+                    }">
                         ${iconRocket(24, '')}
                     </div>
                     <div style="flex:1">

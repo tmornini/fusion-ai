@@ -154,7 +154,7 @@ export class IdeaCreatePresenter {
                         + ' items-center'
                         + ' justify-center'
                     }"
-                    style=${'width:'
+                    style="${'width:'
                         + '2.25rem;'
                         + 'height:'
                         + '2.25rem;'
@@ -162,7 +162,7 @@ export class IdeaCreatePresenter {
                         + 'hsl(var('
                         + '--primary'
                         + '-foreground'
-                        + '))'}>
+                        + '))'}">
                     ${iconSparkles(
                         20, '',
                     )}
@@ -196,9 +196,9 @@ export class IdeaCreatePresenter {
     <div
         class="flex items-center
             justify-between mb-8"
-        style=${'overflow-x:auto;'
+        style="${'overflow-x:auto;'
             + 'padding-bottom:'
-            + '0.5rem'}>
+            + '0.5rem'}">
         ${this.#buildProgressSteps()}
     </div>
     <div class="card p-6"
@@ -222,10 +222,10 @@ export class IdeaCreatePresenter {
             class="flex items-center
                 justify-between gap-3
                 mt-8 pt-6"
-            style=${'border-top:'
+            style="${'border-top:'
                 + '1px solid'
                 + ' hsl(var('
-                + '--border))'}>
+                + '--border))'}">
             <button
                 class="${
                     'btn btn-ghost'
@@ -310,14 +310,16 @@ export class IdeaCreatePresenter {
                     >= STEPS.length - 1;
                 const connector = !isLast
                     ? html`<div
-                        class="hidden-mobile"
-                        style=${'flex:1;'
+                        class="${
+                            'hidden-mobile'
+                        }"
+                        style="${'flex:1;'
                             + 'height:'
                             + '0.25rem;'
                             + 'margin:'
                             + '0 1rem;'
-                            + 'border-radius:'
-                            + '9999px;'
+                            + 'border-radius'
+                            + ':9999px;'
                             + (isCompleted
                                 ? 'background'
                                     + ':hsl(var('
@@ -327,20 +329,20 @@ export class IdeaCreatePresenter {
                                     + ':hsl(var('
                                     + '--muted'
                                     + '))'
-                            )}>
+                            )}">
                         </div>`
                     : html``;
 
                 return html`
     <div
         class="flex items-center"
-        style=${'flex-shrink:0'
+        style="${'flex-shrink:0'
             + (isLast
                 ? ''
-                : ';flex:1')}>
+                : ';flex:1')}">
         <div class="flex flex-col
             items-center">
-            <div style=${'width:3rem;'
+            <div style="${'width:3rem;'
                 + 'height:3rem;'
                 + 'border-radius:'
                 + '0.75rem;'
@@ -348,7 +350,7 @@ export class IdeaCreatePresenter {
                 + 'align-items:center;'
                 + 'justify-content:'
                 + 'center;'
-                + bgStyle}>
+                + bgStyle}">
                 ${isCompleted
                     ? iconCheck(20, '')
                     : step.icon(20, '')}
@@ -356,7 +358,7 @@ export class IdeaCreatePresenter {
             <span
                 class="mt-2 text-sm
                     font-medium"
-                style=${'white-space:'
+                style="${'white-space:'
                     + 'nowrap;'
                     + 'color:'
                     + (this.#step
@@ -367,7 +369,7 @@ export class IdeaCreatePresenter {
                         : 'hsl(var('
                             + '--muted'
                             + '-foreground'
-                            + '))')}>
+                            + '))')}">
                 ${step.title}
             </span>
         </div>
@@ -389,9 +391,9 @@ export class IdeaCreatePresenter {
 
     #buildStep1(): SafeHtml {
         return html`
-    <div style=${'display:flex;'
+    <div style="${'display:flex;'
         + 'flex-direction:column;'
-        + 'gap:1.5rem'}>
+        + 'gap:1.5rem'}">
         <div>
             <label class="label mb-2
                 block font-medium">
@@ -400,14 +402,18 @@ export class IdeaCreatePresenter {
             <input class="input"
                 id=${'idea-create'
                     + '-field-title'}
-                placeholder=${'e.g.,'
-                    + ' AI-Powered Customer'
-                    + ' Segmentation'}
+                placeholder="${'e.g.,'
+                    + ' AI-Powered'
+                    + ' Customer'
+                    + ' Segmentation'}"
                 value="${
                     this.#form.title
                 }"
-                style=${'font-size:1.125rem;'
-                    + 'padding:0.75rem 1rem'}
+                style="${
+                    'font-size:'
+                    + '1.125rem;'
+                    + 'padding:'
+                    + '0.75rem 1rem'}"
             />
             <p class="text-xs text-muted
                 mt-1">
@@ -425,13 +431,16 @@ export class IdeaCreatePresenter {
             <textarea class="textarea"
                 id=${'idea-create'
                     + '-field-problem'}
-                placeholder=${'Describe the'
-                    + ' current pain point or'
+                placeholder="${
+                    'Describe the'
+                    + ' current pain'
+                    + ' point or'
                     + ' challenge. Who'
-                    + ' experiences it? How'
-                    + ' often? What is the'
-                    + ' cost of not'
-                    + ' solving it?'}
+                    + ' experiences it?'
+                    + ' How often? What'
+                    + ' is the cost of'
+                    + ' not solving it?'
+                }"
                 rows="5"
                 style="resize:none">${
                     this.#form
@@ -450,18 +459,20 @@ export class IdeaCreatePresenter {
                 ${'Who will benefit'
                     + ' from this?'}
                 <span class="text-muted"
-                    style=${'font-weight:'
-                        + 'normal'}>
+                    style="${
+                        'font-weight:'
+                        + 'normal'}">
                     (optional)
                 </span>
             </label>
             <input class="input"
                 id=${'idea-create'
                     + '-field-target'}
-                placeholder=${'e.g.,'
+                placeholder="${'e.g.,'
                     + ' Sales team,'
-                    + ' customers, operations'
-                    + ' managers'}
+                    + ' customers,'
+                    + ' operations'
+                    + ' managers'}"
                 value="${
                     this.#form
                         .targetUsers
@@ -472,9 +483,9 @@ export class IdeaCreatePresenter {
 
     #buildStep2(): SafeHtml {
         return html`
-    <div style=${'display:flex;'
+    <div style="${'display:flex;'
         + 'flex-direction:column;'
-        + 'gap:1.5rem'}>
+        + 'gap:1.5rem'}">
         <div>
             <label class="label mb-2
                 block font-medium">
@@ -483,12 +494,16 @@ export class IdeaCreatePresenter {
             <textarea class="textarea"
                 id=${'idea-create'
                     + '-field-solution'}
-                placeholder=${'Describe your'
-                    + ' proposed approach.'
-                    + ' What would change?'
-                    + ' What technology or'
+                placeholder="${
+                    'Describe your'
+                    + ' proposed'
+                    + ' approach.'
+                    + ' What would'
+                    + ' change? What'
+                    + ' technology or'
                     + ' process would'
-                    + ' you use?'}
+                    + ' you use?'
+                }"
                 rows="7"
                 style="resize:none">${
                     this.#form
@@ -502,12 +517,12 @@ export class IdeaCreatePresenter {
             </p>
         </div>
         <div class="p-4 rounded-xl"
-            style=${'background:'
+            style="${'background:'
                 + 'hsl(var('
                 + '--primary)/0.05);'
                 + 'border:1px solid'
                 + ' hsl(var('
-                + '--primary)/0.1)'}>
+                + '--primary)/0.1)'}">
             <div class="flex items-start
                 gap-3">
                 ${iconTarget(
@@ -539,9 +554,9 @@ export class IdeaCreatePresenter {
 
     #buildStep3(): SafeHtml {
         return html`
-    <div style=${'display:flex;'
+    <div style="${'display:flex;'
         + 'flex-direction:column;'
-        + 'gap:1.5rem'}>
+        + 'gap:1.5rem'}">
         <div>
             <label class="label mb-2
                 block font-medium">
@@ -551,13 +566,16 @@ export class IdeaCreatePresenter {
             <textarea class="textarea"
                 id=${'idea-create'
                     + '-field-outcome'}
-                placeholder=${'If this works,'
-                    + ' what changes? Be'
-                    + ' specific: revenue'
-                    + ' impact, time saved,'
+                placeholder="${
+                    'If this works,'
+                    + ' what changes?'
+                    + ' Be specific:'
+                    + ' revenue impact,'
+                    + ' time saved,'
                     + ' errors reduced,'
                     + ' satisfaction'
-                    + ' improved...'}
+                    + ' improved...'
+                }"
                 rows="5"
                 style="resize:none">${
                     this.#form
@@ -576,20 +594,26 @@ export class IdeaCreatePresenter {
                 ${'How would you measure'
                     + ' success?'}
                 <span class="text-muted"
-                    style=${'font-weight:'
-                        + 'normal'}>
+                    style="${
+                        'font-weight:'
+                        + 'normal'}">
                     (optional)
                 </span>
             </label>
             <textarea class="textarea"
                 id=${'idea-create'
                     + '-field-metrics'}
-                placeholder=${'e.g., 20%'
+                placeholder="${
+                    'e.g., 20%'
                     + ' reduction in'
-                    + ' processing time, 15%'
-                    + ' increase in conversion'
-                    + ' rate, NPS improvement'
-                    + ' of 10 points'}
+                    + ' processing'
+                    + ' time, 15%'
+                    + ' increase in'
+                    + ' conversion'
+                    + ' rate, NPS'
+                    + ' improvement'
+                    + ' of 10 points'
+                }"
                 rows="4"
                 style="resize:none">${
                     this.#form
@@ -597,12 +621,12 @@ export class IdeaCreatePresenter {
             }</textarea>
         </div>
         <div class="p-4 rounded-xl"
-            style=${'background:'
+            style="${'background:'
                 + 'hsl(var('
                 + '--success-soft));'
                 + 'border:1px solid'
                 + ' hsl(var('
-                + '--success)/0.2)'}>
+                + '--success)/0.2)'}">
             <div class="flex items-start
                 gap-3">
                 ${iconTrendingUp(
