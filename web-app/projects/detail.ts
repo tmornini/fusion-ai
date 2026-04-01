@@ -7,8 +7,7 @@ import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
 import {
-    navigateTo, initTabs,
-    SECONDS_PER_DAY,
+    navigateTo, SECONDS_PER_DAY,
 } from '../app/core';
 import {
     getProjectById, putProject,
@@ -147,36 +146,6 @@ function bindProjectEvents(
             updated, projectId,
             updatedWfs, false,
         );
-    });
-
-    initTabs('.tab[data-tab]', '.tab-panel', 'active');
-
-    const comment = $textarea(
-            '#project-discussion-comment', document,
-    );
-    const postBtn = $(
-            '#project-discussion-post-btn', document,
-    );
-    comment?.addEventListener(
-            'input',
-            () => {
-                if (
-                    postBtn
-                            instanceof HTMLButtonElement
-                )
-                    postBtn.disabled =
-                            !comment.value.trim();
-            },
-    );
-    postBtn?.addEventListener('click', () => {
-        showToast(
-                'Comment posted', 'success',
-        );
-        if (comment) comment.value = '';
-        if (
-            postBtn instanceof HTMLButtonElement
-        )
-            postBtn.disabled = true;
     });
 
     $('#new-workflow-btn', document)
