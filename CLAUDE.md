@@ -57,7 +57,7 @@ protocol locally, but testing is HTTP-only.
   simple: the file you edit is the file the browser
   loads.
 - **Auth**: Mock auth returning `demo@example.com`.
-- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~45 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
+- **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains ~30 adapter functions (split into domain modules with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 - **Durations**: All numeric durations are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
@@ -193,13 +193,13 @@ web-app/
     logger.ts                 # Lightweight logger respecting fusion-ai:log-level in localStorage
     safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()
     loading-states.ts         # Loading skeletons, error states, empty states, withLoadingState()
-    adapters/                 # ~45 adapter functions (API → frontend shapes)
+    adapters/                 # ~30 adapter functions (API → frontend shapes)
       index.ts                # Barrel re-export
       helpers.ts              # buildUserMap, userName, parseJson
       shared.ts               # getCurrentUser
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
       ideas.ts                # getIdeas, getIdeaDetail, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getIdea, putIdea, putIdeaSubmission
-      projects.ts             # getProjects, getProjectById, getProjectForEngineering, getClarificationsByProjectId
+      projects.ts             # getProjects, getProjectById, putProject, putProjectTeamMember
       teams.ts                # getTeamMembers, getManagedUsers
       workflows.ts            # getWorkflows, getWorkflowsByProject, getWorkflowGraph, postWorkflowCreation, putWorkflow, etc.
       admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
@@ -218,10 +218,10 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 24 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
+  # Pages — 23 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list + detail, create, convert, review-queue, approval-detail (named files)
-  projects/                 # Projects list + detail, engineering-requirements (named files)
+  projects/                 # Projects list + detail (named files)
   flow/                     # Workflow list + detail (detail.ts/detail.html)
   organization/             # Account overview, users, teams, activity-feed, onboarding (named files)
   profile/                  # Profile settings
@@ -232,7 +232,7 @@ web-app/
   auth/                     # Login/signup (standalone)
   not-found/                # 404 page (standalone)
 
-SCHEMA.md                     # Database schema (44 tables, columns, types, defaults)
+SCHEMA.md                     # Database schema (21 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification
 TEST-PLAN.md                  # Human-executable test plan (176 cases)
 ```
