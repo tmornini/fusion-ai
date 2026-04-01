@@ -1,6 +1,6 @@
 # Database Schema
 
-49 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
+39 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -144,53 +144,6 @@
 | changes | TEXT |
 
 ## Tools
-
-### edges
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| status | TEXT |
-| confidence | TEXT |
-| impact_short_term | TEXT |
-| impact_mid_term | TEXT |
-| impact_long_term | TEXT |
-| updated_at | TEXT |
-
-### edge_outcomes
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| description | TEXT |
-
-### edge_metrics
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| name | TEXT |
-| target | TEXT |
-| unit | TEXT |
-| current | TEXT |
-
-### crunch_columns
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| original_name | TEXT |
-| friendly_name | TEXT |
-| data_type | TEXT |
-| description | TEXT |
-| sample_values | TEXT (JSON array) |
-
-### crunch_column_acronyms
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| expansion | TEXT |
 
 ### workflows
 
@@ -341,42 +294,6 @@ Singleton table (single row, `id = '1'`).
 | project_id | TEXT (FK → projects) |
 | created_at | TEXT |
 
-### edge_ownerships
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| edge_id | TEXT (FK → edges) |
-| user_id | TEXT (FK → users) |
-| created_at | TEXT |
-
-### edge_ideas
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| edge_id | TEXT (FK → edges) |
-| idea_id | TEXT (FK → ideas) |
-| created_at | TEXT |
-
-### edge_outcome_edges
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| edge_outcome_id | TEXT (FK → edge_outcomes) |
-| edge_id | TEXT (FK → edges) |
-| created_at | TEXT |
-
-### edge_metric_outcomes
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| edge_metric_id | TEXT (FK → edge_metrics) |
-| outcome_id | TEXT (FK → edge_outcomes) |
-| created_at | TEXT |
-
 ### task_assignments
 
 | Column | Type |
@@ -465,15 +382,6 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT |
 | project_task_id | TEXT (FK → project_tasks) |
 | project_id | TEXT (FK → projects) |
-| created_at | TEXT |
-
-### crunch_column_acronym_links
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| crunch_column_acronym_id | TEXT (FK → crunch_column_acronyms) |
-| crunch_column_id | TEXT (FK → crunch_columns) |
 | created_at | TEXT |
 
 ### project_workflows
