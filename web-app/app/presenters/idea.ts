@@ -194,12 +194,23 @@ export class IdeaPresenter {
                 </div>
                 <div style="display:grid;
                     grid-template-columns:
-                        3fr auto 2fr;
+                        3fr auto;
                     gap:1rem;
                     align-items:start">
                     ${this.#buildEstimates()}
-                    ${this.#buildBadges()}
-                    ${this.#buildActions()}
+                    <div style="${
+                        'display:flex;'
+                        + 'flex-direction:'
+                        + 'column;'
+                        + 'align-items:'
+                        + 'flex-end;'
+                        + 'gap:0.5rem;'
+                        + 'padding-right:'
+                        + '0.75rem'
+                    }">
+                        ${this.#buildBadges()}
+                        ${this.#buildActions()}
+                    </div>
                 </div>
             </div>
         </div>
@@ -382,8 +393,9 @@ export class IdeaPresenter {
             class="flex idea-actions"
             style="${
                 'flex-direction:column;'
-                + 'align-items:flex-end;'
-                + 'gap:0.5rem'
+                + 'align-items:stretch;'
+                + 'gap:0.5rem;'
+                + 'min-width:8rem'
             }">
             ${this.#needsEdgeDefinition
                 ? html`
