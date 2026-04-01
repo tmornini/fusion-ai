@@ -106,7 +106,7 @@ const steps = [
         points: [
             'Visual workflow builder',
             'Role-based permissions',
-            'Audit trails',
+            'Process automation',
         ],
     },
     {
