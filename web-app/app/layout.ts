@@ -200,45 +200,6 @@ function initSidebar(): void {
         () => setSidebarCollapsed(false),
     );
 
-    $$('[data-section]', document).forEach(btn => {
-        btn.addEventListener(
-            'click',
-            () => {
-                const label =
-                    btn.getAttribute(
-                        'data-section',
-                    );
-                const items = $(
-                    `[data-section-items=`
-                    + `"${label}"]`, document,
-                );
-                if (items) {
-                    const isCollapsed =
-                        items.style.display
-                            === 'none';
-                    items.style.display =
-                        isCollapsed
-                            ? '' : 'none';
-                    btn.setAttribute(
-                        'aria-expanded',
-                        String(isCollapsed),
-                    );
-                    const chevron =
-                        btn.querySelector(
-                            'svg',
-                        );
-                    if (chevron)
-                        chevron
-                            .style
-                            .transform =
-                                isCollapsed
-                                    ? ''
-                                    : 'rotate('
-                                    + '-90deg)';
-                }
-            },
-        );
-    });
 }
 
 function initDropdown(
