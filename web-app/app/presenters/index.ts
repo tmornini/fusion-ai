@@ -17,10 +17,6 @@ export {
     ProjectListPresenter,
 } from './project';
 export {
-    EdgePresenter,
-    EdgeListPresenter,
-} from './edge';
-export {
     GaugePresenter,
 } from './gauge';
 export {
@@ -35,12 +31,6 @@ export {
 export {
     ProjectDetailPresenter,
 } from './project-detail';
-export {
-    EdgeDetailPresenter,
-} from './edge-detail';
-export {
-    CrunchPresenter,
-} from './crunch';
 export {
     AccountPresenter,
 } from './account';

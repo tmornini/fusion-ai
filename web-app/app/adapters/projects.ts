@@ -29,16 +29,12 @@ import {
     buildUserMap,
     userName,
     parseJson,
-    getEdgeDataWithConfidence,
-    type EdgeData,
-    type Metric,
 } from './helpers';
 
 export {
     Project,
     type ProjectStatus,
 } from '../../../api/types';
-export type { EdgeData, Metric };
 
 interface TeamMemberRow {
     id: string;
@@ -104,7 +100,6 @@ export interface DetailTask {
 export class ProjectView {
     private readonly project: Project;
     readonly projectLead: string;
-    readonly edge: EdgeData | null;
     readonly team:
         readonly DetailTeamMember[];
     readonly milestones:
@@ -119,7 +114,6 @@ export class ProjectView {
     constructor(
         project: Project,
         projectLead: string,
-        edge: EdgeData | null,
         team: readonly DetailTeamMember[],
         milestones:
             readonly DetailMilestone[],
@@ -131,7 +125,6 @@ export class ProjectView {
     ) {
         this.project = project;
         this.projectLead = projectLead;
-        this.edge = edge;
         this.team = team;
         this.milestones = milestones;
         this.versions = versions;
@@ -225,7 +218,6 @@ export async function getProjectById(
         entity, teamRows, milestoneRows,
         taskRows, discussionRows,
         versionRows, userMap,
-        ideaProjectLinks,
         taskAssignments,
         discussionAuthors,
         versionAuthors,
@@ -252,9 +244,6 @@ export async function getProjectById(
                 + `/versions`,
         ),
         buildUserMap(),
-        GET<IdeaProjectLinkEntity[]>(
-            'idea-project-links',
-        ),
         GET<TaskAssignmentEntity[]>(
             'task-assignments',
         ),
@@ -269,9 +258,6 @@ export async function getProjectById(
     const project = new Project(entity);
     const leadRow = teamRows.find(
         isTeamLead,
-    );
-    const link = ideaProjectLinks.find(
-        l => l.project_id === projectId,
     );
     const taskAssignmentMap = new Map(
         taskAssignments.map(
@@ -295,17 +281,11 @@ export async function getProjectById(
         ),
     );
 
-    const edgeData =
-        await getEdgeDataWithConfidence(
-            link?.idea_id || projectId,
-        );
-
     return new ProjectView(
         project,
         userName(
             userMap, leadRow?.user_id,
         ),
-        edgeData,
         teamRows.map(member => ({
             id: member.user_id,
             name: userName(

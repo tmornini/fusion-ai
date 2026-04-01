@@ -128,7 +128,6 @@ const NAV_GROUP_CHILDREN:
             'project-detail',
             'engineering-requirements',
         ],
-        edges: ['edge-detail'],
     };
 
 function initActiveNavItem(): void {

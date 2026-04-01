@@ -72,32 +72,6 @@ export const PAGE_REGISTRY: Record<
         icon: 'clipboardCheck',
         keywords: 'review approve reject',
     },
-    edges: {
-        title: 'Edges',
-        layout: 'sidebar',
-        sourceDir: 'edges',
-        sourceFile: 'index',
-        icon: 'target',
-        keywords:
-            'edge outcomes metrics',
-    },
-    'edge-detail': {
-        title: 'Edge Detail',
-        layout: 'sidebar',
-        sourceDir: 'edges',
-        sourceFile: 'detail',
-        icon: 'target',
-        searchable: false,
-    },
-    crunch: {
-        title: 'Crunch',
-        layout: 'sidebar',
-        sourceDir: 'crunch',
-        sourceFile: 'index',
-        icon: 'database',
-        keywords:
-            'data labeling columns',
-    },
     flow: {
         title: 'Workflows',
         layout: 'sidebar',

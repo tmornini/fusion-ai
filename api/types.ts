@@ -987,7 +987,6 @@ export class Idea {
     readonly estimatedCost: number;
     readonly priority: number;
     readonly status: IdeaStatus;
-    readonly edgeStatus: EdgeStatus;
     readonly problemStatement: string;
     readonly proposedSolution: string;
     readonly expectedOutcome: string;
@@ -1011,7 +1010,6 @@ export class Idea {
     constructor(
         entity: IdeaEntity,
         submittedBy: string,
-        edgeStatus: EdgeStatus,
         submittedAt: string,
     ) {
         this.id = entity.id;
@@ -1024,7 +1022,6 @@ export class Idea {
             entity.estimated_cost;
         this.priority = entity.priority;
         this.status = entity.status;
-        this.edgeStatus = edgeStatus;
         this.problemStatement =
             entity.problem_statement;
         this.proposedSolution =
@@ -1071,17 +1068,11 @@ export class Idea {
     }
 
     isReviewable(): boolean {
-        return this.status === 'in-review'
-            && this.edgeStatus === 'complete';
+        return this.status === 'in-review';
     }
 
     isConvertible(): boolean {
         return this.status === 'approved';
-    }
-
-    needsEdgeDefinition(): boolean {
-        return this.edgeStatus === 'missing'
-            || this.edgeStatus === 'draft';
     }
 
     isReady(): boolean {
@@ -1104,18 +1095,6 @@ export class Idea {
     statusClassName(): string {
         return (
             IDEA_STATUS_CONFIG[this.status]
-        )!.className;
-    }
-
-    edgeStatusLabel(): string {
-        return (
-            EDGE_STATUS_CONFIG[this.edgeStatus]
-        )!.label;
-    }
-
-    edgeStatusClassName(): string {
-        return (
-            EDGE_STATUS_CONFIG[this.edgeStatus]
         )!.className;
     }
 
