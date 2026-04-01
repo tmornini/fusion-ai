@@ -527,7 +527,10 @@ export class ProjectDetailPresenter {
     }
 
 
-    #buildProjectSidebar(): SafeHtml {
+    #buildProjectSidebar(
+        workflows: WorkflowListItem[],
+        projectId: string,
+    ): SafeHtml {
 
         return html`
             <div style="${
@@ -641,6 +644,11 @@ export class ProjectDetailPresenter {
                         `)}
                     </div>
                 </div>
+                ${this
+                    .#buildWorkflowsSection(
+                    workflows,
+                    projectId,
+                )}
             </div>`;
     }
 
@@ -1003,121 +1011,6 @@ export class ProjectDetailPresenter {
                 </div>
 
                 <div class="${
-                    'actions-grid mb-8'
-                }"
-                    style="${
-                        'gap:0.75rem'
-                    }">
-                    <a href="${
-                        '../organization/'
-                        + 'teams.html'
-                    }"
-                        class="${
-                            'card card-hover'
-                        }"
-                        style="${
-                            'padding:1rem;'
-                            + 'text-decoration:'
-                            + 'none;'
-                            + 'color:inherit'
-                        }">
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-center '
-                                + 'gap-3'
-                            }">
-                            <div style="${
-                                'padding:0.5rem;'
-                                + 'border-radius:'
-                                + '0.5rem;'
-                                + 'background:'
-                                + 'hsl(var('
-                                + '--primary)'
-                                + '/0.1)'
-                            }">
-                                ${iconUsers(
-                                    20,
-                                    'text-primary',
-                                )}
-                            </div>
-                            <div style="${
-                                'min-width:0'
-                            }">
-                                <p class="${
-                                    'font-medium '
-                                    + 'text-sm'
-                                }">
-                                    Team
-                                </p>
-                                <p class="${
-                                    'text-xs '
-                                    + 'text-muted '
-                                    + 'hidden-'
-                                    + 'mobile'
-                                }">
-                                    Manage
-                                    assignments
-                                </p>
-                            </div>
-                        </div>
-                    </a>
-                    <a href="${
-                        '../flow/index.html'
-                    }"
-                        class="${
-                            'card card-hover'
-                        }"
-                        style="${
-                            'padding:1rem;'
-                            + 'text-decoration:'
-                            + 'none;'
-                            + 'color:inherit'
-                        }">
-                        <div
-                            class="${
-                                'flex '
-                                + 'items-center '
-                                + 'gap-3'
-                            }">
-                            <div style="${
-                                'padding:0.5rem;'
-                                + 'border-radius:'
-                                + '0.5rem;'
-                                + 'background:'
-                                + 'hsl(var('
-                                + '--primary)'
-                                + '/0.1)'
-                            }">
-                                ${iconGitBranch(
-                                    20,
-                                    'text-primary',
-                                )}
-                            </div>
-                            <div style="${
-                                'min-width:0'
-                            }">
-                                <p class="${
-                                    'font-medium '
-                                    + 'text-sm'
-                                }">
-                                    Workflows
-                                </p>
-                                <p class="${
-                                    'text-xs '
-                                    + 'text-muted '
-                                    + 'hidden-'
-                                    + 'mobile'
-                                }">
-                                    Design
-                                    workflows
-                                </p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="${
                     'detail-grid'
                 }"
                     style="gap:2rem">
@@ -1135,14 +1028,12 @@ export class ProjectDetailPresenter {
                             .#buildBaselineComparison(
                             isEditing,
                         )}
-                        ${this
-                            .#buildWorkflowsSection(
-                            workflows,
-                            projectId,
-                        )}
                     </div>
                     ${this
-                        .#buildProjectSidebar()}
+                        .#buildProjectSidebar(
+                        workflows,
+                        projectId,
+                    )}
                 </div>
             </div>`;
     }
