@@ -10,17 +10,7 @@ import type {
     TeamMembershipEntity,
     TeamMembershipProjectEntity,
     TeamMembershipUserEntity,
-    MilestoneEntity,
-    MilestoneProjectEntity,
-    ProjectTaskEntity,
-    ProjectTaskProjectEntity,
-    DiscussionEntity,
-    ProjectVersionEntity,
-    ProjectVersionProjectEntity,
     ActivityEntity,
-    ClarificationEntity,
-    ClarificationAnswerEntity,
-    ClarificationAnswerClarificationEntity,
     WorkflowEntity,
     WfNodeEntity,
     WfEdgeEntity,
@@ -28,15 +18,7 @@ import type {
     CompanySettingsEntity,
     AccountEntity,
     IdeaSubmissionEntity,
-    IdeaProjectLinkEntity,
-    TaskAssignmentEntity,
-    DiscussionAuthorshipEntity,
-    DiscussionProjectEntity,
-    VersionAuthorshipEntity,
     ActivityActorEntity,
-    ClarificationAskerEntity,
-    ClarificationAnswererEntity,
-    ClarificationProjectEntity,
     ProjectWorkflowEntity,
     WfWorkflowNodeEntity,
     WfNodeEdgeEntity,
@@ -327,14 +309,7 @@ export const TABLE_NAMES = [
     'team_memberships',
     'team_membership_projects',
     'team_membership_users',
-    'milestones',
-    'project_tasks',
-    'discussions',
-    'project_versions',
     'activities',
-    'clarifications',
-    'clarification_answers',
-    'clarification_answer_clarifications',
     'workflows',
     'wf_nodes',
     'wf_edges',
@@ -346,18 +321,7 @@ export const TABLE_NAMES = [
     'company_settings',
     'account',
     'idea_submissions',
-    'idea_project_links',
-    'task_assignments',
-    'discussion_authorships',
-    'discussion_projects',
-    'version_authorships',
     'activity_actors',
-    'clarification_askers',
-    'clarification_answerers',
-    'clarification_projects',
-    'project_task_projects',
-    'milestone_projects',
-    'project_version_projects',
 ];
 
 
@@ -526,66 +490,10 @@ export async function createLocalStorageAdapter(
                 TeamMembershipUserEntity
             >('team_membership_users'),
 
-        milestones:
-            createEntityStore<MilestoneEntity>(
-                'milestones',
-            ),
-        milestoneProjects:
-            createEntityStore<
-                MilestoneProjectEntity
-            >('milestone_projects'),
-
-        projectTasks:
-            createEntityStore<
-                ProjectTaskEntity
-            >('project_tasks'),
-        projectTaskProjects:
-            createEntityStore<
-                ProjectTaskProjectEntity
-            >('project_task_projects'),
-
-        discussions:
-            createEntityStore<
-                DiscussionEntity
-            >('discussions'),
-        discussionProjects:
-            createEntityStore<
-                DiscussionProjectEntity
-            >('discussion_projects'),
-
-        projectVersions:
-            createEntityStore<
-                ProjectVersionEntity
-            >('project_versions'),
-        projectVersionProjects:
-            createEntityStore<
-                ProjectVersionProjectEntity
-            >('project_version_projects'),
-
         activities:
             createEntityStore<ActivityEntity>(
                 'activities',
             ),
-
-        clarifications:
-            createEntityStore<
-                ClarificationEntity
-            >('clarifications'),
-        clarificationAnswers:
-            createEntityStore<
-                ClarificationAnswerEntity
-            >('clarification_answers'),
-        clarificationAnswerClarifications:
-            createEntityStore<
-                ClarificationAnswerClarificationEntity
-            >(
-                'clarification_answer'
-                + '_clarifications',
-            ),
-        clarificationProjects:
-            createEntityStore<
-                ClarificationProjectEntity
-            >('clarification_projects'),
 
         workflows:
             createEntityStore<
@@ -634,34 +542,10 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 IdeaSubmissionEntity
             >('idea_submissions'),
-        ideaProjectLinks:
-            createEntityStore<
-                IdeaProjectLinkEntity
-            >('idea_project_links'),
-        taskAssignments:
-            createEntityStore<
-                TaskAssignmentEntity
-            >('task_assignments'),
-        discussionAuthorships:
-            createEntityStore<
-                DiscussionAuthorshipEntity
-            >('discussion_authorships'),
-        versionAuthorships:
-            createEntityStore<
-                VersionAuthorshipEntity
-            >('version_authorships'),
         activityActors:
             createEntityStore<
                 ActivityActorEntity
             >('activity_actors'),
-        clarificationAskers:
-            createEntityStore<
-                ClarificationAskerEntity
-            >('clarification_askers'),
-        clarificationAnswerers:
-            createEntityStore<
-                ClarificationAnswererEntity
-            >('clarification_answerers'),
     };
 
     return adapter;

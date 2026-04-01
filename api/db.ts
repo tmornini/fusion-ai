@@ -5,17 +5,7 @@ import type {
     TeamMembershipEntity,
     TeamMembershipProjectEntity,
     TeamMembershipUserEntity,
-    MilestoneEntity,
-    MilestoneProjectEntity,
-    ProjectTaskEntity,
-    ProjectTaskProjectEntity,
-    DiscussionEntity,
-    ProjectVersionEntity,
-    ProjectVersionProjectEntity,
     ActivityEntity,
-    ClarificationEntity,
-    ClarificationAnswerEntity,
-    ClarificationAnswerClarificationEntity,
     WorkflowEntity,
     WfNodeEntity,
     WfEdgeEntity,
@@ -23,15 +13,7 @@ import type {
     CompanySettingsEntity,
     AccountEntity,
     IdeaSubmissionEntity,
-    IdeaProjectLinkEntity,
-    TaskAssignmentEntity,
-    DiscussionAuthorshipEntity,
-    DiscussionProjectEntity,
-    VersionAuthorshipEntity,
     ActivityActorEntity,
-    ClarificationAskerEntity,
-    ClarificationAnswererEntity,
-    ClarificationProjectEntity,
     ProjectWorkflowEntity,
     WfWorkflowNodeEntity,
     WfNodeEdgeEntity,
@@ -40,8 +22,13 @@ import type {
 
 export interface EntityStore<T> {
     getAll(): Promise<T[]>;
-    getById(id: string): Promise<T | null>;
-    put(id: string, fields: Partial<T>): Promise<T>;
+    getById(
+        id: string,
+    ): Promise<T | null>;
+    put(
+        id: string,
+        fields: Partial<T>,
+    ): Promise<T>;
     delete(id: string): Promise<void>;
 }
 
@@ -57,14 +44,22 @@ export interface DbAdapter {
     deleteSchema(): Promise<void>;
     hasSchema(): Promise<boolean>;
     createSchema(): Promise<void>;
-    exportSnapshot(): Promise<string>;
-    importSnapshot(json: string): Promise<void>;
+    exportSnapshot():
+        Promise<string>;
+    importSnapshot(
+        json: string,
+    ): Promise<void>;
 
-    users: EntityStore<UserEntity>;
-    ideas: EntityStore<IdeaEntity>;
-    projects: EntityStore<ProjectEntity>;
+    users:
+        EntityStore<UserEntity>;
+    ideas:
+        EntityStore<IdeaEntity>;
+    projects:
+        EntityStore<ProjectEntity>;
     teamMemberships:
-        EntityStore<TeamMembershipEntity>;
+        EntityStore<
+            TeamMembershipEntity
+        >;
     teamMembershipProjects:
         EntityStore<
             TeamMembershipProjectEntity
@@ -73,36 +68,8 @@ export interface DbAdapter {
         EntityStore<
             TeamMembershipUserEntity
         >;
-    milestones:
-        EntityStore<MilestoneEntity>;
-    milestoneProjects:
-        EntityStore<MilestoneProjectEntity>;
-    projectTasks:
-        EntityStore<ProjectTaskEntity>;
-    projectTaskProjects:
-        EntityStore<
-            ProjectTaskProjectEntity
-        >;
-    discussions:
-        EntityStore<DiscussionEntity>;
-    discussionProjects:
-        EntityStore<
-            DiscussionProjectEntity
-        >;
-    projectVersions:
-        EntityStore<ProjectVersionEntity>;
-    projectVersionProjects:
-        EntityStore<
-            ProjectVersionProjectEntity
-        >;
-    activities: EntityStore<ActivityEntity>;
-    clarifications: EntityStore<ClarificationEntity>;
-    clarificationAnswers: EntityStore<ClarificationAnswerEntity>;
-    clarificationAnswerClarifications:
-        EntityStore<
-            ClarificationAnswerClarificationEntity
-        >;
-    clarificationProjects: EntityStore<ClarificationProjectEntity>;
+    activities:
+        EntityStore<ActivityEntity>;
     workflows:
         EntityStore<WorkflowEntity>;
     wfNodes:
@@ -123,14 +90,18 @@ export interface DbAdapter {
         EntityStore<WfNodeEdgeEntity>;
     wfNodeFields:
         EntityStore<WfNodeFieldEntity>;
-    companySettings: SingletonStore<CompanySettingsEntity>;
-    account: SingletonStore<AccountEntity>;
-    ideaSubmissions: EntityStore<IdeaSubmissionEntity>;
-    ideaProjectLinks: EntityStore<IdeaProjectLinkEntity>;
-    taskAssignments: EntityStore<TaskAssignmentEntity>;
-    discussionAuthorships: EntityStore<DiscussionAuthorshipEntity>;
-    versionAuthorships: EntityStore<VersionAuthorshipEntity>;
-    activityActors: EntityStore<ActivityActorEntity>;
-    clarificationAskers: EntityStore<ClarificationAskerEntity>;
-    clarificationAnswerers: EntityStore<ClarificationAnswererEntity>;
+    companySettings:
+        SingletonStore<
+            CompanySettingsEntity
+        >;
+    account:
+        SingletonStore<AccountEntity>;
+    ideaSubmissions:
+        EntityStore<
+            IdeaSubmissionEntity
+        >;
+    activityActors:
+        EntityStore<
+            ActivityActorEntity
+        >;
 }

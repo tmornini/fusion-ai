@@ -30,15 +30,6 @@ export type ReadinessLevel =
     | 'needs-info'
     | 'incomplete';
 
-export type TaskPriority =
-    | 'High'
-    | 'Medium'
-    | 'Low';
-
-export type ClarificationStatus =
-    | 'pending'
-    | 'answered';
-
 export type IdeaStatus =
     | 'active'
     | 'in-review'
@@ -199,18 +190,6 @@ export function isReadinessLevel(
 ): v is ReadinessLevel {
     return includes(
         READINESS_LEVELS, v,
-    );
-}
-
-const TASK_PRIORITIES:
-    readonly TaskPriority[] =
-    ['High', 'Medium', 'Low'];
-
-export function isTaskPriority(
-    v: string,
-): v is TaskPriority {
-    return includes(
-        TASK_PRIORITIES, v,
     );
 }
 
@@ -422,64 +401,6 @@ export interface TeamMembershipUserEntity {
     created_at: string;
 }
 
-export interface MilestoneEntity {
-    id: Id;
-    title: string;
-    status: MilestoneStatus;
-    date: string;
-    sort_order: number;
-}
-
-export interface MilestoneProjectEntity {
-    id: Id;
-    milestone_id: Id;
-    project_id: Id;
-    created_at: string;
-}
-
-export interface ProjectTaskEntity {
-    id: Id;
-    name: string;
-    priority: TaskPriority;
-    description: string;
-    skills: JsonArrayField;
-    duration: number; // seconds
-}
-
-export interface ProjectTaskProjectEntity {
-    id: Id;
-    project_task_id: Id;
-    project_id: Id;
-    created_at: string;
-}
-
-export interface DiscussionEntity {
-    id: Id;
-    date: string;
-    message: string;
-}
-
-export interface DiscussionProjectEntity {
-    id: Id;
-    discussion_id: Id;
-    project_id: Id;
-    created_at: string;
-}
-
-export interface ProjectVersionEntity {
-    id: Id;
-    version: string;
-    date: string;
-    changes: string;
-}
-
-export interface ProjectVersionProjectEntity {
-    id: Id;
-    project_version_id: Id;
-    project_id: Id;
-    created_at: string;
-}
-
 export interface ActivityEntity {
     id: Id;
     type: string;
@@ -489,25 +410,6 @@ export interface ActivityEntity {
     score: number;
     status: string;
     comment: string;
-}
-
-export interface ClarificationEntity {
-    id: Id;
-    question: string;
-    asked_at: string;
-    status: ClarificationStatus;
-}
-
-export interface ClarificationAnswerEntity {
-    id: Id;
-    answer: string;
-}
-
-export interface ClarificationAnswerClarificationEntity {
-    id: Id;
-    clarification_answer_id: Id;
-    clarification_id: Id;
-    created_at: string;
 }
 
 export interface WorkflowEntity {
@@ -588,59 +490,10 @@ export interface IdeaSubmissionEntity {
     created_at: string;
 }
 
-export interface IdeaProjectLinkEntity {
-    id: Id;
-    idea_id: Id;
-    project_id: Id;
-    created_at: string;
-}
-
-export interface TaskAssignmentEntity {
-    id: Id;
-    task_id: Id;
-    user_id: Id;
-    created_at: string;
-}
-
-export interface DiscussionAuthorshipEntity {
-    id: Id;
-    discussion_id: Id;
-    user_id: Id;
-    created_at: string;
-}
-
-export interface VersionAuthorshipEntity {
-    id: Id;
-    version_id: Id;
-    user_id: Id;
-    created_at: string;
-}
-
 export interface ActivityActorEntity {
     id: Id;
     activity_id: Id;
     user_id: Id;
-    created_at: string;
-}
-
-export interface ClarificationAskerEntity {
-    id: Id;
-    clarification_id: Id;
-    user_id: Id;
-    created_at: string;
-}
-
-export interface ClarificationAnswererEntity {
-    id: Id;
-    clarification_id: Id;
-    user_id: Id;
-    created_at: string;
-}
-
-export interface ClarificationProjectEntity {
-    id: Id;
-    clarification_id: Id;
-    project_id: Id;
     created_at: string;
 }
 
@@ -676,11 +529,6 @@ export interface WfNodeFieldEntity {
 export interface StatusDisplay {
     label: string;
     className: string;
-}
-
-export interface InlineStyleDisplay {
-    label: string;
-    style: string;
 }
 
 export const USER_STATUS_CONFIG: Record<
@@ -784,76 +632,6 @@ export const CONFIDENCE_CONFIG: Record<
     low: {
         label: 'Low',
         className: 'text-error',
-    },
-};
-
-export interface MilestoneDisplay {
-    label: string;
-    textStyle: string;
-    iconBackground: string;
-}
-
-export type MilestoneStatus =
-    'completed'
-    | 'in_progress'
-    | 'pending';
-
-export const MILESTONE_STATUS_CONFIG:
-    Record<MilestoneStatus, MilestoneDisplay>
-= {
-    completed: {
-        label: 'Completed',
-        textStyle:
-            'color:hsl(var(--success))',
-        iconBackground:
-            'hsl(var(--success))',
-    },
-    in_progress: {
-        label: 'In Progress',
-        textStyle:
-            'color:hsl(var(--warning))',
-        iconBackground:
-            'hsl(var(--warning))',
-    },
-    pending: {
-        label: 'Pending',
-        textStyle: 'color:hsl(var('
-            + '--muted-foreground))',
-        iconBackground:
-            'hsl(var(--muted))',
-    },
-};
-
-export const TASK_PRIORITY_CONFIG: Record<
-    TaskPriority,
-    InlineStyleDisplay
-> = {
-    High: {
-        label: 'High',
-        style: 'background:hsl(var('
-            + '--error-soft));'
-            + 'color:hsl(var('
-            + '--error-text));'
-            + 'border:1px solid '
-            + 'hsl(var(--error-border))',
-    },
-    Medium: {
-        label: 'Medium',
-        style: 'background:hsl(var('
-            + '--warning-soft));'
-            + 'color:hsl(var('
-            + '--warning-text));'
-            + 'border:1px solid '
-            + 'hsl(var(--warning-border))',
-    },
-    Low: {
-        label: 'Low',
-        style: 'background:hsl(var('
-            + '--muted)/0.5);'
-            + 'color:hsl(var('
-            + '--muted-foreground));'
-            + 'border:1px solid '
-            + 'hsl(var(--border))',
     },
 };
 
@@ -1330,8 +1108,3 @@ export function projectIsApproved(
     return e.status === 'approved';
 }
 
-export function clarificationIsPending(
-    e: { status: ClarificationStatus },
-): boolean {
-    return e.status === 'pending';
-}
