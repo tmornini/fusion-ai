@@ -5,7 +5,7 @@ import {
     iconTrendingUp, iconClock,
     iconDollarSign, iconUsers,
     iconCalendar, iconTarget,
-    iconCheckCircle2, iconAlertCircle,
+    iconCheckCircle2,
     iconArrowLeft, iconPlus,
     iconArrowUpRight, iconArrowDownRight,
     iconMinus,
@@ -23,35 +23,7 @@ import type {
 } from '../adapters/workflows';
 import {
     PROJECT_STATUS_CONFIG,
-    MILESTONE_STATUS_CONFIG,
-    type MilestoneStatus,
 } from '../../../api/types';
-
-type MilestoneIconEntry = {
-    iconFn: (
-        s: number,
-        c: string,
-    ) => SafeHtml;
-    iconClass: string;
-};
-
-const MILESTONE_ICON_MAP: Record<
-    MilestoneStatus,
-    MilestoneIconEntry
-> = {
-    completed: {
-        iconFn: iconCheckCircle2,
-        iconClass: 'text-primary-fg',
-    },
-    in_progress: {
-        iconFn: iconAlertCircle,
-        iconClass: 'text-primary-fg',
-    },
-    pending: {
-        iconFn: iconClock,
-        iconClass: 'text-muted',
-    },
-};
 
 export class ProjectDetailPresenter {
     readonly #title: string;
@@ -64,8 +36,6 @@ export class ProjectDetailPresenter {
     readonly #targetEndDate: string;
     readonly #projectLead: string;
     readonly #team: ProjectView['team'];
-    readonly #milestones:
-        ProjectView['milestones'];
     readonly #timeBaselineDays: number;
     readonly #timeCurrentDays: number;
     readonly #costBaselineK: number;
@@ -88,7 +58,6 @@ export class ProjectDetailPresenter {
         this.#projectLead =
             view.projectLead;
         this.#team = view.team;
-        this.#milestones = view.milestones;
         this.#timeBaselineDays =
             view.timeBaselineDays();
         this.#timeCurrentDays =
@@ -136,27 +105,6 @@ export class ProjectDetailPresenter {
             }${Math.abs(diff)}${
                 unit
             }</span>`;
-    }
-
-    #buildMilestoneIcon(
-        status: MilestoneStatus,
-    ): SafeHtml {
-        const base =
-            'width:1.5rem;height:1.5rem;'
-            + 'border-radius:9999px;'
-            + 'display:flex;'
-            + 'align-items:center;'
-            + 'justify-content:center';
-        const cfg =
-            MILESTONE_STATUS_CONFIG[status];
-        const icon =
-            MILESTONE_ICON_MAP[status];
-        return html`<div
-            style="${base};background:${
-                cfg.iconBackground}"
-            >${icon.iconFn(
-                12, icon.iconClass,
-            )}</div>`;
     }
 
     #buildProjectSummary(
@@ -691,116 +639,6 @@ export class ProjectDetailPresenter {
                                 </div>
                             </div>
                         `)}
-                    </div>
-                </div>
-
-                <div class="card p-6">
-                    <h3
-                        class="${
-                            'font-display '
-                            + 'font-semibold '
-                            + 'mb-4'
-                        }">
-                        Milestones
-                    </h3>
-                    <div style="${
-                        'position:relative'
-                    }">
-                        ${this.#milestones.map(
-                            ({
-                                status, title,
-                                date,
-                            },
-                                msIndex,
-                            ) => {
-                            const ms = status as
-                                MilestoneStatus;
-                            return html`
-                            <div class="${
-                                'flex gap-3'
-                            }"
-                                style="${
-                                    'padding-'
-                                    + 'bottom:'
-                                    + (msIndex
-                                        < this
-                                            .#milestones
-                                            .length
-                                            - 1
-                                        ? '1rem'
-                                        : '0')
-                                }">
-                                <div style="${
-                                    'display:flex;'
-                                    + 'flex-'
-                                    + 'direction:'
-                                    + 'column;'
-                                    + 'align-'
-                                    + 'items:'
-                                    + 'center'
-                                }">
-                                    ${
-                                        this
-                                            .#buildMilestoneIcon(
-                                            ms,
-                                        )
-                                    }
-                                    ${msIndex
-                                        < this
-                                            .#milestones
-                                            .length
-                                            - 1
-                                        ? html`<div
-                                            style="${
-                                                'width'
-                                                + ':2px;'
-                                                + 'flex'
-                                                + ':1;'
-                                                + 'background'
-                                                + ':hsl('
-                                                + 'var('
-                                                + '--border'
-                                                + '));'
-                                                + 'margin'
-                                                + '-top:'
-                                                + '0.25'
-                                                + 'rem'
-                                            }">
-                                            </div>`
-                                        : html``}
-                                </div>
-                                <div
-                                    style="${
-                                        'flex:1;'
-                                        + 'padding-'
-                                        + 'bottom:'
-                                        + '0.5rem'
-                                    }">
-                                    <p
-                                        class="${
-                                            'text-sm'
-                                            + ' font-'
-                                            + 'medium'
-                                        }"
-                                        style="${
-                                            MILESTONE_STATUS_CONFIG[
-                                                ms
-                                            ].textStyle
-                                        }">
-                                        ${title}
-                                    </p>
-                                    <p class="${
-                                        'text-xs '
-                                        + 'text-'
-                                        + 'muted'
-                                    }">
-                                        ${formatDate(
-                                            date,
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        `; })}
                     </div>
                 </div>
             </div>`;
