@@ -134,28 +134,28 @@ const routes: Route[] = [
                 .getAll(),
     }),
 
-    route('workflows', {
+    route('flows', {
         get: (db) =>
-            db.workflows.getAll(),
+            db.flows.getAll(),
         post: async (db, _params, body) => {
             const id =
                 body.id as string;
-            return db.workflows.put(
+            return db.flows.put(
                 id, body,
             );
         },
     }),
-    route('workflows/:id', {
+    route('flows/:id', {
         get: (db, params) =>
-            db.workflows.getById(
+            db.flows.getById(
                 param(params, 0),
             ),
         put: (db, params, body) =>
-            db.workflows.put(
+            db.flows.put(
                 param(params, 0), body,
             ),
         delete: (db, params) =>
-            db.workflows.delete(
+            db.flows.delete(
                 param(params, 0),
             ),
     }),
@@ -236,41 +236,41 @@ const routes: Route[] = [
                 param(params, 0),
             ),
     }),
-    route('project-workflows', {
+    route('project-flows', {
         get: (db) =>
-            db.projectWorkflows
+            db.projectFlows
                 .getAll(),
         post: async (
             db, _params, body,
         ) => {
             const id =
                 body.id as string;
-            return db.projectWorkflows
+            return db.projectFlows
                 .put(id, body);
         },
     }),
-    route('project-workflows/:id', {
+    route('project-flows/:id', {
         delete: (db, params) =>
-            db.projectWorkflows.delete(
+            db.projectFlows.delete(
                 param(params, 0),
             ),
     }),
-    route('wf-workflow-nodes', {
+    route('wf-flow-nodes', {
         get: (db) =>
-            db.wfWorkflowNodes
+            db.wfFlowNodes
                 .getAll(),
         post: async (
             db, _params, body,
         ) => {
             const id =
                 body.id as string;
-            return db.wfWorkflowNodes
+            return db.wfFlowNodes
                 .put(id, body);
         },
     }),
-    route('wf-workflow-nodes/:id', {
+    route('wf-flow-nodes/:id', {
         delete: (db, params) =>
-            db.wfWorkflowNodes.delete(
+            db.wfFlowNodes.delete(
                 param(params, 0),
             ),
     }),

@@ -19,8 +19,8 @@ import type {
     ProjectView,
 } from '../adapters/projects';
 import type {
-    WorkflowListItem,
-} from '../adapters/workflows';
+    FlowListItem,
+} from '../adapters/flows';
 import {
     PROJECT_STATUS_CONFIG,
 } from '../../../api/types';
@@ -528,7 +528,7 @@ export class ProjectDetailPresenter {
 
 
     #buildProjectSidebar(
-        workflows: WorkflowListItem[],
+        flows: FlowListItem[],
         projectId: string,
     ): SafeHtml {
 
@@ -645,15 +645,15 @@ export class ProjectDetailPresenter {
                     </div>
                 </div>
                 ${this
-                    .#buildWorkflowsSection(
-                    workflows,
+                    .#buildFlowsSection(
+                    flows,
                     projectId,
                 )}
             </div>`;
     }
 
-    #buildWorkflowsSection(
-        workflows: WorkflowListItem[],
+    #buildFlowsSection(
+        flows: FlowListItem[],
         projectId: string,
     ): SafeHtml {
         const header = html`
@@ -665,20 +665,20 @@ export class ProjectDetailPresenter {
                     'text-lg font-display '
                     + 'font-semibold'
                 }">
-                    Workflows
+                    Flows
                 </h2>
                 <button
-                    id="new-workflow-btn"
+                    id="new-flow-btn"
                     class="${
                         'btn btn-primary '
                         + 'btn-sm gap-2'
                     }">
                     ${iconPlus(14, '')}
-                    New Workflow
+                    New Flow
                 </button>
             </div>`;
 
-        if (workflows.length === 0) {
+        if (flows.length === 0) {
             return html`
                 <div class="card p-6">
                     ${header}
@@ -692,7 +692,7 @@ export class ProjectDetailPresenter {
                         <p class="${
                             'text-muted mt-4'
                         }">
-                            No workflows yet
+                            No flows yet
                         </p>
                     </div>
                 </div>`;
@@ -706,11 +706,11 @@ export class ProjectDetailPresenter {
                     + 'flex-direction:column;'
                     + 'gap:0.75rem'
                 }">
-                    ${workflows.map(wf =>
+                    ${flows.map(wf =>
                         html`
                         <a
                             href="#"
-                            data-workflow-id="${
+                            data-flow-id="${
                                 wf.id
                             }"
                             class="${
@@ -803,7 +803,7 @@ export class ProjectDetailPresenter {
 
     buildDetailView(
         projectId: string,
-        workflows: WorkflowListItem[],
+        flows: FlowListItem[],
         isEditing: boolean,
     ): SafeHtml {
         const statusOptions =
@@ -1031,7 +1031,7 @@ export class ProjectDetailPresenter {
                     </div>
                     ${this
                         .#buildProjectSidebar(
-                        workflows,
+                        flows,
                         projectId,
                     )}
                 </div>

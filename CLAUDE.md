@@ -25,7 +25,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 
 **Vanilla TypeScript** with zero runtime dependencies.
 This is an enterprise innovation management platform
-with modules for ideas, projects, teams, workflows,
+with modules for ideas, projects, teams, flows,
 and analytics. Every page is a standalone HTML file
 served via HTTP. The code also supports `file:///`
 protocol locally, but testing is HTTP-only.
@@ -201,7 +201,7 @@ web-app/
       ideas.ts                # getIdeas, getIdeaDetail, getReviewQueue, getIdeaForConversion, getIdeaForApproval, getIdea, putIdea, putIdeaSubmission
       projects.ts             # getProjects, getProjectById, putProject, putProjectTeamMember
       teams.ts                # getTeamMembers, getManagedUsers
-      workflows.ts            # getWorkflows, getWorkflowsByProject, getWorkflowGraph, postWorkflowCreation, putWorkflow, etc.
+      flows.ts                # getFlows, getFlowsByProject, getFlowGraph, postFlowCreation, putFlow, etc.
       admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
@@ -222,7 +222,7 @@ web-app/
   dashboard/                # Dashboard with gauge cards
   ideas/                    # Ideas list + detail, create, convert, review-queue, approval-detail (named files)
   projects/                 # Projects list + detail (named files)
-  flow/                     # Workflow list + detail (detail.ts/detail.html)
+  flow/                     # Flow list + detail (detail.ts/detail.html)
   organization/             # Account overview, users, teams, activity-feed, onboarding (named files)
   profile/                  # Profile settings
   settings/                 # Company settings

@@ -6,7 +6,7 @@ import type {
     TeamMembershipProjectEntity,
     TeamMembershipUserEntity,
     ActivityEntity,
-    WorkflowEntity,
+    FlowEntity,
     WfNodeEntity,
     WfEdgeEntity,
     WfFieldEntity,
@@ -14,8 +14,8 @@ import type {
     AccountEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
-    ProjectWorkflowEntity,
-    WfWorkflowNodeEntity,
+    ProjectFlowEntity,
+    WfFlowNodeEntity,
     WfNodeEdgeEntity,
     WfNodeFieldEntity,
 } from './types';
@@ -70,21 +70,21 @@ export interface DbAdapter {
         >;
     activities:
         EntityStore<ActivityEntity>;
-    workflows:
-        EntityStore<WorkflowEntity>;
+    flows:
+        EntityStore<FlowEntity>;
     wfNodes:
         EntityStore<WfNodeEntity>;
     wfEdges:
         EntityStore<WfEdgeEntity>;
     wfFields:
         EntityStore<WfFieldEntity>;
-    projectWorkflows:
+    projectFlows:
         EntityStore<
-            ProjectWorkflowEntity
+            ProjectFlowEntity
         >;
-    wfWorkflowNodes:
+    wfFlowNodes:
         EntityStore<
-            WfWorkflowNodeEntity
+            WfFlowNodeEntity
         >;
     wfNodeEdges:
         EntityStore<WfNodeEdgeEntity>;

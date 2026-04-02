@@ -6,4 +6,4 @@ export * from './projects';
 export * from './teams';
 export * from './admin';
 export * from './snapshots';
-export * from './workflows';
+export * from './flows';

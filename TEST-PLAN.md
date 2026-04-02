@@ -97,14 +97,14 @@ on. Run these in order.
 - [ ] **AA33** On project detail, click "Edit". Set progress, priority_score, and other fields to match mock data. Save. PASS: project data persists.
 - [ ] **AA34** Repeat conversion for all 6 projects. PASS: Projects list shows all 6 with correct status, progress, and priority.
 
-### AA9. Create Workflows
+### AA9. Create Flows
 
 - [ ] **AA35** Navigate to Projects. Click into
-  project #1 detail. PASS: a "Workflows" section
-  is visible showing "No workflows yet" empty
-  state and a "New Workflow" button.
-- [ ] **AA36** Click "New Workflow". PASS: navigates
-  to the workflow designer page. The SVG canvas
+  project #1 detail. PASS: a "Flows" section
+  is visible showing "No flows yet" empty
+  state and a "New Flow" button.
+- [ ] **AA36** Click "New Flow". PASS: navigates
+  to the flow designer page. The SVG canvas
   shows two nodes: "New" (start, top-left with
   green border) and "Complete" (end, bottom-right
   with double green border) connected by no edges.
@@ -157,7 +157,7 @@ on. Run these in order.
   cards (Time, Cost, Impact) show aggregated values
   computed from the entered project data.
 - [ ] **AA47** Header stats reflect entered data
-  counts (ideas, projects, workflows). PASS:
+  counts (ideas, projects, flows). PASS:
   counts are non-zero and match.
 
 ### AA11. Edit & Verify Cycle
@@ -168,7 +168,7 @@ on. Run these in order.
 - [ ] **AA49** Edit project #1: change description.
   Save, navigate away, return. PASS: changed
   description persists.
-- [ ] **AA50** Edit workflow: navigate to workflow
+- [ ] **AA50** Edit flow: navigate to flow
   designer, rename a state, click Save. Navigate
   away, return. PASS: changed state name persists.
 - [ ] **AA52** Edit profile: change phone number.
@@ -226,10 +226,15 @@ on. Run these in order.
 
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
 - [ ] **C2** Sidebar shows flat navigation
-  links: Dashboard, Ideas, Projects, Teams,
-  Workflows, Organization, Snapshots, Design
+  links: Dashboard, Ideas, Projects, Flows,
+  Organization, Teams, Snapshots, Design
   System. PASS: all links present and styled.
-- [ ] **C3** Header shows search bar, greeting ("Good {morning/afternoon/evening}, Tony Stark" — varies by time of day), company stats ("Stark Industries · 11 Ideas · 6 Projects · 1 Workflows"), and theme toggle. PASS: elements visible and styled.
+- [ ] **C3** Header shows search bar, greeting
+  ("Good {morning/afternoon/evening}, Tony
+  Stark" — varies by time of day), company
+  stats ("Stark Industries · 11 Ideas ·
+  6 Projects · 1 Flows"), and theme toggle.
+  PASS: elements visible and styled.
 - [ ] **C4** Dashboard displays 3 gauge/metric cards (Time, Cost, Impact) with baseline and current values. PASS: cards render with non-zero values and concentric arc gauges.
 - [ ] **C6** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C7** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
@@ -353,7 +358,7 @@ on. Run these in order.
   render with data. Baseline/current metrics
   show em dash when values are zero or missing.
 - [ ] **E4** Three quick-action cards visible
-  (Engineering, Team, Workflows). PASS: clicking
+  (Engineering, Team, Flows). PASS: clicking
   "Engineering" navigates to
   `engineering-requirements/?projectId=1`.
 - [ ] **E5** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and days. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
@@ -379,23 +384,23 @@ on. Run these in order.
 
 ## F. Tools
 
-### Workflow List (`flow/`)
+### Flow List (`flow/`)
 
 - [ ] **F11** Navigate to `flow/`. PASS: page shows
-  workflow cards with name, description, project
+  flow cards with name, description, project
   name badge, and state/transition counts.
 - [ ] **F12** Type in the search input (if present).
-  PASS: filters workflow cards by name or
+  PASS: filters flow cards by name or
   description in real-time.
-- [ ] **F13** Click a workflow card. PASS: navigates
-  to `flow/detail.html?workflowId=<id>`.
+- [ ] **F13** Click a flow card. PASS: navigates
+  to `flow/detail.html?flowId=<id>`.
 
-### Workflow Designer (`flow/detail.html?workflowId=...`)
+### Flow Designer (`flow/detail.html?flowId=...`)
 
-- [ ] **F14** Navigate to a workflow designer page.
+- [ ] **F14** Navigate to a flow designer page.
   PASS: toolbar at top with Add State, Re-layout,
   Zoom +/-, Fit, stats, and Save. SVG canvas below
-  with dot grid background showing the workflow
+  with dot grid background showing the flow
   graph.
 - [ ] **F15** Nodes display correctly: start node
   has green border with "Start state" subtitle,
@@ -460,7 +465,7 @@ on. Run these in order.
   designer. PASS: all nodes, edges, fields, and
   positions persist.
 - [ ] **F28** Navigate to
-  `flow/detail.html?workflowId=nonexistent`. PASS:
+  `flow/detail.html?flowId=nonexistent`. PASS:
   page handles gracefully — redirects to flow list
   or shows error state, no unhandled JS exception.
 

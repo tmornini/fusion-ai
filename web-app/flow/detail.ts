@@ -9,11 +9,11 @@ import {
 } from '../app/loading-states';
 import { navigateTo } from '../app/core';
 import {
-    getWorkflowGraph,
+    getFlowGraph,
 } from '../app/adapters';
 import {
     bindInteractions,
-} from '../app/workflow-interactions';
+} from '../app/flow-interactions';
 import {
     FlowDesignerPresenter,
 } from '../app/presenters';
@@ -380,21 +380,21 @@ async function handleSaveField(
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
-    const workflowId =
-        params?.workflowId;
-    if (!workflowId) {
+    const flowId =
+        params?.flowId;
+    if (!flowId) {
         navigateTo('flow');
         return;
     }
     const container = $(
-        '#workflow-designer', document,
+        '#flow-designer', document,
     );
     if (!container) return;
 
     const graph = await withLoadingState(
         container,
         buildSkeleton('detail', 1),
-        () => getWorkflowGraph(workflowId),
+        () => getFlowGraph(flowId),
     );
     if (!graph) return;
 

@@ -8,12 +8,12 @@ import type {
     ActivityEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
-    WorkflowEntity,
+    FlowEntity,
     WfNodeEntity,
     WfEdgeEntity,
     WfFieldEntity,
-    ProjectWorkflowEntity,
-    WfWorkflowNodeEntity,
+    ProjectFlowEntity,
+    WfFlowNodeEntity,
     WfNodeEdgeEntity,
     WfNodeFieldEntity,
 } from './types';
@@ -1443,8 +1443,8 @@ export async function populateMockData(
     const wfTimestamp =
         '2024-02-01T09:00:00.000000Z';
 
-    const mockWorkflows:
-        WorkflowEntity[] = [
+    const mockFlows:
+        FlowEntity[] = [
         {
             id: 'wf-1',
             name: 'Customer Onboarding',
@@ -1644,39 +1644,39 @@ export async function populateMockData(
         },
     ];
 
-    const mockProjectWorkflows:
-        ProjectWorkflowEntity[] = [
+    const mockProjectFlows:
+        ProjectFlowEntity[] = [
         {
             id: 'pw-1',
             project_id: '1',
-            workflow_id: 'wf-1',
+            flow_id: 'wf-1',
             created_at: wfTimestamp,
         },
     ];
 
-    const mockWfWorkflowNodes:
-        WfWorkflowNodeEntity[] = [
+    const mockWfFlowNodes:
+        WfFlowNodeEntity[] = [
         {
             id: 'wwn-1',
-            workflow_id: 'wf-1',
+            flow_id: 'wf-1',
             node_id: 'wn-1',
             created_at: wfTimestamp,
         },
         {
             id: 'wwn-2',
-            workflow_id: 'wf-1',
+            flow_id: 'wf-1',
             node_id: 'wn-2',
             created_at: wfTimestamp,
         },
         {
             id: 'wwn-3',
-            workflow_id: 'wf-1',
+            flow_id: 'wf-1',
             node_id: 'wn-3',
             created_at: wfTimestamp,
         },
         {
             id: 'wwn-4',
-            workflow_id: 'wf-1',
+            flow_id: 'wf-1',
             node_id: 'wn-4',
             created_at: wfTimestamp,
         },
@@ -1797,8 +1797,8 @@ export async function populateMockData(
                 activity,
             ),
         ),
-        ...mockWorkflows.map(wf =>
-            adapter.workflows.put(
+        ...mockFlows.map(wf =>
+            adapter.flows.put(
                 wf.id, wf,
             ),
         ),
@@ -2096,13 +2096,13 @@ export async function populateMockData(
                 r.id, r,
             ),
         ),
-        ...mockProjectWorkflows.map(r =>
-            adapter.projectWorkflows.put(
+        ...mockProjectFlows.map(r =>
+            adapter.projectFlows.put(
                 r.id, r,
             ),
         ),
-        ...mockWfWorkflowNodes.map(r =>
-            adapter.wfWorkflowNodes.put(
+        ...mockWfFlowNodes.map(r =>
+            adapter.wfFlowNodes.put(
                 r.id, r,
             ),
         ),

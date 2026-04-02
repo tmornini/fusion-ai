@@ -412,7 +412,7 @@ export interface ActivityEntity {
     comment: string;
 }
 
-export interface WorkflowEntity {
+export interface FlowEntity {
     id: Id;
     name: string;
     description: string;
@@ -497,16 +497,16 @@ export interface ActivityActorEntity {
     created_at: string;
 }
 
-export interface ProjectWorkflowEntity {
+export interface ProjectFlowEntity {
     id: Id;
     project_id: Id;
-    workflow_id: Id;
+    flow_id: Id;
     created_at: string;
 }
 
-export interface WfWorkflowNodeEntity {
+export interface WfFlowNodeEntity {
     id: Id;
-    workflow_id: Id;
+    flow_id: Id;
     node_id: Id;
     created_at: string;
 }

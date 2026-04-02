@@ -9,7 +9,7 @@ Vanilla TypeScript with zero runtime dependencies. Uses localStorage for in-brow
 ### Modules
 
 - **Ideas** — submit, score, and review innovation ideas
-- **Flow** — process documentation and workflow management
+- **Flow** — process documentation and flow management
 - **Projects** — track approved ideas through execution
 - **Teams** — team roster and assignments
 - **Account** — organization settings, users, billing, and activity

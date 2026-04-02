@@ -26,8 +26,8 @@ export {
     UserPresenter,
 } from './user';
 export {
-    WorkflowPresenter,
-} from './workflow';
+    FlowPresenter,
+} from './flow';
 export {
     ProjectDetailPresenter,
 } from './project-detail';

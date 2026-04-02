@@ -4,7 +4,7 @@ import {
 import type { SafeHtml } from '../safe-html';
 import { showToast } from '../toast';
 import {
-    putWorkflow,
+    putFlow,
     putNode,
     putWfEdge,
     postNodeAddition,
@@ -18,32 +18,32 @@ import type {
     GraphNode,
     GraphEdge,
     GraphField,
-    WorkflowGraph,
-} from '../adapters/workflows';
+    FlowGraph,
+} from '../adapters/flows';
 import {
     buildGraphSvg,
-} from '../workflow-graph';
+} from '../flow-graph';
 import {
     computeLayout,
     NODE_WIDTH,
     NODE_HEIGHT,
     START_X,
     START_Y,
-} from '../workflow-layout';
+} from '../flow-layout';
 import {
     createInteractionState,
     zoomIn as zoomInState,
     zoomOut as zoomOutState,
     zoomToFit as zoomToFitState,
-} from '../workflow-interactions';
+} from '../flow-interactions';
 import type {
     InteractionState,
-} from '../workflow-interactions';
+} from '../flow-interactions';
 
 interface DesignerState {
-    workflowId: string;
-    workflowName: string;
-    workflowDescription: string;
+    flowId: string;
+    flowName: string;
+    flowDescription: string;
     nodes: GraphNode[];
     edges: GraphEdge[];
     interaction: InteractionState;
@@ -56,7 +56,7 @@ export class FlowDesignerPresenter {
     #canvasH: number;
 
     constructor(
-        graph: WorkflowGraph,
+        graph: FlowGraph,
         canvasW: number,
         canvasH: number,
     ) {
@@ -67,9 +67,9 @@ export class FlowDesignerPresenter {
                 canvasW, canvasH,
             );
         this.#state = {
-            workflowId: graph.id,
-            workflowName: graph.name,
-            workflowDescription:
+            flowId: graph.id,
+            flowName: graph.name,
+            flowDescription:
                 graph.description,
             nodes: graph.nodes,
             edges: graph.edges,
@@ -91,8 +91,8 @@ export class FlowDesignerPresenter {
             .selectedEdgeId;
     }
 
-    workflowId(): string {
-        return this.#state.workflowId;
+    flowId(): string {
+        return this.#state.flowId;
     }
 
     interactionState(): InteractionState {
@@ -132,9 +132,9 @@ export class FlowDesignerPresenter {
 class="wf-designer">
 <div class="wf-designer-header">
 <h2 class="text-lg font-semibold"
-    >${this.#state.workflowName}</h2>
+    >${this.#state.flowName}</h2>
 <p class="text-sm text-muted"
-    >${this.#state.workflowDescription}</p>
+    >${this.#state.flowDescription}</p>
 </div>
 ${toolbar}
 ${panel}
@@ -171,8 +171,8 @@ ${panel}
         try {
             await postNodeAddition({
                 nodeId,
-                workflowId:
-                    this.#state.workflowId,
+                flowId:
+                    this.#state.flowId,
                 name: 'New State',
                 positionX: x,
                 positionY: y,
@@ -238,7 +238,7 @@ ${panel}
         try {
             await deleteNode(
                 nodeId,
-                this.#state.workflowId,
+                this.#state.flowId,
             );
         } catch {
             showToast(
@@ -324,17 +324,17 @@ ${panel}
 
     async persist(): Promise<boolean> {
         try {
-            await this.#persistWorkflow();
+            await this.#persistFlow();
         } catch {
             showToast(
-                'Failed to save workflow',
+                'Failed to save flow',
                 'error',
             );
             return false;
         }
         this.#state.hasUnsavedChanges = false;
         showToast(
-            'Workflow saved', 'success',
+            'Flow saved', 'success',
         );
         return true;
     }
@@ -904,15 +904,15 @@ data-action="delete-edge"
         );
     }
 
-    async #persistWorkflow(): Promise<void> {
-        await putWorkflow(
-            this.#state.workflowId,
+    async #persistFlow(): Promise<void> {
+        await putFlow(
+            this.#state.flowId,
             {
                 name:
-                    this.#state.workflowName,
+                    this.#state.flowName,
                 description:
                     this.#state
-                        .workflowDescription,
+                        .flowDescription,
             },
         );
         for (

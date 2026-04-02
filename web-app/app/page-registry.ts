@@ -64,17 +64,17 @@ export const PAGE_REGISTRY: Record<
         keywords: 'review approve reject',
     },
     flow: {
-        title: 'Workflows',
+        title: 'Flows',
         layout: 'sidebar',
         sourceDir: 'flow',
         sourceFile: 'index',
         icon: 'gitBranch',
         keywords:
-            'workflow, process,'
-            + ' state machine, flow',
+            'flow, process,'
+            + ' state machine',
     },
     'flow-detail': {
-        title: 'Workflow Designer',
+        title: 'Flow Designer',
         layout: 'sidebar',
         sourceDir: 'flow',
         sourceFile: 'detail',

@@ -2,10 +2,10 @@ import type { SafeHtml } from './safe-html';
 import { trusted, html, escapeForHtml } from './safe-html';
 import type {
     GraphNode, GraphEdge,
-} from './adapters/workflows';
+} from './adapters/flows';
 import {
     NODE_WIDTH, NODE_HEIGHT,
-} from './workflow-layout';
+} from './flow-layout';
 
 const BLUE = '#4B6CA1';
 const WARN = '#d97706';

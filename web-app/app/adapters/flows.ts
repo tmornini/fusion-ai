@@ -2,13 +2,13 @@ import {
     GET, POST, PUT, DELETE,
 } from '../../../api/api';
 import type {
-    WorkflowEntity,
+    FlowEntity,
     WfNodeEntity,
     WfEdgeEntity,
     WfFieldEntity,
     ProjectEntity,
-    ProjectWorkflowEntity,
-    WfWorkflowNodeEntity,
+    ProjectFlowEntity,
+    WfFlowNodeEntity,
     WfNodeEdgeEntity,
     WfNodeFieldEntity,
 } from '../../../api/types';
@@ -26,7 +26,7 @@ const DEFAULT_START_Y = 30;
 const DEFAULT_COMPLETE_X = 680;
 const DEFAULT_COMPLETE_Y = 370;
 
-export interface WorkflowListItem {
+export interface FlowListItem {
     id: string;
     name: string;
     description: string;
@@ -34,8 +34,8 @@ export interface WorkflowListItem {
     edgeCount: number;
 }
 
-export interface WorkflowSummary
-    extends WorkflowListItem {
+export interface FlowSummary
+    extends FlowListItem {
     projectName: string | null;
 }
 
@@ -67,7 +67,7 @@ export interface GraphEdge {
     toNodeId: string;
 }
 
-export interface WorkflowGraph {
+export interface FlowGraph {
     id: string;
     name: string;
     description: string;
@@ -75,22 +75,22 @@ export interface WorkflowGraph {
     edges: GraphEdge[];
 }
 
-export async function getWorkflows(
-): Promise<WorkflowSummary[]> {
+export async function getFlows(
+): Promise<FlowSummary[]> {
     const [
-        workflows, projectWorkflows,
-        projects, workflowNodes,
+        flows, projectFlows,
+        projects, flowNodes,
         nodeEdges,
     ] = await Promise.all([
-        GET<WorkflowEntity[]>(
-            'workflows',
+        GET<FlowEntity[]>(
+            'flows',
         ),
-        GET<ProjectWorkflowEntity[]>(
-            'project-workflows',
+        GET<ProjectFlowEntity[]>(
+            'project-flows',
         ),
         GET<ProjectEntity[]>('projects'),
-        GET<WfWorkflowNodeEntity[]>(
-            'wf-workflow-nodes',
+        GET<WfFlowNodeEntity[]>(
+            'wf-flow-nodes',
         ),
         GET<WfNodeEdgeEntity[]>(
             'wf-node-edges',
@@ -101,38 +101,38 @@ export async function getWorkflows(
         projects.map(p => [p.id, p.title]),
     );
 
-    const projectByWorkflow = new Map<
+    const projectByFlow = new Map<
         string, string | null
     >();
-    for (const pw of projectWorkflows) {
-        projectByWorkflow.set(
-            pw.workflow_id,
+    for (const pw of projectFlows) {
+        projectByFlow.set(
+            pw.flow_id,
             projectMap.get(
                 pw.project_id,
             ) ?? null,
         );
     }
 
-    const nodeIdsByWorkflow = new Map<
+    const nodeIdsByFlow = new Map<
         string, Set<string>
     >();
-    for (const wf of workflows) {
-        nodeIdsByWorkflow.set(
+    for (const wf of flows) {
+        nodeIdsByFlow.set(
             wf.id, new Set(),
         );
     }
-    for (const wn of workflowNodes) {
-        nodeIdsByWorkflow
-            .get(wn.workflow_id)
+    for (const wn of flowNodes) {
+        nodeIdsByFlow
+            .get(wn.flow_id)
             ?.add(wn.node_id);
     }
 
-    const edgeCountByWorkflow = new Map<
+    const edgeCountByFlow = new Map<
         string, number
     >();
-    for (const wf of workflows) {
+    for (const wf of flows) {
         const nodeIds =
-            nodeIdsByWorkflow.get(wf.id)!;
+            nodeIdsByFlow.get(wf.id)!;
         let count = 0;
         for (const ne of nodeEdges) {
             if (
@@ -146,82 +146,82 @@ export async function getWorkflows(
                 count++;
             }
         }
-        edgeCountByWorkflow.set(
+        edgeCountByFlow.set(
             wf.id, count,
         );
     }
 
-    return workflows.map(wf => ({
+    return flows.map(wf => ({
         id: wf.id,
         name: wf.name,
         description: wf.description,
         projectName:
-            projectByWorkflow.get(wf.id)
+            projectByFlow.get(wf.id)
                 ?? null,
         nodeCount:
-            nodeIdsByWorkflow
+            nodeIdsByFlow
                 .get(wf.id)!.size,
         edgeCount:
-            edgeCountByWorkflow
+            edgeCountByFlow
                 .get(wf.id)!,
     }));
 }
 
-export async function getWorkflowsByProject(
+export async function getFlowsByProject(
     projectId: string,
-): Promise<WorkflowListItem[]> {
+): Promise<FlowListItem[]> {
     const [
-        projectWorkflows, workflows,
-        workflowNodes, nodeEdges,
+        projectFlows, flows,
+        flowNodes, nodeEdges,
     ] = await Promise.all([
-        GET<ProjectWorkflowEntity[]>(
-            'project-workflows',
+        GET<ProjectFlowEntity[]>(
+            'project-flows',
         ),
-        GET<WorkflowEntity[]>(
-            'workflows',
+        GET<FlowEntity[]>(
+            'flows',
         ),
-        GET<WfWorkflowNodeEntity[]>(
-            'wf-workflow-nodes',
+        GET<WfFlowNodeEntity[]>(
+            'wf-flow-nodes',
         ),
         GET<WfNodeEdgeEntity[]>(
             'wf-node-edges',
         ),
     ]);
 
-    const workflowIds = new Set(
-        projectWorkflows
+    const flowIds = new Set(
+        projectFlows
             .filter(
                 pw =>
                     pw.project_id
                         === projectId,
             )
-            .map(pw => pw.workflow_id),
+            .map(pw => pw.flow_id),
     );
 
-    const workflowMap = new Map(
-        workflows.map(w => [w.id, w]),
+    const flowMap = new Map(
+        flows.map(w => [w.id, w]),
     );
 
-    const nodeIdsByWorkflow = new Map<
+    const nodeIdsByFlow = new Map<
         string, Set<string>
     >();
-    for (const wfId of workflowIds) {
-        nodeIdsByWorkflow.set(
+    for (const wfId of flowIds) {
+        nodeIdsByFlow.set(
             wfId, new Set(),
         );
     }
-    for (const wn of workflowNodes) {
-        nodeIdsByWorkflow
-            .get(wn.workflow_id)
+    for (const wn of flowNodes) {
+        nodeIdsByFlow
+            .get(wn.flow_id)
             ?.add(wn.node_id);
     }
 
-    const edgeCountByWorkflow = new Map<
+    const edgeCountByFlow = new Map<
         string, number
     >();
-    for (const wfId of workflowIds) {
+    for (const wfId of flowIds) {
         const nodeIds =
-            nodeIdsByWorkflow.get(wfId)!;
+            nodeIdsByFlow.get(wfId)!;
         let count = 0;
         for (const ne of nodeEdges) {
             if (
@@ -235,46 +235,46 @@ export async function getWorkflowsByProject(
                 count++;
             }
         }
-        edgeCountByWorkflow.set(
+        edgeCountByFlow.set(
             wfId, count,
         );
     }
 
-    const result: WorkflowListItem[] = [];
-    for (const wfId of workflowIds) {
-        const wf = workflowMap.get(wfId);
+    const result: FlowListItem[] = [];
+    for (const wfId of flowIds) {
+        const wf = flowMap.get(wfId);
         if (!wf) continue;
         result.push({
             id: wf.id,
             name: wf.name,
             description: wf.description,
             nodeCount:
-                nodeIdsByWorkflow
+                nodeIdsByFlow
                     .get(wfId)!.size,
             edgeCount:
-                edgeCountByWorkflow
+                edgeCountByFlow
                     .get(wfId)!,
         });
     }
     return result;
 }
 
-export async function getWorkflowGraph(
-    workflowId: string,
-): Promise<WorkflowGraph | null> {
-    const workflow =
-        await GET<WorkflowEntity | null>(
-            `workflows/${workflowId}`,
+export async function getFlowGraph(
+    flowId: string,
+): Promise<FlowGraph | null> {
+    const flow =
+        await GET<FlowEntity | null>(
+            `flows/${flowId}`,
         );
-    if (!workflow) return null;
+    if (!flow) return null;
 
     const [
-        allWorkflowNodes, allNodeEdges,
+        allFlowNodes, allNodeEdges,
         allNodes, allEdges,
         allFields, allNodeFields,
     ] = await Promise.all([
-        GET<WfWorkflowNodeEntity[]>(
-            'wf-workflow-nodes',
+        GET<WfFlowNodeEntity[]>(
+            'wf-flow-nodes',
         ),
         GET<WfNodeEdgeEntity[]>(
             'wf-node-edges',
@@ -288,11 +288,11 @@ export async function getWorkflowGraph(
     ]);
 
     const nodeIds = new Set(
-        allWorkflowNodes
+        allFlowNodes
             .filter(
                 wn =>
-                    wn.workflow_id
-                        === workflowId,
+                    wn.flow_id
+                        === flowId,
             )
             .map(wn => wn.node_id),
     );
@@ -376,16 +376,16 @@ export async function getWorkflowGraph(
     }
 
     return {
-        id: workflow.id,
-        name: workflow.name,
-        description: workflow.description,
+        id: flow.id,
+        name: flow.name,
+        description: flow.description,
         nodes,
         edges,
     };
 }
 
-export interface WorkflowCreationContext {
-    workflowId: string;
+export interface FlowCreationContext {
+    flowId: string;
     projectId: string;
     name: string;
     description: string;
@@ -393,7 +393,7 @@ export interface WorkflowCreationContext {
 
 export interface NodeAdditionContext {
     nodeId: string;
-    workflowId: string;
+    flowId: string;
     name: string;
     positionX: number;
     positionY: number;
@@ -416,8 +416,8 @@ export interface FieldAdditionContext {
     options: string[];
 }
 
-export async function postWorkflowCreation(
-    ctx: WorkflowCreationContext,
+export async function postFlowCreation(
+    ctx: FlowCreationContext,
 ): Promise<void> {
     const startNodeId =
         crypto.randomUUID();
@@ -425,8 +425,8 @@ export async function postWorkflowCreation(
         crypto.randomUUID();
     const now = nowUtc();
 
-    await POST<void>('workflows', {
-        id: ctx.workflowId,
+    await POST<void>('flows', {
+        id: ctx.flowId,
         name: ctx.name,
         description: ctx.description,
         created_at: now,
@@ -457,21 +457,21 @@ export async function postWorkflowCreation(
     ]);
 
     await Promise.all([
-        POST<void>('project-workflows', {
+        POST<void>('project-flows', {
             id: crypto.randomUUID(),
             project_id: ctx.projectId,
-            workflow_id: ctx.workflowId,
+            flow_id: ctx.flowId,
             created_at: now,
         }),
-        POST<void>('wf-workflow-nodes', {
+        POST<void>('wf-flow-nodes', {
             id: crypto.randomUUID(),
-            workflow_id: ctx.workflowId,
+            flow_id: ctx.flowId,
             node_id: startNodeId,
             created_at: now,
         }),
-        POST<void>('wf-workflow-nodes', {
+        POST<void>('wf-flow-nodes', {
             id: crypto.randomUUID(),
-            workflow_id: ctx.workflowId,
+            flow_id: ctx.flowId,
             node_id: completeNodeId,
             created_at: now,
         }),
@@ -495,10 +495,10 @@ export async function postNodeAddition(
     });
 
     await POST<void>(
-        'wf-workflow-nodes',
+        'wf-flow-nodes',
         {
             id: crypto.randomUUID(),
-            workflow_id: ctx.workflowId,
+            flow_id: ctx.flowId,
             node_id: ctx.nodeId,
             created_at: now,
         },
@@ -551,14 +551,14 @@ export async function postFieldAddition(
     });
 }
 
-export async function putWorkflow(
+export async function putFlow(
     id: string,
     fields: {
         name?: string;
         description?: string;
     },
 ): Promise<void> {
-    await PUT(`workflows/${id}`, {
+    await PUT(`flows/${id}`, {
         ...fields,
         updated_at: nowUtc(),
     });
@@ -615,15 +615,15 @@ export async function putField(
 
 export async function deleteNode(
     nodeId: string,
-    workflowId: string,
+    flowId: string,
 ): Promise<void> {
-    const [nodeEdges, workflowNodes] =
+    const [nodeEdges, flowNodes] =
         await Promise.all([
             GET<WfNodeEdgeEntity[]>(
                 'wf-node-edges',
             ),
-            GET<WfWorkflowNodeEntity[]>(
-                'wf-workflow-nodes',
+            GET<WfFlowNodeEntity[]>(
+                'wf-flow-nodes',
             ),
         ]);
 
@@ -633,11 +633,11 @@ export async function deleteNode(
             || ne.to_node_id === nodeId,
     );
 
-    const workflowNodeLink =
-        workflowNodes.find(
+    const flowNodeLink =
+        flowNodes.find(
             wn =>
-                wn.workflow_id
-                    === workflowId
+                wn.flow_id
+                    === flowId
                 && wn.node_id === nodeId,
         );
 
@@ -657,11 +657,11 @@ export async function deleteNode(
         );
     }
 
-    if (workflowNodeLink) {
+    if (flowNodeLink) {
         deletePromises.push(
             DELETE(
-                'wf-workflow-nodes/'
-                + workflowNodeLink.id,
+                'wf-flow-nodes/'
+                + flowNodeLink.id,
             ),
         );
     }

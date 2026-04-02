@@ -106,7 +106,7 @@
 | type | TEXT |
 ## Tools
 
-### workflows
+### flows
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -236,21 +236,21 @@ Singleton table (single row, `id = '1'`).
 | activity_id | TEXT (FK → activities) |
 | user_id | TEXT (FK → users) |
 | created_at | TEXT |
-### project_workflows
+### project_flows
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY |
 | project_id | TEXT | References projects |
-| workflow_id | TEXT | References workflows |
+| flow_id | TEXT | References flows |
 | created_at | TEXT | RFC-3339 Zulu |
 
-### wf_workflow_nodes
+### wf_flow_nodes
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY |
-| workflow_id | TEXT | References workflows |
+| flow_id | TEXT | References flows |
 | node_id | TEXT | References wf_nodes |
 | created_at | TEXT | RFC-3339 Zulu |
 

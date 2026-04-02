@@ -11,12 +11,12 @@ import {
 } from '../app/core';
 import {
     getProjectById, putProject,
-    getWorkflowsByProject,
-    postWorkflowCreation,
+    getFlowsByProject,
+    postFlowCreation,
     ProjectView,
 } from '../app/adapters';
 import type {
-    WorkflowListItem,
+    FlowListItem,
 } from '../app/adapters';
 import {
     ProjectDetailPresenter,
@@ -30,7 +30,7 @@ import {
 function bindProjectEvents(
     project: ProjectView,
     projectId: string,
-    workflows: WorkflowListItem[],
+    flows: FlowListItem[],
     isEditing: boolean,
 ): void {
     $('#project-back-btn', document)
@@ -44,7 +44,7 @@ function bindProjectEvents(
             'click',
             () => mutateProjectPage(
                 project, projectId,
-                workflows, true,
+                flows, true,
             ),
         );
 
@@ -53,7 +53,7 @@ function bindProjectEvents(
             'click',
             () => mutateProjectPage(
                 project, projectId,
-                workflows, false,
+                flows, false,
             ),
         );
 
@@ -138,7 +138,7 @@ function bindProjectEvents(
         const [updated, updatedWfs] =
             await Promise.all([
                 getProjectById(projectId),
-                getWorkflowsByProject(
+                getFlowsByProject(
                     projectId,
                 ),
             ]);
@@ -148,38 +148,38 @@ function bindProjectEvents(
         );
     });
 
-    $('#new-workflow-btn', document)
+    $('#new-flow-btn', document)
         ?.addEventListener(
             'click',
             async () => {
                 const wfId =
                     crypto.randomUUID();
                 try {
-                    await postWorkflowCreation(
+                    await postFlowCreation(
                         {
-                            workflowId: wfId,
+                            flowId: wfId,
                             projectId,
                             name:
-                                'New Workflow',
+                                'New Flow',
                             description: '',
                         },
                     );
                 } catch {
                     showToast(
                         'Failed to create'
-                        + ' workflow',
+                        + ' flow',
                         'error',
                     );
                     return;
                 }
                 navigateTo(
                     'flow-detail',
-                    { workflowId: wfId },
+                    { flowId: wfId },
                 );
             },
         );
 
-    $$('[data-workflow-id]', document)
+    $$('[data-flow-id]', document)
         .forEach(el => {
             el.addEventListener(
                 'click',
@@ -187,12 +187,12 @@ function bindProjectEvents(
                     e.preventDefault();
                     const wfId =
                         el.getAttribute(
-                            'data-workflow-id',
+                            'data-flow-id',
                         );
                     if (!wfId) return;
                     navigateTo(
                         'flow-detail',
-                        { workflowId: wfId },
+                        { flowId: wfId },
                     );
                 },
             );
@@ -202,7 +202,7 @@ function bindProjectEvents(
 function mutateProjectPage(
     project: ProjectView,
     projectId: string,
-    workflows: WorkflowListItem[],
+    flows: FlowListItem[],
     isEditing: boolean,
 ): void {
     const container = $(
@@ -214,12 +214,12 @@ function mutateProjectPage(
     setHtml(
         container,
         presenter.buildDetailView(
-            projectId, workflows, isEditing,
+            projectId, flows, isEditing,
         ),
     );
     bindProjectEvents(
         project, projectId,
-        workflows, isEditing,
+        flows, isEditing,
     );
 }
 
@@ -239,12 +239,12 @@ export async function init(
     );
 
     let project: ProjectView;
-    let workflows: WorkflowListItem[];
+    let flows: FlowListItem[];
     try {
-        [project, workflows] =
+        [project, flows] =
             await Promise.all([
                 getProjectById(projectId),
-                getWorkflowsByProject(
+                getFlowsByProject(
                     projectId,
                 ),
             ]);
@@ -269,6 +269,6 @@ export async function init(
 
     mutateProjectPage(
         project, projectId,
-        workflows, false,
+        flows, false,
     );
 }
