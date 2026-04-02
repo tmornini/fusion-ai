@@ -7,7 +7,11 @@ import {
     buildSkeleton,
     withLoadingState,
 } from '../app/loading-states';
-import { navigateTo } from '../app/core';
+import {
+    navigateTo,
+    openDialog,
+    closeDialog,
+} from '../app/core';
 import {
     getFlowGraph,
 } from '../app/adapters';
@@ -34,6 +38,9 @@ function renderAndBind(
         container, presenter,
     );
     bindPanelActions(
+        container, presenter,
+    );
+    bindAddStateDialog(
         container, presenter,
     );
 }
@@ -114,11 +121,9 @@ function bindToolbarActions(
         if (action === 'add-state') {
             btn.addEventListener(
                 'click',
-                () => void presenter
-                    .addNode()
-                    .then(() => renderAndBind(
-                        container, presenter,
-                    )),
+                () => openDialog(
+                    'add-state',
+                ),
             );
         }
         if (action === 're-layout') {
@@ -425,6 +430,109 @@ export async function init(
     bindKeyboardShortcuts(
         container, presenter,
     );
+}
+
+function bindAddStateDialog(
+    container: HTMLElement,
+    presenter: FlowDesignerPresenter,
+): void {
+    const cancelBtn = $(
+        '#add-state-cancel', document,
+    );
+    const submitBtn = $(
+        '#add-state-submit', document,
+    );
+    const backdrop = $(
+        '#add-state-backdrop', document,
+    );
+
+    cancelBtn?.addEventListener(
+        'click',
+        () => closeDialog('add-state'),
+    );
+    backdrop?.addEventListener(
+        'click',
+        (e) => {
+            if (
+                e.target === e.currentTarget
+            ) {
+                closeDialog('add-state');
+            }
+        },
+    );
+
+    const dirBtns =
+        document.querySelectorAll(
+            '[data-direction]',
+        );
+    for (const btn of dirBtns) {
+        btn.addEventListener(
+            'click',
+            () => {
+                for (const b of dirBtns) {
+                    b.classList.remove(
+                        'active',
+                    );
+                }
+                btn.classList.add('active');
+            },
+        );
+    }
+
+    submitBtn?.addEventListener(
+        'click',
+        () => void handleAddState(
+            container, presenter,
+        ),
+    );
+}
+
+async function handleAddState(
+    container: HTMLElement,
+    presenter: FlowDesignerPresenter,
+): Promise<void> {
+    const nameEl = $input(
+        '#add-state-name', document,
+    );
+    const transEl = $input(
+        '#add-state-transition', document,
+    );
+    const name = nameEl?.value.trim() ?? '';
+    const transition =
+        transEl?.value.trim() ?? '';
+    if (name.length === 0) {
+        showToast(
+            'State name is required',
+            'error',
+        );
+        return;
+    }
+    if (transition.length === 0) {
+        showToast(
+            'Transition name is required',
+            'error',
+        );
+        return;
+    }
+    const activeDir =
+        document.querySelector(
+            '[data-direction].active',
+        );
+    const direction =
+        activeDir?.getAttribute(
+            'data-direction',
+        ) ?? 'right';
+
+    const ok =
+        await presenter.addNodeWithEdge(
+            name, transition, direction,
+        );
+    if (ok) {
+        closeDialog('add-state');
+        renderAndBind(
+            container, presenter,
+        );
+    }
 }
 
 function bindKeyboardShortcuts(

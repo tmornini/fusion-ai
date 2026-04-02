@@ -35,6 +35,8 @@ import {
     computeLayout,
     NODE_WIDTH,
     NODE_HEIGHT,
+    HORIZONTAL_GAP,
+    VERTICAL_GAP,
     START_X,
     START_Y,
 } from '../flow-layout';
@@ -175,6 +177,8 @@ export class FlowDesignerPresenter {
             this.#buildPropsPanel();
         const canvas =
             this.#buildCanvas();
+        const dialog =
+            this.#buildAddStateDialog();
         const content = html`<div
 class="wf-designer">
 <div class="wf-designer-header">
@@ -187,7 +191,8 @@ ${toolbar}
 ${panel}
 <div class="wf-canvas-wrap"
     >${canvas}</div>
-</div>`;
+</div>
+${dialog}`;
         setHtml(container, content);
     }
 
@@ -707,6 +712,153 @@ ${panel}
         return true;
     }
 
+    selectedNodeName(): string {
+        const nodeId =
+            this.#state
+                .interaction
+                .selectedNodeId;
+        if (nodeId === null) return '';
+        const node = this.#state.nodes.find(
+            n => n.id === nodeId,
+        );
+        return node?.name ?? '';
+    }
+
+    async addNodeWithEdge(
+        name: string,
+        transitionName: string,
+        direction: string,
+    ): Promise<boolean> {
+        const fromNodeId =
+            this.#state
+                .interaction
+                .selectedNodeId;
+        if (fromNodeId === null) return false;
+        const fromNode =
+            this.#state.nodes.find(
+                n => n.id === fromNodeId,
+            );
+        if (!fromNode) return false;
+
+        const pos =
+            this.#computeDirectionPos(
+                fromNode, direction,
+            );
+        const nodeId = crypto.randomUUID();
+        const flowNodeId =
+            crypto.randomUUID();
+        const edgeId = crypto.randomUUID();
+        const nodeEdgeId =
+            crypto.randomUUID();
+
+        try {
+            await postNodeAddition({
+                nodeId,
+                flowNodeId,
+                flowId:
+                    this.#state.flowId,
+                name,
+                positionX: pos.x,
+                positionY: pos.y,
+            });
+            await postEdgeConnection({
+                edgeId,
+                nodeEdgeId,
+                name: transitionName,
+                fromNodeId,
+                toNodeId: nodeId,
+            });
+        } catch {
+            showToast(
+                'Failed to add state',
+                'error',
+            );
+            return false;
+        }
+        this.#state.nodes.push({
+            id: nodeId,
+            name,
+            description: '',
+            positionX: pos.x,
+            positionY: pos.y,
+            isStart: false,
+            isComplete: false,
+            fields: [],
+        });
+        this.#state.edges.push({
+            id: edgeId,
+            name: transitionName,
+            description: '',
+            fromNodeId,
+            toNodeId: nodeId,
+        });
+        this.#undo.push({
+            type: 'add-node-and-edge',
+            forward: [],
+            reverse: [
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-node-edges/'
+                        + nodeEdgeId,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        `wf-edges/${edgeId}`,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-flow-nodes/'
+                        + flowNodeId,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        `wf-nodes/${nodeId}`,
+                },
+            ],
+        });
+        return true;
+    }
+
+    #computeDirectionPos(
+        fromNode: GraphNode,
+        direction: string,
+    ): { x: number; y: number } {
+        switch (direction) {
+            case 'left':
+                return {
+                    x: fromNode.positionX
+                        - NODE_WIDTH
+                        - HORIZONTAL_GAP,
+                    y: fromNode.positionY,
+                };
+            case 'above':
+                return {
+                    x: fromNode.positionX,
+                    y: fromNode.positionY
+                        - NODE_HEIGHT
+                        - VERTICAL_GAP,
+                };
+            case 'below':
+                return {
+                    x: fromNode.positionX,
+                    y: fromNode.positionY
+                        + NODE_HEIGHT
+                        + VERTICAL_GAP,
+                };
+            default:
+                return {
+                    x: fromNode.positionX
+                        + NODE_WIDTH
+                        + HORIZONTAL_GAP,
+                    y: fromNode.positionY,
+                };
+        }
+    }
+
     zoomIn(): void {
         zoomInState(
             this.#state.interaction,
@@ -775,8 +927,12 @@ class="wf-toolbar">
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-primary btn-sm"
-    data-action="add-state"
-    >+ Add State</button>
+    data-action="add-state"${
+    trusted(
+        this.#state.interaction
+            .selectedNodeId !== null
+            ? '' : ' disabled',
+    )}>+ Add State</button>
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
@@ -1142,4 +1298,106 @@ data-action="delete-edge"
         );
     }
 
+    #buildAddStateDialog(): SafeHtml {
+        const selNodeId =
+            this.#state.interaction
+                .selectedNodeId;
+        const selNode = selNodeId
+            !== null
+            ? this.#state.nodes.find(
+                n => n.id === selNodeId,
+            )
+            : undefined;
+        const fromName =
+            selNode?.name ?? '';
+        const dirStyle =
+            'padding:0.5rem;'
+            + 'border-radius:6px;'
+            + 'cursor:pointer;'
+            + 'text-align:center';
+        return html`<div
+class="dialog-backdrop hidden"
+id="add-state-backdrop">
+<div class="dialog hidden"
+    id="add-state-dialog"
+    aria-hidden="true"
+    style="max-width:28rem">
+<div style="${
+    'padding:1.5rem;'
+    + 'border-bottom:1px solid'
+    + ' hsl(var(--border))'
+}">
+<h3 class="text-lg font-display font-semibold"
+    >Add State</h3>
+<p class="text-sm text-muted"
+    >Connected from <strong
+    >${fromName}</strong></p>
+</div>
+<div style="${
+    'padding:1.5rem;'
+    + 'display:flex;'
+    + 'flex-direction:column;'
+    + 'gap:1rem'
+}">
+<div>
+<label class="label mb-1"
+    for="add-state-name"
+    >State Name</label>
+<input class="input"
+    id="add-state-name"
+    placeholder="e.g., Approved" />
+</div>
+<div>
+<label class="label mb-1"
+    for="add-state-transition"
+    >Transition Name</label>
+<input class="input"
+    id="add-state-transition"
+    placeholder="e.g., approve" />
+</div>
+<div>
+<label class="label mb-1"
+    >Placement Direction</label>
+<div style="${
+    'display:grid;'
+    + 'grid-template-columns:1fr 1fr;'
+    + 'gap:0.5rem'
+}">
+<button class="btn btn-outline active"
+    data-direction="right"
+    style="${dirStyle}"
+    >\u2192 Right</button>
+<button class="btn btn-outline"
+    data-direction="left"
+    style="${dirStyle}"
+    >\u2190 Left</button>
+<button class="btn btn-outline"
+    data-direction="above"
+    style="${dirStyle}"
+    >\u2191 Above</button>
+<button class="btn btn-outline"
+    data-direction="below"
+    style="${dirStyle}"
+    >\u2193 Below</button>
+</div>
+</div>
+</div>
+<div style="${
+    'padding:1rem 1.5rem;'
+    + 'border-top:1px solid'
+    + ' hsl(var(--border));'
+    + 'display:flex;'
+    + 'justify-content:flex-end;'
+    + 'gap:0.75rem'
+}">
+<button class="btn btn-outline"
+    id="add-state-cancel"
+    >Cancel</button>
+<button class="btn btn-primary"
+    id="add-state-submit"
+    >Add State</button>
+</div>
+</div>
+</div>`;
+    }
 }
