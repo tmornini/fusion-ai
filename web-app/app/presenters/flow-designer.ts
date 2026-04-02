@@ -4,7 +4,9 @@ import {
 import type { SafeHtml } from '../safe-html';
 import { showToast } from '../toast';
 import {
-    putFlow,
+    iconArrowLeft,
+} from '../icons';
+import {
     putNode,
     putWfEdge,
     postNodeAddition,
@@ -47,7 +49,6 @@ interface DesignerState {
     nodes: GraphNode[];
     edges: GraphEdge[];
     interaction: InteractionState;
-    hasUnsavedChanges: boolean;
 }
 
 export class FlowDesignerPresenter {
@@ -74,7 +75,6 @@ export class FlowDesignerPresenter {
             nodes: graph.nodes,
             edges: graph.edges,
             interaction,
-            hasUnsavedChanges: false,
         };
         this.#applyZoomToFit();
     }
@@ -155,7 +155,6 @@ ${panel}
         if (!node) return;
         node.positionX = x;
         node.positionY = y;
-        this.#state.hasUnsavedChanges = true;
         void putNode(nodeId, {
             position_x: x,
             position_y: y,
@@ -194,7 +193,7 @@ ${panel}
             isComplete: false,
             fields: [],
         });
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -224,7 +223,7 @@ ${panel}
             fromNodeId: fromId,
             toNodeId: toId,
         });
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -259,7 +258,7 @@ ${panel}
         this.#state
             .interaction
             .selectedNodeId = null;
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -286,7 +285,7 @@ ${panel}
         this.#state
             .interaction
             .selectedEdgeId = null;
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -318,25 +317,11 @@ ${panel}
             if (!pos) continue;
             node.positionX = pos.x;
             node.positionY = pos.y;
+            void putNode(node.id, {
+                position_x: pos.x,
+                position_y: pos.y,
+            });
         }
-        this.#state.hasUnsavedChanges = true;
-    }
-
-    async persist(): Promise<boolean> {
-        try {
-            await this.#persistFlow();
-        } catch {
-            showToast(
-                'Failed to save flow',
-                'error',
-            );
-            return false;
-        }
-        this.#state.hasUnsavedChanges = false;
-        showToast(
-            'Flow saved', 'success',
-        );
-        return true;
     }
 
     updateNodeName(
@@ -352,7 +337,7 @@ ${panel}
         );
         if (!node) return;
         node.name = name;
-        this.#state.hasUnsavedChanges = true;
+        void putNode(nodeId, { name });
     }
 
     updateNodeDescription(
@@ -368,7 +353,9 @@ ${panel}
         );
         if (!node) return;
         node.description = desc;
-        this.#state.hasUnsavedChanges = true;
+        void putNode(
+            nodeId, { description: desc },
+        );
     }
 
     updateEdgeName(
@@ -384,7 +371,7 @@ ${panel}
         );
         if (!edge) return;
         edge.name = name;
-        this.#state.hasUnsavedChanges = true;
+        void putWfEdge(edgeId, { name });
     }
 
     updateEdgeDescription(
@@ -400,7 +387,9 @@ ${panel}
         );
         if (!edge) return;
         edge.description = desc;
-        this.#state.hasUnsavedChanges = true;
+        void putWfEdge(
+            edgeId, { description: desc },
+        );
     }
 
     async addField(
@@ -445,7 +434,7 @@ ${panel}
             isRequired,
             options,
         });
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -477,7 +466,7 @@ ${panel}
                     f => f.id !== fieldId,
                 );
         }
-        this.#state.hasUnsavedChanges = true;
+
         return true;
     }
 
@@ -523,11 +512,14 @@ ${panel}
             + String(edgeCount)
             + ' transition'
             + (edgeCount !== 1 ? 's' : '');
-        const saveDisabled =
-            this.#state.hasUnsavedChanges
-                ? '' : ' disabled';
         return html`<div
 class="wf-toolbar">
+<div class="wf-toolbar-group">
+<button
+    class="btn btn-ghost btn-icon"
+    id="flow-back-btn"
+    >${iconArrowLeft(20, '')}</button>
+</div>
 <div class="wf-toolbar-group">
 <button class="btn btn-primary btn-sm"
     data-action="add-state"
@@ -549,13 +541,6 @@ class="wf-toolbar">
 <div class="wf-toolbar-group">
 <span class="text-muted text-sm"
     >${stats}</span>
-</div>
-<div class="wf-toolbar-group ml-auto">
-<button
-    class="btn btn-success btn-sm"
-    data-action="save"${
-    trusted(saveDisabled)
-    }>Save</button>
 </div>
 </div>`;
     }
@@ -904,36 +889,4 @@ data-action="delete-edge"
         );
     }
 
-    async #persistFlow(): Promise<void> {
-        await putFlow(
-            this.#state.flowId,
-            {
-                name:
-                    this.#state.flowName,
-                description:
-                    this.#state
-                        .flowDescription,
-            },
-        );
-        for (
-            const node of this.#state.nodes
-        ) {
-            await putNode(node.id, {
-                name: node.name,
-                description:
-                    node.description,
-                position_x: node.positionX,
-                position_y: node.positionY,
-            });
-        }
-        for (
-            const edge of this.#state.edges
-        ) {
-            await putWfEdge(edge.id, {
-                name: edge.name,
-                description:
-                    edge.description,
-            });
-        }
-    }
 }

@@ -26,6 +26,7 @@ function renderAndBind(
     presenter: FlowDesignerPresenter,
 ): void {
     presenter.render(container);
+    bindBackButton();
     bindSvgInteractions(
         container, presenter,
     );
@@ -35,6 +36,14 @@ function renderAndBind(
     bindPanelActions(
         container, presenter,
     );
+}
+
+function bindBackButton(): void {
+    $('#flow-back-btn', document)
+        ?.addEventListener(
+            'click',
+            () => navigateTo('flows'),
+        );
 }
 
 function bindSvgInteractions(
@@ -134,16 +143,6 @@ function bindToolbarActions(
                         container, presenter,
                     );
                 },
-            );
-        }
-        if (action === 'save') {
-            btn.addEventListener(
-                'click',
-                () => void presenter
-                    .persist()
-                    .then(() => renderAndBind(
-                        container, presenter,
-                    )),
             );
         }
     }
