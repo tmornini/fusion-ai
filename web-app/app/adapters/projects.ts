@@ -82,7 +82,8 @@ export class ProjectView {
     }
 
     get progress(): number {
-        return this.project.progress;
+        return this.project
+            .timelineProgress();
     }
 
     get startDate(): string {

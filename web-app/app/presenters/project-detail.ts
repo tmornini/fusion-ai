@@ -14,6 +14,7 @@ import {
 } from '../icons';
 import {
     initials, formatDate,
+    toDateInputValue,
 } from '../core';
 import type {
     ProjectView,
@@ -178,8 +179,10 @@ export class ProjectDetailPresenter {
                                         + 'date'
                                     }"
                                     value="${
-                                        this
-                                            .#startDate
+                                        toDateInputValue(
+                                            this
+                                                .#startDate,
+                                        )
                                     }"
                                     class="input"
                                     style="${
@@ -230,8 +233,10 @@ export class ProjectDetailPresenter {
                                         + 'end-date'
                                     }"
                                     value="${
-                                        this
-                                            .#targetEndDate
+                                        toDateInputValue(
+                                            this
+                                                .#targetEndDate,
+                                        )
                                     }"
                                     class="input"
                                     style="${
@@ -262,7 +267,7 @@ export class ProjectDetailPresenter {
                         <span class="${
                             'text-sm font-medium'
                         }">
-                            Overall Progress
+                            Schedule Progress
                         </span>
                         <span
                             class="${
@@ -958,7 +963,7 @@ export class ProjectDetailPresenter {
                                     this
                                         .#progress
                                 }%
-                                complete
+                                of schedule elapsed
                             </p>
                         </div>
                     </div>

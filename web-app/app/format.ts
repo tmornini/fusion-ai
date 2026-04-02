@@ -28,6 +28,13 @@ function formatDate(iso: string): string {
     });
 }
 
+function toDateInputValue(
+    iso: string,
+): string {
+    if (!iso) return '';
+    return iso.slice(0, 10);
+}
+
 function displayText(
     value: string,
 ): string {
@@ -39,6 +46,7 @@ export {
     formatDate,
     getTimeOfDay,
     initials,
+    toDateInputValue,
     durationInDays,
     formatCompactCurrency,
     SECONDS_PER_DAY,

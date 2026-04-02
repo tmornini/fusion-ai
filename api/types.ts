@@ -895,6 +895,34 @@ export class Project {
         );
     }
 
+    timelineProgress(): number {
+        if (this.status === 'completed')
+            return 100;
+        const start =
+            new Date(this.startDate);
+        const end =
+            new Date(this.targetEndDate);
+        if (
+            isNaN(start.getTime())
+            || isNaN(end.getTime())
+        ) return 0;
+        const total =
+            end.getTime()
+            - start.getTime();
+        if (total <= 0) return 0;
+        const elapsed =
+            Date.now() - start.getTime();
+        return Math.max(
+            0,
+            Math.min(
+                100,
+                Math.round(
+                    elapsed / total * 100,
+                ),
+            ),
+        );
+    }
+
     formattedCost(): string {
         return formatCompactCurrency(
             this.estimatedCost,
