@@ -5,6 +5,8 @@ import type { SafeHtml } from '../safe-html';
 import { showToast } from '../toast';
 import {
     iconArrowLeft,
+    iconUndo,
+    iconRedo,
 } from '../icons';
 import {
     putNode,
@@ -12,9 +14,11 @@ import {
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
-    deleteNode,
-    deleteEdge,
-    deleteField,
+    deleteNodeCapture,
+    deleteEdgeCapture,
+    deleteFieldCapture,
+    executeUndoSteps,
+    getFlowGraph,
 } from '../adapters';
 import type {
     GraphNode,
@@ -22,6 +26,8 @@ import type {
     GraphField,
     FlowGraph,
 } from '../adapters/flows';
+import { UndoManager } from '../flow-undo';
+import type { UndoStep } from '../flow-undo';
 import {
     buildGraphSvg,
 } from '../flow-graph';
@@ -55,6 +61,7 @@ export class FlowDesignerPresenter {
     #state: DesignerState;
     #canvasW: number;
     #canvasH: number;
+    #undo: UndoManager;
 
     constructor(
         graph: FlowGraph,
@@ -63,6 +70,9 @@ export class FlowDesignerPresenter {
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
+        this.#undo = new UndoManager(
+            executeUndoSteps,
+        );
         const interaction =
             createInteractionState(
                 canvasW, canvasH,
@@ -77,6 +87,43 @@ export class FlowDesignerPresenter {
             interaction,
         };
         this.#applyZoomToFit();
+    }
+
+    canUndo(): boolean {
+        return this.#undo.canUndo();
+    }
+
+    canRedo(): boolean {
+        return this.#undo.canRedo();
+    }
+
+    async performUndo(): Promise<boolean> {
+        const action =
+            await this.#undo.undo();
+        if (!action) return false;
+        await this.#refreshState();
+        return true;
+    }
+
+    async performRedo(): Promise<boolean> {
+        const action =
+            await this.#undo.redo();
+        if (!action) return false;
+        await this.#refreshState();
+        return true;
+    }
+
+    async #refreshState(): Promise<void> {
+        const graph = await getFlowGraph(
+            this.#state.flowId,
+        );
+        if (!graph) return;
+        this.#state.nodes = graph.nodes;
+        this.#state.edges = graph.edges;
+        this.#state.interaction
+            .selectedNodeId = null;
+        this.#state.interaction
+            .selectedEdgeId = null;
     }
 
     selectedNodeId(): string | null {
@@ -153,8 +200,31 @@ ${panel}
             n => n.id === nodeId,
         );
         if (!node) return;
+        const oldX = node.positionX;
+        const oldY = node.positionY;
         node.positionX = x;
         node.positionY = y;
+        const resource =
+            `wf-nodes/${nodeId}`;
+        this.#undo.push({
+            type: 'move-node',
+            forward: [{
+                op: 'put',
+                resource,
+                body: {
+                    position_x: x,
+                    position_y: y,
+                },
+            }],
+            reverse: [{
+                op: 'put',
+                resource,
+                body: {
+                    position_x: oldX,
+                    position_y: oldY,
+                },
+            }],
+        });
         void putNode(nodeId, {
             position_x: x,
             position_y: y,
@@ -167,9 +237,12 @@ ${panel}
             * (NODE_WIDTH + 120);
         const y = START_Y + 100;
         const nodeId = crypto.randomUUID();
+        const flowNodeId =
+            crypto.randomUUID();
         try {
             await postNodeAddition({
                 nodeId,
+                flowNodeId,
                 flowId:
                     this.#state.flowId,
                 name: 'New State',
@@ -193,7 +266,23 @@ ${panel}
             isComplete: false,
             fields: [],
         });
-
+        this.#undo.push({
+            type: 'add-node',
+            forward: [],
+            reverse: [
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-flow-nodes/'
+                        + flowNodeId,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        `wf-nodes/${nodeId}`,
+                },
+            ],
+        });
         return true;
     }
 
@@ -202,9 +291,12 @@ ${panel}
         toId: string,
     ): Promise<boolean> {
         const edgeId = crypto.randomUUID();
+        const nodeEdgeId =
+            crypto.randomUUID();
         try {
             await postEdgeConnection({
                 edgeId,
+                nodeEdgeId,
                 name: 'Transition',
                 fromNodeId: fromId,
                 toNodeId: toId,
@@ -223,7 +315,23 @@ ${panel}
             fromNodeId: fromId,
             toNodeId: toId,
         });
-
+        this.#undo.push({
+            type: 'add-edge',
+            forward: [],
+            reverse: [
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-node-edges/'
+                        + nodeEdgeId,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        `wf-edges/${edgeId}`,
+                },
+            ],
+        });
         return true;
     }
 
@@ -235,10 +343,29 @@ ${panel}
                 .selectedNodeId;
         if (nodeId === null) return false;
         try {
-            await deleteNode(
-                nodeId,
-                this.#state.flowId,
-            );
+            const capture =
+                await deleteNodeCapture(
+                    nodeId,
+                    this.#state.flowId,
+                );
+            this.#undo.push({
+                type: 'delete-node',
+                forward: capture.deleteSteps,
+                reverse:
+                    capture.restoreSteps,
+            });
+            this.#state.nodes =
+                this.#state.nodes.filter(
+                    n => n.id !== nodeId,
+                );
+            this.#state.edges =
+                this.#state.edges.filter(
+                    e =>
+                        e.fromNodeId
+                            !== nodeId
+                        && e.toNodeId
+                            !== nodeId,
+                );
         } catch {
             showToast(
                 'Failed to delete state',
@@ -246,19 +373,9 @@ ${panel}
             );
             return false;
         }
-        this.#state.nodes =
-            this.#state.nodes.filter(
-                n => n.id !== nodeId,
-            );
-        this.#state.edges =
-            this.#state.edges.filter(
-                e => e.fromNodeId !== nodeId
-                    && e.toNodeId !== nodeId,
-            );
         this.#state
             .interaction
             .selectedNodeId = null;
-
         return true;
     }
 
@@ -270,7 +387,20 @@ ${panel}
                 .selectedEdgeId;
         if (edgeId === null) return false;
         try {
-            await deleteEdge(edgeId);
+            const capture =
+                await deleteEdgeCapture(
+                    edgeId,
+                );
+            this.#undo.push({
+                type: 'delete-edge',
+                forward: capture.deleteSteps,
+                reverse:
+                    capture.restoreSteps,
+            });
+            this.#state.edges =
+                this.#state.edges.filter(
+                    e => e.id !== edgeId,
+                );
         } catch {
             showToast(
                 'Failed to delete transition',
@@ -278,18 +408,23 @@ ${panel}
             );
             return false;
         }
-        this.#state.edges =
-            this.#state.edges.filter(
-                e => e.id !== edgeId,
-            );
         this.#state
             .interaction
             .selectedEdgeId = null;
-
         return true;
     }
 
     relayout(): void {
+        const oldPositions: UndoStep[] =
+            this.#state.nodes.map(n => ({
+                op: 'put' as const,
+                resource:
+                    `wf-nodes/${n.id}`,
+                body: {
+                    position_x: n.positionX,
+                    position_y: n.positionY,
+                },
+            }));
         const layoutInputs =
             this.#state.nodes.map(
                 n => ({
@@ -309,6 +444,7 @@ ${panel}
             layoutInputs, layoutEdges,
             this.#canvasW, this.#canvasH,
         );
+        const newPositions: UndoStep[] = [];
         for (
             const node of this.#state.nodes
         ) {
@@ -317,11 +453,25 @@ ${panel}
             if (!pos) continue;
             node.positionX = pos.x;
             node.positionY = pos.y;
+            newPositions.push({
+                op: 'put',
+                resource:
+                    `wf-nodes/${node.id}`,
+                body: {
+                    position_x: pos.x,
+                    position_y: pos.y,
+                },
+            });
             void putNode(node.id, {
                 position_x: pos.x,
                 position_y: pos.y,
             });
         }
+        this.#undo.push({
+            type: 'relayout',
+            forward: newPositions,
+            reverse: oldPositions,
+        });
     }
 
     updateNodeName(
@@ -336,7 +486,21 @@ ${panel}
             n => n.id === nodeId,
         );
         if (!node) return;
+        const oldName = node.name;
         node.name = name;
+        const resource =
+            `wf-nodes/${nodeId}`;
+        this.#undo.push({
+            type: 'update-node-name',
+            forward: [{
+                op: 'put', resource,
+                body: { name },
+            }],
+            reverse: [{
+                op: 'put', resource,
+                body: { name: oldName },
+            }],
+        });
         void putNode(nodeId, { name });
     }
 
@@ -352,7 +516,23 @@ ${panel}
             n => n.id === nodeId,
         );
         if (!node) return;
+        const oldDesc = node.description;
         node.description = desc;
+        const resource =
+            `wf-nodes/${nodeId}`;
+        this.#undo.push({
+            type: 'update-node-desc',
+            forward: [{
+                op: 'put', resource,
+                body: { description: desc },
+            }],
+            reverse: [{
+                op: 'put', resource,
+                body: {
+                    description: oldDesc,
+                },
+            }],
+        });
         void putNode(
             nodeId, { description: desc },
         );
@@ -370,7 +550,21 @@ ${panel}
             e => e.id === edgeId,
         );
         if (!edge) return;
+        const oldName = edge.name;
         edge.name = name;
+        const resource =
+            `wf-edges/${edgeId}`;
+        this.#undo.push({
+            type: 'update-edge-name',
+            forward: [{
+                op: 'put', resource,
+                body: { name },
+            }],
+            reverse: [{
+                op: 'put', resource,
+                body: { name: oldName },
+            }],
+        });
         void putWfEdge(edgeId, { name });
     }
 
@@ -386,7 +580,23 @@ ${panel}
             e => e.id === edgeId,
         );
         if (!edge) return;
+        const oldDesc = edge.description;
         edge.description = desc;
+        const resource =
+            `wf-edges/${edgeId}`;
+        this.#undo.push({
+            type: 'update-edge-desc',
+            forward: [{
+                op: 'put', resource,
+                body: { description: desc },
+            }],
+            reverse: [{
+                op: 'put', resource,
+                body: {
+                    description: oldDesc,
+                },
+            }],
+        });
         void putWfEdge(
             edgeId, { description: desc },
         );
@@ -409,9 +619,12 @@ ${panel}
         if (!node) return false;
         const sortOrder = node.fields.length;
         const fieldId = crypto.randomUUID();
+        const nodeFieldId =
+            crypto.randomUUID();
         try {
             await postFieldAddition({
                 fieldId,
+                nodeFieldId,
                 nodeId,
                 name,
                 fieldType,
@@ -434,7 +647,24 @@ ${panel}
             isRequired,
             options,
         });
-
+        this.#undo.push({
+            type: 'add-field',
+            forward: [],
+            reverse: [
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-node-fields/'
+                        + nodeFieldId,
+                },
+                {
+                    op: 'delete',
+                    resource:
+                        'wf-fields/'
+                        + fieldId,
+                },
+            ],
+        });
         return true;
     }
 
@@ -447,9 +677,26 @@ ${panel}
                 .selectedNodeId;
         if (nodeId === null) return false;
         try {
-            await deleteField(
-                fieldId, nodeId,
-            );
+            const capture =
+                await deleteFieldCapture(
+                    fieldId, nodeId,
+                );
+            this.#undo.push({
+                type: 'delete-field',
+                forward: capture.deleteSteps,
+                reverse:
+                    capture.restoreSteps,
+            });
+            const node =
+                this.#state.nodes.find(
+                    n => n.id === nodeId,
+                );
+            if (node) {
+                node.fields =
+                    node.fields.filter(
+                        f => f.id !== fieldId,
+                    );
+            }
         } catch {
             showToast(
                 'Failed to delete field',
@@ -457,16 +704,6 @@ ${panel}
             );
             return false;
         }
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (node) {
-            node.fields =
-                node.fields.filter(
-                    f => f.id !== fieldId,
-                );
-        }
-
         return true;
     }
 
@@ -519,6 +756,22 @@ class="wf-toolbar">
     class="btn btn-ghost btn-icon"
     id="flow-back-btn"
     >${iconArrowLeft(20, '')}</button>
+</div>
+<div class="wf-toolbar-group">
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="undo"${
+    trusted(
+        this.#undo.canUndo()
+            ? '' : ' disabled',
+    )}>${iconUndo(18, '')}</button>
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="redo"${
+    trusted(
+        this.#undo.canRedo()
+            ? '' : ' disabled',
+    )}>${iconRedo(18, '')}</button>
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-primary btn-sm"

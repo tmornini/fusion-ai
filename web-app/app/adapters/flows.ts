@@ -18,6 +18,9 @@ import {
     jsonArrayField,
 } from '../../../api/types';
 import { parseJson } from './helpers';
+import type {
+    UndoStep,
+} from '../flow-undo';
 
 const DEFAULT_START_NAME = 'New';
 const DEFAULT_COMPLETE_NAME = 'Complete';
@@ -393,6 +396,7 @@ export interface FlowCreationContext {
 
 export interface NodeAdditionContext {
     nodeId: string;
+    flowNodeId: string;
     flowId: string;
     name: string;
     positionX: number;
@@ -401,6 +405,7 @@ export interface NodeAdditionContext {
 
 export interface EdgeConnectionContext {
     edgeId: string;
+    nodeEdgeId: string;
     name: string;
     fromNodeId: string;
     toNodeId: string;
@@ -408,6 +413,7 @@ export interface EdgeConnectionContext {
 
 export interface FieldAdditionContext {
     fieldId: string;
+    nodeFieldId: string;
     nodeId: string;
     name: string;
     fieldType: string;
@@ -497,7 +503,7 @@ export async function postNodeAddition(
     await POST<void>(
         'wf-flow-nodes',
         {
-            id: crypto.randomUUID(),
+            id: ctx.flowNodeId,
             flow_id: ctx.flowId,
             node_id: ctx.nodeId,
             created_at: now,
@@ -518,7 +524,7 @@ export async function postEdgeConnection(
     });
 
     await POST<void>('wf-node-edges', {
-        id: crypto.randomUUID(),
+        id: ctx.nodeEdgeId,
         wf_edge_id: ctx.edgeId,
         from_node_id: ctx.fromNodeId,
         to_node_id: ctx.toNodeId,
@@ -544,7 +550,7 @@ export async function postFieldAddition(
     });
 
     await POST<void>('wf-node-fields', {
-        id: crypto.randomUUID(),
+        id: ctx.nodeFieldId,
         node_id: ctx.nodeId,
         field_id: ctx.fieldId,
         created_at: now,
@@ -726,4 +732,249 @@ export async function deleteField(
     }
 
     await Promise.all(deletePromises);
+}
+
+export interface NodeDeletionCapture {
+    restoreSteps: UndoStep[];
+    deleteSteps: UndoStep[];
+    removedEdgeIds: string[];
+}
+
+export async function deleteNodeCapture(
+    nodeId: string,
+    flowId: string,
+): Promise<NodeDeletionCapture> {
+    const [
+        nodeEdges, flowNodes,
+        allNodes, allEdges,
+    ] = await Promise.all([
+        GET<WfNodeEdgeEntity[]>(
+            'wf-node-edges',
+        ),
+        GET<WfFlowNodeEntity[]>(
+            'wf-flow-nodes',
+        ),
+        GET<WfNodeEntity[]>('wf-nodes'),
+        GET<WfEdgeEntity[]>('wf-edges'),
+    ]);
+
+    const node = allNodes.find(
+        n => n.id === nodeId,
+    );
+    const flowNodeLink = flowNodes.find(
+        wn =>
+            wn.flow_id === flowId
+            && wn.node_id === nodeId,
+    );
+    const affected = nodeEdges.filter(
+        ne =>
+            ne.from_node_id === nodeId
+            || ne.to_node_id === nodeId,
+    );
+
+    const restoreSteps: UndoStep[] = [];
+    const deleteSteps: UndoStep[] = [];
+    const removedEdgeIds: string[] = [];
+
+    if (node) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-nodes',
+            body: { ...node },
+        });
+    }
+    if (flowNodeLink) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-flow-nodes',
+            body: { ...flowNodeLink },
+        });
+    }
+
+    for (const ne of affected) {
+        const edge = allEdges.find(
+            e => e.id === ne.wf_edge_id,
+        );
+        if (edge) {
+            restoreSteps.push({
+                op: 'post',
+                resource: 'wf-edges',
+                body: { ...edge },
+            });
+            removedEdgeIds.push(edge.id);
+        }
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-node-edges',
+            body: { ...ne },
+        });
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                `wf-node-edges/${ne.id}`,
+        });
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                'wf-edges/'
+                + ne.wf_edge_id,
+        });
+    }
+
+    if (flowNodeLink) {
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                'wf-flow-nodes/'
+                + flowNodeLink.id,
+        });
+    }
+    deleteSteps.push({
+        op: 'delete',
+        resource: `wf-nodes/${nodeId}`,
+    });
+
+    await executeUndoSteps(deleteSteps);
+    return {
+        restoreSteps,
+        deleteSteps,
+        removedEdgeIds,
+    };
+}
+
+export interface EdgeDeletionCapture {
+    restoreSteps: UndoStep[];
+    deleteSteps: UndoStep[];
+}
+
+export async function deleteEdgeCapture(
+    edgeId: string,
+): Promise<EdgeDeletionCapture> {
+    const [nodeEdges, allEdges] =
+        await Promise.all([
+            GET<WfNodeEdgeEntity[]>(
+                'wf-node-edges',
+            ),
+            GET<WfEdgeEntity[]>('wf-edges'),
+        ]);
+
+    const edge = allEdges.find(
+        e => e.id === edgeId,
+    );
+    const link = nodeEdges.find(
+        ne => ne.wf_edge_id === edgeId,
+    );
+
+    const restoreSteps: UndoStep[] = [];
+    const deleteSteps: UndoStep[] = [];
+
+    if (edge) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-edges',
+            body: { ...edge },
+        });
+    }
+    if (link) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-node-edges',
+            body: { ...link },
+        });
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                `wf-node-edges/${link.id}`,
+        });
+    }
+    deleteSteps.push({
+        op: 'delete',
+        resource: `wf-edges/${edgeId}`,
+    });
+
+    await executeUndoSteps(deleteSteps);
+    return { restoreSteps, deleteSteps };
+}
+
+export interface FieldDeletionCapture {
+    restoreSteps: UndoStep[];
+    deleteSteps: UndoStep[];
+}
+
+export async function deleteFieldCapture(
+    fieldId: string,
+    nodeId: string,
+): Promise<FieldDeletionCapture> {
+    const [nodeFields, allFields] =
+        await Promise.all([
+            GET<WfNodeFieldEntity[]>(
+                'wf-node-fields',
+            ),
+            GET<WfFieldEntity[]>(
+                'wf-fields',
+            ),
+        ]);
+
+    const field = allFields.find(
+        f => f.id === fieldId,
+    );
+    const link = nodeFields.find(
+        nf =>
+            nf.field_id === fieldId
+            && nf.node_id === nodeId,
+    );
+
+    const restoreSteps: UndoStep[] = [];
+    const deleteSteps: UndoStep[] = [];
+
+    if (field) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-fields',
+            body: { ...field },
+        });
+    }
+    if (link) {
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-node-fields',
+            body: { ...link },
+        });
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                `wf-node-fields/${link.id}`,
+        });
+    }
+    deleteSteps.push({
+        op: 'delete',
+        resource: `wf-fields/${fieldId}`,
+    });
+
+    await executeUndoSteps(deleteSteps);
+    return { restoreSteps, deleteSteps };
+}
+
+export async function executeUndoSteps(
+    steps: UndoStep[],
+): Promise<void> {
+    for (const step of steps) {
+        switch (step.op) {
+            case 'post':
+                await POST<void>(
+                    step.resource,
+                    step.body,
+                );
+                break;
+            case 'put':
+                await PUT(
+                    step.resource,
+                    step.body,
+                );
+                break;
+            case 'delete':
+                await DELETE(step.resource);
+                break;
+        }
+    }
 }

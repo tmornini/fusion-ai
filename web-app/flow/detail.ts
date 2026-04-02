@@ -91,6 +91,26 @@ function bindToolbarActions(
             'data-action',
         );
         if (!action) continue;
+        if (action === 'undo') {
+            btn.addEventListener(
+                'click',
+                () => void presenter
+                    .performUndo()
+                    .then(() => renderAndBind(
+                        container, presenter,
+                    )),
+            );
+        }
+        if (action === 'redo') {
+            btn.addEventListener(
+                'click',
+                () => void presenter
+                    .performRedo()
+                    .then(() => renderAndBind(
+                        container, presenter,
+                    )),
+            );
+        }
         if (action === 'add-state') {
             btn.addEventListener(
                 'click',
@@ -402,4 +422,49 @@ export async function init(
             graph, CANVAS_W, CANVAS_H,
         );
     renderAndBind(container, presenter);
+    bindKeyboardShortcuts(
+        container, presenter,
+    );
+}
+
+function bindKeyboardShortcuts(
+    container: HTMLElement,
+    presenter: FlowDesignerPresenter,
+): void {
+    document.addEventListener(
+        'keydown',
+        (e: KeyboardEvent) => {
+            const mod =
+                e.metaKey || e.ctrlKey;
+            if (!mod) return;
+            if (
+                e.key === 'z'
+                && !e.shiftKey
+            ) {
+                e.preventDefault();
+                void presenter
+                    .performUndo()
+                    .then(
+                        () => renderAndBind(
+                            container,
+                            presenter,
+                        ),
+                    );
+            }
+            if (
+                e.key === 'z'
+                && e.shiftKey
+            ) {
+                e.preventDefault();
+                void presenter
+                    .performRedo()
+                    .then(
+                        () => renderAndBind(
+                            container,
+                            presenter,
+                        ),
+                    );
+            }
+        },
+    );
 }
