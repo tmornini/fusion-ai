@@ -71,12 +71,15 @@ function buildDefs(): string {
         + ` markerWidth="${ARROW_MARKER}"`
         + ` markerHeight="${ARROW_MARKER}"`
         + ' orient="auto-start-reverse">';
+    const halfCell = GRID_CELL / 2;
     return '<defs>'
         + '<pattern id="wf-grid"'
         + ` width="${GRID_CELL}"`
         + ` height="${GRID_CELL}"`
         + ' patternUnits='
-        + '"userSpaceOnUse">'
+        + '"userSpaceOnUse"'
+        + ` patternTransform="translate(`
+        + `${-halfCell}, ${-halfCell})">`
         + `<circle cx="${gridCenter}"`
         + ` cy="${gridCenter}"`
         + ` r="${GRID_DOT_RADIUS}"`
@@ -111,17 +114,39 @@ function buildDefs(): string {
         + '</defs>';
 }
 
+const GRID_MIN_W = 1600;
+const GRID_MIN_H = 1000;
+
 function buildGrid(
-    w: number, h: number,
+    vbX: number,
+    vbY: number,
+    vbW: number,
+    vbH: number,
 ): string {
+    const gx = Math.min(
+        vbX, -GRID_MIN_W / 2,
+    );
+    const gy = Math.min(
+        vbY, -GRID_MIN_H / 2,
+    );
+    const gw = Math.max(
+        vbW, GRID_MIN_W,
+        vbX + vbW - gx,
+    );
+    const gh = Math.max(
+        vbH, GRID_MIN_H,
+        vbY + vbH - gy,
+    );
     return '<rect'
-        + ` width="${w}"`
-        + ` height="${h}"`
+        + ` x="${gx}" y="${gy}"`
+        + ` width="${gw}"`
+        + ` height="${gh}"`
         + ' fill="var('
         + '--color-surface, #1a1f2e)"/>'
         + '<rect'
-        + ` width="${w}"`
-        + ` height="${h}"`
+        + ` x="${gx}" y="${gy}"`
+        + ` width="${gw}"`
+        + ` height="${gh}"`
         + ' fill="url(#wf-grid)"/>';
 }
 
@@ -505,7 +530,10 @@ export function buildGraphSvg(
         + ' height="100%"'
         + ' style="display:block">'
         + buildDefs()
-        + buildGrid(viewBoxW, viewBoxH)
+        + buildGrid(
+            viewBoxX, viewBoxY,
+            viewBoxW, viewBoxH,
+        )
         + edgeMarkup
         + nodeMarkup
         + '</svg>',

@@ -54,8 +54,8 @@ export function createInteractionState(
         panStartX: 0,
         panStartY: 0,
         viewBox: {
-            x: 0,
-            y: 0,
+            x: -viewBoxW / 2,
+            y: -viewBoxH / 2,
             w: viewBoxW,
             h: viewBoxH,
         },

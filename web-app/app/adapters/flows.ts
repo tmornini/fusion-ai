@@ -24,10 +24,10 @@ import type {
 
 const DEFAULT_START_NAME = 'New';
 const DEFAULT_COMPLETE_NAME = 'Complete';
-const DEFAULT_START_X = 40;
-const DEFAULT_START_Y = 30;
-const DEFAULT_COMPLETE_X = 680;
-const DEFAULT_COMPLETE_Y = 370;
+const DEFAULT_START_X = -300;
+const DEFAULT_START_Y = 0;
+const DEFAULT_COMPLETE_X = 300;
+const DEFAULT_COMPLETE_Y = 200;
 
 export interface FlowListItem {
     id: string;

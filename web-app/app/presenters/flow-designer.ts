@@ -88,6 +88,7 @@ export class FlowDesignerPresenter {
             edges: graph.edges,
             interaction,
         };
+        this.#migrateToCenter();
         this.#applyZoomToFit();
     }
 
@@ -126,6 +127,31 @@ export class FlowDesignerPresenter {
             .selectedNodeId = null;
         this.#state.interaction
             .selectedEdgeId = null;
+    }
+
+    #migrateToCenter(): void {
+        const nodes = this.#state.nodes;
+        if (nodes.length === 0) return;
+        let sumX = 0;
+        let sumY = 0;
+        for (const n of nodes) {
+            sumX += n.positionX;
+            sumY += n.positionY;
+        }
+        const cx = sumX / nodes.length;
+        const cy = sumY / nodes.length;
+        if (
+            Math.abs(cx) <= 1
+            && Math.abs(cy) <= 1
+        ) return;
+        for (const n of nodes) {
+            n.positionX -= cx;
+            n.positionY -= cy;
+            void putNode(n.id, {
+                position_x: n.positionX,
+                position_y: n.positionY,
+            });
+        }
     }
 
     selectedNodeId(): string | null {
