@@ -174,24 +174,23 @@ export class FlowDesignerPresenter {
         return this.#state.interaction;
     }
 
-    initDragPositions(): void {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return;
-        for (const node of this.#state.nodes) {
-            if (node.id !== nodeId) continue;
-            this.#state
-                .interaction
-                .dragCurrentX =
-                    node.positionX;
-            this.#state
-                .interaction
-                .dragCurrentY =
-                    node.positionY;
-            break;
-        }
+    getNodePosition(id: string): {
+        x: number;
+        y: number;
+        isDraggable: boolean;
+    } | null {
+        const node =
+            this.#state.nodes.find(
+                n => n.id === id,
+            );
+        if (!node) return null;
+        return {
+            x: node.positionX,
+            y: node.positionY,
+            isDraggable:
+                !node.isStart
+                && !node.isComplete,
+        };
     }
 
     render(
@@ -321,6 +320,30 @@ ${dialog}`;
         fromId: string,
         toId: string,
     ): Promise<boolean> {
+        const from =
+            this.#state.nodes.find(
+                n => n.id === fromId,
+            );
+        const to =
+            this.#state.nodes.find(
+                n => n.id === toId,
+            );
+        if (from?.isComplete) {
+            showToast(
+                'Cannot create transition'
+                + ' from end state',
+                'error',
+            );
+            return false;
+        }
+        if (to?.isStart) {
+            showToast(
+                'Cannot create transition'
+                + ' to start state',
+                'error',
+            );
+            return false;
+        }
         const edgeId = crypto.randomUUID();
         const nodeEdgeId =
             crypto.randomUUID();
@@ -373,6 +396,14 @@ ${dialog}`;
                 .interaction
                 .selectedNodeId;
         if (nodeId === null) return false;
+        const target =
+            this.#state.nodes.find(
+                n => n.id === nodeId,
+            );
+        if (
+            target?.isStart
+            || target?.isComplete
+        ) return false;
         try {
             const capture =
                 await deleteNodeCapture(
@@ -1080,12 +1111,30 @@ Required</label>
     ): SafeHtml {
         const isSpecial =
             node.isStart || node.isComplete;
-        const deleteBtn = isSpecial
-            ? html``
-            : html`<button
-class="btn btn-destructive btn-sm mt-4"
-data-action="delete-node"
->Delete State</button>`;
+        if (isSpecial) {
+            const kind = node.isStart
+                ? 'Start' : 'End';
+            return html`<div
+class="wf-props-panel">
+<h3 class="text-sm font-semibold mb-3"
+    >${kind} State</h3>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Name</label>
+<div class="text-sm">${node.name}</div>
+</div>
+<div class="mb-3">
+<label class="text-xs text-muted"
+    >Outgoing Transitions</label>
+${outgoing.length > 0
+    ? outgoing.map(e => html`<div
+class="text-sm text-muted"
+>\u2192 ${e.name}</div>`)
+    : html`<div class="text-sm text-muted"
+        >None</div>`}
+</div>
+</div>`;
+        }
         const fieldRows = node.fields
             .map(f => this.#buildFieldRow(f));
         return html`<div
@@ -1128,7 +1177,10 @@ class="text-sm text-muted"
     : html`<div class="text-sm text-muted"
         >None</div>`}
 </div>
-${deleteBtn}
+<button
+class="btn btn-destructive btn-sm mt-4"
+data-action="delete-node"
+>Delete State</button>
 </div>`;
     }
 

@@ -246,13 +246,17 @@ function buildNode(
         + escapeForHtml(meta)
         + '</text>';
 
-    inner += buildPort(
-        0, halfH, borderColor, 'left',
-    );
-    inner += buildPort(
-        NODE_WIDTH, halfH,
-        borderColor, 'right',
-    );
+    if (!node.isStart) {
+        inner += buildPort(
+            0, halfH, borderColor, 'left',
+        );
+    }
+    if (!node.isComplete) {
+        inner += buildPort(
+            NODE_WIDTH, halfH,
+            borderColor, 'right',
+        );
+    }
 
     if (!node.isStart && !node.isComplete) {
         inner += buildPort(

@@ -61,10 +61,11 @@ function bindSvgInteractions(
         'svg.wf-canvas',
     ) as SVGSVGElement | null;
     if (!svg) return;
-    presenter.initDragPositions();
+    const state =
+        presenter.interactionState();
     bindInteractions(
         svg,
-        presenter.interactionState(),
+        state,
         () => renderAndBind(
             container, presenter,
         ),
@@ -83,7 +84,26 @@ function bindSvgInteractions(
                     container, presenter,
                 ));
         },
+        (id) =>
+            presenter.getNodePosition(id),
     );
+    if (
+        (state.isDragging
+            || state.isConnecting
+            || state.isPanning)
+        && state.activePointerId > 0
+    ) {
+        try {
+            svg.setPointerCapture(
+                state.activePointerId,
+            );
+        } catch {
+            state.isDragging = false;
+            state.isConnecting = false;
+            state.isPanning = false;
+            state.dragNodeId = null;
+        }
+    }
 }
 
 function bindToolbarActions(
