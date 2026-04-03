@@ -21,6 +21,10 @@ import { parseJson } from './helpers';
 import type {
     UndoStep,
 } from '../flow-undo';
+import {
+    generateMermaid,
+} from '../mermaid-generate';
+import { buildZip } from '../mermaid-zip';
 
 const DEFAULT_START_NAME = 'New';
 const DEFAULT_COMPLETE_NAME = 'Complete';
@@ -977,4 +981,129 @@ export async function executeUndoSteps(
                 break;
         }
     }
+}
+
+/* ── Mermaid export ──────────────── */
+
+export async function exportFlowMermaid(
+    flowId: string,
+): Promise<string> {
+    const graph =
+        await getFlowGraph(flowId);
+    if (!graph) {
+        throw new Error(
+            'Flow not found: ' + flowId,
+        );
+    }
+    return generateMermaid(graph);
+}
+
+interface SidecarField {
+    name: string;
+    fieldType: string;
+    sortOrder: number;
+    isRequired: boolean;
+    options: string[];
+}
+
+interface SidecarNode {
+    mermaidId: string;
+    name: string;
+    description: string;
+    positionX: number;
+    positionY: number;
+    isStart: boolean;
+    isComplete: boolean;
+    fields: SidecarField[];
+}
+
+interface SidecarEdge {
+    mermaidFrom: string;
+    mermaidTo: string;
+    name: string;
+    description: string;
+}
+
+function sanitizeId(id: string): string {
+    return id.replaceAll('-', '_');
+}
+
+function buildSidecar(
+    graph: FlowGraph,
+): string {
+    const nodes: SidecarNode[] =
+        graph.nodes.map(n => ({
+            mermaidId: sanitizeId(n.id),
+            name: n.name,
+            description: n.description,
+            positionX: n.positionX,
+            positionY: n.positionY,
+            isStart: n.isStart,
+            isComplete: n.isComplete,
+            fields: n.fields.map(f => ({
+                name: f.name,
+                fieldType: f.fieldType,
+                sortOrder: f.sortOrder,
+                isRequired: f.isRequired,
+                options: f.options,
+            })),
+        }));
+    const edges: SidecarEdge[] =
+        graph.edges.map(e => ({
+            mermaidFrom:
+                sanitizeId(e.fromNodeId),
+            mermaidTo:
+                sanitizeId(e.toNodeId),
+            name: e.name,
+            description: e.description,
+        }));
+    return JSON.stringify({
+        version: 1,
+        name: graph.name,
+        description: graph.description,
+        nodes,
+        edges,
+    }, null, 2);
+}
+
+function buildFlowTxt(
+    flowId: string,
+): string {
+    return 'flowId: ' + flowId + '\n'
+        + 'exportedAt: ' + nowUtc() + '\n';
+}
+
+export async function exportFlowZip(
+    flowId: string,
+): Promise<{ data: Uint8Array; name: string }> {
+    const graph =
+        await getFlowGraph(flowId);
+    if (!graph) {
+        throw new Error(
+            'Flow not found: ' + flowId,
+        );
+    }
+
+    const enc = new TextEncoder();
+    const mmd =
+        enc.encode(generateMermaid(graph));
+    const json =
+        enc.encode(buildSidecar(graph));
+    const txt =
+        enc.encode(buildFlowTxt(flowId));
+
+    const data = buildZip([
+        { name: 'flow.txt', data: txt },
+        { name: 'flow.mmd', data: mmd },
+        { name: 'flow.json', data: json },
+    ]);
+
+    const safeName = graph.name
+        .replaceAll(/[^a-zA-Z0-9_-]/g, '-')
+        .toLowerCase();
+
+    return {
+        data,
+        name: safeName + '.zip',
+    };
 }
