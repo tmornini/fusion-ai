@@ -1408,27 +1408,19 @@ export async function importFlowFromZip(
         const se = sidecarEdgeMap.get(
             sidecarEdgeKey(e.fromId, e.toId),
         );
+        const edgeId = crypto.randomUUID();
         await postEdgeConnection({
-            edgeId: crypto.randomUUID(),
+            edgeId,
             nodeEdgeId: crypto.randomUUID(),
             name: e.name,
             fromNodeId: fromId,
             toNodeId: toId,
         });
         if (se?.description) {
-            const edgeEntities =
-                await GET<WfEdgeEntity[]>(
-                    'wf-edges',
-                );
-            const last = edgeEntities[
-                edgeEntities.length - 1
-            ];
-            if (last) {
-                await putWfEdge(last.id, {
-                    description:
-                        se.description,
-                });
-            }
+            await putWfEdge(edgeId, {
+                description:
+                    se.description,
+            });
         }
     }
 

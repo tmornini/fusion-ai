@@ -245,7 +245,8 @@ function inferStartEnd(
             edges.map(e => e.fromId),
         );
         const candidate = nodes.find(
-            n => !outgoing.has(n.mermaidId),
+            n => !outgoing.has(n.mermaidId)
+                && !n.isStart,
         );
         if (candidate) {
             candidate.isComplete = true;

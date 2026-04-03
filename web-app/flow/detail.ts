@@ -273,8 +273,8 @@ async function handleExportZip(
         const result =
             await exportFlowZip(flowId);
         const blob = new Blob(
-            [result.data as unknown as
-                ArrayBuffer],
+            [result.data as
+                unknown as ArrayBuffer],
             { type: 'application/zip' },
         );
         const url =
