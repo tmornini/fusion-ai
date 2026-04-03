@@ -7,7 +7,7 @@ import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
 import {
-    navigateTo, SECONDS_PER_DAY,
+    navigateTo,
 } from '../app/core';
 import {
     getProjectById, putProject,
@@ -90,13 +90,7 @@ function bindProjectEvents(
                     '#project-edit-end-date',
                     document,
                 )!.value;
-        const timeBaseline = Number(
-                $input(
-                    '#project-edit-time-baseline',
-                    document,
-                )!.value,
-        );
-        const costBaseline = Number(
+            const costBaseline = Number(
                 $input(
                     '#project-edit-cost-baseline',
                     document,
@@ -116,9 +110,6 @@ function bindProjectEvents(
                 start_date: startDate,
                 target_end_date:
                     targetEndDate,
-                estimated_duration:
-                    timeBaseline
-                    * SECONDS_PER_DAY,
                 estimated_cost:
                     costBaseline
                     * COST_DIVISOR,

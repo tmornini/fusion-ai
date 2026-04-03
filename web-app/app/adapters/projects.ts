@@ -7,6 +7,7 @@ import {
     Project,
     projectIsNotDeleted,
     COST_DIVISOR,
+    SECONDS_PER_DAY,
 } from '../../../api/types';
 import {
     buildUserMap,
@@ -104,13 +105,29 @@ export class ProjectView {
     }
 
     timeBaselineDays(): number {
-        return this.project
-            .estimatedDurationDays();
+        const start = new Date(
+            this.project.startDate,
+        ).getTime();
+        const end = new Date(
+            this.project.targetEndDate,
+        ).getTime();
+        if (isNaN(start) || isNaN(end))
+            return 0;
+        return Math.max(0, Math.ceil(
+            (end - start)
+            / (SECONDS_PER_DAY * 1000),
+        ));
     }
 
     timeCurrentDays(): number {
-        return this.project
-            .actualDurationDays();
+        const start = new Date(
+            this.project.startDate,
+        ).getTime();
+        if (isNaN(start)) return 0;
+        return Math.max(0, Math.ceil(
+            (Date.now() - start)
+            / (SECONDS_PER_DAY * 1000),
+        ));
     }
 
     costBaselineK(): number {

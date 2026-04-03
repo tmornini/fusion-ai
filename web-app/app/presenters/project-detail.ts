@@ -306,7 +306,7 @@ export class ProjectDetailPresenter {
                         'text-lg font-display '
                         + 'font-semibold'
                     }">
-                        Baseline vs Current
+                        Metrics
                     </h2>
                     <span class="${
                         'text-xs text-muted'
@@ -329,6 +329,7 @@ export class ProjectDetailPresenter {
                             unit: 'd',
                             prefix: '',
                             isLowerBetter: true,
+                            editable: false,
                         },
                         {
                             label: 'Cost',
@@ -343,6 +344,7 @@ export class ProjectDetailPresenter {
                             unit: 'k',
                             prefix: '$',
                             isLowerBetter: true,
+                            editable: true,
                         },
                         {
                             label: 'Impact',
@@ -357,6 +359,7 @@ export class ProjectDetailPresenter {
                             unit: ' pts',
                             prefix: '',
                             isLowerBetter: false,
+                            editable: true,
                         },
                     ].map(metric => html`
                         <div style="${
@@ -407,6 +410,8 @@ export class ProjectDetailPresenter {
                                         Baseline
                                     </span>
                                     ${isEditing
+                                        && metric
+                                            .editable
                                         ? html`<input
                                             type="${
                                                 'number'
