@@ -138,8 +138,16 @@ Added to `web-app/app/adapters/flows.ts`:
 Filename: `{flow-name}.zip`
 
 ```
+flow.txt          # Flow ID and export timestamp
 flow.mmd          # Clean Mermaid flowchart text
 flow.json         # Sidecar metadata
+```
+
+### `flow.txt`
+
+```
+flowId: wf-1
+exportedAt: 2026-04-03T12:00:00.000000Z
 ```
 
 ### `flow.json` Schema
