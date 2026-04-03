@@ -14,6 +14,8 @@ import {
 } from '../app/core';
 import {
     getFlowGraph,
+    exportFlowMermaid,
+    exportFlowZip,
 } from '../app/adapters';
 import {
     bindInteractions,
@@ -223,6 +225,75 @@ function bindToolbarActions(
                 },
             );
         }
+        if (action === 'copy-mermaid') {
+            btn.addEventListener(
+                'click',
+                () => void handleCopyMermaid(
+                    presenter,
+                ),
+            );
+        }
+        if (action === 'export-zip') {
+            btn.addEventListener(
+                'click',
+                () => void handleExportZip(
+                    presenter,
+                ),
+            );
+        }
+    }
+}
+
+async function handleCopyMermaid(
+    presenter: FlowDesignerPresenter,
+): Promise<void> {
+    try {
+        const flowId = presenter.flowId();
+        const text =
+            await exportFlowMermaid(flowId);
+        await navigator.clipboard
+            .writeText(text);
+        showToast(
+            'Mermaid copied to clipboard',
+            'success',
+        );
+    } catch {
+        showToast(
+            'Failed to copy Mermaid',
+            'error',
+        );
+    }
+}
+
+async function handleExportZip(
+    presenter: FlowDesignerPresenter,
+): Promise<void> {
+    try {
+        const flowId = presenter.flowId();
+        const result =
+            await exportFlowZip(flowId);
+        const blob = new Blob(
+            [result.data as unknown as
+                ArrayBuffer],
+            { type: 'application/zip' },
+        );
+        const url =
+            URL.createObjectURL(blob);
+        const a =
+            document.createElement('a');
+        a.href = url;
+        a.download = result.name;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(
+            'Flow exported',
+            'success',
+        );
+    } catch {
+        showToast(
+            'Failed to export flow',
+            'error',
+        );
     }
 }
 

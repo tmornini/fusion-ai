@@ -1008,6 +1008,14 @@ class="wf-toolbar">
     data-action="fit">Fit</button>
 </div>
 <div class="wf-toolbar-group">
+<button class="btn btn-ghost btn-sm"
+    data-action="copy-mermaid"
+    >Copy Mermaid</button>
+<button class="btn btn-ghost btn-sm"
+    data-action="export-zip"
+    >Export .zip</button>
+</div>
+<div class="wf-toolbar-group">
 <span class="text-muted text-sm"
     >${stats}</span>
 </div>
