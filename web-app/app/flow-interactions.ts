@@ -285,7 +285,10 @@ function handlePointerUp(
         state.isConnecting
         && state.connectFromNodeId
     ) {
-        const target = e.target;
+        const target =
+            document.elementFromPoint(
+                e.clientX, e.clientY,
+            );
         if (target instanceof Element) {
             const portAttr = target
                 .getAttribute('data-port');

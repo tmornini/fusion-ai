@@ -190,9 +190,7 @@ export class FlowDesignerPresenter {
         return {
             x: node.positionX,
             y: node.positionY,
-            isDraggable:
-                !node.isStart
-                && !node.isComplete,
+            isDraggable: !node.isStart,
         };
     }
 
