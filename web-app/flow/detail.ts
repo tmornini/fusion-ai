@@ -197,6 +197,9 @@ function bindPanelActions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
+    bindClosePanelAction(
+        container, presenter,
+    );
     bindNodePanelInputs(
         container, presenter,
     );
@@ -208,6 +211,26 @@ function bindPanelActions(
     );
     bindFieldActions(
         container, presenter,
+    );
+}
+
+function bindClosePanelAction(
+    container: HTMLElement,
+    presenter: FlowDesignerPresenter,
+): void {
+    const btn = container.querySelector(
+        '[data-action="close-panel"]',
+    );
+    if (!btn) return;
+    btn.addEventListener(
+        'click',
+        () => {
+            presenter.interactionState()
+                .isPanelOpen = false;
+            renderAndBind(
+                container, presenter,
+            );
+        },
     );
 }
 
@@ -562,6 +585,21 @@ function bindKeyboardShortcuts(
     document.addEventListener(
         'keydown',
         (e: KeyboardEvent) => {
+            if (
+                e.key === 'Escape'
+                && presenter
+                    .interactionState()
+                    .isPanelOpen
+            ) {
+                e.preventDefault();
+                presenter
+                    .interactionState()
+                    .isPanelOpen = false;
+                renderAndBind(
+                    container, presenter,
+                );
+                return;
+            }
             const mod =
                 e.metaKey || e.ctrlKey;
             if (!mod) return;
