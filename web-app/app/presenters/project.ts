@@ -131,6 +131,14 @@ export class ProjectPresenter {
         const statusIcon = STATUS_ICONS[
             this.#status
         ]!;
+        const metricBoxStyle =
+            'width:2rem;height:2rem;'
+            + 'border-radius:0.5rem;'
+            + 'background:'
+            + 'hsl(var(--primary)/0.1);'
+            + 'display:flex;'
+            + 'align-items:center;'
+            + 'justify-content:center';
         return html`
     <div class="card card-hover"
         style="padding:1.25rem"
@@ -188,7 +196,9 @@ export class ProjectPresenter {
                         }</span>`
                     : html``}
             </div>
-            ${this.#buildMetrics()}
+            ${this.#buildMetrics(
+                metricBoxStyle,
+            )}
             ${this.#buildProgressRing()}
         </div>
     </div>`;
@@ -243,46 +253,82 @@ export class ProjectPresenter {
     </div>`;
     }
 
-    #buildMetrics(): SafeHtml {
+    #buildMetrics(
+        boxStyle: string,
+    ): SafeHtml {
         const tb = this.#timeBaselineDays;
         const tc = this.#timeCurrentDays;
         const cb = this.#costBaselineK;
         const cc = this.#costCurrentK;
         const ib = this.#impactBaseline;
         const ic = this.#impactCurrent;
-        const m = 'text-muted';
-        const cls =
-            'flex items-center gap-1'
-            + ' text-xs font-medium';
+        const m = 'text-xs text-muted';
         return html`
     <div class="${
         'hidden-mobile flex'
-        + ' items-center gap-3'
+        + ' items-center gap-4'
     }" style="flex-shrink:0">
-        <span class="${cls}">${
-            iconClock(14, m)
-        } ${tb
-            ? html`${tc}d <span
-                class="${m}"
-                >/ ${tb}d</span>`
-            : html`&mdash;`
-        }</span>
-        <span class="${cls}">${
-            iconDollarSign(14, m)
-        } ${cb
-            ? html`${'$' + cc}k <span
-                class="${m}"
-                >/ ${'$' + cb}k</span>`
-            : html`&mdash;`
-        }</span>
-        <span class="${cls}">${
-            iconTrendingUp(14, m)
-        } ${ib
-            ? html`${ic} <span
-                class="${m}"
-                >/ ${ib}</span>`
-            : html`&mdash;`
-        }</span>
+        <div class="${
+            'flex items-center gap-2'
+        }">
+            <div style="${boxStyle}">${
+                iconClock(
+                    16, 'text-primary',
+                )
+            }</div>
+            <div>
+                <p class="${m}">Time</p>
+                <p class="${
+                    'text-sm font-medium'
+                }">${tb
+                    ? html`${tc}d <span
+                        class="${m}"
+                        >/ ${tb}d</span>`
+                    : html`&mdash;`
+                }</p>
+            </div>
+        </div>
+        <div class="${
+            'flex items-center gap-2'
+        }">
+            <div style="${boxStyle}">${
+                iconDollarSign(
+                    16, 'text-primary',
+                )
+            }</div>
+            <div>
+                <p class="${m}">Cost</p>
+                <p class="${
+                    'text-sm font-medium'
+                }">${cb
+                    ? html`${'$' + cc}k
+                        <span class="${m}"
+                        >/ ${'$'
+                        + cb}k</span>`
+                    : html`&mdash;`
+                }</p>
+            </div>
+        </div>
+        <div class="${
+            'flex items-center gap-2'
+        }">
+            <div style="${boxStyle}">${
+                iconTrendingUp(
+                    16, 'text-primary',
+                )
+            }</div>
+            <div>
+                <p class="${m}">Impact</p>
+                <p class="${
+                    'text-sm font-medium'
+                }">${ib
+                    ? html`${ic} <span
+                        class="${m}"
+                        >/ ${ib}</span>`
+                    : html`&mdash;`
+                }</p>
+            </div>
+        </div>
     </div>`;
     }
 }
