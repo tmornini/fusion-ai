@@ -12,7 +12,7 @@ function sanitizeId(id: string): string {
 function quoteLabel(name: string): string {
     if (MERMAID_SPECIAL.test(name)) {
         const escaped =
-            name.replaceAll('"', '#quot;');
+            name.replaceAll('"', '&quot;');
         return '"' + escaped + '"';
     }
     return name;
