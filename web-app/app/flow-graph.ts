@@ -5,6 +5,7 @@ import type {
 } from './adapters/flows';
 import {
     NODE_WIDTH, NODE_HEIGHT,
+    buildAdjacency, assignRanks,
 } from './flow-layout';
 
 const BLUE = '#4B6CA1';
@@ -329,6 +330,7 @@ function buildEdge(
     toNode: GraphNode,
     isSelected: boolean,
     aimOffset: number,
+    isCycle: boolean,
 ): SafeHtml {
     const fromCx =
         fromNode.positionX
@@ -342,10 +344,6 @@ function buildEdge(
     const toCy =
         toNode.positionY
         + NODE_HEIGHT / 2;
-
-    const isCycle =
-        toNode.positionX
-            <= fromNode.positionX;
 
     let pathD: string;
     let color: string;
@@ -565,6 +563,38 @@ export function buildGraphSvg(
         nodes.map(n => [n.id, n]),
     );
 
+    const startNode =
+        nodes.find(n => n.isStart);
+    const startId =
+        startNode?.id
+        ?? nodes[0]?.id ?? '';
+    const adj = buildAdjacency(
+        edges.map(e => ({
+            fromId: e.fromNodeId,
+            toId: e.toNodeId,
+        })),
+    );
+    const allIds =
+        nodes.map(n => n.id);
+    const ranks = assignRanks(
+        startId, adj, allIds,
+    );
+    const cycleEdgeIds =
+        new Set<string>();
+    for (const edge of edges) {
+        const fromRank =
+            ranks.get(edge.fromNodeId);
+        const toRank =
+            ranks.get(edge.toNodeId);
+        if (
+            fromRank !== undefined
+            && toRank !== undefined
+            && toRank <= fromRank
+        ) {
+            cycleEdgeIds.add(edge.id);
+        }
+    }
+
     const pairKey = (
         a: string, b: string,
     ): string =>
@@ -612,6 +642,9 @@ export function buildGraphSvg(
                 toNode,
                 isSelected,
                 aimOffset,
+                cycleEdgeIds.has(
+                    edge.id,
+                ),
             ).toString();
     }
 

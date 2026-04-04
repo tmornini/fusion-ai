@@ -21,7 +21,7 @@ const GRID_MAX_H = 4000;
 const HALF_MAX_W = GRID_MAX_W / 2;
 const HALF_MAX_H = GRID_MAX_H / 2;
 
-function buildAdjacency(
+export function buildAdjacency(
     edges: LayoutEdge[],
 ): Map<string, string[]> {
     const adj = new Map<string, string[]>();
@@ -36,7 +36,7 @@ function buildAdjacency(
     return adj;
 }
 
-function assignRanks(
+export function assignRanks(
     startId: string,
     adj: Map<string, string[]>,
     allIds: string[],
