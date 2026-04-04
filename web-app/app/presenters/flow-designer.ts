@@ -126,9 +126,7 @@ export class FlowDesignerPresenter {
         this.#state.nodes = graph.nodes;
         this.#state.edges = graph.edges;
         this.#state.interaction
-            .selectedNodeId = null;
-        this.#state.interaction
-            .selectedEdgeId = null;
+            .selection = { kind: 'none' };
         this.#state.interaction
             .isPanelOpen = false;
     }
@@ -159,15 +157,21 @@ export class FlowDesignerPresenter {
     }
 
     selectedNodeId(): string | null {
-        return this.#state
-            .interaction
-            .selectedNodeId;
+        const sel =
+            this.#state.interaction
+                .selection;
+        return sel.kind === 'node'
+            ? sel.nodeId
+            : null;
     }
 
     selectedEdgeId(): string | null {
-        return this.#state
-            .interaction
-            .selectedEdgeId;
+        const sel =
+            this.#state.interaction
+                .selection;
+        return sel.kind === 'edge'
+            ? sel.edgeId
+            : null;
     }
 
     flowId(): string {
@@ -422,11 +426,13 @@ ${dialog}`;
 
     async deleteSelectedNode(
     ): Promise<boolean> {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return false;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') {
+            return false;
+        }
+        const nodeId = sel.nodeId;
         const target =
             this.#state.nodes.find(
                 n => n.id === nodeId,
@@ -466,19 +472,20 @@ ${dialog}`;
             );
             return false;
         }
-        this.#state
-            .interaction
-            .selectedNodeId = null;
+        this.#state.interaction
+            .selection = { kind: 'none' };
         return true;
     }
 
     async deleteSelectedEdge(
     ): Promise<boolean> {
-        const edgeId =
-            this.#state
-                .interaction
-                .selectedEdgeId;
-        if (edgeId === null) return false;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'edge') {
+            return false;
+        }
+        const edgeId = sel.edgeId;
         try {
             const capture =
                 await deleteEdgeCapture(
@@ -501,9 +508,8 @@ ${dialog}`;
             );
             return false;
         }
-        this.#state
-            .interaction
-            .selectedEdgeId = null;
+        this.#state.interaction
+            .selection = { kind: 'none' };
         return true;
     }
 
@@ -571,11 +577,11 @@ ${dialog}`;
     updateNodeName(
         name: string,
     ): void {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') return;
+        const nodeId = sel.nodeId;
         const node = this.#state.nodes.find(
             n => n.id === nodeId,
         );
@@ -601,11 +607,11 @@ ${dialog}`;
     updateNodeDescription(
         desc: string,
     ): void {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') return;
+        const nodeId = sel.nodeId;
         const node = this.#state.nodes.find(
             n => n.id === nodeId,
         );
@@ -635,11 +641,11 @@ ${dialog}`;
     updateEdgeName(
         name: string,
     ): void {
-        const edgeId =
-            this.#state
-                .interaction
-                .selectedEdgeId;
-        if (edgeId === null) return;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'edge') return;
+        const edgeId = sel.edgeId;
         const edge = this.#state.edges.find(
             e => e.id === edgeId,
         );
@@ -665,11 +671,11 @@ ${dialog}`;
     updateEdgeDescription(
         desc: string,
     ): void {
-        const edgeId =
-            this.#state
-                .interaction
-                .selectedEdgeId;
-        if (edgeId === null) return;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'edge') return;
+        const edgeId = sel.edgeId;
         const edge = this.#state.edges.find(
             e => e.id === edgeId,
         );
@@ -702,11 +708,13 @@ ${dialog}`;
         isRequired: boolean,
         options: string[],
     ): Promise<boolean> {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return false;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') {
+            return false;
+        }
+        const nodeId = sel.nodeId;
         const node = this.#state.nodes.find(
             n => n.id === nodeId,
         );
@@ -765,11 +773,13 @@ ${dialog}`;
     async deleteField(
         fieldId: string,
     ): Promise<boolean> {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return false;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') {
+            return false;
+        }
+        const nodeId = sel.nodeId;
         try {
             const capture =
                 await deleteFieldCapture(
@@ -802,14 +812,14 @@ ${dialog}`;
     }
 
     selectedNodeName(): string {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return '';
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') return '';
+        const node =
+            this.#state.nodes.find(
+                n => n.id === sel.nodeId,
+            );
         return node?.name ?? '';
     }
 
@@ -818,11 +828,13 @@ ${dialog}`;
         transitionName: string,
         direction: string,
     ): Promise<boolean> {
-        const fromNodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (fromNodeId === null) return false;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') {
+            return false;
+        }
+        const fromNodeId = sel.nodeId;
         const fromNode =
             this.#state.nodes.find(
                 n => n.id === fromNodeId,
@@ -1010,13 +1022,14 @@ ${dialog}`;
     }
 
     #canDelete(): boolean {
-        const nodeId =
+        const sel =
             this.#state.interaction
-                .selectedNodeId;
-        if (nodeId !== null) {
+                .selection;
+        if (sel.kind === 'node') {
             const node =
                 this.#state.nodes.find(
-                    n => n.id === nodeId,
+                    n => n.id
+                        === sel.nodeId,
                 );
             if (
                 node
@@ -1024,8 +1037,7 @@ ${dialog}`;
                 && !node.isComplete
             ) return true;
         }
-        return this.#state.interaction
-            .selectedEdgeId !== null;
+        return sel.kind === 'edge';
     }
 
     #buildToolbar(): SafeHtml {
@@ -1069,7 +1081,7 @@ class="wf-toolbar">
     data-action="add-state"${
     trusted(
         this.#state.interaction
-            .selectedNodeId !== null
+            .selection.kind === 'node'
             ? '' : ' disabled',
     )}>+ Add State</button>
 </div>
@@ -1144,11 +1156,13 @@ ${req}
     }
 
     buildFieldEditor(): SafeHtml {
-        const nodeId =
-            this.#state
-                .interaction
-                .selectedNodeId;
-        if (nodeId === null) return html``;
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') {
+            return html``;
+        }
+        const nodeId = sel.nodeId;
         return html`<div
 class="wf-field-editor"
 data-node-id="${nodeId}">
@@ -1354,31 +1368,30 @@ justify-content:space-between"
         if (!interaction.isPanelOpen) {
             return html``;
         }
-        const selNodeId =
-            interaction.selectedNodeId;
-        const selEdgeId =
-            interaction.selectedEdgeId;
+        const sel = interaction.selection;
 
-        if (selNodeId !== null) {
+        if (sel.kind === 'node') {
             const node =
                 this.#state.nodes.find(
-                    n => n.id === selNodeId,
+                    n => n.id
+                        === sel.nodeId,
                 );
             if (!node) return html``;
             const outgoing =
                 this.#state.edges.filter(
                     e => e.fromNodeId
-                        === selNodeId,
+                        === sel.nodeId,
                 );
             return this.#buildNodePanel(
                 node, outgoing,
             );
         }
 
-        if (selEdgeId !== null) {
+        if (sel.kind === 'edge') {
             const edge =
                 this.#state.edges.find(
-                    e => e.id === selEdgeId,
+                    e => e.id
+                        === sel.edgeId,
                 );
             if (!edge) return html``;
             const fromNode =
@@ -1403,52 +1416,43 @@ justify-content:space-between"
         x: number;
         y: number;
     } | null {
-        const interaction =
-            this.#state.interaction;
-        if (!interaction.connectFromNodeId) {
+        const conn =
+            this.#state.interaction.connect;
+        if (conn.kind !== 'connecting') {
             return null;
         }
         const fromNode =
             this.#state.nodes.find(
                 n => n.id
-                    === interaction
-                        .connectFromNodeId,
+                    === conn.fromNodeId,
             );
         if (!fromNode) return null;
-        const endX =
-            interaction.connectToX;
-        const endY =
-            interaction.connectToY;
         return perimeterPoint(
             fromNode.positionX,
             fromNode.positionY,
             NODE_WIDTH, NODE_HEIGHT,
-            endX, endY,
+            conn.toX, conn.toY,
         );
     }
 
     #buildConnectPreview(): string {
-        const interaction =
-            this.#state.interaction;
-        if (!interaction.isConnecting) {
+        const conn =
+            this.#state.interaction.connect;
+        if (conn.kind !== 'connecting') {
             return '';
         }
         const src =
             this.#connectSourcePoint();
         if (!src) return '';
-        const endX =
-            interaction.connectToX;
-        const endY =
-            interaction.connectToY;
         return '<line'
             + ' x1="'
             + String(src.x) + '"'
             + ' y1="'
             + String(src.y) + '"'
             + ' x2="'
-            + String(endX) + '"'
+            + String(conn.toX) + '"'
             + ' y2="'
-            + String(endY) + '"'
+            + String(conn.toY) + '"'
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"'
             + ' stroke-dasharray="6 3"'
@@ -1456,27 +1460,19 @@ justify-content:space-between"
     }
 
     #nodesForRender(): GraphNode[] {
-        const interaction =
-            this.#state.interaction;
-        if (
-            !interaction.isDragging
-            || !interaction.dragNodeId
-        ) {
+        const drag =
+            this.#state.interaction.drag;
+        if (drag.kind !== 'dragging') {
             return this.#state.nodes;
         }
         return this.#state.nodes.map(n => {
-            if (
-                n.id
-                !== interaction.dragNodeId
-            ) {
+            if (n.id !== drag.nodeId) {
                 return n;
             }
             return {
                 ...n,
-                positionX:
-                    interaction.dragCurrentX,
-                positionY:
-                    interaction.dragCurrentY,
+                positionX: drag.currentX,
+                positionY: drag.currentY,
             };
         });
     }
@@ -1492,12 +1488,8 @@ justify-content:space-between"
             vb.y,
             vb.w,
             vb.h,
-            this.#state
-                .interaction
-                .selectedNodeId,
-            this.#state
-                .interaction
-                .selectedEdgeId,
+            this.#state.interaction
+                .selection,
         );
         const preview =
             this.#buildConnectPreview();
@@ -1518,13 +1510,13 @@ justify-content:space-between"
     }
 
     #buildAddStateDialog(): SafeHtml {
-        const selNodeId =
+        const sel =
             this.#state.interaction
-                .selectedNodeId;
-        const selNode = selNodeId
-            !== null
+                .selection;
+        const selNode =
+            sel.kind === 'node'
             ? this.#state.nodes.find(
-                n => n.id === selNodeId,
+                n => n.id === sel.nodeId,
             )
             : undefined;
         const fromName =

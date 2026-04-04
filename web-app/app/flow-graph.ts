@@ -3,6 +3,9 @@ import { trusted, html, escapeForHtml } from './safe-html';
 import type {
     GraphNode, GraphEdge,
 } from './adapters/flows';
+import type {
+    Selection,
+} from './flow-interactions';
 import {
     NODE_WIDTH, NODE_HEIGHT,
     buildAdjacency, assignRanks,
@@ -556,8 +559,7 @@ export function buildGraphSvg(
     viewBoxY: number,
     viewBoxW: number,
     viewBoxH: number,
-    selectedNodeId: string | null,
-    selectedEdgeId: string | null,
+    selection: Selection,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -626,7 +628,9 @@ export function buildGraphSvg(
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
         const isSelected =
-            edge.id === selectedEdgeId;
+            selection.kind === 'edge'
+            && edge.id
+                === selection.edgeId;
         let aimOffset = 0;
         const k = pairKey(
             edge.fromNodeId,
@@ -651,7 +655,9 @@ export function buildGraphSvg(
     let nodeMarkup = '';
     for (const node of nodes) {
         const isSelected =
-            node.id === selectedNodeId;
+            selection.kind === 'node'
+            && node.id
+                === selection.nodeId;
         nodeMarkup +=
             buildNode(
                 node, isSelected,

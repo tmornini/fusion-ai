@@ -138,9 +138,11 @@ function bindSvgInteractions(
             presenter.getNodePosition(id),
     );
     if (
-        (state.isDragging
-            || state.isConnecting
-            || state.isPanning)
+        (state.drag.kind === 'dragging'
+            || state.connect.kind
+                === 'connecting'
+            || state.pan.kind
+                === 'panning')
         && state.activePointerId > 0
     ) {
         try {
@@ -148,10 +150,10 @@ function bindSvgInteractions(
                 state.activePointerId,
             );
         } catch {
-            state.isDragging = false;
-            state.isConnecting = false;
-            state.isPanning = false;
-            state.dragNodeId = null;
+            state.drag = { kind: 'idle' };
+            state.connect =
+                { kind: 'idle' };
+            state.pan = { kind: 'idle' };
         }
     }
 }
