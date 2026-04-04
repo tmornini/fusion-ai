@@ -296,16 +296,19 @@ ${dialog}`;
             );
             return false;
         }
-        this.#state.nodes.push({
-            id: nodeId,
-            name: 'New State',
-            description: '',
-            positionX: x,
-            positionY: y,
-            isStart: false,
-            isComplete: false,
-            fields: [],
-        });
+        this.#state.nodes = [
+            ...this.#state.nodes,
+            {
+                id: nodeId,
+                name: 'New State',
+                description: '',
+                positionX: x,
+                positionY: y,
+                isStart: false,
+                isComplete: false,
+                fields: [],
+            },
+        ];
         this.#undo.push({
             type: 'add-node',
             forward: [],
@@ -400,13 +403,16 @@ ${dialog}`;
             );
             return false;
         }
-        this.#state.edges.push({
-            id: edgeId,
-            name: 'Transition',
-            description: '',
-            fromNodeId: fromId,
-            toNodeId: toId,
-        });
+        this.#state.edges = [
+            ...this.#state.edges,
+            {
+                id: edgeId,
+                name: 'Transition',
+                description: '',
+                fromNodeId: fromId,
+                toNodeId: toId,
+            },
+        ];
         this.#undo.push({
             type: 'add-edge',
             forward: [],
@@ -744,14 +750,17 @@ ${dialog}`;
             );
             return false;
         }
-        node.fields.push({
-            id: fieldId,
-            name,
-            fieldType,
-            sortOrder,
-            isRequired,
-            options,
-        });
+        node.fields = [
+            ...node.fields,
+            {
+                id: fieldId,
+                name,
+                fieldType,
+                sortOrder,
+                isRequired,
+                options,
+            },
+        ];
         this.#undo.push({
             type: 'add-field',
             forward: [],
@@ -879,23 +888,29 @@ ${dialog}`;
             );
             return false;
         }
-        this.#state.nodes.push({
-            id: nodeId,
-            name,
-            description: '',
-            positionX: pos.x,
-            positionY: pos.y,
-            isStart: false,
-            isComplete: false,
-            fields: [],
-        });
-        this.#state.edges.push({
-            id: edgeId,
-            name: transitionName,
-            description: '',
-            fromNodeId,
-            toNodeId: nodeId,
-        });
+        this.#state.nodes = [
+            ...this.#state.nodes,
+            {
+                id: nodeId,
+                name,
+                description: '',
+                positionX: pos.x,
+                positionY: pos.y,
+                isStart: false,
+                isComplete: false,
+                fields: [],
+            },
+        ];
+        this.#state.edges = [
+            ...this.#state.edges,
+            {
+                id: edgeId,
+                name: transitionName,
+                description: '',
+                fromNodeId,
+                toNodeId: nodeId,
+            },
+        ];
         this.#undo.push({
             type: 'add-node-and-edge',
             forward: [],
