@@ -8,7 +8,8 @@ import {
     isValidTheme,
 } from './state';
 import {
-    $, $$, attr, FOCUSABLE_SELECTOR,
+    $, $$, $required,
+    attr, FOCUSABLE_SELECTOR,
 } from './dom';
 import { setHtml } from './safe-html';
 import {
@@ -160,16 +161,18 @@ function initActiveNavItem(): void {
 }
 
 function initSidebar(): void {
-    const sidebar =
-        $('#desktop-sidebar', document);
-    const mainContent =
-        $('.main-content', document);
+    const sidebar = $required(
+        '#desktop-sidebar', document,
+    );
+    const mainContent = $required(
+        '.main-content', document,
+    );
 
     if (state.isSidebarCollapsed) {
-        sidebar?.classList.add(
+        sidebar.classList.add(
             'sidebar-collapsed',
         );
-        mainContent?.classList.add(
+        mainContent.classList.add(
             'sidebar-collapsed',
         );
     }
@@ -179,24 +182,27 @@ function initSidebar(): void {
     ): void {
         const action = collapsed
             ? 'add' : 'remove';
-        sidebar?.classList[action](
+        sidebar.classList[action](
             'sidebar-collapsed',
         );
-        mainContent?.classList[action](
+        mainContent.classList[action](
             'sidebar-collapsed',
         );
         persistSidebarCollapsed(collapsed);
     }
 
-    $('#sidebar-collapse', document)?.addEventListener(
+    $required(
+        '#sidebar-collapse', document,
+    ).addEventListener(
         'click',
         () => setSidebarCollapsed(true),
     );
-    $('#sidebar-expand', document)?.addEventListener(
+    $required(
+        '#sidebar-expand', document,
+    ).addEventListener(
         'click',
         () => setSidebarCollapsed(false),
     );
-
 }
 
 function initDropdown(
