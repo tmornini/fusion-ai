@@ -1117,10 +1117,13 @@ function buildSidecar(
     }, null, 2);
 }
 
-function minuteUtc(): string {
-    return new Date()
+function minuteUtc(timeSep: string): string {
+    const iso = new Date()
         .toISOString()
         .slice(0, 16) + 'Z';
+    return timeSep === ':'
+        ? iso
+        : iso.replaceAll(':', timeSep);
 }
 
 function buildFlowTxt(
@@ -1128,7 +1131,7 @@ function buildFlowTxt(
 ): string {
     return 'flowId: ' + flowId + '\n'
         + 'exportedAt: '
-        + minuteUtc() + '\n';
+        + minuteUtc(':') + '\n';
 }
 
 export async function exportFlowZip(
@@ -1162,7 +1165,9 @@ export async function exportFlowZip(
 
     return {
         data,
-        name: safeName + '.zip',
+        name: safeName
+            + '-' + minuteUtc('-')
+            + '.zip',
     };
 }
 
