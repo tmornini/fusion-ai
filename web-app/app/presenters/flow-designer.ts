@@ -348,6 +348,34 @@ ${dialog}`;
             );
             return false;
         }
+        const hasDuplicate =
+            this.#state.edges.some(
+                e => e.fromNodeId === fromId
+                    && e.toNodeId === toId,
+            );
+        if (hasDuplicate) {
+            showToast(
+                'Transition already exists',
+                'error',
+            );
+            return false;
+        }
+        if (from?.isStart) {
+            const hasOutgoing =
+                this.#state.edges.some(
+                    e => e.fromNodeId
+                        === fromId,
+                );
+            if (hasOutgoing) {
+                showToast(
+                    'Start state allows'
+                    + ' only one outgoing'
+                    + ' transition',
+                    'error',
+                );
+                return false;
+            }
+        }
         const edgeId = crypto.randomUUID();
         const nodeEdgeId =
             crypto.randomUUID();
