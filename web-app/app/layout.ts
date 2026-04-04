@@ -20,7 +20,6 @@ import {
     getPageName,
     navigateTo,
 } from './navigation';
-import { log } from './logger';
 import { showToast } from './toast';
 
 const THEME_TOGGLE_IDS = [
@@ -82,12 +81,11 @@ async function mutateSidebarUser(
     try {
         data =
             await fetchSidebarUser();
-    } catch (err) {
-        log.debug(
+    } catch {
+        showToast(
             'Sidebar user info'
             + ' load failed',
-            'layout',
-            err,
+            'error',
         );
         return;
     }
@@ -440,11 +438,10 @@ async function mutateHeaderInfo(
     let data: HeaderData;
     try {
         data = await fetchHeaderData();
-    } catch (err) {
-        log.debug(
+    } catch {
+        showToast(
             'Header info load failed',
-            'layout',
-            err,
+            'error',
         );
         return;
     }
