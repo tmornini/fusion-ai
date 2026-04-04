@@ -7,6 +7,7 @@ import {
     iconArrowLeft,
     iconUndo,
     iconRedo,
+    iconTrash,
     iconX,
 } from '../icons';
 import {
@@ -951,6 +952,25 @@ ${dialog}`;
         );
     }
 
+    #canDelete(): boolean {
+        const nodeId =
+            this.#state.interaction
+                .selectedNodeId;
+        if (nodeId !== null) {
+            const node =
+                this.#state.nodes.find(
+                    n => n.id === nodeId,
+                );
+            if (
+                node
+                && !node.isStart
+                && !node.isComplete
+            ) return true;
+        }
+        return this.#state.interaction
+            .selectedEdgeId !== null;
+    }
+
     #buildToolbar(): SafeHtml {
         const nodeCount =
             this.#state.nodes.length;
@@ -995,6 +1015,15 @@ class="wf-toolbar">
             .selectedNodeId !== null
             ? '' : ' disabled',
     )}>+ Add State</button>
+</div>
+<div class="wf-toolbar-group">
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="delete-selected"${
+    trusted(
+        this.#canDelete()
+            ? '' : ' disabled',
+    )}>${iconTrash(18, '')}</button>
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
@@ -1208,10 +1237,6 @@ class="text-sm text-muted"
     : html`<div class="text-sm text-muted"
         >None</div>`}
 </div>
-<button
-class="btn btn-destructive btn-sm mt-4"
-data-action="delete-node"
->Delete State</button>
 </div>`;
     }
 
@@ -1263,10 +1288,6 @@ justify-content:space-between"
     >To</label>
 <div class="text-sm">${toName}</div>
 </div>
-<button
-class="btn btn-destructive btn-sm mt-4"
-data-action="delete-edge"
->Delete Transition</button>
 </div>`;
     }
 

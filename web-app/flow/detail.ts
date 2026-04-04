@@ -241,6 +241,40 @@ function bindToolbarActions(
                 ),
             );
         }
+        if (action === 'delete-selected') {
+            btn.addEventListener(
+                'click',
+                () => {
+                    const nodeId =
+                        presenter
+                            .selectedNodeId();
+                    const edgeId =
+                        presenter
+                            .selectedEdgeId();
+                    if (nodeId !== null) {
+                        void presenter
+                            .deleteSelectedNode()
+                            .then(
+                                () => renderAndBind(
+                                    container,
+                                    presenter,
+                                ),
+                            );
+                        return;
+                    }
+                    if (edgeId !== null) {
+                        void presenter
+                            .deleteSelectedEdge()
+                            .then(
+                                () => renderAndBind(
+                                    container,
+                                    presenter,
+                                ),
+                            );
+                    }
+                },
+            );
+        }
     }
 }
 
@@ -308,9 +342,6 @@ function bindPanelActions(
         container, presenter,
     );
     bindEdgePanelInputs(
-        container, presenter,
-    );
-    bindDeleteActions(
         container, presenter,
     );
     bindFieldActions(
@@ -416,41 +447,6 @@ function bindEdgePanelInputs(
             );
         },
     );
-}
-
-function bindDeleteActions(
-    container: HTMLElement,
-    presenter: FlowDesignerPresenter,
-): void {
-    const delNodeBtn = container
-        .querySelector(
-            '[data-action="delete-node"]',
-        );
-    if (delNodeBtn) {
-        delNodeBtn.addEventListener(
-            'click',
-            () => void presenter
-                .deleteSelectedNode()
-                .then(() => renderAndBind(
-                    container, presenter,
-                )),
-        );
-    }
-
-    const delEdgeBtn = container
-        .querySelector(
-            '[data-action="delete-edge"]',
-        );
-    if (delEdgeBtn) {
-        delEdgeBtn.addEventListener(
-            'click',
-            () => void presenter
-                .deleteSelectedEdge()
-                .then(() => renderAndBind(
-                    container, presenter,
-                )),
-        );
-    }
 }
 
 function bindFieldActions(
