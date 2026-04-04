@@ -21,8 +21,6 @@ const ARROW_MARKER = 8;
 const GLOW_SPREAD = 4;
 const GLOW_OPACITY = 0.6;
 
-const PORT_RADIUS = 6;
-
 const STROKE_NORMAL = 2;
 const STROKE_START = 2.5;
 const STROKE_COMPLETE = 3;
@@ -55,12 +53,6 @@ const LABEL_RADIUS = 4;
 const LABEL_BG_OPACITY = 0.9;
 const LABEL_TEXT_OFFSET_Y = 4;
 const LABEL_FONT = 11;
-
-export interface ConnectState {
-    fromNodeId: string;
-    fromX: number;
-    fromY: number;
-}
 
 type RectEdge =
     'right' | 'left' | 'top' | 'bottom';
@@ -219,27 +211,9 @@ function buildGrid(
         + ' fill="url(#wf-grid)"/>';
 }
 
-function buildPort(
-    cx: number,
-    cy: number,
-    color: string,
-    label: string,
-): string {
-    return '<circle'
-        + ` cx="${cx}"`
-        + ` cy="${cy}"`
-        + ` r="${PORT_RADIUS}"`
-        + ` fill="${color}"`
-        + ` data-port="${label}"/>`;
-}
-
 function buildNode(
     node: GraphNode,
     isSelected: boolean,
-    connectFrom?: {
-        x: number;
-        y: number;
-    } | null,
 ): SafeHtml {
     const { positionX, positionY } = node;
     const halfH = NODE_HEIGHT / 2;
@@ -318,34 +292,6 @@ function buildNode(
         + ' #5a6480)">'
         + escapeForHtml(meta)
         + '</text>';
-
-    if (node.isStart) {
-        inner += buildPort(
-            NODE_WIDTH, halfH,
-            borderColor, 'connect',
-        );
-    } else if (connectFrom) {
-        const lx =
-            connectFrom.x - positionX;
-        const ly =
-            connectFrom.y - positionY;
-        const pt = perimeterPoint(
-            0, 0,
-            NODE_WIDTH, NODE_HEIGHT,
-            lx, ly,
-        );
-        inner += buildPort(
-            pt.x, pt.y,
-            borderColor, 'connect',
-        );
-    } else {
-        const dx = node.isComplete
-            ? 0 : NODE_WIDTH;
-        inner += buildPort(
-            dx, halfH,
-            borderColor, 'connect',
-        );
-    }
 
     return trusted(
         '<g'
@@ -619,8 +565,6 @@ export function buildGraphSvg(
     viewBoxH: number,
     selectedNodeId: string | null,
     selectedEdgeId: string | null,
-    connectState?:
-        ConnectState | null,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -648,24 +592,9 @@ export function buildGraphSvg(
     for (const node of nodes) {
         const isSelected =
             node.id === selectedNodeId;
-        let cf: {
-            x: number;
-            y: number;
-        } | null = null;
-        if (
-            connectState
-            && node.id
-                !== connectState.fromNodeId
-            && !node.isStart
-        ) {
-            cf = {
-                x: connectState.fromX,
-                y: connectState.fromY,
-            };
-        }
         nodeMarkup +=
             buildNode(
-                node, isSelected, cf,
+                node, isSelected,
             ).toString();
     }
 

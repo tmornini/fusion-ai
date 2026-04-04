@@ -34,9 +34,6 @@ import {
     buildGraphSvg,
     perimeterPoint,
 } from '../flow-graph';
-import type {
-    ConnectState,
-} from '../flow-graph';
 import {
     computeLayout,
     NODE_WIDTH,
@@ -1424,37 +1421,10 @@ justify-content:space-between"
         });
     }
 
-    #buildConnectState():
-        ConnectState | null {
-        const interaction =
-            this.#state.interaction;
-        if (!interaction.isConnecting) {
-            return null;
-        }
-        const src =
-            this.#connectSourcePoint();
-        if (
-            !src
-            || !interaction
-                .connectFromNodeId
-        ) {
-            return null;
-        }
-        return {
-            fromNodeId:
-                interaction
-                    .connectFromNodeId,
-            fromX: src.x,
-            fromY: src.y,
-        };
-    }
-
     #buildCanvas(): SafeHtml {
         const nodes = this.#nodesForRender();
         const vb =
             this.#state.interaction.viewBox;
-        const cs =
-            this.#buildConnectState();
         const svgHtml = buildGraphSvg(
             nodes,
             this.#state.edges,
@@ -1468,7 +1438,6 @@ justify-content:space-between"
             this.#state
                 .interaction
                 .selectedEdgeId,
-            cs,
         );
         const preview =
             this.#buildConnectPreview();
