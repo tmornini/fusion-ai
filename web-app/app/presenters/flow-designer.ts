@@ -946,6 +946,8 @@ ${dialog}`;
         zoomToFitState(
             this.#state.interaction,
             positions,
+            this.#canvasW,
+            this.#canvasH,
         );
     }
 

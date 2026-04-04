@@ -41,8 +41,6 @@ const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
 
-const CYCLE_DROP = 60;
-const CYCLE_LEFT_OFFSET = 40;
 const CYCLE_DASH = '6 3';
 
 const LABEL_CHAR_WIDTH = 7;
@@ -336,39 +334,58 @@ function buildEdge(
     let markerUrl: string;
     let dashAttr: string;
 
+    const startPt = perimeterPoint(
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+        toCx, toCy,
+    );
+    const endPt = perimeterPoint(
+        toNode.positionX,
+        toNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+        fromCx, fromCy,
+    );
+    const dist = Math.hypot(
+        endPt.x - startPt.x,
+        endPt.y - startPt.y,
+    );
+    const se = whichEdge(
+        startPt.x, startPt.y,
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const ee = whichEdge(
+        endPt.x, endPt.y,
+        toNode.positionX,
+        toNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const cp1 =
+        controlOffset(se, dist);
+    const cp2 =
+        controlOffset(ee, dist);
+    pathD = 'M '
+        + String(startPt.x) + ' '
+        + String(startPt.y)
+        + ' C '
+        + String(
+            startPt.x + cp1.dx,
+        ) + ' '
+        + String(
+            startPt.y + cp1.dy,
+        ) + ', '
+        + String(
+            endPt.x + cp2.dx,
+        ) + ' '
+        + String(
+            endPt.y + cp2.dy,
+        ) + ', '
+        + String(endPt.x) + ' '
+        + String(endPt.y);
+
     if (isCycle) {
-        const botPt = perimeterPoint(
-            fromNode.positionX,
-            fromNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-            fromCx,
-            fromCy + NODE_HEIGHT * 2,
-        );
-        const leftPt = perimeterPoint(
-            toNode.positionX,
-            toNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-            toNode.positionX
-                - NODE_WIDTH,
-            toCy,
-        );
-        const dropY =
-            Math.max(
-                botPt.y, leftPt.y,
-            ) + CYCLE_DROP;
-        pathD = 'M '
-            + String(botPt.x) + ' '
-            + String(botPt.y)
-            + ' C '
-            + String(botPt.x) + ' '
-            + String(dropY) + ', '
-            + String(
-                leftPt.x
-                    - CYCLE_LEFT_OFFSET,
-            ) + ' '
-            + String(dropY) + ', '
-            + String(leftPt.x) + ' '
-            + String(leftPt.y);
         color = WARN;
         markerUrl =
             'url(#wf-arrow-warn)';
@@ -377,56 +394,6 @@ function buildEdge(
                 CYCLE_DASH
             }"`;
     } else {
-        const startPt = perimeterPoint(
-            fromNode.positionX,
-            fromNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-            toCx, toCy,
-        );
-        const endPt = perimeterPoint(
-            toNode.positionX,
-            toNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-            fromCx, fromCy,
-        );
-        const dist = Math.hypot(
-            endPt.x - startPt.x,
-            endPt.y - startPt.y,
-        );
-        const se = whichEdge(
-            startPt.x, startPt.y,
-            fromNode.positionX,
-            fromNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-        );
-        const ee = whichEdge(
-            endPt.x, endPt.y,
-            toNode.positionX,
-            toNode.positionY,
-            NODE_WIDTH, NODE_HEIGHT,
-        );
-        const cp1 =
-            controlOffset(se, dist);
-        const cp2 =
-            controlOffset(ee, dist);
-        pathD = 'M '
-            + String(startPt.x) + ' '
-            + String(startPt.y)
-            + ' C '
-            + String(
-                startPt.x + cp1.dx,
-            ) + ' '
-            + String(
-                startPt.y + cp1.dy,
-            ) + ', '
-            + String(
-                endPt.x + cp2.dx,
-            ) + ' '
-            + String(
-                endPt.y + cp2.dy,
-            ) + ', '
-            + String(endPt.x) + ' '
-            + String(endPt.y);
         color = BLUE;
         markerUrl = 'url(#wf-arrow)';
         dashAttr = '';
