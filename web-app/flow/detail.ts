@@ -28,42 +28,57 @@ const FALLBACK_W = 800;
 const FALLBACK_H = 600;
 const SAVE_DELAY_MS = 800;
 
-let saveTimer: ReturnType<
-    typeof setTimeout
-> | null = null;
-let pendingSave: (() => void) | null =
-    null;
+class Debouncer {
+    #timer: ReturnType<
+        typeof setTimeout
+    > | undefined = undefined;
+    #pending:
+        | (() => void)
+        | undefined = undefined;
+    readonly #delayMs: number;
 
-function debounceSave(
-    fn: () => void,
-): void {
-    if (saveTimer !== null) {
-        clearTimeout(saveTimer);
+    constructor(delayMs: number) {
+        this.#delayMs = delayMs;
     }
-    pendingSave = fn;
-    saveTimer = setTimeout(() => {
-        fn();
-        saveTimer = null;
-        pendingSave = null;
-    }, SAVE_DELAY_MS);
+
+    schedule(fn: () => void): void {
+        if (this.#timer !== undefined) {
+            clearTimeout(this.#timer);
+        }
+        this.#pending = fn;
+        this.#timer = setTimeout(
+            () => {
+                fn();
+                this.#timer = undefined;
+                this.#pending =
+                    undefined;
+            },
+            this.#delayMs,
+        );
+    }
+
+    flush(): void {
+        if (this.#timer !== undefined) {
+            clearTimeout(this.#timer);
+            this.#timer = undefined;
+        }
+        if (
+            this.#pending !== undefined
+        ) {
+            this.#pending();
+            this.#pending = undefined;
+        }
+    }
 }
 
-function flushPendingSave(): void {
-    if (saveTimer !== null) {
-        clearTimeout(saveTimer);
-        saveTimer = null;
-    }
-    if (pendingSave !== null) {
-        pendingSave();
-        pendingSave = null;
-    }
-}
+const saveDebouncer =
+    new Debouncer(SAVE_DELAY_MS);
 
 function renderAndBind(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
-    flushPendingSave();
+    saveDebouncer.flush();
     presenter.render(container);
     bindBackButton();
     bindSvgInteractions(
@@ -403,7 +418,7 @@ function bindNodePanelInputs(
         'input',
         () => {
             const val = nameInput.value;
-            debounceSave(
+            saveDebouncer.schedule(
                 () => presenter
                     .updateNodeName(val),
             );
@@ -414,7 +429,7 @@ function bindNodePanelInputs(
         'input',
         () => {
             const val = descInput.value;
-            debounceSave(
+            saveDebouncer.schedule(
                 () => presenter
                     .updateNodeDescription(
                         val,
@@ -443,7 +458,7 @@ function bindEdgePanelInputs(
         'input',
         () => {
             const val = nameInput.value;
-            debounceSave(
+            saveDebouncer.schedule(
                 () => presenter
                     .updateEdgeName(val),
             );
@@ -454,7 +469,7 @@ function bindEdgePanelInputs(
         'input',
         () => {
             const val = descInput.value;
-            debounceSave(
+            saveDebouncer.schedule(
                 () => presenter
                     .updateEdgeDescription(
                         val,
