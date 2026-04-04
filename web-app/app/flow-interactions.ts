@@ -141,7 +141,10 @@ function handlePointerDown(
             onUpdate();
             return;
         }
-        if (!pos.isDraggable) {
+        const isPort = findAncestorAttr(
+            target, 'data-connect-port',
+        ) !== null;
+        if (isPort || !pos.isDraggable) {
             state.isConnecting = true;
             state.connectFromNodeId = nodeId;
             state.connectToX = svgPt.x;

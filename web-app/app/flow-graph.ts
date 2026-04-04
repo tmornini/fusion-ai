@@ -30,6 +30,9 @@ const COMPLETE_INSET = 4;
 const COMPLETE_INNER_RADIUS = 7;
 const COMPLETE_INNER_STROKE = 1.5;
 
+const PORT_RADIUS = 5;
+const PORT_STROKE = 2;
+
 const NODE_LABEL_Y = 22;
 const NODE_LABEL_FONT = 14;
 const NODE_META_Y = 40;
@@ -293,6 +296,22 @@ function buildNode(
         + ' #5a6480)">'
         + escapeForHtml(meta)
         + '</text>';
+
+    if (!node.isStart && !node.isComplete) {
+        inner += '<circle'
+            + ' data-connect-port="1"'
+            + ` cx="${NODE_WIDTH}"`
+            + ` cy="${halfH}"`
+            + ` r="${PORT_RADIUS}"`
+            + ` fill="${BLUE}"`
+            + ' stroke="var('
+            + '--color-card-bg, #232940)"'
+            + ` stroke-width=`
+            + `"${PORT_STROKE}"`
+            + ' style='
+            + '"cursor:crosshair"'
+            + '/>';
+    }
 
     return trusted(
         '<g'
