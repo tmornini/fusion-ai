@@ -1322,7 +1322,7 @@ export async function importFlowFromZip(
     projectId: string,
 ): Promise<{ flowId: string; warnings: string[] }> {
     const dec = new TextDecoder();
-    const entries = readZip(data);
+    const entries = await readZip(data);
 
     const mmdEntry = entries.find(
         e => e.name === 'flow.mmd'
@@ -1335,13 +1335,6 @@ export async function importFlowFromZip(
             'ZIP missing flow.mmd',
         );
     }
-    if (mmdEntry.data.length === 0) {
-        throw new Error(
-            'flow.mmd is compressed;'
-            + ' use a stored ZIP',
-        );
-    }
-
     const jsonEntry = entries.find(
         e => e.name === 'flow.json'
             || e.name.endsWith(

@@ -36,6 +36,7 @@ const CENTRAL_HEADER = 46;
 const END_RECORD = 22;
 const VERSION = 20;
 const STORE = 0;
+const DEFLATE = 8;
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -240,9 +241,51 @@ function findEocd(
     return -1;
 }
 
-export function readZip(
+async function inflate(
+    raw: Uint8Array,
+): Promise<Uint8Array> {
+    const ds = new DecompressionStream(
+        'deflate-raw',
+    );
+    const stream =
+        new Blob(
+            [raw as unknown as ArrayBuffer],
+        )
+            .stream()
+            .pipeThrough(ds);
+    const buf = await new Response(stream)
+        .arrayBuffer();
+    return new Uint8Array(buf);
+}
+
+function readLocalData(
+    view: DataView,
     data: Uint8Array,
-): ZipEntry[] {
+    localOff: number,
+    compSz: number,
+): Uint8Array | null {
+    if (
+        localOff + LOCAL_HEADER
+            > data.byteLength
+    ) return null;
+
+    const lNameLen = view.getUint16(
+        localOff + 26, true,
+    );
+    const lExtraLen = view.getUint16(
+        localOff + 28, true,
+    );
+    const start =
+        localOff + LOCAL_HEADER
+        + lNameLen + lExtraLen;
+    return data.slice(
+        start, start + compSz,
+    );
+}
+
+export async function readZip(
+    data: Uint8Array,
+): Promise<ZipEntry[]> {
     const view = new DataView(
         data.buffer,
         data.byteOffset,
@@ -303,36 +346,22 @@ export function readZip(
         off +=
             nameLen + extraLen + commentLen;
 
-        if (method !== STORE) {
+        const raw = readLocalData(
+            view, data, localOff, compSz,
+        );
+        if (!raw) continue;
+
+        if (method === DEFLATE) {
             entries.push({
                 name,
-                data: new Uint8Array(0),
+                data: await inflate(raw),
             });
-            continue;
+        } else if (method === STORE) {
+            entries.push({
+                name,
+                data: raw,
+            });
         }
-
-        if (
-            localOff + LOCAL_HEADER
-                > data.byteLength
-        ) continue;
-
-        const lNameLen = view.getUint16(
-            localOff + 26, true,
-        );
-        const lExtraLen = view.getUint16(
-            localOff + 28, true,
-        );
-        const start =
-            localOff + LOCAL_HEADER
-            + lNameLen + lExtraLen;
-        const fileData = data.slice(
-            start, start + compSz,
-        );
-
-        entries.push({
-            name,
-            data: fileData,
-        });
     }
 
     return entries;
