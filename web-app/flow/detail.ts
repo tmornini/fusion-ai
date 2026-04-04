@@ -24,8 +24,8 @@ import {
     FlowDesignerPresenter,
 } from '../app/presenters';
 
-const CANVAS_W = 1200;
-const CANVAS_H = 800;
+const FALLBACK_W = 800;
+const FALLBACK_H = 600;
 const SAVE_DELAY_MS = 800;
 
 let saveTimer: ReturnType<
@@ -585,9 +585,27 @@ export async function init(
 
     const presenter =
         new FlowDesignerPresenter(
-            graph, CANVAS_W, CANVAS_H,
+            graph, FALLBACK_W, FALLBACK_H,
         );
     renderAndBind(container, presenter);
+    const wrap = container.querySelector(
+        '.wf-canvas-wrap',
+    );
+    if (wrap) {
+        const rect =
+            wrap.getBoundingClientRect();
+        if (
+            rect.width > 0
+            && rect.height > 0
+        ) {
+            presenter.updateCanvasSize(
+                rect.width, rect.height,
+            );
+            renderAndBind(
+                container, presenter,
+            );
+        }
+    }
     bindKeyboardShortcuts(
         container, presenter,
     );

@@ -262,6 +262,7 @@ ${dialog}`;
             position_x: x,
             position_y: y,
         });
+        this.#expandIfNeeded();
     }
 
     async addNode(): Promise<boolean> {
@@ -537,6 +538,7 @@ ${dialog}`;
             forward: newPositions,
             reverse: oldPositions,
         });
+        this.#expandIfNeeded();
     }
 
     updateNodeName(
@@ -880,6 +882,7 @@ ${dialog}`;
                 },
             ],
         });
+        this.#expandIfNeeded();
         return true;
     }
 
@@ -935,6 +938,14 @@ ${dialog}`;
         this.#applyZoomToFit();
     }
 
+    updateCanvasSize(
+        w: number, h: number,
+    ): void {
+        this.#canvasW = w;
+        this.#canvasH = h;
+        this.#applyZoomToFit();
+    }
+
     #applyZoomToFit(): void {
         const positions =
             this.#state.nodes.map(
@@ -949,6 +960,26 @@ ${dialog}`;
             this.#canvasW,
             this.#canvasH,
         );
+    }
+
+    #expandIfNeeded(): void {
+        const vb =
+            this.#state.interaction.viewBox;
+        for (const n of this.#state.nodes) {
+            const r =
+                n.positionX + NODE_WIDTH;
+            const b =
+                n.positionY + NODE_HEIGHT;
+            if (
+                n.positionX < vb.x
+                || n.positionY < vb.y
+                || r > vb.x + vb.w
+                || b > vb.y + vb.h
+            ) {
+                this.#applyZoomToFit();
+                return;
+            }
+        }
     }
 
     #canDelete(): boolean {
