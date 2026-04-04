@@ -40,6 +40,9 @@ const EDGE_STROKE_SELECTED = 3;
 const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
+const BIDI_SPREAD = 16;
+const BIDI_LABEL_T_FWD = 0.35;
+const BIDI_LABEL_T_REV = 0.65;
 
 const CYCLE_DASH = '6 3';
 
@@ -311,6 +314,7 @@ function buildEdge(
     fromNode: GraphNode,
     toNode: GraphNode,
     isSelected: boolean,
+    aimOffset: number,
 ): SafeHtml {
     const fromCx =
         fromNode.positionX
@@ -334,17 +338,38 @@ function buildEdge(
     let markerUrl: string;
     let dashAttr: string;
 
+    let aimFromX = toCx;
+    let aimFromY = toCy;
+    let aimToX = fromCx;
+    let aimToY = fromCy;
+
+    if (aimOffset !== 0) {
+        const dx = toCx - fromCx;
+        const dy = toCy - fromCy;
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+            const px = -dy / len;
+            const py = dx / len;
+            const s =
+                aimOffset * BIDI_SPREAD;
+            aimFromX = toCx + px * s;
+            aimFromY = toCy + py * s;
+            aimToX = fromCx + px * s;
+            aimToY = fromCy + py * s;
+        }
+    }
+
     const startPt = perimeterPoint(
         fromNode.positionX,
         fromNode.positionY,
         NODE_WIDTH, NODE_HEIGHT,
-        toCx, toCy,
+        aimFromX, aimFromY,
     );
     const endPt = perimeterPoint(
         toNode.positionX,
         toNode.positionY,
         NODE_WIDTH, NODE_HEIGHT,
-        fromCx, fromCy,
+        aimToX, aimToY,
     );
     const dist = Math.hypot(
         endPt.x - startPt.x,
@@ -425,12 +450,14 @@ function buildEdge(
         + '"cursor:pointer"'
         + '/>';
 
-    const midX = computeMidpoint(
-        pathD,
-    );
-    const midY = computeMidpointY(
-        pathD,
-    );
+    const labelT = aimOffset === 0
+        ? BEZIER_MIDPOINT
+        : aimOffset > 0
+            ? BIDI_LABEL_T_FWD
+            : BIDI_LABEL_T_REV;
+    const mid = bezierAt(pathD, labelT);
+    const midX = mid.x;
+    const midY = mid.y;
     const labelEsc =
         escapeForHtml(edge.name);
     const labelLen = edge.name.length;
@@ -479,48 +506,35 @@ function buildEdge(
     );
 }
 
-function computeMidpoint(
+function bezierAt(
     pathD: string,
-): number {
+    t: number,
+): { x: number; y: number } {
     const parts = pathD.split(/[,\s]+/);
     const coords = parts
         .map(Number)
         .filter(n => !isNaN(n));
     if (coords.length < 8) {
-        return (coords[0] ?? 0);
+        return {
+            x: coords[0] ?? 0,
+            y: coords[1] ?? 0,
+        };
     }
-    const p0x = coords[0]!;
-    const cp1x = coords[2]!;
-    const cp2x = coords[4]!;
-    const p1x = coords[6]!;
-    const t = BEZIER_MIDPOINT;
     const u = 1 - t;
-    return u * u * u * p0x
-        + 3 * u * u * t * cp1x
-        + 3 * u * t * t * cp2x
-        + t * t * t * p1x;
-}
-
-function computeMidpointY(
-    pathD: string,
-): number {
-    const parts = pathD.split(/[,\s]+/);
-    const coords = parts
-        .map(Number)
-        .filter(n => !isNaN(n));
-    if (coords.length < 8) {
-        return (coords[1] ?? 0);
-    }
-    const p0y = coords[1]!;
-    const cp1y = coords[3]!;
-    const cp2y = coords[5]!;
-    const p1y = coords[7]!;
-    const t = BEZIER_MIDPOINT;
-    const u = 1 - t;
-    return u * u * u * p0y
-        + 3 * u * u * t * cp1y
-        + 3 * u * t * t * cp2y
-        + t * t * t * p1y;
+    const u2 = u * u;
+    const u3 = u2 * u;
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return {
+        x: u3 * coords[0]!
+            + 3 * u2 * t * coords[2]!
+            + 3 * u * t2 * coords[4]!
+            + t3 * coords[6]!,
+        y: u3 * coords[1]!
+            + 3 * u2 * t * coords[3]!
+            + 3 * u * t2 * coords[5]!
+            + t3 * coords[7]!,
+    };
 }
 
 export function buildGraphSvg(
@@ -537,6 +551,29 @@ export function buildGraphSvg(
         nodes.map(n => [n.id, n]),
     );
 
+    const pairKey = (
+        a: string, b: string,
+    ): string =>
+        a < b
+            ? a + ':' + b
+            : b + ':' + a;
+    const pairCounts =
+        new Map<string, number>();
+    for (const edge of edges) {
+        const k = pairKey(
+            edge.fromNodeId,
+            edge.toNodeId,
+        );
+        pairCounts.set(
+            k,
+            (pairCounts.get(k) ?? 0) + 1,
+        );
+    }
+    const bidi = new Set<string>();
+    for (const [k, c] of pairCounts) {
+        if (c >= 2) bidi.add(k);
+    }
+
     let edgeMarkup = '';
     for (const edge of edges) {
         const fromNode =
@@ -546,12 +583,24 @@ export function buildGraphSvg(
         if (!fromNode || !toNode) continue;
         const isSelected =
             edge.id === selectedEdgeId;
+        let aimOffset = 0;
+        const k = pairKey(
+            edge.fromNodeId,
+            edge.toNodeId,
+        );
+        if (bidi.has(k)) {
+            aimOffset =
+                edge.fromNodeId
+                    < edge.toNodeId
+                    ? 1 : -1;
+        }
         edgeMarkup +=
             buildEdge(
                 edge,
                 fromNode,
                 toNode,
                 isSelected,
+                aimOffset,
             ).toString();
     }
 
