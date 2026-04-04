@@ -123,7 +123,6 @@ export class FlowDesignerPresenter {
         const graph = await getFlowGraph(
             this.#state.flowId,
         );
-        if (!graph) return;
         this.#state.nodes = graph.nodes;
         this.#state.edges = graph.edges;
         this.#state.interaction

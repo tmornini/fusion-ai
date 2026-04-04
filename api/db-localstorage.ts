@@ -1,3 +1,6 @@
+import {
+    EntityNotFound,
+} from './db';
 import type {
     DbAdapter,
     EntityStore,
@@ -164,15 +167,19 @@ function createEntityStore<
         },
         async getById(
             id: string,
-        ): Promise<T | null> {
+        ): Promise<T> {
             const rows = readTable<T>(
                 tableName, false,
             );
-            return (
-                rows.find(
-                    entity => entity.id === id,
-                ) ?? null
+            const row = rows.find(
+                entity => entity.id === id,
             );
+            if (!row) {
+                throw new EntityNotFound(
+                    tableName, id,
+                );
+            }
+            return row;
         },
         async put(
             id: string,

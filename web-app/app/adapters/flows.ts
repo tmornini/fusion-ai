@@ -284,12 +284,11 @@ export async function getFlowsByProject(
 
 export async function getFlowGraph(
     flowId: string,
-): Promise<FlowGraph | null> {
+): Promise<FlowGraph> {
     const flow =
-        await GET<FlowEntity | null>(
+        await GET<FlowEntity>(
             `flows/${flowId}`,
         );
-    if (!flow) return null;
 
     const [
         allFlowNodes, allNodeEdges,
@@ -1045,11 +1044,6 @@ export async function exportFlowMermaid(
 ): Promise<string> {
     const graph =
         await getFlowGraph(flowId);
-    if (!graph) {
-        throw new Error(
-            'Flow not found: ' + flowId,
-        );
-    }
     return generateMermaid(graph);
 }
 
@@ -1143,11 +1137,6 @@ export async function exportFlowZip(
 ): Promise<{ data: Uint8Array; name: string }> {
     const graph =
         await getFlowGraph(flowId);
-    if (!graph) {
-        throw new Error(
-            'Flow not found: ' + flowId,
-        );
-    }
 
     const enc = new TextEncoder();
     const mmd =

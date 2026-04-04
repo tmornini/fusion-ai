@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db';
+import { EntityNotFound } from './db';
 import { nowUtc } from './types';
 
 export class ApiError {
@@ -757,6 +758,14 @@ export async function handleRequest(
             return Response.json(
                 { error: error.message },
                 { status: error.status },
+            );
+        }
+        if (
+            error instanceof EntityNotFound
+        ) {
+            return Response.json(
+                { error: error.message },
+                { status: 404 },
             );
         }
         return Response.json(
