@@ -1,48 +1,52 @@
-import { $, FOCUSABLE_SELECTOR } from './dom';
+import {
+    $, $required, FOCUSABLE_SELECTOR,
+} from './dom';
 
 export function initMobileDrawer(
 ): void {
-    const sheet =
-        $('#mobile-sheet', document);
-    const backdrop = $(
+    const sheet = $required(
+        '#mobile-sheet', document,
+    );
+    const backdrop = $required(
         '#mobile-sheet-backdrop',
         document,
     );
     let drawerPreviousFocus:
-        HTMLElement | null = null;
+        HTMLElement | undefined;
 
     function openDrawer(): void {
         drawerPreviousFocus =
             document.activeElement
                 instanceof HTMLElement
                 ? document.activeElement
-                : null;
-        sheet?.classList.remove('hidden');
-        backdrop?.classList.remove(
+                : undefined;
+        sheet.classList.remove('hidden');
+        backdrop.classList.remove(
             'hidden',
         );
         const firstFocusable =
             sheet
-                ?.querySelector<
+                .querySelector<
                     HTMLElement
                 >(FOCUSABLE_SELECTOR);
         firstFocusable?.focus();
     }
 
     function closeDrawer(): void {
-        sheet?.classList.add('hidden');
-        backdrop?.classList.add('hidden');
+        sheet.classList.add('hidden');
+        backdrop.classList.add('hidden');
         drawerPreviousFocus?.focus();
-        drawerPreviousFocus = null;
+        drawerPreviousFocus = undefined;
     }
 
-    $(
-        '#mobile-sidebar-open', document,
-    )?.addEventListener(
+    $required(
+        '#mobile-sidebar-open',
+        document,
+    ).addEventListener(
         'click',
         openDrawer,
     );
-    backdrop?.addEventListener(
+    backdrop.addEventListener(
         'click',
         closeDrawer,
     );
@@ -53,8 +57,7 @@ export function initMobileDrawer(
             if (e.key !== 'Escape')
                 return;
             if (
-                sheet
-                && !sheet.classList
+                !sheet.classList
                     .contains('hidden')
             ) {
                 closeDrawer();
@@ -62,7 +65,7 @@ export function initMobileDrawer(
         },
     );
 
-    sheet?.addEventListener(
+    sheet.addEventListener(
         'keydown',
         (e) => {
             if (e.key !== 'Tab') return;
@@ -98,30 +101,25 @@ export function initMobileDrawer(
         },
     );
 
-    $(
-        '#mobile-search-toggle',
-        document,
-    )?.addEventListener(
-        'click',
-        () => {
-            $(
-                '#mobile-search-bar',
-                document,
-            )?.classList.remove(
-                'hidden',
-            );
-        },
+    const searchBar = $(
+        '#mobile-search-bar', document,
     );
-    $(
-        '#mobile-search-close',
-        document,
-    )?.addEventListener(
-        'click',
-        () => {
-            $(
-                '#mobile-search-bar',
-                document,
-            )?.classList.add('hidden');
-        },
-    );
+    if (searchBar) {
+        $required(
+            '#mobile-search-toggle',
+            document,
+        ).addEventListener(
+            'click',
+            () => searchBar.classList
+                .remove('hidden'),
+        );
+        $required(
+            '#mobile-search-close',
+            document,
+        ).addEventListener(
+            'click',
+            () => searchBar.classList
+                .add('hidden'),
+        );
+    }
 }
