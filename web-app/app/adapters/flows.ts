@@ -1318,19 +1318,32 @@ export async function importFlowFromZip(
     const entries = readZip(data);
 
     const mmdEntry = entries.find(
-        e => e.name === 'flow.mmd',
+        e => e.name === 'flow.mmd'
+            || e.name.endsWith(
+                '/flow.mmd',
+            ),
     );
     if (!mmdEntry) {
         throw new Error(
             'ZIP missing flow.mmd',
         );
     }
+    if (mmdEntry.data.length === 0) {
+        throw new Error(
+            'flow.mmd is compressed;'
+            + ' use a stored ZIP',
+        );
+    }
 
     const jsonEntry = entries.find(
-        e => e.name === 'flow.json',
+        e => e.name === 'flow.json'
+            || e.name.endsWith(
+                '/flow.json',
+            ),
     );
 
-    const mmdText = dec.decode(mmdEntry.data);
+    const mmdText =
+        dec.decode(mmdEntry.data);
     const parsed = parseMermaid(mmdText);
     if (parsed.nodes.length === 0) {
         throw new Error(

@@ -218,6 +218,28 @@ export function buildZip(
     return out;
 }
 
+function findEocd(
+    view: DataView,
+    length: number,
+): number {
+    const minOff = Math.max(
+        0, length - 65557,
+    );
+    for (
+        let i = length - END_RECORD;
+        i >= minOff;
+        i--
+    ) {
+        if (
+            view.getUint32(i, true)
+                === END_SIG
+        ) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 export function readZip(
     data: Uint8Array,
 ): ZipEntry[] {
@@ -226,40 +248,86 @@ export function readZip(
         data.byteOffset,
         data.byteLength,
     );
+
+    const eocd = findEocd(
+        view, data.byteLength,
+    );
+    if (eocd < 0) return [];
+
+    const count = view.getUint16(
+        eocd + 10, true,
+    );
+    const cdStart = view.getUint32(
+        eocd + 16, true,
+    );
+
     const entries: ZipEntry[] = [];
-    let offset = 0;
+    let off = cdStart;
 
-    while (
-        offset + LOCAL_HEADER
-            <= data.length
-    ) {
-        const sig = view.getUint32(
-            offset, true,
+    for (let i = 0; i < count; i++) {
+        if (
+            off + CENTRAL_HEADER
+                > data.byteLength
+        ) break;
+        if (
+            view.getUint32(off, true)
+                !== CENTRAL_SIG
+        ) break;
+
+        const method = view.getUint16(
+            off + 10, true,
         );
-        if (sig !== LOCAL_SIG) break;
-
-        const compSize = view.getUint32(
-            offset + 18, true,
+        const compSz = view.getUint32(
+            off + 20, true,
         );
         const nameLen = view.getUint16(
-            offset + 26, true,
+            off + 28, true,
         );
         const extraLen = view.getUint16(
-            offset + 28, true,
+            off + 30, true,
         );
-        offset += LOCAL_HEADER;
-
-        const nameBytes = data.slice(
-            offset, offset + nameLen,
+        const commentLen = view.getUint16(
+            off + 32, true,
         );
-        const name =
-            decoder.decode(nameBytes);
-        offset += nameLen + extraLen;
+        const localOff = view.getUint32(
+            off + 42, true,
+        );
 
+        off += CENTRAL_HEADER;
+
+        const name = decoder.decode(
+            data.slice(
+                off, off + nameLen,
+            ),
+        );
+        off +=
+            nameLen + extraLen + commentLen;
+
+        if (method !== STORE) {
+            entries.push({
+                name,
+                data: new Uint8Array(0),
+            });
+            continue;
+        }
+
+        if (
+            localOff + LOCAL_HEADER
+                > data.byteLength
+        ) continue;
+
+        const lNameLen = view.getUint16(
+            localOff + 26, true,
+        );
+        const lExtraLen = view.getUint16(
+            localOff + 28, true,
+        );
+        const start =
+            localOff + LOCAL_HEADER
+            + lNameLen + lExtraLen;
         const fileData = data.slice(
-            offset, offset + compSize,
+            start, start + compSz,
         );
-        offset += compSize;
 
         entries.push({
             name,
