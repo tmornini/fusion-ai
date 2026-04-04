@@ -763,6 +763,7 @@ export async function deleteNodeCapture(
     const [
         nodeEdges, flowNodes,
         allNodes, allEdges,
+        nodeFields, allFields,
     ] = await Promise.all([
         GET<WfNodeEdgeEntity[]>(
             'wf-node-edges',
@@ -772,6 +773,10 @@ export async function deleteNodeCapture(
         ),
         GET<WfNodeEntity[]>('wf-nodes'),
         GET<WfEdgeEntity[]>('wf-edges'),
+        GET<WfNodeFieldEntity[]>(
+            'wf-node-fields',
+        ),
+        GET<WfFieldEntity[]>('wf-fields'),
     ]);
 
     const node = allNodes.find(
@@ -787,6 +792,10 @@ export async function deleteNodeCapture(
             ne.from_node_id === nodeId
             || ne.to_node_id === nodeId,
     );
+    const affectedFields =
+        nodeFields.filter(
+            nf => nf.node_id === nodeId,
+        );
 
     const restoreSteps: UndoStep[] = [];
     const deleteSteps: UndoStep[] = [];
@@ -835,6 +844,36 @@ export async function deleteNodeCapture(
                 'wf-edges/'
                 + ne.wf_edge_id,
         });
+    }
+
+    for (const nf of affectedFields) {
+        const field = allFields.find(
+            f => f.id === nf.field_id,
+        );
+        if (field) {
+            restoreSteps.push({
+                op: 'post',
+                resource: 'wf-fields',
+                body: { ...field },
+            });
+        }
+        restoreSteps.push({
+            op: 'post',
+            resource: 'wf-node-fields',
+            body: { ...nf },
+        });
+        deleteSteps.push({
+            op: 'delete',
+            resource:
+                `wf-node-fields/${nf.id}`,
+        });
+        if (field) {
+            deleteSteps.push({
+                op: 'delete',
+                resource:
+                    `wf-fields/${field.id}`,
+            });
+        }
     }
 
     if (flowNodeLink) {
