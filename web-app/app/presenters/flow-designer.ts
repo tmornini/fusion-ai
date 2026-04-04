@@ -4,6 +4,9 @@ import {
 import type { SafeHtml } from '../safe-html';
 import { showToast } from '../toast';
 import {
+    DISPLAY_ABSENT,
+} from '../format';
+import {
     iconArrowLeft,
     iconUndo,
     iconRedo,
@@ -1317,9 +1320,11 @@ class="text-sm text-muted"
         toNode: GraphNode | undefined,
     ): SafeHtml {
         const fromName =
-            fromNode?.name ?? '\u2014';
+            fromNode?.name
+            ?? DISPLAY_ABSENT;
         const toName =
-            toNode?.name ?? '\u2014';
+            toNode?.name
+            ?? DISPLAY_ABSENT;
         return html`<div
 class="wf-props-panel">
 <div style="display:flex;
