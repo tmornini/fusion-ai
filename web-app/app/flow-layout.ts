@@ -112,16 +112,20 @@ export function computeLayout(
     }
 
     const step = NODE_WIDTH + HORIZONTAL_GAP;
-    const intraRankGap = NODE_HEIGHT + 20;
+    const siblingStep = NODE_WIDTH + 100;
 
     for (const [rank, ids] of rankGroups) {
-        for (let i = 0; i < ids.length; i++) {
+        const n = ids.length;
+        const span = (n - 1) * siblingStep;
+        for (let i = 0; i < n; i++) {
             const id = ids[i]!;
-            const x = START_X + rank * step;
+            const x =
+                START_X + rank * step
+                + i * siblingStep
+                - span / 2;
             const y =
-                START_Y +
-                rank * VERTICAL_GAP +
-                i * intraRankGap;
+                START_Y
+                + rank * VERTICAL_GAP;
             positions.set(id, { x, y });
         }
     }
