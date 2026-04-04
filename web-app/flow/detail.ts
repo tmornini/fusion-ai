@@ -722,6 +722,52 @@ function bindKeyboardShortcuts(
                 );
                 return;
             }
+            if (
+                (e.key === 'Delete'
+                    || e.key === 'Backspace')
+                && !(
+                    document.activeElement
+                    instanceof
+                    HTMLInputElement
+                    || document.activeElement
+                    instanceof
+                    HTMLTextAreaElement
+                    || document.activeElement
+                    instanceof
+                    HTMLSelectElement
+                )
+            ) {
+                const nodeId =
+                    presenter
+                        .selectedNodeId();
+                const edgeId =
+                    presenter
+                        .selectedEdgeId();
+                if (nodeId !== null) {
+                    e.preventDefault();
+                    void presenter
+                        .deleteSelectedNode()
+                        .then(
+                            () => renderAndBind(
+                                container,
+                                presenter,
+                            ),
+                        );
+                    return;
+                }
+                if (edgeId !== null) {
+                    e.preventDefault();
+                    void presenter
+                        .deleteSelectedEdge()
+                        .then(
+                            () => renderAndBind(
+                                container,
+                                presenter,
+                            ),
+                        );
+                    return;
+                }
+            }
             const mod =
                 e.metaKey || e.ctrlKey;
             if (!mod) return;
