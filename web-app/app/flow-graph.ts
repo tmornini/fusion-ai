@@ -40,7 +40,7 @@ const EDGE_STROKE_SELECTED = 3;
 const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 16;
+const BIDI_SPREAD = 20;
 const BIDI_LABEL_T_FWD = 0.35;
 const BIDI_LABEL_T_REV = 0.65;
 
@@ -452,7 +452,7 @@ function buildEdge(
 
     const labelT = aimOffset === 0
         ? BEZIER_MIDPOINT
-        : aimOffset > 0
+        : edge.fromNodeId < edge.toNodeId
             ? BIDI_LABEL_T_FWD
             : BIDI_LABEL_T_REV;
     const mid = bezierAt(pathD, labelT);
@@ -589,10 +589,7 @@ export function buildGraphSvg(
             edge.toNodeId,
         );
         if (bidi.has(k)) {
-            aimOffset =
-                edge.fromNodeId
-                    < edge.toNodeId
-                    ? 1 : -1;
+            aimOffset = 1;
         }
         edgeMarkup +=
             buildEdge(
