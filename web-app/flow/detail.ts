@@ -281,54 +281,69 @@ function bindToolbarActions(
 async function handleCopyMermaid(
     presenter: FlowDesignerPresenter,
 ): Promise<void> {
+    const flowId = presenter.flowId();
+    let text: string;
     try {
-        const flowId = presenter.flowId();
-        const text =
+        text =
             await exportFlowMermaid(flowId);
-        await navigator.clipboard
-            .writeText(text);
-        showToast(
-            'Mermaid copied to clipboard',
-            'success',
-        );
     } catch {
         showToast(
-            'Failed to copy Mermaid',
+            'Failed to export Mermaid',
             'error',
         );
+        return;
     }
+    try {
+        await navigator.clipboard
+            .writeText(text);
+    } catch {
+        showToast(
+            'Failed to copy to clipboard',
+            'error',
+        );
+        return;
+    }
+    showToast(
+        'Mermaid copied to clipboard',
+        'success',
+    );
 }
 
 async function handleExportZip(
     presenter: FlowDesignerPresenter,
 ): Promise<void> {
+    const flowId = presenter.flowId();
+    let result: {
+        data: Uint8Array;
+        name: string;
+    };
     try {
-        const flowId = presenter.flowId();
-        const result =
+        result =
             await exportFlowZip(flowId);
-        const blob = new Blob(
-            [result.data as
-                unknown as ArrayBuffer],
-            { type: 'application/zip' },
-        );
-        const url =
-            URL.createObjectURL(blob);
-        const a =
-            document.createElement('a');
-        a.href = url;
-        a.download = result.name;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast(
-            'Flow exported',
-            'success',
-        );
     } catch {
         showToast(
             'Failed to export flow',
             'error',
         );
+        return;
     }
+    const blob = new Blob(
+        [result.data as
+            unknown as ArrayBuffer],
+        { type: 'application/zip' },
+    );
+    const url =
+        URL.createObjectURL(blob);
+    const a =
+        document.createElement('a');
+    a.href = url;
+    a.download = result.name;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(
+        'Flow exported',
+        'success',
+    );
 }
 
 function bindPanelActions(
