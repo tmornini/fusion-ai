@@ -43,7 +43,7 @@ const EDGE_STROKE_SELECTED = 3;
 const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 20;
+const BIDI_SPREAD = 40;
 const BIDI_LABEL_T_FWD = 0.35;
 const BIDI_LABEL_T_REV = 0.65;
 
