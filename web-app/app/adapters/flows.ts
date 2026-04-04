@@ -53,8 +53,12 @@ export interface FlowListItem {
     edgeCount: number;
 }
 
-export interface FlowSummary
-    extends FlowListItem {
+export interface FlowSummary {
+    id: string;
+    name: string;
+    description: string;
+    nodeCount: number;
+    edgeCount: number;
     projectName: string | null;
 }
 
