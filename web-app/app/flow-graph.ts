@@ -162,11 +162,6 @@ function buildDefs(): string {
         + `<path d="${arrowPath}"`
         + ` fill="${WARN}"/>`
         + '</marker>'
-        + '<marker id="wf-arrow-ok"'
-        + markerAttrs
-        + `<path d="${arrowPath}"`
-        + ` fill="${GREEN}"/>`
-        + '</marker>'
         + '<filter id="wf-glow"'
         + ' x="-20%" y="-20%"'
         + ' width="140%" height="140%">'
