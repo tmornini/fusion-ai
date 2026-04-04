@@ -181,11 +181,11 @@ function bindToolbarActions(
                 ),
             );
         }
-        if (action === 're-layout') {
+        if (action === 'auto-layout') {
             btn.addEventListener(
                 'click',
                 () => {
-                    presenter.relayout();
+                    presenter.autoLayout();
                     renderAndBind(
                         container, presenter,
                     );

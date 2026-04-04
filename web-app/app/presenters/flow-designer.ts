@@ -479,7 +479,7 @@ ${dialog}`;
         return true;
     }
 
-    relayout(): void {
+    autoLayout(): void {
         const oldPositions: UndoStep[] =
             this.#state.nodes.map(n => ({
                 op: 'put' as const,
@@ -533,7 +533,7 @@ ${dialog}`;
             });
         }
         this.#undo.push({
-            type: 'relayout',
+            type: 'auto-layout',
             forward: newPositions,
             reverse: oldPositions,
         });
@@ -1026,8 +1026,8 @@ class="wf-toolbar">
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
-    data-action="re-layout"
-    >Re-layout</button>
+    data-action="auto-layout"
+    >Auto Layout</button>
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-in"
     >Zoom +</button>
