@@ -30,7 +30,7 @@ import type {
 } from '../mermaid-parse';
 import {
     buildZip, readZip,
-} from '../mermaid-zip';
+} from '../zip';
 import {
     computeLayout,
 } from '../flow-layout';
