@@ -1117,11 +1117,18 @@ function buildSidecar(
     }, null, 2);
 }
 
+function minuteUtc(): string {
+    return new Date()
+        .toISOString()
+        .slice(0, 16) + 'Z';
+}
+
 function buildFlowTxt(
     flowId: string,
 ): string {
     return 'flowId: ' + flowId + '\n'
-        + 'exportedAt: ' + nowUtc() + '\n';
+        + 'exportedAt: '
+        + minuteUtc() + '\n';
 }
 
 export async function exportFlowZip(
