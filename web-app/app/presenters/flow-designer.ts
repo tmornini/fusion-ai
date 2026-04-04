@@ -31,6 +31,10 @@ import { UndoManager } from '../flow-undo';
 import type { UndoStep } from '../flow-undo';
 import {
     buildGraphSvg,
+    perimeterPoint,
+} from '../flow-graph';
+import type {
+    ConnectState,
 } from '../flow-graph';
 import {
     computeLayout,
@@ -1317,14 +1321,14 @@ data-action="delete-edge"
         return html``;
     }
 
-    #buildConnectPreview(): string {
+    #connectSourcePoint(): {
+        x: number;
+        y: number;
+    } | null {
         const interaction =
             this.#state.interaction;
-        if (!interaction.isConnecting) {
-            return '';
-        }
         if (!interaction.connectFromNodeId) {
-            return '';
+            return null;
         }
         const fromNode =
             this.#state.nodes.find(
@@ -1332,21 +1336,41 @@ data-action="delete-edge"
                     === interaction
                         .connectFromNodeId,
             );
-        if (!fromNode) return '';
-        const startX =
-            fromNode.positionX + NODE_WIDTH;
-        const startY =
-            fromNode.positionY
-            + NODE_HEIGHT / 2;
+        if (!fromNode) return null;
+        const endX =
+            interaction.connectToX;
+        const endY =
+            interaction.connectToY;
+        return perimeterPoint(
+            fromNode.positionX,
+            fromNode.positionY,
+            NODE_WIDTH, NODE_HEIGHT,
+            endX, endY,
+        );
+    }
+
+    #buildConnectPreview(): string {
+        const interaction =
+            this.#state.interaction;
+        if (!interaction.isConnecting) {
+            return '';
+        }
+        const src =
+            this.#connectSourcePoint();
+        if (!src) return '';
         const endX =
             interaction.connectToX;
         const endY =
             interaction.connectToY;
         return '<line'
-            + ' x1="' + String(startX) + '"'
-            + ' y1="' + String(startY) + '"'
-            + ' x2="' + String(endX) + '"'
-            + ' y2="' + String(endY) + '"'
+            + ' x1="'
+            + String(src.x) + '"'
+            + ' y1="'
+            + String(src.y) + '"'
+            + ' x2="'
+            + String(endX) + '"'
+            + ' y2="'
+            + String(endY) + '"'
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"'
             + ' stroke-dasharray="6 3"'
@@ -1379,10 +1403,37 @@ data-action="delete-edge"
         });
     }
 
+    #buildConnectState():
+        ConnectState | null {
+        const interaction =
+            this.#state.interaction;
+        if (!interaction.isConnecting) {
+            return null;
+        }
+        const src =
+            this.#connectSourcePoint();
+        if (
+            !src
+            || !interaction
+                .connectFromNodeId
+        ) {
+            return null;
+        }
+        return {
+            fromNodeId:
+                interaction
+                    .connectFromNodeId,
+            fromX: src.x,
+            fromY: src.y,
+        };
+    }
+
     #buildCanvas(): SafeHtml {
         const nodes = this.#nodesForRender();
         const vb =
             this.#state.interaction.viewBox;
+        const cs =
+            this.#buildConnectState();
         const svgHtml = buildGraphSvg(
             nodes,
             this.#state.edges,
@@ -1396,6 +1447,7 @@ data-action="delete-edge"
             this.#state
                 .interaction
                 .selectedEdgeId,
+            cs,
         );
         const preview =
             this.#buildConnectPreview();

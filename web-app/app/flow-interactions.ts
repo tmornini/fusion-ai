@@ -290,26 +290,22 @@ function handlePointerUp(
                 e.clientX, e.clientY,
             );
         if (target instanceof Element) {
-            const portAttr = target
-                .getAttribute('data-port');
-            if (portAttr !== null) {
-                const toNodeId =
-                    findAncestorAttr(
-                        target,
-                        'data-node-id',
-                    );
-                if (
-                    toNodeId
-                    && toNodeId
-                        !== state
-                            .connectFromNodeId
-                ) {
-                    onEdgeCreated(
-                        state
-                            .connectFromNodeId,
-                        toNodeId,
-                    );
-                }
+            const toNodeId =
+                findAncestorAttr(
+                    target,
+                    'data-node-id',
+                );
+            if (
+                toNodeId
+                && toNodeId
+                    !== state
+                        .connectFromNodeId
+            ) {
+                onEdgeCreated(
+                    state
+                        .connectFromNodeId,
+                    toNodeId,
+                );
             }
         }
         state.isConnecting = false;
