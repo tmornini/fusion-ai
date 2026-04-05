@@ -23,13 +23,13 @@ run as a single continuous regression pass.
 | B. Entry Pages | 16 |
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 44 |
-| E. Core: Projects | 13 |
+| E. Core: Projects | 9 |
 | F. Tools | 21 |
 | G. Admin Pages | 32 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 20 |
 | J. Teardown | 3 |
-| **Total** | **206** |
+| **Total** | **202** |
 
 ---
 
@@ -342,12 +342,13 @@ on. Run these in order.
   baseline vs. current metrics. PASS: all cards
   render with data. Baseline/current metrics
   show em dash when values are zero or missing.
-- [ ] **E4** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and days. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
-- [ ] **E6** **Discussion tab**: shows 3 seeded comments with author avatars/names. Comment composer textarea + "Post Comment" button (disabled when empty, enabled when text entered). PASS: all elements render.
-- [ ] **E6b** Type a comment in the composer textarea, click "Post Comment". PASS: toast "Comment posted" appears, comment appears in the list.
-- [ ] **E7** **History tab**: shows 3 version entries (v1.0, v1.1, v1.2) with latest highlighted. PASS: version list renders in order.
-- [ ] **E8** **Linked Data tab**: shows empty state "No linked data yet" with "Link Data Source" button. PASS: empty state renders cleanly.
-- [ ] **E9** Right sidebar shows Team card (4 members with roles) and Milestones card (5 milestones: 2 completed, 1 in progress, 2 pending). PASS: both cards render with correct data.
+- [ ] **E4** Sidebar shows Team card listing
+  project team members with roles. PASS: team
+  members render with names and role badges.
+- [ ] **E5** Flows section shows linked flows with
+  node/edge counts and a "New Flow" button. PASS:
+  at least one flow displayed or empty state with
+  button visible.
 
 ### Project Detail — Edit Mode
 
@@ -373,10 +374,11 @@ on. Run these in order.
 ### Flow Designer (`flow/detail.html?flowId=...`)
 
 - [ ] **F14** Navigate to a flow designer page.
-  PASS: toolbar at top with Add State, Re-layout,
-  Zoom +/-, Fit, stats, and Save. SVG canvas below
-  with dot grid background showing the flow
-  graph.
+  PASS: toolbar at top with + Add State, Auto
+  Layout, Zoom +/-, Fit, Copy Mermaid, Export
+  .zip. SVG canvas below with dot grid background
+  showing the flow graph. Changes auto-save
+  (no explicit Save button).
 - [ ] **F15** Nodes display correctly: start node
   has green border with "Start state" subtitle,
   standard nodes have blue border with field count,
@@ -389,10 +391,10 @@ on. Run these in order.
 - [ ] **F17** Connection ports (small circles) are
   visible on node edges. Hover over a port. PASS:
   cursor changes to crosshair.
-- [ ] **F18** Click a node. PASS: node gets blue
-  glow selection effect. Properties panel appears
-  showing state name, description, form fields
-  list, and outgoing transitions.
+- [ ] **F18** Double-click a node. PASS: node gets
+  blue glow selection effect. Properties panel
+  appears showing state name, description, form
+  fields list, and outgoing transitions.
 - [ ] **F19** Click "+ Add State" in toolbar. PASS:
   new node appears on the canvas between existing
   nodes. Auto-layout places it along the diagonal
@@ -404,7 +406,7 @@ on. Run these in order.
 - [ ] **F19c** Attempt to drag the start or complete
   node. PASS: they remain pinned at their positions
   and do not move.
-- [ ] **F19d** Click "Re-layout" in toolbar. PASS:
+- [ ] **F19d** Click "Auto Layout" in toolbar. PASS:
   all non-pinned nodes reposition along the
   top-left to bottom-right diagonal. Start stays
   top-left, complete stays bottom-right.
@@ -412,10 +414,11 @@ on. Run these in order.
   node's port. PASS: a dashed preview line appears
   during drag. On release over a valid port, a new
   edge is created with a default name.
-- [ ] **F21** Select a node, edit its name in the
-  properties panel. PASS: the node label updates on
-  the SVG canvas immediately.
-- [ ] **F22** Select a node, click "+ Add Field".
+- [ ] **F21** Double-click a node, edit its name in
+  the properties panel. PASS: the node label
+  updates on the SVG canvas immediately (changes
+  auto-save after 800ms debounce).
+- [ ] **F22** Double-click a node, click "+ Add Field".
   Enter field name, select type from dropdown,
   toggle required. PASS: field appears in the
   fields list with correct type badge and required
@@ -435,10 +438,10 @@ on. Run these in order.
   toolbar. PASS: canvas zooms in and out smoothly.
   Click "Fit". PASS: canvas adjusts to show all
   nodes.
-- [ ] **F27** Click "Save". PASS: success toast
-  appears. Navigate away and return to the
-  designer. PASS: all nodes, edges, fields, and
-  positions persist.
+- [ ] **F27** Edit a node name via the properties
+  panel, wait 1 second for auto-save. Navigate
+  away and return to the designer. PASS: all
+  nodes, edges, fields, and positions persist.
 - [ ] **F28** Navigate to
   `flow/detail.html?flowId=nonexistent`. PASS:
   page handles gracefully — redirects to flow list
@@ -578,7 +581,7 @@ on. Run these in order.
 | Browser & Version | |
 | OS | |
 | Build SHA | |
-| Tests Passed | /206 |
-| Tests Failed | /206 |
-| Tests Skipped | /206 |
+| Tests Passed | /202 |
+| Tests Failed | /202 |
+| Tests Skipped | /202 |
 | Notes | |
