@@ -22,14 +22,14 @@ run as a single continuous regression pass.
 | AA. Data Entry Workflow | 43 |
 | B. Entry Pages | 16 |
 | C. Core: Dashboard | 7 |
-| D. Core: Ideas Workflow | 44 |
-| E. Core: Projects | 9 |
-| F. Tools | 21 |
-| G. Admin Pages | 32 |
+| D. Core: Ideas Workflow | 47 |
+| E. Core: Projects | 11 |
+| F. Tools | 24 |
+| G. Admin Pages | 34 |
 | H. Reference & System | 2 |
-| I. Cross-Cutting Concerns | 20 |
+| I. Cross-Cutting Concerns | 27 |
 | J. Teardown | 3 |
-| **Total** | **202** |
+| **Total** | **219** |
 
 ---
 
@@ -291,6 +291,7 @@ on. Run these in order.
 ### Idea Convert (`ideas/convert.html`)
 
 - [ ] **D20** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 6 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Budget (select), Priority (select). Sticky sidebar shows idea summary (problem, solution, outcome).
+- [ ] **D20b** With required fields empty, "Create Project" button is disabled and progress bar shows 0/7. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 7 required fields are filled.
 - [ ] **D21** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
 ### Idea Review Queue (`ideas/review-queue.html`)
@@ -316,7 +317,9 @@ on. Run these in order.
   PASS: clicking it shows confirmation or
   success feedback.
 - [ ] **D29** "Reject" or "Send Back" action is available. PASS: clicking it shows confirmation or reason dialog.
+- [ ] **D29b** Confirm the reject dialog. PASS: idea status changes to "sent-back", page updates to reflect rejected state.
 - [ ] **D30** Clarification questions are displayed if applicable. PASS: section renders (may show empty state if no clarifications for this idea).
+- [ ] **D30b** Click "Request Clarification" button. PASS: clarification dialog opens. Submit the dialog. PASS: clarification is recorded and visible in the clarifications section.
 
 ### Ideas Workflow Integration
 
@@ -333,6 +336,7 @@ on. Run these in order.
 
 - [ ] **E1** Navigate to `projects/`. PASS: table/list shows 6 seeded projects with title, status, progress, and priority. Project cards show "—" (em-dash) for missing/zero metric values (time, cost, impact). Footer count uses correct singular/plural grammar (e.g. "1 project", "6 projects").
 - [ ] **E1b** Click the table/grid view toggle. PASS: layout switches between card grid and table row format. Toggle button highlights for the active view.
+- [ ] **E1c** Click a status filter badge (e.g. "Active"). PASS: project list filters to show only projects with that status. Click the same badge again or "All". PASS: full list returns.
 - [ ] **E2** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
 
 ### Project Detail (`projects/detail.html?projectId=1`)
@@ -349,6 +353,7 @@ on. Run these in order.
   node/edge counts and a "New Flow" button. PASS:
   at least one flow displayed or empty state with
   button visible.
+- [ ] **E5b** Click "New Flow" button. PASS: a new flow is created and the browser navigates to the flow designer page. The new flow is associated with the current project.
 
 ### Project Detail — Edit Mode
 
@@ -370,6 +375,12 @@ on. Run these in order.
   description in real-time.
 - [ ] **F13** Click a flow card. PASS: navigates
   to `flow/detail.html?flowId=<id>`.
+
+### Flow Import
+
+- [ ] **F13b** Click "Import Flow" button on the flows list page. PASS: import dialog opens with a file upload input and a project selector dropdown.
+- [ ] **F13c** Select a `.mermaid` file via the file input and choose a project from the dropdown. Click "Import". PASS: flow is created, toast confirms import, and browser navigates to the flow designer for the imported flow.
+- [ ] **F13d** Repeat with a `.zip` file exported from a previous flow. PASS: imported flow contains the same nodes, edges, and fields as the original.
 
 ### Flow Designer (`flow/detail.html?flowId=...`)
 
@@ -458,6 +469,8 @@ on. Run these in order.
 - [ ] **G1c** Detail panel shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches — Dimensions shows Driver/Analytical/Expressive/Amiable scores with progress bars.
 - [ ] **G1d** Click a different team member card. PASS: detail panel updates to show the newly selected member's information.
 - [ ] **G1e** Type a name in the search input. PASS: team member cards filter in real-time by name, role, or department.
+- [ ] **G1f** Click "Add Member" button. PASS: add-member dialog opens with an email field and send button.
+- [ ] **G1g** Enter an email address and click send. PASS: toast confirms invitation, dialog closes.
 - [ ] **G2** Member status dots render with distinct colors (green for available, yellow for busy, red for limited). PASS: at least 2 different statuses visible.
 
 ### Account (`organization/index.html`)
@@ -522,6 +535,7 @@ on. Run these in order.
 - [ ] **I3** Select "Light" theme. PASS: page returns to light theme.
 - [ ] **I4** Select "System" theme. PASS: theme follows OS preference (matches `prefers-color-scheme`).
 - [ ] **I5** Reload the page. PASS: theme choice persists (stored in `localStorage` key `fusion-theme`).
+- [ ] **I5b** Open the app in a second browser tab. Change theme in the first tab. PASS: second tab updates to the new theme without manual reload (cross-tab sync via StorageEvent).
 
 ### Sidebar
 
@@ -538,12 +552,16 @@ on. Run these in order.
 - [ ] **I10** Tap/click the hamburger menu. PASS: mobile sidebar sheet slides in from the left with navigation links.
 - [ ] **I11** Tap/click the backdrop or a nav link. PASS: mobile sidebar closes.
 - [ ] **I11b** Tap a navigation link in the mobile sidebar. PASS: navigates to the target page and mobile sidebar closes.
+- [ ] **I11c** Open the mobile sidebar, press `Escape`. PASS: sidebar closes.
+- [ ] **I11d** Open the mobile sidebar, press `Tab` repeatedly. PASS: focus cycles through focusable elements inside the sidebar without escaping to the page behind it. `Shift+Tab` at the first element wraps to the last.
 
 ### Command Palette
 
 - [ ] **I12** Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux). PASS: command palette overlay appears with search input focused.
 - [ ] **I13** Type a search term (e.g. "ideas"). PASS: filtered results appear. Select a result — navigates to the corresponding page.
 - [ ] **I14** Press `Escape`. PASS: command palette closes.
+- [ ] **I14b** Open command palette, type a search term. Use `Down Arrow` and `Up Arrow` to navigate results. PASS: active result highlight moves with arrow keys. Press `Enter`. PASS: navigates to the highlighted result.
+- [ ] **I14c** Open command palette with an empty search field. PASS: results are grouped by category (Pages, Ideas, Projects, People) with category headers. Type a term that matches no results. PASS: result list is empty or shows a no-results message.
 
 ### Loading States
 
@@ -553,6 +571,8 @@ on. Run these in order.
 ### Toasts
 
 - [ ] **I17** Trigger a toast (e.g. save profile, or use DB Admin reload). PASS: toast appears at bottom or corner of screen, auto-dismisses after ~3 seconds with fade-out.
+- [ ] **I17b** While a toast is visible, click its close button (×). PASS: toast dismisses immediately without waiting for auto-dismiss timer.
+- [ ] **I17c** Trigger multiple toasts in rapid succession (e.g. save profile repeatedly). PASS: toasts stack visibly (up to 5). When a 6th toast arrives, the oldest is removed.
 
 ### Snapshot Round-Trip
 
@@ -581,7 +601,7 @@ on. Run these in order.
 | Browser & Version | |
 | OS | |
 | Build SHA | |
-| Tests Passed | /202 |
-| Tests Failed | /202 |
-| Tests Skipped | /202 |
+| Tests Passed | /219 |
+| Tests Failed | /219 |
+| Tests Skipped | /219 |
 | Notes | |
