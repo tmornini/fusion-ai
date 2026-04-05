@@ -19,17 +19,17 @@ run as a single continuous regression pass.
 | Section | Tests |
 |---|--:|
 | A. Build & Setup | 5 |
-| AA. Data Entry Workflow | 46 |
+| AA. Data Entry Workflow | 43 |
 | B. Entry Pages | 16 |
 | C. Core: Dashboard | 7 |
-| D. Core: Ideas Workflow | 50 |
-| E. Core: Projects | 17 |
+| D. Core: Ideas Workflow | 44 |
+| E. Core: Projects | 13 |
 | F. Tools | 21 |
-| G. Admin Pages | 34 |
+| G. Admin Pages | 32 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 20 |
 | J. Teardown | 3 |
-| **Total** | **221** |
+| **Total** | **206** |
 
 ---
 
@@ -75,13 +75,7 @@ on. Run these in order.
 - [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Set remaining fields: category, estimated impact, duration (days), cost. Click "Save". PASS: toast confirms save, all fields persist.
 - [ ] **AA14** Repeat creation and field entry for all 11 ideas matching mock data titles. PASS: ideas list shows all 11 with correct titles.
 
-### AA5. Score Ideas
-
-- [ ] **AA15** Navigate to idea #1 detail. Locate the score editing section. PASS: score input is visible showing current score (0).
-- [ ] **AA16** Enter score 92 for idea #1. Click save. PASS: toast confirms, score displays with correct color-coded styling.
-- [ ] **AA17** Set scores for all 11 ideas (92, 87, 84, 81, 78, 74, 87, 72, 81, 45, 91). PASS: ideas list shows correct scores with priority badges and color coding.
-
-### AA6. Submit Ideas for Review
+### AA5. Submit Ideas for Review
 
 - [ ] **AA18** Navigate to idea #1 detail (status: active). Click "Submit for Review". PASS: status changes to "In Review", button disappears.
 - [ ] **AA19** Submit ideas 1, 4, 7, 8, 9, 10, 11 for review (matching mock data statuses). PASS: each transitions from active to in-review.
@@ -207,7 +201,7 @@ on. Run these in order.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter `test@example.com`, password `password123`, click "Sign in →". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`.
 - [ ] **B10** Click "Don't have an account?" toggle. PASS: switches to Sign Up mode — title changes to "Get started", "Company Name" field appears, submit reads "Create account →".
-- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `onboarding/index.html`.
+- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `organization/onboarding.html`.
 
 ### Onboarding Page (`onboarding/`)
 
@@ -247,8 +241,7 @@ on. Run these in order.
 ### Ideas List (`ideas/`)
 
 - [ ] **D1** Navigate to `ideas/`. PASS: table/list shows 11 seeded ideas with title, score, priority, status, and Time/Cost/Impact stats. Ideas without estimates show "—" (em-dash) instead of zero values.
-- [ ] **D1b** Click the "Performance" view toggle. PASS: cards reorder by score descending, toggle button highlights. Click "Priority" toggle. PASS: cards return to priority rank order.
-- [ ] **D1c** "Idea Flow" workflow banner is
+- [ ] **D1b** "Idea Flow" workflow banner is
   visible showing the 3 stages: Create → Review
   → Convert. PASS: banner renders with labeled
   steps.
@@ -257,9 +250,9 @@ on. Run these in order.
   Archived). PASS: badges render with distinct
   colors.
 - [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
-- [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `idea-create/index.html`.
+- [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `ideas/create.html`.
 
-### Idea Create Wizard (`idea-create/`)
+### Idea Create Wizard (`ideas/create.html`)
 
 - [ ] **D5** Page loads showing Step 1 of 3 ("The Problem") with a progress bar. PASS: step indicator shows step 1 active, steps 2 and 3 inactive.
 - [ ] **D6** "Continue" button is disabled when Title and Problem Statement are empty. PASS: button is visually disabled and not clickable.
@@ -286,30 +279,23 @@ on. Run these in order.
 - [ ] **D19c** For an idea in "in_review"
   status: "Review" action button is visible.
   PASS: clicking it navigates to
-  `approval-detail/` page.
-- [ ] **D19e** For a convertible idea: "Convert" action button is visible. PASS: clicking it navigates to `idea-convert/` page.
+  `ideas/approval-detail.html` page.
+- [ ] **D19e** For a convertible idea: "Convert" action button is visible. PASS: clicking it navigates to `ideas/convert.html` page.
 - [ ] **D19f** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
-
-### Idea Detail — Score Editing
-
-- [ ] **D19g** Navigate to idea detail. Score editing section is visible with the current score value displayed. PASS: score input renders with current value.
-- [ ] **D19h** Enter a new score value (e.g. 85). Click save. PASS: toast confirms save, score updates with correct color-coded styling (green for high, yellow for medium, red for low).
-- [ ] **D19i** Navigate to ideas list. PASS: updated score is reflected on the idea's row with correct priority badge.
-- [ ] **D19j** Return to idea detail. PASS: score value persists at the saved value.
 
 ### Idea Detail — Submit for Review
 
 - [ ] **D19k** Navigate to an idea with status "active". PASS: "Submit for Review" button is visible in the header area.
 - [ ] **D19l** Click "Submit for Review". PASS: status changes to "In Review", button disappears, status badge updates.
 
-### Idea Convert (`idea-convert/`)
+### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D20** Navigate to `idea-convert/?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 6 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Budget (select), Priority (select). Sticky sidebar shows idea summary (problem, solution, outcome).
+- [ ] **D20** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 6 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Budget (select), Priority (select). Sticky sidebar shows idea summary (problem, solution, outcome).
 - [ ] **D21** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
-### Idea Review Queue (`idea-review-queue/`)
+### Idea Review Queue (`ideas/review-queue.html`)
 
-- [ ] **D22** Navigate to `idea-review-queue/`. PASS: page shows stats cards (Pending Review, Ready to Decide, High Priority, Avg. Wait Time) and a list of ideas pending review.
+- [ ] **D22** Navigate to `ideas/review-queue.html`. PASS: page shows 3 stats cards (Pending Review, Ready to Decide, Avg. Wait Time) and a list of ideas pending review.
 - [ ] **D22b** Each review card shows priority
   badge (High Priority/Medium), readiness status
   (Ready for Review/Needs Info/Unknown), title,
@@ -318,14 +304,13 @@ on. Run these in order.
   with data.
 - [ ] **D23** At least one idea with `in-review` status appears in the queue. PASS: idea 7 ("AI-Powered Customer Support Chatbot") or similar is listed.
 - [ ] **D23b** Type a search term in the search input. PASS: review cards filter by title or submitter name in real-time.
-- [ ] **D23c** Select "High" from the priority filter dropdown. PASS: list shows only high-priority items. Reset to "All Priority" → full list returns.
-- [ ] **D23d** Select "Ready for Review" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
+- [ ] **D23c** Select "Ready for Review" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
 - [ ] **D23e** Apply search + filter that matches no items. PASS: empty state shows "No ideas match your filters" message.
-- [ ] **D24** Click a review item. PASS: navigates to `approval-detail/?id=<ideaId>`.
+- [ ] **D24** Click a review item. PASS: navigates to `ideas/approval-detail.html?id=<ideaId>`.
 
 ### Approval Detail (`ideas/approval-detail.html`)
 
-- [ ] **D25** Navigate to `approval-detail/?id=7`. PASS: page loads with full idea details for idea 7.
+- [ ] **D25** Navigate to `ideas/approval-detail.html?id=7`. PASS: page loads with full idea details for idea 7.
 - [ ] **D26** Page shows the idea title, problem statement, proposed solution, and expected outcome. PASS: all text fields populated.
 - [ ] **D27** "Approve" action is available.
   PASS: clicking it shows confirmation or
@@ -335,10 +320,10 @@ on. Run these in order.
 
 ### Ideas Workflow Integration
 
-- [ ] **D31** After completing the idea-create wizard through to idea-convert, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
+- [ ] **D31** After completing the idea-create wizard through to idea convert, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
 - [ ] **D32** Navigate from ideas list → idea convert → back button. PASS: navigates to ideas list.
-- [ ] **D33** Navigate to `idea-convert/?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
-- [ ] **D34** Navigate to `approval-detail/` with no `id` parameter. PASS: page handles gracefully — no crash.
+- [ ] **D33** Navigate to `ideas/convert.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
+- [ ] **D34** Navigate to `ideas/approval-detail.html` with no `id` parameter. PASS: page handles gracefully — no crash.
 
 ---
 
@@ -348,20 +333,16 @@ on. Run these in order.
 
 - [ ] **E1** Navigate to `projects/`. PASS: table/list shows 6 seeded projects with title, status, progress, and priority. Project cards show "—" (em-dash) for missing/zero metric values (time, cost, impact). Footer count uses correct singular/plural grammar (e.g. "1 project", "6 projects").
 - [ ] **E1b** Click the table/grid view toggle. PASS: layout switches between card grid and table row format. Toggle button highlights for the active view.
-- [ ] **E2** Click a project row. PASS: navigates to `project-detail/?projectId=<id>`.
+- [ ] **E2** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
 
-### Project Detail (`project-detail/?projectId=1`)
+### Project Detail (`projects/detail.html?projectId=1`)
 
 - [ ] **E3** Page loads with project summary
   card (description, dates, progress bar) and
   baseline vs. current metrics. PASS: all cards
   render with data. Baseline/current metrics
   show em dash when values are zero or missing.
-- [ ] **E4** Three quick-action cards visible
-  (Engineering, Team, Flows). PASS: clicking
-  "Engineering" navigates to
-  `engineering-requirements/?projectId=1`.
-- [ ] **E5** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and days. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
+- [ ] **E4** **Tasks tab** (default): shows 5 task cards with priority badges, skill tags, and days. Assigned/unassigned count is dynamically computed from task data (seed data: 1 assigned, 4 unassigned). PASS: "Save Assignments" button visible.
 - [ ] **E6** **Discussion tab**: shows 3 seeded comments with author avatars/names. Comment composer textarea + "Post Comment" button (disabled when empty, enabled when text entered). PASS: all elements render.
 - [ ] **E6b** Type a comment in the composer textarea, click "Post Comment". PASS: toast "Comment posted" appears, comment appears in the list.
 - [ ] **E7** **History tab**: shows 3 version entries (v1.0, v1.1, v1.2) with latest highlighted. PASS: version list renders in order.
@@ -373,12 +354,6 @@ on. Run these in order.
 - [ ] **E9b** Click "Edit" button on project detail. PASS: fields become editable inputs/textareas, Save and Cancel buttons appear.
 - [ ] **E9c** Modify a field, click "Save". PASS: project saves successfully, returns to view mode with updated data.
 - [ ] **E9d** Click "Edit", then "Cancel". PASS: returns to view mode with original data unchanged.
-
-### Engineering Requirements (`engineering-requirements/?projectId=1`)
-
-- [ ] **E10** Navigate to `engineering-requirements/?projectId=1`. PASS: page renders with engineering specifications content.
-- [ ] **E10b** Clarification questions section displays question cards with asker name, timestamp, question text, and status (pending/answered). PASS: at least one clarification visible with correct styling.
-- [ ] **E10c** Pending clarifications show warning-colored status badge. Answered clarifications show answer text. PASS: visual distinction between pending and answered states.
 
 ---
 
@@ -473,18 +448,18 @@ on. Run these in order.
 
 ## G. Admin Pages
 
-### Team (`teams/`)
+### Team (`organization/teams.html`)
 
-- [ ] **G1** Navigate to `teams/`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
+- [ ] **G1** Navigate to `organization/teams.html`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
 - [ ] **G1b** Click a team member card. PASS: right-side detail panel populates with member name, role, email, and large avatar with initials.
 - [ ] **G1c** Detail panel shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches — Dimensions shows Driver/Analytical/Expressive/Amiable scores with progress bars.
 - [ ] **G1d** Click a different team member card. PASS: detail panel updates to show the newly selected member's information.
 - [ ] **G1e** Type a name in the search input. PASS: team member cards filter in real-time by name, role, or department.
 - [ ] **G2** Member status dots render with distinct colors (green for available, yellow for busy, red for limited). PASS: at least 2 different statuses visible.
 
-### Account (`account/`)
+### Account (`organization/index.html`)
 
-- [ ] **G3** Navigate to `account/`. PASS: shows account overview with plan info (Business plan), billing date, seat usage (18/25), and resource usage bars.
+- [ ] **G3** Navigate to `organization/index.html`. PASS: shows account overview with plan info (Business plan), billing date, seat usage (18/25), and resource usage bars.
 - [ ] **G4** Health score (92, "excellent") is displayed. PASS: score and label visible.
 
 ### Profile (`profile/`)
@@ -501,27 +476,22 @@ on. Run these in order.
 - [ ] **G9** Edit a setting (e.g. timezone or language) and save. PASS: success toast or save completes without error.
 - [ ] **G9b** Navigate away from Settings, then return. PASS: the edited setting retains the saved value — data was persisted to the database.
 
-### Manage Users (`manage-users/`)
+### Manage Users (`organization/users.html`)
 
-- [ ] **G10** Navigate to `manage-users/`. PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
+- [ ] **G10** Navigate to `organization/users.html`. PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
 - [ ] **G10b** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list.
 - [ ] **G11** Deactivated user (James Miller) is visually distinguished with "Deactivated" badge (X icon), strikethrough or opacity styling. PASS: clearly different from active users.
 - [ ] **G11b** Pending users show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active users.
 - [ ] **G12** "Invite User" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Availability, Performance Score, Strengths, Team Dimensions, Phone, and Bio.
 - [ ] **G12b** Fill all required fields and submit the invite dialog. PASS: toast confirms user creation, new user appears in the user list with correct name, email, role, and status badge.
 
-### Activity Feed (`teams/activity-feed.html`)
+### Activity Feed (`organization/activity-feed.html`)
 
-- [ ] **G13** Navigate to `activity-feed/`. PASS: shows seeded activity entries with type icons and timestamps. Search input ("Search activity...") and type filter dropdown ("All Activity") visible.
+- [ ] **G13** Navigate to `organization/activity-feed.html`. PASS: shows seeded activity entries with type icons and timestamps. Search input ("Search activity...") and type filter dropdown ("All Activity") visible.
 - [ ] **G14** Activity types include scored, completed task, submitted new idea, commented on, joined the team, changed status, converted idea to project. PASS: multiple distinct types visible with appropriate icons (star, checkmark, lightbulb, chat bubble, user-plus, edit, arrow-right).
 - [ ] **G14b** Each activity entry shows actor name, action verb, target name, and meta info (score badge, status badge, or quoted comment text). PASS: entries have full context.
 - [ ] **G14c** Type in the search input. PASS: activity entries filter by actor name or target name in real-time.
 - [ ] **G14d** Select a type from the filter dropdown (e.g. "Scored"). PASS: only activities of that type shown. Reset to "All Activity" → full list returns.
-
-### Engineering Requirements
-
-- [ ] **G15** Navigate to `engineering-requirements/?projectId=1`. PASS: page renders with engineering specifications content for project 1.
-- [ ] **G16** Clarification questions section shows question cards with message icon, asker name, timestamp, question text, and status (pending with warning styling or answered with answer text). PASS: at least one clarification visible.
 
 ### Snapshots (`snapshots/`) — Run These Last
 
@@ -608,7 +578,7 @@ on. Run these in order.
 | Browser & Version | |
 | OS | |
 | Build SHA | |
-| Tests Passed | /221 |
-| Tests Failed | /221 |
-| Tests Skipped | /221 |
+| Tests Passed | /206 |
+| Tests Failed | /206 |
+| Tests Skipped | /206 |
 | Notes | |
