@@ -39,12 +39,17 @@ interface TransitionValues {
     [fieldId: string]: string;
 }
 
+export interface HistoryFieldValue {
+    fieldName: string;
+    value: string;
+}
+
 export interface HistoryEntry {
     fromNodeName: string;
     toNodeName: string;
     userName: string;
     transitionedAt: string;
-    values: Record<string, string>;
+    fieldValues: HistoryFieldValue[];
 }
 
 export interface WorkboxDetail {
@@ -315,25 +320,55 @@ export async function getWorkboxItem(
         }
     }
 
+    const fieldNameMap = new Map<
+        string, string
+    >();
+    for (const node of fg.nodes) {
+        for (const f of node.fields) {
+            fieldNameMap.set(
+                f.id, f.name,
+            );
+        }
+    }
+
     const history: HistoryEntry[] =
-        woTransitions.map(t => ({
-            fromNodeName: t.from_node_id
-                === ''
-                ? 'Created'
-                : nodeName(
+        woTransitions.map(t => {
+            const vals =
+                parseValues(t.values);
+            const fieldValues: HistoryFieldValue[]
+                = [];
+            for (
+                const [fId, val]
+                of Object.entries(vals)
+            ) {
+                fieldValues.push({
+                    fieldName:
+                        fieldNameMap
+                            .get(fId)
+                            ?? fId,
+                    value: val,
+                });
+            }
+            return {
+                fromNodeName:
+                    t.from_node_id === ''
+                        ? 'Created'
+                        : nodeName(
+                            fg.nodes,
+                            t.from_node_id,
+                        ),
+                toNodeName: nodeName(
                     fg.nodes,
-                    t.from_node_id,
+                    t.to_node_id,
                 ),
-            toNodeName: nodeName(
-                fg.nodes, t.to_node_id,
-            ),
-            userName: userName(
-                userMap, t.user_id,
-            ),
-            transitionedAt:
-                t.transitioned_at,
-            values: parseValues(t.values),
-        }));
+                userName: userName(
+                    userMap, t.user_id,
+                ),
+                transitionedAt:
+                    t.transitioned_at,
+                fieldValues,
+            };
+        });
 
     const claim = claims.find(
         c => c.work_order_id

@@ -1776,7 +1776,12 @@ export async function populateMockData(
         'cfdd1f8c-8415'
         + '-4610-8c6f'
         + '-7504eb54ef4f';
-    const woUserId = 'current';
+    const woUserSarah =
+        'a0facefa-e853-4d92'
+        + '-b796-373da78aba93';
+    const woUserMike =
+        '846cf47c-26b9-4b65'
+        + '-8a45-6584380a7307';
     const fCompanyName =
         '9ee5e0cb-6485-452d'
         + '-8738-a8ca92ea62dc';
@@ -1852,7 +1857,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: '',
             to_node_id: woNodeNew,
-            user_id: woUserId,
+            user_id: woUserSarah,
             values: jsonObjectField({}),
             transitioned_at:
                 woCreated,
@@ -1862,7 +1867,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            user_id: woUserId,
+            user_id: woUserSarah,
             values: jsonObjectField({}),
             transitioned_at:
                 woCreated,
@@ -1873,7 +1878,7 @@ export async function populateMockData(
             from_node_id:
                 woNodeCapture,
             to_node_id: woNodeReview,
-            user_id: woUserId,
+            user_id: woUserMike,
             values: jsonObjectField({
                 [fCompanyName]:
                     'Acme Corp',
@@ -1896,7 +1901,7 @@ export async function populateMockData(
                 woNodeReview,
             to_node_id:
                 woNodeComplete,
-            user_id: woUserId,
+            user_id: woUserSarah,
             values: jsonObjectField({
                 [fReviewerNotes]:
                     'Approved.'

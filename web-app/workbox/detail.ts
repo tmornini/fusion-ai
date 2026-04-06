@@ -19,6 +19,7 @@ import {
 import type {
     WorkboxDetail,
     HistoryEntry,
+    HistoryFieldValue,
 } from '../app/adapters';
 import {
     iconArrowLeft,
@@ -214,26 +215,54 @@ function buildFieldRow(
 function buildHistoryEntry(
     entry: HistoryEntry,
 ): SafeHtml {
+    const hasValues =
+        entry.fieldValues.length > 0;
+    const valuesHtml = hasValues
+        ? html`<div
+            class="mt-2 ml-6"
+            style="display:grid;
+                grid-template-columns:
+                    auto 1fr;
+                gap:0.25rem 0.75rem;
+                font-size:0.8125rem">
+            ${entry.fieldValues.map(
+                fv => html`
+                <span
+                    class="text-muted"
+                >${fv.fieldName}</span>
+                <span>${fv.value}</span>`,
+            )}
+        </div>`
+        : html``;
     return html`<div
-        class="flex items-center
-            gap-3 py-2"
+        class="py-3"
         style="border-bottom:1px solid
             hsl(var(--border))">
-        <span class="text-muted">
-            ${iconClock(14, '')}
-        </span>
-        <span>
-            ${entry.fromNodeName}
-            &rarr; ${entry.toNodeName}
-        </span>
-        <span class="text-muted ml-auto">
-            ${entry.userName || '\u2014'}
-        </span>
-        <span class="text-muted text-sm">
-            ${relativeTime(
+        <div
+            class="flex items-center
+                gap-3"
+        >
+            <span class="text-muted">
+                ${iconClock(14, '')}
+            </span>
+            <span
+                class="font-semibold"
+            >${entry.fromNodeName}
+                &rarr;
+                ${entry.toNodeName}</span>
+            <span
+                class="text-muted
+                    ml-auto"
+            >${entry.userName
+                || '\u2014'}</span>
+            <span
+                class="text-muted
+                    text-sm"
+            >${relativeTime(
                 entry.transitionedAt,
-            )}
-        </span>
+            )}</span>
+        </div>
+        ${valuesHtml}
     </div>`;
 }
 
