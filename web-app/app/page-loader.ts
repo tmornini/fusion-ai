@@ -21,6 +21,10 @@ const pageModules: Record<
 > = {
     dashboard: () =>
         import('../dashboard/index'),
+    workbox: () =>
+        import('../workbox/index'),
+    'workbox-detail': () =>
+        import('../workbox/detail'),
     ideas: () =>
         import('../ideas/index'),
     'idea-detail': () =>

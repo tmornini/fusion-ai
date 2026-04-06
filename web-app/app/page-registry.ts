@@ -22,6 +22,23 @@ export const PAGE_REGISTRY: Record<
         icon: 'home',
         keywords: 'home overview',
     },
+    workbox: {
+        title: 'Workbox',
+        layout: 'sidebar',
+        sourceDir: 'workbox',
+        sourceFile: 'index',
+        icon: 'mail',
+        keywords:
+            'workbox inbox work order',
+    },
+    'workbox-detail': {
+        title: 'Work Order',
+        layout: 'sidebar',
+        sourceDir: 'workbox',
+        sourceFile: 'detail',
+        icon: 'mail',
+        searchable: false,
+    },
     ideas: {
         title: 'Ideas',
         layout: 'sidebar',

@@ -1,0 +1,134 @@
+<div>
+    <div
+        class="flex items-center
+            justify-between gap-4 mb-6"
+    >
+        <div>
+            <h1
+                class="text-2xl font-display
+                    font-bold mb-1"
+            >Workbox</h1>
+            <p class="text-muted">
+                Your work order inbox
+            </p>
+        </div>
+        <div
+            class="flex flex-wrap
+                items-center gap-3"
+        >
+            <button
+                class="btn btn-primary gap-2"
+                id="new-wo-btn"
+            >
+                <span id="new-wo-btn-icon">
+                </span>
+                <span class="hidden-mobile"
+                >+ New</span><span
+                    class="visible-mobile"
+                >New</span>
+            </button>
+        </div>
+    </div>
+
+    <div
+        class="flex items-center gap-2 mb-4"
+    >
+        <button
+            class="btn btn-sm active"
+            data-tab="active"
+        >Active</button>
+        <button
+            class="btn btn-sm"
+            data-tab="archive"
+        >Archive</button>
+    </div>
+
+    <div
+        id="tab-active"
+        class="tab-panel"
+    >
+        <div
+            id="active-list"
+            class="flex flex-col gap-3"
+        >
+        </div>
+    </div>
+
+    <div
+        id="tab-archive"
+        class="tab-panel"
+        style="display:none"
+    >
+        <div
+            id="archive-list"
+            class="flex flex-col gap-3"
+        >
+        </div>
+    </div>
+</div>
+
+<!-- New Work Order Dialog -->
+<div
+    class="dialog-backdrop hidden"
+    id="new-wo-backdrop"
+>
+    <div
+        class="dialog hidden"
+        id="new-wo-dialog"
+        aria-hidden="true"
+        style="max-width:28rem"
+    >
+        <div
+            style="padding:1.5rem;
+                border-bottom:1px solid
+                    hsl(var(--border))"
+        >
+            <h3
+                class="text-lg font-display
+                    font-semibold"
+            >New Work Order</h3>
+            <p class="text-sm text-muted">
+                Select a flow to create
+                a new work order.
+            </p>
+        </div>
+        <div
+            style="padding:1.5rem;
+                display:flex;
+                flex-direction:column;
+                gap:1rem"
+        >
+            <div>
+                <label
+                    class="label mb-1"
+                    for="new-wo-flow"
+                >Flow</label>
+                <select
+                    class="input"
+                    id="new-wo-flow"
+                >
+                    <option value="">
+                        Select a flow...
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div
+            style="padding:1rem 1.5rem;
+                border-top:1px solid
+                    hsl(var(--border));
+                display:flex;
+                justify-content:flex-end;
+                gap:0.75rem"
+        >
+            <button
+                class="btn btn-outline"
+                id="new-wo-cancel"
+            >Cancel</button>
+            <button
+                class="btn btn-primary"
+                id="new-wo-submit"
+            >Create</button>
+        </div>
+    </div>
+</div>
