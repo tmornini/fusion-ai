@@ -506,6 +506,96 @@ on. Run these in order.
 
 ---
 
+## F2. Workbox
+
+### Workbox Inbox (`workbox/`)
+
+- [ ] **WB1** Navigate to `workbox/`. PASS:
+  page shows "Workbox" title, subtitle "Your
+  work order inbox", Active/Archive tabs, and
+  a "+ New" button.
+- [ ] **WB2** With no work orders, the Active
+  tab shows an empty state with mail icon and
+  "No Active Work Orders" message.
+- [ ] **WB3** Click the Archive tab. PASS: tab
+  switches to show archive list (empty state
+  initially).
+
+### Workbox — Create Work Order
+
+- [ ] **WB4** Click "+ New". PASS: a "New Work
+  Order" dialog opens with a Flow dropdown
+  listing available flows and Create/Cancel
+  buttons.
+- [ ] **WB5** Select a flow (e.g. "Customer
+  Onboarding") and click Create. PASS: work
+  order is created, browser navigates to the
+  action screen at the first post-start state
+  (e.g. "Data Capture"). Display ID (8-char
+  hex) is visible in the header.
+
+### Workbox — Action Screen (`workbox/detail.html`)
+
+- [ ] **WB6** The action screen shows: back link
+  ("Workbox"), flow name, display ID, current
+  state badge, and dynamically rendered fields
+  matching the current node's field definitions
+  from the flow graph.
+- [ ] **WB7** Field types render correctly: text
+  inputs, textareas, selects, number inputs,
+  date inputs, file inputs, checkboxes, radio
+  buttons as appropriate for each field type
+  in the flow definition.
+- [ ] **WB8** Transition buttons appear below
+  the fields, one per outgoing edge from the
+  current node, labeled with the edge name.
+- [ ] **WB9** An "Unclaim" button is visible,
+  separate from transition buttons.
+- [ ] **WB10** A collapsible History section
+  shows all transitions with from/to state
+  names, user name, and relative timestamp.
+
+### Workbox — Transitions
+
+- [ ] **WB11** Fill in required fields and click
+  a transition button. PASS: transition is
+  recorded, work order moves to the next state,
+  browser navigates back to the inbox. The work
+  order appears in the Active tab (unclaimed).
+- [ ] **WB12** Click the work order row in the
+  Active tab. PASS: work order is claimed and
+  browser navigates to the action screen
+  showing the new state's fields.
+- [ ] **WB13** Click "Unclaim". PASS: browser
+  navigates to inbox, work order reappears in
+  the Active tab.
+
+### Workbox — Completion
+
+- [ ] **WB14** Transition a work order to the
+  completion node (is_complete=true). PASS:
+  work order moves to the Archive tab. It no
+  longer appears in Active.
+- [ ] **WB15** Click a completed work order in
+  the Archive tab. PASS: action screen shows
+  read-only view with history but no fields
+  or transition buttons.
+
+### Workbox — Data Integrity
+
+- [ ] **WB16** After creating and transitioning
+  a work order, check localStorage. PASS:
+  work_orders table has 1 row with display_id
+  and flow_graph JSON. work_order_transitions
+  has immutable event records with from/to
+  node IDs, user ID, values JSON, and
+  timestamps.
+- [ ] **WB17** Navigate away from the action
+  screen and return. PASS: all data persists
+  correctly across page navigation.
+
+---
+
 ## G. Admin Pages
 
 ### Team (`organization/teams.html`)

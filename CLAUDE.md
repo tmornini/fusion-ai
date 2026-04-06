@@ -26,7 +26,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 **Vanilla TypeScript** with zero runtime dependencies.
 This is an enterprise innovation management platform
 with modules for ideas, projects, teams, flows,
-and analytics. Every page is a standalone HTML file
+workbox, and analytics. Every page is a standalone HTML file
 served via HTTP. The code also supports `file:///`
 protocol locally, but testing is HTTP-only.
 
@@ -215,6 +215,7 @@ web-app/
       flow-deletions.ts       # deleteNode/Edge/Field + capture functions for undo
       flow-undo-adapter.ts    # executeUndoSteps
       flow-export.ts          # exportFlowMermaid, exportFlowZip, importFlowFromMermaid, importFlowFromZip
+      workbox.ts              # getWorkboxItems, getWorkboxItem, postWorkOrderCreation, postWorkOrderTransition, postWorkOrderClaim, deleteWorkOrderClaim
       admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
@@ -231,8 +232,9 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 23 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
+  # Pages — 25 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
+  workbox/                  # Work order inbox + detail
   ideas/                    # Ideas list + detail, create, convert, review-queue, approval-detail (named files)
   projects/                 # Projects list + detail (named files)
   flow/                     # Flow list + detail (detail.ts/detail.html)
@@ -258,7 +260,7 @@ temp directory -- no build artifacts in the repo.
 ## Build
 
 Build steps (requires clean git working directory):
-1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 20 composed files in a temp build directory. Respects `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 22 composed files in a temp build directory. Respects `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
 2. Copies 4 standalone pages' `index.html` to the
    build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
