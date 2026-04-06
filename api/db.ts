@@ -12,6 +12,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    WorkOrderEntity,
+    FlowWorkOrderEntity,
+    WorkOrderTransitionEntity,
+    WorkOrderClaimEntity,
 } from './types';
 
 export class EntityNotFound {
@@ -78,6 +82,22 @@ export interface DbAdapter {
     projectFlows:
         EntityStore<
             ProjectFlowEntity
+        >;
+    workOrders:
+        EntityStore<
+            WorkOrderEntity
+        >;
+    flowWorkOrders:
+        EntityStore<
+            FlowWorkOrderEntity
+        >;
+    workOrderTransitions:
+        EntityStore<
+            WorkOrderTransitionEntity
+        >;
+    workOrderClaims:
+        EntityStore<
+            WorkOrderClaimEntity
         >;
     companySettings:
         SingletonStore<

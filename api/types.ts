@@ -452,6 +452,46 @@ export interface FlowEntity {
     updated_at: string;
 }
 
+export interface WorkOrderFlowGraph {
+    flowId: Id;
+    name: string;
+    description: string;
+    lockTimeout: number;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+}
+
+export interface WorkOrderEntity {
+    id: Id;
+    display_id: string;
+    flow_graph: JsonObjectField;
+    created_at: string;
+}
+
+export interface FlowWorkOrderEntity {
+    id: Id;
+    flow_id: Id;
+    work_order_id: Id;
+    created_at: string;
+}
+
+export interface WorkOrderTransitionEntity {
+    id: Id;
+    work_order_id: Id;
+    from_node_id: Id;
+    to_node_id: Id;
+    user_id: Id;
+    values: JsonObjectField;
+    transitioned_at: string;
+}
+
+export interface WorkOrderClaimEntity {
+    id: Id;
+    work_order_id: Id;
+    user_id: Id;
+    claimed_at: string;
+}
+
 export interface CompanySettingsEntity {
     id: Id;
     name: string;

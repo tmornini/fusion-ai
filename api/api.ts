@@ -177,6 +177,76 @@ const routes: Route[] = [
                 param(params, 0),
             ),
     }),
+    route('work-orders', {
+        get: (db) =>
+            db.workOrders.getAll(),
+        post: async (
+            db, _params, body,
+        ) => {
+            const id =
+                body.id as string;
+            return db.workOrders.put(
+                id, body,
+            );
+        },
+    }),
+    route('work-orders/:id', {
+        get: (db, params) =>
+            db.workOrders.getById(
+                param(params, 0),
+            ),
+        put: (db, params, body) =>
+            db.workOrders.put(
+                param(params, 0), body,
+            ),
+    }),
+    route('flow-work-orders', {
+        get: (db) =>
+            db.flowWorkOrders.getAll(),
+        post: async (
+            db, _params, body,
+        ) => {
+            const id =
+                body.id as string;
+            return db.flowWorkOrders.put(
+                id, body,
+            );
+        },
+    }),
+    route('work-order-transitions', {
+        get: (db) =>
+            db.workOrderTransitions
+                .getAll(),
+        post: async (
+            db, _params, body,
+        ) => {
+            const id =
+                body.id as string;
+            return db
+                .workOrderTransitions
+                .put(id, body);
+        },
+    }),
+    route('work-order-claims', {
+        get: (db) =>
+            db.workOrderClaims
+                .getAll(),
+        post: async (
+            db, _params, body,
+        ) => {
+            const id =
+                body.id as string;
+            return db.workOrderClaims
+                .put(id, body);
+        },
+    }),
+    route('work-order-claims/:id', {
+        delete: (db, params) =>
+            db.workOrderClaims.delete(
+                param(params, 0),
+            ),
+    }),
+
     route('company-settings', {
         get: (db) =>
             db.companySettings.get(),

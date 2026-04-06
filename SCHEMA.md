@@ -1,6 +1,6 @@
 # Database Schema
 
-15 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
+19 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 
@@ -150,6 +150,22 @@ definition as a JSON document:
 }
 ```
 
+## Workbox
+
+### work_orders
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT | PRIMARY KEY (UUID) |
+| display_id | TEXT | 8-char hex SHA-256 |
+| flow_graph | TEXT | JSON (WorkOrderFlowGraph) |
+| created_at | TEXT | RFC-3339 Zulu |
+
+The `flow_graph` column stores a snapshot of the
+flow definition at work order creation time. Same
+structure as `flows.graph` plus flow-level metadata
+(`flowId`, `name`, `description`, `lockTimeout`).
+
 ## Platform
 
 ### activities
@@ -244,6 +260,39 @@ Singleton table (single row, `id = '1'`).
 | project_id | TEXT | References projects |
 | flow_id | TEXT | References flows |
 | created_at | TEXT | RFC-3339 Zulu |
+
+### flow_work_orders
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT | PRIMARY KEY |
+| flow_id | TEXT | References flows |
+| work_order_id | TEXT | References work_orders |
+| created_at | TEXT | RFC-3339 Zulu |
+
+### work_order_transitions
+
+Immutable event records — source of truth for
+work order state and history.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT | PRIMARY KEY |
+| work_order_id | TEXT | References work_orders |
+| from_node_id | TEXT | '' for creation |
+| to_node_id | TEXT | Node in flow_graph |
+| user_id | TEXT | References users |
+| values | TEXT | JSON {field_id: value} |
+| transitioned_at | TEXT | RFC-3339 Zulu |
+
+### work_order_claims
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | TEXT | PRIMARY KEY |
+| work_order_id | TEXT | References work_orders |
+| user_id | TEXT | References users |
+| claimed_at | TEXT | RFC-3339 Zulu |
 
 ### team_membership_projects
 

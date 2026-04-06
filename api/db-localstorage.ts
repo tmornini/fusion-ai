@@ -20,6 +20,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    WorkOrderEntity,
+    FlowWorkOrderEntity,
+    WorkOrderTransitionEntity,
+    WorkOrderClaimEntity,
 } from './types';
 import { nowUtc } from './types';
 
@@ -304,6 +308,10 @@ export const TABLE_NAMES = [
     'activities',
     'flows',
     'project_flows',
+    'work_orders',
+    'flow_work_orders',
+    'work_order_transitions',
+    'work_order_claims',
     'company_settings',
     'account',
     'idea_submissions',
@@ -487,6 +495,22 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 ProjectFlowEntity
             >('project_flows'),
+        workOrders:
+            createEntityStore<
+                WorkOrderEntity
+            >('work_orders'),
+        flowWorkOrders:
+            createEntityStore<
+                FlowWorkOrderEntity
+            >('flow_work_orders'),
+        workOrderTransitions:
+            createEntityStore<
+                WorkOrderTransitionEntity
+            >('work_order_transitions'),
+        workOrderClaims:
+            createEntityStore<
+                WorkOrderClaimEntity
+            >('work_order_claims'),
 
         companySettings:
             createSingletonStore<
