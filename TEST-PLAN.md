@@ -35,11 +35,11 @@ run as a single continuous regression pass.
 
 ## A. Build & Setup
 
-- [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 12 page directories containing 23 HTML page files, plus root `index.html`.
-- [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
-- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
-- [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
+- [x] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
+- [x] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 12 page directories containing 23 HTML page files, plus root `index.html`.
+- [x] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
+- [x] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
+- [x] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
 ---
 
@@ -51,53 +51,53 @@ on. Run these in order.
 
 ### AA1. Create Pristine Environment
 
-- [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
-- [ ] **AA2** Open DevTools, verify localStorage has `fusion-ai:*` keys (19 tables as empty arrays plus bootstrap data).
-- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), company "Stark Industries" with "Business" plan.
+- [x] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
+- [x] **AA2** Open DevTools, verify localStorage has `fusion-ai:*` keys (19 tables as empty arrays plus bootstrap data).
+- [x] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), company "Stark Industries" with "Business" plan.
 
 ### AA2. Create Users
 
-- [ ] **AA4** Navigate to Organization > Users. Click "Invite User". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
-- [ ] **AA5** Fill all fields for user "Sarah Chen" (Engineering Manager, Engineering dept, active status). Submit. PASS: toast confirms creation, user appears in the list.
-- [ ] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on Users page with correct name, email, role, and status badge.
-- [ ] **AA7** Navigate to Teams page. PASS: users display with correct availability color coding and performance stats.
+- [x] **AA4** Navigate to Organization > Users. Click "Invite User". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [x] **AA5** Fill all fields for user "Sarah Chen" (Engineering Manager, Engineering dept, active status). Submit. PASS: toast confirms creation, user appears in the list.
+- [x] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on Users page with correct name, email, role, and status badge.
+- [x] **AA7** Navigate to Teams page. PASS: users display with correct availability color coding and performance stats.
 
 ### AA3. Profile & Company Settings
 
-- [ ] **AA8** Navigate to Profile. Edit fields (phone, bio, strengths). Click "Save Changes". PASS: toast "Profile saved" appears.
-- [ ] **AA9** Navigate away, return to Profile. PASS: edited fields persist with saved values.
-- [ ] **AA10** Navigate to Company Settings. Edit a field (e.g. timezone). Click save. PASS: success toast appears.
-- [ ] **AA11** Navigate away, return to Settings. PASS: edited field persists with saved value.
+- [x] **AA8** Navigate to Profile. Edit fields (phone, bio, strengths). Click "Save Changes". PASS: toast "Profile saved" appears.
+- [x] **AA9** Navigate away, return to Profile. PASS: edited fields persist with saved values.
+- [x] **AA10** Navigate to Company Settings. Edit a field (e.g. timezone). Click save. PASS: success toast appears.
+- [x] **AA11** Navigate away, return to Settings. PASS: edited field persists with saved value.
 
 ### AA4. Create Ideas
 
-- [ ] **AA12** Navigate to Ideas. Click "Create Idea". Complete the 3-step wizard for "AI-Powered Customer Segmentation" (title, problem, solution, outcome, metrics). PASS: idea appears on ideas list.
+- [x] **AA12** Navigate to Ideas. Click "Create Idea". Complete the 3-step wizard for "AI-Powered Customer Segmentation" (title, problem, solution, outcome, metrics). PASS: idea appears on ideas list.
 - [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Set remaining fields: category, estimated impact, duration (days), cost. Click "Save". PASS: toast confirms save, all fields persist.
-- [ ] **AA14** Repeat creation and field entry for all 11 ideas matching mock data titles. PASS: ideas list shows all 11 with correct titles.
+- [x] **AA14** Repeat creation and field entry for all 11 ideas matching mock data titles. PASS: ideas list shows all 11 with correct titles.
 
 ### AA5. Submit Ideas for Review
 
-- [ ] **AA18** Navigate to idea #1 detail (status: active). Click "Submit for Review". PASS: status changes to "In Review", button disappears.
-- [ ] **AA19** Submit ideas 1, 4, 7, 8, 9, 10, 11 for review (matching mock data statuses). PASS: each transitions from active to in-review.
-- [ ] **AA20** Navigate to Review Queue. PASS: the 7 submitted ideas appear with priority badges and readiness status.
+- [x] **AA18** Navigate to idea #1 detail (status: active). Click "Submit for Review". PASS: status changes to "In Review", button disappears.
+- [x] **AA19** Submit ideas 1, 4, 7, 8, 9, 10, 11 for review (matching mock data statuses). PASS: each transitions from active to in-review.
+- [x] **AA20** Navigate to Review Queue. PASS: the 7 submitted ideas appear with priority badges and readiness status.
 
 ### AA7. Approve Ideas & Convert to Projects
 
-- [ ] **AA28** Navigate to Review Queue. Click idea #1. PASS: navigates to approval detail.
-- [ ] **AA29** Click "Approve". PASS: idea status changes to approved, confirmation shown.
-- [ ] **AA30** Approve idea #4 as well (it was submitted for review in AA19). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
-- [ ] **AA31** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 6 required fields (Project Name, Lead, Start Date, End Date, Budget, Priority).
-- [ ] **AA32** Fill all required fields: Project Name, select "Sarah Chen" as project lead, Start Date, Target End Date, Budget, Priority. Click "Create Project". PASS: navigates to project detail for the new project.
+- [x] **AA28** Navigate to Review Queue. Click idea #1. PASS: navigates to approval detail.
+- [x] **AA29** Click "Approve". PASS: idea status changes to approved, confirmation shown.
+- [x] **AA30** Approve idea #4 as well (it was submitted for review in AA19). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
+- [x] **AA31** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 6 required fields (Project Name, Lead, Start Date, End Date, Budget, Priority).
+- [x] **AA32** Fill all required fields: Project Name, select "Sarah Chen" as project lead, Start Date, Target End Date, Budget, Priority. Click "Create Project". PASS: navigates to project detail for the new project.
 - [ ] **AA33** On project detail, click "Edit". Set fields (title, description, status, start date, end date, cost baseline, impact baseline) to match mock data. Save. PASS: project data persists.
-- [ ] **AA34** Approve remaining ideas (7, 8, 9, 10) from Review Queue, then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status, progress, and priority.
+- [x] **AA34** Approve remaining ideas (7, 8, 9, 10) from Review Queue, then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status, progress, and priority.
 
 ### AA9. Create Flows
 
-- [ ] **AA35** Navigate to Projects. Click into
+- [x] **AA35** Navigate to Projects. Click into
   project #1 detail. PASS: a "Flows" section
   is visible showing "No flows yet" empty
   state and a "New Flow" button.
-- [ ] **AA36** Click "New Flow". PASS: navigates
+- [x] **AA36** Click "New Flow". PASS: navigates
   to the flow designer page. The SVG canvas
   shows two nodes: "New" (start, top-left with
   green border) and "Complete" (end, bottom-right
@@ -106,7 +106,7 @@ on. Run these in order.
   (trash icon), Auto Layout, Zoom +/−, Fit, Copy
   Mermaid, Export .zip. Changes auto-save (no
   explicit Save button).
-- [ ] **AA37** Click the start node to select it.
+- [x] **AA37** Click the start node to select it.
   Click "+ Add State". PASS: a dialog opens asking
   for State Name, Transition Name, and Placement
   Direction. Enter "Data Capture" and "begin".
@@ -154,10 +154,10 @@ on. Run these in order.
 
 ### AA10. Verify Dashboard
 
-- [ ] **AA46** Navigate to Dashboard. PASS: gauge
+- [x] **AA46** Navigate to Dashboard. PASS: gauge
   cards (Time, Cost, Impact) show aggregated values
   computed from the entered project data.
-- [ ] **AA47** Header stats reflect entered data
+- [x] **AA47** Header stats reflect entered data
   counts (ideas, projects, flows). PASS:
   counts are non-zero and match.
 
