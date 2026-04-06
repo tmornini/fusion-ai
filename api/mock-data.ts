@@ -10,6 +10,9 @@ import type {
     ActivityActorEntity,
     FlowEntity,
     ProjectFlowEntity,
+    WorkOrderEntity,
+    FlowWorkOrderEntity,
+    WorkOrderTransitionEntity,
 } from './types';
 import {
     jsonArrayField,
@@ -1751,6 +1754,161 @@ export async function populateMockData(
         },
     ];
 
+    const woId =
+        'e1a2b3c4-d5e6-4f78'
+        + '-9a0b-1c2d3e4f5a6b';
+    const woFlowGraph =
+        mockFlows[0]!.graph;
+    const woCreated = dt(14, 10, 0);
+    const woNodeNew =
+        '7c6c4356-a06b'
+        + '-4f43-99ac'
+        + '-9a481baf70f1';
+    const woNodeCapture =
+        'bfe39522-9b30'
+        + '-4db4-a8af'
+        + '-8b9acc02a8fe';
+    const woNodeReview =
+        '357443aa-2aa4'
+        + '-4c1b-8293'
+        + '-2f55a49a83e6';
+    const woNodeComplete =
+        'cfdd1f8c-8415'
+        + '-4610-8c6f'
+        + '-7504eb54ef4f';
+    const woUserId = 'current';
+    const fCompanyName =
+        '9ee5e0cb-6485-452d'
+        + '-8738-a8ca92ea62dc';
+    const fEmail =
+        '1076b0ff-3502-4cbe'
+        + '-b41b-bd64b2a2cc49';
+    const fPhone =
+        'd597e67f-e37b-4189'
+        + '-aa50-c6e8cc4fd9be';
+    const fIndustry =
+        '361a0441-a634-4ff9'
+        + '-b4d1-b9528950bf41';
+    const fRevenue =
+        '581fc85d-6954-42fd'
+        + '-910c-1674970f174f';
+    const fEmployees =
+        '76792667-d2ff-48ab'
+        + '-b078-01d5d1bf187c';
+    const fReviewerNotes =
+        '542af865-0bd3-4653'
+        + '-8de6-308ae793c996';
+    const fDecision =
+        '191493d3-fd82-4f77'
+        + '-87a7-deb15eb569c2';
+    const fRisk =
+        '4506eca9-8ba6-4312'
+        + '-8b4a-e06c9f275066';
+
+    const mockWorkOrders:
+        WorkOrderEntity[] = [
+        {
+            id: woId,
+            display_id: 'a7c3e1f9',
+            flow_graph: jsonObjectField({
+                flowId:
+                    'b07adeaa-7484-49be'
+                    + '-a9d7-5652555c9f7f',
+                name:
+                    'Customer Onboarding',
+                description:
+                    'Standard customer'
+                    + ' onboarding'
+                    + ' process',
+                lockTimeout:
+                    DEFAULT_LOCK_TIMEOUT,
+                nodes: JSON.parse(
+                    woFlowGraph,
+                ).nodes,
+                edges: JSON.parse(
+                    woFlowGraph,
+                ).edges,
+            }),
+            created_at: woCreated,
+        },
+    ];
+
+    const mockFlowWorkOrders:
+        FlowWorkOrderEntity[] = [
+        {
+            id: 'fwo-' + woId,
+            flow_id:
+                'b07adeaa-7484-49be'
+                + '-a9d7-5652555c9f7f',
+            work_order_id: woId,
+            created_at: woCreated,
+        },
+    ];
+
+    const mockWoTransitions:
+        WorkOrderTransitionEntity[] = [
+        {
+            id: 'wot-01-' + woId,
+            work_order_id: woId,
+            from_node_id: '',
+            to_node_id: woNodeNew,
+            user_id: woUserId,
+            values: jsonObjectField({}),
+            transitioned_at:
+                woCreated,
+        },
+        {
+            id: 'wot-02-' + woId,
+            work_order_id: woId,
+            from_node_id: woNodeNew,
+            to_node_id: woNodeCapture,
+            user_id: woUserId,
+            values: jsonObjectField({}),
+            transitioned_at:
+                woCreated,
+        },
+        {
+            id: 'wot-03-' + woId,
+            work_order_id: woId,
+            from_node_id:
+                woNodeCapture,
+            to_node_id: woNodeReview,
+            user_id: woUserId,
+            values: jsonObjectField({
+                [fCompanyName]:
+                    'Acme Corp',
+                [fEmail]:
+                    'onboard@acme.com',
+                [fPhone]:
+                    '+1-555-0100',
+                [fIndustry]:
+                    'Technology',
+                [fRevenue]: '5000000',
+                [fEmployees]: '250',
+            }),
+            transitioned_at:
+                dt(13, 14, 30),
+        },
+        {
+            id: 'wot-04-' + woId,
+            work_order_id: woId,
+            from_node_id:
+                woNodeReview,
+            to_node_id:
+                woNodeComplete,
+            user_id: woUserId,
+            values: jsonObjectField({
+                [fReviewerNotes]:
+                    'Approved.'
+                    + ' Strong fit.',
+                [fDecision]: 'Approve',
+                [fRisk]: 'Low',
+            }),
+            transitioned_at:
+                dt(12, 9, 15),
+        },
+    ];
+
     const mockProjectFlows:
         ProjectFlowEntity[] = [
         {
@@ -2035,6 +2193,20 @@ export async function populateMockData(
             adapter.projectFlows.put(
                 r.id, r,
             ),
+        ),
+        ...mockWorkOrders.map(r =>
+            adapter.workOrders.put(
+                r.id, r,
+            ),
+        ),
+        ...mockFlowWorkOrders.map(r =>
+            adapter.flowWorkOrders.put(
+                r.id, r,
+            ),
+        ),
+        ...mockWoTransitions.map(r =>
+            adapter.workOrderTransitions
+                .put(r.id, r),
         ),
     ]);
 }

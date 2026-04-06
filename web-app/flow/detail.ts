@@ -173,21 +173,27 @@ function bindToolbarActions(
         if (action === 'undo') {
             btn.addEventListener(
                 'click',
-                () => void presenter
-                    .performUndo()
-                    .then(() => renderAndBind(
-                        container, presenter,
-                    )),
+                async () => {
+                    await presenter
+                        .performUndo();
+                    renderAndBind(
+                        container,
+                        presenter,
+                    );
+                },
             );
         }
         if (action === 'redo') {
             btn.addEventListener(
                 'click',
-                () => void presenter
-                    .performRedo()
-                    .then(() => renderAndBind(
-                        container, presenter,
-                    )),
+                async () => {
+                    await presenter
+                        .performRedo();
+                    renderAndBind(
+                        container,
+                        presenter,
+                    );
+                },
             );
         }
         if (action === 'add-state') {
@@ -822,28 +828,28 @@ function bindKeyboardShortcuts(
                 && !e.shiftKey
             ) {
                 e.preventDefault();
-                void presenter
-                    .performUndo()
-                    .then(
-                        () => renderAndBind(
-                            container,
-                            presenter,
-                        ),
+                void (async () => {
+                    await presenter
+                        .performUndo();
+                    renderAndBind(
+                        container,
+                        presenter,
                     );
+                })();
             }
             if (
                 e.key === 'z'
                 && e.shiftKey
             ) {
                 e.preventDefault();
-                void presenter
-                    .performRedo()
-                    .then(
-                        () => renderAndBind(
-                            container,
-                            presenter,
-                        ),
+                void (async () => {
+                    await presenter
+                        .performRedo();
+                    renderAndBind(
+                        container,
+                        presenter,
                     );
+                })();
             }
         },
     );
