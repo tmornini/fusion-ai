@@ -9,17 +9,12 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     FlowEntity,
-    WfNodeEntity,
-    WfEdgeEntity,
-    WfFieldEntity,
     ProjectFlowEntity,
-    WfFlowNodeEntity,
-    WfNodeEdgeEntity,
-    WfNodeFieldEntity,
 } from './types';
 import {
     jsonArrayField,
     jsonObjectField,
+    DEFAULT_LOCK_TIMEOUT,
 } from './types';
 
 const now = new Date();
@@ -1426,201 +1421,333 @@ export async function populateMockData(
     const mockFlows:
         FlowEntity[] = [
         {
-            id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
+            id: 'b07adeaa-7484-49be-'
+                + 'a9d7-5652555c9f7f',
             name: 'Customer Onboarding',
             description:
                 'Standard customer'
                 + ' onboarding process',
+            lock_timeout:
+                DEFAULT_LOCK_TIMEOUT,
+            graph: jsonObjectField({
+                nodes: [
+                    {
+                        id: '7c6c4356-a06b'
+                            + '-4f43-99ac'
+                            + '-9a481baf70f1',
+                        name: 'New',
+                        description: '',
+                        positionX: 40,
+                        positionY: 30,
+                        isStart: true,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'bfe39522-9b30'
+                            + '-4db4-a8af'
+                            + '-8b9acc02a8fe',
+                        name:
+                            'Data Capture',
+                        description: '',
+                        positionX: 260,
+                        positionY: 140,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [
+                            {
+                                id: '9ee5e0cb'
+                                    + '-6485'
+                                    + '-452d'
+                                    + '-8738'
+                                    + '-a8ca92'
+                                    + 'ea62dc',
+                                name:
+                                    'Company'
+                                    + ' Name',
+                                fieldType:
+                                    'text',
+                                sortOrder: 1,
+                                isRequired:
+                                    true,
+                                options: [],
+                            },
+                            {
+                                id: '1076b0ff'
+                                    + '-3502'
+                                    + '-4cbe'
+                                    + '-b41b'
+                                    + '-bd64b2'
+                                    + 'a2cc49',
+                                name:
+                                    'Contact'
+                                    + ' Email',
+                                fieldType:
+                                    'email',
+                                sortOrder: 2,
+                                isRequired:
+                                    true,
+                                options: [],
+                            },
+                            {
+                                id: 'd597e67f'
+                                    + '-e37b'
+                                    + '-4189'
+                                    + '-aa50'
+                                    + '-c6e8cc'
+                                    + '4fd9be',
+                                name:
+                                    'Contact'
+                                    + ' Phone',
+                                fieldType:
+                                    'phone',
+                                sortOrder: 3,
+                                isRequired:
+                                    false,
+                                options: [],
+                            },
+                            {
+                                id: '361a0441'
+                                    + '-a634'
+                                    + '-4ff9'
+                                    + '-b4d1'
+                                    + '-b9528950'
+                                    + 'bf41',
+                                name:
+                                    'Industry',
+                                fieldType:
+                                    'select',
+                                sortOrder: 4,
+                                isRequired:
+                                    false,
+                                options: [
+                                    'Technology',
+                                    'Finance',
+                                    'Healthcare',
+                                    'Retail',
+                                    'Manufacturing',
+                                ],
+                            },
+                            {
+                                id: '581fc85d'
+                                    + '-6954'
+                                    + '-42fd'
+                                    + '-910c'
+                                    + '-167497'
+                                    + '0f174f',
+                                name:
+                                    'Annual'
+                                    + ' Revenue',
+                                fieldType:
+                                    'currency',
+                                sortOrder: 5,
+                                isRequired:
+                                    false,
+                                options: [],
+                            },
+                            {
+                                id: '76792667'
+                                    + '-d2ff'
+                                    + '-48ab'
+                                    + '-b078'
+                                    + '-01d5d1'
+                                    + 'bf187c',
+                                name:
+                                    'Number of'
+                                    + ' Employees',
+                                fieldType:
+                                    'number',
+                                sortOrder: 6,
+                                isRequired:
+                                    false,
+                                options: [],
+                            },
+                            {
+                                id: 'c03de6e0'
+                                    + '-224b'
+                                    + '-4dd1'
+                                    + '-9490'
+                                    + '-b6004d'
+                                    + '6d9684',
+                                name:
+                                    'Company'
+                                    + ' Logo',
+                                fieldType:
+                                    'image',
+                                sortOrder: 7,
+                                isRequired:
+                                    false,
+                                options: [],
+                            },
+                            {
+                                id: '82af66a7'
+                                    + '-6373'
+                                    + '-400d'
+                                    + '-ba57'
+                                    + '-5e0e66'
+                                    + 'df9365',
+                                name:
+                                    'Supporting'
+                                    + ' Documents',
+                                fieldType:
+                                    'file',
+                                sortOrder: 8,
+                                isRequired:
+                                    false,
+                                options: [],
+                            },
+                        ],
+                    },
+                    {
+                        id: '357443aa-2aa4'
+                            + '-4c1b-8293'
+                            + '-2f55a49a83e6',
+                        name: 'Review',
+                        description: '',
+                        positionX: 480,
+                        positionY: 250,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [
+                            {
+                                id: '542af865'
+                                    + '-0bd3'
+                                    + '-4653'
+                                    + '-8de6'
+                                    + '-308ae7'
+                                    + '93c996',
+                                name:
+                                    'Reviewer'
+                                    + ' Notes',
+                                fieldType:
+                                    'textarea',
+                                sortOrder: 1,
+                                isRequired:
+                                    true,
+                                options: [],
+                            },
+                            {
+                                id: '191493d3'
+                                    + '-fd82'
+                                    + '-4f77'
+                                    + '-87a7'
+                                    + '-deb15e'
+                                    + 'b569c2',
+                                name:
+                                    'Decision',
+                                fieldType:
+                                    'select',
+                                sortOrder: 2,
+                                isRequired:
+                                    true,
+                                options: [
+                                    'Approve',
+                                    'Needs'
+                                    + ' Revision',
+                                ],
+                            },
+                            {
+                                id: '4506eca9'
+                                    + '-8ba6'
+                                    + '-4312'
+                                    + '-8b4a'
+                                    + '-e06c9f'
+                                    + '275066',
+                                name:
+                                    'Risk'
+                                    + ' Assessment',
+                                fieldType:
+                                    'radio',
+                                sortOrder: 3,
+                                isRequired:
+                                    false,
+                                options: [
+                                    'Low',
+                                    'Medium',
+                                    'High',
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        id: 'cfdd1f8c-8415'
+                            + '-4610-8c6f'
+                            + '-7504eb54ef4f',
+                        name: 'Complete',
+                        description: '',
+                        positionX: 680,
+                        positionY: 370,
+                        isStart: false,
+                        isComplete: true,
+                        fields: [],
+                    },
+                ],
+                edges: [
+                    {
+                        id: 'e7e43fb7-344c'
+                            + '-4fde-9bff'
+                            + '-53ecb411fd6a',
+                        name: 'begin',
+                        description: '',
+                        fromNodeId:
+                            '7c6c4356-a06b'
+                            + '-4f43-99ac'
+                            + '-9a481baf70f1',
+                        toNodeId:
+                            'bfe39522-9b30'
+                            + '-4db4-a8af'
+                            + '-8b9acc02a8fe',
+                    },
+                    {
+                        id: '00a85417-914c'
+                            + '-4ab8-b558'
+                            + '-4f31a0d3a72c',
+                        name: 'submit',
+                        description: '',
+                        fromNodeId:
+                            'bfe39522-9b30'
+                            + '-4db4-a8af'
+                            + '-8b9acc02a8fe',
+                        toNodeId:
+                            '357443aa-2aa4'
+                            + '-4c1b-8293'
+                            + '-2f55a49a83e6',
+                    },
+                    {
+                        id: 'cabe0849-aea8'
+                            + '-4288-b8a9'
+                            + '-f1b1cfd0cd7e',
+                        name:
+                            'needs revision',
+                        description: '',
+                        fromNodeId:
+                            '357443aa-2aa4'
+                            + '-4c1b-8293'
+                            + '-2f55a49a83e6',
+                        toNodeId:
+                            'bfe39522-9b30'
+                            + '-4db4-a8af'
+                            + '-8b9acc02a8fe',
+                    },
+                    {
+                        id: '58aa5414-b787'
+                            + '-401e-80ec'
+                            + '-0494c00af9ff',
+                        name: 'approve',
+                        description: '',
+                        fromNodeId:
+                            '357443aa-2aa4'
+                            + '-4c1b-8293'
+                            + '-2f55a49a83e6',
+                        toNodeId:
+                            'cfdd1f8c-8415'
+                            + '-4610-8c6f'
+                            + '-7504eb54ef4f',
+                    },
+                ],
+            }),
             created_at: wfTimestamp,
             updated_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfNodes:
-        WfNodeEntity[] = [
-        {
-            id: '7c6c4356-a06b-4f43-99ac-9a481baf70f1',
-            name: 'New',
-            description: '',
-            position_x: 40,
-            position_y: 30,
-            is_start: 1,
-            is_complete: 0,
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            name: 'Data Capture',
-            description: '',
-            position_x: 260,
-            position_y: 140,
-            is_start: 0,
-            is_complete: 0,
-            created_at: wfTimestamp,
-        },
-        {
-            id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            name: 'Review',
-            description: '',
-            position_x: 480,
-            position_y: 250,
-            is_start: 0,
-            is_complete: 0,
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'cfdd1f8c-8415-4610-8c6f-7504eb54ef4f',
-            name: 'Complete',
-            description: '',
-            position_x: 680,
-            position_y: 370,
-            is_start: 0,
-            is_complete: 1,
-            created_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfEdges:
-        WfEdgeEntity[] = [
-        {
-            id: 'e7e43fb7-344c-4fde-9bff-53ecb411fd6a',
-            name: 'begin',
-            description: '',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '00a85417-914c-4ab8-b558-4f31a0d3a72c',
-            name: 'submit',
-            description: '',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'cabe0849-aea8-4288-b8a9-f1b1cfd0cd7e',
-            name: 'needs revision',
-            description: '',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '58aa5414-b787-401e-80ec-0494c00af9ff',
-            name: 'approve',
-            description: '',
-            created_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfFields:
-        WfFieldEntity[] = [
-        {
-            id: '9ee5e0cb-6485-452d-8738-a8ca92ea62dc',
-            name: 'Company Name',
-            field_type: 'text',
-            sort_order: 1,
-            is_required: 1,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '1076b0ff-3502-4cbe-b41b-bd64b2a2cc49',
-            name: 'Contact Email',
-            field_type: 'email',
-            sort_order: 2,
-            is_required: 1,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'd597e67f-e37b-4189-aa50-c6e8cc4fd9be',
-            name: 'Contact Phone',
-            field_type: 'phone',
-            sort_order: 3,
-            is_required: 0,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '361a0441-a634-4ff9-b4d1-b9528950bf41',
-            name: 'Industry',
-            field_type: 'select',
-            sort_order: 4,
-            is_required: 0,
-            options: jsonArrayField([
-                'Technology',
-                'Finance',
-                'Healthcare',
-                'Retail',
-                'Manufacturing',
-            ]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '581fc85d-6954-42fd-910c-1674970f174f',
-            name: 'Annual Revenue',
-            field_type: 'currency',
-            sort_order: 5,
-            is_required: 0,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '76792667-d2ff-48ab-b078-01d5d1bf187c',
-            name: 'Number of Employees',
-            field_type: 'number',
-            sort_order: 6,
-            is_required: 0,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'c03de6e0-224b-4dd1-9490-b6004d6d9684',
-            name: 'Company Logo',
-            field_type: 'image',
-            sort_order: 7,
-            is_required: 0,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '82af66a7-6373-400d-ba57-5e0e66df9365',
-            name: 'Supporting Documents',
-            field_type: 'file',
-            sort_order: 8,
-            is_required: 0,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '542af865-0bd3-4653-8de6-308ae793c996',
-            name: 'Reviewer Notes',
-            field_type: 'textarea',
-            sort_order: 1,
-            is_required: 1,
-            options: jsonArrayField([]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '191493d3-fd82-4f77-87a7-deb15eb569c2',
-            name: 'Decision',
-            field_type: 'select',
-            sort_order: 2,
-            is_required: 1,
-            options: jsonArrayField([
-                'Approve',
-                'Needs Revision',
-            ]),
-            created_at: wfTimestamp,
-        },
-        {
-            id: '4506eca9-8ba6-4312-8b4a-e06c9f275066',
-            name: 'Risk Assessment',
-            field_type: 'radio',
-            sort_order: 3,
-            is_required: 0,
-            options: jsonArrayField([
-                'Low',
-                'Medium',
-                'High',
-            ]),
-            created_at: wfTimestamp,
         },
     ];
 
@@ -1630,136 +1757,6 @@ export async function populateMockData(
             id: 'b89df96a-0863-4e0a-8574-31af5d259efc',
             project_id: 'd04b29ad-cc85-4830-adc2-96b1e434d1d0',
             flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
-            created_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfFlowNodes:
-        WfFlowNodeEntity[] = [
-        {
-            id: '570e7d38-3541-4e22-827c-cab5ee0e4b54',
-            flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
-            node_id: '7c6c4356-a06b-4f43-99ac-9a481baf70f1',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'a7628908-cdde-4398-bec2-4053dad39101',
-            flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '2eaee732-56ff-4757-9cd2-dc96cb99eadd',
-            flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
-            node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'edd2b6ce-4d32-4c52-9686-a38e27b9ac9a',
-            flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
-            node_id: 'cfdd1f8c-8415-4610-8c6f-7504eb54ef4f',
-            created_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfNodeEdges:
-        WfNodeEdgeEntity[] = [
-        {
-            id: '980790a7-b80f-4265-85f8-fd46cddfef67',
-            wf_edge_id: 'e7e43fb7-344c-4fde-9bff-53ecb411fd6a',
-            from_node_id: '7c6c4356-a06b-4f43-99ac-9a481baf70f1',
-            to_node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'dea18858-94be-4e9d-b102-e74ee28707fa',
-            wf_edge_id: '00a85417-914c-4ab8-b558-4f31a0d3a72c',
-            from_node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            to_node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'd34e72f8-8574-43d2-80d9-765155b97697',
-            wf_edge_id: 'cabe0849-aea8-4288-b8a9-f1b1cfd0cd7e',
-            from_node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            to_node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'fb70cebb-4bbd-4454-aa19-7c8f00d7de72',
-            wf_edge_id: '58aa5414-b787-401e-80ec-0494c00af9ff',
-            from_node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            to_node_id: 'cfdd1f8c-8415-4610-8c6f-7504eb54ef4f',
-            created_at: wfTimestamp,
-        },
-    ];
-
-    const mockWfNodeFields:
-        WfNodeFieldEntity[] = [
-        {
-            id: 'c3eff5dd-d73b-4170-bf84-6a85577e96fb',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '9ee5e0cb-6485-452d-8738-a8ca92ea62dc',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '91a1ea83-4117-44cf-8648-2e639669a11a',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '1076b0ff-3502-4cbe-b41b-bd64b2a2cc49',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '109a3a8b-569a-4475-97ba-e4995deb19cf',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: 'd597e67f-e37b-4189-aa50-c6e8cc4fd9be',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'f6f26dac-3139-44e3-b45a-01969a8c85bf',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '361a0441-a634-4ff9-b4d1-b9528950bf41',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '7f19901c-a1db-4780-983b-3a29826faf5c',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '581fc85d-6954-42fd-910c-1674970f174f',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'de723a0d-294e-49a8-a362-9633c5e9938f',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '76792667-d2ff-48ab-b078-01d5d1bf187c',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'd576e93c-9add-4e67-903b-6bb1482ff2d7',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: 'c03de6e0-224b-4dd1-9490-b6004d6d9684',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '27043277-7f34-456d-9d37-67c83e933a7d',
-            node_id: 'bfe39522-9b30-4db4-a8af-8b9acc02a8fe',
-            field_id: '82af66a7-6373-400d-ba57-5e0e66df9365',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'cf2b1560-7019-48fc-8c1f-608768724c47',
-            node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            field_id: '542af865-0bd3-4653-8de6-308ae793c996',
-            created_at: wfTimestamp,
-        },
-        {
-            id: 'faee1b38-a9a5-464f-a71e-5836ed32a416',
-            node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            field_id: '191493d3-fd82-4f77-87a7-deb15eb569c2',
-            created_at: wfTimestamp,
-        },
-        {
-            id: '9e9a5c22-7e7a-4a6f-a339-f78dc572b553',
-            node_id: '357443aa-2aa4-4c1b-8293-2f55a49a83e6',
-            field_id: '4506eca9-8ba6-4312-8b4a-e06c9f275066',
             created_at: wfTimestamp,
         },
     ];
@@ -1780,21 +1777,6 @@ export async function populateMockData(
         ...mockFlows.map(wf =>
             adapter.flows.put(
                 wf.id, wf,
-            ),
-        ),
-        ...mockWfNodes.map(n =>
-            adapter.wfNodes.put(
-                n.id, n,
-            ),
-        ),
-        ...mockWfEdges.map(e =>
-            adapter.wfEdges.put(
-                e.id, e,
-            ),
-        ),
-        ...mockWfFields.map(f =>
-            adapter.wfFields.put(
-                f.id, f,
             ),
         ),
     ]);
@@ -2051,21 +2033,6 @@ export async function populateMockData(
         ),
         ...mockProjectFlows.map(r =>
             adapter.projectFlows.put(
-                r.id, r,
-            ),
-        ),
-        ...mockWfFlowNodes.map(r =>
-            adapter.wfFlowNodes.put(
-                r.id, r,
-            ),
-        ),
-        ...mockWfNodeEdges.map(r =>
-            adapter.wfNodeEdges.put(
-                r.id, r,
-            ),
-        ),
-        ...mockWfNodeFields.map(r =>
-            adapter.wfNodeFields.put(
                 r.id, r,
             ),
         ),

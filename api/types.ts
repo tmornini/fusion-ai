@@ -412,40 +412,44 @@ export interface ActivityEntity {
     comment: string;
 }
 
+export interface GraphField {
+    id: string;
+    name: string;
+    fieldType: WfFieldType;
+    sortOrder: number;
+    isRequired: boolean;
+    options: string[];
+}
+
+export interface GraphNode {
+    id: string;
+    name: string;
+    description: string;
+    positionX: number;
+    positionY: number;
+    isStart: boolean;
+    isComplete: boolean;
+    fields: GraphField[];
+}
+
+export interface GraphEdge {
+    id: string;
+    name: string;
+    description: string;
+    fromNodeId: string;
+    toNodeId: string;
+}
+
+export const DEFAULT_LOCK_TIMEOUT = 28800;
+
 export interface FlowEntity {
     id: Id;
     name: string;
     description: string;
+    lock_timeout: number;
+    graph: JsonObjectField;
     created_at: string;
     updated_at: string;
-}
-
-export interface WfNodeEntity {
-    id: Id;
-    name: string;
-    description: string;
-    position_x: number;
-    position_y: number;
-    is_start: StoredBoolean;
-    is_complete: StoredBoolean;
-    created_at: string;
-}
-
-export interface WfEdgeEntity {
-    id: Id;
-    name: string;
-    description: string;
-    created_at: string;
-}
-
-export interface WfFieldEntity {
-    id: Id;
-    name: string;
-    field_type: WfFieldType;
-    sort_order: number;
-    is_required: StoredBoolean;
-    options: JsonArrayField;
-    created_at: string;
 }
 
 export interface CompanySettingsEntity {
@@ -504,27 +508,6 @@ export interface ProjectFlowEntity {
     created_at: string;
 }
 
-export interface WfFlowNodeEntity {
-    id: Id;
-    flow_id: Id;
-    node_id: Id;
-    created_at: string;
-}
-
-export interface WfNodeEdgeEntity {
-    id: Id;
-    wf_edge_id: Id;
-    from_node_id: Id;
-    to_node_id: Id;
-    created_at: string;
-}
-
-export interface WfNodeFieldEntity {
-    id: Id;
-    node_id: Id;
-    field_id: Id;
-    created_at: string;
-}
 
 export interface StatusDisplay {
     label: string;

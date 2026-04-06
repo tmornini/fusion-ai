@@ -31,6 +31,12 @@ import type {
     GraphField,
     FlowGraph,
 } from '../adapters/flows';
+import type { WfFieldType }
+    from '../../../api/types';
+import {
+    jsonObjectField,
+    nowUtc,
+} from '../../../api/types';
 import { UndoManager } from '../flow-undo';
 import type { UndoStep } from '../flow-undo';
 import {
@@ -55,6 +61,34 @@ import {
 import type {
     InteractionState,
 } from '../flow-interactions';
+
+function serializeGraph(
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+): string {
+    return jsonObjectField(
+        { nodes, edges } as unknown as Record<
+            string, unknown
+        >,
+    );
+}
+
+function graphPutStep(
+    flowId: string,
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+): UndoStep {
+    return {
+        op: 'put',
+        resource: `flows/${flowId}`,
+        body: {
+            graph: serializeGraph(
+                nodes, edges,
+            ),
+            updated_at: nowUtc(),
+        },
+    };
+}
 
 interface DesignerState {
     flowId: string;
@@ -152,10 +186,14 @@ export class FlowDesignerPresenter {
         for (const n of nodes) {
             n.positionX -= cx;
             n.positionY -= cy;
-            void putNode(n.id, {
-                position_x: n.positionX,
-                position_y: n.positionY,
-            });
+            void putNode(
+                this.#state.flowId,
+                n.id,
+                {
+                    positionX: n.positionX,
+                    positionY: n.positionY,
+                },
+            );
         }
     }
 
@@ -239,34 +277,27 @@ ${dialog}`;
             n => n.id === nodeId,
         );
         if (!node) return;
-        const oldX = node.positionX;
-        const oldY = node.positionY;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         node.positionX = x;
         node.positionY = y;
-        const resource =
-            `wf-nodes/${nodeId}`;
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'move-node',
-            forward: [{
-                op: 'put',
-                resource,
-                body: {
-                    position_x: x,
-                    position_y: y,
-                },
-            }],
-            reverse: [{
-                op: 'put',
-                resource,
-                body: {
-                    position_x: oldX,
-                    position_y: oldY,
-                },
-            }],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
-        void putNode(nodeId, {
-            position_x: x,
-            position_y: y,
+        void putNode(fId, nodeId, {
+            positionX: x,
+            positionY: y,
         });
         this.#expandIfNeeded();
     }
@@ -277,14 +308,16 @@ ${dialog}`;
             * (NODE_WIDTH + 120);
         const y = START_Y + 100;
         const nodeId = crypto.randomUUID();
-        const flowNodeId =
-            crypto.randomUUID();
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         try {
             await postNodeAddition({
                 nodeId,
-                flowNodeId,
-                flowId:
-                    this.#state.flowId,
+                flowId: fId,
                 name: 'New State',
                 positionX: x,
                 positionY: y,
@@ -309,22 +342,15 @@ ${dialog}`;
                 fields: [],
             },
         ];
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'add-node',
-            forward: [],
-            reverse: [
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-flow-nodes/'
-                        + flowNodeId,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        `wf-nodes/${nodeId}`,
-                },
-            ],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         return true;
     }
@@ -386,19 +412,24 @@ ${dialog}`;
             }
         }
         const edgeId = crypto.randomUUID();
-        const nodeEdgeId =
-            crypto.randomUUID();
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         try {
             await postEdgeConnection({
                 edgeId,
-                nodeEdgeId,
+                flowId: fId,
                 name: 'Transition',
                 fromNodeId: fromId,
                 toNodeId: toId,
             });
         } catch {
             showToast(
-                'Failed to create transition',
+                'Failed to create'
+                + ' transition',
                 'error',
             );
             return false;
@@ -413,22 +444,15 @@ ${dialog}`;
                 toNodeId: toId,
             },
         ];
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'add-edge',
-            forward: [],
-            reverse: [
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-node-edges/'
-                        + nodeEdgeId,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        `wf-edges/${edgeId}`,
-                },
-            ],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         return true;
     }
@@ -499,6 +523,7 @@ ${dialog}`;
             const capture =
                 await deleteEdgeCapture(
                     edgeId,
+                    this.#state.flowId,
                 );
             this.#undo.push({
                 type: 'delete-edge',
@@ -523,16 +548,12 @@ ${dialog}`;
     }
 
     autoLayout(): void {
-        const oldPositions: UndoStep[] =
-            this.#state.nodes.map(n => ({
-                op: 'put' as const,
-                resource:
-                    `wf-nodes/${n.id}`,
-                body: {
-                    position_x: n.positionX,
-                    position_y: n.positionY,
-                },
-            }));
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         const layoutInputs =
             this.#state.nodes.map(
                 n => ({
@@ -552,7 +573,6 @@ ${dialog}`;
             layoutInputs, layoutEdges,
             this.#canvasW, this.#canvasH,
         );
-        const newPositions: UndoStep[] = [];
         for (
             const node of this.#state.nodes
         ) {
@@ -561,24 +581,20 @@ ${dialog}`;
             if (!pos) continue;
             node.positionX = pos.x;
             node.positionY = pos.y;
-            newPositions.push({
-                op: 'put',
-                resource:
-                    `wf-nodes/${node.id}`,
-                body: {
-                    position_x: pos.x,
-                    position_y: pos.y,
-                },
-            });
-            void putNode(node.id, {
-                position_x: pos.x,
-                position_y: pos.y,
+            void putNode(fId, node.id, {
+                positionX: pos.x,
+                positionY: pos.y,
             });
         }
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'auto-layout',
-            forward: newPositions,
-            reverse: oldPositions,
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         this.#expandIfNeeded();
     }
@@ -595,22 +611,26 @@ ${dialog}`;
             n => n.id === nodeId,
         );
         if (!node) return;
-        const oldName = node.name;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         node.name = name;
-        const resource =
-            `wf-nodes/${nodeId}`;
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'update-node-name',
-            forward: [{
-                op: 'put', resource,
-                body: { name },
-            }],
-            reverse: [{
-                op: 'put', resource,
-                body: { name: oldName },
-            }],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
-        void putNode(nodeId, { name });
+        void putNode(
+            fId, nodeId, { name },
+        );
     }
 
     updateNodeDescription(
@@ -625,25 +645,26 @@ ${dialog}`;
             n => n.id === nodeId,
         );
         if (!node) return;
-        const oldDesc = node.description;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         node.description = desc;
-        const resource =
-            `wf-nodes/${nodeId}`;
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'update-node-desc',
-            forward: [{
-                op: 'put', resource,
-                body: { description: desc },
-            }],
-            reverse: [{
-                op: 'put', resource,
-                body: {
-                    description: oldDesc,
-                },
-            }],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         void putNode(
-            nodeId, { description: desc },
+            fId, nodeId,
+            { description: desc },
         );
     }
 
@@ -659,22 +680,26 @@ ${dialog}`;
             e => e.id === edgeId,
         );
         if (!edge) return;
-        const oldName = edge.name;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         edge.name = name;
-        const resource =
-            `wf-edges/${edgeId}`;
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'update-edge-name',
-            forward: [{
-                op: 'put', resource,
-                body: { name },
-            }],
-            reverse: [{
-                op: 'put', resource,
-                body: { name: oldName },
-            }],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
-        void putWfEdge(edgeId, { name });
+        void putWfEdge(
+            fId, edgeId, { name },
+        );
     }
 
     updateEdgeDescription(
@@ -689,25 +714,26 @@ ${dialog}`;
             e => e.id === edgeId,
         );
         if (!edge) return;
-        const oldDesc = edge.description;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         edge.description = desc;
-        const resource =
-            `wf-edges/${edgeId}`;
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'update-edge-desc',
-            forward: [{
-                op: 'put', resource,
-                body: { description: desc },
-            }],
-            reverse: [{
-                op: 'put', resource,
-                body: {
-                    description: oldDesc,
-                },
-            }],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         void putWfEdge(
-            edgeId, { description: desc },
+            fId, edgeId,
+            { description: desc },
         );
     }
 
@@ -730,12 +756,16 @@ ${dialog}`;
         if (!node) return false;
         const sortOrder = node.fields.length;
         const fieldId = crypto.randomUUID();
-        const nodeFieldId =
-            crypto.randomUUID();
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         try {
             await postFieldAddition({
                 fieldId,
-                nodeFieldId,
+                flowId: fId,
                 nodeId,
                 name,
                 fieldType,
@@ -750,34 +780,28 @@ ${dialog}`;
             );
             return false;
         }
+        const typed =
+            fieldType as WfFieldType;
         node.fields = [
             ...node.fields,
             {
                 id: fieldId,
                 name,
-                fieldType,
+                fieldType: typed,
                 sortOrder,
                 isRequired,
                 options,
             },
         ];
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'add-field',
-            forward: [],
-            reverse: [
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-node-fields/'
-                        + nodeFieldId,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-fields/'
-                        + fieldId,
-                },
-            ],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         return true;
     }
@@ -795,7 +819,9 @@ ${dialog}`;
         try {
             const capture =
                 await deleteFieldCapture(
-                    fieldId, nodeId,
+                    fieldId,
+                    nodeId,
+                    this.#state.flowId,
                 );
             this.#undo.push({
                 type: 'delete-field',
@@ -858,25 +884,25 @@ ${dialog}`;
                 fromNode, direction,
             );
         const nodeId = crypto.randomUUID();
-        const flowNodeId =
-            crypto.randomUUID();
         const edgeId = crypto.randomUUID();
-        const nodeEdgeId =
-            crypto.randomUUID();
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
 
         try {
             await postNodeAddition({
                 nodeId,
-                flowNodeId,
-                flowId:
-                    this.#state.flowId,
+                flowId: fId,
                 name,
                 positionX: pos.x,
                 positionY: pos.y,
             });
             await postEdgeConnection({
                 edgeId,
-                nodeEdgeId,
+                flowId: fId,
                 name: transitionName,
                 fromNodeId,
                 toNodeId: nodeId,
@@ -911,33 +937,15 @@ ${dialog}`;
                 toNodeId: nodeId,
             },
         ];
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         this.#undo.push({
             type: 'add-node-and-edge',
-            forward: [],
-            reverse: [
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-node-edges/'
-                        + nodeEdgeId,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        `wf-edges/${edgeId}`,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        'wf-flow-nodes/'
-                        + flowNodeId,
-                },
-                {
-                    op: 'delete',
-                    resource:
-                        `wf-nodes/${nodeId}`,
-                },
-            ],
+            forward: [forwardStep],
+            reverse: [reverseStep],
         });
         this.#expandIfNeeded();
         return true;

@@ -15,17 +15,11 @@ import type {
     TeamMembershipUserEntity,
     ActivityEntity,
     FlowEntity,
-    WfNodeEntity,
-    WfEdgeEntity,
-    WfFieldEntity,
     CompanySettingsEntity,
     AccountEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
-    WfFlowNodeEntity,
-    WfNodeEdgeEntity,
-    WfNodeFieldEntity,
 } from './types';
 import { nowUtc } from './types';
 
@@ -309,13 +303,7 @@ export const TABLE_NAMES = [
     'team_membership_users',
     'activities',
     'flows',
-    'wf_nodes',
-    'wf_edges',
-    'wf_fields',
     'project_flows',
-    'wf_flow_nodes',
-    'wf_node_edges',
-    'wf_node_fields',
     'company_settings',
     'account',
     'idea_submissions',
@@ -495,34 +483,10 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 FlowEntity
             >('flows'),
-        wfNodes:
-            createEntityStore<
-                WfNodeEntity
-            >('wf_nodes'),
-        wfEdges:
-            createEntityStore<
-                WfEdgeEntity
-            >('wf_edges'),
-        wfFields:
-            createEntityStore<
-                WfFieldEntity
-            >('wf_fields'),
         projectFlows:
             createEntityStore<
                 ProjectFlowEntity
             >('project_flows'),
-        wfFlowNodes:
-            createEntityStore<
-                WfFlowNodeEntity
-            >('wf_flow_nodes'),
-        wfNodeEdges:
-            createEntityStore<
-                WfNodeEdgeEntity
-            >('wf_node_edges'),
-        wfNodeFields:
-            createEntityStore<
-                WfNodeFieldEntity
-            >('wf_node_fields'),
 
         companySettings:
             createSingletonStore<
