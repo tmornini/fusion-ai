@@ -220,9 +220,7 @@ function bindApprovalEvents(
                 + ' successfully',
                 'success',
             );
-            navigateTo(
-                'idea-review-queue',
-            );
+            navigateTo('ideas');
         },
     );
 
@@ -256,9 +254,7 @@ function bindApprovalEvents(
             closeDialog(
                 'approval-reject',
             );
-            navigateTo(
-                'idea-review-queue',
-            );
+            navigateTo('ideas');
         },
     );
 

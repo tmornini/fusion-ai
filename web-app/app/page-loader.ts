@@ -37,8 +37,6 @@ const pageModules: Record<
         import('../ideas/create'),
     'idea-convert': () =>
         import('../ideas/convert'),
-    'idea-review-queue': () =>
-        import('../ideas/review-queue'),
     flow: () =>
         import('../flow/index'),
     'flow-detail': () =>

@@ -206,7 +206,7 @@ web-app/
       helpers.ts              # buildUserMap, userName, parseJson
       shared.ts               # getCurrentUser
       dashboard.ts            # getDashboardGauges, getDashboardStats, etc.
-      ideas.ts                # getIdeas, getIdeaDetail, getReviewQueue, getIdeaForConversion, getIdea, putIdea, putIdeaSubmission
+      ideas.ts                # getIdeas, getIdeaDetail, getIdeaForConversion, getIdea, putIdea, putIdeaSubmission
       projects.ts             # getProjects, getProjectById, putProject, putProjectTeamMember
       teams.ts                # getTeamMembers, getManagedUsers
       flows.ts                # Barrel re-export from flow-* modules
@@ -235,7 +235,7 @@ web-app/
   # Pages — 25 pages across page directories (most use index.ts + index.html; some use sourceFile naming)
   dashboard/                # Dashboard with gauge cards
   workbox/                  # Work order inbox + detail
-  ideas/                    # Ideas list + detail, create, convert, review-queue (named files)
+  ideas/                    # Ideas list + detail, create, convert (named files)
   projects/                 # Projects list + detail (named files)
   flow/                     # Flow list + detail (detail.ts/detail.html)
   organization/             # Account overview, users, teams, activity-feed, onboarding (named files)

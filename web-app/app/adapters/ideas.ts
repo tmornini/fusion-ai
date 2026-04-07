@@ -6,7 +6,6 @@ import type {
 import {
     Idea, nowUtc,
     ideaIsVisible,
-    ideaIsInReview,
 } from '../../../api/types';
 import {
     buildUserMap,
@@ -79,43 +78,6 @@ export async function getIdeaDetail(
         ),
         submission.created_at,
     );
-}
-
-export async function getReviewQueue(
-): Promise<Idea[]> {
-    const [
-        ideas, userMap, submissions,
-    ] = await Promise.all([
-        GET<IdeaEntity[]>('ideas'),
-        buildUserMap(),
-        GET<IdeaSubmissionEntity[]>(
-            'idea-submissions',
-        ),
-    ]);
-    const submitterMap = new Map(
-        submissions.map(
-            s => [s.idea_id, s.user_id],
-        ),
-    );
-    const submittedAtMap = new Map(
-        submissions.map(
-            s => [
-                s.idea_id,
-                s.created_at,
-            ],
-        ),
-    );
-
-    return ideas
-        .filter(ideaIsInReview)
-        .map(idea => new Idea(
-            idea,
-            userName(
-                userMap,
-                submitterMap.get(idea.id)!,
-            ),
-            submittedAtMap.get(idea.id)!,
-        ));
 }
 
 export interface ConversionData {

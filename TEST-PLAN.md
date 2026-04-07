@@ -79,17 +79,17 @@ on. Run these in order.
 
 - [ ] **AA18** Navigate to idea #1 detail (status: active). Click "Submit for Review". PASS: status changes to "In Review", button disappears.
 - [ ] **AA19** Submit ideas 1, 4, 7, 8, 9, 10, 11 for review (matching mock data statuses). PASS: each transitions from active to in-review.
-- [ ] **AA20** Navigate to Review Queue. PASS: the 7 submitted ideas appear with priority badges and readiness status.
+- [ ] **AA20** Navigate to Ideas list and filter by "In Review" status badge. PASS: the 7 submitted ideas appear.
 
 ### AA7. Approve Ideas & Convert to Projects
 
-- [ ] **AA28** Navigate to Review Queue. Click idea #1. PASS: navigates to idea detail with approval footer.
+- [ ] **AA28** On Ideas list, filter by "In Review". Click idea #1. PASS: navigates to idea detail with approval footer.
 - [ ] **AA29** Click "Approve". PASS: idea status changes to approved, confirmation shown.
 - [ ] **AA30** Approve idea #4 as well (it was submitted for review in AA19). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
 - [ ] **AA31** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 6 required fields (Project Name, Lead, Start Date, End Date, Budget, Priority).
 - [ ] **AA32** Fill all required fields: Project Name, select "Sarah Chen" as project lead, Start Date, Target End Date, Budget, Priority. Click "Create Project". PASS: navigates to project detail for the new project.
 - [ ] **AA33** On project detail, click "Edit". Set fields (title, description, status, start date, end date, cost baseline, impact baseline) to match mock data. Save. PASS: project data persists.
-- [ ] **AA34** Approve remaining ideas (7, 8, 9, 10) from Review Queue, then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status, progress, and priority.
+- [ ] **AA34** Approve remaining ideas (7, 8, 9, 10) from Ideas list (filter by "In Review"), then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status, progress, and priority.
 
 ### AA9. Create Flows
 
@@ -302,7 +302,7 @@ on. Run these in order.
 ### Idea Detail — Sent Back Re-Submit
 
 - [ ] **D19m** Navigate to an idea with status "sent-back" (after a reviewer sends it back). PASS: "Submit for Review" button is visible, allowing re-submission.
-- [ ] **D19n** Click "Edit", modify a field, click "Save". PASS: idea updates. Click "Submit for Review". PASS: status changes to "In Review", idea reappears in Review Queue.
+- [ ] **D19n** Click "Edit", modify a field, click "Save". PASS: idea updates. Click "Submit for Review". PASS: status changes to "In Review".
 
 ### Idea Convert (`ideas/convert.html`)
 
@@ -310,25 +310,18 @@ on. Run these in order.
 - [ ] **D20b** With required fields empty, "Create Project" button is disabled and progress bar shows 0/6. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 6 required fields are filled.
 - [ ] **D21** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
-### Idea Review Queue (`ideas/review-queue.html`)
+### Idea Status Filtering (`ideas/index.html`)
 
-- [ ] **D22** Navigate to `ideas/review-queue.html`. PASS: page shows 3 stats cards (Pending Review, Ready to Decide, Avg. Wait Time) and a list of ideas pending review.
-- [ ] **D22b** Each review card shows readiness
-  status (Ready for Review/Needs Info/Incomplete),
-  title, submitter, category, days waiting,
-  impact, and effort. PASS: all fields render
-  with data.
-- [ ] **D23** At least one idea with `in-review` status appears in the queue. PASS: idea 7 ("AI-Powered Customer Support Chatbot") or similar is listed.
-- [ ] **D23b** Type a search term in the search input. PASS: review cards filter by title or submitter name in real-time.
-- [ ] **D23c** Select "Ready" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
-- [ ] **D23e** Apply search + filter that matches no items. PASS: empty state shows "No ideas match your filters" message.
-- [ ] **D24** Click a review item. PASS: navigates to `ideas/detail.html?ideaId=<ideaId>` with approval footer.
+- [ ] **D22** Navigate to `ideas/index.html`. PASS: status badges appear showing each status present in the data (e.g., Active, In Review, Approved).
+- [ ] **D23** Click a status badge. PASS: list filters to show only ideas with that status, badge is highlighted, others are dimmed, count updates.
+- [ ] **D23b** Click the same badge again. PASS: filter clears, all ideas shown, all badges at full opacity.
+- [ ] **D23c** Click a different badge. PASS: filter switches to the new status.
 
 ### Idea Detail — Approval Actions
 
 - [ ] **D25** Navigate to `ideas/detail.html?ideaId=7` (in-review idea). PASS: page loads with idea details and sticky approval footer showing Clarify / Send Back / Approve.
-- [ ] **D27** Click "Approve". PASS: success toast, navigates to review queue, idea status is now "approved".
-- [ ] **D29** Click "Send Back". PASS: dialog opens asking for feedback. Confirm. PASS: idea status changes to "sent-back", navigates to review queue.
+- [ ] **D27** Click "Approve". PASS: success toast, navigates to ideas list, idea status is now "approved".
+- [ ] **D29** Click "Send Back". PASS: dialog opens asking for feedback. Confirm. PASS: idea status changes to "sent-back", navigates to ideas list.
 - [ ] **D30** Click "Request Clarification". PASS: dialog opens. Submit. PASS: toast "Clarification requested" appears, dialog closes.
 - [ ] **D25b** Navigate to idea detail for a non-in-review idea. PASS: no approval footer is shown.
 

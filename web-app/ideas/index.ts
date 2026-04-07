@@ -14,7 +14,6 @@ import {
 import {
     iconPlus,
     iconWand,
-    iconClipboardCheck,
     iconChevronRight,
     iconLightbulb,
 } from '../app/icons';
@@ -22,6 +21,10 @@ import {
     navigateTo,
 } from '../app/core';
 import { getIdeas } from '../app/adapters';
+import {
+    type IdeaStatus,
+    isIdeaStatus,
+} from '../../api/types';
 import {
     IdeaListPresenter,
 } from '../app/presenters';
@@ -92,34 +95,6 @@ export async function init(): Promise<void> {
         )}`);
     }
 
-    const pendingReviewCount =
-        presenter.pendingReviewCount();
-    const reviewBtnEl = $(
-        '#review-queue-btn', document,
-    );
-    if (reviewBtnEl
-        && pendingReviewCount > 0) {
-        setHtml(reviewBtnEl, html`
-        <button
-            class="btn btn-outline gap-2"
-            style="border-color:hsl(
-                var(--warning)/0.3);
-                color:hsl(var(--warning))"
-            id="review-queue-nav">
-            ${iconClipboardCheck(16, '')}
-            <span class="hidden-mobile">
-                Review Queue
-            </span> (${pendingReviewCount})
-        </button>`);
-        $('#review-queue-nav', document)
-            ?.addEventListener(
-                'click',
-                () => navigateTo(
-                    'idea-review-queue',
-                ),
-            );
-    }
-
     $('#create-idea-btn', document)
         ?.addEventListener(
             'click',
@@ -127,6 +102,72 @@ export async function init(): Promise<void> {
                 'idea-create',
             ),
         );
+
+    const badgesEl = $(
+        '#status-badges', document,
+    );
+    if (badgesEl) {
+        setHtml(
+            badgesEl,
+            presenter
+                .renderStatusBadges(),
+        );
+        badgesEl.addEventListener(
+            'click',
+            (e) => {
+                if (
+                    !(e.target
+                        instanceof
+                        HTMLElement)
+                ) return;
+                const badge =
+                    e.target.closest<
+                        HTMLElement
+                    >('[data-status]');
+                if (!badge) return;
+                const s = attr(
+                    badge,
+                    'data-status',
+                );
+                if (!isIdeaStatus(s))
+                    return;
+                presenter.toggleFilter(
+                    s,
+                );
+                updateBadgeStyles(
+                    badgesEl,
+                    presenter
+                        .activeFilter(),
+                );
+                renderList();
+            },
+        );
+    }
+
+    function updateBadgeStyles(
+        container: Element,
+        active: IdeaStatus | null,
+    ): void {
+        container
+            .querySelectorAll(
+                '[data-status]',
+            )
+            .forEach(el => {
+                if (
+                    el instanceof
+                    HTMLElement
+                ) {
+                    el.style.opacity =
+                        active
+                        && attr(
+                            el,
+                            'data-status',
+                        ) !== active
+                            ? '0.4'
+                            : '1';
+                }
+            });
+    }
 
     function renderList(): void {
         const list = $(

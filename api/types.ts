@@ -1141,12 +1141,6 @@ export function ideaIsVisible(
         && e.status !== 'deleted';
 }
 
-export function ideaIsInReview(
-    e: IdeaEntity,
-): boolean {
-    return e.status === 'in-review';
-}
-
 export function projectIsNotDeleted(
     e: ProjectEntity,
 ): boolean {

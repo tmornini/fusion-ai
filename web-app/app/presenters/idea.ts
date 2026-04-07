@@ -7,7 +7,7 @@ import {
     iconClock,
     iconDollarSign,
     iconTrendingUp,
-
+    iconLightbulb,
     iconClipboardCheck,
     iconArrowRight,
     iconArrowLeft,
@@ -15,31 +15,33 @@ import {
     iconCheckCircle2,
     iconXCircle,
     iconMessageSquare,
-    iconAlertCircle,
-    iconChevronRight,
     iconEdit,
     iconSave,
     iconX,
 } from '../icons';
 import type {
     Idea,
-    ReadinessLevel,
     IdeaStatus,
 } from '../../../api/types';
 import {
     COST_DIVISOR,
+    IDEA_STATUS_CONFIG,
 } from '../../../api/types';
 
-const READINESS_ICONS: Record<
-    ReadinessLevel,
+const STATUS_ICONS: Record<
+    IdeaStatus,
     (
         size: number,
         cssClass: string,
     ) => SafeHtml
 > = {
-    ready: iconCheckCircle2,
-    'needs-info': iconMessageSquare,
-    incomplete: iconAlertCircle,
+    'active': iconLightbulb,
+    'in-review': iconClipboardCheck,
+    'approved': iconCheckCircle2,
+    'promoted': iconTrendingUp,
+    'sent-back': iconArrowLeft,
+    'archived': iconClock,
+    'deleted': iconXCircle,
 };
 
 export class IdeaPresenter {
@@ -62,16 +64,6 @@ export class IdeaPresenter {
     readonly #estimatedImpact: number;
     readonly #isReviewable: boolean;
     readonly #isConvertible: boolean;
-    readonly #isInReview: boolean;
-    readonly #isReady: boolean;
-    readonly #readiness: ReadinessLevel;
-    readonly #readinessClassName: string;
-    readonly #readinessLabel: string;
-    readonly #waitingDays: number;
-    readonly #impactLabel: string;
-    readonly #effortLabel: string;
-    readonly #searchTitle: string;
-    readonly #searchSubmittedBy: string;
 
     constructor(idea: Idea) {
         this.#id = idea.id;
@@ -104,20 +96,6 @@ export class IdeaPresenter {
             idea.isReviewable();
         this.#isConvertible =
             idea.isConvertible();
-        this.#isInReview = idea.isInReview();
-        this.#isReady = idea.isReady();
-        this.#readiness = idea.readiness;
-        this.#readinessClassName =
-            idea.readinessClassName();
-        this.#readinessLabel =
-            idea.readinessLabel();
-        this.#waitingDays = idea.waitingDays;
-        this.#impactLabel = idea.impactLabel;
-        this.#effortLabel = idea.effortLabel;
-        this.#searchTitle =
-            idea.title.toLowerCase();
-        this.#searchSubmittedBy =
-            idea.submittedBy.toLowerCase();
     }
 
     idForLink(): string {
@@ -128,35 +106,26 @@ export class IdeaPresenter {
         return this.#priority;
     }
 
-    isInReview(): boolean {
-        return this.#isInReview;
+    statusGroup(): IdeaStatus {
+        return this.#status;
     }
 
-    matchesSearch(
-        term: string,
-    ): boolean {
-        const t = term.toLowerCase();
-        return (
-            this.#searchTitle.includes(t)
-            || this.#searchSubmittedBy
-                .includes(t)
-        );
-    }
-
-    isReady(): boolean {
-        return this.#isReady;
-    }
-
-    matchesReadinessFilter(
-        readiness: string,
-    ): boolean {
-        return readiness === 'all'
-            || this.#readiness
-                === readiness;
-    }
-
-    waitingDays(): number {
-        return this.#waitingDays;
+    buildStatusBadge(): SafeHtml {
+        const cfg = IDEA_STATUS_CONFIG[
+            this.#status
+        ]!;
+        const icon = STATUS_ICONS[
+            this.#status
+        ]!;
+        return html`<span class="${
+            'badge '
+            + cfg.className
+            + ' text-xs'
+        }" data-status="${
+            this.#status
+        }" style="cursor:pointer">${
+            icon(14, '')
+        } ${cfg.label}</span>`;
     }
 
     buildCard(view: string): SafeHtml {
@@ -392,108 +361,6 @@ export class IdeaPresenter {
                 </span>
             </button>` : html``}
         </div>`;
-    }
-
-    buildReviewCard(): SafeHtml {
-        const rIcon = READINESS_ICONS[
-            this.#readiness
-        ]!;
-        return html`
-    <div class="card card-hover p-4"
-        style="cursor:pointer"
-        data-review-card="${this.#id}">
-        <div class="flex items-start
-            justify-between gap-4">
-            <div style="${
-                'flex:1;min-width:0'
-            }">
-                <div class="${
-                    'flex flex-wrap'
-                    + ' items-center'
-                    + ' gap-2 mb-2'
-                }">
-                    <span class="${
-                        'flex items-center'
-                        + ' gap-1 text-sm '
-                        + this
-                            .#readinessClassName
-                    }">${
-                        rIcon(16, '')
-                    } ${
-                        this.#readinessLabel
-                    }</span>
-                </div>
-                <h3 class="${
-                    'font-semibold mb-1'
-                }">${this.#title}</h3>
-                <div class="${
-                    'flex items-center'
-                    + ' gap-4 text-sm'
-                    + ' text-muted'
-                }">
-                    <span>by ${
-                        displayText(
-                            this.#submittedBy,
-                        )
-                    }</span>
-                    <span>${
-                        '\u2022'
-                    }</span>
-                    <span>${
-                        this.#category
-                    }</span>
-                    <span>${
-                        '\u2022'
-                    }</span>
-                    <span style="${
-                        'color:hsl('
-                        + 'var(--warning))'
-                    }">${
-                        this.#waitingDays
-                    } days waiting</span>
-                </div>
-            </div>
-            <div class="${
-                'flex items-center gap-6'
-            }">
-                <div class="${
-                    'text-right'
-                    + ' hidden-mobile'
-                }">
-                    <div class="${
-                        'flex items-center'
-                        + ' gap-4 text-sm'
-                    }">
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Impact</p>
-                            <p class="${
-                                'font-medium'
-                            }">${
-                                this
-                                    .#impactLabel
-                            }</p>
-                        </div>
-                        <div>
-                            <p class="${
-                                'text-muted'
-                            }">Effort</p>
-                            <p class="${
-                                'font-medium'
-                            }">${
-                                this
-                                    .#effortLabel
-                            }</p>
-                        </div>
-                    </div>
-                </div>
-                ${iconChevronRight(
-                    20, 'text-muted',
-                )}
-            </div>
-        </div>
-    </div>`;
     }
 
     buildDetailView(
@@ -1204,29 +1071,62 @@ export class IdeaPresenter {
 
 export class IdeaListPresenter {
     readonly #ideas: IdeaPresenter[];
-    readonly #pendingReviewCount: number;
+    readonly #statusBadges: SafeHtml;
+    #filterStatus: IdeaStatus | null =
+        null;
 
     constructor(ideas: Idea[]) {
         this.#ideas = ideas.map(
             i => new IdeaPresenter(i),
         );
-        this.#pendingReviewCount =
-            this.#ideas.filter(
-                i => i.isInReview(),
-            ).length;
+        const groups = Object.groupBy(
+            this.#ideas,
+            i => i.statusGroup(),
+        );
+        const badges =
+            Object.values(groups)
+                .filter(
+                    items =>
+                        items
+                        && items.length > 0,
+                )
+                .map(items =>
+                    items![0]!
+                        .buildStatusBadge(),
+                );
+        this.#statusBadges =
+            html`${badges}`;
     }
 
-    pendingReviewCount(): number {
-        return this.#pendingReviewCount;
+    renderStatusBadges(): SafeHtml {
+        return this.#statusBadges;
     }
 
-    totalCount(): number {
-        return this.#ideas.length;
+    toggleFilter(
+        status: IdeaStatus,
+    ): void {
+        this.#filterStatus =
+            this.#filterStatus === status
+                ? null
+                : status;
+    }
+
+    activeFilter():
+        IdeaStatus | null {
+        return this.#filterStatus;
     }
 
     renderList(): SafeHtml {
+        const filtered =
+            this.#filterStatus
+                ? this.#ideas.filter(
+                    i => i.statusGroup()
+                        === this
+                            .#filterStatus,
+                )
+                : this.#ideas;
         const sorted =
-            [...this.#ideas].sort(
+            [...filtered].sort(
                 (a, b) =>
                     a.prioritySortKey()
                     - b.prioritySortKey(),
@@ -1239,92 +1139,18 @@ export class IdeaListPresenter {
     }
 
     countLabel(): string {
-        const n = this.#ideas.length;
+        const filtered =
+            this.#filterStatus
+                ? this.#ideas.filter(
+                    i => i.statusGroup()
+                        === this
+                            .#filterStatus,
+                )
+                : this.#ideas;
+        const n = filtered.length;
         return `${n} `
             + `${n === 1
                 ? 'idea' : 'ideas'}`
             + ' \u2022 by priority';
-    }
-}
-
-export class ReviewQueuePresenter {
-    readonly #ideas: IdeaPresenter[];
-    readonly #totalCount: number;
-    readonly #readyCount: number;
-    readonly #avgWaitDays: number;
-    #search = '';
-    #readinessFilter = 'all';
-
-    constructor(ideas: Idea[]) {
-        this.#ideas = ideas.map(
-            i => new IdeaPresenter(i),
-        );
-        this.#totalCount =
-            this.#ideas.length;
-        this.#readyCount =
-            this.#ideas.filter(
-                i => i.isReady(),
-            ).length;
-        this.#avgWaitDays =
-            this.#ideas.length > 0
-                ? Math.round(
-                    this.#ideas.reduce(
-                        (sum, i) =>
-                            sum
-                            + i.waitingDays(),
-                        0,
-                    ) / this.#ideas.length,
-                )
-                : 0;
-    }
-
-    setSearch(query: string): void {
-        this.#search = query.toLowerCase();
-    }
-
-    setReadinessFilter(
-        readiness: string,
-    ): void {
-        this.#readinessFilter = readiness;
-    }
-
-    stats(): {
-        total: number;
-        ready: number;
-        avgWait: number;
-    } {
-        return {
-            total: this.#totalCount,
-            ready: this.#readyCount,
-            avgWait: this.#avgWaitDays,
-        };
-    }
-
-    renderList(): SafeHtml {
-        const filtered =
-            this.#ideas.filter(
-                i =>
-                    i.matchesSearch(
-                        this.#search,
-                    )
-                    && i.matchesReadinessFilter(
-                        this.#readinessFilter,
-                    ),
-            );
-        return html`${filtered.map(
-            i => i.buildReviewCard(),
-        )}`;
-    }
-
-    hasFilteredResults(): boolean {
-        return this.#ideas.some(
-            i =>
-                i.matchesSearch(
-                    this.#search,
-                )
-                && i.matchesReadinessFilter(
-                    this.#readinessFilter,
-                ),
-        );
     }
 }

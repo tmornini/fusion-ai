@@ -72,14 +72,6 @@ export const PAGE_REGISTRY: Record<
         icon: 'folderKanban',
         searchable: false,
     },
-    'idea-review-queue': {
-        title: 'Review Queue',
-        layout: 'sidebar',
-        sourceDir: 'ideas',
-        sourceFile: 'review-queue',
-        icon: 'clipboardCheck',
-        keywords: 'review approve reject',
-    },
     flow: {
         title: 'Flows',
         layout: 'sidebar',

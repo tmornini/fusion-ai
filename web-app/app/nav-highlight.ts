@@ -12,7 +12,6 @@ const NAV_GROUP_CHILDREN:
         ideas: [
             'idea-create',
             'idea-convert',
-            'idea-review-queue',
             'idea-detail',
         ],
         projects: [
