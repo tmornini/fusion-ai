@@ -9,7 +9,7 @@ import {
     iconArrowLeft, iconPlus,
     iconArrowUpRight, iconArrowDownRight,
     iconMinus,
-    iconGitBranch,
+    iconGitBranch, iconInfo,
     iconEdit, iconSave, iconX,
 } from '../icons';
 import {
@@ -677,15 +677,26 @@ export class ProjectDetailPresenter {
                 }">
                     Flows
                 </h2>
-                <button
-                    id="new-flow-btn"
-                    class="${
-                        'btn btn-primary '
-                        + 'btn-sm gap-2'
-                    }">
-                    ${iconPlus(14, '')}
-                    New Flow
-                </button>
+                ${this.#status === 'approved'
+                    ? html`<button
+                        id="new-flow-btn"
+                        class="${
+                            'btn btn-primary '
+                            + 'btn-sm gap-2'
+                        }">
+                        ${iconPlus(14, '')}
+                        New Flow
+                    </button>`
+                    : html`<span
+                        class="${
+                            'status-badge '
+                            + 'status-badge'
+                            + '-info'
+                        }">
+                        ${iconInfo(14, '')}
+                        Approve to add
+                        flows
+                    </span>`}
             </div>`;
 
         if (flows.length === 0) {
@@ -702,7 +713,14 @@ export class ProjectDetailPresenter {
                         <p class="${
                             'text-muted mt-4'
                         }">
-                            No flows yet
+                            ${this.#status
+                                === 'approved'
+                                ? 'No flows yet'
+                                : 'Flow creation'
+                                + ' limited to'
+                                + ' approved'
+                                + ' projects'
+                                + ' only'}
                         </p>
                     </div>
                 </div>`;
