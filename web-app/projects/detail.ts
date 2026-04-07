@@ -8,6 +8,8 @@ import {
 } from '../app/loading-states';
 import {
     navigateTo,
+    openDialog,
+    closeDialog,
 } from '../app/core';
 import {
     getProjectById, putProject,
@@ -142,36 +144,9 @@ function bindProjectEvents(
     $('#new-flow-btn', document)
         ?.addEventListener(
             'click',
-            async () => {
-                const wfId =
-                    crypto.randomUUID();
-                try {
-                    await postFlowCreation(
-                        {
-                            flowId: wfId,
-                            projectId,
-                            name:
-                                'New Flow',
-                            description: '',
-                        },
-                    );
-                } catch {
-                    showToast(
-                        'Failed to create'
-                        + ' flow',
-                        'error',
-                    );
-                    return;
-                }
-                navigateTo(
-                    'flow-detail',
-                    {
-                        flowId: wfId,
-                        projectId,
-                    },
-                );
-            },
+            () => openDialog('new-flow'),
         );
+    bindNewFlowDialog(projectId);
 
     $$('[data-flow-id]', document)
         .forEach(el => {
@@ -194,6 +169,77 @@ function bindProjectEvents(
                 },
             );
         });
+}
+
+function bindNewFlowDialog(
+    projectId: string,
+): void {
+    const backdrop = $(
+        '#new-flow-backdrop', document,
+    );
+    $('#new-flow-cancel', document)
+        ?.addEventListener(
+            'click',
+            () => closeDialog('new-flow'),
+        );
+    backdrop?.addEventListener(
+        'click',
+        (e) => {
+            if (
+                e.target === e.currentTarget
+            ) {
+                closeDialog('new-flow');
+            }
+        },
+    );
+    $('#new-flow-submit', document)
+        ?.addEventListener(
+            'click',
+            async () => {
+                const nameEl = $input(
+                    '#new-flow-name',
+                    document,
+                );
+                const name =
+                    nameEl?.value.trim()
+                    ?? '';
+                if (name.length === 0) {
+                    showToast(
+                        'Flow name is'
+                        + ' required',
+                        'error',
+                    );
+                    return;
+                }
+                const wfId =
+                    crypto.randomUUID();
+                try {
+                    await postFlowCreation(
+                        {
+                            flowId: wfId,
+                            projectId,
+                            name,
+                            description: '',
+                        },
+                    );
+                } catch {
+                    showToast(
+                        'Failed to create'
+                        + ' flow',
+                        'error',
+                    );
+                    return;
+                }
+                closeDialog('new-flow');
+                navigateTo(
+                    'flow-detail',
+                    {
+                        flowId: wfId,
+                        projectId,
+                    },
+                );
+            },
+        );
 }
 
 function mutateProjectPage(
