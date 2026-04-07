@@ -13,7 +13,7 @@ const NAV_GROUP_CHILDREN:
             'idea-create',
             'idea-convert',
             'idea-review-queue',
-            'approval-detail',
+            'idea-detail',
         ],
         projects: [
             'project-detail',

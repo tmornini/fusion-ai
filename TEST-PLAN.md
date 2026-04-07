@@ -83,7 +83,7 @@ on. Run these in order.
 
 ### AA7. Approve Ideas & Convert to Projects
 
-- [ ] **AA28** Navigate to Review Queue. Click idea #1. PASS: navigates to approval detail.
+- [ ] **AA28** Navigate to Review Queue. Click idea #1. PASS: navigates to idea detail with approval footer.
 - [ ] **AA29** Click "Approve". PASS: idea status changes to approved, confirmation shown.
 - [ ] **AA30** Approve idea #4 as well (it was submitted for review in AA19). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
 - [ ] **AA31** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 6 required fields (Project Name, Lead, Start Date, End Date, Budget, Priority).
@@ -284,9 +284,9 @@ on. Run these in order.
 
 - [ ] **D19b** Click "Edit", then "Cancel". PASS: returns to view mode with original data unchanged.
 - [ ] **D19c** For an idea in "in_review"
-  status: "Review" action button is visible.
-  PASS: clicking it navigates to
-  `ideas/approval-detail.html` page.
+  status: clicking the card navigates to
+  `ideas/detail.html` page with approval
+  footer (Approve / Send Back / Clarify).
 - [ ] **D19e** For a convertible idea: "Convert" action button is visible. PASS: clicking it navigates to `ideas/convert.html` page.
 - [ ] **D19f** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
 
@@ -318,25 +318,21 @@ on. Run these in order.
 - [ ] **D23b** Type a search term in the search input. PASS: review cards filter by title or submitter name in real-time.
 - [ ] **D23c** Select "Ready" from the readiness filter dropdown. PASS: list shows only ready items. Reset to "All Status" → full list returns.
 - [ ] **D23e** Apply search + filter that matches no items. PASS: empty state shows "No ideas match your filters" message.
-- [ ] **D24** Click a review item. PASS: navigates to `ideas/approval-detail.html?id=<ideaId>`.
+- [ ] **D24** Click a review item. PASS: navigates to `ideas/detail.html?ideaId=<ideaId>` with approval footer.
 
-### Approval Detail (`ideas/approval-detail.html`)
+### Idea Detail — Approval Actions
 
-- [ ] **D25** Navigate to `ideas/approval-detail.html?id=7`. PASS: page loads with full idea details for idea 7.
-- [ ] **D26** Page shows the idea title, submitter, date, category, idea overview, expected impact, effort, cost, risks, assumptions, and alignments. PASS: all content sections populated.
-- [ ] **D27** "Approve" action is available.
-  PASS: clicking it shows confirmation or
-  success feedback.
-- [ ] **D29** "Reject" or "Send Back" action is available. PASS: clicking it shows confirmation or reason dialog.
-- [ ] **D29b** Confirm the reject dialog. PASS: idea status changes to "sent-back", page updates to reflect rejected state.
-- [ ] **D30** Click "Request Clarification" button. PASS: clarification dialog opens. Submit the dialog. PASS: toast "Clarification requested" appears and dialog closes.
+- [ ] **D25** Navigate to `ideas/detail.html?ideaId=7` (in-review idea). PASS: page loads with idea details and sticky approval footer showing Clarify / Send Back / Approve.
+- [ ] **D27** Click "Approve". PASS: success toast, navigates to review queue, idea status is now "approved".
+- [ ] **D29** Click "Send Back". PASS: dialog opens asking for feedback. Confirm. PASS: idea status changes to "sent-back", navigates to review queue.
+- [ ] **D30** Click "Request Clarification". PASS: dialog opens. Submit. PASS: toast "Clarification requested" appears, dialog closes.
+- [ ] **D25b** Navigate to idea detail for a non-in-review idea. PASS: no approval footer is shown.
 
 ### Ideas Workflow Integration
 
 - [ ] **D31** After completing the idea-create wizard through to idea convert, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
 - [ ] **D32** Navigate from ideas list → idea convert → back button. PASS: navigates to ideas list.
 - [ ] **D33** Navigate to `ideas/convert.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
-- [ ] **D34** Navigate to `ideas/approval-detail.html` with no `id` parameter. PASS: page handles gracefully — no crash.
 
 ---
 

@@ -185,14 +185,6 @@ export const PAGE_REGISTRY: Record<
         icon: 'lightbulb',
         searchable: false,
     },
-    'approval-detail': {
-        title: 'Approval Detail',
-        layout: 'sidebar',
-        sourceDir: 'ideas',
-        sourceFile: 'approval-detail',
-        icon: 'clipboardCheck',
-        searchable: false,
-    },
     auth: {
         title: 'Authentication',
         layout: 'standalone',

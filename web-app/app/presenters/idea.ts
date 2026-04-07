@@ -11,7 +11,9 @@ import {
     iconClipboardCheck,
     iconArrowRight,
     iconArrowLeft,
+    iconCheckCircle,
     iconCheckCircle2,
+    iconXCircle,
     iconMessageSquare,
     iconAlertCircle,
     iconChevronRight,
@@ -498,10 +500,14 @@ export class IdeaPresenter {
         ideaId: string,
         isEditing: boolean,
     ): SafeHtml {
+        const pad = this.#isReviewable
+            ? ';padding-bottom:10rem'
+            : '';
         return html`
     <div
-        style="max-width:48rem;
-            margin:0 auto">
+        style="${'max-width:48rem;'
+            + 'margin:0 auto'
+            + pad}">
         <div class="flex items-center gap-2
             text-sm text-muted mb-4">
             <a href="../ideas/index.html"
@@ -593,26 +599,6 @@ export class IdeaPresenter {
                     )}
                     Submit for Review
                 </button>` : html``}
-                ${this.#isReviewable
-                    ? html`
-                <button
-                    class="${
-                        'btn btn-outline'
-                        + ' btn-sm gap-2'
-                    }"
-                    style="${
-                        'border-color:hsl('
-                        + 'var(--warning)'
-                        + '/0.3);'
-                        + 'color:hsl('
-                        + 'var(--warning))'
-                    }"
-                    id="idea-review-btn">
-                    ${iconClipboardCheck(
-                        16, '',
-                    )}
-                    Review
-                </button>` : html``}
                 ${this.#isConvertible
                     ? html`
                 <button
@@ -679,7 +665,247 @@ export class IdeaPresenter {
                 isEditing,
             )}
         </div>
-    </div>`;
+    </div>
+    ${this.#isReviewable
+        ? html`
+            ${this.#buildApprovalFooter()}
+            ${this.#buildApprovalDialogs()}`
+        : html``}`;
+    }
+
+    #buildApprovalFooter(): SafeHtml {
+        return html`
+        <div class="action-footer">
+            <div class="${
+                'action-footer-inner'
+            }">
+                <div class="flex items-center
+                    justify-between gap-4">
+                    <button
+                        class="${
+                            'btn btn-outline'
+                            + ' gap-2'
+                        }"
+                        id="${
+                            'approval-clarify'
+                            + '-btn'
+                        }">
+                        ${iconMessageSquare(
+                            16, '',
+                        )}
+                        <span class="${
+                            'hidden-mobile'
+                        }">
+                            ${'Request'
+                                + ' Clarification'}
+                        </span>
+                        <span
+                            class="${
+                                'visible-'
+                                + 'mobile'
+                            }">
+                            Clarify
+                        </span>
+                    </button>
+                    <div class="flex gap-3">
+                        <button
+                            class="${
+                                'btn'
+                                + ' btn-outline'
+                                + '-error gap-2'
+                            }"
+                            id="${
+                                'approval-'
+                                + 'reject'
+                                + '-btn'
+                            }">
+                            ${iconXCircle(
+                                16, '',
+                            )}
+                            <span
+                                class="${
+                                    'hidden-'
+                                    + 'mobile'
+                                }">
+                                Send Back
+                            </span>
+                            <span
+                                class="${
+                                    'visible-'
+                                    + 'mobile'
+                                }">
+                                Reject
+                            </span>
+                        </button>
+                        <button
+                            class="${
+                                'btn'
+                                + ' btn-success'
+                                + ' gap-2'
+                            }"
+                            id=${'approval'
+                                + '-approve'
+                                + '-btn'}>
+                            ${iconCheckCircle(
+                                16, '',
+                            )}
+                            Approve
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    #buildApprovalDialogs(): SafeHtml {
+        return html`
+        <div
+            id="${
+                'approval-reject'
+                + '-backdrop'
+            }"
+            class="${
+                'dialog-backdrop hidden'
+            }">
+        </div>
+        <div
+            id="${
+                'approval-reject-dialog'
+            }"
+            class="dialog hidden"
+            role="dialog"
+            aria-modal="true"
+            style="max-width:28rem">
+            <div class="dialog-header">
+                <h3 class="dialog-title">
+                    ${'Send Back for'
+                        + ' Revision'}
+                </h3>
+                <p class="${
+                    'dialog-description'
+                }">
+                    ${'Provide feedback'
+                        + ' to help the'
+                        + ' submitter'
+                        + ' improve'
+                        + ' their idea.'}
+                </p>
+            </div>
+            <div class="py-4">
+                <textarea
+                    class="${
+                        'textarea'
+                        + ' resize-none'
+                    }"
+                    id=${'approval'
+                        + '-reject'
+                        + '-feedback'}
+                    placeholder="${
+                        'Explain what'
+                        + ' changes or'
+                        + ' additional'
+                        + ' information'
+                        + ' is'
+                        + ' needed...'
+                    }"
+                    rows="4">
+                </textarea>
+            </div>
+            <div class="dialog-footer">
+                <button
+                    class="${
+                        'btn btn-outline'
+                    }"
+                    id="${
+                        'approval-reject'
+                        + '-cancel'
+                    }">
+                    Cancel
+                </button>
+                <button
+                    class="btn btn-error"
+                    id="${
+                        'approval-reject'
+                        + '-confirm'
+                    }">
+                    Send Back
+                </button>
+            </div>
+        </div>
+
+        <div
+            id="${
+                'approval-clarify'
+                + '-backdrop'
+            }"
+            class="${
+                'dialog-backdrop hidden'
+            }">
+        </div>
+        <div
+            id="${
+                'approval-clarify'
+                + '-dialog'
+            }"
+            class="dialog hidden"
+            role="dialog"
+            aria-modal="true"
+            style="max-width:28rem">
+            <div class="dialog-header">
+                <h3 class="dialog-title">
+                    ${'Request'
+                        + ' Clarification'}
+                </h3>
+                <p class="${
+                    'dialog-description'
+                }">
+                    ${'Ask the submitter'
+                        + ' for additional'
+                        + ' details before'
+                        + ' making a'
+                        + ' decision.'}
+                </p>
+            </div>
+            <div class="py-4">
+                <textarea
+                    class="${
+                        'textarea'
+                        + ' resize-none'
+                    }"
+                    id=${'approval'
+                        + '-clarify'
+                        + '-feedback'}
+                    placeholder="${
+                        'What additional'
+                        + ' information'
+                        + ' do you'
+                        + ' need?'
+                    }"
+                    rows="4">
+                </textarea>
+            </div>
+            <div class="dialog-footer">
+                <button
+                    class="${
+                        'btn btn-outline'
+                    }"
+                    id="${
+                        'approval-clarify'
+                        + '-cancel'
+                    }">
+                    Cancel
+                </button>
+                <button
+                    class="${
+                        'btn btn-primary'
+                    }"
+                    id=${'approval'
+                        + '-clarify'
+                        + '-confirm'}>
+                    Send Request
+                </button>
+            </div>
+        </div>`;
     }
 
     #buildProblemSolutionCard(

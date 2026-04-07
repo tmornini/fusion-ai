@@ -247,9 +247,9 @@ export async function init(): Promise<void> {
                         );
                 if (card)
                     navigateTo(
-                        'approval-detail',
+                        'idea-detail',
                         {
-                            id: attr(
+                            ideaId: attr(
                                 card,
                                 'data-review'
                                 + '-card',

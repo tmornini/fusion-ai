@@ -9,6 +9,7 @@ import {
 } from '../app/loading-states';
 import {
     navigateTo, SECONDS_PER_DAY,
+    initDialog, closeDialog,
 } from '../app/core';
 import {
     getIdeaDetail,
@@ -149,14 +150,9 @@ function bindIdeaEvents(
             },
         );
 
-    $('#idea-review-btn', document)
-        ?.addEventListener(
-            'click',
-            () => navigateTo(
-                'approval-detail',
-                { id: ideaId },
-            ),
-        );
+    if (idea.isReviewable()) {
+        bindApprovalEvents(ideaId);
+    }
     $('#idea-convert-btn', document)
         ?.addEventListener(
             'click',
@@ -194,6 +190,110 @@ function bindIdeaEvents(
                 updated, ideaId,
                 false,
             );
+        },
+    );
+}
+
+function bindApprovalEvents(
+    ideaId: string,
+): void {
+    $(
+        '#approval-approve-btn',
+        document,
+    )?.addEventListener(
+        'click',
+        async () => {
+            try {
+                await putIdea(
+                    ideaId,
+                    { status: 'approved' },
+                );
+            } catch {
+                showToast(
+                    'Failed to approve',
+                    'error',
+                );
+                return;
+            }
+            showToast(
+                'Idea approved'
+                + ' successfully',
+                'success',
+            );
+            navigateTo(
+                'idea-review-queue',
+            );
+        },
+    );
+
+    initDialog(
+        'approval-reject',
+        'approval-reject-btn',
+    );
+    $(
+        '#approval-reject-confirm',
+        document,
+    )?.addEventListener(
+        'click',
+        async () => {
+            try {
+                await putIdea(
+                    ideaId,
+                    { status: 'sent-back' },
+                );
+            } catch {
+                showToast(
+                    'Failed to send back',
+                    'error',
+                );
+                return;
+            }
+            showToast(
+                'Idea sent back'
+                + ' for revision',
+                'info',
+            );
+            closeDialog(
+                'approval-reject',
+            );
+            navigateTo(
+                'idea-review-queue',
+            );
+        },
+    );
+
+    initDialog(
+        'approval-clarify',
+        'approval-clarify-btn',
+    );
+    $(
+        '#approval-clarify-confirm',
+        document,
+    )?.addEventListener(
+        'click',
+        () => {
+            showToast(
+                'Clarification'
+                + ' requested',
+                'info',
+            );
+            closeDialog(
+                'approval-clarify',
+            );
+        },
+    );
+
+    document.addEventListener(
+        'keydown',
+        (e) => {
+            if (e.key === 'Escape') {
+                closeDialog(
+                    'approval-reject',
+                );
+                closeDialog(
+                    'approval-clarify',
+                );
+            }
         },
     );
 }

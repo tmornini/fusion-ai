@@ -155,32 +155,6 @@ export async function getIdeaForConversion(
     };
 }
 
-export async function getIdeaForApproval(
-    ideaId: string,
-): Promise<Idea> {
-    const [entity, userMap, submissions] =
-        await Promise.all([
-            GET<IdeaEntity>(
-                `ideas/${ideaId}`,
-            ),
-            buildUserMap(),
-            GET<IdeaSubmissionEntity[]>(
-                'idea-submissions',
-            ),
-        ]);
-    const submission = submissions.find(
-        s => s.idea_id === ideaId,
-    );
-    return new Idea(
-        entity,
-        userName(
-            userMap,
-            submission!.user_id,
-        ),
-        submission!.created_at,
-    );
-}
-
 export async function getIdea(
     id: string,
 ): Promise<IdeaEntity> {

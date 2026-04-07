@@ -167,9 +167,9 @@ export async function init(): Promise<void> {
                         )
                     )
                         navigateTo(
-                            'approval-detail',
+                            'idea-detail',
                             {
-                                id: attr(
+                                ideaId: attr(
                                     actionButton,
                                     'data-idea'
                                     + '-review',
