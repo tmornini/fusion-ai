@@ -165,7 +165,10 @@ function bindProjectEvents(
                 }
                 navigateTo(
                     'flow-detail',
-                    { flowId: wfId },
+                    {
+                        flowId: wfId,
+                        projectId,
+                    },
                 );
             },
         );
@@ -183,7 +186,10 @@ function bindProjectEvents(
                     if (!wfId) return;
                     navigateTo(
                         'flow-detail',
-                        { flowId: wfId },
+                        {
+                            flowId: wfId,
+                            projectId,
+                        },
                     );
                 },
             );

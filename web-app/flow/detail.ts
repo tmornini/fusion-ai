@@ -74,6 +74,9 @@ class Debouncer {
 const saveDebouncer =
     new Debouncer(SAVE_DELAY_MS);
 
+let currentProjectId:
+    string | undefined;
+
 function renderAndBind(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
@@ -99,7 +102,15 @@ function bindBackButton(): void {
     $('#flow-back-btn', document)
         ?.addEventListener(
             'click',
-            () => navigateTo('flows'),
+            () => currentProjectId
+                ? navigateTo(
+                    'project-detail',
+                    {
+                        projectId:
+                            currentProjectId,
+                    },
+                )
+                : navigateTo('flow'),
         );
 }
 
@@ -605,6 +616,8 @@ export async function init(
 ): Promise<void> {
     const flowId =
         params?.flowId;
+    currentProjectId =
+        params?.projectId;
     if (!flowId) {
         navigateTo('flow');
         return;
