@@ -96,6 +96,70 @@ function renderAndBind(
     bindAddStateDialog(
         container, presenter,
     );
+    bindFlowNameEdit(
+        container, presenter,
+    );
+}
+
+function bindFlowNameEdit(
+    container: HTMLElement,
+    presenter: FlowDesignerPresenter,
+): void {
+    $('#flow-name-edit-btn', document)
+        ?.addEventListener(
+            'click',
+            () => {
+                presenter
+                    .startEditingName();
+                renderAndBind(
+                    container, presenter,
+                );
+                const input = $input(
+                    '#flow-name-input',
+                    document,
+                );
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            },
+        );
+    $('#flow-name-save-btn', document)
+        ?.addEventListener(
+            'click',
+            () => {
+                const name = $input(
+                    '#flow-name-input',
+                    document,
+                )?.value.trim() ?? '';
+                if (
+                    name.length === 0
+                ) {
+                    showToast(
+                        'Flow name is'
+                        + ' required',
+                        'error',
+                    );
+                    return;
+                }
+                presenter
+                    .updateFlowName(name);
+                renderAndBind(
+                    container, presenter,
+                );
+            },
+        );
+    $('#flow-name-cancel-btn', document)
+        ?.addEventListener(
+            'click',
+            () => {
+                presenter
+                    .cancelEditingName();
+                renderAndBind(
+                    container, presenter,
+                );
+            },
+        );
 }
 
 function bindBackButton(): void {

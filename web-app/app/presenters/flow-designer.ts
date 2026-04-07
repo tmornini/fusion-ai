@@ -12,10 +12,13 @@ import {
     iconRedo,
     iconTrash,
     iconX,
+    iconEdit,
+    iconCheck,
 } from '../icons';
 import {
     putNode,
     putWfEdge,
+    putFlow,
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
@@ -94,6 +97,7 @@ interface DesignerState {
     flowId: string;
     flowName: string;
     flowDescription: string;
+    isEditingName: boolean;
     nodes: GraphNode[];
     edges: GraphEdge[];
     interaction: InteractionState;
@@ -124,12 +128,30 @@ export class FlowDesignerPresenter {
             flowName: graph.name,
             flowDescription:
                 graph.description,
+            isEditingName: false,
             nodes: graph.nodes,
             edges: graph.edges,
             interaction,
         };
         this.#migrateToCenter();
         this.#applyZoomToFit();
+    }
+
+    startEditingName(): void {
+        this.#state.isEditingName = true;
+    }
+
+    cancelEditingName(): void {
+        this.#state.isEditingName = false;
+    }
+
+    updateFlowName(name: string): void {
+        this.#state.flowName = name;
+        this.#state.isEditingName = false;
+        void putFlow(
+            this.#state.flowId,
+            { name },
+        );
     }
 
     canUndo(): boolean {
@@ -251,11 +273,46 @@ export class FlowDesignerPresenter {
             this.#buildCanvas();
         const dialog =
             this.#buildAddStateDialog();
+        const nameHtml =
+            this.#state.isEditingName
+                ? html`<div class="${
+                    'flex items-center'
+                    + ' gap-2'
+                }">
+<input class="input"
+    id="flow-name-input"
+    value="${this.#state.flowName}"
+    style="${
+        'font-size:1.125rem;'
+        + 'font-weight:600;'
+        + 'padding:0.25rem 0.5rem'
+    }" />
+<button class="${
+    'btn btn-ghost btn-icon'
+}" id="flow-name-save-btn"
+    >${iconCheck(16, '')}</button>
+<button class="${
+    'btn btn-ghost btn-icon'
+}" id="flow-name-cancel-btn"
+    >${iconX(16, '')}</button>
+</div>`
+                : html`<div class="${
+                    'flex items-center'
+                    + ' gap-2'
+                }">
+<h2 class="${
+    'text-lg font-semibold'
+}">${this.#state.flowName}</h2>
+<button class="${
+    'btn btn-ghost btn-icon'
+}" id="flow-name-edit-btn"
+    style="opacity:0.5"
+    >${iconEdit(14, '')}</button>
+</div>`;
         const content = html`<div
 class="wf-designer">
 <div class="wf-designer-header">
-<h2 class="text-lg font-semibold"
-    >${this.#state.flowName}</h2>
+${nameHtml}
 <p class="text-sm text-muted"
     >${this.#state.flowDescription}</p>
 </div>
