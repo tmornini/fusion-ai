@@ -94,9 +94,13 @@ on. Run these in order.
 ### AA9. Create Flows
 
 - [ ] **AA35** Navigate to Projects. Click into
-  project #1 detail. PASS: a "Flows" section
-  is visible showing "No flows yet" empty
-  state and a "New Flow" button.
+  project #1 detail (status: approved). PASS:
+  a "Flows" section is visible showing "No
+  flows yet" empty state and a "New Flow"
+  button. Non-approved projects show an info
+  badge "Approve to add flows" instead of
+  the button, and empty state reads "Flow
+  creation limited to approved projects only".
 - [ ] **AA36** Click "New Flow". PASS: navigates
   to the flow designer page. The SVG canvas
   shows two nodes: "New" (start, top-left with
@@ -356,10 +360,17 @@ on. Run these in order.
   project team members with roles. PASS: team
   members render with names and role badges.
 - [ ] **E5** Flows section shows linked flows with
-  node/edge counts and a "New Flow" button. PASS:
-  at least one flow displayed or empty state with
-  button visible.
-- [ ] **E5b** Click "New Flow" button. PASS: a new flow is created and the browser navigates to the flow designer page. The new flow is associated with the current project.
+  node/edge counts. For approved projects, a "New
+  Flow" button is visible. For non-approved
+  projects, an info badge "Approve to add flows"
+  appears instead and empty state reads "Flow
+  creation limited to approved projects only".
+  PASS: correct UI for project status.
+- [ ] **E5b** On an approved project, click "New
+  Flow" button. PASS: a new flow is created and
+  the browser navigates to the flow designer
+  page. The new flow is associated with the
+  current project.
 
 ### Project Detail — Edit Mode
 
