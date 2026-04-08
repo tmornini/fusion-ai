@@ -131,7 +131,7 @@
 .sidebar-avatar {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background-color: hsl(var(--primary) / 0.1);
   display: flex;
   align-items: center;

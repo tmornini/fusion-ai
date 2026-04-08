@@ -207,7 +207,7 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 500;
   line-height: 1.25rem;
@@ -300,7 +300,7 @@
   font-size: 0.625rem;
   font-weight: 600;
   padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.025em;
@@ -615,21 +615,21 @@
   height: 0.5rem;
   width: 100%;
   background-color: hsl(var(--muted));
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
   background-color: hsl(var(--primary));
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   transition: width var(--duration-slow) var(--ease-default);
 }
 
 .progress-fill {
   height: 100%;
   background: hsl(var(--primary));
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   transition: width 0.3s;
 }
 
@@ -643,7 +643,7 @@
   width: 2.75rem;
   height: 1.5rem;
   background-color: hsl(var(--muted));
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   border: none;
   cursor: pointer;
   transition: var(--transition-colors);
@@ -660,7 +660,7 @@
   width: 1.25rem;
   height: 1.25rem;
   background-color: hsl(var(--card));
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   transition: transform var(--duration-fast) var(--ease-default);
   box-shadow: var(--shadow-sm);
 }
@@ -746,13 +746,13 @@
 .skeleton-badge {
   height: 1.25rem;
   width: 4rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
 }
 
 .skeleton-avatar {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
