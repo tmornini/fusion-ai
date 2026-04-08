@@ -232,8 +232,8 @@ export async function init(
                 {
                     icon: iconMail(24, ''),
                     title:
-                        'No Active'
-                        + ' Work Orders',
+                        'No Active Work'
+                        + ' Orders Yet',
                     description:
                         'Create a work'
                         + ' order to get'
@@ -261,8 +261,8 @@ export async function init(
                 {
                     icon: iconMail(24, ''),
                     title:
-                        'No Archived'
-                        + ' Work Orders',
+                        'No Archived Work'
+                        + ' Orders Yet',
                     description:
                         'Completed work'
                         + ' orders will'

@@ -110,7 +110,8 @@ export async function init(): Promise<void> {
         init,
         {
             icon: iconUsers(24, ''),
-            title: 'No Team Members',
+            title: 'No Team Members'
+                + ' Yet',
             description:
                 'Invite team members to start'
                 + ' collaborating on projects.',
