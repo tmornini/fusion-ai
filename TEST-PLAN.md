@@ -4,8 +4,9 @@
 
 ### Protocol
 
-All sections are executed over HTTP — serve the unzipped build via
-a local HTTP server (e.g. `python3 -m http.server 8080`).
+All sections are executed over HTTP — build with
+`./build --no-zip /tmp/fusion-test/` and serve via
+`cd /tmp/fusion-test/ && python3 -m http.server 8080`.
 
 ### Execution Order
 
@@ -36,8 +37,8 @@ run as a single continuous regression pass.
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Unzip the archive into a temp directory (e.g. `/tmp/fusion-test`). PASS: directory contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 12 page directories containing 23 HTML page files, plus root `index.html`.
-- [ ] **A3** Start an HTTP server from the unzipped directory (e.g. `python3 -m http.server 8080`). PASS: server starts without errors.
+- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 12 page directories containing 23 HTML page files, plus root `index.html`.
+- [ ] **A3** Start an HTTP server from the build directory (`cd /tmp/fusion-test/ && python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
@@ -756,7 +757,7 @@ on. Run these in order.
 ## J. Teardown
 
 - [ ] **J1** Stop the HTTP server started in A3. PASS: process terminates.
-- [ ] **J2** Remove the temp test directory (`rm -rf /tmp/fusion-test` or equivalent). PASS: directory removed.
+- [ ] **J2** Remove the build directory (`rm -rf /tmp/fusion-test` or equivalent). PASS: directory removed.
 - [ ] **J3** Verify the ZIP file remains on `~/Desktop` for archival. PASS: `fusion-ai-<sha>.zip` exists.
 
 ---

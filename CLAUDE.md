@@ -8,10 +8,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 ./validate             # Type-check + lint (works on dirty tree)
-./build                # Compile, bundle, minify, and create distribution ZIP
+./build                # Compile, bundle, minify, ZIP to ~/Desktop/
+./build --no-zip dir/  # Bundle to dir/ without zipping (for testing)
+./build dir/           # ZIP to dir/ instead of ~/Desktop/
+./build --help         # Show usage
 ```
 
 **Always commit before building.** `./build` requires a clean working directory. Use `./validate` to catch type errors and lint issues before committing, then commit, then build.
+
+**Build and test locally:**
+
+```bash
+./build --no-zip /tmp/fusion-test/
+cd /tmp/fusion-test/ && python3 -m http.server 8080
+# open http://localhost:8080/landing/index.html
+```
 
 `./validate` runs `tsc --noEmit` (type checking) then enforces 78-character maximum line length on all `.ts`, `.html`, and `.css` files (excluding `compose.ts`).
 
@@ -260,14 +271,16 @@ temp directory -- no build artifacts in the repo.
 ## Build
 
 Build steps (requires clean git working directory):
-1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 22 composed files in a temp build directory. Respects `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
+1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 22 composed files in the build directory. Respects `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
 2. Copies 4 standalone pages' `index.html` to the
    build directory
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
 4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
-5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) on `~/Desktop`
+5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) at the output path (default `~/Desktop/`), or skips zipping with `--no-zip`
 
-No build artifacts are created in the repo — everything is assembled in `/tmp/`.
+CLI options: `./build [--no-zip] [path/]`. The trailing `/` on the path argument is required. Default output is `~/Desktop/`. With `--no-zip`, the bundle directory is kept for direct serving via HTTP.
+
+No build artifacts are created in the repo — build output goes to `/tmp/` by default.
 
 ## Gotchas
 
