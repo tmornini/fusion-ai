@@ -137,7 +137,7 @@ export class ProjectPresenter {
             this.#status
         }" style="${
             'cursor:pointer;'
-            + 'min-width:8rem;'
+            + 'min-width:6rem;'
             + 'justify-content:center'
         }">${
             icon(14, '')
@@ -196,7 +196,7 @@ export class ProjectPresenter {
                 }" style="${
                     'justify-content:'
                     + 'center;'
-                    + 'min-width:8rem;'
+                    + 'min-width:6rem;'
                     + 'margin-top:'
                     + '0.25rem'
                 }">${

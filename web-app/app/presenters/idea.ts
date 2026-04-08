@@ -134,7 +134,7 @@ export class IdeaPresenter {
             this.#status
         }" style="${
             'cursor:pointer;'
-            + 'min-width:5.5rem;'
+            + 'min-width:6rem;'
             + 'justify-content:center'
         }">${
             icon(14, '')
@@ -205,7 +205,7 @@ export class IdeaPresenter {
             + ' text-xs'
         }" style="${
             'justify-content:center;'
-            + 'min-width:5.5rem;'
+            + 'min-width:6rem;'
             + 'margin-top:0.25rem'
         }">${
             STATUS_ICONS[
