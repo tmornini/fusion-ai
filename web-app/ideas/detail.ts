@@ -65,7 +65,7 @@ function bindIdeaEvents(
             '#idea-edit-impact', saveSel,
         );
         bindEnterToClick(
-            '#idea-edit-duration',
+            '#idea-edit-time',
             saveSel,
         );
         bindEnterToClick(
@@ -139,9 +139,9 @@ function bindIdeaEvents(
                         document,
                     )!.value,
                 );
-                const duration = Number(
+                const time = Number(
                     $input(
-                        '#idea-edit-duration',
+                        '#idea-edit-time',
                         document,
                     )!.value,
                 );
@@ -168,7 +168,7 @@ function bindIdeaEvents(
                         estimated_impact:
                             impact,
                         estimated_duration:
-                            duration
+                            time
                             * SECONDS_PER_DAY,
                         estimated_cost:
                             cost,

@@ -967,17 +967,8 @@ export class IdeaPresenter {
         <div class="score-grid">
             ${[
               {
-                  label: 'Impact',
-                  inputId: 'impact',
-                  icon: iconTrendingUp,
-                  value:
-                      this.#estimatedImpact,
-                  unit: ' pts',
-                  prefix: '',
-              },
-              {
-                  label: 'Duration',
-                  inputId: 'duration',
+                  label: 'Time',
+                  inputId: 'time',
                   icon: iconClock,
                   value:
                       this.#durationInDays,
@@ -992,6 +983,15 @@ export class IdeaPresenter {
                       this.#estimatedCost,
                   unit: '',
                   prefix: '$',
+              },
+              {
+                  label: 'Impact',
+                  inputId: 'impact',
+                  icon: iconTrendingUp,
+                  value:
+                      this.#estimatedImpact,
+                  unit: ' pts',
+                  prefix: '',
               },
             ].map(metric => html`
             <div style="padding:1rem;
