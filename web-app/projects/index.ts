@@ -1,8 +1,6 @@
 import {
     $,
     attr,
-    populateIcons,
-    initToggleGroup,
 } from '../app/dom';
 import {
     setHtml,
@@ -13,8 +11,6 @@ import {
     withLoadingState,
 } from '../app/loading-states';
 import {
-    iconLayoutGrid,
-    iconBarChart,
     iconFolderKanban,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
@@ -54,17 +50,6 @@ export async function init(): Promise<void> {
     if (!result) return;
     const presenter =
         new ProjectListPresenter(result);
-
-    populateIcons([
-        [
-            '#priority-view-icon',
-            iconLayoutGrid(16, ''),
-        ],
-        [
-            '#performance-view-icon',
-            iconBarChart(16, ''),
-        ],
-    ]);
 
     const badgesEl = $(
         '#status-badges', document,
@@ -140,12 +125,6 @@ export async function init(): Promise<void> {
                 presenter.renderList(),
             );
         }
-        const info =
-            $('#projects-info', document);
-        if (info) {
-            info.textContent =
-                presenter.countLabel();
-        }
     }
 
     listContainer.addEventListener(
@@ -171,19 +150,6 @@ export async function init(): Promise<void> {
                         ),
                     },
                 );
-        },
-    );
-
-    initToggleGroup(
-        '.view-toggle-btn',
-        'data-view',
-        (view) => {
-            presenter.setView(
-                view as
-                    | 'priority'
-                    | 'performance',
-            );
-            renderList();
         },
     );
 

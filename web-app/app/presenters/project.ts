@@ -40,6 +40,7 @@ export class ProjectPresenter {
     readonly #statusLabel: string;
     readonly #priority: number;
     readonly #priorityScore: number;
+    readonly #position: number;
     readonly #progress: number;
     readonly #timeCurrentDays: number;
     readonly #timeBaselineDays: number;
@@ -59,6 +60,7 @@ export class ProjectPresenter {
         this.#priority = project.priority;
         this.#priorityScore =
             project.priorityScore;
+        this.#position = project.position;
         this.#progress =
             project.timelineProgress();
         const start = new Date(
@@ -107,6 +109,10 @@ export class ProjectPresenter {
         return this.#priorityScore;
     }
 
+    positionSortKey(): number {
+        return this.#position;
+    }
+
     statusGroup(): ProjectStatus {
         return this.#status;
     }
@@ -148,7 +154,8 @@ export class ProjectPresenter {
         return html`
     <div class="card card-hover"
         style="padding:1.25rem"
-        data-project-card="${this.#id}">
+        data-project-card="${this.#id}"
+        data-position="${this.#position}">
         <div class="${
             'flex items-center gap-4'
         }">
@@ -333,8 +340,6 @@ export class ProjectPresenter {
 export class ProjectListPresenter {
     readonly #projects: ProjectPresenter[];
     readonly #statusBadges: SafeHtml;
-    #view: 'priority' | 'performance' =
-        'priority';
     #filterStatus: ProjectStatus | null =
         null;
 
@@ -361,17 +366,6 @@ export class ProjectListPresenter {
             html`${badges}`;
     }
 
-    setView(
-        view: 'priority' | 'performance',
-    ): void {
-        this.#view = view;
-    }
-
-    currentView():
-        'priority' | 'performance' {
-        return this.#view;
-    }
-
     renderStatusBadges(): SafeHtml {
         return this.#statusBadges;
     }
@@ -395,40 +389,18 @@ export class ProjectListPresenter {
             this.#filterStatus
                 ? this.#projects.filter(
                     p => p.statusGroup()
-                        === this.#filterStatus,
+                        === this
+                            .#filterStatus,
                 )
                 : this.#projects;
         const sorted =
             [...filtered].sort(
                 (a, b) =>
-                    this.#view === 'priority'
-                        ? a.prioritySortKey()
-                            - b.prioritySortKey()
-                        : b.scoreSortKey()
-                            - a.scoreSortKey(),
+                    a.positionSortKey()
+                    - b.positionSortKey(),
             );
         return html`${sorted.map(
-            p => p.buildCard(this.#view),
+            p => p.buildCard('position'),
         )}`;
-    }
-
-    countLabel(): string {
-        const filtered =
-            this.#filterStatus
-                ? this.#projects.filter(
-                    p => p.statusGroup()
-                        === this.#filterStatus,
-                )
-                : this.#projects;
-        const n = filtered.length;
-        return n
-            + ' '
-            + (n === 1
-                ? 'project'
-                : 'projects')
-            + ' \u2022 '
-            + (this.#view === 'priority'
-                ? 'by priority'
-                : 'by score');
     }
 }
