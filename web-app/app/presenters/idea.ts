@@ -1037,7 +1037,7 @@ export class IdeaPresenter {
 }
 
 export class IdeaListPresenter {
-    readonly #ideas: IdeaPresenter[];
+    #ideas: IdeaPresenter[];
     readonly #statusBadges: SafeHtml;
     #filterStatus: IdeaStatus | null =
         null;
@@ -1063,6 +1063,12 @@ export class IdeaListPresenter {
                 );
         this.#statusBadges =
             html`${badges}`;
+    }
+
+    update(ideas: Idea[]): void {
+        this.#ideas = ideas.map(
+            i => new IdeaPresenter(i),
+        );
     }
 
     renderStatusBadges(): SafeHtml {

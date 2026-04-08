@@ -18,10 +18,16 @@ import {
     type ProjectStatus,
     isProjectStatus,
 } from '../../api/types';
-import { getProjects } from '../app/adapters';
+import {
+    getProjects,
+    putProject,
+} from '../app/adapters';
 import {
     ProjectListPresenter,
 } from '../app/presenters';
+import {
+    initDragReorder,
+} from '../app/drag-reorder';
 
 export async function init(): Promise<void> {
     const listContainer =
@@ -154,4 +160,20 @@ export async function init(): Promise<void> {
     );
 
     renderList();
+
+    initDragReorder(
+        listContainer,
+        '[data-project-card]',
+        'data-project-card',
+        async (id, newPosition) => {
+            await putProject(
+                id,
+                { position: newPosition },
+            );
+            const updated =
+                await getProjects();
+            presenter.update(updated);
+            renderList();
+        },
+    );
 }

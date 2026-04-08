@@ -19,7 +19,10 @@ import {
 import {
     navigateTo,
 } from '../app/core';
-import { getIdeas } from '../app/adapters';
+import {
+    getIdeas,
+    putIdea,
+} from '../app/adapters';
 import {
     type IdeaStatus,
     isIdeaStatus,
@@ -27,6 +30,9 @@ import {
 import {
     IdeaListPresenter,
 } from '../app/presenters';
+import {
+    initDragReorder,
+} from '../app/drag-reorder';
 
 export async function init(): Promise<void> {
     const listContainer =
@@ -228,4 +234,20 @@ export async function init(): Promise<void> {
         );
 
     renderList();
+
+    initDragReorder(
+        listContainer,
+        '[data-idea-card]',
+        'data-idea-card',
+        async (id, newPosition) => {
+            await putIdea(
+                id,
+                { position: newPosition },
+            );
+            const updated =
+                await getIdeas();
+            presenter.update(updated);
+            renderList();
+        },
+    );
 }

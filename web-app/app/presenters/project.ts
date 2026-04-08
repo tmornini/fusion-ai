@@ -338,7 +338,7 @@ export class ProjectPresenter {
 }
 
 export class ProjectListPresenter {
-    readonly #projects: ProjectPresenter[];
+    #projects: ProjectPresenter[];
     readonly #statusBadges: SafeHtml;
     #filterStatus: ProjectStatus | null =
         null;
@@ -364,6 +364,12 @@ export class ProjectListPresenter {
                 );
         this.#statusBadges =
             html`${badges}`;
+    }
+
+    update(projects: Project[]): void {
+        this.#projects = projects.map(
+            p => new ProjectPresenter(p),
+        );
     }
 
     renderStatusBadges(): SafeHtml {

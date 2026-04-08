@@ -479,6 +479,7 @@ async function performConversion(
                     priorityKey
                 ],
             priority_score: 0,
+            position: 0,
             business_context:
                 jsonObjectField({}),
             timeline_label: '',

@@ -172,6 +172,8 @@ export async function init():
                             0,
                         priority:
                             0,
+                        position:
+                            0,
                         category:
                             '',
                         readiness:
