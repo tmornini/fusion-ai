@@ -1769,6 +1769,520 @@ export async function populateMockData(
             created_at: wfTimestamp,
             updated_at: wfTimestamp,
         },
+        {
+            id: '5569e404-e4ea-'
+                + '4310-83f8'
+                + '-0225a5f95311',
+            name: 'Fusion Flow',
+            description: '',
+            lock_timeout:
+                DEFAULT_LOCK_TIMEOUT,
+            graph: jsonObjectField({
+                nodes: [
+                    {
+                        id: '207852d5-38f5'
+                            + '-4271-bf42'
+                            + '-73339e9ec0e8',
+                        name: 'New',
+                        description: '',
+                        positionX: -702,
+                        positionY: -236,
+                        isStart: true,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'f59ba944-c3fc'
+                            + '-45a1-841e'
+                            + '-b7f1174aa7fa',
+                        name: 'Complete',
+                        description: '',
+                        positionX: 436,
+                        positionY: 358,
+                        isStart: false,
+                        isComplete: true,
+                        fields: [],
+                    },
+                    {
+                        id: '74e1ca84-949b'
+                            + '-40de-b314'
+                            + '-9ea5eee39e31',
+                        name: 'Ideas',
+                        description: '',
+                        positionX: -406,
+                        positionY: -234,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'f3fffa30-5f51'
+                            + '-4efe-91cd'
+                            + '-2222ba9a3117',
+                        name:
+                            'Describe problem',
+                        description: '',
+                        positionX: -82,
+                        positionY: -230,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'ada32086-c2f2'
+                            + '-4e5c-8c1e'
+                            + '-37a4e1573665',
+                        name: 'Who Benefits',
+                        description: '',
+                        positionX: 187,
+                        positionY: -232,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '8d1f590e-472b'
+                            + '-475e-8aac'
+                            + '-4d79ab1d343e',
+                        name: 'Solution',
+                        description: '',
+                        positionX: 527,
+                        positionY: -231,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '2cbd3e93-2ff9'
+                            + '-4963-b971'
+                            + '-c7bd606fef75',
+                        name: 'Outcome',
+                        description: '',
+                        positionX: 525,
+                        positionY: -108,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '2ba3a2b9-3c6a'
+                            + '-47fe-bec1'
+                            + '-4a12f0910109',
+                        name: 'Edit Idea',
+                        description: '',
+                        positionX: 189,
+                        positionY: -108,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '314956fb-4323'
+                            + '-4b42-96ec'
+                            + '-026bf87ab767',
+                        name: 'Cost',
+                        description: '',
+                        positionX: -409,
+                        positionY: 22,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '73d8c251-17c6'
+                            + '-45ed-a4c5'
+                            + '-c642db88d408',
+                        name: 'Impact',
+                        description: '',
+                        positionX: -411,
+                        positionY: 141,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'dd5a9515-007a'
+                            + '-46fd-a2ef'
+                            + '-cb529ad04e9b',
+                        name: 'Category',
+                        description: '',
+                        positionX: -143,
+                        positionY: -108,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '8651a244-ca20'
+                            + '-47ec-a8f4'
+                            + '-10e8c3178499',
+                        name: 'Time',
+                        description: '',
+                        positionX: -408,
+                        positionY: -108,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '3a4b7fe2-b948'
+                            + '-4924-90fb'
+                            + '-2a0a7aca1f45',
+                        name: 'Idea',
+                        description: '',
+                        positionX: -412,
+                        positionY: 278,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '93a8a7be-7352'
+                            + '-4fb5-806c'
+                            + '-86528e9c37e1',
+                        name: 'Idea',
+                        description: '',
+                        positionX: -140,
+                        positionY: -3,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '51d2755f-25d4'
+                            + '-437b-9095'
+                            + '-13034fc1a903',
+                        name:
+                            'Review Queue',
+                        description: '',
+                        positionX: 188,
+                        positionY: -7,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: '1f228734-9e2c'
+                            + '-4d38-9dc3'
+                            + '-d3d45e172d10',
+                        name:
+                            'Approval Detail',
+                        description: '',
+                        positionX: 450,
+                        positionY: 81,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'c29d8354-0fd0'
+                            + '-4fe3-a5d6'
+                            + '-f4e5f4c744ce',
+                        name:
+                            'Ideas approve',
+                        description: '',
+                        positionX: 143,
+                        positionY: 274,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                    {
+                        id: 'f798510b-b580'
+                            + '-44a3-b534'
+                            + '-5d4adad96fc7',
+                        name:
+                            'Approval Detail',
+                        description: '',
+                        positionX: 448,
+                        positionY: 214,
+                        isStart: false,
+                        isComplete: false,
+                        fields: [],
+                    },
+                ],
+                edges: [
+                    {
+                        id: 'a7c3e1f0-b4d5'
+                            + '-4f16-8a27'
+                            + '-c9d0e1f2a3b4',
+                        name: 'Create Idea',
+                        description: '',
+                        fromNodeId:
+                            '207852d5-38f5'
+                            + '-4271-bf42'
+                            + '-73339e9ec0e8',
+                        toNodeId:
+                            '74e1ca84-949b'
+                            + '-40de-b314'
+                            + '-9ea5eee39e31',
+                    },
+                    {
+                        id: 'b8d4f201-c5e6'
+                            + '-4027-9b38'
+                            + '-d0e1f2a3b4c5',
+                        name:
+                            'Create Title',
+                        description: '',
+                        fromNodeId:
+                            '74e1ca84-949b'
+                            + '-40de-b314'
+                            + '-9ea5eee39e31',
+                        toNodeId:
+                            'f3fffa30-5f51'
+                            + '-4efe-91cd'
+                            + '-2222ba9a3117',
+                    },
+                    {
+                        id: 'c9e5a312-d6f7'
+                            + '-4138-ac49'
+                            + '-e1f2a3b4c5d6',
+                        name: 'submit',
+                        description: '',
+                        fromNodeId:
+                            'f3fffa30-5f51'
+                            + '-4efe-91cd'
+                            + '-2222ba9a3117',
+                        toNodeId:
+                            'ada32086-c2f2'
+                            + '-4e5c-8c1e'
+                            + '-37a4e1573665',
+                    },
+                    {
+                        id: 'daf6b423-e708'
+                            + '-4249-bd5a'
+                            + '-f2a3b4c5d6e7',
+                        name:
+                            'describe'
+                            + ' solution',
+                        description: '',
+                        fromNodeId:
+                            'ada32086-c2f2'
+                            + '-4e5c-8c1e'
+                            + '-37a4e1573665',
+                        toNodeId:
+                            '8d1f590e-472b'
+                            + '-475e-8aac'
+                            + '-4d79ab1d343e',
+                    },
+                    {
+                        id: 'ebc7c534-f819'
+                            + '-435a-8e6b'
+                            + '-a3b4c5d6e7f8',
+                        name: 'Describe',
+                        description: '',
+                        fromNodeId:
+                            '8d1f590e-472b'
+                            + '-475e-8aac'
+                            + '-4d79ab1d343e',
+                        toNodeId:
+                            '2cbd3e93-2ff9'
+                            + '-4963-b971'
+                            + '-c7bd606fef75',
+                    },
+                    {
+                        id: 'fcd8d645-a92a'
+                            + '-4b6b-9f7c'
+                            + '-b4c5d6e7f8a9',
+                        name:
+                            'Define'
+                            + ' & Measure',
+                        description: '',
+                        fromNodeId:
+                            '2cbd3e93-2ff9'
+                            + '-4963-b971'
+                            + '-c7bd606fef75',
+                        toNodeId:
+                            '2ba3a2b9-3c6a'
+                            + '-47fe-bec1'
+                            + '-4a12f0910109',
+                    },
+                    {
+                        id: 'ade9e756-ba3b'
+                            + '-4c7c-aa8d'
+                            + '-c5d6e7f8a9b0',
+                        name:
+                            'Click on field',
+                        description: '',
+                        fromNodeId:
+                            '2ba3a2b9-3c6a'
+                            + '-47fe-bec1'
+                            + '-4a12f0910109',
+                        toNodeId:
+                            'dd5a9515-007a'
+                            + '-46fd-a2ef'
+                            + '-cb529ad04e9b',
+                    },
+                    {
+                        id: 'befa0867-cb4c'
+                            + '-4d8d-bb9e'
+                            + '-d6e7f8a9b0c1',
+                        name: 'Define',
+                        description: '',
+                        fromNodeId:
+                            'dd5a9515-007a'
+                            + '-46fd-a2ef'
+                            + '-cb529ad04e9b',
+                        toNodeId:
+                            '8651a244-ca20'
+                            + '-47ec-a8f4'
+                            + '-10e8c3178499',
+                    },
+                    {
+                        id: 'cfab1978-dc5d'
+                            + '-4e9e-8caf'
+                            + '-e7f8a9b0c1d2',
+                        name: 'Estimate',
+                        description: '',
+                        fromNodeId:
+                            '8651a244-ca20'
+                            + '-47ec-a8f4'
+                            + '-10e8c3178499',
+                        toNodeId:
+                            '314956fb-4323'
+                            + '-4b42-96ec'
+                            + '-026bf87ab767',
+                    },
+                    {
+                        id: 'd0bc2a89-ed6e'
+                            + '-4faf-9db0'
+                            + '-f8a9b0c1d2e3',
+                        name: 'Estimate',
+                        description: '',
+                        fromNodeId:
+                            '314956fb-4323'
+                            + '-4b42-96ec'
+                            + '-026bf87ab767',
+                        toNodeId:
+                            '73d8c251-17c6'
+                            + '-45ed-a4c5'
+                            + '-c642db88d408',
+                    },
+                    {
+                        id: 'e1cd3b9a-fe7f'
+                            + '-4ab0-aec1'
+                            + '-a9b0c1d2e3f4',
+                        name: 'Estimate',
+                        description: '',
+                        fromNodeId:
+                            '73d8c251-17c6'
+                            + '-45ed-a4c5'
+                            + '-c642db88d408',
+                        toNodeId:
+                            '3a4b7fe2-b948'
+                            + '-4924-90fb'
+                            + '-2a0a7aca1f45',
+                    },
+                    {
+                        id: 'f2de4cab-af80'
+                            + '-4bc1-bfd2'
+                            + '-b0c1d2e3f4a5',
+                        name: 'Submit',
+                        description: '',
+                        fromNodeId:
+                            '3a4b7fe2-b948'
+                            + '-4924-90fb'
+                            + '-2a0a7aca1f45',
+                        toNodeId:
+                            '93a8a7be-7352'
+                            + '-4fb5-806c'
+                            + '-86528e9c37e1',
+                    },
+                    {
+                        id: 'a3ef5dbc-b091'
+                            + '-4cd2-80e3'
+                            + '-c1d2e3f4a5b6',
+                        name: 'Review',
+                        description: '',
+                        fromNodeId:
+                            '93a8a7be-7352'
+                            + '-4fb5-806c'
+                            + '-86528e9c37e1',
+                        toNodeId:
+                            '51d2755f-25d4'
+                            + '-437b-9095'
+                            + '-13034fc1a903',
+                    },
+                    {
+                        id: 'b4f06ecd-c1a2'
+                            + '-4de3-91f4'
+                            + '-d2e3f4a5b6c7',
+                        name: 'Select',
+                        description: '',
+                        fromNodeId:
+                            '51d2755f-25d4'
+                            + '-437b-9095'
+                            + '-13034fc1a903',
+                        toNodeId:
+                            '1f228734-9e2c'
+                            + '-4d38-9dc3'
+                            + '-d3d45e172d10',
+                    },
+                    {
+                        id: 'c5a17fde-d2b3'
+                            + '-4ef4-a2a5'
+                            + '-e3f4a5b6c7d8',
+                        name: 'Decline',
+                        description: '',
+                        fromNodeId:
+                            '1f228734-9e2c'
+                            + '-4d38-9dc3'
+                            + '-d3d45e172d10',
+                        toNodeId:
+                            '51d2755f-25d4'
+                            + '-437b-9095'
+                            + '-13034fc1a903',
+                    },
+                    {
+                        id: 'd6b280ef-e3c4'
+                            + '-4f05-b3b6'
+                            + '-f4a5b6c7d8e9',
+                        name: 'Review',
+                        description: '',
+                        fromNodeId:
+                            '1f228734-9e2c'
+                            + '-4d38-9dc3'
+                            + '-d3d45e172d10',
+                        toNodeId:
+                            'f798510b-b580'
+                            + '-44a3-b534'
+                            + '-5d4adad96fc7',
+                    },
+                    {
+                        id: 'e7c391f0-f4d5'
+                            + '-4016-84c7'
+                            + '-a5b6c7d8e9f0',
+                        name: 'Approve',
+                        description: '',
+                        fromNodeId:
+                            'f798510b-b580'
+                            + '-44a3-b534'
+                            + '-5d4adad96fc7',
+                        toNodeId:
+                            'c29d8354-0fd0'
+                            + '-4fe3-a5d6'
+                            + '-f4e5f4c744ce',
+                    },
+                    {
+                        id: 'f8d4a201-a5e6'
+                            + '-4b27-95d8'
+                            + '-b6c7d8e9f0a1',
+                        name: 'Released',
+                        description: '',
+                        fromNodeId:
+                            'c29d8354-0fd0'
+                            + '-4fe3-a5d6'
+                            + '-f4e5f4c744ce',
+                        toNodeId:
+                            'f59ba944-c3fc'
+                            + '-45a1-841e'
+                            + '-b7f1174aa7fa',
+                    },
+                ],
+            }),
+            created_at: wfTimestamp,
+            updated_at: wfTimestamp,
+        },
     ];
 
     const woId =
@@ -1937,6 +2451,12 @@ export async function populateMockData(
             id: 'b89df96a-0863-4e0a-8574-31af5d259efc',
             project_id: 'd04b29ad-cc85-4830-adc2-96b1e434d1d0',
             flow_id: 'b07adeaa-7484-49be-a9d7-5652555c9f7f',
+            created_at: wfTimestamp,
+        },
+        {
+            id: 'c7e5a302-1b34-4f56-9d78-ab9c0d1e2f3a',
+            project_id: '8b75e9ca-76ed-42c0-b496-699eb5a2e400',
+            flow_id: '5569e404-e4ea-4310-83f8-0225a5f95311',
             created_at: wfTimestamp,
         },
     ];
