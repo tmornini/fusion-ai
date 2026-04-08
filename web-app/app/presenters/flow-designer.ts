@@ -1123,18 +1123,23 @@ ${dialog}`;
         return sel.kind === 'edge';
     }
 
+    #canAddState(): boolean {
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'node') return false;
+        const node =
+            this.#state.nodes.find(
+                n => n.id === sel.nodeId,
+            );
+        if (!node) return false;
+        if (!node.isStart) return true;
+        return !this.#state.edges.some(
+            e => e.fromNodeId === node.id,
+        );
+    }
+
     #buildToolbar(): SafeHtml {
-        const nodeCount =
-            this.#state.nodes.length;
-        const edgeCount =
-            this.#state.edges.length;
-        const stats = String(nodeCount)
-            + ' state'
-            + (nodeCount !== 1 ? 's' : '')
-            + ' \u00b7 '
-            + String(edgeCount)
-            + ' transition'
-            + (edgeCount !== 1 ? 's' : '');
         return html`<div
 class="wf-toolbar">
 <div class="wf-toolbar-group">
@@ -1163,32 +1168,22 @@ class="wf-toolbar">
 <button class="btn btn-primary btn-sm"
     data-action="add-state"${
     trusted(
-        this.#state.interaction
-            .selection.kind === 'node'
+        this.#canAddState()
             ? '' : ' disabled',
     )}>+ Add State</button>
-</div>
-<div class="wf-toolbar-group">
-<button
-    class="btn btn-ghost btn-icon"
-    data-action="delete-selected"${
-    trusted(
-        this.#canDelete()
-            ? '' : ' disabled',
-    )}>${iconTrash(18, '')}</button>
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
     data-action="auto-layout"
     >Auto Layout</button>
 <button class="btn btn-ghost btn-sm"
-    data-action="zoom-in"
-    >Zoom +</button>
+    data-action="fit">Fit</button>
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-out"
     >Zoom \u2212</button>
 <button class="btn btn-ghost btn-sm"
-    data-action="fit">Fit</button>
+    data-action="zoom-in"
+    >Zoom +</button>
 </div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
@@ -1196,11 +1191,17 @@ class="wf-toolbar">
     >Copy Mermaid</button>
 <button class="btn btn-ghost btn-sm"
     data-action="export-zip"
-    >Export .zip</button>
+    >Export</button>
 </div>
-<div class="wf-toolbar-group">
-<span class="text-muted text-sm"
-    >${stats}</span>
+<div class="wf-toolbar-group"
+    style="margin-left:auto">
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="delete-selected"${
+    trusted(
+        this.#canDelete()
+            ? '' : ' disabled',
+    )}>${iconTrash(18, '')}</button>
 </div>
 </div>`;
     }
