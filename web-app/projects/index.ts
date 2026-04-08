@@ -4,7 +4,6 @@ import {
 } from '../app/dom';
 import {
     setHtml,
-    html,
 } from '../app/safe-html';
 import {
     buildSkeleton,
