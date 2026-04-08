@@ -166,7 +166,6 @@ export class IdeaPresenter {
                 + 'align-items:flex-end;'
                 + 'gap:0.5rem'
             }">
-                ${this.#buildBadges()}
                 ${this.#buildActions()}
             </div>
         </div>
@@ -181,26 +180,18 @@ export class IdeaPresenter {
             + ' truncate'
         }">
             ${this.#title}
-        </h3>`;
-    }
-
-    #buildBadges(): SafeHtml {
-        return html`
-        <div style="${
-            'display:grid;'
-            + 'gap:0.25rem;'
-            + 'align-self:center'
+        </h3>
+        <span class="${
+            'badge '
+            + this.#statusClassName
+            + ' text-xs'
+        }" style="${
+            'justify-content:center;'
+            + 'min-width:5.5rem;'
+            + 'margin-top:0.25rem'
         }">
-            <span class="${
-                'badge '
-                + this.#statusClassName
-                + ' text-xs'
-            }" style="${
-                'justify-content:center'
-            }">
-                ${this.#statusLabel}
-            </span>
-        </div>`;
+            ${this.#statusLabel}
+        </span>`;
     }
 
     #buildEstimates(

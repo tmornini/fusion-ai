@@ -169,23 +169,29 @@ export class ProjectPresenter {
                 }">${
                     this.#title
                 }</h3>
+                <span class="${
+                    'badge '
+                    + this
+                        .#statusClassName
+                    + ' text-xs'
+                }" style="${
+                    'justify-content:'
+                    + 'center;'
+                    + 'min-width:8rem;'
+                    + 'margin-top:'
+                    + '0.25rem'
+                }">${
+                    statusIcon(
+                        14, '',
+                    )
+                } ${
+                    this
+                        .#statusLabel
+                }</span>
             </div>
             ${this.#buildMetrics(
                 metricBoxStyle,
             )}
-            <span class="${
-                'badge '
-                + this
-                    .#statusClassName
-                + ' text-xs'
-            }">${
-                statusIcon(
-                    14, '',
-                )
-            } ${
-                this
-                    .#statusLabel
-            }</span>
             ${this.#buildProgressRing()}
         </div>
     </div>`;
