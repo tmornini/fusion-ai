@@ -12,10 +12,10 @@ Options:
   --help     Show this help message
 
 Examples:
-  ./build                          # ZIP to ~/Desktop/
-  ./build dist/                    # ZIP to dist/
+  ./build                          # bundle and ZIP to ~/Desktop/
+  ./build dist/                    # bundle ZIP to dist/
   ./build --no-zip /tmp/test/      # bundle to /tmp/test/
-  ./build --no-zip                 # bundle to temp dir
+  ./build --no-zip                 # bundle to ~/Desktop/
 USAGE
 }
 
@@ -97,3 +97,4 @@ else
   echo "Distribution: $ZIPDEST ($(wc -c < "$ZIPDEST" | xargs) bytes)"
 fi
 echo "Done."
+
