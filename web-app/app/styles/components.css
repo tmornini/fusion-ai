@@ -635,7 +635,8 @@
   height: 100%;
   background: hsl(var(--primary));
   border-radius: var(--radius-full);
-  transition: width 0.3s;
+  transition: width var(--duration-slow)
+    var(--ease-default);
 }
 
 /* ==========================================

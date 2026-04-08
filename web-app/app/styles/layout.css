@@ -214,7 +214,11 @@
 
 #header-greeting {
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition:
+    transform var(--duration-fast)
+        var(--ease-default),
+    box-shadow var(--duration-fast)
+        var(--ease-default);
 }
 #header-greeting:active {
   transform: translateY(1px);
