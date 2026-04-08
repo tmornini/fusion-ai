@@ -155,7 +155,7 @@ export class IdeaPresenter {
             <div style="${
                 'flex:1;min-width:0'
             }">
-                ${this.#buildHeading(view)}
+                ${this.#buildHeading()}
             </div>
             ${this.#buildEstimates(
                 metricBoxStyle,
@@ -173,39 +173,15 @@ export class IdeaPresenter {
     </div>`;
     }
 
-    #buildHeading(
-        view: string,
-    ): SafeHtml {
+    #buildHeading(): SafeHtml {
         return html`
         <h3 class="${
             'font-display'
             + ' font-semibold'
             + ' truncate'
-            + ' mb-1'
         }">
             ${this.#title}
-        </h3>
-        <div class="${
-            'flex items-center'
-            + ' gap-2 text-xs'
-            + ' text-muted'
-        }">
-            ${view === 'priority'
-                ? html`<span>${
-                    'Priority'
-                    } #${this.#priority}
-                </span><span>${
-                    '\u2022'
-                }</span>`
-                : html``}
-            <span>
-                by ${
-                    displayText(
-                        this.#submittedBy,
-                    )
-                }
-            </span>
-        </div>`;
+        </h3>`;
     }
 
     #buildBadges(): SafeHtml {

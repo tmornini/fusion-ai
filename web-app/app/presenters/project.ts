@@ -156,51 +156,36 @@ export class ProjectPresenter {
             <div style="${
                 'flex:1;min-width:0'
             }">
-                <div class="${
-                    'flex flex-wrap '
-                    + 'items-center'
-                    + ' gap-2'
-                }">
-                    <h3 class="${
-                        'font-display '
-                        + 'font-semibold'
-                    }" style="${
-                        'white-space:'
-                        + 'nowrap;'
-                        + 'overflow:'
-                        + 'hidden;'
-                        + 'text-overflow'
-                        + ':ellipsis'
-                    }">${
-                        this.#title
-                    }</h3>
-                    <span class="${
-                        'badge '
-                        + this
-                            .#statusClassName
-                        + ' text-xs'
-                    }">${
-                        statusIcon(
-                            14, '',
-                        )
-                    } ${
-                        this
-                            .#statusLabel
-                    }</span>
-                </div>
-                ${view === 'priority'
-                    ? html`<span
-                        class="${
-                            'text-xs'
-                            + ' text-muted'
-                        }">Priority #${
-                            this.#priority
-                        }</span>`
-                    : html``}
+                <h3 class="${
+                    'font-display '
+                    + 'font-semibold'
+                }" style="${
+                    'white-space:'
+                    + 'nowrap;'
+                    + 'overflow:'
+                    + 'hidden;'
+                    + 'text-overflow'
+                    + ':ellipsis'
+                }">${
+                    this.#title
+                }</h3>
             </div>
             ${this.#buildMetrics(
                 metricBoxStyle,
             )}
+            <span class="${
+                'badge '
+                + this
+                    .#statusClassName
+                + ' text-xs'
+            }">${
+                statusIcon(
+                    14, '',
+                )
+            } ${
+                this
+                    .#statusLabel
+            }</span>
             ${this.#buildProgressRing()}
         </div>
     </div>`;
