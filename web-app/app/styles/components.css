@@ -515,10 +515,15 @@
   text-align: left;
   transition: background-color var(--duration-instant) var(--ease-default);
 }
-.dropdown-item:hover,
+.dropdown-item:hover {
+  background-color: hsl(var(--muted));
+}
 .dropdown-item:focus-visible {
   background-color: hsl(var(--muted));
-  outline: none;
+  outline: var(--focus-ring-width) solid
+    hsl(var(--focus-ring-color));
+  outline-offset:
+    calc(-1 * var(--focus-ring-width));
 }
 
 .dropdown-label {
