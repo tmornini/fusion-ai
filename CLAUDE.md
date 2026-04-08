@@ -196,7 +196,7 @@ web-app/
     preferences-store.ts      # localStorage adapter for user preferences (theme, sidebar, log-level)
     charts.ts                 # SVG chart rendering (bar, line, donut, area)
     command-palette.ts        # Cmd+K search overlay with keyboard navigation
-    dom.ts                    # querySelector wrappers ($, $$, $required, $input, $select, $textarea), attr(), populateIcons(), initToggleGroup()
+    dom.ts                    # querySelector wrappers ($, $$, $required, $input, $select, $textarea), attr(), populateIcons(), initToggleGroup(), bindEnterToClick()
     toast.ts                  # showToast() auto-dismiss notifications
     logger.ts                 # Lightweight logger using preferences-store for log-level
     safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()

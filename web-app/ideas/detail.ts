@@ -1,5 +1,6 @@
 import {
     $, $input, $textarea,
+    bindEnterToClick,
 } from '../app/dom';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -51,6 +52,24 @@ function bindIdeaEvents(
         document.addEventListener(
             'keydown',
             editEscapeHandler,
+        );
+        const saveSel = '#idea-save-btn';
+        bindEnterToClick(
+            '#idea-edit-title', saveSel,
+        );
+        bindEnterToClick(
+            '#idea-edit-category',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#idea-edit-impact', saveSel,
+        );
+        bindEnterToClick(
+            '#idea-edit-duration',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#idea-edit-cost', saveSel,
         );
     }
     $('#idea-back-btn', document)

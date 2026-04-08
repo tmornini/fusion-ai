@@ -714,6 +714,39 @@ on. Run these in order.
 
 - [ ] **I18** Download a snapshot, wipe data (Create Pristine), upload the snapshot. PASS: all data restored correctly — spot-check 3 pages to confirm content matches pre-wipe state.
 
+### Keyboard Shortcuts — Edit Modes & Dialogs
+
+- [ ] **I20** Ideas detail: click Edit, press Enter
+  in the title field. PASS: idea saves, returns
+  to view mode with updated data.
+- [ ] **I20b** Ideas detail: click Edit, press
+  Escape. PASS: returns to view mode, no save.
+- [ ] **I20c** Projects detail: click Edit, press
+  Enter in the title field. PASS: project saves.
+- [ ] **I20d** Projects detail: click Edit, press
+  Escape. PASS: returns to view mode, no save.
+- [ ] **I20e** Flow designer: open field editor,
+  type a name, press Enter. PASS: field is added.
+- [ ] **I20f** Profile: press Enter in first name
+  field. PASS: profile saves.
+- [ ] **I20g** Settings: press Enter in company name
+  field. PASS: settings save.
+- [ ] **I20h** Manage Users: open invite dialog,
+  fill fields, press Enter in email field. PASS:
+  dialog submits.
+- [ ] **I20i** Teams: open add-member dialog, type
+  email, press Enter. PASS: invitation sent.
+- [ ] **I20j** Idea conversion: fill required fields,
+  press Enter in project name. PASS: conversion
+  submits (if all required fields complete).
+- [ ] **I20k** Idea create wizard: type a title,
+  press Enter. PASS: wizard advances to next step.
+- [ ] **I20l** Any dialog: press Escape. PASS: dialog
+  closes without submitting.
+- [ ] **I20m** Ideas detail: click Edit, press Enter
+  in a textarea (e.g. Problem Statement). PASS:
+  newline is inserted, does NOT trigger save.
+
 ### General
 
 - [ ] **I19** Check DevTools Console after navigating through 5+ different pages. PASS: no unhandled JavaScript errors (warnings and info messages from browser extensions are acceptable).

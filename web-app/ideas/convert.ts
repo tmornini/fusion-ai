@@ -1,4 +1,6 @@
-import { $ } from '../app/dom';
+import {
+    $, bindEnterToClick,
+} from '../app/dom';
 import {
     html, setHtml,
 } from '../app/safe-html';
@@ -327,6 +329,24 @@ export async function init(
                     'change', handler,
                 );
             });
+
+        const submitSel =
+            '#convert-submit-btn';
+        bindEnterToClick(
+            '#convert-project-name',
+            submitSel,
+        );
+        bindEnterToClick(
+            '#convert-start-date',
+            submitSel,
+        );
+        bindEnterToClick(
+            '#convert-target-end-date',
+            submitSel,
+        );
+        bindEnterToClick(
+            '#convert-budget', submitSel,
+        );
 
         $(
             '#convert-submit-btn',

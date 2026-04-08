@@ -1,5 +1,6 @@
 import {
     $, $input, $textarea,
+    bindEnterToClick,
 } from '../app/dom';
 import {
     setHtml,
@@ -230,6 +231,17 @@ export async function init():
                     },
                 );
             });
+
+        const nextSel =
+            '#idea-create-step-next';
+        bindEnterToClick(
+            '#idea-create-field-title',
+            nextSel,
+        );
+        bindEnterToClick(
+            '#idea-create-field-target',
+            nextSel,
+        );
     }
 
     renderPage();

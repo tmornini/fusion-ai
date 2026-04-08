@@ -1,5 +1,6 @@
 import {
     $, $input, $select,
+    bindEnterToClick,
 } from '../app/dom';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -646,6 +647,12 @@ function showFieldEditor(
             () => void handleSaveField(
                 container, presenter,
             ),
+        );
+        bindEnterToClick(
+            '#new-field-name',
+            '[data-action='
+            + '"save-field"]',
+            slot,
         );
     }
 }

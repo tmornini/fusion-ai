@@ -1,5 +1,6 @@
 import {
     $, $$, $textarea, $input, $select,
+    bindEnterToClick,
 } from '../app/dom';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -61,6 +62,28 @@ function bindProjectEvents(
         document.addEventListener(
             'keydown',
             editEscapeHandler,
+        );
+        const saveSel =
+            '#project-save-btn';
+        bindEnterToClick(
+            '#project-edit-title',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#project-edit-start-date',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#project-edit-end-date',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#project-edit-cost-baseline',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#project-edit-impact-baseline',
+            saveSel,
         );
     }
     $('#project-back-btn', document)

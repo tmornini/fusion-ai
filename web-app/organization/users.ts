@@ -1,5 +1,6 @@
 import {
     $, $input, $select,
+    bindEnterToClick,
 } from '../app/dom';
 import {
     html, setHtml,
@@ -769,5 +770,25 @@ export async function init(): Promise<void> {
                 );
             }
         },
+    );
+
+    const submitSel = '#invite-submit';
+    bindEnterToClick(
+        '#invite-first', submitSel,
+    );
+    bindEnterToClick(
+        '#invite-last', submitSel,
+    );
+    bindEnterToClick(
+        '#invite-email', submitSel,
+    );
+    bindEnterToClick(
+        '#invite-phone', submitSel,
+    );
+    bindEnterToClick(
+        '#invite-avail', submitSel,
+    );
+    bindEnterToClick(
+        '#invite-perf', submitSel,
     );
 }
