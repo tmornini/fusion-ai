@@ -48,6 +48,7 @@ export class IdeaPresenter {
     readonly #id: string;
     readonly #title: string;
     readonly #priority: number;
+    readonly #position: number;
     readonly #status: IdeaStatus;
     readonly #statusClassName: string;
     readonly #statusLabel: string;
@@ -69,6 +70,7 @@ export class IdeaPresenter {
         this.#id = idea.id;
         this.#title = idea.title;
         this.#priority = idea.priority;
+        this.#position = idea.position;
         this.#status = idea.status;
         this.#statusClassName =
             idea.statusClassName();
@@ -104,6 +106,10 @@ export class IdeaPresenter {
 
     prioritySortKey(): number {
         return this.#priority;
+    }
+
+    positionSortKey(): number {
+        return this.#position;
     }
 
     statusGroup(): IdeaStatus {
@@ -147,7 +153,8 @@ export class IdeaPresenter {
             'padding:1.25rem;'
             + 'cursor:pointer'
         }"
-        data-idea-card="${this.#id}">
+        data-idea-card="${this.#id}"
+        data-position="${this.#position}">
         <div class="${
             'flex items-center gap-4'
         }">
@@ -206,16 +213,21 @@ export class IdeaPresenter {
     ): SafeHtml {
         const days = this.#durationInDays;
         const cost = this.#estimatedCost;
-        const impact = this.#estimatedImpact;
+        const impact =
+            this.#estimatedImpact;
+        if (!days && !cost && !impact)
+            return html``;
         const m = 'text-xs text-muted';
+        const med = 'text-sm font-medium';
+        const cell =
+            'flex items-center gap-2';
         return html`
     <div class="${
         'hidden-mobile flex'
         + ' items-center gap-4'
     }" style="flex-shrink:0">
-        <div class="${
-            'flex items-center gap-2'
-        }">
+        ${days ? html`
+        <div class="${cell}">
             <div style="${boxStyle}">${
                 iconClock(
                     16, 'text-primary',
@@ -223,18 +235,12 @@ export class IdeaPresenter {
             }</div>
             <div>
                 <p class="${m}">Time</p>
-                <p class="${
-                    'text-sm font-medium'
-                }">${
-                    days
-                        ? `${days}d`
-                        : '\u2014'
-                }</p>
+                <p class="${med}">${
+                    days}d</p>
             </div>
-        </div>
-        <div class="${
-            'flex items-center gap-2'
-        }">
+        </div>` : html``}
+        ${cost ? html`
+        <div class="${cell}">
             <div style="${boxStyle}">${
                 iconDollarSign(
                     16, 'text-primary',
@@ -242,22 +248,14 @@ export class IdeaPresenter {
             }</div>
             <div>
                 <p class="${m}">Cost</p>
-                <p class="${
-                    'text-sm font-medium'
-                }">${
-                    cost
-                        ? '$'
-                            + (cost
-                                / COST_DIVISOR
-                            ).toFixed(0)
-                            + 'k'
-                        : '\u2014'
-                }</p>
+                <p class="${med}">$${
+                    (cost / COST_DIVISOR)
+                        .toFixed(0)
+                }k</p>
             </div>
-        </div>
-        <div class="${
-            'flex items-center gap-2'
-        }">
+        </div>` : html``}
+        ${impact ? html`
+        <div class="${cell}">
             <div style="${boxStyle}">${
                 iconTrendingUp(
                     16, 'text-primary',
@@ -265,15 +263,10 @@ export class IdeaPresenter {
             }</div>
             <div>
                 <p class="${m}">Impact</p>
-                <p class="${
-                    'text-sm font-medium'
-                }">${
-                    impact
-                        ? String(impact)
-                        : '\u2014'
-                }</p>
+                <p class="${med}">${
+                    impact}</p>
             </div>
-        </div>
+        </div>` : html``}
     </div>`;
     }
 
@@ -1102,29 +1095,13 @@ export class IdeaListPresenter {
         const sorted =
             [...filtered].sort(
                 (a, b) =>
-                    a.prioritySortKey()
-                    - b.prioritySortKey(),
+                    a.positionSortKey()
+                    - b.positionSortKey(),
             );
         return html`${sorted.map(
             idea => idea.buildCard(
-                'priority',
+                'position',
             ),
         )}`;
-    }
-
-    countLabel(): string {
-        const filtered =
-            this.#filterStatus
-                ? this.#ideas.filter(
-                    i => i.statusGroup()
-                        === this
-                            .#filterStatus,
-                )
-                : this.#ideas;
-        const n = filtered.length;
-        return `${n} `
-            + `${n === 1
-                ? 'idea' : 'ideas'}`
-            + ' \u2022 by priority';
     }
 }

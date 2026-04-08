@@ -157,12 +157,6 @@ export async function init(): Promise<void> {
                 list,
                 presenter.renderList(),
             );
-
-        const count =
-            $('#ideas-count', document);
-        if (count)
-            count.textContent =
-                presenter.countLabel();
     }
 
     $('#ideas-list', document)
