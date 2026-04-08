@@ -660,7 +660,8 @@ export class IdeaPresenter {
                     Cancel
                 </button>
                 <button
-                    class="btn btn-error"
+                    class="btn
+                        btn-destructive"
                     id="${
                         'approval-reject'
                         + '-confirm'
