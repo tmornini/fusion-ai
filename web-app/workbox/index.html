@@ -74,49 +74,30 @@
         aria-hidden="true"
         style="max-width:28rem"
     >
-        <div
-            style="padding:1.5rem;
-                border-bottom:1px solid
-                    hsl(var(--border))"
-        >
-            <h3
-                class="text-lg font-display
-                    font-semibold"
-            >New Work Order</h3>
-            <p class="text-sm text-muted">
+        <div class="dialog-header">
+            <h3 class="dialog-title">
+                New Work Order
+            </h3>
+            <p class="dialog-description">
                 Select a flow to create
                 a new work order.
             </p>
         </div>
-        <div
-            style="padding:1.5rem;
-                display:flex;
-                flex-direction:column;
-                gap:1rem"
-        >
-            <div>
-                <label
-                    class="label mb-1"
-                    for="new-wo-flow"
-                >Flow</label>
-                <select
-                    class="input"
-                    id="new-wo-flow"
-                >
-                    <option value="">
-                        Select a flow...
-                    </option>
-                </select>
-            </div>
+        <div>
+            <label
+                class="label mb-1"
+                for="new-wo-flow"
+            >Flow</label>
+            <select
+                class="input"
+                id="new-wo-flow"
+            >
+                <option value="">
+                    Select a flow...
+                </option>
+            </select>
         </div>
-        <div
-            style="padding:1rem 1.5rem;
-                border-top:1px solid
-                    hsl(var(--border));
-                display:flex;
-                justify-content:flex-end;
-                gap:0.75rem"
-        >
+        <div class="dialog-footer">
             <button
                 class="btn btn-outline"
                 id="new-wo-cancel"

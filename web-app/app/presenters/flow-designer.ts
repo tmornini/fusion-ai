@@ -1618,23 +1618,13 @@ id="add-state-backdrop">
     id="add-state-dialog"
     aria-hidden="true"
     style="max-width:28rem">
-<div style="${
-    'padding:1.5rem;'
-    + 'border-bottom:1px solid'
-    + ' hsl(var(--border))'
-}">
-<h3 class="text-lg font-display font-semibold"
-    >Add State</h3>
-<p class="text-sm text-muted"
+<div class="dialog-header">
+<h3 class="dialog-title">Add State</h3>
+<p class="dialog-description"
     >Connected from <strong
     >${fromName}</strong></p>
 </div>
-<div style="${
-    'padding:1.5rem;'
-    + 'display:flex;'
-    + 'flex-direction:column;'
-    + 'gap:1rem'
-}">
+<div class="flex flex-col gap-4">
 <div>
 <label class="label mb-1"
     for="add-state-name"
@@ -1678,14 +1668,7 @@ id="add-state-backdrop">
 </div>
 </div>
 </div>
-<div style="${
-    'padding:1rem 1.5rem;'
-    + 'border-top:1px solid'
-    + ' hsl(var(--border));'
-    + 'display:flex;'
-    + 'justify-content:flex-end;'
-    + 'gap:0.75rem'
-}">
+<div class="dialog-footer">
 <button class="btn btn-outline"
     id="add-state-cancel"
     >Cancel</button>

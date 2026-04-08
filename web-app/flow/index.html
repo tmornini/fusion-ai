@@ -29,55 +29,37 @@
             aria-hidden="true"
             style="max-width:28rem"
         >
-            <div style="padding:1.5rem;
-                border-bottom:1px solid
-                hsl(var(--border))"
-            >
-                <h3
-                    class="text-lg
-                        font-display
-                        font-semibold"
-                >Import Flow</h3>
-                <p
-                    class="text-sm
-                        text-muted"
-                >Select a project and
+            <div class="dialog-header">
+                <h3 class="dialog-title">
+                    Import Flow
+                </h3>
+                <p class="dialog-description">
+                    Select a project and
                     choose a .mmd or
-                    .zip file</p>
+                    .zip file
+                </p>
             </div>
-            <div
-                style="padding:1.5rem;
-                    display:flex;
-                    flex-direction:column;
-                    gap:1rem"
-            >
-                <div>
-                    <label
-                        class="label"
-                        for="import-project"
-                    >Project</label>
-                    <select
-                        id="import-project"
-                        class="input w-full"
-                    ></select>
-                </div>
-                <div
-                    class="flex gap-2
-                        justify-end"
-                >
-                    <button
-                        class="btn
-                            btn-ghost
-                            btn-sm"
-                        id="import-cancel"
-                    >Cancel</button>
-                    <button
-                        class="btn
-                            btn-primary
-                            btn-sm"
-                        id="import-choose"
-                    >Choose File</button>
-                </div>
+            <div>
+                <label
+                    class="label mb-1"
+                    for="import-project"
+                >Project</label>
+                <select
+                    id="import-project"
+                    class="input w-full"
+                ></select>
+            </div>
+            <div class="dialog-footer">
+                <button
+                    class="btn btn-ghost
+                        btn-sm"
+                    id="import-cancel"
+                >Cancel</button>
+                <button
+                    class="btn btn-primary
+                        btn-sm"
+                    id="import-choose"
+                >Choose File</button>
             </div>
         </div>
     </div>
