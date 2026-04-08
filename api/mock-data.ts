@@ -410,6 +410,7 @@ export async function populateMockData(
             estimated_duration: 432000,
             estimated_cost: 45000,
             priority: 1,
+            position: 1,
             status: 'in-review',
 
             problem_statement:
@@ -468,6 +469,7 @@ export async function populateMockData(
             estimated_duration: 288000,
             estimated_cost: 32000,
             priority: 2,
+            position: 2,
             status: 'approved',
 
             problem_statement:
@@ -529,6 +531,7 @@ export async function populateMockData(
             estimated_duration: 720000,
             estimated_cost: 75000,
             priority: 3,
+            position: 3,
             status: 'active',
 
             problem_statement:
@@ -587,6 +590,7 @@ export async function populateMockData(
             estimated_duration: 216000,
             estimated_cost: 28000,
             priority: 4,
+            position: 4,
             status: 'in-review',
 
             problem_statement:
@@ -648,6 +652,7 @@ export async function populateMockData(
             estimated_duration: 360000,
             estimated_cost: 38000,
             priority: 5,
+            position: 5,
             status: 'active',
 
             problem_statement:
@@ -708,6 +713,7 @@ export async function populateMockData(
             estimated_duration: 324000,
             estimated_cost: 35000,
             priority: 6,
+            position: 6,
             status: 'sent-back',
 
             problem_statement:
@@ -766,6 +772,7 @@ export async function populateMockData(
             estimated_duration: 0,
             estimated_cost: 0,
             priority: 8,
+            position: 8,
             status: 'in-review',
 
             problem_statement:
@@ -882,6 +889,7 @@ export async function populateMockData(
             estimated_duration: 0,
             estimated_cost: 0,
             priority: 10,
+            position: 10,
             status: 'in-review',
 
             problem_statement:
@@ -936,6 +944,7 @@ export async function populateMockData(
             estimated_duration: 0,
             estimated_cost: 0,
             priority: 9,
+            position: 9,
             status: 'in-review',
 
             problem_statement:
@@ -992,6 +1001,7 @@ export async function populateMockData(
             estimated_duration: 0,
             estimated_cost: 0,
             priority: 11,
+            position: 11,
             status: 'in-review',
 
             problem_statement:
@@ -1049,6 +1059,7 @@ export async function populateMockData(
             estimated_duration: 0,
             estimated_cost: 0,
             priority: 7,
+            position: 7,
             status: 'in-review',
 
             problem_statement:
@@ -1160,6 +1171,7 @@ export async function populateMockData(
             actual_impact: 78,
             priority: 1,
             priority_score: 92,
+            position: 1,
             business_context: jsonObjectField({
                 problem:
                     'Current manual'
@@ -1226,6 +1238,7 @@ export async function populateMockData(
             actual_impact: 82,
             priority: 2,
             priority_score: 87,
+            position: 2,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
             budget_label: 'Under Budget',
@@ -1253,6 +1266,7 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 3,
             priority_score: 84,
+            position: 3,
             business_context: jsonObjectField({}),
             timeline_label: 'At Risk',
             budget_label: 'Under Budget',
@@ -1279,6 +1293,7 @@ export async function populateMockData(
             actual_impact: 70,
             priority: 4,
             priority_score: 81,
+            position: 4,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
             budget_label: 'On Budget',
@@ -1306,6 +1321,7 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 5,
             priority_score: 78,
+            position: 5,
             business_context: jsonObjectField({}),
             timeline_label: 'Overdue',
             budget_label: 'Under Budget',
@@ -1333,6 +1349,7 @@ export async function populateMockData(
             actual_impact: 0,
             priority: 6,
             priority_score: 74,
+            position: 6,
             business_context: jsonObjectField({}),
             timeline_label: 'On Track',
             budget_label: 'Under Budget',

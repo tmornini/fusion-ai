@@ -40,6 +40,7 @@
 | estimated_duration | INTEGER (seconds) |
 | estimated_cost | INTEGER |
 | priority | INTEGER |
+| position | REAL |
 | status | TEXT |
 | problem_statement | TEXT |
 | proposed_solution | TEXT |
@@ -93,6 +94,7 @@
 | actual_impact | INTEGER |
 | priority | INTEGER |
 | priority_score | INTEGER |
+| position | REAL |
 | business_context | TEXT (JSON object) |
 | timeline_label | TEXT |
 | budget_label | TEXT |

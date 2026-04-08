@@ -341,6 +341,7 @@ export interface IdeaEntity {
     estimated_duration: number;
     estimated_cost: number;
     priority: number;
+    position: number;
     status: IdeaStatus;
     problem_statement: string;
     proposed_solution: string;
@@ -376,6 +377,7 @@ export interface ProjectEntity {
     actual_impact: number;
     priority: number;
     priority_score: number;
+    position: number;
     business_context: JsonObjectField;
     timeline_label: string;
     budget_label: string;
@@ -683,6 +685,7 @@ export class Idea {
     readonly estimatedDuration: number;
     readonly estimatedCost: number;
     readonly priority: number;
+    readonly position: number;
     readonly status: IdeaStatus;
     readonly problemStatement: string;
     readonly proposedSolution: string;
@@ -718,6 +721,7 @@ export class Idea {
         this.estimatedCost =
             entity.estimated_cost;
         this.priority = entity.priority;
+        this.position = entity.position;
         this.status = entity.status;
         this.problemStatement =
             entity.problem_statement;
@@ -858,6 +862,7 @@ export class Project {
     readonly actualImpact: number;
     readonly priority: number;
     readonly priorityScore: number;
+    readonly position: number;
     readonly businessContext: string;
     readonly timelineLabel: string;
     readonly budgetLabel: string;
@@ -885,6 +890,7 @@ export class Project {
         this.priority = entity.priority;
         this.priorityScore =
             entity.priority_score;
+        this.position = entity.position;
         this.businessContext =
             entity.business_context;
         this.timelineLabel =
