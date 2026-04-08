@@ -24,6 +24,9 @@ import type {
     IdeaStatus,
 } from '../../../api/types';
 import {
+    orderedKeys,
+} from './ordered-keys';
+import {
     COST_DIVISOR,
     IDEA_STATUS_CONFIG,
 } from '../../../api/types';
@@ -1054,8 +1057,13 @@ export class IdeaListPresenter {
             this.#ideas,
             i => i.statusGroup(),
         );
+        const order: IdeaStatus[] = [
+            'active', 'in-review',
+            'sent-back', 'approved',
+        ];
         const badges =
-            Object.values(groups)
+            orderedKeys(groups, order)
+                .map(s => groups[s])
                 .filter(
                     items =>
                         items

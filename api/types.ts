@@ -588,7 +588,7 @@ export const IDEA_STATUS_CONFIG: Record<
     },
     'approved': {
         label: 'Approved',
-        className: 'badge-primary',
+        className: 'badge-success',
     },
     'promoted': {
         label: 'Promoted',
@@ -617,12 +617,12 @@ export const PROJECT_STATUS_CONFIG: Record<
         className: 'badge-default',
     },
     'under-review': {
-        label: 'Under Review',
+        label: 'In Review',
         className: 'badge-warning',
     },
     'sent-back': {
         label: 'Sent Back',
-        className: 'badge-warning',
+        className: 'badge-error',
     },
     'approved': {
         label: 'Approved',
@@ -633,8 +633,8 @@ export const PROJECT_STATUS_CONFIG: Record<
         className: 'badge-error',
     },
     'completed': {
-        label: 'Completed',
-        className: 'badge-primary',
+        label: 'Active',
+        className: 'badge-success',
     },
     'deleted': {
         label: 'Deleted',

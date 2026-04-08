@@ -5,8 +5,10 @@ import {
     iconTrendingUp,
     iconGripVertical,
     iconCheckCircle2,
-    iconAlertCircle,
     iconXCircle,
+    iconLightbulb,
+    iconClipboardCheck,
+    iconArrowLeft,
 } from '../icons';
 import {
     type Project,
@@ -15,6 +17,9 @@ import {
     COST_DIVISOR,
     SECONDS_PER_DAY,
 } from '../../../api/types';
+import {
+    orderedKeys,
+} from './ordered-keys';
 
 const STATUS_ICONS: Record<
     ProjectStatus,
@@ -24,11 +29,11 @@ const STATUS_ICONS: Record<
     ) => SafeHtml
 > = {
     'submitted': iconClock,
-    'under-review': iconAlertCircle,
-    'sent-back': iconXCircle,
+    'under-review': iconClipboardCheck,
+    'sent-back': iconArrowLeft,
     'approved': iconCheckCircle2,
     'declined': iconXCircle,
-    'completed': iconCheckCircle2,
+    'completed': iconLightbulb,
     'deleted': iconXCircle,
 };
 
@@ -354,8 +359,13 @@ export class ProjectListPresenter {
             this.#projects,
             p => p.statusGroup(),
         );
+        const order: ProjectStatus[] = [
+            'completed', 'under-review',
+            'sent-back', 'approved',
+        ];
         const badges =
-            Object.values(groups)
+            orderedKeys(groups, order)
+                .map(s => groups[s])
                 .filter(
                     items =>
                         items
