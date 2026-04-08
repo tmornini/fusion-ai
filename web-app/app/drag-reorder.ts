@@ -15,6 +15,8 @@ export function initDragReorder(
     let dragId: string | null = null;
     let indicator: HTMLElement | null =
         null;
+    let pointerTarget: Element | null =
+        null;
 
     function cards(): HTMLElement[] {
         return [
@@ -62,6 +64,14 @@ export function initDragReorder(
     }
 
     container.addEventListener(
+        'pointerdown',
+        (e) => {
+            pointerTarget =
+                e.target as Element;
+        },
+    );
+
+    container.addEventListener(
         'dragstart',
         (e) => {
             const card =
@@ -71,10 +81,9 @@ export function initDragReorder(
                     );
             if (!card) return;
             const handle =
-                (e.target as Element)
-                    .closest(
-                        '[style*="grab"]',
-                    );
+                pointerTarget?.closest(
+                    '[style*="grab"]',
+                );
             if (!handle) {
                 e.preventDefault();
                 return;

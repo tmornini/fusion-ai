@@ -138,7 +138,10 @@ export class IdeaPresenter {
         } ${cfg.label}</span>`;
     }
 
-    buildCard(view: string): SafeHtml {
+    buildCard(
+        view: string,
+        showGrip: boolean,
+    ): SafeHtml {
         const metricBoxStyle =
             'width:2rem;height:2rem;'
             + 'border-radius:0.5rem;'
@@ -158,11 +161,11 @@ export class IdeaPresenter {
         <div class="${
             'flex items-center gap-4'
         }">
-            <div class="${
+            ${showGrip ? html`<div class="${
                 'hidden-mobile text-muted'
             }" style="cursor:grab">${
                 iconGripVertical(20, '')
-            }</div>
+            }</div>` : html``}
             <div style="${
                 'flex:1;min-width:0'
             }">
@@ -1104,9 +1107,11 @@ export class IdeaListPresenter {
                     a.positionSortKey()
                     - b.positionSortKey(),
             );
+        const hasGrip =
+            !this.#filterStatus;
         return html`${sorted.map(
             idea => idea.buildCard(
-                'position',
+                'position', hasGrip,
             ),
         )}`;
     }

@@ -139,7 +139,10 @@ export class ProjectPresenter {
         } ${cfg.label}</span>`;
     }
 
-    buildCard(view: string): SafeHtml {
+    buildCard(
+        view: string,
+        showGrip: boolean,
+    ): SafeHtml {
         const statusIcon = STATUS_ICONS[
             this.#status
         ]!;
@@ -159,11 +162,11 @@ export class ProjectPresenter {
         <div class="${
             'flex items-center gap-4'
         }">
-            <div class="${
+            ${showGrip ? html`<div class="${
                 'hidden-mobile text-muted'
             }" style="cursor:grab">${
                 iconGripVertical(20, '')
-            }</div>
+            }</div>` : html``}
             <div style="${
                 'flex:1;min-width:0'
             }">
@@ -405,8 +408,12 @@ export class ProjectListPresenter {
                     a.positionSortKey()
                     - b.positionSortKey(),
             );
+        const hasGrip =
+            !this.#filterStatus;
         return html`${sorted.map(
-            p => p.buildCard('position'),
+            p => p.buildCard(
+                'position', hasGrip,
+            ),
         )}`;
     }
 }
