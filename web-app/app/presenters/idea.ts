@@ -123,7 +123,11 @@ export class IdeaPresenter {
             + ' text-xs'
         }" data-status="${
             this.#status
-        }" style="cursor:pointer">${
+        }" style="${
+            'cursor:pointer;'
+            + 'min-width:5.5rem;'
+            + 'justify-content:center'
+        }">${
             icon(14, '')
         } ${cfg.label}</span>`;
     }
@@ -164,7 +168,8 @@ export class IdeaPresenter {
                 'display:flex;'
                 + 'flex-direction:column;'
                 + 'align-items:flex-end;'
-                + 'gap:0.5rem'
+                + 'gap:0.5rem;'
+                + 'margin-left:1.5rem'
             }">
                 ${this.#buildActions()}
             </div>
@@ -189,9 +194,11 @@ export class IdeaPresenter {
             'justify-content:center;'
             + 'min-width:5.5rem;'
             + 'margin-top:0.25rem'
-        }">
-            ${this.#statusLabel}
-        </span>`;
+        }">${
+            STATUS_ICONS[
+                this.#status
+            ]!(14, '')
+        } ${this.#statusLabel}</span>`;
     }
 
     #buildEstimates(

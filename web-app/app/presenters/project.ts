@@ -124,7 +124,11 @@ export class ProjectPresenter {
             + ' text-xs'
         }" data-status="${
             this.#status
-        }" style="cursor:pointer">${
+        }" style="${
+            'cursor:pointer;'
+            + 'min-width:8rem;'
+            + 'justify-content:center'
+        }">${
             icon(14, '')
         } ${cfg.label}</span>`;
     }

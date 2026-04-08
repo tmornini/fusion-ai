@@ -14,7 +14,6 @@ import {
 import {
     iconPlus,
     iconWand,
-    iconChevronRight,
     iconLightbulb,
 } from '../app/icons';
 import {
@@ -74,26 +73,6 @@ export async function init(): Promise<void> {
             iconWand(16, ''),
         ],
     ]);
-
-    const flowEl =
-        $('#flow-indicator', document);
-    if (flowEl) {
-        setHtml(flowEl, html`
-        ${iconLightbulb(16, 'text-primary')}
-        <span class="text-sm text-muted"
-            style="white-space:nowrap">
-            <span class="font-medium"
-                style="color:hsl(
-                    var(--foreground))">
-                Idea Flow:
-            </span>
-            Create &rarr;
-            Review &rarr; Convert
-        </span>
-        ${iconChevronRight(
-            16, 'text-muted',
-        )}`);
-    }
 
     $('#create-idea-btn', document)
         ?.addEventListener(
