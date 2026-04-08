@@ -29,12 +29,40 @@ import {
     COST_DIVISOR,
 } from '../../api/types';
 
+let editEscapeHandler:
+    ((e: KeyboardEvent) => void) | null
+    = null;
+
 function bindProjectEvents(
     project: ProjectView,
     projectId: string,
     flows: FlowListItem[],
     isEditing: boolean,
 ): void {
+    if (editEscapeHandler) {
+        document.removeEventListener(
+            'keydown',
+            editEscapeHandler,
+        );
+        editEscapeHandler = null;
+    }
+    if (isEditing) {
+        editEscapeHandler = (
+            e: KeyboardEvent,
+        ) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                $(
+                    '#project-cancel-btn',
+                    document,
+                )?.click();
+            }
+        };
+        document.addEventListener(
+            'keydown',
+            editEscapeHandler,
+        );
+    }
     $('#project-back-btn', document)
         ?.addEventListener(
                 'click',
@@ -240,6 +268,20 @@ function bindNewFlowDialog(
                 );
             },
         );
+    $input(
+        '#new-flow-name', document,
+    )?.addEventListener(
+        'keydown',
+        (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(
+                    '#new-flow-submit',
+                    document,
+                )?.click();
+            }
+        },
+    );
 }
 
 function mutateProjectPage(

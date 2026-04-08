@@ -20,11 +20,39 @@ import {
     IdeaPresenter,
 } from '../app/presenters';
 
+let editEscapeHandler:
+    ((e: KeyboardEvent) => void) | null
+    = null;
+
 function bindIdeaEvents(
     idea: Idea,
     ideaId: string,
     isEditing: boolean,
 ): void {
+    if (editEscapeHandler) {
+        document.removeEventListener(
+            'keydown',
+            editEscapeHandler,
+        );
+        editEscapeHandler = null;
+    }
+    if (isEditing) {
+        editEscapeHandler = (
+            e: KeyboardEvent,
+        ) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                $(
+                    '#idea-cancel-btn',
+                    document,
+                )?.click();
+            }
+        };
+        document.addEventListener(
+            'keydown',
+            editEscapeHandler,
+        );
+    }
     $('#idea-back-btn', document)
         ?.addEventListener(
             'click',
@@ -279,19 +307,7 @@ function bindApprovalEvents(
         },
     );
 
-    document.addEventListener(
-        'keydown',
-        (e) => {
-            if (e.key === 'Escape') {
-                closeDialog(
-                    'approval-reject',
-                );
-                closeDialog(
-                    'approval-clarify',
-                );
-            }
-        },
-    );
+
 }
 
 function mutateIdeaPage(

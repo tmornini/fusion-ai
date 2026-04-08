@@ -770,11 +770,4 @@ export async function init(): Promise<void> {
             }
         },
     );
-    document.addEventListener(
-        'keydown',
-        (e) => {
-            if (e.key === 'Escape')
-                closeDialog('invite');
-        },
-    );
 }

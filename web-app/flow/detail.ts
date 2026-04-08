@@ -160,6 +160,29 @@ function bindFlowNameEdit(
                 );
             },
         );
+    $input(
+        '#flow-name-input', document,
+    )?.addEventListener(
+        'keydown',
+        (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                $(
+                    '#flow-name-save-btn',
+                    document,
+                )?.click();
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                $(
+                    '#flow-name-cancel-btn',
+                    document,
+                )?.click();
+            }
+        },
+    );
 }
 
 function bindBackButton(): void {
@@ -779,6 +802,23 @@ function bindAddStateDialog(
             container, presenter,
         ),
     );
+    for (const id of [
+        '#add-state-name',
+        '#add-state-transition',
+    ]) {
+        $input(id, document)
+            ?.addEventListener(
+                'keydown',
+                (e) => {
+                    if (
+                        e.key === 'Enter'
+                    ) {
+                        e.preventDefault();
+                        submitBtn?.click();
+                    }
+                },
+            );
+    }
 }
 
 async function handleAddState(

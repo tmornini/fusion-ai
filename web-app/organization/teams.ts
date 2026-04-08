@@ -155,6 +155,17 @@ export async function init(): Promise<void> {
             closeDialog('add-member');
         },
     );
+    $input(
+        '#add-member-email', document,
+    )?.addEventListener(
+        'keydown',
+        (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendBtn?.click();
+            }
+        },
+    );
 
     if (!result) return;
     const members = result;
