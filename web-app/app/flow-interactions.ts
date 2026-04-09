@@ -384,28 +384,29 @@ function handlePointerUp(
             state.connect.fromNodeId;
         const toX = state.connect.toX;
         const toY = state.connect.toY;
-        let handled = false;
-        const target =
-            document.elementFromPoint(
-                e.clientX, e.clientY,
-            );
-        if (target instanceof Element) {
-            const toNodeId =
-                findAncestorAttr(
-                    target,
-                    'data-node-id',
+        if (e.shiftKey) {
+            const target =
+                document.elementFromPoint(
+                    e.clientX, e.clientY,
                 );
             if (
-                toNodeId
-                && toNodeId !== fromId
+                target instanceof Element
             ) {
-                onEdgeCreated(
-                    fromId, toNodeId,
-                );
-                handled = true;
+                const toNodeId =
+                    findAncestorAttr(
+                        target,
+                        'data-node-id',
+                    );
+                if (
+                    toNodeId
+                    && toNodeId !== fromId
+                ) {
+                    onEdgeCreated(
+                        fromId, toNodeId,
+                    );
+                }
             }
-        }
-        if (!handled) {
+        } else {
             const pos =
                 getNodePosition(fromId);
             if (pos) {
