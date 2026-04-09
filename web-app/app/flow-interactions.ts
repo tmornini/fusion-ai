@@ -25,6 +25,10 @@ export type DragMode =
         currentY: number;
     };
 
+export type ConnectTarget =
+    | { kind: 'none' }
+    | { kind: 'node'; id: string };
+
 export type ConnectMode =
     | { kind: 'idle' }
     | {
@@ -32,6 +36,8 @@ export type ConnectMode =
         fromNodeId: string;
         toX: number;
         toY: number;
+        isShift: boolean;
+        target: ConnectTarget;
     };
 
 export type PanMode =
@@ -180,6 +186,8 @@ function handlePointerDown(
                 fromNodeId: nodeId,
                 toX: svgPt.x,
                 toY: svgPt.y,
+                isShift: e.shiftKey,
+                target: { kind: 'none' },
             };
             state.activePointerId =
                 e.pointerId;
