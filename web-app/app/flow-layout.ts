@@ -99,6 +99,15 @@ export function isReachable(
     return false;
 }
 
+export function wouldBeCycle(
+    fromId: string,
+    toId: string,
+    edges: LayoutEdge[],
+): boolean {
+    const adj = buildAdjacency(edges);
+    return isReachable(toId, fromId, adj);
+}
+
 export function computeLayout(
     nodes: LayoutInput[],
     edges: LayoutEdge[],
