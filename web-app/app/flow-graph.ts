@@ -436,8 +436,10 @@ function buildNode(
             + '"cursor:crosshair">'
             + '<title>'
             + 'Click and drag to create'
-            + ' a new node'
-            + ' attached here'
+            + ' a new node attached here.'
+            + ' Hold Shift to connect'
+            + ' to an existing node'
+            + ' instead.'
             + '</title>'
             + '</circle>';
     }
