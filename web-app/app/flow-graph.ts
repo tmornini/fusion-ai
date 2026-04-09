@@ -8,7 +8,7 @@ import type {
 } from './flow-interactions';
 import {
     NODE_WIDTH, NODE_HEIGHT,
-    buildAdjacency, assignRanks,
+    buildAdjacency, isReachable,
 } from './flow-layout';
 
 const BLUE = '#4B6CA1';
@@ -696,34 +696,20 @@ export function buildGraphSvg(
         nodes.map(n => [n.id, n]),
     );
 
-    const startNode =
-        nodes.find(n => n.isStart);
-    const startId =
-        startNode?.id
-        ?? nodes[0]?.id ?? '';
     const adj = buildAdjacency(
         edges.map(e => ({
             fromId: e.fromNodeId,
             toId: e.toNodeId,
         })),
     );
-    const allIds =
-        nodes.map(n => n.id);
-    const ranks = assignRanks(
-        startId, adj, allIds,
-    );
     const cycleEdgeIds =
         new Set<string>();
     for (const edge of edges) {
-        const fromRank =
-            ranks.get(edge.fromNodeId);
-        const toRank =
-            ranks.get(edge.toNodeId);
-        if (
-            fromRank !== undefined
-            && toRank !== undefined
-            && toRank <= fromRank
-        ) {
+        if (isReachable(
+            edge.toNodeId,
+            edge.fromNodeId,
+            adj,
+        )) {
             cycleEdgeIds.add(edge.id);
         }
     }
