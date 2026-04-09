@@ -59,7 +59,7 @@ const LABEL_BG_OPACITY = 0.9;
 const LABEL_TEXT_OFFSET_Y = 4;
 const LABEL_FONT = 11;
 
-type RectEdge =
+export type RectEdge =
     'right' | 'left' | 'top' | 'bottom';
 
 export function perimeterPoint(
@@ -188,7 +188,7 @@ function computePortPos(
     return perimToXy(bestMid);
 }
 
-function whichEdge(
+export function whichEdge(
     px: number, py: number,
     rx: number, ry: number,
     rw: number, rh: number,
@@ -206,7 +206,7 @@ function whichEdge(
     return 'bottom';
 }
 
-function controlOffset(
+export function controlOffset(
     edge: RectEdge,
     dist: number,
 ): { dx: number; dy: number } {

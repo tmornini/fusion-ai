@@ -908,9 +908,16 @@
   flex: 1;
 }
 
-.wf-canvas-wrap {
+.wf-canvas-area {
+  position: relative;
   flex: 1;
-  min-height: 15.625rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wf-canvas-wrap {
+  width: 100%;
+  height: 100%;
   background-color:
       hsl(var(--background));
   border: 1px solid hsl(var(--border));
@@ -930,6 +937,11 @@ svg.wf-canvas {
 }
 
 .wf-props-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
   padding: 1rem;
   background-color: hsl(var(--card));
   border-bottom:
@@ -986,7 +998,6 @@ svg.wf-canvas [data-edge-id] {
 @media (max-width: 767px) {
   .wf-toolbar { gap: 0.5rem; }
   .wf-toolbar-spacer { display: none; }
-  .wf-canvas-wrap { min-height: 15.625rem; }
   .wf-props-panel { max-height: none; }
 }
 

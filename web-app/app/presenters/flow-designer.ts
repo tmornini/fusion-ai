@@ -46,6 +46,8 @@ import type { UndoStep } from '../flow-undo';
 import {
     buildGraphSvg,
     perimeterPoint,
+    whichEdge,
+    controlOffset,
 } from '../flow-graph';
 import {
     computeLayout,
@@ -94,6 +96,16 @@ function graphPutStep(
     };
 }
 
+type SavedViewBox =
+    | { kind: 'none' }
+    | {
+        kind: 'saved';
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    };
+
 interface DesignerState {
     flowId: string;
     flowName: string;
@@ -103,7 +115,11 @@ interface DesignerState {
     nodes: GraphNode[];
     edges: GraphEdge[];
     interaction: InteractionState;
+    savedViewBox: SavedViewBox;
 }
+
+const PANEL_HEIGHT_PX = 300;
+const PANEL_PAD_PX = 40;
 
 export class FlowDesignerPresenter {
     #state: DesignerState;
@@ -137,6 +153,8 @@ export class FlowDesignerPresenter {
             nodes: graph.nodes,
             edges: graph.edges,
             interaction,
+            savedViewBox:
+                { kind: 'none' },
         };
         this.#migrateToCenter();
         this.#applyZoomToFit();
@@ -290,9 +308,111 @@ export class FlowDesignerPresenter {
         };
     }
 
+    #panToRevealSelected(): void {
+        const vb =
+            this.#state.interaction
+                .viewBox;
+        const pxToSvg =
+            vb.w / this.#canvasW;
+        const panelH =
+            PANEL_HEIGHT_PX * pxToSvg;
+        const pad =
+            PANEL_PAD_PX * pxToSvg;
+        const sel =
+            this.#state.interaction
+                .selection;
+        let elementY: number | undefined;
+        if (sel.kind === 'node') {
+            const n =
+                this.#state.nodes.find(
+                    nd => nd.id
+                        === sel.nodeId,
+                );
+            if (n) {
+                elementY = n.positionY;
+            }
+        }
+        if (sel.kind === 'edge') {
+            const e =
+                this.#state.edges.find(
+                    ed => ed.id
+                        === sel.edgeId,
+                );
+            if (e) {
+                const fn =
+                    this.#state.nodes
+                        .find(
+                            nd => nd.id
+                                === e
+                                .fromNodeId,
+                        );
+                const tn =
+                    this.#state.nodes
+                        .find(
+                            nd => nd.id
+                                === e
+                                .toNodeId,
+                        );
+                if (fn && tn) {
+                    elementY = (
+                        fn.positionY
+                        + tn.positionY
+                    ) / 2;
+                }
+            }
+        }
+        if (
+            elementY === undefined
+        ) return;
+        const threshold =
+            vb.y + panelH + pad;
+        if (elementY < threshold) {
+            vb.y =
+                elementY - panelH - pad;
+        }
+    }
+
+    #handlePanelTransition(): void {
+        const saved =
+            this.#state.savedViewBox;
+        const isOpen =
+            this.#state.interaction
+                .isPanelOpen;
+        const wasOpen =
+            saved.kind === 'saved';
+        if (isOpen && !wasOpen) {
+            const vb =
+                this.#state.interaction
+                    .viewBox;
+            this.#state.savedViewBox = {
+                kind: 'saved',
+                x: vb.x,
+                y: vb.y,
+                w: vb.w,
+                h: vb.h,
+            };
+            this.#panToRevealSelected();
+        }
+        if (!isOpen && wasOpen) {
+            const vb =
+                this.#state.interaction
+                    .viewBox;
+            vb.x = saved.x;
+            vb.y = saved.y;
+            vb.w = saved.w;
+            vb.h = saved.h;
+            this.#state.savedViewBox =
+                { kind: 'none' };
+        }
+        if (isOpen && wasOpen) {
+            this.#panToRevealSelected();
+        }
+    }
+
     render(
         container: HTMLElement,
     ): void {
+        this.#handlePanelTransition();
         const toolbar =
             this.#buildToolbar();
         const panel =
@@ -361,9 +481,10 @@ class="wf-designer">
 </div>
 </div>
 ${toolbar}
-${panel}
+<div class="wf-canvas-area">${panel}
 <div class="wf-canvas-wrap"
     >${canvas}</div>
+</div>
 </div>`;
         setHtml(container, content);
     }
@@ -1092,7 +1213,7 @@ ${panel}
                 nodeId,
             };
         this.#state.interaction
-            .isPanelOpen = true;
+            .isPanelOpen = false;
         this.#expandIfNeeded();
         return true;
     }
@@ -1707,32 +1828,80 @@ justify-content:space-between"
 
     #buildConnectPreview(): string {
         const conn =
-            this.#state.interaction.connect;
+            this.#state.interaction
+                .connect;
         if (conn.kind !== 'connecting') {
             return '';
         }
         const src =
             this.#connectSourcePoint();
         if (!src) return '';
+        const fromNode =
+            this.#state.nodes.find(
+                n => n.id
+                    === conn.fromNodeId,
+            );
+        if (!fromNode) return '';
         const gx =
             conn.toX - NODE_WIDTH / 2;
         const gy =
             conn.toY - NODE_HEIGHT / 2;
         const halfW = NODE_WIDTH / 2;
-        return '<line'
-            + ' x1="'
-            + String(src.x) + '"'
-            + ' y1="'
-            + String(src.y) + '"'
-            + ' x2="'
-            + String(conn.toX) + '"'
-            + ' y2="'
-            + String(conn.toY) + '"'
+        const fromCx =
+            fromNode.positionX + halfW;
+        const fromCy =
+            fromNode.positionY
+            + NODE_HEIGHT / 2;
+        const endPt = perimeterPoint(
+            gx, gy,
+            NODE_WIDTH, NODE_HEIGHT,
+            fromCx, fromCy,
+        );
+        const dist = Math.hypot(
+            endPt.x - src.x,
+            endPt.y - src.y,
+        );
+        const se = whichEdge(
+            src.x, src.y,
+            fromNode.positionX,
+            fromNode.positionY,
+            NODE_WIDTH, NODE_HEIGHT,
+        );
+        const ee = whichEdge(
+            endPt.x, endPt.y,
+            gx, gy,
+            NODE_WIDTH, NODE_HEIGHT,
+        );
+        const cp1 = controlOffset(
+            se, dist,
+        );
+        const cp2 = controlOffset(
+            ee, dist,
+        );
+        const pathD = 'M '
+            + String(src.x) + ' '
+            + String(src.y)
+            + ' C '
+            + String(src.x + cp1.dx)
+            + ' '
+            + String(src.y + cp1.dy)
+            + ', '
+            + String(endPt.x + cp2.dx)
+            + ' '
+            + String(endPt.y + cp2.dy)
+            + ', '
+            + String(endPt.x) + ' '
+            + String(endPt.y);
+        return '<path'
+            + ' d="' + pathD + '"'
+            + ' fill="none"'
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"'
-            + ' stroke-dasharray="6 3"'
-            + ' opacity="0.6"'
-            + ' pointer-events="none"/>'
+            + ' opacity="0.3"'
+            + ' marker-end='
+            + '"url(#wf-arrow)"'
+            + ' pointer-events='
+            + '"none"/>'
             + '<g transform="translate('
             + String(gx) + ', '
             + String(gy) + ')"'
