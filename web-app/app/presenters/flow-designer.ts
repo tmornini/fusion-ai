@@ -1714,11 +1714,13 @@ justify-content:space-between"
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"'
             + ' stroke-dasharray="6 3"'
-            + ' opacity="0.6"/>'
+            + ' opacity="0.6"'
+            + ' pointer-events="none"/>'
             + '<g transform="translate('
             + String(gx) + ', '
             + String(gy) + ')"'
-            + ' opacity="0.3">'
+            + ' opacity="0.3"'
+            + ' pointer-events="none">'
             + '<rect'
             + ` width="${NODE_WIDTH}"`
             + ` height="${NODE_HEIGHT}"`
@@ -1763,6 +1765,10 @@ justify-content:space-between"
         const nodes = this.#nodesForRender();
         const vb =
             this.#state.interaction.viewBox;
+        const isConn =
+            this.#state.interaction
+                .connect.kind
+                === 'connecting';
         const svgHtml = buildGraphSvg(
             nodes,
             this.#state.edges,
@@ -1773,6 +1779,7 @@ justify-content:space-between"
             this.#state.interaction
                 .selection,
             this.#state.isLocked,
+            isConn,
         );
         const preview =
             this.#buildConnectPreview();

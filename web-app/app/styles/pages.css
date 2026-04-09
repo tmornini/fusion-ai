@@ -958,6 +958,16 @@ svg.wf-canvas [data-node-id]:hover {
   opacity: 0.85;
 }
 
+svg.wf-canvas.wf-connecting {
+  cursor: crosshair;
+}
+
+svg.wf-canvas.wf-connecting
+    [data-node-id]:hover {
+  opacity: 1;
+  cursor: copy;
+}
+
 svg.wf-canvas [data-edge-id] {
   cursor: pointer;
 }

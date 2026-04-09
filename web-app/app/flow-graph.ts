@@ -87,6 +87,107 @@ export function perimeterPoint(
     };
 }
 
+function perimToXy(
+    t: number,
+): { x: number; y: number } {
+    const w = NODE_WIDTH;
+    const h = NODE_HEIGHT;
+    if (t < w) return { x: t, y: 0 };
+    if (t < w + h) {
+        return { x: w, y: t - w };
+    }
+    if (t < 2 * w + h) {
+        return {
+            x: w - (t - w - h), y: h,
+        };
+    }
+    return {
+        x: 0, y: h - (t - 2 * w - h),
+    };
+}
+
+function xyToPerim(
+    px: number, py: number,
+): number {
+    const w = NODE_WIDTH;
+    const h = NODE_HEIGHT;
+    const dT = Math.abs(py);
+    const dR = Math.abs(px - w);
+    const dB = Math.abs(py - h);
+    const dL = Math.abs(px);
+    const min = Math.min(
+        dT, dR, dB, dL,
+    );
+    if (min === dT) return px;
+    if (min === dR) return w + py;
+    if (min === dB) {
+        return w + h + (w - px);
+    }
+    return 2 * w + h + (h - py);
+}
+
+function computePortPos(
+    node: GraphNode,
+    edges: GraphEdge[],
+    nodeMap: Map<string, GraphNode>,
+): { x: number; y: number } {
+    const w = NODE_WIDTH;
+    const h = NODE_HEIGHT;
+    const perim = 2 * (w + h);
+    const params: number[] = [];
+    for (const e of edges) {
+        let otherId: string | null = null;
+        if (e.fromNodeId === node.id) {
+            otherId = e.toNodeId;
+        } else if (
+            e.toNodeId === node.id
+        ) {
+            otherId = e.fromNodeId;
+        }
+        if (!otherId) continue;
+        const other = nodeMap.get(otherId);
+        if (!other) continue;
+        const pt = perimeterPoint(
+            node.positionX,
+            node.positionY,
+            w, h,
+            other.positionX + w / 2,
+            other.positionY + h / 2,
+        );
+        const localX =
+            pt.x - node.positionX;
+        const localY =
+            pt.y - node.positionY;
+        params.push(
+            xyToPerim(localX, localY),
+        );
+    }
+    if (params.length === 0) {
+        return { x: w, y: h / 2 };
+    }
+    params.sort((a, b) => a - b);
+    let bestGap = 0;
+    let bestMid = w + h / 2;
+    for (let i = 0;
+        i < params.length; i++
+    ) {
+        const next =
+            params[(i + 1)
+                % params.length]!;
+        const cur = params[i]!;
+        const gap = i < params.length - 1
+            ? next - cur
+            : perim - cur + next;
+        if (gap > bestGap) {
+            bestGap = gap;
+            const mid =
+                (cur + gap / 2) % perim;
+            bestMid = mid;
+        }
+    }
+    return perimToXy(bestMid);
+}
+
 function whichEdge(
     px: number, py: number,
     rx: number, ry: number,
@@ -206,6 +307,9 @@ function buildNode(
     node: GraphNode,
     isSelected: boolean,
     isLocked: boolean,
+    portPos: {
+        x: number; y: number;
+    } | null,
 ): SafeHtml {
     const { positionX, positionY } = node;
     const halfH = NODE_HEIGHT / 2;
@@ -285,15 +389,11 @@ function buildNode(
         + escapeForHtml(meta)
         + '</text>';
 
-    if (
-        !isLocked
-        && !node.isStart
-        && !node.isComplete
-    ) {
+    if (portPos) {
         inner += '<circle'
             + ' data-connect-port="1"'
-            + ` cx="${NODE_WIDTH}"`
-            + ` cy="${halfH}"`
+            + ` cx="${portPos.x}"`
+            + ` cy="${portPos.y}"`
             + ` r="${PORT_RADIUS}"`
             + ` fill="${BLUE}"`
             + ' stroke="var('
@@ -557,6 +657,7 @@ export function buildGraphSvg(
     viewBoxH: number,
     selection: Selection,
     isLocked: boolean,
+    isConnecting: boolean,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -655,10 +756,18 @@ export function buildGraphSvg(
             selection.kind === 'node'
             && node.id
                 === selection.nodeId;
+        const showPort = !isLocked
+            && !node.isStart
+            && !node.isComplete;
+        const portPos = showPort
+            ? computePortPos(
+                node, edges, nodeMap,
+            )
+            : null;
         nodeMarkup +=
             buildNode(
                 node, isSelected,
-                isLocked,
+                isLocked, portPos,
             ).toString();
     }
 
@@ -667,11 +776,14 @@ export function buildGraphSvg(
         + ' ' + String(viewBoxW)
         + ' ' + String(viewBoxH);
 
+    const svgCls = isConnecting
+        ? 'wf-canvas wf-connecting'
+        : 'wf-canvas';
     return trusted(
         '<svg'
         + ' xmlns='
         + '"http://www.w3.org/2000/svg"'
-        + ' class="wf-canvas"'
+        + ` class="${svgCls}"`
         + ` viewBox="${vb}"`
         + ' width="100%"'
         + ' height="100%"'
