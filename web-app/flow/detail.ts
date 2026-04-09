@@ -754,19 +754,30 @@ export async function init(
         '.wf-canvas-wrap',
     );
     if (wrap) {
-        const rect =
-            wrap.getBoundingClientRect();
-        if (
-            rect.width > 0
-            && rect.height > 0
-        ) {
-            presenter.updateCanvasSize(
-                rect.width, rect.height,
-            );
-            renderAndBind(
-                container, presenter,
-            );
-        }
+        const ro = new ResizeObserver(
+            (entries) => {
+                const entry =
+                    entries[0];
+                if (!entry) return;
+                const cr =
+                    entry.contentRect;
+                if (
+                    cr.width > 0
+                    && cr.height > 0
+                ) {
+                    presenter
+                        .updateCanvasSize(
+                            cr.width,
+                            cr.height,
+                        );
+                    renderAndBind(
+                        container,
+                        presenter,
+                    );
+                }
+            },
+        );
+        ro.observe(wrap);
     }
     bindKeyboardShortcuts(
         container, presenter,

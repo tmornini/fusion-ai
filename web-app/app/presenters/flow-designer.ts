@@ -1245,7 +1245,17 @@ ${panel}
     ): void {
         this.#canvasW = w;
         this.#canvasH = h;
-        this.#applyZoomToFit();
+        const vb =
+            this.#state.interaction
+                .viewBox;
+        const cx = vb.x + vb.w / 2;
+        const cy = vb.y + vb.h / 2;
+        const z =
+            this.#state.interaction.zoom;
+        vb.w = w / z;
+        vb.h = h / z;
+        vb.x = cx - vb.w / 2;
+        vb.y = cy - vb.h / 2;
     }
 
     #applyZoomToFit(): void {

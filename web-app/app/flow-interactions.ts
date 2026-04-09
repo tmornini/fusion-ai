@@ -554,7 +554,7 @@ export function zoomToFit(
 ): void {
     if (nodePositions.length === 0) return;
 
-    const PAD = 40;
+    const PAD = 140;
     const NODE_W = 140;
     const NODE_H = 56;
 
@@ -595,9 +595,14 @@ export function zoomToFit(
         vbW = contentH * containerAR;
     }
 
+    state.zoom = canvasW / vbW;
+    if (state.zoom > MAX_ZOOM) {
+        state.zoom = MAX_ZOOM;
+        vbW = canvasW / MAX_ZOOM;
+        vbH = canvasH / MAX_ZOOM;
+    }
     state.viewBox.x = cx - vbW / 2;
     state.viewBox.y = cy - vbH / 2;
     state.viewBox.w = vbW;
     state.viewBox.h = vbH;
-    state.zoom = canvasW / vbW;
 }
