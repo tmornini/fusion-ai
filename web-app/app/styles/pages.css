@@ -894,6 +894,10 @@
   gap: 0.5rem;
 }
 
+.wf-toolbar-spacer {
+  flex: 1;
+}
+
 .wf-canvas-wrap {
   flex: 1;
   min-height: 15.625rem;
@@ -960,6 +964,7 @@ svg.wf-canvas [data-edge-id] {
 
 @media (max-width: 767px) {
   .wf-toolbar { gap: 0.5rem; }
+  .wf-toolbar-spacer { display: none; }
   .wf-canvas-wrap { min-height: 15.625rem; }
   .wf-props-panel { max-height: none; }
 }

@@ -1148,6 +1148,7 @@ class="wf-toolbar">
     id="flow-back-btn"
     >${iconArrowLeft(20, '')}</button>
 </div>
+<div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button
     class="btn btn-ghost btn-icon"
@@ -1164,6 +1165,7 @@ class="wf-toolbar">
             ? '' : ' disabled',
     )}>${iconRedo(18, '')}</button>
 </div>
+<div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button class="btn btn-primary btn-sm"
     data-action="add-state"${
@@ -1171,13 +1173,14 @@ class="wf-toolbar">
         this.#canAddState()
             ? '' : ' disabled',
     )}>+ Add State</button>
-</div>
-<div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
     data-action="auto-layout"
     >Auto Layout</button>
 <button class="btn btn-ghost btn-sm"
     data-action="fit">Fit</button>
+</div>
+<div class="wf-toolbar-spacer"></div>
+<div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-out"
     >Zoom \u2212</button>
@@ -1185,6 +1188,7 @@ class="wf-toolbar">
     data-action="zoom-in"
     >Zoom +</button>
 </div>
+<div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
     data-action="copy-mermaid"
@@ -1193,8 +1197,8 @@ class="wf-toolbar">
     data-action="export-zip"
     >Export</button>
 </div>
-<div class="wf-toolbar-group"
-    style="margin-left:auto">
+<div class="wf-toolbar-spacer"></div>
+<div class="wf-toolbar-group">
 <button
     class="btn btn-ghost btn-icon"
     data-action="delete-selected"${
