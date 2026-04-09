@@ -76,15 +76,23 @@ const saveDebouncer =
 let currentProjectId:
     string | undefined;
 
+let interactionAbortController:
+    AbortController | null = null;
+
 function renderAndBind(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
+    interactionAbortController?.abort();
+    interactionAbortController =
+        new AbortController();
+    const signal =
+        interactionAbortController.signal;
     saveDebouncer.flush();
     presenter.render(container);
     bindBackButton();
     bindSvgInteractions(
-        container, presenter,
+        container, presenter, signal,
     );
     bindToolbarActions(
         container, presenter,
@@ -221,6 +229,7 @@ function bindBackButton(): void {
 function bindSvgInteractions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
+    signal: AbortSignal,
 ): void {
     const svg = container.querySelector(
         'svg.wf-canvas',
@@ -260,6 +269,7 @@ function bindSvgInteractions(
         },
         (id) =>
             presenter.getNodePosition(id),
+        signal,
     );
     if (
         (state.drag.kind === 'dragging'

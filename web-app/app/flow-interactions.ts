@@ -500,6 +500,7 @@ export function bindInteractions(
         y: number,
     ) => void,
     getNodePosition: NodePositionLookup,
+    signal: AbortSignal,
 ): void {
     svg.addEventListener(
         'pointerdown',
@@ -507,6 +508,7 @@ export function bindInteractions(
             e, svg, state, onUpdate,
             getNodePosition,
         ),
+        { signal },
     );
 
     svg.addEventListener(
@@ -514,6 +516,7 @@ export function bindInteractions(
         (e) => handlePointerMove(
             e, svg, state, onUpdate,
         ),
+        { signal },
     );
 
     svg.addEventListener(
@@ -525,6 +528,7 @@ export function bindInteractions(
             onNodeCreated,
             getNodePosition,
         ),
+        { signal },
     );
 
     svg.addEventListener(
@@ -532,7 +536,7 @@ export function bindInteractions(
         (e) => handleWheel(
             e, svg, state, onUpdate,
         ),
-        { passive: false },
+        { passive: false, signal },
     );
 }
 
