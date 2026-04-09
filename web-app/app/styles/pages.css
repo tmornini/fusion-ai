@@ -962,6 +962,24 @@ svg.wf-canvas [data-edge-id] {
   cursor: pointer;
 }
 
+svg.wf-canvas .wf-selected {
+  animation:
+      wf-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes wf-pulse {
+  0%, 100% {
+    filter:
+        drop-shadow(0 0 4px #4B6CA1)
+        drop-shadow(0 0 6px #4B6CA1);
+  }
+  50% {
+    filter:
+        drop-shadow(0 0 6px #4B6CA1)
+        drop-shadow(0 0 14px #4B6CA1);
+  }
+}
+
 @media (max-width: 767px) {
   .wf-toolbar { gap: 0.5rem; }
   .wf-toolbar-spacer { display: none; }

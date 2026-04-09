@@ -22,8 +22,6 @@ const ARROW_VIEWBOX = 10;
 const ARROW_MIDPOINT = 5;
 const ARROW_MARKER = 8;
 
-const GLOW_SPREAD = 4;
-const GLOW_OPACITY = 0.6;
 
 const STROKE_NORMAL = 2;
 const STROKE_START = 2.5;
@@ -43,7 +41,6 @@ const NODE_META_Y = 40;
 const NODE_META_FONT = 11;
 
 const EDGE_STROKE = 2;
-const EDGE_STROKE_SELECTED = 3;
 const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
@@ -166,15 +163,6 @@ function buildDefs(): string {
         + `<path d="${arrowPath}"`
         + ` fill="${WARN}"/>`
         + '</marker>'
-        + '<filter id="wf-glow"'
-        + ' x="-20%" y="-20%"'
-        + ' width="140%" height="140%">'
-        + '<feDropShadow'
-        + ' dx="0" dy="0"'
-        + ` stdDeviation="${GLOW_SPREAD}"`
-        + ` flood-color="${BLUE}"`
-        + ` flood-opacity="${GLOW_OPACITY}"/>`
-        + '</filter>'
         + '</defs>';
 }
 
@@ -231,8 +219,8 @@ function buildNode(
             : STROKE_START;
     }
 
-    const filterAttr = isSelected
-        ? ' filter="url(#wf-glow)"'
+    const selClass = isSelected
+        ? ' class="wf-selected"'
         : '';
 
     let inner = '';
@@ -320,7 +308,7 @@ function buildNode(
         + ', '
         + String(positionY)
         + ')"'
-        + filterAttr
+        + selClass
         + ' style="cursor:pointer">'
         + inner
         + '</g>',
@@ -439,11 +427,7 @@ function buildEdge(
         dashAttr = '';
     }
 
-    const sw = isSelected
-        ? EDGE_STROKE_SELECTED
-        : EDGE_STROKE;
-    const opacity = isSelected
-        ? ' opacity="1"' : '';
+    const sw = EDGE_STROKE;
 
     const hitPath = '<path'
         + ` d="${pathD}"`
@@ -459,7 +443,6 @@ function buildEdge(
         + ` stroke="${color}"`
         + ` stroke-width="${sw}"`
         + dashAttr
-        + opacity
         + ` marker-end="${markerUrl}"`;
     const visClose = ' style='
         + '"cursor:pointer"'
@@ -509,9 +492,12 @@ function buildEdge(
         + labelEsc
         + '</text>';
 
+    const edgeSelClass = isSelected
+        ? ' class="wf-selected"' : '';
     return trusted(
         '<g'
         + ` data-edge-id="${edge.id}"`
+        + edgeSelClass
         + '>'
         + hitPath
         + visPath + visClose
