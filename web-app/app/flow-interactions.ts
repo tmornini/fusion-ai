@@ -282,10 +282,34 @@ function handlePointerMove(
         const svgPt = screenToSvg(
             svg, e.clientX, e.clientY,
         );
+        let target: ConnectTarget =
+            { kind: 'none' };
+        const hit =
+            document.elementFromPoint(
+                e.clientX, e.clientY,
+            );
+        if (hit instanceof Element) {
+            const nid = findAncestorAttr(
+                hit, 'data-node-id',
+            );
+            if (
+                nid
+                && nid
+                    !== state.connect
+                        .fromNodeId
+            ) {
+                target = {
+                    kind: 'node',
+                    id: nid,
+                };
+            }
+        }
         state.connect = {
             ...state.connect,
             toX: svgPt.x,
             toY: svgPt.y,
+            isShift: e.shiftKey,
+            target,
         };
         onUpdate();
         return;
