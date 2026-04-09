@@ -1,3 +1,7 @@
+import {
+    NODE_WIDTH, NODE_HEIGHT,
+} from './flow-layout';
+
 export interface ViewBox {
     x: number;
     y: number;
@@ -72,6 +76,7 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2.0;
 const ZOOM_STEP = 0.1;
 const DBLCLICK_MS = 400;
+const MIN_DRAG_DISTANCE = 20;
 
 export function createInteractionState(
     viewBoxW: number,
@@ -317,6 +322,12 @@ function handlePointerUp(
         fromNodeId: string,
         toNodeId: string,
     ) => void,
+    onNodeCreated: (
+        fromNodeId: string,
+        x: number,
+        y: number,
+    ) => void,
+    getNodePosition: NodePositionLookup,
 ): void {
     if (state.drag.kind === 'dragging') {
         onNodeDragEnd(
@@ -339,6 +350,9 @@ function handlePointerUp(
     ) {
         const fromId =
             state.connect.fromNodeId;
+        const toX = state.connect.toX;
+        const toY = state.connect.toY;
+        let handled = false;
         const target =
             document.elementFromPoint(
                 e.clientX, e.clientY,
@@ -356,6 +370,30 @@ function handlePointerUp(
                 onEdgeCreated(
                     fromId, toNodeId,
                 );
+                handled = true;
+            }
+        }
+        if (!handled) {
+            const pos =
+                getNodePosition(fromId);
+            if (pos) {
+                const portX =
+                    pos.x + NODE_WIDTH;
+                const portY =
+                    pos.y
+                    + NODE_HEIGHT / 2;
+                const dx = toX - portX;
+                const dy = toY - portY;
+                const dist = Math.hypot(
+                    dx, dy,
+                );
+                if (
+                    dist > MIN_DRAG_DISTANCE
+                ) {
+                    onNodeCreated(
+                        fromId, toX, toY,
+                    );
+                }
             }
         }
         state.connect = { kind: 'idle' };
@@ -423,6 +461,11 @@ export function bindInteractions(
         fromNodeId: string,
         toNodeId: string,
     ) => void,
+    onNodeCreated: (
+        fromNodeId: string,
+        x: number,
+        y: number,
+    ) => void,
     getNodePosition: NodePositionLookup,
 ): void {
     svg.addEventListener(
@@ -444,7 +487,10 @@ export function bindInteractions(
         'pointerup',
         (e) => handlePointerUp(
             e, svg, state, onUpdate,
-            onNodeDragEnd, onEdgeCreated,
+            onNodeDragEnd,
+            onEdgeCreated,
+            onNodeCreated,
+            getNodePosition,
         ),
     );
 

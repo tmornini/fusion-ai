@@ -301,8 +301,13 @@ function buildNode(
             + ` stroke-width=`
             + `"${PORT_STROKE}"`
             + ' style='
-            + '"cursor:crosshair"'
-            + '/>';
+            + '"cursor:crosshair">'
+            + '<title>'
+            + 'Click and drag to create'
+            + ' a new node'
+            + ' attached here'
+            + '</title>'
+            + '</circle>';
     }
 
     return trusted(

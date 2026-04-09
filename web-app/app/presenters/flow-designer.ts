@@ -297,8 +297,6 @@ export class FlowDesignerPresenter {
             this.#buildPropsPanel();
         const canvas =
             this.#buildCanvas();
-        const dialog =
-            this.#buildAddStateDialog();
         const nameHtml =
             this.#state.isEditingName
                 ? html`<div class="${
@@ -364,8 +362,7 @@ ${toolbar}
 ${panel}
 <div class="wf-canvas-wrap"
     >${canvas}</div>
-</div>
-${dialog}`;
+</div>`;
         setHtml(container, content);
     }
 
@@ -983,6 +980,121 @@ ${dialog}`;
         return node?.name ?? '';
     }
 
+    async addNodeAtPosition(
+        fromNodeId: string,
+        x: number,
+        y: number,
+    ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
+        const fromNode =
+            this.#state.nodes.find(
+                n => n.id === fromNodeId,
+            );
+        if (!fromNode) return false;
+        if (fromNode.isComplete) {
+            showToast(
+                'Cannot create from'
+                + ' end state',
+                'error',
+            );
+            return false;
+        }
+        if (fromNode.isStart) {
+            const hasOut =
+                this.#state.edges.some(
+                    e => e.fromNodeId
+                        === fromNodeId,
+                );
+            if (hasOut) {
+                showToast(
+                    'Start state allows'
+                    + ' only one outgoing'
+                    + ' transition',
+                    'error',
+                );
+                return false;
+            }
+        }
+        const nodeId = crypto.randomUUID();
+        const edgeId = crypto.randomUUID();
+        const fId = this.#state.flowId;
+        const posX =
+            x - NODE_WIDTH / 2;
+        const posY =
+            y - NODE_HEIGHT / 2;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
+        try {
+            await postNodeAddition({
+                nodeId,
+                flowId: fId,
+                name: 'New State',
+                positionX: posX,
+                positionY: posY,
+            });
+            await postEdgeConnection({
+                edgeId,
+                flowId: fId,
+                name: 'Transition',
+                fromNodeId,
+                toNodeId: nodeId,
+            });
+        } catch {
+            showToast(
+                'Failed to add state',
+                'error',
+            );
+            return false;
+        }
+        this.#state.nodes = [
+            ...this.#state.nodes,
+            {
+                id: nodeId,
+                name: 'New State',
+                description: '',
+                positionX: posX,
+                positionY: posY,
+                isStart: false,
+                isComplete: false,
+                fields: [],
+            },
+        ];
+        this.#state.edges = [
+            ...this.#state.edges,
+            {
+                id: edgeId,
+                name: 'Transition',
+                description: '',
+                fromNodeId,
+                toNodeId: nodeId,
+            },
+        ];
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
+        this.#undo.push({
+            type: 'add-node-and-edge',
+            forward: [forwardStep],
+            reverse: [reverseStep],
+        });
+        this.#state.interaction
+            .selection = {
+                kind: 'node',
+                nodeId,
+            };
+        this.#state.interaction
+            .isPanelOpen = true;
+        this.#expandIfNeeded();
+        return true;
+    }
+
     async addNodeWithEdge(
         name: string,
         transitionName: string,
@@ -1191,21 +1303,6 @@ ${dialog}`;
         return sel.kind === 'edge';
     }
 
-    #canAddState(): boolean {
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') return false;
-        const node =
-            this.#state.nodes.find(
-                n => n.id === sel.nodeId,
-            );
-        if (!node) return false;
-        if (!node.isStart) return true;
-        return !this.#state.edges.some(
-            e => e.fromNodeId === node.id,
-        );
-    }
 
     #buildToolbar(): SafeHtml {
         return html`<div
@@ -1235,13 +1332,6 @@ class="wf-toolbar">
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
-<button class="btn btn-primary btn-sm"
-    data-action="add-state"${
-    trusted(
-        this.#canAddState()
-        && !this.#state.isLocked
-            ? '' : ' disabled',
-    )}>+ Add State</button>
 <button class="btn btn-ghost btn-sm"
     data-action="auto-layout"${
     trusted(
@@ -1607,6 +1697,11 @@ justify-content:space-between"
         const src =
             this.#connectSourcePoint();
         if (!src) return '';
+        const gx =
+            conn.toX - NODE_WIDTH / 2;
+        const gy =
+            conn.toY - NODE_HEIGHT / 2;
+        const halfW = NODE_WIDTH / 2;
         return '<line'
             + ' x1="'
             + String(src.x) + '"'
@@ -1619,7 +1714,31 @@ justify-content:space-between"
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"'
             + ' stroke-dasharray="6 3"'
-            + ' opacity="0.6"/>';
+            + ' opacity="0.6"/>'
+            + '<g transform="translate('
+            + String(gx) + ', '
+            + String(gy) + ')"'
+            + ' opacity="0.3">'
+            + '<rect'
+            + ` width="${NODE_WIDTH}"`
+            + ` height="${NODE_HEIGHT}"`
+            + ' rx="10"'
+            + ' fill="var('
+            + '--color-card-bg,'
+            + ' #232940)"'
+            + ' stroke="#4B6CA1"'
+            + ' stroke-width="2"/>'
+            + '<text'
+            + ` x="${halfW}"`
+            + ' y="22"'
+            + ' text-anchor="middle"'
+            + ' font-size="14"'
+            + ' font-weight="600"'
+            + ' fill="var('
+            + '--color-foreground,'
+            + ' #e0e4ef)">'
+            + 'New State</text>'
+            + '</g>';
     }
 
     #nodesForRender(): GraphNode[] {
@@ -1673,89 +1792,4 @@ justify-content:space-between"
         );
     }
 
-    #buildAddStateDialog(): SafeHtml {
-        const sel =
-            this.#state.interaction
-                .selection;
-        const selNode =
-            sel.kind === 'node'
-            ? this.#state.nodes.find(
-                n => n.id === sel.nodeId,
-            )
-            : undefined;
-        const fromName =
-            selNode?.name ?? '';
-        const dirStyle =
-            'padding:0.5rem;'
-            + 'border-radius:6px;'
-            + 'cursor:pointer;'
-            + 'text-align:center';
-        return html`<div
-class="dialog-backdrop hidden"
-id="add-state-backdrop">
-<div class="dialog hidden"
-    id="add-state-dialog"
-    aria-hidden="true"
-    style="max-width:28rem">
-<div class="dialog-header">
-<h3 class="dialog-title">Add State</h3>
-<p class="dialog-description"
-    >Connected from <strong
-    >${fromName}</strong></p>
-</div>
-<div class="flex flex-col gap-4">
-<div>
-<label class="label mb-1"
-    for="add-state-name"
-    >State Name</label>
-<input class="input"
-    id="add-state-name"
-    placeholder="e.g., Approved" />
-</div>
-<div>
-<label class="label mb-1"
-    for="add-state-transition"
-    >Transition Name</label>
-<input class="input"
-    id="add-state-transition"
-    placeholder="e.g., approve" />
-</div>
-<div>
-<label class="label mb-1"
-    >Placement Direction</label>
-<div style="${
-    'display:grid;'
-    + 'grid-template-columns:1fr 1fr;'
-    + 'gap:0.5rem'
-}">
-<button class="btn btn-outline active"
-    data-direction="right"
-    style="${dirStyle}"
-    >\u2192 Right</button>
-<button class="btn btn-outline"
-    data-direction="left"
-    style="${dirStyle}"
-    >\u2190 Left</button>
-<button class="btn btn-outline"
-    data-direction="above"
-    style="${dirStyle}"
-    >\u2191 Above</button>
-<button class="btn btn-outline"
-    data-direction="below"
-    style="${dirStyle}"
-    >\u2193 Below</button>
-</div>
-</div>
-</div>
-<div class="dialog-footer">
-<button class="btn btn-outline"
-    id="add-state-cancel"
-    >Cancel</button>
-<button class="btn btn-primary"
-    id="add-state-submit"
-    >Add State</button>
-</div>
-</div>
-</div>`;
-    }
 }
