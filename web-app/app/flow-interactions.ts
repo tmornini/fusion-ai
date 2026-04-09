@@ -538,6 +538,29 @@ export function bindInteractions(
         ),
         { passive: false, signal },
     );
+
+    const handleShift = (
+        ke: KeyboardEvent,
+    ): void => {
+        if (ke.key !== 'Shift') return;
+        if (
+            state.connect.kind
+                !== 'connecting'
+        ) return;
+        state.connect = {
+            ...state.connect,
+            isShift: ke.shiftKey,
+        };
+        onUpdate();
+    };
+    window.addEventListener(
+        'keydown', handleShift,
+        { signal },
+    );
+    window.addEventListener(
+        'keyup', handleShift,
+        { signal },
+    );
 }
 
 export function zoomIn(
