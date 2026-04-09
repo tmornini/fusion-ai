@@ -48,9 +48,11 @@ import {
     perimeterPoint,
     whichEdge,
     controlOffset,
+    buildEdgePreviewPath,
 } from '../flow-graph';
 import {
     computeLayout,
+    wouldBeCycle,
     NODE_WIDTH,
     NODE_HEIGHT,
     HORIZONTAL_GAP,
@@ -1842,6 +1844,53 @@ justify-content:space-between"
                     === conn.fromNodeId,
             );
         if (!fromNode) return '';
+        if (conn.isShift) {
+            if (
+                conn.target.kind === 'node'
+            ) {
+                const targetId =
+                    conn.target.id;
+                const toNode =
+                    this.#state.nodes.find(
+                        n => n.id
+                            === targetId,
+                    );
+                if (toNode) {
+                    const isCycle =
+                        wouldBeCycle(
+                            conn.fromNodeId,
+                            targetId,
+                            this.#state
+                                .edges
+                                .map(e => ({
+                                    fromId:
+                                        e
+                                        .fromNodeId,
+                                    toId:
+                                        e
+                                        .toNodeId,
+                                })),
+                        );
+                    return buildEdgePreviewPath(
+                        fromNode,
+                        toNode,
+                        isCycle,
+                    );
+                }
+            }
+            return '<line'
+                + ` x1="${src.x}"`
+                + ` y1="${src.y}"`
+                + ` x2="${conn.toX}"`
+                + ` y2="${conn.toY}"`
+                + ' stroke='
+                + '"var('
+                + '--color-muted-foreground,'
+                + ' #5a6480)"'
+                + ' stroke-width="2"'
+                + ' opacity="0.5"'
+                + ' pointer-events="none"/>';
+        }
         const gx =
             conn.toX - NODE_WIDTH / 2;
         const gy =
