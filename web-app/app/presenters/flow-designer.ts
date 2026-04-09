@@ -109,6 +109,7 @@ export class FlowDesignerPresenter {
     #state: DesignerState;
     #canvasW: number;
     #canvasH: number;
+    #needsFit: boolean;
     #undo: UndoManager;
 
     constructor(
@@ -118,6 +119,7 @@ export class FlowDesignerPresenter {
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
+        this.#needsFit = true;
         this.#undo = new UndoManager(
             executeUndoSteps,
         );
@@ -1245,6 +1247,11 @@ ${panel}
     ): void {
         this.#canvasW = w;
         this.#canvasH = h;
+        if (this.#needsFit) {
+            this.#needsFit = false;
+            this.#applyZoomToFit();
+            return;
+        }
         const vb =
             this.#state.interaction
                 .viewBox;

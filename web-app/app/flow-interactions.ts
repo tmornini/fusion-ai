@@ -554,7 +554,7 @@ export function zoomToFit(
 ): void {
     if (nodePositions.length === 0) return;
 
-    const PAD = 140;
+    const PAD = 70;
     const NODE_W = 140;
     const NODE_H = 56;
 
