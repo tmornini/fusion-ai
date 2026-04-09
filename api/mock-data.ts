@@ -1447,6 +1447,7 @@ export async function populateMockData(
             description:
                 'Standard customer'
                 + ' onboarding process',
+            is_locked: false,
             lock_timeout:
                 DEFAULT_LOCK_TIMEOUT,
             graph: jsonObjectField({
@@ -1775,6 +1776,7 @@ export async function populateMockData(
                 + '-0225a5f95311',
             name: 'Fusion Flow',
             description: '',
+            is_locked: false,
             lock_timeout:
                 DEFAULT_LOCK_TIMEOUT,
             graph: jsonObjectField({

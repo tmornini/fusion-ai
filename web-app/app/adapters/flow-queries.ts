@@ -7,6 +7,7 @@ import type {
     GraphEdge,
     GraphField,
 } from '../../../api/types';
+import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
 export type { GraphNode, GraphEdge, GraphField };
@@ -15,6 +16,7 @@ export interface FlowGraph {
     id: string;
     name: string;
     description: string;
+    isLocked: boolean;
     nodes: GraphNode[];
     edges: GraphEdge[];
 }
@@ -146,6 +148,9 @@ export async function getFlowGraph(
         id: flow.id,
         name: flow.name,
         description: flow.description,
+        isLocked: toBool(
+            flow.is_locked,
+        ),
         nodes: g.nodes,
         edges: g.edges,
     };

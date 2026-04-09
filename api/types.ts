@@ -448,6 +448,7 @@ export interface FlowEntity {
     id: Id;
     name: string;
     description: string;
+    is_locked: boolean;
     lock_timeout: number;
     graph: JsonObjectField;
     created_at: string;

@@ -19,6 +19,7 @@ import {
     putNode,
     putWfEdge,
     putFlow,
+    putFlowLocked,
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
@@ -97,6 +98,7 @@ interface DesignerState {
     flowId: string;
     flowName: string;
     flowDescription: string;
+    isLocked: boolean;
     isEditingName: boolean;
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -128,6 +130,7 @@ export class FlowDesignerPresenter {
             flowName: graph.name,
             flowDescription:
                 graph.description,
+            isLocked: graph.isLocked,
             isEditingName: false,
             nodes: graph.nodes,
             edges: graph.edges,
@@ -145,7 +148,30 @@ export class FlowDesignerPresenter {
         this.#state.isEditingName = false;
     }
 
+    isLocked(): boolean {
+        return this.#state.isLocked;
+    }
+
+    toggleLocked(): void {
+        const next = !this.#state.isLocked;
+        this.#state.isLocked = next;
+        void putFlowLocked(
+            this.#state.flowId, next,
+        );
+    }
+
+    #guardLocked(): boolean {
+        if (!this.#state.isLocked) {
+            return false;
+        }
+        showToast(
+            'Flow is locked', 'error',
+        );
+        return true;
+    }
+
     updateFlowName(name: string): void {
+        if (this.#guardLocked()) return;
         this.#state.flowName = name;
         this.#state.isEditingName = false;
         void putFlow(
@@ -309,12 +335,30 @@ export class FlowDesignerPresenter {
     style="opacity:0.5"
     >${iconEdit(14, '')}</button>
 </div>`;
+        const lockedAttr =
+            this.#state.isLocked
+                ? ' checked' : '';
         const content = html`<div
 class="wf-designer">
 <div class="wf-designer-header">
-${nameHtml}
+<div class="${
+    'flex items-center gap-4'
+}">
+<div style="flex:1">${nameHtml}
 <p class="text-sm text-muted"
     >${this.#state.flowDescription}</p>
+</div>
+<label class="${
+    'flex items-center gap-2'
+    + ' text-sm'
+}" style="${
+    'cursor:pointer;'
+    + 'white-space:nowrap'
+}"><input type="checkbox"
+    id="flow-lock-checkbox"${
+    trusted(lockedAttr)
+} /> Locked</label>
+</div>
 </div>
 ${toolbar}
 ${panel}
@@ -330,6 +374,7 @@ ${dialog}`;
         x: number,
         y: number,
     ): void {
+        if (this.#guardLocked()) return;
         const node = this.#state.nodes.find(
             n => n.id === nodeId,
         );
@@ -416,6 +461,9 @@ ${dialog}`;
         fromId: string,
         toId: string,
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const from =
             this.#state.nodes.find(
                 n => n.id === fromId,
@@ -516,6 +564,9 @@ ${dialog}`;
 
     async deleteSelectedNode(
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const sel =
             this.#state.interaction
                 .selection;
@@ -569,6 +620,9 @@ ${dialog}`;
 
     async deleteSelectedEdge(
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const sel =
             this.#state.interaction
                 .selection;
@@ -605,6 +659,7 @@ ${dialog}`;
     }
 
     autoLayout(): void {
+        if (this.#guardLocked()) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
@@ -659,6 +714,7 @@ ${dialog}`;
     updateNodeName(
         name: string,
     ): void {
+        if (this.#guardLocked()) return;
         const sel =
             this.#state.interaction
                 .selection;
@@ -693,6 +749,7 @@ ${dialog}`;
     updateNodeDescription(
         desc: string,
     ): void {
+        if (this.#guardLocked()) return;
         const sel =
             this.#state.interaction
                 .selection;
@@ -728,6 +785,7 @@ ${dialog}`;
     updateEdgeName(
         name: string,
     ): void {
+        if (this.#guardLocked()) return;
         const sel =
             this.#state.interaction
                 .selection;
@@ -762,6 +820,7 @@ ${dialog}`;
     updateEdgeDescription(
         desc: string,
     ): void {
+        if (this.#guardLocked()) return;
         const sel =
             this.#state.interaction
                 .selection;
@@ -800,6 +859,9 @@ ${dialog}`;
         isRequired: boolean,
         options: string[],
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const sel =
             this.#state.interaction
                 .selection;
@@ -866,6 +928,9 @@ ${dialog}`;
     async deleteField(
         fieldId: string,
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const sel =
             this.#state.interaction
                 .selection;
@@ -923,6 +988,9 @@ ${dialog}`;
         transitionName: string,
         direction: string,
     ): Promise<boolean> {
+        if (this.#guardLocked()) {
+            return false;
+        }
         const sel =
             this.#state.interaction
                 .selection;
@@ -1171,11 +1239,15 @@ class="wf-toolbar">
     data-action="add-state"${
     trusted(
         this.#canAddState()
+        && !this.#state.isLocked
             ? '' : ' disabled',
     )}>+ Add State</button>
 <button class="btn btn-ghost btn-sm"
-    data-action="auto-layout"
-    >Auto Layout</button>
+    data-action="auto-layout"${
+    trusted(
+        this.#state.isLocked
+            ? ' disabled' : '',
+    )}>Auto Layout</button>
 <button class="btn btn-ghost btn-sm"
     data-action="fit">Fit</button>
 </div>
@@ -1204,6 +1276,7 @@ class="wf-toolbar">
     data-action="delete-selected"${
     trusted(
         this.#canDelete()
+        && !this.#state.isLocked
             ? '' : ' disabled',
     )}>${iconTrash(18, '')}</button>
 </div>
@@ -1580,6 +1653,7 @@ justify-content:space-between"
             vb.h,
             this.#state.interaction
                 .selection,
+            this.#state.isLocked,
         );
         const preview =
             this.#buildConnectPreview();

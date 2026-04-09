@@ -217,6 +217,16 @@ export async function putFlow(
     });
 }
 
+export async function putFlowLocked(
+    id: string,
+    isLocked: boolean,
+): Promise<void> {
+    await PUT(`flows/${id}`, {
+        is_locked: isLocked,
+        updated_at: nowUtc(),
+    });
+}
+
 export async function putNode(
     flowId: string,
     nodeId: string,

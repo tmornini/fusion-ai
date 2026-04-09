@@ -205,6 +205,7 @@ function buildGrid(
 function buildNode(
     node: GraphNode,
     isSelected: boolean,
+    isLocked: boolean,
 ): SafeHtml {
     const { positionX, positionY } = node;
     const halfH = NODE_HEIGHT / 2;
@@ -284,7 +285,11 @@ function buildNode(
         + escapeForHtml(meta)
         + '</text>';
 
-    if (!node.isStart && !node.isComplete) {
+    if (
+        !isLocked
+        && !node.isStart
+        && !node.isComplete
+    ) {
         inner += '<circle'
             + ' data-connect-port="1"'
             + ` cx="${NODE_WIDTH}"`
@@ -546,6 +551,7 @@ export function buildGraphSvg(
     viewBoxW: number,
     viewBoxH: number,
     selection: Selection,
+    isLocked: boolean,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -647,6 +653,7 @@ export function buildGraphSvg(
         nodeMarkup +=
             buildNode(
                 node, isSelected,
+                isLocked,
             ).toString();
     }
 
