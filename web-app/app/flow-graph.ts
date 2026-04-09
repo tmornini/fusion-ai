@@ -264,6 +264,38 @@ function buildDefs(): string {
         + `<path d="${arrowPath}"`
         + ` fill="${WARN}"/>`
         + '</marker>'
+        + '<filter id="wf-glow"'
+        + ' x="-30%" y="-30%"'
+        + ' width="160%"'
+        + ' height="160%">'
+        + '<feGaussianBlur'
+        + ' in="SourceGraphic"'
+        + ' stdDeviation="4"'
+        + ' result="blur">'
+        + '<animate'
+        + ' attributeName='
+        + '"stdDeviation"'
+        + ' values="4;12;4"'
+        + ' dur="1.5s"'
+        + ' repeatCount='
+        + '"indefinite"/>'
+        + '</feGaussianBlur>'
+        + '<feFlood'
+        + ` flood-color="${BLUE}"`
+        + ' flood-opacity="0.8"'
+        + ' result="color"/>'
+        + '<feComposite'
+        + ' in="color"'
+        + ' in2="blur"'
+        + ' operator="in"'
+        + ' result="glow"/>'
+        + '<feMerge>'
+        + '<feMergeNode'
+        + ' in="glow"/>'
+        + '<feMergeNode'
+        + ' in="SourceGraphic"/>'
+        + '</feMerge>'
+        + '</filter>'
         + '</defs>';
 }
 
@@ -324,8 +356,8 @@ function buildNode(
             : STROKE_START;
     }
 
-    const selClass = isSelected
-        ? ' class="wf-selected"'
+    const selAttr = isSelected
+        ? ' filter="url(#wf-glow)"'
         : '';
 
     let inner = '';
@@ -418,7 +450,7 @@ function buildNode(
         + ', '
         + String(positionY)
         + ')"'
-        + selClass
+        + selAttr
         + ' style="cursor:pointer">'
         + inner
         + '</g>',
@@ -602,12 +634,13 @@ function buildEdge(
         + labelEsc
         + '</text>';
 
-    const edgeSelClass = isSelected
-        ? ' class="wf-selected"' : '';
+    const edgeSelAttr = isSelected
+        ? ' filter="url(#wf-glow)"'
+        : '';
     return trusted(
         '<g'
         + ` data-edge-id="${edge.id}"`
-        + edgeSelClass
+        + edgeSelAttr
         + '>'
         + hitPath
         + visPath + visClose
