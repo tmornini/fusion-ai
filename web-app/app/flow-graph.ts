@@ -650,6 +650,85 @@ function buildEdge(
     );
 }
 
+export function buildEdgePreviewPath(
+    fromNode: GraphNode,
+    toNode: GraphNode,
+    isCycle: boolean,
+): string {
+    const fromCx =
+        fromNode.positionX
+        + NODE_WIDTH / 2;
+    const fromCy =
+        fromNode.positionY
+        + NODE_HEIGHT / 2;
+    const toCx =
+        toNode.positionX
+        + NODE_WIDTH / 2;
+    const toCy =
+        toNode.positionY
+        + NODE_HEIGHT / 2;
+    const startPt = perimeterPoint(
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+        toCx, toCy,
+    );
+    const endPt = perimeterPoint(
+        toNode.positionX,
+        toNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+        fromCx, fromCy,
+    );
+    const dist = Math.hypot(
+        endPt.x - startPt.x,
+        endPt.y - startPt.y,
+    );
+    const se = whichEdge(
+        startPt.x, startPt.y,
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const ee = whichEdge(
+        endPt.x, endPt.y,
+        toNode.positionX,
+        toNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const cp1 = controlOffset(se, dist);
+    const cp2 = controlOffset(ee, dist);
+    const pathD = 'M '
+        + String(startPt.x) + ' '
+        + String(startPt.y)
+        + ' C '
+        + String(startPt.x + cp1.dx)
+        + ' '
+        + String(startPt.y + cp1.dy)
+        + ', '
+        + String(endPt.x + cp2.dx)
+        + ' '
+        + String(endPt.y + cp2.dy)
+        + ', '
+        + String(endPt.x) + ' '
+        + String(endPt.y);
+    const color = isCycle ? WARN : BLUE;
+    const marker = isCycle
+        ? 'url(#wf-arrow-warn)'
+        : 'url(#wf-arrow)';
+    const dashAttr = isCycle
+        ? ' stroke-dasharray="'
+            + CYCLE_DASH + '"'
+        : '';
+    return '<path'
+        + ' d="' + pathD + '"'
+        + ' fill="none"'
+        + ` stroke="${color}"`
+        + ` stroke-width="${EDGE_STROKE}"`
+        + dashAttr
+        + ` marker-end="${marker}"`
+        + ' pointer-events="none"/>';
+}
+
 function bezierAt(
     pathD: string,
     t: number,
