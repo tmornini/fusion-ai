@@ -35,28 +35,17 @@
 |--------|------|
 | id | TEXT |
 | title | TEXT |
-| score | INTEGER |
-| estimated_impact | INTEGER |
-| estimated_duration | INTEGER (seconds) |
-| estimated_cost | INTEGER |
 | priority | INTEGER |
 | position | REAL |
 | status | TEXT |
 | problem_statement | TEXT |
 | proposed_solution | TEXT |
 | expected_outcome | TEXT |
-| category | TEXT |
 | readiness | TEXT |
-| impact_label | TEXT |
-| effort_label | TEXT |
 | description | TEXT |
 | risks | TEXT (JSON array) |
 | assumptions | TEXT (JSON array) |
 | alignments | TEXT (JSON array) |
-| effort_duration_estimate | TEXT |
-| effort_team_size | TEXT |
-| cost_estimate | TEXT |
-| cost_breakdown | TEXT |
 | success_metrics | TEXT |
 
 ### idea_scores

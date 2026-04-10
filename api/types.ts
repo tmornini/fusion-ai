@@ -337,27 +337,17 @@ export class User {
 export interface IdeaEntity {
     id: Id;
     title: string;
-    estimated_impact: number;
-    estimated_duration: number;
-    estimated_cost: number;
     priority: number;
     position: number;
     status: IdeaStatus;
     problem_statement: string;
     proposed_solution: string;
     expected_outcome: string;
-    category: string;
     readiness: ReadinessLevel;
-    impact_label: string;
-    effort_label: string;
     description: string;
     risks: JsonArrayField;
     assumptions: JsonArrayField;
     alignments: JsonArrayField;
-    effort_duration_estimate: string;
-    effort_team_size: string;
-    cost_estimate: string;
-    cost_breakdown: string;
     success_metrics: string;
 }
 
@@ -682,29 +672,19 @@ export const READINESS_CONFIG: Record<
 export class Idea {
     readonly id: string;
     readonly title: string;
-    readonly estimatedImpact: number;
-    readonly estimatedDuration: number;
-    readonly estimatedCost: number;
     readonly priority: number;
     readonly position: number;
     readonly status: IdeaStatus;
     readonly problemStatement: string;
     readonly proposedSolution: string;
     readonly expectedOutcome: string;
-    readonly category: string;
     readonly readiness: ReadinessLevel;
     readonly waitingDays: number;
-    readonly impactLabel: string;
-    readonly effortLabel: string;
     readonly description: string;
     readonly submittedAt: string;
     readonly risks: string;
     readonly assumptions: string;
     readonly alignments: string;
-    readonly effortDurationEstimate: string;
-    readonly effortTeamSize: string;
-    readonly costEstimate: string;
-    readonly costBreakdown: string;
     readonly successMetrics: string;
     readonly submittedBy: string;
 
@@ -715,12 +695,6 @@ export class Idea {
     ) {
         this.id = entity.id;
         this.title = entity.title;
-        this.estimatedImpact =
-            entity.estimated_impact;
-        this.estimatedDuration =
-            entity.estimated_duration;
-        this.estimatedCost =
-            entity.estimated_cost;
         this.priority = entity.priority;
         this.position = entity.position;
         this.status = entity.status;
@@ -730,10 +704,7 @@ export class Idea {
             entity.proposed_solution;
         this.expectedOutcome =
             entity.expected_outcome;
-        this.category = entity.category;
         this.readiness = entity.readiness;
-        this.impactLabel = entity.impact_label;
-        this.effortLabel = entity.effort_label;
         this.description = entity.description;
         this.submittedAt = submittedAt;
         this.waitingDays = this.submittedAt
@@ -749,13 +720,6 @@ export class Idea {
         this.risks = entity.risks;
         this.assumptions = entity.assumptions;
         this.alignments = entity.alignments;
-        this.effortDurationEstimate =
-            entity.effort_duration_estimate;
-        this.effortTeamSize =
-            entity.effort_team_size;
-        this.costEstimate = entity.cost_estimate;
-        this.costBreakdown =
-            entity.cost_breakdown;
         this.successMetrics =
             entity.success_metrics;
         this.submittedBy = submittedBy;
@@ -779,13 +743,6 @@ export class Idea {
 
     isReady(): boolean {
         return this.readiness === 'ready';
-    }
-
-    durationInDays(): number {
-        return Math.ceil(
-            this.estimatedDuration
-                / SECONDS_PER_DAY,
-        );
     }
 
     statusLabel(): string {
