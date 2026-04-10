@@ -184,14 +184,7 @@ function bindIdeaEvents(
                 'Submitted for review',
                 'success',
             );
-            const updated =
-                await getIdeaDetail(
-                    ideaId,
-                );
-            mutateIdeaPage(
-                updated, ideaId,
-                false,
-            );
+            navigateTo('ideas');
         },
     );
 }
