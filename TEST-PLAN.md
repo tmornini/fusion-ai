@@ -108,17 +108,18 @@ on. Run these in order.
   green border) and "Complete" (end, bottom-right
   with double green border) connected by no edges.
   Toolbar shows Undo, Redo, Delete (trash icon),
-  Auto Layout, Zoom +/−, Fit, Copy Mermaid,
-  Export .zip. Changes auto-save (no explicit
-  Save button).
-- [ ] **AA37** Click anywhere on the non-draggable
-  start node and drag into empty canvas past 20
-  pixels. PASS: during the drag a ghost "New
-  State" card follows the cursor along with a
-  faint bezier preview. On release, a new node
-  appears at the drop position with a blue
-  border, auto-connected from the start by an
-  edge with a default name.
+  Auto Layout, Zoom −/Show All/+,
+  Copy Mermaid, Export. Changes auto-save
+  (no explicit Save button).
+- [ ] **AA37** Drag the port circle on the start
+  node into empty canvas past 20 pixels. PASS:
+  during the drag a ghost "New State" card
+  follows the cursor along with a faint bezier
+  preview. On release, a new node appears at the
+  drop position with a blue border,
+  auto-connected from the start by an edge with
+  a default name. The start node is also
+  draggable by its body.
 - [ ] **AA38** Double-click the new blue-bordered
   node. PASS: properties panel appears showing
   State Name input, Description input, empty
@@ -383,16 +384,16 @@ on. Run these in order.
 
 ## F. Tools
 
-### Flow List (`flow/`)
+### Flow List (`flows/`)
 
-- [ ] **F11** Navigate to `flow/`. PASS: page shows
+- [ ] **F11** Navigate to `flows/`. PASS: page shows
   flow cards with name, description, project
   name badge, and state/transition counts.
 - [ ] **F12** Type in the search input (if present).
   PASS: filters flow cards by name or
   description in real-time.
 - [ ] **F13** Click a flow card. PASS: navigates
-  to `flow/detail.html?flowId=<id>`.
+  to `flows/detail.html?flowId=<id>`.
 
 ### Flow Import
 
@@ -400,12 +401,12 @@ on. Run these in order.
 - [ ] **F13c** Select a `.mmd` file via the file input and choose a project from the dropdown. Click "Import". PASS: flow is created, toast confirms import, and browser navigates to the flow designer for the imported flow.
 - [ ] **F13d** Repeat with a `.zip` file exported from a previous flow. PASS: imported flow contains the same nodes, edges, and fields as the original.
 
-### Flow Designer (`flow/detail.html?flowId=...`)
+### Flow Designer (`flows/detail.html?flowId=...`)
 
 - [ ] **F14** Navigate to a flow designer page.
   PASS: toolbar at top with Undo, Redo, Delete
-  (trash icon), Auto Layout, Zoom +/−, Fit, Copy
-  Mermaid, Export .zip, Lock Down. SVG canvas
+  (trash icon), Auto Layout, Zoom −/Show All/+,
+  Copy Mermaid, Export, Lock Down. SVG canvas
   below with dot grid background showing the flow
   graph. Changes auto-save (no explicit Save
   button).
@@ -514,14 +515,14 @@ on. Run these in order.
   removed from the canvas.
 - [ ] **F26** Click "Zoom +" and "Zoom -" in
   toolbar. PASS: canvas zooms in and out smoothly.
-  Click "Fit". PASS: canvas adjusts to show all
-  nodes.
+  Click "Show All". PASS: canvas adjusts to
+  show all nodes.
 - [ ] **F27** Edit a node name via the properties
   panel, wait 1 second for auto-save. Navigate
   away and return to the designer. PASS: all
   nodes, edges, fields, and positions persist.
 - [ ] **F28** Navigate to
-  `flow/detail.html?flowId=nonexistent`. PASS:
+  `flows/detail.html?flowId=nonexistent`. PASS:
   page handles gracefully — shows error state,
   no unhandled JS exception.
 
