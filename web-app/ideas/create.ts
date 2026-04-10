@@ -164,8 +164,6 @@ export async function init():
                             .targetUsers,
                         status:
                             'active',
-                        priority:
-                            0,
                         position:
                             0,
                         readiness:

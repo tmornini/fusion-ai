@@ -48,7 +48,6 @@ const STATUS_ICONS: Record<
 export class IdeaPresenter {
     readonly #id: string;
     readonly #title: string;
-    readonly #priority: number;
     readonly #position: number;
     readonly #status: IdeaStatus;
     readonly #statusClassName: string;
@@ -66,7 +65,6 @@ export class IdeaPresenter {
     constructor(idea: Idea) {
         this.#id = idea.id;
         this.#title = idea.title;
-        this.#priority = idea.priority;
         this.#position = idea.position;
         this.#status = idea.status;
         this.#statusClassName =
@@ -92,10 +90,6 @@ export class IdeaPresenter {
 
     idForLink(): string {
         return this.#id;
-    }
-
-    prioritySortKey(): number {
-        return this.#priority;
     }
 
     positionSortKey(): number {

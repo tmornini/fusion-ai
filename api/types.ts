@@ -2,8 +2,6 @@ export type Id = string;
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
-export type PriorityLevel = 'high' | 'medium' | 'low';
-
 export type WfFieldType =
     | 'text'
     | 'textarea'
@@ -48,21 +46,8 @@ export type ProjectStatus =
     | 'completed'
     | 'deleted';
 
-export const SCORE_THRESHOLD_HIGH = 80;
-export const SCORE_THRESHOLD_MEDIUM = 60;
-
 export const AVAILABILITY_HIGH = 70;
 export const AVAILABILITY_LOW = 40;
-
-export function computePriority(
-    score: number,
-): PriorityLevel {
-    if (score >= SCORE_THRESHOLD_HIGH)
-        return 'high';
-    if (score >= SCORE_THRESHOLD_MEDIUM)
-        return 'medium';
-    return 'low';
-}
 
 export type StoredBoolean = 0 | 1;
 
@@ -337,7 +322,6 @@ export class User {
 export interface IdeaEntity {
     id: Id;
     title: string;
-    priority: number;
     position: number;
     status: IdeaStatus;
     problem_statement: string;
@@ -365,8 +349,6 @@ export interface ProjectEntity {
     actual_cost: number;
     estimated_impact: number;
     actual_impact: number;
-    priority: number;
-    priority_score: number;
     position: number;
     business_context: JsonObjectField;
     timeline_label: string;
@@ -672,7 +654,6 @@ export const READINESS_CONFIG: Record<
 export class Idea {
     readonly id: string;
     readonly title: string;
-    readonly priority: number;
     readonly position: number;
     readonly status: IdeaStatus;
     readonly problemStatement: string;
@@ -695,7 +676,6 @@ export class Idea {
     ) {
         this.id = entity.id;
         this.title = entity.title;
-        this.priority = entity.priority;
         this.position = entity.position;
         this.status = entity.status;
         this.problemStatement =
@@ -818,8 +798,6 @@ export class Project {
     readonly actualCost: number;
     readonly estimatedImpact: number;
     readonly actualImpact: number;
-    readonly priority: number;
-    readonly priorityScore: number;
     readonly position: number;
     readonly businessContext: string;
     readonly timelineLabel: string;
@@ -845,9 +823,6 @@ export class Project {
             entity.estimated_impact;
         this.actualImpact =
             entity.actual_impact;
-        this.priority = entity.priority;
-        this.priorityScore =
-            entity.priority_score;
         this.position = entity.position;
         this.businessContext =
             entity.business_context;
@@ -913,12 +888,6 @@ export class Project {
     formattedCost(): string {
         return formatCompactCurrency(
             this.estimatedCost,
-        );
-    }
-
-    priorityLevel(): PriorityLevel {
-        return computePriority(
-            this.priorityScore,
         );
     }
 

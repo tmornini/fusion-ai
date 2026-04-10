@@ -406,7 +406,6 @@ export async function populateMockData(
             id: 'd752cb3e-8e59-423f-95ba-d35a0f16f883',
             title: 'AI-Powered Customer'
                 + ' Segmentation',
-            priority: 1,
             position: 1,
             status: 'in-review',
 
@@ -449,7 +448,6 @@ export async function populateMockData(
             id: 'e9a7b7c9-f449-46b6-92b1-7144d29f6612',
             title: 'Automated Report'
                 + ' Generation',
-            priority: 2,
             position: 2,
             status: 'approved',
 
@@ -495,7 +493,6 @@ export async function populateMockData(
             id: 'eef228e7-8ab1-42ed-afae-d095c214a85b',
             title: 'Predictive Maintenance'
                 + ' System',
-            priority: 3,
             position: 3,
             status: 'active',
 
@@ -538,7 +535,6 @@ export async function populateMockData(
             id: 'f0582dd9-4f65-45bc-a23d-47ca7426582c',
             title: 'Real-time Analytics'
                 + ' Dashboard',
-            priority: 4,
             position: 4,
             status: 'in-review',
 
@@ -584,7 +580,6 @@ export async function populateMockData(
             id: 'b112a99b-4993-4ea3-8621-0ba9c6036896',
             title: 'Smart Inventory'
                 + ' Optimization',
-            priority: 5,
             position: 5,
             status: 'active',
 
@@ -629,7 +624,6 @@ export async function populateMockData(
             id: '48fe64d4-89f8-483b-b819-53045ecb9e5f',
             title: 'Employee Training'
                 + ' Assistant',
-            priority: 6,
             position: 6,
             status: 'sent-back',
 
@@ -672,7 +666,6 @@ export async function populateMockData(
             id: '7cdd88db-2463-41cc-9303-89dd3254ad40',
             title: 'AI-Powered Customer'
                 + ' Support Chatbot',
-            priority: 8,
             position: 8,
             status: 'in-review',
 
@@ -773,7 +766,6 @@ export async function populateMockData(
             id: 'b46bd91c-1b7d-409b-8f1c-28e1c6996241',
             title: 'Mobile App Push'
                 + ' Notification Revamp',
-            priority: 10,
             position: 10,
             status: 'in-review',
 
@@ -812,7 +804,6 @@ export async function populateMockData(
             id: '80450d9e-d3c5-4eaa-bd70-2bd4048edcc7',
             title: 'Sustainability Dashboard'
                 + ' for Operations',
-            priority: 9,
             position: 9,
             status: 'in-review',
 
@@ -853,7 +844,6 @@ export async function populateMockData(
             id: 'cd1bb80d-cb50-48c4-aa21-3a115fbbd114',
             title: 'Employee Wellness'
                 + ' Program Integration',
-            priority: 11,
             position: 11,
             status: 'in-review',
 
@@ -895,7 +885,6 @@ export async function populateMockData(
             id: '9add8b29-d51e-49f9-b4e0-e17d23370732',
             title: 'Real-time Inventory'
                 + ' Tracking System',
-            priority: 7,
             position: 7,
             status: 'in-review',
 
@@ -993,8 +982,6 @@ export async function populateMockData(
             actual_cost: 38000,
             estimated_impact: 85,
             actual_impact: 78,
-            priority: 1,
-            priority_score: 92,
             position: 1,
             business_context: jsonObjectField({
                 problem:
@@ -1060,8 +1047,6 @@ export async function populateMockData(
             actual_cost: 28000,
             estimated_impact: 78,
             actual_impact: 82,
-            priority: 2,
-            priority_score: 87,
             position: 2,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
@@ -1088,8 +1073,6 @@ export async function populateMockData(
             actual_cost: 18000,
             estimated_impact: 90,
             actual_impact: 0,
-            priority: 3,
-            priority_score: 84,
             position: 3,
             business_context: jsonObjectField({}),
             timeline_label: 'At Risk',
@@ -1115,8 +1098,6 @@ export async function populateMockData(
             actual_cost: 26000,
             estimated_impact: 72,
             actual_impact: 70,
-            priority: 4,
-            priority_score: 81,
             position: 4,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
@@ -1143,8 +1124,6 @@ export async function populateMockData(
             actual_cost: 12000,
             estimated_impact: 68,
             actual_impact: 0,
-            priority: 5,
-            priority_score: 78,
             position: 5,
             business_context: jsonObjectField({}),
             timeline_label: 'Overdue',
@@ -1171,8 +1150,6 @@ export async function populateMockData(
             actual_cost: 8000,
             estimated_impact: 65,
             actual_impact: 0,
-            priority: 6,
-            priority_score: 74,
             position: 6,
             business_context: jsonObjectField({}),
             timeline_label: 'On Track',

@@ -35,7 +35,6 @@
 |--------|------|
 | id | TEXT |
 | title | TEXT |
-| priority | INTEGER |
 | position | REAL |
 | status | TEXT |
 | problem_statement | TEXT |
@@ -81,8 +80,6 @@
 | actual_cost | INTEGER |
 | estimated_impact | INTEGER |
 | actual_impact | INTEGER |
-| priority | INTEGER |
-| priority_score | INTEGER |
 | position | REAL |
 | business_context | TEXT (JSON object) |
 | timeline_label | TEXT |
