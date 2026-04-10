@@ -89,11 +89,6 @@ function bindIdeaEvents(
                         '#idea-edit-title',
                         document,
                     )!.value;
-                const description =
-                    $textarea(
-                        '#idea-edit-target-users',
-                        document,
-                    )!.value;
                 const problemStatement =
                     $textarea(
                         '#idea-edit-problem',
@@ -109,24 +104,16 @@ function bindIdeaEvents(
                         '#idea-edit-outcome',
                         document,
                     )!.value;
-                const successMetrics =
-                    $textarea(
-                        '#idea-edit-metrics',
-                        document,
-                    )!.value;
 
                 try {
                     await putIdea(ideaId, {
                         title,
-                        description,
                         problem_statement:
                             problemStatement,
                         proposed_solution:
                             proposedSolution,
                         expected_outcome:
                             expectedOutcome,
-                        success_metrics:
-                            successMetrics,
                     });
                 } catch {
                     showToast(

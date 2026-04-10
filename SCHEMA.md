@@ -41,11 +41,9 @@
 | proposed_solution | TEXT |
 | expected_outcome | TEXT |
 | readiness | TEXT |
-| description | TEXT |
 | risks | TEXT (JSON array) |
 | assumptions | TEXT (JSON array) |
 | alignments | TEXT (JSON array) |
-| success_metrics | TEXT |
 
 ### idea_scores
 

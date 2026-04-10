@@ -328,11 +328,9 @@ export interface IdeaEntity {
     proposed_solution: string;
     expected_outcome: string;
     readiness: ReadinessLevel;
-    description: string;
     risks: JsonArrayField;
     assumptions: JsonArrayField;
     alignments: JsonArrayField;
-    success_metrics: string;
 }
 
 export interface ProjectEntity {
@@ -661,12 +659,10 @@ export class Idea {
     readonly expectedOutcome: string;
     readonly readiness: ReadinessLevel;
     readonly waitingDays: number;
-    readonly description: string;
     readonly submittedAt: string;
     readonly risks: string;
     readonly assumptions: string;
     readonly alignments: string;
-    readonly successMetrics: string;
     readonly submittedBy: string;
 
     constructor(
@@ -685,7 +681,6 @@ export class Idea {
         this.expectedOutcome =
             entity.expected_outcome;
         this.readiness = entity.readiness;
-        this.description = entity.description;
         this.submittedAt = submittedAt;
         this.waitingDays = this.submittedAt
             ? Math.max(0, Math.ceil(
@@ -700,8 +695,6 @@ export class Idea {
         this.risks = entity.risks;
         this.assumptions = entity.assumptions;
         this.alignments = entity.alignments;
-        this.successMetrics =
-            entity.success_metrics;
         this.submittedBy = submittedBy;
     }
 

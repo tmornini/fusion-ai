@@ -13,7 +13,6 @@ import {
 } from '../app/loading-states';
 import {
     iconPlus,
-    iconWand,
     iconLightbulb,
 } from '../app/icons';
 import {
@@ -53,8 +52,7 @@ export async function init(): Promise<void> {
                 + ' your first idea.',
             action: {
                 label: html`${iconPlus(16, '')}
-                    Create Your First Idea
-                    ${iconWand(16, '')}`,
+                    Create Your First Idea`,
                 href:
                     'create.html',
             },
@@ -73,10 +71,6 @@ export async function init(): Promise<void> {
         [
             '#create-btn-icon',
             iconPlus(16, ''),
-        ],
-        [
-            '#create-btn-accent',
-            iconWand(16, ''),
         ],
     ]);
 

@@ -428,21 +428,9 @@ export async function populateMockData(
                 + ' by 25%.',
             readiness: 'ready',
 
-            description:
-                'Helps marketing teams'
-                + ' target the right'
-                + ' audiences automatically'
-                + ' using behavioral data.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Segmentation time reduced'
-                + ' from 20+ hours to under'
-                + ' 4 hours weekly; campaign'
-                + ' conversion rate improves'
-                + ' by 25%',
         },
         {
             id: 'e9a7b7c9-f449-46b6-92b1-7144d29f6612',
@@ -473,21 +461,9 @@ export async function populateMockData(
                 + ' minutes.',
             readiness: 'ready',
 
-            description:
-                'Enables analysts and'
-                + ' managers to receive'
-                + ' up-to-date reports'
-                + ' without manual effort.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                '15 analyst-hours freed'
-                + ' per week; report'
-                + ' delivery time under 5'
-                + ' minutes; zero manual'
-                + ' data compilation',
         },
         {
             id: 'eef228e7-8ab1-42ed-afae-d095c214a85b',
@@ -515,21 +491,9 @@ export async function populateMockData(
                 + ' annually.',
             readiness: 'needs-info',
 
-            description:
-                'Serves operations and'
-                + ' facilities teams who'
-                + ' manage critical'
-                + ' equipment uptime.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Unplanned downtime'
-                + ' reduced by 70%;'
-                + ' equipment lifespan'
-                + ' extended 20%; $150K'
-                + ' annual savings',
         },
         {
             id: 'f0582dd9-4f65-45bc-a23d-47ca7426582c',
@@ -559,22 +523,9 @@ export async function populateMockData(
                 + ' 5 days to under 1 hour.',
             readiness: 'ready',
 
-            description:
-                'Gives leadership and'
-                + ' analysts real-time'
-                + ' visibility into key'
-                + ' business metrics.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Market response time'
-                + ' under 1 hour; dashboard'
-                + ' adoption by 90% of'
-                + ' leadership; anomaly'
-                + ' detection within 5'
-                + ' minutes',
         },
         {
             id: 'b112a99b-4993-4ea3-8621-0ba9c6036896',
@@ -604,21 +555,9 @@ export async function populateMockData(
                 + ' satisfaction scores.',
             readiness: 'needs-info',
 
-            description:
-                'Helps supply chain and'
-                + ' warehouse teams balance'
-                + ' stock levels with'
-                + ' demand forecasts.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Carrying costs reduced'
-                + ' 30%; stockout incidents'
-                + ' down 60%; customer'
-                + ' satisfaction score'
-                + ' improves by 10 points',
         },
         {
             id: '48fe64d4-89f8-483b-b819-53045ecb9e5f',
@@ -647,20 +586,9 @@ export async function populateMockData(
                 + ' quarter.',
             readiness: 'incomplete',
 
-            description:
-                'Supports HR and team'
-                + ' leads in delivering'
-                + ' consistent, adaptive'
-                + ' onboarding content.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Onboarding time reduced'
-                + ' to 3 weeks; new hire'
-                + ' productivity scores up'
-                + ' 40% in first quarter',
         },
         {
             id: '7cdd88db-2463-41cc-9303-89dd3254ad40',
@@ -688,18 +616,6 @@ export async function populateMockData(
                 + ' to under 30 seconds.',
             readiness: 'ready',
 
-            description:
-                'Implement an intelligent'
-                + ' chatbot using GPT-4 to'
-                + ' handle tier-1 customer'
-                + ' support inquiries. The'
-                + ' system would integrate'
-                + ' with our existing'
-                + ' helpdesk platform and'
-                + ' learn from historical'
-                + ' ticket data to provide'
-                + ' accurate, context-aware'
-                + ' responses.',
             risks: jsonArrayField([
                 {
                     title:
@@ -755,12 +671,6 @@ export async function populateMockData(
                 'Cost optimization'
                     + ' program',
             ]),
-            success_metrics:
-                'Tier-1 ticket deflection'
-                + ' rate of 60%; average'
-                + ' response time under 30'
-                + ' seconds; CSAT score'
-                + ' above 4.2',
         },
         {
             id: 'b46bd91c-1b7d-409b-8f1c-28e1c6996241',
@@ -785,20 +695,9 @@ export async function populateMockData(
                 + ' by 35%.',
             readiness: 'needs-info',
 
-            description:
-                'Improves the mobile'
-                + ' experience for end'
-                + ' users through smarter'
-                + ' notification delivery.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Opt-out rate below 20%;'
-                + ' notification tap rate'
-                + ' up 35%; daily active'
-                + ' users increase 10%',
         },
         {
             id: '80450d9e-d3c5-4eaa-bd70-2bd4048edcc7',
@@ -824,21 +723,9 @@ export async function populateMockData(
                 + ' requirements.',
             readiness: 'ready',
 
-            description:
-                'Provides operations and'
-                + ' sustainability officers'
-                + ' with real-time ESG'
-                + ' tracking across sites.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Energy costs reduced'
-                + ' 15%; ESG reports'
-                + ' generated in under'
-                + ' 1 hour; 100% facility'
-                + ' coverage',
         },
         {
             id: 'cd1bb80d-cb50-48c4-aa21-3a115fbbd114',
@@ -865,21 +752,9 @@ export async function populateMockData(
                 + ' by 12%.',
             readiness: 'incomplete',
 
-            description:
-                'Helps HR and employees'
-                + ' access wellness'
-                + ' resources through a'
-                + ' consolidated portal.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Wellness participation'
-                + ' up 50%; voluntary'
-                + ' turnover reduced 12%;'
-                + ' employee satisfaction'
-                + ' score improves 8%',
         },
         {
             id: '9add8b29-d51e-49f9-b4e0-e17d23370732',
@@ -905,21 +780,9 @@ export async function populateMockData(
                 + ' reconciliation.',
             readiness: 'ready',
 
-            description:
-                'Enables warehouse and'
-                + ' logistics staff to'
-                + ' track stock movements'
-                + ' in real time.',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
-            success_metrics:
-                'Inventory accuracy'
-                + ' at 99.5%; manual'
-                + ' reconciliation'
-                + ' eliminated; stock'
-                + ' discrepancies down 90%',
         },
     ];
 

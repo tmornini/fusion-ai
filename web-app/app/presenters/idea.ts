@@ -54,10 +54,8 @@ export class IdeaPresenter {
     readonly #submittedBy: string;
     readonly #submittedAt: string;
     readonly #problemStatement: string;
-    readonly #description: string;
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
-    readonly #successMetrics: string;
     readonly #isReviewable: boolean;
     readonly #isConvertible: boolean;
 
@@ -74,13 +72,10 @@ export class IdeaPresenter {
         this.#submittedAt = idea.submittedAt;
         this.#problemStatement =
             idea.problemStatement;
-        this.#description = idea.description;
         this.#proposedSolution =
             idea.proposedSolution;
         this.#expectedOutcome =
             idea.expectedOutcome;
-        this.#successMetrics =
-            idea.successMetrics;
         this.#isReviewable =
             idea.isReviewable();
         this.#isConvertible =
@@ -564,30 +559,6 @@ export class IdeaPresenter {
                 <p class="${
                     'text-xs text-muted mb-1'
                 }">
-                    Target Users
-                </p>
-                ${isEditing
-                    ? html`<textarea
-                        class="textarea"
-                        id="${
-                            'idea-edit-'
-                            + 'target-users'
-                        }"
-                        rows="2"
-                        style="resize:none"
-                        >${this
-                            .#description
-                        }</textarea>`
-                    : html`<p class="text-sm">
-                        ${displayText(
-                            this.#description,
-                        )}
-                        </p>`}
-            </div>
-            <div>
-                <p class="${
-                    'text-xs text-muted mb-1'
-                }">
                     Proposed Solution
                 </p>
                 ${isEditing
@@ -631,31 +602,6 @@ export class IdeaPresenter {
                         ${displayText(
                             this
                                 .#expectedOutcome,
-                        )}
-                        </p>`}
-            </div>
-            <div>
-                <p class="${
-                    'text-xs text-muted mb-1'
-                }">
-                    Success Metrics
-                </p>
-                ${isEditing
-                    ? html`<textarea
-                        class="textarea"
-                        id="${
-                            'idea-edit-'
-                            + 'metrics'
-                        }"
-                        rows="3"
-                        style="resize:none"
-                        >${this
-                            .#successMetrics
-                        }</textarea>`
-                    : html`<p class="text-sm">
-                        ${displayText(
-                            this
-                                .#successMetrics,
                         )}
                         </p>`}
             </div>

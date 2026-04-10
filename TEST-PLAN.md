@@ -72,8 +72,8 @@ on. Run these in order.
 
 ### AA4. Create Ideas
 
-- [ ] **AA12** Navigate to Ideas. Click "Create Idea". Complete the 3-step wizard for "AI-Powered Customer Segmentation" (title, problem, solution, outcome, metrics). PASS: idea appears on ideas list.
-- [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Verify only title and text fields (problem, solution, outcome, target users, metrics) are editable. Click "Save". PASS: toast confirms save, all fields persist.
+- [ ] **AA12** Navigate to Ideas. Click "Create Idea". Fill in title, problem, solution, and outcome for "AI-Powered Customer Segmentation". Click "Submit Idea". PASS: idea appears on ideas list.
+- [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Verify title and text fields (problem, solution, outcome) are editable. Click "Save". PASS: toast confirms save, all fields persist.
 - [ ] **AA14** Repeat creation and field entry for all 11 ideas matching mock data titles. PASS: ideas list shows all 11 with correct titles.
 
 ### AA5. Submit Ideas for Review
@@ -272,24 +272,18 @@ on. Run these in order.
 - [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
 - [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `ideas/create.html`.
 
-### Idea Create Wizard (`ideas/create.html`)
+### Idea Create Form (`ideas/create.html`)
 
-- [ ] **D5** Page loads showing Step 1 of 3 ("The Problem") with a progress bar. PASS: step indicator shows step 1 active, steps 2 and 3 inactive.
-- [ ] **D6** "Continue" button is disabled when Title and Problem Statement are empty. PASS: button is visually disabled and not clickable.
-- [ ] **D7** Enter a Title and Problem Statement. PASS: "Continue" button becomes enabled.
-- [ ] **D8** Click "Continue". PASS: advances to Step 2 ("The Solution"), progress bar updates.
-- [ ] **D9** Step 2 shows "Proposed Solution" textarea (required). "Continue" is disabled until text is entered. PASS: button enables after typing.
-- [ ] **D10** Click "Continue". PASS: advances to Step 3 ("The Impact"), button label changes to "Submit Idea".
-- [ ] **D11** Step 3 shows "Expected Outcome" (required) and "Success Metrics" (optional). "Submit Idea" disabled until Expected Outcome is filled. PASS: button enables after typing in Expected Outcome.
+- [ ] **D5** Page loads showing a single-page form with four fields: Title, Problem Statement, Proposed Solution, Expected Outcome. PASS: all four fields visible.
+- [ ] **D6** "Submit Idea" button is disabled when any required field is empty. PASS: button is visually disabled and not clickable.
+- [ ] **D7** Fill in all four fields. PASS: "Submit Idea" button becomes enabled.
 - [ ] **D12** Click "Submit Idea". PASS: navigates to `ideas/index.html`.
-- [ ] **D13** On Step 2, click "Back". PASS: returns to Step 1 with previously entered data preserved.
-- [ ] **D14** On Step 1, click "Cancel" (or "Back"). PASS: navigates to `ideas/` list.
-- [ ] **D15** "Generate with AI" button is present in the header. PASS: button is visible (no action expected — UI placeholder).
+- [ ] **D14** Click "Cancel". PASS: navigates to `ideas/` list.
 
 ### Idea Detail (`ideas/detail.html?ideaId=1`)
 
 - [ ] **D16** Navigate to `ideas/detail.html?ideaId=1`. PASS: page loads with idea title, status badge, and "Submitted by [name] @ [date/time]" in the header.
-- [ ] **D17** Page displays one card: Problem & Solution (Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). PASS: all fields populated. No Details or Estimates cards.
+- [ ] **D17** Page displays one card: Problem & Solution (Problem Statement, Proposed Solution, Expected Outcome). PASS: all fields populated. No Details or Estimates cards.
 - [ ] **D18** Click "Edit" button. PASS: text fields become editable inputs/textareas, Save and Cancel buttons appear, Edit button hides.
 - [ ] **D19** Modify a field (e.g. title), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
 
@@ -315,7 +309,7 @@ on. Run these in order.
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D20** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 5 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Cost (text input). Sticky sidebar shows "Problem & Solution" with title, problem, target users, solution, expected outcome, and success metrics.
+- [ ] **D20** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 5 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Cost (text input). Sticky sidebar shows "Problem & Solution" with title, problem, solution, and expected outcome.
 - [ ] **D20b** With required fields empty, "Create Project" button is disabled and progress bar shows 0/5. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 5 required fields are filled.
 - [ ] **D21** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
@@ -336,7 +330,7 @@ on. Run these in order.
 
 ### Ideas Workflow Integration
 
-- [ ] **D31** After completing the idea-create wizard through to idea convert, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
+- [ ] **D31** After creating an idea and converting it to a project, navigate back to `ideas/`. PASS: the ideas list still loads correctly with seed data.
 - [ ] **D32** Navigate from ideas list → idea convert → back button. PASS: navigates to ideas list.
 - [ ] **D33** Navigate to `ideas/convert.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows empty/error state, no unhandled JS exception.
 
@@ -791,8 +785,8 @@ on. Run these in order.
 - [ ] **I20j** Idea conversion: fill required fields,
   press Enter in project name. PASS: conversion
   submits (if all required fields complete).
-- [ ] **I20k** Idea create wizard: type a title,
-  press Enter. PASS: wizard advances to next step.
+- [ ] **I20k** Idea create form: type a title,
+  press Enter. PASS: submits if all fields complete.
 - [ ] **I20l** Any dialog: press Escape. PASS: dialog
   closes without submitting.
 - [ ] **I20m** Ideas detail: click Edit, press Enter
