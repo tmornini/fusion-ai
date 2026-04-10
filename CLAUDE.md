@@ -114,7 +114,7 @@ import { iconPlus, iconTrash } from '../app/icons';
 import { navigateTo, openDialog, closeDialog } from '../app/core';
 ```
 
-`core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `durationInDays`, `formatCompactCurrency`, `SECONDS_PER_DAY`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
+`core.ts` re-exports from `format.ts`, `navigation.ts`, and `dialog.ts` so page modules can import `navigateTo`, `initials`, `durationInDays`, `formatDateTime`, `formatCompactCurrency`, `SECONDS_PER_DAY`, `openDialog`, `closeDialog`, `initTabs` from `'../app/core'`. The `adapters/` directory retains its barrel re-export (`adapters/index.ts`).
 
 **Page modules never import from `api/api.ts`** — all data access (reads and writes) goes through the adapter layer (`adapters/`). Only adapter modules import from the API layer directly.
 
@@ -193,7 +193,7 @@ web-app/
     database-init.ts          # initDatabase(), handleDatabaseError()
     page-loader.ts            # Page module registry, loadAndInitPage(), handlePageLoadError()
     page-registry.ts          # PAGE_REGISTRY: maps page names → sidebar/standalone classification + sourceDir/sourceFile overrides
-    format.ts                 # initials(), durationInDays(), formatCompactCurrency(), SECONDS_PER_DAY, DISPLAY_ABSENT
+    format.ts                 # initials(), durationInDays(), formatCompactCurrency(), formatDateTime(), SECONDS_PER_DAY, DISPLAY_ABSENT
     layout.ts                 # Sidebar collapse/expand + initSidebarLayout() orchestrator
     theme-toggle.ts           # Theme toggle icon, dropdown init
     sidebar-user.ts           # Sidebar user info fetch and display

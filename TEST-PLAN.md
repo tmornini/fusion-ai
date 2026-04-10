@@ -73,7 +73,7 @@ on. Run these in order.
 ### AA4. Create Ideas
 
 - [ ] **AA12** Navigate to Ideas. Click "Create Idea". Complete the 3-step wizard for "AI-Powered Customer Segmentation" (title, problem, solution, outcome, metrics). PASS: idea appears on ideas list.
-- [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Set remaining fields: category, estimated impact, duration (days), cost. Click "Save". PASS: toast confirms save, all fields persist.
+- [ ] **AA13** Navigate to the new idea's detail page. Click "Edit". Verify only title and text fields (problem, solution, outcome, target users, metrics) are editable. Click "Save". PASS: toast confirms save, all fields persist.
 - [ ] **AA14** Repeat creation and field entry for all 11 ideas matching mock data titles. PASS: ideas list shows all 11 with correct titles.
 
 ### AA5. Submit Ideas for Review
@@ -288,8 +288,8 @@ on. Run these in order.
 
 ### Idea Detail (`ideas/detail.html?ideaId=1`)
 
-- [ ] **D16** Navigate to `ideas/detail.html?ideaId=1`. PASS: page loads with idea title, status badge, "Submitted by" name, and submission date.
-- [ ] **D17** Page displays three cards: Problem & Solution (Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics), Details (Category, Submitted by, Submitted at), and Estimates (Impact, Duration in days, Cost). PASS: all fields populated.
+- [ ] **D16** Navigate to `ideas/detail.html?ideaId=1`. PASS: page loads with idea title, status badge, and "Submitted by [name] @ [date/time]" in the header.
+- [ ] **D17** Page displays one card: Problem & Solution (Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). PASS: all fields populated. No Details or Estimates cards.
 - [ ] **D18** Click "Edit" button. PASS: text fields become editable inputs/textareas, Save and Cancel buttons appear, Edit button hides.
 - [ ] **D19** Modify a field (e.g. title), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
 
