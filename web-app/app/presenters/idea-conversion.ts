@@ -25,7 +25,6 @@ type ConversionField =
     | 'start-date'
     | 'target-end-date'
     | 'budget'
-    | 'priority'
     | 'success-criteria';
 
 const REQUIRED_FIELDS:
@@ -35,7 +34,6 @@ const REQUIRED_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
-    'priority',
 ];
 
 const ALL_FIELDS:
@@ -45,7 +43,6 @@ const ALL_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
-    'priority',
     'success-criteria',
 ];
 
@@ -58,8 +55,10 @@ interface LeadOption {
 export class IdeaConversionPresenter {
     readonly #title: string;
     readonly #problemStatement: string;
+    readonly #description: string;
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
+    readonly #successMetrics: string;
     readonly #leadOptions: LeadOption[];
     #fields: Record<
         ConversionField, string
@@ -72,10 +71,14 @@ export class IdeaConversionPresenter {
         this.#title = idea.title;
         this.#problemStatement =
             idea.problemStatement;
+        this.#description =
+            idea.description;
         this.#proposedSolution =
             idea.proposedSolution;
         this.#expectedOutcome =
             idea.expectedOutcome;
+        this.#successMetrics =
+            idea.successMetrics;
         this.#leadOptions = users
             .filter(u => u.isActive())
             .map(u => ({
@@ -89,7 +92,6 @@ export class IdeaConversionPresenter {
             'start-date': '',
             'target-end-date': '',
             'budget': '',
-            'priority': '',
             'success-criteria': '',
         };
     }
@@ -294,7 +296,8 @@ export class IdeaConversionPresenter {
                         ${iconFolderKanban(
                             16, '',
                         )}
-                        Idea Summary
+                        ${'Problem'
+                            + ' & Solution'}
                     </div>
                     <h2 class="${
                         'text-xl'
@@ -327,7 +330,27 @@ export class IdeaConversionPresenter {
                                 this
                                 .#problemStatement
                             }</p>
-                        </div>
+                        </div>${
+                        this.#description
+                            ? html`
+                        <div>
+                            <h4 class="${
+                                'text-sm'
+                                + ' font-medium'
+                                + ' text-muted'
+                                + ' mb-1'
+                            }">
+                                ${'Target'
+                                    + ' Users'}
+                            </h4>
+                            <p class="${
+                                'text-sm'
+                            }">${
+                                this
+                                .#description
+                            }</p>
+                        </div>`
+                            : html``}
                         <div>
                             <h4 class="${
                                 'text-sm'
@@ -360,7 +383,27 @@ export class IdeaConversionPresenter {
                                 this
                                 .#expectedOutcome
                             }</p>
-                        </div>
+                        </div>${
+                        this.#successMetrics
+                            ? html`
+                        <div>
+                            <h4 class="${
+                                'text-sm'
+                                + ' font-medium'
+                                + ' text-muted'
+                                + ' mb-1'
+                            }">
+                                ${'Success'
+                                    + ' Metrics'}
+                            </h4>
+                            <p class="${
+                                'text-sm'
+                            }">${
+                                this
+                                .#successMetrics
+                            }</p>
+                        </div>`
+                            : html``}
                     </div>
                 </div>
             </div>`;
@@ -559,8 +602,7 @@ export class IdeaConversionPresenter {
                                 16,
                                 'text-muted',
                             )}
-                            ${'Allocated'
-                                + ' Budget'}
+                            Cost
                             ${this.#fieldCheck(
                                 'budget',
                             )}
@@ -611,93 +653,6 @@ export class IdeaConversionPresenter {
                                     + '1.75rem'
                                 }" />
                         </div>
-                    </div>
-                    <div>
-                        <label class="${
-                            'label mb-2'
-                            + ' font-medium'
-                            + ' flex'
-                            + ' items-center'
-                            + ' gap-2'
-                        }">
-                            Priority Level
-                            ${this.#fieldCheck(
-                                'priority',
-                            )}
-                        </label>
-                        <select
-                            class="input"
-                            id="${
-                                'convert'
-                                + '-priority'
-                            }">
-                            <option value="">
-                                ${'How urgent'
-                                    + ' is this'
-                                    + ' project?'}
-                            </option>
-                            <option
-                                value="${
-                                    'critical'
-                                }"
-                                ${trusted(
-                                    f[
-                                    'priority'
-                                    ] ===
-                                    'critical'
-                                    ? 'selected'
-                                    : '',
-                                )}>
-                                ${'Critical'
-                                    + ' - Must'
-                                    + ' start'
-                                    + ' immediately'}
-                            </option>
-                            <option
-                                value="high"
-                                ${trusted(
-                                    f[
-                                    'priority'
-                                    ] ===
-                                    'high'
-                                    ? 'selected'
-                                    : '',
-                                )}>
-                                ${'High'
-                                    + ' - Start'
-                                    + ' within'
-                                    + ' 2 weeks'}
-                            </option>
-                            <option
-                                value="medium"
-                                ${trusted(
-                                    f[
-                                    'priority'
-                                    ] ===
-                                    'medium'
-                                    ? 'selected'
-                                    : '',
-                                )}>
-                                ${'Medium'
-                                    + ' - Start'
-                                    + ' within'
-                                    + ' 1 month'}
-                            </option>
-                            <option
-                                value="low"
-                                ${trusted(
-                                    f[
-                                    'priority'
-                                    ] ===
-                                    'low'
-                                    ? 'selected'
-                                    : '',
-                                )}>
-                                ${'Low - Can'
-                                    + ' wait for'
-                                    + ' capacity'}
-                            </option>
-                        </select>
                     </div>
                 </div>
             </div>`;

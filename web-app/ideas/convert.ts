@@ -27,29 +27,12 @@ import {
     IdeaConversionPresenter,
 } from '../app/presenters/idea-conversion';
 
-type PriorityRank =
-    | 'critical'
-    | 'high'
-    | 'medium'
-    | 'low';
-
-const PRIORITY_RANKS: Record<
-    PriorityRank,
-    number
-> = {
-    critical: 1,
-    high: 2,
-    medium: 3,
-    low: 4,
-};
-
 type ConversionField =
     | 'project-name'
     | 'project-lead'
     | 'start-date'
     | 'target-end-date'
     | 'budget'
-    | 'priority'
     | 'success-criteria';
 
 const ALL_FIELDS:
@@ -59,7 +42,6 @@ const ALL_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
-    'priority',
     'success-criteria',
 ];
 
@@ -418,19 +400,26 @@ export async function init(
             },
         );
 
+        const goBack =
+            params?.['from'] === 'detail'
+                ? () => navigateTo(
+                    'idea-detail',
+                    { ideaId },
+                )
+                : () => navigateTo(
+                    'ideas',
+                );
         $(
             '#convert-back-to-ideas',
             document,
         )?.addEventListener(
-            'click',
-            () => navigateTo('ideas'),
+            'click', goBack,
         );
         $(
             '#convert-back-to-ideas-2',
             document,
         )?.addEventListener(
-            'click',
-            () => navigateTo('ideas'),
+            'click', goBack,
         );
     }
 
@@ -444,9 +433,6 @@ async function performConversion(
 ): Promise<void> {
     const leadUserId =
         pd['project-lead']!;
-    const priorityKey = pd[
-        'priority'
-    ]! as PriorityRank;
     await putProject(
         projectId,
         {
@@ -470,11 +456,6 @@ async function performConversion(
             actual_cost: 0,
             estimated_impact: 0,
             actual_impact: 0,
-            priority:
-                PRIORITY_RANKS[
-                    priorityKey
-                ],
-            priority_score: 0,
             position: 0,
             business_context:
                 jsonObjectField({}),
