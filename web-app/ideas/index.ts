@@ -210,6 +210,7 @@ export async function init(): Promise<void> {
                                     'data-idea'
                                     + '-convert',
                                 ),
+                                from: 'list',
                             },
                         );
                     return;

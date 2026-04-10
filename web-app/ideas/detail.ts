@@ -160,7 +160,7 @@ function bindIdeaEvents(
             'click',
             () => navigateTo(
                 'idea-convert',
-                { ideaId },
+                { ideaId, from: 'detail' },
             ),
         );
     $(
