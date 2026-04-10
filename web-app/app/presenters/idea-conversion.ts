@@ -2,6 +2,9 @@ import {
     html, SafeHtml, trusted,
 } from '../safe-html';
 import {
+    displayText,
+} from '../core';
+import {
     iconDollarSign,
     iconArrowRight,
     iconArrowLeft,
@@ -9,7 +12,7 @@ import {
     iconRocket,
     iconCalendar,
     iconUsers,
-    iconFolderKanban,
+    iconTrendingUp,
     iconCheckCircle2,
 } from '../icons';
 import type {
@@ -25,6 +28,7 @@ type ConversionField =
     | 'start-date'
     | 'target-end-date'
     | 'budget'
+    | 'impact'
     | 'success-criteria';
 
 const REQUIRED_FIELDS:
@@ -34,6 +38,7 @@ const REQUIRED_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
+    'impact',
 ];
 
 const ALL_FIELDS:
@@ -43,6 +48,7 @@ const ALL_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
+    'impact',
     'success-criteria',
 ];
 
@@ -92,6 +98,7 @@ export class IdeaConversionPresenter {
             'start-date': '',
             'target-end-date': '',
             'budget': '',
+            'impact': '',
             'success-criteria': '',
         };
     }
@@ -286,124 +293,119 @@ export class IdeaConversionPresenter {
                         + 'sticky;'
                         + 'top:6rem'
                     }">
-                    <div class="${
-                        'flex items-center'
-                        + ' gap-2 text-sm'
-                        + ' font-medium'
-                        + ' text-muted'
+                    <h2 class="${
+                        'text-lg'
+                        + ' font-display'
+                        + ' font-semibold'
                         + ' mb-4'
                     }">
-                        ${iconFolderKanban(
-                            16, '',
-                        )}
                         ${'Problem'
                             + ' & Solution'}
-                    </div>
-                    <h2 class="${
+                    </h2>
+                    <p class="${
                         'text-xl'
                         + ' font-display'
                         + ' font-bold'
                         + ' mb-4'
                     }">${
                         this.#title
-                    }</h2>
+                    }</p>
                     <div style="${
                         'display:flex;'
                         + 'flex-direction:'
                         + 'column;'
-                        + 'gap:1rem;'
-                        + 'margin-bottom:'
-                        + '1.5rem'
+                        + 'gap:1.25rem'
                     }">
                         <div>
-                            <h4 class="${
-                                'text-sm'
-                                + ' font-medium'
+                            <p class="${
+                                'text-xs'
                                 + ' text-muted'
                                 + ' mb-1'
                             }">
-                                Problem
-                            </h4>
+                                ${'Problem'
+                                + ' Statement'}
+                            </p>
                             <p class="${
                                 'text-sm'
                             }">${
+                                displayText(
                                 this
                                 .#problemStatement
+                                )
                             }</p>
-                        </div>${
-                        this.#description
-                            ? html`
+                        </div>
                         <div>
-                            <h4 class="${
-                                'text-sm'
-                                + ' font-medium'
+                            <p class="${
+                                'text-xs'
                                 + ' text-muted'
                                 + ' mb-1'
                             }">
                                 ${'Target'
                                     + ' Users'}
-                            </h4>
+                            </p>
                             <p class="${
                                 'text-sm'
                             }">${
+                                displayText(
                                 this
                                 .#description
-                            }</p>
-                        </div>`
-                            : html``}
-                        <div>
-                            <h4 class="${
-                                'text-sm'
-                                + ' font-medium'
-                                + ' text-muted'
-                                + ' mb-1'
-                            }">
-                                Solution
-                            </h4>
-                            <p class="${
-                                'text-sm'
-                            }">${
-                                this
-                                .#proposedSolution
+                                )
                             }</p>
                         </div>
                         <div>
-                            <h4 class="${
+                            <p class="${
+                                'text-xs'
+                                + ' text-muted'
+                                + ' mb-1'
+                            }">
+                                ${'Proposed'
+                                + ' Solution'}
+                            </p>
+                            <p class="${
                                 'text-sm'
-                                + ' font-medium'
+                            }">${
+                                displayText(
+                                this
+                                .#proposedSolution
+                                )
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="${
+                                'text-xs'
                                 + ' text-muted'
                                 + ' mb-1'
                             }">
                                 ${'Expected'
-                                    + ' Outcome'}
-                            </h4>
+                                + ' Outcome'}
+                            </p>
                             <p class="${
                                 'text-sm'
                             }">${
+                                displayText(
                                 this
                                 .#expectedOutcome
+                                )
                             }</p>
-                        </div>${
-                        this.#successMetrics
-                            ? html`
+                        </div>
                         <div>
-                            <h4 class="${
-                                'text-sm'
-                                + ' font-medium'
+                            <p class="${
+                                'text-xs'
                                 + ' text-muted'
                                 + ' mb-1'
                             }">
                                 ${'Success'
-                                    + ' Metrics'}
-                            </h4>
+                                + ' Metrics'}
+                            </p>
                             <p class="${
                                 'text-sm'
                             }">${
+                                displayText(
                                 this
                                 .#successMetrics
+                                )
                             }</p>
-                        </div>`
-                            : html``}
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -651,6 +653,70 @@ export class IdeaConversionPresenter {
                                     'padding-'
                                     + 'left:'
                                     + '1.75rem'
+                                }" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="${
+                            'label mb-2'
+                            + ' font-medium'
+                            + ' flex'
+                            + ' items-center'
+                            + ' gap-2'
+                        }">
+                            ${iconTrendingUp(
+                                16,
+                                'text-muted',
+                            )}
+                            Impact
+                            ${this.#fieldCheck(
+                                'impact',
+                            )}
+                        </label>
+                        <div style="${
+                            'position:'
+                            + 'relative'
+                        }">
+                            <span style="${
+                                'position:'
+                                + 'absolute;'
+                                + 'right:'
+                                + '0.75rem;'
+                                + 'top:50%;'
+                                + 'transform:'
+                                + 'translateY'
+                                + '(-50%);'
+                                + 'color:'
+                                + 'hsl(var('
+                                + '--muted-'
+                                + 'foreground'
+                                + '));'
+                                + 'pointer-'
+                                + 'events:'
+                                + 'none'
+                            }">pts</span>
+                            <input
+                                class="input"
+                                type="text"
+                                inputmode="${
+                                    'numeric'
+                                }"
+                                id="${
+                                    'convert'
+                                    + '-impact'
+                                }"
+                                placeholder="${
+                                    'Enter'
+                                    + ' impact'
+                                    + ' points'
+                                }"
+                                value="${
+                                    f['impact']
+                                }"
+                                style="${
+                                    'padding-'
+                                    + 'right:'
+                                    + '2.5rem'
                                 }" />
                         </div>
                     </div>

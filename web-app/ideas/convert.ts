@@ -33,6 +33,7 @@ type ConversionField =
     | 'start-date'
     | 'target-end-date'
     | 'budget'
+    | 'impact'
     | 'success-criteria';
 
 const ALL_FIELDS:
@@ -42,6 +43,7 @@ const ALL_FIELDS:
     'start-date',
     'target-end-date',
     'budget',
+    'impact',
     'success-criteria',
 ];
 
@@ -325,6 +327,9 @@ export async function init(
         bindEnterToClick(
             '#convert-budget', submitSel,
         );
+        bindEnterToClick(
+            '#convert-impact', submitSel,
+        );
 
         $(
             '#convert-submit-btn',
@@ -454,7 +459,10 @@ async function performConversion(
             actual_duration: 0,
             estimated_cost: 0,
             actual_cost: 0,
-            estimated_impact: 0,
+            estimated_impact:
+                Number(
+                    pd['impact']!,
+                ) || 0,
             actual_impact: 0,
             position: 0,
             business_context:
