@@ -195,33 +195,6 @@ export class IdeaPresenter {
                 + 'padding-bottom:'
                 + '0.5rem'
             }">
-            ${this.#isReviewable
-                ? html`
-            <button
-                class="${
-                    'btn btn-outline'
-                    + ' btn-sm gap-2'
-                }"
-                style="${
-                    'border-color:'
-                    + 'hsl('
-                    + 'var(--warning)'
-                    + '/0.3);'
-                    + 'color:hsl('
-                    + 'var(--warning))'
-                }"
-                data-idea-review="${this.#id}">
-                ${iconClipboardCheck(
-                    16, '',
-                )}
-                <span
-                    class="${
-                        'hidden-'
-                        + 'mobile'
-                    }">
-                    Review
-                </span>
-            </button>` : html``}
             ${this.#isConvertible
                 ? html`
             <button
