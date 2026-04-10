@@ -253,28 +253,6 @@ function bindApprovalEvents(
         },
     );
 
-    initDialog(
-        'approval-clarify',
-        'approval-clarify-btn',
-    );
-    $(
-        '#approval-clarify-confirm',
-        document,
-    )?.addEventListener(
-        'click',
-        () => {
-            showToast(
-                'Clarification'
-                + ' requested',
-                'info',
-            );
-            closeDialog(
-                'approval-clarify',
-            );
-        },
-    );
-
-
 }
 
 function mutateIdeaPage(

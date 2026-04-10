@@ -13,7 +13,6 @@ import {
     iconCheckCircle,
     iconCheckCircle2,
     iconXCircle,
-    iconMessageSquare,
     iconEdit,
     iconSave,
     iconX,
@@ -425,33 +424,7 @@ export class IdeaPresenter {
                 'action-footer-inner'
             }">
                 <div class="flex items-center
-                    justify-between gap-4">
-                    <button
-                        class="${
-                            'btn btn-outline'
-                            + ' gap-2'
-                        }"
-                        id="${
-                            'approval-clarify'
-                            + '-btn'
-                        }">
-                        ${iconMessageSquare(
-                            16, '',
-                        )}
-                        <span class="${
-                            'hidden-mobile'
-                        }">
-                            ${'Request'
-                                + ' Clarification'}
-                        </span>
-                        <span
-                            class="${
-                                'visible-'
-                                + 'mobile'
-                            }">
-                            Clarify
-                        </span>
-                    </button>
+                    justify-end gap-4">
                     <div class="flex gap-3">
                         <button
                             class="${
@@ -575,80 +548,6 @@ export class IdeaPresenter {
                         + '-confirm'
                     }">
                     Send Back
-                </button>
-            </div>
-        </div>
-
-        <div
-            id="${
-                'approval-clarify'
-                + '-backdrop'
-            }"
-            class="${
-                'dialog-backdrop hidden'
-            }">
-        </div>
-        <div
-            id="${
-                'approval-clarify'
-                + '-dialog'
-            }"
-            class="dialog hidden"
-            role="dialog"
-            aria-modal="true"
-            style="max-width:28rem">
-            <div class="dialog-header">
-                <h3 class="dialog-title">
-                    ${'Request'
-                        + ' Clarification'}
-                </h3>
-                <p class="${
-                    'dialog-description'
-                }">
-                    ${'Ask the submitter'
-                        + ' for additional'
-                        + ' details before'
-                        + ' making a'
-                        + ' decision.'}
-                </p>
-            </div>
-            <div class="py-4">
-                <textarea
-                    class="${
-                        'textarea'
-                        + ' resize-none'
-                    }"
-                    id=${'approval'
-                        + '-clarify'
-                        + '-feedback'}
-                    placeholder="${
-                        'What additional'
-                        + ' information'
-                        + ' do you'
-                        + ' need?'
-                    }"
-                    rows="4">
-                </textarea>
-            </div>
-            <div class="dialog-footer">
-                <button
-                    class="${
-                        'btn btn-outline'
-                    }"
-                    id="${
-                        'approval-clarify'
-                        + '-cancel'
-                    }">
-                    Cancel
-                </button>
-                <button
-                    class="${
-                        'btn btn-primary'
-                    }"
-                    id=${'approval'
-                        + '-clarify'
-                        + '-confirm'}>
-                    Send Request
                 </button>
             </div>
         </div>`;
