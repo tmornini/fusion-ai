@@ -74,7 +74,7 @@ export class ProjectPresenter {
         this.#timeCurrentDays =
             isNaN(start)
                 ? 0
-                : Math.max(0, Math.ceil(
+                : Math.max(0, Math.floor(
                     (Date.now() - start)
                     / msPerDay,
                 ));

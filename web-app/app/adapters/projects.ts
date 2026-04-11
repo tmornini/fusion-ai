@@ -124,7 +124,7 @@ export class ProjectView {
             this.project.startDate,
         ).getTime();
         if (isNaN(start)) return 0;
-        return Math.max(0, Math.ceil(
+        return Math.max(0, Math.floor(
             (Date.now() - start)
             / (SECONDS_PER_DAY * 1000),
         ));

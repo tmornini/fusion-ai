@@ -457,7 +457,10 @@ async function performConversion(
                 ]!,
             estimated_duration: 0,
             actual_duration: 0,
-            estimated_cost: 0,
+            estimated_cost:
+                Number(
+                    pd['budget']!,
+                ) || 0,
             actual_cost: 0,
             estimated_impact:
                 Number(
