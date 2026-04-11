@@ -351,13 +351,12 @@ async function handleV2Zip(
         resolution,
     };
     configureResolutionDialog(
-        resolution, backup,
+        resolution,
     );
 }
 
 function configureResolutionDialog(
     resolution: ImportResolution,
-    backup: BackupV2,
 ): void {
     const desc = $(
         '#import-description',
@@ -386,74 +385,21 @@ function configureResolutionDialog(
         || !createBtn || !chooseBtn
     ) return;
 
-    const name = backup.flow.name;
-
+    const cfg = resolution.dialog;
     chooseBtn.classList.add('hidden');
-
-    if (
-        resolution.case === '1a'
-    ) {
-        desc.textContent =
-            '\u2018' + name
-            + '\u2019 already exists'
-            + ' in \u2018'
-            + resolution.projectName
-            + '\u2019.';
-        projectSec.classList
-            .add('hidden');
-        overwriteBtn.classList
-            .remove('hidden');
-        createNewBtn.classList
-            .remove('hidden');
-        createBtn.classList
-            .add('hidden');
-    } else if (
-        resolution.case === '1b'
-    ) {
-        desc.textContent =
-            'Project \u2018'
-            + resolution.projectName
-            + '\u2019 found. \u2018'
-            + name
-            + '\u2019 will be created.';
-        projectSec.classList
-            .add('hidden');
-        overwriteBtn.classList
-            .add('hidden');
-        createNewBtn.classList
-            .remove('hidden');
-        createBtn.classList
-            .add('hidden');
-    } else if (
-        resolution.case === '2a'
-    ) {
-        desc.textContent =
-            '\u2018' + name
-            + '\u2019 exists but its'
-            + ' project does not.';
-        projectSec.classList
-            .add('hidden');
-        overwriteBtn.classList
-            .remove('hidden');
-        createNewBtn.classList
-            .add('hidden');
-        createBtn.classList
-            .add('hidden');
-    } else {
-        desc.textContent =
-            'Neither \u2018' + name
-            + '\u2019 nor its project'
-            + ' exist. Select a'
-            + ' project.';
-        projectSec.classList
-            .remove('hidden');
-        overwriteBtn.classList
-            .add('hidden');
-        createNewBtn.classList
-            .add('hidden');
-        createBtn.classList
-            .remove('hidden');
-    }
+    desc.textContent = cfg.description;
+    projectSec.classList.toggle(
+        'hidden', !cfg.showProject,
+    );
+    overwriteBtn.classList.toggle(
+        'hidden', !cfg.showOverwrite,
+    );
+    createNewBtn.classList.toggle(
+        'hidden', !cfg.showCreateNew,
+    );
+    createBtn.classList.toggle(
+        'hidden', !cfg.showCreate,
+    );
 }
 
 function resetImportDialog(): void {
@@ -539,11 +485,10 @@ async function handleCreateNew(
         return;
     const { backup, resolution } =
         importStore.state;
-    const projectId =
-        resolution.case === '1a'
-        || resolution.case === '1b'
-            ? backup.projectId!
-            : undefined;
+    if (!resolution.dialog
+        .hasKnownProject
+    ) return;
+    const projectId = backup.projectId;
     if (!projectId) return;
     closeDialog('import-flow');
     resetImportDialog();

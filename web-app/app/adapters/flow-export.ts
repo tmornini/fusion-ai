@@ -153,17 +153,80 @@ export interface BackupV2 {
     };
 }
 
-export type ImportResolution =
-    | {
-        case: '1a';
-        projectName: string;
+export interface ImportDialogConfig {
+    description: string;
+    showProject: boolean;
+    showOverwrite: boolean;
+    showCreateNew: boolean;
+    showCreate: boolean;
+    hasKnownProject: boolean;
+}
+
+export interface ImportResolution {
+    dialog: ImportDialogConfig;
+}
+
+function buildDialogConfig(
+    flowName: string,
+    projectName: string | undefined,
+    flowExists: boolean,
+): ImportDialogConfig {
+    if (projectName && flowExists) {
+        return {
+            description:
+                '\u2018' + flowName
+                + '\u2019 already exists'
+                + ' in \u2018'
+                + projectName + '\u2019.',
+            showProject: false,
+            showOverwrite: true,
+            showCreateNew: true,
+            showCreate: false,
+            hasKnownProject: true,
+        };
     }
-    | {
-        case: '1b';
-        projectName: string;
+    if (projectName) {
+        return {
+            description:
+                'Project \u2018'
+                + projectName
+                + '\u2019 found. \u2018'
+                + flowName
+                + '\u2019 will be'
+                + ' created.',
+            showProject: false,
+            showOverwrite: false,
+            showCreateNew: true,
+            showCreate: false,
+            hasKnownProject: true,
+        };
     }
-    | { case: '2a' }
-    | { case: '2b' };
+    if (flowExists) {
+        return {
+            description:
+                '\u2018' + flowName
+                + '\u2019 exists but its'
+                + ' project does not.',
+            showProject: false,
+            showOverwrite: true,
+            showCreateNew: false,
+            showCreate: false,
+            hasKnownProject: false,
+        };
+    }
+    return {
+        description:
+            'Neither \u2018' + flowName
+            + '\u2019 nor its project'
+            + ' exist. Select a'
+            + ' project.',
+        showProject: true,
+        showOverwrite: false,
+        showCreateNew: false,
+        showCreate: true,
+        hasKnownProject: false,
+    };
+}
 
 async function getFlowBackupData(
     flowId: string,
@@ -328,22 +391,13 @@ export async function getFlowBackupResolution(
         )
         : undefined;
 
-    if (project && flowExists) {
-        return {
-            case: '1a',
-            projectName: project.title,
-        };
-    }
-    if (project) {
-        return {
-            case: '1b',
-            projectName: project.title,
-        };
-    }
-    if (flowExists) {
-        return { case: '2a' };
-    }
-    return { case: '2b' };
+    return {
+        dialog: buildDialogConfig(
+            backup.flow.name,
+            project?.title,
+            flowExists,
+        ),
+    };
 }
 
 export async function overwriteFlow(
