@@ -6,7 +6,7 @@ import type {
 import { User } from '../../../api/types';
 import { log } from '../logger';
 
-export async function buildUserMap(): Promise<Map<Id, User>> {
+export async function getUserMap(): Promise<Map<Id, User>> {
     const users = await GET<UserEntity[]>('users');
     return new Map(users.map(entity => [entity.id, new User(entity)]));
 }

@@ -10,7 +10,7 @@ import {
     SECONDS_PER_DAY,
 } from '../../../api/types';
 import {
-    buildUserMap,
+    getUserMap,
     userName,
 } from './helpers';
 
@@ -162,7 +162,7 @@ export async function getProjectById(
         GET<TeamMemberRow[]>(
             `projects/${projectId}/team`,
         ),
-        buildUserMap(),
+        getUserMap(),
     ]);
 
     const project = new Project(entity);

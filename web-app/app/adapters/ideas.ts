@@ -8,7 +8,7 @@ import {
     ideaIsVisible,
 } from '../../../api/types';
 import {
-    buildUserMap,
+    getUserMap,
     userName,
 } from './helpers';
 
@@ -20,7 +20,7 @@ export async function getIdeas(
         ideas, userMap, submissions,
     ] = await Promise.all([
         GET<IdeaEntity[]>('ideas'),
-        buildUserMap(),
+        getUserMap(),
         GET<IdeaSubmissionEntity[]>(
             'idea-submissions',
         ),
@@ -59,7 +59,7 @@ export async function getIdeaDetail(
         GET<IdeaEntity>(
             `ideas/${ideaId}`,
         ),
-        buildUserMap(),
+        getUserMap(),
         GET<IdeaSubmissionEntity[]>(
             'idea-submissions',
         ),
@@ -89,7 +89,7 @@ export async function getIdeaForConversion(
         GET<IdeaEntity>(
             `ideas/${ideaId}`,
         ),
-        buildUserMap(),
+        getUserMap(),
         GET<IdeaSubmissionEntity[]>(
             'idea-submissions',
         ),

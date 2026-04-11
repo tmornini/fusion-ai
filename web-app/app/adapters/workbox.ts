@@ -18,7 +18,7 @@ import {
     jsonObjectField,
 } from '../../../api/types';
 import {
-    buildUserMap,
+    getUserMap,
     userName,
     parseJson,
 } from './helpers';
@@ -160,7 +160,7 @@ export async function getWorkboxItems(
         GET<WorkOrderClaimEntity[]>(
             'work-order-claims',
         ),
-        buildUserMap(),
+        getUserMap(),
     ]);
 
     const transitionsByWo = Map.groupBy(
@@ -270,7 +270,7 @@ export async function getWorkboxItem(
         GET<WorkOrderClaimEntity[]>(
             'work-order-claims',
         ),
-        buildUserMap(),
+        getUserMap(),
     ]);
 
     const fg = parseFlowGraph(
