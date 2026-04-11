@@ -1356,13 +1356,66 @@ ${toolbar}
     zoomIn(): void {
         zoomInState(
             this.#state.interaction,
+            this.#selectedFocalPt(),
         );
     }
 
     zoomOut(): void {
         zoomOutState(
             this.#state.interaction,
+            this.#selectedFocalPt(),
         );
+    }
+
+    #selectedFocalPt(): {
+        x: number;
+        y: number;
+    } | null {
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind === 'node') {
+            const node =
+                this.#state.nodes.find(
+                    n => n.id
+                        === sel.nodeId,
+                );
+            if (!node) return null;
+            return {
+                x: node.positionX
+                    + NODE_WIDTH / 2,
+                y: node.positionY
+                    + NODE_HEIGHT / 2,
+            };
+        }
+        if (sel.kind === 'edge') {
+            const edge =
+                this.#state.edges.find(
+                    e => e.id
+                        === sel.edgeId,
+                );
+            if (!edge) return null;
+            const from =
+                this.#state.nodes.find(
+                    n => n.id
+                        === edge.fromNodeId,
+                );
+            const to =
+                this.#state.nodes.find(
+                    n => n.id
+                        === edge.toNodeId,
+                );
+            if (!from || !to) return null;
+            return {
+                x: (from.positionX
+                    + to.positionX
+                    + NODE_WIDTH) / 2,
+                y: (from.positionY
+                    + to.positionY
+                    + NODE_HEIGHT) / 2,
+            };
+        }
+        return null;
     }
 
     zoomToFit(): void {
