@@ -125,7 +125,7 @@ function bindProjectEvents(
         const status: ProjectStatus =
                 isProjectStatus(statusValue)
                         ? statusValue
-                        : project.status;
+                        : project.statusValue();
         const startDate =
                 $input(
                     '#project-edit-start-date',
@@ -150,7 +150,7 @@ function bindProjectEvents(
         );
         try {
             await putProject(
-                project.id,
+                project.idForLink(),
                 trimStrings({
                     title,
                     description,
@@ -182,9 +182,9 @@ function bindProjectEvents(
         );
         const [updated, updatedWfs] =
             await Promise.all([
-                getProjectById(project.id),
+                getProjectById(project.idForLink()),
                 getFlowsByProject(
-                    project.id,
+                    project.idForLink(),
                 ),
             ]);
         mutateProjectPage(
@@ -197,7 +197,7 @@ function bindProjectEvents(
             'click',
             () => openDialog('new-flow'),
         );
-    bindNewFlowDialog(project.id);
+    bindNewFlowDialog(project.idForLink());
 
     $$('[data-flow-id]', document)
         .forEach(el => {
@@ -215,7 +215,7 @@ function bindProjectEvents(
                         {
                             flowId: wfId,
                             projectId:
-                                project.id,
+                                project.idForLink(),
                         },
                     );
                 },
@@ -328,7 +328,7 @@ function mutateProjectPage(
     setHtml(
         container,
         presenter.buildDetailView(
-            project.id, flows, isEditing,
+            project.idForLink(), flows, isEditing,
         ),
     );
     bindProjectEvents(

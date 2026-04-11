@@ -266,7 +266,7 @@ function buildDetailView(
         : html`<div id="wo-transitions"
             class="flex gap-3 mb-6
                 flex-wrap">
-            ${detail.outgoingEdges.map(
+            ${detail.outgoingEdgeList().map(
                 e => html`<button
                     class="btn btn-primary"
                     data-edge-id="${e.id}">
@@ -295,14 +295,14 @@ function buildDetailView(
         <div id="wo-header" class="mb-6">
             <h1 class="text-2xl
                 font-bold mb-1">
-                ${detail.flowName}
+                ${detail.flowNameText()}
             </h1>
             <div class="flex items-center
                 gap-3">
                 <span
                     class="badge
                         badge-neutral">
-                    #${detail.displayId}
+                    #${detail.displayIdText()}
                 </span>
                 <span
                     class="badge
@@ -328,12 +328,12 @@ function buildDetailView(
                 History
             </summary>
             <div class="card p-4">
-                ${detail.history.length === 0
+                ${!detail.hasHistory()
                     ? html`<p
                         class="text-muted">
                         No history yet.
                     </p>`
-                    : detail.history
+                    : detail.historyEntries()
                         .toReversed()
                         .map(
                             buildHistoryEntry,
@@ -390,7 +390,7 @@ function initTransitionButtons(
                     await
                         postWorkOrderTransition({
                             workOrderId:
-                                detail.id,
+                                detail.idValue(),
                             edgeId,
                             values,
                             userId,

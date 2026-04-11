@@ -53,9 +53,9 @@ export interface DetailTeamMember {
 }
 
 export class ProjectView {
-    private readonly project: Project;
-    readonly projectLead: string;
-    readonly team:
+    readonly #project: Project;
+    readonly #projectLead: string;
+    readonly #team:
         readonly DetailTeamMember[];
 
     constructor(
@@ -64,60 +64,70 @@ export class ProjectView {
         team:
             readonly DetailTeamMember[],
     ) {
-        this.project = project;
-        this.projectLead = projectLead;
-        this.team = team;
+        this.#project = project;
+        this.#projectLead = projectLead;
+        this.#team = team;
     }
 
-    get id(): string {
-        return this.project.idForLink();
+    idForLink(): string {
+        return this.#project.idForLink();
     }
 
-    get title(): string {
-        return this.project.titleText();
+    titleText(): string {
+        return this.#project.titleText();
     }
 
-    get description(): string {
-        return this.project
+    descriptionText(): string {
+        return this.#project
             .descriptionText();
     }
 
-    get status(): ProjectStatus {
-        return this.project.statusValue();
+    statusValue(): ProjectStatus {
+        return this.#project
+            .statusValue();
     }
 
-    get progress(): number {
-        return this.project
+    progressPercent(): number {
+        return this.#project
             .timelineProgress();
     }
 
-    get startDate(): string {
-        return this.project
+    startDateValue(): string {
+        return this.#project
             .startDateValue();
     }
 
-    get targetEndDate(): string {
-        return this.project
+    targetEndDateValue(): string {
+        return this.#project
             .targetEndDateValue();
     }
 
+    projectLeadName(): string {
+        return this.#projectLead;
+    }
+
+    teamMembers():
+        readonly DetailTeamMember[] {
+        return this.#team;
+    }
+
     statusLabel(): string {
-        return this.project
+        return this.#project
             .statusLabel();
     }
 
     statusClassName(): string {
-        return this.project
+        return this.#project
             .statusClassName();
     }
 
     timeBaselineDays(): number {
         const start = new Date(
-            this.project
+            this.#project
                 .startDateValue(),
         ).getTime();
         const end = new Date(
-            this.project
+            this.#project
                 .targetEndDateValue(),
         ).getTime();
         if (isNaN(start) || isNaN(end))
@@ -130,7 +140,7 @@ export class ProjectView {
 
     timeCurrentDays(): number {
         const start = new Date(
-            this.project
+            this.#project
                 .startDateValue(),
         ).getTime();
         if (isNaN(start)) return 0;
@@ -141,24 +151,24 @@ export class ProjectView {
     }
 
     costBaselineK(): number {
-        return this.project
+        return this.#project
             .estimatedCostAmount()
             / COST_DIVISOR;
     }
 
     costCurrentK(): number {
-        return this.project
+        return this.#project
             .actualCostAmount()
             / COST_DIVISOR;
     }
 
     impactBaseline(): number {
-        return this.project
+        return this.#project
             .estimatedImpactScore();
     }
 
     impactCurrent(): number {
-        return this.project
+        return this.#project
             .actualImpactScore();
     }
 }

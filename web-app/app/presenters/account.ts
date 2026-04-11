@@ -169,7 +169,7 @@ export class AccountPresenter {
                                    font-semibold"
                         >${
                             this.#account
-                                .companyName
+                                .companyNameText()
                         }</h2>
                         <div
                             class="flex
@@ -185,7 +185,7 @@ export class AccountPresenter {
                                     12, '',
                                 )}
                                 ${this.#account
-                                    .plan
+                                    .planName()
                                 } Plan
                             </span>
                             <span class="${
@@ -214,13 +214,13 @@ export class AccountPresenter {
                             'text-sm font-medium'
                         }">
                             ${this.#account
-                                .healthStatus}
+                                .healthStatusText()}
                         </span>
                     </div>
                     <p class="text-xs mt-1">
                         ${'Health Score: '
                             + this.#account
-                                .healthScore
+                                .healthScoreValue()
                             + '%'}
                     </p>
                 </div>
@@ -249,12 +249,14 @@ export class AccountPresenter {
                         'text-2xl font-bold'
                     }">
                         ${this.#account
-                            .usedSeats}<span
+                            .usedSeatCount()
+                        }<span
                             class="text-sm
                                    font-normal
                                    text-muted"
                         >/${this.#account
-                            .seats}</span>
+                            .seatCount()
+                        }</span>
                     </p>
                 </div>
                 <div
@@ -278,7 +280,8 @@ export class AccountPresenter {
                         'text-2xl font-bold'
                     }">
                         ${this.#account
-                            .projectsCurrent}
+                            .projectsCurrentCount()
+                        }
                     </p>
                 </div>
                 <div
@@ -300,7 +303,8 @@ export class AccountPresenter {
                         'text-2xl font-bold'
                     }">
                         ${this.#account
-                            .ideasCurrent}
+                            .ideasCurrentCount()
+                        }
                     </p>
                 </div>
                 <div
@@ -323,7 +327,7 @@ export class AccountPresenter {
                     }">
                         ${formatDate(
                             this.#account
-                                .nextBilling,
+                                .nextBillingDate(),
                         )}
                     </p>
                 </div>
@@ -343,36 +347,38 @@ export class AccountPresenter {
             <div class="flex flex-col gap-4">
                 ${this.#buildUsageBar(
                     'User Seats',
-                    this.#account.usedSeats,
-                    this.#account.seats,
+                    this.#account
+                        .usedSeatCount(),
+                    this.#account
+                        .seatCount(),
                 )}
                 ${this.#buildUsageBar(
                     'Projects',
                     this.#account
-                        .projectsCurrent,
+                        .projectsCurrentCount(),
                     this.#account
-                        .projectsLimit,
+                        .projectsLimitCount(),
                 )}
                 ${this.#buildUsageBar(
                     'Ideas',
                     this.#account
-                        .ideasCurrent,
+                        .ideasCurrentCount(),
                     this.#account
-                        .ideasLimit,
+                        .ideasLimitCount(),
                 )}
                 ${this.#buildUsageBar(
                     'AI Credits',
                     this.#account
-                        .aiCreditsCurrent,
+                        .aiCreditsCurrentValue(),
                     this.#account
-                        .aiCreditsLimit,
+                        .aiCreditsLimitValue(),
                 )}
                 ${this.#buildUsageBar(
                     'Storage (GB)',
                     this.#account
-                        .storageCurrent,
+                        .storageCurrentValue(),
                     this.#account
-                        .storageLimit,
+                        .storageLimitValue(),
                 )}
             </div>
         </div>

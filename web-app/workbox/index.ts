@@ -64,7 +64,7 @@ function buildInboxRow(
         class="card"
         style="padding:1rem;
             cursor:pointer"
-        data-wo-card="${item.id}"
+        data-wo-card="${item.idForLink()}"
     >
         <div
             class="flex items-center
@@ -72,10 +72,10 @@ function buildInboxRow(
         >
             <span
                 class="font-semibold"
-            >${item.flowName}</span>
+            >${item.flowNameText()}</span>
             <span
                 class="text-xs text-muted"
-            >#${item.displayId}</span>
+            >#${item.displayIdText()}</span>
         </div>
         <div
             class="flex items-center
@@ -86,7 +86,7 @@ function buildInboxRow(
             <span
                 class="ml-auto"
             >${relativeTime(
-                item.lastTransitionedAt,
+                item.lastTransitionedAtDate(),
             )}</span>
         </div>
     </div>`;

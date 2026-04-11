@@ -79,31 +79,33 @@ export class ActivityPresenter {
             | undefined,
     ): boolean {
         if (query
-            && !this.#activity.actor
-                .toLowerCase()
-                .includes(query)
-            && !this.#activity.target
-                .toLowerCase()
-                .includes(query))
+            && !this.#activity
+                .matchesActor(query)
+            && !this.#activity
+                .matchesTarget(query))
             return false;
         if (types
-            && !types.includes(
-                this.#activity.type,
+            && !types.some(
+                t => this.#activity
+                    .hasType(t),
             ))
             return false;
         return true;
     }
 
     buildActivity(): SafeHtml {
-        const meta = this.#activity.status
+        const meta =
+            this.#activity.hasStatus()
                 ? html`<div
                     class="${
                         'badge badge-default'
                         + ' text-xs mt-1'
                     }">${
-                    this.#activity.status
+                    this.#activity
+                        .statusText()
                 }</div>`
-                : this.#activity.comment
+                : this.#activity
+                    .hasComment()
                     ? html`<p
                         class="${
                             'text-sm'
@@ -115,7 +117,8 @@ export class ActivityPresenter {
                             + ':italic'
                         }"
                         >"${
-                        this.#activity.comment
+                        this.#activity
+                            .commentText()
                     }"</p>`
                     : html``;
         return html`
@@ -128,18 +131,21 @@ export class ActivityPresenter {
                     'font-medium'
                 }">${
                     displayText(
-                        this.#activity.actor,
+                        this.#activity
+                            .actorName(),
                     )
                 }</span>
                 <span class="${
                     'text-muted'
                 }"> ${
-                    this.#activity.action
+                    this.#activity
+                        .actionText()
                 } </span>
                 <span class="${
                     'font-medium'
                 }">${
-                    this.#activity.target
+                    this.#activity
+                        .targetText()
                 }</span>
             </p>
             ${meta}
@@ -147,7 +153,8 @@ export class ActivityPresenter {
                 'text-xs text-muted mt-1'
             }">${
                 formatDate(
-                    this.#activity.timestamp,
+                    this.#activity
+                        .timestampValue(),
                 )
             }</p>
         </div>
@@ -155,8 +162,8 @@ export class ActivityPresenter {
     }
 
     #buildIcon(): SafeHtml {
-        const actType =
-            this.#activity.type as ActivityType;
+        const actType = this.#activity
+            .typeValue() as ActivityType;
         const entry =
             ICON_MAP[actType]
             ?? ICON_MAP.idea_created;

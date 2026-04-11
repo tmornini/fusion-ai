@@ -93,13 +93,13 @@ export class ProjectDetailPresenter {
                         style="${
                             'resize:none'
                         }">${
-                            this.#view.description
+                            this.#view.descriptionText()
                         }</textarea>`
                     : html`<p class="${
                         'text-sm '
                         + 'text-muted mb-6'
                     }">${
-                        this.#view.description
+                        this.#view.descriptionText()
                     }</p>`}
                 <div style="${
                     'display:grid;'
@@ -142,7 +142,7 @@ export class ProjectDetailPresenter {
                                         toDateInputValue(
                                             this
                                                 .#view
-                                                .startDate,
+                                                .startDateValue(),
                                         )
                                     }"
                                     class="input"
@@ -159,7 +159,7 @@ export class ProjectDetailPresenter {
                                         formatDate(
                                             this
                                                 .#view
-                                                .startDate,
+                                                .startDateValue(),
                                         )
                                     }</p>`}
                         </div>
@@ -198,7 +198,7 @@ export class ProjectDetailPresenter {
                                         toDateInputValue(
                                             this
                                                 .#view
-                                                .targetEndDate,
+                                                .targetEndDateValue(),
                                         )
                                     }"
                                     class="input"
@@ -215,7 +215,7 @@ export class ProjectDetailPresenter {
                                         formatDate(
                                             this
                                                 .#view
-                                                .targetEndDate,
+                                                .targetEndDateValue(),
                                         )
                                     }</p>`}
                         </div>
@@ -239,7 +239,7 @@ export class ProjectDetailPresenter {
                                 + 'font-bold '
                                 + 'text-primary'
                             }">${
-                                this.#view.progress
+                                this.#view.progressPercent()
                             }%</span>
                     </div>
                     <div class="${
@@ -249,7 +249,7 @@ export class ProjectDetailPresenter {
                             'progress-fill'
                         }"
                         style="width:${
-                            this.#view.progress
+                            this.#view.progressPercent()
                         }%"
                         ></div></div>
                 </div>
@@ -538,7 +538,7 @@ export class ProjectDetailPresenter {
                         + 'column;'
                         + 'gap:0.75rem'
                     }">
-                        ${this.#view.team.map(
+                        ${this.#view.teamMembers().map(
                             teamMember => html`
                             <div
                                 class="${
@@ -641,7 +641,7 @@ export class ProjectDetailPresenter {
                 }">
                     Flows
                 </h2>
-                ${this.#view.status === 'approved'
+                ${this.#view.statusValue() === 'approved'
                     ? html`<button
                         id="new-flow-btn"
                         class="${
@@ -677,7 +677,7 @@ export class ProjectDetailPresenter {
                         <p class="${
                             'text-muted mt-4'
                         }">
-                            ${this.#view.status
+                            ${this.#view.statusValue()
                                 === 'approved'
                                 ? 'No flows yet'
                                 : 'Flow creation'
@@ -809,7 +809,7 @@ export class ProjectDetailPresenter {
                                 key
                                     === this
                                         .#view
-                                        .status
+                                        .statusValue()
                                     ? 'selected'
                                     : '',
                             )}>${
@@ -835,7 +835,7 @@ export class ProjectDetailPresenter {
                     </a>
                     <span>/</span>
                     <span>${
-                        this.#view.title
+                        this.#view.titleText()
                     }</span>
                 </div>
 
@@ -880,7 +880,7 @@ export class ProjectDetailPresenter {
                                         value="${
                                             this
                                                 .#view
-                                                .title
+                                                .titleText()
                                         }"
                                         style="${
                                             'font-'
@@ -902,7 +902,7 @@ export class ProjectDetailPresenter {
                                         ${
                                             this
                                                 .#view
-                                                .title
+                                                .titleText()
                                         }
                                     </h1>`}
                                 ${isEditing
@@ -950,12 +950,12 @@ export class ProjectDetailPresenter {
                                 Led by ${
                                     this
                                         .#view
-                                        .projectLead
+                                        .projectLeadName()
                                 }
                                 &#x2022; ${
                                     this
                                         .#view
-                                        .progress
+                                        .progressPercent()
                                 }%
                                 of schedule elapsed
                             </p>

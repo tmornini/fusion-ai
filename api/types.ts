@@ -1203,39 +1203,92 @@ export class Project {
 }
 
 export class Activity {
-    readonly id: string;
-    readonly type: string;
-    readonly action: string;
-    readonly target: string;
-    readonly timestamp: string;
-    readonly score: number;
-    readonly status: string;
-    readonly comment: string;
-    readonly actor: string;
+    readonly #id: string;
+    readonly #type: string;
+    readonly #action: string;
+    readonly #target: string;
+    readonly #timestamp: string;
+    readonly #score: number;
+    readonly #status: string;
+    readonly #comment: string;
+    readonly #actor: string;
 
     constructor(
         entity: ActivityEntity,
         actor: string,
     ) {
-        this.id = entity.id;
-        this.type = entity.type;
-        this.action = entity.action;
-        this.target = entity.target;
-        this.timestamp = entity.timestamp;
-        this.score = entity.score;
-        this.status = entity.status;
-        this.comment = entity.comment;
-        this.actor = actor;
+        this.#id = entity.id;
+        this.#type = entity.type;
+        this.#action = entity.action;
+        this.#target = entity.target;
+        this.#timestamp =
+            entity.timestamp;
+        this.#score = entity.score;
+        this.#status = entity.status;
+        this.#comment = entity.comment;
+        this.#actor = actor;
     }
 
     formattedDescription(): string {
         const prefix =
-            this.actor !== null
-                ? `${this.actor} `
+            this.#actor !== null
+                ? `${this.#actor} `
                 : '';
         return prefix
-            + `${this.action}`
-            + ` ${this.target}`;
+            + `${this.#action}`
+            + ` ${this.#target}`;
+    }
+
+    typeValue(): string {
+        return this.#type;
+    }
+
+    actionText(): string {
+        return this.#action;
+    }
+
+    targetText(): string {
+        return this.#target;
+    }
+
+    timestampValue(): string {
+        return this.#timestamp;
+    }
+
+    statusText(): string {
+        return this.#status;
+    }
+
+    hasStatus(): boolean {
+        return this.#status !== '';
+    }
+
+    commentText(): string {
+        return this.#comment;
+    }
+
+    hasComment(): boolean {
+        return this.#comment !== '';
+    }
+
+    actorName(): string {
+        return this.#actor;
+    }
+
+    matchesActor(term: string): boolean {
+        return this.#actor
+            .toLowerCase()
+            .includes(term);
+    }
+
+    matchesTarget(term: string): boolean {
+        return this.#target
+            .toLowerCase()
+            .includes(term);
+    }
+
+    hasType(type: string): boolean {
+        return this.#type === type;
     }
 }
 
@@ -1246,25 +1299,25 @@ export interface RecentActivityItem {
 }
 
 export class Account {
-    readonly companyName: string;
-    readonly plan: string;
-    readonly planStatus: string;
-    readonly nextBilling: string;
-    readonly seats: number;
-    readonly usedSeats: number;
-    readonly projectsCurrent: number;
-    readonly projectsLimit: number;
-    readonly ideasCurrent: number;
-    readonly ideasLimit: number;
-    readonly storageCurrent: number;
-    readonly storageLimit: number;
-    readonly aiCreditsCurrent: number;
-    readonly aiCreditsLimit: number;
-    readonly healthScore: number;
-    readonly healthStatus: string;
-    readonly lastActivity: string;
-    readonly activeUsers: number;
-    readonly recentActivity:
+    readonly #companyName: string;
+    readonly #plan: string;
+    readonly #planStatus: string;
+    readonly #nextBilling: string;
+    readonly #seats: number;
+    readonly #usedSeats: number;
+    readonly #projectsCurrent: number;
+    readonly #projectsLimit: number;
+    readonly #ideasCurrent: number;
+    readonly #ideasLimit: number;
+    readonly #storageCurrent: number;
+    readonly #storageLimit: number;
+    readonly #aiCreditsCurrent: number;
+    readonly #aiCreditsLimit: number;
+    readonly #healthScore: number;
+    readonly #healthStatus: string;
+    readonly #lastActivity: string;
+    readonly #activeUsers: number;
+    readonly #recentActivity:
         RecentActivityItem[];
 
     constructor(
@@ -1273,58 +1326,130 @@ export class Account {
         recentActivity:
             RecentActivityItem[],
     ) {
-        this.companyName = companyName;
-        this.plan = entity.plan;
-        this.planStatus =
+        this.#companyName = companyName;
+        this.#plan = entity.plan;
+        this.#planStatus =
             entity.plan_status;
-        this.nextBilling =
+        this.#nextBilling =
             entity.next_billing;
-        this.seats = entity.seats;
-        this.usedSeats =
+        this.#seats = entity.seats;
+        this.#usedSeats =
             entity.used_seats;
-        this.projectsCurrent =
+        this.#projectsCurrent =
             entity.projects_current;
-        this.projectsLimit =
+        this.#projectsLimit =
             entity.projects_limit;
-        this.ideasCurrent =
+        this.#ideasCurrent =
             entity.ideas_current;
-        this.ideasLimit =
+        this.#ideasLimit =
             entity.ideas_limit;
-        this.storageCurrent =
+        this.#storageCurrent =
             entity.storage_current;
-        this.storageLimit =
+        this.#storageLimit =
             entity.storage_limit;
-        this.aiCreditsCurrent =
+        this.#aiCreditsCurrent =
             entity.ai_credits_current;
-        this.aiCreditsLimit =
+        this.#aiCreditsLimit =
             entity.ai_credits_limit;
-        this.healthScore =
+        this.#healthScore =
             entity.health_score;
-        this.healthStatus =
+        this.#healthStatus =
             entity.health_status;
-        this.lastActivity =
+        this.#lastActivity =
             entity.last_activity;
-        this.activeUsers =
+        this.#activeUsers =
             entity.active_users;
-        this.recentActivity =
+        this.#recentActivity =
             recentActivity;
     }
 
+    companyNameText(): string {
+        return this.#companyName;
+    }
+
+    planName(): string {
+        return this.#plan;
+    }
+
+    planStatusText(): string {
+        return this.#planStatus;
+    }
+
+    nextBillingDate(): string {
+        return this.#nextBilling;
+    }
+
+    seatCount(): number {
+        return this.#seats;
+    }
+
+    usedSeatCount(): number {
+        return this.#usedSeats;
+    }
+
+    projectsCurrentCount(): number {
+        return this.#projectsCurrent;
+    }
+
+    projectsLimitCount(): number {
+        return this.#projectsLimit;
+    }
+
+    ideasCurrentCount(): number {
+        return this.#ideasCurrent;
+    }
+
+    ideasLimitCount(): number {
+        return this.#ideasLimit;
+    }
+
+    storageCurrentValue(): number {
+        return this.#storageCurrent;
+    }
+
+    storageLimitValue(): number {
+        return this.#storageLimit;
+    }
+
+    aiCreditsCurrentValue(): number {
+        return this.#aiCreditsCurrent;
+    }
+
+    aiCreditsLimitValue(): number {
+        return this.#aiCreditsLimit;
+    }
+
+    healthScoreValue(): number {
+        return this.#healthScore;
+    }
+
+    healthStatusText(): string {
+        return this.#healthStatus;
+    }
+
+    lastActivityDate(): string {
+        return this.#lastActivity;
+    }
+
+    activeUserCount(): number {
+        return this.#activeUsers;
+    }
+
     seatUsagePercent(): number {
-        return this.seats > 0
+        return this.#seats > 0
             ? Math.min(
-                (this.usedSeats
-                    / this.seats) * 100,
+                (this.#usedSeats
+                    / this.#seats) * 100,
                 100,
             )
             : 0;
     }
 
     projectUsagePercent(): number {
-        return this.projectsLimit > 0
+        return this.#projectsLimit > 0
             ? Math.min(
-                (this.projectsCurrent
-                    / this.projectsLimit)
+                (this.#projectsCurrent
+                    / this.#projectsLimit)
                     * 100,
                 100,
             )
@@ -1332,10 +1457,10 @@ export class Account {
     }
 
     ideaUsagePercent(): number {
-        return this.ideasLimit > 0
+        return this.#ideasLimit > 0
             ? Math.min(
-                (this.ideasCurrent
-                    / this.ideasLimit)
+                (this.#ideasCurrent
+                    / this.#ideasLimit)
                     * 100,
                 100,
             )
@@ -1343,10 +1468,10 @@ export class Account {
     }
 
     aiCreditUsagePercent(): number {
-        return this.aiCreditsLimit > 0
+        return this.#aiCreditsLimit > 0
             ? Math.min(
-                (this.aiCreditsCurrent
-                    / this.aiCreditsLimit)
+                (this.#aiCreditsCurrent
+                    / this.#aiCreditsLimit)
                     * 100,
                 100,
             )
@@ -1354,10 +1479,10 @@ export class Account {
     }
 
     storageUsagePercent(): number {
-        return this.storageLimit > 0
+        return this.#storageLimit > 0
             ? Math.min(
-                (this.storageCurrent
-                    / this.storageLimit)
+                (this.#storageCurrent
+                    / this.#storageLimit)
                     * 100,
                 100,
             )
