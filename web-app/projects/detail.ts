@@ -9,6 +9,7 @@ import {
 } from '../app/loading-states';
 import {
     navigateTo,
+    trimStrings,
     openDialog,
     closeDialog,
 } from '../app/core';
@@ -156,19 +157,22 @@ function bindProjectEvents(
                 )!.value,
         );
         try {
-            await putProject(projectId, {
-                title,
-                description,
-                status,
-                start_date: startDate,
-                target_end_date:
-                    targetEndDate,
-                estimated_cost:
-                    costBaseline
-                    * COST_DIVISOR,
-                estimated_impact:
-                    impactBaseline,
-            });
+            await putProject(
+                projectId,
+                trimStrings({
+                    title,
+                    description,
+                    status,
+                    start_date: startDate,
+                    target_end_date:
+                        targetEndDate,
+                    estimated_cost:
+                        costBaseline
+                        * COST_DIVISOR,
+                    estimated_impact:
+                        impactBaseline,
+                }),
+            );
         } catch {
             showToast(
                 'Failed to save project',

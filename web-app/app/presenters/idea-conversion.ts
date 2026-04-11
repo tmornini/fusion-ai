@@ -108,10 +108,16 @@ export class IdeaConversionPresenter {
             ConversionField, string
         >>,
     ): void {
-        this.#fields = {
-            ...this.#fields,
-            ...fields,
-        };
+        for (
+            const [k, v] of
+            Object.entries(fields)
+        ) {
+            if (v !== undefined) {
+                this.#fields[
+                    k as ConversionField
+                ] = v.trim();
+            }
+        }
     }
 
     projectDetails(): Record<
@@ -122,20 +128,19 @@ export class IdeaConversionPresenter {
 
     isReady(): boolean {
         return REQUIRED_FIELDS.every(
-            f => this.#fields[f].trim(),
+            f => this.#fields[f] !== '',
         );
     }
 
     fieldReady(
         field: ConversionField,
     ): boolean {
-        return !!this.#fields[field]
-            .trim();
+        return this.#fields[field] !== '';
     }
 
     completedCount(): number {
         return REQUIRED_FIELDS.filter(
-            f => this.#fields[f].trim(),
+            f => this.#fields[f] !== '',
         ).length;
     }
 
@@ -147,7 +152,7 @@ export class IdeaConversionPresenter {
         field: ConversionField,
     ): SafeHtml {
         const isSet =
-            this.#fields[field].trim();
+            this.#fields[field] !== '';
         return html`<span
             id="check-${field}"
             style="${'color:'

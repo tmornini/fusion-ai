@@ -25,6 +25,7 @@ export {
     getTimeOfDay,
     initials,
     toDateInputValue,
+    trimStrings,
     durationInDays,
     formatCompactCurrency,
     SECONDS_PER_DAY,

@@ -116,7 +116,8 @@ export async function init(
                 || el instanceof
                     HTMLTextAreaElement
             ) {
-                fields[field] = el.value;
+                fields[field] =
+                    el.value.trim();
             }
         }
         presenter.syncFields(fields);

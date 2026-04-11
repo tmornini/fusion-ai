@@ -62,6 +62,21 @@ function displayText(
         : DISPLAY_ABSENT;
 }
 
+function trimStrings<
+    T extends Record<string, unknown>,
+>(obj: T): T {
+    const r = { ...obj };
+    for (const k of Object.keys(r)) {
+        const v = r[k as keyof T];
+        if (typeof v === 'string') {
+            (r as Record<
+                string, unknown
+            >)[k] = v.trim();
+        }
+    }
+    return r;
+}
+
 export {
     DISPLAY_ABSENT,
     displayText,
@@ -70,6 +85,7 @@ export {
     getTimeOfDay,
     initials,
     toDateInputValue,
+    trimStrings,
     durationInDays,
     formatCompactCurrency,
     SECONDS_PER_DAY,

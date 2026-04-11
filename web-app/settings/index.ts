@@ -88,7 +88,7 @@ export async function init(): Promise<void> {
             const inp = (id: string) =>
                 $input(
                     '#' + id, document,
-                )!.value;
+                )!.value.trim();
             const sw = (id: string) =>
                 $(
                     '#switch-' + id,

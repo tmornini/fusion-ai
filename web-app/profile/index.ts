@@ -27,6 +27,9 @@ import {
     buildErrorState,
 } from '../app/loading-states';
 import {
+    trimStrings,
+} from '../app/core';
+import {
     getProfile, putProfile,
     allStrengths,
 } from '../app/adapters';
@@ -220,22 +223,29 @@ export async function init(): Promise<void> {
                 'disabled', '',
             );
             try {
-                await putProfile({
-                    first_name:
-                        firstName.value,
-                    last_name:
-                        lastName.value,
-                    email: email.value,
-                    phone: phone.value,
-                    role: role.value,
-                    department:
-                        department.value,
-                    bio: bio.value,
-                    strengths:
-                        jsonArrayField(
-                            [...selectedStrengths],
-                        ),
-                });
+                await putProfile(
+                    trimStrings({
+                        first_name:
+                            firstName.value,
+                        last_name:
+                            lastName.value,
+                        email:
+                            email.value,
+                        phone:
+                            phone.value,
+                        role:
+                            role.value,
+                        department:
+                            department.value,
+                        bio: bio.value,
+                        strengths:
+                            jsonArrayField(
+                                [
+                                    ...selectedStrengths,
+                                ],
+                            ),
+                    }),
+                );
                 setHtml(
                     btn,
                     html`${

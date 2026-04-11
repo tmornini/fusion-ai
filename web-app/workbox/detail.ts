@@ -67,7 +67,8 @@ function collectFieldValues(
                 ? 'true'
                 : 'false';
         } else {
-            values[fieldId] = input.value;
+            values[fieldId] =
+                input.value.trim();
         }
     }
     return values;

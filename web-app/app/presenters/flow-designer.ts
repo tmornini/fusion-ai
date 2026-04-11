@@ -194,6 +194,7 @@ export class FlowDesignerPresenter {
 
     updateFlowName(name: string): void {
         if (this.#guardLocked()) return;
+        name = name.trim();
         this.#state.flowName = name;
         this.#state.isEditingName = false;
         void putFlow(
@@ -835,6 +836,7 @@ ${toolbar}
         name: string,
     ): void {
         if (this.#guardLocked()) return;
+        name = name.trim();
         const sel =
             this.#state.interaction
                 .selection;
@@ -870,6 +872,7 @@ ${toolbar}
         desc: string,
     ): void {
         if (this.#guardLocked()) return;
+        desc = desc.trim();
         const sel =
             this.#state.interaction
                 .selection;
@@ -906,6 +909,7 @@ ${toolbar}
         name: string,
     ): void {
         if (this.#guardLocked()) return;
+        name = name.trim();
         const sel =
             this.#state.interaction
                 .selection;
@@ -941,6 +945,7 @@ ${toolbar}
         desc: string,
     ): void {
         if (this.#guardLocked()) return;
+        desc = desc.trim();
         const sel =
             this.#state.interaction
                 .selection;
@@ -982,6 +987,7 @@ ${toolbar}
         if (this.#guardLocked()) {
             return false;
         }
+        name = name.trim();
         const sel =
             this.#state.interaction
                 .selection;

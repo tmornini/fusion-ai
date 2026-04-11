@@ -30,10 +30,16 @@ export class IdeaCreatePresenter {
     syncFields(
         fields: Partial<FormData>,
     ): void {
-        this.#form = {
-            ...this.#form,
-            ...fields,
-        };
+        for (
+            const [k, v] of
+            Object.entries(fields)
+        ) {
+            if (v !== undefined) {
+                this.#form[
+                    k as keyof FormData
+                ] = v.trim();
+            }
+        }
     }
 
     formData(): FormData {
@@ -42,16 +48,16 @@ export class IdeaCreatePresenter {
 
     isFormComplete(): boolean {
         return this.#form
-            .title.trim() !== ''
+            .title !== ''
             && this.#form
                 .problemStatement
-                .trim() !== ''
+                !== ''
             && this.#form
                 .proposedSolution
-                .trim() !== ''
+                !== ''
             && this.#form
                 .expectedOutcome
-                .trim() !== '';
+                !== '';
     }
 
     render(): SafeHtml {

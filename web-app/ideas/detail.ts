@@ -10,6 +10,7 @@ import {
 } from '../app/loading-states';
 import {
     navigateTo,
+    trimStrings,
     initDialog, closeDialog,
 } from '../app/core';
 import {
@@ -116,19 +117,22 @@ function bindIdeaEvents(
                     )!.value;
 
                 try {
-                    await putIdea(ideaId, {
-                        title,
-                        problem_statement:
-                            problemStatement,
-                        target_users:
-                            targetUsers,
-                        proposed_solution:
-                            proposedSolution,
-                        expected_outcome:
-                            expectedOutcome,
-                        success_metrics:
-                            successMetrics,
-                    });
+                    await putIdea(
+                        ideaId,
+                        trimStrings({
+                            title,
+                            problem_statement:
+                                problemStatement,
+                            target_users:
+                                targetUsers,
+                            proposed_solution:
+                                proposedSolution,
+                            expected_outcome:
+                                expectedOutcome,
+                            success_metrics:
+                                successMetrics,
+                        }),
+                    );
                 } catch {
                     showToast(
                         'Failed to save'
