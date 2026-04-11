@@ -17,6 +17,7 @@ import {
 } from '../icons';
 import {
     putNode,
+    putGraph,
     putWfEdge,
     putFlow,
     putFlowLocked,
@@ -159,7 +160,6 @@ export class FlowDesignerPresenter {
                 { kind: 'none' },
         };
         this.#migrateToCenter();
-        this.#applyZoomToFit();
     }
 
     startEditingName(): void {
@@ -256,15 +256,12 @@ export class FlowDesignerPresenter {
         for (const n of nodes) {
             n.positionX -= cx;
             n.positionY -= cy;
-            void putNode(
-                this.#state.flowId,
-                n.id,
-                {
-                    positionX: n.positionX,
-                    positionY: n.positionY,
-                },
-            );
         }
+        void putGraph(
+            this.#state.flowId,
+            nodes,
+            this.#state.edges,
+        );
     }
 
     selectedNodeId(): string | null {
@@ -815,11 +812,12 @@ ${toolbar}
             if (!pos) continue;
             node.positionX = pos.x;
             node.positionY = pos.y;
-            void putNode(fId, node.id, {
-                positionX: pos.x,
-                positionY: pos.y,
-            });
         }
+        void putGraph(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -1484,16 +1482,14 @@ class="wf-toolbar">
 <div class="wf-toolbar-group">
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-out"
-    ><span class="wf-btn-stack"
-    >Zoom<br>\u2212</span></button>
+    >Zoom \u2212</button>
 <button class="btn btn-ghost btn-sm"
     data-action="fit"
     ><span class="wf-btn-stack"
     >Show<br>All</span></button>
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-in"
-    ><span class="wf-btn-stack"
-    >Zoom<br>+</span></button>
+    >Zoom +</button>
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">

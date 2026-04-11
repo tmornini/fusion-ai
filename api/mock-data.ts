@@ -1311,47 +1311,6 @@ export async function populateMockData(
                                     true,
                                 options: [],
                             },
-                            {
-                                id: '191493d3'
-                                    + '-fd82'
-                                    + '-4f77'
-                                    + '-87a7'
-                                    + '-deb15e'
-                                    + 'b569c2',
-                                name:
-                                    'Decision',
-                                fieldType:
-                                    'select',
-                                sortOrder: 2,
-                                isRequired:
-                                    true,
-                                options: [
-                                    'Approve',
-                                    'Needs'
-                                    + ' Revision',
-                                ],
-                            },
-                            {
-                                id: '4506eca9'
-                                    + '-8ba6'
-                                    + '-4312'
-                                    + '-8b4a'
-                                    + '-e06c9f'
-                                    + '275066',
-                                name:
-                                    'Risk'
-                                    + ' Assessment',
-                                fieldType:
-                                    'radio',
-                                sortOrder: 3,
-                                isRequired:
-                                    false,
-                                options: [
-                                    'Low',
-                                    'Medium',
-                                    'High',
-                                ],
-                            },
                         ],
                     },
                     {
@@ -2000,12 +1959,6 @@ export async function populateMockData(
     const fReviewerNotes =
         '542af865-0bd3-4653'
         + '-8de6-308ae793c996';
-    const fDecision =
-        '191493d3-fd82-4f77'
-        + '-87a7-deb15eb569c2';
-    const fRisk =
-        '4506eca9-8ba6-4312'
-        + '-8b4a-e06c9f275066';
 
     const mockWorkOrders:
         WorkOrderEntity[] = [
@@ -2103,8 +2056,6 @@ export async function populateMockData(
                 [fReviewerNotes]:
                     'Approved.'
                     + ' Strong fit.',
-                [fDecision]: 'Approve',
-                [fRisk]: 'Low',
             }),
             transitioned_at:
                 dt(12, 9, 15),

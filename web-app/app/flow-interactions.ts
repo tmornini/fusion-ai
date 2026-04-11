@@ -420,8 +420,22 @@ function handlePointerUp(
                 const dist = Math.hypot(
                     dx, dy,
                 );
+                const dropHit =
+                    document
+                        .elementFromPoint(
+                            e.clientX,
+                            e.clientY,
+                        );
+                const overNode =
+                    dropHit
+                        instanceof Element
+                    && findAncestorAttr(
+                        dropHit,
+                        'data-node-id',
+                    ) !== null;
                 if (
                     dist > MIN_DRAG_DISTANCE
+                    && !overNode
                 ) {
                     onNodeCreated(
                         fromId, toX, toY,

@@ -227,6 +227,17 @@ export async function putFlowLocked(
     });
 }
 
+export async function putGraph(
+    flowId: string,
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+): Promise<void> {
+    await PUT(`flows/${flowId}`, {
+        graph: saveGraph({ nodes, edges }),
+        updated_at: nowUtc(),
+    });
+}
+
 export async function putNode(
     flowId: string,
     nodeId: string,
