@@ -57,7 +57,7 @@ function buildStatusDot(
         + 'right:-2px;'
         + 'width:0.875rem;'
         + 'height:0.875rem;'
-        + 'border-radius:9999px;'
+        + 'border-radius:var(--radius-full);'
         + 'border:2px solid '
         + 'hsl(var(--card));'
         + 'background:' + color
@@ -427,7 +427,7 @@ export class UserPresenter {
                     'width:2.5rem;'
                     + 'height:2.5rem;'
                     + 'border-radius:'
-                    + '9999px;'
+                    + 'var(--radius-full);'
                     + 'background:'
                     + 'linear-gradient('
                     + '135deg,'

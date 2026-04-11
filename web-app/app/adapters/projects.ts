@@ -7,7 +7,7 @@ import {
     Project,
     projectIsNotDeleted,
     COST_DIVISOR,
-    SECONDS_PER_DAY,
+    MS_PER_DAY,
 } from '../../../api/types';
 import {
     getUserMap,
@@ -118,7 +118,7 @@ export class ProjectView {
             return 0;
         return Math.max(0, Math.ceil(
             (end - start)
-            / (SECONDS_PER_DAY * 1000),
+            / (MS_PER_DAY),
         ));
     }
 
@@ -129,7 +129,7 @@ export class ProjectView {
         if (isNaN(start)) return 0;
         return Math.max(0, Math.floor(
             (Date.now() - start)
-            / (SECONDS_PER_DAY * 1000),
+            / (MS_PER_DAY),
         ));
     }
 

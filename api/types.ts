@@ -180,6 +180,8 @@ export function isReadinessLevel(
 
 export const MS_PER_SECOND = 1000;
 export const SECONDS_PER_DAY = 86400;
+export const MS_PER_DAY =
+    SECONDS_PER_DAY * MS_PER_SECOND;
 export const COST_DIVISOR = 1000;
 
 export function durationInDays(

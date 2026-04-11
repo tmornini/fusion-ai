@@ -364,7 +364,7 @@ function buildNode(
         + ` height="${NODE_HEIGHT}"`
         + ` rx="${NODE_RADIUS}"`
         + ' fill="var('
-        + '--color-card-bg, #232940)"'
+        + '--color-card-bg)"'
         + ` stroke="${borderColor}"`
         + ` stroke-width="${strokeW}"/>`;
 
@@ -430,7 +430,7 @@ function buildNode(
             + ` r="${PORT_RADIUS}"`
             + ` fill="${BLUE}"`
             + ' stroke="var('
-            + '--color-card-bg, #232940)"'
+            + '--color-card-bg)"'
             + ` stroke-width=`
             + `"${PORT_STROKE}"`
             + ' style='
@@ -629,7 +629,7 @@ function buildEdge(
         + ` height="${LABEL_HEIGHT}"`
         + ` rx="${LABEL_RADIUS}"`
         + ' fill="var('
-        + '--color-card-bg, #232940)"'
+        + '--color-card-bg)"'
         + ` stroke="${color}"`
         + ' stroke-width="1"'
         + ` opacity="${LABEL_BG_OPACITY}"/>`;

@@ -2079,8 +2079,7 @@ justify-content:space-between"
             + ` height="${NODE_HEIGHT}"`
             + ' rx="10"'
             + ' fill="var('
-            + '--color-card-bg,'
-            + ' #232940)"'
+            + '--color-card-bg)"'
             + ' stroke="#4B6CA1"'
             + ' stroke-width="2"/>'
             + '<text'

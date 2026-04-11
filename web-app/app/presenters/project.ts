@@ -15,7 +15,7 @@ import {
     type ProjectStatus,
     PROJECT_STATUS_CONFIG,
     COST_DIVISOR,
-    SECONDS_PER_DAY,
+    MS_PER_DAY,
 } from '../adapters';
 import {
     orderedKeys,
@@ -69,8 +69,7 @@ export class ProjectPresenter {
         const end = new Date(
             project.targetEndDate,
         ).getTime();
-        const msPerDay =
-            SECONDS_PER_DAY * 1000;
+        const msPerDay = MS_PER_DAY;
         this.#timeCurrentDays =
             isNaN(start)
                 ? 0

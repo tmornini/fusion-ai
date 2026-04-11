@@ -8,7 +8,7 @@ import {
     ideaIsVisible,
     projectIsApproved,
     projectIsNotDeleted,
-    SECONDS_PER_DAY,
+    MS_PER_DAY,
 } from '../../../api/types';
 import {
     formatCompactCurrency,
@@ -49,8 +49,7 @@ export async function getDashboardGauges(
         projectIsApproved,
     );
 
-    const msPerDay =
-        SECONDS_PER_DAY * 1000;
+    const msPerDay = MS_PER_DAY;
     const now = Date.now();
     let sumBaselineDays = 0;
     let sumCurrentDays = 0;

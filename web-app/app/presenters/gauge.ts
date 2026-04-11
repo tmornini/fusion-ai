@@ -342,7 +342,7 @@ export class GaugePresenter {
         const dotBase =
             'width:0.625rem;'
             + 'height:0.625rem;'
-            + 'border-radius:9999px;';
+            + 'border-radius:var(--radius-full);';
         return html`
         <div style="${
             'display:grid;'

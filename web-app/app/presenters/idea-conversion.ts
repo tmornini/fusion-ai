@@ -253,7 +253,7 @@ export class IdeaConversionPresenter {
                     + 'hsl(var(--muted)'
                     + ');'
                     + 'border-radius:'
-                    + '9999px;'
+                    + 'var(--radius-full);'
                     + 'overflow:'
                     + 'hidden'
                 }">

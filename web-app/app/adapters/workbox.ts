@@ -16,6 +16,7 @@ import type {
 import {
     nowUtc,
     jsonObjectField,
+    MS_PER_SECOND,
 } from '../../../api/types';
 import {
     getUserMap,
@@ -205,7 +206,8 @@ function isExpiredClaim(
         - new Date(
             claim.claimed_at,
         ).getTime();
-    const ms = lockTimeout * 1000;
+    const ms =
+        lockTimeout * MS_PER_SECOND;
     return elapsed >= ms;
 }
 
