@@ -1018,85 +1018,91 @@ export class Idea {
 }
 
 export class Project {
-    readonly id: string;
-    readonly title: string;
-    readonly description: string;
-    readonly status: ProjectStatus;
-    readonly progress: number;
-    readonly startDate: string;
-    readonly targetEndDate: string;
-    readonly estimatedDuration: number;
-    readonly actualDuration: number;
-    readonly estimatedCost: number;
-    readonly actualCost: number;
-    readonly estimatedImpact: number;
-    readonly actualImpact: number;
-    readonly position: number;
-    readonly businessContext: string;
-    readonly timelineLabel: string;
-    readonly budgetLabel: string;
+    readonly #id: string;
+    readonly #title: string;
+    readonly #description: string;
+    readonly #status: ProjectStatus;
+    readonly #progress: number;
+    readonly #startDate: string;
+    readonly #targetEndDate: string;
+    readonly #estimatedDuration: number;
+    readonly #actualDuration: number;
+    readonly #estimatedCost: number;
+    readonly #actualCost: number;
+    readonly #estimatedImpact: number;
+    readonly #actualImpact: number;
+    readonly #position: number;
+    readonly #businessContext: string;
+    readonly #timelineLabel: string;
+    readonly #budgetLabel: string;
 
     constructor(entity: ProjectEntity) {
-        this.id = entity.id;
-        this.title = entity.title;
-        this.description = entity.description;
-        this.status = entity.status;
-        this.progress = entity.progress;
-        this.startDate = entity.start_date;
-        this.targetEndDate =
+        this.#id = entity.id;
+        this.#title = entity.title;
+        this.#description =
+            entity.description;
+        this.#status = entity.status;
+        this.#progress = entity.progress;
+        this.#startDate =
+            entity.start_date;
+        this.#targetEndDate =
             entity.target_end_date;
-        this.estimatedDuration =
+        this.#estimatedDuration =
             entity.estimated_duration;
-        this.actualDuration =
+        this.#actualDuration =
             entity.actual_duration;
-        this.estimatedCost =
+        this.#estimatedCost =
             entity.estimated_cost;
-        this.actualCost = entity.actual_cost;
-        this.estimatedImpact =
+        this.#actualCost =
+            entity.actual_cost;
+        this.#estimatedImpact =
             entity.estimated_impact;
-        this.actualImpact =
+        this.#actualImpact =
             entity.actual_impact;
-        this.position = entity.position;
-        this.businessContext =
+        this.#position = entity.position;
+        this.#businessContext =
             entity.business_context;
-        this.timelineLabel =
+        this.#timelineLabel =
             entity.timeline_label;
-        this.budgetLabel = entity.budget_label;
+        this.#budgetLabel =
+            entity.budget_label;
     }
 
     isDeleted(): boolean {
-        return this.status === 'deleted';
+        return this.#status === 'deleted';
     }
 
     isOverBudget(): boolean {
-        return this.actualCost
-            > this.estimatedCost;
+        return this.#actualCost
+            > this.#estimatedCost;
     }
 
     isOverdue(): boolean {
-        return this.actualDuration
-            > this.estimatedDuration;
+        return this.#actualDuration
+            > this.#estimatedDuration;
     }
 
     estimatedDurationDays(): number {
         return durationInDays(
-            this.estimatedDuration,
+            this.#estimatedDuration,
         );
     }
 
     actualDurationDays(): number {
         return durationInDays(
-            this.actualDuration,
+            this.#actualDuration,
         );
     }
 
     timelineProgress(): number {
-        if (this.status === 'completed')
+        if (this.#status === 'completed')
             return 100;
         const start =
-            new Date(this.startDate);
+            new Date(this.#startDate);
         const end =
-            new Date(this.targetEndDate);
+            new Date(
+                this.#targetEndDate,
+            );
         if (
             isNaN(start.getTime())
             || isNaN(end.getTime())
@@ -1120,20 +1126,79 @@ export class Project {
 
     formattedCost(): string {
         return formatCompactCurrency(
-            this.estimatedCost,
+            this.#estimatedCost,
         );
     }
 
     statusLabel(): string {
         return (
-            PROJECT_STATUS_CONFIG[this.status]
+            PROJECT_STATUS_CONFIG[
+                this.#status
+            ]
         )!.label;
     }
 
     statusClassName(): string {
         return (
-            PROJECT_STATUS_CONFIG[this.status]
+            PROJECT_STATUS_CONFIG[
+                this.#status
+            ]
         )!.className;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    titleText(): string {
+        return this.#title;
+    }
+
+    descriptionText(): string {
+        return this.#description;
+    }
+
+    statusValue(): ProjectStatus {
+        return this.#status;
+    }
+
+    progressPercent(): number {
+        return this.#progress;
+    }
+
+    startDateValue(): string {
+        return this.#startDate;
+    }
+
+    targetEndDateValue(): string {
+        return this.#targetEndDate;
+    }
+
+    estimatedCostAmount(): number {
+        return this.#estimatedCost;
+    }
+
+    actualCostAmount(): number {
+        return this.#actualCost;
+    }
+
+    estimatedImpactScore(): number {
+        return this.#estimatedImpact;
+    }
+
+    actualImpactScore(): number {
+        return this.#actualImpact;
+    }
+
+    positionSortKey(): number {
+        return this.#position;
+    }
+
+    matchesSearch(term: string): boolean {
+        const t = term.toLowerCase();
+        return this.#title
+            .toLowerCase()
+            .includes(t);
     }
 }
 

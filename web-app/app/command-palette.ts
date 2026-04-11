@@ -228,14 +228,23 @@ export function initCommandPalette(
             SearchItem[] =
             projects.map(
                 project => ({
-                    id: `project-`
-                        + `${project.id}`,
+                    id: 'project-'
+                        + project
+                            .idForLink(),
                     title:
-                        project.title,
+                        project
+                            .titleText(),
                     meta:
-                        `Progress:`
-                        + ` ${project.progress}%`
-                        + ` · ${project.status.replace(/-/g, ' ')}`,
+                        'Progress: '
+                        + project
+                            .progressPercent()
+                        + '% \u00B7 '
+                        + project
+                            .statusValue()
+                            .replace(
+                                /-/g,
+                                ' ',
+                            ),
                     category:
                         'projects',
                     icon:
@@ -247,11 +256,13 @@ export function initCommandPalette(
                             'project-detail',
                             {
                                 projectId:
-                                    project.id,
+                                    project
+                                        .idForLink(),
                             },
                         ),
                     keywords:
-                        `${project.status}`,
+                        project
+                            .statusValue(),
                 }),
             );
 

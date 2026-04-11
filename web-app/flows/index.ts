@@ -241,8 +241,9 @@ async function openImportDialog(
             document.createElement(
                 'option',
             );
-        opt.value = p.id;
-        opt.textContent = p.title;
+        opt.value = p.idForLink();
+        opt.textContent =
+            p.titleText();
         select.appendChild(opt);
     }
 

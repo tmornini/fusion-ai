@@ -45,31 +45,30 @@ export class ProjectPresenter {
     }
 
     idForLink(): string {
-        return this.#project.id;
+        return this.#project.idForLink();
     }
 
     positionSortKey(): number {
-        return this.#project.position;
+        return this.#project
+            .positionSortKey();
     }
 
     statusGroup(): ProjectStatus {
-        return this.#project.status;
+        return this.#project
+            .statusValue();
     }
 
     buildStatusBadge(): SafeHtml {
-        const cfg = PROJECT_STATUS_CONFIG[
-            this.#project.status
-        ]!;
-        const icon = STATUS_ICONS[
-            this.#project.status
-        ]!;
+        const s =
+            this.#project.statusValue();
+        const cfg =
+            PROJECT_STATUS_CONFIG[s]!;
+        const icon = STATUS_ICONS[s]!;
         return html`<span class="${
             'badge '
             + cfg.className
             + ' text-xs'
-        }" data-status="${
-            this.#project.status
-        }" style="${
+        }" data-status="${s}" style="${
             'cursor:pointer;'
             + 'min-width:6rem;'
             + 'justify-content:center'
@@ -83,7 +82,7 @@ export class ProjectPresenter {
         showGrip: boolean,
     ): SafeHtml {
         const statusIcon = STATUS_ICONS[
-            this.#project.status
+            this.#project.statusValue()
         ]!;
         const metricBoxStyle =
             'width:2rem;height:2rem;'
@@ -96,8 +95,12 @@ export class ProjectPresenter {
         return html`
     <div class="card card-hover"
         style="padding:1.25rem"
-        data-project-card="${this.#project.id}"
-        data-position="${this.#project.position}">
+        data-project-card="${
+            this.#project.idForLink()
+        }"
+        data-position="${
+            this.#project.positionSortKey()
+        }">
         <div class="${
             'flex items-center gap-4'
         }">
@@ -120,7 +123,8 @@ export class ProjectPresenter {
                     + 'text-overflow'
                     + ':ellipsis'
                 }">${
-                    this.#project.title
+                    this.#project
+                        .titleText()
                 }</h3>
                 <span class="${
                     'badge '
@@ -204,10 +208,10 @@ export class ProjectPresenter {
     ): SafeHtml {
         const p = this.#project;
         const s = new Date(
-            p.startDate,
+            p.startDateValue(),
         ).getTime();
         const e = new Date(
-            p.targetEndDate,
+            p.targetEndDateValue(),
         ).getTime();
         const tb = isNaN(s) || isNaN(e)
             ? 0
@@ -220,12 +224,14 @@ export class ProjectPresenter {
                 (Date.now() - s)
                 / MS_PER_DAY,
             ));
-        const cb = p.estimatedCost
+        const cb = p.estimatedCostAmount()
             / COST_DIVISOR;
-        const cc = p.actualCost
+        const cc = p.actualCostAmount()
             / COST_DIVISOR;
-        const ib = p.estimatedImpact;
-        const ic = p.actualImpact;
+        const ib =
+            p.estimatedImpactScore();
+        const ic =
+            p.actualImpactScore();
         const m = 'text-xs text-muted';
         return html`
     <div class="${

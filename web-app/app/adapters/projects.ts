@@ -70,19 +70,20 @@ export class ProjectView {
     }
 
     get id(): string {
-        return this.project.id;
+        return this.project.idForLink();
     }
 
     get title(): string {
-        return this.project.title;
+        return this.project.titleText();
     }
 
     get description(): string {
-        return this.project.description;
+        return this.project
+            .descriptionText();
     }
 
     get status(): ProjectStatus {
-        return this.project.status;
+        return this.project.statusValue();
     }
 
     get progress(): number {
@@ -91,15 +92,18 @@ export class ProjectView {
     }
 
     get startDate(): string {
-        return this.project.startDate;
+        return this.project
+            .startDateValue();
     }
 
     get targetEndDate(): string {
-        return this.project.targetEndDate;
+        return this.project
+            .targetEndDateValue();
     }
 
     statusLabel(): string {
-        return this.project.statusLabel();
+        return this.project
+            .statusLabel();
     }
 
     statusClassName(): string {
@@ -109,10 +113,12 @@ export class ProjectView {
 
     timeBaselineDays(): number {
         const start = new Date(
-            this.project.startDate,
+            this.project
+                .startDateValue(),
         ).getTime();
         const end = new Date(
-            this.project.targetEndDate,
+            this.project
+                .targetEndDateValue(),
         ).getTime();
         if (isNaN(start) || isNaN(end))
             return 0;
@@ -124,7 +130,8 @@ export class ProjectView {
 
     timeCurrentDays(): number {
         const start = new Date(
-            this.project.startDate,
+            this.project
+                .startDateValue(),
         ).getTime();
         if (isNaN(start)) return 0;
         return Math.max(0, Math.floor(
@@ -134,22 +141,25 @@ export class ProjectView {
     }
 
     costBaselineK(): number {
-        return this.project.estimatedCost
+        return this.project
+            .estimatedCostAmount()
             / COST_DIVISOR;
     }
 
     costCurrentK(): number {
-        return this.project.actualCost
+        return this.project
+            .actualCostAmount()
             / COST_DIVISOR;
     }
 
     impactBaseline(): number {
         return this.project
-            .estimatedImpact;
+            .estimatedImpactScore();
     }
 
     impactCurrent(): number {
-        return this.project.actualImpact;
+        return this.project
+            .actualImpactScore();
     }
 }
 
