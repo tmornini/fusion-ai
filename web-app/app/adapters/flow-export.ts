@@ -282,7 +282,7 @@ export async function getFlowZip(
 
 export async function getZipBackup(
     data: Uint8Array,
-): Promise<BackupV2 | null> {
+): Promise<BackupV2> {
     const entries = await readZip(data);
     const jsonEntry = entries.find(
         e => e.name === 'flow.json'
@@ -290,20 +290,23 @@ export async function getZipBackup(
                 '/flow.json',
             ),
     );
-    if (!jsonEntry) return null;
+    if (!jsonEntry) {
+        throw new Error(
+            'ZIP missing flow.json',
+        );
+    }
     const dec = new TextDecoder();
     const text =
         dec.decode(jsonEntry.data);
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(text);
-    } catch {
-        return null;
-    }
-    const obj = parsed as {
+    const parsed = JSON.parse(text) as {
         version?: unknown;
     };
-    if (obj.version !== 2) return null;
+    if (parsed.version !== 2) {
+        throw new Error(
+            'Unsupported backup version: '
+            + String(parsed.version),
+        );
+    }
     return parsed as
         unknown as BackupV2;
 }

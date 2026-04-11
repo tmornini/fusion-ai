@@ -238,13 +238,16 @@ async function handleFileSelect(
         const bytes = new Uint8Array(
             await file.arrayBuffer(),
         );
-        const backup =
-            await getZipBackup(bytes);
-        if (backup) {
+        try {
+            const backup =
+                await getZipBackup(bytes);
             await handleV2Zip(
                 backup, input,
             );
             return;
+        } catch {
+            /* not a v2 backup — fall
+               through to standard import */
         }
     }
 
