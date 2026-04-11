@@ -77,7 +77,7 @@ let currentProjectId:
     string | undefined;
 
 let interactionAbortController:
-    AbortController | null = null;
+    AbortController | undefined;
 
 function renderAndBind(
     container: HTMLElement,

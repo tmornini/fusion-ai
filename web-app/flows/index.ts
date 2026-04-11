@@ -36,10 +36,16 @@ import {
 } from '../app/presenters';
 import { showToast } from '../app/toast';
 
-let pendingBackup:
-    BackupV2 | null = null;
-let pendingResolution:
-    ImportResolution | null = null;
+type ImportState =
+    | { kind: 'idle' }
+    | {
+        kind: 'pending';
+        backup: BackupV2;
+        resolution: ImportResolution;
+    };
+
+let importState: ImportState =
+    { kind: 'idle' };
 
 export async function init(
 ): Promise<void> {
@@ -145,8 +151,7 @@ function bindImport(): void {
     cancelBtn.addEventListener(
         'click',
         () => {
-            pendingBackup = null;
-            pendingResolution = null;
+            importState = { kind: 'idle' };
             resetImportDialog();
             closeDialog('import-flow');
         },
@@ -194,8 +199,7 @@ async function openImportDialog(
     if (!select) return;
 
     resetImportDialog();
-    pendingBackup = null;
-    pendingResolution = null;
+    importState = { kind: 'idle' };
 
     const projects = await getProjects();
     if (projects.length === 0) {
@@ -327,8 +331,11 @@ async function handleV2Zip(
         input.value = '';
         return;
     }
-    pendingBackup = backup;
-    pendingResolution = resolution;
+    importState = {
+        kind: 'pending',
+        backup,
+        resolution,
+    };
     configureResolutionDialog(
         resolution, backup,
     );
@@ -477,16 +484,16 @@ function resetImportDialog(): void {
 function clearPending(
     input: HTMLInputElement,
 ): void {
-    pendingBackup = null;
-    pendingResolution = null;
+    importState = { kind: 'idle' };
     input.value = '';
 }
 
 async function handleOverwrite(
     input: HTMLInputElement,
 ): Promise<void> {
-    const backup = pendingBackup;
-    if (!backup) return;
+    if (importState.kind !== 'pending')
+        return;
+    const { backup } = importState;
     closeDialog('import-flow');
     resetImportDialog();
     try {
@@ -514,16 +521,15 @@ async function handleOverwrite(
 async function handleCreateNew(
     input: HTMLInputElement,
 ): Promise<void> {
-    const backup = pendingBackup;
-    const resolution =
-        pendingResolution;
-    if (!backup || !resolution)
+    if (importState.kind !== 'pending')
         return;
+    const { backup, resolution } =
+        importState;
     const projectId =
         resolution.case === '1a'
         || resolution.case === '1b'
             ? backup.projectId!
-            : null;
+            : undefined;
     if (!projectId) return;
     closeDialog('import-flow');
     resetImportDialog();
@@ -554,8 +560,9 @@ async function handleCreateNew(
 async function handleCreate(
     input: HTMLInputElement,
 ): Promise<void> {
-    const backup = pendingBackup;
-    if (!backup) return;
+    if (importState.kind !== 'pending')
+        return;
+    const { backup } = importState;
     const select = $select(
         '#import-project', document,
     );

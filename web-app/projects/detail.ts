@@ -32,8 +32,8 @@ import {
 } from '../../api/types';
 
 let editEscapeHandler:
-    ((e: KeyboardEvent) => void) | null
-    = null;
+    ((e: KeyboardEvent) => void)
+    | undefined;
 
 function bindProjectEvents(
     project: ProjectView,
@@ -46,7 +46,7 @@ function bindProjectEvents(
             'keydown',
             editEscapeHandler,
         );
-        editEscapeHandler = null;
+        editEscapeHandler = undefined;
     }
     if (isEditing) {
         editEscapeHandler = (

@@ -23,8 +23,8 @@ import {
 } from '../app/presenters';
 
 let editEscapeHandler:
-    ((e: KeyboardEvent) => void) | null
-    = null;
+    ((e: KeyboardEvent) => void)
+    | undefined;
 
 function bindIdeaEvents(
     idea: Idea,
@@ -36,7 +36,7 @@ function bindIdeaEvents(
             'keydown',
             editEscapeHandler,
         );
-        editEscapeHandler = null;
+        editEscapeHandler = undefined;
     }
     if (isEditing) {
         editEscapeHandler = (
