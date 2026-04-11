@@ -281,9 +281,9 @@ export async function getWorkboxItems(
             currentNodeId(woTransitions);
         const curNode = fg.nodes.find(
             n => n.id === curId,
-        );
+        )!;
         const isCompleted =
-            curNode?.isComplete === true;
+            curNode.isComplete;
 
         const claim =
             claimByWo.get(wo.id);
@@ -304,8 +304,7 @@ export async function getWorkboxItems(
             id: wo.id,
             displayId: wo.display_id,
             flowName: fg.name,
-            stateName:
-                curNode?.name ?? '',
+            stateName: curNode.name,
             transitionerName:
                 userName(
                     userMap,
