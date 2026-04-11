@@ -52,30 +52,30 @@ export class IdeaPresenter {
     }
 
     idForLink(): string {
-        return this.#idea.id;
+        return this.#idea.idForLink();
     }
 
     positionSortKey(): number {
-        return this.#idea.position;
+        return this.#idea.positionSortKey();
     }
 
     statusGroup(): IdeaStatus {
-        return this.#idea.status;
+        return this.#idea.statusValue();
     }
 
     buildStatusBadge(): SafeHtml {
         const cfg = IDEA_STATUS_CONFIG[
-            this.#idea.status
+            this.#idea.statusValue()
         ]!;
         const icon = STATUS_ICONS[
-            this.#idea.status
+            this.#idea.statusValue()
         ]!;
         return html`<span class="${
             'badge '
             + cfg.className
             + ' text-xs'
         }" data-status="${
-            this.#idea.status
+            this.#idea.statusValue()
         }" style="${
             'cursor:pointer;'
             + 'min-width:6rem;'
@@ -95,8 +95,9 @@ export class IdeaPresenter {
             'padding:1.25rem;'
             + 'cursor:pointer'
         }"
-        data-idea-card="${this.#idea.id}"
-        data-position="${this.#idea.position}">
+        data-idea-card="${this.#idea.idForLink()}"
+        data-position="${
+            this.#idea.positionSortKey()}">
         <div class="${
             'flex items-center gap-4'
         }">
@@ -130,11 +131,11 @@ export class IdeaPresenter {
             + ' font-semibold'
             + ' truncate'
         }">
-            ${this.#idea.title}
+            ${this.#idea.titleText()}
         </h3>
         <span class="${
             'badge '
-            + this.#idea.statusClassName
+            + this.#idea.statusClassName()
             + ' text-xs'
         }" style="${
             'justify-content:center;'
@@ -142,9 +143,9 @@ export class IdeaPresenter {
             + 'margin-top:0.25rem'
         }">${
             STATUS_ICONS[
-                this.#idea.status
+                this.#idea.statusValue()
             ]!(14, '')
-        } ${this.#idea.statusLabel}</span>`;
+        } ${this.#idea.statusLabel()}</span>`;
     }
 
     #buildActions(): SafeHtml {
@@ -167,7 +168,7 @@ export class IdeaPresenter {
                     + ' btn-sm gap-2'
                 }"
                 data-idea-convert="${
-                    this.#idea.id}">
+                    this.#idea.idForLink()}">
                 ${iconArrowRight(16, '')}
                 <span
                     class="${
@@ -199,7 +200,7 @@ export class IdeaPresenter {
                 Ideas
             </a>
             <span>/</span>
-            <span>${this.#idea.title}</span>
+            <span>${this.#idea.titleText()}</span>
         </div>
 
         <div class="flex items-start
@@ -228,7 +229,8 @@ export class IdeaPresenter {
                                     + '-title'
                                 }"
                                 value="${
-                                    this.#idea.title
+                                    this.#idea
+                                        .titleText()
                                 }"
                                 style="${
                                     'font-size:'
@@ -242,7 +244,8 @@ export class IdeaPresenter {
                                     + ' font-display'
                                     + ' font-bold'
                                 }">
-                                ${this.#idea.title}
+                                ${this.#idea
+                                    .titleText()}
                             </h1>`}
                         <span class="badge
                             ${this.#idea
@@ -257,10 +260,12 @@ export class IdeaPresenter {
                     }">
                         Submitted by
                         ${displayText(
-                            this.#idea.submittedBy,
+                            this.#idea
+                                .submittedByName(),
                         )}
                         @ ${formatDateTime(
-                            this.#idea.submittedAt,
+                            this.#idea
+                                .submittedAtDate(),
                         )}
                     </p>
                 </div>
@@ -269,8 +274,10 @@ export class IdeaPresenter {
                 class="${
                     'flex items-center gap-2'
                 }">
-                ${this.#idea.status === 'active'
-                    || this.#idea.status === 'sent-back'
+                ${this.#idea.statusValue()
+                    === 'active'
+                    || this.#idea.statusValue()
+                    === 'sent-back'
                     ? html`
                 <button
                     class="${
@@ -515,12 +522,13 @@ export class IdeaPresenter {
                         rows="3"
                         style="resize:none"
                         >${this
-                            .#idea.problemStatement
+                            .#idea
+                            .problemStatementText()
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            this
-                                .#idea.problemStatement,
+                            this.#idea
+                            .problemStatementText(),
                         )}
                         </p>`}
             </div>
@@ -538,12 +546,13 @@ export class IdeaPresenter {
                             + 'target'
                         }"
                         value="${
-                            this.#idea.targetUsers
+                            this.#idea
+                                .targetUsersText()
                         }" />`
                     : html`<p class="text-sm">
                         ${displayText(
-                            this
-                                .#idea.targetUsers,
+                            this.#idea
+                                .targetUsersText(),
                         )}
                         </p>`}
             </div>
@@ -563,12 +572,13 @@ export class IdeaPresenter {
                         rows="3"
                         style="resize:none"
                         >${this
-                            .#idea.proposedSolution
+                            .#idea
+                            .proposedSolutionText()
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            this
-                                .#idea.proposedSolution,
+                            this.#idea
+                            .proposedSolutionText(),
                         )}
                         </p>`}
             </div>
@@ -588,12 +598,13 @@ export class IdeaPresenter {
                         rows="3"
                         style="resize:none"
                         >${this
-                            .#idea.expectedOutcome
+                            .#idea
+                            .expectedOutcomeText()
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            this
-                                .#idea.expectedOutcome,
+                            this.#idea
+                            .expectedOutcomeText(),
                         )}
                         </p>`}
             </div>
@@ -613,12 +624,13 @@ export class IdeaPresenter {
                         rows="3"
                         style="resize:none"
                         >${this
-                            .#idea.successMetrics
+                            .#idea
+                            .successMetricsText()
                         }</textarea>`
                     : html`<p class="text-sm">
                         ${displayText(
-                            this
-                                .#idea.successMetrics,
+                            this.#idea
+                            .successMetricsText(),
                         )}
                         </p>`}
             </div>

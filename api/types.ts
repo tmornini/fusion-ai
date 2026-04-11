@@ -832,101 +832,101 @@ export const READINESS_CONFIG: Record<
 };
 
 export class Idea {
-    readonly id: string;
-    readonly title: string;
-    readonly position: number;
-    readonly status: IdeaStatus;
-    readonly problemStatement: string;
-    readonly targetUsers: string;
-    readonly proposedSolution: string;
-    readonly expectedOutcome: string;
-    readonly successMetrics: string;
-    readonly readiness: ReadinessLevel;
-    readonly waitingDays: number;
-    readonly submittedAt: string;
-    readonly risks: string;
-    readonly assumptions: string;
-    readonly alignments: string;
-    readonly submittedBy: string;
+    readonly #id: string;
+    readonly #title: string;
+    readonly #position: number;
+    readonly #status: IdeaStatus;
+    readonly #problemStatement: string;
+    readonly #targetUsers: string;
+    readonly #proposedSolution: string;
+    readonly #expectedOutcome: string;
+    readonly #successMetrics: string;
+    readonly #readiness: ReadinessLevel;
+    readonly #waitingDays: number;
+    readonly #submittedAt: string;
+    readonly #risks: string;
+    readonly #assumptions: string;
+    readonly #alignments: string;
+    readonly #submittedBy: string;
 
     constructor(
         entity: IdeaEntity,
         submittedBy: string,
         submittedAt: string,
     ) {
-        this.id = entity.id;
-        this.title = entity.title;
-        this.position = entity.position;
-        this.status = entity.status;
-        this.problemStatement =
+        this.#id = entity.id;
+        this.#title = entity.title;
+        this.#position = entity.position;
+        this.#status = entity.status;
+        this.#problemStatement =
             entity.problem_statement;
-        this.targetUsers =
+        this.#targetUsers =
             entity.target_users;
-        this.proposedSolution =
+        this.#proposedSolution =
             entity.proposed_solution;
-        this.expectedOutcome =
+        this.#expectedOutcome =
             entity.expected_outcome;
-        this.successMetrics =
+        this.#successMetrics =
             entity.success_metrics;
-        this.readiness = entity.readiness;
-        this.submittedAt = submittedAt;
-        this.waitingDays = this.submittedAt
+        this.#readiness = entity.readiness;
+        this.#submittedAt = submittedAt;
+        this.#waitingDays = this.#submittedAt
             ? Math.max(0, Math.ceil(
                 (Date.now()
                     - new Date(
-                        this.submittedAt,
+                        this.#submittedAt,
                     ).getTime())
                 / MS_PER_SECOND
                 / SECONDS_PER_DAY,
             ))
             : 0;
-        this.risks = entity.risks;
-        this.assumptions = entity.assumptions;
-        this.alignments = entity.alignments;
-        this.submittedBy = submittedBy;
+        this.#risks = entity.risks;
+        this.#assumptions = entity.assumptions;
+        this.#alignments = entity.alignments;
+        this.#submittedBy = submittedBy;
     }
 
     isDeleted(): boolean {
-        return this.status === 'deleted';
+        return this.#status === 'deleted';
     }
 
     isInReview(): boolean {
-        return this.status === 'in-review';
+        return this.#status === 'in-review';
     }
 
     isReviewable(): boolean {
-        return this.status === 'in-review';
+        return this.#status === 'in-review';
     }
 
     isConvertible(): boolean {
-        return this.status === 'approved';
+        return this.#status === 'approved';
     }
 
     isReady(): boolean {
-        return this.readiness === 'ready';
+        return this.#readiness === 'ready';
     }
 
     statusLabel(): string {
         return (
-            IDEA_STATUS_CONFIG[this.status]
+            IDEA_STATUS_CONFIG[this.#status]
         )!.label;
     }
 
     statusClassName(): string {
         return (
-            IDEA_STATUS_CONFIG[this.status]
+            IDEA_STATUS_CONFIG[this.#status]
         )!.className;
     }
 
     readinessLabel(): string {
         return (
-            READINESS_CONFIG[this.readiness]
+            READINESS_CONFIG[this.#readiness]
         )!.label;
     }
 
     readinessClassName(): string {
         return (
-            READINESS_CONFIG[this.readiness]
+            READINESS_CONFIG[this.#readiness]
         )!.className;
     }
 
@@ -934,7 +934,7 @@ export class Idea {
         severity: string;
         mitigation: string }[] {
         return JSON.parse(
-            this.risks,
+            this.#risks,
         ) as { title: string;
             severity: string;
             mitigation: string }[];
@@ -942,26 +942,78 @@ export class Idea {
 
     parsedAssumptions(): string[] {
         return JSON.parse(
-            this.assumptions,
+            this.#assumptions,
         ) as string[];
     }
 
     parsedAlignments(): string[] {
         return JSON.parse(
-            this.alignments,
+            this.#alignments,
         ) as string[];
     }
 
     matchesSearch(term: string): boolean {
         const t = term.toLowerCase();
         return (
-            this.title
+            this.#title
                 .toLowerCase()
                 .includes(t)
-            || this.submittedBy
+            || this.#submittedBy
                 .toLowerCase()
                 .includes(t)
         );
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    titleText(): string {
+        return this.#title;
+    }
+
+    positionSortKey(): number {
+        return this.#position;
+    }
+
+    statusValue(): IdeaStatus {
+        return this.#status;
+    }
+
+    problemStatementText(): string {
+        return this.#problemStatement;
+    }
+
+    targetUsersText(): string {
+        return this.#targetUsers;
+    }
+
+    proposedSolutionText(): string {
+        return this.#proposedSolution;
+    }
+
+    expectedOutcomeText(): string {
+        return this.#expectedOutcome;
+    }
+
+    successMetricsText(): string {
+        return this.#successMetrics;
+    }
+
+    readinessValue(): ReadinessLevel {
+        return this.#readiness;
+    }
+
+    waitingDaysCount(): number {
+        return this.#waitingDays;
+    }
+
+    submittedAtDate(): string {
+        return this.#submittedAt;
+    }
+
+    submittedByName(): string {
+        return this.#submittedBy;
     }
 }
 

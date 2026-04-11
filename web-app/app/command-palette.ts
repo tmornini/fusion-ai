@@ -200,10 +200,11 @@ export function initCommandPalette(
         const ideaItems:
             SearchItem[] =
             ideas.map(idea => ({
-                id: `idea-${idea.id}`,
-                title: idea.title,
+                id: `idea-${
+                    idea.idForLink()}`,
+                title: idea.titleText(),
                 meta:
-                    idea.status
+                    idea.statusValue()
                         .replace(
                             /-/g,
                             ' ',
@@ -215,12 +216,12 @@ export function initCommandPalette(
                     'idea-convert',
                     {
                         ideaId:
-                            idea.id,
+                            idea.idForLink(),
                     },
                 ),
                 keywords:
-                    `${idea.submittedBy}`
-                    + ` ${idea.status}`,
+                    `${idea.submittedByName()}`
+                    + ` ${idea.statusValue()}`,
             }));
 
         const projectItems:
