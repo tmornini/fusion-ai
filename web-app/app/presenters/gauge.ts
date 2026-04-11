@@ -75,48 +75,20 @@ const ARC_OUTER_R = 65;
 const ARC_INNER_R = 45;
 
 export class GaugePresenter {
-    readonly #theme: GaugeCard['theme'];
-    readonly #title: string;
-    readonly #icon: GaugeIcon;
-    readonly #iconCssClass: string;
-    readonly #outerValue: number;
-    readonly #outerMax: number;
-    readonly #outerLabel: string;
-    readonly #outerDisplay: string;
-    readonly #innerValue: number;
-    readonly #innerMax: number;
-    readonly #innerLabel: string;
-    readonly #innerDisplay: string;
-    readonly #hasOverrunWarning: boolean;
+    readonly #card: GaugeCard;
 
     constructor(card: GaugeCard) {
-        this.#theme = card.theme;
-        this.#title = card.title;
-        this.#icon = card.icon;
-        this.#iconCssClass =
-            card.iconCssClass;
-        this.#outerValue = card.outer.value;
-        this.#outerMax = card.outer.max;
-        this.#outerLabel = card.outer.label;
-        this.#outerDisplay =
-            card.outer.display;
-        this.#innerValue = card.inner.value;
-        this.#innerMax = card.inner.max;
-        this.#innerLabel = card.inner.label;
-        this.#innerDisplay =
-            card.inner.display;
-        this.#hasOverrunWarning =
-            card.hasOverrunWarning;
+        this.#card = card;
     }
 
     buildGauge(): SafeHtml {
         const ts =
-            THEME_CONFIG[this.#theme];
-        const elementId = this.#title
+            THEME_CONFIG[this.#card.theme];
+        const elementId = this.#card.title
             .replace(/\s+/g, '-')
             .toLowerCase();
         const iconFn =
-            ICON_CONFIG[this.#icon]!;
+            ICON_CONFIG[this.#card.icon]!;
         return html`
     <div class="card" style="${
         'border:2px solid transparent;'
@@ -139,12 +111,12 @@ export class GaugePresenter {
                 + 'justify-content:center'
             }">
                 ${iconFn(
-                    20, this.#iconCssClass,
+                    20, this.#card.iconCssClass,
                 )}
             </div>
             <h3 class="${
                 'text-sm font-semibold'
-            }">${this.#title}</h3>
+            }">${this.#card.title}</h3>
         </div>
         <div style="${
             'display:flex;'
@@ -161,19 +133,19 @@ export class GaugePresenter {
         elementId: string,
     ): SafeHtml {
         const outerPct =
-            this.#outerMax > 0
+            this.#card.outer.max > 0
                 ? Math.min(
-                    (this.#outerValue
-                        / this.#outerMax)
+                    (this.#card.outer.value
+                        / this.#card.outer.max)
                         * 100,
                     100,
                 )
                 : 0;
         const innerPct =
-            this.#innerMax > 0
+            this.#card.inner.max > 0
                 ? Math.min(
-                    (this.#innerValue
-                        / this.#innerMax)
+                    (this.#card.inner.value
+                        / this.#card.inner.max)
                         * 100,
                     100,
                 )
@@ -183,9 +155,9 @@ export class GaugePresenter {
         const innerArc =
             Math.PI * ARC_INNER_R;
         const isOverrun =
-            this.#hasOverrunWarning
-            && this.#innerValue
-                > this.#innerMax;
+            this.#card.hasOverrunWarning
+            && this.#card.inner.value
+                > this.#card.inner.max;
         const stop0 =
             'hsl(var(--success))';
         const stop1 = isOverrun
@@ -194,12 +166,12 @@ export class GaugePresenter {
 
         let flashStyle = '';
         if (
-            this.#hasOverrunWarning
-            && this.#innerMax > 0
+            this.#card.hasOverrunWarning
+            && this.#card.inner.max > 0
         ) {
             const ratio =
-                this.#innerValue
-                / this.#innerMax;
+                this.#card.inner.value
+                / this.#card.inner.max;
             if (ratio > 1.5) {
                 const dur = Math.max(
                     0.333,
@@ -367,13 +339,13 @@ export class GaugePresenter {
                     }" style="${
                         'font-weight:500'
                     }">${
-                        this.#innerLabel
+                        this.#card.inner.label
                     }</span>
                 </div>
                 <p class="${
                     'text-2xl font-bold'
                 }">${
-                    this.#innerDisplay
+                    this.#card.inner.display
                 }</p>
             </div>
             <div style="${cellStyle}">
@@ -393,13 +365,13 @@ export class GaugePresenter {
                     }" style="${
                         'font-weight:500'
                     }">${
-                        this.#outerLabel
+                        this.#card.outer.label
                     }</span>
                 </div>
                 <p class="${
                     'text-2xl font-bold'
                 }">${
-                    this.#outerDisplay
+                    this.#card.outer.display
                 }</p>
             </div>
         </div>`;
