@@ -74,21 +74,37 @@ class Debouncer {
 const saveDebouncer =
     new Debouncer(SAVE_DELAY_MS);
 
-const pageState = {
-    projectId: undefined as
-        string | undefined,
-    interaction: new AbortController(),
-};
+class PageState {
+    #projectId: string | undefined;
+    #interaction = new AbortController();
+
+    projectId(): string | undefined {
+        return this.#projectId;
+    }
+
+    setProjectId(id: string): void {
+        this.#projectId = id;
+    }
+
+    signal(): AbortSignal {
+        return this.#interaction.signal;
+    }
+
+    resetInteraction(): void {
+        this.#interaction.abort();
+        this.#interaction =
+            new AbortController();
+    }
+}
+
+const pageState = new PageState();
 
 function renderAndBind(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
-    pageState.interaction.abort();
-    pageState.interaction =
-        new AbortController();
-    const signal =
-        pageState.interaction.signal;
+    pageState.resetInteraction();
+    const signal = pageState.signal();
     saveDebouncer.flush();
     presenter.render(container);
     bindBackButton();
@@ -215,15 +231,18 @@ function bindBackButton(): void {
     $('#flow-back-btn', document)
         ?.addEventListener(
             'click',
-            () => pageState.projectId
-                ? navigateTo(
-                    'project-detail',
-                    {
-                        projectId:
-                            pageState.projectId,
-                    },
-                )
-                : navigateTo('flows'),
+            () => {
+                const pid =
+                    pageState.projectId();
+                if (pid) {
+                    navigateTo(
+                        'project-detail',
+                        { projectId: pid },
+                    );
+                } else {
+                    navigateTo('flows');
+                }
+            },
         );
 }
 
@@ -758,8 +777,11 @@ export async function init(
 ): Promise<void> {
     const flowId =
         params?.flowId;
-    pageState.projectId =
-        params?.projectId;
+    if (params?.projectId) {
+        pageState.setProjectId(
+            params.projectId,
+        );
+    }
     if (!flowId) {
         navigateTo('flows');
         return;
