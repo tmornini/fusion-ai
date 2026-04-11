@@ -240,55 +240,76 @@ export async function putFlowLocked(
     });
 }
 
+export interface GraphUpdateContext {
+    flowId: string;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+}
+
 export async function putGraph(
-    flowId: string,
-    nodes: GraphNode[],
-    edges: GraphEdge[],
+    ctx: GraphUpdateContext,
 ): Promise<void> {
-    await PUT(`flows/${flowId}`, {
-        graph: putFlowGraph({ nodes, edges }),
+    await PUT(`flows/${ctx.flowId}`, {
+        graph: putFlowGraph({
+            nodes: ctx.nodes,
+            edges: ctx.edges,
+        }),
         updated_at: nowUtc(),
     });
 }
 
-export async function putNode(
-    flowId: string,
-    nodeId: string,
+export interface NodeUpdateContext {
+    flowId: string;
+    nodeId: string;
     fields: {
         name?: string;
         description?: string;
         positionX?: number;
         positionY?: number;
-    },
+    };
+}
+
+export async function putNode(
+    ctx: NodeUpdateContext,
 ): Promise<void> {
     await putGraphMutation(
-        flowId,
+        ctx.flowId,
         g => ({
             ...g,
             nodes: g.nodes.map(
-                n => n.id === nodeId
-                    ? { ...n, ...fields }
+                n => n.id === ctx.nodeId
+                    ? {
+                        ...n,
+                        ...ctx.fields,
+                    }
                     : n,
             ),
         }),
     );
 }
 
-export async function putWfEdge(
-    flowId: string,
-    edgeId: string,
+export interface EdgeUpdateContext {
+    flowId: string;
+    edgeId: string;
     fields: {
         name?: string;
         description?: string;
-    },
+    };
+}
+
+export async function putWfEdge(
+    ctx: EdgeUpdateContext,
 ): Promise<void> {
     await putGraphMutation(
-        flowId,
+        ctx.flowId,
         g => ({
             ...g,
             edges: g.edges.map(
-                e => e.id === edgeId
-                    ? { ...e, ...fields }
+                e => e.id === ctx.edgeId
+                    ? {
+                        ...e,
+                        ...ctx.fields,
+                    }
                     : e,
             ),
         }),
@@ -315,31 +336,36 @@ function applyFieldUpdate(
     };
 }
 
-export async function putField(
-    flowId: string,
-    nodeId: string,
-    fieldId: string,
+export interface FieldUpdateContext {
+    flowId: string;
+    nodeId: string;
+    fieldId: string;
     fields: {
         name?: string;
         fieldType?: string;
         sortOrder?: number;
         isRequired?: boolean;
         options?: string[];
-    },
+    };
+}
+
+export async function putField(
+    ctx: FieldUpdateContext,
 ): Promise<void> {
     await putGraphMutation(
-        flowId,
+        ctx.flowId,
         g => ({
             ...g,
             nodes: g.nodes.map(
-                n => n.id === nodeId
+                n => n.id === ctx.nodeId
                     ? {
                         ...n,
                         fields: n.fields.map(
                             f => f.id
-                                === fieldId
+                                === ctx.fieldId
                                 ? applyFieldUpdate(
-                                    f, fields,
+                                    f,
+                                    ctx.fields,
                                 )
                                 : f,
                         ),

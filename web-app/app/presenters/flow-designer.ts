@@ -261,11 +261,11 @@ export class FlowDesignerPresenter {
                     n.positionY - cy,
             }),
         );
-        void putGraph(
-            this.#state.flowId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
+        void putGraph({
+            flowId: this.#state.flowId,
+            nodes: this.#state.nodes,
+            edges: this.#state.edges,
+        });
     }
 
     selectedNodeId(): string | null {
@@ -523,9 +523,13 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putNode(fId, nodeId, {
-            positionX: x,
-            positionY: y,
+        void putNode({
+            flowId: fId,
+            nodeId,
+            fields: {
+                positionX: x,
+                positionY: y,
+            },
         });
         this.#expandIfNeeded();
     }
@@ -857,11 +861,11 @@ ${toolbar}
                     positionY: pos.y,
                 };
             });
-        void putGraph(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
+        void putGraph({
+            flowId: fId,
+            nodes: this.#state.nodes,
+            edges: this.#state.edges,
+        });
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -907,9 +911,11 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putNode(
-            fId, nodeId, { name },
-        );
+        void putNode({
+            flowId: fId,
+            nodeId,
+            fields: { name },
+        });
     }
 
     updateNodeDescription(
@@ -947,10 +953,13 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putNode(
-            fId, nodeId,
-            { description: desc },
-        );
+        void putNode({
+            flowId: fId,
+            nodeId,
+            fields: {
+                description: desc,
+            },
+        });
     }
 
     updateEdgeName(
@@ -985,9 +994,11 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putWfEdge(
-            fId, edgeId, { name },
-        );
+        void putWfEdge({
+            flowId: fId,
+            edgeId,
+            fields: { name },
+        });
     }
 
     updateEdgeDescription(
@@ -1025,10 +1036,13 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putWfEdge(
-            fId, edgeId,
-            { description: desc },
-        );
+        void putWfEdge({
+            flowId: fId,
+            edgeId,
+            fields: {
+                description: desc,
+            },
+        });
     }
 
     async addField(
