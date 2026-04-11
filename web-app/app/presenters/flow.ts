@@ -10,28 +10,17 @@ import type {
 } from '../adapters/flows';
 
 export class FlowPresenter {
-    readonly #id: string;
-    readonly #name: string;
-    readonly #description: string;
-    readonly #nodeCount: number;
-    readonly #edgeCount: number;
-    readonly #projectName:
-        string | undefined;
+    readonly #flow: FlowSummary;
 
     constructor(wf: FlowSummary) {
-        this.#id = wf.id;
-        this.#name = wf.name;
-        this.#description = wf.description;
-        this.#nodeCount = wf.nodeCount;
-        this.#edgeCount = wf.edgeCount;
-        this.#projectName = wf.projectName;
+        this.#flow = wf;
     }
 
     buildCard(): SafeHtml {
         return html`
     <div class="card card-hover p-4"
         style="cursor:pointer"
-        data-flow-card="${this.#id}">
+        data-flow-card="${this.#flow.id}">
         <div class="${
             'flex items-start '
             + 'justify-between gap-4'
@@ -44,7 +33,7 @@ export class FlowPresenter {
                     + 'items-center'
                     + ' gap-2 mb-2'
                 }">
-                    ${this.#projectName
+                    ${this.#flow.projectName
                         ? html`<span
                             class="${
                                 'badge'
@@ -55,19 +44,19 @@ export class FlowPresenter {
                                 12, '',
                             )
                         } ${
-                            this.#projectName
+                            this.#flow.projectName
                         }</span>`
                         : html``}
                 </div>
                 <h3 class="${
                     'font-semibold mb-1'
-                }">${this.#name}</h3>
+                }">${this.#flow.name}</h3>
                 <p class="${
                     'text-sm'
                     + ' text-muted mb-2'
                     + ' truncate'
                 }">${
-                    this.#description
+                    this.#flow.description
                 }</p>
                 <div class="${
                     'flex flex-wrap '
@@ -83,9 +72,9 @@ export class FlowPresenter {
                     }">${
                         iconCircle(14, '')
                     } ${
-                        this.#nodeCount
+                        this.#flow.nodeCount
                     } ${
-                        this.#nodeCount === 1
+                        this.#flow.nodeCount === 1
                             ? 'state'
                             : 'states'
                     }</span>
@@ -96,9 +85,9 @@ export class FlowPresenter {
                     }">${
                         iconShare(14, '')
                     } ${
-                        this.#edgeCount
+                        this.#flow.edgeCount
                     } ${
-                        this.#edgeCount === 1
+                        this.#flow.edgeCount === 1
                             ? 'transition'
                             : 'transitions'
                     }</span>
