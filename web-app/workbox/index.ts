@@ -205,7 +205,8 @@ async function initNewDialog(): Promise<
                     const woId =
                         await postWorkOrderCreation(
                             flowId,
-                            auth.user.id,
+                            auth.user
+                                .idForLink(),
                         );
                     closeDialog('new-wo');
                     showToast(

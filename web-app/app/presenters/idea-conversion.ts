@@ -86,9 +86,9 @@ export class IdeaConversionPresenter {
         this.#leadOptions = users
             .filter(u => u.isActive())
             .map(u => ({
-                id: u.id,
+                id: u.idForLink(),
                 fullName: u.fullName(),
-                role: u.role,
+                role: u.roleLabel(),
             }));
         this.#fields = {
             'project-name': idea.title,

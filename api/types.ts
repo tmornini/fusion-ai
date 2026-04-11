@@ -231,93 +231,271 @@ export interface UserEntity {
     last_active: string;
 }
 
+export interface UserCardReceiver {
+    identity(
+        id: string,
+        fullName: string,
+        initials: string,
+    ): void;
+    role(text: string): void;
+    department(text: string): void;
+    email(text: string): void;
+    status(
+        label: string,
+        className: string,
+        isActive: boolean,
+        isPending: boolean,
+        isDeactivated: boolean,
+    ): void;
+    availability(value: number): void;
+    performance(
+        score: number,
+        projectsCompleted: number,
+        currentProjects: number,
+    ): void;
+    strengths(items: string[]): void;
+    teamDimensions(
+        dims: Record<string, number>,
+    ): void;
+    lastActive(isoDate: string): void;
+}
+
+export interface UserProfileReceiver {
+    populateField(
+        field: string,
+        value: string,
+    ): void;
+}
+
 export class User {
-    readonly id: string;
-    readonly firstName: string;
-    readonly lastName: string;
-    readonly email: string;
-    readonly role: string;
-    readonly department: string;
-    readonly status: UserStatus;
-    readonly availability: number;
-    readonly performanceScore: number;
-    readonly projectsCompleted: number;
-    readonly currentProjects: number;
-    readonly strengths: string;
-    readonly teamDimensions: string;
-    readonly phone: string;
-    readonly bio: string;
-    readonly lastActive: string;
+    readonly #id: string;
+    readonly #firstName: string;
+    readonly #lastName: string;
+    readonly #email: string;
+    readonly #role: string;
+    readonly #department: string;
+    readonly #status: UserStatus;
+    readonly #availability: number;
+    readonly #performanceScore: number;
+    readonly #projectsCompleted: number;
+    readonly #currentProjects: number;
+    readonly #strengths: string;
+    readonly #teamDimensions: string;
+    readonly #phone: string;
+    readonly #bio: string;
+    readonly #lastActive: string;
 
     constructor(entity: UserEntity) {
-        this.id = entity.id;
-        this.firstName = entity.first_name;
-        this.lastName = entity.last_name;
-        this.email = entity.email;
-        this.role = entity.role;
-        this.department = entity.department;
-        this.status = entity.status;
-        this.availability = entity.availability;
-        this.performanceScore = entity.performance_score;
-        this.projectsCompleted = entity.projects_completed;
-        this.currentProjects = entity.current_projects;
-        this.strengths = entity.strengths;
-        this.teamDimensions = entity.team_dimensions;
-        this.phone = entity.phone;
-        this.bio = entity.bio;
-        this.lastActive = entity.last_active;
+        this.#id = entity.id;
+        this.#firstName =
+            entity.first_name;
+        this.#lastName =
+            entity.last_name;
+        this.#email = entity.email;
+        this.#role = entity.role;
+        this.#department =
+            entity.department;
+        this.#status = entity.status;
+        this.#availability =
+            entity.availability;
+        this.#performanceScore =
+            entity.performance_score;
+        this.#projectsCompleted =
+            entity.projects_completed;
+        this.#currentProjects =
+            entity.current_projects;
+        this.#strengths =
+            entity.strengths;
+        this.#teamDimensions =
+            entity.team_dimensions;
+        this.#phone = entity.phone;
+        this.#bio = entity.bio;
+        this.#lastActive =
+            entity.last_active;
+    }
+
+    idForLink(): string {
+        return this.#id;
     }
 
     fullName(): string {
         return (
-            `${this.firstName}`
-            + ` ${this.lastName}`
+            `${this.#firstName}`
+            + ` ${this.#lastName}`
         ).trim();
     }
 
+    roleLabel(): string {
+        return this.#role;
+    }
+
+    departmentLabel(): string {
+        return this.#department;
+    }
+
+    emailAddress(): string {
+        return this.#email;
+    }
+
     isActive(): boolean {
-        return this.status === 'active';
+        return this.#status === 'active';
     }
 
     isPending(): boolean {
-        return this.status === 'pending';
+        return (
+            this.#status === 'pending'
+        );
     }
 
     isDeactivated(): boolean {
-        return this.status === 'deactivated';
+        return (
+            this.#status === 'deactivated'
+        );
     }
 
     statusLabel(): string {
         return (
-            USER_STATUS_CONFIG[this.status]
+            USER_STATUS_CONFIG[
+                this.#status
+            ]
         )!.label;
     }
 
     statusClassName(): string {
         return (
-            USER_STATUS_CONFIG[this.status]
+            USER_STATUS_CONFIG[
+                this.#status
+            ]
         )!.className;
     }
 
     hasDepartment(): boolean {
-        return this.department !== '';
+        return this.#department !== '';
     }
 
     hasPerformanceScore(): boolean {
-        return this.performanceScore > 0;
+        return this.#performanceScore > 0;
+    }
+
+    availabilityScore(): number {
+        return this.#availability;
+    }
+
+    performanceScoreValue(): number {
+        return this.#performanceScore;
+    }
+
+    projectsCompletedCount(): number {
+        return this.#projectsCompleted;
+    }
+
+    currentProjectsCount(): number {
+        return this.#currentProjects;
+    }
+
+    lastActiveDate(): string {
+        return this.#lastActive;
+    }
+
+    statusValue(): UserStatus {
+        return this.#status;
     }
 
     parsedStrengths(): string[] {
         return JSON.parse(
-            this.strengths,
+            this.#strengths,
         ) as string[];
     }
 
     parsedTeamDimensions():
         Record<string, number> {
         return JSON.parse(
-            this.teamDimensions,
+            this.#teamDimensions,
         ) as Record<string, number>;
+    }
+
+    matchesSearch(term: string): boolean {
+        const t = term.toLowerCase();
+        return (
+            this.fullName()
+                .toLowerCase()
+                .includes(t)
+            || this.#email
+                .toLowerCase()
+                .includes(t)
+            || this.#role
+                .toLowerCase()
+                .includes(t)
+            || this.#department
+                .toLowerCase()
+                .includes(t)
+        );
+    }
+
+    presentCardInto(
+        r: UserCardReceiver,
+    ): void {
+        const fn = this.fullName();
+        const parts = fn.split(/\s+/);
+        const ini = parts.length >= 2
+            ? (parts[0]![0] ?? '')
+                + (parts[parts.length - 1]
+                    ?.[0] ?? '')
+            : fn.slice(0, 2);
+        r.identity(
+            this.#id,
+            fn,
+            ini.toUpperCase(),
+        );
+        r.role(this.#role);
+        r.department(this.#department);
+        r.email(this.#email);
+        r.status(
+            this.statusLabel(),
+            this.statusClassName(),
+            this.isActive(),
+            this.isPending(),
+            this.isDeactivated(),
+        );
+        r.availability(this.#availability);
+        r.performance(
+            this.#performanceScore,
+            this.#projectsCompleted,
+            this.#currentProjects,
+        );
+        r.strengths(
+            this.parsedStrengths(),
+        );
+        r.teamDimensions(
+            this.parsedTeamDimensions(),
+        );
+        r.lastActive(this.#lastActive);
+    }
+
+    presentProfileInto(
+        r: UserProfileReceiver,
+    ): void {
+        r.populateField(
+            'firstName', this.#firstName,
+        );
+        r.populateField(
+            'lastName', this.#lastName,
+        );
+        r.populateField(
+            'email', this.#email,
+        );
+        r.populateField(
+            'phone', this.#phone,
+        );
+        r.populateField(
+            'role', this.#role,
+        );
+        r.populateField(
+            'department', this.#department,
+        );
+        r.populateField(
+            'bio', this.#bio,
+        );
     }
 }
 

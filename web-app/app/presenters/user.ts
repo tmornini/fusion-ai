@@ -106,7 +106,7 @@ export class UserPresenter {
     }
 
     idForLink(): string {
-        return this.#user.id;
+        return this.#user.idForLink();
     }
 
     matchesSearch(
@@ -115,10 +115,10 @@ export class UserPresenter {
         return this.#user.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#user.role
+            || this.#user.roleLabel()
                 .toLowerCase()
                 .includes(query)
-            || this.#user.department
+            || this.#user.departmentLabel()
                 .toLowerCase()
                 .includes(query);
     }
@@ -129,7 +129,7 @@ export class UserPresenter {
         return this.#user.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#user.email
+            || this.#user.emailAddress()
                 .toLowerCase()
                 .includes(query);
     }
@@ -138,21 +138,21 @@ export class UserPresenter {
         role: string,
     ): boolean {
         return role === 'all'
-            || this.#user.role === role;
+            || this.#user.roleLabel() === role;
     }
 
     matchesStatusFilter(
         status: string,
     ): boolean {
         return status === 'all'
-            || this.#user.status === status;
+            || this.#user.statusValue() === status;
     }
 
     buildMemberCard(
         selectedId: string | null,
     ): SafeHtml {
         const cardStyle =
-            selectedId === this.#user.id
+            selectedId === this.#user.idForLink()
                 ? 'box-shadow:0 0 0 2px'
                   + ' hsl(var(--primary))'
                 : '';
@@ -161,7 +161,7 @@ export class UserPresenter {
         class="card card-hover"
         style="padding:1.25rem;
             cursor:pointer;${cardStyle}"
-        data-member-card="${this.#user.id}"
+        data-member-card="${this.#user.idForLink()}"
     >
         <div class="flex items-start gap-4">
             <div
@@ -199,7 +199,7 @@ export class UserPresenter {
                     }</span>
                 </div>
                 ${buildStatusDot(
-                    this.#user.availability,
+                    this.#user.availabilityScore(),
                 )}
             </div>
             <div style="flex:1;min-width:0">
@@ -221,18 +221,18 @@ export class UserPresenter {
                         style="${
                             styleForAvailability(
                                 this.#user
-                                .availability,
+                                .availabilityScore(),
                             )
                         }"
                     >${
-                        this.#user.availability
+                        this.#user.availabilityScore()
                     }%</span>
                 </div>
                 <p class="${
                     'text-xs text-muted mb-2'
                 }">
-                    ${this.#user.role}
-                    \u2022 ${this.#user.department}
+                    ${this.#user.roleLabel()}
+                    \u2022 ${this.#user.departmentLabel()}
                 </p>
                 <div
                     class="${
@@ -276,7 +276,8 @@ export class UserPresenter {
                             14, 'text-success',
                         )}
                         ${this.#user
-                            .performanceScore}%
+                            .performanceScoreValue()
+                        }%
                     </span>
                     <span
                         class="${
@@ -286,7 +287,7 @@ export class UserPresenter {
                     >
                         ${iconBriefcase(14, '')}
                         ${this.#user
-                            .currentProjects
+                            .currentProjectsCount()
                         } active
                     </span>
                     <span
@@ -300,7 +301,7 @@ export class UserPresenter {
                             14, 'text-primary',
                         )}
                         ${this.#user
-                            .projectsCompleted}
+                            .projectsCompletedCount()}
                         completed
                     </span>
                 </div>
@@ -355,10 +356,10 @@ export class UserPresenter {
                 }"
             >${this.#user.fullName()}</h3>
             <p class="text-sm text-muted">
-                ${this.#user.role}
+                ${this.#user.roleLabel()}
             </p>
             <p class="text-xs text-muted">
-                ${this.#user.email}
+                ${this.#user.emailAddress()}
             </p>
         </div>
         ${this.#buildDimensionsTab()}
@@ -429,7 +430,7 @@ export class UserPresenter {
                             + 'text-muted '
                             + 'truncate'
                         }">
-                        ${this.#user.email}
+                        ${this.#user.emailAddress()}
                     </p>
                 </div>
             </div>
@@ -440,7 +441,7 @@ export class UserPresenter {
                 class="${
                     'text-sm text-muted'
                 }">
-                ${this.#user.department}
+                ${this.#user.departmentLabel()}
             </div>
             <div style="flex:1">
                 ${this.#buildStatusBadge()}
@@ -453,7 +454,7 @@ export class UserPresenter {
                         : 'Last active '
                             + formatDate(
                                 this.#user
-                                .lastActive,
+                                .lastActiveDate(),
                             )}
                 </p>
             </div>
@@ -466,7 +467,7 @@ export class UserPresenter {
                         + 'btn-icon btn-sm'
                     }"
                     data-edit-user="${
-                        this.#user.id
+                        this.#user.idForLink()
                     }">
                     ${iconStar(16, '')}
                 </button>
@@ -502,13 +503,13 @@ export class UserPresenter {
 
     #buildRoleBadge(): SafeHtml {
         const cfg =
-            ROLE_LABELS[this.#user.role];
+            ROLE_LABELS[this.#user.roleLabel()];
         if (!cfg)
             return html`<span
                 class="${
                     'badge badge-secondary'
                 }">
-                ${this.#user.role}
+                ${this.#user.roleLabel()}
             </span>`;
         return html`<span
             class="${
@@ -650,7 +651,7 @@ export class UserPresenter {
                         'margin:0.5rem 0'
                     }"
                 >${
-                    this.#user.performanceScore
+                    this.#user.performanceScoreValue()
                 }%</div>
                 <p class="${
                     'text-xs text-muted'
@@ -691,7 +692,7 @@ export class UserPresenter {
                         }"
                     >${
                         this.#user
-                            .projectsCompleted
+                            .projectsCompletedCount()
                     }</div>
                     <p class="${
                         'text-xs text-muted'
@@ -724,7 +725,7 @@ export class UserPresenter {
                         }"
                     >${
                         this.#user
-                            .currentProjects
+                            .currentProjectsCount()
                     }</div>
                     <p class="${
                         'text-xs text-muted'

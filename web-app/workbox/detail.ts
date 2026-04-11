@@ -487,7 +487,7 @@ export async function init(
         buildSkeleton('detail', 4),
         async () => {
             let wo = await getWorkboxItem(
-                id, user.id,
+                id, user.idForLink(),
             );
             const claim =
                 wo.claimStatus();
@@ -497,10 +497,10 @@ export async function init(
                 && !wo.isComplete()
             ) {
                 await postWorkOrderClaim(
-                    id, user.id,
+                    id, user.idForLink(),
                 );
                 wo = await getWorkboxItem(
-                    id, user.id,
+                    id, user.idForLink(),
                 );
             }
             return wo;
@@ -531,7 +531,8 @@ export async function init(
         !detail.isComplete()
     ) {
         initTransitionButtons(
-            container, detail, user.id,
+            container, detail,
+            user.idForLink(),
         );
         initUnclaimButton(
             container, detail,

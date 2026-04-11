@@ -259,12 +259,15 @@ export function initCommandPalette(
             members.map(
                 member => ({
                     id: `person-`
-                        + `${member.id}`,
+                        + member
+                            .idForLink(),
                     title:
                         member.fullName(),
                     meta:
-                        `${member.role}`
-                        + ` · ${member.department}`,
+                        member.roleLabel()
+                        + ' \u00B7 '
+                        + member
+                            .departmentLabel(),
                     category:
                         'people',
                     icon:
@@ -274,9 +277,13 @@ export function initCommandPalette(
                             'teams',
                         ),
                     keywords:
-                        `${member.role}`
-                        + ` ${member.department}`
-                        + ` ${member.email}`,
+                        member.roleLabel()
+                        + ' '
+                        + member
+                            .departmentLabel()
+                        + ' '
+                        + member
+                            .emailAddress(),
                 }),
             );
 
