@@ -2,6 +2,9 @@ const INDICATOR_HEIGHT = 3;
 const INDICATOR_COLOR =
     'hsl(var(--primary))';
 const DRAGGING_OPACITY = '0.4';
+const FIRST_POSITION = 1;
+const POSITION_GAP = 1;
+const FALLBACK_POSITION = '0';
 
 export function initDragReorder(
     container: HTMLElement,
@@ -154,21 +157,22 @@ export function initDragReorder(
                 c => parseFloat(
                     c.getAttribute(
                         'data-position',
-                    ) ?? '0',
+                    ) ?? FALLBACK_POSITION,
                 ),
             );
             let newPos: number;
             if (items.length === 0) {
-                newPos = 1;
+                newPos = FIRST_POSITION;
             } else if (idx === 0) {
-                newPos = positions[0]! - 1;
+                newPos = positions[0]!
+                    - POSITION_GAP;
             } else if (
                 idx >= items.length
             ) {
                 newPos =
                     positions[
                         positions.length - 1
-                    ]! + 1;
+                    ]! + POSITION_GAP;
             } else {
                 newPos = (
                     positions[idx - 1]!

@@ -469,6 +469,8 @@ export async function createFlowFromBackup(
 
 const IMPORT_CANVAS_W = 1200;
 const IMPORT_CANVAS_H = 800;
+const IMPORT_DEFAULT_DESCRIPTION = '';
+const IMPORT_FALLBACK_POSITION = 0;
 
 function layoutParsedNodes(
     nodes: ParsedNode[],
@@ -549,9 +551,12 @@ export async function postFlowFromMermaid(
             return {
                 id: nodeId,
                 name: n.name,
-                description: '',
-                positionX: pos?.x ?? 0,
-                positionY: pos?.y ?? 0,
+                description:
+                    IMPORT_DEFAULT_DESCRIPTION,
+                positionX: pos?.x
+                    ?? IMPORT_FALLBACK_POSITION,
+                positionY: pos?.y
+                    ?? IMPORT_FALLBACK_POSITION,
                 isStart: n.isStart,
                 isComplete: n.isComplete,
                 fields: [],
@@ -567,7 +572,8 @@ export async function postFlowFromMermaid(
         edges.push({
             id: crypto.randomUUID(),
             name: e.name,
-            description: '',
+            description:
+                IMPORT_DEFAULT_DESCRIPTION,
             fromNodeId: fromId,
             toNodeId: toId,
         });
@@ -698,7 +704,8 @@ export async function postFlowFromZip(
         ?? parsed.nodes[0]!.name
             + ' (import)';
     const flowDesc =
-        sidecar?.description ?? '';
+        sidecar?.description
+        ?? IMPORT_DEFAULT_DESCRIPTION;
 
     const idMap =
         new Map<string, string>();
@@ -729,9 +736,12 @@ export async function postFlowFromZip(
                 id: nodeId,
                 name: n.name,
                 description:
-                    sc?.description ?? '',
-                positionX: pos?.x ?? 0,
-                positionY: pos?.y ?? 0,
+                    sc?.description
+                    ?? IMPORT_DEFAULT_DESCRIPTION,
+                positionX: pos?.x
+                    ?? IMPORT_FALLBACK_POSITION,
+                positionY: pos?.y
+                    ?? IMPORT_FALLBACK_POSITION,
                 isStart: n.isStart,
                 isComplete: n.isComplete,
                 fields: sc
@@ -771,7 +781,8 @@ export async function postFlowFromZip(
             id: crypto.randomUUID(),
             name: e.name,
             description:
-                se?.description ?? '',
+                se?.description
+                ?? IMPORT_DEFAULT_DESCRIPTION,
             fromNodeId: fromId,
             toNodeId: toId,
         });

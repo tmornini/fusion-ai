@@ -61,6 +61,8 @@ const LABEL_BG_OPACITY = 0.9;
 const LABEL_TEXT_OFFSET_Y = 4;
 const LABEL_FONT = 11;
 
+const BEZIER_ORIGIN = 0;
+
 export type RectEdge =
     'right' | 'left' | 'top' | 'bottom';
 
@@ -750,8 +752,8 @@ function bezierAt(
         .filter(n => !isNaN(n));
     if (coords.length < 8) {
         return {
-            x: coords[0] ?? 0,
-            y: coords[1] ?? 0,
+            x: coords[0] ?? BEZIER_ORIGIN,
+            y: coords[1] ?? BEZIER_ORIGIN,
         };
     }
     const u = 1 - t;
