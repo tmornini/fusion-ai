@@ -215,7 +215,7 @@ function bindProjectEvents(
                         );
                     if (!wfId) return;
                     navigateTo(
-                        'flows-detail',
+                        'flow-detail',
                         {
                             flowId: wfId,
                             projectId,
@@ -287,7 +287,7 @@ function bindNewFlowDialog(
                 }
                 closeDialog('new-flow');
                 navigateTo(
-                    'flows-detail',
+                    'flow-detail',
                     {
                         flowId: wfId,
                         projectId,

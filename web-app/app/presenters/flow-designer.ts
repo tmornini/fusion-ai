@@ -250,13 +250,6 @@ export class FlowDesignerPresenter {
         }
         const cx = sumX / nodes.length;
         const cy = sumY / nodes.length;
-        console.log(
-            '[migrateToCenter]',
-            { cx, cy,
-                skip: Math.abs(cx) <= 1
-                    && Math.abs(cy) <= 1,
-                count: nodes.length },
-        );
         if (
             Math.abs(cx) <= 1
             && Math.abs(cy) <= 1
@@ -419,15 +412,6 @@ export class FlowDesignerPresenter {
     render(
         container: HTMLElement,
     ): void {
-        const vb =
-            this.#state.interaction
-                .viewBox;
-        console.log(
-            '[render]',
-            { vb: { ...vb },
-                zoom: this.#state
-                    .interaction.zoom },
-        );
         this.#handlePanelTransition();
         const toolbar =
             this.#buildToolbar();
@@ -1388,11 +1372,6 @@ ${toolbar}
     updateCanvasSize(
         w: number, h: number,
     ): void {
-        console.log(
-            '[updateCanvasSize]',
-            { w, h,
-                needsFit: this.#needsFit },
-        );
         this.#canvasW = w;
         this.#canvasH = h;
         if (this.#needsFit) {

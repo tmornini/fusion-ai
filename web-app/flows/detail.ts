@@ -759,45 +759,36 @@ export async function init(
         new FlowDesignerPresenter(
             graph, FALLBACK_W, FALLBACK_H,
         );
-    let lastW = 0;
-    let lastH = 0;
-    const ro = new ResizeObserver(
-        (entries) => {
-            const entry = entries[0];
-            if (!entry) return;
-            const cr =
-                entry.contentRect;
-            if (
-                cr.width <= 0
-                || cr.height <= 0
-            ) return;
-            if (
-                cr.width === lastW
-                && cr.height === lastH
-            ) return;
-            lastW = cr.width;
-            lastH = cr.height;
-            presenter
-                .updateCanvasSize(
-                    cr.width,
-                    cr.height,
-                );
-            renderAndBind(
-                container, presenter,
-            );
-            ro.disconnect();
-            const w =
-                container.querySelector(
-                    '.wf-canvas-wrap',
-                );
-            if (w) ro.observe(w);
-        },
-    );
     renderAndBind(container, presenter);
     const wrap = container.querySelector(
         '.wf-canvas-wrap',
     );
-    if (wrap) ro.observe(wrap);
+    if (wrap) {
+        const ro = new ResizeObserver(
+            (entries) => {
+                const entry =
+                    entries[0];
+                if (!entry) return;
+                const cr =
+                    entry.contentRect;
+                if (
+                    cr.width > 0
+                    && cr.height > 0
+                ) {
+                    presenter
+                        .updateCanvasSize(
+                            cr.width,
+                            cr.height,
+                        );
+                    renderAndBind(
+                        container,
+                        presenter,
+                    );
+                }
+            },
+        );
+        ro.observe(wrap);
+    }
     bindKeyboardShortcuts(
         container, presenter,
     );

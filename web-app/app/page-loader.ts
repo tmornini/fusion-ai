@@ -39,7 +39,7 @@ const pageModules: Record<
         import('../ideas/convert'),
     flows: () =>
         import('../flows/index'),
-    'flows-detail': () =>
+    'flow-detail': () =>
         import('../flows/detail'),
     teams: () =>
         import(

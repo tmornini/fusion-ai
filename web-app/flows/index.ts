@@ -81,7 +81,7 @@ export async function init(
                 );
             if (card)
                 navigateTo(
-                    'flows-detail',
+                    'flow-detail',
                     {
                         flowId: attr(
                             card,
@@ -237,7 +237,7 @@ async function handleFileSelect(
     }
 
     navigateTo(
-        'flows-detail',
+        'flow-detail',
         { flowId: result.flowId },
     );
 }
