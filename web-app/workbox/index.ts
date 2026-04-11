@@ -181,9 +181,27 @@ async function initNewDialog(): Promise<
                     );
                     return;
                 }
+                let auth: Awaited<
+                    ReturnType<
+                        typeof getCurrentUser
+                    >
+                >;
                 try {
-                    const auth =
+                    auth =
                         await getCurrentUser();
+                } catch (err) {
+                    log.error(
+                        'getCurrentUser failed',
+                        'workbox',
+                        err,
+                    );
+                    showToast(
+                        'Failed to load user',
+                        'error',
+                    );
+                    return;
+                }
+                try {
                     const woId =
                         await postWorkOrderCreation(
                             flowId,

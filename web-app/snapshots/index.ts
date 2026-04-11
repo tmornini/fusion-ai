@@ -101,10 +101,26 @@ export async function init(
         button.textContent = 'Working...';
         try {
             await deleteSchema();
+        } catch (err) {
+            log.error(
+                'schema deletion failed',
+                'snapshots',
+                err,
+            );
+            showToast(
+                'Failed to clear schema.',
+                'error',
+            );
+            button.disabled = false;
+            button.textContent =
+                originalText;
+            return;
+        }
+        try {
             await action();
         } catch (err) {
             log.error(
-                'snapshot action failed',
+                label + ' failed',
                 'snapshots',
                 err,
             );

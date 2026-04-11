@@ -1252,6 +1252,19 @@ ${toolbar}
                 positionX: posX,
                 positionY: posY,
             });
+        } catch (err) {
+            log.error(
+                'postNodeAddition failed',
+                'flow-designer',
+                err,
+            );
+            showToast(
+                'Failed to add state',
+                'error',
+            );
+            return false;
+        }
+        try {
             await postEdgeConnection({
                 edgeId,
                 flowId: fId,
@@ -1261,12 +1274,13 @@ ${toolbar}
             });
         } catch (err) {
             log.error(
-                'postNodeAddition failed',
+                'postEdgeConnection failed',
                 'flow-designer',
                 err,
             );
             showToast(
-                'Failed to add state',
+                'Failed to connect'
+                + ' transition',
                 'error',
             );
             return false;
@@ -1357,6 +1371,19 @@ ${toolbar}
                 positionX: pos.x,
                 positionY: pos.y,
             });
+        } catch (err) {
+            log.error(
+                'postNodeAddition failed',
+                'flow-designer',
+                err,
+            );
+            showToast(
+                'Failed to add state',
+                'error',
+            );
+            return false;
+        }
+        try {
             await postEdgeConnection({
                 edgeId,
                 flowId: fId,
@@ -1366,12 +1393,13 @@ ${toolbar}
             });
         } catch (err) {
             log.error(
-                'postNodeAddition failed',
+                'postEdgeConnection failed',
                 'flow-designer',
                 err,
             );
             showToast(
-                'Failed to add state',
+                'Failed to connect'
+                + ' transition',
                 'error',
             );
             return false;

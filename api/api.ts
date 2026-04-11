@@ -579,6 +579,10 @@ export async function handleRequest(
     const method = request.method;
     const db = getDbAdapter();
 
+    // HTTP boundary handler: each case
+    // calls a single route handler; the
+    // catch translates domain exceptions
+    // to HTTP responses.
     try {
         switch (method) {
             case 'GET': {
