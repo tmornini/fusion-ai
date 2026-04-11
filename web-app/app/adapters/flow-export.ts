@@ -1,10 +1,17 @@
-import { POST } from '../../../api/api';
+import {
+    GET, POST, PUT,
+} from '../../../api/api';
 import {
     nowUtc,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
+    toBool,
+    projectIsNotDeleted,
 } from '../../../api/types';
 import type {
+    FlowEntity,
+    ProjectFlowEntity,
+    ProjectEntity,
     GraphNode,
     GraphEdge,
     WfFieldType,
@@ -128,22 +135,129 @@ function buildFlowTxt(
         + minuteUtc(':') + '\n';
 }
 
+/* ── v2 backup format ───────────── */
+
+export interface BackupV2 {
+    version: 2;
+    exportedAt: string;
+    projectId: string | null;
+    flow: {
+        id: string;
+        name: string;
+        description: string;
+        lockTimeout: number;
+        graph: {
+            nodes: GraphNode[];
+            edges: GraphEdge[];
+        };
+    };
+}
+
+export type ImportResolution =
+    | {
+        case: '1a';
+        projectName: string;
+    }
+    | {
+        case: '1b';
+        projectName: string;
+    }
+    | { case: '2a' }
+    | { case: '2b' };
+
+async function getFlowBackupData(
+    flowId: string,
+): Promise<{
+    flow: FlowEntity;
+    projectId: string | null;
+}> {
+    const [flow, projectFlows] =
+        await Promise.all([
+            GET<FlowEntity>(
+                'flows/' + flowId,
+            ),
+            GET<ProjectFlowEntity[]>(
+                'project-flows',
+            ),
+        ]);
+    const pf = projectFlows.find(
+        r => r.flow_id === flowId,
+    );
+    return {
+        flow,
+        projectId:
+            pf?.project_id ?? null,
+    };
+}
+
+function buildBackupJson(
+    flow: FlowEntity,
+    projectId: string | null,
+): string {
+    const graph = parseJson<{
+        nodes: GraphNode[];
+        edges: GraphEdge[];
+    }>(
+        flow.graph,
+        { nodes: [], edges: [] },
+    );
+    const backup: BackupV2 = {
+        version: 2,
+        exportedAt: minuteUtc(':'),
+        projectId,
+        flow: {
+            id: flow.id,
+            name: flow.name,
+            description:
+                flow.description,
+            lockTimeout:
+                flow.lock_timeout,
+            graph,
+        },
+    };
+    return JSON.stringify(
+        backup, null, 2,
+    );
+}
+
 export async function exportFlowZip(
     flowId: string,
 ): Promise<{
     data: Uint8Array;
     name: string;
 }> {
-    const graph =
-        await getFlowGraph(flowId);
+    const { flow, projectId } =
+        await getFlowBackupData(flowId);
+
+    const graph = parseJson<{
+        nodes: GraphNode[];
+        edges: GraphEdge[];
+    }>(
+        flow.graph,
+        { nodes: [], edges: [] },
+    );
+
+    const mermaidGraph: FlowGraph = {
+        id: flow.id,
+        name: flow.name,
+        description: flow.description,
+        isLocked: toBool(
+            flow.is_locked,
+        ),
+        nodes: graph.nodes,
+        edges: graph.edges,
+    };
 
     const enc = new TextEncoder();
-    const mmd =
-        enc.encode(generateMermaid(graph));
-    const json =
-        enc.encode(buildSidecar(graph));
-    const txt =
-        enc.encode(buildFlowTxt(flowId));
+    const mmd = enc.encode(
+        generateMermaid(mermaidGraph),
+    );
+    const json = enc.encode(
+        buildBackupJson(flow, projectId),
+    );
+    const txt = enc.encode(
+        buildFlowTxt(flowId),
+    );
 
     const data = buildZip([
         { name: 'flow.txt', data: txt },
@@ -151,7 +265,7 @@ export async function exportFlowZip(
         { name: 'flow.json', data: json },
     ]);
 
-    const safeName = graph.name
+    const safeName = flow.name
         .replaceAll(
             /[^a-zA-Z0-9_-]/g, '-',
         )
@@ -163,6 +277,192 @@ export async function exportFlowZip(
             + '-' + minuteUtc('-')
             + '.zip',
     };
+}
+
+/* ── v2 import ───────────────── */
+
+export async function parseZipBackup(
+    data: Uint8Array,
+): Promise<BackupV2 | null> {
+    const entries = await readZip(data);
+    const jsonEntry = entries.find(
+        e => e.name === 'flow.json'
+            || e.name.endsWith(
+                '/flow.json',
+            ),
+    );
+    if (!jsonEntry) return null;
+    const dec = new TextDecoder();
+    const text =
+        dec.decode(jsonEntry.data);
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return null;
+    }
+    const obj = parsed as {
+        version?: unknown;
+    };
+    if (obj.version !== 2) return null;
+    return parsed as
+        unknown as BackupV2;
+}
+
+export async function resolveFlowBackup(
+    backup: BackupV2,
+): Promise<ImportResolution> {
+    const [flows, projects] =
+        await Promise.all([
+            GET<FlowEntity[]>('flows'),
+            GET<ProjectEntity[]>(
+                'projects',
+            ),
+        ]);
+    const flowExists = flows.some(
+        f => f.id === backup.flow.id,
+    );
+    const project = backup.projectId
+        ? projects.find(
+            p => p.id
+                === backup.projectId
+                && projectIsNotDeleted(
+                    p,
+                ),
+        )
+        : undefined;
+
+    if (project && flowExists) {
+        return {
+            case: '1a',
+            projectName: project.title,
+        };
+    }
+    if (project) {
+        return {
+            case: '1b',
+            projectName: project.title,
+        };
+    }
+    if (flowExists) {
+        return { case: '2a' };
+    }
+    return { case: '2b' };
+}
+
+export async function overwriteFlow(
+    backup: BackupV2,
+): Promise<string> {
+    await PUT(
+        'flows/' + backup.flow.id,
+        {
+            name: backup.flow.name,
+            description:
+                backup.flow.description,
+            lock_timeout:
+                backup.flow.lockTimeout,
+            graph: saveGraph(
+                backup.flow.graph,
+            ),
+            updated_at: nowUtc(),
+        },
+    );
+    return backup.flow.id;
+}
+
+export async function createFlowFromBackup(
+    backup: BackupV2,
+    projectId: string,
+): Promise<string> {
+    const flowId = crypto.randomUUID();
+    const now = nowUtc();
+
+    const idMap =
+        new Map<string, string>();
+    for (
+        const n
+            of backup.flow.graph.nodes
+    ) {
+        idMap.set(
+            n.id,
+            crypto.randomUUID(),
+        );
+    }
+
+    const nodes: GraphNode[] =
+        backup.flow.graph.nodes.map(
+            n => ({
+                id: idMap.get(n.id)!,
+                name: n.name,
+                description:
+                    n.description,
+                positionX: n.positionX,
+                positionY: n.positionY,
+                isStart: n.isStart,
+                isComplete: n.isComplete,
+                fields: n.fields.map(
+                    f => ({
+                        id: crypto
+                            .randomUUID(),
+                        name: f.name,
+                        fieldType:
+                            f.fieldType,
+                        sortOrder:
+                            f.sortOrder,
+                        isRequired:
+                            f.isRequired,
+                        options:
+                            f.options,
+                    }),
+                ),
+            }),
+        );
+
+    const edges: GraphEdge[] = [];
+    for (
+        const e
+            of backup.flow.graph.edges
+    ) {
+        const fromId =
+            idMap.get(e.fromNodeId);
+        const toId =
+            idMap.get(e.toNodeId);
+        if (!fromId || !toId) continue;
+        edges.push({
+            id: crypto.randomUUID(),
+            name: e.name,
+            description:
+                e.description,
+            fromNodeId: fromId,
+            toNodeId: toId,
+        });
+    }
+
+    await POST<void>('flows', {
+        id: flowId,
+        name: backup.flow.name,
+        description:
+            backup.flow.description,
+        lock_timeout:
+            backup.flow.lockTimeout,
+        graph: saveGraph({
+            nodes, edges,
+        }),
+        created_at: now,
+        updated_at: now,
+    });
+
+    await POST<void>(
+        'project-flows',
+        {
+            id: crypto.randomUUID(),
+            project_id: projectId,
+            flow_id: flowId,
+            created_at: now,
+        },
+    );
+
+    return flowId;
 }
 
 /* ── Mermaid import ──────────────── */
