@@ -66,23 +66,10 @@ const ICON_MAP: Record<
 };
 
 export class ActivityPresenter {
-    readonly #type: string;
-    readonly #action: string;
-    readonly #target: string;
-    readonly #timestamp: string;
-    readonly #status: string;
-    readonly #comment: string;
-    readonly #actor: string;
+    readonly #activity: Activity;
 
     constructor(activity: Activity) {
-        this.#type = activity.type;
-        this.#action = activity.action;
-        this.#target = activity.target;
-        this.#timestamp =
-            activity.timestamp;
-        this.#status = activity.status;
-        this.#comment = activity.comment;
-        this.#actor = activity.actor;
+        this.#activity = activity;
     }
 
     matchesFilter(
@@ -92,31 +79,31 @@ export class ActivityPresenter {
             | undefined,
     ): boolean {
         if (query
-            && !this.#actor
+            && !this.#activity.actor
                 .toLowerCase()
                 .includes(query)
-            && !this.#target
+            && !this.#activity.target
                 .toLowerCase()
                 .includes(query))
             return false;
         if (types
             && !types.includes(
-                this.#type,
+                this.#activity.type,
             ))
             return false;
         return true;
     }
 
     buildActivity(): SafeHtml {
-        const meta = this.#status
+        const meta = this.#activity.status
                 ? html`<div
                     class="${
                         'badge badge-default'
                         + ' text-xs mt-1'
                     }">${
-                    this.#status
+                    this.#activity.status
                 }</div>`
-                : this.#comment
+                : this.#activity.comment
                     ? html`<p
                         class="${
                             'text-sm'
@@ -128,7 +115,7 @@ export class ActivityPresenter {
                             + ':italic'
                         }"
                         >"${
-                        this.#comment
+                        this.#activity.comment
                     }"</p>`
                     : html``;
         return html`
@@ -141,18 +128,18 @@ export class ActivityPresenter {
                     'font-medium'
                 }">${
                     displayText(
-                        this.#actor,
+                        this.#activity.actor,
                     )
                 }</span>
                 <span class="${
                     'text-muted'
                 }"> ${
-                    this.#action
+                    this.#activity.action
                 } </span>
                 <span class="${
                     'font-medium'
                 }">${
-                    this.#target
+                    this.#activity.target
                 }</span>
             </p>
             ${meta}
@@ -160,7 +147,7 @@ export class ActivityPresenter {
                 'text-xs text-muted mt-1'
             }">${
                 formatDate(
-                    this.#timestamp,
+                    this.#activity.timestamp,
                 )
             }</p>
         </div>
@@ -169,7 +156,7 @@ export class ActivityPresenter {
 
     #buildIcon(): SafeHtml {
         const actType =
-            this.#type as ActivityType;
+            this.#activity.type as ActivityType;
         const entry =
             ICON_MAP[actType]
             ?? ICON_MAP.idea_created;
