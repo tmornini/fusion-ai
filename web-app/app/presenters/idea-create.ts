@@ -9,15 +9,19 @@ import {
 interface FormData {
     title: string;
     problemStatement: string;
+    targetUsers: string;
     proposedSolution: string;
     expectedOutcome: string;
+    successMetrics: string;
 }
 
 const EMPTY_FORM: FormData = {
     title: '',
     problemStatement: '',
+    targetUsers: '',
     proposedSolution: '',
     expectedOutcome: '',
+    successMetrics: '',
 };
 
 export class IdeaCreatePresenter {
@@ -225,6 +229,33 @@ export class IdeaCreatePresenter {
         <div>
             <label class="label mb-2
                 block font-medium">
+                ${'Who will benefit'
+                    + ' from this?'}
+            </label>
+            <input class="input"
+                id=${'idea-create'
+                    + '-field-target'}
+                placeholder="${
+                    'e.g., Sales'
+                    + ' team,'
+                    + ' customers,'
+                    + ' operations'
+                    + ' managers'
+                }"
+                value="${
+                    this.#form.targetUsers
+                }"
+            />
+            <p class="text-xs text-muted
+                mt-1">
+                ${'Identify the people'
+                    + ' or teams who will'
+                    + ' use this'}
+            </p>
+        </div>
+        <div>
+            <label class="label mb-2
+                block font-medium">
                 How would you solve this?
             </label>
             <textarea class="textarea"
@@ -281,6 +312,38 @@ export class IdeaCreatePresenter {
                 ${'Think about what success'
                     + ' looks'
                     + ' like in 6-12 months'}
+            </p>
+        </div>
+        <div>
+            <label class="label mb-2
+                block font-medium">
+                ${'How would you'
+                    + ' measure success?'}
+            </label>
+            <textarea class="textarea"
+                id=${'idea-create'
+                    + '-field-metrics'}
+                placeholder="${
+                    'e.g., 20%'
+                    + ' reduction in'
+                    + ' processing'
+                    + ' time, 15%'
+                    + ' increase in'
+                    + ' conversion'
+                    + ' rate, NPS'
+                    + ' improvement'
+                    + ' of 10 points'
+                }"
+                rows="4"
+                style="resize:none">${
+                    this.#form
+                        .successMetrics
+            }</textarea>
+            <p class="text-xs text-muted
+                mt-1">
+                ${'Define measurable'
+                    + ' indicators of'
+                    + ' success'}
             </p>
         </div>
     </div>`;

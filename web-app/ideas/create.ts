@@ -45,6 +45,13 @@ export async function init():
                     + '-problem',
                     document,
                 )!.value,
+            targetUsers:
+                $input(
+                    '#idea-create'
+                    + '-field'
+                    + '-target',
+                    document,
+                )!.value,
             proposedSolution:
                 $textarea(
                     '#idea-create'
@@ -57,6 +64,13 @@ export async function init():
                     '#idea-create'
                     + '-field'
                     + '-outcome',
+                    document,
+                )!.value,
+            successMetrics:
+                $textarea(
+                    '#idea-create'
+                    + '-field'
+                    + '-metrics',
                     document,
                 )!.value,
         });
@@ -114,12 +128,18 @@ export async function init():
                         problem_statement:
                             fd
                             .problemStatement,
+                        target_users:
+                            fd
+                            .targetUsers,
                         proposed_solution:
                             fd
                             .proposedSolution,
                         expected_outcome:
                             fd
                             .expectedOutcome,
+                        success_metrics:
+                            fd
+                            .successMetrics,
                         status:
                             'active',
                         position:
