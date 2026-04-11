@@ -270,11 +270,9 @@ function buildHistoryEntry(
 function buildDetailView(
     detail: WorkboxDetail,
 ): SafeHtml {
-    const isComplete =
-        detail.currentNode.isComplete
-            === true;
+    const complete = detail.isComplete();
 
-    const fields = isComplete
+    const fields = complete
         ? html``
         : html`<div id="wo-fields"
             class="card mb-6 p-6">
@@ -282,7 +280,7 @@ function buildDetailView(
                 font-semibold mb-4">
                 Fields
             </h3>
-            ${detail.currentNode.fields
+            ${detail.renderableFields()
                 .toSorted(
                     (a, b) =>
                         a.sortOrder
@@ -291,7 +289,7 @@ function buildDetailView(
                 .map(buildFieldRow)}
         </div>`;
 
-    const transitions = isComplete
+    const transitions = complete
         ? html``
         : html`<div id="wo-transitions"
             class="flex gap-3 mb-6
@@ -305,7 +303,7 @@ function buildDetailView(
             )}
         </div>`;
 
-    const unclaimBtn = isComplete
+    const unclaimBtn = complete
         ? html``
         : html`<button
             id="unclaim-btn"
@@ -337,8 +335,8 @@ function buildDetailView(
                 <span
                     class="badge
                         badge-info">
-                    ${detail.currentNode
-                        .name}
+                    ${detail
+                        .currentNodeName()}
                 </span>
             </div>
         </div>
@@ -397,8 +395,8 @@ function initTransitionButtons(
                         container,
                     );
                 const hasEmpty =
-                    detail.currentNode
-                        .fields
+                    detail
+                        .renderableFields()
                         .filter(
                             f => f.isRequired,
                         )
@@ -426,8 +424,7 @@ function initTransitionButtons(
                             userId,
                             currentNodeId:
                                 detail
-                                    .currentNode
-                                    .id,
+                                    .currentNodeId(),
                         });
                     showToast(
                         'Transition'
@@ -455,12 +452,15 @@ function initUnclaimButton(
         '#unclaim-btn', container,
     );
     if (!btn) return;
+    const claim = detail.claimStatus();
+    if (claim.kind !== 'claimed') return;
+    const claimId = claim.claimId;
     btn.addEventListener(
         'click',
         async () => {
             try {
                 await deleteWorkOrderClaim(
-                    detail.claimId,
+                    claimId,
                 );
                 showToast(
                     'Work order released',
@@ -504,9 +504,12 @@ export async function init(
             let wo = await getWorkboxItem(
                 id, user.id,
             );
+            const claim =
+                wo.claimStatus();
             if (
-                !wo.claimedByCurrentUser
-                && !wo.currentNode.isComplete
+                (claim.kind !== 'claimed'
+                    || !claim.byCurrentUser)
+                && !wo.isComplete()
             ) {
                 await postWorkOrderClaim(
                     id, user.id,
@@ -540,7 +543,7 @@ export async function init(
     }
 
     if (
-        !detail.currentNode.isComplete
+        !detail.isComplete()
     ) {
         initTransitionButtons(
             container, detail, user.id,

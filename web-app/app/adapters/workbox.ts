@@ -52,20 +52,75 @@ export interface HistoryEntry {
     fieldValues: HistoryFieldValue[];
 }
 
-export interface WorkboxDetail {
-    id: string;
-    displayId: string;
-    flowName: string;
-    currentNode: GraphNode;
-    outgoingEdges: GraphEdge[];
-    body: Record<
+export type ClaimStatus =
+    | { kind: 'unclaimed' }
+    | {
+        kind: 'claimed';
+        claimId: string;
+        byCurrentUser: boolean;
+    };
+
+export class WorkboxDetail {
+    readonly id: string;
+    readonly displayId: string;
+    readonly flowName: string;
+    readonly outgoingEdges:
+        readonly GraphEdge[];
+    readonly body: Record<
         string,
         Record<string, string>
     >;
-    history: HistoryEntry[];
-    isClaimed: boolean;
-    claimedByCurrentUser: boolean;
-    claimId: string;
+    readonly history:
+        readonly HistoryEntry[];
+    readonly #currentNode: GraphNode;
+    readonly #claim: ClaimStatus;
+
+    constructor(data: {
+        id: string;
+        displayId: string;
+        flowName: string;
+        currentNode: GraphNode;
+        outgoingEdges: GraphEdge[];
+        body: Record<
+            string,
+            Record<string, string>
+        >;
+        history: HistoryEntry[];
+        claim: ClaimStatus;
+    }) {
+        this.id = data.id;
+        this.displayId = data.displayId;
+        this.flowName = data.flowName;
+        this.#currentNode =
+            data.currentNode;
+        this.outgoingEdges =
+            data.outgoingEdges;
+        this.body = data.body;
+        this.history = data.history;
+        this.#claim = data.claim;
+    }
+
+    isComplete(): boolean {
+        return this.#currentNode
+            .isComplete;
+    }
+
+    currentNodeName(): string {
+        return this.#currentNode.name;
+    }
+
+    currentNodeId(): string {
+        return this.#currentNode.id;
+    }
+
+    renderableFields():
+        readonly GraphField[] {
+        return this.#currentNode.fields;
+    }
+
+    claimStatus(): ClaimStatus {
+        return this.#claim;
+    }
 }
 
 /* ── Helpers ─────────────── */
@@ -375,7 +430,18 @@ export async function getWorkboxItem(
             ),
     );
 
-    return {
+    const claimData: ClaimStatus =
+        claim !== undefined
+            ? {
+                kind: 'claimed',
+                claimId: claim.id,
+                byCurrentUser:
+                    claim.user_id
+                        === currentUserId,
+            }
+            : { kind: 'unclaimed' };
+
+    return new WorkboxDetail({
         id: wo.id,
         displayId: wo.display_id,
         flowName: fg.name,
@@ -383,12 +449,8 @@ export async function getWorkboxItem(
         outgoingEdges: outgoing,
         body,
         history,
-        isClaimed: claim !== undefined,
-        claimedByCurrentUser:
-            claim?.user_id
-                === currentUserId,
-        claimId: claim?.id ?? '',
-    };
+        claim: claimData,
+    });
 }
 
 /* ── Operations ──────────── */
