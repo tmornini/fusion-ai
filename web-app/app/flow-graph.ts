@@ -301,39 +301,22 @@ function buildDefs(): string {
         + '</defs>';
 }
 
-const GRID_MIN_W = 1600;
-const GRID_MIN_H = 1000;
-
 function buildGrid(
     vbX: number,
     vbY: number,
     vbW: number,
     vbH: number,
 ): string {
-    const gx = Math.min(
-        vbX, -GRID_MIN_W / 2,
-    );
-    const gy = Math.min(
-        vbY, -GRID_MIN_H / 2,
-    );
-    const gw = Math.max(
-        vbW, GRID_MIN_W,
-        vbX + vbW - gx,
-    );
-    const gh = Math.max(
-        vbH, GRID_MIN_H,
-        vbY + vbH - gy,
-    );
     return '<rect'
-        + ` x="${gx}" y="${gy}"`
-        + ` width="${gw}"`
-        + ` height="${gh}"`
+        + ` x="${vbX}" y="${vbY}"`
+        + ` width="${vbW}"`
+        + ` height="${vbH}"`
         + ' fill="var('
         + '--color-surface, #1a1f2e)"/>'
         + '<rect'
-        + ` x="${gx}" y="${gy}"`
-        + ` width="${gw}"`
-        + ` height="${gh}"`
+        + ` x="${vbX}" y="${vbY}"`
+        + ` width="${vbW}"`
+        + ` height="${vbH}"`
         + ' fill="url(#wf-grid)"/>';
 }
 

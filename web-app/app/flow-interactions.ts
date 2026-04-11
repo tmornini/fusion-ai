@@ -629,8 +629,6 @@ export function zoomToFit(
     if (nodePositions.length === 0) return;
 
     const PAD = 70;
-    const NODE_W = 140;
-    const NODE_H = 56;
 
     let minX = Infinity;
     let minY = Infinity;
@@ -640,11 +638,11 @@ export function zoomToFit(
     for (const pos of nodePositions) {
         if (pos.x < minX) minX = pos.x;
         if (pos.y < minY) minY = pos.y;
-        if (pos.x + NODE_W > maxX) {
-            maxX = pos.x + NODE_W;
+        if (pos.x + NODE_WIDTH > maxX) {
+            maxX = pos.x + NODE_WIDTH;
         }
-        if (pos.y + NODE_H > maxY) {
-            maxY = pos.y + NODE_H;
+        if (pos.y + NODE_HEIGHT > maxY) {
+            maxY = pos.y + NODE_HEIGHT;
         }
     }
 

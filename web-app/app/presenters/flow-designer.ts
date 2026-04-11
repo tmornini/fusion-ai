@@ -829,7 +829,7 @@ ${toolbar}
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        this.#expandIfNeeded();
+        this.#applyZoomToFit();
     }
 
     updateNodeName(
