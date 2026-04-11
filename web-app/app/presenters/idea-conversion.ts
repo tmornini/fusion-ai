@@ -61,8 +61,10 @@ interface LeadOption {
 export class IdeaConversionPresenter {
     readonly #title: string;
     readonly #problemStatement: string;
+    readonly #targetUsers: string;
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
+    readonly #successMetrics: string;
     readonly #leadOptions: LeadOption[];
     #fields: Record<
         ConversionField, string
@@ -75,10 +77,14 @@ export class IdeaConversionPresenter {
         this.#title = idea.title;
         this.#problemStatement =
             idea.problemStatement;
+        this.#targetUsers =
+            idea.targetUsers;
         this.#proposedSolution =
             idea.proposedSolution;
         this.#expectedOutcome =
             idea.expectedOutcome;
+        this.#successMetrics =
+            idea.successMetrics;
         this.#leadOptions = users
             .filter(u => u.isActive())
             .map(u => ({
@@ -334,6 +340,24 @@ export class IdeaConversionPresenter {
                                 + ' text-muted'
                                 + ' mb-1'
                             }">
+                                ${'Target'
+                                + ' Users'}
+                            </p>
+                            <p class="${
+                                'text-sm'
+                            }">${
+                                displayText(
+                                this
+                                .#targetUsers
+                                )
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="${
+                                'text-xs'
+                                + ' text-muted'
+                                + ' mb-1'
+                            }">
                                 ${'Proposed'
                                 + ' Solution'}
                             </p>
@@ -361,6 +385,24 @@ export class IdeaConversionPresenter {
                                 displayText(
                                 this
                                 .#expectedOutcome
+                                )
+                            }</p>
+                        </div>
+                        <div>
+                            <p class="${
+                                'text-xs'
+                                + ' text-muted'
+                                + ' mb-1'
+                            }">
+                                ${'Success'
+                                + ' Metrics'}
+                            </p>
+                            <p class="${
+                                'text-sm'
+                            }">${
+                                displayText(
+                                this
+                                .#successMetrics
                                 )
                             }</p>
                         </div>
