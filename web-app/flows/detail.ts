@@ -419,33 +419,14 @@ function bindToolbarActions(
             btn.addEventListener(
                 'click',
                 () => {
-                    const nodeId =
-                        presenter
-                            .selectedNodeId();
-                    const edgeId =
-                        presenter
-                            .selectedEdgeId();
-                    if (nodeId !== null) {
-                        void presenter
-                            .deleteSelectedNode()
-                            .then(
-                                () => renderAndBind(
-                                    container,
-                                    presenter,
-                                ),
-                            );
-                        return;
-                    }
-                    if (edgeId !== null) {
-                        void presenter
-                            .deleteSelectedEdge()
-                            .then(
-                                () => renderAndBind(
-                                    container,
-                                    presenter,
-                                ),
-                            );
-                    }
+                    void presenter
+                        .deleteSelected()
+                        .then(
+                            () => renderAndBind(
+                                container,
+                                presenter,
+                            ),
+                        );
                 },
             );
         }
@@ -874,36 +855,15 @@ function bindKeyboardShortcuts(
                     HTMLSelectElement
                 )
             ) {
-                const nodeId =
-                    presenter
-                        .selectedNodeId();
-                const edgeId =
-                    presenter
-                        .selectedEdgeId();
-                if (nodeId !== null) {
-                    e.preventDefault();
-                    void presenter
-                        .deleteSelectedNode()
-                        .then(
-                            () => renderAndBind(
-                                container,
-                                presenter,
-                            ),
-                        );
-                    return;
-                }
-                if (edgeId !== null) {
-                    e.preventDefault();
-                    void presenter
-                        .deleteSelectedEdge()
-                        .then(
-                            () => renderAndBind(
-                                container,
-                                presenter,
-                            ),
-                        );
-                    return;
-                }
+                e.preventDefault();
+                void presenter
+                    .deleteSelected()
+                    .then(
+                        () => renderAndBind(
+                            container,
+                            presenter,
+                        ),
+                    );
             }
             const mod =
                 e.metaKey || e.ctrlKey;

@@ -804,6 +804,22 @@ ${toolbar}
         return true;
     }
 
+    async deleteSelected(
+    ): Promise<boolean> {
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind === 'node') {
+            return this
+                .deleteSelectedNode();
+        }
+        if (sel.kind === 'edge') {
+            return this
+                .deleteSelectedEdge();
+        }
+        return false;
+    }
+
     autoLayout(): void {
         if (this.#guardLocked()) return;
         const fId = this.#state.flowId;
