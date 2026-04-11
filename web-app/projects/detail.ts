@@ -18,6 +18,7 @@ import {
     getProjectById, putProject,
     getFlowsByProject,
     postFlowCreation,
+    projectChanged,
     ProjectView,
     isProjectStatus,
     COST_DIVISOR,
@@ -180,17 +181,24 @@ function bindProjectEvents(
         showToast(
             'Project saved', 'success',
         );
-        const [updated, updatedWfs] =
-            await Promise.all([
-                getProjectById(project.idForLink()),
-                getFlowsByProject(
-                    project.idForLink(),
-                ),
-            ]);
-        mutateProjectPage(
-            updated, updatedWfs, false,
-        );
     });
+
+    projectChanged.subscribe(
+        async () => {
+            const [upd, updWfs] =
+                await Promise.all([
+                    getProjectById(
+                        project.idForLink(),
+                    ),
+                    getFlowsByProject(
+                        project.idForLink(),
+                    ),
+                ]);
+            mutateProjectPage(
+                upd, updWfs, false,
+            );
+        },
+    );
 
     $('#new-flow-btn', document)
         ?.addEventListener(

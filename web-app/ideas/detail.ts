@@ -17,6 +17,7 @@ import {
 import {
     getIdeaDetail,
     putIdea,
+    ideaChanged,
     type Idea,
 } from '../app/adapters';
 import {
@@ -146,15 +147,18 @@ function bindIdeaEvents(
                     'Idea saved',
                     'success',
                 );
-                const updated =
-                    await getIdeaDetail(
-                        idea.idForLink(),
-                    );
-                mutateIdeaPage(
-                    updated, false,
-                );
             },
         );
+
+    ideaChanged.subscribe(async () => {
+        const updated =
+            await getIdeaDetail(
+                idea.idForLink(),
+            );
+        mutateIdeaPage(
+            updated, false,
+        );
+    });
 
     if (idea.isReviewable()) {
         bindApprovalEvents(

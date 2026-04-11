@@ -13,6 +13,12 @@ import {
     getUserMap,
     userName,
 } from './helpers';
+import {
+    createChannel,
+} from '../channels';
+
+export const projectChanged =
+    createChannel<void>();
 
 export {
     Project,
@@ -214,6 +220,7 @@ export async function putProject(
     entity: Partial<ProjectEntity>,
 ): Promise<void> {
     await PUT(`projects/${id}`, entity);
+    projectChanged.send();
 }
 
 export interface TeamMemberAssignment {
