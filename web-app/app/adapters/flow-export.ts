@@ -414,25 +414,23 @@ export async function createFlowFromBackup(
             }),
         );
 
-    const edges: GraphEdge[] = [];
-    for (
-        const e
-            of backup.flow.graph.edges
-    ) {
-        const fromId =
-            idMap.get(e.fromNodeId);
-        const toId =
-            idMap.get(e.toNodeId);
-        if (!fromId || !toId) continue;
-        edges.push({
-            id: crypto.randomUUID(),
-            name: e.name,
-            description:
-                e.description,
-            fromNodeId: fromId,
-            toNodeId: toId,
-        });
-    }
+    const edges: GraphEdge[] =
+        backup.flow.graph.edges.map(
+            e => ({
+                id: crypto.randomUUID(),
+                name: e.name,
+                description:
+                    e.description,
+                fromNodeId:
+                    idMap.get(
+                        e.fromNodeId,
+                    )!,
+                toNodeId:
+                    idMap.get(
+                        e.toNodeId,
+                    )!,
+            }),
+        );
 
     await POST<void>('flows', {
         id: flowId,
