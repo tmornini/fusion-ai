@@ -38,8 +38,10 @@
 | position | REAL |
 | status | TEXT |
 | problem_statement | TEXT |
+| target_users | TEXT |
 | proposed_solution | TEXT |
 | expected_outcome | TEXT |
+| success_metrics | TEXT |
 | readiness | TEXT |
 | risks | TEXT (JSON array) |
 | assumptions | TEXT (JSON array) |

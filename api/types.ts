@@ -325,8 +325,10 @@ export interface IdeaEntity {
     position: number;
     status: IdeaStatus;
     problem_statement: string;
+    target_users: string;
     proposed_solution: string;
     expected_outcome: string;
+    success_metrics: string;
     readiness: ReadinessLevel;
     risks: JsonArrayField;
     assumptions: JsonArrayField;
@@ -655,8 +657,10 @@ export class Idea {
     readonly position: number;
     readonly status: IdeaStatus;
     readonly problemStatement: string;
+    readonly targetUsers: string;
     readonly proposedSolution: string;
     readonly expectedOutcome: string;
+    readonly successMetrics: string;
     readonly readiness: ReadinessLevel;
     readonly waitingDays: number;
     readonly submittedAt: string;
@@ -676,10 +680,14 @@ export class Idea {
         this.status = entity.status;
         this.problemStatement =
             entity.problem_statement;
+        this.targetUsers =
+            entity.target_users;
         this.proposedSolution =
             entity.proposed_solution;
         this.expectedOutcome =
             entity.expected_outcome;
+        this.successMetrics =
+            entity.success_metrics;
         this.readiness = entity.readiness;
         this.submittedAt = submittedAt;
         this.waitingDays = this.submittedAt

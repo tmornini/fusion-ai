@@ -416,6 +416,10 @@ export async function populateMockData(
                 + ' leading to delayed'
                 + ' campaigns and missed'
                 + ' opportunities.',
+            target_users:
+                'Marketing team,'
+                + ' campaign managers,'
+                + ' data analysts',
             proposed_solution:
                 'Implement machine learning'
                 + ' model to automatically'
@@ -426,6 +430,11 @@ export async function populateMockData(
                 + ' by 80% and increase'
                 + ' conversion rates'
                 + ' by 25%.',
+            success_metrics:
+                '80% reduction in manual'
+                + ' segmentation time, 25%'
+                + ' increase in campaign'
+                + ' conversion rates',
             readiness: 'ready',
 
             risks: jsonArrayField([]),
@@ -446,6 +455,10 @@ export async function populateMockData(
                 + ' multiple data sources,'
                 + ' causing delays in'
                 + ' decision-making.',
+            target_users:
+                'Business analysts,'
+                + ' finance team,'
+                + ' department heads',
             proposed_solution:
                 'Build an automated'
                 + ' pipeline that aggregates'
@@ -459,6 +472,10 @@ export async function populateMockData(
                 + ' reducing report delivery'
                 + ' time from days to'
                 + ' minutes.',
+            success_metrics:
+                '90% reduction in report'
+                + ' preparation time,'
+                + ' 100% on-time delivery',
             readiness: 'ready',
 
             risks: jsonArrayField([]),
@@ -478,6 +495,10 @@ export async function populateMockData(
                 + ' incident and occurs 3-4'
                 + ' times per quarter due to'
                 + ' reactive maintenance.',
+            target_users:
+                'Operations team,'
+                + ' maintenance crew,'
+                + ' plant managers',
             proposed_solution:
                 'Deploy IoT sensors with'
                 + ' ML models to predict'
@@ -489,6 +510,7 @@ export async function populateMockData(
                 + ' equipment lifespan by'
                 + ' 20%, saving $150K'
                 + ' annually.',
+            success_metrics: '',
             readiness: 'needs-info',
 
             risks: jsonArrayField([]),
@@ -509,6 +531,10 @@ export async function populateMockData(
                 + ' time they arrive,'
                 + ' missing real-time'
                 + ' trends.',
+            target_users:
+                'Executive team,'
+                + ' VP of operations,'
+                + ' product managers',
             proposed_solution:
                 'Create a live dashboard'
                 + ' with streaming data'
@@ -521,6 +547,11 @@ export async function populateMockData(
                 + ' reducing response time'
                 + ' to market changes from'
                 + ' 5 days to under 1 hour.',
+            success_metrics:
+                'Dashboard response time'
+                + ' under 2 seconds, 95%'
+                + ' daily active usage'
+                + ' by leadership',
             readiness: 'ready',
 
             risks: jsonArrayField([]),
@@ -540,6 +571,7 @@ export async function populateMockData(
                 + ' stockouts cause 8% of'
                 + ' orders to be delayed or'
                 + ' cancelled.',
+            target_users: '',
             proposed_solution:
                 'Implement demand'
                 + ' forecasting with'
@@ -553,6 +585,7 @@ export async function populateMockData(
                 + ' incidents by 60%,'
                 + ' improving customer'
                 + ' satisfaction scores.',
+            success_metrics: '',
             readiness: 'needs-info',
 
             risks: jsonArrayField([]),
@@ -572,6 +605,9 @@ export async function populateMockData(
                 + ' inconsistent training'
                 + ' quality across'
                 + ' departments.',
+            target_users:
+                'New hires, HR team,'
+                + ' department trainers',
             proposed_solution:
                 'Build an AI training'
                 + ' assistant that delivers'
@@ -584,6 +620,10 @@ export async function populateMockData(
                 + ' hire productivity scores'
                 + ' by 40% in the first'
                 + ' quarter.',
+            success_metrics:
+                '50% faster onboarding,'
+                + ' 40% higher new-hire'
+                + ' productivity scores',
             readiness: 'incomplete',
 
             risks: jsonArrayField([]),
@@ -603,6 +643,10 @@ export async function populateMockData(
                 + ' daily, with average'
                 + ' response time of 4'
                 + ' hours.',
+            target_users:
+                'Customer support team,'
+                + ' customers, support'
+                + ' operations manager',
             proposed_solution:
                 'Deploy an AI chatbot'
                 + ' trained on historical'
@@ -614,6 +658,11 @@ export async function populateMockData(
                 + ' tickets and cut'
                 + ' average response time'
                 + ' to under 30 seconds.',
+            success_metrics:
+                '60% ticket deflection'
+                + ' rate, CSAT above 4.5,'
+                + ' average response time'
+                + ' under 30 seconds',
             readiness: 'ready',
 
             risks: jsonArrayField([
@@ -684,6 +733,10 @@ export async function populateMockData(
                 + ' rate is 42% due to'
                 + ' irrelevant, poorly'
                 + ' timed messages.',
+            target_users:
+                'Mobile app users,'
+                + ' product team,'
+                + ' marketing',
             proposed_solution:
                 'Implement user-preference'
                 + ' controls and ML-based'
@@ -693,6 +746,10 @@ export async function populateMockData(
                 + ' under 20% and increase'
                 + ' notification engagement'
                 + ' by 35%.',
+            success_metrics:
+                'Opt-out rate below 20%,'
+                + ' 35% higher engagement'
+                + ' on push notifications',
             readiness: 'needs-info',
 
             risks: jsonArrayField([]),
@@ -711,6 +768,7 @@ export async function populateMockData(
                 + ' energy, water, and'
                 + ' waste metrics across'
                 + ' facilities.',
+            target_users: '',
             proposed_solution:
                 'Build a dashboard that'
                 + ' aggregates utility data'
@@ -721,6 +779,10 @@ export async function populateMockData(
                 + ' energy costs and meet'
                 + ' annual ESG reporting'
                 + ' requirements.',
+            success_metrics:
+                '15% energy cost'
+                + ' reduction, ESG report'
+                + ' delivery on schedule',
             readiness: 'ready',
 
             risks: jsonArrayField([]),
@@ -739,6 +801,9 @@ export async function populateMockData(
                 + ' are rising with no'
                 + ' unified wellness'
                 + ' tracking or resources.',
+            target_users:
+                'All employees, HR team,'
+                + ' people operations',
             proposed_solution:
                 'Integrate wellness'
                 + ' vendors into a single'
@@ -750,6 +815,10 @@ export async function populateMockData(
                 + ' by 50% and reduce'
                 + ' voluntary turnover'
                 + ' by 12%.',
+            success_metrics:
+                '50% participation'
+                + ' increase, 12% lower'
+                + ' voluntary turnover',
             readiness: 'incomplete',
 
             risks: jsonArrayField([]),
@@ -768,6 +837,10 @@ export async function populateMockData(
                 + ' manual audits that lag'
                 + ' 48 hours behind actual'
                 + ' stock movements.',
+            target_users:
+                'Warehouse staff,'
+                + ' supply chain team,'
+                + ' logistics managers',
             proposed_solution:
                 'Deploy barcode and RFID'
                 + ' scanning with live'
@@ -778,6 +851,10 @@ export async function populateMockData(
                 + ' accuracy and eliminate'
                 + ' end-of-day manual'
                 + ' reconciliation.',
+            success_metrics:
+                '99.5% inventory accuracy,'
+                + ' zero manual'
+                + ' reconciliation needed',
             readiness: 'ready',
 
             risks: jsonArrayField([]),
