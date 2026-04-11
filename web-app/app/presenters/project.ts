@@ -334,8 +334,12 @@ export class ProjectPresenter {
 export class ProjectListPresenter {
     #projects: ProjectPresenter[];
     readonly #statusBadges: SafeHtml;
-    #filterStatus: ProjectStatus | null =
-        null;
+    #filter:
+        | { kind: 'all' }
+        | {
+            kind: 'filtered';
+            status: ProjectStatus;
+        } = { kind: 'all' };
 
     constructor(projects: Project[]) {
         this.#projects = projects.map(
@@ -376,26 +380,35 @@ export class ProjectListPresenter {
     }
 
     toggleFilter(
-        status: ProjectStatus | null,
+        status: ProjectStatus,
     ): void {
-        this.#filterStatus =
-            this.#filterStatus === status
-                ? null
-                : status;
+        this.#filter =
+            this.#filter.kind
+                === 'filtered'
+            && this.#filter.status
+                === status
+                ? { kind: 'all' }
+                : {
+                    kind: 'filtered',
+                    status,
+                };
     }
 
     activeFilter():
         ProjectStatus | null {
-        return this.#filterStatus;
+        return this.#filter.kind
+            === 'filtered'
+            ? this.#filter.status
+            : null;
     }
 
     renderList(): SafeHtml {
+        const f = this.#filter;
         const filtered =
-            this.#filterStatus
+            f.kind === 'filtered'
                 ? this.#projects.filter(
                     p => p.statusGroup()
-                        === this
-                            .#filterStatus,
+                        === f.status,
                 )
                 : this.#projects;
         const sorted =
@@ -405,7 +418,7 @@ export class ProjectListPresenter {
                     - b.positionSortKey(),
             );
         const hasGrip =
-            !this.#filterStatus;
+            f.kind === 'all';
         return html`${sorted.map(
             p => p.buildCard(
                 'position', hasGrip,

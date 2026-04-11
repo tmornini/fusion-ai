@@ -668,8 +668,12 @@ export class IdeaPresenter {
 export class IdeaListPresenter {
     #ideas: IdeaPresenter[];
     readonly #statusBadges: SafeHtml;
-    #filterStatus: IdeaStatus | null =
-        null;
+    #filter:
+        | { kind: 'all' }
+        | {
+            kind: 'filtered';
+            status: IdeaStatus;
+        } = { kind: 'all' };
 
     constructor(ideas: Idea[]) {
         this.#ideas = ideas.map(
@@ -712,24 +716,33 @@ export class IdeaListPresenter {
     toggleFilter(
         status: IdeaStatus,
     ): void {
-        this.#filterStatus =
-            this.#filterStatus === status
-                ? null
-                : status;
+        this.#filter =
+            this.#filter.kind
+                === 'filtered'
+            && this.#filter.status
+                === status
+                ? { kind: 'all' }
+                : {
+                    kind: 'filtered',
+                    status,
+                };
     }
 
     activeFilter():
         IdeaStatus | null {
-        return this.#filterStatus;
+        return this.#filter.kind
+            === 'filtered'
+            ? this.#filter.status
+            : null;
     }
 
     renderList(): SafeHtml {
+        const f = this.#filter;
         const filtered =
-            this.#filterStatus
+            f.kind === 'filtered'
                 ? this.#ideas.filter(
                     i => i.statusGroup()
-                        === this
-                            .#filterStatus,
+                        === f.status,
                 )
                 : this.#ideas;
         const sorted =
@@ -739,7 +752,7 @@ export class IdeaListPresenter {
                     - b.positionSortKey(),
             );
         const hasGrip =
-            !this.#filterStatus;
+            f.kind === 'all';
         return html`${sorted.map(
             idea => idea.buildCard(
                 'position', hasGrip,
