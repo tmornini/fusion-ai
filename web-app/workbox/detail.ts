@@ -418,14 +418,17 @@ function initTransitionButtons(
                 }
                 try {
                     await
-                        postWorkOrderTransition(
-                            detail.id,
+                        postWorkOrderTransition({
+                            workOrderId:
+                                detail.id,
                             edgeId,
                             values,
                             userId,
-                            detail.currentNode
-                                .id,
-                        );
+                            currentNodeId:
+                                detail
+                                    .currentNode
+                                    .id,
+                        });
                     showToast(
                         'Transition'
                         + ' complete',

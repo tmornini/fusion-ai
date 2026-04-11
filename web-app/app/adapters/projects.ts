@@ -193,16 +193,23 @@ export async function putProject(
     await PUT(`projects/${id}`, entity);
 }
 
+export interface TeamMemberAssignment {
+    projectId: string;
+    userId: string;
+    role: string;
+    type: string;
+}
+
 export async function
 putProjectTeamMember(
-    projectId: string,
-    userId: string,
-    role: string,
-    type: string,
+    ctx: TeamMemberAssignment,
 ): Promise<void> {
     await PUT(
-        `projects/${projectId}`
-            + `/team/${userId}`,
-        { role, type },
+        `projects/${ctx.projectId}`
+            + `/team/${ctx.userId}`,
+        {
+            role: ctx.role,
+            type: ctx.type,
+        },
     );
 }

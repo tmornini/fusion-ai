@@ -476,12 +476,12 @@ async function performConversion(
                 pd['budget']!,
         },
     );
-    await putProjectTeamMember(
+    await putProjectTeamMember({
         projectId,
-        leadUserId,
-        'lead',
-        'internal',
-    );
+        userId: leadUserId,
+        role: 'lead',
+        type: 'internal',
+    });
     const existingIdea =
         await getIdea(ideaId);
     await putIdea(ideaId, {

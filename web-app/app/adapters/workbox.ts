@@ -521,13 +521,21 @@ export async function postWorkOrderCreation(
     return woId;
 }
 
+export interface TransitionContext {
+    workOrderId: string;
+    edgeId: string;
+    values: Record<string, string>;
+    userId: string;
+    currentNodeId: string;
+}
+
 export async function postWorkOrderTransition(
-    workOrderId: string,
-    edgeId: string,
-    values: Record<string, string>,
-    userId: string,
-    currentNodeId: string,
+    ctx: TransitionContext,
 ): Promise<void> {
+    const {
+        workOrderId, edgeId, values,
+        userId, currentNodeId,
+    } = ctx;
     const wo = await GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
