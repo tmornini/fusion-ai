@@ -94,6 +94,11 @@ function bindIdeaEvents(
                         '#idea-edit-problem',
                         document,
                     )!.value;
+                const targetUsers =
+                    $input(
+                        '#idea-edit-target',
+                        document,
+                    )!.value;
                 const proposedSolution =
                     $textarea(
                         '#idea-edit-solution',
@@ -104,16 +109,25 @@ function bindIdeaEvents(
                         '#idea-edit-outcome',
                         document,
                     )!.value;
+                const successMetrics =
+                    $textarea(
+                        '#idea-edit-metrics',
+                        document,
+                    )!.value;
 
                 try {
                     await putIdea(ideaId, {
                         title,
                         problem_statement:
                             problemStatement,
+                        target_users:
+                            targetUsers,
                         proposed_solution:
                             proposedSolution,
                         expected_outcome:
                             expectedOutcome,
+                        success_metrics:
+                            successMetrics,
                     });
                 } catch {
                     showToast(
