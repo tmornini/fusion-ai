@@ -5,7 +5,7 @@ import {
     postMockDataLoad,
     putSnapshot,
     getSnapshot,
-    hasData,
+    getDataPresent,
     nowUtc,
 } from '../app/adapters';
 import { $ } from '../app/dom';
@@ -468,7 +468,7 @@ async function mutateEmptyBanner(
     root: HTMLElement,
 ): Promise<void> {
     const hasExistingData =
-        await hasData();
+        await getDataPresent();
     const existing =
         document.getElementById(
             BANNER_ID,

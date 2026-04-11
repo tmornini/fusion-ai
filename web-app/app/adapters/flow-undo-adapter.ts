@@ -5,7 +5,7 @@ import type {
     UndoStep,
 } from '../flow-undo';
 
-export async function executeUndoSteps(
+export async function postUndoExecution(
     steps: UndoStep[],
 ): Promise<void> {
     for (const step of steps) {

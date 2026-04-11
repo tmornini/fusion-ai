@@ -25,7 +25,7 @@ import {
     deleteNodeCapture,
     deleteEdgeCapture,
     deleteFieldCapture,
-    executeUndoSteps,
+    postUndoExecution,
     getFlowGraph,
 } from '../adapters';
 import type {
@@ -138,7 +138,7 @@ export class FlowDesignerPresenter {
         this.#canvasH = canvasH;
         this.#needsFit = true;
         this.#undo = new UndoManager(
-            executeUndoSteps,
+            postUndoExecution,
         );
         const interaction =
             buildInteractionState(

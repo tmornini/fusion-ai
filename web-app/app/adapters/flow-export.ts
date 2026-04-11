@@ -400,7 +400,7 @@ export async function getFlowBackupResolution(
     };
 }
 
-export async function overwriteFlow(
+export async function putFlowFromBackup(
     backup: BackupV2,
 ): Promise<string> {
     await PUT(

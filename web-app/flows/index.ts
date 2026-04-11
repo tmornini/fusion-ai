@@ -24,7 +24,7 @@ import {
     postFlowFromZip,
     getZipBackup,
     getFlowBackupResolution,
-    overwriteFlow,
+    putFlowFromBackup,
     postFlowFromBackup,
 } from '../app/adapters';
 import type {
@@ -478,7 +478,7 @@ async function handleOverwrite(
     resetImportDialog();
     try {
         const flowId =
-            await overwriteFlow(stOw.backup);
+            await putFlowFromBackup(stOw.backup);
         clearPending(input);
         showToast(
             'Flow overwritten',
