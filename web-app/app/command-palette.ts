@@ -187,11 +187,12 @@ export function initCommandPalette(
                     getProjects(),
                     getTeamMembers(),
                 ]);
-        } catch {
+        } catch (err) {
             log.warn(
                 'Failed to load'
                 + ' search data',
                 'command-palette',
+                err,
             );
             return;
         }

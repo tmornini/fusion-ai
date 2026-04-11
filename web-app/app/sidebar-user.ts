@@ -1,4 +1,5 @@
 import { $ } from './dom';
+import { log } from './logger';
 import { showToast } from './toast';
 
 const SIDEBAR_USER_NAME_IDS = [
@@ -35,7 +36,12 @@ export async function mutateSidebarUser(
     try {
         data =
             await fetchSidebarUser();
-    } catch {
+    } catch (err) {
+        log.error(
+            'getSidebarUser failed',
+            'sidebar-user',
+            err,
+        );
         showToast(
             'Sidebar user info'
             + ' load failed',

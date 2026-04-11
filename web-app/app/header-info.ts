@@ -1,4 +1,5 @@
 import { $ } from './dom';
+import { log } from './logger';
 import { navigateTo } from './navigation';
 import { showToast } from './toast';
 
@@ -38,7 +39,12 @@ export async function mutateHeaderInfo(
     let data: HeaderData;
     try {
         data = await fetchHeaderData();
-    } catch {
+    } catch (err) {
+        log.error(
+            'getHeaderData failed',
+            'header-info',
+            err,
+        );
         showToast(
             'Header info load failed',
             'error',

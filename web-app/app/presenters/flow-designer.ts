@@ -2,6 +2,7 @@ import {
     html, setHtml, trusted,
 } from '../safe-html';
 import type { SafeHtml } from '../safe-html';
+import { log } from '../logger';
 import { showToast } from '../toast';
 import {
     DISPLAY_ABSENT,
@@ -544,7 +545,12 @@ ${toolbar}
                 positionX: x,
                 positionY: y,
             });
-        } catch {
+        } catch (err) {
+            log.error(
+                'postNodeAddition failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to add state',
                 'error',
@@ -651,7 +657,12 @@ ${toolbar}
                 fromNodeId: fromId,
                 toNodeId: toId,
             });
-        } catch {
+        } catch (err) {
+            log.error(
+                'postEdgeConnection failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to create'
                 + ' transition',
@@ -726,7 +737,12 @@ ${toolbar}
                         && e.toNodeId
                             !== nodeId,
                 );
-        } catch {
+        } catch (err) {
+            log.error(
+                'deleteNodeCapture failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to delete state',
                 'error',
@@ -766,7 +782,12 @@ ${toolbar}
                 this.#state.edges.filter(
                     e => e.id !== edgeId,
                 );
-        } catch {
+        } catch (err) {
+            log.error(
+                'deleteEdgeCapture failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to delete transition',
                 'error',
@@ -1018,7 +1039,12 @@ ${toolbar}
                 isRequired,
                 options,
             });
-        } catch {
+        } catch (err) {
+            log.error(
+                'postFieldAddition failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to add field',
                 'error',
@@ -1087,7 +1113,12 @@ ${toolbar}
                         f => f.id !== fieldId,
                     );
             }
-        } catch {
+        } catch (err) {
+            log.error(
+                'deleteFieldCapture failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to delete field',
                 'error',
@@ -1173,7 +1204,12 @@ ${toolbar}
                 fromNodeId,
                 toNodeId: nodeId,
             });
-        } catch {
+        } catch (err) {
+            log.error(
+                'postNodeAddition failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to add state',
                 'error',
@@ -1273,7 +1309,12 @@ ${toolbar}
                 fromNodeId,
                 toNodeId: nodeId,
             });
-        } catch {
+        } catch (err) {
+            log.error(
+                'postNodeAddition failed',
+                'flow-designer',
+                err,
+            );
             showToast(
                 'Failed to add state',
                 'error',

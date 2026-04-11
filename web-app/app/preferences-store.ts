@@ -5,11 +5,12 @@ function readPreference(
 ): string | null {
     try {
         return localStorage.getItem(key);
-    } catch {
+    } catch (err) {
         log.warn(
             'Failed to read preference: '
             + key,
             'preferences-store',
+            err,
         );
         return null;
     }
