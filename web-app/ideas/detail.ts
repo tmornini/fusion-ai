@@ -28,7 +28,6 @@ let editEscapeHandler:
 
 function bindIdeaEvents(
     idea: Idea,
-    ideaId: string,
     isEditing: boolean,
 ): void {
     if (editEscapeHandler) {
@@ -69,7 +68,7 @@ function bindIdeaEvents(
         ?.addEventListener(
             'click',
             () => mutateIdeaPage(
-                idea, ideaId, true,
+                idea, true,
             ),
         );
 
@@ -77,7 +76,7 @@ function bindIdeaEvents(
         ?.addEventListener(
             'click',
             () => mutateIdeaPage(
-                idea, ideaId, false,
+                idea, false,
             ),
         );
 
@@ -118,7 +117,7 @@ function bindIdeaEvents(
 
                 try {
                     await putIdea(
-                        ideaId,
+                        idea.id,
                         trimStrings({
                             title,
                             problem_statement:
@@ -147,25 +146,26 @@ function bindIdeaEvents(
                 );
                 const updated =
                     await getIdeaDetail(
-                        ideaId,
+                        idea.id,
                     );
                 mutateIdeaPage(
-                    updated,
-                    ideaId,
-                    false,
+                    updated, false,
                 );
             },
         );
 
     if (idea.isReviewable()) {
-        bindApprovalEvents(ideaId);
+        bindApprovalEvents(idea.id);
     }
     $('#idea-convert-btn', document)
         ?.addEventListener(
             'click',
             () => navigateTo(
                 'idea-convert',
-                { ideaId, from: 'detail' },
+                {
+                    ideaId: idea.id,
+                    from: 'detail',
+                },
             ),
         );
     $(
@@ -175,7 +175,7 @@ function bindIdeaEvents(
         'click',
         async () => {
             try {
-                await putIdea(ideaId, {
+                await putIdea(idea.id, {
                     status: 'in-review',
                 });
             } catch {
@@ -262,7 +262,6 @@ function bindApprovalEvents(
 
 function mutateIdeaPage(
     idea: Idea,
-    ideaId: string,
     isEditing: boolean,
 ): void {
     const container = $(
@@ -274,12 +273,10 @@ function mutateIdeaPage(
     setHtml(
         container,
         presenter.buildDetailView(
-            ideaId, isEditing,
+            idea.id, isEditing,
         ),
     );
-    bindIdeaEvents(
-        idea, ideaId, isEditing,
-    );
+    bindIdeaEvents(idea, isEditing);
 }
 
 export async function init(
@@ -301,5 +298,5 @@ export async function init(
     );
     if (!idea) return;
 
-    mutateIdeaPage(idea, ideaId, false);
+    mutateIdeaPage(idea, false);
 }

@@ -37,7 +37,6 @@ let editEscapeHandler:
 
 function bindProjectEvents(
     project: ProjectView,
-    projectId: string,
     flows: FlowListItem[],
     isEditing: boolean,
 ): void {
@@ -97,8 +96,7 @@ function bindProjectEvents(
         ?.addEventListener(
             'click',
             () => mutateProjectPage(
-                project, projectId,
-                flows, true,
+                project, flows, true,
             ),
         );
 
@@ -106,8 +104,7 @@ function bindProjectEvents(
         ?.addEventListener(
             'click',
             () => mutateProjectPage(
-                project, projectId,
-                flows, false,
+                project, flows, false,
             ),
         );
 
@@ -158,7 +155,7 @@ function bindProjectEvents(
         );
         try {
             await putProject(
-                projectId,
+                project.id,
                 trimStrings({
                     title,
                     description,
@@ -185,14 +182,13 @@ function bindProjectEvents(
         );
         const [updated, updatedWfs] =
             await Promise.all([
-                getProjectById(projectId),
+                getProjectById(project.id),
                 getFlowsByProject(
-                    projectId,
+                    project.id,
                 ),
             ]);
         mutateProjectPage(
-            updated, projectId,
-            updatedWfs, false,
+            updated, updatedWfs, false,
         );
     });
 
@@ -201,7 +197,7 @@ function bindProjectEvents(
             'click',
             () => openDialog('new-flow'),
         );
-    bindNewFlowDialog(projectId);
+    bindNewFlowDialog(project.id);
 
     $$('[data-flow-id]', document)
         .forEach(el => {
@@ -218,7 +214,8 @@ function bindProjectEvents(
                         'flow-detail',
                         {
                             flowId: wfId,
-                            projectId,
+                            projectId:
+                                project.id,
                         },
                     );
                 },
@@ -313,7 +310,6 @@ function bindNewFlowDialog(
 
 function mutateProjectPage(
     project: ProjectView,
-    projectId: string,
     flows: FlowListItem[],
     isEditing: boolean,
 ): void {
@@ -326,12 +322,11 @@ function mutateProjectPage(
     setHtml(
         container,
         presenter.buildDetailView(
-            projectId, flows, isEditing,
+            project.id, flows, isEditing,
         ),
     );
     bindProjectEvents(
-        project, projectId,
-        flows, isEditing,
+        project, flows, isEditing,
     );
 }
 
@@ -380,7 +375,6 @@ export async function init(
     }
 
     mutateProjectPage(
-        project, projectId,
-        flows, false,
+        project, flows, false,
     );
 }
