@@ -9,6 +9,7 @@ import { showToast } from '../app/toast';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states';
+import { log } from '../app/logger';
 import {
     iconUsers, iconUserPlus, iconSearch,
     iconChevronRight, iconSend,
@@ -770,7 +771,12 @@ export async function init(): Promise<void> {
                 );
                 closeDialog('invite');
                 navigateTo('users');
-            } catch {
+            } catch (err) {
+                log.error(
+                    'putUser failed',
+                    'organization',
+                    err,
+                );
                 showToast(
                     'Failed to create'
                     + ' user',

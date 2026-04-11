@@ -5,6 +5,7 @@ import {
     html, setHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
+import { log } from '../app/logger';
 import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
@@ -81,7 +82,13 @@ export async function init(
                 idea,
                 users,
             );
-    } catch {
+    } catch (err) {
+        log.error(
+            'getIdeaForConversion'
+            + ' failed',
+            'ideas',
+            err,
+        );
         setHtml(
             root,
             buildErrorState(
@@ -369,7 +376,13 @@ export async function init(
                         presenter
                             .projectDetails(),
                     );
-                } catch {
+                } catch (err) {
+                    log.error(
+                        'performConversion'
+                        + ' failed',
+                        'ideas',
+                        err,
+                    );
                     showToast(
                         'Failed to create'
                         + ' project.'

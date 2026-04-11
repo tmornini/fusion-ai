@@ -7,6 +7,7 @@ import { showToast } from '../app/toast';
 import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
+import { log } from '../app/logger';
 import {
     navigateTo,
     trimStrings,
@@ -170,7 +171,12 @@ function bindProjectEvents(
                         impactBaseline,
                 }),
             );
-        } catch {
+        } catch (err) {
+            log.error(
+                'putProject failed',
+                'projects',
+                err,
+            );
             showToast(
                 'Failed to save project',
                 'error',
@@ -274,7 +280,13 @@ function bindNewFlowDialog(
                             description: '',
                         },
                     );
-                } catch {
+                } catch (err) {
+                    log.error(
+                        'postFlowCreation'
+                        + ' failed',
+                        'projects',
+                        err,
+                    );
                     showToast(
                         'Failed to create'
                         + ' flow',
@@ -355,7 +367,12 @@ export async function init(
                     projectId,
                 ),
             ]);
-    } catch {
+    } catch (err) {
+        log.error(
+            'getProjectById failed',
+            'projects',
+            err,
+        );
         setHtml(
                 container,
                 buildErrorState(

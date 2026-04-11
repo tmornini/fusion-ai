@@ -4,6 +4,7 @@ import {
 } from '../app/dom';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
+import { log } from '../app/logger';
 import {
     buildSkeleton,
     withLoadingState,
@@ -132,7 +133,12 @@ function bindIdeaEvents(
                                 successMetrics,
                         }),
                     );
-                } catch {
+                } catch (err) {
+                    log.error(
+                        'putIdea failed',
+                        'ideas',
+                        err,
+                    );
                     showToast(
                         'Failed to save'
                         + ' idea',
@@ -178,7 +184,12 @@ function bindIdeaEvents(
                 await putIdea(idea.id, {
                     status: 'in-review',
                 });
-            } catch {
+            } catch (err) {
+                log.error(
+                    'putIdea failed',
+                    'ideas',
+                    err,
+                );
                 showToast(
                     'Failed to submit',
                     'error',
@@ -208,7 +219,12 @@ function bindApprovalEvents(
                     ideaId,
                     { status: 'approved' },
                 );
-            } catch {
+            } catch (err) {
+                log.error(
+                    'putIdea failed',
+                    'ideas',
+                    err,
+                );
                 showToast(
                     'Failed to approve',
                     'error',
@@ -239,7 +255,12 @@ function bindApprovalEvents(
                     ideaId,
                     { status: 'sent-back' },
                 );
-            } catch {
+            } catch (err) {
+                log.error(
+                    'putIdea failed',
+                    'ideas',
+                    err,
+                );
                 showToast(
                     'Failed to send back',
                     'error',

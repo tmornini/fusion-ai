@@ -2,6 +2,7 @@ import {
     $, $input, $select,
     bindEnterToClick,
 } from '../app/dom';
+import { log } from '../app/logger';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -283,7 +284,12 @@ function bindSvgInteractions(
             svg.setPointerCapture(
                 state.activePointerId,
             );
-        } catch {
+        } catch (err) {
+            log.warn(
+                'setPointerCapture failed',
+                'flow-detail',
+                err,
+            );
             state.drag = { kind: 'idle' };
             state.connect =
                 { kind: 'idle' };
@@ -435,7 +441,12 @@ async function handleCopyMermaid(
     try {
         text =
             await getFlowMermaid(flowId);
-    } catch {
+    } catch (err) {
+        log.error(
+            'getFlowMermaid failed',
+            'flow-detail',
+            err,
+        );
         showToast(
             'Failed to export Mermaid',
             'error',
@@ -445,7 +456,12 @@ async function handleCopyMermaid(
     try {
         await navigator.clipboard
             .writeText(text);
-    } catch {
+    } catch (err) {
+        log.error(
+            'clipboard write failed',
+            'flow-detail',
+            err,
+        );
         showToast(
             'Failed to copy to clipboard',
             'error',
@@ -469,7 +485,12 @@ async function handleExportZip(
     try {
         result =
             await getFlowZip(flowId);
-    } catch {
+    } catch (err) {
+        log.error(
+            'getFlowZip failed',
+            'flow-detail',
+            err,
+        );
         showToast(
             'Failed to export flow',
             'error',

@@ -4,6 +4,7 @@ import {
 import {
     html, setHtml,
 } from '../app/safe-html';
+import { log } from '../app/logger';
 import { showToast } from '../app/toast';
 import {
     buildSkeleton,
@@ -197,7 +198,13 @@ async function initNewDialog(): Promise<
                         'workbox-detail',
                         { id: woId },
                     );
-                } catch {
+                } catch (err) {
+                    log.error(
+                        'work order creation'
+                        + ' failed',
+                        'workbox',
+                        err,
+                    );
                     showToast(
                         'Failed to create'
                         + ' work order',

@@ -34,6 +34,7 @@ import type {
 import {
     FlowPresenter,
 } from '../app/presenters';
+import { log } from '../app/logger';
 import { showToast } from '../app/toast';
 
 type ImportState =
@@ -245,9 +246,12 @@ async function handleFileSelect(
                 backup, input,
             );
             return;
-        } catch {
-            /* not a v2 backup — fall
-               through to standard import */
+        } catch (err) {
+            log.info(
+                'not a v2 backup',
+                'flows',
+                err,
+            );
         }
     }
 
@@ -326,7 +330,13 @@ async function handleV2Zip(
             await getFlowBackupResolution(
                 backup,
             );
-    } catch {
+    } catch (err) {
+        log.error(
+            'getFlowBackupResolution'
+            + ' failed',
+            'flows',
+            err,
+        );
         showToast(
             'Failed to resolve import',
             'error',

@@ -8,6 +8,7 @@ import {
     hasData,
 } from '../app/adapters';
 import { $ } from '../app/dom';
+import { log } from '../app/logger';
 import {
     html,
     setHtml,
@@ -107,7 +108,12 @@ export async function init(
         try {
             await deleteSchema();
             await action();
-        } catch {
+        } catch (err) {
+            log.error(
+                'snapshot action failed',
+                'snapshots',
+                err,
+            );
             showToast(
                 'Failed to '
                 + label.toLowerCase()
@@ -356,7 +362,12 @@ export async function init(
                 await putSnapshot(
                     text,
                 );
-            } catch {
+            } catch (err) {
+                log.error(
+                    'putSnapshot failed',
+                    'snapshots',
+                    err,
+                );
                 showToast(
                     'Failed to upload'
                     + ' snapshot. Check'
@@ -380,7 +391,12 @@ export async function init(
             try {
                 json =
                     await getSnapshot();
-            } catch {
+            } catch (err) {
+                log.error(
+                    'getSnapshot failed',
+                    'snapshots',
+                    err,
+                );
                 showToast(
                     'Failed to download'
                     + ' snapshot.',

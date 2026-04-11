@@ -3,6 +3,7 @@ import {
     html, setHtml,
 } from '../app/safe-html';
 import type { SafeHtml } from '../app/safe-html';
+import { log } from '../app/logger';
 import { showToast } from '../app/toast';
 import {
     buildSkeleton,
@@ -432,7 +433,14 @@ function initTransitionButtons(
                         'success',
                     );
                     navigateTo('workbox');
-                } catch {
+                } catch (err) {
+                    log.error(
+                        'work order'
+                        + ' transition'
+                        + ' failed',
+                        'workbox',
+                        err,
+                    );
                     showToast(
                         'Transition'
                         + ' failed',
@@ -467,7 +475,13 @@ function initUnclaimButton(
                     'success',
                 );
                 navigateTo('workbox');
-            } catch {
+            } catch (err) {
+                log.error(
+                    'work order release'
+                    + ' failed',
+                    'workbox',
+                    err,
+                );
                 showToast(
                     'Failed to release'
                     + ' work order',
