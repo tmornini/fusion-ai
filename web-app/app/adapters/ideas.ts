@@ -12,7 +12,12 @@ import {
     userName,
 } from './helpers';
 
-export { Idea } from '../../../api/types';
+export {
+    Idea,
+    type IdeaStatus,
+    isIdeaStatus,
+    IDEA_STATUS_CONFIG,
+} from '../../../api/types';
 
 export async function getIdeas(
 ): Promise<Idea[]> {

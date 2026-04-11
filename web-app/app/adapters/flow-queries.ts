@@ -6,11 +6,15 @@ import type {
     GraphNode,
     GraphEdge,
     GraphField,
+    WfFieldType,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import { parseJson } from './helpers';
 
-export type { GraphNode, GraphEdge, GraphField };
+export type {
+    GraphNode, GraphEdge, GraphField,
+    WfFieldType,
+};
 
 export interface FlowGraph {
     id: string;
