@@ -14,15 +14,13 @@ import {
 } from '../app/icons';
 import { navigateTo } from '../app/core';
 import {
-    jsonObjectField,
-} from '../../api/types';
-import {
     getIdeaForConversion,
     getManagedUsers,
     getIdea,
     putIdea,
     putProject,
     putProjectTeamMember,
+    jsonObjectField,
 } from '../app/adapters';
 import {
     IdeaConversionPresenter,

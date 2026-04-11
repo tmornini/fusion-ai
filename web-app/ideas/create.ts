@@ -9,10 +9,8 @@ import { navigateTo } from '../app/core';
 import {
     putIdea,
     putIdeaSubmission,
-} from '../app/adapters';
-import {
     jsonArrayField,
-} from '../../api/types';
+} from '../app/adapters';
 import {
     IdeaCreatePresenter,
 } from '../app/presenters';

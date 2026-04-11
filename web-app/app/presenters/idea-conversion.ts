@@ -15,12 +15,10 @@ import {
     iconTrendingUp,
     iconCheckCircle2,
 } from '../icons';
-import type {
-    Idea,
-} from '../../../api/types';
 import {
+    type Idea,
     User,
-} from '../../../api/types';
+} from '../adapters';
 
 type ConversionField =
     | 'project-name'

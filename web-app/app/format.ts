@@ -2,7 +2,7 @@ import {
     SECONDS_PER_DAY,
     durationInDays,
     formatCompactCurrency,
-} from '../../api/types';
+} from './adapters';
 
 function initials(name: string): string {
     if (!name) return '';

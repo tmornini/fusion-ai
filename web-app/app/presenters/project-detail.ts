@@ -24,7 +24,7 @@ import type {
 } from '../adapters/flows';
 import {
     PROJECT_STATUS_CONFIG,
-} from '../../../api/types';
+} from '../adapters';
 
 export class ProjectDetailPresenter {
     readonly #title: string;

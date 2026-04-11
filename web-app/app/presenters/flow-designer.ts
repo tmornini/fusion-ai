@@ -38,11 +38,11 @@ import type {
     FlowGraph,
 } from '../adapters/flows';
 import type { WfFieldType }
-    from '../../../api/types';
+    from '../adapters/flows';
 import {
     jsonObjectField,
     nowUtc,
-} from '../../../api/types';
+} from '../adapters';
 import { UndoManager } from '../flow-undo';
 import type { UndoStep } from '../flow-undo';
 import {

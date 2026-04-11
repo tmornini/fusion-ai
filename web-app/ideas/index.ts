@@ -21,11 +21,9 @@ import {
 import {
     getIdeas,
     putIdea,
-} from '../app/adapters';
-import {
     type IdeaStatus,
     isIdeaStatus,
-} from '../../api/types';
+} from '../app/adapters';
 import {
     IdeaListPresenter,
 } from '../app/presenters';

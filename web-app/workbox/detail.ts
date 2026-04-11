@@ -21,14 +21,12 @@ import type {
     WorkboxDetail,
     HistoryEntry,
     HistoryFieldValue,
+    GraphField,
 } from '../app/adapters';
 import {
     iconArrowLeft,
     iconClock,
 } from '../app/icons';
-import type {
-    GraphField,
-} from '../../api/types';
 
 /* ── Helpers ─────────────── */
 

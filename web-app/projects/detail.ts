@@ -19,18 +19,16 @@ import {
     getFlowsByProject,
     postFlowCreation,
     ProjectView,
+    isProjectStatus,
+    COST_DIVISOR,
 } from '../app/adapters';
 import type {
     FlowListItem,
+    ProjectStatus,
 } from '../app/adapters';
 import {
     ProjectDetailPresenter,
 } from '../app/presenters';
-import {
-    isProjectStatus,
-    type ProjectStatus,
-    COST_DIVISOR,
-} from '../../api/types';
 
 let editEscapeHandler:
     ((e: KeyboardEvent) => void)

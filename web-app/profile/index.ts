@@ -33,10 +33,8 @@ import {
 import {
     getProfile, putProfile,
     allStrengths,
-} from '../app/adapters';
-import {
     jsonArrayField,
-} from '../../api/types';
+} from '../app/adapters';
 
 export async function init(): Promise<void> {
     const selectedStrengths = new Set<string>(

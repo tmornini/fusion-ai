@@ -16,7 +16,7 @@ import {
     PROJECT_STATUS_CONFIG,
     COST_DIVISOR,
     SECONDS_PER_DAY,
-} from '../../../api/types';
+} from '../adapters';
 import {
     orderedKeys,
 } from './ordered-keys';

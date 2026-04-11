@@ -20,15 +20,13 @@ import {
 } from '../app/core';
 import {
     getManagedUsers, putUser,
+    jsonArrayField,
+    jsonObjectField,
+    nowUtc,
 } from '../app/adapters';
 import {
     UserPresenter,
 } from '../app/presenters';
-import {
-    jsonArrayField,
-    jsonObjectField,
-    nowUtc,
-} from '../../api/types';
 
 const DEFAULT_DIM = 50;
 

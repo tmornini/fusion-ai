@@ -6,6 +6,7 @@ import {
     putSnapshot,
     getSnapshot,
     hasData,
+    nowUtc,
 } from '../app/adapters';
 import { $ } from '../app/dom';
 import { log } from '../app/logger';
@@ -27,7 +28,6 @@ import {
     iconDatabase,
     iconInfo,
 } from '../app/icons';
-import { nowUtc } from '../../api/types';
 
 const BANNER_ID = 'empty-banner';
 

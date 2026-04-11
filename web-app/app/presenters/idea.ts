@@ -20,13 +20,13 @@ import {
 import type {
     Idea,
     IdeaStatus,
-} from '../../../api/types';
+} from '../adapters';
+import {
+    IDEA_STATUS_CONFIG,
+} from '../adapters';
 import {
     orderedKeys,
 } from './ordered-keys';
-import {
-    IDEA_STATUS_CONFIG,
-} from '../../../api/types';
 
 const STATUS_ICONS: Record<
     IdeaStatus,
