@@ -9,33 +9,28 @@ export class ApiError {
     ) {}
 }
 
-const apiModule = (() => {
-    let db: DbAdapter | null = null;
-    return {
-        init(dbAdapter: DbAdapter): void {
-            db = dbAdapter;
-        },
-        get(): DbAdapter {
-            if (!db) {
-                throw new Error(
-                    'API not initialized.'
-                    + ' Call initApi()'
-                    + ' first.',
-                );
-            }
-            return db;
-        },
-    };
-})();
+let adapter: DbAdapter | undefined;
 
 export function initApi(
     dbAdapter: DbAdapter,
 ): void {
-    apiModule.init(dbAdapter);
+    if (adapter) {
+        throw new Error(
+            'initApi() already called.',
+        );
+    }
+    adapter = dbAdapter;
 }
 
-export function getDbAdapter(): DbAdapter {
-    return apiModule.get();
+function getDbAdapter(): DbAdapter {
+    if (!adapter) {
+        throw new Error(
+            'API not initialized.'
+            + ' Call initApi()'
+            + ' first.',
+        );
+    }
+    return adapter;
 }
 
 type GetHandler = (
