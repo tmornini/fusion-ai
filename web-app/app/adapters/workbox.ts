@@ -90,17 +90,23 @@ function nodeName(
     nodes: GraphNode[],
     nodeId: string,
 ): string {
-    return nodes.find(
+    const node = nodes.find(
         n => n.id === nodeId,
-    )?.name ?? '';
+    );
+    if (!node) {
+        throw new Error(
+            'Node not found: ' + nodeId,
+        );
+    }
+    return node.name;
 }
 
 function currentNodeId(
     transitions:
         WorkOrderTransitionEntity[],
-): string {
-    const last = transitions.at(-1);
-    return last?.to_node_id ?? '';
+): string | undefined {
+    return transitions.at(-1)
+        ?.to_node_id;
 }
 
 function isExpiredClaim(
