@@ -138,19 +138,17 @@ function computePortPos(
     const w = NODE_WIDTH;
     const h = NODE_HEIGHT;
     const perim = 2 * (w + h);
-    const params: number[] = [];
-    for (const e of edges) {
-        let otherId: string | null = null;
-        if (e.fromNodeId === node.id) {
-            otherId = e.toNodeId;
-        } else if (
-            e.toNodeId === node.id
-        ) {
-            otherId = e.fromNodeId;
-        }
-        if (!otherId) continue;
-        const other = nodeMap.get(otherId);
-        if (!other) continue;
+    const params = edges.flatMap(e => {
+        const otherId =
+            e.fromNodeId === node.id
+                ? e.toNodeId
+                : e.toNodeId === node.id
+                    ? e.fromNodeId
+                    : null;
+        if (!otherId) return [];
+        const other =
+            nodeMap.get(otherId);
+        if (!other) return [];
         const pt = perimeterPoint(
             node.positionX,
             node.positionY,
@@ -158,18 +156,14 @@ function computePortPos(
             other.positionX + w / 2,
             other.positionY + h / 2,
         );
-        const localX =
-            pt.x - node.positionX;
-        const localY =
-            pt.y - node.positionY;
-        params.push(
-            xyToPerim(localX, localY),
-        );
-    }
+        return [xyToPerim(
+            pt.x - node.positionX,
+            pt.y - node.positionY,
+        )];
+    }).toSorted((a, b) => a - b);
     if (params.length === 0) {
         return { x: w, y: h / 2 };
     }
-    params.sort((a, b) => a - b);
     let bestGap = 0;
     let bestMid = w + h / 2;
     for (let i = 0;
