@@ -677,4 +677,14 @@ export function zoomToFit(
     state.viewBox.y = cy - vbH / 2;
     state.viewBox.w = vbW;
     state.viewBox.h = vbH;
+    console.log('[zoomToFit]', {
+        nodes: nodePositions.length,
+        canvasW, canvasH,
+        minX, minY, maxX, maxY,
+        contentW, contentH,
+        cx, cy,
+        containerAR, contentAR,
+        zoom: state.zoom,
+        vb: { ...state.viewBox },
+    });
 }
