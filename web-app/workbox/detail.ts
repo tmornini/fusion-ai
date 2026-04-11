@@ -75,6 +75,28 @@ function collectFieldValues(
 
 /* ── Build functions ─────── */
 
+const FIELD_HTML_TYPE: Record<
+    string,
+    { type: string; extra?: string }
+> = {
+    text: { type: 'text' },
+    number: { type: 'number' },
+    date: { type: 'date' },
+    email: { type: 'email' },
+    url: { type: 'url' },
+    phone: { type: 'tel' },
+    currency: {
+        type: 'number',
+        extra: 'step="0.01"',
+    },
+    checkbox: { type: 'checkbox' },
+    file: { type: 'file' },
+    image: {
+        type: 'file',
+        extra: 'accept="image/*"',
+    },
+};
+
 function buildFieldInput(
     field: GraphField,
 ): SafeHtml {
@@ -82,123 +104,74 @@ function buildFieldInput(
     const req = field.isRequired
         ? 'required'
         : '';
-    switch (field.fieldType) {
-        case 'text':
-            return html`<input
-                type="text"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'textarea':
-            return html`<textarea
-                class="input"
-                rows="3"
-                data-field-id="${id}"
-                ${req}></textarea>`;
-        case 'number':
-            return html`<input
-                type="number"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'date':
-            return html`<input
-                type="date"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'email':
-            return html`<input
-                type="email"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'url':
-            return html`<input
-                type="url"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'phone':
-            return html`<input
-                type="tel"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'currency':
-            return html`<input
-                type="number"
-                step="0.01"
-                class="input"
-                data-field-id="${id}"
-                ${req} />`;
-        case 'checkbox':
-            return html`<input
-                type="checkbox"
-                data-field-id="${id}" />`;
-        case 'select':
-            return html`<select
-                class="input"
-                data-field-id="${id}"
-                ${req}>
-                <option value="">
-                    Select...
-                </option>
-                ${field.options.map(
-                    o => html`<option
-                        value="${o}"
-                        >${o}</option>`,
-                )}
-            </select>`;
-        case 'radio':
-            return html`<div
-                class="flex flex-col
-                    gap-2">
-                ${field.options.map(
-                    o => html`<label
-                        class="flex
-                            items-center
-                            gap-2">
-                        <input
-                            type="radio"
-                            name="${id}"
-                            value="${o}"
-                            data-field-id
-                                ="${id}" />
-                        ${o}
-                    </label>`,
-                )}
-            </div>`;
-        case 'multi_select':
-            return html`<div
-                class="flex flex-col
-                    gap-2">
-                ${field.options.map(
-                    o => html`<label
-                        class="flex
-                            items-center
-                            gap-2">
-                        <input
-                            type="checkbox"
-                            value="${o}"
-                            data-field-id
-                                ="${id}" />
-                        ${o}
-                    </label>`,
-                )}
-            </div>`;
-        case 'file':
-            return html`<input
-                type="file"
-                class="input"
-                data-field-id="${id}" />`;
-        case 'image':
-            return html`<input
-                type="file"
-                accept="image/*"
-                class="input"
-                data-field-id="${id}" />`;
+    if (field.fieldType === 'textarea') {
+        return html`<textarea
+            class="input"
+            rows="3"
+            data-field-id="${id}"
+            ${req}></textarea>`;
     }
+    if (field.fieldType === 'select') {
+        return html`<select
+            class="input"
+            data-field-id="${id}"
+            ${req}>
+            <option value="">
+                Select...
+            </option>
+            ${field.options.map(
+                o => html`<option
+                    value="${o}"
+                    >${o}</option>`,
+            )}
+        </select>`;
+    }
+    if (
+        field.fieldType === 'radio'
+        || field.fieldType
+            === 'multi_select'
+    ) {
+        const inputType =
+            field.fieldType === 'radio'
+                ? 'radio' : 'checkbox';
+        return html`<div
+            class="flex flex-col
+                gap-2">
+            ${field.options.map(
+                o => html`<label
+                    class="flex
+                        items-center
+                        gap-2">
+                    <input
+                        type="${inputType}"
+                        name="${id}"
+                        value="${o}"
+                        data-field-id
+                            ="${id}" />
+                    ${o}
+                </label>`,
+            )}
+        </div>`;
+    }
+    const spec =
+        FIELD_HTML_TYPE[field.fieldType];
+    if (!spec) {
+        return html`<input
+            type="text"
+            class="input"
+            data-field-id="${id}"
+            ${req} />`;
+    }
+    const extra = spec.extra ?? '';
+    const cls =
+        spec.type === 'checkbox'
+            ? '' : 'class="input"';
+    return html`<input
+        type="${spec.type}"
+        ${cls}
+        data-field-id="${id}"
+        ${extra}
+        ${req} />`;
 }
 
 function buildFieldRow(
