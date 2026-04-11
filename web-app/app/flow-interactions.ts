@@ -74,7 +74,7 @@ export type NodePositionLookup = (
     x: number;
     y: number;
     isDraggable: boolean;
-} | null;
+};
 
 export type InteractionCallback = () => void;
 
@@ -173,10 +173,6 @@ function handlePointerDown(
         state.isPanelOpen = isDbl;
         const pos =
             getNodePosition(nodeId);
-        if (!pos) {
-            onUpdate();
-            return;
-        }
         const isPort = ancestorAttr(
             target, 'data-connect-port',
         ) !== null;
@@ -409,38 +405,36 @@ function handlePointerUp(
         } else {
             const pos =
                 getNodePosition(fromId);
-            if (pos) {
-                const portX =
-                    pos.x + NODE_WIDTH;
-                const portY =
-                    pos.y
-                    + NODE_HEIGHT / 2;
-                const dx = toX - portX;
-                const dy = toY - portY;
-                const dist = Math.hypot(
-                    dx, dy,
-                );
-                const dropHit =
-                    document
-                        .elementFromPoint(
-                            e.clientX,
-                            e.clientY,
-                        );
-                const overNode =
-                    dropHit
-                        instanceof Element
-                    && ancestorAttr(
-                        dropHit,
-                        'data-node-id',
-                    ) !== null;
-                if (
-                    dist > MIN_DRAG_DISTANCE
-                    && !overNode
-                ) {
-                    onNodeCreated(
-                        fromId, toX, toY,
+            const portX =
+                pos.x + NODE_WIDTH;
+            const portY =
+                pos.y
+                + NODE_HEIGHT / 2;
+            const dx = toX - portX;
+            const dy = toY - portY;
+            const dist = Math.hypot(
+                dx, dy,
+            );
+            const dropHit =
+                document
+                    .elementFromPoint(
+                        e.clientX,
+                        e.clientY,
                     );
-                }
+            const overNode =
+                dropHit
+                    instanceof Element
+                && ancestorAttr(
+                    dropHit,
+                    'data-node-id',
+                ) !== null;
+            if (
+                dist > MIN_DRAG_DISTANCE
+                && !overNode
+            ) {
+                onNodeCreated(
+                    fromId, toX, toY,
+                );
             }
         }
         state.connect = { kind: 'idle' };

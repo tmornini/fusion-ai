@@ -5,9 +5,6 @@ import type { SafeHtml } from '../safe-html';
 import { log } from '../logger';
 import { showToast } from '../toast';
 import {
-    DISPLAY_ABSENT,
-} from '../format';
-import {
     iconArrowLeft,
     iconUndo,
     iconRedo,
@@ -255,13 +252,18 @@ export class FlowDesignerPresenter {
             Math.abs(cx) <= 1
             && Math.abs(cy) <= 1
         ) return;
-        for (const n of nodes) {
-            n.positionX -= cx;
-            n.positionY -= cy;
-        }
+        this.#state.nodes = nodes.map(
+            n => ({
+                ...n,
+                positionX:
+                    n.positionX - cx,
+                positionY:
+                    n.positionY - cy,
+            }),
+        );
         void putGraph(
             this.#state.flowId,
-            nodes,
+            this.#state.nodes,
             this.#state.edges,
         );
     }
@@ -296,12 +298,11 @@ export class FlowDesignerPresenter {
         x: number;
         y: number;
         isDraggable: boolean;
-    } | null {
+    } {
         const node =
             this.#state.nodes.find(
                 n => n.id === id,
-            );
-        if (!node) return null;
+            )!;
         return {
             x: node.positionX,
             y: node.positionY,
@@ -496,18 +497,22 @@ ${toolbar}
         y: number,
     ): void {
         if (this.#guardLocked()) return;
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (!node) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
-        node.positionX = x;
-        node.positionY = y;
+        this.#state.nodes =
+            this.#state.nodes.map(
+                n => n.id === nodeId
+                    ? {
+                        ...n,
+                        positionX: x,
+                        positionY: y,
+                    }
+                    : n,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -826,15 +831,16 @@ ${toolbar}
             layoutInputs, layoutEdges,
             this.#canvasW, this.#canvasH,
         );
-        for (
-            const node of this.#state.nodes
-        ) {
-            const pos =
-                positions.get(node.id);
-            if (!pos) continue;
-            node.positionX = pos.x;
-            node.positionY = pos.y;
-        }
+        this.#state.nodes =
+            this.#state.nodes.map(n => {
+                const pos =
+                    positions.get(n.id)!;
+                return {
+                    ...n,
+                    positionX: pos.x,
+                    positionY: pos.y,
+                };
+            });
         void putGraph(
             fId,
             this.#state.nodes,
@@ -863,17 +869,18 @@ ${toolbar}
                 .selection;
         if (sel.kind !== 'node') return;
         const nodeId = sel.nodeId;
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (!node) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
-        node.name = name;
+        this.#state.nodes =
+            this.#state.nodes.map(
+                n => n.id === nodeId
+                    ? { ...n, name }
+                    : n,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -899,17 +906,21 @@ ${toolbar}
                 .selection;
         if (sel.kind !== 'node') return;
         const nodeId = sel.nodeId;
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (!node) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
-        node.description = desc;
+        this.#state.nodes =
+            this.#state.nodes.map(
+                n => n.id === nodeId
+                    ? {
+                        ...n,
+                        description: desc,
+                    }
+                    : n,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -936,17 +947,18 @@ ${toolbar}
                 .selection;
         if (sel.kind !== 'edge') return;
         const edgeId = sel.edgeId;
-        const edge = this.#state.edges.find(
-            e => e.id === edgeId,
-        );
-        if (!edge) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
-        edge.name = name;
+        this.#state.edges =
+            this.#state.edges.map(
+                e => e.id === edgeId
+                    ? { ...e, name }
+                    : e,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -972,17 +984,21 @@ ${toolbar}
                 .selection;
         if (sel.kind !== 'edge') return;
         const edgeId = sel.edgeId;
-        const edge = this.#state.edges.find(
-            e => e.id === edgeId,
-        );
-        if (!edge) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
-        edge.description = desc;
+        this.#state.edges =
+            this.#state.edges.map(
+                e => e.id === edgeId
+                    ? {
+                        ...e,
+                        description: desc,
+                    }
+                    : e,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -1016,11 +1032,10 @@ ${toolbar}
             return false;
         }
         const nodeId = sel.nodeId;
-        const node = this.#state.nodes.find(
-            n => n.id === nodeId,
-        );
-        if (!node) return false;
-        const sortOrder = node.fields.length;
+        const sortOrder =
+            this.#state.nodes.find(
+                n => n.id === nodeId,
+            )!.fields.length;
         const fieldId = crypto.randomUUID();
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
@@ -1053,17 +1068,26 @@ ${toolbar}
         }
         const typed =
             fieldType as WfFieldType;
-        node.fields = [
-            ...node.fields,
-            {
-                id: fieldId,
-                name,
-                fieldType: typed,
-                sortOrder,
-                isRequired,
-                options,
-            },
-        ];
+        const newField: GraphField = {
+            id: fieldId,
+            name,
+            fieldType: typed,
+            sortOrder,
+            isRequired,
+            options,
+        };
+        this.#state.nodes =
+            this.#state.nodes.map(
+                n => n.id === nodeId
+                    ? {
+                        ...n,
+                        fields: [
+                            ...n.fields,
+                            newField,
+                        ],
+                    }
+                    : n,
+            );
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
@@ -1103,16 +1127,19 @@ ${toolbar}
                 reverse:
                     capture.restoreSteps,
             });
-            const node =
-                this.#state.nodes.find(
-                    n => n.id === nodeId,
+            this.#state.nodes =
+                this.#state.nodes.map(
+                    n => n.id === nodeId
+                        ? {
+                            ...n,
+                            fields:
+                                n.fields.filter(
+                                    f => f.id
+                                        !== fieldId,
+                                ),
+                        }
+                        : n,
                 );
-            if (node) {
-                node.fields =
-                    node.fields.filter(
-                        f => f.id !== fieldId,
-                    );
-            }
         } catch (err) {
             log.error(
                 'deleteFieldCapture failed',
@@ -1133,11 +1160,9 @@ ${toolbar}
             this.#state.interaction
                 .selection;
         if (sel.kind !== 'node') return '';
-        const node =
-            this.#state.nodes.find(
-                n => n.id === sel.nodeId,
-            );
-        return node?.name ?? '';
+        return this.#state.nodes.find(
+            n => n.id === sel.nodeId,
+        )!.name;
     }
 
     async addNodeAtPosition(
@@ -1420,8 +1445,7 @@ ${toolbar}
                 this.#state.nodes.find(
                     n => n.id
                         === sel.nodeId,
-                );
-            if (!node) return null;
+                )!;
             return {
                 x: node.positionX
                     + NODE_WIDTH / 2,
@@ -1434,19 +1458,17 @@ ${toolbar}
                 this.#state.edges.find(
                     e => e.id
                         === sel.edgeId,
-                );
-            if (!edge) return null;
+                )!;
             const from =
                 this.#state.nodes.find(
                     n => n.id
                         === edge.fromNodeId,
-                );
+                )!;
             const to =
                 this.#state.nodes.find(
                     n => n.id
                         === edge.toNodeId,
-                );
-            if (!from || !to) return null;
+                )!;
             return {
                 x: (from.positionX
                     + to.positionX
@@ -1806,15 +1828,11 @@ class="text-sm text-muted"
 
     #buildEdgePanel(
         edge: GraphEdge,
-        fromNode: GraphNode | undefined,
-        toNode: GraphNode | undefined,
+        fromNode: GraphNode,
+        toNode: GraphNode,
     ): SafeHtml {
-        const fromName =
-            fromNode?.name
-            ?? DISPLAY_ABSENT;
-        const toName =
-            toNode?.name
-            ?? DISPLAY_ABSENT;
+        const fromName = fromNode.name;
+        const toName = toNode.name;
         return html`<div
 class="wf-props-panel">
 <div style="display:flex;
@@ -1870,8 +1888,7 @@ justify-content:space-between"
                 this.#state.nodes.find(
                     n => n.id
                         === sel.nodeId,
-                );
-            if (!node) return html``;
+                )!;
             const outgoing =
                 this.#state.edges.filter(
                     e => e.fromNodeId
@@ -1887,18 +1904,17 @@ justify-content:space-between"
                 this.#state.edges.find(
                     e => e.id
                         === sel.edgeId,
-                );
-            if (!edge) return html``;
+                )!;
             const fromNode =
                 this.#state.nodes.find(
                     n => n.id
                         === edge.fromNodeId,
-                );
+                )!;
             const toNode =
                 this.#state.nodes.find(
                     n => n.id
                         === edge.toNodeId,
-                );
+                )!;
             return this.#buildEdgePanel(
                 edge, fromNode, toNode,
             );
