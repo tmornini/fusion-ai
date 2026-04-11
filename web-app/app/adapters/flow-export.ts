@@ -40,7 +40,7 @@ import type {
 
 /* ── Mermaid export ──────────────── */
 
-export async function exportFlowMermaid(
+export async function getFlowMermaid(
     flowId: string,
 ): Promise<string> {
     const graph =
@@ -220,7 +220,7 @@ function buildBackupJson(
     );
 }
 
-export async function exportFlowZip(
+export async function getFlowZip(
     flowId: string,
 ): Promise<{
     data: Uint8Array;
@@ -281,7 +281,7 @@ export async function exportFlowZip(
 
 /* ── v2 import ───────────────── */
 
-export async function parseZipBackup(
+export async function getZipBackup(
     data: Uint8Array,
 ): Promise<BackupV2 | null> {
     const entries = await readZip(data);
@@ -309,7 +309,7 @@ export async function parseZipBackup(
         unknown as BackupV2;
 }
 
-export async function resolveFlowBackup(
+export async function getFlowBackupResolution(
     backup: BackupV2,
 ): Promise<ImportResolution> {
     const [flows, projects] =
@@ -509,7 +509,7 @@ function saveGraph(
     );
 }
 
-export async function importFlowFromMermaid(
+export async function postFlowFromMermaid(
     text: string,
     projectId: string,
 ): Promise<{
@@ -609,7 +609,7 @@ interface SidecarData {
     edges: SidecarEdge[];
 }
 
-export async function importFlowFromZip(
+export async function postFlowFromZip(
     data: Uint8Array,
     projectId: string,
 ): Promise<{

@@ -20,10 +20,10 @@ import {
 import {
     getFlows,
     getProjects,
-    importFlowFromMermaid,
-    importFlowFromZip,
-    parseZipBackup,
-    resolveFlowBackup,
+    postFlowFromMermaid,
+    postFlowFromZip,
+    getZipBackup,
+    getFlowBackupResolution,
     overwriteFlow,
     createFlowFromBackup,
 } from '../app/adapters';
@@ -235,7 +235,7 @@ async function handleFileSelect(
             await file.arrayBuffer(),
         );
         const backup =
-            await parseZipBackup(bytes);
+            await getZipBackup(bytes);
         if (backup) {
             await handleV2Zip(
                 backup, input,
@@ -264,14 +264,14 @@ async function handleFileSelect(
     };
     try {
         result = ext === 'zip'
-            ? await importFlowFromZip(
+            ? await postFlowFromZip(
                 new Uint8Array(
                     await file
                         .arrayBuffer(),
                 ),
                 projectId,
             )
-            : await importFlowFromMermaid(
+            : await postFlowFromMermaid(
                 await file.text(),
                 projectId,
             );
@@ -316,7 +316,7 @@ async function handleV2Zip(
     let resolution: ImportResolution;
     try {
         resolution =
-            await resolveFlowBackup(
+            await getFlowBackupResolution(
                 backup,
             );
     } catch {

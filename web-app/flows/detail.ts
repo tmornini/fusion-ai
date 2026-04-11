@@ -13,8 +13,8 @@ import {
 } from '../app/core';
 import {
     getFlowGraph,
-    exportFlowMermaid,
-    exportFlowZip,
+    getFlowMermaid,
+    getFlowZip,
 } from '../app/adapters';
 import {
     bindInteractions,
@@ -434,7 +434,7 @@ async function handleCopyMermaid(
     let text: string;
     try {
         text =
-            await exportFlowMermaid(flowId);
+            await getFlowMermaid(flowId);
     } catch {
         showToast(
             'Failed to export Mermaid',
@@ -468,7 +468,7 @@ async function handleExportZip(
     };
     try {
         result =
-            await exportFlowZip(flowId);
+            await getFlowZip(flowId);
     } catch {
         showToast(
             'Failed to export flow',
