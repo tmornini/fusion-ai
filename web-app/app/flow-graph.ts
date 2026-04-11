@@ -904,8 +904,7 @@ export function buildGraphSvg(
         + '"http://www.w3.org/2000/svg"'
         + ` class="${svgCls}"`
         + ` viewBox="${vb}"`
-        + ' preserveAspectRatio='
-        + '"xMidYMid meet"'
+        + ' preserveAspectRatio="none"'
         + ' width="100%"'
         + ' height="100%"'
         + ' style="display:block">'
