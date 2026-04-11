@@ -3,8 +3,8 @@ import {
     postSchemaCreation,
     postBootstrap,
     postMockDataLoad,
-    importSnapshot,
-    exportSnapshot,
+    putSnapshot,
+    getSnapshot,
     hasData,
 } from '../app/adapters';
 import { $ } from '../app/dom';
@@ -353,7 +353,7 @@ export async function init(
                 const text =
                     await file.text();
                 await deleteSchema();
-                await importSnapshot(
+                await putSnapshot(
                     text,
                 );
             } catch {
@@ -379,7 +379,7 @@ export async function init(
             let json: string;
             try {
                 json =
-                    await exportSnapshot();
+                    await getSnapshot();
             } catch {
                 showToast(
                     'Failed to download'
