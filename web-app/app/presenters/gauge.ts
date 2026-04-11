@@ -1,12 +1,16 @@
-import { html, SafeHtml } from '../safe-html';
+import {
+    html,
+    SafeHtml,
+} from '../safe-html';
 import {
     iconDollarSign,
     iconClock,
     iconZap,
 } from '../icons';
 import type {
-    GaugeCard,
+    GaugeReceiver,
     GaugeIcon,
+    GaugeTheme,
 } from '../adapters/dashboard';
 
 type ThemeStyle = {
@@ -15,7 +19,7 @@ type ThemeStyle = {
     border: string;
 };
 const THEME_CONFIG: Record<
-    GaugeCard['theme'],
+    GaugeTheme,
     ThemeStyle
 > = {
     blue: {
@@ -59,7 +63,7 @@ const THEME_CONFIG: Record<
     },
 };
 
-const ICON_CONFIG: Record<
+const ICON_FNS: Record<
     GaugeIcon,
     (
         size: number,
@@ -74,26 +78,81 @@ const ICON_CONFIG: Record<
 const ARC_OUTER_R = 65;
 const ARC_INNER_R = 45;
 
-export class GaugePresenter {
-    readonly #card: GaugeCard;
+export class GaugePresenter
+    implements GaugeReceiver
+{
+    #title = '';
+    #ts: ThemeStyle = THEME_CONFIG.blue;
+    #iconFn: (
+        size: number,
+        cls: string,
+    ) => SafeHtml = iconClock;
+    #iconCss = '';
+    #outerValue = 0;
+    #outerMax = 0;
+    #outerLabel = '';
+    #outerDisplay = '';
+    #innerValue = 0;
+    #innerMax = 0;
+    #innerLabel = '';
+    #innerDisplay = '';
+    #hasOverrun = false;
 
-    constructor(card: GaugeCard) {
-        this.#card = card;
+    title(text: string): void {
+        this.#title = text;
     }
 
-    buildGauge(): SafeHtml {
-        const ts =
-            THEME_CONFIG[this.#card.theme];
-        const elementId = this.#card.title
+    theme(name: GaugeTheme): void {
+        this.#ts = THEME_CONFIG[name];
+    }
+
+    icon(
+        name: GaugeIcon,
+        cssClass: string,
+    ): void {
+        this.#iconFn = ICON_FNS[name];
+        this.#iconCss = cssClass;
+    }
+
+    outerArc(
+        value: number,
+        max: number,
+        label: string,
+        display: string,
+    ): void {
+        this.#outerValue = value;
+        this.#outerMax = max;
+        this.#outerLabel = label;
+        this.#outerDisplay = display;
+    }
+
+    innerArc(
+        value: number,
+        max: number,
+        label: string,
+        display: string,
+    ): void {
+        this.#innerValue = value;
+        this.#innerMax = max;
+        this.#innerLabel = label;
+        this.#innerDisplay = display;
+    }
+
+    overrunWarning(
+        enabled: boolean,
+    ): void {
+        this.#hasOverrun = enabled;
+    }
+
+    render(): SafeHtml {
+        const elementId = this.#title
             .replace(/\s+/g, '-')
             .toLowerCase();
-        const iconFn =
-            ICON_CONFIG[this.#card.icon]!;
         return html`
     <div class="card" style="${
         'border:2px solid transparent;'
-        + ts.border + ';'
-        + ts.bg + ';'
+        + this.#ts.border + ';'
+        + this.#ts.bg + ';'
         + 'border-radius:0.75rem;'
         + 'padding:1.5rem;'
         + 'transition:all 0.3s'
@@ -105,47 +164,47 @@ export class GaugePresenter {
                 'width:2.5rem;'
                 + 'height:2.5rem;'
                 + 'border-radius:0.5rem;'
-                + ts.iconBg + ';'
+                + this.#ts.iconBg + ';'
                 + 'display:flex;'
                 + 'align-items:center;'
                 + 'justify-content:center'
             }">
-                ${iconFn(
-                    20, this.#card.iconCssClass,
+                ${this.#iconFn(
+                    20, this.#iconCss,
                 )}
             </div>
             <h3 class="${
                 'text-sm font-semibold'
-            }">${this.#card.title}</h3>
+            }">${this.#title}</h3>
         </div>
         <div style="${
             'display:flex;'
             + 'justify-content:center;'
             + 'margin-bottom:1.25rem'
         }">
-            ${this.#buildSvgArcs(elementId)}
+            ${this.#renderSvgArcs(elementId)}
         </div>
-        ${this.#buildLegend()}
+        ${this.#renderLegend()}
     </div>`;
     }
 
-    #buildSvgArcs(
+    #renderSvgArcs(
         elementId: string,
     ): SafeHtml {
         const outerPct =
-            this.#card.outer.max > 0
+            this.#outerMax > 0
                 ? Math.min(
-                    (this.#card.outer.value
-                        / this.#card.outer.max)
+                    (this.#outerValue
+                        / this.#outerMax)
                         * 100,
                     100,
                 )
                 : 0;
         const innerPct =
-            this.#card.inner.max > 0
+            this.#innerMax > 0
                 ? Math.min(
-                    (this.#card.inner.value
-                        / this.#card.inner.max)
+                    (this.#innerValue
+                        / this.#innerMax)
                         * 100,
                     100,
                 )
@@ -155,9 +214,9 @@ export class GaugePresenter {
         const innerArc =
             Math.PI * ARC_INNER_R;
         const isOverrun =
-            this.#card.hasOverrunWarning
-            && this.#card.inner.value
-                > this.#card.inner.max;
+            this.#hasOverrun
+            && this.#innerValue
+                > this.#innerMax;
         const stop0 =
             'hsl(var(--success))';
         const stop1 = isOverrun
@@ -166,12 +225,12 @@ export class GaugePresenter {
 
         let flashStyle = '';
         if (
-            this.#card.hasOverrunWarning
-            && this.#card.inner.max > 0
+            this.#hasOverrun
+            && this.#innerMax > 0
         ) {
             const ratio =
-                this.#card.inner.value
-                / this.#card.inner.max;
+                this.#innerValue
+                / this.#innerMax;
             if (ratio > 1.5) {
                 const dur = Math.max(
                     0.333,
@@ -302,7 +361,7 @@ export class GaugePresenter {
         </svg>`;
     }
 
-    #buildLegend(): SafeHtml {
+    #renderLegend(): SafeHtml {
         const cellStyle =
             'text-align:center;'
             + 'padding:0.75rem;'
@@ -314,7 +373,8 @@ export class GaugePresenter {
         const dotBase =
             'width:0.625rem;'
             + 'height:0.625rem;'
-            + 'border-radius:var(--radius-full);';
+            + 'border-radius:'
+            + 'var(--radius-full);';
         return html`
         <div style="${
             'display:grid;'
@@ -339,13 +399,13 @@ export class GaugePresenter {
                     }" style="${
                         'font-weight:500'
                     }">${
-                        this.#card.inner.label
+                        this.#innerLabel
                     }</span>
                 </div>
                 <p class="${
                     'text-2xl font-bold'
                 }">${
-                    this.#card.inner.display
+                    this.#innerDisplay
                 }</p>
             </div>
             <div style="${cellStyle}">
@@ -365,13 +425,13 @@ export class GaugePresenter {
                     }" style="${
                         'font-weight:500'
                     }">${
-                        this.#card.outer.label
+                        this.#outerLabel
                     }</span>
                 </div>
                 <p class="${
                     'text-2xl font-bold'
                 }">${
-                    this.#card.outer.display
+                    this.#outerDisplay
                 }</p>
             </div>
         </div>`;
