@@ -99,65 +99,26 @@ const ROLE_LABELS: Record<
 };
 
 export class UserPresenter {
-    readonly #id: string;
-    readonly #fullName: string;
-    readonly #email: string;
-    readonly #role: string;
-    readonly #department: string;
-    readonly #status: string;
-    readonly #availability: number;
-    readonly #performanceScore: number;
-    readonly #projectsCompleted: number;
-    readonly #currentProjects: number;
-    readonly #lastActive: string;
-    readonly #isActive: boolean;
-    readonly #isPending: boolean;
-    readonly #isDeactivated: boolean;
-    readonly #strengths:
-        readonly string[];
-    readonly #teamDimensions:
-        Record<string, number>;
+    readonly #user: User;
 
     constructor(user: User) {
-        this.#id = user.id;
-        this.#fullName = user.fullName();
-        this.#email = user.email;
-        this.#role = user.role;
-        this.#department = user.department;
-        this.#status = user.status;
-        this.#availability =
-            user.availability;
-        this.#performanceScore =
-            user.performanceScore;
-        this.#projectsCompleted =
-            user.projectsCompleted;
-        this.#currentProjects =
-            user.currentProjects;
-        this.#lastActive = user.lastActive;
-        this.#isActive = user.isActive();
-        this.#isPending = user.isPending();
-        this.#isDeactivated =
-            user.isDeactivated();
-        this.#strengths =
-            user.parsedStrengths();
-        this.#teamDimensions =
-            user.parsedTeamDimensions();
+        this.#user = user;
     }
 
     idForLink(): string {
-        return this.#id;
+        return this.#user.id;
     }
 
     matchesSearch(
         query: string,
     ): boolean {
-        return this.#fullName
+        return this.#user.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#role
+            || this.#user.role
                 .toLowerCase()
                 .includes(query)
-            || this.#department
+            || this.#user.department
                 .toLowerCase()
                 .includes(query);
     }
@@ -165,10 +126,10 @@ export class UserPresenter {
     matchesUserSearch(
         query: string,
     ): boolean {
-        return this.#fullName
+        return this.#user.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#email
+            || this.#user.email
                 .toLowerCase()
                 .includes(query);
     }
@@ -177,21 +138,21 @@ export class UserPresenter {
         role: string,
     ): boolean {
         return role === 'all'
-            || this.#role === role;
+            || this.#user.role === role;
     }
 
     matchesStatusFilter(
         status: string,
     ): boolean {
         return status === 'all'
-            || this.#status === status;
+            || this.#user.status === status;
     }
 
     buildMemberCard(
         selectedId: string | null,
     ): SafeHtml {
         const cardStyle =
-            selectedId === this.#id
+            selectedId === this.#user.id
                 ? 'box-shadow:0 0 0 2px'
                   + ' hsl(var(--primary))'
                 : '';
@@ -200,7 +161,7 @@ export class UserPresenter {
         class="card card-hover"
         style="padding:1.25rem;
             cursor:pointer;${cardStyle}"
-        data-member-card="${this.#id}"
+        data-member-card="${this.#user.id}"
     >
         <div class="flex items-start gap-4">
             <div
@@ -233,12 +194,12 @@ export class UserPresenter {
                         }"
                     >${
                         initials(
-                            this.#fullName,
+                            this.#user.fullName(),
                         )
                     }</span>
                 </div>
                 ${buildStatusDot(
-                    this.#availability,
+                    this.#user.availability,
                 )}
             </div>
             <div style="flex:1;min-width:0">
@@ -253,25 +214,25 @@ export class UserPresenter {
                         'font-semibold'
                         + ' text-sm'
                     }">
-                        ${this.#fullName}
+                        ${this.#user.fullName()}
                     </h3>
                     <span
                         class="pill"
                         style="${
                             styleForAvailability(
-                                this
-                                .#availability,
+                                this.#user
+                                .availability,
                             )
                         }"
                     >${
-                        this.#availability
+                        this.#user.availability
                     }%</span>
                 </div>
                 <p class="${
                     'text-xs text-muted mb-2'
                 }">
-                    ${this.#role}
-                    \u2022 ${this.#department}
+                    ${this.#user.role}
+                    \u2022 ${this.#user.department}
                 </p>
                 <div
                     class="${
@@ -279,7 +240,8 @@ export class UserPresenter {
                         + ' gap-1.5 mb-2'
                     }"
                 >
-                    ${this.#strengths
+                    ${this.#user
+                        .parsedStrengths()
                         .slice(0, 3)
                         .map(s => html`
                     <span
@@ -313,8 +275,8 @@ export class UserPresenter {
                         ${iconTrendingUp(
                             14, 'text-success',
                         )}
-                        ${this
-                            .#performanceScore}%
+                        ${this.#user
+                            .performanceScore}%
                     </span>
                     <span
                         class="${
@@ -323,8 +285,8 @@ export class UserPresenter {
                         }"
                     >
                         ${iconBriefcase(14, '')}
-                        ${this
-                            .#currentProjects
+                        ${this.#user
+                            .currentProjects
                         } active
                     </span>
                     <span
@@ -337,8 +299,8 @@ export class UserPresenter {
                         ${iconAward(
                             14, 'text-primary',
                         )}
-                        ${this
-                            .#projectsCompleted}
+                        ${this.#user
+                            .projectsCompleted}
                         completed
                     </span>
                 </div>
@@ -382,7 +344,7 @@ export class UserPresenter {
                     }"
                 >${
                     initials(
-                        this.#fullName,
+                        this.#user.fullName(),
                     )
                 }</span>
             </div>
@@ -391,12 +353,12 @@ export class UserPresenter {
                     'text-lg font-display'
                     + ' font-semibold'
                 }"
-            >${this.#fullName}</h3>
+            >${this.#user.fullName()}</h3>
             <p class="text-sm text-muted">
-                ${this.#role}
+                ${this.#user.role}
             </p>
             <p class="text-xs text-muted">
-                ${this.#email}
+                ${this.#user.email}
             </p>
         </div>
         ${this.#buildDimensionsTab()}
@@ -409,7 +371,7 @@ export class UserPresenter {
         <div class="${
             'flex items-center '
             + 'gap-4 p-4 '
-            + (this.#isDeactivated
+            + (this.#user.isDeactivated()
                 ? 'opacity-50' : '')
         }"
             style="${
@@ -448,7 +410,7 @@ export class UserPresenter {
                             + 'text-primary'
                         }">
                         ${initials(
-                            this.#fullName,
+                            this.#user.fullName(),
                         )}
                     </span>
                 </div>
@@ -459,7 +421,7 @@ export class UserPresenter {
                         'font-medium '
                         + 'truncate'
                     }">
-                        ${this.#fullName}
+                        ${this.#user.fullName()}
                     </p>
                     <p
                         class="${
@@ -467,7 +429,7 @@ export class UserPresenter {
                             + 'text-muted '
                             + 'truncate'
                         }">
-                        ${this.#email}
+                        ${this.#user.email}
                     </p>
                 </div>
             </div>
@@ -478,7 +440,7 @@ export class UserPresenter {
                 class="${
                     'text-sm text-muted'
                 }">
-                ${this.#department}
+                ${this.#user.department}
             </div>
             <div style="flex:1">
                 ${this.#buildStatusBadge()}
@@ -486,12 +448,12 @@ export class UserPresenter {
                     'text-xs text-muted'
                     + ' mt-1'
                 }">
-                    ${this.#isPending
+                    ${this.#user.isPending()
                         ? 'Invite sent'
                         : 'Last active '
                             + formatDate(
-                                this
-                                .#lastActive,
+                                this.#user
+                                .lastActive,
                             )}
                 </p>
             </div>
@@ -504,7 +466,7 @@ export class UserPresenter {
                         + 'btn-icon btn-sm'
                     }"
                     data-edit-user="${
-                        this.#id
+                        this.#user.id
                     }">
                     ${iconStar(16, '')}
                 </button>
@@ -513,7 +475,7 @@ export class UserPresenter {
     }
 
     #buildStatusBadge(): SafeHtml {
-        if (this.#isActive)
+        if (this.#user.isActive())
             return html`<span
                 class="${
                     'status-badge-success'
@@ -521,7 +483,7 @@ export class UserPresenter {
                 ${iconCheckCircle2(14, '')}
                 Active
             </span>`;
-        if (this.#isPending)
+        if (this.#user.isPending())
             return html`<span
                 class="${
                     'status-badge-warning'
@@ -540,13 +502,13 @@ export class UserPresenter {
 
     #buildRoleBadge(): SafeHtml {
         const cfg =
-            ROLE_LABELS[this.#role];
+            ROLE_LABELS[this.#user.role];
         if (!cfg)
             return html`<span
                 class="${
                     'badge badge-secondary'
                 }">
-                ${this.#role}
+                ${this.#user.role}
             </span>`;
         return html`<span
             class="${
@@ -590,7 +552,8 @@ export class UserPresenter {
                 Results
             </p>
             ${Object.entries(
-                this.#teamDimensions,
+                this.#user
+                    .parsedTeamDimensions(),
             ).map(([key, value]) =>
                     html`
             <div style="${
@@ -687,7 +650,7 @@ export class UserPresenter {
                         'margin:0.5rem 0'
                     }"
                 >${
-                    this.#performanceScore
+                    this.#user.performanceScore
                 }%</div>
                 <p class="${
                     'text-xs text-muted'
@@ -727,8 +690,8 @@ export class UserPresenter {
                             + '0.25rem 0'
                         }"
                     >${
-                        this
-                            .#projectsCompleted
+                        this.#user
+                            .projectsCompleted
                     }</div>
                     <p class="${
                         'text-xs text-muted'
@@ -760,8 +723,8 @@ export class UserPresenter {
                             + '0.25rem 0'
                         }"
                     >${
-                        this
-                            .#currentProjects
+                        this.#user
+                            .currentProjects
                     }</div>
                     <p class="${
                         'text-xs text-muted'
