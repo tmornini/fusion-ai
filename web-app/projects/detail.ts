@@ -30,37 +30,33 @@ import {
     ProjectDetailPresenter,
 } from '../app/presenters';
 
-let editEscapeHandler:
-    ((e: KeyboardEvent) => void)
-    | undefined;
+const escapeController =
+    { current: new AbortController() };
 
 function bindProjectEvents(
     project: ProjectView,
     flows: FlowListItem[],
     isEditing: boolean,
 ): void {
-    if (editEscapeHandler) {
-        document.removeEventListener(
-            'keydown',
-            editEscapeHandler,
-        );
-        editEscapeHandler = undefined;
-    }
+    escapeController.current.abort();
+    escapeController.current =
+        new AbortController();
     if (isEditing) {
-        editEscapeHandler = (
-            e: KeyboardEvent,
-        ) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                $(
-                    '#project-cancel-btn',
-                    document,
-                )?.click();
-            }
-        };
         document.addEventListener(
             'keydown',
-            editEscapeHandler,
+            (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    $(
+                        '#project-cancel-btn',
+                        document,
+                    )?.click();
+                }
+            },
+            {
+                signal: escapeController
+                    .current.signal,
+            },
         );
         const saveSel =
             '#project-save-btn';

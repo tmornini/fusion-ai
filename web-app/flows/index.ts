@@ -45,8 +45,9 @@ type ImportState =
         resolution: ImportResolution;
     };
 
-let importState: ImportState =
-    { kind: 'idle' };
+const importStore = {
+    state: { kind: 'idle' } as ImportState,
+};
 
 export async function init(
 ): Promise<void> {
@@ -152,7 +153,7 @@ function bindImport(): void {
     cancelBtn.addEventListener(
         'click',
         () => {
-            importState = { kind: 'idle' };
+            importStore.state = { kind: 'idle' };
             resetImportDialog();
             closeDialog('import-flow');
         },
@@ -200,7 +201,7 @@ async function openImportDialog(
     if (!select) return;
 
     resetImportDialog();
-    importState = { kind: 'idle' };
+    importStore.state = { kind: 'idle' };
 
     const projects = await getProjects();
     if (projects.length === 0) {
@@ -344,7 +345,7 @@ async function handleV2Zip(
         input.value = '';
         return;
     }
-    importState = {
+    importStore.state = {
         kind: 'pending',
         backup,
         resolution,
@@ -497,16 +498,16 @@ function resetImportDialog(): void {
 function clearPending(
     input: HTMLInputElement,
 ): void {
-    importState = { kind: 'idle' };
+    importStore.state = { kind: 'idle' };
     input.value = '';
 }
 
 async function handleOverwrite(
     input: HTMLInputElement,
 ): Promise<void> {
-    if (importState.kind !== 'pending')
+    if (importStore.state.kind !== 'pending')
         return;
-    const { backup } = importState;
+    const { backup } = importStore.state;
     closeDialog('import-flow');
     resetImportDialog();
     try {
@@ -534,10 +535,10 @@ async function handleOverwrite(
 async function handleCreateNew(
     input: HTMLInputElement,
 ): Promise<void> {
-    if (importState.kind !== 'pending')
+    if (importStore.state.kind !== 'pending')
         return;
     const { backup, resolution } =
-        importState;
+        importStore.state;
     const projectId =
         resolution.case === '1a'
         || resolution.case === '1b'
@@ -573,9 +574,9 @@ async function handleCreateNew(
 async function handleCreate(
     input: HTMLInputElement,
 ): Promise<void> {
-    if (importState.kind !== 'pending')
+    if (importStore.state.kind !== 'pending')
         return;
-    const { backup } = importState;
+    const { backup } = importStore.state;
     const select = $select(
         '#import-project', document,
     );

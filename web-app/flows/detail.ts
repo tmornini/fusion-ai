@@ -74,21 +74,21 @@ class Debouncer {
 const saveDebouncer =
     new Debouncer(SAVE_DELAY_MS);
 
-let currentProjectId:
-    string | undefined;
-
-let interactionAbortController:
-    AbortController | undefined;
+const pageState = {
+    projectId: undefined as
+        string | undefined,
+    interaction: new AbortController(),
+};
 
 function renderAndBind(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
-    interactionAbortController?.abort();
-    interactionAbortController =
+    pageState.interaction.abort();
+    pageState.interaction =
         new AbortController();
     const signal =
-        interactionAbortController.signal;
+        pageState.interaction.signal;
     saveDebouncer.flush();
     presenter.render(container);
     bindBackButton();
@@ -215,12 +215,12 @@ function bindBackButton(): void {
     $('#flow-back-btn', document)
         ?.addEventListener(
             'click',
-            () => currentProjectId
+            () => pageState.projectId
                 ? navigateTo(
                     'project-detail',
                     {
                         projectId:
-                            currentProjectId,
+                            pageState.projectId,
                     },
                 )
                 : navigateTo('flows'),
@@ -758,7 +758,7 @@ export async function init(
 ): Promise<void> {
     const flowId =
         params?.flowId;
-    currentProjectId =
+    pageState.projectId =
         params?.projectId;
     if (!flowId) {
         navigateTo('flows');
