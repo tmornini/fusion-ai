@@ -45,17 +45,19 @@ function relativeTime(
 function buildInboxRow(
     item: WorkboxItem,
 ): ReturnType<typeof html> {
-    const badge = item.isCompleted
+    const badge = item.isCompleted()
         ? html`<span
             class="badge badge-success"
             >Complete</span>`
         : html`<span
             class="badge badge-info"
-            >${item.currentStateName}</span>`;
-    const from =
-        item.lastTransitionerName
-            ? item.lastTransitionerName
-            : '\u2014';
+            >${
+            item.currentStateName()
+        }</span>`;
+    const name =
+        item.lastTransitionerName();
+    const from = name
+        ? name : '\u2014';
     return html`
     <div
         class="card"

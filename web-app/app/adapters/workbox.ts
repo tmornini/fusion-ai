@@ -25,14 +25,46 @@ import {
 
 /* ── Types ───────────────── */
 
-export interface WorkboxItem {
-    id: string;
-    displayId: string;
-    flowName: string;
-    currentStateName: string;
-    lastTransitionerName: string;
-    lastTransitionedAt: string;
-    isCompleted: boolean;
+export class WorkboxItem {
+    readonly id: string;
+    readonly displayId: string;
+    readonly flowName: string;
+    readonly lastTransitionedAt: string;
+    readonly #stateName: string;
+    readonly #transitionerName: string;
+    readonly #completed: boolean;
+
+    constructor(data: {
+        id: string;
+        displayId: string;
+        flowName: string;
+        stateName: string;
+        transitionerName: string;
+        lastTransitionedAt: string;
+        completed: boolean;
+    }) {
+        this.id = data.id;
+        this.displayId = data.displayId;
+        this.flowName = data.flowName;
+        this.#stateName = data.stateName;
+        this.#transitionerName =
+            data.transitionerName;
+        this.lastTransitionedAt =
+            data.lastTransitionedAt;
+        this.#completed = data.completed;
+    }
+
+    isCompleted(): boolean {
+        return this.#completed;
+    }
+
+    currentStateName(): string {
+        return this.#stateName;
+    }
+
+    lastTransitionerName(): string {
+        return this.#transitionerName;
+    }
 }
 
 interface TransitionValues {
@@ -268,13 +300,13 @@ export async function getWorkboxItems(
         const last =
             woTransitions.at(-1);
 
-        items.push({
+        items.push(new WorkboxItem({
             id: wo.id,
             displayId: wo.display_id,
             flowName: fg.name,
-            currentStateName:
+            stateName:
                 curNode?.name ?? '',
-            lastTransitionerName:
+            transitionerName:
                 userName(
                     userMap,
                     last?.user_id,
@@ -282,8 +314,8 @@ export async function getWorkboxItems(
             lastTransitionedAt:
                 last?.transitioned_at
                     ?? wo.created_at,
-            isCompleted,
-        });
+            completed: isCompleted,
+        }));
     }
 
     return items;
@@ -293,7 +325,7 @@ export async function getWorkboxArchive(
 ): Promise<WorkboxItem[]> {
     const items = await getWorkboxItems();
     return items.filter(
-        i => i.isCompleted,
+        i => i.isCompleted(),
     );
 }
 
@@ -301,7 +333,7 @@ export async function getWorkboxActive(
 ): Promise<WorkboxItem[]> {
     const items = await getWorkboxItems();
     return items.filter(
-        i => !i.isCompleted,
+        i => !i.isCompleted(),
     );
 }
 
