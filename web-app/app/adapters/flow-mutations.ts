@@ -38,7 +38,9 @@ function putFlowGraph(
 
 async function putGraphMutation(
     flowId: string,
-    mutate: (g: StoredGraph) => void,
+    transform: (
+        g: StoredGraph,
+    ) => StoredGraph,
 ): Promise<void> {
     const entity =
         await GET<FlowEntity>(
@@ -47,9 +49,9 @@ async function putGraphMutation(
     const graph = parseGraph(
         entity.graph,
     );
-    mutate(graph);
+    const updated = transform(graph);
     await PUT(`flows/${flowId}`, {
-        graph: putFlowGraph(graph),
+        graph: putFlowGraph(updated),
         updated_at: nowUtc(),
     });
 }
@@ -157,7 +159,10 @@ export async function postNodeAddition(
     };
     await putGraphMutation(
         ctx.flowId,
-        g => { g.nodes.push(node); },
+        g => ({
+            ...g,
+            nodes: [...g.nodes, node],
+        }),
     );
 }
 
@@ -173,7 +178,10 @@ export async function postEdgeConnection(
     };
     await putGraphMutation(
         ctx.flowId,
-        g => { g.edges.push(edge); },
+        g => ({
+            ...g,
+            edges: [...g.edges, edge],
+        }),
     );
 }
 
@@ -192,12 +200,20 @@ export async function postFieldAddition(
     };
     await putGraphMutation(
         ctx.flowId,
-        g => {
-            const node = g.nodes.find(
-                n => n.id === ctx.nodeId,
-            );
-            if (node) node.fields.push(field);
-        },
+        g => ({
+            ...g,
+            nodes: g.nodes.map(
+                n => n.id === ctx.nodeId
+                    ? {
+                        ...n,
+                        fields: [
+                            ...n.fields,
+                            field,
+                        ],
+                    }
+                    : n,
+            ),
+        }),
     );
 }
 
@@ -247,32 +263,14 @@ export async function putNode(
 ): Promise<void> {
     await putGraphMutation(
         flowId,
-        g => {
-            const node = g.nodes.find(
-                n => n.id === nodeId,
-            );
-            if (!node) return;
-            if (fields.name !== undefined)
-                node.name = fields.name;
-            if (
-                fields.description
-                    !== undefined
-            )
-                node.description =
-                    fields.description;
-            if (
-                fields.positionX
-                    !== undefined
-            )
-                node.positionX =
-                    fields.positionX;
-            if (
-                fields.positionY
-                    !== undefined
-            )
-                node.positionY =
-                    fields.positionY;
-        },
+        g => ({
+            ...g,
+            nodes: g.nodes.map(
+                n => n.id === nodeId
+                    ? { ...n, ...fields }
+                    : n,
+            ),
+        }),
     );
 }
 
@@ -286,21 +284,35 @@ export async function putWfEdge(
 ): Promise<void> {
     await putGraphMutation(
         flowId,
-        g => {
-            const edge = g.edges.find(
-                e => e.id === edgeId,
-            );
-            if (!edge) return;
-            if (fields.name !== undefined)
-                edge.name = fields.name;
-            if (
-                fields.description
-                    !== undefined
-            )
-                edge.description =
-                    fields.description;
-        },
+        g => ({
+            ...g,
+            edges: g.edges.map(
+                e => e.id === edgeId
+                    ? { ...e, ...fields }
+                    : e,
+            ),
+        }),
     );
+}
+
+function applyFieldUpdate(
+    f: GraphField,
+    fields: {
+        name?: string;
+        fieldType?: string;
+        sortOrder?: number;
+        isRequired?: boolean;
+        options?: string[];
+    },
+): GraphField {
+    const ft = fields.fieldType
+        ? (fields.fieldType as WfFieldType)
+        : f.fieldType;
+    return {
+        ...f,
+        ...fields,
+        fieldType: ft,
+    };
 }
 
 export async function putField(
@@ -317,42 +329,23 @@ export async function putField(
 ): Promise<void> {
     await putGraphMutation(
         flowId,
-        g => {
-            const node = g.nodes.find(
-                n => n.id === nodeId,
-            );
-            if (!node) return;
-            const field = node.fields.find(
-                f => f.id === fieldId,
-            );
-            if (!field) return;
-            if (fields.name !== undefined)
-                field.name = fields.name;
-            if (
-                fields.fieldType
-                    !== undefined
-            ) {
-                const ft =
-                    fields.fieldType as
-                        WfFieldType;
-                field.fieldType = ft;
-            }
-            if (
-                fields.sortOrder
-                    !== undefined
-            )
-                field.sortOrder =
-                    fields.sortOrder;
-            if (
-                fields.isRequired
-                    !== undefined
-            )
-                field.isRequired =
-                    fields.isRequired;
-            if (
-                fields.options !== undefined
-            )
-                field.options = fields.options;
-        },
+        g => ({
+            ...g,
+            nodes: g.nodes.map(
+                n => n.id === nodeId
+                    ? {
+                        ...n,
+                        fields: n.fields.map(
+                            f => f.id
+                                === fieldId
+                                ? applyFieldUpdate(
+                                    f, fields,
+                                )
+                                : f,
+                        ),
+                    }
+                    : n,
+            ),
+        }),
     );
 }
