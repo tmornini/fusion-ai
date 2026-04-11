@@ -140,7 +140,7 @@ function buildFlowTxt(
 export interface BackupV2 {
     version: 2;
     exportedAt: string;
-    projectId: string | null;
+    projectId: string | undefined;
     flow: {
         id: string;
         name: string;
@@ -169,7 +169,7 @@ async function getFlowBackupData(
     flowId: string,
 ): Promise<{
     flow: FlowEntity;
-    projectId: string | null;
+    projectId: string | undefined;
 }> {
     const [flow, projectFlows] =
         await Promise.all([
@@ -185,14 +185,13 @@ async function getFlowBackupData(
     );
     return {
         flow,
-        projectId:
-            pf?.project_id ?? null,
+        projectId: pf?.project_id,
     };
 }
 
 function buildBackupJson(
     flow: FlowEntity,
-    projectId: string | null,
+    projectId: string | undefined,
 ): string {
     const graph = parseJson<{
         nodes: GraphNode[];

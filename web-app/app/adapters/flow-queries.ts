@@ -35,7 +35,7 @@ export interface FlowSummary {
     description: string;
     nodeCount: number;
     edgeCount: number;
-    projectName: string | null;
+    projectName: string | undefined;
 }
 
 interface StoredGraph {
@@ -69,15 +69,17 @@ export async function getFlows(
     );
 
     const projectByFlow = new Map<
-        string, string | null
+        string, string
     >();
     for (const pw of projectFlows) {
-        projectByFlow.set(
-            pw.flow_id,
-            projectMap.get(
-                pw.project_id,
-            ) ?? null,
+        const name = projectMap.get(
+            pw.project_id,
         );
+        if (name !== undefined) {
+            projectByFlow.set(
+                pw.flow_id, name,
+            );
+        }
     }
 
     return flows.map(f => {
@@ -87,8 +89,7 @@ export async function getFlows(
             name: f.name,
             description: f.description,
             projectName:
-                projectByFlow.get(f.id)
-                    ?? null,
+                projectByFlow.get(f.id),
             nodeCount: g.nodes.length,
             edgeCount: g.edges.length,
         };
