@@ -407,6 +407,36 @@ export class ProjectDetailPresenter {
                                         + 'text-'
                                         + 'muted'
                                     }">
+                                        Current
+                                    </span>
+                                    <span
+                                        class="${
+                                            'text-sm'
+                                            + ' font-'
+                                            + 'medium'
+                                        }">${
+                                            metric
+                                                .current
+                                                ? metric
+                                                    .prefix
+                                                    + metric
+                                                        .current
+                                                    + metric
+                                                        .unit
+                                                : '\u2014'
+                                        }</span>
+                                </div>
+                                <div class="${
+                                    'flex '
+                                    + 'items-center'
+                                    + ' justify-'
+                                    + 'between'
+                                }">
+                                    <span class="${
+                                        'text-xs '
+                                        + 'text-'
+                                        + 'muted'
+                                    }">
                                         Baseline
                                     </span>
                                     ${isEditing
@@ -461,36 +491,6 @@ export class ProjectDetailPresenter {
                                                             .unit
                                                     : '\u2014'
                                             }</span>`}
-                                </div>
-                                <div class="${
-                                    'flex '
-                                    + 'items-center'
-                                    + ' justify-'
-                                    + 'between'
-                                }">
-                                    <span class="${
-                                        'text-xs '
-                                        + 'text-'
-                                        + 'muted'
-                                    }">
-                                        Current
-                                    </span>
-                                    <span
-                                        class="${
-                                            'text-sm'
-                                            + ' font-'
-                                            + 'medium'
-                                        }">${
-                                            metric
-                                                .current
-                                                ? metric
-                                                    .prefix
-                                                    + metric
-                                                        .current
-                                                    + metric
-                                                        .unit
-                                                : '\u2014'
-                                        }</span>
                                 </div>
                                 <div style="${
                                     'padding-top:'
