@@ -19,10 +19,7 @@ interface StoredGraph {
 function parseGraph(
     raw: string,
 ): StoredGraph {
-    return parseJson<StoredGraph>(
-        raw,
-        { nodes: [], edges: [] },
-    );
+    return parseJson<StoredGraph>(raw);
 }
 
 function saveGraph(

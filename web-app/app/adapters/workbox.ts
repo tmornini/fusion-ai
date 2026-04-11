@@ -75,14 +75,6 @@ function parseFlowGraph(
 ): WorkOrderFlowGraph {
     return parseJson<WorkOrderFlowGraph>(
         raw,
-        {
-            flowId: '',
-            name: '',
-            description: '',
-            lockTimeout: 28800,
-            nodes: [],
-            edges: [],
-        },
     );
 }
 
@@ -91,7 +83,6 @@ function parseValues(
 ): TransitionValues {
     return parseJson<TransitionValues>(
         raw,
-        {},
     );
 }
 
@@ -419,10 +410,7 @@ export async function postWorkOrderCreation(
     const graph = parseJson<{
         nodes: GraphNode[];
         edges: GraphEdge[];
-    }>(
-        flow.graph,
-        { nodes: [], edges: [] },
-    );
+    }>(flow.graph);
 
     const startNode = graph.nodes.find(
         n => n.isStart,

@@ -46,10 +46,7 @@ interface StoredGraph {
 function parseGraph(
     raw: string,
 ): StoredGraph {
-    return parseJson<StoredGraph>(
-        raw,
-        { nodes: [], edges: [] },
-    );
+    return parseJson<StoredGraph>(raw);
 }
 
 export async function getFlows(

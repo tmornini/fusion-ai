@@ -196,10 +196,7 @@ function buildBackupJson(
     const graph = parseJson<{
         nodes: GraphNode[];
         edges: GraphEdge[];
-    }>(
-        flow.graph,
-        { nodes: [], edges: [] },
-    );
+    }>(flow.graph);
     const backup: BackupV2 = {
         version: 2,
         exportedAt: minuteUtc(':'),
@@ -231,10 +228,7 @@ export async function getFlowZip(
     const graph = parseJson<{
         nodes: GraphNode[];
         edges: GraphEdge[];
-    }>(
-        flow.graph,
-        { nodes: [], edges: [] },
-    );
+    }>(flow.graph);
 
     const mermaidGraph: FlowGraph = {
         id: flow.id,
@@ -654,17 +648,14 @@ export async function postFlowFromZip(
         );
     }
 
-    const fallback =
-        null as unknown as SidecarData;
-    const sidecar: SidecarData | null =
+    const sidecar: SidecarData | undefined =
         jsonEntry
             ? parseJson<SidecarData>(
                 dec.decode(
                     jsonEntry.data,
                 ),
-                fallback,
             )
-            : null;
+            : undefined;
 
     const sidecarNodeMap = new Map<
         string, SidecarNode
