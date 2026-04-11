@@ -1,9 +1,16 @@
+import { log } from './logger';
+
 function readPreference(
     key: string,
 ): string | null {
     try {
         return localStorage.getItem(key);
     } catch {
+        log.warn(
+            'Failed to read preference: '
+            + key,
+            'preferences-store',
+        );
         return null;
     }
 }
