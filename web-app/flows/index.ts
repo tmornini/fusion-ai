@@ -100,15 +100,15 @@ export async function init(
         },
     );
     if (!result) return;
-    const flows = result.map(
-        wf => new FlowPresenter(wf),
-    );
+    const rendered = result.map(wf => {
+        const p = new FlowPresenter();
+        wf.presentCardInto(p);
+        return p.render();
+    });
 
     setHtml(
         listEl,
-        html`${flows.map(
-            wf => wf.buildCard(),
-        )}`,
+        html`${rendered}`,
     );
 
     listEl.addEventListener(
