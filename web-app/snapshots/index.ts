@@ -296,7 +296,7 @@ export async function init(
     </div>
     `);
 
-    await updateEmptyBanner(root);
+    await mutateEmptyBanner(root);
 
     const wipeBtn =
         document.querySelector<
@@ -467,7 +467,7 @@ export async function init(
     );
 }
 
-async function updateEmptyBanner(
+async function mutateEmptyBanner(
     root: HTMLElement,
 ): Promise<void> {
     const hasExistingData =

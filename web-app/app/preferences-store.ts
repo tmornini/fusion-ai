@@ -1,6 +1,6 @@
 import { log } from './logger';
 
-function readPreference(
+function getPreference(
     key: string,
 ): string | null {
     try {
@@ -24,6 +24,6 @@ function writePreference(
 }
 
 export {
-    readPreference,
+    getPreference,
     writePreference,
 };

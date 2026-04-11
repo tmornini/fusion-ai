@@ -25,7 +25,7 @@ import {
     getZipBackup,
     getFlowBackupResolution,
     overwriteFlow,
-    createFlowFromBackup,
+    postFlowFromBackup,
 } from '../app/adapters';
 import type {
     BackupV2,
@@ -548,7 +548,7 @@ async function handleCreateNew(
     resetImportDialog();
     try {
         const flowId =
-            await createFlowFromBackup(
+            await postFlowFromBackup(
                 backup, projectId,
             );
         clearPending(input);
@@ -591,7 +591,7 @@ async function handleCreate(
     resetImportDialog();
     try {
         const flowId =
-            await createFlowFromBackup(
+            await postFlowFromBackup(
                 backup, projectId,
             );
         clearPending(input);

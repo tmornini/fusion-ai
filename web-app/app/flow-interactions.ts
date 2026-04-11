@@ -84,7 +84,7 @@ const ZOOM_STEP = 0.1;
 const DBLCLICK_MS = 400;
 const MIN_DRAG_DISTANCE = 20;
 
-export function createInteractionState(
+export function buildInteractionState(
     viewBoxW: number,
     viewBoxH: number,
 ): InteractionState {
@@ -122,7 +122,7 @@ function screenToSvg(
     return { x: svgPt.x, y: svgPt.y };
 }
 
-function findAncestorAttr(
+function ancestorAttr(
     el: Element,
     attrName: string,
 ): string | null {
@@ -150,7 +150,7 @@ function handlePointerDown(
         svg, e.clientX, e.clientY,
     );
 
-    const nodeId = findAncestorAttr(
+    const nodeId = ancestorAttr(
         target, 'data-node-id',
     );
     if (nodeId) {
@@ -177,7 +177,7 @@ function handlePointerDown(
             onUpdate();
             return;
         }
-        const isPort = findAncestorAttr(
+        const isPort = ancestorAttr(
             target, 'data-connect-port',
         ) !== null;
         if (isPort || !pos.isDraggable) {
@@ -214,7 +214,7 @@ function handlePointerDown(
         return;
     }
 
-    const edgeId = findAncestorAttr(
+    const edgeId = ancestorAttr(
         target, 'data-edge-id',
     );
     if (edgeId) {
@@ -289,7 +289,7 @@ function handlePointerMove(
                 e.clientX, e.clientY,
             );
         if (hit instanceof Element) {
-            const nid = findAncestorAttr(
+            const nid = ancestorAttr(
                 hit, 'data-node-id',
             );
             if (
@@ -393,7 +393,7 @@ function handlePointerUp(
                 target instanceof Element
             ) {
                 const toNodeId =
-                    findAncestorAttr(
+                    ancestorAttr(
                         target,
                         'data-node-id',
                     );
@@ -429,7 +429,7 @@ function handlePointerUp(
                 const overNode =
                     dropHit
                         instanceof Element
-                    && findAncestorAttr(
+                    && ancestorAttr(
                         dropHit,
                         'data-node-id',
                     ) !== null;

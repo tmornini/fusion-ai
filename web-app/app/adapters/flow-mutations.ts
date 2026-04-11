@@ -26,7 +26,7 @@ function parseGraph(
     return parseJson<StoredGraph>(raw);
 }
 
-function saveGraph(
+function putFlowGraph(
     graph: StoredGraph,
 ): string {
     return jsonObjectField(
@@ -36,7 +36,7 @@ function saveGraph(
     );
 }
 
-async function loadAndUpdate(
+async function putGraphMutation(
     flowId: string,
     mutate: (g: StoredGraph) => void,
 ): Promise<void> {
@@ -49,7 +49,7 @@ async function loadAndUpdate(
     );
     mutate(graph);
     await PUT(`flows/${flowId}`, {
-        graph: saveGraph(graph),
+        graph: putFlowGraph(graph),
         updated_at: nowUtc(),
     });
 }
@@ -129,7 +129,7 @@ export async function postFlowCreation(
         name: ctx.name,
         description: ctx.description,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: saveGraph(graph),
+        graph: putFlowGraph(graph),
         created_at: now,
         updated_at: now,
     });
@@ -155,7 +155,7 @@ export async function postNodeAddition(
         isComplete: false,
         fields: [],
     };
-    await loadAndUpdate(
+    await putGraphMutation(
         ctx.flowId,
         g => { g.nodes.push(node); },
     );
@@ -171,7 +171,7 @@ export async function postEdgeConnection(
         fromNodeId: ctx.fromNodeId,
         toNodeId: ctx.toNodeId,
     };
-    await loadAndUpdate(
+    await putGraphMutation(
         ctx.flowId,
         g => { g.edges.push(edge); },
     );
@@ -190,7 +190,7 @@ export async function postFieldAddition(
         isRequired: ctx.isRequired,
         options: ctx.options,
     };
-    await loadAndUpdate(
+    await putGraphMutation(
         ctx.flowId,
         g => {
             const node = g.nodes.find(
@@ -230,7 +230,7 @@ export async function putGraph(
     edges: GraphEdge[],
 ): Promise<void> {
     await PUT(`flows/${flowId}`, {
-        graph: saveGraph({ nodes, edges }),
+        graph: putFlowGraph({ nodes, edges }),
         updated_at: nowUtc(),
     });
 }
@@ -245,7 +245,7 @@ export async function putNode(
         positionY?: number;
     },
 ): Promise<void> {
-    await loadAndUpdate(
+    await putGraphMutation(
         flowId,
         g => {
             const node = g.nodes.find(
@@ -284,7 +284,7 @@ export async function putWfEdge(
         description?: string;
     },
 ): Promise<void> {
-    await loadAndUpdate(
+    await putGraphMutation(
         flowId,
         g => {
             const edge = g.edges.find(
@@ -315,7 +315,7 @@ export async function putField(
         options?: string[];
     },
 ): Promise<void> {
-    await loadAndUpdate(
+    await putGraphMutation(
         flowId,
         g => {
             const node = g.nodes.find(

@@ -13,7 +13,7 @@ interface HeaderData {
     }>;
 }
 
-async function fetchHeaderData(
+async function getHeaderData(
 ): Promise<HeaderData> {
     const {
         getCurrentUser,
@@ -38,7 +38,7 @@ export async function mutateHeaderInfo(
 ): Promise<void> {
     let data: HeaderData;
     try {
-        data = await fetchHeaderData();
+        data = await getHeaderData();
     } catch (err) {
         log.error(
             'getHeaderData failed',

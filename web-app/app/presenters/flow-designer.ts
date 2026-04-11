@@ -63,7 +63,7 @@ import {
     START_Y,
 } from '../flow-layout';
 import {
-    createInteractionState,
+    buildInteractionState,
     zoomIn as zoomInState,
     zoomOut as zoomOutState,
     zoomToFit as zoomToFitState,
@@ -144,7 +144,7 @@ export class FlowDesignerPresenter {
             executeUndoSteps,
         );
         const interaction =
-            createInteractionState(
+            buildInteractionState(
                 canvasW, canvasH,
             );
         this.#state = {

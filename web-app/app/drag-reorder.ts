@@ -30,7 +30,7 @@ export function initDragReorder(
         ];
     }
 
-    function createIndicator():
+    function buildIndicator():
         HTMLElement {
         const el =
             document.createElement('div');
@@ -44,7 +44,7 @@ export function initDragReorder(
         return el;
     }
 
-    function removeIndicator(): void {
+    function clearIndicator(): void {
         indicator?.remove();
         indicator = null;
     }
@@ -108,11 +108,11 @@ export function initDragReorder(
             e.preventDefault();
             e.dataTransfer!.dropEffect =
                 'move';
-            removeIndicator();
+            clearIndicator();
             const idx = dropIndex(
                 e.clientY,
             );
-            indicator = createIndicator();
+            indicator = buildIndicator();
             const items = cards();
             if (idx < items.length) {
                 container.insertBefore(
@@ -138,7 +138,7 @@ export function initDragReorder(
                         : null,
                 )
             ) {
-                removeIndicator();
+                clearIndicator();
             }
         },
     );
@@ -148,7 +148,7 @@ export function initDragReorder(
         (e) => {
             e.preventDefault();
             if (!dragId) return;
-            removeIndicator();
+            clearIndicator();
             const items = cards();
             const idx = dropIndex(
                 e.clientY,
@@ -191,7 +191,7 @@ export function initDragReorder(
     container.addEventListener(
         'dragend',
         () => {
-            removeIndicator();
+            clearIndicator();
             dragId = null;
             for (const c of cards()) {
                 c.style.opacity = '';

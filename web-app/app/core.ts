@@ -12,7 +12,7 @@ import {
     handleDatabaseError,
 } from './database-init';
 import {
-    loadAndInitPage,
+    initPageModule,
     handlePageLoadError,
 } from './page-loader';
 
@@ -114,7 +114,7 @@ document.addEventListener(
             ));
 
         try {
-            await loadAndInitPage(
+            await initPageModule(
                 pageName,
             );
         } catch (err) {

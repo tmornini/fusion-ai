@@ -151,7 +151,7 @@ export function initCommandPalette(
         previousFocusElement: null,
     };
 
-    async function loadSearchIndex(
+    async function getSearchIndex(
     ): Promise<void> {
         if (state.isDataLoaded) return;
         state.isDataLoaded = true;
@@ -499,7 +499,7 @@ ${posIndex === 0
             state.input.focus();
         }
 
-        loadSearchIndex().then(
+        getSearchIndex().then(
             () => mutateResults(''),
         );
     }

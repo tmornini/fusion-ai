@@ -29,7 +29,7 @@ import type {
     ParsedNode,
 } from '../mermaid-parse';
 import {
-    buildZip, readZip,
+    buildZip, getZipEntries,
 } from '../zip';
 import {
     computeLayout,
@@ -277,7 +277,7 @@ export async function getFlowZip(
 export async function getZipBackup(
     data: Uint8Array,
 ): Promise<BackupV2> {
-    const entries = await readZip(data);
+    const entries = await getZipEntries(data);
     const jsonEntry = entries.find(
         e => e.name === 'flow.json'
             || e.name.endsWith(
@@ -357,7 +357,7 @@ export async function overwriteFlow(
                 backup.flow.description,
             lock_timeout:
                 backup.flow.lockTimeout,
-            graph: saveGraph(
+            graph: putFlowGraph(
                 backup.flow.graph,
             ),
             updated_at: nowUtc(),
@@ -366,7 +366,7 @@ export async function overwriteFlow(
     return backup.flow.id;
 }
 
-export async function createFlowFromBackup(
+export async function postFlowFromBackup(
     backup: BackupV2,
     projectId: string,
 ): Promise<string> {
@@ -439,7 +439,7 @@ export async function createFlowFromBackup(
             backup.flow.description,
         lock_timeout:
             backup.flow.lockTimeout,
-        graph: saveGraph({
+        graph: putFlowGraph({
             nodes, edges,
         }),
         created_at: now,
@@ -495,7 +495,7 @@ interface StoredGraph {
     edges: GraphEdge[];
 }
 
-function saveGraph(
+function putFlowGraph(
     graph: StoredGraph,
 ): string {
     return jsonObjectField(
@@ -583,7 +583,7 @@ export async function postFlowFromMermaid(
             + ' (import)',
         description: '',
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: saveGraph(graph),
+        graph: putFlowGraph(graph),
         created_at: now,
         updated_at: now,
     });
@@ -617,7 +617,7 @@ export async function postFlowFromZip(
     warnings: string[];
 }> {
     const dec = new TextDecoder();
-    const entries = await readZip(data);
+    const entries = await getZipEntries(data);
 
     const mmdEntry = entries.find(
         e => e.name === 'flow.mmd'
@@ -788,7 +788,7 @@ export async function postFlowFromZip(
         name: flowName,
         description: flowDesc,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: saveGraph(graph),
+        graph: putFlowGraph(graph),
         created_at: now,
         updated_at: now,
     });

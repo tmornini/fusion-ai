@@ -12,7 +12,7 @@ const SIDEBAR_USER_COMPANY_IDS = [
     'mobile-sidebar-user-company',
 ] as const;
 
-async function fetchSidebarUser(
+async function getSidebarUser(
 ): Promise<{
     name: string;
     company: string;
@@ -35,7 +35,7 @@ export async function mutateSidebarUser(
     };
     try {
         data =
-            await fetchSidebarUser();
+            await getSidebarUser();
     } catch (err) {
         log.error(
             'getSidebarUser failed',

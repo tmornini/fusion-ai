@@ -1,7 +1,7 @@
 import { log } from './logger';
 import { showToast } from './toast';
 import {
-    readPreference,
+    getPreference,
     writePreference,
 } from './preferences-store';
 
@@ -39,7 +39,7 @@ class AppStateManager {
         this.data = {
             theme: (() => {
                 const raw =
-                    readPreference(
+                    getPreference(
                         STORAGE_KEY_THEME,
                     );
                 return isValidTheme(raw)
@@ -52,7 +52,7 @@ class AppStateManager {
                 + 'px)',
             ).matches,
             isSidebarCollapsed:
-                readPreference(
+                getPreference(
                     STORAGE_KEY_SIDEBAR,
                 ) === 'true',
             isSidebarOpen: false,
