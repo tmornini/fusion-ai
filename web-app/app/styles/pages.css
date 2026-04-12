@@ -926,6 +926,22 @@
   border-color: hsl(var(--primary));
 }
 
+.wf-canvas.wf-pan-cursor {
+  cursor: grab;
+}
+.wf-canvas.wf-pan-cursor:active {
+  cursor: grabbing;
+}
+
+.wf-marquee {
+  fill: hsl(var(--primary) / 0.12);
+  stroke: hsl(var(--primary));
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .wf-btn-stack {
   display: inline-flex;
   flex-direction: column;

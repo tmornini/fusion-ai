@@ -287,6 +287,7 @@ function bindSvgInteractions(
         },
         (id) =>
             presenter.getNodePosition(id),
+        () => presenter.getAllNodes(),
         signal,
     );
     if (

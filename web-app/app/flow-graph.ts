@@ -772,6 +772,13 @@ export function buildGraphSvg(
     selection: Selection,
     isLocked: boolean,
     isConnecting: boolean,
+    marqueeRect: {
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    } | null,
+    isPanCursor: boolean,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -883,9 +890,24 @@ export function buildGraphSvg(
         + ' ' + String(viewBoxW)
         + ' ' + String(viewBoxH);
 
-    const svgCls = isConnecting
-        ? 'wf-canvas wf-connecting'
-        : 'wf-canvas';
+    let svgCls = 'wf-canvas';
+    if (isConnecting) {
+        svgCls += ' wf-connecting';
+    }
+    if (isPanCursor) {
+        svgCls += ' wf-pan-cursor';
+    }
+
+    let marqueeMarkup = '';
+    if (marqueeRect) {
+        marqueeMarkup = '<rect'
+            + ` x="${marqueeRect.x}"`
+            + ` y="${marqueeRect.y}"`
+            + ` width="${marqueeRect.w}"`
+            + ` height="${marqueeRect.h}"`
+            + ' class="wf-marquee"/>';
+    }
+
     return trusted(
         '<svg'
         + ' xmlns='
@@ -904,6 +926,7 @@ export function buildGraphSvg(
         )
         + edgeMarkup
         + nodeMarkup
+        + marqueeMarkup
         + '</svg>',
     );
 }

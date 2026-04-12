@@ -55,6 +55,16 @@ export type PanMode =
         startY: number;
     };
 
+export type MarqueeMode =
+    | { kind: 'idle' }
+    | {
+        kind: 'selecting';
+        startX: number;
+        startY: number;
+        currentX: number;
+        currentY: number;
+    };
+
 export type LastClick =
     | { kind: 'none' }
     | {
@@ -70,10 +80,12 @@ export interface InteractionState {
     drag: DragMode;
     connect: ConnectMode;
     pan: PanMode;
+    marquee: MarqueeMode;
     viewBox: ViewBox;
     zoom: number;
     activePointerId: number;
     autoFitEnabled: boolean;
+    isSpaceDown: boolean;
 }
 
 export type NodePositionLookup = (
@@ -83,6 +95,13 @@ export type NodePositionLookup = (
     y: number;
     isDraggable: boolean;
 };
+
+export type NodeListLookup = (
+) => Iterable<{
+    id: string;
+    x: number;
+    y: number;
+}>;
 
 export type InteractionCallback = () => void;
 
@@ -103,6 +122,7 @@ export function buildInteractionState(
         drag: { kind: 'idle' },
         connect: { kind: 'idle' },
         pan: { kind: 'idle' },
+        marquee: { kind: 'idle' },
         viewBox: {
             x: -viewBoxW / 2,
             y: -viewBoxH / 2,
@@ -112,6 +132,7 @@ export function buildInteractionState(
         zoom: 1.0,
         activePointerId: 0,
         autoFitEnabled: true,
+        isSpaceDown: false,
     };
 }
 
@@ -266,29 +287,42 @@ function handlePointerDown(
             onUpdate();
             return;
         }
-        startBackgroundPan(e, svg, state);
+        startBackgroundDrag(e, svg, state);
         onUpdate();
         return;
     }
 
     state.lastClick = { kind: 'none' };
-    startBackgroundPan(e, svg, state);
+    startBackgroundDrag(e, svg, state);
     onUpdate();
 }
 
-function startBackgroundPan(
+function startBackgroundDrag(
     e: PointerEvent,
     svg: SVGSVGElement,
     state: InteractionState,
 ): void {
-    state.selection = { kind: 'none' };
     state.isPanelOpen = false;
-    state.pan = {
-        kind: 'panning',
-        startX: e.clientX,
-        startY: e.clientY,
-    };
-    state.autoFitEnabled = false;
+    if (state.isSpaceDown) {
+        state.pan = {
+            kind: 'panning',
+            startX: e.clientX,
+            startY: e.clientY,
+        };
+        state.autoFitEnabled = false;
+    } else {
+        const svgPt = screenToSvg(
+            svg, e.clientX, e.clientY,
+        );
+        state.selection = { kind: 'none' };
+        state.marquee = {
+            kind: 'selecting',
+            startX: svgPt.x,
+            startY: svgPt.y,
+            currentX: svgPt.x,
+            currentY: svgPt.y,
+        };
+    }
     state.activePointerId = e.pointerId;
     svg.setPointerCapture(e.pointerId);
 }
@@ -416,6 +450,21 @@ function handlePointerMove(
             startY: e.clientY,
         };
         onUpdate();
+        return;
+    }
+
+    if (
+        state.marquee.kind === 'selecting'
+    ) {
+        const svgPt = screenToSvg(
+            svg, e.clientX, e.clientY,
+        );
+        state.marquee = {
+            ...state.marquee,
+            currentX: svgPt.x,
+            currentY: svgPt.y,
+        };
+        onUpdate();
     }
 }
 
@@ -441,6 +490,7 @@ function handlePointerUp(
         y: number,
     ) => void,
     getNodePosition: NodePositionLookup,
+    getAllNodes: NodeListLookup,
 ): void {
     if (state.drag.kind === 'dragging') {
         const dx =
@@ -553,6 +603,50 @@ function handlePointerUp(
         svg.releasePointerCapture(
             e.pointerId,
         );
+        return;
+    }
+
+    if (
+        state.marquee.kind === 'selecting'
+    ) {
+        const m = state.marquee;
+        const minX = Math.min(
+            m.startX, m.currentX,
+        );
+        const minY = Math.min(
+            m.startY, m.currentY,
+        );
+        const maxX = Math.max(
+            m.startX, m.currentX,
+        );
+        const maxY = Math.max(
+            m.startY, m.currentY,
+        );
+        const hits = new Set<string>();
+        for (const n of getAllNodes()) {
+            const nr = n.x + NODE_WIDTH;
+            const nb = n.y + NODE_HEIGHT;
+            const overlaps =
+                n.x < maxX
+                && nr > minX
+                && n.y < maxY
+                && nb > minY;
+            if (overlaps) {
+                hits.add(n.id);
+            }
+        }
+        state.selection = hits.size === 0
+            ? { kind: 'none' }
+            : {
+                kind: 'nodes',
+                nodeIds: hits,
+            };
+        state.marquee = { kind: 'idle' };
+        state.activePointerId = 0;
+        svg.releasePointerCapture(
+            e.pointerId,
+        );
+        onUpdate();
     }
 }
 
@@ -612,6 +706,7 @@ export function bindInteractions(
         y: number,
     ) => void,
     getNodePosition: NodePositionLookup,
+    getAllNodes: NodeListLookup,
     signal: AbortSignal,
 ): void {
     svg.addEventListener(
@@ -639,6 +734,7 @@ export function bindInteractions(
             onEdgeCreated,
             onNodeCreated,
             getNodePosition,
+            getAllNodes,
         ),
         { signal },
     );
@@ -671,6 +767,50 @@ export function bindInteractions(
     );
     window.addEventListener(
         'keyup', handleShift,
+        { signal },
+    );
+
+    const isFormFocused = (): boolean => {
+        const a = document.activeElement;
+        if (!a) return false;
+        const tag = a.tagName.toLowerCase();
+        if (
+            tag === 'input'
+            || tag === 'textarea'
+            || tag === 'select'
+            || tag === 'button'
+            || tag === 'a'
+        ) return true;
+        return (
+            a as HTMLElement
+        ).isContentEditable;
+    };
+
+    const handleSpace = (
+        ke: KeyboardEvent,
+    ): void => {
+        if (ke.key !== ' ') return;
+        if (isFormFocused()) return;
+        if (
+            state.marquee.kind
+                === 'selecting'
+            || state.pan.kind === 'panning'
+            || state.drag.kind === 'dragging'
+        ) return;
+        ke.preventDefault();
+        const next = ke.type === 'keydown';
+        if (state.isSpaceDown === next) {
+            return;
+        }
+        state.isSpaceDown = next;
+        onUpdate();
+    };
+    window.addEventListener(
+        'keydown', handleSpace,
+        { signal },
+    );
+    window.addEventListener(
+        'keyup', handleSpace,
         { signal },
     );
 }

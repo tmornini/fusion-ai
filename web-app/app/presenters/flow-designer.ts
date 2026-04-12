@@ -330,6 +330,20 @@ export class FlowDesignerPresenter {
         };
     }
 
+    getAllNodes(): Iterable<{
+        id: string;
+        x: number;
+        y: number;
+    }> {
+        return this.#state.nodes.map(
+            n => ({
+                id: n.id,
+                x: n.positionX,
+                y: n.positionY,
+            }),
+        );
+    }
+
     #panToRevealSelected(): void {
         const vb =
             this.#state.interaction
@@ -2253,6 +2267,25 @@ justify-content:space-between"
             this.#state.interaction
                 .connect.kind
                 === 'connecting';
+        const m =
+            this.#state.interaction.marquee;
+        const marqueeRect = m.kind
+            === 'selecting'
+            ? {
+                x: Math.min(
+                    m.startX, m.currentX,
+                ),
+                y: Math.min(
+                    m.startY, m.currentY,
+                ),
+                w: Math.abs(
+                    m.currentX - m.startX,
+                ),
+                h: Math.abs(
+                    m.currentY - m.startY,
+                ),
+            }
+            : null;
         const svgHtml = buildGraphSvg(
             nodes,
             this.#state.edges,
@@ -2264,6 +2297,9 @@ justify-content:space-between"
                 .selection,
             this.#state.isLocked,
             isConn,
+            marqueeRect,
+            this.#state.interaction
+                .isSpaceDown,
         );
         const preview =
             this.#buildConnectPreview();
