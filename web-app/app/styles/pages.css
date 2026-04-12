@@ -915,6 +915,17 @@
   border-color: transparent;
 }
 
+.wf-toolbar-toggle.wf-toolbar-toggle-on {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+.wf-toolbar-toggle.wf-toolbar-toggle-on:hover {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
 .wf-btn-stack {
   display: inline-flex;
   flex-direction: column;

@@ -388,11 +388,12 @@ function bindToolbarActions(
                 },
             );
         }
-        if (action === 'fit') {
+        if (action === 'auto-fit') {
             btn.addEventListener(
                 'click',
                 () => {
-                    presenter.zoomToFit();
+                    presenter
+                        .enableAutoFit();
                     renderAndBind(
                         container, presenter,
                     );

@@ -1539,7 +1539,9 @@ ${toolbar}
         return null;
     }
 
-    zoomToFit(): void {
+    enableAutoFit(): void {
+        this.#state.interaction
+            .autoFitEnabled = true;
         this.#applyZoomToFit();
     }
 
@@ -1583,6 +1585,10 @@ ${toolbar}
     }
 
     #expandIfNeeded(): void {
+        if (
+            !this.#state.interaction
+                .autoFitEnabled
+        ) return;
         const vb =
             this.#state.interaction.viewBox;
         for (const n of this.#state.nodes) {
@@ -1623,6 +1629,11 @@ ${toolbar}
 
 
     #buildToolbar(): SafeHtml {
+        const autoFitCls =
+            this.#state.interaction
+                .autoFitEnabled
+                ? ' wf-toolbar-toggle-on'
+                : '';
         return html`<div
 class="wf-toolbar">
 <div class="wf-toolbar-group">
@@ -1663,10 +1674,14 @@ class="wf-toolbar">
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-out"
     >Zoom \u2212</button>
-<button class="btn btn-ghost btn-sm"
-    data-action="fit"
+<button class="${trusted(
+    'btn btn-ghost btn-sm'
+    + ' wf-toolbar-toggle'
+    + autoFitCls,
+)}"
+    data-action="auto-fit"
     ><span class="wf-btn-stack"
-    >Show<br>All</span></button>
+    >Auto<br>Fit</span></button>
 <button class="btn btn-ghost btn-sm"
     data-action="zoom-in"
     >Zoom +</button>

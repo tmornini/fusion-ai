@@ -66,6 +66,7 @@ export interface InteractionState {
     viewBox: ViewBox;
     zoom: number;
     activePointerId: number;
+    autoFitEnabled: boolean;
 }
 
 export type NodePositionLookup = (
@@ -103,6 +104,7 @@ export function buildInteractionState(
         },
         zoom: 1.0,
         activePointerId: 0,
+        autoFitEnabled: true,
     };
 }
 
@@ -243,6 +245,7 @@ function handlePointerDown(
         startX: e.clientX,
         startY: e.clientY,
     };
+    state.autoFitEnabled = false;
     state.activePointerId = e.pointerId;
     svg.setPointerCapture(e.pointerId);
     onUpdate();
@@ -486,6 +489,7 @@ function handleWheel(
         svgPt.y
         - (svgPt.y - state.viewBox.y) * ratio;
 
+    state.autoFitEnabled = false;
     onUpdate();
 }
 
@@ -578,23 +582,9 @@ export function zoomIn(
         y: number;
     } | null,
 ): void {
-    const prevZoom = state.zoom;
-    state.zoom = Math.min(
-        MAX_ZOOM, prevZoom + ZOOM_STEP,
+    applyButtonZoom(
+        state, ZOOM_STEP, focalPt,
     );
-    const ratio = prevZoom / state.zoom;
-    const cx = focalPt?.x
-        ?? state.viewBox.x
-            + state.viewBox.w / 2;
-    const cy = focalPt?.y
-        ?? state.viewBox.y
-            + state.viewBox.h / 2;
-    state.viewBox.w *= ratio;
-    state.viewBox.h *= ratio;
-    state.viewBox.x =
-        cx - (cx - state.viewBox.x) * ratio;
-    state.viewBox.y =
-        cy - (cy - state.viewBox.y) * ratio;
 }
 
 export function zoomOut(
@@ -604,23 +594,40 @@ export function zoomOut(
         y: number;
     } | null,
 ): void {
+    applyButtonZoom(
+        state, -ZOOM_STEP, focalPt,
+    );
+}
+
+function applyButtonZoom(
+    state: InteractionState,
+    delta: number,
+    focalPt: {
+        x: number;
+        y: number;
+    } | null | undefined,
+): void {
+    const prevCx = state.viewBox.x
+        + state.viewBox.w / 2;
+    const prevCy = state.viewBox.y
+        + state.viewBox.h / 2;
     const prevZoom = state.zoom;
     state.zoom = Math.max(
-        MIN_ZOOM, prevZoom - ZOOM_STEP,
+        MIN_ZOOM,
+        Math.min(
+            MAX_ZOOM, prevZoom + delta,
+        ),
     );
     const ratio = prevZoom / state.zoom;
-    const cx = focalPt?.x
-        ?? state.viewBox.x
-            + state.viewBox.w / 2;
-    const cy = focalPt?.y
-        ?? state.viewBox.y
-            + state.viewBox.h / 2;
     state.viewBox.w *= ratio;
     state.viewBox.h *= ratio;
+    const cx = focalPt?.x ?? prevCx;
+    const cy = focalPt?.y ?? prevCy;
     state.viewBox.x =
-        cx - (cx - state.viewBox.x) * ratio;
+        cx - state.viewBox.w / 2;
     state.viewBox.y =
-        cy - (cy - state.viewBox.y) * ratio;
+        cy - state.viewBox.h / 2;
+    state.autoFitEnabled = false;
 }
 
 export function zoomToFit(
