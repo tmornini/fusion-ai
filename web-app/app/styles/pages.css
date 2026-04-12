@@ -926,10 +926,16 @@
   border-color: hsl(var(--primary));
 }
 
-.wf-canvas.wf-pan-cursor {
+svg.wf-canvas.wf-pan-cursor,
+svg.wf-canvas.wf-pan-cursor [data-node-id],
+svg.wf-canvas.wf-pan-cursor [data-edge-id],
+svg.wf-canvas.wf-pan-cursor [data-connect-port] {
   cursor: grab;
 }
-.wf-canvas.wf-pan-cursor:active {
+svg.wf-canvas.wf-pan-cursor:active,
+svg.wf-canvas.wf-pan-cursor:active [data-node-id],
+svg.wf-canvas.wf-pan-cursor:active [data-edge-id],
+svg.wf-canvas.wf-pan-cursor:active [data-connect-port] {
   cursor: grabbing;
 }
 
@@ -965,11 +971,11 @@
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-lg);
   overflow: hidden;
-  cursor: grab;
+  cursor: cell;
 }
 
 .wf-canvas-wrap:active {
-  cursor: grabbing;
+  cursor: cell;
 }
 
 svg.wf-canvas {
@@ -1018,10 +1024,15 @@ svg.wf-canvas [data-node-id] {
   transition:
       opacity var(--duration-fast)
       var(--ease-default);
+  cursor: pointer;
 }
 
 svg.wf-canvas [data-node-id]:hover {
   opacity: 0.85;
+}
+
+svg.wf-canvas [data-connect-port] {
+  cursor: crosshair;
 }
 
 svg.wf-canvas.wf-connecting {

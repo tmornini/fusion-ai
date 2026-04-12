@@ -426,9 +426,7 @@ function buildNode(
             + ' stroke="var('
             + '--color-card-bg)"'
             + ` stroke-width=`
-            + `"${PORT_STROKE}"`
-            + ' style='
-            + '"cursor:crosshair">'
+            + `"${PORT_STROKE}">`
             + '<title>'
             + 'Click and drag to create'
             + ' a new node attached here.'
@@ -448,7 +446,7 @@ function buildNode(
         + String(positionY)
         + ')"'
         + selAttr
-        + ' style="cursor:pointer">'
+        + '>'
         + inner
         + '</g>',
     );
@@ -572,8 +570,7 @@ function buildEdge(
         + ' fill="none"'
         + ' stroke="transparent"'
         + ` stroke-width="`
-        + `${HIT_TARGET_WIDTH}"`
-        + ' style="cursor:pointer"/>';
+        + `${HIT_TARGET_WIDTH}"/>`;
 
     const visPath = '<path'
         + ` d="${pathD}"`
@@ -582,9 +579,7 @@ function buildEdge(
         + ` stroke-width="${sw}"`
         + dashAttr
         + ` marker-end="${markerUrl}"`;
-    const visClose = ' style='
-        + '"cursor:pointer"'
-        + '/>';
+    const visClose = '/>';
 
     const labelT = aimOffset === 0
         ? BEZIER_MIDPOINT
