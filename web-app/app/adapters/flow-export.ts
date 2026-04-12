@@ -639,7 +639,10 @@ function autoWireDefaults(
     completeId: string,
     intermediateIds: string[],
     edges: GraphEdge[],
+    wireStart: boolean,
+    wireEnd: boolean,
 ): GraphEdge[] {
+    if (!wireStart && !wireEnd) return edges;
     const incoming = new Set(
         edges.map(e => e.toNodeId),
     );
@@ -647,28 +650,32 @@ function autoWireDefaults(
         edges.map(e => e.fromNodeId),
     );
     const extras: GraphEdge[] = [];
-    for (const id of intermediateIds) {
-        if (!incoming.has(id)) {
-            extras.push({
-                id: crypto.randomUUID(),
-                name: '',
-                description:
-                    IMPORT_DEFAULT_DESCRIPTION,
-                fromNodeId: startId,
-                toNodeId: id,
-            });
+    if (wireStart) {
+        for (const id of intermediateIds) {
+            if (!incoming.has(id)) {
+                extras.push({
+                    id: crypto.randomUUID(),
+                    name: '',
+                    description:
+                        IMPORT_DEFAULT_DESCRIPTION,
+                    fromNodeId: startId,
+                    toNodeId: id,
+                });
+            }
         }
     }
-    for (const id of intermediateIds) {
-        if (!outgoing.has(id)) {
-            extras.push({
-                id: crypto.randomUUID(),
-                name: '',
-                description:
-                    IMPORT_DEFAULT_DESCRIPTION,
-                fromNodeId: id,
-                toNodeId: completeId,
-            });
+    if (wireEnd) {
+        for (const id of intermediateIds) {
+            if (!outgoing.has(id)) {
+                extras.push({
+                    id: crypto.randomUUID(),
+                    name: '',
+                    description:
+                        IMPORT_DEFAULT_DESCRIPTION,
+                    fromNodeId: id,
+                    toNodeId: completeId,
+                });
+            }
         }
     }
     return [...edges, ...extras];
@@ -718,6 +725,11 @@ export async function postFlowFromMermaid(
             complete.id,
         );
 
+    const hasExplicitStart =
+        parsed.nodes.some(n => n.isStart);
+    const hasExplicitComplete =
+        parsed.nodes.some(n => n.isComplete);
+
     const intermediateIds = intermediates
         .map(({ newId }) => newId);
     const rewiredEdges = buildImportedEdges(
@@ -728,6 +740,8 @@ export async function postFlowFromMermaid(
         complete.id,
         intermediateIds,
         rewiredEdges,
+        !hasExplicitStart,
+        !hasExplicitComplete,
     );
 
     const positions = layoutImportedGraph(
@@ -943,6 +957,11 @@ export async function postFlowFromZip(
         complete, sidecarComplete,
     );
 
+    const hasExplicitStart =
+        parsed.nodes.some(n => n.isStart);
+    const hasExplicitComplete =
+        parsed.nodes.some(n => n.isComplete);
+
     const intermediateIds = intermediates
         .map(({ newId }) => newId);
     const rewiredEdges = buildImportedEdges(
@@ -955,6 +974,8 @@ export async function postFlowFromZip(
         complete.id,
         intermediateIds,
         rewiredEdges,
+        !hasExplicitStart,
+        !hasExplicitComplete,
     );
 
     const positions = sidecar
