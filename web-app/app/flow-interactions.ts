@@ -224,22 +224,36 @@ function handlePointerDown(
                 === state.lastClick.id
             && now - state.lastClick.time
                 < DBLCLICK_MS;
-        state.selection = {
-            kind: 'edge', edgeId,
-        };
         state.lastClick = {
             kind: 'clicked',
             id: edgeId,
             time: now,
         };
-        state.isPanelOpen = isDbl;
+        if (isDbl) {
+            state.selection = {
+                kind: 'edge', edgeId,
+            };
+            state.isPanelOpen = true;
+            onUpdate();
+            return;
+        }
+        startBackgroundPan(e, svg, state);
         onUpdate();
         return;
     }
 
+    state.lastClick = { kind: 'none' };
+    startBackgroundPan(e, svg, state);
+    onUpdate();
+}
+
+function startBackgroundPan(
+    e: PointerEvent,
+    svg: SVGSVGElement,
+    state: InteractionState,
+): void {
     state.selection = { kind: 'none' };
     state.isPanelOpen = false;
-    state.lastClick = { kind: 'none' };
     state.pan = {
         kind: 'panning',
         startX: e.clientX,
@@ -248,7 +262,6 @@ function handlePointerDown(
     state.autoFitEnabled = false;
     state.activePointerId = e.pointerId;
     svg.setPointerCapture(e.pointerId);
-    onUpdate();
 }
 
 function handlePointerMove(

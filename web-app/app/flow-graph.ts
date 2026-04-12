@@ -458,7 +458,6 @@ function buildEdge(
     edge: GraphEdge,
     fromNode: GraphNode,
     toNode: GraphNode,
-    isSelected: boolean,
     aimOffset: number,
     isCycle: boolean,
 ): SafeHtml {
@@ -641,13 +640,9 @@ function buildEdge(
         + labelEsc
         + '</text>';
 
-    const edgeSelAttr = isSelected
-        ? ' filter="url(#wf-glow)"'
-        : '';
     return trusted(
         '<g'
         + ` data-edge-id="${edge.id}"`
-        + edgeSelAttr
         + '>'
         + hitPath
         + visPath + visClose
@@ -830,10 +825,6 @@ export function buildGraphSvg(
         const toNode =
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
-        const isSelected =
-            selection.kind === 'edge'
-            && edge.id
-                === selection.edgeId;
         let aimOffset = 0;
         const k = pairKey(
             edge.fromNodeId,
@@ -847,7 +838,6 @@ export function buildGraphSvg(
                 edge,
                 fromNode,
                 toNode,
-                isSelected,
                 aimOffset,
                 cycleEdgeIds.has(
                     edge.id,
