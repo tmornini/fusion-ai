@@ -1,6 +1,6 @@
 import { $, $required } from '../app/dom';
 import {
-    html, setHtml,
+    html, setHtml, trusted,
 } from '../app/safe-html';
 import type { SafeHtml } from '../app/safe-html';
 import { log } from '../app/logger';
@@ -162,13 +162,17 @@ function buildFieldInput(
             data-field-id="${id}"
             ${req} />`;
     }
-    const extra = spec.extra ?? '';
-    const cls =
-        spec.type === 'checkbox'
-            ? '' : 'class="input"';
+    if (spec.type === 'checkbox') {
+        return html`<input
+            type="checkbox"
+            data-field-id="${id}"
+            ${req} />`;
+    }
+    const extra =
+        trusted(spec.extra ?? '');
     return html`<input
         type="${spec.type}"
-        ${cls}
+        class="input"
         data-field-id="${id}"
         ${extra}
         ${req} />`;
