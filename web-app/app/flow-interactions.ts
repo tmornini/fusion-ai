@@ -11,18 +11,25 @@ export interface ViewBox {
 
 export type Selection =
     | { kind: 'none' }
-    | { kind: 'node'; nodeId: string }
+    | {
+        kind: 'nodes';
+        nodeIds: Set<string>;
+    }
     | { kind: 'edge'; edgeId: string };
 
 export type DragMode =
     | { kind: 'idle' }
     | {
         kind: 'dragging';
-        nodeId: string;
-        offsetX: number;
-        offsetY: number;
-        currentX: number;
-        currentY: number;
+        anchorNodeId: string;
+        startPointerX: number;
+        startPointerY: number;
+        currentPointerX: number;
+        currentPointerY: number;
+        initialPositions: Map<
+            string,
+            { x: number; y: number }
+        >;
     };
 
 export type ConnectTarget =
@@ -164,21 +171,22 @@ function handlePointerDown(
                 === state.lastClick.id
             && now - state.lastClick.time
                 < DBLCLICK_MS;
-        state.selection = {
-            kind: 'node', nodeId,
-        };
         state.lastClick = {
             kind: 'clicked',
             id: nodeId,
             time: now,
         };
-        state.isPanelOpen = isDbl;
-        const pos =
-            getNodePosition(nodeId);
         const isPort = ancestorAttr(
             target, 'data-connect-port',
         ) !== null;
+        const pos =
+            getNodePosition(nodeId);
         if (isPort || !pos.isDraggable) {
+            state.selection = {
+                kind: 'nodes',
+                nodeIds: new Set([nodeId]),
+            };
+            state.isPanelOpen = isDbl;
             state.connect = {
                 kind: 'connecting',
                 fromNodeId: nodeId,
@@ -195,13 +203,34 @@ function handlePointerDown(
             onUpdate();
             return;
         }
+        applyNodeClickSelection(
+            state, nodeId, e,
+        );
+        state.isPanelOpen = isDbl;
+        const sel = state.selection;
+        const ids =
+            sel.kind === 'nodes'
+                ? sel.nodeIds
+                : new Set<string>();
+        const initialPositions =
+            new Map<
+                string,
+                { x: number; y: number }
+            >();
+        for (const id of ids) {
+            const p = getNodePosition(id);
+            initialPositions.set(
+                id, { x: p.x, y: p.y },
+            );
+        }
         state.drag = {
             kind: 'dragging',
-            nodeId,
-            currentX: pos.x,
-            currentY: pos.y,
-            offsetX: svgPt.x - pos.x,
-            offsetY: svgPt.y - pos.y,
+            anchorNodeId: nodeId,
+            startPointerX: svgPt.x,
+            startPointerY: svgPt.y,
+            currentPointerX: svgPt.x,
+            currentPointerY: svgPt.y,
+            initialPositions,
         };
         state.activePointerId =
             e.pointerId;
@@ -264,6 +293,48 @@ function startBackgroundPan(
     svg.setPointerCapture(e.pointerId);
 }
 
+function applyNodeClickSelection(
+    state: InteractionState,
+    nodeId: string,
+    e: PointerEvent,
+): void {
+    const sel = state.selection;
+    const current =
+        sel.kind === 'nodes'
+            ? sel.nodeIds
+            : new Set<string>();
+    if (e.shiftKey) {
+        const next = new Set(current);
+        next.add(nodeId);
+        state.selection = {
+            kind: 'nodes', nodeIds: next,
+        };
+        return;
+    }
+    if (e.metaKey || e.ctrlKey) {
+        const next = new Set(current);
+        if (next.has(nodeId)) {
+            next.delete(nodeId);
+        } else {
+            next.add(nodeId);
+        }
+        state.selection = next.size === 0
+            ? { kind: 'none' }
+            : {
+                kind: 'nodes',
+                nodeIds: next,
+            };
+        return;
+    }
+    if (current.has(nodeId)) {
+        return;
+    }
+    state.selection = {
+        kind: 'nodes',
+        nodeIds: new Set([nodeId]),
+    };
+}
+
 function handlePointerMove(
     e: PointerEvent,
     svg: SVGSVGElement,
@@ -276,12 +347,8 @@ function handlePointerMove(
         );
         state.drag = {
             ...state.drag,
-            currentX:
-                svgPt.x
-                - state.drag.offsetX,
-            currentY:
-                svgPt.y
-                - state.drag.offsetY,
+            currentPointerX: svgPt.x,
+            currentPointerY: svgPt.y,
         };
         onUpdate();
         return;
@@ -357,10 +424,12 @@ function handlePointerUp(
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
-    onNodeDragEnd: (
-        nodeId: string,
-        x: number,
-        y: number,
+    onNodesDragEnd: (
+        updates: Array<{
+            nodeId: string;
+            x: number;
+            y: number;
+        }>,
     ) => void,
     onEdgeCreated: (
         fromNodeId: string,
@@ -374,11 +443,27 @@ function handlePointerUp(
     getNodePosition: NodePositionLookup,
 ): void {
     if (state.drag.kind === 'dragging') {
-        onNodeDragEnd(
-            state.drag.nodeId,
-            state.drag.currentX,
-            state.drag.currentY,
-        );
+        const dx =
+            state.drag.currentPointerX
+            - state.drag.startPointerX;
+        const dy =
+            state.drag.currentPointerY
+            - state.drag.startPointerY;
+        const updates: Array<{
+            nodeId: string;
+            x: number;
+            y: number;
+        }> = [];
+        for (const [
+            id, init,
+        ] of state.drag.initialPositions) {
+            updates.push({
+                nodeId: id,
+                x: init.x + dx,
+                y: init.y + dy,
+            });
+        }
+        onNodesDragEnd(updates);
         state.drag = { kind: 'idle' };
         state.activePointerId = 0;
         svg.releasePointerCapture(
@@ -510,10 +595,12 @@ export function bindInteractions(
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
-    onNodeDragEnd: (
-        nodeId: string,
-        x: number,
-        y: number,
+    onNodesDragEnd: (
+        updates: Array<{
+            nodeId: string;
+            x: number;
+            y: number;
+        }>,
     ) => void,
     onEdgeCreated: (
         fromNodeId: string,
@@ -548,7 +635,7 @@ export function bindInteractions(
         'pointerup',
         (e) => handlePointerUp(
             e, svg, state, onUpdate,
-            onNodeDragEnd,
+            onNodesDragEnd,
             onEdgeCreated,
             onNodeCreated,
             getNodePosition,

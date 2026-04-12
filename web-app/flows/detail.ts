@@ -263,10 +263,8 @@ function bindSvgInteractions(
         () => renderAndBind(
             container, presenter,
         ),
-        (nodeId, x, y) => {
-            presenter.moveNode(
-                nodeId, x, y,
-            );
+        (updates) => {
+            presenter.moveNodes(updates);
             renderAndBind(
                 container, presenter,
             );

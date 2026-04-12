@@ -16,10 +16,10 @@ export type UndoStep =
 
 export type UndoActionType =
     | 'add-node'
-    | 'delete-node'
+    | 'delete-nodes'
     | 'add-edge'
     | 'delete-edge'
-    | 'move-node'
+    | 'move-nodes'
     | 'update-node-name'
     | 'update-node-desc'
     | 'update-edge-name'

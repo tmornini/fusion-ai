@@ -845,12 +845,14 @@ export function buildGraphSvg(
             ).toString();
     }
 
+    const selectedNodeIds =
+        selection.kind === 'nodes'
+            ? selection.nodeIds
+            : new Set<string>();
     let nodeMarkup = '';
     for (const node of nodes) {
         const isSelected =
-            selection.kind === 'node'
-            && node.id
-                === selection.nodeId;
+            selectedNodeIds.has(node.id);
         const isSpecial =
             node.isStart
             || node.isComplete;

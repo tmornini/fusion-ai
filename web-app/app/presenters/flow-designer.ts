@@ -22,7 +22,6 @@ import {
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
-    deleteNodeCapture,
     deleteEdgeCapture,
     deleteFieldCapture,
     postUndoExecution,
@@ -269,12 +268,8 @@ export class FlowDesignerPresenter {
     }
 
     selectedNodeId(): string | null {
-        const sel =
-            this.#state.interaction
-                .selection;
-        return sel.kind === 'node'
-            ? sel.nodeId
-            : null;
+        return this
+            .#singleSelectedNodeId();
     }
 
     selectedEdgeId(): string | null {
@@ -284,6 +279,31 @@ export class FlowDesignerPresenter {
         return sel.kind === 'edge'
             ? sel.edgeId
             : null;
+    }
+
+    #singleSelectedNodeId(
+    ): string | null {
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'nodes') {
+            return null;
+        }
+        if (sel.nodeIds.size !== 1) {
+            return null;
+        }
+        return sel.nodeIds
+            .values().next().value
+            ?? null;
+    }
+
+    #selectedNodeIds(): Set<string> {
+        const sel =
+            this.#state.interaction
+                .selection;
+        return sel.kind === 'nodes'
+            ? sel.nodeIds
+            : new Set<string>();
     }
 
     flowId(): string {
@@ -324,11 +344,12 @@ export class FlowDesignerPresenter {
             this.#state.interaction
                 .selection;
         let elementY: number | undefined;
-        if (sel.kind === 'node') {
+        const singleId = this
+            .#singleSelectedNodeId();
+        if (singleId) {
             const n =
                 this.#state.nodes.find(
-                    nd => nd.id
-                        === sel.nodeId,
+                    nd => nd.id === singleId,
                 );
             if (n) {
                 elementY = n.positionY;
@@ -491,46 +512,57 @@ ${toolbar}
         setHtml(container, content);
     }
 
-    moveNode(
-        nodeId: string,
-        x: number,
-        y: number,
+    moveNodes(
+        updates: Array<{
+            nodeId: string;
+            x: number;
+            y: number;
+        }>,
     ): void {
         if (this.#guardLocked()) return;
+        if (updates.length === 0) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
+        const updateMap = new Map(
+            updates.map(
+                u => [u.nodeId, u],
+            ),
+        );
         this.#state.nodes =
-            this.#state.nodes.map(
-                n => n.id === nodeId
-                    ? {
-                        ...n,
-                        positionX: x,
-                        positionY: y,
-                    }
-                    : n,
-            );
+            this.#state.nodes.map(n => {
+                const u =
+                    updateMap.get(n.id);
+                if (!u) return n;
+                return {
+                    ...n,
+                    positionX: u.x,
+                    positionY: u.y,
+                };
+            });
         const forwardStep = graphPutStep(
             fId,
             this.#state.nodes,
             this.#state.edges,
         );
         this.#undo.push({
-            type: 'move-node',
+            type: 'move-nodes',
             forward: [forwardStep],
             reverse: [reverseStep],
         });
-        void putNode({
-            flowId: fId,
-            nodeId,
-            fields: {
-                positionX: x,
-                positionY: y,
-            },
-        });
+        for (const u of updates) {
+            void putNode({
+                flowId: fId,
+                nodeId: u.nodeId,
+                fields: {
+                    positionX: u.x,
+                    positionY: u.y,
+                },
+            });
+        }
         this.#expandIfNeeded();
     }
 
@@ -702,53 +734,44 @@ ${toolbar}
         return true;
     }
 
-    async deleteSelectedNode(
+    async deleteSelectedNodes(
     ): Promise<boolean> {
         if (this.#guardLocked()) {
             return false;
         }
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') {
-            return false;
-        }
-        const nodeId = sel.nodeId;
-        const target =
-            this.#state.nodes.find(
-                n => n.id === nodeId,
+        const ids = this
+            .#deletableNodeIds();
+        if (ids.length === 0) return false;
+        const fId = this.#state.flowId;
+        const reverseStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
+        const idSet = new Set(ids);
+        this.#state.nodes =
+            this.#state.nodes.filter(
+                n => !idSet.has(n.id),
             );
-        if (
-            target?.isStart
-            || target?.isComplete
-        ) return false;
+        this.#state.edges =
+            this.#state.edges.filter(
+                e =>
+                    !idSet.has(
+                        e.fromNodeId,
+                    )
+                    && !idSet.has(
+                        e.toNodeId,
+                    ),
+            );
         try {
-            const capture =
-                await deleteNodeCapture(
-                    nodeId,
-                    this.#state.flowId,
-                );
-            this.#undo.push({
-                type: 'delete-node',
-                forward: capture.deleteSteps,
-                reverse:
-                    capture.restoreSteps,
+            await putGraph({
+                flowId: fId,
+                nodes: this.#state.nodes,
+                edges: this.#state.edges,
             });
-            this.#state.nodes =
-                this.#state.nodes.filter(
-                    n => n.id !== nodeId,
-                );
-            this.#state.edges =
-                this.#state.edges.filter(
-                    e =>
-                        e.fromNodeId
-                            !== nodeId
-                        && e.toNodeId
-                            !== nodeId,
-                );
         } catch (err) {
             log.error(
-                'deleteNodeCapture failed',
+                'putGraph failed',
                 'flow-designer',
                 err,
             );
@@ -758,9 +781,41 @@ ${toolbar}
             );
             return false;
         }
+        const forwardStep = graphPutStep(
+            fId,
+            this.#state.nodes,
+            this.#state.edges,
+        );
+        this.#undo.push({
+            type: 'delete-nodes',
+            forward: [forwardStep],
+            reverse: [reverseStep],
+        });
         this.#state.interaction
             .selection = { kind: 'none' };
         return true;
+    }
+
+    #deletableNodeIds(): string[] {
+        const sel =
+            this.#state.interaction
+                .selection;
+        if (sel.kind !== 'nodes') return [];
+        const result: string[] = [];
+        for (const id of sel.nodeIds) {
+            const n =
+                this.#state.nodes.find(
+                    nd => nd.id === id,
+                );
+            if (
+                n
+                && !n.isStart
+                && !n.isComplete
+            ) {
+                result.push(id);
+            }
+        }
+        return result;
     }
 
     async deleteSelectedEdge(
@@ -813,9 +868,9 @@ ${toolbar}
         const sel =
             this.#state.interaction
                 .selection;
-        if (sel.kind === 'node') {
+        if (sel.kind === 'nodes') {
             return this
-                .deleteSelectedNode();
+                .deleteSelectedNodes();
         }
         if (sel.kind === 'edge') {
             return this
@@ -884,11 +939,9 @@ ${toolbar}
     ): void {
         if (this.#guardLocked()) return;
         name = name.trim();
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') return;
-        const nodeId = sel.nodeId;
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
@@ -923,11 +976,9 @@ ${toolbar}
     ): void {
         if (this.#guardLocked()) return;
         desc = desc.trim();
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') return;
-        const nodeId = sel.nodeId;
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return;
         const fId = this.#state.flowId;
         const reverseStep = graphPutStep(
             fId,
@@ -1055,13 +1106,9 @@ ${toolbar}
             return false;
         }
         name = name.trim();
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') {
-            return false;
-        }
-        const nodeId = sel.nodeId;
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return false;
         const sortOrder =
             this.#state.nodes.find(
                 n => n.id === nodeId,
@@ -1137,13 +1184,9 @@ ${toolbar}
         if (this.#guardLocked()) {
             return false;
         }
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') {
-            return false;
-        }
-        const nodeId = sel.nodeId;
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return false;
         try {
             const capture =
                 await deleteFieldCapture(
@@ -1186,12 +1229,11 @@ ${toolbar}
     }
 
     selectedNodeName(): string {
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') return '';
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return '';
         return this.#state.nodes.find(
-            n => n.id === sel.nodeId,
+            n => n.id === nodeId,
         )!.name;
     }
 
@@ -1320,8 +1362,8 @@ ${toolbar}
         });
         this.#state.interaction
             .selection = {
-                kind: 'node',
-                nodeId,
+                kind: 'nodes',
+                nodeIds: new Set([nodeId]),
             };
         this.#state.interaction
             .isPanelOpen = false;
@@ -1337,13 +1379,9 @@ ${toolbar}
         if (this.#guardLocked()) {
             return false;
         }
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') {
-            return false;
-        }
-        const fromNodeId = sel.nodeId;
+        const fromNodeId = this
+            .#singleSelectedNodeId();
+        if (!fromNodeId) return false;
         const fromNode =
             this.#state.nodes.find(
                 n => n.id === fromNodeId,
@@ -1498,17 +1536,38 @@ ${toolbar}
         const sel =
             this.#state.interaction
                 .selection;
-        if (sel.kind === 'node') {
-            const node =
-                this.#state.nodes.find(
-                    n => n.id
-                        === sel.nodeId,
-                )!;
+        if (sel.kind === 'nodes') {
+            const selectedNodes =
+                this.#state.nodes.filter(
+                    n => sel.nodeIds
+                        .has(n.id),
+                );
+            if (
+                selectedNodes.length === 0
+            ) return null;
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+            for (const n of selectedNodes) {
+                if (n.positionX < minX) {
+                    minX = n.positionX;
+                }
+                if (n.positionY < minY) {
+                    minY = n.positionY;
+                }
+                const r =
+                    n.positionX
+                    + NODE_WIDTH;
+                const b =
+                    n.positionY
+                    + NODE_HEIGHT;
+                if (r > maxX) maxX = r;
+                if (b > maxY) maxY = b;
+            }
             return {
-                x: node.positionX
-                    + NODE_WIDTH / 2,
-                y: node.positionY
-                    + NODE_HEIGHT / 2,
+                x: (minX + maxX) / 2,
+                y: (minY + maxY) / 2,
             };
         }
         if (sel.kind === 'edge') {
@@ -1612,17 +1671,10 @@ ${toolbar}
         const sel =
             this.#state.interaction
                 .selection;
-        if (sel.kind === 'node') {
-            const node =
-                this.#state.nodes.find(
-                    n => n.id
-                        === sel.nodeId,
-                );
-            if (
-                node
-                && !node.isStart
-                && !node.isComplete
-            ) return true;
+        if (sel.kind === 'nodes') {
+            return this
+                .#deletableNodeIds()
+                .length > 0;
         }
         return sel.kind === 'edge';
     }
@@ -1744,13 +1796,11 @@ ${req}
     }
 
     buildFieldEditor(): SafeHtml {
-        const sel =
-            this.#state.interaction
-                .selection;
-        if (sel.kind !== 'node') {
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) {
             return html``;
         }
-        const nodeId = sel.nodeId;
         return html`<div
 class="wf-field-editor"
 data-node-id="${nodeId}">
@@ -1956,16 +2006,18 @@ justify-content:space-between"
         }
         const sel = interaction.selection;
 
-        if (sel.kind === 'node') {
+        const singleNodeId = this
+            .#singleSelectedNodeId();
+        if (singleNodeId) {
             const node =
                 this.#state.nodes.find(
                     n => n.id
-                        === sel.nodeId,
+                        === singleNodeId,
                 )!;
             const outgoing =
                 this.#state.edges.filter(
                     e => e.fromNodeId
-                        === sel.nodeId,
+                        === singleNodeId,
                 );
             return this.#buildNodePanel(
                 node, outgoing,
@@ -2174,14 +2226,21 @@ justify-content:space-between"
         if (drag.kind !== 'dragging') {
             return this.#state.nodes;
         }
+        const dx =
+            drag.currentPointerX
+            - drag.startPointerX;
+        const dy =
+            drag.currentPointerY
+            - drag.startPointerY;
         return this.#state.nodes.map(n => {
-            if (n.id !== drag.nodeId) {
-                return n;
-            }
+            const init =
+                drag.initialPositions
+                    .get(n.id);
+            if (!init) return n;
             return {
                 ...n,
-                positionX: drag.currentX,
-                positionY: drag.currentY,
+                positionX: init.x + dx,
+                positionY: init.y + dy,
             };
         });
     }
