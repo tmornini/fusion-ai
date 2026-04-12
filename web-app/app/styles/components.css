@@ -259,6 +259,12 @@
   border-color: hsl(var(--info) / 0.3);
 }
 
+.badge[data-tab] {
+  transition: opacity
+    var(--duration-fast) var(--ease-default);
+}
+.badge[data-tab]:not(.active) { opacity: 0.4; }
+
 /* Status Badges */
 .status-badge {
   display: inline-flex;
