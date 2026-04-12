@@ -204,58 +204,9 @@ export function parseMermaid(
         }
     }
 
-    const result = [...nodes.values()];
-
-    inferStartEnd(result, edges);
-
     return {
-        nodes: result,
+        nodes: [...nodes.values()],
         edges,
         warnings,
     };
-}
-
-function inferStartEnd(
-    nodes: ParsedNode[],
-    edges: ParsedEdge[],
-): void {
-    const hasStart = nodes.some(
-        n => n.isStart,
-    );
-    const hasComplete = nodes.some(
-        n => n.isComplete,
-    );
-
-    if (!hasStart && nodes.length > 0) {
-        const incoming = new Set(
-            edges.map(e => e.toId),
-        );
-        const candidate = nodes.find(
-            n => !incoming.has(n.mermaidId),
-        );
-        if (candidate) {
-            candidate.isStart = true;
-        } else {
-            nodes[0]!.isStart = true;
-        }
-    }
-
-    if (!hasComplete && nodes.length > 0) {
-        const outgoing = new Set(
-            edges.map(e => e.fromId),
-        );
-        const candidate = nodes.find(
-            n => !outgoing.has(n.mermaidId)
-                && !n.isStart,
-        );
-        if (candidate) {
-            candidate.isComplete = true;
-        } else {
-            const last =
-                nodes[nodes.length - 1];
-            if (last) {
-                last.isComplete = true;
-            }
-        }
-    }
 }
