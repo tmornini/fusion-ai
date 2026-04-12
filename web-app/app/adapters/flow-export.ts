@@ -567,8 +567,7 @@ function layoutImportedGraph(
     startId: string,
     completeId: string,
     intermediates: IntermediateParsed[],
-    parsedEdges: ParsedEdge[],
-    idMap: Map<string, string>,
+    edges: GraphEdge[],
 ): Map<string, { x: number; y: number }> {
     const inputs: LayoutInput[] = [
         {
@@ -589,15 +588,11 @@ function layoutImportedGraph(
             isComplete: true,
         },
     ];
-    const layoutEdges: LayoutEdge[] = [];
-    for (const e of parsedEdges) {
-        const from = idMap.get(e.fromId);
-        const to = idMap.get(e.toId);
-        if (!from || !to) continue;
-        layoutEdges.push({
-            fromId: from, toId: to,
-        });
-    }
+    const layoutEdges: LayoutEdge[] =
+        edges.map(e => ({
+            fromId: e.fromNodeId,
+            toId: e.toNodeId,
+        }));
     return computeLayout(
         inputs, layoutEdges,
         IMPORT_CANVAS_W, IMPORT_CANVAS_H,
@@ -607,6 +602,9 @@ function layoutImportedGraph(
 function buildImportedEdges(
     parsedEdges: ParsedEdge[],
     idMap: Map<string, string>,
+    sidecarEdgeMap?: Map<
+        string, SidecarEdge
+    >,
 ): GraphEdge[] {
     const edges: GraphEdge[] = [];
     const seen = new Set<string>();
@@ -620,16 +618,60 @@ function buildImportedEdges(
             + toId + ':' + e.name;
         if (seen.has(key)) continue;
         seen.add(key);
+        const sc = sidecarEdgeMap?.get(
+            e.fromId + '->' + e.toId,
+        );
         edges.push({
             id: crypto.randomUUID(),
             name: e.name,
             description:
-                IMPORT_DEFAULT_DESCRIPTION,
+                sc?.description
+                ?? IMPORT_DEFAULT_DESCRIPTION,
             fromNodeId: fromId,
             toNodeId: toId,
         });
     }
     return edges;
+}
+
+function autoWireDefaults(
+    startId: string,
+    completeId: string,
+    intermediateIds: string[],
+    edges: GraphEdge[],
+): GraphEdge[] {
+    const incoming = new Set(
+        edges.map(e => e.toNodeId),
+    );
+    const outgoing = new Set(
+        edges.map(e => e.fromNodeId),
+    );
+    const extras: GraphEdge[] = [];
+    for (const id of intermediateIds) {
+        if (!incoming.has(id)) {
+            extras.push({
+                id: crypto.randomUUID(),
+                name: '',
+                description:
+                    IMPORT_DEFAULT_DESCRIPTION,
+                fromNodeId: startId,
+                toNodeId: id,
+            });
+        }
+    }
+    for (const id of intermediateIds) {
+        if (!outgoing.has(id)) {
+            extras.push({
+                id: crypto.randomUUID(),
+                name: '',
+                description:
+                    IMPORT_DEFAULT_DESCRIPTION,
+                fromNodeId: id,
+                toNodeId: completeId,
+            });
+        }
+    }
+    return [...edges, ...extras];
 }
 
 interface StoredGraph {
@@ -676,12 +718,23 @@ export async function postFlowFromMermaid(
             complete.id,
         );
 
+    const intermediateIds = intermediates
+        .map(({ newId }) => newId);
+    const rewiredEdges = buildImportedEdges(
+        parsed.edges, idMap,
+    );
+    const edges = autoWireDefaults(
+        start.id,
+        complete.id,
+        intermediateIds,
+        rewiredEdges,
+    );
+
     const positions = layoutImportedGraph(
         start.id,
         complete.id,
         intermediates,
-        parsed.edges,
-        idMap,
+        edges,
     );
 
     const startPos = positions.get(start.id);
@@ -717,10 +770,6 @@ export async function postFlowFromMermaid(
                 };
             },
         );
-
-    const edges = buildImportedEdges(
-        parsed.edges, idMap,
-    );
 
     const graph: StoredGraph = {
         nodes: [
@@ -894,6 +943,20 @@ export async function postFlowFromZip(
         complete, sidecarComplete,
     );
 
+    const intermediateIds = intermediates
+        .map(({ newId }) => newId);
+    const rewiredEdges = buildImportedEdges(
+        parsed.edges,
+        idMap,
+        sidecarEdgeMap,
+    );
+    const edges = autoWireDefaults(
+        start.id,
+        complete.id,
+        intermediateIds,
+        rewiredEdges,
+    );
+
     const positions = sidecar
         ? new Map<
             string, { x: number; y: number }
@@ -902,8 +965,7 @@ export async function postFlowFromZip(
             start.id,
             complete.id,
             intermediates,
-            parsed.edges,
-            idMap,
+            edges,
         );
 
     if (!sidecar) {
@@ -953,34 +1015,6 @@ export async function postFlowFromZip(
                 };
             },
         );
-
-    const edges: GraphEdge[] = [];
-    const seen = new Set<string>();
-    for (const e of parsed.edges) {
-        const fromId = idMap.get(e.fromId);
-        const toId = idMap.get(e.toId);
-        if (!fromId || !toId) continue;
-        if (fromId === toId) continue;
-        const key =
-            fromId + '->'
-            + toId + ':' + e.name;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const se = sidecarEdgeMap.get(
-            sidecarEdgeKey(
-                e.fromId, e.toId,
-            ),
-        );
-        edges.push({
-            id: crypto.randomUUID(),
-            name: e.name,
-            description:
-                se?.description
-                ?? IMPORT_DEFAULT_DESCRIPTION,
-            fromNodeId: fromId,
-            toNodeId: toId,
-        });
-    }
 
     const graph: StoredGraph = {
         nodes: [
