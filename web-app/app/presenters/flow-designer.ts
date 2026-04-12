@@ -213,6 +213,12 @@ export class FlowDesignerPresenter {
             await this.#undo.undo();
         if (!action) return false;
         await this.#refreshState();
+        if (
+            this.#state.interaction
+                .autoFitEnabled
+        ) {
+            this.#applyZoomToFit();
+        }
         return true;
     }
 
@@ -221,6 +227,12 @@ export class FlowDesignerPresenter {
             await this.#undo.redo();
         if (!action) return false;
         await this.#refreshState();
+        if (
+            this.#state.interaction
+                .autoFitEnabled
+        ) {
+            this.#applyZoomToFit();
+        }
         return true;
     }
 
