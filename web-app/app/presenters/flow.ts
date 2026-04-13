@@ -50,16 +50,15 @@ export class FlowPresenter
 
     render(): SafeHtml {
         return html`
-    <div class="card card-hover p-4"
-        style="cursor:pointer"
+    <div class="${
+        'card card-hover p-4 cursor-pointer'
+    }"
         data-flow-card="${this.#id}">
         <div class="${
             'flex items-start '
             + 'justify-between gap-4'
         }">
-            <div style="${
-                'flex:1;min-width:0'
-            }">
+            <div class="flex-fill">
                 <div class="${
                     'flex flex-wrap '
                     + 'items-center'
