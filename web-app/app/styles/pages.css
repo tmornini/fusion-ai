@@ -1131,3 +1131,33 @@ svg.wf-canvas [data-edge-id] {
   box-shadow: var(--shadow-lg);
 }
 
+/* ==========================================
+   43. IDEA / IDEA CONVERSION DETAIL
+   ========================================== */
+
+.idea-actions-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-width: 8rem;
+  padding-bottom: 0.5rem;
+}
+
+.idea-detail-wrap {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.idea-detail-wrap.has-footer-actions {
+  padding-bottom: 10rem;
+}
+
+.idea-edit-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.dialog-narrow {
+  max-width: 28rem;
+}
+
