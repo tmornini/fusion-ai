@@ -816,15 +816,7 @@ export function bindInteractions(
             return;
         }
         state.isSpaceDown = next;
-        if (next) {
-            svg.classList.add(
-                'wf-pan-cursor',
-            );
-        } else {
-            svg.classList.remove(
-                'wf-pan-cursor',
-            );
-        }
+        onUpdate();
     };
     window.addEventListener(
         'keydown', handleSpace,
