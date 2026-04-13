@@ -1594,7 +1594,6 @@ svg.wf-canvas [data-edge-id] {
   width: 100%;
   border-radius: var(--radius);
   border: 1px solid hsl(var(--border));
-  background: var(--swatch-bg, transparent);
 }
 .color-swatch-block-2 {
   border-width: 2px;
