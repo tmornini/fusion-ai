@@ -61,9 +61,7 @@ function buildInboxRow(
         ? name : '\u2014';
     return html`
     <div
-        class="card"
-        style="padding:1rem;
-            cursor:pointer"
+        class="card p-4 cursor-pointer"
         data-wo-card="${item.idForLink()}"
     >
         <div
