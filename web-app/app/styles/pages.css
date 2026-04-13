@@ -1027,6 +1027,31 @@ svg.wf-canvas {
   border: 1px solid hsl(var(--border));
 }
 
+.wf-name-input {
+  font-size: 1.125rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+}
+
+.wf-name-edit-btn {
+  opacity: 0.5;
+}
+
+.wf-lock-label {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wf-required-mark {
+  color: hsl(var(--error));
+}
+
+.wf-props-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 svg.wf-canvas [data-node-id] {
   transition:
       opacity var(--duration-fast)
