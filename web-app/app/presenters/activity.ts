@@ -16,12 +16,15 @@ type ActivityType =
     | 'status_changed'
     | 'idea_converted';
 
+type IconTone =
+    'primary' | 'success' | 'warning' | 'info';
+
 type IconEntry = {
     icon: (
         size: number,
         cssClass: string,
     ) => SafeHtml;
-    bg: string;
+    tone: IconTone;
 };
 
 const ICON_MAP: Record<
@@ -30,38 +33,23 @@ const ICON_MAP: Record<
 > = {
     idea_created: {
         icon: iconLightbulb,
-        bg: 'background:'
-            + 'hsl(var(--warning-soft));'
-            + 'color:'
-            + 'hsl(var(--warning-text))',
+        tone: 'warning',
     },
     project_created: {
         icon: iconFolderKanban,
-        bg: 'background:'
-            + 'hsl(var(--primary) / 0.1);'
-            + 'color:'
-            + 'hsl(var(--primary))',
+        tone: 'primary',
     },
     user_joined: {
         icon: iconUserPlus,
-        bg: 'background:'
-            + 'hsl(var(--info-soft));'
-            + 'color:'
-            + 'hsl(var(--info-text))',
+        tone: 'info',
     },
     status_changed: {
         icon: iconEdit,
-        bg: 'background:'
-            + 'hsl(var(--warning-soft));'
-            + 'color:'
-            + 'hsl(var(--warning-text))',
+        tone: 'warning',
     },
     idea_converted: {
         icon: iconArrowRight,
-        bg: 'background:'
-            + 'hsl(var(--success-soft));'
-            + 'color:'
-            + 'hsl(var(--success-text))',
+        tone: 'success',
     },
 };
 
@@ -110,11 +98,7 @@ export class ActivityPresenter {
                         class="${
                             'text-sm'
                             + ' text-muted'
-                            + ' mt-1'
-                        }"
-                        style="${
-                            'font-style'
-                            + ':italic'
+                            + ' mt-1 italic'
                         }"
                         >"${
                         this.#activity
@@ -125,7 +109,7 @@ export class ActivityPresenter {
     <div class="flex items-start gap-4
         p-4 rounded-lg activity-row">
         ${this.#buildIcon()}
-        <div style="flex:1;min-width:0">
+        <div class="flex-fill">
             <p class="text-sm">
                 <span class="${
                     'font-medium'
@@ -167,17 +151,8 @@ export class ActivityPresenter {
         const entry =
             ICON_MAP[actType]
             ?? ICON_MAP.idea_created;
-        return html`<div style="${
-            'width:2.5rem;'
-            + 'height:2.5rem;'
-            + 'border-radius:'
-            + 'var(--radius-lg);'
-            + 'display:flex;'
-            + 'align-items:center;'
-            + 'justify-content:center;'
-            + 'flex-shrink:0;'
-            + entry.bg
-        }">${
+        return html`<div class="icon-box"
+            data-tone="${entry.tone}">${
             entry.icon(20, '')
         }</div>`;
     }
