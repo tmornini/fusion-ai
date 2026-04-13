@@ -876,7 +876,7 @@
 .icon-box {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
