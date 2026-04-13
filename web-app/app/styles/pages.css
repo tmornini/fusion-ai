@@ -1106,3 +1106,13 @@ svg.wf-canvas [data-edge-id] {
   font-size: 0.8125rem;
 }
 
+/* ==========================================
+   42. ONBOARDING
+   ========================================== */
+
+.welcome-icon-box {
+  width: 4rem;
+  height: 4rem;
+  box-shadow: var(--shadow-lg);
+}
+
