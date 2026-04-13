@@ -1062,3 +1062,36 @@ svg.wf-canvas [data-edge-id] {
   .wf-props-panel { max-height: none; }
 }
 
+/* ==========================================
+   40. DASHBOARD GAUGES
+   ========================================== */
+
+#gauge-container .card {
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.gauge-arc-container {
+  display: flex;
+  justify-content: center;
+  margin-top: -3.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.gauge-arc-outer,
+.gauge-arc-inner {
+  animation: gauge-draw 2s ease-out;
+}
+
+.gauge-arc-inner.overrun {
+  animation:
+    gauge-draw 2s ease-out,
+    gauge-flash var(--flash-speed, 0.5s)
+      infinite;
+}
+
+@keyframes gauge-draw {
+  from {
+    stroke-dashoffset: var(--dash-full);
+  }
+}
+
