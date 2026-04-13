@@ -927,12 +927,14 @@
 }
 
 svg.wf-canvas.wf-pan-cursor,
+svg.wf-canvas.wf-pan-cursor *,
 svg.wf-canvas.wf-pan-cursor [data-node-id],
 svg.wf-canvas.wf-pan-cursor [data-edge-id],
 svg.wf-canvas.wf-pan-cursor [data-connect-port] {
   cursor: grab;
 }
 svg.wf-canvas.wf-pan-cursor:active,
+svg.wf-canvas.wf-pan-cursor:active *,
 svg.wf-canvas.wf-pan-cursor:active [data-node-id],
 svg.wf-canvas.wf-pan-cursor:active [data-edge-id],
 svg.wf-canvas.wf-pan-cursor:active [data-connect-port] {

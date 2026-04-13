@@ -176,6 +176,19 @@ function handlePointerDown(
     const target = e.target;
     if (!(target instanceof Element)) return;
 
+    if (state.isSpaceDown) {
+        state.pan = {
+            kind: 'panning',
+            startX: e.clientX,
+            startY: e.clientY,
+        };
+        state.autoFitEnabled = false;
+        state.activePointerId = e.pointerId;
+        svg.setPointerCapture(e.pointerId);
+        onUpdate();
+        return;
+    }
+
     const svgPt = screenToSvg(
         svg, e.clientX, e.clientY,
     );
