@@ -137,16 +137,73 @@
     background-color: hsl(var(--primary) / 0.1);
 }
 .bg-success-soft {
-    background-color: hsl(var(--success) / 0.1);
+    background-color: hsl(var(--success-soft));
 }
 .bg-warning-soft {
-    background-color: hsl(var(--warning) / 0.1);
+    background-color: hsl(var(--warning-soft));
 }
 .bg-error-soft {
-    background-color: hsl(var(--error) / 0.1);
+    background-color: hsl(var(--error-soft));
 }
 .bg-info-soft {
-    background-color: hsl(var(--info) / 0.1);
+    background-color: hsl(var(--info-soft));
+}
+.bg-accent {
+    background-color: hsl(var(--accent));
+}
+.bg-accent-soft {
+    background-color: hsl(var(--accent-soft));
+}
+.bg-destructive {
+    background-color: hsl(var(--destructive));
+}
+.bg-foreground {
+    background-color: hsl(var(--foreground));
+}
+.bg-border {
+    background-color: hsl(var(--border));
+}
+.bg-ring {
+    background-color: hsl(var(--ring));
+}
+.bg-primary-fg {
+    background-color:
+        hsl(var(--primary-foreground));
+}
+.bg-accent-fg {
+    background-color:
+        hsl(var(--accent-foreground));
+}
+.bg-blue-50 { background-color: hsl(var(--blue-50)); }
+.bg-blue-100 { background-color: hsl(var(--blue-100)); }
+.bg-blue-200 { background-color: hsl(var(--blue-200)); }
+.bg-blue-300 { background-color: hsl(var(--blue-300)); }
+.bg-blue-400 { background-color: hsl(var(--blue-400)); }
+.bg-blue-500 { background-color: hsl(var(--blue-500)); }
+.bg-blue-600 { background-color: hsl(var(--blue-600)); }
+.bg-blue-700 { background-color: hsl(var(--blue-700)); }
+.bg-blue-800 { background-color: hsl(var(--blue-800)); }
+.bg-blue-900 { background-color: hsl(var(--blue-900)); }
+.bg-yellow-50 {
+    background-color: hsl(var(--yellow-50));
+}
+.bg-yellow-100 {
+    background-color: hsl(var(--yellow-100));
+}
+.bg-yellow-200 {
+    background-color: hsl(var(--yellow-200));
+}
+.bg-yellow-300 {
+    background-color: hsl(var(--yellow-300));
+}
+.bg-yellow-400 {
+    background-color: hsl(var(--yellow-400));
+}
+.bg-yellow-500 {
+    background-color: hsl(var(--yellow-500));
+}
+.bg-yellow-600 {
+    background-color: hsl(var(--yellow-600));
 }
 
 /* Overflow */
