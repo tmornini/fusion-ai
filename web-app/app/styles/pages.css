@@ -1095,3 +1095,14 @@ svg.wf-canvas [data-edge-id] {
   }
 }
 
+/* ==========================================
+   41. WORKBOX
+   ========================================== */
+
+.wo-history-fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
