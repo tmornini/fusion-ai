@@ -640,6 +640,7 @@
 
 .progress-fill {
   height: 100%;
+  width: var(--progress-fill, 0%);
   background: hsl(var(--primary));
   border-radius: var(--radius-full);
   transition: width var(--duration-slow)

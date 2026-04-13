@@ -1275,3 +1275,98 @@ svg.wf-canvas [data-edge-id] {
   max-width: 28rem;
 }
 
+/* ==========================================
+   44. PROJECT DETAIL
+   ========================================== */
+
+.project-detail-wrap {
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+.detail-grid-spaced {
+  gap: 2rem;
+}
+
+.metric-cell {
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: hsl(var(--muted) / 0.3);
+  border: 1px solid hsl(var(--border));
+}
+
+.metric-cell-row-divider {
+  padding-top: 0.5rem;
+  border-top: 1px solid
+    hsl(var(--border));
+}
+
+.summary-stat-cell {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: hsl(var(--muted) / 0.5);
+}
+
+.team-member-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius);
+  background: hsl(var(--primary) / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.flow-icon-pill {
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  background: hsl(var(--primary) / 0.1);
+}
+
+.flow-card-link {
+  padding: 1rem;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.input-narrow-num {
+  width: 5rem;
+  text-align: right;
+}
+
+.variance-good {
+  color: hsl(var(--success-text));
+}
+.variance-bad {
+  color: hsl(var(--error-text));
+}
+
+.dialog-section {
+  padding: 1.5rem;
+}
+.dialog-section-divider-bottom {
+  border-bottom: 1px solid
+    hsl(var(--border));
+}
+.dialog-section-divider-top {
+  border-top: 1px solid
+    hsl(var(--border));
+}
+.dialog-actions-row {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.select-auto {
+  width: auto;
+}
+
+.input-md-bold {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
