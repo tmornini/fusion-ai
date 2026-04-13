@@ -1066,8 +1066,23 @@ svg.wf-canvas [data-edge-id] {
    40. DASHBOARD GAUGES
    ========================================== */
 
-#gauge-container .card {
+.gauge-card {
   padding: 1rem 1.5rem 1.5rem;
+}
+
+.gauge-card[data-tone="primary"] {
+  background: hsl(var(--primary) / 0.04);
+  border-color: hsl(var(--primary) / 0.15);
+}
+
+.gauge-card[data-tone="success"] {
+  background: hsl(var(--success) / 0.04);
+  border-color: hsl(var(--success) / 0.15);
+}
+
+.gauge-card[data-tone="warning"] {
+  background: hsl(var(--warning) / 0.04);
+  border-color: hsl(var(--warning) / 0.15);
 }
 
 .gauge-arc-container {
