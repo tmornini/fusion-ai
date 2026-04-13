@@ -7,8 +7,10 @@
 .flex-col { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
 .flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
 .flex-fill { flex: 1; min-width: 0; }
 .flex-shrink-0 { flex-shrink: 0; }
+.min-w-0 { min-width: 0; }
 .items-center { align-items: center; }
 .items-start { align-items: flex-start; }
 .items-end { align-items: flex-end; }

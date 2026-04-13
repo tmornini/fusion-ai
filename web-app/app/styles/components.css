@@ -327,6 +327,24 @@
   color: hsl(var(--muted-foreground));
 }
 
+.pill-tag-strength {
+  background: hsl(var(--muted) / 0.5);
+  font-size: 0.625rem;
+}
+
+.pill[data-tone="success"] {
+  background: hsl(var(--success-soft));
+  color: hsl(var(--success-text));
+}
+.pill[data-tone="warning"] {
+  background: hsl(var(--warning-soft));
+  color: hsl(var(--warning-text));
+}
+.pill[data-tone="error"] {
+  background: hsl(var(--error-soft));
+  color: hsl(var(--error-text));
+}
+
 /* Admin link card — bordered card with hover highlight */
 .admin-link-card {
   display: flex;
@@ -985,6 +1003,20 @@
   height: 3.5rem;
   font-size: var(--text-lg);
 }
+.avatar-2xl {
+  width: 5rem;
+  height: 5rem;
+  font-size: var(--text-2xl);
+  border-radius: 1rem;
+}
+
+/* Variant: tinted gradient (used by user / account) */
+.avatar-tinted {
+  background: linear-gradient(135deg,
+    hsl(var(--primary) / 0.2),
+    hsl(var(--primary) / 0.05));
+  color: hsl(var(--primary));
+}
 
 /* ==========================================
    24. STATUS DOT (positioned overlay)
@@ -1175,6 +1207,24 @@
 .badge-fixed-w {
   min-width: 6rem;
   justify-content: center;
+}
+
+/* ==========================================
+   30b. CARD SELECTED RING
+   ========================================== */
+
+.card-selected {
+  box-shadow:
+    0 0 0 2px hsl(var(--primary));
+}
+
+/* ==========================================
+   30c. AVATAR FRAME (relative wrapper)
+   ========================================== */
+
+.avatar-frame {
+  position: relative;
+  flex-shrink: 0;
 }
 
 /* ==========================================

@@ -1370,3 +1370,58 @@ svg.wf-canvas [data-edge-id] {
   font-weight: 700;
 }
 
+/* ==========================================
+   45. USER / TEAM MEMBER PRESENTER
+   ========================================== */
+
+.user-detail-wrap {
+  padding: 1.5rem;
+}
+
+.user-detail-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.user-row-divider {
+  border-bottom: 1px solid
+    hsl(var(--border));
+}
+
+.user-dim-row {
+  margin-bottom: 1rem;
+}
+
+.user-dim-progress {
+  height: 0.5rem;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+.perf-hero {
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg,
+    hsl(var(--primary) / 0.1),
+    hsl(var(--primary) / 0.05));
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.perf-hero-value {
+  margin: 0.5rem 0;
+}
+
+.perf-stat-cell {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: hsl(var(--muted) / 0.3);
+  text-align: center;
+}
+
+.perf-stat-value {
+  margin: 0.25rem 0;
+}
+
