@@ -168,11 +168,13 @@
 .bg-ring {
     background-color: hsl(var(--ring));
 }
-.bg-primary-fg {
+.bg-primary-fg,
+.bg-primary-foreground {
     background-color:
         hsl(var(--primary-foreground));
 }
-.bg-accent-fg {
+.bg-accent-fg,
+.bg-accent-foreground {
     background-color:
         hsl(var(--accent-foreground));
 }
