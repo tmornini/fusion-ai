@@ -1683,6 +1683,7 @@ svg.wf-canvas [data-edge-id] {
 
 .ds-space-bar {
   height: 1rem;
+  width: var(--space-w, 0);
   background: hsl(var(--primary));
   border-radius: 0.25rem;
 }

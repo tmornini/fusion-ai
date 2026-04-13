@@ -895,8 +895,8 @@ export async function init(): Promise<void> {
                 <div class="${
                     'flex flex-wrap gap-3'
                 }">
-                    <span style="${
-                        accentBadgeStyle
+                    <span class="${
+                        'ds-accent-badge'
                     }">${''
                         }Accent Badge</span>
                 </div>
@@ -1150,13 +1150,9 @@ export async function init(): Promise<void> {
                     }flex items-end gap-8">
                     ${[16, 20, 24, 48].map(
                         size => html`
-                    <div style="${
-                        iconSizeColStyle
-                    }">
-                        <div style="${''
-                            }color:hsl(${''
-                            }var(--primary))">${''
-                            }${iconSparkles(
+                    <div class="icon-size-col">
+                        <div class="text-primary"
+                            >${iconSparkles(
                                 size, '',
                             )}</div>
                         <code class="${''
@@ -1170,8 +1166,7 @@ export async function init(): Promise<void> {
                 <div class="${''
                     }flex flex-wrap gap-4${''
                     } mt-6 ${''
-                    }pt-4"
-                    class="section-divider-top">
+                    }pt-4 section-divider-top">
                     ${[
                       {
                           fn: iconHome,
@@ -1214,14 +1209,10 @@ export async function init(): Promise<void> {
                           name: 'Upload',
                       },
                     ].map(entry => html`
-                    <div style="${
-                        iconColStyle
-                    }">
-                        <div style="${''
-                            }color:hsl(${''
-                            }var(${''
-                            }--foreground))">${''
-                            }${entry.fn(20, '')
+                    <div class="icon-col">
+                        <div class="${
+                            'text-foreground'
+                        }">${entry.fn(20, '')
                             }</div>
                         <span class="${''
                             }text-2xs${''
@@ -1299,7 +1290,7 @@ export async function init(): Promise<void> {
                     }">${space.name}</code>
                     <div class="ds-space-bar"
                         style="${
-                            'width:' + space.w
+                            '--space-w:' + space.w
                         }"></div>
                     <span class="${''
                         }text-sm text-muted">${''
@@ -1331,11 +1322,9 @@ export async function init(): Promise<void> {
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Inline Validation</h3>
-                    <div style="${''
-                        }display:flex${''
-                        };flex-direction:${''
-                        }column${''
-                        };gap:0.75rem">
+                    <div class="${
+                        'flex flex-col gap-3'
+                    }">
                         <div>
                             <label class="${''
                                 }label mb-1${''
@@ -1368,20 +1357,18 @@ export async function init(): Promise<void> {
                                 } text-sm">${''
                                 }Project ${''
                                 }Name</label>
-                            <input class="input"
+                            <input class="${
+                                'input'
+                                + ' ds-success-border'
+                            }"
                                 value="${''
-                                }AI Segmentation"
-                                style="${
-                                    succBorderStyle
-                                }"/>
+                                }AI Segmentation"/>
                             <p class="${''
                                 }text-xs mt-1${''
                                 } flex ${''
                                 }items-center${''
-                                } gap-1"
-                                style="${
-                                    succColor
-                                }">${''
+                                } gap-1${''
+                                } text-success">${''
                                 }${iconCheck(12, '')
                                 } ${''
                                 }Looks good!</p>
@@ -1392,17 +1379,13 @@ export async function init(): Promise<void> {
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Upload Failed</h3>
-                    <div style="${
-                        uploadFailStyle
-                    }">
+                    <div class="ds-upload-fail">
                         ${iconUpload(
                             32, 'text-error',
                         )}
                         <p class="${''
                             }font-medium${''
-                            } text-sm mt-2"
-                            style="${errColor
-                            }">${''
+                            } text-sm mt-2 text-error">${''
                             }Upload Failed</p>
                         <p class="${''
                             }text-xs${''
@@ -1421,9 +1404,7 @@ export async function init(): Promise<void> {
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Save Failed</h3>
-                    <div style="${
-                        errSoftBorder
-                    }">
+                    <div class="ds-soft-row" data-tone="error">
                         ${iconAlertCircle(
                             20,
                             'text-error',
@@ -1431,10 +1412,7 @@ export async function init(): Promise<void> {
                         <div class="flex-1">
                             <p class="${''
                                 }text-sm${''
-                                } font-medium"
-                                style="${
-                                    errColor
-                                }">${''
+                                } font-medium text-error">${''
                                 }Changes could${''
                                 } not ${''
                                 }be saved</p>
@@ -1458,9 +1436,7 @@ export async function init(): Promise<void> {
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Connection Issue</h3>
-                    <div style="${
-                        warnSoftBorder
-                    }">
+                    <div class="ds-soft-row" data-tone="warning">
                         ${iconAlertTriangle(
                             20,
                             'text-warning',
@@ -1468,10 +1444,7 @@ export async function init(): Promise<void> {
                         <div class="flex-1">
                             <p class="${''
                                 }text-sm${''
-                                } font-medium"
-                                style="${
-                                    warnColor
-                                }">${''
+                                } font-medium text-warning">${''
                                 }Connection ${''
                                 }interrupted</p>
                             <p class="${''
@@ -1498,9 +1471,7 @@ export async function init(): Promise<void> {
                     <div class="flex-1">
                         <p class="${''
                             }text-sm${''
-                            } font-medium"
-                            style="${errColor
-                            }">${''
+                            } font-medium text-error">${''
                             }Something went${''
                             } wrong</p>
                         <p class="${''
@@ -1522,14 +1493,13 @@ export async function init(): Promise<void> {
                         }Reload Section</button>
                 </div>
             </div>
-            <div class="card"
-                style="${''
-                }padding:3rem${''
-                };text-align:center">
+            <div class="${
+                'card text-center p-12'
+            }">
                 <h3 class="${''
                     }font-semibold mb-3">${''
                     }Full Page Error</h3>
-                <div style="padding:2rem">
+                <div class="p-8">
                     ${iconAlertTriangle(
                         48,
                         'text-error',
@@ -1542,10 +1512,8 @@ export async function init(): Promise<void> {
                         } wrong</h3>
                     <p class="${''
                         }text-sm text-muted${''
-                        } mt-2"
-                        style="${
-                            fullPageErrDesc
-                        }">${''
+                        } mt-2${''
+                        } ds-fullpage-err-desc">${''
                         }We encountered an ${''
                         }unexpected error. ${''
                         }Please try ${''
