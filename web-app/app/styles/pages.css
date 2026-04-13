@@ -1132,6 +1132,25 @@ svg.wf-canvas [data-edge-id] {
 }
 
 /* ==========================================
+   43a. IDEA CREATE PAGE
+   ========================================== */
+
+.idea-create-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: hsl(var(--primary-foreground));
+}
+
+.input-large-title {
+  font-size: 1.125rem;
+  padding: 0.75rem 1rem;
+}
+
+.section-divider-top {
+  border-top: 1px solid hsl(var(--border));
+}
+
+/* ==========================================
    43. IDEA / IDEA CONVERSION DETAIL
    ========================================== */
 
