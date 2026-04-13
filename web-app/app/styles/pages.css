@@ -1613,7 +1613,6 @@ svg.wf-canvas [data-edge-id] {
   border-radius: var(--radius-lg);
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  box-shadow: var(--shadow-lg);
 }
 
 .type-row {

@@ -56,11 +56,12 @@ function buildShadowBox(
     name: string,
     variable: string,
 ): SafeHtml {
+    const cls =
+        'shadow' + variable.replace('--', '-');
     return html`<div class="shadow-swatch">
-    <div class="shadow-swatch-block"
-        style="${
-            'box-shadow:var(' + variable + ')'
-        }"></div>
+    <div class="${
+        'shadow-swatch-block ' + cls
+    }"></div>
     <code class="text-xs text-muted">${
         name}</code>
     </div>`;
@@ -247,27 +248,15 @@ function buildWfPortSvg(
 }
 
 function buildWfPropPanel(): SafeHtml {
-    const panelStyle = 'padding:1rem'
-        + ';border-radius:'
-        + 'var(--radius-lg)'
-        + ';background:'
-        + 'hsl(var(--card))'
-        + ';border:1px solid '
-        + 'hsl(var(--border))'
-        + ';max-width:18rem';
-    const fieldStyle = 'display:flex'
-        + ';flex-direction:column'
-        + ';gap:0.25rem';
     return html`
-    <div style="${panelStyle}">
+    <div class="ds-prop-panel">
         <h4 class="${''
             }font-semibold text-sm mb-3">${''
             }Node Properties</h4>
-        <div style="${''
-            }display:flex${''
-            };flex-direction:column${''
-            };gap:0.75rem">
-            <div style="${fieldStyle}">
+        <div class="${
+            'flex flex-col gap-3'
+        }">
+            <div class="ds-prop-field">
                 <label class="${''
                     }text-xs text-muted">${''
                     }Name</label>
@@ -275,7 +264,7 @@ function buildWfPropPanel(): SafeHtml {
                     value="Data Capture"
                     readonly/>
             </div>
-            <div style="${fieldStyle}">
+            <div class="ds-prop-field">
                 <label class="${''
                     }text-xs text-muted">${''
                     }Type</label>
@@ -283,7 +272,7 @@ function buildWfPropPanel(): SafeHtml {
                     }badge badge-default">${''
                     }Standard</span>
             </div>
-            <div style="${fieldStyle}">
+            <div class="ds-prop-field">
                 <label class="${''
                     }text-xs text-muted">${''
                     }Fields</label>
@@ -444,8 +433,7 @@ export async function init(): Promise<void> {
                 }text-3xl font-bold${''
                 } font-display">${''
                 }Fusion AI Design System</h1>
-            <p class="text-muted"
-                style="margin-top:0.5rem">${''
+            <p class="text-muted mt-2">${''
                 }A production-ready design ${''
                 }system ${''
                 }for enterprise ${''
@@ -635,8 +623,7 @@ export async function init(): Promise<void> {
                     }display, ${''
                     }Inter for body text</p>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 ${buildTypographyRow(
                     'text-4xl / font-display'
                     + ' / font-bold',
@@ -708,8 +695,7 @@ export async function init(): Promise<void> {
                     }All button variants ${''
                     }and sizes</p>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 <h3 class="${''
                     }font-semibold mb-4">${''
                     }Variants</h3>
@@ -742,24 +728,26 @@ export async function init(): Promise<void> {
                     }Soft Variants</h3>
                 <div class="${''
                     }flex flex-wrap gap-3 mb-4">
-                    <button class="btn"
-                        style="${
-                            softPrimaryBtn
-                        }">${''
-                        }Soft Primary</button>
-                    <button class="btn"
-                        style="${softSuccBtn
-                        }">${''
-                        }Soft Success</button>
-                    <button class="btn"
-                        style="${softWarnBtn
-                        }">${''
-                        }Soft Warning</button>
-                    <button class="btn"
-                        style="${softErrBtn
-                        }">${''
-                        }Soft Destructive${''
-                        }</button>
+                    <button class="${
+                        'btn ds-soft-btn'
+                    }" data-tone="primary">${
+                        'Soft Primary'
+                    }</button>
+                    <button class="${
+                        'btn ds-soft-btn'
+                    }" data-tone="success">${
+                        'Soft Success'
+                    }</button>
+                    <button class="${
+                        'btn ds-soft-btn'
+                    }" data-tone="warning">${
+                        'Soft Warning'
+                    }</button>
+                    <button class="${
+                        'btn ds-soft-btn'
+                    }" data-tone="error">${
+                        'Soft Destructive'
+                    }</button>
                 </div>
                 <h3 class="${''
                     }font-semibold mb-4">${''
@@ -850,8 +838,7 @@ export async function init(): Promise<void> {
                     }Status indicators ${''
                     }and labels</p>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 <h3 class="${''
                     }font-semibold mb-4">${''
                     }Standard</h3>
@@ -930,8 +917,7 @@ export async function init(): Promise<void> {
             </div>
             <div class="ds-grid-2"
                 class="convert-grid">
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-4">${''
                         }Inputs</h3>
@@ -971,10 +957,9 @@ export async function init(): Promise<void> {
                                     'Invalid'
                                     + ' input'
                                 }"/>
-                            <p class="${''
-                                }text-xs mt-1"
-                                style="${
-                                    destColor
+                            <p class="${
+                                    'text-xs mt-1'
+                                    + ' text-error'
                                 }">${''
                                 }This field ${''
                                 }is ${''
@@ -993,8 +978,7 @@ export async function init(): Promise<void> {
                         </div>
                     </div>
                 </div>
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-4">${''
                         }Textareas</h3>
@@ -1024,10 +1008,9 @@ export async function init(): Promise<void> {
                                 }Invalid${''
                                 } content${''
                                 }</textarea>
-                            <p class="${''
-                                }text-xs mt-1"
-                                style="${
-                                    destColor
+                            <p class="${
+                                    'text-xs mt-1'
+                                    + ' text-error'
                                 }">${''
                                 }Please provide${''
                                 } a valid ${''
@@ -1054,7 +1037,7 @@ export async function init(): Promise<void> {
             <div class="ds-grid-3"
                 class="score-grid">
                 <div class="card card-hover"
-                    style="padding:1.5rem">
+                    class="p-6">
                     <h3 class="${''
                         }font-semibold mb-1">${''
                         }Fusion Card</h3>
@@ -1071,7 +1054,7 @@ export async function init(): Promise<void> {
                         }effect.</p>
                 </div>
                 <div class="card card-flat"
-                    style="padding:1.5rem">
+                    class="p-6">
                     <h3 class="${''
                         }font-semibold mb-1">${''
                         }Flat Card</h3>
@@ -1088,8 +1071,7 @@ export async function init(): Promise<void> {
                         }secondary ${''
                         }content.</p>
                 </div>
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-1">${''
                         }Standard Card</h3>
@@ -1163,8 +1145,7 @@ export async function init(): Promise<void> {
                     } ${''
                     }sizes</p>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 <div class="${''
                     }flex items-end gap-8">
                     ${[16, 20, 24, 48].map(
@@ -1190,7 +1171,7 @@ export async function init(): Promise<void> {
                     }flex flex-wrap gap-4${''
                     } mt-6 ${''
                     }pt-4"
-                    style="${borderTopStyle}">
+                    class="section-divider-top">
                     ${[
                       {
                           fn: iconHome,
@@ -1266,8 +1247,7 @@ export async function init(): Promise<void> {
                     }consistent ${''
                     }spacing</p>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 ${[
                   {
                       name: 'space-1',
@@ -1311,17 +1291,16 @@ export async function init(): Promise<void> {
                   },
                 ].map(space => html`
                 <div class="${''
-                    }flex items-center gap-4"
-                    style="${''
-                    }margin-bottom:0.75rem">
-                    <code class="${''
-                        }text-xs text-muted"
-                        style="width:5rem">${''
-                        }${space.name}</code>
-                    <div style="${
-                        spaceBarStyle}${''
-                        };width:${
-                        space.w}"></div>
+                    }flex items-center gap-4 ${''
+                    }mb-3">
+                    <code class="${
+                        'text-xs text-muted'
+                        + ' w-rem-5'
+                    }">${space.name}</code>
+                    <div class="ds-space-bar"
+                        style="${
+                            'width:' + space.w
+                        }"></div>
                     <span class="${''
                         }text-sm text-muted">${''
                         }${space.value}</span>
@@ -1348,8 +1327,7 @@ export async function init(): Promise<void> {
             </div>
             <div class="ds-grid-2"
                 class="convert-grid">
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Inline Validation</h3>
@@ -1375,10 +1353,7 @@ export async function init(): Promise<void> {
                                 }text-xs mt-1${''
                                 } flex ${''
                                 }items-center${''
-                                } gap-1"
-                                style="${
-                                    destColor
-                                }">${''
+                                } gap-1 text-error">${''
                                 }${
                                 iconAlertCircle(12, '')
                                 } ${''
@@ -1413,8 +1388,7 @@ export async function init(): Promise<void> {
                         </div>
                     </div>
                 </div>
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Upload Failed</h3>
@@ -1443,8 +1417,7 @@ export async function init(): Promise<void> {
                             }Try Again</button>
                     </div>
                 </div>
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Save Failed</h3>
@@ -1455,7 +1428,7 @@ export async function init(): Promise<void> {
                             20,
                             'text-error',
                         )}
-                        <div style="flex:1">
+                        <div class="flex-1">
                             <p class="${''
                                 }text-sm${''
                                 } font-medium"
@@ -1481,8 +1454,7 @@ export async function init(): Promise<void> {
                             }Retry</button>
                     </div>
                 </div>
-                <div class="card"
-                    style="padding:1.5rem">
+                <div class="card p-6">
                     <h3 class="${''
                         }font-semibold mb-3">${''
                         }Connection Issue</h3>
@@ -1493,7 +1465,7 @@ export async function init(): Promise<void> {
                             20,
                             'text-warning',
                         )}
-                        <div style="flex:1">
+                        <div class="flex-1">
                             <p class="${''
                                 }text-sm${''
                                 } font-medium"
@@ -1514,17 +1486,16 @@ export async function init(): Promise<void> {
                     </div>
                 </div>
             </div>
-            <div class="card"
-                style="padding:1.5rem">
+            <div class="card p-6">
                 <h3 class="${''
                     }font-semibold mb-3">${''
                     }Inline System Error</h3>
-                <div style="${errSoftBorder}">
+                <div class="ds-soft-row" data-tone="error">
                     ${iconAlertCircle(
                         20,
                         'text-error',
                     )}
-                    <div style="flex:1">
+                    <div class="flex-1">
                         <p class="${''
                             }text-sm${''
                             } font-medium"
@@ -1619,7 +1590,7 @@ export async function init(): Promise<void> {
             <div class="ds-grid-2"
                 class="convert-grid">
                 <div class="card"
-                    style="${doCardStyle}">
+                    class="ds-do-card">
                     <h3 class="${''
                         }font-semibold${''
                         } text-success${''
@@ -1628,7 +1599,7 @@ export async function init(): Promise<void> {
                         }${iconCheck(20, '')
                         } Do</h3>
                     <div class="text-sm"
-                        style="${doColStyle}">
+                        class="flex flex-col gap-2">
                         <p>${iconCheck(
                             14,
                             'text-success',
@@ -1670,7 +1641,7 @@ export async function init(): Promise<void> {
                     </div>
                 </div>
                 <div class="card"
-                    style="${dontCardStyle}">
+                    class="ds-dont-card">
                     <h3 class="${''
                         }font-semibold${''
                         } text-error ${''
@@ -1679,7 +1650,7 @@ export async function init(): Promise<void> {
                         }${iconX(20, '')
                         } Don't</h3>
                     <div class="text-sm"
-                        style="${doColStyle}">
+                        class="flex flex-col gap-2">
                         <p>${iconX(
                             14,
                             'text-error',

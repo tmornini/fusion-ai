@@ -73,6 +73,7 @@
 
 /* Width / Height */
 .w-full { width: 100%; }
+.w-rem-5 { width: 5rem; }
 .w-20 { width: 20%; }
 .w-25 { width: 25%; }
 .w-30 { width: 30%; }
