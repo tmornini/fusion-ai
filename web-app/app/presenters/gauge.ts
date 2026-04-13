@@ -154,7 +154,6 @@ export class GaugePresenter
         + this.#ts.border + ';'
         + this.#ts.bg + ';'
         + 'border-radius:0.75rem;'
-        + 'padding:1.5rem;'
         + 'transition:all 0.3s'
     }">
         <div class="${
@@ -177,11 +176,7 @@ export class GaugePresenter
                 'text-sm font-semibold'
             }">${this.#title}</h3>
         </div>
-        <div style="${
-            'display:flex;'
-            + 'justify-content:center;'
-            + 'margin-bottom:1.25rem'
-        }">
+        <div class="gauge-arc-container">
             ${this.#renderSvgArcs(elementId)}
         </div>
         ${this.#renderLegend()}
@@ -223,7 +218,9 @@ export class GaugePresenter
             ? 'red'
             : 'hsl(var(--success))';
 
-        let flashStyle = '';
+        let innerClass = 'gauge-arc-inner';
+        let innerStyle =
+            '--dash-full:' + innerArc;
         if (
             this.#hasOverrun
             && this.#innerMax > 0
@@ -237,10 +234,10 @@ export class GaugePresenter
                     1 - (ratio - 1.5)
                         * 0.667,
                 );
-                flashStyle =
-                    'animation:gauge-flash '
-                    + dur.toFixed(3)
-                    + 's infinite';
+                innerClass += ' overrun';
+                innerStyle +=
+                    ';--flash-speed:'
+                    + dur.toFixed(3) + 's';
             }
         }
 
@@ -310,6 +307,7 @@ export class GaugePresenter
                 stroke-linecap="round"
                 opacity="0.3"/>
             <path
+                class="gauge-arc-outer"
                 d="${
                     'M 25 85 A 65 65'
                     + ' 0 0 1 155 85'
@@ -326,6 +324,10 @@ export class GaugePresenter
                 }"
                 stroke-dashoffset="${
                     outerOff
+                }"
+                style="${
+                    '--dash-full:'
+                    + outerArc
                 }"/>
             <path
                 d="${
@@ -340,6 +342,7 @@ export class GaugePresenter
                 stroke-linecap="round"
                 opacity="0.3"/>
             <path
+                class="${innerClass}"
                 d="${
                     'M 45 85 A 45 45'
                     + ' 0 0 1 135 85'
@@ -357,7 +360,7 @@ export class GaugePresenter
                 stroke-dashoffset="${
                     innerOff
                 }"
-                style="${flashStyle}"/>
+                style="${innerStyle}"/>
         </svg>`;
     }
 
