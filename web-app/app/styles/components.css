@@ -138,6 +138,7 @@
 .input:disabled { opacity: 0.5; cursor: not-allowed; }
 .input-error { border-color: hsl(var(--destructive)); }
 .input-error:focus { box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.2); }
+.input-narrow { width: 10rem; }
 
 .textarea {
   display: block;
