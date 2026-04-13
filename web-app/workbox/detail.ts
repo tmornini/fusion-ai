@@ -196,12 +196,8 @@ function buildHistoryEntry(
         entry.fieldValues.length > 0;
     const valuesHtml = hasValues
         ? html`<div
-            class="mt-2 ml-6"
-            style="display:grid;
-                grid-template-columns:
-                    auto 1fr;
-                gap:0.25rem 0.75rem;
-                font-size:0.8125rem">
+            class="mt-2 ml-6
+                wo-history-fields">
             ${entry.fieldValues.map(
                 fv => html`
                 <span
@@ -212,9 +208,7 @@ function buildHistoryEntry(
         </div>`
         : html``;
     return html`<div
-        class="py-3"
-        style="border-bottom:1px solid
-            hsl(var(--border))">
+        class="py-3 border-b">
         <div
             class="flex items-center
                 gap-3"
@@ -290,9 +284,8 @@ function buildDetailView(
     return html`<div>
         <a href="#" id="wo-back-btn"
             class="flex items-center
-                gap-1 text-muted mb-4"
-            style="text-decoration:none;
-                cursor:pointer">
+                gap-1 text-muted mb-4
+                cursor-pointer">
             ${iconArrowLeft(16, '')}
             Workbox
         </a>
@@ -327,8 +320,8 @@ function buildDetailView(
         <details id="wo-history" open>
             <summary
                 class="text-lg
-                    font-semibold mb-3"
-                style="cursor:pointer">
+                    font-semibold mb-3
+                    cursor-pointer">
                 History
             </summary>
             <div class="card p-4">
