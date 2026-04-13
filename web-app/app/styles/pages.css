@@ -941,6 +941,10 @@ svg.wf-canvas.wf-pan-cursor:active [data-connect-port] {
   cursor: grabbing;
 }
 
+.wf-canvas-wrap:has(svg.wf-canvas.wf-pan-cursor) {
+  box-shadow: inset 0 0 0 2px hsl(var(--primary));
+}
+
 .wf-marquee {
   fill: hsl(var(--primary) / 0.12);
   stroke: hsl(var(--primary));
