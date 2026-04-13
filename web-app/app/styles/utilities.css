@@ -163,6 +163,7 @@
 
 /* Cursor */
 .cursor-pointer { cursor: pointer; }
+.cursor-grab { cursor: grab; }
 
 /* Rounded */
 .rounded { border-radius: var(--radius); }

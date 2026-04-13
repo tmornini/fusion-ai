@@ -1115,3 +1115,51 @@
   background: hsl(var(--card) / 0.5);
 }
 
+/* ==========================================
+   29. METRIC ICON BOX (small inline)
+   ========================================== */
+
+.metric-icon-box {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  background: hsl(var(--primary) / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   30. STATUS PILL BADGE (centered fixed)
+   ========================================== */
+
+.badge-fixed-w {
+  min-width: 6rem;
+  justify-content: center;
+}
+
+/* ==========================================
+   31. PROGRESS RING (small SVG)
+   ========================================== */
+
+.progress-ring {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+}
+
+.progress-ring-svg {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
