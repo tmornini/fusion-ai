@@ -52,15 +52,10 @@ export class SettingsPresenter {
         return html`
     <div class="${
         'flex items-center '
-        + 'justify-between py-4'
-    }" style="${
-        'border-bottom:1px solid '
-        + 'hsl(var(--border))'
+        + 'justify-between gap-8 py-4 '
+        + 'border-b'
     }">
-        <div style="${
-            'flex:1;min-width:0;'
-            + 'margin-right:2rem'
-        }">
+        <div class="flex-fill">
             <p class="font-medium">${
                 label}</p>
             <p class="text-sm text-muted">${
@@ -79,10 +74,7 @@ export class SettingsPresenter {
 
     buildPage(): SafeHtml {
         return html`
-    <div style="${
-        'max-width:48rem;'
-        + 'margin:0 auto'
-    }">
+    <div class="content-wrap">
         <nav class="${
             'flex items-center gap-2 '
             + 'text-sm text-muted mb-6'
