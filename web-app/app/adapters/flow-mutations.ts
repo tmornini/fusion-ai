@@ -14,6 +14,7 @@ import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../../../api/types';
 import { parseJson } from './helpers';
+import { postFlowVersion } from './flow-versions';
 
 interface StoredGraph {
     nodes: GraphNode[];
@@ -42,6 +43,7 @@ async function putGraphMutation(
         g: StoredGraph,
     ) => StoredGraph,
 ): Promise<void> {
+    await postFlowVersion(flowId);
     const entity =
         await GET<FlowEntity>(
             `flows/${flowId}`,
@@ -234,6 +236,7 @@ export async function putFlow(
         description?: string;
     },
 ): Promise<void> {
+    await postFlowVersion(id);
     await PUT(`flows/${id}`, {
         ...fields,
         updated_at: nowUtc(),
@@ -257,6 +260,14 @@ export interface GraphUpdateContext {
 }
 
 export async function putGraph(
+    ctx: GraphUpdateContext,
+): Promise<void> {
+    await postFlowVersion(ctx.flowId);
+    await putGraphSilent(ctx);
+}
+
+// No capture: internal migration, not user edit.
+export async function putGraphSilent(
     ctx: GraphUpdateContext,
 ): Promise<void> {
     await PUT(`flows/${ctx.flowId}`, {

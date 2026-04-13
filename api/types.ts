@@ -607,6 +607,16 @@ export interface FlowEntity {
     updated_at: string;
 }
 
+export interface FlowVersionEntity {
+    id: Id;
+    flow_id: Id;
+    name: string;
+    description: string;
+    lock_timeout: number;
+    graph: JsonObjectField;
+    created_at: string;
+}
+
 export interface WorkOrderFlowGraph {
     flowId: Id;
     name: string;

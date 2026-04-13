@@ -16,22 +16,28 @@ import {
 import {
     putNode,
     putGraph,
+    putGraphSilent,
     putWfEdge,
     putFlow,
     putFlowLocked,
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
-    deleteEdgeCapture,
-    deleteFieldCapture,
-    postUndoExecution,
+    deleteEdge,
+    deleteField,
     getFlowGraph,
+    postFlowVersion,
+    getFlowVersions,
+    getLatestFlowVersion,
+    deleteFlowVersion,
+    putFlowFromVersion,
 } from '../adapters';
 import type {
     GraphNode,
     GraphEdge,
     GraphField,
     FlowGraph,
+    FlowVersion,
 } from '../adapters/flows';
 import type { WfFieldType }
     from '../adapters/flows';
@@ -39,8 +45,6 @@ import {
     jsonObjectField,
     nowUtc,
 } from '../adapters';
-import { UndoManager } from '../flow-undo';
-import type { UndoStep } from '../flow-undo';
 import {
     buildGraphSvg,
     perimeterPoint,
@@ -71,29 +75,12 @@ import type {
 function serializeGraph(
     nodes: GraphNode[],
     edges: GraphEdge[],
-): string {
+) {
     return jsonObjectField(
         { nodes, edges } as unknown as Record<
             string, unknown
         >,
     );
-}
-
-function graphPutStep(
-    flowId: string,
-    nodes: GraphNode[],
-    edges: GraphEdge[],
-): UndoStep {
-    return {
-        op: 'put',
-        resource: `flows/${flowId}`,
-        body: {
-            graph: serializeGraph(
-                nodes, edges,
-            ),
-            updated_at: nowUtc(),
-        },
-    };
 }
 
 type SavedViewBox =
@@ -111,6 +98,7 @@ interface DesignerState {
     flowName: string;
     flowDescription: string;
     isLocked: boolean;
+    lockTimeout: number;
     isEditingName: boolean;
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -126,19 +114,19 @@ export class FlowDesignerPresenter {
     #canvasW: number;
     #canvasH: number;
     #needsFit: boolean;
-    #undo: UndoManager;
+    #hasUndoHistory: boolean;
+    #redoStack: FlowVersion[] = [];
 
     constructor(
         graph: FlowGraph,
         canvasW: number,
         canvasH: number,
+        hasUndoHistory: boolean,
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
         this.#needsFit = true;
-        this.#undo = new UndoManager(
-            postUndoExecution,
-        );
+        this.#hasUndoHistory = hasUndoHistory;
         const interaction =
             buildInteractionState(
                 canvasW, canvasH,
@@ -149,6 +137,7 @@ export class FlowDesignerPresenter {
             flowDescription:
                 graph.description,
             isLocked: graph.isLocked,
+            lockTimeout: graph.lockTimeout,
             isEditingName: false,
             nodes: graph.nodes,
             edges: graph.edges,
@@ -157,6 +146,11 @@ export class FlowDesignerPresenter {
                 { kind: 'none' },
         };
         this.#migrateToCenter();
+    }
+
+    #noteMutation(): void {
+        this.#hasUndoHistory = true;
+        this.#redoStack = [];
     }
 
     startEditingName(): void {
@@ -198,21 +192,48 @@ export class FlowDesignerPresenter {
             this.#state.flowId,
             { name },
         );
+        this.#noteMutation();
     }
 
     canUndo(): boolean {
-        return this.#undo.canUndo();
+        return this.#hasUndoHistory;
     }
 
     canRedo(): boolean {
-        return this.#undo.canRedo();
+        return this.#redoStack.length > 0;
     }
 
     async performUndo(): Promise<boolean> {
-        const action =
-            await this.#undo.undo();
-        if (!action) return false;
+        if (this.#guardLocked()) return false;
+        const version = await getLatestFlowVersion(
+            this.#state.flowId,
+        );
+        if (!version) {
+            this.#hasUndoHistory = false;
+            return false;
+        }
+        this.#redoStack.push({
+            id: crypto.randomUUID(),
+            flowId: this.#state.flowId,
+            name: this.#state.flowName,
+            description:
+                this.#state.flowDescription,
+            lockTimeout:
+                this.#state.lockTimeout,
+            graph: serializeGraph(
+                this.#state.nodes,
+                this.#state.edges,
+            ),
+            createdAt: nowUtc(),
+        });
+        await putFlowFromVersion(version);
+        await deleteFlowVersion(version.id);
         await this.#refreshState();
+        const remaining = await getFlowVersions(
+            this.#state.flowId,
+        );
+        this.#hasUndoHistory =
+            remaining.length > 0;
         if (
             this.#state.interaction
                 .autoFitEnabled
@@ -223,9 +244,14 @@ export class FlowDesignerPresenter {
     }
 
     async performRedo(): Promise<boolean> {
-        const action =
-            await this.#undo.redo();
-        if (!action) return false;
+        if (this.#guardLocked()) return false;
+        const snapshot = this.#redoStack.pop();
+        if (!snapshot) return false;
+        await postFlowVersion(
+            this.#state.flowId,
+        );
+        this.#hasUndoHistory = true;
+        await putFlowFromVersion(snapshot);
         await this.#refreshState();
         if (
             this.#state.interaction
@@ -272,7 +298,7 @@ export class FlowDesignerPresenter {
                     n.positionY - cy,
             }),
         );
-        void putGraph({
+        void putGraphSilent({
             flowId: this.#state.flowId,
             nodes: this.#state.nodes,
             edges: this.#state.edges,
@@ -548,11 +574,6 @@ ${toolbar}
         if (this.#guardLocked()) return;
         if (updates.length === 0) return;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         const updateMap = new Map(
             updates.map(
                 u => [u.nodeId, u],
@@ -569,26 +590,12 @@ ${toolbar}
                     positionY: u.y,
                 };
             });
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'move-nodes',
-            forward: [forwardStep],
-            reverse: [reverseStep],
+        void putGraph({
+            flowId: fId,
+            nodes: this.#state.nodes,
+            edges: this.#state.edges,
         });
-        for (const u of updates) {
-            void putNode({
-                flowId: fId,
-                nodeId: u.nodeId,
-                fields: {
-                    positionX: u.x,
-                    positionY: u.y,
-                },
-            });
-        }
+        this.#noteMutation();
         this.#expandIfNeeded();
     }
 
@@ -599,11 +606,6 @@ ${toolbar}
         const y = START_Y + 100;
         const nodeId = crypto.randomUUID();
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         try {
             await postNodeAddition({
                 nodeId,
@@ -637,16 +639,7 @@ ${toolbar}
                 fields: [],
             },
         ];
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'add-node',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         return true;
     }
 
@@ -711,11 +704,6 @@ ${toolbar}
         }
         const edgeId = crypto.randomUUID();
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         try {
             await postEdgeConnection({
                 edgeId,
@@ -747,16 +735,7 @@ ${toolbar}
                 toNodeId: toId,
             },
         ];
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'add-edge',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         return true;
     }
 
@@ -769,11 +748,6 @@ ${toolbar}
             .#deletableNodeIds();
         if (ids.length === 0) return false;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         const idSet = new Set(ids);
         this.#state.nodes =
             this.#state.nodes.filter(
@@ -807,16 +781,7 @@ ${toolbar}
             );
             return false;
         }
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'delete-nodes',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
         return true;
@@ -857,24 +822,18 @@ ${toolbar}
         }
         const edgeId = sel.edgeId;
         try {
-            const capture =
-                await deleteEdgeCapture(
-                    edgeId,
-                    this.#state.flowId,
-                );
-            this.#undo.push({
-                type: 'delete-edge',
-                forward: capture.deleteSteps,
-                reverse:
-                    capture.restoreSteps,
-            });
+            await deleteEdge(
+                edgeId,
+                this.#state.flowId,
+            );
             this.#state.edges =
                 this.#state.edges.filter(
                     e => e.id !== edgeId,
                 );
+            this.#noteMutation();
         } catch (err) {
             log.error(
-                'deleteEdgeCapture failed',
+                'deleteEdge failed',
                 'flow-designer',
                 err,
             );
@@ -908,11 +867,6 @@ ${toolbar}
     autoLayout(): void {
         if (this.#guardLocked()) return;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         const layoutInputs =
             this.#state.nodes.map(
                 n => ({
@@ -947,16 +901,7 @@ ${toolbar}
             nodes: this.#state.nodes,
             edges: this.#state.edges,
         });
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'auto-layout',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         this.#applyZoomToFit();
     }
 
@@ -969,32 +914,18 @@ ${toolbar}
             .#singleSelectedNodeId();
         if (!nodeId) return;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         this.#state.nodes =
             this.#state.nodes.map(
                 n => n.id === nodeId
                     ? { ...n, name }
                     : n,
             );
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'update-node-name',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
         void putNode({
             flowId: fId,
             nodeId,
             fields: { name },
         });
+        this.#noteMutation();
     }
 
     updateNodeDescription(
@@ -1006,11 +937,6 @@ ${toolbar}
             .#singleSelectedNodeId();
         if (!nodeId) return;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         this.#state.nodes =
             this.#state.nodes.map(
                 n => n.id === nodeId
@@ -1020,16 +946,6 @@ ${toolbar}
                     }
                     : n,
             );
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'update-node-desc',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
         void putNode({
             flowId: fId,
             nodeId,
@@ -1037,6 +953,7 @@ ${toolbar}
                 description: desc,
             },
         });
+        this.#noteMutation();
     }
 
     updateEdgeName(
@@ -1050,32 +967,18 @@ ${toolbar}
         if (sel.kind !== 'edge') return;
         const edgeId = sel.edgeId;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         this.#state.edges =
             this.#state.edges.map(
                 e => e.id === edgeId
                     ? { ...e, name }
                     : e,
             );
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'update-edge-name',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
         void putWfEdge({
             flowId: fId,
             edgeId,
             fields: { name },
         });
+        this.#noteMutation();
     }
 
     updateEdgeDescription(
@@ -1089,11 +992,6 @@ ${toolbar}
         if (sel.kind !== 'edge') return;
         const edgeId = sel.edgeId;
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         this.#state.edges =
             this.#state.edges.map(
                 e => e.id === edgeId
@@ -1103,16 +1001,6 @@ ${toolbar}
                     }
                     : e,
             );
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'update-edge-desc',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
         void putWfEdge({
             flowId: fId,
             edgeId,
@@ -1120,6 +1008,7 @@ ${toolbar}
                 description: desc,
             },
         });
+        this.#noteMutation();
     }
 
     async addField(
@@ -1141,11 +1030,6 @@ ${toolbar}
             )!.fields.length;
         const fieldId = crypto.randomUUID();
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         try {
             await postFieldAddition({
                 fieldId,
@@ -1191,16 +1075,7 @@ ${toolbar}
                     }
                     : n,
             );
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'add-field',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         return true;
     }
 
@@ -1214,18 +1089,11 @@ ${toolbar}
             .#singleSelectedNodeId();
         if (!nodeId) return false;
         try {
-            const capture =
-                await deleteFieldCapture(
-                    fieldId,
-                    nodeId,
-                    this.#state.flowId,
-                );
-            this.#undo.push({
-                type: 'delete-field',
-                forward: capture.deleteSteps,
-                reverse:
-                    capture.restoreSteps,
-            });
+            await deleteField(
+                fieldId,
+                nodeId,
+                this.#state.flowId,
+            );
             this.#state.nodes =
                 this.#state.nodes.map(
                     n => n.id === nodeId
@@ -1239,9 +1107,10 @@ ${toolbar}
                         }
                         : n,
                 );
+            this.#noteMutation();
         } catch (err) {
             log.error(
-                'deleteFieldCapture failed',
+                'deleteField failed',
                 'flow-designer',
                 err,
             );
@@ -1307,11 +1176,6 @@ ${toolbar}
             x - NODE_WIDTH / 2;
         const posY =
             y - NODE_HEIGHT / 2;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
         try {
             await postNodeAddition({
                 nodeId,
@@ -1376,16 +1240,7 @@ ${toolbar}
                 toNodeId: nodeId,
             },
         ];
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'add-node-and-edge',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         this.#state.interaction
             .selection = {
                 kind: 'nodes',
@@ -1421,11 +1276,6 @@ ${toolbar}
         const nodeId = crypto.randomUUID();
         const edgeId = crypto.randomUUID();
         const fId = this.#state.flowId;
-        const reverseStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
 
         try {
             await postNodeAddition({
@@ -1491,16 +1341,7 @@ ${toolbar}
                 toNodeId: nodeId,
             },
         ];
-        const forwardStep = graphPutStep(
-            fId,
-            this.#state.nodes,
-            this.#state.edges,
-        );
-        this.#undo.push({
-            type: 'add-node-and-edge',
-            forward: [forwardStep],
-            reverse: [reverseStep],
-        });
+        this.#noteMutation();
         this.#expandIfNeeded();
         return true;
     }
@@ -1726,14 +1567,14 @@ class="wf-toolbar">
     class="btn btn-ghost btn-icon"
     data-action="undo"${
     trusted(
-        this.#undo.canUndo()
+        this.canUndo()
             ? '' : ' disabled',
     )}>${iconUndo(18, '')}</button>
 <button
     class="btn btn-ghost btn-icon"
     data-action="redo"${
     trusted(
-        this.#undo.canRedo()
+        this.canRedo()
             ? '' : ' disabled',
     )}>${iconRedo(18, '')}</button>
 </div>

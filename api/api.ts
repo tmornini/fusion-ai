@@ -153,6 +153,27 @@ const routes: Route[] = [
                 param(params, 0),
             ),
     }),
+    route('flow-versions', {
+        get: (db) =>
+            db.flowVersions.getAll(),
+        post: async (db, _params, body) => {
+            const id =
+                body.id as string;
+            return db.flowVersions.put(
+                id, body,
+            );
+        },
+    }),
+    route('flow-versions/:id', {
+        get: (db, params) =>
+            db.flowVersions.getById(
+                param(params, 0),
+            ),
+        delete: (db, params) =>
+            db.flowVersions.delete(
+                param(params, 0),
+            ),
+    }),
     route('project-flows', {
         get: (db) =>
             db.projectFlows

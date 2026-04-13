@@ -16,6 +16,7 @@ import {
     getFlowGraph,
     getFlowMermaid,
     getFlowZip,
+    getFlowVersions,
 } from '../app/adapters';
 import {
     bindInteractions,
@@ -772,16 +773,26 @@ export async function init(
     );
     if (!container) return;
 
-    const graph = await withLoadingState(
+    const loaded = await withLoadingState(
         container,
         buildSkeleton('detail', 1),
-        () => getFlowGraph(flowId),
+        async () => {
+            const [graph, versions] =
+                await Promise.all([
+                    getFlowGraph(flowId),
+                    getFlowVersions(flowId),
+                ]);
+            return { graph, versions };
+        },
     );
-    if (!graph) return;
+    if (!loaded) return;
 
     const presenter =
         new FlowDesignerPresenter(
-            graph, FALLBACK_W, FALLBACK_H,
+            loaded.graph,
+            FALLBACK_W,
+            FALLBACK_H,
+            loaded.versions.length > 0,
         );
     renderAndBind(container, presenter);
     const wrap = container.querySelector(
