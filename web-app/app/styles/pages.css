@@ -1279,9 +1279,12 @@ svg.wf-canvas [data-edge-id] {
    44. PROJECT DETAIL
    ========================================== */
 
+/* .project-detail-wrap is now an alias
+   for .content-wrap-xl */
 .project-detail-wrap {
   max-width: 64rem;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .detail-grid-spaced {
