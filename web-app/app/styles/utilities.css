@@ -68,7 +68,9 @@
 
 /* Width / Height */
 .w-full { width: 100%; }
+.w-20 { width: 20%; }
 .w-25 { width: 25%; }
+.w-30 { width: 30%; }
 .w-33 { width: 33.333%; }
 .w-40 { width: 40%; }
 .w-50 { width: 50%; }

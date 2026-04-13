@@ -769,6 +769,20 @@
   flex-shrink: 0;
 }
 
+.skeleton-avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1.5rem;
+}
+
 /* State containers (error, empty) */
 .state-container {
   display: flex;
