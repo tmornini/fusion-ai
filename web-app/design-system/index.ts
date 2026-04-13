@@ -24,16 +24,15 @@ import {
 function buildColorSwatch(
     name: string,
     variable: string,
-    style: string,
+    bgClass?: string,
 ): SafeHtml {
-    return html`<div style="${''
-        }display:flex;flex-direction:column${''
-        };gap:0.5rem">
-    <div style="${''
-        }height:4rem;width:100%${''
-        };border-radius:0.5rem${''
-        };border:1px solid hsl(var(--border))${''
-        };${style}"></div>
+    const cls =
+        bgClass
+        ?? 'bg' + variable.replace('--', '-');
+    return html`<div class="color-swatch">
+    <div class="${
+        'color-swatch-block ' + cls
+    }"></div>
     <div class="text-sm font-medium">${
         name}</div>
     <code class="text-xs text-muted">${
@@ -46,11 +45,7 @@ function buildTypographyRow(
     className: string,
     sample: string,
 ): SafeHtml {
-    return html`<div style="${''
-        }display:flex;flex-direction:column${''
-        };gap:0.25rem;padding:0.75rem 0${''
-        };border-bottom:1px solid ${''
-        }hsl(var(--border))">
+    return html`<div class="type-row">
     <code class="text-xs text-muted">${
         label}</code>
     <p class="${className}">${sample}</p>
@@ -61,16 +56,11 @@ function buildShadowBox(
     name: string,
     variable: string,
 ): SafeHtml {
-    return html`<div style="${''
-        }display:flex;flex-direction:column${''
-        };align-items:center;gap:0.75rem">
-    <div style="${''
-        }width:100%;height:5rem${''
-        };border-radius:0.75rem${''
-        };background:hsl(var(--card))${''
-        };box-shadow:var(${variable})${''
-        };border:1px solid ${''
-        }hsl(var(--border))"></div>
+    return html`<div class="shadow-swatch">
+    <div class="shadow-swatch-block"
+        style="${
+            'box-shadow:var(' + variable + ')'
+        }"></div>
     <code class="text-xs text-muted">${
         name}</code>
     </div>`;
@@ -448,9 +438,7 @@ export async function init(): Promise<void> {
         'border-color:hsl(var(--success))';
 
     setHtml(root, html`
-    <div style="${''
-        }display:flex;flex-direction:column${''
-        };gap:3rem;padding-bottom:4rem">
+    <div class="ds-page">
         <div>
             <h1 class="${''
                 }text-3xl font-bold${''
@@ -468,9 +456,9 @@ export async function init(): Promise<void> {
                 }decision-making.</p>
         </div>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -480,39 +468,28 @@ export async function init(): Promise<void> {
                     }Primary brand colors ${''
                     }for Fusion AI</p>
             </div>
-            <div style="${grid4}"
+            <div class="ds-grid-4"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Primary Blue',
                     '--primary',
-                    'background:'
-                    + 'hsl(var(--primary))',
                 )}
                 ${buildColorSwatch(
                     'Primary Foreground',
                     '--primary-foreground',
-                    'background:'
-                    + 'hsl(var('
-                    + '--primary-foreground))'
-                    + ';border-width:2px',
                 )}
                 ${buildColorSwatch(
                     'Accent Yellow',
                     '--accent',
-                    'background:'
-                    + 'hsl(var(--accent))',
                 )}
                 ${buildColorSwatch(
                     'Accent Foreground',
                     '--accent-foreground',
-                    'background:'
-                    + 'hsl(var('
-                    + '--accent-foreground))',
                 )}
             </div>
         </section>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -523,65 +500,45 @@ export async function init(): Promise<void> {
                     }for ${''
                     }nuanced UI design</p>
             </div>
-            <div style="${grid5}"
+            <div class="ds-grid-5"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Blue 50', '--blue-50',
-                    'background:'
-                    + 'hsl(var(--blue-50))',
                 )}
                 ${buildColorSwatch(
                     'Blue 100', '--blue-100',
-                    'background:'
-                    + 'hsl(var(--blue-100))',
                 )}
                 ${buildColorSwatch(
                     'Blue 200', '--blue-200',
-                    'background:'
-                    + 'hsl(var(--blue-200))',
                 )}
                 ${buildColorSwatch(
                     'Blue 300', '--blue-300',
-                    'background:'
-                    + 'hsl(var(--blue-300))',
                 )}
                 ${buildColorSwatch(
                     'Blue 400', '--blue-400',
-                    'background:'
-                    + 'hsl(var(--blue-400))',
                 )}
             </div>
-            <div style="${grid5}"
+            <div class="ds-grid-5"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Blue 500', '--blue-500',
-                    'background:'
-                    + 'hsl(var(--blue-500))',
                 )}
                 ${buildColorSwatch(
                     'Blue 600', '--blue-600',
-                    'background:'
-                    + 'hsl(var(--blue-600))',
                 )}
                 ${buildColorSwatch(
                     'Blue 700', '--blue-700',
-                    'background:'
-                    + 'hsl(var(--blue-700))',
                 )}
                 ${buildColorSwatch(
                     'Blue 800', '--blue-800',
-                    'background:'
-                    + 'hsl(var(--blue-800))',
                 )}
                 ${buildColorSwatch(
                     'Blue 900', '--blue-900',
-                    'background:'
-                    + 'hsl(var(--blue-900))',
                 )}
             </div>
         </section>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -592,60 +549,44 @@ export async function init(): Promise<void> {
                     }colors ${''
                     }(WCAG AA compliant)</p>
             </div>
-            <div style="${grid4}"
+            <div class="ds-grid-4"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Success', '--success',
-                    'background:'
-                    + 'hsl(var(--success))',
                 )}
                 ${buildColorSwatch(
                     'Warning', '--warning',
-                    'background:'
-                    + 'hsl(var(--warning))',
                 )}
                 ${buildColorSwatch(
                     'Destructive',
                     '--destructive',
-                    'background:'
-                    + 'hsl(var(--destructive))',
                 )}
                 ${buildColorSwatch(
                     'Info', '--info',
-                    'background:'
-                    + 'hsl(var(--primary))',
                 )}
             </div>
-            <div style="${grid4}"
+            <div class="ds-grid-4"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Success Soft',
                     '--success-soft',
-                    'background:'
-                    + 'hsl(var(--success-soft))',
                 )}
                 ${buildColorSwatch(
                     'Warning Soft',
                     '--warning-soft',
-                    'background:'
-                    + 'hsl(var(--warning-soft))',
                 )}
                 ${buildColorSwatch(
                     'Error Soft',
                     '--error-soft',
-                    'background:'
-                    + 'hsl(var(--error-soft))',
                 )}
                 ${buildColorSwatch(
                     'Info Soft',
                     '--info-soft',
-                    'background:'
-                    + 'hsl(var(--primary)/0.1)',
                 )}
             </div>
         </section>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -656,46 +597,34 @@ export async function init(): Promise<void> {
                     }and ${''
                     }border colors</p>
             </div>
-            <div style="${grid6}"
+            <div class="ds-grid-6"
                 class="stats-grid">
                 ${buildColorSwatch(
                     'Background',
                     '--background',
-                    'background:'
-                    + 'hsl(var(--background))',
                 )}
                 ${buildColorSwatch(
                     'Foreground',
                     '--foreground',
-                    'background:'
-                    + 'hsl(var(--foreground))',
                 )}
                 ${buildColorSwatch(
                     'Card', '--card',
-                    'background:'
-                    + 'hsl(var(--card))',
                 )}
                 ${buildColorSwatch(
                     'Muted', '--muted',
-                    'background:'
-                    + 'hsl(var(--muted))',
                 )}
                 ${buildColorSwatch(
                     'Border', '--border',
-                    'background:'
-                    + 'hsl(var(--border))',
                 )}
                 ${buildColorSwatch(
                     'Ring', '--ring',
-                    'background:'
-                    + 'hsl(var(--ring))',
                 )}
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -767,9 +696,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -909,9 +838,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -987,9 +916,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -999,14 +928,14 @@ export async function init(): Promise<void> {
                     }Input fields and ${''
                     }text areas</p>
             </div>
-            <div style="${grid2}"
+            <div class="ds-grid-2"
                 class="convert-grid">
                 <div class="card"
                     style="padding:1.5rem">
                     <h3 class="${''
                         }font-semibold mb-4">${''
                         }Inputs</h3>
-                    <div style="${colStyle}">
+                    <div class="ds-stack">
                         <div>
                             <label class="${''
                                 }label mb-1${''
@@ -1069,7 +998,7 @@ export async function init(): Promise<void> {
                     <h3 class="${''
                         }font-semibold mb-4">${''
                         }Textareas</h3>
-                    <div style="${colStyle}">
+                    <div class="ds-stack">
                         <div>
                             <label class="${''
                                 }label mb-1${''
@@ -1109,9 +1038,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1122,7 +1051,7 @@ export async function init(): Promise<void> {
                     }with ${''
                     }consistent styling</p>
             </div>
-            <div style="${grid3}"
+            <div class="ds-grid-3"
                 class="score-grid">
                 <div class="card card-hover"
                     style="padding:1.5rem">
@@ -1180,9 +1109,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1194,7 +1123,7 @@ export async function init(): Promise<void> {
                     } ${''
                     }and hierarchy</p>
             </div>
-            <div style="${grid5}"
+            <div class="ds-grid-5"
                 class="stats-grid">
                 ${buildShadowBox(
                     'shadow-xs',
@@ -1219,9 +1148,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1324,9 +1253,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1401,9 +1330,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1417,7 +1346,7 @@ export async function init(): Promise<void> {
                     }and ${''
                     }system messages</p>
             </div>
-            <div style="${grid2}"
+            <div class="ds-grid-2"
                 class="convert-grid">
                 <div class="card"
                     style="padding:1.5rem">
@@ -1674,9 +1603,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1687,7 +1616,7 @@ export async function init(): Promise<void> {
                     }the ${''
                     }design system</p>
             </div>
-            <div style="${grid2}"
+            <div class="ds-grid-2"
                 class="convert-grid">
                 <div class="card"
                     style="${doCardStyle}">
@@ -1790,9 +1719,9 @@ export async function init(): Promise<void> {
             </div>
         </section>
 
-        <hr style="${borderHr}"/>
+        <hr class="ds-hr"/>
 
-        <section style="${sectionStyle}">
+        <section class="ds-section">
             <div>
                 <h2 class="${''
                     }text-2xl font-semibold ${''
@@ -1805,9 +1734,9 @@ export async function init(): Promise<void> {
 
             <h3 class="font-semibold">${''
                 }Node Variants</h3>
-            <div style="${grid3}"
+            <div class="ds-grid-3"
                 class="stats-grid">
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Start Node</code>
@@ -1818,7 +1747,7 @@ export async function init(): Promise<void> {
                         false,
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Standard Node</code>
@@ -1829,7 +1758,7 @@ export async function init(): Promise<void> {
                         false,
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Complete Node</code>
@@ -1844,9 +1773,9 @@ export async function init(): Promise<void> {
 
             <h3 class="font-semibold">${''
                 }Edge Variants</h3>
-            <div style="${grid3}"
+            <div class="ds-grid-3"
                 class="stats-grid">
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Forward Edge</code>
@@ -1857,7 +1786,7 @@ export async function init(): Promise<void> {
                         false,
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Cycle Edge</code>
@@ -1868,7 +1797,7 @@ export async function init(): Promise<void> {
                         true,
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Completion Edge</code>
@@ -1885,7 +1814,7 @@ export async function init(): Promise<void> {
                 }Port Styles</h3>
             <div class="${''
                 }flex flex-wrap gap-6">
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Standard</code>
@@ -1893,7 +1822,7 @@ export async function init(): Promise<void> {
                         WF_BLUE, 'port',
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Start / End</code>
@@ -1901,7 +1830,7 @@ export async function init(): Promise<void> {
                         WF_GREEN, 'port',
                     )}
                 </div>
-                <div style="${colStyle}">
+                <div class="ds-stack">
                     <code class="${''
                         }text-xs text-muted">${''
                         }Cycle</code>
