@@ -804,12 +804,6 @@ export function bindInteractions(
     ): void => {
         if (ke.key !== ' ') return;
         if (isFormFocused()) return;
-        if (
-            state.marquee.kind
-                === 'selecting'
-            || state.pan.kind === 'panning'
-            || state.drag.kind === 'dragging'
-        ) return;
         ke.preventDefault();
         const next = ke.type === 'keydown';
         if (state.isSpaceDown === next) {
