@@ -912,8 +912,7 @@ export function buildGraphSvg(
         + ' preserveAspectRatio='
         + '"xMidYMid meet"'
         + ' width="100%"'
-        + ' height="100%"'
-        + ' style="display:block">'
+        + ' height="100%">'
         + buildDefs()
         + buildGrid(
             viewBoxX, viewBoxY,
