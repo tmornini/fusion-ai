@@ -176,18 +176,7 @@ function handlePointerDown(
     const target = e.target;
     if (!(target instanceof Element)) return;
 
-    if (state.isSpaceDown) {
-        state.pan = {
-            kind: 'panning',
-            startX: e.clientX,
-            startY: e.clientY,
-        };
-        state.autoFitEnabled = false;
-        state.activePointerId = e.pointerId;
-        svg.setPointerCapture(e.pointerId);
-        onUpdate();
-        return;
-    }
+    if (state.isSpaceDown) return;
 
     const svgPt = screenToSvg(
         svg, e.clientX, e.clientY,
@@ -316,26 +305,17 @@ function startBackgroundDrag(
     state: InteractionState,
 ): void {
     state.isPanelOpen = false;
-    if (state.isSpaceDown) {
-        state.pan = {
-            kind: 'panning',
-            startX: e.clientX,
-            startY: e.clientY,
-        };
-        state.autoFitEnabled = false;
-    } else {
-        const svgPt = screenToSvg(
-            svg, e.clientX, e.clientY,
-        );
-        state.selection = { kind: 'none' };
-        state.marquee = {
-            kind: 'selecting',
-            startX: svgPt.x,
-            startY: svgPt.y,
-            currentX: svgPt.x,
-            currentY: svgPt.y,
-        };
-    }
+    const svgPt = screenToSvg(
+        svg, e.clientX, e.clientY,
+    );
+    state.selection = { kind: 'none' };
+    state.marquee = {
+        kind: 'selecting',
+        startX: svgPt.x,
+        startY: svgPt.y,
+        currentX: svgPt.x,
+        currentY: svgPt.y,
+    };
     state.activePointerId = e.pointerId;
     svg.setPointerCapture(e.pointerId);
 }
@@ -610,15 +590,6 @@ function handlePointerUp(
         return;
     }
 
-    if (state.pan.kind === 'panning') {
-        state.pan = { kind: 'idle' };
-        state.activePointerId = 0;
-        svg.releasePointerCapture(
-            e.pointerId,
-        );
-        return;
-    }
-
     if (
         state.marquee.kind === 'selecting'
     ) {
@@ -722,6 +693,9 @@ export function bindInteractions(
     getAllNodes: NodeListLookup,
     signal: AbortSignal,
 ): void {
+    let lastClientX = 0;
+    let lastClientY = 0;
+
     svg.addEventListener(
         'pointerdown',
         (e) => handlePointerDown(
@@ -733,9 +707,13 @@ export function bindInteractions(
 
     svg.addEventListener(
         'pointermove',
-        (e) => handlePointerMove(
-            e, svg, state, onUpdate,
-        ),
+        (e) => {
+            lastClientX = e.clientX;
+            lastClientY = e.clientY;
+            handlePointerMove(
+                e, svg, state, onUpdate,
+            );
+        },
         { signal },
     );
 
@@ -810,6 +788,16 @@ export function bindInteractions(
             return;
         }
         state.isSpaceDown = next;
+        if (next) {
+            state.pan = {
+                kind: 'panning',
+                startX: lastClientX,
+                startY: lastClientY,
+            };
+            state.autoFitEnabled = false;
+        } else {
+            state.pan = { kind: 'idle' };
+        }
         onUpdate();
     };
     window.addEventListener(
