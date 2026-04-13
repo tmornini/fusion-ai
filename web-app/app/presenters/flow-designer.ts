@@ -266,6 +266,12 @@ export class FlowDesignerPresenter {
         const graph = await getFlowGraph(
             this.#state.flowId,
         );
+        this.#state.flowName = graph.name;
+        this.#state.flowDescription =
+            graph.description;
+        this.#state.isLocked = graph.isLocked;
+        this.#state.lockTimeout =
+            graph.lockTimeout;
         this.#state.nodes = graph.nodes;
         this.#state.edges = graph.edges;
         this.#state.interaction
