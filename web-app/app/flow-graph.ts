@@ -47,8 +47,7 @@ const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.4;
 const BEZIER_MIDPOINT = 0.5;
 const BIDI_SPREAD = 40;
-const BIDI_LABEL_T_FWD = 0.35;
-const BIDI_LABEL_T_REV = 0.65;
+const BIDI_LABEL_T = 0.42;
 
 const CYCLE_DASH = '6 3';
 
@@ -482,19 +481,23 @@ function buildEdge(
     let aimToX = fromCx;
     let aimToY = fromCy;
 
+    let perpX = 0;
+    let perpY = 0;
+    let spread = 0;
+
     if (aimOffset !== 0) {
         const dx = toCx - fromCx;
         const dy = toCy - fromCy;
         const len = Math.hypot(dx, dy);
         if (len > 0) {
-            const px = -dy / len;
-            const py = dx / len;
-            const s =
+            perpX = -dy / len;
+            perpY = dx / len;
+            spread =
                 aimOffset * BIDI_SPREAD;
-            aimFromX = toCx + px * s;
-            aimFromY = toCy + py * s;
-            aimToX = fromCx + px * s;
-            aimToY = fromCy + py * s;
+            aimFromX = toCx + perpX * spread;
+            aimFromY = toCy + perpY * spread;
+            aimToX = fromCx + perpX * spread;
+            aimToY = fromCy + perpY * spread;
         }
     }
 
@@ -530,22 +533,22 @@ function buildEdge(
         controlOffset(se, dist);
     const cp2 =
         controlOffset(ee, dist);
+    const cp1X =
+        startPt.x + cp1.dx + perpX * spread;
+    const cp1Y =
+        startPt.y + cp1.dy + perpY * spread;
+    const cp2X =
+        endPt.x + cp2.dx + perpX * spread;
+    const cp2Y =
+        endPt.y + cp2.dy + perpY * spread;
     pathD = 'M '
         + String(startPt.x) + ' '
         + String(startPt.y)
         + ' C '
-        + String(
-            startPt.x + cp1.dx,
-        ) + ' '
-        + String(
-            startPt.y + cp1.dy,
-        ) + ', '
-        + String(
-            endPt.x + cp2.dx,
-        ) + ' '
-        + String(
-            endPt.y + cp2.dy,
-        ) + ', '
+        + String(cp1X) + ' '
+        + String(cp1Y) + ', '
+        + String(cp2X) + ' '
+        + String(cp2Y) + ', '
         + String(endPt.x) + ' '
         + String(endPt.y);
 
@@ -583,9 +586,7 @@ function buildEdge(
 
     const labelT = aimOffset === 0
         ? BEZIER_MIDPOINT
-        : edge.fromNodeId < edge.toNodeId
-            ? BIDI_LABEL_T_FWD
-            : BIDI_LABEL_T_REV;
+        : BIDI_LABEL_T;
     const mid = bezierAt(pathD, labelT);
     const midX = mid.x;
     const midY = mid.y;
