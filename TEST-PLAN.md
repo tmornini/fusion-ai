@@ -104,8 +104,8 @@ on. Run these in order.
   creation limited to approved projects only".
 - [ ] **AA36** Click "New Flow". PASS: navigates
   to the flow designer page. The SVG canvas
-  shows two nodes: "New" (start, top-left with
-  green border) and "Complete" (end, bottom-right
+  shows two nodes: "Start" (start, top-left with
+  green border) and "End" (end, bottom-right
   with double green border) connected by no edges.
   Toolbar shows Undo, Redo, Delete (trash icon),
   Auto Layout, Zoom −/Show All/+,
@@ -131,9 +131,11 @@ on. Run these in order.
   node label updates on the canvas immediately
   (auto-saves via 800ms debounce).
 - [ ] **AA40** Double-click the edge between
-  start and "Data Capture". PASS: edge
-  properties panel shows Name, Description,
-  From/To states. Rename it to "begin".
+  start and "Data Capture". PASS: no properties
+  panel opens — the outgoing edge from Start is
+  intentionally not interactive. The edge has no
+  name label visible on the canvas, just a plain
+  blue arrow.
 - [ ] **AA41** Drag from "Data Capture"'s port
   into empty canvas past 20 pixels to create a
   new middle node; rename it "Review" via its
@@ -147,7 +149,7 @@ on. Run these in order.
   check recognises the release would close a
   loop. Release to create the cycle edge; rename
   it "needs revision". Hold Shift and drag from
-  "Review" onto "Complete". PASS: preview is a
+  "Review" onto "End". PASS: preview is a
   solid-blue curved bezier (no return path).
   Release to create the edge; rename it
   "approve".
@@ -404,10 +406,11 @@ on. Run these in order.
   graph. Changes auto-save (no explicit Save
   button).
 - [ ] **F15** Nodes display correctly: start node
-  has green border with "Start state" subtitle,
-  standard nodes have blue border with field count,
-  complete node has double green border with "End
-  state" subtitle.
+  has green border with its name centered in the
+  card and no subtitle, standard nodes have blue
+  border with field count subtitle, complete node
+  has double green border with its name centered
+  in the card and no subtitle.
 - [ ] **F16** Edges display correctly: forward
   edges are solid blue lines with arrow markers
   and named labels. Cycle edges — those that
