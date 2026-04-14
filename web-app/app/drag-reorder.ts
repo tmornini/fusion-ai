@@ -97,7 +97,7 @@ export function initDragReorder(
             if (!card) return;
             const handle =
                 pointerTarget?.closest(
-                    '[style*="grab"]',
+                    '.cursor-grab',
                 );
             if (!handle) {
                 e.preventDefault();
