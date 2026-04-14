@@ -36,6 +36,7 @@ const PORT_RADIUS = 5;
 const PORT_STROKE = 2;
 
 const NODE_LABEL_Y = 26;
+const NODE_LABEL_Y_CENTERED = 38;
 const NODE_LABEL_FONT = 13;
 const NODE_META_Y = 45;
 const NODE_META_FONT = 11;
@@ -380,14 +381,11 @@ function buildNode(
             + `${COMPLETE_INNER_STROKE}"/>`;
     }
 
-    const meta = node.isStart
-        ? 'Start state'
-        : node.isComplete
-            ? 'End state'
-            : String(node.fields.length)
-                + ' field'
-                + (node.fields.length !== 1
-                    ? 's' : '');
+    const isSpecial =
+        node.isStart || node.isComplete;
+    const labelY = isSpecial
+        ? NODE_LABEL_Y_CENTERED
+        : NODE_LABEL_Y;
 
     const nameEsc = escapeForHtml(
         truncateLabel(
@@ -396,7 +394,7 @@ function buildNode(
     );
     inner += '<text'
         + ` x="${halfW}"`
-        + ` y="${NODE_LABEL_Y}"`
+        + ` y="${labelY}"`
         + ' text-anchor="middle"'
         + ` font-size="${NODE_LABEL_FONT}"`
         + ' font-weight="600"'
@@ -404,16 +402,22 @@ function buildNode(
         + '--color-foreground, #e0e4ef)">'
         + nameEsc + '</text>';
 
-    inner += '<text'
-        + ` x="${halfW}"`
-        + ` y="${NODE_META_Y}"`
-        + ' text-anchor="middle"'
-        + ` font-size="${NODE_META_FONT}"`
-        + ' fill="var('
-        + '--color-muted-foreground,'
-        + ' #5a6480)">'
-        + escapeForHtml(meta)
-        + '</text>';
+    if (!isSpecial) {
+        const meta = String(node.fields.length)
+            + ' field'
+            + (node.fields.length !== 1
+                ? 's' : '');
+        inner += '<text'
+            + ` x="${halfW}"`
+            + ` y="${NODE_META_Y}"`
+            + ' text-anchor="middle"'
+            + ` font-size="${NODE_META_FONT}"`
+            + ' fill="var('
+            + '--color-muted-foreground,'
+            + ' #5a6480)">'
+            + escapeForHtml(meta)
+            + '</text>';
+    }
 
     if (portPos) {
         inner += '<circle'
@@ -567,6 +571,20 @@ function buildEdge(
     }
 
     const sw = EDGE_STROKE;
+
+    if (fromNode.isStart) {
+        return trusted(
+            '<g>'
+            + '<path'
+            + ` d="${pathD}"`
+            + ' fill="none"'
+            + ` stroke="${color}"`
+            + ` stroke-width="${sw}"`
+            + dashAttr
+            + ` marker-end="${markerUrl}"/>`
+            + '</g>',
+        );
+    }
 
     const hitPath = '<path'
         + ` d="${pathD}"`
