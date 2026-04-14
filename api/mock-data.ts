@@ -2061,6 +2061,7 @@ export async function populateMockData(
                     woFlowGraph,
                 ).edges,
             }),
+            position: 1,
             created_at: woCreated,
         },
     ];
