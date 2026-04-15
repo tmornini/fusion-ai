@@ -22,7 +22,7 @@ const WF_FIELD_TYPE_VALUES:
         'radio', 'image',
     ];
 
-function parseOrThrow(
+export function parseOrThrow(
     raw: string,
     label: string,
 ): unknown {
@@ -39,7 +39,7 @@ function parseOrThrow(
     }
 }
 
-function asArray(
+export function asArray(
     value: unknown,
     label: string,
 ): unknown[] {
@@ -54,7 +54,7 @@ function asArray(
     return value;
 }
 
-function asObject(
+export function asObject(
     value: unknown,
     label: string,
 ): Record<string, unknown> {
@@ -73,7 +73,7 @@ function asObject(
     return value as Record<string, unknown>;
 }
 
-function asString(
+export function asString(
     value: unknown,
     label: string,
 ): string {
@@ -88,7 +88,7 @@ function asString(
     return value;
 }
 
-function asNumber(
+export function asNumber(
     value: unknown,
     label: string,
 ): number {
@@ -106,7 +106,7 @@ function asNumber(
     return value;
 }
 
-function asBoolean(
+export function asBoolean(
     value: unknown,
     label: string,
 ): boolean {
@@ -316,7 +316,7 @@ function asGraphEdge(
     };
 }
 
-function asStoredGraph(
+export function asStoredGraph(
     value: unknown,
     label: string,
 ): StoredGraph {

@@ -20,6 +20,11 @@ import type {
 } from '../../../api/types';
 import {
     validateStoredGraphJson,
+    parseOrThrow,
+    asObject,
+    asString,
+    asNumber,
+    asStoredGraph,
 } from '../../../api/validators';
 import { parseJson } from './helpers';
 import {
@@ -348,6 +353,69 @@ export async function getFlowZip(
 
 /* ── v2 import ───────────────── */
 
+function validateBackupV2Json(
+    raw: string,
+): BackupV2 {
+    const label = 'backup';
+    const parsed = parseOrThrow(raw, label);
+    const obj = asObject(parsed, label);
+    const version = obj['version'];
+    if (version !== 2) {
+        throw new Error(
+            'unsupported backup version '
+                + 'for ' + label + ', got '
+                + String(version),
+        );
+    }
+    const flowObj = asObject(
+        obj['flow'], label + '.flow',
+    );
+    const graphObj = asObject(
+        flowObj['graph'],
+        label + '.flow.graph',
+    );
+    const projectIdRaw = obj['projectId'];
+    const projectId =
+        projectIdRaw === undefined
+            ? undefined
+            : asString(
+                projectIdRaw,
+                label + '.projectId',
+            );
+    return {
+        version: 2,
+        exportedAt: asString(
+            obj['exportedAt'],
+            label + '.exportedAt',
+        ),
+        projectId,
+        flow: {
+            id: asString(
+                flowObj['id'],
+                label + '.flow.id',
+            ),
+            name: asString(
+                flowObj['name'],
+                label + '.flow.name',
+            ),
+            description: asString(
+                flowObj['description'],
+                label
+                    + '.flow.description',
+            ),
+            lockTimeout: asNumber(
+                flowObj['lockTimeout'],
+                label
+                    + '.flow.lockTimeout',
+            ),
+            graph: asStoredGraph(
+                graphObj,
+                label + '.flow.graph',
+            ),
+        },
+    };
+}
+
 export async function getZipBackup(
     data: Uint8Array,
 ): Promise<BackupV2> {
@@ -366,17 +434,7 @@ export async function getZipBackup(
     const dec = new TextDecoder();
     const text =
         dec.decode(jsonEntry.data);
-    const parsed = JSON.parse(text) as {
-        version?: unknown;
-    };
-    if (parsed.version !== 2) {
-        throw new Error(
-            'Unsupported backup version: '
-            + String(parsed.version),
-        );
-    }
-    return parsed as
-        unknown as BackupV2;
+    return validateBackupV2Json(text);
 }
 
 export async function getFlowBackupResolution(
