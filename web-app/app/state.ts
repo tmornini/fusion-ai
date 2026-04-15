@@ -27,6 +27,32 @@ function isValidTheme(
         || value === 'system';
 }
 
+function loadStoredTheme(
+): AppState['theme'] {
+    const raw = getPreference(
+        STORAGE_KEY_THEME,
+    );
+    if (raw === null) return 'system';
+    if (isValidTheme(raw)) return raw;
+    throw new Error(
+        'corrupt stored theme: ' + raw,
+    );
+}
+
+function loadStoredSidebarCollapsed(
+): boolean {
+    const raw = getPreference(
+        STORAGE_KEY_SIDEBAR,
+    );
+    if (raw === null) return false;
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    throw new Error(
+        'corrupt stored sidebar state: '
+            + raw,
+    );
+}
+
 class AppStateManager {
     private readonly data: AppState;
     private readonly subs =
@@ -35,24 +61,14 @@ class AppStateManager {
 
     constructor() {
         this.data = {
-            theme: (() => {
-                const raw =
-                    getPreference(
-                        STORAGE_KEY_THEME,
-                    );
-                return isValidTheme(raw)
-                    ? raw
-                    : 'system';
-            })(),
+            theme: loadStoredTheme(),
             isMobile: window.matchMedia(
                 '(max-width: '
                 + MOBILE_BREAKPOINT_PX
                 + 'px)',
             ).matches,
             isSidebarCollapsed:
-                getPreference(
-                    STORAGE_KEY_SIDEBAR,
-                ) === 'true',
+                loadStoredSidebarCollapsed(),
             isSidebarOpen: false,
             isSearchOpen: false,
             searchQuery: '',
