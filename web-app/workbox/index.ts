@@ -307,11 +307,16 @@ export async function init(
                 activeEl,
                 '[data-wo-card]',
                 'data-wo-card',
-                (id, newPosition) => {
-                    void putWorkOrder(
-                        id,
-                        { position: newPosition },
-                    ).catch((err) => {
+                async (id, newPosition) => {
+                    try {
+                        await putWorkOrder(
+                            id,
+                            {
+                                position:
+                                    newPosition,
+                            },
+                        );
+                    } catch (err) {
                         log.error(
                             'reorder failed',
                             'workbox', err,
@@ -321,7 +326,16 @@ export async function init(
                             + ' order',
                             'error',
                         );
-                    });
+                        return;
+                    }
+                    const updated =
+                        await getWorkboxActive();
+                    setHtml(
+                        activeEl,
+                        buildInboxList(
+                            updated, true,
+                        ),
+                    );
                 },
             );
         }
