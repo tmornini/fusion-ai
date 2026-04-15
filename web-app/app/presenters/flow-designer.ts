@@ -5,10 +5,6 @@ import type { SafeHtml } from '../safe-html';
 import { log } from '../logger';
 import { showToast } from '../toast';
 import {
-    iconArrowLeft,
-    iconUndo,
-    iconRedo,
-    iconTrash,
     iconX,
     iconEdit,
     iconCheck,
@@ -73,6 +69,9 @@ import type {
     InteractionState,
 } from '../flow-interactions';
 import { FlowHistory } from '../flow-history';
+import {
+    buildToolbar,
+} from './flow-designer-view';
 
 function serializeGraph(
     nodes: GraphNode[],
@@ -1595,85 +1594,14 @@ ${toolbar}
 
 
     #buildToolbar(): SafeHtml {
-        const autoFitCls =
+        return buildToolbar(
             this.#state.interaction
-                .autoFitEnabled
-                ? ' wf-toolbar-toggle-on'
-                : '';
-        return html`<div
-class="wf-toolbar">
-<div class="wf-toolbar-group">
-<button
-    class="btn btn-ghost btn-icon"
-    id="flow-back-btn"
-    >${iconArrowLeft(20, '')}</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button
-    class="btn btn-ghost btn-icon"
-    data-action="undo"${
-    trusted(
-        this.canUndo()
-            ? '' : ' disabled',
-    )}>${iconUndo(18, '')}</button>
-<button
-    class="btn btn-ghost btn-icon"
-    data-action="redo"${
-    trusted(
-        this.canRedo()
-            ? '' : ' disabled',
-    )}>${iconRedo(18, '')}</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="auto-layout"${
-    trusted(
-        this.#state.isLocked
-            ? ' disabled' : '',
-    )}><span class="wf-btn-stack"
-    >Auto<br>Layout</span></button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="zoom-out"
-    >Zoom \u2212</button>
-<button class="${trusted(
-    'btn btn-ghost btn-sm'
-    + ' wf-toolbar-toggle'
-    + autoFitCls,
-)}"
-    data-action="auto-fit"
-    ><span class="wf-btn-stack"
-    >Auto<br>Fit</span></button>
-<button class="btn btn-ghost btn-sm"
-    data-action="zoom-in"
-    >Zoom +</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="copy-mermaid"
-    ><span class="wf-btn-stack"
-    >Copy<br>Mermaid</span></button>
-<button class="btn btn-ghost btn-sm"
-    data-action="export-zip"
-    >Export</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button
-    class="btn btn-ghost btn-icon"
-    data-action="delete-selected"${
-    trusted(
-        this.#canDelete()
-        && !this.#state.isLocked
-            ? '' : ' disabled',
-    )}>${iconTrash(18, '')}</button>
-</div>
-</div>`;
+                .autoFitEnabled,
+            this.canUndo(),
+            this.canRedo(),
+            this.#state.isLocked,
+            this.#canDelete(),
+        );
     }
 
     #buildFieldBadge(
