@@ -15,8 +15,12 @@ import type {
     GraphNode,
     GraphEdge,
     GraphField,
+    StoredGraph,
     WfFieldType,
 } from '../../../api/types';
+import {
+    validateStoredGraphJson,
+} from '../../../api/validators';
 import { parseJson } from './helpers';
 import {
     getFlowGraph,
@@ -264,10 +268,9 @@ function buildBackupJson(
     flow: FlowEntity,
     projectId: string | undefined,
 ): string {
-    const graph = parseJson<{
-        nodes: GraphNode[];
-        edges: GraphEdge[];
-    }>(flow.graph);
+    const graph = validateStoredGraphJson(
+        flow.graph, 'flow.graph',
+    );
     const backup: BackupV2 = {
         version: 2,
         exportedAt: minuteUtc(':'),
@@ -296,10 +299,9 @@ export async function getFlowZip(
     const { flow, projectId } =
         await getFlowBackupData(flowId);
 
-    const graph = parseJson<{
-        nodes: GraphNode[];
-        edges: GraphEdge[];
-    }>(flow.graph);
+    const graph = validateStoredGraphJson(
+        flow.graph, 'flow.graph',
+    );
 
     const mermaidGraph: FlowGraph = {
         id: flow.id,
@@ -689,11 +691,6 @@ function autoWireDefaults(
         }
     }
     return [...edges, ...extras];
-}
-
-interface StoredGraph {
-    nodes: GraphNode[];
-    edges: GraphEdge[];
 }
 
 function putFlowGraph(

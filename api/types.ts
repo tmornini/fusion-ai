@@ -607,6 +607,11 @@ export interface GraphEdge {
     toNodeId: string;
 }
 
+export interface StoredGraph {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+}
+
 export const DEFAULT_LOCK_TIMEOUT = 28800;
 
 export interface FlowEntity {

@@ -1,8 +1,25 @@
+import type {
+    GraphNode,
+    GraphEdge,
+    GraphField,
+    StoredGraph,
+    WfFieldType,
+} from './types';
+
 export interface Risk {
     title: string;
     severity: string;
     mitigation: string;
 }
+
+const WF_FIELD_TYPE_VALUES:
+    readonly WfFieldType[] = [
+        'text', 'textarea', 'number',
+        'date', 'select', 'checkbox',
+        'file', 'email', 'url', 'phone',
+        'currency', 'multi_select',
+        'radio', 'image',
+    ];
 
 function parseOrThrow(
     raw: string,
@@ -88,6 +105,38 @@ function asNumber(
     return value;
 }
 
+function asBoolean(
+    value: unknown,
+    label: string,
+): boolean {
+    if (typeof value !== 'boolean') {
+        throw new Error(
+            'expected boolean for '
+                + label
+                + ', got '
+                + typeName(value),
+        );
+    }
+    return value;
+}
+
+function asWfFieldType(
+    value: unknown,
+    label: string,
+): WfFieldType {
+    const str = asString(value, label);
+    if (
+        !(WF_FIELD_TYPE_VALUES as
+            readonly string[]).includes(str)
+    ) {
+        throw new Error(
+            'expected WfFieldType for '
+                + label + ', got ' + str,
+        );
+    }
+    return str as WfFieldType;
+}
+
 function typeName(value: unknown): string {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
@@ -153,4 +202,147 @@ export function validateRisksJson(
             ),
         };
     });
+}
+
+function asGraphField(
+    value: unknown,
+    label: string,
+): GraphField {
+    const obj = asObject(value, label);
+    const optsArr = asArray(
+        obj['options'],
+        label + '.options',
+    );
+    return {
+        id: asString(
+            obj['id'], label + '.id',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        fieldType: asWfFieldType(
+            obj['fieldType'],
+            label + '.fieldType',
+        ),
+        sortOrder: asNumber(
+            obj['sortOrder'],
+            label + '.sortOrder',
+        ),
+        isRequired: asBoolean(
+            obj['isRequired'],
+            label + '.isRequired',
+        ),
+        options: optsArr.map((o, i) =>
+            asString(
+                o,
+                label + '.options['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
+function asGraphNode(
+    value: unknown,
+    label: string,
+): GraphNode {
+    const obj = asObject(value, label);
+    const fieldsArr = asArray(
+        obj['fields'],
+        label + '.fields',
+    );
+    return {
+        id: asString(
+            obj['id'], label + '.id',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+        positionX: asNumber(
+            obj['positionX'],
+            label + '.positionX',
+        ),
+        positionY: asNumber(
+            obj['positionY'],
+            label + '.positionY',
+        ),
+        isStart: asBoolean(
+            obj['isStart'],
+            label + '.isStart',
+        ),
+        isComplete: asBoolean(
+            obj['isComplete'],
+            label + '.isComplete',
+        ),
+        fields: fieldsArr.map((f, i) =>
+            asGraphField(
+                f,
+                label + '.fields['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
+function asGraphEdge(
+    value: unknown,
+    label: string,
+): GraphEdge {
+    const obj = asObject(value, label);
+    return {
+        id: asString(
+            obj['id'], label + '.id',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+        fromNodeId: asString(
+            obj['fromNodeId'],
+            label + '.fromNodeId',
+        ),
+        toNodeId: asString(
+            obj['toNodeId'],
+            label + '.toNodeId',
+        ),
+    };
+}
+
+export function validateStoredGraphJson(
+    raw: string,
+    label: string,
+): StoredGraph {
+    const parsed = parseOrThrow(raw, label);
+    const obj = asObject(parsed, label);
+    const nodesArr = asArray(
+        obj['nodes'],
+        label + '.nodes',
+    );
+    const edgesArr = asArray(
+        obj['edges'],
+        label + '.edges',
+    );
+    return {
+        nodes: nodesArr.map((n, i) =>
+            asGraphNode(
+                n,
+                label + '.nodes['
+                    + i + ']',
+            ),
+        ),
+        edges: edgesArr.map((e, i) =>
+            asGraphEdge(
+                e,
+                label + '.edges['
+                    + i + ']',
+            ),
+        ),
+    };
 }
