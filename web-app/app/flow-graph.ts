@@ -326,6 +326,30 @@ function truncateLabel(
         : text;
 }
 
+function truncateEdgeLabel(
+    name: string,
+): string {
+    const maxChars = Math.floor(
+        (LABEL_MAX_WIDTH - LABEL_PADDING)
+        / LABEL_CHAR_WIDTH,
+    );
+    return truncateLabel(name, maxChars);
+}
+
+export function computeEdgeLabelWidth(
+    name: string,
+): number {
+    const trunc = truncateEdgeLabel(name);
+    return Math.min(
+        Math.max(
+            trunc.length * LABEL_CHAR_WIDTH
+                + LABEL_PADDING,
+            LABEL_MIN_WIDTH,
+        ),
+        LABEL_MAX_WIDTH,
+    );
+}
+
 function buildNode(
     node: GraphNode,
     isSelected: boolean,
@@ -609,24 +633,12 @@ function buildEdge(
     const mid = bezierAt(pathD, labelT);
     const midX = mid.x;
     const midY = mid.y;
-    const edgeMaxChars = Math.floor(
-        (LABEL_MAX_WIDTH - LABEL_PADDING)
-        / LABEL_CHAR_WIDTH,
-    );
-    const truncEdge = truncateLabel(
-        edge.name, edgeMaxChars,
-    );
+    const truncEdge =
+        truncateEdgeLabel(edge.name);
     const labelEsc =
         escapeForHtml(truncEdge);
-    const labelLen = truncEdge.length;
-    const labelW = Math.min(
-        Math.max(
-            labelLen * LABEL_CHAR_WIDTH
-                + LABEL_PADDING,
-            LABEL_MIN_WIDTH,
-        ),
-        LABEL_MAX_WIDTH,
-    );
+    const labelW =
+        computeEdgeLabelWidth(edge.name);
 
     const labelBg = '<rect'
         + ` x="${midX - labelW / 2}"`

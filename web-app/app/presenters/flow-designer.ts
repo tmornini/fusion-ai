@@ -47,6 +47,7 @@ import {
 } from '../adapters';
 import {
     buildGraphSvg,
+    computeEdgeLabelWidth,
     perimeterPoint,
     whichEdge,
     controlOffset,
@@ -881,6 +882,11 @@ ${toolbar}
     autoLayout(): void {
         if (this.#guardLocked()) return;
         const fId = this.#state.flowId;
+        const nodeById = new Map(
+            this.#state.nodes.map(
+                n => [n.id, n],
+            ),
+        );
         const layoutInputs =
             this.#state.nodes.map(
                 n => ({
@@ -890,12 +896,21 @@ ${toolbar}
                 }),
             );
         const layoutEdges =
-            this.#state.edges.map(
-                e => ({
+            this.#state.edges.map(e => {
+                const from =
+                    nodeById.get(e.fromNodeId);
+                const isStart =
+                    from?.isStart === true;
+                return {
                     fromId: e.fromNodeId,
                     toId: e.toNodeId,
-                }),
-            );
+                    labelWidth: isStart
+                        ? 0
+                        : computeEdgeLabelWidth(
+                            e.name,
+                        ),
+                };
+            });
         const positions = computeLayout(
             layoutInputs, layoutEdges,
             this.#canvasW, this.#canvasH,

@@ -4,9 +4,13 @@ export interface LayoutInput {
     isComplete: boolean;
 }
 
-export interface LayoutEdge {
+export interface EdgePair {
     fromId: string;
     toId: string;
+}
+
+export interface LayoutEdge extends EdgePair {
+    labelWidth: number;
 }
 
 export const NODE_WIDTH = 160;
@@ -15,16 +19,18 @@ export const HORIZONTAL_GAP = 60;
 export const VERTICAL_GAP = 180;
 export const START_X = 0;
 export const START_Y = 0;
+export const LABEL_SAFETY_MARGIN = 16;
 
 type Position = { x: number; y: number };
 type Layers = readonly (readonly string[])[];
 
-const LAYER_STEP = NODE_WIDTH + HORIZONTAL_GAP;
+const MIN_LAYER_STEP =
+    NODE_WIDTH + HORIZONTAL_GAP;
 const SIBLING_STEP = NODE_HEIGHT + 100;
 const CROSSING_SWEEP_COUNT = 12;
 
 export function buildAdjacency(
-    edges: readonly LayoutEdge[],
+    edges: readonly EdgePair[],
 ): Map<string, string[]> {
     const adj = new Map<string, string[]>();
     for (const edge of edges) {
@@ -63,7 +69,7 @@ export function isReachable(
 export function wouldBeCycle(
     fromId: string,
     toId: string,
-    edges: readonly LayoutEdge[],
+    edges: readonly EdgePair[],
 ): boolean {
     const adj = buildAdjacency(edges);
     return isReachable(toId, fromId, adj);
@@ -202,6 +208,7 @@ function removeCycles(
             forwardEdges.push({
                 fromId: e.toId,
                 toId: e.fromId,
+                labelWidth: e.labelWidth,
             });
             reversedIds.add(
                 e.fromId + '->' + e.toId,
@@ -514,8 +521,45 @@ function assignCoordinates(
         enforceSpacing(layer, ys);
     }
 
+    const maxLabelByLayer = new Array<number>(
+        orderedLayers.length,
+    ).fill(0);
+    for (const e of forwardEdges) {
+        const fl = layerOf.get(e.fromId);
+        if (fl === undefined) continue;
+        if (fl >= orderedLayers.length) {
+            continue;
+        }
+        const w = maxLabelByLayer[fl] ?? 0;
+        if (e.labelWidth > w) {
+            maxLabelByLayer[fl] =
+                e.labelWidth;
+        }
+    }
+
+    const xByLayer = new Array<number>(
+        orderedLayers.length,
+    );
+    xByLayer[0] = 0;
+    for (
+        let l = 1;
+        l < orderedLayers.length;
+        l++
+    ) {
+        const labelW =
+            maxLabelByLayer[l - 1] ?? 0;
+        const needed = NODE_WIDTH
+            + labelW
+            + LABEL_SAFETY_MARGIN;
+        const step = Math.max(
+            MIN_LAYER_STEP, needed,
+        );
+        xByLayer[l] =
+            (xByLayer[l - 1] ?? 0) + step;
+    }
+
     orderedLayers.forEach((layer, l) => {
-        const x = l * LAYER_STEP;
+        const x = xByLayer[l] ?? 0;
         for (const id of layer) {
             positions.set(id, {
                 x,
