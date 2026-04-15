@@ -557,7 +557,7 @@ export async function postFlowFromBackup(
             }),
         );
 
-    await POST<void>('flows', {
+    await PUT<void>('flows', {
         id: flowId,
         name: backup.flow.name,
         description:
@@ -571,7 +571,7 @@ export async function postFlowFromBackup(
         updated_at: now,
     });
 
-    await POST<void>(
+    await PUT<void>(
         'project-flows',
         {
             id: crypto.randomUUID(),
@@ -877,7 +877,7 @@ export async function postFlowFromMermaid(
                 + ' intermediate state',
         );
     }
-    await POST<void>('flows', {
+    await PUT<void>('flows', {
         id: flowId,
         name:
             firstNode.name + ' (import)',
@@ -888,7 +888,7 @@ export async function postFlowFromMermaid(
         updated_at: now,
     });
 
-    await POST<void>('project-flows', {
+    await PUT<void>('project-flows', {
         id: crypto.randomUUID(),
         project_id: projectId,
         flow_id: flowId,
@@ -1305,7 +1305,7 @@ export async function postFlowFromZip(
         ? sidecar.description
         : firstNode!.name;
 
-    await POST<void>('flows', {
+    await PUT<void>('flows', {
         id: flowId,
         name: flowName,
         description: flowDesc,
@@ -1315,7 +1315,7 @@ export async function postFlowFromZip(
         updated_at: now,
     });
 
-    await POST<void>('project-flows', {
+    await PUT<void>('project-flows', {
         id: crypto.randomUUID(),
         project_id: projectId,
         flow_id: flowId,
