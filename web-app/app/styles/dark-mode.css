@@ -10,6 +10,7 @@
 
   --card: var(--gray-800);
   --color-card-bg: #232940;
+  --color-surface: #1a1f2e;
   --card-foreground: var(--gray-100);
   --popover: var(--gray-800);
   --popover-foreground: var(--gray-100);

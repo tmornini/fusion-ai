@@ -47,6 +47,7 @@
   /* Semantic: Surfaces */
   --card: 0 0% 100%;
   --color-card-bg: hsl(var(--card));
+  --color-surface: hsl(var(--background));
   --card-foreground: var(--blue-900);
   --popover: 0 0% 100%;
   --popover-foreground: var(--blue-900);
