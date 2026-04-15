@@ -492,10 +492,10 @@ export async function putFlowFromBackup(
 }
 
 export async function postFlowFromBackup(
+    flowId: string,
     backup: BackupV2,
     projectId: string,
 ): Promise<string> {
-    const flowId = crypto.randomUUID();
     const now = nowUtc();
 
     const idMap =
@@ -760,6 +760,7 @@ function putFlowGraph(
 }
 
 export async function postFlowFromMermaid(
+    flowId: string,
     text: string,
     projectId: string,
 ): Promise<{
@@ -776,7 +777,6 @@ export async function postFlowFromMermaid(
         );
     }
 
-    const flowId = crypto.randomUUID();
     const now = nowUtc();
     const { start, complete } =
         buildDefaultStartEnd();
@@ -1081,6 +1081,7 @@ function applySidecarToDefault(
 }
 
 export async function postFlowFromZip(
+    flowId: string,
     data: Uint8Array,
     projectId: string,
 ): Promise<{
@@ -1287,7 +1288,6 @@ export async function postFlowFromZip(
         edges,
     };
 
-    const flowId = crypto.randomUUID();
     const now = nowUtc();
     const firstNode = intermediateNodes[0];
     if (!sidecar && !firstNode) {
