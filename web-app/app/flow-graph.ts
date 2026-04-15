@@ -797,7 +797,6 @@ export function buildGraphSvg(
         w: number;
         h: number;
     } | null,
-    isPanCursor: boolean,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -916,9 +915,6 @@ export function buildGraphSvg(
     let svgCls = 'wf-canvas';
     if (isConnecting) {
         svgCls += ' wf-connecting';
-    }
-    if (isPanCursor) {
-        svgCls += ' wf-pan-cursor';
     }
 
     let marqueeMarkup = '';

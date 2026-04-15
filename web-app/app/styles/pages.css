@@ -1006,22 +1006,22 @@
   border-color: hsl(var(--primary));
 }
 
-svg.wf-canvas.wf-pan-cursor,
-svg.wf-canvas.wf-pan-cursor *,
-svg.wf-canvas.wf-pan-cursor [data-node-id],
-svg.wf-canvas.wf-pan-cursor [data-edge-id],
-svg.wf-canvas.wf-pan-cursor [data-connect-port] {
+.wf-canvas-wrap.wf-pan-cursor,
+.wf-canvas-wrap.wf-pan-cursor *,
+.wf-canvas-wrap.wf-pan-cursor [data-node-id],
+.wf-canvas-wrap.wf-pan-cursor [data-edge-id],
+.wf-canvas-wrap.wf-pan-cursor [data-connect-port] {
   cursor: grab;
 }
-svg.wf-canvas.wf-pan-cursor:active,
-svg.wf-canvas.wf-pan-cursor:active *,
-svg.wf-canvas.wf-pan-cursor:active [data-node-id],
-svg.wf-canvas.wf-pan-cursor:active [data-edge-id],
-svg.wf-canvas.wf-pan-cursor:active [data-connect-port] {
+.wf-canvas-wrap.wf-pan-cursor:active,
+.wf-canvas-wrap.wf-pan-cursor:active *,
+.wf-canvas-wrap.wf-pan-cursor:active [data-node-id],
+.wf-canvas-wrap.wf-pan-cursor:active [data-edge-id],
+.wf-canvas-wrap.wf-pan-cursor:active [data-connect-port] {
   cursor: grabbing;
 }
 
-svg.wf-canvas.wf-pan-cursor {
+.wf-canvas-wrap.wf-pan-cursor {
   outline: 2px solid hsl(var(--primary));
   outline-offset: -2px;
 }

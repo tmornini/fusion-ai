@@ -691,6 +691,14 @@ export function bindInteractions(
     let lastClientX = 0;
     let lastClientY = 0;
 
+    const cursorHost =
+        svg.parentElement as HTMLElement;
+    if (state.isSpaceDown) {
+        cursorHost.classList.add(
+            'wf-pan-cursor',
+        );
+    }
+
     svg.addEventListener(
         'pointerdown',
         (e) => handlePointerDown(
@@ -790,10 +798,15 @@ export function bindInteractions(
                 startY: lastClientY,
             };
             state.autoFitEnabled = false;
+            cursorHost.classList.add(
+                'wf-pan-cursor',
+            );
         } else {
             state.pan = { kind: 'idle' };
+            cursorHost.classList.remove(
+                'wf-pan-cursor',
+            );
         }
-        onUpdate();
     };
     window.addEventListener(
         'keydown', handleSpace,

@@ -2157,8 +2157,6 @@ class="wf-props-panel">
             this.#state.isLocked,
             isConn,
             marqueeRect,
-            this.#state.interaction
-                .isSpaceDown,
         );
         const preview =
             this.#buildConnectPreview();
