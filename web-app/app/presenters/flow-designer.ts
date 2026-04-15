@@ -911,9 +911,17 @@ ${toolbar}
                         ),
                 };
             });
+        const panelOpen = this.#state
+            .interaction.isPanelOpen;
+        const effectiveW = panelOpen
+            ? Math.max(
+                0,
+                this.#canvasW - PANEL_WIDTH_PX,
+            )
+            : this.#canvasW;
         const positions = computeLayout(
             layoutInputs, layoutEdges,
-            this.#canvasW, this.#canvasH,
+            effectiveW, this.#canvasH,
         );
         this.#state.nodes =
             this.#state.nodes.map(n => {

@@ -28,6 +28,7 @@ const MIN_LAYER_STEP =
     NODE_WIDTH + HORIZONTAL_GAP;
 const SIBLING_STEP = NODE_HEIGHT + 100;
 const CROSSING_SWEEP_COUNT = 12;
+const MAX_ASPECT_STRETCH = 1.4;
 
 export function buildAdjacency(
     edges: readonly EdgePair[],
@@ -618,18 +619,23 @@ function fitToCanvas(
     const rotW = rotate ? natH : natW;
     const rotH = rotate ? natW : natH;
 
-    let scale = 1;
+    let scaleX = 1;
+    let scaleY = 1;
     if (canvasW > 0 && canvasH > 0) {
         const tW = canvasW - NODE_WIDTH;
         const tH = canvasH - NODE_HEIGHT;
-        let sX = Infinity;
-        let sY = Infinity;
+        let sX = 1;
+        let sY = 1;
         if (rotW > 0 && tW > 0) sX = tW / rotW;
         if (rotH > 0 && tH > 0) sY = tH / rotH;
-        const candidate = Math.min(sX, sY);
-        if (isFinite(candidate) && candidate > 1) {
-            scale = candidate;
-        }
+        const sSmall = Math.min(sX, sY);
+        const sBig = Math.max(sX, sY);
+        const capped = Math.min(
+            sBig,
+            sSmall * MAX_ASPECT_STRETCH,
+        );
+        scaleX = sX >= sY ? capped : sSmall;
+        scaleY = sY > sX ? capped : sSmall;
     }
 
     const halfW = NODE_WIDTH / 2;
@@ -642,8 +648,8 @@ function fitToCanvas(
         const rx = rotate ? -cy_p : cx_p;
         const ry = rotate ? cx_p : cy_p;
         result.set(id, {
-            x: rx * scale - halfW,
-            y: ry * scale - halfH,
+            x: rx * scaleX - halfW,
+            y: ry * scaleY - halfH,
         });
     }
 
