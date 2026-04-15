@@ -7,8 +7,13 @@ import {
     iconUndo,
     iconRedo,
     iconTrash,
+    iconX,
 } from '../icons';
-import type { GraphField } from '../adapters';
+import type {
+    GraphField,
+    GraphNode,
+    GraphEdge,
+} from '../adapters';
 
 export function buildFieldBadge(
     fieldType: string,
@@ -99,6 +104,142 @@ Required</label>
 <button class="btn btn-primary btn-xs"
     data-action="save-field"
     >Add</button>
+</div>`;
+}
+
+export function buildNodePanel(
+    node: GraphNode,
+    outgoing: GraphEdge[],
+): SafeHtml {
+    const isSpecial =
+        node.isStart || node.isComplete;
+    if (isSpecial) {
+        const kind = node.isStart
+            ? 'Start' : 'End';
+        return html`<div
+class="wf-props-panel">
+<div class="wf-props-header"
+><h3 class="text-sm font-semibold"
+    >${kind} State</h3>
+<button
+    class="btn btn-ghost btn-icon btn-xs"
+    data-action="close-panel"
+    aria-label="Close"
+    >${iconX(14, '')}</button>
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Name</label>
+<div class="text-sm">${node.name}</div>
+</div>
+<div class="mb-3">
+<label class="text-xs text-muted"
+    >Outgoing Transitions</label>
+${outgoing.length > 0
+    ? outgoing.map(e => html`<div
+class="text-sm text-muted"
+>\u2192 ${e.name}</div>`)
+    : html`<div class="text-sm text-muted"
+        >None</div>`}
+</div>
+</div>`;
+    }
+    const fieldRows = node.fields
+        .map(f => buildFieldRow(f));
+    return html`<div
+class="wf-props-panel">
+<div class="wf-props-header"
+><h3 class="text-sm font-semibold"
+    >State Properties</h3>
+<button
+    class="btn btn-ghost btn-icon btn-xs"
+    data-action="close-panel"
+    aria-label="Close"
+    >${iconX(14, '')}</button>
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Name</label>
+<input type="text"
+    class="input input-sm"
+    id="prop-node-name"
+    value="${node.name}" />
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Description</label>
+<input type="text"
+    class="input input-sm"
+    id="prop-node-desc"
+    value="${node.description}" />
+</div>
+<div class="mb-3">
+<label class="text-xs text-muted"
+    >Fields</label>
+${fieldRows}
+<button
+    class="btn btn-ghost btn-xs mt-1"
+    data-action="add-field"
+    >+ Add Field</button>
+<div id="field-editor-slot"></div>
+</div>
+<div class="mb-3">
+<label class="text-xs text-muted"
+    >Outgoing Transitions</label>
+${outgoing.length > 0
+    ? outgoing.map(e => html`<div
+class="text-sm text-muted"
+>\u2192 ${e.name}</div>`)
+    : html`<div class="text-sm text-muted"
+        >None</div>`}
+</div>
+</div>`;
+}
+
+export function buildEdgePanel(
+    edge: GraphEdge,
+    fromNode: GraphNode,
+    toNode: GraphNode,
+): SafeHtml {
+    const fromName = fromNode.name;
+    const toName = toNode.name;
+    return html`<div
+class="wf-props-panel">
+<div class="wf-props-header"
+><h3 class="text-sm font-semibold"
+    >Transition Properties</h3>
+<button
+    class="btn btn-ghost btn-icon btn-xs"
+    data-action="close-panel"
+    aria-label="Close"
+    >${iconX(14, '')}</button>
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Name</label>
+<input type="text"
+    class="input input-sm"
+    id="prop-edge-name"
+    value="${edge.name}" />
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Description</label>
+<input type="text"
+    class="input input-sm"
+    id="prop-edge-desc"
+    value="${edge.description}" />
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >From</label>
+<div class="text-sm">${fromName}</div>
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >To</label>
+<div class="text-sm">${toName}</div>
+</div>
 </div>`;
 }
 

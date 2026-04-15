@@ -71,8 +71,9 @@ import type {
 import { FlowHistory } from '../flow-history';
 import {
     buildToolbar,
-    buildFieldRow,
     buildFieldEditor,
+    buildNodePanel,
+    buildEdgePanel,
 } from './flow-designer-view';
 
 function serializeGraph(
@@ -1612,142 +1613,6 @@ ${toolbar}
         );
     }
 
-    #buildNodePanel(
-        node: GraphNode,
-        outgoing: GraphEdge[],
-    ): SafeHtml {
-        const isSpecial =
-            node.isStart || node.isComplete;
-        if (isSpecial) {
-            const kind = node.isStart
-                ? 'Start' : 'End';
-            return html`<div
-class="wf-props-panel">
-<div class="wf-props-header"
-><h3 class="text-sm font-semibold"
-    >${kind} State</h3>
-<button
-    class="btn btn-ghost btn-icon btn-xs"
-    data-action="close-panel"
-    aria-label="Close"
-    >${iconX(14, '')}</button>
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Name</label>
-<div class="text-sm">${node.name}</div>
-</div>
-<div class="mb-3">
-<label class="text-xs text-muted"
-    >Outgoing Transitions</label>
-${outgoing.length > 0
-    ? outgoing.map(e => html`<div
-class="text-sm text-muted"
->\u2192 ${e.name}</div>`)
-    : html`<div class="text-sm text-muted"
-        >None</div>`}
-</div>
-</div>`;
-        }
-        const fieldRows = node.fields
-            .map(f => buildFieldRow(f));
-        return html`<div
-class="wf-props-panel">
-<div class="wf-props-header"
-><h3 class="text-sm font-semibold"
-    >State Properties</h3>
-<button
-    class="btn btn-ghost btn-icon btn-xs"
-    data-action="close-panel"
-    aria-label="Close"
-    >${iconX(14, '')}</button>
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Name</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-node-name"
-    value="${node.name}" />
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Description</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-node-desc"
-    value="${node.description}" />
-</div>
-<div class="mb-3">
-<label class="text-xs text-muted"
-    >Fields</label>
-${fieldRows}
-<button
-    class="btn btn-ghost btn-xs mt-1"
-    data-action="add-field"
-    >+ Add Field</button>
-<div id="field-editor-slot"></div>
-</div>
-<div class="mb-3">
-<label class="text-xs text-muted"
-    >Outgoing Transitions</label>
-${outgoing.length > 0
-    ? outgoing.map(e => html`<div
-class="text-sm text-muted"
->\u2192 ${e.name}</div>`)
-    : html`<div class="text-sm text-muted"
-        >None</div>`}
-</div>
-</div>`;
-    }
-
-    #buildEdgePanel(
-        edge: GraphEdge,
-        fromNode: GraphNode,
-        toNode: GraphNode,
-    ): SafeHtml {
-        const fromName = fromNode.name;
-        const toName = toNode.name;
-        return html`<div
-class="wf-props-panel">
-<div class="wf-props-header"
-><h3 class="text-sm font-semibold"
-    >Transition Properties</h3>
-<button
-    class="btn btn-ghost btn-icon btn-xs"
-    data-action="close-panel"
-    aria-label="Close"
-    >${iconX(14, '')}</button>
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Name</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-edge-name"
-    value="${edge.name}" />
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Description</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-edge-desc"
-    value="${edge.description}" />
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >From</label>
-<div class="text-sm">${fromName}</div>
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >To</label>
-<div class="text-sm">${toName}</div>
-</div>
-</div>`;
-    }
-
     #buildPropsPanel(): SafeHtml {
         const interaction =
             this.#state.interaction;
@@ -1769,7 +1634,7 @@ class="wf-props-panel">
                     e => e.fromNodeId
                         === singleNodeId,
                 );
-            return this.#buildNodePanel(
+            return buildNodePanel(
                 node, outgoing,
             );
         }
@@ -1790,7 +1655,7 @@ class="wf-props-panel">
                     n => n.id
                         === edge.toNodeId,
                 )!;
-            return this.#buildEdgePanel(
+            return buildEdgePanel(
                 edge, fromNode, toNode,
             );
         }
