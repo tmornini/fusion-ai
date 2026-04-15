@@ -276,20 +276,15 @@ function handlePointerDown(
                 === state.lastClick.id
             && now - state.lastClick.time
                 < DBLCLICK_MS;
+        state.selection = {
+            kind: 'edge', edgeId,
+        };
         state.lastClick = {
             kind: 'clicked',
             id: edgeId,
             time: now,
         };
-        if (isDbl) {
-            state.selection = {
-                kind: 'edge', edgeId,
-            };
-            state.isPanelOpen = true;
-            onUpdate();
-            return;
-        }
-        startBackgroundDrag(e, svg, state);
+        state.isPanelOpen = isDbl;
         onUpdate();
         return;
     }
