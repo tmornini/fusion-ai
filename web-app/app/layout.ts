@@ -21,28 +21,17 @@ import {
 } from './header-info';
 
 function initSidebar(): void {
-    function setSidebarCollapsed(
-        collapsed: boolean,
-    ): void {
-        document.documentElement
-            .classList.toggle(
-                'sidebar-collapsed',
-                collapsed,
-            );
-        persistSidebarCollapsed(collapsed);
+    function toggleSidebar(): void {
+        const isCollapsed = document
+            .documentElement.classList
+            .toggle('sidebar-collapsed');
+        persistSidebarCollapsed(isCollapsed);
     }
 
     $required(
-        '#sidebar-collapse', document,
+        '#sidebar-toggle', document,
     ).addEventListener(
-        'click',
-        () => setSidebarCollapsed(true),
-    );
-    $required(
-        '#sidebar-expand', document,
-    ).addEventListener(
-        'click',
-        () => setSidebarCollapsed(false),
+        'click', toggleSidebar,
     );
 }
 
