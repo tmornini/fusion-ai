@@ -23,6 +23,12 @@ export function userName(
     userId: string | undefined,
 ): string {
     if (!userId) return '';
-    return userMap.get(userId)?.fullName()
-        ?? '';
+    const user = userMap.get(userId);
+    if (!user) {
+        throw new Error(
+            'userName: unknown user '
+                + userId,
+        );
+    }
+    return user.fullName();
 }
