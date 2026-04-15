@@ -1,5 +1,3 @@
-import { log } from './logger';
-import { showToast } from './toast';
 import {
     getPreference,
     writePreference,
@@ -109,23 +107,10 @@ class AppStateManager {
     setTheme(
         theme: AppState['theme'],
     ): void {
-        try {
-            writePreference(
-                STORAGE_KEY_THEME,
-                theme,
-            );
-        } catch (err) {
-            log.warn(
-                'theme write failed',
-                'state',
-                err,
-            );
-            showToast(
-                'Failed to save theme'
-                + ' preference.',
-                'error',
-            );
-        }
+        writePreference(
+            STORAGE_KEY_THEME,
+            theme,
+        );
         this.setState({ theme });
         this.applyTheme();
     }
@@ -133,23 +118,10 @@ class AppStateManager {
     setSidebarCollapsed(
         collapsed: boolean,
     ): void {
-        try {
-            writePreference(
-                STORAGE_KEY_SIDEBAR,
-                String(collapsed),
-            );
-        } catch (err) {
-            log.warn(
-                'sidebar write failed',
-                'state',
-                err,
-            );
-            showToast(
-                'Failed to save'
-                + ' sidebar state.',
-                'error',
-            );
-        }
+        writePreference(
+            STORAGE_KEY_SIDEBAR,
+            String(collapsed),
+        );
         this.setState({
             isSidebarCollapsed: collapsed,
         });
