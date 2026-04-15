@@ -10,6 +10,7 @@ import {
 } from '../app/loading-states';
 import {
     iconMail,
+    iconArchive,
     iconPlus,
     iconGripVertical,
 } from '../app/icons';
@@ -266,6 +267,26 @@ async function initCreateDropdown(
 export async function init(
     _params?: Record<string, string>,
 ): Promise<void> {
+    const tabsEl = $(
+        '#workbox-tabs', document,
+    );
+    if (tabsEl) {
+        setHtml(
+            tabsEl,
+            html`<span
+                class="badge badge-success
+                    text-xs cursor-pointer
+                    active"
+                data-tab="active"
+            >${iconMail(14, '')} Active</span>
+            <span
+                class="badge badge-default
+                    text-xs cursor-pointer"
+                data-tab="archive"
+            >${iconArchive(14, '')} Archive</span>`,
+        );
+    }
+
     initTabs(
         '[data-tab]',
         '.tab-panel',
