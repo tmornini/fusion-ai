@@ -121,7 +121,7 @@ export function asBoolean(
     return value;
 }
 
-function asWfFieldType(
+export function asWfFieldType(
     value: unknown,
     label: string,
 ): WfFieldType {

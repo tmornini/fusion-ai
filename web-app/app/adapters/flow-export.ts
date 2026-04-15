@@ -22,11 +22,13 @@ import {
     validateStoredGraphJson,
     parseOrThrow,
     asObject,
+    asArray,
     asString,
     asNumber,
+    asBoolean,
     asStoredGraph,
+    asWfFieldType,
 } from '../../../api/validators';
-import { parseJson } from './helpers';
 import {
     getFlowGraph,
 } from './flow-queries';
@@ -67,7 +69,7 @@ export async function getFlowMermaid(
 
 interface SidecarField {
     name: string;
-    fieldType: string;
+    fieldType: WfFieldType;
     sortOrder: number;
     isRequired: boolean;
     options: string[];
@@ -893,14 +895,159 @@ interface SidecarData {
     edges: SidecarEdge[];
 }
 
+function asSidecarField(
+    value: unknown,
+    label: string,
+): SidecarField {
+    const obj = asObject(value, label);
+    const optsArr = asArray(
+        obj['options'],
+        label + '.options',
+    );
+    return {
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        fieldType: asWfFieldType(
+            obj['fieldType'],
+            label + '.fieldType',
+        ),
+        sortOrder: asNumber(
+            obj['sortOrder'],
+            label + '.sortOrder',
+        ),
+        isRequired: asBoolean(
+            obj['isRequired'],
+            label + '.isRequired',
+        ),
+        options: optsArr.map((o, i) =>
+            asString(
+                o,
+                label + '.options['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
+function asSidecarNode(
+    value: unknown,
+    label: string,
+): SidecarNode {
+    const obj = asObject(value, label);
+    const fieldsArr = asArray(
+        obj['fields'], label + '.fields',
+    );
+    return {
+        mermaidId: asString(
+            obj['mermaidId'],
+            label + '.mermaidId',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+        positionX: asNumber(
+            obj['positionX'],
+            label + '.positionX',
+        ),
+        positionY: asNumber(
+            obj['positionY'],
+            label + '.positionY',
+        ),
+        isStart: asBoolean(
+            obj['isStart'],
+            label + '.isStart',
+        ),
+        isComplete: asBoolean(
+            obj['isComplete'],
+            label + '.isComplete',
+        ),
+        fields: fieldsArr.map((f, i) =>
+            asSidecarField(
+                f,
+                label + '.fields['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
+function asSidecarEdge(
+    value: unknown,
+    label: string,
+): SidecarEdge {
+    const obj = asObject(value, label);
+    return {
+        mermaidFrom: asString(
+            obj['mermaidFrom'],
+            label + '.mermaidFrom',
+        ),
+        mermaidTo: asString(
+            obj['mermaidTo'],
+            label + '.mermaidTo',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+    };
+}
+
+function validateSidecarDataJson(
+    raw: string,
+): SidecarData {
+    const label = 'sidecar';
+    const parsed = parseOrThrow(raw, label);
+    const obj = asObject(parsed, label);
+    const nodesArr = asArray(
+        obj['nodes'], label + '.nodes',
+    );
+    const edgesArr = asArray(
+        obj['edges'], label + '.edges',
+    );
+    return {
+        version: asNumber(
+            obj['version'],
+            label + '.version',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+        nodes: nodesArr.map((n, i) =>
+            asSidecarNode(
+                n,
+                label + '.nodes['
+                    + i + ']',
+            ),
+        ),
+        edges: edgesArr.map((e, i) =>
+            asSidecarEdge(
+                e,
+                label + '.edges['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
 function sidecarFieldsToGraph(
     sc: SidecarNode,
 ): GraphField[] {
     return sc.fields.map(f => ({
         id: crypto.randomUUID(),
         name: f.name,
-        fieldType:
-            f.fieldType as WfFieldType,
+        fieldType: f.fieldType,
         sortOrder: f.sortOrder,
         isRequired: f.isRequired,
         options: f.options,
@@ -961,7 +1108,7 @@ export async function postFlowFromZip(
 
     const sidecar: SidecarData | undefined =
         jsonEntry
-            ? parseJson<SidecarData>(
+            ? validateSidecarDataJson(
                 dec.decode(
                     jsonEntry.data,
                 ),

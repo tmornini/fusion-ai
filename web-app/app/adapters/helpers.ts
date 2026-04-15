@@ -26,12 +26,3 @@ export function userName(
     return userMap.get(userId)?.fullName()
         ?? '';
 }
-
-export function parseJson<T>(
-    value: string | T,
-): T {
-    if (typeof value === 'string') {
-        return JSON.parse(value) as T;
-    }
-    return value;
-}
