@@ -398,13 +398,16 @@ on. Run these in order.
 ### Flow Designer (`flows/detail.html?flowId=...`)
 
 - [ ] **F14** Navigate to a flow designer page.
-  PASS: toolbar at top with Undo, Redo, Delete
-  (trash icon), Auto Layout, Zoom −/Show All/+,
-  Copy Mermaid, Export. Locked checkbox in
-  header controls edit lock. SVG canvas
-  below with dot grid background showing the flow
-  graph. Changes auto-save (no explicit Save
-  button).
+  PASS: toolbar runs vertically along the left
+  edge of the canvas with Back at the top, Delete
+  (trash icon) at the bottom, and Undo/Redo, Auto
+  Layout, Zoom −/Auto Fit/+, Copy Mermaid, Export
+  distributed between them. Locked checkbox in
+  header controls edit lock. SVG canvas to the
+  right of the toolbar with dot grid background
+  showing the flow graph. Opening a properties
+  panel automatically disables Auto Fit. Changes
+  auto-save (no explicit Save button).
 - [ ] **F15** Nodes display correctly: start node
   has green border with its name centered in the
   card and no subtitle, standard nodes have blue
@@ -435,6 +438,20 @@ on. Run these in order.
   PASS: properties panel appears showing state
   name, description, form fields list, and
   outgoing transitions.
+- [ ] **F18a** Pan so a node sits near the right
+  edge of the canvas, then double-click it. PASS:
+  the properties panel slides out from the
+  toolbar edge over ~200ms and the canvas
+  re-centers so the node sits at the visual center
+  of the canvas region not covered by the panel.
+- [ ] **F18b** While the panel is open, double-click
+  a different node. PASS: panel content updates to
+  the new selection and the canvas re-centers on
+  it.
+- [ ] **F18c** Enable Auto Fit, then double-click a
+  node. PASS: panel opens, Auto Fit toggles off
+  (button no longer highlighted), and the canvas
+  centers on the node.
 - [ ] **F19** Drag from a middle node's port into
   empty canvas past 20 pixels, without holding
   Shift. PASS: during the drag a faint bezier
@@ -451,7 +468,8 @@ on. Run these in order.
   non-draggable — clicking anywhere on it
   initiates a drag-from-start instead). The
   complete node is draggable like standard nodes.
-- [ ] **F19d** Click "Auto Layout" in toolbar. PASS:
+- [ ] **F19d** Click "Auto Layout" in the vertical
+  toolbar on the left. PASS:
   all nodes reposition based on their rank from
   start. Start is placed top-left, complete
   bottom-right, others arranged by graph depth.
