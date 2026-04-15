@@ -1319,8 +1319,16 @@ svg.wf-canvas [data-edge-id] {
 }
 
 /* ==========================================
-   44. PROJECT DETAIL
+   44. PROJECT LIST + DETAIL
    ========================================== */
+
+.project-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 7.5rem);
+  gap: 1rem;
+  align-items: center;
+  flex-shrink: 0;
+}
 
 /* .project-detail-wrap is now an alias
    for .content-wrap-xl */
