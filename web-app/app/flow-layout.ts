@@ -583,7 +583,7 @@ function fitToCanvas(
         if (rotW > 0 && tW > 0) sX = tW / rotW;
         if (rotH > 0 && tH > 0) sY = tH / rotH;
         const candidate = Math.min(sX, sY);
-        if (isFinite(candidate) && candidate > 0) {
+        if (isFinite(candidate) && candidate > 1) {
             scale = candidate;
         }
     }
