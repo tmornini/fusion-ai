@@ -1171,6 +1171,7 @@ svg.wf-canvas [data-edge-id] {
   }
   .wf-toolbar {
     flex-direction: row;
+    flex-wrap: wrap;
     width: auto;
     padding: 0.5rem 0.75rem;
     border-right: none;
@@ -1180,6 +1181,9 @@ svg.wf-canvas [data-edge-id] {
   }
   .wf-toolbar-group {
     flex-direction: row;
+  }
+  .wf-toolbar-spacer {
+    display: none;
   }
   .wf-props-panel {
     left: 0;
