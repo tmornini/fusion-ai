@@ -5,11 +5,6 @@ import type { SafeHtml } from '../safe-html';
 import { log } from '../logger';
 import { showToast } from '../toast';
 import {
-    iconX,
-    iconEdit,
-    iconCheck,
-} from '../icons';
-import {
     putNode,
     putGraph,
     putGraphSilent,
@@ -74,6 +69,7 @@ import {
     buildFieldEditor,
     buildNodePanel,
     buildEdgePanel,
+    buildFlowNameHeader,
 } from './flow-designer-view';
 
 function serializeGraph(
@@ -555,36 +551,10 @@ export class FlowDesignerPresenter {
         const canvas =
             this.#buildCanvas();
         const nameHtml =
-            this.#state.isEditingName
-                ? html`<div class="${
-                    'flex items-center'
-                    + ' gap-2'
-                }">
-<input class="input wf-name-input"
-    id="flow-name-input"
-    value="${this.#state.flowName}" />
-<button class="${
-    'btn btn-ghost btn-icon'
-}" id="flow-name-save-btn"
-    >${iconCheck(16, '')}</button>
-<button class="${
-    'btn btn-ghost btn-icon'
-}" id="flow-name-cancel-btn"
-    >${iconX(16, '')}</button>
-</div>`
-                : html`<div class="${
-                    'flex items-center'
-                    + ' gap-2'
-                }">
-<h2 class="${
-    'text-lg font-semibold'
-}">${this.#state.flowName}</h2>
-<button class="${
-    'btn btn-ghost btn-icon'
-    + ' wf-name-edit-btn'
-}" id="flow-name-edit-btn"
-    >${iconEdit(14, '')}</button>
-</div>`;
+            buildFlowNameHeader(
+                this.#state.flowName,
+                this.#state.isEditingName,
+            );
         const lockedAttr =
             this.#state.isLocked
                 ? ' checked' : '';

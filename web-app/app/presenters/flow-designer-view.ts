@@ -8,6 +8,8 @@ import {
     iconRedo,
     iconTrash,
     iconX,
+    iconEdit,
+    iconCheck,
 } from '../icons';
 import type {
     GraphField,
@@ -104,6 +106,43 @@ Required</label>
 <button class="btn btn-primary btn-xs"
     data-action="save-field"
     >Add</button>
+</div>`;
+}
+
+export function buildFlowNameHeader(
+    flowName: string,
+    isEditingName: boolean,
+): SafeHtml {
+    if (isEditingName) {
+        return html`<div class="${
+            'flex items-center'
+            + ' gap-2'
+        }">
+<input class="input wf-name-input"
+    id="flow-name-input"
+    value="${flowName}" />
+<button class="${
+    'btn btn-ghost btn-icon'
+}" id="flow-name-save-btn"
+    >${iconCheck(16, '')}</button>
+<button class="${
+    'btn btn-ghost btn-icon'
+}" id="flow-name-cancel-btn"
+    >${iconX(16, '')}</button>
+</div>`;
+    }
+    return html`<div class="${
+        'flex items-center'
+        + ' gap-2'
+    }">
+<h2 class="${
+    'text-lg font-semibold'
+}">${flowName}</h2>
+<button class="${
+    'btn btn-ghost btn-icon'
+    + ' wf-name-edit-btn'
+}" id="flow-name-edit-btn"
+    >${iconEdit(14, '')}</button>
 </div>`;
 }
 
