@@ -588,8 +588,6 @@ export async function postFlowFromBackup(
 
 const IMPORT_CANVAS_W = 1200;
 const IMPORT_CANVAS_H = 800;
-const IMPORT_DEFAULT_DESCRIPTION = '';
-const IMPORT_FALLBACK_POSITION = 0;
 
 interface IntermediateParsed {
     parsed: ParsedNode;
@@ -696,9 +694,9 @@ function buildImportedEdges(
         edges.push({
             id: crypto.randomUUID(),
             name: e.name,
-            description:
-                sc?.description
-                ?? IMPORT_DEFAULT_DESCRIPTION,
+            description: sc
+                ? sc.description
+                : '',
             fromNodeId: fromId,
             toNodeId: toId,
         });
@@ -728,8 +726,7 @@ function autoWireDefaults(
                 extras.push({
                     id: crypto.randomUUID(),
                     name: '',
-                    description:
-                        IMPORT_DEFAULT_DESCRIPTION,
+                    description: '',
                     fromNodeId: startId,
                     toNodeId: id,
                 });
@@ -742,8 +739,7 @@ function autoWireDefaults(
                 extras.push({
                     id: crypto.randomUUID(),
                     name: '',
-                    description:
-                        IMPORT_DEFAULT_DESCRIPTION,
+                    description: '',
                     fromNodeId: id,
                     toNodeId: completeId,
                 });
@@ -819,16 +815,24 @@ export async function postFlowFromMermaid(
     );
 
     const startPos = positions.get(start.id);
-    if (startPos) {
-        start.positionX = startPos.x;
-        start.positionY = startPos.y;
+    if (!startPos) {
+        throw new Error(
+            'layout missing position for'
+                + ' start node',
+        );
     }
+    start.positionX = startPos.x;
+    start.positionY = startPos.y;
     const completePos =
         positions.get(complete.id);
-    if (completePos) {
-        complete.positionX = completePos.x;
-        complete.positionY = completePos.y;
+    if (!completePos) {
+        throw new Error(
+            'layout missing position for'
+                + ' complete node',
+        );
     }
+    complete.positionX = completePos.x;
+    complete.positionY = completePos.y;
 
     const intermediateNodes: GraphNode[] =
         intermediates.map(
@@ -836,15 +840,19 @@ export async function postFlowFromMermaid(
                 const pos = positions.get(
                     newId,
                 );
+                if (!pos) {
+                    throw new Error(
+                        'layout missing'
+                        + ' position for '
+                        + newId,
+                    );
+                }
                 return {
                     id: newId,
                     name: p.name,
-                    description:
-                        IMPORT_DEFAULT_DESCRIPTION,
-                    positionX: pos?.x
-                        ?? IMPORT_FALLBACK_POSITION,
-                    positionY: pos?.y
-                        ?? IMPORT_FALLBACK_POSITION,
+                    description: p.name,
+                    positionX: pos.x,
+                    positionY: pos.y,
                     isStart: false,
                     isComplete: false,
                     fields: [],
@@ -861,12 +869,18 @@ export async function postFlowFromMermaid(
         edges,
     };
 
-    const firstName =
-        intermediateNodes[0]?.name
-        ?? 'Imported flow';
+    const firstNode = intermediateNodes[0];
+    if (!firstNode) {
+        throw new Error(
+            'Mermaid import requires'
+                + ' at least one'
+                + ' intermediate state',
+        );
+    }
     await POST<void>('flows', {
         id: flowId,
-        name: firstName + ' (import)',
+        name:
+            firstNode.name + ' (import)',
         description: '',
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
         graph: putFlowGraph(graph),
@@ -1203,17 +1217,25 @@ export async function postFlowFromZip(
 
     if (!sidecar) {
         const sp = positions.get(start.id);
-        if (sp) {
-            start.positionX = sp.x;
-            start.positionY = sp.y;
+        if (!sp) {
+            throw new Error(
+                'layout missing position'
+                    + ' for start node',
+            );
         }
+        start.positionX = sp.x;
+        start.positionY = sp.y;
         const cp = positions.get(
             complete.id,
         );
-        if (cp) {
-            complete.positionX = cp.x;
-            complete.positionY = cp.y;
+        if (!cp) {
+            throw new Error(
+                'layout missing position'
+                    + ' for complete node',
+            );
         }
+        complete.positionX = cp.x;
+        complete.positionY = cp.y;
     }
 
     const intermediateNodes: GraphNode[] =
@@ -1228,16 +1250,23 @@ export async function postFlowFromZip(
                         y: sc.positionY,
                     }
                     : positions.get(newId);
+                if (!pos) {
+                    throw new Error(
+                        'layout missing'
+                        + ' position for '
+                        + newId,
+                    );
+                }
                 return {
                     id: newId,
-                    name: sc?.name ?? p.name,
-                    description:
-                        sc?.description
-                        ?? IMPORT_DEFAULT_DESCRIPTION,
-                    positionX: pos?.x
-                        ?? IMPORT_FALLBACK_POSITION,
-                    positionY: pos?.y
-                        ?? IMPORT_FALLBACK_POSITION,
+                    name: sc
+                        ? sc.name
+                        : p.name,
+                    description: sc
+                        ? sc.description
+                        : p.name,
+                    positionX: pos.x,
+                    positionY: pos.y,
                     isStart: false,
                     isComplete: false,
                     fields: sc
@@ -1260,13 +1289,21 @@ export async function postFlowFromZip(
 
     const flowId = crypto.randomUUID();
     const now = nowUtc();
-    const flowName = sidecar?.name
-        ?? (intermediateNodes[0]?.name
-            ?? 'Imported flow')
-            + ' (import)';
-    const flowDesc =
-        sidecar?.description
-        ?? IMPORT_DEFAULT_DESCRIPTION;
+    const firstNode = intermediateNodes[0];
+    if (!sidecar && !firstNode) {
+        throw new Error(
+            'ZIP import requires a'
+                + ' sidecar or at least'
+                + ' one intermediate'
+                + ' state',
+        );
+    }
+    const flowName = sidecar
+        ? sidecar.name
+        : firstNode!.name + ' (import)';
+    const flowDesc = sidecar
+        ? sidecar.description
+        : firstNode!.name;
 
     await POST<void>('flows', {
         id: flowId,
