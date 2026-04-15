@@ -558,27 +558,49 @@ function fitToCanvas(
         if (p.y > maxY) maxY = p.y;
     }
 
-    const bbW = Math.max(1, maxX - minX);
-    const bbH = Math.max(1, maxY - minY);
-    const graphLandscape = bbW >= bbH;
-    const canvasLandscape =
-        canvasW > 0 && canvasH > 0
-            ? canvasW >= canvasH
-            : true;
-    const rotate = graphLandscape !== canvasLandscape;
+    const natW = maxX - minX;
+    const natH = maxY - minY;
+    const posCx = (minX + maxX) / 2;
+    const posCy = (minY + maxY) / 2;
 
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
+    const graphLandscape =
+        (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
+    const canvasLandscape = canvasW >= canvasH;
+    const rotate =
+        canvasW > 0
+        && canvasH > 0
+        && graphLandscape !== canvasLandscape;
+
+    const rotW = rotate ? natH : natW;
+    const rotH = rotate ? natW : natH;
+
+    let scale = 1;
+    if (canvasW > 0 && canvasH > 0) {
+        const tW = canvasW - NODE_WIDTH;
+        const tH = canvasH - NODE_HEIGHT;
+        let sX = Infinity;
+        let sY = Infinity;
+        if (rotW > 0 && tW > 0) sX = tW / rotW;
+        if (rotH > 0 && tH > 0) sY = tH / rotH;
+        const candidate = Math.min(sX, sY);
+        if (isFinite(candidate) && candidate > 0) {
+            scale = candidate;
+        }
+    }
+
+    const halfW = NODE_WIDTH / 2;
+    const halfH = NODE_HEIGHT / 2;
 
     const result = new Map<string, Position>();
     for (const [id, p] of positions) {
-        const ox = p.x - cx;
-        const oy = p.y - cy;
-        if (rotate) {
-            result.set(id, { x: -oy, y: ox });
-        } else {
-            result.set(id, { x: ox, y: oy });
-        }
+        const cx_p = p.x - posCx;
+        const cy_p = p.y - posCy;
+        const rx = rotate ? -cy_p : cx_p;
+        const ry = rotate ? cx_p : cy_p;
+        result.set(id, {
+            x: rx * scale - halfW,
+            y: ry * scale - halfH,
+        });
     }
 
     return result;
