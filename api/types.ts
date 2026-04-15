@@ -1,3 +1,12 @@
+import {
+    validateStringArrayJson,
+    validateStringNumberRecordJson,
+    validateRisksJson,
+} from './validators';
+import type { Risk } from './validators';
+
+export type { Risk };
+
 export type Id = string;
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
@@ -402,16 +411,20 @@ export class User {
     }
 
     parsedStrengths(): string[] {
-        return JSON.parse(
+        return validateStringArrayJson(
             this.#strengths,
-        ) as string[];
+            'user.strengths',
+        );
     }
 
     parsedTeamDimensions():
         Record<string, number> {
-        return JSON.parse(
-            this.#teamDimensions,
-        ) as Record<string, number>;
+        return (
+            validateStringNumberRecordJson(
+                this.#teamDimensions,
+                'user.teamDimensions',
+            )
+        );
     }
 
     matchesSearch(term: string): boolean {
@@ -941,26 +954,24 @@ export class Idea {
         )!.className;
     }
 
-    parsedRisks(): { title: string;
-        severity: string;
-        mitigation: string }[] {
-        return JSON.parse(
+    parsedRisks(): Risk[] {
+        return validateRisksJson(
             this.#risks,
-        ) as { title: string;
-            severity: string;
-            mitigation: string }[];
+        );
     }
 
     parsedAssumptions(): string[] {
-        return JSON.parse(
+        return validateStringArrayJson(
             this.#assumptions,
-        ) as string[];
+            'idea.assumptions',
+        );
     }
 
     parsedAlignments(): string[] {
-        return JSON.parse(
+        return validateStringArrayJson(
             this.#alignments,
-        ) as string[];
+            'idea.alignments',
+        );
     }
 
     matchesSearch(term: string): boolean {
