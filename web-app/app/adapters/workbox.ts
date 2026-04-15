@@ -28,7 +28,7 @@ import {
 import {
     getUserMap,
     userName,
-} from './helpers';
+} from './shared';
 
 /* ── Types ───────────────── */
 
