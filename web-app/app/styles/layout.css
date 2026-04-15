@@ -24,7 +24,10 @@
   transition: width var(--duration-slow) var(--ease-default);
 }
 
-.sidebar-collapsed { width: 4rem; overflow: hidden; }
+html.sidebar-collapsed .sidebar {
+  width: 4rem;
+  overflow: hidden;
+}
 .sidebar-expand-btn { display: none; }
 .sidebar-collapsed .sidebar-expand-btn { display: flex; }
 .sidebar-collapse-btn,
@@ -151,11 +154,11 @@
   transition: margin-left var(--duration-slow) var(--ease-default);
 }
 
-.sidebar-collapsed ~ .main-content,
-.main-content.sidebar-collapsed { margin-left: 4rem; }
+html.sidebar-collapsed .main-content {
+  margin-left: 4rem;
+}
 
-.sidebar-collapsed ~ .main-content .action-footer,
-.main-content.sidebar-collapsed .action-footer {
+html.sidebar-collapsed .action-footer {
   left: 4rem;
 }
 
