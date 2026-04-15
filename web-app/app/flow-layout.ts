@@ -624,18 +624,27 @@ function fitToCanvas(
     if (canvasW > 0 && canvasH > 0) {
         const tW = canvasW - NODE_WIDTH;
         const tH = canvasH - NODE_HEIGHT;
-        let sX = 1;
-        let sY = 1;
+        let sX = Infinity;
+        let sY = Infinity;
         if (rotW > 0 && tW > 0) sX = tW / rotW;
         if (rotH > 0 && tH > 0) sY = tH / rotH;
-        const sSmall = Math.min(sX, sY);
-        const sBig = Math.max(sX, sY);
-        const capped = Math.min(
-            sBig,
-            sSmall * MAX_ASPECT_STRETCH,
-        );
-        scaleX = sX >= sY ? capped : sSmall;
-        scaleY = sY > sX ? capped : sSmall;
+        if (
+            isFinite(sX) && sX >= 1
+            && isFinite(sY) && sY >= 1
+        ) {
+            const sSmall = Math.min(sX, sY);
+            const sBig = Math.max(sX, sY);
+            const capped = Math.min(
+                sBig,
+                sSmall * MAX_ASPECT_STRETCH,
+            );
+            scaleX = sX >= sY
+                ? capped
+                : sSmall;
+            scaleY = sY > sX
+                ? capped
+                : sSmall;
+        }
     }
 
     const halfW = NODE_WIDTH / 2;
