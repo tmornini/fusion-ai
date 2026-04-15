@@ -19,4 +19,6 @@ export * from './flow-mutations';
 export * from './flow-deletions';
 export * from './flow-versions';
 export * from './flow-export';
-export * from './workbox';
+export * from './workbox-queries';
+export * from './workbox-mutations';
+export * from './workbox-deletions';
