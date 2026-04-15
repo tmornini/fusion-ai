@@ -6,6 +6,7 @@ import type {
 import {
     Project,
     projectIsNotDeleted,
+    msSinceUtc,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../../../api/types';
@@ -145,14 +146,13 @@ export class ProjectView {
     }
 
     timeCurrentDays(): number {
-        const start = new Date(
+        const elapsed = msSinceUtc(
             this.#project
                 .startDateValue(),
-        ).getTime();
-        if (isNaN(start)) return 0;
+        );
+        if (isNaN(elapsed)) return 0;
         return Math.max(0, Math.floor(
-            (Date.now() - start)
-            / (MS_PER_DAY),
+            elapsed / MS_PER_DAY,
         ));
     }
 

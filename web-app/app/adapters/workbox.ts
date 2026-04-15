@@ -16,6 +16,7 @@ import type {
 } from '../../../api/types';
 import {
     nowUtc,
+    msSinceUtc,
     jsonObjectField,
     MS_PER_SECOND,
 } from '../../../api/types';
@@ -257,11 +258,9 @@ function isExpiredClaim(
     claim: WorkOrderClaimEntity,
     lockTimeout: number,
 ): boolean {
-    const elapsed =
-        Date.now()
-        - new Date(
-            claim.claimed_at,
-        ).getTime();
+    const elapsed = msSinceUtc(
+        claim.claimed_at,
+    );
     const ms =
         lockTimeout * MS_PER_SECOND;
     return elapsed >= ms;
