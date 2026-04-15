@@ -3,6 +3,7 @@ import type {
     GraphEdge,
     GraphField,
     StoredGraph,
+    WorkOrderFlowGraph,
     WfFieldType,
 } from './types';
 
@@ -315,12 +316,11 @@ function asGraphEdge(
     };
 }
 
-export function validateStoredGraphJson(
-    raw: string,
+function asStoredGraph(
+    value: unknown,
     label: string,
 ): StoredGraph {
-    const parsed = parseOrThrow(raw, label);
-    const obj = asObject(parsed, label);
+    const obj = asObject(value, label);
     const nodesArr = asArray(
         obj['nodes'],
         label + '.nodes',
@@ -345,4 +345,78 @@ export function validateStoredGraphJson(
             ),
         ),
     };
+}
+
+export function validateStoredGraphJson(
+    raw: string,
+    label: string,
+): StoredGraph {
+    const parsed = parseOrThrow(raw, label);
+    return asStoredGraph(parsed, label);
+}
+
+export function
+validateWorkOrderFlowGraphJson(
+    raw: string,
+    label: string,
+): WorkOrderFlowGraph {
+    const parsed = parseOrThrow(raw, label);
+    const obj = asObject(parsed, label);
+    const nodesArr = asArray(
+        obj['nodes'],
+        label + '.nodes',
+    );
+    const edgesArr = asArray(
+        obj['edges'],
+        label + '.edges',
+    );
+    return {
+        flowId: asString(
+            obj['flowId'],
+            label + '.flowId',
+        ),
+        name: asString(
+            obj['name'], label + '.name',
+        ),
+        description: asString(
+            obj['description'],
+            label + '.description',
+        ),
+        lockTimeout: asNumber(
+            obj['lockTimeout'],
+            label + '.lockTimeout',
+        ),
+        nodes: nodesArr.map((n, i) =>
+            asGraphNode(
+                n,
+                label + '.nodes['
+                    + i + ']',
+            ),
+        ),
+        edges: edgesArr.map((e, i) =>
+            asGraphEdge(
+                e,
+                label + '.edges['
+                    + i + ']',
+            ),
+        ),
+    };
+}
+
+export function
+validateTransitionValuesJson(
+    raw: string,
+    label: string,
+): Record<string, string> {
+    const parsed = parseOrThrow(raw, label);
+    const obj = asObject(parsed, label);
+    const out: Record<string, string> = {};
+    for (
+        const [k, v] of Object.entries(obj)
+    ) {
+        out[k] = asString(
+            v, label + '.' + k,
+        );
+    }
+    return out;
 }
