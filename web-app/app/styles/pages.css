@@ -954,7 +954,23 @@
 }
 
 .wf-designer-header {
-  padding: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+html[data-page="flow-detail"],
+html[data-page="flow-detail"] body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+html[data-page="flow-detail"] #page-root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+html[data-page="flow-detail"] .wf-designer-header {
+  border-bottom:
+      1px solid hsl(var(--border));
 }
 
 .wf-toolbar {
