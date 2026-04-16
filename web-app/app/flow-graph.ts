@@ -46,8 +46,8 @@ const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.25;
 const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 35;
-const BIDI_LABEL_T = 0.42;
+const BIDI_SPREAD = 55;
+const BIDI_LABEL_T = 0.47;
 const BIDI_LABEL_OFFSET = 12;
 
 const CYCLE_DASH = '6 3';

@@ -85,6 +85,18 @@ export function wouldBeCycle(
     return isReachable(toId, fromId, adj);
 }
 
+function isFirstEdgeHorizontal(
+    positions: ReadonlyMap<string, Position>,
+    topo: readonly string[],
+): boolean {
+    if (topo.length < 2) return false;
+    const p0 = positions.get(topo[0]!);
+    const p1 = positions.get(topo[1]!);
+    if (!p0 || !p1) return false;
+    return Math.abs(p1.x - p0.x)
+        > Math.abs(p1.y - p0.y);
+}
+
 export function computeLayout(
     context: LayoutContext,
 ): Map<string, Position> {
@@ -129,12 +141,18 @@ export function computeLayout(
                     snakePos,
                     canvasWidth, canvasHeight,
                     nodes,
+                    !isFirstEdgeHorizontal(
+                        snakePos, topo,
+                    ),
                 );
             }
             return fitToCanvas(
                 sugiPos,
                 canvasWidth, canvasHeight,
                 nodes,
+                !isFirstEdgeHorizontal(
+                    sugiPos, topo,
+                ),
             );
         }
     }
@@ -145,6 +163,9 @@ export function computeLayout(
     return fitToCanvas(
         natural, canvasWidth, canvasHeight,
         nodes,
+        !isFirstEdgeHorizontal(
+            natural, topo,
+        ),
     );
 }
 
@@ -590,6 +611,7 @@ function fitToCanvas(
     canvasW: number,
     canvasH: number,
     nodes: readonly LayoutInput[],
+    mayRotate: boolean,
 ): Map<string, Position> {
     if (positions.size === 0) return new Map();
 
@@ -613,7 +635,8 @@ function fitToCanvas(
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
     const canvasLandscape = canvasW >= canvasH;
     const rotate =
-        canvasW > 0
+        mayRotate
+        && canvasW > 0
         && canvasH > 0
         && graphLandscape !== canvasLandscape;
 
