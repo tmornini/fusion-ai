@@ -85,18 +85,6 @@ export function wouldBeCycle(
     return isReachable(toId, fromId, adj);
 }
 
-function isFirstEdgeHorizontal(
-    positions: ReadonlyMap<string, Position>,
-    topo: readonly string[],
-): boolean {
-    if (topo.length < 2) return false;
-    const p0 = positions.get(topo[0]!);
-    const p1 = positions.get(topo[1]!);
-    if (!p0 || !p1) return false;
-    return Math.abs(p1.x - p0.x)
-        > Math.abs(p1.y - p0.y);
-}
-
 export function computeLayout(
     context: LayoutContext,
 ): Map<string, Position> {
@@ -128,7 +116,8 @@ export function computeLayout(
                 ordered, forwardEdges,
             );
             const snakePos = computeTopoSnake(
-                topo, k, forwardEdges, canvasHeight,
+                topo, k, forwardEdges,
+                canvasWidth, canvasHeight,
             );
             const canvasAspect =
                 canvasWidth / canvasHeight;
@@ -141,18 +130,12 @@ export function computeLayout(
                     snakePos,
                     canvasWidth, canvasHeight,
                     nodes,
-                    !isFirstEdgeHorizontal(
-                        snakePos, topo,
-                    ),
                 );
             }
             return fitToCanvas(
                 sugiPos,
                 canvasWidth, canvasHeight,
                 nodes,
-                !isFirstEdgeHorizontal(
-                    sugiPos, topo,
-                ),
             );
         }
     }
@@ -163,9 +146,6 @@ export function computeLayout(
     return fitToCanvas(
         natural, canvasWidth, canvasHeight,
         nodes,
-        !isFirstEdgeHorizontal(
-            natural, topo,
-        ),
     );
 }
 
@@ -611,7 +591,6 @@ function fitToCanvas(
     canvasW: number,
     canvasH: number,
     nodes: readonly LayoutInput[],
-    mayRotate: boolean,
 ): Map<string, Position> {
     if (positions.size === 0) return new Map();
 
@@ -635,8 +614,7 @@ function fitToCanvas(
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
     const canvasLandscape = canvasW >= canvasH;
     const rotate =
-        mayRotate
-        && canvasW > 0
+        canvasW > 0
         && canvasH > 0
         && graphLandscape !== canvasLandscape;
 
@@ -791,18 +769,17 @@ function snakeColRow(
     i: number,
     k: number,
 ): { col: number; row: number } {
-    const row = Math.floor(i / k);
-    const rowEven = row % 2 === 0;
-    const col = rowEven
-        ? (i % k)
-        : (k - 1 - (i % k));
-    return { col, row };
+    return {
+        col: i % k,
+        row: Math.floor(i / k),
+    };
 }
 
 function computeTopoSnake(
     topo: readonly string[],
     k: number,
     forwardEdges: readonly LayoutEdge[],
+    canvasW: number,
     canvasH: number,
 ): Map<string, Position> {
     const numRows = Math.ceil(topo.length / k);
@@ -844,6 +821,19 @@ function computeTopoSnake(
             NODE_WIDTH + colGap[c - 1]!,
         );
         colX[c] = colX[c - 1]! + step;
+    }
+
+    const lastCol = colX[k - 1]!;
+    const targetW = canvasW - NODE_WIDTH;
+    if (
+        k > 1
+        && lastCol > 0
+        && targetW > lastCol
+    ) {
+        const scale = targetW / lastCol;
+        for (let c = 1; c < k; c++) {
+            colX[c] = colX[c]! * scale;
+        }
     }
 
     const rowY = new Array<number>(numRows);
