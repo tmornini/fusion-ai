@@ -46,7 +46,9 @@ const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.25;
 const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 55;
+const BIDI_SPREAD_FRAC = 0.08;
+const BIDI_SPREAD_MIN = 20;
+const BIDI_SPREAD_MAX = 80;
 const BIDI_LABEL_T = 0.47;
 const BIDI_LABEL_OFFSET = 12;
 
@@ -507,7 +509,13 @@ function buildEdge(
             perpX = -dy / len;
             perpY = dx / len;
             spread =
-                aimOffset * BIDI_SPREAD;
+                aimOffset * Math.min(
+                    BIDI_SPREAD_MAX,
+                    Math.max(
+                        BIDI_SPREAD_MIN,
+                        len * BIDI_SPREAD_FRAC,
+                    ),
+                );
             aimFromX = toCx + perpX * spread;
             aimFromY = toCy + perpY * spread;
             aimToX = fromCx + perpX * spread;

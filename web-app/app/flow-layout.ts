@@ -769,10 +769,12 @@ function snakeColRow(
     i: number,
     k: number,
 ): { col: number; row: number } {
-    return {
-        col: i % k,
-        row: Math.floor(i / k),
-    };
+    const row = Math.floor(i / k);
+    const rowEven = row % 2 === 0;
+    const col = rowEven
+        ? (i % k)
+        : (k - 1 - (i % k));
+    return { col, row };
 }
 
 function computeTopoSnake(
