@@ -121,7 +121,7 @@ function renderAndBind(
     bindFlowNameEdit(
         container, presenter,
     );
-    bindLockCheckbox(
+    bindSwitches(
         container, presenter,
     );
 }
@@ -210,17 +210,29 @@ function bindFlowNameEdit(
     );
 }
 
-function bindLockCheckbox(
+function bindSwitches(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
-    const cb = $input(
-        '#flow-lock-checkbox', document,
-    );
-    cb?.addEventListener(
-        'change',
+    $(
+        '#flow-lock-switch', document,
+    )?.addEventListener(
+        'click',
         () => {
             presenter.toggleLocked();
+            renderAndBind(
+                container, presenter,
+            );
+        },
+    );
+    $(
+        '#flow-manual-layout-switch',
+        document,
+    )?.addEventListener(
+        'click',
+        () => {
+            presenter
+                .toggleManualLayout();
             renderAndBind(
                 container, presenter,
             );
