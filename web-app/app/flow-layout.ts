@@ -36,6 +36,8 @@ const MIN_LAYER_STEP =
 const SIBLING_STEP = NODE_HEIGHT + 100;
 const CROSSING_SWEEP_COUNT = 12;
 const MAX_ASPECT_STRETCH = 1.4;
+const MIN_SNAKE_NODES = 4;
+const SNAKE_GAIN_THRESHOLD = MAX_ASPECT_STRETCH;
 
 export function buildAdjacency(
     edges: readonly EdgePair[],
@@ -100,9 +102,44 @@ export function computeLayout(
     }
 
     const { forwardEdges } = removeCycles(nodes, edges);
+
     const layers = assignLayers(nodes, forwardEdges);
     const ordered = reduceCrossings(layers, forwardEdges);
-    const natural = assignCoordinates(ordered, forwardEdges);
+    const topo = ordered.flat();
+
+    if (topo.length >= MIN_SNAKE_NODES) {
+        const k = computeSnakeWrap(
+            topo.length, canvasWidth, canvasHeight,
+        );
+        if (k > 0) {
+            const sugiPos = assignCoordinates(
+                ordered, forwardEdges,
+            );
+            const snakePos = computeTopoSnake(
+                topo, k, forwardEdges, canvasHeight,
+            );
+            const canvasAspect =
+                canvasWidth / canvasHeight;
+            const mis = (a: number): number =>
+                Math.max(a, canvasAspect)
+                / Math.min(a, canvasAspect);
+            if (mis(computeBboxAspect(snakePos))
+                < mis(computeBboxAspect(sugiPos))) {
+                return fitToCanvas(
+                    snakePos,
+                    canvasWidth, canvasHeight,
+                );
+            }
+            return fitToCanvas(
+                sugiPos,
+                canvasWidth, canvasHeight,
+            );
+        }
+    }
+
+    const natural = assignCoordinates(
+        ordered, forwardEdges,
+    );
     return fitToCanvas(natural, canvasWidth, canvasHeight);
 }
 
@@ -671,4 +708,128 @@ function fitToCanvas(
     }
 
     return result;
+}
+
+function computeSnakeWrap(
+    nodeCount: number,
+    _canvasW: number,
+    canvasH: number,
+): number {
+    if (nodeCount < MIN_SNAKE_NODES) return 0;
+    if (canvasH <= 0) return 0;
+
+    const cellH = NODE_HEIGHT + VERTICAL_GAP;
+    const targetH = canvasH - NODE_HEIGHT;
+    if (targetH <= 0) return 0;
+    const numRows = Math.max(
+        2, Math.floor(targetH / cellH),
+    );
+    const k = Math.max(
+        2,
+        Math.min(
+            Math.ceil(nodeCount / numRows),
+            nodeCount - 1,
+        ),
+    );
+    return k;
+}
+
+function computeBboxAspect(
+    positions: ReadonlyMap<string, Position>,
+): number {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const p of positions.values()) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+    }
+    const w = maxX - minX + NODE_WIDTH;
+    const h = maxY - minY + NODE_HEIGHT;
+    if (h <= 0) return Infinity;
+    return w / h;
+}
+
+function snakeColRow(
+    i: number,
+    k: number,
+): { col: number; row: number } {
+    const row = Math.floor(i / k);
+    const rowEven = row % 2 === 0;
+    const col = rowEven
+        ? (i % k)
+        : (k - 1 - (i % k));
+    return { col, row };
+}
+
+function computeTopoSnake(
+    topo: readonly string[],
+    k: number,
+    forwardEdges: readonly LayoutEdge[],
+    canvasH: number,
+): Map<string, Position> {
+    const numRows = Math.ceil(topo.length / k);
+
+    const edgeLabel = new Map<string, number>();
+    for (const e of forwardEdges) {
+        const key = e.fromId + '\0' + e.toId;
+        const cur = edgeLabel.get(key) ?? 0;
+        if (e.labelWidth > cur) {
+            edgeLabel.set(key, e.labelWidth);
+        }
+    }
+
+    const colGap = new Array<number>(
+        Math.max(0, k - 1),
+    ).fill(HORIZONTAL_GAP);
+    for (let i = 0; i < topo.length - 1; i++) {
+        const a = snakeColRow(i, k);
+        const b = snakeColRow(i + 1, k);
+        if (a.row !== b.row) continue;
+        const g = Math.min(a.col, b.col);
+        const fwd =
+            topo[i]! + '\0' + topo[i + 1]!;
+        const rev =
+            topo[i + 1]! + '\0' + topo[i]!;
+        const labelW = Math.max(
+            edgeLabel.get(fwd) ?? 0,
+            edgeLabel.get(rev) ?? 0,
+        );
+        const need = labelW + LABEL_SAFETY_MARGIN;
+        if (need > colGap[g]!) colGap[g] = need;
+    }
+
+    const colX = new Array<number>(k);
+    colX[0] = 0;
+    for (let c = 1; c < k; c++) {
+        const step = Math.max(
+            MIN_LAYER_STEP,
+            NODE_WIDTH + colGap[c - 1]!,
+        );
+        colX[c] = colX[c - 1]! + step;
+    }
+
+    const rowY = new Array<number>(numRows);
+    rowY[0] = 0;
+    if (numRows > 1) {
+        const span = canvasH - NODE_HEIGHT;
+        const step = span / (numRows - 1);
+        for (let r = 1; r < numRows; r++) {
+            rowY[r] = r * step;
+        }
+    }
+
+    const positions = new Map<string, Position>();
+    for (let i = 0; i < topo.length; i++) {
+        const { col, row } = snakeColRow(i, k);
+        positions.set(topo[i]!, {
+            x: colX[col]!,
+            y: rowY[row]!,
+        });
+    }
+
+    return positions;
 }
