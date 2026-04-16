@@ -47,8 +47,7 @@ const CURVE_TENSION = 0.25;
 const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
 const BIDI_SPREAD = 35;
-const BIDI_LABEL_T_NEAR = 0.35;
-const BIDI_LABEL_T_FAR = 0.65;
+const BIDI_LABEL_T = 0.42;
 
 const CYCLE_DASH = '6 3';
 
@@ -470,7 +469,6 @@ function buildEdge(
     toNode: GraphNode,
     isSelected: boolean,
     aimOffset: number,
-    isCanonical: boolean,
     isCycle: boolean,
 ): SafeHtml {
     const fromCx =
@@ -611,9 +609,7 @@ function buildEdge(
 
     const labelT = aimOffset === 0
         ? BEZIER_MIDPOINT
-        : isCanonical
-            ? BIDI_LABEL_T_NEAR
-            : BIDI_LABEL_T_FAR;
+        : BIDI_LABEL_T;
     const mid = bezierAt(pathD, labelT);
     const midX = mid.x;
     const midY = mid.y;
@@ -847,16 +843,12 @@ export function buildGraphSvg(
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
         let aimOffset = 0;
-        let isCanonical = false;
         const k = pairKey(
             edge.fromNodeId,
             edge.toNodeId,
         );
         if (bidi.has(k)) {
             aimOffset = 1;
-            isCanonical =
-                edge.fromNodeId
-                < edge.toNodeId;
         }
         const isSelected =
             selection.kind === 'edge'
@@ -868,7 +860,6 @@ export function buildGraphSvg(
                 toNode,
                 isSelected,
                 aimOffset,
-                isCanonical,
                 cycleEdgeIds.has(
                     edge.id,
                 ),
