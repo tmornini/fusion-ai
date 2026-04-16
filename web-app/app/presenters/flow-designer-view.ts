@@ -10,6 +10,12 @@ import {
     iconX,
     iconEdit,
     iconCheck,
+    iconLayoutGrid,
+    iconMinus,
+    iconPlus,
+    iconTarget,
+    iconCopy,
+    iconDownload,
 } from '../icons';
 import type {
     GraphField,
@@ -298,64 +304,86 @@ class="wf-toolbar">
 <button
     class="btn btn-ghost btn-icon"
     id="flow-back-btn"
+    title="Back"
+    aria-label="Back"
     >${iconArrowLeft(20, '')}</button>
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button
     class="btn btn-ghost btn-icon"
-    data-action="undo"${
+    data-action="undo"
+    title="Undo"
+    aria-label="Undo"${
     trusted(
         canUndo ? '' : ' disabled',
     )}>${iconUndo(18, '')}</button>
 <button
     class="btn btn-ghost btn-icon"
-    data-action="redo"${
+    data-action="redo"
+    title="Redo"
+    aria-label="Redo"${
     trusted(
         canRedo ? '' : ' disabled',
     )}>${iconRedo(18, '')}</button>
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="auto-layout"${
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="auto-layout"
+    title="Auto layout"
+    aria-label="Auto layout"${
     trusted(
         isLocked ? ' disabled' : '',
-    )}><span class="wf-btn-stack"
-    >Auto<br>Layout</span></button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="zoom-out"
-    >Zoom \u2212</button>
-<button class="${trusted(
-    'btn btn-ghost btn-sm'
-    + ' wf-toolbar-toggle'
-    + autoFitCls,
-)}"
-    data-action="auto-fit"
-    ><span class="wf-btn-stack"
-    >Auto<br>Fit</span></button>
-<button class="btn btn-ghost btn-sm"
-    data-action="zoom-in"
-    >Zoom +</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
-<div class="wf-toolbar-group">
-<button class="btn btn-ghost btn-sm"
-    data-action="copy-mermaid"
-    ><span class="wf-btn-stack"
-    >Copy<br>Mermaid</span></button>
-<button class="btn btn-ghost btn-sm"
-    data-action="export-zip"
-    >Export</button>
+    )}>${iconLayoutGrid(18, '')}</button>
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button
     class="btn btn-ghost btn-icon"
-    data-action="delete-selected"${
+    data-action="zoom-out"
+    title="Zoom out"
+    aria-label="Zoom out"
+    >${iconMinus(18, '')}</button>
+<button class="${trusted(
+    'btn btn-ghost btn-icon'
+    + ' wf-toolbar-toggle'
+    + autoFitCls,
+)}"
+    data-action="auto-fit"
+    title="Auto fit"
+    aria-label="Auto fit"
+    >${iconTarget(18, '')}</button>
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="zoom-in"
+    title="Zoom in"
+    aria-label="Zoom in"
+    >${iconPlus(18, '')}</button>
+</div>
+<div class="wf-toolbar-spacer"></div>
+<div class="wf-toolbar-group">
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="copy-mermaid"
+    title="Copy Mermaid"
+    aria-label="Copy Mermaid"
+    >${iconCopy(18, '')}</button>
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="export-zip"
+    title="Export ZIP"
+    aria-label="Export ZIP"
+    >${iconDownload(18, '')}</button>
+</div>
+<div class="wf-toolbar-spacer"></div>
+<div class="wf-toolbar-group">
+<button
+    class="btn btn-ghost btn-icon"
+    data-action="delete-selected"
+    title="Delete"
+    aria-label="Delete"${
     trusted(
         canDelete && !isLocked
             ? '' : ' disabled',
