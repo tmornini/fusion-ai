@@ -37,7 +37,6 @@ const SIBLING_STEP = NODE_HEIGHT + 100;
 const CROSSING_SWEEP_COUNT = 12;
 const MAX_ASPECT_STRETCH = 1.4;
 const MIN_SNAKE_NODES = 4;
-const SNAKE_GAIN_THRESHOLD = MAX_ASPECT_STRETCH;
 
 export function buildAdjacency(
     edges: readonly EdgePair[],
@@ -128,11 +127,13 @@ export function computeLayout(
                 return fitToCanvas(
                     snakePos,
                     canvasWidth, canvasHeight,
+                    nodes,
                 );
             }
             return fitToCanvas(
                 sugiPos,
                 canvasWidth, canvasHeight,
+                nodes,
             );
         }
     }
@@ -140,7 +141,10 @@ export function computeLayout(
     const natural = assignCoordinates(
         ordered, forwardEdges,
     );
-    return fitToCanvas(natural, canvasWidth, canvasHeight);
+    return fitToCanvas(
+        natural, canvasWidth, canvasHeight,
+        nodes,
+    );
 }
 
 function removeCycles(
@@ -634,6 +638,7 @@ function fitToCanvas(
     positions: Map<string, Position>,
     canvasW: number,
     canvasH: number,
+    nodes: readonly LayoutInput[],
 ): Map<string, Position> {
     if (positions.size === 0) return new Map();
 
@@ -705,6 +710,61 @@ function fitToCanvas(
             x: rx * scaleX - halfW,
             y: ry * scaleY - halfH,
         });
+    }
+
+    const startId = nodes.find(
+        n => n.isStart,
+    )?.id;
+    const endId = nodes.find(
+        n => n.isComplete,
+    )?.id;
+    if (
+        startId && endId
+        && startId !== endId
+    ) {
+        const sp = result.get(startId);
+        const ep = result.get(endId);
+        if (sp && ep) {
+            const flipX = sp.x > ep.x;
+            const flipY = sp.y > ep.y;
+            if (flipX || flipY) {
+                let rMinX = Infinity;
+                let rMaxX = -Infinity;
+                let rMinY = Infinity;
+                let rMaxY = -Infinity;
+                for (
+                    const rp
+                    of result.values()
+                ) {
+                    if (rp.x < rMinX) {
+                        rMinX = rp.x;
+                    }
+                    if (rp.x > rMaxX) {
+                        rMaxX = rp.x;
+                    }
+                    if (rp.y < rMinY) {
+                        rMinY = rp.y;
+                    }
+                    if (rp.y > rMaxY) {
+                        rMaxY = rp.y;
+                    }
+                }
+                for (
+                    const [, rp] of result
+                ) {
+                    if (flipX) {
+                        rp.x =
+                            rMinX + rMaxX
+                            - rp.x;
+                    }
+                    if (flipY) {
+                        rp.y =
+                            rMinY + rMaxY
+                            - rp.y;
+                    }
+                }
+            }
+        }
     }
 
     return result;
