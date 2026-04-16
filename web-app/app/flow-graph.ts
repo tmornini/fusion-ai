@@ -48,6 +48,7 @@ const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
 const BIDI_SPREAD = 35;
 const BIDI_LABEL_T = 0.42;
+const BIDI_LABEL_OFFSET = 12;
 
 const CYCLE_DASH = '6 3';
 
@@ -611,8 +612,10 @@ function buildEdge(
         ? BEZIER_MIDPOINT
         : BIDI_LABEL_T;
     const mid = bezierAt(pathD, labelT);
-    const midX = mid.x;
-    const midY = mid.y;
+    const midX = mid.x
+        + perpX * BIDI_LABEL_OFFSET;
+    const midY = mid.y
+        + perpY * BIDI_LABEL_OFFSET;
     const truncEdge =
         truncateEdgeLabel(edge.name);
     const labelEsc =
