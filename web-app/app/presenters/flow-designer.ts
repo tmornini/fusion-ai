@@ -926,10 +926,12 @@ ${toolbar}
                 this.#canvasW - PANEL_WIDTH_PX,
             )
             : this.#canvasW;
-        const positions = computeLayout(
-            layoutInputs, layoutEdges,
-            effectiveW, this.#canvasH,
-        );
+        const positions = computeLayout({
+            nodes: layoutInputs,
+            edges: layoutEdges,
+            canvasWidth: effectiveW,
+            canvasHeight: this.#canvasH,
+        });
         this.#state.nodes =
             this.#state.nodes.map(n => {
                 const pos =

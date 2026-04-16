@@ -13,6 +13,13 @@ export interface LayoutEdge extends EdgePair {
     labelWidth: number;
 }
 
+export interface LayoutContext {
+    readonly nodes: readonly LayoutInput[];
+    readonly edges: readonly LayoutEdge[];
+    readonly canvasWidth: number;
+    readonly canvasHeight: number;
+}
+
 export const NODE_WIDTH = 160;
 export const NODE_HEIGHT = 64;
 export const HORIZONTAL_GAP = 60;
@@ -77,11 +84,12 @@ export function wouldBeCycle(
 }
 
 export function computeLayout(
-    nodes: readonly LayoutInput[],
-    edges: readonly LayoutEdge[],
-    canvasWidth: number,
-    canvasHeight: number,
+    context: LayoutContext,
 ): Map<string, Position> {
+    const {
+        nodes, edges,
+        canvasWidth, canvasHeight,
+    } = context;
     if (nodes.length === 0) {
         return new Map();
     }

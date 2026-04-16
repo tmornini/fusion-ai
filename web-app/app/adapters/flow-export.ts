@@ -663,10 +663,12 @@ function layoutImportedGraph(
                         e.name,
                     ),
         }));
-    return computeLayout(
-        inputs, layoutEdges,
-        IMPORT_CANVAS_W, IMPORT_CANVAS_H,
-    );
+    return computeLayout({
+        nodes: inputs,
+        edges: layoutEdges,
+        canvasWidth: IMPORT_CANVAS_W,
+        canvasHeight: IMPORT_CANVAS_H,
+    });
 }
 
 function buildImportedEdges(
