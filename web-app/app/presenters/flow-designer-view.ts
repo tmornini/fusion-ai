@@ -3,7 +3,6 @@ import {
 } from '../safe-html';
 import type { SafeHtml } from '../safe-html';
 import {
-    iconArrowLeft,
     iconUndo,
     iconRedo,
     iconTrash,
@@ -300,15 +299,6 @@ export function buildToolbar(
         : '';
     return html`<div
 class="wf-toolbar">
-<div class="wf-toolbar-group">
-<button
-    class="btn btn-ghost btn-icon"
-    id="flow-back-btn"
-    title="Back"
-    aria-label="Back"
-    >${iconArrowLeft(20, '')}</button>
-</div>
-<div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
 <button
     class="btn btn-ghost btn-icon"

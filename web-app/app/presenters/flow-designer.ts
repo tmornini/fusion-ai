@@ -64,6 +64,7 @@ import type {
     InteractionState,
 } from '../flow-interactions';
 import { FlowHistory } from '../flow-history';
+import { iconArrowLeft } from '../icons';
 import {
     buildToolbar,
     buildFieldEditor,
@@ -564,6 +565,12 @@ class="wf-designer">
 <div class="${
     'flex items-center gap-4'
 }">
+<button
+    class="btn btn-ghost btn-icon"
+    id="flow-back-btn"
+    title="Back"
+    aria-label="Back"
+    >${iconArrowLeft(20, '')}</button>
 <div class="flex-1">${nameHtml}
 <p class="text-sm text-muted"
     >${this.#state.flowDescription}</p>
