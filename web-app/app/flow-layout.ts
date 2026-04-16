@@ -159,103 +159,53 @@ function removeCycles(
         e => e.fromId !== e.toId,
     );
 
-    const outN = new Map<string, Set<string>>();
-    const inN = new Map<string, Set<string>>();
+    const outAdj =
+        new Map<string, string[]>();
     for (const n of nodes) {
-        outN.set(n.id, new Set());
-        inN.set(n.id, new Set());
+        outAdj.set(n.id, []);
     }
     for (const e of validEdges) {
-        outN.get(e.fromId)!.add(e.toId);
-        inN.get(e.toId)!.add(e.fromId);
+        outAdj.get(e.fromId)!.push(e.toId);
     }
 
-    const sources: string[] = [];
-    const sinks: string[] = [];
-    const remaining = new Set(nodes.map(n => n.id));
+    const backPairs = new Set<string>();
+    const visited = new Set<string>();
+    const onStack = new Set<string>();
 
-    const removeNode = (id: string): void => {
-        for (const t of outN.get(id)!) {
-            inN.get(t)!.delete(id);
+    const dfs = (id: string): void => {
+        visited.add(id);
+        onStack.add(id);
+        const neighbors =
+            outAdj.get(id) ?? [];
+        for (const n of neighbors) {
+            if (onStack.has(n)) {
+                backPairs.add(
+                    id + ':' + n,
+                );
+            } else if (!visited.has(n)) {
+                dfs(n);
+            }
         }
-        for (const s of inN.get(id)!) {
-            outN.get(s)!.delete(id);
-        }
-        remaining.delete(id);
+        onStack.delete(id);
     };
 
-    const startNode = nodes.find(n => n.isStart);
-    const completeNode = nodes.find(n => n.isComplete);
-
-    if (startNode && remaining.has(startNode.id)) {
-        sources.push(startNode.id);
-        removeNode(startNode.id);
+    const startNode =
+        nodes.find(n => n.isStart);
+    if (startNode) {
+        dfs(startNode.id);
     }
-    if (
-        completeNode
-        && completeNode.id !== startNode?.id
-        && remaining.has(completeNode.id)
-    ) {
-        sinks.push(completeNode.id);
-        removeNode(completeNode.id);
-    }
-
-    while (remaining.size > 0) {
-        let pulled = true;
-        while (pulled) {
-            pulled = false;
-            for (const id of Array.from(remaining)) {
-                if (outN.get(id)!.size === 0) {
-                    sinks.push(id);
-                    removeNode(id);
-                    pulled = true;
-                }
-            }
-        }
-        pulled = true;
-        while (pulled) {
-            pulled = false;
-            for (const id of Array.from(remaining)) {
-                if (inN.get(id)!.size === 0) {
-                    sources.push(id);
-                    removeNode(id);
-                    pulled = true;
-                }
-            }
-        }
-        if (remaining.size > 0) {
-            let best: string | null = null;
-            let bestScore = -Infinity;
-            for (const id of remaining) {
-                const score =
-                    outN.get(id)!.size
-                    - inN.get(id)!.size;
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = id;
-                }
-            }
-            if (best !== null) {
-                sources.push(best);
-                removeNode(best);
-            }
+    for (const n of nodes) {
+        if (!visited.has(n.id)) {
+            dfs(n.id);
         }
     }
-
-    const sigma = [...sources, ...sinks.reverse()];
-    const position = new Map<string, number>();
-    sigma.forEach((id, i) => position.set(id, i));
 
     const forwardEdges: LayoutEdge[] = [];
     const reversedIds = new Set<string>();
     for (const e of validEdges) {
-        const fp = position.get(e.fromId);
-        const tp = position.get(e.toId);
-        if (fp === undefined || tp === undefined) {
-            forwardEdges.push(e);
-            continue;
-        }
-        if (tp < fp) {
+        const key =
+            e.fromId + ':' + e.toId;
+        if (backPairs.has(key)) {
             forwardEdges.push({
                 fromId: e.toId,
                 toId: e.fromId,
