@@ -33,7 +33,8 @@ type Layers = readonly (readonly string[])[];
 
 const MIN_LAYER_STEP =
     NODE_WIDTH + HORIZONTAL_GAP;
-const SIBLING_STEP = NODE_HEIGHT + 100;
+const SIBLING_STEP =
+    Math.max(NODE_WIDTH, NODE_HEIGHT) + 100;
 const CROSSING_SWEEP_COUNT = 12;
 const MAX_ASPECT_STRETCH = 1.4;
 const MIN_SNAKE_NODES = 4;
