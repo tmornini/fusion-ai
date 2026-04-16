@@ -45,9 +45,10 @@ const LABEL_MAX_WIDTH = 140;
 
 const EDGE_STROKE = 2;
 const HIT_TARGET_WIDTH = 12;
-const CURVE_TENSION = 0.4;
+const CURVE_TENSION = 0.25;
+const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 40;
+const BIDI_SPREAD = 25;
 const BIDI_LABEL_T = 0.42;
 
 const CYCLE_DASH = '6 3';
@@ -208,7 +209,10 @@ export function controlOffset(
     edge: RectEdge,
     dist: number,
 ): { dx: number; dy: number } {
-    const d = dist * CURVE_TENSION;
+    const d = Math.min(
+        dist * CURVE_TENSION,
+        MAX_CONTROL_ARM,
+    );
     switch (edge) {
         case 'right':
             return { dx: d, dy: 0 };
@@ -562,14 +566,10 @@ function buildEdge(
         controlOffset(se, dist);
     const cp2 =
         controlOffset(ee, dist);
-    const cp1X =
-        startPt.x + cp1.dx + perpX * spread;
-    const cp1Y =
-        startPt.y + cp1.dy + perpY * spread;
-    const cp2X =
-        endPt.x + cp2.dx + perpX * spread;
-    const cp2Y =
-        endPt.y + cp2.dy + perpY * spread;
+    const cp1X = startPt.x + cp1.dx;
+    const cp1Y = startPt.y + cp1.dy;
+    const cp2X = endPt.x + cp2.dx;
+    const cp2Y = endPt.y + cp2.dy;
     pathD = 'M '
         + String(startPt.x) + ' '
         + String(startPt.y)
