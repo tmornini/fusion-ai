@@ -14,7 +14,7 @@ import {
 const BLUE = '#4B6CA1';
 const WARN = '#d97706';
 const GREEN = '#16a34a';
-const RED = '#dc2626';
+const RED = '#b91c1c';
 
 const GRID_CELL = 24;
 const GRID_DOT_RADIUS = 0.7;
@@ -29,9 +29,6 @@ const STROKE_START = 2.5;
 const STROKE_COMPLETE = 3;
 
 const NODE_RADIUS = 10;
-const COMPLETE_INSET = 4;
-const COMPLETE_INNER_RADIUS = 7;
-const COMPLETE_INNER_STROKE = 1.5;
 
 const PORT_RADIUS = 5;
 const PORT_STROKE = 2;
@@ -49,8 +46,9 @@ const HIT_TARGET_WIDTH = 12;
 const CURVE_TENSION = 0.25;
 const MAX_CONTROL_ARM = 50;
 const BEZIER_MIDPOINT = 0.5;
-const BIDI_SPREAD = 25;
-const BIDI_LABEL_T = 0.42;
+const BIDI_SPREAD = 35;
+const BIDI_LABEL_T_NEAR = 0.35;
+const BIDI_LABEL_T_FAR = 0.65;
 
 const CYCLE_DASH = '6 3';
 
@@ -392,25 +390,6 @@ function buildNode(
         + ` stroke="${borderColor}"`
         + ` stroke-width="${strokeW}"/>`;
 
-    if (node.isComplete) {
-        inner += '<rect'
-            + ` x="${COMPLETE_INSET}"`
-            + ` y="${COMPLETE_INSET}"`
-            + ` width="${
-                NODE_WIDTH
-                - COMPLETE_INSET * 2
-            }"`
-            + ` height="${
-                NODE_HEIGHT
-                - COMPLETE_INSET * 2
-            }"`
-            + ` rx="${COMPLETE_INNER_RADIUS}"`
-            + ' fill="none"'
-            + ` stroke="${RED}"`
-            + ` stroke-width="`
-            + `${COMPLETE_INNER_STROKE}"/>`;
-    }
-
     const isSpecial =
         node.isStart || node.isComplete;
     const labelY = isSpecial
@@ -491,6 +470,7 @@ function buildEdge(
     toNode: GraphNode,
     isSelected: boolean,
     aimOffset: number,
+    isCanonical: boolean,
     isCycle: boolean,
 ): SafeHtml {
     const fromCx =
@@ -631,7 +611,9 @@ function buildEdge(
 
     const labelT = aimOffset === 0
         ? BEZIER_MIDPOINT
-        : BIDI_LABEL_T;
+        : isCanonical
+            ? BIDI_LABEL_T_NEAR
+            : BIDI_LABEL_T_FAR;
     const mid = bezierAt(pathD, labelT);
     const midX = mid.x;
     const midY = mid.y;
@@ -865,12 +847,16 @@ export function buildGraphSvg(
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
         let aimOffset = 0;
+        let isCanonical = false;
         const k = pairKey(
             edge.fromNodeId,
             edge.toNodeId,
         );
         if (bidi.has(k)) {
             aimOffset = 1;
+            isCanonical =
+                edge.fromNodeId
+                < edge.toNodeId;
         }
         const isSelected =
             selection.kind === 'edge'
@@ -882,6 +868,7 @@ export function buildGraphSvg(
                 toNode,
                 isSelected,
                 aimOffset,
+                isCanonical,
                 cycleEdgeIds.has(
                     edge.id,
                 ),
