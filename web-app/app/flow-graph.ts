@@ -14,6 +14,7 @@ import {
 const BLUE = '#4B6CA1';
 const WARN = '#d97706';
 const GREEN = '#16a34a';
+const RED = '#dc2626';
 
 const GRID_CELL = 24;
 const GRID_DOT_RADIUS = 0.7;
@@ -368,11 +369,12 @@ function buildNode(
 
     let borderColor = BLUE;
     let strokeW = STROKE_NORMAL;
-    if (node.isStart || node.isComplete) {
+    if (node.isStart) {
         borderColor = GREEN;
-        strokeW = node.isComplete
-            ? STROKE_COMPLETE
-            : STROKE_START;
+        strokeW = STROKE_START;
+    } else if (node.isComplete) {
+        borderColor = RED;
+        strokeW = STROKE_COMPLETE;
     }
 
     const selAttr = isSelected
@@ -404,7 +406,7 @@ function buildNode(
             }"`
             + ` rx="${COMPLETE_INNER_RADIUS}"`
             + ' fill="none"'
-            + ` stroke="${GREEN}"`
+            + ` stroke="${RED}"`
             + ` stroke-width="`
             + `${COMPLETE_INNER_STROKE}"/>`;
     }
