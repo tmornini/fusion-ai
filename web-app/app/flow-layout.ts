@@ -37,7 +37,7 @@ const SIBLING_STEP =
     Math.max(NODE_WIDTH, NODE_HEIGHT) + 100;
 const CROSSING_SWEEP_COUNT = 12;
 const COORD_ITERATIONS = 4;
-const MAX_ASPECT_STRETCH = 1.4;
+const MAX_ASPECT_STRETCH = 2.5;
 const MIN_SNAKE_NODES = 4;
 
 export function buildAdjacency(
