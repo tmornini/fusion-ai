@@ -108,7 +108,14 @@ export function computeLayout(
     const ordered = reduceCrossings(layers, forwardEdges);
     const topo = ordered.flat();
 
-    if (topo.length >= MIN_SNAKE_NODES) {
+    const hasBranching = [
+        ...buildAdjacency(forwardEdges).values(),
+    ].some(a => a.length > 1);
+
+    if (
+        !hasBranching
+        && topo.length >= MIN_SNAKE_NODES
+    ) {
         const k = computeSnakeWrap(
             topo.length, canvasWidth, canvasHeight,
         );
@@ -515,6 +522,10 @@ function assignCoordinates(
         );
     }
 
+    const fanOwned = computeFanOwned(
+        orderedLayers, upN,
+    );
+
     for (let it = 0; it < COORD_ITERATIONS; it++) {
         for (
             let l = orderedLayers.length - 2;
@@ -522,7 +533,7 @@ function assignCoordinates(
             l--
         ) {
             backwardPassLayer(
-                orderedLayers[l]!, downN, ys,
+                orderedLayers[l]!, downN, ys, fanOwned,
             );
         }
         for (let l = 1; l < orderedLayers.length; l++) {
@@ -650,13 +661,58 @@ function backwardPassLayer(
     layer: readonly string[],
     downN: Map<string, string[]>,
     ys: Map<string, number>,
+    fanOwned: ReadonlySet<string>,
 ): void {
     for (const id of layer) {
+        if (fanOwned.has(id)) continue;
         const succs = downN.get(id)!;
         if (succs.length === 0) continue;
         ys.set(id, medianY(succs, ys));
     }
     enforceSpacing(layer, ys);
+}
+
+function computeFanOwned(
+    orderedLayers: Layers,
+    upN: Map<string, string[]>,
+): ReadonlySet<string> {
+    const fanOwned = new Set<string>();
+    for (const layer of orderedLayers) {
+        for (const id of layer) {
+            const ps = upN.get(id)!;
+            if (ps.length === 1 && fanOwned.has(ps[0]!)) {
+                fanOwned.add(id);
+            }
+        }
+        let i = 0;
+        while (i < layer.length) {
+            const ps = upN.get(layer[i]!)!;
+            if (ps.length !== 1) {
+                i++;
+                continue;
+            }
+            const pred = ps[0]!;
+            let j = i + 1;
+            while (j < layer.length) {
+                const nps = upN.get(layer[j]!)!;
+                if (
+                    nps.length === 1
+                    && nps[0] === pred
+                ) {
+                    j++;
+                } else {
+                    break;
+                }
+            }
+            if (j - i >= 2) {
+                for (let k = i; k < j; k++) {
+                    fanOwned.add(layer[k]!);
+                }
+            }
+            i = j;
+        }
+    }
+    return fanOwned;
 }
 
 function enforceSpacing(
