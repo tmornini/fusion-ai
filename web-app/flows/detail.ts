@@ -226,13 +226,13 @@ function bindSwitches(
         },
     );
     $(
-        '#flow-manual-layout-switch',
+        '#flow-auto-layout-switch',
         document,
     )?.addEventListener(
         'click',
         () => {
             presenter
-                .toggleManualLayout();
+                .toggleAutoLayout();
             renderAndBind(
                 container, presenter,
             );

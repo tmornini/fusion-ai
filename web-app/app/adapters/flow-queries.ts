@@ -37,7 +37,7 @@ export interface FlowGraph {
     name: string;
     description: string;
     isLocked: boolean;
-    isManualLayout: boolean;
+    isAutoLayout: boolean;
     isAutoFit: boolean;
     lockTimeout: number;
     nodes: GraphNode[];
@@ -202,8 +202,8 @@ export async function getFlowGraph(
         isLocked: toBool(
             flow.is_locked,
         ),
-        isManualLayout: toBool(
-            flow.is_manual_layout,
+        isAutoLayout: toBool(
+            flow.is_auto_layout,
         ),
         isAutoFit: toBool(
             flow.is_auto_fit,

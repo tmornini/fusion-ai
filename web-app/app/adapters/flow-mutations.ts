@@ -253,12 +253,12 @@ export async function putFlowLocked(
     });
 }
 
-export async function putFlowManualLayout(
+export async function putFlowAutoLayout(
     id: string,
-    isManualLayout: boolean,
+    isAutoLayout: boolean,
 ): Promise<void> {
     await PUT(`flows/${id}`, {
-        is_manual_layout: isManualLayout,
+        is_auto_layout: isAutoLayout,
         updated_at: nowUtc(),
     });
 }

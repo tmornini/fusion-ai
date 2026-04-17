@@ -317,8 +317,8 @@ export async function getFlowZip(
         isLocked: toBool(
             flow.is_locked,
         ),
-        isManualLayout: toBool(
-            flow.is_manual_layout,
+        isAutoLayout: toBool(
+            flow.is_auto_layout,
         ),
         isAutoFit: toBool(
             flow.is_auto_fit,

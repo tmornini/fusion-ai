@@ -11,7 +11,7 @@ import {
     putWfEdge,
     putFlow,
     putFlowLocked,
-    putFlowManualLayout,
+    putFlowAutoLayout,
     putFlowAutoFit,
     postNodeAddition,
     postEdgeConnection,
@@ -101,7 +101,7 @@ interface DesignerState {
     flowName: string;
     flowDescription: string;
     isLocked: boolean;
-    isManualLayout: boolean;
+    isAutoLayout: boolean;
     isAutoFit: boolean;
     lockTimeout: number;
     isEditingName: boolean;
@@ -144,8 +144,7 @@ export class FlowDesignerPresenter {
             flowDescription:
                 graph.description,
             isLocked: graph.isLocked,
-            isManualLayout:
-                graph.isManualLayout,
+            isAutoLayout: graph.isAutoLayout,
             isAutoFit: graph.isAutoFit,
             lockTimeout: graph.lockTimeout,
             isEditingName: false,
@@ -214,15 +213,15 @@ export class FlowDesignerPresenter {
         );
     }
 
-    isManualLayout(): boolean {
-        return this.#state.isManualLayout;
+    isAutoLayout(): boolean {
+        return this.#state.isAutoLayout;
     }
 
-    toggleManualLayout(): void {
+    toggleAutoLayout(): void {
         const next =
-            !this.#state.isManualLayout;
-        this.#state.isManualLayout = next;
-        void putFlowManualLayout(
+            !this.#state.isAutoLayout;
+        this.#state.isAutoLayout = next;
+        void putFlowAutoLayout(
             this.#state.flowId, next,
         );
     }
@@ -593,9 +592,9 @@ export class FlowDesignerPresenter {
             );
         const lockedChecked =
             String(this.#state.isLocked);
-        const manualChecked =
+        const autoLayoutChecked =
             String(
-                this.#state.isManualLayout,
+                this.#state.isAutoLayout,
             );
         const autoFitChecked =
             String(this.#state.isAutoFit);
@@ -631,11 +630,11 @@ Locked</label>
     + ' text-sm wf-lock-label'
 }"><button class="switch"
     role="switch"
-    aria-checked="${manualChecked}"
-    id="flow-manual-layout-switch"
+    aria-checked="${autoLayoutChecked}"
+    id="flow-auto-layout-switch"
     ><span class="switch-thumb"
     ></span></button>
-Manual Layout</label>
+Auto Layout</label>
 <label class="${
     'flex items-center gap-2'
     + ' text-sm wf-lock-label'
@@ -953,7 +952,7 @@ ${toolbar}
 
     autoLayout(): void {
         if (this.#guardLocked()) return;
-        if (this.#state.isManualLayout) return;
+        if (!this.#state.isAutoLayout) return;
         const fId = this.#state.flowId;
         const nodeById = new Map(
             this.#state.nodes.map(
@@ -1648,7 +1647,7 @@ ${toolbar}
             this.canUndo(),
             this.canRedo(),
             this.#state.isLocked,
-            this.#state.isManualLayout,
+            this.#state.isAutoLayout,
             this.#canDelete(),
         );
     }
