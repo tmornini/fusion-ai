@@ -236,6 +236,9 @@ export class FlowDesignerPresenter {
     toggleLocked(): void {
         const next = !this.#state.isLocked;
         this.#state.isLocked = next;
+        if (next && this.#state.isEditingName) {
+            this.#state.isEditingName = false;
+        }
         void putFlowLocked(
             this.#state.flowId, next,
         );
@@ -607,6 +610,7 @@ export class FlowDesignerPresenter {
             buildFlowNameHeader(
                 this.#state.flowName,
                 this.#state.isEditingName,
+                this.#state.isLocked,
             );
         const lockedChecked =
             String(this.#state.isLocked);
@@ -1692,6 +1696,7 @@ ${toolbar}
                 );
             return buildNodePanel(
                 node, outgoing,
+                this.#state.isLocked,
             );
         }
 
@@ -1713,6 +1718,7 @@ ${toolbar}
                 )!;
             return buildEdgePanel(
                 edge, fromNode, toNode,
+                this.#state.isLocked,
             );
         }
 
