@@ -1664,6 +1664,7 @@ ${toolbar}
             this.canRedo(),
             this.#state.isLocked,
             this.#canDelete(),
+            this.#state.isAutoFit,
         );
     }
 

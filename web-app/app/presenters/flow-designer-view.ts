@@ -302,6 +302,7 @@ export function buildToolbar(
     canRedo: boolean,
     isLocked: boolean,
     canDelete: boolean,
+    isAutoFit: boolean,
 ): SafeHtml {
     return html`<div
 class="wf-toolbar">
@@ -331,14 +332,16 @@ class="wf-toolbar">
     class="btn btn-ghost btn-icon"
     data-action="zoom-out"
     title="Zoom out"
-    aria-label="Zoom out"
-    >${iconMinus(18, '')}</button>
+    aria-label="Zoom out"${
+    trusted(isAutoFit ? ' disabled' : '')
+    }>${iconMinus(18, '')}</button>
 <button
     class="btn btn-ghost btn-icon"
     data-action="zoom-in"
     title="Zoom in"
-    aria-label="Zoom in"
-    >${iconPlus(18, '')}</button>
+    aria-label="Zoom in"${
+    trusted(isAutoFit ? ' disabled' : '')
+    }>${iconPlus(18, '')}</button>
 </div>
 <div class="wf-toolbar-spacer"></div>
 <div class="wf-toolbar-group">
