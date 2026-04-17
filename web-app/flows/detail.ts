@@ -379,17 +379,6 @@ function bindToolbarActions(
                 },
             );
         }
-        if (action === 'auto-layout') {
-            btn.addEventListener(
-                'click',
-                () => {
-                    presenter.autoLayout();
-                    renderAndBind(
-                        container, presenter,
-                    );
-                },
-            );
-        }
         if (action === 'zoom-in') {
             btn.addEventListener(
                 'click',
@@ -406,18 +395,6 @@ function bindToolbarActions(
                 'click',
                 () => {
                     presenter.zoomOut();
-                    renderAndBind(
-                        container, presenter,
-                    );
-                },
-            );
-        }
-        if (action === 'auto-fit') {
-            btn.addEventListener(
-                'click',
-                () => {
-                    presenter
-                        .enableAutoFit();
                     renderAndBind(
                         container, presenter,
                     );

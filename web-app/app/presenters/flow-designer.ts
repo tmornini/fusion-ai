@@ -1642,12 +1642,9 @@ ${toolbar}
 
     #buildToolbar(): SafeHtml {
         return buildToolbar(
-            this.#state.interaction
-                .autoFitEnabled,
             this.canUndo(),
             this.canRedo(),
             this.#state.isLocked,
-            this.#state.isAutoLayout,
             this.#canDelete(),
         );
     }
