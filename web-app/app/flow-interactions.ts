@@ -709,6 +709,7 @@ export function bindInteractions(
     ) => void,
     getNodePosition: NodePositionLookup,
     getAllNodes: NodeListLookup,
+    isAutoFit: () => boolean,
     signal: AbortSignal,
 ): void {
     const cursorHost =
@@ -807,9 +808,11 @@ export function bindInteractions(
         if (state.isSpaceDown === next) {
             return;
         }
+        if (next && isAutoFit()) {
+            return;
+        }
         state.isSpaceDown = next;
         if (next) {
-            onAutoFitDisable();
             cursorHost.classList.add(
                 'wf-pan-cursor',
             );
