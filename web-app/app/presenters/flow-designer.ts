@@ -304,10 +304,7 @@ export class FlowDesignerPresenter {
         this.#history.setHasUndoHistory(
             remaining.length > 0,
         );
-        if (
-            this.#state.interaction
-                .autoFitEnabled
-        ) {
+        if (this.#state.isAutoFit) {
             this.#applyZoomToFit();
         }
         return true;
@@ -325,10 +322,7 @@ export class FlowDesignerPresenter {
             .setHasUndoHistory(true);
         await putFlowFromVersion(snapshot);
         await this.#refreshState();
-        if (
-            this.#state.interaction
-                .autoFitEnabled
-        ) {
+        if (this.#state.isAutoFit) {
             this.#applyZoomToFit();
         }
         return true;
@@ -553,10 +547,7 @@ export class FlowDesignerPresenter {
                 w: vb.w,
                 h: vb.h,
             };
-            // Disable Auto Fit so the centering
-            // call below sticks across renders.
-            this.#state.interaction
-                .autoFitEnabled = false;
+            this.disableAutoFit();
             this.#panToRevealSelected();
         }
         if (!isOpen && wasOpen) {
@@ -1480,6 +1471,7 @@ ${toolbar}
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
+        this.disableAutoFit();
     }
 
     zoomOut(): void {
@@ -1487,6 +1479,7 @@ ${toolbar}
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
+        this.disableAutoFit();
     }
 
     #selectedFocalPt(): {
@@ -1558,10 +1551,12 @@ ${toolbar}
         return null;
     }
 
-    enableAutoFit(): void {
-        this.#state.interaction
-            .autoFitEnabled = true;
-        this.#applyZoomToFit();
+    disableAutoFit(): void {
+        if (!this.#state.isAutoFit) return;
+        this.#state.isAutoFit = false;
+        void putFlowAutoFit(
+            this.#state.flowId, false,
+        );
     }
 
     updateCanvasSize(
@@ -1604,10 +1599,7 @@ ${toolbar}
     }
 
     #expandIfNeeded(): void {
-        if (
-            !this.#state.interaction
-                .autoFitEnabled
-        ) return;
+        if (!this.#state.isAutoFit) return;
         const vb =
             this.#state.interaction.viewBox;
         for (const n of this.#state.nodes) {
