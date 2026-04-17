@@ -753,7 +753,16 @@ function fitToCanvas(
     const posCy = (minY + maxY) / 2;
     (window as unknown as {
         __fit?: object;
-    }).__fit = { canvasW, canvasH, natW, natH };
+    }).__fit = {
+        canvasW, canvasH, natW, natH,
+        pos: Array.from(positions.entries()).map(
+            ([id, p]) => ({
+                id: id.slice(-3),
+                x: Math.round(p.x),
+                y: Math.round(p.y),
+            }),
+        ),
+    };
 
     const graphLandscape =
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
