@@ -751,18 +751,6 @@ function fitToCanvas(
     const natH = maxY - minY;
     const posCx = (minX + maxX) / 2;
     const posCy = (minY + maxY) / 2;
-    (window as unknown as {
-        __fit?: object;
-    }).__fit = {
-        canvasW, canvasH, natW, natH,
-        pos: Array.from(positions.entries()).map(
-            ([id, p]) => ({
-                id: id.slice(-3),
-                x: Math.round(p.x),
-                y: Math.round(p.y),
-            }),
-        ),
-    };
 
     const graphLandscape =
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
@@ -784,10 +772,7 @@ function fitToCanvas(
         let sY = Infinity;
         if (rotW > 0 && tW > 0) sX = tW / rotW;
         if (rotH > 0 && tH > 0) sY = tH / rotH;
-        if (
-            isFinite(sX) && sX >= 1
-            && isFinite(sY) && sY >= 1
-        ) {
+        if (isFinite(sX) && isFinite(sY)) {
             const sSmall = Math.min(sX, sY);
             const sBig = Math.max(sX, sY);
             const capped = Math.min(
