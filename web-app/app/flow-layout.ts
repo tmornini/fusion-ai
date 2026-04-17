@@ -785,6 +785,8 @@ function fitToCanvas(
             scaleY = sY > sX
                 ? capped
                 : sSmall;
+            scaleX = Math.max(scaleX, 1);
+            scaleY = Math.max(scaleY, 0.4);
         }
     }
 
