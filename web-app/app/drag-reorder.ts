@@ -115,11 +115,20 @@ export function initDragReorder(
                 e.preventDefault();
                 return;
             }
+            const id = card.getAttribute(
+                idAttribute,
+            );
+            if (id === null) {
+                throw new Error(
+                    'drag-reorder: card'
+                    + ' missing '
+                    + idAttribute
+                    + ' attribute',
+                );
+            }
             drag = {
                 kind: 'active',
-                id: card.getAttribute(
-                    idAttribute,
-                ) || '',
+                id,
                 indicator: null,
                 idx: null,
             };
