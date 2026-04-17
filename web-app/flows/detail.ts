@@ -807,6 +807,10 @@ export async function init(
         const h = initialWrap.clientHeight;
         if (w > 0 && h > 0) {
             presenter.updateCanvasSize(w, h);
+            presenter.reconcileLayout();
+            renderAndBind(
+                container, presenter,
+            );
         }
     }
     const ro = new ResizeObserver(() => {

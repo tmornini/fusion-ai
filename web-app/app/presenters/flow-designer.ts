@@ -332,7 +332,7 @@ export class FlowDesignerPresenter {
         this.#history.setHasUndoHistory(
             remaining.length > 0,
         );
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -348,7 +348,7 @@ export class FlowDesignerPresenter {
             .setHasUndoHistory(true);
         await putFlowFromVersion(snapshot);
         await this.#refreshState();
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -706,7 +706,7 @@ ${toolbar}
             edges: this.#state.edges,
         });
         this.#noteMutation();
-        this.#postMutation();
+        this.reconcileLayout();
     }
 
     async addNode(): Promise<boolean> {
@@ -747,7 +747,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -841,7 +841,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -889,7 +889,7 @@ ${toolbar}
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -949,7 +949,7 @@ ${toolbar}
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -969,7 +969,7 @@ ${toolbar}
         return false;
     }
 
-    #postMutation(): void {
+    reconcileLayout(): void {
         if (
             this.#state.isAutoLayout
             && !this.#state.isLocked
@@ -1378,7 +1378,7 @@ ${toolbar}
             };
         this.#state.interaction
             .isPanelOpen = false;
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
@@ -1466,7 +1466,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
-        this.#postMutation();
+        this.reconcileLayout();
         return true;
     }
 
