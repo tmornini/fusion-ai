@@ -12,6 +12,7 @@ import {
     putFlow,
     putFlowLocked,
     putFlowManualLayout,
+    putFlowAutoFit,
     postNodeAddition,
     postEdgeConnection,
     postFieldAddition,
@@ -101,6 +102,7 @@ interface DesignerState {
     flowDescription: string;
     isLocked: boolean;
     isManualLayout: boolean;
+    isAutoFit: boolean;
     lockTimeout: number;
     isEditingName: boolean;
     nodes: GraphNode[];
@@ -144,6 +146,7 @@ export class FlowDesignerPresenter {
             isLocked: graph.isLocked,
             isManualLayout:
                 graph.isManualLayout,
+            isAutoFit: graph.isAutoFit,
             lockTimeout: graph.lockTimeout,
             isEditingName: false,
             nodes: graph.nodes,
@@ -222,6 +225,21 @@ export class FlowDesignerPresenter {
         void putFlowManualLayout(
             this.#state.flowId, next,
         );
+    }
+
+    isAutoFit(): boolean {
+        return this.#state.isAutoFit;
+    }
+
+    toggleAutoFit(): void {
+        const next = !this.#state.isAutoFit;
+        this.#state.isAutoFit = next;
+        void putFlowAutoFit(
+            this.#state.flowId, next,
+        );
+        if (next) {
+            this.#applyZoomToFit();
+        }
     }
 
     #guardLocked(): boolean {
