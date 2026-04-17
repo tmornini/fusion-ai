@@ -304,9 +304,7 @@ export class FlowDesignerPresenter {
         this.#history.setHasUndoHistory(
             remaining.length > 0,
         );
-        if (this.#state.isAutoFit) {
-            this.#applyZoomToFit();
-        }
+        this.#postMutation();
         return true;
     }
 
@@ -322,9 +320,7 @@ export class FlowDesignerPresenter {
             .setHasUndoHistory(true);
         await putFlowFromVersion(snapshot);
         await this.#refreshState();
-        if (this.#state.isAutoFit) {
-            this.#applyZoomToFit();
-        }
+        this.#postMutation();
         return true;
     }
 
@@ -682,7 +678,7 @@ ${toolbar}
             edges: this.#state.edges,
         });
         this.#noteMutation();
-        this.#expandIfNeeded();
+        this.#postMutation();
     }
 
     async addNode(): Promise<boolean> {
@@ -723,6 +719,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
+        this.#postMutation();
         return true;
     }
 
@@ -816,6 +813,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
+        this.#postMutation();
         return true;
     }
 
@@ -863,6 +861,7 @@ ${toolbar}
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
+        this.#postMutation();
         return true;
     }
 
@@ -922,6 +921,7 @@ ${toolbar}
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
+        this.#postMutation();
         return true;
     }
 
@@ -941,10 +941,19 @@ ${toolbar}
         return false;
     }
 
-    autoLayout(): void {
-        if (this.#guardLocked()) return;
-        if (!this.#state.isAutoLayout) return;
-        const fId = this.#state.flowId;
+    #postMutation(): void {
+        if (
+            this.#state.isAutoLayout
+            && !this.#state.isLocked
+        ) {
+            this.#runAutoLayout();
+        }
+        if (this.#state.isAutoFit) {
+            this.#applyZoomToFit();
+        }
+    }
+
+    #runAutoLayout(): void {
         const nodeById = new Map(
             this.#state.nodes.map(
                 n => [n.id, n],
@@ -998,13 +1007,11 @@ ${toolbar}
                     positionY: pos.y,
                 };
             });
-        void putGraph({
-            flowId: fId,
+        void putGraphSilent({
+            flowId: this.#state.flowId,
             nodes: this.#state.nodes,
             edges: this.#state.edges,
         });
-        this.#noteMutation();
-        this.#applyZoomToFit();
     }
 
     updateNodeName(
@@ -1338,7 +1345,7 @@ ${toolbar}
             };
         this.#state.interaction
             .isPanelOpen = false;
-        this.#expandIfNeeded();
+        this.#postMutation();
         return true;
     }
 
@@ -1426,7 +1433,7 @@ ${toolbar}
             },
         ];
         this.#noteMutation();
-        this.#expandIfNeeded();
+        this.#postMutation();
         return true;
     }
 
@@ -1596,27 +1603,6 @@ ${toolbar}
             this.#canvasW,
             this.#canvasH,
         );
-    }
-
-    #expandIfNeeded(): void {
-        if (!this.#state.isAutoFit) return;
-        const vb =
-            this.#state.interaction.viewBox;
-        for (const n of this.#state.nodes) {
-            const r =
-                n.positionX + NODE_WIDTH;
-            const b =
-                n.positionY + NODE_HEIGHT;
-            if (
-                n.positionX < vb.x
-                || n.positionY < vb.y
-                || r > vb.x + vb.w
-                || b > vb.y + vb.h
-            ) {
-                this.#applyZoomToFit();
-                return;
-            }
-        }
     }
 
     #canDelete(): boolean {
