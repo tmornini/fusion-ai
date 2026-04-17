@@ -597,6 +597,8 @@ export class FlowDesignerPresenter {
             String(
                 this.#state.isManualLayout,
             );
+        const autoFitChecked =
+            String(this.#state.isAutoFit);
         const content = html`<div
 class="wf-designer">
 <div class="wf-designer-header">
@@ -634,6 +636,16 @@ Locked</label>
     ><span class="switch-thumb"
     ></span></button>
 Manual Layout</label>
+<label class="${
+    'flex items-center gap-2'
+    + ' text-sm wf-lock-label'
+}"><button class="switch"
+    role="switch"
+    aria-checked="${autoFitChecked}"
+    id="flow-auto-fit-switch"
+    ><span class="switch-thumb"
+    ></span></button>
+Auto Fit</label>
 </div>
 </div>
 </div>

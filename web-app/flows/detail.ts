@@ -238,6 +238,18 @@ function bindSwitches(
             );
         },
     );
+    $(
+        '#flow-auto-fit-switch',
+        document,
+    )?.addEventListener(
+        'click',
+        () => {
+            presenter.toggleAutoFit();
+            renderAndBind(
+                container, presenter,
+            );
+        },
+    );
 }
 
 function bindBackButton(): void {
