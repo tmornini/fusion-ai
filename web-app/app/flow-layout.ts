@@ -751,6 +751,10 @@ function fitToCanvas(
     const natH = maxY - minY;
     const posCx = (minX + maxX) / 2;
     const posCy = (minY + maxY) / 2;
+    // eslint-disable-next-line no-console
+    console.log('[FIT]', {
+        canvasW, canvasH, natW, natH,
+    });
 
     const graphLandscape =
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);
