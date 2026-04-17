@@ -252,6 +252,9 @@ export class FlowDesignerPresenter {
         void putFlowAutoLayout(
             this.#state.flowId, next,
         );
+        if (next) {
+            this.reconcileLayout();
+        }
     }
 
     isAutoFit(): boolean {
