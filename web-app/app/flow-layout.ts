@@ -751,9 +751,6 @@ function fitToCanvas(
     const natH = maxY - minY;
     const posCx = (minX + maxX) / 2;
     const posCy = (minY + maxY) / 2;
-    (window as unknown as {
-        __fit?: object;
-    }).__fit = { canvasW, canvasH, natW, natH };
 
     const graphLandscape =
         (natW + NODE_WIDTH) >= (natH + NODE_HEIGHT);

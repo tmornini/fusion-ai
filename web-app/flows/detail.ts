@@ -807,6 +807,16 @@ export async function init(
             loaded.versions.length > 0,
         );
     renderAndBind(container, presenter);
+    const initialWrap = container.querySelector(
+        '.wf-canvas-wrap',
+    );
+    if (initialWrap instanceof HTMLElement) {
+        const w = initialWrap.clientWidth;
+        const h = initialWrap.clientHeight;
+        if (w > 0 && h > 0) {
+            presenter.updateCanvasSize(w, h);
+        }
+    }
     const ro = new ResizeObserver(() => {
         const liveWrap = container.querySelector(
             '.wf-canvas-wrap',
