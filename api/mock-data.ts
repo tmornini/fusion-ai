@@ -1190,6 +1190,7 @@ export async function populateMockData(
                 + ' onboarding process',
             is_locked: false,
             is_manual_layout: false,
+            is_auto_fit: true,
             lock_timeout:
                 DEFAULT_LOCK_TIMEOUT,
             graph: jsonObjectField({
@@ -1479,6 +1480,7 @@ export async function populateMockData(
             description: '',
             is_locked: false,
             is_manual_layout: false,
+            is_auto_fit: true,
             lock_timeout:
                 DEFAULT_LOCK_TIMEOUT,
             graph: jsonObjectField({
@@ -1997,6 +1999,7 @@ export async function populateMockData(
                 + ' cycles for Auto Layout testing',
             is_locked: false,
             is_manual_layout: false,
+            is_auto_fit: true,
             lock_timeout: DEFAULT_LOCK_TIMEOUT,
             graph: jsonObjectField({
                 nodes: [

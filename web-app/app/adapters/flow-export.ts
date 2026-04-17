@@ -320,6 +320,9 @@ export async function getFlowZip(
         isManualLayout: toBool(
             flow.is_manual_layout,
         ),
+        isAutoFit: toBool(
+            flow.is_auto_fit,
+        ),
         lockTimeout: flow.lock_timeout,
         nodes: graph.nodes,
         edges: graph.edges,

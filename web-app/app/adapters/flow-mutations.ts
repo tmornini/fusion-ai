@@ -263,6 +263,16 @@ export async function putFlowManualLayout(
     });
 }
 
+export async function putFlowAutoFit(
+    id: string,
+    isAutoFit: boolean,
+): Promise<void> {
+    await PUT(`flows/${id}`, {
+        is_auto_fit: isAutoFit,
+        updated_at: nowUtc(),
+    });
+}
+
 export interface GraphUpdateContext {
     flowId: string;
     nodes: GraphNode[];
