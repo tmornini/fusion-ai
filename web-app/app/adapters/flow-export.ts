@@ -674,7 +674,7 @@ function layoutImportedGraph(
         edges: layoutEdges,
         canvasWidth: IMPORT_CANVAS_W,
         canvasHeight: IMPORT_CANVAS_H,
-    });
+    }).positions;
 }
 
 function buildImportedEdges(

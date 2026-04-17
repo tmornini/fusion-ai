@@ -48,6 +48,7 @@ import {
 } from '../flow-graph';
 import {
     computeLayout,
+    edgeWaypointKey,
     wouldBeCycle,
     NODE_WIDTH,
     NODE_HEIGHT,
@@ -107,8 +108,34 @@ interface DesignerState {
     isEditingName: boolean;
     nodes: GraphNode[];
     edges: GraphEdge[];
+    edgeWaypoints: Map<string, Waypoint[]>;
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
+}
+
+type Waypoint = { x: number; y: number };
+
+function mapWaypointsByEdgeId(
+    edges: readonly GraphEdge[],
+    byPair: Map<string, Waypoint[]>,
+): Map<string, Waypoint[]> {
+    const result =
+        new Map<string, Waypoint[]>();
+    for (const e of edges) {
+        const key = edgeWaypointKey(
+            e.fromNodeId, e.toNodeId,
+        );
+        const wp = byPair.get(key);
+        if (wp && wp.length > 0) {
+            result.set(e.id, wp);
+        }
+    }
+    return result;
+}
+
+function emptyWaypoints(
+): Map<string, Waypoint[]> {
+    return new Map<string, Waypoint[]>();
 }
 
 // Must match .wf-props-panel width in pages.css
@@ -150,6 +177,7 @@ export class FlowDesignerPresenter {
             isEditingName: false,
             nodes: graph.nodes,
             edges: graph.edges,
+            edgeWaypoints: emptyWaypoints(),
             interaction,
             savedViewBox:
                 { kind: 'none' },
@@ -991,7 +1019,7 @@ ${toolbar}
                 this.#canvasW - PANEL_WIDTH_PX,
             )
             : this.#canvasW;
-        const positions = computeLayout({
+        const result = computeLayout({
             nodes: layoutInputs,
             edges: layoutEdges,
             canvasWidth: effectiveW,
@@ -1000,13 +1028,18 @@ ${toolbar}
         this.#state.nodes =
             this.#state.nodes.map(n => {
                 const pos =
-                    positions.get(n.id)!;
+                    result.positions.get(n.id)!;
                 return {
                     ...n,
                     positionX: pos.x,
                     positionY: pos.y,
                 };
             });
+        this.#state.edgeWaypoints =
+            mapWaypointsByEdgeId(
+                this.#state.edges,
+                result.waypoints,
+            );
         void putGraphSilent({
             flowId: this.#state.flowId,
             nodes: this.#state.nodes,
@@ -1919,6 +1952,7 @@ ${toolbar}
             this.#state.isLocked,
             isConn,
             marqueeRect,
+            this.#state.edgeWaypoints,
         );
         const preview =
             this.#buildConnectPreview();
