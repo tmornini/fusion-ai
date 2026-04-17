@@ -8,7 +8,6 @@ import type {
 } from './flow-interactions';
 import {
     NODE_WIDTH, NODE_HEIGHT,
-    buildAdjacency, isReachable,
 } from './flow-layout';
 
 const BLUE = '#4B6CA1';
@@ -805,22 +804,33 @@ export function buildGraphSvg(
         nodes.map(n => [n.id, n]),
     );
 
-    const adj = buildAdjacency(
-        edges.map(e => ({
-            fromId: e.fromNodeId,
-            toId: e.toNodeId,
-        })),
-    );
-    const cycleEdgeIds =
-        new Set<string>();
+    const outAdj = new Map<string, GraphEdge[]>();
+    for (const n of nodes) {
+        outAdj.set(n.id, []);
+    }
     for (const edge of edges) {
-        if (isReachable(
-            edge.toNodeId,
-            edge.fromNodeId,
-            adj,
-        )) {
-            cycleEdgeIds.add(edge.id);
+        outAdj.get(edge.fromNodeId)?.push(edge);
+    }
+    const cycleEdgeIds = new Set<string>();
+    const visited = new Set<string>();
+    const onStack = new Set<string>();
+    const dfs = (id: string): void => {
+        visited.add(id);
+        onStack.add(id);
+        const outs = outAdj.get(id) ?? [];
+        for (const e of outs) {
+            if (onStack.has(e.toNodeId)) {
+                cycleEdgeIds.add(e.id);
+            } else if (!visited.has(e.toNodeId)) {
+                dfs(e.toNodeId);
+            }
         }
+        onStack.delete(id);
+    };
+    const startNode = nodes.find(n => n.isStart);
+    if (startNode) dfs(startNode.id);
+    for (const n of nodes) {
+        if (!visited.has(n.id)) dfs(n.id);
     }
 
     const pairKey = (
