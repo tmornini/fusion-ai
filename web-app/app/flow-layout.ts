@@ -36,6 +36,7 @@ const MIN_LAYER_STEP =
 const SIBLING_STEP =
     Math.max(NODE_WIDTH, NODE_HEIGHT) + 100;
 const CROSSING_SWEEP_COUNT = 12;
+const COORD_ITERATIONS = 4;
 const MAX_ASPECT_STRETCH = 1.4;
 const MIN_SNAKE_NODES = 4;
 
@@ -480,8 +481,12 @@ function assignCoordinates(
     });
 
     const upN = new Map<string, string[]>();
+    const downN = new Map<string, string[]>();
     for (const l of orderedLayers) {
-        for (const id of l) upN.set(id, []);
+        for (const id of l) {
+            upN.set(id, []);
+            downN.set(id, []);
+        }
     }
     for (const e of forwardEdges) {
         const fl = layerOf.get(e.fromId);
@@ -490,6 +495,7 @@ function assignCoordinates(
         if (tl === undefined) continue;
         if (tl - fl !== 1) continue;
         upN.get(e.toId)!.push(e.fromId);
+        downN.get(e.fromId)!.push(e.toId);
     }
 
     const ys = new Map<string, number>();
@@ -504,23 +510,26 @@ function assignCoordinates(
     }
 
     for (let l = 1; l < orderedLayers.length; l++) {
-        const layer = orderedLayers[l]!;
-        const raw = layer.map(id => {
-            const ps = upN.get(id)!;
-            if (ps.length === 0) return 0;
-            const vals = ps
-                .map(p => ys.get(p)!)
-                .sort((a, b) => a - b);
-            const mid = Math.floor(vals.length / 2);
-            if (vals.length % 2 === 1) {
-                return vals[mid]!;
-            }
-            return (vals[mid - 1]! + vals[mid]!) / 2;
-        });
-        layer.forEach((id, i) => {
-            ys.set(id, raw[i]!);
-        });
-        enforceSpacing(layer, ys);
+        forwardPassLayer(
+            orderedLayers[l]!, upN, ys,
+        );
+    }
+
+    for (let it = 0; it < COORD_ITERATIONS; it++) {
+        for (
+            let l = orderedLayers.length - 2;
+            l >= 0;
+            l--
+        ) {
+            backwardPassLayer(
+                orderedLayers[l]!, downN, ys,
+            );
+        }
+        for (let l = 1; l < orderedLayers.length; l++) {
+            forwardPassLayer(
+                orderedLayers[l]!, upN, ys,
+            );
+        }
     }
 
     const maxLabelByLayer = new Array<number>(
@@ -571,6 +580,83 @@ function assignCoordinates(
     });
 
     return positions;
+}
+
+function medianY(
+    ids: readonly string[],
+    ys: Map<string, number>,
+): number {
+    const vals = ids
+        .map(id => ys.get(id)!)
+        .sort((a, b) => a - b);
+    const mid = Math.floor(vals.length / 2);
+    if (vals.length % 2 === 1) {
+        return vals[mid]!;
+    }
+    return (vals[mid - 1]! + vals[mid]!) / 2;
+}
+
+function centerGroupAround(
+    group: readonly string[],
+    centerY: number,
+    ys: Map<string, number>,
+): void {
+    const k = group.length;
+    group.forEach((id, i) => {
+        const offset =
+            (i - (k - 1) / 2) * SIBLING_STEP;
+        ys.set(id, centerY + offset);
+    });
+}
+
+function forwardPassLayer(
+    layer: readonly string[],
+    upN: Map<string, string[]>,
+    ys: Map<string, number>,
+): void {
+    let i = 0;
+    while (i < layer.length) {
+        const id = layer[i]!;
+        const ps = upN.get(id)!;
+        if (ps.length !== 1) {
+            ys.set(id, medianY(ps, ys));
+            i++;
+            continue;
+        }
+        const pred = ps[0]!;
+        let j = i + 1;
+        while (j < layer.length) {
+            const nid = layer[j]!;
+            const nps = upN.get(nid)!;
+            if (
+                nps.length === 1
+                && nps[0] === pred
+            ) {
+                j++;
+            } else {
+                break;
+            }
+        }
+        const group = layer.slice(i, j);
+        centerGroupAround(
+            group, ys.get(pred)!, ys,
+        );
+        i = j;
+    }
+    enforceSpacing(layer, ys);
+}
+
+function backwardPassLayer(
+    layer: readonly string[],
+    downN: Map<string, string[]>,
+    ys: Map<string, number>,
+): void {
+    for (const id of layer) {
+        const succs = downN.get(id)!;
+        if (succs.length === 0) continue;
+        ys.set(id, medianY(succs, ys));
+    }
+    enforceSpacing(layer, ys);
 }
 
 function enforceSpacing(
