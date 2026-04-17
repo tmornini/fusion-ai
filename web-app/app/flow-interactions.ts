@@ -655,9 +655,10 @@ function handleWheel(
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
-    onAutoFitDisable: InteractionCallback,
+    isAutoFit: () => boolean,
 ): void {
     e.preventDefault();
+    if (isAutoFit()) return;
 
     const svgPt = screenToSvg(
         svg, e.clientX, e.clientY,
@@ -682,7 +683,6 @@ function handleWheel(
         svgPt.y
         - (svgPt.y - state.viewBox.y) * ratio;
 
-    onAutoFitDisable();
     onUpdate();
 }
 
@@ -690,7 +690,6 @@ export function bindInteractions(
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
-    onAutoFitDisable: InteractionCallback,
     onNodesDragEnd: (
         updates: Array<{
             nodeId: string;
@@ -754,7 +753,7 @@ export function bindInteractions(
         'wheel',
         (e) => handleWheel(
             e, svg, state, onUpdate,
-            onAutoFitDisable,
+            isAutoFit,
         ),
         { passive: false, signal },
     );

@@ -1518,7 +1518,6 @@ ${toolbar}
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
-        this.disableAutoFit();
     }
 
     zoomOut(): void {
@@ -1526,7 +1525,6 @@ ${toolbar}
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
-        this.disableAutoFit();
     }
 
     #selectedFocalPt(): {
