@@ -108,12 +108,12 @@ export function computeLayout(
     const ordered = reduceCrossings(layers, forwardEdges);
     const topo = ordered.flat();
 
-    const hasBranching = [
+    const hasWideFan = [
         ...buildAdjacency(forwardEdges).values(),
-    ].some(a => a.length > 1);
+    ].some(a => a.length >= 3);
 
     if (
-        !hasBranching
+        !hasWideFan
         && topo.length >= MIN_SNAKE_NODES
     ) {
         const k = computeSnakeWrap(
