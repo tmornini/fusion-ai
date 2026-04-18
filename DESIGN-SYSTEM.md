@@ -177,9 +177,9 @@ radius. Three types:
 
 | Type | Border | Port | Draggable |
 |------|--------|------|-----------|
-| Start (New) | Green, 2.5px | None | No |
-| Complete | Green double-border, 3px | None | Yes |
-| Regular | Blue `#4B6CA1`, 2px | Right side | Yes |
+| Start (New) | Green `#16a34a`, 2.5 px | None | No |
+| Complete | Red `#b91c1c`, 3 px | None | Yes |
+| Regular | Blue `#4B6CA1`, 2 px | Right side | Yes |
 
 **Edges**: Cubic bezier curves between node
 perimeters.
@@ -189,11 +189,14 @@ perimeters.
 | Forward | Blue `#4B6CA1` | Blue | Solid |
 | Cycle | Amber `#d97706` | Amber | `6 3` |
 
-Edge classification uses graph reachability, not
-geometric position: `isReachable` (DFS) checks
-whether the target can already reach the source
-through existing edges. A forward edge has no
-existing back-path; a cycle edge would close a loop.
+Edge classification at render time uses DFS
+back-edge detection in `removeCycles`: during a
+depth-first traversal from the start node, any edge
+whose target is currently on the DFS stack is a
+back-edge and renders as a cycle. During a shift-drag
+to create a new edge, the separate `wouldBeCycle`
+helper uses reachability (`isReachable`) to preview
+whether the prospective edge would close a loop.
 
 Labels render at the bezier midpoint in a pill with
 `--color-card-bg` background. Bidirectional pairs

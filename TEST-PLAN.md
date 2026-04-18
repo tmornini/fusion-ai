@@ -107,7 +107,7 @@ on. Run these in order.
   to the flow designer page. The SVG canvas
   shows two nodes: "Start" (start, top-left with
   green border) and "End" (end, bottom-right
-  with double green border) connected by no edges.
+  with red 3-px border) connected by no edges.
   Toolbar shows Undo, Redo, Delete (trash icon),
   Auto Layout, Zoom −/Show All/+,
   Copy Mermaid, Export. Changes auto-save
@@ -432,7 +432,7 @@ on. Run these in order.
   has green border with its name centered in the
   card and no subtitle, standard nodes have blue
   border with field count subtitle, complete node
-  has double green border with its name centered
+  has a red 3-px border with its name centered
   in the card and no subtitle.
 - [ ] **F9** Edges display correctly: forward
   edges are solid blue lines with arrow markers
