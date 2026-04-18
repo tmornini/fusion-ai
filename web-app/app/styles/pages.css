@@ -1080,6 +1080,10 @@ svg.wf-canvas {
   user-select: none;
 }
 
+svg.wf-canvas.wf-canvas-locked #wf-grid circle {
+  fill: hsl(var(--yellow-300));
+}
+
 .wf-props-panel {
   position: absolute;
   top: 0;
