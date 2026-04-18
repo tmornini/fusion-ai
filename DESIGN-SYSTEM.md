@@ -154,14 +154,14 @@ Cmd+K (or Ctrl+K) overlay for quick navigation and search. Implemented in `web-a
 
 ### Charts
 
-SVG chart rendering functions in `web-app/app/charts.ts`. All charts use design system colors and respond to dark mode.
+`build*` functions in `web-app/app/charts.ts` return `SafeHtml` for inline SVG charts. All charts use design system colors and respond to dark mode.
 
 | Type | Function | Usage |
 |------|----------|-------|
-| Bar | `renderBarChart()` | Comparisons, category breakdowns |
-| Line | `renderLineChart()` | Trends over time |
-| Donut | `renderDonutChart()` | Proportions, status distribution |
-| Area | `renderAreaChart()` | Volume trends |
+| Bar | `buildBarChart()` | Comparisons, category breakdowns |
+| Line | `buildLineChart()` | Trends over time |
+| Donut | `buildDonutChart()` | Proportions, status distribution |
+| Area | `buildAreaChart()` | Volume trends |
 
 ### Flow Designer
 
@@ -172,7 +172,7 @@ presenter in `presenters/flow-designer.ts`.
 **Canvas**: Dot grid pattern, 24px cell size, on
 `--color-surface` background.
 
-**Nodes**: 140x56px rounded rectangles, 10px corner
+**Nodes**: 160×64 px rounded rectangles, 10 px corner
 radius. Three types:
 
 | Type | Border | Port | Draggable |
@@ -189,10 +189,11 @@ perimeters.
 | Forward | Blue `#4B6CA1` | Blue | Solid |
 | Cycle | Amber `#d97706` | Amber | `6 3` |
 
-Edge classification uses graph distance from the
-start node (BFS rank), not geometric position. A
-forward edge moves further from start; a cycle edge
-moves closer or stays at the same distance.
+Edge classification uses graph reachability, not
+geometric position: `isReachable` (DFS) checks
+whether the target can already reach the source
+through existing edges. A forward edge has no
+existing back-path; a cycle edge would close a loop.
 
 Labels render at the bezier midpoint in a pill with
 `--color-card-bg` background. Bidirectional pairs
