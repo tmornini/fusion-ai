@@ -559,6 +559,7 @@ export class FlowDesignerPresenter {
     }
 
     #handlePanelTransition(): void {
+        if (this.#state.isAutoFit) return;
         const saved =
             this.#state.savedViewBox;
         const isOpen =
@@ -577,7 +578,6 @@ export class FlowDesignerPresenter {
                 w: vb.w,
                 h: vb.h,
             };
-            this.disableAutoFit();
             this.#panToRevealSelected();
         }
         if (!isOpen && wasOpen) {
@@ -1594,14 +1594,6 @@ ${toolbar}
             };
         }
         return null;
-    }
-
-    disableAutoFit(): void {
-        if (!this.#state.isAutoFit) return;
-        this.#state.isAutoFit = false;
-        void putFlowAutoFit(
-            this.#state.flowId, false,
-        );
     }
 
     updateCanvasSize(

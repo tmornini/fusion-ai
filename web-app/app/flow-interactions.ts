@@ -170,6 +170,7 @@ function handlePointerDown(
     state: InteractionState,
     onUpdate: InteractionCallback,
     getNodePosition: NodePositionLookup,
+    isLocked: () => boolean,
 ): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
@@ -241,6 +242,10 @@ function handlePointerDown(
             state, nodeId, e,
         );
         state.isPanelOpen = isDbl;
+        if (isLocked()) {
+            onUpdate();
+            return;
+        }
         const sel = state.selection;
         const ids =
             sel.kind === 'nodes'
@@ -709,6 +714,7 @@ export function bindInteractions(
     getNodePosition: NodePositionLookup,
     getAllNodes: NodeListLookup,
     isAutoFit: () => boolean,
+    isLocked: () => boolean,
     signal: AbortSignal,
 ): void {
     const cursorHost =
@@ -723,7 +729,7 @@ export function bindInteractions(
         'pointerdown',
         (e) => handlePointerDown(
             e, svg, state, onUpdate,
-            getNodePosition,
+            getNodePosition, isLocked,
         ),
         { signal },
     );

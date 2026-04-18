@@ -314,6 +314,7 @@ function bindSvgInteractions(
             presenter.getNodePosition(id),
         () => presenter.getAllNodes(),
         () => presenter.isAutoFit(),
+        () => presenter.isLocked(),
         signal,
     );
     if (
