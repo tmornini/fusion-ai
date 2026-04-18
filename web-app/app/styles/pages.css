@@ -1080,8 +1080,12 @@ svg.wf-canvas {
   user-select: none;
 }
 
-svg.wf-canvas.wf-canvas-locked #wf-grid circle {
+svg.wf-canvas.wf-canvas-locked .wf-grid-bg {
   fill: hsl(var(--yellow-300));
+}
+
+svg.wf-canvas.wf-canvas-locked #wf-grid circle {
+  fill: hsl(var(--blue-900));
 }
 
 .wf-props-panel {

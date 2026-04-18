@@ -308,6 +308,7 @@ function buildGrid(
     vbH: number,
 ): string {
     return '<rect'
+        + ' class="wf-grid-bg"'
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
         + ` height="${vbH}"`
