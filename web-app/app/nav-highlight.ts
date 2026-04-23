@@ -4,8 +4,6 @@ import { getPageName } from './navigation';
 const NAV_GROUP_CHILDREN:
     Record<string, string[]> = {
         account: [
-            'profile',
-            'settings',
             'users',
             'activity-feed',
         ],
