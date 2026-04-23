@@ -2,7 +2,6 @@ import {
     html, SafeHtml,
 } from '../safe-html';
 import {
-    iconUser, iconSettings,
     iconCreditCard, iconBuilding,
     iconCrown, iconCheckCircle2,
     iconActivity, iconUsers,
@@ -32,69 +31,6 @@ export class AccountPresenter {
                 ${'Manage your organization,'
                     + ' users, and billing'}
             </p>
-        </div>
-
-        <!-- Quick Actions -->
-        <div
-            class="grid grid-cols-1
-                   sm:grid-cols-3 gap-4 mb-8"
-        >
-            <button
-                class="${
-                    'btn btn-outline'
-                    + ' btn-quick-action'
-                }"
-                data-nav-to="profile"
-            >
-                <div class="icon-box"
-                    data-tone="primary"
-                >${iconUser(20, '')}</div>
-                <div class="text-left">
-                    <p class="font-medium text-sm">
-                        My Profile
-                    </p>
-                    <p class="text-xs text-muted">
-                        Personal settings
-                    </p>
-                </div>
-            </button>
-            <button
-                class="${
-                    'btn btn-outline'
-                    + ' btn-quick-action'
-                }"
-                data-nav-to="settings"
-            >
-                <div class="icon-box"
-                    data-tone="info"
-                >${iconSettings(20, '')}</div>
-                <div class="text-left">
-                    <p class="font-medium text-sm">
-                        Company Settings
-                    </p>
-                    <p class="text-xs text-muted">
-                        Organization config
-                    </p>
-                </div>
-            </button>
-            <button
-                class="${
-                    'btn btn-outline'
-                    + ' btn-quick-action'
-                }"
-            >
-                <div class="icon-box"
-                    data-tone="success"
-                >${iconCreditCard(20, '')}</div>
-                <div class="text-left">
-                    <p class="font-medium text-sm">
-                        Billing
-                    </p>
-                    <p class="text-xs text-muted">
-                        Plans & invoices
-                    </p>
-                </div>
-            </button>
         </div>
 
         <!-- Company Overview -->

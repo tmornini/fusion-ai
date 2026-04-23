@@ -6,7 +6,10 @@ import {
     iconGitBranch,
     iconMail,
     iconUser,
+    iconBuilding,
     iconUsers,
+    iconSettings,
+    iconCreditCard,
     iconDatabase,
     iconPalette,
 } from './icons';
@@ -50,16 +53,34 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         icon: iconMail,
     },
     {
+        href: '../profile/index.html',
+        pageLink: 'profile',
+        label: 'My Profile',
+        icon: iconUser,
+    },
+    {
         href: '../organization/index.html',
         pageLink: 'account',
         label: 'Organization',
-        icon: iconUser,
+        icon: iconBuilding,
     },
     {
         href: '../organization/teams.html',
         pageLink: 'teams',
         label: 'Teams',
         icon: iconUsers,
+    },
+    {
+        href: '../settings/index.html',
+        pageLink: 'settings',
+        label: 'Company Settings',
+        icon: iconSettings,
+    },
+    {
+        href: '../billing/index.html',
+        pageLink: 'billing',
+        label: 'Billing',
+        icon: iconCreditCard,
     },
     {
         href: '../snapshots/index.html',
