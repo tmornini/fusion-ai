@@ -53,6 +53,8 @@ const pageModules: Record<
         import('../profile/index'),
     settings: () =>
         import('../settings/index'),
+    billing: () =>
+        import('../billing/index'),
     users: () =>
         import(
             '../organization/users'

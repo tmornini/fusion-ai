@@ -127,6 +127,16 @@ export const PAGE_REGISTRY: Record<
             'company organization'
             + ' settings',
     },
+    billing: {
+        title: 'Billing',
+        layout: 'sidebar',
+        sourceDir: 'billing',
+        sourceFile: 'index',
+        icon: 'creditCard',
+        keywords:
+            'billing plan invoices'
+            + ' payment',
+    },
     users: {
         title: 'Users',
         layout: 'sidebar',

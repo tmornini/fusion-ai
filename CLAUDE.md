@@ -349,7 +349,7 @@ web-app/
     favicon.ico               # Application favicon
     *.woff2                   # 9 self-hosted font files (IBM Plex Sans, Inter, IBM Plex Mono)
 
-  # Pages — 23 entries in PAGE_REGISTRY (18 sidebar-layout + 5 standalone). Most page directories hold multiple pages (e.g., flows/index + flows/detail).
+  # Pages — 24 entries in PAGE_REGISTRY (19 sidebar-layout + 5 standalone). Most page directories hold multiple pages (e.g., flows/index + flows/detail).
   dashboard/                # Dashboard with gauge cards
   workbox/                  # Work order inbox + detail
   ideas/                    # Ideas list + detail, create, convert (named files)
