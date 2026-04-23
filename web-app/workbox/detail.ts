@@ -281,7 +281,7 @@ function buildDetailView(
             Release Work Order
         </button>`;
 
-    return html`<div>
+    return html`<div class="content-wrap">
         <div id="wo-header"
             class="flex items-center
                 gap-4 mb-6">
