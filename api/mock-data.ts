@@ -870,14 +870,6 @@ export async function populateMockData(
         adapter.companySettings.put({
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-            industry: 'Technology',
-            size: '51-200',
-            timezone: 'America/New_York',
-            language: 'English',
-            is_sso_enforced: 0,
-            is_two_factor_enabled: 1,
-            is_ip_whitelist_enabled: 0,
-            data_retention: '12 months',
         }),
         adapter.account.put({
             plan: 'Business',
@@ -2891,14 +2883,6 @@ export async function populateBootstrapData(
         adapter.companySettings.put({
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-            industry: 'Technology',
-            size: '51-200',
-            timezone: 'America/New_York',
-            language: 'English',
-            is_sso_enforced: 0,
-            is_two_factor_enabled: 1,
-            is_ip_whitelist_enabled: 0,
-            data_retention: '12 months',
         }),
         adapter.account.put({
             plan: 'Business',

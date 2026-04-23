@@ -9,7 +9,6 @@ import type {
     ActivityActorEntity,
 } from '../../../api/types';
 import {
-    toBool,
     Activity,
     Account,
     User,
@@ -135,14 +134,6 @@ export async function putProfile(
 export interface CompanySettings {
     name: string;
     domain: string;
-    industry: string;
-    size: string;
-    timezone: string;
-    language: string;
-    isSsoEnforced: boolean;
-    isTwoFactorEnabled: boolean;
-    isIpWhitelistEnabled: boolean;
-    dataRetention: string;
 }
 
 export async function getCompanySettings(
@@ -154,21 +145,6 @@ export async function getCompanySettings(
     return {
         name: row.name,
         domain: row.domain,
-        industry: row.industry,
-        size: row.size,
-        timezone: row.timezone,
-        language: row.language,
-        isSsoEnforced:
-            toBool(row.is_sso_enforced),
-        isTwoFactorEnabled:
-            toBool(
-                row.is_two_factor_enabled,
-            ),
-        isIpWhitelistEnabled:
-            toBool(
-                row.is_ip_whitelist_enabled,
-            ),
-        dataRetention: row.data_retention,
     };
 }
 

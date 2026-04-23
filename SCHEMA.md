@@ -167,14 +167,6 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT |
 | name | TEXT |
 | domain | TEXT |
-| industry | TEXT |
-| size | TEXT |
-| timezone | TEXT |
-| language | TEXT |
-| is_sso_enforced | INTEGER |
-| is_two_factor_enabled | INTEGER |
-| is_ip_whitelist_enabled | INTEGER |
-| data_retention | TEXT |
 
 ### account
 

@@ -689,14 +689,6 @@ export interface CompanySettingsEntity {
     id: Id;
     name: string;
     domain: string;
-    industry: string;
-    size: string;
-    timezone: string;
-    language: string;
-    is_sso_enforced: StoredBoolean;
-    is_two_factor_enabled: StoredBoolean;
-    is_ip_whitelist_enabled: StoredBoolean;
-    data_retention: string;
 }
 
 export interface AccountEntity {
