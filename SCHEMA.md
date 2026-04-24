@@ -242,6 +242,9 @@ Powers persistent undo on the flows/detail page.
 | flow_id | TEXT | References flows |
 | name | TEXT | Snapshot of flows.name |
 | description | TEXT | Snapshot of flows.description |
+| is_locked | BOOLEAN | Snapshot of flows.is_locked |
+| is_auto_layout | BOOLEAN | Snapshot of flows.is_auto_layout |
+| is_auto_fit | BOOLEAN | Snapshot of flows.is_auto_fit |
 | lock_timeout | INTEGER | Snapshot of flows.lock_timeout |
 | graph | TEXT | Snapshot of flows.graph (JSON) |
 | created_at | TEXT | RFC-3339 Zulu — capture time |

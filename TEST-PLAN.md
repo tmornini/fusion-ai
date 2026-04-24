@@ -243,9 +243,11 @@ on. Run these in order.
 
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
 - [ ] **C2** Sidebar shows flat navigation
-  links: Dashboard, Workbox, Ideas, Projects,
-  Flows, Organization, Teams, Snapshots,
-  Design System. PASS: all links present and styled.
+  links in this order: Dashboard, Ideas,
+  Projects, Flows, Workbox, My Profile,
+  Organization, Teams, Company Settings,
+  Billing, Snapshots, Design System. PASS:
+  all 12 links present, in order, and styled.
 - [ ] **C3** Header shows search bar, greeting
   ("Good {morning/afternoon/evening}, Tony
   Stark" — varies by time of day), company
