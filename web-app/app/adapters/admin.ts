@@ -12,6 +12,7 @@ import {
     Activity,
     Account,
     User,
+    jsonArrayField,
 } from '../../../api/types';
 export type { Account };
 import {
@@ -125,15 +126,26 @@ export async function getProfile(
     };
 }
 
-export async function getProfileEntity(
-): Promise<UserEntity> {
-    return GET<UserEntity>('current-user');
-}
-
 export async function putProfile(
-    entity: Omit<UserEntity, 'id'>,
+    profile: Profile,
 ): Promise<void> {
-    await PUT('users/current', entity);
+    const current =
+        await GET<UserEntity>('current-user');
+    const updated:
+        Omit<UserEntity, 'id'> = {
+            ...current,
+            first_name: profile.firstName,
+            last_name: profile.lastName,
+            email: profile.email,
+            phone: profile.phone,
+            role: profile.role,
+            department: profile.department,
+            bio: profile.bio,
+            strengths: jsonArrayField(
+                profile.strengths,
+            ),
+        };
+    await PUT('users/current', updated);
 }
 
 export interface CompanySettings {
@@ -154,11 +166,9 @@ export async function getCompanySettings(
 }
 
 export async function putCompanySettings(
-    entity: Omit<
-        CompanySettingsEntity, 'id'
-    >,
+    settings: CompanySettings,
 ): Promise<void> {
-    await PUT('company-settings', entity);
+    await PUT('company-settings', { ...settings });
 }
 
 export { Activity } from '../../../api/types';
