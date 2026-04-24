@@ -18,6 +18,9 @@ import {
     validateStoredGraphJson,
 } from '../../../api/validators';
 import { postFlowVersion } from './flow-versions';
+import {
+    buildStartAndCompleteNodes,
+} from './flow-defaults';
 
 function parseGraph(
     raw: string,
@@ -59,41 +62,6 @@ async function putGraphMutation(
     });
 }
 
-const DEFAULT_START_NAME = 'Start';
-const DEFAULT_COMPLETE_NAME = 'End';
-const DEFAULT_START_X = -300;
-const DEFAULT_START_Y = 0;
-const DEFAULT_COMPLETE_X = 300;
-const DEFAULT_COMPLETE_Y = 200;
-
-export function buildDefaultStartEnd(): {
-    start: GraphNode;
-    complete: GraphNode;
-} {
-    return {
-        start: {
-            id: crypto.randomUUID(),
-            name: DEFAULT_START_NAME,
-            description: '',
-            positionX: DEFAULT_START_X,
-            positionY: DEFAULT_START_Y,
-            isStart: true,
-            isComplete: false,
-            fields: [],
-        },
-        complete: {
-            id: crypto.randomUUID(),
-            name: DEFAULT_COMPLETE_NAME,
-            description: '',
-            positionX: DEFAULT_COMPLETE_X,
-            positionY: DEFAULT_COMPLETE_Y,
-            isStart: false,
-            isComplete: true,
-            fields: [],
-        },
-    };
-}
-
 export interface FlowCreationContext {
     flowId: string;
     projectId: string;
@@ -133,7 +101,7 @@ export async function postFlowCreation(
 ): Promise<void> {
     const now = nowUtc();
     const { start, complete } =
-        buildDefaultStartEnd();
+        buildStartAndCompleteNodes();
     const graph: StoredGraph = {
         nodes: [start, complete],
         edges: [],

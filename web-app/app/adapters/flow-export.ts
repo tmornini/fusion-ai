@@ -45,8 +45,8 @@ import {
     buildZip, getZipEntries,
 } from '../zip';
 import {
-    buildDefaultStartEnd,
-} from './flow-mutations';
+    buildStartAndCompleteNodes,
+} from './flow-defaults';
 import {
     computeLayout,
 } from '../flow-layout';
@@ -446,7 +446,7 @@ function validateBackupV2Json(
     };
 }
 
-export async function getZipBackup(
+export async function readZipBackup(
     data: Uint8Array,
 ): Promise<BackupV2> {
     const entries = await getZipEntries(data);
@@ -467,7 +467,7 @@ export async function getZipBackup(
     return validateBackupV2Json(text);
 }
 
-export async function getFlowBackupResolution(
+export async function computeFlowBackupResolution(
     backup: BackupV2,
 ): Promise<ImportResolution> {
     const [flows, projects] =
@@ -825,7 +825,7 @@ export async function postFlowFromMermaid(
 
     const now = nowUtc();
     const { start, complete } =
-        buildDefaultStartEnd();
+        buildStartAndCompleteNodes();
 
     const { intermediates, idMap } =
         remapParsedToDefaults(
@@ -1207,7 +1207,7 @@ export async function postFlowFromZip(
     }
 
     const { start, complete } =
-        buildDefaultStartEnd();
+        buildStartAndCompleteNodes();
 
     const { intermediates, idMap } =
         remapParsedToDefaults(

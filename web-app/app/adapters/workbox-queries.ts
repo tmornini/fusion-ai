@@ -201,7 +201,7 @@ export class WorkboxDetail {
 
 /* ── Helpers ─────────────── */
 
-export function parseWorkOrderFlowGraph(
+export function validateWorkOrderFlowGraph(
     raw: string,
 ): WorkOrderFlowGraph {
     return validateWorkOrderFlowGraphJson(
@@ -281,7 +281,7 @@ export async function getWorkboxItems(
 
     const items: WorkboxItem[] = [];
     for (const wo of workOrders) {
-        const fg = parseWorkOrderFlowGraph(
+        const fg = validateWorkOrderFlowGraph(
             wo.flow_graph,
         );
         const woTransitions = (
@@ -390,7 +390,7 @@ export async function getWorkboxItem(
         getUserMap(),
     ]);
 
-    const fg = parseWorkOrderFlowGraph(
+    const fg = validateWorkOrderFlowGraph(
         wo.flow_graph,
     );
 

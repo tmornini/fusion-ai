@@ -16,7 +16,7 @@ import {
     validateStoredGraphJson,
 } from '../../../api/validators';
 import {
-    parseWorkOrderFlowGraph,
+    validateWorkOrderFlowGraph,
 } from './workbox-queries';
 
 const FIRST_POSITION = 1;
@@ -190,7 +190,7 @@ export async function postWorkOrderTransition(
     const wo = await GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
-    const fg = parseWorkOrderFlowGraph(
+    const fg = validateWorkOrderFlowGraph(
         wo.flow_graph,
     );
 
