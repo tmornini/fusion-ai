@@ -2569,9 +2569,9 @@ export async function populateMockData(
                 activity,
             ),
         ),
-        ...mockFlows.map(wf =>
+        ...mockFlows.map(flow =>
             adapter.flows.put(
-                wf.id, wf,
+                flow.id, flow,
             ),
         ),
     ]);

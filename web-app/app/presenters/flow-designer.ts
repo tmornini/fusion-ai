@@ -133,7 +133,7 @@ function emptyWaypoints(
     return new Map<string, Waypoint[]>();
 }
 
-// Must match .wf-props-panel width in pages.css
+// Must match .flow-props-panel width in pages.css
 // (18rem = 288px at 16px root).
 const PANEL_WIDTH_PX = 288;
 
@@ -536,7 +536,7 @@ export class FlowDesignerPresenter {
         // Center the selection in the visible canvas
         // region (the area not covered by the panel).
         // The panel is anchored at the left edge of
-        // .wf-canvas-area with width PANEL_WIDTH_PX,
+        // .flow-canvas-area with width PANEL_WIDTH_PX,
         // so visible X spans [PANEL_WIDTH_PX, canvasW].
         // Solving for vb.x such that selX lands at the
         // visible center yields:
@@ -668,8 +668,8 @@ export class FlowDesignerPresenter {
         const autoFitChecked =
             String(this.#state.isAutoFit);
         const content = html`<div
-class="wf-designer">
-<div class="wf-designer-header">
+class="flow-designer">
+<div class="flow-designer-header">
 <div class="${
     'flex items-center gap-4'
 }">
@@ -686,7 +686,7 @@ class="wf-designer">
 <div class="flex flex-col gap-2">
 <label class="${
     'flex items-center gap-2'
-    + ' text-sm wf-lock-label'
+    + ' text-sm flow-lock-label'
 }"><button class="switch"
     role="switch"
     aria-checked="${lockedChecked}"
@@ -696,7 +696,7 @@ class="wf-designer">
 Locked</label>
 <label class="${
     'flex items-center gap-2'
-    + ' text-sm wf-lock-label'
+    + ' text-sm flow-lock-label'
 }"><button class="switch"
     role="switch"
     aria-checked="${autoLayoutChecked}"
@@ -706,7 +706,7 @@ Locked</label>
 Auto Layout</label>
 <label class="${
     'flex items-center gap-2'
-    + ' text-sm wf-lock-label'
+    + ' text-sm flow-lock-label'
 }"><button class="switch"
     role="switch"
     aria-checked="${autoFitChecked}"
@@ -717,10 +717,10 @@ Auto Fit</label>
 </div>
 </div>
 </div>
-<div class="wf-designer-body">
+<div class="flow-designer-body">
 ${toolbar}
-<div class="wf-canvas-area">${panel}
-<div class="wf-canvas-wrap"
+<div class="flow-canvas-area">${panel}
+<div class="flow-canvas-wrap"
     >${canvas}</div>
 </div>
 </div>
@@ -1873,7 +1873,7 @@ ${toolbar}
             + ' stroke-width="2"'
             + ' opacity="0.3"'
             + ' marker-end='
-            + '"url(#wf-arrow)"'
+            + '"url(#flow-arrow)"'
             + ' pointer-events='
             + '"none"/>'
             + '<g transform="translate('

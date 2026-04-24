@@ -242,7 +242,7 @@ function buildDefs(): string {
         + ' orient="auto-start-reverse">';
     const halfCell = GRID_CELL / 2;
     return '<defs>'
-        + '<pattern id="wf-grid"'
+        + '<pattern id="flow-grid"'
         + ` width="${GRID_CELL}"`
         + ` height="${GRID_CELL}"`
         + ' patternUnits='
@@ -256,17 +256,17 @@ function buildDefs(): string {
         + '--color-muted-foreground,'
         + ' #5a6480)"/>'
         + '</pattern>'
-        + '<marker id="wf-arrow"'
+        + '<marker id="flow-arrow"'
         + markerAttrs
         + `<path d="${arrowPath}"`
         + ` fill="${BLUE}"/>`
         + '</marker>'
-        + '<marker id="wf-arrow-warn"'
+        + '<marker id="flow-arrow-warn"'
         + markerAttrs
         + `<path d="${arrowPath}"`
         + ` fill="${WARN}"/>`
         + '</marker>'
-        + '<filter id="wf-glow"'
+        + '<filter id="flow-glow"'
         + ' x="-30%" y="-30%"'
         + ' width="160%"'
         + ' height="160%">'
@@ -308,7 +308,7 @@ function buildGrid(
     vbH: number,
 ): string {
     return '<rect'
-        + ' class="wf-grid-bg"'
+        + ' class="flow-grid-bg"'
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
         + ` height="${vbH}"`
@@ -318,7 +318,7 @@ function buildGrid(
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
         + ` height="${vbH}"`
-        + ' fill="url(#wf-grid)"/>';
+        + ' fill="url(#flow-grid)"/>';
 }
 
 function truncateLabel(
@@ -378,7 +378,7 @@ function buildNode(
     }
 
     const selAttr = isSelected
-        ? ' filter="url(#wf-glow)"'
+        ? ' filter="url(#flow-glow)"'
         : '';
 
     let inner = '';
@@ -619,14 +619,14 @@ function buildEdge(
     if (isCycle) {
         color = WARN;
         markerUrl =
-            'url(#wf-arrow-warn)';
+            'url(#flow-arrow-warn)';
         dashAttr =
             ` stroke-dasharray="${
                 CYCLE_DASH
             }"`;
     } else {
         color = BLUE;
-        markerUrl = 'url(#wf-arrow)';
+        markerUrl = 'url(#flow-arrow)';
         dashAttr = '';
     }
 
@@ -705,7 +705,7 @@ function buildEdge(
         + '</text>';
 
     const edgeSelAttr = isSelected
-        ? ' filter="url(#wf-glow)"'
+        ? ' filter="url(#flow-glow)"'
         : '';
     return trusted(
         '<g'
@@ -783,8 +783,8 @@ export function buildEdgePreviewPath(
         + String(endPt.y);
     const color = isCycle ? WARN : BLUE;
     const marker = isCycle
-        ? 'url(#wf-arrow-warn)'
-        : 'url(#wf-arrow)';
+        ? 'url(#flow-arrow-warn)'
+        : 'url(#flow-arrow)';
     const dashAttr = isCycle
         ? ' stroke-dasharray="'
             + CYCLE_DASH + '"'
@@ -978,12 +978,12 @@ export function buildGraphSvg(
         + ' ' + String(viewBoxW)
         + ' ' + String(viewBoxH);
 
-    let svgCls = 'wf-canvas';
+    let svgCls = 'flow-canvas';
     if (isConnecting) {
-        svgCls += ' wf-connecting';
+        svgCls += ' flow-connecting';
     }
     if (isLocked) {
-        svgCls += ' wf-canvas-locked';
+        svgCls += ' flow-canvas-locked';
     }
 
     let marqueeMarkup = '';
@@ -993,7 +993,7 @@ export function buildGraphSvg(
             + ` y="${marqueeRect.y}"`
             + ` width="${marqueeRect.w}"`
             + ` height="${marqueeRect.h}"`
-            + ' class="wf-marquee"/>';
+            + ' class="flow-marquee"/>';
     }
 
     return trusted(

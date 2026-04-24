@@ -100,9 +100,9 @@ export async function init(
         },
     );
     if (!result) return;
-    const rendered = result.map(wf => {
+    const rendered = result.map(flow => {
         const p = new FlowPresenter();
-        wf.presentCardInto(p);
+        flow.presentCardInto(p);
         return p.render();
     });
 
