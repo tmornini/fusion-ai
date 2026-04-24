@@ -45,7 +45,7 @@ const pageModules: Record<
         import(
             '../organization/teams'
         ),
-    account: () =>
+    organization: () =>
         import(
             '../organization/index'
         ),

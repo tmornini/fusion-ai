@@ -3,7 +3,7 @@ import { getPageName } from './navigation';
 
 const NAV_GROUP_CHILDREN:
     Record<string, string[]> = {
-        account: [
+        organization: [
             'users',
             'activity-feed',
         ],
