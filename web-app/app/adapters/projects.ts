@@ -179,7 +179,7 @@ export class ProjectView {
     }
 }
 
-export async function getProjectById(
+export async function getProject(
     projectId: string,
 ): Promise<ProjectView> {
     const [
@@ -215,7 +215,7 @@ export async function getProjectById(
     );
 }
 
-export async function getProject(
+export async function getProjectEntity(
     id: string,
 ): Promise<ProjectEntity> {
     return GET<ProjectEntity>(

@@ -15,7 +15,7 @@ import {
     closeDialog,
 } from '../app/core';
 import {
-    getProjectById, getProject,
+    getProject, getProjectEntity,
     putProject,
     getFlowsByProject,
     postFlowCreation,
@@ -152,7 +152,7 @@ function bindProjectEvents(
         );
         try {
             const entity =
-                await getProject(
+                await getProjectEntity(
                     project.idForLink(),
                 );
             await putProject(
@@ -195,7 +195,7 @@ function bindProjectEvents(
         async () => {
             const [upd, updFlows] =
                 await Promise.all([
-                    getProjectById(
+                    getProject(
                         project.idForLink(),
                     ),
                     getFlowsByProject(
@@ -372,14 +372,14 @@ export async function init(
     try {
         [project, flows] =
             await Promise.all([
-                getProjectById(projectId),
+                getProject(projectId),
                 getFlowsByProject(
                     projectId,
                 ),
             ]);
     } catch (err) {
         log.error(
-            'getProjectById failed',
+            'getProject failed',
             'projects',
             err,
         );
