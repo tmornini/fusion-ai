@@ -639,6 +639,9 @@ export interface FlowVersionEntity {
     flow_id: Id;
     name: string;
     description: string;
+    is_locked: boolean;
+    is_auto_layout: boolean;
+    is_auto_fit: boolean;
     lock_timeout: number;
     graph: JsonObjectField;
     created_at: string;

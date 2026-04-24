@@ -362,6 +362,11 @@ export class FlowDesignerPresenter {
             name: this.#state.flowName,
             description:
                 this.#state.flowDescription,
+            isLocked: this.#state.isLocked,
+            isAutoLayout:
+                this.#state.isAutoLayout,
+            isAutoFit:
+                this.#state.isAutoFit,
             lockTimeout:
                 this.#state.lockTimeout,
             graph: serializeGraph(
@@ -407,8 +412,14 @@ export class FlowDesignerPresenter {
         this.#state.flowDescription =
             graph.description;
         this.#state.isLocked = graph.isLocked;
+        this.#state.isAutoLayout =
+            graph.isAutoLayout;
+        this.#state.isAutoFit =
+            graph.isAutoFit;
         this.#state.lockTimeout =
             graph.lockTimeout;
+        this.#state.createdAt =
+            graph.createdAt;
         this.#state.nodes = graph.nodes;
         this.#state.edges = graph.edges;
         this.#state.interaction

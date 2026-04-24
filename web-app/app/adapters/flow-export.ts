@@ -164,6 +164,9 @@ export interface BackupV2 {
         id: string;
         name: string;
         description: string;
+        isLocked: boolean;
+        isAutoLayout: boolean;
+        isAutoFit: boolean;
         lockTimeout: number;
         graph: {
             nodes: GraphNode[];
@@ -287,6 +290,15 @@ function buildBackupJson(
             name: flow.name,
             description:
                 flow.description,
+            isLocked: toBool(
+                flow.is_locked,
+            ),
+            isAutoLayout: toBool(
+                flow.is_auto_layout,
+            ),
+            isAutoFit: toBool(
+                flow.is_auto_fit,
+            ),
             lockTimeout:
                 flow.lock_timeout,
             graph,
@@ -412,6 +424,15 @@ function validateBackupV2Json(
                 label
                     + '.flow.description',
             ),
+            isLocked:
+                flowObj['isLocked']
+                    === true,
+            isAutoLayout:
+                flowObj['isAutoLayout']
+                    === true,
+            isAutoFit:
+                flowObj['isAutoFit']
+                    === true,
             lockTimeout: asNumber(
                 flowObj['lockTimeout'],
                 label
@@ -481,17 +502,28 @@ export async function getFlowBackupResolution(
 export async function putFlowFromBackup(
     backup: BackupV2,
 ): Promise<string> {
+    const current = await GET<FlowEntity>(
+        'flows/' + backup.flow.id,
+    );
     await PUT(
         'flows/' + backup.flow.id,
         {
             name: backup.flow.name,
             description:
                 backup.flow.description,
+            is_locked:
+                backup.flow.isLocked,
+            is_auto_layout:
+                backup.flow.isAutoLayout,
+            is_auto_fit:
+                backup.flow.isAutoFit,
             lock_timeout:
                 backup.flow.lockTimeout,
             graph: putFlowGraph(
                 backup.flow.graph,
             ),
+            created_at:
+                current.created_at,
             updated_at: nowUtc(),
         },
     );
@@ -569,6 +601,11 @@ export async function postFlowFromBackup(
         name: backup.flow.name,
         description:
             backup.flow.description,
+        is_locked: backup.flow.isLocked,
+        is_auto_layout:
+            backup.flow.isAutoLayout,
+        is_auto_fit:
+            backup.flow.isAutoFit,
         lock_timeout:
             backup.flow.lockTimeout,
         graph: putFlowGraph({
