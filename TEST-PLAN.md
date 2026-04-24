@@ -279,7 +279,7 @@ on. Run these in order.
 
 ### Ideas List (`ideas/`)
 
-- [ ] **D1** Navigate to `ideas/`. PASS: table/list shows 11 ideas with title, status, and Time/Cost/Impact stats. Ideas without estimates show "—" (em-dash) instead of zero values.
+- [ ] **D1** Navigate to `ideas/`. PASS: list shows 11 ideas as cards, each with a drag-handle grip, title, status badge, and (for approved ideas) a Convert button. Ideas represent the problem-and-proposed-solution shape and do not carry time/cost/impact estimates; those fields live on projects created by conversion.
 - [ ] **D2** Each idea row shows a status badge
   (Active, In Review, Approved, Promoted, Sent
   Back, or Archived). PASS: badges render with
