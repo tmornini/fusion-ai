@@ -11,6 +11,7 @@ import {
     iconAlertCircle,
     iconClock,
     iconUserX,
+    iconUserCheck,
     iconHeart,
     iconTarget,
     iconMessageSquare,
@@ -381,16 +382,41 @@ export class UserPresenter {
                 </p>
             </div>
             <div class="flex-shrink-0">
-                <button
-                    class="${
-                        'btn btn-ghost '
-                        + 'btn-icon btn-sm'
-                    }"
-                    data-edit-user="${
-                        this.#user.idForLink()
-                    }">
-                    ${iconStar(16, '')}
-                </button>
+                ${this.#user.isDeactivated()
+                    ? html`<button
+                        class="${
+                            'btn btn-ghost '
+                            + 'btn-icon btn-sm'
+                        }"
+                        data-reactivate-user="${
+                            this.#user
+                                .idForLink()
+                        }"
+                        title="Reactivate user"
+                        aria-label="${
+                            'Reactivate user'
+                        }">
+                        ${iconUserCheck(
+                            16, '',
+                        )}
+                    </button>`
+                    : html`<button
+                        class="${
+                            'btn btn-ghost '
+                            + 'btn-icon btn-sm'
+                        }"
+                        data-deactivate-user="${
+                            this.#user
+                                .idForLink()
+                        }"
+                        title="Deactivate user"
+                        aria-label="${
+                            'Deactivate user'
+                        }">
+                        ${iconUserX(
+                            16, '',
+                        )}
+                    </button>`}
             </div>
         </div>`;
     }

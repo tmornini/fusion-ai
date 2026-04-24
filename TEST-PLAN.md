@@ -824,11 +824,17 @@ on. Run these in order.
   inline error reports the upload failed with a human-readable
   message; existing data in localStorage is untouched (verify via
   DevTools that no fusion-ai:* keys were overwritten or cleared).
-- [ ] **G36** On `organization/users.html`, open the row menu of an
-  active user and choose "Deactivate" (or equivalent). PASS: a
-  confirmation dialog appears; on confirm the user's status badge
-  changes to "Deactivated" with reduced opacity styling, and the
-  user's row no longer counts toward the active-user header stat.
+- [ ] **G36** On `organization/users.html`, each active or pending
+  user row shows a user-X icon button (aria-label "Deactivate
+  user") and each deactivated row shows a user-check icon button
+  ("Reactivate user"). Click an active user's deactivate button.
+  PASS: a toast "User deactivated" fires and the list reloads with
+  the user's badge changed to "Deactivated" and reduced opacity
+  styling; the user no longer counts toward the active header
+  stat. Click the reactivate button on a deactivated row. PASS: a
+  toast "User reactivated" fires and the user returns to active.
+  The action is intentionally reversible with a single click, so
+  no confirmation dialog is required.
 
 ### Billing (`billing/`) — STUB
 
