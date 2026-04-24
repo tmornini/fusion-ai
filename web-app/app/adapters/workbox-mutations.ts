@@ -239,9 +239,9 @@ export async function postWorkOrderTransition(
 
 export async function putWorkOrder(
     id: string,
-    patch: { position: number },
+    entity: Omit<WorkOrderEntity, 'id'>,
 ): Promise<void> {
-    await PUT(`work-orders/${id}`, patch);
+    await PUT(`work-orders/${id}`, entity);
 }
 
 export async function postWorkOrderClaim(

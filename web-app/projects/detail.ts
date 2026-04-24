@@ -15,7 +15,8 @@ import {
     closeDialog,
 } from '../app/core';
 import {
-    getProjectById, putProject,
+    getProjectById, getProject,
+    putProject,
     getFlowsByProject,
     postFlowCreation,
     projectChanged,
@@ -150,21 +151,28 @@ function bindProjectEvents(
                 )!.value,
         );
         try {
+            const entity =
+                await getProject(
+                    project.idForLink(),
+                );
             await putProject(
                 project.idForLink(),
-                trimStrings({
-                    title,
-                    description,
-                    status,
-                    start_date: startDate,
-                    target_end_date:
-                        targetEndDate,
-                    estimated_cost:
-                        costBaseline
-                        * COST_DIVISOR,
-                    estimated_impact:
-                        impactBaseline,
-                }),
+                {
+                    ...entity,
+                    ...trimStrings({
+                        title,
+                        description,
+                        status,
+                        start_date: startDate,
+                        target_end_date:
+                            targetEndDate,
+                        estimated_cost:
+                            costBaseline
+                            * COST_DIVISOR,
+                        estimated_impact:
+                            impactBaseline,
+                    }),
+                },
             );
         } catch (err) {
             log.error(

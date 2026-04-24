@@ -31,7 +31,8 @@ import {
     trimStrings,
 } from '../app/core';
 import {
-    getProfile, putProfile,
+    getProfile, getProfileEntity,
+    putProfile,
     allStrengths,
     jsonArrayField,
 } from '../app/adapters';
@@ -227,8 +228,11 @@ export async function init(): Promise<void> {
                 'disabled', '',
             );
             try {
-                await putProfile(
-                    trimStrings({
+                const entity =
+                    await getProfileEntity();
+                await putProfile({
+                    ...entity,
+                    ...trimStrings({
                         first_name:
                             firstName.value,
                         last_name:
@@ -249,7 +253,7 @@ export async function init(): Promise<void> {
                                 ],
                             ),
                     }),
-                );
+                });
                 setHtml(
                     btn,
                     html`${

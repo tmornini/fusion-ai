@@ -362,6 +362,14 @@ export async function getWorkboxActive(
     );
 }
 
+export async function getWorkOrder(
+    id: string,
+): Promise<WorkOrderEntity> {
+    return GET<WorkOrderEntity>(
+        `work-orders/${id}`,
+    );
+}
+
 export async function getWorkboxItem(
     workOrderId: string,
     currentUserId: string,

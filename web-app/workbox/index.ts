@@ -22,6 +22,7 @@ import {
 import {
     getWorkboxActive,
     getWorkboxArchive,
+    getWorkOrder,
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
@@ -330,9 +331,14 @@ export async function init(
                 'data-wo-card',
                 async (id, newPosition) => {
                     try {
+                        const entity =
+                            await getWorkOrder(
+                                id,
+                            );
                         await putWorkOrder(
                             id,
                             {
+                                ...entity,
                                 position:
                                     newPosition,
                             },

@@ -125,8 +125,13 @@ export async function getProfile(
     };
 }
 
+export async function getProfileEntity(
+): Promise<UserEntity> {
+    return GET<UserEntity>('current-user');
+}
+
 export async function putProfile(
-    entity: Partial<UserEntity>,
+    entity: Omit<UserEntity, 'id'>,
 ): Promise<void> {
     await PUT('users/current', entity);
 }
@@ -149,7 +154,9 @@ export async function getCompanySettings(
 }
 
 export async function putCompanySettings(
-    entity: Partial<CompanySettingsEntity>,
+    entity: Omit<
+        CompanySettingsEntity, 'id'
+    >,
 ): Promise<void> {
     await PUT('company-settings', entity);
 }

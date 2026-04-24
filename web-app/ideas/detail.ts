@@ -16,6 +16,7 @@ import {
 } from '../app/core';
 import {
     getIdeaDetail,
+    getIdea,
     putIdea,
     ideaChanged,
     type Idea,
@@ -114,21 +115,28 @@ function bindIdeaEvents(
                     )!.value;
 
                 try {
+                    const entity =
+                        await getIdea(
+                            idea.idForLink(),
+                        );
                     await putIdea(
                         idea.idForLink(),
-                        trimStrings({
-                            title,
-                            problem_statement:
-                                problemStatement,
-                            target_users:
-                                targetUsers,
-                            proposed_solution:
-                                proposedSolution,
-                            expected_outcome:
-                                expectedOutcome,
-                            success_metrics:
-                                successMetrics,
-                        }),
+                        {
+                            ...entity,
+                            ...trimStrings({
+                                title,
+                                problem_statement:
+                                    problemStatement,
+                                target_users:
+                                    targetUsers,
+                                proposed_solution:
+                                    proposedSolution,
+                                expected_outcome:
+                                    expectedOutcome,
+                                success_metrics:
+                                    successMetrics,
+                            }),
+                        },
                     );
                 } catch (err) {
                     log.error(
@@ -183,9 +191,17 @@ function bindIdeaEvents(
         'click',
         async () => {
             try {
-                await putIdea(idea.idForLink(), {
-                    status: 'in-review',
-                });
+                const entity =
+                    await getIdea(
+                        idea.idForLink(),
+                    );
+                await putIdea(
+                    idea.idForLink(),
+                    {
+                        ...entity,
+                        status: 'in-review',
+                    },
+                );
             } catch (err) {
                 log.error(
                     'putIdea failed',
@@ -217,9 +233,14 @@ function bindApprovalEvents(
         'click',
         async () => {
             try {
+                const entity =
+                    await getIdea(ideaId);
                 await putIdea(
                     ideaId,
-                    { status: 'approved' },
+                    {
+                        ...entity,
+                        status: 'approved',
+                    },
                 );
             } catch (err) {
                 log.error(
@@ -253,9 +274,14 @@ function bindApprovalEvents(
         'click',
         async () => {
             try {
+                const entity =
+                    await getIdea(ideaId);
                 await putIdea(
                     ideaId,
-                    { status: 'sent-back' },
+                    {
+                        ...entity,
+                        status: 'sent-back',
+                    },
                 );
             } catch (err) {
                 log.error(

@@ -129,7 +129,7 @@ export async function getIdea(
 
 export async function putIdea(
     id: string,
-    entity: Partial<IdeaEntity>,
+    entity: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     await PUT(`ideas/${id}`, entity);
     ideaChanged.send();
