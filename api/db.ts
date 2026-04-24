@@ -2,9 +2,9 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamMembershipEntity,
-    TeamMembershipProjectEntity,
-    TeamMembershipUserEntity,
+    TeamEntity,
+    TeamProjectEntity,
+    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -68,17 +68,17 @@ export interface DbAdapter {
         EntityStore<IdeaEntity>;
     projects:
         EntityStore<ProjectEntity>;
-    teamMemberships:
+    teams:
         EntityStore<
-            TeamMembershipEntity
+            TeamEntity
         >;
-    teamMembershipProjects:
+    teamProjects:
         EntityStore<
-            TeamMembershipProjectEntity
+            TeamProjectEntity
         >;
-    teamMembershipUsers:
+    teamUsers:
         EntityStore<
-            TeamMembershipUserEntity
+            TeamUserEntity
         >;
     activities:
         EntityStore<ActivityEntity>;

@@ -2576,7 +2576,7 @@ export async function populateMockData(
         ),
     ]);
 
-    const teamMemberships: {
+    const teams: {
         id: string;
         project_id: string;
         user_id: string;
@@ -2648,8 +2648,8 @@ export async function populateMockData(
         },
     ];
     await Promise.all([
-        ...teamMemberships.map(tm =>
-            adapter.teamMemberships.put(
+        ...teams.map(tm =>
+            adapter.teams.put(
                 tm.id,
                 {
                     role: tm.role,
@@ -2657,20 +2657,20 @@ export async function populateMockData(
                 },
             ),
         ),
-        ...teamMemberships.map(tm =>
-            adapter.teamMembershipProjects
+        ...teams.map(tm =>
+            adapter.teamProjects
                 .put(`tmp-${tm.id}`, {
-                    team_membership_id:
+                    team_id:
                         tm.id,
                     project_id:
                         tm.project_id,
                     created_at: dt(75),
                 }),
         ),
-        ...teamMemberships.map(tm =>
-            adapter.teamMembershipUsers
+        ...teams.map(tm =>
+            adapter.teamUsers
                 .put(`tmu-${tm.id}`, {
-                    team_membership_id:
+                    team_id:
                         tm.id,
                     user_id: tm.user_id,
                     created_at: dt(75),

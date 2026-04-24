@@ -555,22 +555,22 @@ export interface ProjectEntity {
     budget_label: string;
 }
 
-export interface TeamMembershipEntity {
+export interface TeamEntity {
     id: Id;
     role: string;
     type: string;
 }
 
-export interface TeamMembershipProjectEntity {
+export interface TeamProjectEntity {
     id: Id;
-    team_membership_id: Id;
+    team_id: Id;
     project_id: Id;
     created_at: string;
 }
 
-export interface TeamMembershipUserEntity {
+export interface TeamUserEntity {
     id: Id;
-    team_membership_id: Id;
+    team_id: Id;
     user_id: Id;
     created_at: string;
 }

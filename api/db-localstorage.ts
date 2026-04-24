@@ -10,9 +10,9 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamMembershipEntity,
-    TeamMembershipProjectEntity,
-    TeamMembershipUserEntity,
+    TeamEntity,
+    TeamProjectEntity,
+    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -331,9 +331,9 @@ export const TABLE_NAMES = [
     'users',
     'ideas',
     'projects',
-    'team_memberships',
-    'team_membership_projects',
-    'team_membership_users',
+    'teams',
+    'team_projects',
+    'team_users',
     'activities',
     'flows',
     'flow_versions',
@@ -499,18 +499,18 @@ export async function createLocalStorageAdapter(
                 'projects',
             ),
 
-        teamMemberships:
+        teams:
             createEntityStore<
-                TeamMembershipEntity
-            >('team_memberships'),
-        teamMembershipProjects:
+                TeamEntity
+            >('teams'),
+        teamProjects:
             createEntityStore<
-                TeamMembershipProjectEntity
-            >('team_membership_projects'),
-        teamMembershipUsers:
+                TeamProjectEntity
+            >('team_projects'),
+        teamUsers:
             createEntityStore<
-                TeamMembershipUserEntity
-            >('team_membership_users'),
+                TeamUserEntity
+            >('team_users'),
 
         activities:
             createEntityStore<ActivityEntity>(

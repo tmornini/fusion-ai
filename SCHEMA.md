@@ -71,7 +71,10 @@
 | timeline_label | TEXT |
 | budget_label | TEXT |
 
-### team_memberships
+### teams
+
+A team is a named role group (identified by `role` and `type`) that can be
+attached to projects (via `team_projects`) and users (via `team_users`).
 
 | Column | Type |
 |--------|------|
@@ -275,20 +278,20 @@ work order state and history.
 | user_id | TEXT | References users |
 | claimed_at | TEXT | RFC-3339 Zulu |
 
-### team_membership_projects
+### team_projects
 
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| team_membership_id | TEXT (FK → team_memberships) |
+| team_id | TEXT (FK → teams) |
 | project_id | TEXT (FK → projects) |
 | created_at | TEXT |
 
-### team_membership_users
+### team_users
 
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| team_membership_id | TEXT (FK → team_memberships) |
+| team_id | TEXT (FK → teams) |
 | user_id | TEXT (FK → users) |
 | created_at | TEXT |

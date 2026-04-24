@@ -8,9 +8,9 @@ import type {
     ActivityEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
-    TeamMembershipEntity,
-    TeamMembershipProjectEntity,
-    TeamMembershipUserEntity,
+    TeamEntity,
+    TeamProjectEntity,
+    TeamUserEntity,
     FlowEntity,
     FlowVersionEntity,
     ProjectFlowEntity,
@@ -140,18 +140,18 @@ const routes: Route[] = [
         get: (db) =>
             db.activityActors.getAll(),
     }),
-    route('team-memberships', {
+    route('teams', {
         get: (db) =>
-            db.teamMemberships.getAll(),
+            db.teams.getAll(),
     }),
-    route('team-membership-projects', {
+    route('team-projects', {
         get: (db) =>
-            db.teamMembershipProjects
+            db.teamProjects
                 .getAll(),
     }),
-    route('team-membership-users', {
+    route('team-users', {
         get: (db) =>
-            db.teamMembershipUsers
+            db.teamUsers
                 .getAll(),
     }),
 
@@ -360,37 +360,37 @@ const routes: Route[] = [
                 >(payload),
             ),
     }),
-    route('team-memberships/:id', {
+    route('teams/:id', {
         put: (db, p, payload) =>
-            db.teamMemberships.put(
+            db.teams.put(
                 param(p, 0),
                 fields<
-                    TeamMembershipEntity
+                    TeamEntity
                 >(payload),
             ),
     }),
     route(
-        'team-membership-projects/:id',
+        'team-projects/:id',
         {
             put: (db, p, payload) =>
-                db.teamMembershipProjects
+                db.teamProjects
                     .put(
                         param(p, 0),
                         fields<
-                            TeamMembershipProjectEntity
+                            TeamProjectEntity
                         >(payload),
                     ),
         },
     ),
     route(
-        'team-membership-users/:id',
+        'team-users/:id',
         {
             put: (db, p, payload) =>
-                db.teamMembershipUsers
+                db.teamUsers
                     .put(
                         param(p, 0),
                         fields<
-                            TeamMembershipUserEntity
+                            TeamUserEntity
                         >(payload),
                     ),
         },
@@ -403,11 +403,11 @@ const routes: Route[] = [
                 memberships,
                 tmUsers,
             ] = await Promise.all([
-                db.teamMembershipProjects
+                db.teamProjects
                     .getAll(),
-                db.teamMemberships
+                db.teams
                     .getAll(),
-                db.teamMembershipUsers
+                db.teamUsers
                     .getAll(),
             ]);
             const membershipIds = new Set(
@@ -418,13 +418,13 @@ const routes: Route[] = [
                     )
                     .map(
                         l =>
-                            l.team_membership_id,
+                            l.team_id,
                     ),
             );
             const userByMembership = new Map(
                 tmUsers.map(
                     u => [
-                        u.team_membership_id,
+                        u.team_id,
                         u.user_id,
                     ],
                 ),
@@ -478,7 +478,7 @@ const routes: Route[] = [
                 const tmId =
                     `tm-${pid}-${uid}`;
                 const membership =
-                    await db.teamMemberships
+                    await db.teams
                         .put(tmId, {
                             role:
                                 payload.role as
@@ -492,17 +492,17 @@ const routes: Route[] = [
                 const userLinkId =
                     `tmu-${tmId}`;
                 await Promise.all([
-                    db.teamMembershipProjects
+                    db.teamProjects
                         .put(projLinkId, {
-                            team_membership_id:
+                            team_id:
                                 tmId,
                             project_id: pid,
                             created_at:
                                 nowUtc(),
                         }),
-                    db.teamMembershipUsers
+                    db.teamUsers
                         .put(userLinkId, {
-                            team_membership_id:
+                            team_id:
                                 tmId,
                             user_id: uid,
                             created_at:
