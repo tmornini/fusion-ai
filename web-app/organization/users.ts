@@ -20,6 +20,7 @@ import {
 } from '../app/core';
 import {
     getManagedUsers, getUserEntity, putUser,
+    postActivity,
     jsonArrayField,
     jsonObjectField,
     nowUtc,
@@ -804,6 +805,11 @@ export async function init(): Promise<void> {
                             nowUtc(),
                     }),
                 );
+                await postActivity({
+                    type: 'user_joined',
+                    action: 'joined the team',
+                    target: `${first} ${last}`,
+                });
                 showToast(
                     'User created',
                     'success',
