@@ -27,6 +27,9 @@ import type {
     WorkOrderClaimEntity,
 } from './types';
 import { nowUtc } from './types';
+import {
+    withSimulatedLatency,
+} from './latency';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -566,5 +569,5 @@ export async function createLocalStorageAdapter(
             >('activity_actors'),
     };
 
-    return adapter;
+    return withSimulatedLatency(adapter);
 }
