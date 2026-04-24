@@ -361,7 +361,7 @@ web-app/
   organization/             # Account overview, users, teams, activity-feed, onboarding (named files)
   profile/                  # Profile settings
   settings/                 # Company settings
-  billing/                  # Billing page (plan + invoices stub)
+  billing/                  # Billing page — STUB (init() is empty; page renders a placeholder)
   snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
   design-system/            # Component gallery
   landing/                  # Landing page (standalone)
@@ -370,7 +370,7 @@ web-app/
 
 SCHEMA.md                     # Database schema (18 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification
-TEST-PLAN.md                  # Human-executable test plan (253 cases)
+TEST-PLAN.md                  # Human-executable test plan (254 cases)
 ```
 
 Most pages use `index.ts` + `index.html`. Pages with

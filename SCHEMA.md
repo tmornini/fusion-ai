@@ -1,6 +1,8 @@
 # Database Schema
 
-18 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
+18 tables stored in localStorage as JSON arrays. Each table is keyed as `fusion-ai:tableName`. All rows have a text `id` primary key. Column types: TEXT (string), INTEGER (number), REAL (float), BOOLEAN (see below). JSON columns store stringified arrays or objects. All columns are NOT NULL — entity validation on creation ensures every field is present.
+
+**Boolean storage:** BOOLEAN columns are typed as `boolean` in TypeScript (`api/types.ts`) but persisted as INTEGER `0`|`1` by `db-localstorage.ts::serializeValue` on write and deserialized back on read. The in-memory and API-boundary shape is always a real boolean; the `0`|`1` form never escapes the storage layer.
 
 **Duration convention:** All numeric duration fields are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
 

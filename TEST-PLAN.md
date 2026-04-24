@@ -27,11 +27,11 @@ run as a single continuous regression pass.
 | E. Core: Projects | 11 |
 | F. Tools | 46 |
 | F2. Workbox | 19 |
-| G. Admin Pages | 36 |
+| G. Admin Pages | 37 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 28 |
 | J. Teardown | 3 |
-| **Total** | **253** |
+| **Total** | **254** |
 
 ---
 
@@ -802,6 +802,20 @@ on. Run these in order.
   confirmation dialog appears; on confirm the user's status badge
   changes to "Deactivated" with reduced opacity styling, and the
   user's row no longer counts toward the active-user header stat.
+
+### Billing (`billing/`) — STUB
+
+Billing is a placeholder page. `init()` is empty and
+the body is hand-written static HTML. These tests
+verify the page loads and the sidebar nav link works
+— functional billing tests will be added when the
+feature is implemented.
+
+- [ ] **G37** Click "Billing" in the sidebar. PASS:
+  browser navigates to `billing/index.html`. The page
+  renders without console errors. Sidebar highlights
+  the Billing link as active. No runtime JS errors
+  from the empty `init()`.
 
 ---
 
