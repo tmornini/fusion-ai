@@ -2652,7 +2652,6 @@ export async function populateMockData(
             adapter.teamMemberships.put(
                 tm.id,
                 {
-                    id: tm.id,
                     role: tm.role,
                     type: tm.type,
                 },
@@ -2661,7 +2660,6 @@ export async function populateMockData(
         ...teamMemberships.map(tm =>
             adapter.teamMembershipProjects
                 .put(`tmp-${tm.id}`, {
-                    id: `tmp-${tm.id}`,
                     team_membership_id:
                         tm.id,
                     project_id:
@@ -2672,7 +2670,6 @@ export async function populateMockData(
         ...teamMemberships.map(tm =>
             adapter.teamMembershipUsers
                 .put(`tmu-${tm.id}`, {
-                    id: `tmu-${tm.id}`,
                     team_membership_id:
                         tm.id,
                     user_id: tm.user_id,

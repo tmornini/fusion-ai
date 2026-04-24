@@ -30,19 +30,23 @@ export class EntityNotFound {
     }
 }
 
-export interface EntityStore<T> {
+export interface EntityStore<
+    T extends { id: string },
+> {
     getAll(): Promise<T[]>;
     getById(id: string): Promise<T>;
     put(
         id: string,
-        fields: Partial<T>,
+        fields: Omit<T, 'id'>,
     ): Promise<T>;
     delete(id: string): Promise<void>;
 }
 
-export interface SingletonStore<T> {
+export interface SingletonStore<
+    T extends { id: string },
+> {
     get(): Promise<T>;
-    put(fields: Partial<T>): Promise<T>;
+    put(fields: Omit<T, 'id'>): Promise<T>;
 }
 
 export interface DbAdapter {
