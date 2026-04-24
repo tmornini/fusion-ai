@@ -17,7 +17,7 @@ import {
 } from '../../../api/validators';
 import {
     validateWorkOrderFlowGraph,
-} from './workbox-queries';
+} from './work-orders-queries';
 
 const FIRST_POSITION = 1;
 const POSITION_STEP = 1;

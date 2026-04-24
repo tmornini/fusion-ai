@@ -1268,7 +1268,7 @@ svg.wf-canvas [data-edge-id] {
    41. WORKBOX
    ========================================== */
 
-.wo-history-fields {
+.work-order-history-fields {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--space-1) var(--space-3);

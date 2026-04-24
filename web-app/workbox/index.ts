@@ -20,8 +20,8 @@ import {
     initDropdown,
 } from '../app/core';
 import {
-    getWorkboxActive,
-    getWorkboxArchive,
+    getActiveWorkOrders,
+    getArchivedWorkOrders,
     getWorkOrder,
     getFlowsForCreation,
     postWorkOrderCreation,
@@ -29,7 +29,7 @@ import {
     getCurrentUser,
 } from '../app/adapters';
 import type {
-    WorkboxItem,
+    WorkOrderInboxRow,
 } from '../app/adapters';
 import {
     initDragReorder,
@@ -51,7 +51,7 @@ function relativeTime(
 }
 
 function buildInboxRow(
-    item: WorkboxItem,
+    item: WorkOrderInboxRow,
     showGrip: boolean,
 ): ReturnType<typeof html> {
     const badge = item.isCompleted()
@@ -78,7 +78,7 @@ function buildInboxRow(
     return html`
     <div
         class="card p-4 cursor-pointer"
-        data-wo-card="${item.idForLink()}"
+        data-work-order-card="${item.idForLink()}"
         data-position="${
             item.positionSortKey()
         }"
@@ -127,7 +127,7 @@ function buildInboxRow(
 }
 
 function buildInboxList(
-    items: WorkboxItem[],
+    items: WorkOrderInboxRow[],
     showGrip: boolean,
 ): ReturnType<typeof html> {
     return html`${items.map(
@@ -148,12 +148,12 @@ function initRowNavigation(
             const card =
                 e.target
                     .closest<HTMLElement>(
-                        '[data-wo-card]',
+                        '[data-work-order-card]',
                     );
             if (!card) return;
             const id =
                 card.getAttribute(
-                    'data-wo-card',
+                    'data-work-order-card',
                 ) ?? '';
             navigateTo(
                 'workbox-detail',
@@ -214,13 +214,13 @@ async function initCreateDropdown(
 ): Promise<void> {
     populateIcons([
         [
-            '#create-wo-btn-icon',
+            '#create-work-order-btn-icon',
             iconPlus(16, ''),
         ],
     ]);
 
     const dropdownEl = $(
-        '#create-wo-dropdown',
+        '#create-work-order-dropdown',
         document,
     );
     if (!dropdownEl) return;
@@ -237,8 +237,8 @@ async function initCreateDropdown(
     );
 
     initDropdown(
-        'create-wo-btn',
-        'create-wo-dropdown',
+        'create-work-order-btn',
+        'create-work-order-dropdown',
     );
 
     dropdownEl.addEventListener(
@@ -306,7 +306,7 @@ export async function init(
                 buildSkeleton(
                     'card-list', 4,
                 ),
-                getWorkboxActive,
+                getActiveWorkOrders,
                 init,
                 {
                     icon: iconMail(24, ''),
@@ -327,8 +327,8 @@ export async function init(
             initRowNavigation(activeEl);
             initDragReorder(
                 activeEl,
-                '[data-wo-card]',
-                'data-wo-card',
+                '[data-work-order-card]',
+                'data-work-order-card',
                 async (id, newPosition) => {
                     try {
                         const entity =
@@ -356,7 +356,7 @@ export async function init(
                         return;
                     }
                     const updated =
-                        await getWorkboxActive();
+                        await getActiveWorkOrders();
                     setHtml(
                         activeEl,
                         buildInboxList(
@@ -375,7 +375,7 @@ export async function init(
                 buildSkeleton(
                     'card-list', 4,
                 ),
-                getWorkboxArchive,
+                getArchivedWorkOrders,
                 init,
                 {
                     icon: iconMail(24, ''),
