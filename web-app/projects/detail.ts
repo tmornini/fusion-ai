@@ -193,7 +193,7 @@ function bindProjectEvents(
 
     projectChanged.subscribe(
         async () => {
-            const [upd, updWfs] =
+            const [upd, updFlows] =
                 await Promise.all([
                     getProjectById(
                         project.idForLink(),
@@ -203,7 +203,7 @@ function bindProjectEvents(
                     ),
                 ]);
             mutateProjectPage(
-                upd, updWfs, false,
+                upd, updFlows, false,
             );
         },
     );

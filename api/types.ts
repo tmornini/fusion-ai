@@ -11,7 +11,7 @@ export type Id = string;
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
-export type WfFieldType =
+export type FlowFieldType =
     | 'text'
     | 'textarea'
     | 'number'
@@ -111,8 +111,8 @@ export function isConfidenceLevel(
     );
 }
 
-const WF_FIELD_TYPES:
-    readonly WfFieldType[]
+const FLOW_FIELD_TYPES:
+    readonly FlowFieldType[]
     = [
         'text', 'textarea', 'number',
         'date', 'select', 'checkbox',
@@ -122,11 +122,11 @@ const WF_FIELD_TYPES:
         'image',
     ];
 
-export function isWfFieldType(
+export function isFlowFieldType(
     v: string,
-): v is WfFieldType {
+): v is FlowFieldType {
     return includes(
-        WF_FIELD_TYPES, v,
+        FLOW_FIELD_TYPES, v,
     );
 }
 
@@ -589,7 +589,7 @@ export interface ActivityEntity {
 export interface GraphField {
     id: string;
     name: string;
-    fieldType: WfFieldType;
+    fieldType: FlowFieldType;
     sortOrder: number;
     isRequired: boolean;
     options: string[];

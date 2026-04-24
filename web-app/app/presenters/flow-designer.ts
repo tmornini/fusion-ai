@@ -26,7 +26,7 @@ import type {
     FlowGraph,
     FlowVersion,
 } from '../adapters/flows';
-import type { WfFieldType }
+import type { FlowFieldType }
     from '../adapters/flows';
 import {
     jsonObjectField,
@@ -1214,7 +1214,7 @@ ${toolbar}
             return false;
         }
         const typed =
-            fieldType as WfFieldType;
+            fieldType as FlowFieldType;
         const newField: GraphField = {
             id: fieldId,
             name,

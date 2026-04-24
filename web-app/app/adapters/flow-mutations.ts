@@ -7,7 +7,7 @@ import type {
     GraphEdge,
     GraphField,
     StoredGraph,
-    WfFieldType,
+    FlowFieldType,
 } from '../../../api/types';
 import {
     nowUtc,
@@ -205,7 +205,7 @@ export async function postFieldAddition(
     ctx: FieldAdditionContext,
 ): Promise<void> {
     const ft =
-        ctx.fieldType as WfFieldType;
+        ctx.fieldType as FlowFieldType;
     const field: GraphField = {
         id: ctx.fieldId,
         name: ctx.name,

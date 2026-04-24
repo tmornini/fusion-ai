@@ -7,7 +7,7 @@ import type {
     GraphEdge,
     GraphField,
     StoredGraph,
-    WfFieldType,
+    FlowFieldType,
 } from '../../../api/types';
 import { toBool } from '../../../api/types';
 import {
@@ -16,7 +16,7 @@ import {
 
 export type {
     GraphNode, GraphEdge, GraphField,
-    WfFieldType,
+    FlowFieldType,
 };
 
 export interface FlowCardReceiver {

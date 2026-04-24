@@ -16,7 +16,7 @@ import type {
     GraphEdge,
     GraphField,
     StoredGraph,
-    WfFieldType,
+    FlowFieldType,
 } from '../../../api/types';
 import {
     validateStoredGraphJson,
@@ -27,7 +27,7 @@ import {
     asNumber,
     asBoolean,
     asStoredGraph,
-    asWfFieldType,
+    asFlowFieldType,
 } from '../../../api/validators';
 import {
     getFlowGraph,
@@ -69,7 +69,7 @@ export async function getFlowMermaid(
 
 interface SidecarField {
     name: string;
-    fieldType: WfFieldType;
+    fieldType: FlowFieldType;
     sortOrder: number;
     isRequired: boolean;
     options: string[];
@@ -968,7 +968,7 @@ function asSidecarField(
         name: asString(
             obj['name'], label + '.name',
         ),
-        fieldType: asWfFieldType(
+        fieldType: asFlowFieldType(
             obj['fieldType'],
             label + '.fieldType',
         ),
