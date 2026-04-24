@@ -20,7 +20,7 @@ import {
 } from '../app/core';
 import {
     getIdeas,
-    getIdea,
+    getIdeaEntity,
     putIdea,
     ideaChanged,
     type IdeaStatus,
@@ -220,7 +220,7 @@ export async function init(): Promise<void> {
         'data-idea-card',
         async (id, newPosition) => {
             const entity =
-                await getIdea(id);
+                await getIdeaEntity(id);
             await putIdea(id, {
                 ...entity,
                 position: newPosition,

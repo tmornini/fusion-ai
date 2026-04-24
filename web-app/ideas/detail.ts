@@ -15,8 +15,8 @@ import {
     initDialog, closeDialog,
 } from '../app/core';
 import {
-    getIdeaDetail,
     getIdea,
+    getIdeaEntity,
     putIdea,
     ideaChanged,
     type Idea,
@@ -116,7 +116,7 @@ function bindIdeaEvents(
 
                 try {
                     const entity =
-                        await getIdea(
+                        await getIdeaEntity(
                             idea.idForLink(),
                         );
                     await putIdea(
@@ -160,7 +160,7 @@ function bindIdeaEvents(
 
     ideaChanged.subscribe(async () => {
         const updated =
-            await getIdeaDetail(
+            await getIdea(
                 idea.idForLink(),
             );
         mutateIdeaPage(
@@ -192,7 +192,7 @@ function bindIdeaEvents(
         async () => {
             try {
                 const entity =
-                    await getIdea(
+                    await getIdeaEntity(
                         idea.idForLink(),
                     );
                 await putIdea(
@@ -234,7 +234,7 @@ function bindApprovalEvents(
         async () => {
             try {
                 const entity =
-                    await getIdea(ideaId);
+                    await getIdeaEntity(ideaId);
                 await putIdea(
                     ideaId,
                     {
@@ -275,7 +275,7 @@ function bindApprovalEvents(
         async () => {
             try {
                 const entity =
-                    await getIdea(ideaId);
+                    await getIdeaEntity(ideaId);
                 await putIdea(
                     ideaId,
                     {
@@ -342,7 +342,7 @@ export async function init(
     const idea = await withLoadingState(
         container,
         buildSkeleton('detail', 4),
-        () => getIdeaDetail(ideaId),
+        () => getIdea(ideaId),
         () => init(params),
     );
     if (!idea) return;
