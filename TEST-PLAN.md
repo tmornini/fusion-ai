@@ -4,16 +4,30 @@
 
 ### Protocol
 
-All sections are executed over HTTP — build with
-`./build --no-zip /tmp/fusion-test/` and serve via
-`cd /tmp/fusion-test/ && python3 -m http.server 8080`.
+All sections are executed over HTTP. Two execution modes:
+
+- **Serial (single human tester)**:
+  `./build --no-zip /tmp/fusion-test/` then
+  `cd /tmp/fusion-test/ && python3 -m http.server 8080`. Run
+  sections in document order.
+- **Parallel (Claude Code agents)**:
+  `TMPDIR=/tmp/claude ./build --no-zip ~/Desktop/fusion-test/`
+  then `cd ~/Desktop/fusion-test/ && python3 -m http.server 8080`.
+  See `CLAUDE.md` section `## Testing` for the six-phase agent
+  protocol, entity mutation domain scoping, and known MCP
+  limitations (flow-designer gestures, `resize_window`, file I/O).
 
 ### Execution Order
 
 Sections A through AA establish a pristine environment and populate
-it with data through the UI. Sections B through J then verify every
-page renders correctly against that data. The plan is designed to
-run as a single continuous regression pass.
+it through the UI. Sections B through J then verify every page
+renders correctly against that data.
+
+In the serial run the plan is a single continuous regression pass.
+In the parallel run B–J split across seven agents each with its
+own browser tab and disjoint entity mutation domain; I runs alone
+(global UI state); G30–G35 run alone last (they wipe the database).
+See `CLAUDE.md` section `## Testing`.
 
 ## Summary
 
@@ -38,7 +52,7 @@ run as a single continuous regression pass.
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 13 page directories containing 23 HTML page files, plus root `index.html`.
+- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), `index.html`, and 14 page directories containing 24 HTML page files, plus root `index.html`.
 - [ ] **A3** Start an HTTP server from the build directory (`cd /tmp/fusion-test/ && python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
@@ -290,7 +304,7 @@ on. Run these in order.
   Target Users, Proposed Solution, Expected
   Outcome, Success Metrics). PASS: all fields populated. No Details or Estimates cards.
 - [ ] **D12** Click "Edit" button. PASS: text fields become editable inputs/textareas, Save and Cancel buttons appear, Edit button hides.
-- [ ] **D13** Modify a field (e.g. title), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
+- [ ] **D13** Modify a field (e.g. Problem Statement or Expected Outcome — inline edit exposes the four textarea fields only; title is not editable here), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
 
 ### Idea Detail — Edit & Actions
 
@@ -378,10 +392,12 @@ on. Run these in order.
   creation limited to approved projects only".
   PASS: correct UI for project status.
 - [ ] **E7** On an approved project, click "New
-  Flow" button. PASS: a new flow is created and
-  the browser navigates to the flow designer
-  page. The new flow is associated with the
-  current project.
+  Flow" button. PASS: a "New Flow" dialog opens
+  with a Flow Name input and Create/Cancel
+  buttons. Enter a name and click Create. PASS:
+  a new flow is created and the browser
+  navigates to the flow designer page. The new
+  flow is associated with the current project.
 
 ### Project Detail — Edit Mode
 
@@ -427,8 +443,12 @@ on. Run these in order.
   distributed between them. Locked checkbox in
   header controls edit lock. SVG canvas to the
   right of the toolbar with dot grid background
-  showing the flow graph. Opening a properties
-  panel automatically disables Auto Fit. Changes
+  showing the flow graph. When Auto Fit is on,
+  conflicting interactions (drag, pan, zoom
+  buttons, panel pan) are gated with a fire-and-
+  toast "blocked" message rather than being
+  silently absorbed; the user either turns Auto
+  Fit off or accepts the constraint. Changes
   auto-save (no explicit Save button).
 - [ ] **F8** Nodes display correctly: start node
   has green border with its name centered in the
@@ -471,9 +491,10 @@ on. Run these in order.
   the new selection and the canvas re-centers on
   it.
 - [ ] **F14** Enable Auto Fit, then double-click a
-  node. PASS: panel opens, Auto Fit toggles off
-  (button no longer highlighted), and the canvas
-  centers on the node.
+  node. PASS: the panel-open gesture is gated by
+  Auto Fit — a toast reports the action is blocked.
+  Turn Auto Fit off and double-click again. PASS:
+  panel opens and the canvas centers on the node.
 - [ ] **F15** Drag from a middle node's port into
   empty canvas past 20 pixels, without holding
   Shift. PASS: during the drag a faint bezier
@@ -485,11 +506,13 @@ on. Run these in order.
 - [ ] **F16** Drag a standard node to a new
   position. PASS: node follows the pointer and
   can be placed freely on the canvas.
-- [ ] **F17** Attempt to drag the start node. PASS:
-  it does not move (the start node is
-  non-draggable — clicking anywhere on it
-  initiates a drag-from-start instead). The
-  complete node is draggable like standard nodes.
+- [ ] **F17** Drag the start node. PASS: it moves
+  freely like any standard node (start and
+  complete nodes are both draggable; Auto Layout
+  restores them to upper-left and lower-right
+  respectively when invoked). Clicking the start
+  node's port still initiates a drag-from-start
+  to create a new state.
 - [ ] **F18** Click "Auto Layout" in the vertical
   toolbar on the left. PASS:
   all nodes reposition based on their rank from
@@ -596,18 +619,21 @@ on. Run these in order.
 ### Flow Designer — Additional Coverage
 
 - [ ] **F40** Toggle the Locked checkbox in the designer header.
-  PASS: connection ports disappear from all middle nodes, Delete and
-  Auto Layout toolbar buttons become disabled, and opening a
-  properties panel shows fields as read-only (inputs `disabled`).
-  Untoggle Locked: ports return, buttons re-enable, fields editable.
+  PASS: connection ports disappear from all middle nodes, the
+  Delete toolbar button becomes disabled, and opening a properties
+  panel shows fields as read-only (inputs `disabled`). Auto Layout
+  remains enabled because it only repositions nodes without
+  changing structure. Untoggle Locked: ports return, the Delete
+  button re-enables, fields become editable.
 - [ ] **F41** With a non-trivial flow loaded, click "Copy Mermaid"
   in the toolbar. PASS: toast confirms the clipboard copy. Paste the
   clipboard contents into a text editor — the result is valid Mermaid
   flowchart syntax that round-trips through `parseMermaid` without
   losing nodes, edges, or field definitions.
 - [ ] **F42** Click "Export" in the toolbar. PASS: a `.zip` file
-  downloads. Unzip the archive — it contains at least a `flow.mmd`
-  Mermaid source and a `layout.json` with node positions.
+  downloads. Unzip the archive — it contains `flow.mmd` (Mermaid
+  source), `flow.json` (graph with node positions), and a
+  human-readable `flow.txt`.
 - [ ] **F43** On `flows/index.html` click "Import Flow", select a
   `.mmd` file previously exported from a known flow, choose a
   project, and submit. PASS: the imported flow opens in the designer
@@ -636,7 +662,7 @@ on. Run these in order.
 - [ ] **WB1** Navigate to `workbox/`. PASS:
   page shows "Workbox" title, subtitle "Your
   work order inbox", Active/Archive tabs, and
-  a "+ New" button.
+  a "+ Create Work Order" button.
 - [ ] **WB2** With no work orders, the Active
   tab shows an empty state with mail icon and
   "No Active Work Orders Yet" message.
@@ -646,10 +672,10 @@ on. Run these in order.
 
 ### Workbox — Create Work Order
 
-- [ ] **WB4** Click "+ New". PASS: a "New Work
-  Order" dialog opens with a Flow dropdown
-  listing available flows and Create/Cancel
-  buttons.
+- [ ] **WB4** Click "+ Create Work Order". PASS:
+  a dropdown menu opens listing available flows
+  by name. (No separate dialog or Cancel button;
+  the flow listing itself is the selector.)
 - [ ] **WB5** Select a flow (e.g. "Customer
   Onboarding") and click Create. PASS: work
   order is created, browser navigates to the
@@ -690,9 +716,10 @@ on. Run these in order.
   Active tab. PASS: work order is claimed and
   browser navigates to the action screen
   showing the new state's fields.
-- [ ] **WB13** Click "Unclaim". PASS: browser
-  navigates to inbox, work order reappears in
-  the Active tab.
+- [ ] **WB13** Click "Release Work Order". PASS:
+  a single click soft-deletes the active claim
+  and the browser navigates to the inbox, where
+  the work order reappears in the Active tab.
 
 ### Workbox — Completion
 
@@ -748,8 +775,8 @@ on. Run these in order.
 
 ### Account (`organization/index.html`)
 
-- [ ] **G9** Navigate to `organization/index.html`. PASS: shows account overview with plan info (Business plan), billing date, seat usage (18/25), and resource usage bars.
-- [ ] **G10** Health score (92, "excellent") is displayed. PASS: score and label visible.
+- [ ] **G9** Navigate to `organization/index.html`. PASS: shows account overview with plan info, billing date, seat usage, and resource usage bars. (The overview values on this page are currently hardcoded placeholders — 18/25 seats, 12 Projects, 47 Ideas — not computed from live tables. Verify the page renders without error; numeric accuracy will be addressed when the values are wired to the database.)
+- [ ] **G10** Health score (92, "excellent") is displayed. PASS: score and label visible. (Also hardcoded; see G9.)
 
 ### Profile (`profile/`)
 
@@ -760,9 +787,9 @@ on. Run these in order.
 
 ### Company Settings (`settings/`)
 
-- [ ] **G15** Navigate to `settings/`. PASS: shows company info (Stark Industries, acmecorp.com, Technology, 51-200).
-- [ ] **G16** Security settings visible: SSO (off), 2FA (on), IP Whitelist (off). PASS: toggle/indicator states match seed data.
-- [ ] **G17** Edit a setting (e.g. timezone or language) and save. PASS: success toast or save completes without error.
+- [ ] **G15** Navigate to `settings/`. PASS: shows the current Company Settings form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
+- [ ] **G16** _[RETIRED]_ Security settings (SSO, 2FA, IP Whitelist) are not present in the current Company Settings UI. This test is retired pending removal of the broader feature.
+- [ ] **G17** Edit Name (or Domain) and click save. PASS: success toast or save completes without error.
 - [ ] **G18** Navigate away from Settings, then return. PASS: the edited setting retains the saved value — data was persisted to the database.
 
 ### Manage Users (`organization/users.html`)
@@ -861,12 +888,12 @@ feature is implemented.
 - [ ] **I17** Type a search term (e.g. "ideas"). PASS: filtered results appear. Select a result — navigates to the corresponding page.
 - [ ] **I18** Press `Escape`. PASS: command palette closes.
 - [ ] **I19** Open command palette, type a search term. Use `Down Arrow` and `Up Arrow` to navigate results. PASS: active result highlight moves with arrow keys. Press `Enter`. PASS: navigates to the highlighted result.
-- [ ] **I20** Open command palette with an empty search field. PASS: results are grouped by category (Pages, Ideas, Projects, People) with category headers. Type a term that matches no results. PASS: result list is empty or shows a no-results message.
+- [ ] **I20** Open command palette with an empty search field. PASS: results list shows up to 12 items from the combined index, grouped by category (Pages, Ideas, Projects, People) with category headers — when the dataset is sparse enough for multiple categories to fit in 12 items, multiple groups appear; otherwise a single group is shown. Type a multi-category term (e.g. "dashboard") that matches across groups. PASS: results regroup under multiple category headers. Type a term that matches no results. PASS: result list is empty or shows a no-results message.
 
 ### Loading States
 
 - [ ] **I21** Navigate to a data-dependent page with mock data loaded. PASS: loading skeleton (card-grid, card-list, or detail pattern) appears briefly before content renders.
-- [ ] **I22** If an error occurs loading a page (e.g. corrupted localStorage), error state with "Try Again" retry button is shown. PASS: clicking retry re-attempts data loading.
+- [ ] **I22** If an error occurs inside a `withLoadingState()` fetch path (e.g. a data-dependent page hits a thrown adapter error after the database initialized successfully), the error state with "Try Again" retry button is shown. PASS: clicking retry re-attempts data loading. (Note: errors surfaced from `initDatabase` itself — e.g. corrupted localStorage that fails before the page renders — show a separate "Failed to initialize database" error UI via `handleDatabaseError`, without a retry button. Both are valid error states for different layers.)
 
 ### Toasts
 

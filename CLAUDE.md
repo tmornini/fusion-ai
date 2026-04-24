@@ -34,7 +34,7 @@ cd ~/Desktop/fusion-test/ && python3 -m http.server 8080
 
 `./validate` runs `tsc --noEmit` (type checking) then enforces 78-character maximum line length on all `.ts`, `.html`, and `.css` files (excluding `compose.ts`).
 
-No test framework is configured.
+No unit test framework is configured; see `## Testing` below for the manual browser regression protocol.
 
 ## TypeScript
 
@@ -390,6 +390,92 @@ Build steps (requires clean git working directory):
 CLI options: `./build [--no-zip] [path/]`. The trailing `/` on the path argument is required. Default output is `~/Desktop/`. With `--no-zip`, the bundle directory is kept for direct serving via HTTP.
 
 No build artifacts are created in the repo — build output goes to `/tmp/` by default.
+
+## Testing
+
+No unit test framework is configured. Testing is a manual browser
+regression pass against `TEST-PLAN.md` (254 cases), driven either
+by a single human tester serially or by Claude Code agents in
+parallel via the `claude-in-chrome` MCP.
+
+### Six-phase parallel protocol
+
+Agents execute the plan in six phases to fit within context and
+time budgets while keeping per-entity mutation domains disjoint:
+
+1. **Phase 0 — Preflight** (main): `./validate`, `./build` to
+   produce the distribution ZIP, `./build --no-zip` for the test
+   server, start HTTP server, open tab 0. Covers A1–A5.
+2. **Phase 1 — Data setup** (one agent, serial): AA1–AA43 in
+   tab 0. Creates pristine environment, users, ideas, projects,
+   one flow. Populates the shared database that Phase 2 verifies.
+3. **Phase 2 — Parallel verification** (7 agents concurrent,
+   each in its own tab, no shared tabs):
+   - Agent-B — Entry pages (B1–B16)
+   - Agent-CH — Dashboard + Reference (C1–C7, H1–H2), read-only
+   - Agent-D — Ideas (D1–D37)
+   - Agent-E — Projects (E1–E11)
+   - Agent-F — Flows (F1–F46)
+   - Agent-F2 — Workbox (WB1–WB19)
+   - Agent-G — Admin (G1–G29, G36–G37; skip G30–G35)
+4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
+   Mutates global UI state (theme, sidebar, command palette) —
+   no concurrent agents.
+5. **Phase 4 — Snapshot lifecycle** (one agent, alone):
+   G30–G35. Wipes and reloads the database — strictly last
+   before teardown.
+6. **Phase 5 — Teardown** (main): stop HTTP server, remove
+   build directory, verify distribution ZIP remains, aggregate
+   results.
+
+### Entity mutation domain scoping
+
+Phase 2 agents share one localStorage but each owns a disjoint
+subset of tables:
+
+| Agent | Mutation domain |
+|---|---|
+| Agent-B | creates one user via signup |
+| Agent-D | `ideas` |
+| Agent-E | `projects` (plus one flow via E7) |
+| Agent-F | `flows`, `flow_versions` |
+| Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims` |
+| Agent-G | `users`, `teams`, `profile`, `company_settings` |
+| Agent-CH | none (read-only) |
+
+Because `StorageEvent` propagation makes sibling changes visible
+to every tab, cross-boundary assertions use `≥ N` or
+"displayed-count matches current localStorage at read time"
+framing rather than frozen expected values. Agent-CH's dashboard
+count checks are non-zero + consistency, not numeric equality.
+
+### Known MCP limitations
+
+- **Flow designer gestures** (port drag, shift-drag to connect,
+  marquee select): synthetic PointerEvents do not reliably
+  drive the `flow-interactions.ts` state machines because they
+  use pointer-capture semantics. Affected tests include
+  AA27–AA34, F15, F19–F23, D36, D37, E11. Work around by
+  validating end-state via direct JSON injection into
+  `fusion-ai:flows`, then reloading and verifying render. Mark
+  BLOCKED if neither path confirms behavior.
+- **`resize_window`** does not change the CSS viewport;
+  responsive tests at specific widths (I10) cannot be driven.
+  Inspect `responsive.css` manually to verify media queries.
+- **File downloads** cannot write to disk from the MCP
+  sandbox. Capture Blob content via `javascript_tool`
+  intercepting `URL.createObjectURL` for validation.
+- **File uploads** require constructing a `DataTransfer` in
+  `javascript_tool` and dispatching a synthetic change event.
+- **Keyboard events** (arrows, Cmd+K, Delete, Tab) work
+  normally and bypass the pointer-capture limitation.
+
+### Serial single-tester mode
+
+The same TEST-PLAN.md runs serially by one human in one browser
+following document order (A → AA → B → C → D → E → F → F2 → G
+→ H → I → J). The agent-scoped mutation domains and tolerance
+patterns apply only to the parallel run.
 
 ## Gotchas
 
