@@ -60,7 +60,7 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
     },
     {
         href: '../organization/index.html',
-        pageLink: 'account',
+        pageLink: 'organization',
         label: 'Organization',
         icon: iconBuilding,
     },

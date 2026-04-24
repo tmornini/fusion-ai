@@ -170,7 +170,7 @@ Singleton table (single row, `id = '1'`).
 | name | TEXT |
 | domain | TEXT |
 
-### account
+### organization
 
 Singleton table (single row, `id = '1'`).
 

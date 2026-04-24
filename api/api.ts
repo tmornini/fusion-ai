@@ -19,7 +19,7 @@ import type {
     WorkOrderTransitionEntity,
     WorkOrderClaimEntity,
     CompanySettingsEntity,
-    AccountEntity,
+    OrganizationEntity,
 } from './types';
 
 export class ApiError {
@@ -286,11 +286,11 @@ const routes: Route[] = [
                 >(payload),
             ),
     }),
-    route('account', {
-        get: (db) => db.account.get(),
+    route('organization', {
+        get: (db) => db.organization.get(),
         put: (db, _, payload) =>
-            db.account.put(
-                fields<AccountEntity>(
+            db.organization.put(
+                fields<OrganizationEntity>(
                     payload,
                 ),
             ),

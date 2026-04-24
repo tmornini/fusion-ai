@@ -871,7 +871,7 @@ export async function populateMockData(
             name: 'Stark Industries',
             domain: 'acmecorp.com',
         }),
-        adapter.account.put({
+        adapter.organization.put({
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0),
@@ -2881,7 +2881,7 @@ export async function populateBootstrapData(
             name: 'Stark Industries',
             domain: 'acmecorp.com',
         }),
-        adapter.account.put({
+        adapter.organization.put({
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0),

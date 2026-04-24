@@ -98,15 +98,14 @@ export const PAGE_REGISTRY: Record<
         icon: 'users',
         keywords: 'team members roster',
     },
-    account: {
+    organization: {
         title: 'Organization',
         layout: 'sidebar',
         sourceDir: 'organization',
         sourceFile: 'index',
         icon: 'settings',
         keywords:
-            'account organization'
-            + ' billing plan',
+            'organization billing plan',
     },
     profile: {
         title: 'Profile',

@@ -17,7 +17,7 @@ import type {
     FlowEntity,
     FlowVersionEntity,
     CompanySettingsEntity,
-    AccountEntity,
+    OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
@@ -343,7 +343,7 @@ export const TABLE_NAMES = [
     'work_order_transitions',
     'work_order_claims',
     'company_settings',
-    'account',
+    'organization',
     'idea_submissions',
     'activity_actors',
 ];
@@ -551,9 +551,9 @@ export async function createLocalStorageAdapter(
                 CompanySettingsEntity
             >('company_settings'),
 
-        account:
-            createSingletonStore<AccountEntity>(
-                'account',
+        organization:
+            createSingletonStore<OrganizationEntity>(
+                'organization',
             ),
 
         ideaSubmissions:

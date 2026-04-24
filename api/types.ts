@@ -694,7 +694,7 @@ export interface CompanySettingsEntity {
     domain: string;
 }
 
-export interface AccountEntity {
+export interface OrganizationEntity {
     id: Id;
     plan: string;
     plan_status: string;
@@ -1328,7 +1328,7 @@ export interface RecentActivityItem {
     time: string;
 }
 
-export class Account {
+export class Organization {
     readonly #companyName: string;
     readonly #plan: string;
     readonly #planStatus: string;
@@ -1351,7 +1351,7 @@ export class Account {
         RecentActivityItem[];
 
     constructor(
-        entity: AccountEntity,
+        entity: OrganizationEntity,
         companyName: string,
         recentActivity:
             RecentActivityItem[],

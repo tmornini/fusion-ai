@@ -3,18 +3,18 @@ import {
 } from '../../../api/api';
 import type {
     UserEntity,
-    AccountEntity,
+    OrganizationEntity,
     CompanySettingsEntity,
     ActivityEntity,
     ActivityActorEntity,
 } from '../../../api/types';
 import {
     Activity,
-    Account,
+    Organization,
     User,
     jsonArrayField,
 } from '../../../api/types';
-export type { Account };
+export type { Organization };
 import {
     getUserMap,
     userName,
@@ -22,14 +22,14 @@ import {
 
 const RECENT_ACTIVITY_COUNT = 3;
 
-export async function getAccount(
-): Promise<Account> {
+export async function getOrganization(
+): Promise<Organization> {
     const [
         entity, settings,
         activities, userMap,
         activityActors,
     ] = await Promise.all([
-        GET<AccountEntity>('account'),
+        GET<OrganizationEntity>('organization'),
         GET<CompanySettingsEntity>(
             'company-settings',
         ),
@@ -44,7 +44,7 @@ export async function getAccount(
 
     if (!entity.plan)
         throw new Error(
-            'Account not configured',
+            'Organization not configured',
         );
 
     const actorMap = new Map(
@@ -75,7 +75,7 @@ export async function getAccount(
             };
         });
 
-    return new Account(
+    return new Organization(
         entity,
         settings.name,
         recent,
