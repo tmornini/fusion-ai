@@ -324,6 +324,7 @@ export async function getFlowZip(
             flow.is_auto_fit,
         ),
         lockTimeout: flow.lock_timeout,
+        createdAt: flow.created_at,
         nodes: graph.nodes,
         edges: graph.edges,
     };
