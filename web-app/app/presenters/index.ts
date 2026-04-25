@@ -22,6 +22,7 @@ export {
 } from './activity';
 export {
     UserPresenter,
+    TeamListPresenter,
 } from './user';
 export {
     FlowPresenter,
