@@ -1,4 +1,7 @@
-import { html, SafeHtml } from '../safe-html';
+import {
+    html, setHtml, SafeHtml,
+} from '../safe-html';
+import { $ } from '../dom';
 import {
     iconMail,
     iconPhone,
@@ -23,47 +26,143 @@ const DEPARTMENTS = [
     'Sales',
 ];
 
+export type ProfileFieldKey =
+    | 'firstName' | 'lastName' | 'email'
+    | 'phone' | 'role' | 'department'
+    | 'bio';
+
 export class ProfilePresenter {
-    readonly #profile: Profile;
+    #profile: Profile;
+    #draft: Profile | null;
 
     constructor(profile: Profile) {
         this.#profile = profile;
+        this.#draft = null;
     }
 
-    avatarInitials(): string {
-        return this.#profile
-            .firstName.charAt(0)
-            + this.#profile
-                .lastName.charAt(0);
+    update(profile: Profile): void {
+        this.#profile = profile;
+        this.#draft = null;
     }
 
-    initialStrengths(): Set<string> {
-        return new Set(
-            this.#profile.strengths,
+    beginEdit(): void {
+        this.#draft = {
+            ...this.#profile,
+            strengths: [
+                ...this.#profile.strengths,
+            ],
+        };
+    }
+
+    cancelEdit(): void {
+        this.#draft = null;
+    }
+
+    isEditing(): boolean {
+        return this.#draft !== null;
+    }
+
+    setDraftField(
+        field: ProfileFieldKey,
+        value: string,
+    ): void {
+        if (!this.#draft) return;
+        this.#draft[field] = value;
+    }
+
+    toggleStrength(name: string): void {
+        if (!this.#draft) return;
+        const i = this.#draft.strengths
+            .indexOf(name);
+        if (i >= 0) {
+            this.#draft.strengths.splice(i, 1);
+        } else {
+            this.#draft.strengths.push(name);
+        }
+    }
+
+    draft(): Profile {
+        return this.#draft ?? this.#profile;
+    }
+
+    renderShell(
+        container: HTMLElement,
+    ): void {
+        setHtml(container, html`
+<div class="idea-detail-wrap">
+    <div class="profile-header-slot"></div>
+    <div class="profile-info-slot"></div>
+    <div class="profile-styles-slot"></div>
+    <div class="profile-strengths-slot"></div>
+</div>`);
+        this.renderUpdate(container);
+    }
+
+    renderUpdate(
+        container: HTMLElement,
+    ): void {
+        this.#updateHeader(container);
+        this.#updateInfo(container);
+        this.#updateStyles(container);
+        this.#updateStrengths(container);
+    }
+
+    #updateHeader(
+        container: HTMLElement,
+    ): void {
+        const slot = $(
+            '.profile-header-slot', container,
+        );
+        if (!slot) return;
+        setHtml(slot, this.#buildHeader());
+    }
+
+    #updateInfo(
+        container: HTMLElement,
+    ): void {
+        const slot = $(
+            '.profile-info-slot', container,
+        );
+        if (!slot) return;
+        setHtml(
+            slot,
+            this.#buildPersonalInfoCard(),
         );
     }
 
-    buildPage(
-        isEditing: boolean,
-        selectedStrengths: Set<string>,
-    ): SafeHtml {
-        return html`
-    <div class="idea-detail-wrap">
-        ${this.#buildHeader(isEditing)}
-        ${this.#buildPersonalInfoCard(
-            isEditing,
-        )}
-        ${this.#buildWorkingStylesCard()}
-        ${this.#buildStrengthsCard(
-            isEditing,
-            selectedStrengths,
-        )}
-    </div>`;
+    #updateStyles(
+        container: HTMLElement,
+    ): void {
+        const slot = $(
+            '.profile-styles-slot', container,
+        );
+        if (!slot) return;
+        setHtml(
+            slot,
+            this.#buildWorkingStylesCard(),
+        );
     }
 
-    #buildHeader(
-        isEditing: boolean,
-    ): SafeHtml {
+    #updateStrengths(
+        container: HTMLElement,
+    ): void {
+        const slot = $(
+            '.profile-strengths-slot',
+            container,
+        );
+        if (!slot) return;
+        setHtml(
+            slot, this.#buildStrengthsCard(),
+        );
+    }
+
+    #avatarInitials(): string {
+        const p = this.draft();
+        return p.firstName.charAt(0)
+            + p.lastName.charAt(0);
+    }
+
+    #buildHeader(): SafeHtml {
         return html`
         <div class="page-header">
             <div>
@@ -78,26 +177,24 @@ export class ProfilePresenter {
                     preferences
                 </p>
             </div>
-            ${this.#buildHeaderButtons(
-                isEditing,
-            )}
+            ${this.#buildHeaderButtons()}
         </div>`;
     }
 
-    #buildHeaderButtons(
-        isEditing: boolean,
-    ): SafeHtml {
-        if (isEditing) {
+    #buildHeaderButtons(): SafeHtml {
+        if (this.isEditing()) {
             return html`
             <div class="flex gap-2">
                 <button class="${
                     'btn btn-outline gap-2'
-                }" id="profile-cancel-btn">
+                }" id="profile-cancel-btn"
+                    data-profile-action="cancel">
                     ${iconX(16, '')} Cancel
                 </button>
                 <button class="${
                     'btn btn-primary gap-2'
-                }" id="profile-save-btn">
+                }" id="profile-save-btn"
+                    data-profile-action="save">
                     ${iconSave(16, '')} Save
                 </button>
             </div>`;
@@ -105,14 +202,14 @@ export class ProfilePresenter {
         return html`
             <button class="${
                 'btn btn-outline gap-2'
-            }" id="profile-edit-btn">
+            }" id="profile-edit-btn"
+                data-profile-action="edit">
                 ${iconEdit(16, '')} Edit
             </button>`;
     }
 
-    #buildPersonalInfoCard(
-        isEditing: boolean,
-    ): SafeHtml {
+    #buildPersonalInfoCard(): SafeHtml {
+        const p = this.draft();
         return html`
         <div class="${
             'card card-hover p-6 mb-6'
@@ -124,32 +221,28 @@ export class ProfilePresenter {
             <div class="${
                 'flex items-start gap-6 mb-6'
             }">
-                ${this.#buildAvatar(
-                    isEditing,
-                )}
-                ${this.#buildNameFields(
-                    isEditing,
-                )}
+                ${this.#buildAvatar()}
+                ${this.#buildNameFields()}
             </div>
             <div class="${
                 'grid grid-cols-2 gap-4 mb-4'
             }">
                 ${this.#buildField(
-                    isEditing,
                     'profile-email',
+                    'email',
                     html`${
                         iconMail(16, '')
                     } Email`,
-                    this.#profile.email,
+                    p.email,
                     'email',
                 )}
                 ${this.#buildField(
-                    isEditing,
                     'profile-phone',
+                    'phone',
                     html`${
                         iconPhone(16, '')
                     } Phone`,
-                    this.#profile.phone,
+                    p.phone,
                     'text',
                 )}
             </div>
@@ -157,25 +250,21 @@ export class ProfilePresenter {
                 'grid grid-cols-2 gap-4 mb-4'
             }">
                 ${this.#buildField(
-                    isEditing,
                     'profile-role',
+                    'role',
                     html`${
                         iconBriefcase(16, '')
                     } Role`,
-                    this.#profile.role,
+                    p.role,
                     'text',
                 )}
-                ${this.#buildDepartmentField(
-                    isEditing,
-                )}
+                ${this.#buildDepartmentField()}
             </div>
-            ${this.#buildBioField(isEditing)}
+            ${this.#buildBioField()}
         </div>`;
     }
 
-    #buildAvatar(
-        isEditing: boolean,
-    ): SafeHtml {
+    #buildAvatar(): SafeHtml {
         return html`
             <div class="profile-avatar-wrap">
                 <div class="profile-avatar">
@@ -183,10 +272,10 @@ export class ProfilePresenter {
                         'text-3xl font-bold'
                         + ' text-primary'
                     }">${
-                        this.avatarInitials()
+                        this.#avatarInitials()
                     }</span>
                 </div>
-                ${isEditing
+                ${this.isEditing()
                     ? html`<button class="${
                         'profile-avatar-btn'
                     }"
@@ -200,33 +289,32 @@ export class ProfilePresenter {
             </div>`;
     }
 
-    #buildNameFields(
-        isEditing: boolean,
-    ): SafeHtml {
+    #buildNameFields(): SafeHtml {
+        const p = this.draft();
         return html`
             <div class="${
                 'grid grid-cols-2 gap-4 flex-1'
             }">
                 ${this.#buildField(
-                    isEditing,
                     'profile-first-name',
+                    'firstName',
                     html`First Name`,
-                    this.#profile.firstName,
+                    p.firstName,
                     'text',
                 )}
                 ${this.#buildField(
-                    isEditing,
                     'profile-last-name',
+                    'lastName',
                     html`Last Name`,
-                    this.#profile.lastName,
+                    p.lastName,
                     'text',
                 )}
             </div>`;
     }
 
     #buildField(
-        isEditing: boolean,
         id: string,
+        field: ProfileFieldKey,
         label: SafeHtml,
         value: string,
         inputType: string,
@@ -237,11 +325,14 @@ export class ProfilePresenter {
                     'label mb-2 flex'
                     + ' items-center gap-2'
                 }" for="${id}">${label}</label>
-                ${isEditing
+                ${this.isEditing()
                     ? html`<input
                         class="input"
                         id="${id}"
                         type="${inputType}"
+                        data-profile-field="${
+                            field
+                        }"
                         value="${value}" />`
                     : html`<p class="${
                         'text-sm'
@@ -249,57 +340,54 @@ export class ProfilePresenter {
             </div>`;
     }
 
-    #buildDepartmentField(
-        isEditing: boolean,
-    ): SafeHtml {
+    #buildDepartmentField(): SafeHtml {
+        const p = this.draft();
         return html`
             <div>
                 <label class="${
                     'label mb-2 block'
                 }" for="profile-department"
                 >Department</label>
-                ${isEditing
+                ${this.isEditing()
                     ? html`<select
                         class="input"
                         id="profile-department"
+                        data-profile-field="${
+                            'department'
+                        }"
                     >${DEPARTMENTS.map(d =>
                         html`<option
                             value="${d}"
-                            ${this.#profile
-                                .department === d
-                                    ? 'selected'
-                                    : ''}
+                            ${p.department === d
+                                ? 'selected'
+                                : ''}
                         >${d}</option>`)
                     }</select>`
                     : html`<p class="${
                         'text-sm'
-                    }">${
-                        this.#profile.department
-                    }</p>`}
+                    }">${p.department}</p>`}
             </div>`;
     }
 
-    #buildBioField(
-        isEditing: boolean,
-    ): SafeHtml {
+    #buildBioField(): SafeHtml {
+        const p = this.draft();
         return html`
             <div>
                 <label class="${
                     'label mb-2 block'
                 }" for="profile-bio">Bio</label>
-                ${isEditing
+                ${this.isEditing()
                     ? html`<textarea
                         class="textarea"
                         rows="3"
                         id="profile-bio"
-                    >${
-                        this.#profile.bio
-                    }</textarea>`
+                        data-profile-field="${
+                            'bio'
+                        }"
+                    >${p.bio}</textarea>`
                     : html`<p class="${
                         'text-sm'
-                    }">${
-                        this.#profile.bio
-                    }</p>`}
+                    }">${p.bio}</p>`}
             </div>`;
     }
 
@@ -309,10 +397,7 @@ export class ProfilePresenter {
         ).buildCard();
     }
 
-    #buildStrengthsCard(
-        isEditing: boolean,
-        selectedStrengths: Set<string>,
-    ): SafeHtml {
+    #buildStrengthsCard(): SafeHtml {
         return html`
         <div class="${
             'card card-hover p-6 mb-6'
@@ -326,24 +411,17 @@ export class ProfilePresenter {
             <div class="${
                 'flex flex-wrap gap-2'
             }" id="profile-strengths">
-                ${this.#buildStrengthChips(
-                    isEditing,
-                    selectedStrengths,
-                )}
+                ${this.#buildStrengthChips()}
             </div>
         </div>`;
     }
 
-    #buildStrengthChips(
-        isEditing: boolean,
-        selectedStrengths: Set<string>,
-    ): SafeHtml {
-        if (!isEditing) {
+    #buildStrengthChips(): SafeHtml {
+        const p = this.draft();
+        const draftSet = new Set(p.strengths);
+        if (!this.isEditing()) {
             const selected = allStrengths
-                .filter(
-                    s => selectedStrengths
-                        .has(s),
-                );
+                .filter(s => draftSet.has(s));
             return html`${selected.map(
                 name => html`<span class="${
                     'pill-tag'
@@ -355,8 +433,7 @@ export class ProfilePresenter {
         }
         return html`${allStrengths.map(
             name => this.#buildEditableChip(
-                name,
-                selectedStrengths.has(name),
+                name, draftSet.has(name),
             ),
         )}`;
     }

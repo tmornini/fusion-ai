@@ -32,9 +32,11 @@ export {
 } from './organization';
 export {
     ProfilePresenter,
+    type ProfileFieldKey,
 } from './profile';
 export {
     CompanyPresenter,
+    type CompanyFieldKey,
 } from './company';
 export {
     FlowDesignerPresenter,
