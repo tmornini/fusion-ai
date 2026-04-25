@@ -338,7 +338,6 @@ async function handleSave(): Promise<void> {
     if (!presenter) return;
     if (!presenter.isEditing()) return;
     const patch = presenter.buildEntityPatch();
-    if (!patch) return;
     const ideaId = presenter.idForLink();
     try {
         const entity = await getIdeaEntity(

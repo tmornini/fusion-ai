@@ -18,6 +18,7 @@ import { allStrengths } from '../adapters';
 import {
     WorkingStylesPresenter,
 } from './working-styles';
+import type { EditMode } from './edit-mode';
 
 const DEPARTMENTS = [
     'Product',
@@ -33,56 +34,72 @@ export type ProfileFieldKey =
 
 export class ProfilePresenter {
     #profile: Profile;
-    #draft: Profile | null;
+    #mode: EditMode<Profile>
+        = { kind: 'reading' };
 
     constructor(profile: Profile) {
         this.#profile = profile;
-        this.#draft = null;
     }
 
     update(profile: Profile): void {
         this.#profile = profile;
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     beginEdit(): void {
-        this.#draft = {
-            ...this.#profile,
-            strengths: [
-                ...this.#profile.strengths,
-            ],
+        this.#mode = {
+            kind: 'editing',
+            draft: {
+                ...this.#profile,
+                strengths: [
+                    ...this.#profile.strengths,
+                ],
+            },
         };
     }
 
     cancelEdit(): void {
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     isEditing(): boolean {
-        return this.#draft !== null;
+        return this.#mode.kind === 'editing';
     }
 
     setDraftField(
         field: ProfileFieldKey,
         value: string,
     ): void {
-        if (!this.#draft) return;
-        this.#draft[field] = value;
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'setDraftField requires'
+                + ' editing mode',
+            );
+        }
+        this.#mode.draft[field] = value;
     }
 
     toggleStrength(name: string): void {
-        if (!this.#draft) return;
-        const i = this.#draft.strengths
-            .indexOf(name);
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'toggleStrength requires'
+                + ' editing mode',
+            );
+        }
+        const strengths
+            = this.#mode.draft.strengths;
+        const i = strengths.indexOf(name);
         if (i >= 0) {
-            this.#draft.strengths.splice(i, 1);
+            strengths.splice(i, 1);
         } else {
-            this.#draft.strengths.push(name);
+            strengths.push(name);
         }
     }
 
     draft(): Profile {
-        return this.#draft ?? this.#profile;
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft
+            : this.#profile;
     }
 
     renderShell(

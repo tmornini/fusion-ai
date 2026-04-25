@@ -9,46 +9,57 @@ import {
 import type {
     Company,
 } from '../adapters';
+import type { EditMode } from './edit-mode';
 
 export type CompanyFieldKey =
     | 'name' | 'domain';
 
 export class CompanyPresenter {
     #company: Company;
-    #draft: Company | null;
+    #mode: EditMode<Company>
+        = { kind: 'reading' };
 
     constructor(company: Company) {
         this.#company = company;
-        this.#draft = null;
     }
 
     update(company: Company): void {
         this.#company = company;
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     beginEdit(): void {
-        this.#draft = { ...this.#company };
+        this.#mode = {
+            kind: 'editing',
+            draft: { ...this.#company },
+        };
     }
 
     cancelEdit(): void {
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     isEditing(): boolean {
-        return this.#draft !== null;
+        return this.#mode.kind === 'editing';
     }
 
     setDraftField(
         field: CompanyFieldKey,
         value: string,
     ): void {
-        if (!this.#draft) return;
-        this.#draft[field] = value;
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'setDraftField requires'
+                + ' editing mode',
+            );
+        }
+        this.#mode.draft[field] = value;
     }
 
     draft(): Company {
-        return this.#draft ?? this.#company;
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft
+            : this.#company;
     }
 
     renderShell(

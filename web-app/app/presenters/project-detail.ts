@@ -29,6 +29,7 @@ import {
 import type {
     FlowListItem,
 } from '../adapters/flows';
+import type { EditMode } from './edit-mode';
 
 interface ProjectDraftFields {
     title: string;
@@ -56,7 +57,8 @@ export type ProjectEntityPatch =
 export class ProjectDetailPresenter {
     #view: ProjectView;
     #flows: FlowListItem[];
-    #draft: ProjectDraftFields | null;
+    #mode: EditMode<ProjectDraftFields>
+        = { kind: 'reading' };
 
     constructor(
         view: ProjectView,
@@ -64,7 +66,6 @@ export class ProjectDetailPresenter {
     ) {
         this.#view = view;
         this.#flows = flows;
-        this.#draft = null;
     }
 
     update(
@@ -73,50 +74,64 @@ export class ProjectDetailPresenter {
     ): void {
         this.#view = view;
         this.#flows = flows;
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     beginEdit(): void {
-        this.#draft = {
-            title: this.#view.titleText(),
-            description:
-                this.#view.descriptionText(),
-            status: this.#view.statusValue(),
-            startDate: toDateInputValue(
-                this.#view.startDateValue(),
-            ),
-            targetEndDate: toDateInputValue(
-                this.#view.targetEndDateValue(),
-            ),
-            costBaseline: String(
-                this.#view.costBaselineK(),
-            ),
-            impactBaseline: String(
-                this.#view.impactBaseline(),
-            ),
+        this.#mode = {
+            kind: 'editing',
+            draft: {
+                title: this.#view.titleText(),
+                description:
+                    this.#view.descriptionText(),
+                status:
+                    this.#view.statusValue(),
+                startDate: toDateInputValue(
+                    this.#view.startDateValue(),
+                ),
+                targetEndDate: toDateInputValue(
+                    this.#view
+                        .targetEndDateValue(),
+                ),
+                costBaseline: String(
+                    this.#view.costBaselineK(),
+                ),
+                impactBaseline: String(
+                    this.#view.impactBaseline(),
+                ),
+            },
         };
     }
 
     cancelEdit(): void {
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     isEditing(): boolean {
-        return this.#draft !== null;
+        return this.#mode.kind === 'editing';
     }
 
     setDraftField(
         field: ProjectFieldKey,
         value: string,
     ): void {
-        if (!this.#draft) return;
-        this.#draft[field] = value;
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'setDraftField requires'
+                + ' editing mode',
+            );
+        }
+        this.#mode.draft[field] = value;
     }
 
-    buildEntityPatch():
-        ProjectEntityPatch | null {
-        const d = this.#draft;
-        if (!d) return null;
+    buildEntityPatch(): ProjectEntityPatch {
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'buildEntityPatch requires'
+                + ' editing mode',
+            );
+        }
+        const d = this.#mode.draft;
         const status = isProjectStatus(d.status)
             ? d.status
             : this.#view.statusValue();
@@ -229,9 +244,8 @@ export class ProjectDetailPresenter {
     }
 
     #displayedTitle(): string {
-        const d = this.#draft;
-        return d
-            ? d.title
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.title
             : this.#view.titleText();
     }
 
@@ -308,9 +322,8 @@ export class ProjectDetailPresenter {
     }
 
     #displayedStatus(): string {
-        const d = this.#draft;
-        return d
-            ? d.status
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.status
             : this.#view.statusValue();
     }
 
@@ -367,25 +380,22 @@ export class ProjectDetailPresenter {
     }
 
     #displayedDescription(): string {
-        const d = this.#draft;
-        return d
-            ? d.description
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.description
             : this.#view.descriptionText();
     }
 
     #displayedStartDate(): string {
-        const d = this.#draft;
-        return d
-            ? d.startDate
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.startDate
             : toDateInputValue(
                 this.#view.startDateValue(),
             );
     }
 
     #displayedEndDate(): string {
-        const d = this.#draft;
-        return d
-            ? d.targetEndDate
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.targetEndDate
             : toDateInputValue(
                 this.#view.targetEndDateValue(),
             );
@@ -521,16 +531,18 @@ export class ProjectDetailPresenter {
     }
 
     #displayedCostBaseline(): number {
-        const d = this.#draft;
-        return d
-            ? Number(d.costBaseline)
+        return this.#mode.kind === 'editing'
+            ? Number(
+                this.#mode.draft.costBaseline,
+            )
             : this.#view.costBaselineK();
     }
 
     #displayedImpactBaseline(): number {
-        const d = this.#draft;
-        return d
-            ? Number(d.impactBaseline)
+        return this.#mode.kind === 'editing'
+            ? Number(
+                this.#mode.draft.impactBaseline,
+            )
             : this.#view.impactBaseline();
     }
 

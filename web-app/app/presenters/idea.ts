@@ -31,6 +31,7 @@ import type {
 import {
     IDEA_STATUS_CONFIG,
 } from '../adapters';
+import type { EditMode } from './edit-mode';
 
 const STATUS_ICONS: Record<
     IdeaStatus,
@@ -71,54 +72,67 @@ export type IdeaEntityPatch =
 
 export class IdeaPresenter {
     #idea: Idea;
-    #draft: IdeaDraftFields | null;
+    #mode: EditMode<IdeaDraftFields>
+        = { kind: 'reading' };
 
     constructor(idea: Idea) {
         this.#idea = idea;
-        this.#draft = null;
     }
 
     update(idea: Idea): void {
         this.#idea = idea;
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     beginEdit(): void {
-        this.#draft = {
-            title: this.#idea.titleText(),
-            problemStatement: this.#idea
-                .problemStatementText(),
-            targetUsers: this.#idea
-                .targetUsersText(),
-            proposedSolution: this.#idea
-                .proposedSolutionText(),
-            expectedOutcome: this.#idea
-                .expectedOutcomeText(),
-            successMetrics: this.#idea
-                .successMetricsText(),
+        this.#mode = {
+            kind: 'editing',
+            draft: {
+                title:
+                    this.#idea.titleText(),
+                problemStatement: this.#idea
+                    .problemStatementText(),
+                targetUsers: this.#idea
+                    .targetUsersText(),
+                proposedSolution: this.#idea
+                    .proposedSolutionText(),
+                expectedOutcome: this.#idea
+                    .expectedOutcomeText(),
+                successMetrics: this.#idea
+                    .successMetricsText(),
+            },
         };
     }
 
     cancelEdit(): void {
-        this.#draft = null;
+        this.#mode = { kind: 'reading' };
     }
 
     isEditing(): boolean {
-        return this.#draft !== null;
+        return this.#mode.kind === 'editing';
     }
 
     setDraftField(
         field: IdeaFieldKey,
         value: string,
     ): void {
-        if (!this.#draft) return;
-        this.#draft[field] = value;
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'setDraftField requires'
+                + ' editing mode',
+            );
+        }
+        this.#mode.draft[field] = value;
     }
 
-    buildEntityPatch():
-        IdeaEntityPatch | null {
-        const d = this.#draft;
-        if (!d) return null;
+    buildEntityPatch(): IdeaEntityPatch {
+        if (this.#mode.kind !== 'editing') {
+            throw new Error(
+                'buildEntityPatch requires'
+                + ' editing mode',
+            );
+        }
+        const d = this.#mode.draft;
         return {
             title: d.title,
             problem_statement:
@@ -352,9 +366,8 @@ export class IdeaPresenter {
     }
 
     #titleForDisplay(): string {
-        const d = this.#draft;
-        return d
-            ? d.title
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft.title
             : this.#idea.titleText();
     }
 
@@ -543,8 +556,9 @@ export class IdeaPresenter {
         field: IdeaFieldKey,
         savedValue: string,
     ): string {
-        const d = this.#draft;
-        return d ? d[field] : savedValue;
+        return this.#mode.kind === 'editing'
+            ? this.#mode.draft[field]
+            : savedValue;
     }
 
     #buildInputField(
