@@ -8,40 +8,40 @@ import {
 } from '../app/loading-states';
 import { log } from '../app/logger';
 import {
-    getCompanySettings,
-    putCompanySettings,
-    type CompanySettings,
+    getCompany,
+    putCompany,
+    type Company,
 } from '../app/adapters';
 import {
-    SettingsPresenter,
+    CompanyPresenter,
 } from '../app/presenters';
 
 const escapeController =
     { current: new AbortController() };
 
-let currentSettings:
-    CompanySettings | null = null;
+let currentCompany:
+    Company | null = null;
 
-function mutateSettingsPage(
-    settings: CompanySettings,
+function mutateCompanyPage(
+    company: Company,
     isEditing: boolean,
 ): void {
-    currentSettings = settings;
+    currentCompany = company;
     const container = $(
-        '#settings-content', document,
+        '#company-content', document,
     );
     if (!container) return;
     const presenter =
-        new SettingsPresenter(settings);
+        new CompanyPresenter(company);
     setHtml(
         container,
         presenter.buildPage(isEditing),
     );
-    bindSettingsEvents(settings, isEditing);
+    bindCompanyEvents(company, isEditing);
 }
 
-function bindSettingsEvents(
-    settings: CompanySettings,
+function bindCompanyEvents(
+    company: Company,
     isEditing: boolean,
 ): void {
     escapeController.current.abort();
@@ -54,8 +54,7 @@ function bindSettingsEvents(
                 if (e.key === 'Escape') {
                     e.preventDefault();
                     $(
-                        '#company-settings'
-                        + '-cancel-btn',
+                        '#company-cancel-btn',
                         document,
                     )?.click();
                 }
@@ -65,37 +64,36 @@ function bindSettingsEvents(
                     .current.signal,
             },
         );
-        const saveSel =
-            '#company-settings-save-btn';
+        const saveSel = '#company-save-btn';
         bindEnterToClick(
-            '#company-settings-name',
+            '#company-name',
             saveSel,
         );
         bindEnterToClick(
-            '#company-settings-domain',
+            '#company-domain',
             saveSel,
         );
     }
     $(
-        '#company-settings-edit-btn',
+        '#company-edit-btn',
         document,
     )?.addEventListener(
         'click',
-        () => mutateSettingsPage(
-            settings, true,
+        () => mutateCompanyPage(
+            company, true,
         ),
     );
     $(
-        '#company-settings-cancel-btn',
+        '#company-cancel-btn',
         document,
     )?.addEventListener(
         'click',
-        () => mutateSettingsPage(
-            settings, false,
+        () => mutateCompanyPage(
+            company, false,
         ),
     );
     $(
-        '#company-settings-save-btn',
+        '#company-save-btn',
         document,
     )?.addEventListener(
         'click',
@@ -104,54 +102,52 @@ function bindSettingsEvents(
 }
 
 async function handleSave(): Promise<void> {
-    if (!currentSettings) return;
+    if (!currentCompany) return;
     const name = $input(
-        '#company-settings-name', document,
+        '#company-name', document,
     )!.value.trim();
     const domain = $input(
-        '#company-settings-domain', document,
+        '#company-domain', document,
     )!.value.trim();
-    const updated: CompanySettings = {
+    const updated: Company = {
         name, domain,
     };
     try {
-        await putCompanySettings(updated);
+        await putCompany(updated);
     } catch (err) {
         log.error(
-            'putCompanySettings failed',
-            'settings',
+            'putCompany failed',
+            'company',
             err,
         );
         showToast(
-            'Failed to save settings',
+            'Failed to save company',
             'error',
         );
         return;
     }
-    showToast('Settings saved', 'success');
-    mutateSettingsPage(updated, false);
+    showToast('Company saved', 'success');
+    mutateCompanyPage(updated, false);
 }
 
 export async function init(): Promise<void> {
     const container = $(
-        '#settings-content', document,
+        '#company-content', document,
     );
     if (!container) return;
-    let settings: CompanySettings;
+    let company: Company;
     try {
-        settings =
-            await getCompanySettings();
+        company = await getCompany();
     } catch (err) {
         log.error(
-            'getCompanySettings failed',
-            'settings',
+            'getCompany failed',
+            'company',
             err,
         );
         setHtml(
             container,
             buildErrorState(
-                'Failed to load company'
-                + ' settings.',
+                'Failed to load company.',
                 'Try Again',
             ),
         );
@@ -165,5 +161,5 @@ export async function init(): Promise<void> {
             );
         return;
     }
-    mutateSettingsPage(settings, false);
+    mutateCompanyPage(company, false);
 }

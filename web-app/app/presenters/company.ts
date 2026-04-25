@@ -6,16 +6,16 @@ import {
     iconEdit, iconX,
 } from '../icons';
 import type {
-    CompanySettings,
+    Company,
 } from '../adapters';
 
-export class SettingsPresenter {
-    readonly #settings: CompanySettings;
+export class CompanyPresenter {
+    readonly #company: Company;
 
     constructor(
-        settings: CompanySettings,
+        company: Company,
     ) {
-        this.#settings = settings;
+        this.#company = company;
     }
 
     buildPage(
@@ -57,18 +57,12 @@ export class SettingsPresenter {
             <div class="flex gap-2">
                 <button class="${
                     'btn btn-outline gap-2'
-                }" id="${
-                    'company-settings'
-                    + '-cancel-btn'
-                }">
+                }" id="company-cancel-btn">
                     ${iconX(16, '')} Cancel
                 </button>
                 <button class="${
                     'btn btn-primary gap-2'
-                }" id="${
-                    'company-settings'
-                    + '-save-btn'
-                }">
+                }" id="company-save-btn">
                     ${iconSave(16, '')} Save
                 </button>
             </div>`;
@@ -76,9 +70,7 @@ export class SettingsPresenter {
         return html`
             <button class="${
                 'btn btn-outline gap-2'
-            }" id="${
-                'company-settings-edit-btn'
-            }">
+            }" id="company-edit-btn">
                 ${iconEdit(16, '')} Edit
             </button>`;
     }
@@ -102,15 +94,15 @@ export class SettingsPresenter {
             }">
                 ${this.#buildField(
                     isEditing,
-                    'company-settings-name',
+                    'company-name',
                     'Company Name',
-                    this.#settings.name,
+                    this.#company.name,
                 )}
                 ${this.#buildField(
                     isEditing,
-                    'company-settings-domain',
+                    'company-domain',
                     'Domain',
-                    this.#settings.domain,
+                    this.#company.domain,
                 )}
             </div>
         </div>`;

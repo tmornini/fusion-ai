@@ -144,7 +144,7 @@ generate the markup the page injects into the DOM.
   `IdeaListPresenter`), `idea-conversion`,
   `idea-create`, `profile`, `project` (exports
   `ProjectPresenter` plus `ProjectListPresenter`),
-  `project-detail`, `settings`, `user`, plus
+  `project-detail`, `company`, `user`, plus
   `index` (barrel), `ordered-keys` (helper), and
   `flow-designer-view` (helper for the flow
   designer page, exporting `build*` functions).
@@ -319,7 +319,7 @@ web-app/
       workbox-queries.ts      # getWorkboxItems, getWorkboxActive, getWorkboxArchive, getWorkboxItem, getFlowsForCreation
       workbox-mutations.ts    # postWorkOrderCreation, postWorkOrderTransition, postWorkOrderClaim, putWorkOrder
       workbox-deletions.ts    # deleteWorkOrderClaim
-      admin.ts                # getAccount, getProfile, getCompanySettings, getActivityFeed
+      admin.ts                # getAccount, getProfile, getCompany, getActivityFeed
       snapshots.ts            # deleteSchema, postSchemaCreation, postMockDataLoad, postBootstrap, putSnapshot, getSnapshot, getDataPresent
     presenters/               # 15 presenter classes across 13 files (adapter shapes → SafeHtml)
       index.ts                # Barrel re-export
@@ -335,7 +335,7 @@ web-app/
       profile.ts              # ProfilePresenter
       project.ts              # ProjectPresenter, ProjectListPresenter
       project-detail.ts       # ProjectDetailPresenter
-      settings.ts             # SettingsPresenter
+      company.ts              # CompanyPresenter
       user.ts                 # UserPresenter
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
@@ -361,7 +361,7 @@ web-app/
   organization/             # Account overview, users, activity-feed, onboarding (named files)
   teams/                    # Team roster and member management
   profile/                  # Profile settings
-  settings/                 # Company settings
+  company/                  # Company name and domain
   billing/                  # Billing page — STUB (init() is empty; page renders a placeholder)
   snapshots/                # Snapshots (wipe, reload, upload/download snapshots)
   design-system/            # Component gallery
@@ -441,7 +441,7 @@ subset of tables:
 | Agent-E | `projects` (plus one flow via E7) |
 | Agent-F | `flows`, `flow_versions` |
 | Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims` |
-| Agent-G | `users`, `teams`, `profile`, `company_settings` |
+| Agent-G | `users`, `teams`, `profile`, `company` |
 | Agent-CH | none (read-only) |
 
 Because `StorageEvent` propagation makes sibling changes visible

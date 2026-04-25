@@ -49,8 +49,8 @@ const pageModules: Record<
         ),
     profile: () =>
         import('../profile/index'),
-    settings: () =>
-        import('../settings/index'),
+    company: () =>
+        import('../company/index'),
     billing: () =>
         import('../billing/index'),
     users: () =>

@@ -71,8 +71,8 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         icon: iconUsers,
     },
     {
-        href: '../settings/index.html',
-        pageLink: 'settings',
+        href: '../company/index.html',
+        pageLink: 'company',
         label: 'Company',
         icon: iconSettings,
     },

@@ -116,15 +116,13 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'profile settings personal',
     },
-    settings: {
+    company: {
         title: 'Company',
         layout: 'sidebar',
-        sourceDir: 'settings',
+        sourceDir: 'company',
         sourceFile: 'index',
         icon: 'settings',
-        keywords:
-            'company organization'
-            + ' settings',
+        keywords: 'company organization',
     },
     billing: {
         title: 'Billing',

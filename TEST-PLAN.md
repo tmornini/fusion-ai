@@ -205,7 +205,7 @@ on. Run these in order.
 - [ ] **AA41** Edit profile: change phone number.
   Save, navigate away, return. PASS: changed phone
   persists.
-- [ ] **AA42** Edit company settings: change
+- [ ] **AA42** Edit company: change
   timezone. Save, navigate away, return. PASS:
   changed timezone persists.
 
@@ -785,9 +785,9 @@ on. Run these in order.
 - [ ] **G13** Edit a field (e.g. phone), toggle strengths, and click "Save Changes". PASS: toast "Profile saved" appears.
 - [ ] **G14** Navigate away from Profile (e.g. to Dashboard), then return to Profile. PASS: the edited field retains the saved value — data was persisted to the database, not just displayed via toast.
 
-### Company (`settings/`)
+### Company (`company/`)
 
-- [ ] **G15** Navigate to `settings/`. PASS: shows the current Company form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
+- [ ] **G15** Navigate to `company/`. PASS: shows the current Company form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
 - [ ] **G16** _[RETIRED]_ Security settings (SSO, 2FA, IP Whitelist) are not present in the current Company UI. This test is retired pending removal of the broader feature.
 - [ ] **G17** Edit Name (or Domain) and click save. PASS: success toast or save completes without error.
 - [ ] **G18** Navigate away from Settings, then return. PASS: the edited setting retains the saved value — data was persisted to the database.
