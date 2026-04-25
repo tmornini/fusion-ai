@@ -581,7 +581,6 @@ export interface ActivityEntity {
     action: string;
     target: string;
     timestamp: string;
-    score: number;
     status: string;
     feedback: string;
 }
@@ -1238,7 +1237,6 @@ export class Activity {
     readonly #action: string;
     readonly #target: string;
     readonly #timestamp: string;
-    readonly #score: number;
     readonly #status: string;
     readonly #feedback: string;
     readonly #actor: string;
@@ -1253,7 +1251,6 @@ export class Activity {
         this.#target = entity.target;
         this.#timestamp =
             entity.timestamp;
-        this.#score = entity.score;
         this.#status = entity.status;
         this.#feedback = entity.feedback;
         this.#actor = actor;

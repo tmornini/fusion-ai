@@ -1096,7 +1096,6 @@ export async function populateMockData(
             action: 'submitted new idea',
             target: 'Mobile App Redesign',
             timestamp: dt(0, 17),
-            score: 0,
             status: 'active',
             feedback:
                 'Addresses top user'
@@ -1109,7 +1108,6 @@ export async function populateMockData(
             target:
                 'Q1 Analytics Dashboard',
             timestamp: dt(0, 16),
-            score: 0,
             status: 'active',
             feedback:
                 'Great progress on the'
@@ -1121,7 +1119,6 @@ export async function populateMockData(
             action: 'joined the team',
             target: 'Product Innovation',
             timestamp: dt(0, 15),
-            score: 0,
             status: 'active',
             feedback:
                 'Excited to contribute'
@@ -1134,7 +1131,6 @@ export async function populateMockData(
             target:
                 'Customer Feedback Portal',
             timestamp: dt(0, 14),
-            score: 0,
             status: 'In Progress',
             feedback:
                 'Development sprint'
@@ -1148,7 +1144,6 @@ export async function populateMockData(
             target: 'Automated Testing'
                 + ' Framework',
             timestamp: dt(0, 13),
-            score: 0,
             status: 'completed',
             feedback:
                 'Approved by engineering'
@@ -1161,7 +1156,6 @@ export async function populateMockData(
             target: 'Performance'
                 + ' Optimization Initiative',
             timestamp: dt(0, 12),
-            score: 0,
             status: 'active',
             feedback:
                 'Targeting 40% latency'

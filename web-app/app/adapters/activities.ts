@@ -14,7 +14,6 @@ export interface ActivityInput {
     action: string;
     target: string;
     feedback?: string;
-    score?: number;
     status?: string;
 }
 
@@ -32,7 +31,6 @@ export async function postActivity(
             action: input.action,
             target: input.target,
             timestamp,
-            score: input.score ?? 0,
             status: input.status ?? 'active',
             feedback: input.feedback ?? '',
         },

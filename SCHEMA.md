@@ -158,7 +158,6 @@ structure as `flows.graph` plus flow-level metadata
 | action | TEXT |
 | target | TEXT |
 | timestamp | TEXT |
-| score | INTEGER |
 | status | TEXT |
 | feedback | TEXT |
 ## Admin
