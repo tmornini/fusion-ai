@@ -93,7 +93,7 @@ export class ActivityPresenter {
                         .statusText()
                 }</div>`
                 : this.#activity
-                    .hasComment()
+                    .hasFeedback()
                     ? html`<p
                         class="${
                             'text-sm'
@@ -102,7 +102,7 @@ export class ActivityPresenter {
                         }"
                         >"${
                         this.#activity
-                            .commentText()
+                            .feedbackText()
                     }"</p>`
                     : html``;
         return html`

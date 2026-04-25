@@ -245,7 +245,7 @@ item.
 
 ### 9. Comments / discussion
 
-There is no comments table. The `activities.comment` column is a
+There is no comments table. The `activities.feedback` column is a
 free-form text field on activity rows, not a per-item discussion
 thread.
 

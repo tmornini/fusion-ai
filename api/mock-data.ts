@@ -1098,7 +1098,7 @@ export async function populateMockData(
             timestamp: dt(0, 17),
             score: 0,
             status: 'active',
-            comment:
+            feedback:
                 'Addresses top user'
                 + ' feedback themes.',
         },
@@ -1111,7 +1111,7 @@ export async function populateMockData(
             timestamp: dt(0, 16),
             score: 0,
             status: 'active',
-            comment:
+            feedback:
                 'Great progress on the'
                 + ' charts!',
         },
@@ -1123,7 +1123,7 @@ export async function populateMockData(
             timestamp: dt(0, 15),
             score: 0,
             status: 'active',
-            comment:
+            feedback:
                 'Excited to contribute'
                 + ' to the team.',
         },
@@ -1136,7 +1136,7 @@ export async function populateMockData(
             timestamp: dt(0, 14),
             score: 0,
             status: 'In Progress',
-            comment:
+            feedback:
                 'Development sprint'
                 + ' started this week.',
         },
@@ -1150,7 +1150,7 @@ export async function populateMockData(
             timestamp: dt(0, 13),
             score: 0,
             status: 'completed',
-            comment:
+            feedback:
                 'Approved by engineering'
                 + ' leadership.',
         },
@@ -1163,7 +1163,7 @@ export async function populateMockData(
             timestamp: dt(0, 12),
             score: 0,
             status: 'active',
-            comment:
+            feedback:
                 'Targeting 40% latency'
                 + ' reduction.',
         },
