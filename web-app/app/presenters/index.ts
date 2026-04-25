@@ -49,3 +49,6 @@ export {
 export {
     WorkingStylesPresenter,
 } from './working-styles';
+export {
+    WorkboxInboxPresenter,
+} from './workbox-inbox';

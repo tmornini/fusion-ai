@@ -3,6 +3,9 @@ import {
 } from '../safe-html';
 import { $ } from '../dom';
 import {
+    orderedKeys,
+} from './ordered-keys';
+import {
     displayText, formatDateTime,
 } from '../core';
 import {
@@ -28,9 +31,6 @@ import type {
 import {
     IDEA_STATUS_CONFIG,
 } from '../adapters';
-import {
-    orderedKeys,
-} from './ordered-keys';
 
 const STATUS_ICONS: Record<
     IdeaStatus,
@@ -754,7 +754,6 @@ export class IdeaPresenter {
 
 export class IdeaListPresenter {
     #ideas: IdeaPresenter[];
-    readonly #statusBadges: SafeHtml;
     #filter:
         | { kind: 'all' }
         | {
@@ -766,38 +765,12 @@ export class IdeaListPresenter {
         this.#ideas = ideas.map(
             i => new IdeaPresenter(i),
         );
-        const groups = Object.groupBy(
-            this.#ideas,
-            i => i.statusGroup(),
-        );
-        const order: IdeaStatus[] = [
-            'active', 'in-review',
-            'sent-back', 'approved',
-        ];
-        const badges =
-            orderedKeys(groups, order)
-                .map(s => groups[s])
-                .filter(
-                    items =>
-                        items
-                        && items.length > 0,
-                )
-                .map(items =>
-                    items![0]!
-                        .buildStatusBadge(),
-                );
-        this.#statusBadges =
-            html`${badges}`;
     }
 
     update(ideas: Idea[]): void {
         this.#ideas = ideas.map(
             i => new IdeaPresenter(i),
         );
-    }
-
-    renderStatusBadges(): SafeHtml {
-        return this.#statusBadges;
     }
 
     toggleFilter(
@@ -823,7 +796,62 @@ export class IdeaListPresenter {
             : null;
     }
 
-    renderList(): SafeHtml {
+    renderBadges(
+        container: HTMLElement,
+    ): void {
+        setHtml(
+            container, this.#buildBadges(),
+        );
+        this.#applyBadgeActiveState(container);
+    }
+
+    renderList(
+        container: HTMLElement,
+    ): void {
+        setHtml(container, this.#buildList());
+    }
+
+    #buildBadges(): SafeHtml {
+        const groups = Object.groupBy(
+            this.#ideas,
+            i => i.statusGroup(),
+        );
+        const order: IdeaStatus[] = [
+            'active', 'in-review',
+            'sent-back', 'approved',
+        ];
+        const badges = orderedKeys(
+            groups, order,
+        )
+            .map(s => groups[s])
+            .filter(
+                items => items
+                    && items.length > 0,
+            )
+            .map(items =>
+                items![0]!.buildStatusBadge(),
+            );
+        return html`${badges}`;
+    }
+
+    #applyBadgeActiveState(
+        container: HTMLElement,
+    ): void {
+        const active = this.activeFilter();
+        container.querySelectorAll<HTMLElement>(
+            '[data-status]',
+        ).forEach(el => {
+            const status = el.getAttribute(
+                'data-status',
+            );
+            el.style.opacity =
+                active && status !== active
+                    ? '0.4'
+                    : '1';
+        });
+    }
+
+    #buildList(): SafeHtml {
         const f = this.#filter;
         const filtered =
             f.kind === 'filtered'
