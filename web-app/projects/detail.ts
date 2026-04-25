@@ -1,4 +1,6 @@
-import { $, $input } from '../app/dom';
+import {
+    $, $input, $inputRequired,
+} from '../app/dom';
 import { showToast } from '../app/toast';
 import {
     buildSkeleton, buildErrorState,
@@ -329,10 +331,9 @@ async function handleSave(): Promise<void> {
 async function handleNewFlowSubmit(
     projectId: string,
 ): Promise<void> {
-    const nameEl = $input(
+    const name = $inputRequired(
         '#new-flow-name', document,
-    );
-    const name = nameEl?.value.trim() ?? '';
+    ).value.trim();
     if (name.length === 0) {
         showToast(
             'Flow name is required', 'error',
