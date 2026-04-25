@@ -27,6 +27,8 @@ import {
 const pageAbort = new AbortController();
 const signal = pageAbort.signal;
 
+const NO_FEEDBACK = '';
+
 let presenter: IdeaPresenter | null = null;
 let pageContainer: HTMLElement | null = null;
 
@@ -86,7 +88,7 @@ const TRANSITION_CONFIG:
 async function transitionIdea(
     ideaId: string,
     toStatus: IdeaTransition,
-    feedback?: string,
+    feedback: string,
 ): Promise<void> {
     const cfg = TRANSITION_CONFIG[toStatus]!;
     let title = '';
@@ -110,7 +112,7 @@ async function transitionIdea(
         action: cfg.activityAction,
         target: title,
         status: toStatus,
-        feedback: feedback ?? '',
+        feedback,
     });
     showToast(
         cfg.successToast,
@@ -265,11 +267,13 @@ function handleIdeaActions(
         case 'submit-review':
             void transitionIdea(
                 ideaId, 'in-review',
+                NO_FEEDBACK,
             );
             return true;
         case 'approve':
             void transitionIdea(
                 ideaId, 'approved',
+                NO_FEEDBACK,
             );
             return true;
         case 'send-back-confirm':
@@ -287,8 +291,13 @@ async function handleSendBackConfirm(
         '#approval-send-back-feedback',
         document,
     );
-    const feedback =
-        ta?.value.trim() || undefined;
+    if (!ta) {
+        throw new Error(
+            'Required:'
+            + ' #approval-send-back-feedback',
+        );
+    }
+    const feedback = ta.value.trim();
     closeDialog('approval-send-back');
     await transitionIdea(
         ideaId, 'sent-back', feedback,
