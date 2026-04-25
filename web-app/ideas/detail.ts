@@ -1,7 +1,8 @@
+import { $, $textarea } from '../app/dom';
 import {
-    $, $input, $textarea,
-    bindEnterToClick,
-} from '../app/dom';
+    IdeaPresenter,
+    type IdeaFieldKey,
+} from '../app/presenters';
 import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { log } from '../app/logger';
@@ -12,7 +13,8 @@ import {
 import {
     navigateTo,
     trimStrings,
-    initDialog,
+    openDialog,
+    closeDialog,
 } from '../app/core';
 import {
     getIdea,
@@ -20,14 +22,27 @@ import {
     postActivity,
     putIdea,
     ideaChanged,
-    type Idea,
 } from '../app/adapters';
-import {
-    IdeaPresenter,
-} from '../app/presenters';
 
-const escapeController =
-    { current: new AbortController() };
+const pageAbort = new AbortController();
+const signal = pageAbort.signal;
+
+let presenter: IdeaPresenter | null = null;
+let pageContainer: HTMLElement | null = null;
+
+const FIELDS: ReadonlySet<IdeaFieldKey> =
+    new Set([
+        'title', 'problemStatement',
+        'targetUsers', 'proposedSolution',
+        'expectedOutcome', 'successMetrics',
+    ]);
+
+function isFieldKey(
+    s: string | null,
+): s is IdeaFieldKey {
+    return s !== null
+        && FIELDS.has(s as IdeaFieldKey);
+}
 
 type IdeaTransition =
     | 'in-review'
@@ -45,7 +60,8 @@ const TRANSITION_CONFIG:
     Record<IdeaTransition, TransitionConfig> = {
     'in-review': {
         failureToast: 'Failed to submit',
-        successToast: 'Submitted for review',
+        successToast:
+            'Submitted for review',
         successVariant: 'success',
         activityAction:
             'submitted idea for review',
@@ -103,238 +119,20 @@ async function transitionIdea(
     navigateTo('ideas');
 }
 
-function bindIdeaEvents(
-    idea: Idea,
-    isEditing: boolean,
-): void {
-    escapeController.current.abort();
-    escapeController.current =
-        new AbortController();
-    if (isEditing) {
-        document.addEventListener(
-            'keydown',
-            (e: KeyboardEvent) => {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    $(
-                        '#idea-cancel-btn',
-                        document,
-                    )?.click();
-                }
-            },
-            {
-                signal: escapeController
-                    .current.signal,
-            },
-        );
-        const saveSel = '#idea-save-btn';
-        bindEnterToClick(
-            '#idea-edit-title', saveSel,
-        );
-    }
-    $('#idea-back-btn', document)
-        ?.addEventListener(
-            'click',
-            () => navigateTo('ideas'),
-        );
-
-    $('#idea-edit-btn', document)
-        ?.addEventListener(
-            'click',
-            () => mutateIdeaPage(
-                idea, true,
-            ),
-        );
-
-    $('#idea-cancel-btn', document)
-        ?.addEventListener(
-            'click',
-            () => mutateIdeaPage(
-                idea, false,
-            ),
-        );
-
-    $('#idea-save-btn', document)
-        ?.addEventListener(
-            'click',
-            async () => {
-                const title =
-                    $input(
-                        '#idea-edit-title',
-                        document,
-                    )!.value;
-                const problemStatement =
-                    $textarea(
-                        '#idea-edit-problem',
-                        document,
-                    )!.value;
-                const targetUsers =
-                    $input(
-                        '#idea-edit-target',
-                        document,
-                    )!.value;
-                const proposedSolution =
-                    $textarea(
-                        '#idea-edit-solution',
-                        document,
-                    )!.value;
-                const expectedOutcome =
-                    $textarea(
-                        '#idea-edit-outcome',
-                        document,
-                    )!.value;
-                const successMetrics =
-                    $textarea(
-                        '#idea-edit-metrics',
-                        document,
-                    )!.value;
-
-                try {
-                    const entity =
-                        await getIdeaEntity(
-                            idea.idForLink(),
-                        );
-                    await putIdea(
-                        idea.idForLink(),
-                        {
-                            ...entity,
-                            ...trimStrings({
-                                title,
-                                problem_statement:
-                                    problemStatement,
-                                target_users:
-                                    targetUsers,
-                                proposed_solution:
-                                    proposedSolution,
-                                expected_outcome:
-                                    expectedOutcome,
-                                success_metrics:
-                                    successMetrics,
-                            }),
-                        },
-                    );
-                } catch (err) {
-                    log.error(
-                        'putIdea failed',
-                        'ideas',
-                        err,
-                    );
-                    showToast(
-                        'Failed to save'
-                        + ' idea',
-                        'error',
-                    );
-                    return;
-                }
-                showToast(
-                    'Idea saved',
-                    'success',
-                );
-            },
-        );
-
-    ideaChanged.subscribe(async () => {
-        const updated =
-            await getIdea(
-                idea.idForLink(),
-            );
-        mutateIdeaPage(
-            updated, false,
-        );
-    });
-
-    if (idea.isReviewable()) {
-        bindApprovalEvents(
-            idea.idForLink(),
-        );
-    }
-    $('#idea-convert-btn', document)
-        ?.addEventListener(
-            'click',
-            () => navigateTo(
-                'idea-convert',
-                {
-                    ideaId: idea.idForLink(),
-                    from: 'detail',
-                },
-            ),
-        );
-    $(
-        '#idea-submit-review-btn',
-        document,
-    )?.addEventListener(
-        'click',
-        () => transitionIdea(
-            idea.idForLink(),
-            'in-review',
-        ),
-    );
-}
-
-function bindApprovalEvents(
-    ideaId: string,
-): void {
-    $(
-        '#approval-approve-btn',
-        document,
-    )?.addEventListener(
-        'click',
-        () => transitionIdea(ideaId, 'approved'),
-    );
-
-    initDialog(
-        'approval-send-back',
-        'approval-send-back-btn',
-    );
-    $(
-        '#approval-send-back-confirm',
-        document,
-    )?.addEventListener(
-        'click',
-        () => {
-            const ta = $textarea(
-                '#approval-send-back-feedback',
-                document,
-            );
-            const feedback =
-                ta?.value.trim() || undefined;
-            return transitionIdea(
-                ideaId, 'sent-back', feedback,
-            );
-        },
-    );
-
-}
-
-function mutateIdeaPage(
-    idea: Idea,
-    isEditing: boolean,
-): void {
-    const container = $(
-        '#idea-detail-content', document,
-    );
-    if (!container) return;
-    const presenter =
-        new IdeaPresenter(idea);
-    setHtml(
-        container,
-        presenter.buildDetailView(
-            idea.idForLink(), isEditing,
-        ),
-    );
-    bindIdeaEvents(idea, isEditing);
-}
-
 export async function init(
     params?: Record<string, string>,
 ): Promise<void> {
     const ideaId = params?.ideaId;
-    if (!ideaId) { navigateTo('ideas'); return; }
+    if (!ideaId) {
+        navigateTo('ideas');
+        return;
+    }
 
     const container = $(
         '#idea-detail-content', document,
     );
     if (!container) return;
+    pageContainer = container;
 
     const idea = await withLoadingState(
         container,
@@ -344,5 +142,220 @@ export async function init(
     );
     if (!idea) return;
 
-    mutateIdeaPage(idea, false);
+    presenter = new IdeaPresenter(idea);
+    presenter.renderShell(container);
+    bindStableListeners(container, presenter);
+
+    ideaChanged.subscribe(async () => {
+        if (!presenter || !pageContainer) {
+            return;
+        }
+        const fresh = await getIdea(ideaId);
+        presenter.update(fresh);
+        presenter.renderUpdate(pageContainer);
+    });
+}
+
+function bindStableListeners(
+    container: HTMLElement,
+    p: IdeaPresenter,
+): void {
+    container.addEventListener(
+        'click', e => onClick(e, container, p),
+        { signal },
+    );
+    container.addEventListener(
+        'input', e => onInput(e, p),
+        { signal },
+    );
+    container.addEventListener(
+        'keydown',
+        e => onContainerKeydown(e),
+        { signal },
+    );
+    document.addEventListener(
+        'keydown',
+        e => onDocumentKeydown(e, container, p),
+        { signal },
+    );
+}
+
+function onClick(
+    e: MouseEvent,
+    container: HTMLElement,
+    p: IdeaPresenter,
+): void {
+    const target = e.target as Element | null;
+    if (!target) return;
+
+    if (handleDialogClicks(target)) return;
+    if (handleIdeaActions(target, container, p)) {
+        return;
+    }
+}
+
+function handleDialogClicks(
+    target: Element,
+): boolean {
+    if (target.classList.contains(
+        'dialog-backdrop',
+    )) {
+        const id = target.getAttribute(
+            'data-dialog-id',
+        );
+        if (id) closeDialog(id);
+        return true;
+    }
+    const openEl = target.closest(
+        '[data-dialog-open]',
+    );
+    if (openEl) {
+        const id = openEl.getAttribute(
+            'data-dialog-open',
+        );
+        if (id) openDialog(id);
+        return true;
+    }
+    const cancelEl = target.closest(
+        '[data-dialog-cancel]',
+    );
+    if (cancelEl) {
+        const id = cancelEl.getAttribute(
+            'data-dialog-cancel',
+        );
+        if (id) closeDialog(id);
+        return true;
+    }
+    return false;
+}
+
+function handleIdeaActions(
+    target: Element,
+    container: HTMLElement,
+    p: IdeaPresenter,
+): boolean {
+    const actionEl = target.closest(
+        '[data-idea-action]',
+    );
+    const action = actionEl?.getAttribute(
+        'data-idea-action',
+    );
+    if (!action) return false;
+    const ideaId = p.idForLink();
+    switch (action) {
+        case 'back':
+            navigateTo('ideas');
+            return true;
+        case 'edit':
+            p.beginEdit();
+            p.renderUpdate(container);
+            return true;
+        case 'cancel':
+            p.cancelEdit();
+            p.renderUpdate(container);
+            return true;
+        case 'save':
+            void handleSave();
+            return true;
+        case 'convert':
+            navigateTo('idea-convert', {
+                ideaId, from: 'detail',
+            });
+            return true;
+        case 'submit-review':
+            void transitionIdea(
+                ideaId, 'in-review',
+            );
+            return true;
+        case 'approve':
+            void transitionIdea(
+                ideaId, 'approved',
+            );
+            return true;
+        case 'send-back-confirm':
+            void handleSendBackConfirm(ideaId);
+            return true;
+        default:
+            return false;
+    }
+}
+
+async function handleSendBackConfirm(
+    ideaId: string,
+): Promise<void> {
+    const ta = $textarea(
+        '#approval-send-back-feedback',
+        document,
+    );
+    const feedback =
+        ta?.value.trim() || undefined;
+    closeDialog('approval-send-back');
+    await transitionIdea(
+        ideaId, 'sent-back', feedback,
+    );
+}
+
+function onInput(
+    e: Event,
+    p: IdeaPresenter,
+): void {
+    const target = e.target as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
+    if (!target) return;
+    const field = target.getAttribute(
+        'data-idea-field',
+    );
+    if (!isFieldKey(field)) return;
+    p.setDraftField(field, target.value);
+}
+
+function onContainerKeydown(
+    e: KeyboardEvent,
+): void {
+    if (e.key !== 'Enter') return;
+    const target = e.target as HTMLElement;
+    if (!target.matches('input.input')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    void handleSave();
+}
+
+function onDocumentKeydown(
+    e: KeyboardEvent,
+    container: HTMLElement,
+    p: IdeaPresenter,
+): void {
+    if (e.key !== 'Escape') return;
+    if (!p.isEditing()) return;
+    e.preventDefault();
+    p.cancelEdit();
+    p.renderUpdate(container);
+}
+
+async function handleSave(): Promise<void> {
+    if (!presenter) return;
+    if (!presenter.isEditing()) return;
+    const patch = presenter.buildEntityPatch();
+    if (!patch) return;
+    const ideaId = presenter.idForLink();
+    try {
+        const entity = await getIdeaEntity(
+            ideaId,
+        );
+        await putIdea(ideaId, {
+            ...entity,
+            ...trimStrings(patch),
+        });
+    } catch (err) {
+        log.error(
+            'putIdea failed', 'ideas', err,
+        );
+        showToast(
+            'Failed to save idea', 'error',
+        );
+        return;
+    }
+    showToast('Idea saved', 'success');
 }

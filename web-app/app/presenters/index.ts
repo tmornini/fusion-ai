@@ -1,6 +1,8 @@
 export {
     IdeaPresenter,
     IdeaListPresenter,
+    type IdeaFieldKey,
+    type IdeaEntityPatch,
 } from './idea';
 export {
     IdeaConversionPresenter,
@@ -26,6 +28,8 @@ export {
 } from './flow';
 export {
     ProjectDetailPresenter,
+    type ProjectFieldKey,
+    type ProjectEntityPatch,
 } from './project-detail';
 export {
     OrganizationPresenter,
