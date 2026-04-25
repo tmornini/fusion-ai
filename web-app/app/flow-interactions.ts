@@ -99,7 +99,6 @@ export interface InteractionState {
     marquee: MarqueeMode;
     viewBox: ViewBox;
     zoom: number;
-    activePointerId: number;
     isSpaceDown: boolean;
 }
 
@@ -145,7 +144,6 @@ export function buildInteractionState(
             h: viewBoxH,
         },
         zoom: 1.0,
-        activePointerId: 0,
         isSpaceDown: false,
     };
 }
@@ -182,6 +180,7 @@ function ancestorAttr(
 
 function handlePointerDown(
     e: PointerEvent,
+    wrap: HTMLElement,
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
@@ -197,9 +196,7 @@ function handlePointerDown(
             startX: e.clientX,
             startY: e.clientY,
         };
-        state.activePointerId =
-            e.pointerId;
-        svg.setPointerCapture(
+        wrap.setPointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -246,9 +243,7 @@ function handlePointerDown(
                 isShift: e.shiftKey,
                 target: { kind: 'none' },
             };
-            state.activePointerId =
-                e.pointerId;
-            svg.setPointerCapture(
+            wrap.setPointerCapture(
                 e.pointerId,
             );
             onUpdate();
@@ -287,9 +282,7 @@ function handlePointerDown(
             currentPointerY: svgPt.y,
             initialPositions,
         };
-        state.activePointerId =
-            e.pointerId;
-        svg.setPointerCapture(
+        wrap.setPointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -322,12 +315,15 @@ function handlePointerDown(
     }
 
     state.lastClick = { kind: 'none' };
-    startBackgroundDrag(e, svg, state);
+    startBackgroundDrag(
+        e, wrap, svg, state,
+    );
     onUpdate();
 }
 
 function startBackgroundDrag(
     e: PointerEvent,
+    wrap: HTMLElement,
     svg: SVGSVGElement,
     state: InteractionState,
 ): void {
@@ -343,8 +339,7 @@ function startBackgroundDrag(
         currentX: svgPt.x,
         currentY: svgPt.y,
     };
-    state.activePointerId = e.pointerId;
-    svg.setPointerCapture(e.pointerId);
+    wrap.setPointerCapture(e.pointerId);
 }
 
 function applyNodeClickSelection(
@@ -490,7 +485,7 @@ function handlePointerMove(
 
 function handlePointerUp(
     e: PointerEvent,
-    svg: SVGSVGElement,
+    wrap: HTMLElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
     onNodesDragEnd: (
@@ -514,8 +509,7 @@ function handlePointerUp(
 ): void {
     if (state.pan.kind === 'panning') {
         state.pan = { kind: 'idle' };
-        state.activePointerId = 0;
-        svg.releasePointerCapture(
+        wrap.releasePointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -545,8 +539,7 @@ function handlePointerUp(
         }
         onNodesDragEnd(updates);
         state.drag = { kind: 'idle' };
-        state.activePointerId = 0;
-        svg.releasePointerCapture(
+        wrap.releasePointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -619,8 +612,7 @@ function handlePointerUp(
             }
         }
         state.connect = { kind: 'idle' };
-        state.activePointerId = 0;
-        svg.releasePointerCapture(
+        wrap.releasePointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -663,8 +655,7 @@ function handlePointerUp(
                 nodeIds: hits,
             };
         state.marquee = { kind: 'idle' };
-        state.activePointerId = 0;
-        svg.releasePointerCapture(
+        wrap.releasePointerCapture(
             e.pointerId,
         );
         onUpdate();
@@ -711,7 +702,7 @@ function handleWheel(
 }
 
 export function bindInteractions(
-    svg: SVGSVGElement,
+    wrap: HTMLElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
     onNodesDragEnd: (
@@ -736,35 +727,52 @@ export function bindInteractions(
     isLocked: () => boolean,
     signal: AbortSignal,
 ): void {
-    const cursorHost =
-        svg.parentElement as HTMLElement;
+    const cursorHost = wrap;
     if (state.isSpaceDown) {
         cursorHost.classList.add(
             'flow-pan-cursor',
         );
     }
 
-    svg.addEventListener(
+    const liveSvg = (
+    ): SVGSVGElement | null => {
+        const s = wrap.querySelector(
+            'svg.flow-canvas',
+        );
+        return s instanceof SVGSVGElement
+            ? s : null;
+    };
+
+    wrap.addEventListener(
         'pointerdown',
-        (e) => handlePointerDown(
-            e, svg, state, onUpdate,
-            getNodePosition, isLocked,
-        ),
+        (e) => {
+            const svg = liveSvg();
+            if (!svg) return;
+            handlePointerDown(
+                e, wrap, svg, state,
+                onUpdate,
+                getNodePosition, isLocked,
+            );
+        },
         { signal },
     );
 
-    svg.addEventListener(
+    wrap.addEventListener(
         'pointermove',
-        (e) => handlePointerMove(
-            e, svg, state, onUpdate,
-        ),
+        (e) => {
+            const svg = liveSvg();
+            if (!svg) return;
+            handlePointerMove(
+                e, svg, state, onUpdate,
+            );
+        },
         { signal },
     );
 
-    svg.addEventListener(
+    wrap.addEventListener(
         'pointerup',
         (e) => handlePointerUp(
-            e, svg, state, onUpdate,
+            e, wrap, state, onUpdate,
             onNodesDragEnd,
             onEdgeCreated,
             onNodeCreated,
@@ -774,12 +782,16 @@ export function bindInteractions(
         { signal },
     );
 
-    svg.addEventListener(
+    wrap.addEventListener(
         'wheel',
-        (e) => handleWheel(
-            e, svg, state, onUpdate,
-            isAutoFit,
-        ),
+        (e) => {
+            const svg = liveSvg();
+            if (!svg) return;
+            handleWheel(
+                e, svg, state, onUpdate,
+                isAutoFit,
+            );
+        },
         { passive: false, signal },
     );
 
@@ -862,6 +874,48 @@ export function bindInteractions(
         'keyup', handleSpace,
         { signal },
     );
+
+    document.addEventListener(
+        'keydown',
+        (e) => handleCanvasNavigation(
+            e, wrap, state, onUpdate,
+        ),
+        { signal },
+    );
+}
+
+function handleCanvasNavigation(
+    e: KeyboardEvent,
+    wrap: HTMLElement,
+    state: InteractionState,
+    onUpdate: InteractionCallback,
+): void {
+    if (e.key !== 'Enter' && e.key !== ' ') {
+        return;
+    }
+    const active = document.activeElement;
+    if (!(active instanceof Element)) return;
+    if (!wrap.contains(active)) return;
+    const nodeId = ancestorAttr(
+        active, 'data-node-id',
+    );
+    const edgeId = ancestorAttr(
+        active, 'data-edge-id',
+    );
+    if (!nodeId && !edgeId) return;
+    e.preventDefault();
+    if (nodeId) {
+        state.selection = {
+            kind: 'nodes',
+            nodeIds: new Set([nodeId]),
+        };
+    } else if (edgeId) {
+        state.selection = {
+            kind: 'edge', edgeId,
+        };
+    }
+    state.isPanelOpen = true;
+    onUpdate();
 }
 
 export function zoomIn(
