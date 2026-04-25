@@ -78,11 +78,11 @@ on. Run these in order.
 - [ ] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on Users page with correct name, email, role, and status badge.
 - [ ] **AA7** Navigate to Teams page. PASS: users display with correct availability color coding and performance stats.
 
-### AA3. Profile & Company Settings
+### AA3. Profile & Company
 
 - [ ] **AA8** Navigate to Profile. Edit fields (phone, bio, strengths). Click "Save Changes". PASS: toast "Profile saved" appears.
 - [ ] **AA9** Navigate away, return to Profile. PASS: edited fields persist with saved values.
-- [ ] **AA10** Navigate to Company Settings. Edit a field (e.g. timezone). Click save. PASS: success toast appears.
+- [ ] **AA10** Navigate to Company. Edit a field (e.g. timezone). Click save. PASS: success toast appears.
 - [ ] **AA11** Navigate away, return to Settings. PASS: edited field persists with saved value.
 
 ### AA4. Create Ideas
@@ -259,7 +259,7 @@ on. Run these in order.
 - [ ] **C2** Sidebar shows flat navigation
   links in this order: Dashboard, Ideas,
   Projects, Flows, Workbox, Profile,
-  Organization, Teams, Company Settings,
+  Organization, Teams, Company,
   Billing, Snapshots, Design System. PASS:
   all 12 links present, in order, and styled.
 - [ ] **C3** Header shows search bar, greeting
@@ -785,10 +785,10 @@ on. Run these in order.
 - [ ] **G13** Edit a field (e.g. phone), toggle strengths, and click "Save Changes". PASS: toast "Profile saved" appears.
 - [ ] **G14** Navigate away from Profile (e.g. to Dashboard), then return to Profile. PASS: the edited field retains the saved value — data was persisted to the database, not just displayed via toast.
 
-### Company Settings (`settings/`)
+### Company (`settings/`)
 
-- [ ] **G15** Navigate to `settings/`. PASS: shows the current Company Settings form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
-- [ ] **G16** _[RETIRED]_ Security settings (SSO, 2FA, IP Whitelist) are not present in the current Company Settings UI. This test is retired pending removal of the broader feature.
+- [ ] **G15** Navigate to `settings/`. PASS: shows the current Company form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
+- [ ] **G16** _[RETIRED]_ Security settings (SSO, 2FA, IP Whitelist) are not present in the current Company UI. This test is retired pending removal of the broader feature.
 - [ ] **G17** Edit Name (or Domain) and click save. PASS: success toast or save completes without error.
 - [ ] **G18** Navigate away from Settings, then return. PASS: the edited setting retains the saved value — data was persisted to the database.
 

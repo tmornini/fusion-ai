@@ -37,7 +37,7 @@ export class SettingsPresenter {
                 <h1 class="${
                     'text-3xl font-display'
                     + ' font-bold mb-2'
-                }">Company Settings</h1>
+                }">Company</h1>
                 <p class="text-muted">${
                     "Manage your organization's"
                     + ' configuration'

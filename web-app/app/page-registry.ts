@@ -117,7 +117,7 @@ export const PAGE_REGISTRY: Record<
             'profile settings personal',
     },
     settings: {
-        title: 'Company Settings',
+        title: 'Company',
         layout: 'sidebar',
         sourceDir: 'settings',
         sourceFile: 'index',

@@ -73,7 +73,7 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
     {
         href: '../settings/index.html',
         pageLink: 'settings',
-        label: 'Company Settings',
+        label: 'Company',
         icon: iconSettings,
     },
     {
