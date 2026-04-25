@@ -55,7 +55,7 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
     {
         href: '../profile/index.html',
         pageLink: 'profile',
-        label: 'My Profile',
+        label: 'Profile',
         icon: iconUser,
     },
     {

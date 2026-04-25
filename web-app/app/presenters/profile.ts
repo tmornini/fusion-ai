@@ -68,7 +68,7 @@ export class ProfilePresenter {
         <div class="page-header">
             <div>
                 <h1 class="page-title">
-                    My Profile
+                    Profile
                 </h1>
                 <p class="${
                     'text-sm text-muted'
