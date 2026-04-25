@@ -410,7 +410,7 @@ export async function init(
                     presenter
                         .projectDetails()[
                             'project-name'
-                        ] ?? '';
+                        ]!;
                 await postActivity({
                     type: 'idea_converted',
                     action:
