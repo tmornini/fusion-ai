@@ -29,6 +29,78 @@ import {
 const escapeController =
     { current: new AbortController() };
 
+type IdeaTransition =
+    | 'in-review'
+    | 'approved'
+    | 'sent-back';
+
+interface TransitionConfig {
+    failureToast: string;
+    successToast: string;
+    successVariant: 'success' | 'info';
+    activityAction: string;
+}
+
+const TRANSITION_CONFIG:
+    Record<IdeaTransition, TransitionConfig> = {
+    'in-review': {
+        failureToast: 'Failed to submit',
+        successToast: 'Submitted for review',
+        successVariant: 'success',
+        activityAction:
+            'submitted idea for review',
+    },
+    'approved': {
+        failureToast: 'Failed to approve',
+        successToast:
+            'Idea approved successfully',
+        successVariant: 'success',
+        activityAction: 'approved idea',
+    },
+    'sent-back': {
+        failureToast: 'Failed to send back',
+        successToast:
+            'Idea sent back for revision',
+        successVariant: 'info',
+        activityAction:
+            'sent idea back for revision',
+    },
+};
+
+async function transitionIdea(
+    ideaId: string,
+    toStatus: IdeaTransition,
+): Promise<void> {
+    const cfg = TRANSITION_CONFIG[toStatus]!;
+    let title = '';
+    try {
+        const entity =
+            await getIdeaEntity(ideaId);
+        title = entity.title;
+        await putIdea(
+            ideaId,
+            { ...entity, status: toStatus },
+        );
+    } catch (err) {
+        log.error(
+            'putIdea failed', 'ideas', err,
+        );
+        showToast(cfg.failureToast, 'error');
+        return;
+    }
+    await postActivity({
+        type: 'status_changed',
+        action: cfg.activityAction,
+        target: title,
+        status: toStatus,
+    });
+    showToast(
+        cfg.successToast,
+        cfg.successVariant,
+    );
+    navigateTo('ideas');
+}
+
 function bindIdeaEvents(
     idea: Idea,
     isEditing: boolean,
@@ -190,46 +262,10 @@ function bindIdeaEvents(
         document,
     )?.addEventListener(
         'click',
-        async () => {
-            let title = '';
-            try {
-                const entity =
-                    await getIdeaEntity(
-                        idea.idForLink(),
-                    );
-                title = entity.title;
-                await putIdea(
-                    idea.idForLink(),
-                    {
-                        ...entity,
-                        status: 'in-review',
-                    },
-                );
-            } catch (err) {
-                log.error(
-                    'putIdea failed',
-                    'ideas',
-                    err,
-                );
-                showToast(
-                    'Failed to submit',
-                    'error',
-                );
-                return;
-            }
-            await postActivity({
-                type: 'status_changed',
-                action: 'submitted idea'
-                    + ' for review',
-                target: title,
-                status: 'in-review',
-            });
-            showToast(
-                'Submitted for review',
-                'success',
-            );
-            navigateTo('ideas');
-        },
+        () => transitionIdea(
+            idea.idForLink(),
+            'in-review',
+        ),
     );
 }
 
@@ -241,44 +277,7 @@ function bindApprovalEvents(
         document,
     )?.addEventListener(
         'click',
-        async () => {
-            let title = '';
-            try {
-                const entity =
-                    await getIdeaEntity(ideaId);
-                title = entity.title;
-                await putIdea(
-                    ideaId,
-                    {
-                        ...entity,
-                        status: 'approved',
-                    },
-                );
-            } catch (err) {
-                log.error(
-                    'putIdea failed',
-                    'ideas',
-                    err,
-                );
-                showToast(
-                    'Failed to approve',
-                    'error',
-                );
-                return;
-            }
-            await postActivity({
-                type: 'status_changed',
-                action: 'approved idea',
-                target: title,
-                status: 'approved',
-            });
-            showToast(
-                'Idea approved'
-                + ' successfully',
-                'success',
-            );
-            navigateTo('ideas');
-        },
+        () => transitionIdea(ideaId, 'approved'),
     );
 
     initDialog(
@@ -290,45 +289,7 @@ function bindApprovalEvents(
         document,
     )?.addEventListener(
         'click',
-        async () => {
-            let title = '';
-            try {
-                const entity =
-                    await getIdeaEntity(ideaId);
-                title = entity.title;
-                await putIdea(
-                    ideaId,
-                    {
-                        ...entity,
-                        status: 'sent-back',
-                    },
-                );
-            } catch (err) {
-                log.error(
-                    'putIdea failed',
-                    'ideas',
-                    err,
-                );
-                showToast(
-                    'Failed to send back',
-                    'error',
-                );
-                return;
-            }
-            await postActivity({
-                type: 'status_changed',
-                action: 'sent idea back'
-                    + ' for revision',
-                target: title,
-                status: 'sent-back',
-            });
-            showToast(
-                'Idea sent back'
-                + ' for revision',
-                'info',
-            );
-            navigateTo('ideas');
-        },
+        () => transitionIdea(ideaId, 'sent-back'),
     );
 
 }
