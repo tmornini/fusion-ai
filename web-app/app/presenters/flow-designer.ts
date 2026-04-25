@@ -18,13 +18,13 @@ import {
     deleteFlowVersion,
     putFlowFromVersion,
 } from '../adapters';
-import type { FlowEntity } from '../../../api/types';
 import type {
     GraphNode,
     GraphEdge,
     GraphField,
     FlowGraph,
     FlowVersion,
+    FlowSaveShape,
 } from '../adapters/flows';
 import type { FlowFieldType }
     from '../adapters/flows';
@@ -203,30 +203,22 @@ export class FlowDesignerPresenter {
             .selection = { kind: 'none' };
     }
 
-    #buildFlowEntity(
-    ): Omit<FlowEntity, 'id'> {
+    #buildSaveShape(): FlowSaveShape {
         return {
             name: this.#state.flowName,
             description:
                 this.#state.flowDescription,
-            is_locked: this.#state.isLocked,
-            is_auto_layout:
+            isLocked: this.#state.isLocked,
+            isAutoLayout:
                 this.#state.isAutoLayout,
-            is_auto_fit:
+            isAutoFit:
                 this.#state.isAutoFit,
-            lock_timeout:
+            lockTimeout:
                 this.#state.lockTimeout,
-            graph: jsonObjectField({
-                nodes: this.#state
-                    .nodes as unknown as
-                    Record<string, unknown>[],
-                edges: this.#state
-                    .edges as unknown as
-                    Record<string, unknown>[],
-            }),
-            created_at:
+            nodes: this.#state.nodes,
+            edges: this.#state.edges,
+            createdAt:
                 this.#state.createdAt,
-            updated_at: nowUtc(),
         };
     }
 
@@ -240,7 +232,7 @@ export class FlowDesignerPresenter {
         }
         await putFlow(
             this.#state.flowId,
-            this.#buildFlowEntity(),
+            this.#buildSaveShape(),
         );
     }
 
