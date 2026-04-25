@@ -60,18 +60,25 @@ export class ProjectPresenter {
             .statusValue();
     }
 
-    buildStatusBadge(): SafeHtml {
+    buildStatusBadge(
+        isActive: boolean | null,
+    ): SafeHtml {
         const s =
             this.#project.statusValue();
         const cfg =
             PROJECT_STATUS_CONFIG[s]!;
         const icon = STATUS_ICONS[s]!;
+        const dimmed = isActive === false
+            ? 'true'
+            : 'false';
         return html`<span class="${
             'badge '
             + cfg.className
             + ' text-xs badge-fixed-w'
             + ' cursor-pointer'
-        }" data-status="${s}">${
+        }" data-status="${s}" data-dimmed="${
+            dimmed
+        }">${
             icon(14, '')
         } ${cfg.label}</span>`;
     }
@@ -314,7 +321,6 @@ export class ProjectListPresenter {
         setHtml(
             container, this.#buildBadges(),
         );
-        this.#applyBadgeActiveState(container);
     }
 
     renderList(
@@ -324,6 +330,7 @@ export class ProjectListPresenter {
     }
 
     #buildBadges(): SafeHtml {
+        const active = this.activeFilter();
         const groups = Object.groupBy(
             this.#projects,
             p => p.statusGroup(),
@@ -335,32 +342,21 @@ export class ProjectListPresenter {
         const badges = orderedKeys(
             groups, order,
         )
-            .map(s => groups[s])
+            .map(s => ({
+                status: s,
+                items: groups[s],
+            }))
             .filter(
-                items => items
-                    && items.length > 0,
+                g => g.items
+                    && g.items.length > 0,
             )
-            .map(items =>
-                items![0]!.buildStatusBadge(),
-            );
+            .map(g => g.items![0]!
+                .buildStatusBadge(
+                    active === null
+                        ? null
+                        : g.status === active,
+                ));
         return html`${badges}`;
-    }
-
-    #applyBadgeActiveState(
-        container: HTMLElement,
-    ): void {
-        const active = this.activeFilter();
-        container.querySelectorAll<HTMLElement>(
-            '[data-status]',
-        ).forEach(el => {
-            const status = el.getAttribute(
-                'data-status',
-            );
-            el.style.opacity =
-                active && status !== active
-                    ? '0.4'
-                    : '1';
-        });
     }
 
     #buildList(): SafeHtml {
