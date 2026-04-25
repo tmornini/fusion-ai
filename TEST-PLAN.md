@@ -762,9 +762,9 @@ on. Run these in order.
 
 ## G. Admin Pages
 
-### Team (`organization/teams.html`)
+### Team (`teams/index.html`)
 
-- [ ] **G1** Navigate to `organization/teams.html`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
+- [ ] **G1** Navigate to `teams/index.html`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
 - [ ] **G2** Click a team member card. PASS: right-side detail panel populates with member name, role, email, and large avatar with initials.
 - [ ] **G3** Detail panel shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches — Dimensions shows Driver/Analytical/Expressive/Amiable scores with progress bars.
 - [ ] **G4** Click a different team member card. PASS: detail panel updates to show the newly selected member's information.

@@ -42,9 +42,7 @@ const pageModules: Record<
     'flow-detail': () =>
         import('../flows/detail'),
     teams: () =>
-        import(
-            '../organization/teams'
-        ),
+        import('../teams/index'),
     organization: () =>
         import(
             '../organization/index'

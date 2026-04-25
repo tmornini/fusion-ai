@@ -93,8 +93,8 @@ export const PAGE_REGISTRY: Record<
     teams: {
         title: 'Teams',
         layout: 'sidebar',
-        sourceDir: 'organization',
-        sourceFile: 'teams',
+        sourceDir: 'teams',
+        sourceFile: 'index',
         icon: 'users',
         keywords: 'team members roster',
     },

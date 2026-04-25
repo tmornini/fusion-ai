@@ -100,7 +100,7 @@ The `DbAdapter` interface is designed for easy migration to Postgres or other ba
 
 ### Page Module Pattern
 
-Every entry in `PAGE_REGISTRY` declares both `sourceDir` and `sourceFile` explicitly (e.g., `flow-detail` → `web-app/flows/detail.ts` + `web-app/flows/detail.html`). The most common values are `index`, `detail`, `create`, `convert`, and the named `organization/` files (`teams`, `users`, `activity-feed`, `onboarding`). Each page module exports:
+Every entry in `PAGE_REGISTRY` declares both `sourceDir` and `sourceFile` explicitly (e.g., `flow-detail` → `web-app/flows/detail.ts` + `web-app/flows/detail.html`). The most common values are `index`, `detail`, `create`, `convert`, and the named `organization/` files (`users`, `activity-feed`, `onboarding`). Each page module exports:
 - `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
 
 Sidebar-layout pages have `index.html` containing page content that gets composed with the layout template. Standalone pages have a complete hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
@@ -358,7 +358,8 @@ web-app/
   ideas/                    # Ideas list + detail, create, convert (named files)
   projects/                 # Projects list + detail (named files)
   flows/                    # Flow list + detail (detail.ts/detail.html)
-  organization/             # Account overview, users, teams, activity-feed, onboarding (named files)
+  organization/             # Account overview, users, activity-feed, onboarding (named files)
+  teams/                    # Team roster and member management
   profile/                  # Profile settings
   settings/                 # Company settings
   billing/                  # Billing page — STUB (init() is empty; page renders a placeholder)

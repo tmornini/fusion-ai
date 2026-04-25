@@ -65,7 +65,7 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         icon: iconBuilding,
     },
     {
-        href: '../organization/teams.html',
+        href: '../teams/index.html',
         pageLink: 'teams',
         label: 'Teams',
         icon: iconUsers,
