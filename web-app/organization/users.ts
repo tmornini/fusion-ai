@@ -80,7 +80,7 @@ export async function init(): Promise<void> {
                     class="${
                         'text-primary'
                     }">
-                    Administration
+                    Organization
                 </a>
                 ${iconChevronRight(14, '')}
                 <span>Manage Users</span>
