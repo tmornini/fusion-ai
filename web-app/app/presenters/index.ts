@@ -23,6 +23,7 @@ export {
 export {
     UserPresenter,
     TeamListPresenter,
+    ManagedUsersPresenter,
 } from './user';
 export {
     FlowPresenter,

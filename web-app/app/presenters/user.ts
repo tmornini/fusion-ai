@@ -567,6 +567,77 @@ export class UserPresenter {
     }
 }
 
+export class ManagedUsersPresenter {
+    #presenters: UserPresenter[];
+    #search: string;
+    #role: string;
+    #status: string;
+
+    constructor(users: User[]) {
+        this.#presenters = users.map(
+            u => new UserPresenter(u),
+        );
+        this.#search = '';
+        this.#role = 'all';
+        this.#status = 'all';
+    }
+
+    update(users: User[]): void {
+        this.#presenters = users.map(
+            u => new UserPresenter(u),
+        );
+    }
+
+    setSearch(query: string): void {
+        this.#search = query.toLowerCase();
+    }
+
+    setRole(role: string): void {
+        this.#role = role;
+    }
+
+    setStatus(status: string): void {
+        this.#status = status;
+    }
+
+    activeCount(): number {
+        return this.#presenters.filter(
+            p => p.matchesStatusFilter(
+                'active',
+            ),
+        ).length;
+    }
+
+    pendingCount(): number {
+        return this.#presenters.filter(
+            p => p.matchesStatusFilter(
+                'pending',
+            ),
+        ).length;
+    }
+
+    renderList(
+        container: HTMLElement,
+    ): void {
+        const filtered = this.#presenters
+            .filter(p =>
+                (this.#search === ''
+                    || p.matchesUserSearch(
+                        this.#search,
+                    ))
+                && p.matchesRoleFilter(
+                    this.#role,
+                )
+                && p.matchesStatusFilter(
+                    this.#status,
+                ),
+            );
+        setHtml(container, html`${filtered.map(
+            p => p.buildUserRow(),
+        )}`);
+    }
+}
+
 export class TeamListPresenter {
     #presenters: UserPresenter[];
     #selectedId: string | null;
