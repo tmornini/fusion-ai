@@ -1,5 +1,5 @@
 import {
-    $, $input, $select,
+    $, $input, $inputRequired, $select,
 } from '../app/dom';
 import { log } from '../app/logger';
 import { setHtml } from '../app/safe-html';
@@ -144,10 +144,10 @@ function bindFlowNameEdit(
                 btn.id
                     === 'flow-name-save-btn'
             ) {
-                const name = $input(
+                const name = $inputRequired(
                     '#flow-name-input',
                     container,
-                )?.value.trim() ?? '';
+                ).value.trim();
                 if (name.length === 0) {
                     showToast(
                         'Flow name is'
@@ -643,20 +643,29 @@ async function handleSaveField(
     if (
         presenter.selectedNodeId() === null
     ) return;
-    const nameEl = $input(
+    const nameEl = $inputRequired(
         '#new-field-name', container,
     );
     const typeEl = $select(
         '#new-field-type', container,
     );
-    const reqEl = $input(
+    if (!typeEl) {
+        throw new Error(
+            'Required: #new-field-type',
+        );
+    }
+    const reqEl = $inputRequired(
         '#new-field-required', container,
     );
     const optEl = container
         .querySelector<HTMLTextAreaElement>(
             '#new-field-options',
         );
-    if (!nameEl || !typeEl) return;
+    if (!optEl) {
+        throw new Error(
+            'Required: #new-field-options',
+        );
+    }
     const fieldName = nameEl.value.trim();
     if (fieldName.length === 0) {
         showToast(
@@ -666,10 +675,8 @@ async function handleSaveField(
         return;
     }
     const fieldType = typeEl.value;
-    const isRequired =
-        reqEl?.checked ?? false;
-    const optionsText =
-        optEl?.value.trim() ?? '';
+    const isRequired = reqEl.checked;
+    const optionsText = optEl.value.trim();
     const options =
         optionsText.length > 0
             ? optionsText
