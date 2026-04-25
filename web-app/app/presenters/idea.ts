@@ -829,6 +829,16 @@ export class IdeaListPresenter {
         setHtml(container, this.#buildList());
     }
 
+    applyFilterToggle(
+        status: IdeaStatus,
+        badgesEl: HTMLElement,
+        listEl: HTMLElement,
+    ): void {
+        this.toggleFilter(status);
+        this.renderBadges(badgesEl);
+        this.renderList(listEl);
+    }
+
     #buildBadges(): SafeHtml {
         const active = this.activeFilter();
         const groups = Object.groupBy(
