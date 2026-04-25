@@ -455,12 +455,17 @@ export class User {
     presentCardInto(
         r: UserCardReceiver,
     ): void {
-        const fn = this.fullName();
+        const fn = this.fullName().trim();
+        if (fn.length === 0) {
+            throw new Error(
+                'Cannot compute initials'
+                + ' for empty fullName',
+            );
+        }
         const parts = fn.split(/\s+/);
         const ini = parts.length >= 2
-            ? (parts[0]![0] ?? '')
-                + (parts[parts.length - 1]
-                    ?.[0] ?? '')
+            ? parts[0]![0]!
+                + parts[parts.length - 1]![0]!
             : fn.slice(0, 2);
         r.identity(
             this.#id,
