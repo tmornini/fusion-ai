@@ -70,6 +70,7 @@ const TRANSITION_CONFIG:
 async function transitionIdea(
     ideaId: string,
     toStatus: IdeaTransition,
+    feedback?: string,
 ): Promise<void> {
     const cfg = TRANSITION_CONFIG[toStatus]!;
     let title = '';
@@ -93,6 +94,7 @@ async function transitionIdea(
         action: cfg.activityAction,
         target: title,
         status: toStatus,
+        ...(feedback ? { feedback } : {}),
     });
     showToast(
         cfg.successToast,
@@ -289,7 +291,17 @@ function bindApprovalEvents(
         document,
     )?.addEventListener(
         'click',
-        () => transitionIdea(ideaId, 'sent-back'),
+        () => {
+            const ta = $textarea(
+                '#approval-send-back-feedback',
+                document,
+            );
+            const feedback =
+                ta?.value.trim() || undefined;
+            return transitionIdea(
+                ideaId, 'sent-back', feedback,
+            );
+        },
     );
 
 }
