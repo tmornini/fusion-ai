@@ -1,10 +1,7 @@
 import {
-    $, $input,
-    bindEnterToClick,
+    $, $input, bindEnterToClick,
 } from '../app/dom';
-import {
-    setHtml,
-} from '../app/safe-html';
+import { setHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
     buildErrorState,
@@ -13,18 +10,134 @@ import { log } from '../app/logger';
 import {
     getCompanySettings,
     putCompanySettings,
+    type CompanySettings,
 } from '../app/adapters';
 import {
     SettingsPresenter,
 } from '../app/presenters';
 
-export async function init(): Promise<void> {
-    const container =
-        $('#settings-content', document);
+const escapeController =
+    { current: new AbortController() };
+
+let currentSettings:
+    CompanySettings | null = null;
+
+function mutateSettingsPage(
+    settings: CompanySettings,
+    isEditing: boolean,
+): void {
+    currentSettings = settings;
+    const container = $(
+        '#settings-content', document,
+    );
     if (!container) return;
-    let settings: Awaited<
-        ReturnType<typeof getCompanySettings>
-    >;
+    const presenter =
+        new SettingsPresenter(settings);
+    setHtml(
+        container,
+        presenter.buildPage(isEditing),
+    );
+    bindSettingsEvents(settings, isEditing);
+}
+
+function bindSettingsEvents(
+    settings: CompanySettings,
+    isEditing: boolean,
+): void {
+    escapeController.current.abort();
+    escapeController.current =
+        new AbortController();
+    if (isEditing) {
+        document.addEventListener(
+            'keydown',
+            (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    $(
+                        '#company-settings'
+                        + '-cancel-btn',
+                        document,
+                    )?.click();
+                }
+            },
+            {
+                signal: escapeController
+                    .current.signal,
+            },
+        );
+        const saveSel =
+            '#company-settings-save-btn';
+        bindEnterToClick(
+            '#company-settings-name',
+            saveSel,
+        );
+        bindEnterToClick(
+            '#company-settings-domain',
+            saveSel,
+        );
+    }
+    $(
+        '#company-settings-edit-btn',
+        document,
+    )?.addEventListener(
+        'click',
+        () => mutateSettingsPage(
+            settings, true,
+        ),
+    );
+    $(
+        '#company-settings-cancel-btn',
+        document,
+    )?.addEventListener(
+        'click',
+        () => mutateSettingsPage(
+            settings, false,
+        ),
+    );
+    $(
+        '#company-settings-save-btn',
+        document,
+    )?.addEventListener(
+        'click',
+        handleSave,
+    );
+}
+
+async function handleSave(): Promise<void> {
+    if (!currentSettings) return;
+    const name = $input(
+        '#company-settings-name', document,
+    )!.value.trim();
+    const domain = $input(
+        '#company-settings-domain', document,
+    )!.value.trim();
+    const updated: CompanySettings = {
+        name, domain,
+    };
+    try {
+        await putCompanySettings(updated);
+    } catch (err) {
+        log.error(
+            'putCompanySettings failed',
+            'settings',
+            err,
+        );
+        showToast(
+            'Failed to save settings',
+            'error',
+        );
+        return;
+    }
+    showToast('Settings saved', 'success');
+    mutateSettingsPage(updated, false);
+}
+
+export async function init(): Promise<void> {
+    const container = $(
+        '#settings-content', document,
+    );
+    if (!container) return;
+    let settings: CompanySettings;
     try {
         settings =
             await getCompanySettings();
@@ -37,8 +150,8 @@ export async function init(): Promise<void> {
         setHtml(
             container,
             buildErrorState(
-                'Failed to load'
-                + ' company settings.',
+                'Failed to load company'
+                + ' settings.',
                 'Try Again',
             ),
         );
@@ -52,60 +165,5 @@ export async function init(): Promise<void> {
             );
         return;
     }
-
-    const presenter =
-        new SettingsPresenter(settings);
-    setHtml(
-        container,
-        presenter.buildPage(),
-    );
-
-    $(
-        '#company-settings-save-btn',
-        document,
-    )?.addEventListener(
-        'click',
-        async () => {
-            const inp = (id: string) =>
-                $input(
-                    '#' + id, document,
-                )!.value.trim();
-            const p =
-                'company-settings-';
-            try {
-                await putCompanySettings({
-                    name: inp(p + 'name'),
-                    domain: inp(
-                        p + 'domain',
-                    ),
-                });
-                showToast(
-                    'Settings saved',
-                    'success',
-                );
-            } catch (err) {
-                log.error(
-                    'putCompanySettings'
-                    + ' failed',
-                    'settings',
-                    err,
-                );
-                showToast(
-                    'Failed to save'
-                    + ' settings',
-                    'error',
-                );
-            }
-        },
-    );
-
-    const saveSel =
-        '#company-settings-save-btn';
-    bindEnterToClick(
-        '#company-settings-name', saveSel,
-    );
-    bindEnterToClick(
-        '#company-settings-domain',
-        saveSel,
-    );
+    mutateSettingsPage(settings, false);
 }
