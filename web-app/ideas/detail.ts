@@ -12,7 +12,7 @@ import {
 import {
     navigateTo,
     trimStrings,
-    initDialog, closeDialog,
+    initDialog,
 } from '../app/core';
 import {
     getIdea,
@@ -326,9 +326,6 @@ function bindApprovalEvents(
                 'Idea sent back'
                 + ' for revision',
                 'info',
-            );
-            closeDialog(
-                'approval-reject',
             );
             navigateTo('ideas');
         },
