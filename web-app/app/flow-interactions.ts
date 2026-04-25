@@ -7,17 +7,21 @@ const AUTOFIT_TOAST_MSG =
     'Disable Auto-Fit to change the view';
 const WHEEL_TOAST_COOLDOWN_MS = 2000;
 const ZOOM_TO_FIT_PADDING_PX = 70;
-let lastWheelToastAt = 0;
 
-function toastAutoFitWheel(): void {
-    const now = Date.now();
-    if (
-        now - lastWheelToastAt
-        < WHEEL_TOAST_COOLDOWN_MS
-    ) return;
-    lastWheelToastAt = now;
-    showToast(AUTOFIT_TOAST_MSG, 'error');
-}
+const toastAutoFitWheel = (() => {
+    let lastWheelToastAt = 0;
+    return (): void => {
+        const now = Date.now();
+        if (
+            now - lastWheelToastAt
+            < WHEEL_TOAST_COOLDOWN_MS
+        ) return;
+        lastWheelToastAt = now;
+        showToast(
+            AUTOFIT_TOAST_MSG, 'error',
+        );
+    };
+})();
 
 export interface ViewBox {
     x: number;
