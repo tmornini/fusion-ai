@@ -15,7 +15,6 @@ import {
     getFlowGraph,
     postFlowVersion,
     getFlowVersions,
-    getLatestFlowVersion,
     deleteFlowVersion,
     putFlowFromVersion,
 } from '../adapters';
@@ -349,9 +348,10 @@ export class FlowDesignerPresenter {
 
     async performUndo(): Promise<boolean> {
         if (this.#guardLocked()) return false;
-        const version = await getLatestFlowVersion(
+        const versions = await getFlowVersions(
             this.#state.flowId,
         );
+        const version = versions[0];
         if (!version) {
             this.#history
                 .setHasUndoHistory(false);
