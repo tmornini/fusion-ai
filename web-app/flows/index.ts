@@ -22,7 +22,7 @@ import {
     getProjects,
     postFlowFromMermaid,
     postFlowFromZip,
-    readZipBackup,
+    getBackupFromZip,
     computeFlowBackupResolution,
     putFlowFromBackup,
     postFlowFromBackup,
@@ -266,7 +266,7 @@ async function handleFileSelect(
         );
         try {
             const backup =
-                await readZipBackup(bytes);
+                await getBackupFromZip(bytes);
             await handleV2Zip(
                 backup, input,
             );

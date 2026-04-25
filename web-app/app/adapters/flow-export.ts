@@ -446,7 +446,7 @@ function validateBackupV2Json(
     };
 }
 
-export async function readZipBackup(
+export async function getBackupFromZip(
     data: Uint8Array,
 ): Promise<BackupV2> {
     const entries = await getZipEntries(data);
