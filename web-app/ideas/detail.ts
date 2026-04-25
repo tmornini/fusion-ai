@@ -282,11 +282,11 @@ function bindApprovalEvents(
     );
 
     initDialog(
-        'approval-reject',
-        'approval-reject-btn',
+        'approval-send-back',
+        'approval-send-back-btn',
     );
     $(
-        '#approval-reject-confirm',
+        '#approval-send-back-confirm',
         document,
     )?.addEventListener(
         'click',

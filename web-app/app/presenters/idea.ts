@@ -355,7 +355,7 @@ export class IdeaPresenter {
                             }"
                             id="${
                                 'approval-'
-                                + 'reject'
+                                + 'send-back'
                                 + '-btn'
                             }">
                             ${iconXCircle(
@@ -373,7 +373,7 @@ export class IdeaPresenter {
                                     'visible-'
                                     + 'mobile'
                                 }">
-                                Reject
+                                Send Back
                             </span>
                         </button>
                         <button
@@ -400,7 +400,7 @@ export class IdeaPresenter {
         return html`
         <div
             id="${
-                'approval-reject'
+                'approval-send-back'
                 + '-backdrop'
             }"
             class="${
@@ -409,7 +409,7 @@ export class IdeaPresenter {
         </div>
         <div
             id="${
-                'approval-reject-dialog'
+                'approval-send-back-dialog'
             }"
             class="${
                 'dialog dialog-narrow hidden'
@@ -438,7 +438,7 @@ export class IdeaPresenter {
                         + ' resize-none'
                     }"
                     id=${'approval'
-                        + '-reject'
+                        + '-send-back'
                         + '-feedback'}
                     placeholder="${
                         'Explain what'
@@ -457,7 +457,7 @@ export class IdeaPresenter {
                         'btn btn-outline'
                     }"
                     id="${
-                        'approval-reject'
+                        'approval-send-back'
                         + '-cancel'
                     }">
                     Cancel
@@ -466,7 +466,7 @@ export class IdeaPresenter {
                     class="btn
                         btn-destructive"
                     id="${
-                        'approval-reject'
+                        'approval-send-back'
                         + '-confirm'
                     }">
                     Send Back
