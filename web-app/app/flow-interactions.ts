@@ -6,6 +6,7 @@ import { showToast } from './toast';
 const AUTOFIT_TOAST_MSG =
     'Disable Auto-Fit to change the view';
 const WHEEL_TOAST_COOLDOWN_MS = 2000;
+const ZOOM_TO_FIT_PADDING_PX = 70;
 let lastWheelToastAt = 0;
 
 function toastAutoFitWheel(): void {
@@ -983,8 +984,6 @@ export function zoomToFit(
 ): void {
     if (nodePositions.length === 0) return;
 
-    const PAD = 70;
-
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
@@ -1002,9 +1001,9 @@ export function zoomToFit(
     }
 
     const contentW =
-        maxX - minX + PAD * 2;
+        maxX - minX + ZOOM_TO_FIT_PADDING_PX * 2;
     const contentH =
-        maxY - minY + PAD * 2;
+        maxY - minY + ZOOM_TO_FIT_PADDING_PX * 2;
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
 
