@@ -241,6 +241,8 @@ export async function init(): Promise<void> {
                     strengths: [
                         ...selectedStrengths,
                     ],
+                    teamDimensions:
+                        profile.teamDimensions,
                 }));
                 setHtml(
                     btn,

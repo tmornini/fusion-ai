@@ -91,6 +91,7 @@ export interface Profile {
     department: string;
     bio: string;
     strengths: string[];
+    teamDimensions: Record<string, number>;
 }
 
 export const allStrengths = [
@@ -123,6 +124,8 @@ export async function getProfile(
         bio: user.bio,
         strengths:
             userObj.parsedStrengths(),
+        teamDimensions:
+            userObj.parsedTeamDimensions(),
     };
 }
 
