@@ -39,3 +39,6 @@ export {
 export {
     FlowDesignerPresenter,
 } from './flow-designer';
+export {
+    WorkingStylesPresenter,
+} from './working-styles';
