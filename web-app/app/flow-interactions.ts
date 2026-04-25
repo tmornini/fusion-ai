@@ -273,9 +273,9 @@ function handlePointerDown(
                 { x: number; y: number }
             >();
         for (const id of ids) {
-            const p = getNodePosition(id);
+            const pos = getNodePosition(id);
             initialPositions.set(
-                id, { x: p.x, y: p.y },
+                id, { x: pos.x, y: pos.y },
             );
         }
         state.drag = {
@@ -741,11 +741,11 @@ export function bindInteractions(
 
     const liveSvg = (
     ): SVGSVGElement | null => {
-        const s = wrap.querySelector(
+        const el = wrap.querySelector(
             'svg.flow-canvas',
         );
-        return s instanceof SVGSVGElement
-            ? s : null;
+        return el instanceof SVGSVGElement
+            ? el : null;
     };
 
     wrap.addEventListener(
@@ -824,9 +824,11 @@ export function bindInteractions(
     );
 
     const isFormFocused = (): boolean => {
-        const a = document.activeElement;
-        if (!a) return false;
-        const tag = a.tagName.toLowerCase();
+        const activeEl
+            = document.activeElement;
+        if (!activeEl) return false;
+        const tag = activeEl.tagName
+            .toLowerCase();
         if (
             tag === 'input'
             || tag === 'textarea'
@@ -835,7 +837,7 @@ export function bindInteractions(
             || tag === 'a'
         ) return true;
         return (
-            a as HTMLElement
+            activeEl as HTMLElement
         ).isContentEditable;
     };
 

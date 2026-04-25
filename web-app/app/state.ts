@@ -87,10 +87,11 @@ function subscribe(
 
 function computeTheme(): 'light' | 'dark' {
     if (state.theme === 'system') {
-        const q = '(prefers-color-scheme'
-            + ': dark)';
+        const darkMediaQuery
+            = '(prefers-color-scheme: dark)';
         return window
-            .matchMedia(q).matches
+            .matchMedia(darkMediaQuery)
+            .matches
             ? 'dark'
             : 'light';
     }

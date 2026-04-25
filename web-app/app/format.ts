@@ -65,16 +65,16 @@ function displayText(
 function trimStrings<
     T extends object,
 >(obj: T): T {
-    const r = { ...obj };
-    for (const k of Object.keys(r)) {
-        const v = r[k as keyof T];
+    const copy = { ...obj };
+    for (const k of Object.keys(copy)) {
+        const v = copy[k as keyof T];
         if (typeof v === 'string') {
-            (r as Record<
+            (copy as Record<
                 string, unknown
             >)[k] = v.trim();
         }
     }
-    return r;
+    return copy;
 }
 
 export {

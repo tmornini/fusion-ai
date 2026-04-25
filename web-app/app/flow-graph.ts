@@ -89,10 +89,10 @@ export function perimeterPoint(
     const sy = dy !== 0
         ? (rh / 2) / Math.abs(dy)
         : Infinity;
-    const s = Math.min(sx, sy);
+    const scale = Math.min(sx, sy);
     return {
-        x: cx + dx * s,
-        y: cy + dy * s,
+        x: cx + dx * scale,
+        y: cy + dy * scale,
     };
 }
 

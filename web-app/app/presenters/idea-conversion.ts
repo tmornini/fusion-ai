@@ -388,7 +388,7 @@ export class IdeaConversionPresenter {
     }
 
     #buildRequired(): SafeHtml {
-        const f = this.#fields;
+        const fields = this.#fields;
         const lo = this.#leadOptions;
         return html`
             <div class="card p-6">
@@ -425,7 +425,7 @@ export class IdeaConversionPresenter {
                                 + '-project'
                                 + '-name'}
                             value="${
-                                f[
+                                fields[
                                 'project-name'
                                 ]
                             }"
@@ -468,7 +468,7 @@ export class IdeaConversionPresenter {
                                 value="${o.id}"
                                 ${trusted(
                                     o.id ===
-                                    f[
+                                    fields[
                                     'project-lead'
                                     ]
                                         ? 'selected'
@@ -507,7 +507,7 @@ export class IdeaConversionPresenter {
                                     + '-start'
                                     + '-date'}
                                 value="${
-                                    f[
+                                    fields[
                                     'start-date'
                                     ]
                                 }" />
@@ -539,7 +539,7 @@ export class IdeaConversionPresenter {
                                     + '-end'
                                     + '-date'}
                                 value="${
-                                    f[
+                                    fields[
                                     'target-end-date'
                                     ]
                                 }" />
@@ -588,7 +588,7 @@ export class IdeaConversionPresenter {
                                     + ' amount'
                                 }"
                                 value="${
-                                    f['budget']
+                                    fields['budget']
                                 }" />
                         </div>
                     </div>
@@ -635,7 +635,7 @@ export class IdeaConversionPresenter {
                                     + ' points'
                                 }"
                                 value="${
-                                    f['impact']
+                                    fields['impact']
                                 }" />
                         </div>
                     </div>
@@ -644,7 +644,7 @@ export class IdeaConversionPresenter {
     }
 
     #buildOptional(): SafeHtml {
-        const f = this.#fields;
+        const fields = this.#fields;
         return html`
             <div class="card p-6">
                 <div class="flex
@@ -694,7 +694,7 @@ export class IdeaConversionPresenter {
                                 + ' successful?'
                             }"
                             rows="4">${
-                            f[
+                            fields[
                             'success-criteria'
                             ]
                         }</textarea>
