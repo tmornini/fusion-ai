@@ -13,8 +13,8 @@ export interface ActivityInput {
     type: ActivityType;
     action: string;
     target: string;
-    feedback?: string;
-    status?: string;
+    status: string;
+    feedback: string;
 }
 
 export async function postActivity(
@@ -31,8 +31,8 @@ export async function postActivity(
             action: input.action,
             target: input.target,
             timestamp,
-            status: input.status ?? 'active',
-            feedback: input.feedback ?? '',
+            status: input.status,
+            feedback: input.feedback,
         },
     );
     await PUT(

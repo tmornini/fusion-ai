@@ -110,7 +110,7 @@ async function transitionIdea(
         action: cfg.activityAction,
         target: title,
         status: toStatus,
-        ...(feedback ? { feedback } : {}),
+        feedback: feedback ?? '',
     });
     showToast(
         cfg.successToast,

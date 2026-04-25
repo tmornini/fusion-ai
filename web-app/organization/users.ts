@@ -622,6 +622,8 @@ async function handleInvite(): Promise<void> {
             type: 'user_joined',
             action: 'joined the team',
             target: first + ' ' + last,
+            status: '',
+            feedback: '',
         });
         showToast('User created', 'success');
         closeDialog('invite');
