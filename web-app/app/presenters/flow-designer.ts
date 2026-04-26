@@ -1756,6 +1756,31 @@ Auto Fit</label>
         );
     }
 
+    tryShowFieldEditor(
+        container: HTMLElement,
+    ):
+        | 'opened'
+        | 'no-selection'
+        | 'locked'
+    {
+        if (this.selectedNodeId() === null) {
+            return 'no-selection';
+        }
+        if (this.isLocked()) {
+            return 'locked';
+        }
+        const slot = $(
+            '#field-editor-slot', container,
+        );
+        if (slot) {
+            mutateHtml(
+                slot,
+                this.buildFieldEditor(),
+            );
+        }
+        return 'opened';
+    }
+
     #buildPropsPanel(): SafeHtml {
         if (!this.#state.isPanelOpen) {
             return html``;

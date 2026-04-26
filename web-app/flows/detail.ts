@@ -624,23 +624,11 @@ function showFieldEditor(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): void {
-    if (
-        presenter.selectedNodeId() === null
-    ) return;
-    if (presenter.isLocked()) {
-        showToast(
-            'Flow is locked', 'error',
-        );
-        return;
+    const result =
+        presenter.tryShowFieldEditor(container);
+    if (result === 'locked') {
+        showToast('Flow is locked', 'error');
     }
-    const slot = $(
-        '#field-editor-slot', container,
-    );
-    if (!slot) return;
-    mutateHtml(
-        slot,
-        presenter.buildFieldEditor(),
-    );
 }
 
 async function handleSaveField(
