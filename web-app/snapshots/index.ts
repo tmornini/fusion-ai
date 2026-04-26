@@ -3,7 +3,7 @@ import {
     postSchemaCreation,
     postBootstrap,
     postMockDataLoad,
-    putSnapshot,
+    putSnapshotFromFile,
     getSnapshot,
     getDataPresent,
     nowUtc,
@@ -327,14 +327,10 @@ export async function init(
                 importInput.files?.[0];
             if (!file) return;
             try {
-                const text =
-                    await file.text();
-                await putSnapshot(
-                    text,
-                );
+                await putSnapshotFromFile(file);
             } catch (err) {
                 log.error(
-                    'putSnapshot failed',
+                    'putSnapshotFromFile failed',
                     'snapshots',
                     err,
                 );
