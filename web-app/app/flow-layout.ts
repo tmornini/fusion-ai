@@ -42,6 +42,27 @@ function isDummy(id: string): boolean {
     return id.startsWith(DUMMY_PREFIX);
 }
 
+function countPairInversions(
+    pairs: readonly (readonly [number, number])[],
+): number {
+    let total = 0;
+    for (let i = 0; i < pairs.length; i++) {
+        for (
+            let j = i + 1;
+            j < pairs.length;
+            j++
+        ) {
+            const [t1, b1] = pairs[i]!;
+            const [t2, b2] = pairs[j]!;
+            const isInversion =
+                (t1 < t2 && b1 > b2)
+                || (t1 > t2 && b1 < b2);
+            if (isInversion) total++;
+        }
+    }
+    return total;
+}
+
 export function edgeWaypointKey(
     fromId: string, toId: string,
 ): string {
@@ -583,24 +604,7 @@ function reduceCrossings(
                     }
                 }
             });
-            for (let i = 0; i < pairs.length; i++) {
-                for (
-                    let j = i + 1;
-                    j < pairs.length;
-                    j++
-                ) {
-                    const p1 = pairs[i]!;
-                    const p2 = pairs[j]!;
-                    const t1 = p1[0];
-                    const b1 = p1[1];
-                    const t2 = p2[0];
-                    const b2 = p2[1];
-                    const crosses =
-                        (t1 < t2 && b1 > b2)
-                        || (t1 > t2 && b1 < b2);
-                    if (crosses) total++;
-                }
-            }
+            total += countPairInversions(pairs);
         }
         return total;
     };
