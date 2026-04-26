@@ -138,7 +138,7 @@ function applyTheme(): void {
         );
 }
 
-function setTheme(
+function persistThemePreference(
     theme: AppState['theme'],
 ): void {
     writePreference(
@@ -228,7 +228,7 @@ export {
     computeTheme,
     getThemeIcon,
     applyTheme,
-    setTheme,
+    persistThemePreference,
     setSidebarCollapsed,
     isValidTheme,
     initListeners,

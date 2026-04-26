@@ -1,7 +1,7 @@
 import {
     getThemeIcon,
     isValidTheme,
-    setTheme,
+    persistThemePreference,
 } from './state';
 import { $, $$ } from './dom';
 import { mutateHtml } from './safe-html';
@@ -111,11 +111,13 @@ export function initThemeAndDropdowns(
                         isValidTheme(theme)
                     ) {
                         try {
-                            setTheme(theme);
+                            persistThemePreference(
+                                theme,
+                            );
                         } catch (e) {
                             log.warn(
-                                'setTheme'
-                                + ' failed',
+                                'persistThemePreference'
+                                    + ' failed',
                                 'theme-toggle',
                                 e,
                             );
