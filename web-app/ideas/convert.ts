@@ -457,6 +457,20 @@ export async function init(
     renderPage();
 }
 
+function parseFiniteNumber(
+    field: string,
+    value: string,
+): number {
+    const n = Number(value);
+    if (!Number.isFinite(n)) {
+        throw new Error(
+            `${field} must be a finite number,`
+            + ` got ${JSON.stringify(value)}`,
+        );
+    }
+    return n;
+}
+
 async function performConversion(
     ideaId: string,
     projectId: string,
@@ -479,15 +493,15 @@ async function performConversion(
                 fields['target-end-date'],
             estimated_duration: 0,
             actual_duration: 0,
-            estimated_cost:
-                Number(
-                    fields['budget'],
-                ) || 0,
+            estimated_cost: parseFiniteNumber(
+                'budget',
+                fields['budget'],
+            ),
             actual_cost: 0,
-            estimated_impact:
-                Number(
-                    fields['impact'],
-                ) || 0,
+            estimated_impact: parseFiniteNumber(
+                'impact',
+                fields['impact'],
+            ),
             actual_impact: 0,
             position: 0,
             business_context:
