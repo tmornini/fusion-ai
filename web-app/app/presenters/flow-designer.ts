@@ -35,7 +35,6 @@ import {
 } from '../adapters';
 import {
     buildGraphSvg,
-    computeEdgeLabelWidth,
     perimeterPoint,
     whichEdge,
     controlOffset,
@@ -43,8 +42,6 @@ import {
     BLUE,
 } from '../flow-graph';
 import {
-    computeLayout,
-    edgeWaypointKey,
     wouldBeCycle,
     NODE_WIDTH,
     NODE_HEIGHT,
@@ -86,6 +83,10 @@ import {
     applyUpdateEdge,
     applyAddField,
     applyDeleteField,
+    applyAutoLayout,
+} from '../flow-designer-actions';
+import type {
+    Waypoint,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -136,26 +137,6 @@ interface DesignerState {
     isPanelOpen: boolean;
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
-}
-
-type Waypoint = { x: number; y: number };
-
-function mapWaypointsByEdgeId(
-    edges: readonly GraphEdge[],
-    byPair: Map<string, Waypoint[]>,
-): Map<string, Waypoint[]> {
-    const result =
-        new Map<string, Waypoint[]>();
-    for (const e of edges) {
-        const key = edgeWaypointKey(
-            e.fromNodeId, e.toNodeId,
-        );
-        const workingPair = byPair.get(key);
-        if (workingPair && workingPair.length > 0) {
-            result.set(e.id, workingPair);
-        }
-    }
-    return result;
 }
 
 function emptyWaypoints(
@@ -1112,64 +1093,17 @@ Auto Fit</label>
     }
 
     #runAutoLayout(): void {
-        const nodeById = new Map(
-            this.#state.nodes.map(
-                n => [n.id, n],
-            ),
+        const result = applyAutoLayout(
+            this.#state.nodes,
+            this.#state.edges,
+            this.#canvasW,
+            this.#canvasH,
+            this.#state.isPanelOpen,
+            PANEL_WIDTH_PX,
         );
-        const layoutInputs =
-            this.#state.nodes.map(
-                n => ({
-                    id: n.id,
-                    isStart: n.isStart,
-                    isComplete: n.isComplete,
-                }),
-            );
-        const layoutEdges =
-            this.#state.edges.map(e => {
-                const from =
-                    nodeById.get(e.fromNodeId);
-                const isStart =
-                    from?.isStart === true;
-                return {
-                    fromId: e.fromNodeId,
-                    toId: e.toNodeId,
-                    labelWidth: isStart
-                        ? 0
-                        : computeEdgeLabelWidth(
-                            e.name,
-                        ),
-                };
-            });
-        const panelOpen =
-            this.#state.isPanelOpen;
-        const effectiveW = panelOpen
-            ? Math.max(
-                0,
-                this.#canvasW - PANEL_WIDTH_PX,
-            )
-            : this.#canvasW;
-        const result = computeLayout({
-            nodes: layoutInputs,
-            edges: layoutEdges,
-            canvasWidth: effectiveW,
-            canvasHeight: this.#canvasH,
-        });
-        this.#state.nodes =
-            this.#state.nodes.map(n => {
-                const pos =
-                    result.positions.get(n.id)!;
-                return {
-                    ...n,
-                    positionX: pos.x,
-                    positionY: pos.y,
-                };
-            });
+        this.#state.nodes = result.nodes;
         this.#state.edgeWaypoints =
-            mapWaypointsByEdgeId(
-                this.#state.edges,
-                result.waypoints,
-            );
+            result.edgeWaypoints;
         void this.#saveFlow(false);
     }
 

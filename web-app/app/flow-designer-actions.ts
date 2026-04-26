@@ -3,6 +3,18 @@ import type {
     GraphEdge,
     GraphField,
 } from './adapters/flows';
+import {
+    computeLayout,
+    edgeWaypointKey,
+} from './flow-layout';
+import {
+    computeEdgeLabelWidth,
+} from './flow-graph';
+
+export type Waypoint = {
+    readonly x: number;
+    readonly y: number;
+};
 
 export interface NodeMove {
     readonly nodeId: string;
@@ -184,4 +196,80 @@ export function applyDeleteField(
             }
             : n,
     );
+}
+
+export interface AutoLayoutResult {
+    readonly nodes: GraphNode[];
+    readonly edgeWaypoints:
+        Map<string, Waypoint[]>;
+}
+
+export function applyAutoLayout(
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+    canvasW: number,
+    canvasH: number,
+    panelOpen: boolean,
+    panelWidthPx: number,
+): AutoLayoutResult {
+    const nodeById = new Map(
+        nodes.map(n => [n.id, n]),
+    );
+    const layoutInputs = nodes.map(n => ({
+        id: n.id,
+        isStart: n.isStart,
+        isComplete: n.isComplete,
+    }));
+    const layoutEdges = edges.map(e => {
+        const from =
+            nodeById.get(e.fromNodeId);
+        const isStart =
+            from?.isStart === true;
+        return {
+            fromId: e.fromNodeId,
+            toId: e.toNodeId,
+            labelWidth: isStart
+                ? 0
+                : computeEdgeLabelWidth(
+                    e.name,
+                ),
+        };
+    });
+    const effectiveW = panelOpen
+        ? Math.max(
+            0,
+            canvasW - panelWidthPx,
+        )
+        : canvasW;
+    const result = computeLayout({
+        nodes: layoutInputs,
+        edges: layoutEdges,
+        canvasWidth: effectiveW,
+        canvasHeight: canvasH,
+    });
+    const newNodes = nodes.map(n => {
+        const pos =
+            result.positions.get(n.id)!;
+        return {
+            ...n,
+            positionX: pos.x,
+            positionY: pos.y,
+        };
+    });
+    const edgeWaypoints =
+        new Map<string, Waypoint[]>();
+    for (const e of edges) {
+        const key = edgeWaypointKey(
+            e.fromNodeId, e.toNodeId,
+        );
+        const wp =
+            result.waypoints.get(key);
+        if (wp && wp.length > 0) {
+            edgeWaypoints.set(e.id, wp);
+        }
+    }
+    return {
+        nodes: newNodes,
+        edgeWaypoints,
+    };
 }
