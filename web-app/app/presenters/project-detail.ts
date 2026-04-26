@@ -154,7 +154,7 @@ function buildShell(
 </div>`);
 }
 
-function setSlot(
+function mutateSlot(
     container: HTMLElement,
     cls: string,
     markup: SafeHtml,
@@ -1002,38 +1002,38 @@ export class ProjectDetailPresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setSlot(
+        mutateSlot(
             container,
             '.project-breadcrumb-slot',
             buildBreadcrumb(
                 this.#view.titleText(),
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-title-slot',
             buildReadonlyTitleSection(
                 this.#view,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-actions-slot',
             buildReadonlyActionButtons(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-summary-slot',
             buildReadonlyProjectSummary(
                 this.#view,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-metrics-slot',
             buildReadonlyMetrics(this.#view),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-sidebar-slot',
             buildSidebar(
@@ -1083,38 +1083,38 @@ export class ProjectDetailEditPresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setSlot(
+        mutateSlot(
             container,
             '.project-breadcrumb-slot',
             buildBreadcrumb(this.#draft.title),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-title-slot',
             buildEditableTitleSection(
                 this.#view, this.#draft,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-actions-slot',
             buildEditableActionButtons(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-summary-slot',
             buildEditableProjectSummary(
                 this.#view, this.#draft,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-metrics-slot',
             buildEditableMetrics(
                 this.#view, this.#draft,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.project-sidebar-slot',
             buildSidebar(

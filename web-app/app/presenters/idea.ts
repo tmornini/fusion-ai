@@ -150,7 +150,7 @@ function buildShell(
 </div>`);
 }
 
-function setSlot(
+function mutateSlot(
     container: HTMLElement,
     cls: string,
     markup: SafeHtml,
@@ -715,40 +715,40 @@ export class IdeaPresenter {
             container,
             this.#idea.isReviewable(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-breadcrumb-slot',
             buildBreadcrumb(
                 this.#idea.titleText(),
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-title-slot',
             buildReadonlyTitleSection(
                 this.#idea,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-actions-slot',
             this.#buildActionButtons(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-cards-slot',
             buildProblemSolutionReadonlyCard(
                 this.#idea,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-footer-slot',
             this.#idea.isReviewable()
                 ? buildApprovalFooter()
                 : html``,
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-dialogs-slot',
             this.#idea.isReviewable()
@@ -807,40 +807,40 @@ export class IdeaEditPresenter {
             container,
             this.#idea.isReviewable(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-breadcrumb-slot',
             buildBreadcrumb(
                 this.#draft.title,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-title-slot',
             buildEditableTitleSection(
                 this.#idea, this.#draft,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-actions-slot',
             this.#buildActionButtons(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-cards-slot',
             buildProblemSolutionEditableCard(
                 this.#draft,
             ),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-footer-slot',
             this.#idea.isReviewable()
                 ? buildApprovalFooter()
                 : html``,
         );
-        setSlot(
+        mutateSlot(
             container,
             '.idea-dialogs-slot',
             this.#idea.isReviewable()

@@ -23,7 +23,7 @@ function buildShell(
 </div>`);
 }
 
-function setHeader(
+function mutateHeader(
     container: HTMLElement,
     markup: SafeHtml,
 ): void {
@@ -34,7 +34,7 @@ function setHeader(
     mutateHtml(slot, markup);
 }
 
-function setBody(
+function mutateBody(
     container: HTMLElement,
     markup: SafeHtml,
 ): void {
@@ -139,10 +139,10 @@ export class CompanyPresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setHeader(
+        mutateHeader(
             container, this.#buildHeader(),
         );
-        setBody(
+        mutateBody(
             container, this.#buildCard(),
         );
     }
@@ -190,10 +190,10 @@ export class CompanyEditPresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setHeader(
+        mutateHeader(
             container, this.#buildHeader(),
         );
-        setBody(
+        mutateBody(
             container, this.#buildCard(),
         );
     }

@@ -43,7 +43,7 @@ function buildShell(
 </div>`);
 }
 
-function setSlot(
+function mutateSlot(
     container: HTMLElement,
     cls: string,
     markup: SafeHtml,
@@ -311,22 +311,22 @@ export class ProfilePresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setSlot(
+        mutateSlot(
             container,
             '.profile-header-slot',
             this.#buildHeader(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-info-slot',
             this.#buildPersonalInfoCard(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-styles-slot',
             this.#buildWorkingStylesCard(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-strengths-slot',
             this.#buildStrengthsCard(),
@@ -430,22 +430,22 @@ export class ProfileEditPresenter {
     renderUpdate(
         container: HTMLElement,
     ): void {
-        setSlot(
+        mutateSlot(
             container,
             '.profile-header-slot',
             this.#buildHeader(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-info-slot',
             this.#buildPersonalInfoCard(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-styles-slot',
             this.#buildWorkingStylesCard(),
         );
-        setSlot(
+        mutateSlot(
             container,
             '.profile-strengths-slot',
             this.#buildStrengthsCard(),
