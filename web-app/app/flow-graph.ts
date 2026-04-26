@@ -9,6 +9,7 @@ import type {
 import {
     NODE_WIDTH, NODE_HEIGHT,
 } from './flow-layout';
+import { pluralize } from './format';
 
 export const BLUE = '#4B6CA1';
 const WARN = '#d97706';
@@ -419,9 +420,10 @@ function buildNode(
 
     if (!isSpecial) {
         const meta = String(node.fields.length)
-            + ' field'
-            + (node.fields.length !== 1
-                ? 's' : '');
+            + ' '
+            + pluralize(
+                node.fields.length, 'field',
+            );
         inner += '<text'
             + ` x="${halfW}"`
             + ` y="${NODE_META_Y}"`

@@ -26,6 +26,7 @@ export {
     formatDateTime,
     getTimeOfDay,
     initials,
+    pluralize,
     toDateInputValue,
     trimStrings,
     durationInDays,

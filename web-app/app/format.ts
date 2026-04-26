@@ -65,6 +65,15 @@ function displayText(
         : DISPLAY_ABSENT;
 }
 
+function pluralize(
+    count: number,
+    word: string,
+): string {
+    return count === 1
+        ? word
+        : word + 's';
+}
+
 function trimStrings<
     T extends object,
 >(obj: T): T {
@@ -87,6 +96,7 @@ export {
     formatDateTime,
     getTimeOfDay,
     initials,
+    pluralize,
     toDateInputValue,
     trimStrings,
     durationInDays,

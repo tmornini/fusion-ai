@@ -26,6 +26,7 @@ import {
     PAGE_REGISTRY,
 } from './page-registry';
 import { buildPageUrl } from './navigation';
+import { pluralize } from './format';
 
 interface SearchItem {
     id: string;
@@ -422,12 +423,15 @@ ${posIndex === 0
             state.list,
             html`${markup}`,
         );
-        if (state.liveRegion)
+        if (state.liveRegion) {
+            const count =
+                state.filteredItems.length;
             state.liveRegion
                 .textContent =
-                `${state.filteredItems.length}`
-                + ` result${state.filteredItems.length !== 1 ? 's' : ''}`
+                `${count} `
+                + `${pluralize(count, 'result')}`
                 + ` found`;
+        }
     }
 
     function mutateActiveItem(): void {
