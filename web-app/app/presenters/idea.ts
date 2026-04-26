@@ -594,6 +594,12 @@ export class IdeaPresenter {
         return this.#idea.statusValue();
     }
 
+    matchesStatus(
+        status: IdeaStatus,
+    ): boolean {
+        return this.statusGroup() === status;
+    }
+
     buildStatusBadge(
         isActive: boolean | null,
     ): SafeHtml {
@@ -976,8 +982,9 @@ export class IdeaListPresenter {
         const filtered =
             f.kind === 'filtered'
                 ? this.#ideas.filter(
-                    i => i.statusGroup()
-                        === f.status,
+                    i => i.matchesStatus(
+                        f.status,
+                    ),
                 )
                 : this.#ideas;
         const sorted =
