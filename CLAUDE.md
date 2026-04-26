@@ -137,12 +137,19 @@ generate the markup the page injects into the DOM.
   modules are responsible for the DOM; presenters are
   responsible for the HTML they hand over.
   *Exception:* `FlowDesignerPresenter` retains
-  internal interaction state for now — extracting the
-  flow-designer state machine is a deferred follow-up
-  due to the complexity of pan/zoom/drag/connect
-  interactions. Specific tell-don't-ask violations
-  are encapsulated behind `closePanel()` /
-  `isPanelOpen()` methods on that presenter.
+  internal mutable state. Partial extraction
+  completed: panel state is hoisted out of
+  `InteractionState` (the gesture FSM uses an
+  `onPanelRequest` callback rather than mutating
+  panel directly); `FlowHistory` is now an
+  immutable value with free transition functions;
+  `flow-designer-actions.ts` seeds pure transitions
+  (`applyMoveNodes`). Full migration to a
+  `FlowSnapshot` constructor argument and a
+  fully-pure presenter remains pending — it needs
+  manual regression coverage (F1–F46) that
+  includes drag/connect/marquee gestures that
+  synthetic PointerEvents cannot reliably drive.
 - **Barrel**: `presenters/index.ts` re-exports every
   presenter class. Page modules import via
   `from '../app/presenters'`.
@@ -411,6 +418,15 @@ CLI options: `./build [--no-zip] [path/]`. The trailing `/` on the path argument
 No build artifacts are created in the repo — build output goes to `/tmp/` by default.
 
 ## Testing
+
+The codebase honors the Office of Verification through
+a manual browser regression protocol rather than an
+executable test runner — a deliberate trade-off between
+toolchain minimalism (zero runtime *and* test
+dependencies) and verification automation. A future
+scroll may introduce Node's built-in test runner for
+the `api/` and `adapters/` layers (highest leverage;
+validates the boundary doctrine).
 
 No unit test framework is configured. Testing is a manual browser
 regression pass against `TEST-PLAN.md` (254 cases), driven either
