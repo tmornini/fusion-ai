@@ -490,7 +490,7 @@ function onUserListClick(e: MouseEvent): void {
             'data-deactivate-user',
         );
         if (id) {
-            void changeUserStatus(
+            void updateUserActivationStatus(
                 id, 'deactivated',
             );
         }
@@ -504,14 +504,14 @@ function onUserListClick(e: MouseEvent): void {
             'data-reactivate-user',
         );
         if (id) {
-            void changeUserStatus(
+            void updateUserActivationStatus(
                 id, 'active',
             );
         }
     }
 }
 
-async function changeUserStatus(
+async function updateUserActivationStatus(
     userId: string,
     next: 'active' | 'deactivated',
 ): Promise<void> {
@@ -532,7 +532,7 @@ async function changeUserStatus(
         navigateTo('users');
     } catch (err) {
         log.error(
-            'changeUserStatus failed',
+            'updateUserActivationStatus failed',
             'organization', err,
         );
         showToast(
