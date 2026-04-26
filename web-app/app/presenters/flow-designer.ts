@@ -39,6 +39,7 @@ import {
     whichEdge,
     controlOffset,
     buildEdgePreviewPath,
+    BLUE,
 } from '../flow-graph';
 import {
     computeLayout,
@@ -83,6 +84,9 @@ import {
     buildEdgePanel,
     buildFlowNameHeader,
 } from './flow-designer-view';
+
+const NEW_NODE_OFFSET_X = 120;
+const NEW_NODE_OFFSET_Y = 100;
 
 function serializeGraph(
     nodes: GraphNode[],
@@ -837,8 +841,8 @@ Auto Fit</label>
     async addNode(): Promise<boolean> {
         const x = START_X
             + (this.#state.nodes.length - 1)
-            * (NODE_WIDTH + 120);
-        const y = START_Y + 100;
+            * (NODE_WIDTH + NEW_NODE_OFFSET_X);
+        const y = START_Y + NEW_NODE_OFFSET_Y;
         const nodeId = crypto.randomUUID();
         const fId = this.#state.flowId;
         try {
@@ -1942,7 +1946,7 @@ Auto Fit</label>
         return '<path'
             + ' d="' + pathD + '"'
             + ' fill="none"'
-            + ' stroke="#4B6CA1"'
+            + ` stroke="${BLUE}"`
             + ' stroke-width="2"'
             + ' opacity="0.3"'
             + ' marker-end='
@@ -1960,7 +1964,7 @@ Auto Fit</label>
             + ' rx="10"'
             + ' fill="var('
             + '--color-card-bg)"'
-            + ' stroke="#4B6CA1"'
+            + ` stroke="${BLUE}"`
             + ' stroke-width="2"/>'
             + '<text'
             + ` x="${halfW}"`

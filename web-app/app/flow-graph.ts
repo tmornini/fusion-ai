@@ -10,7 +10,7 @@ import {
     NODE_WIDTH, NODE_HEIGHT,
 } from './flow-layout';
 
-const BLUE = '#4B6CA1';
+export const BLUE = '#4B6CA1';
 const WARN = '#d97706';
 const GREEN = '#16a34a';
 const RED = '#b91c1c';
