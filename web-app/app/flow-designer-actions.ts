@@ -1,4 +1,7 @@
-import type { GraphNode } from './adapters/flows';
+import type {
+    GraphNode,
+    GraphEdge,
+} from './adapters/flows';
 
 export interface NodeMove {
     readonly nodeId: string;
@@ -53,4 +56,45 @@ export function applyUpdateFlowName(
         flowName: name.trim(),
         isEditingName: false,
     };
+}
+
+export function applyAddNode(
+    nodes: readonly GraphNode[],
+    nodeId: string,
+    name: string,
+    positionX: number,
+    positionY: number,
+): GraphNode[] {
+    return [
+        ...nodes,
+        {
+            id: nodeId,
+            name,
+            description: '',
+            positionX,
+            positionY,
+            isStart: false,
+            isComplete: false,
+            fields: [],
+        },
+    ];
+}
+
+export function applyAddEdge(
+    edges: readonly GraphEdge[],
+    edgeId: string,
+    name: string,
+    fromNodeId: string,
+    toNodeId: string,
+): GraphEdge[] {
+    return [
+        ...edges,
+        {
+            id: edgeId,
+            name,
+            description: '',
+            fromNodeId,
+            toNodeId,
+        },
+    ];
 }

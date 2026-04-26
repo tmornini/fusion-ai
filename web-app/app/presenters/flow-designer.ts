@@ -78,6 +78,8 @@ import {
     applyMoveNodes,
     applyToggleLock,
     applyUpdateFlowName,
+    applyAddNode,
+    applyAddEdge,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -868,19 +870,10 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.nodes = [
-            ...this.#state.nodes,
-            {
-                id: nodeId,
-                name: 'New State',
-                description: '',
-                positionX: x,
-                positionY: y,
-                isStart: false,
-                isComplete: false,
-                fields: [],
-            },
-        ];
+        this.#state.nodes = applyAddNode(
+            this.#state.nodes,
+            nodeId, 'New State', x, y,
+        );
         this.#noteMutation();
         this.reconcileLayout();
         return true;
@@ -977,16 +970,11 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.edges = [
-            ...this.#state.edges,
-            {
-                id: edgeId,
-                name: 'Transition',
-                description: '',
-                fromNodeId: fromId,
-                toNodeId: toId,
-            },
-        ];
+        this.#state.edges = applyAddEdge(
+            this.#state.edges,
+            edgeId, 'Transition',
+            fromId, toId,
+        );
         this.#noteMutation();
         this.reconcileLayout();
         return true;
@@ -1465,29 +1453,15 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.nodes = [
-            ...this.#state.nodes,
-            {
-                id: nodeId,
-                name: 'New State',
-                description: '',
-                positionX: posX,
-                positionY: posY,
-                isStart: false,
-                isComplete: false,
-                fields: [],
-            },
-        ];
-        this.#state.edges = [
-            ...this.#state.edges,
-            {
-                id: edgeId,
-                name: 'Transition',
-                description: '',
-                fromNodeId,
-                toNodeId: nodeId,
-            },
-        ];
+        this.#state.nodes = applyAddNode(
+            this.#state.nodes,
+            nodeId, 'New State', posX, posY,
+        );
+        this.#state.edges = applyAddEdge(
+            this.#state.edges,
+            edgeId, 'Transition',
+            fromNodeId, nodeId,
+        );
         this.#noteMutation();
         this.#state.interaction
             .selection = {
@@ -1559,29 +1533,15 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.nodes = [
-            ...this.#state.nodes,
-            {
-                id: nodeId,
-                name,
-                description: '',
-                positionX: pos.x,
-                positionY: pos.y,
-                isStart: false,
-                isComplete: false,
-                fields: [],
-            },
-        ];
-        this.#state.edges = [
-            ...this.#state.edges,
-            {
-                id: edgeId,
-                name: transitionName,
-                description: '',
-                fromNodeId,
-                toNodeId: nodeId,
-            },
-        ];
+        this.#state.nodes = applyAddNode(
+            this.#state.nodes,
+            nodeId, name, pos.x, pos.y,
+        );
+        this.#state.edges = applyAddEdge(
+            this.#state.edges,
+            edgeId, transitionName,
+            fromNodeId, nodeId,
+        );
         this.#noteMutation();
         this.reconcileLayout();
         return true;
