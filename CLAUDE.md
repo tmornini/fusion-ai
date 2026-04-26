@@ -114,22 +114,35 @@ modules fetch data via adapters, instantiate the
 relevant presenter, and call `build*` methods on it to
 generate the markup the page injects into the DOM.
 
-- **Construction**: each presenter takes the
-  adapter-returned shape in its constructor. Example:
-  `new IdeaPresenter(idea)` wraps an `Idea` and exposes
-  `buildStatusBadge()`, `idForLink()`,
-  `positionSortKey()`, etc.
-- **Receiver variant**: a few presenters implement a
-  `*Receiver` interface (e.g.,
-  `GaugePresenter implements GaugeReceiver`) so the
-  adapter can tell the presenter its values via method
-  calls rather than returning a data shape — a
-  tell-don't-ask flavor for simpler components.
+- **Construction**: every presenter takes its full
+  data shape in the constructor and is immutable.
+  Example: `new IdeaPresenter(idea)` wraps an `Idea`
+  and exposes `buildStatusBadge()`, `idForLink()`,
+  `positionSortKey()`, etc. State transitions
+  construct a *new* presenter — never mutate an
+  existing one.
+- **Edit mode is a separate presenter**: entities
+  with editable detail views split into two
+  classes — `IdeaPresenter` (read view, takes the
+  entity) and `IdeaEditPresenter` (edit view, takes
+  the entity plus a draft shape). The page module
+  owns a `PageState` discriminated union
+  (`{kind: 'reading'} | {kind: 'editing', draft}`)
+  and constructs the appropriate presenter on each
+  render. The same pattern applies to `Profile`,
+  `Company`, and `ProjectDetail`.
 - **No state beyond construction args**: presenters
   are pure view objects. They never fetch data, never
   mutate, and never touch the DOM directly. Page
   modules are responsible for the DOM; presenters are
   responsible for the HTML they hand over.
+  *Exception:* `FlowDesignerPresenter` retains
+  internal interaction state for now — extracting the
+  flow-designer state machine is a deferred follow-up
+  due to the complexity of pan/zoom/drag/connect
+  interactions. Specific tell-don't-ask violations
+  are encapsulated behind `closePanel()` /
+  `isPanelOpen()` methods on that presenter.
 - **Barrel**: `presenters/index.ts` re-exports every
   presenter class. Page modules import via
   `from '../app/presenters'`.
@@ -137,17 +150,22 @@ generate the markup the page injects into the DOM.
   an internal helper used by several presenters; it is
   not itself a presenter and is not re-exported from
   the barrel.
-- **File list** (15 classes across 13 presenter
-  files, 16 files total including helpers):
-  `account`, `activity`, `flow`, `flow-designer`,
-  `gauge`, `idea` (exports `IdeaPresenter` plus
+- **File list** (presenter classes across the
+  presenter files): `account`, `activity`, `flow`,
+  `flow-designer`, `gauge`, `idea` (exports
+  `IdeaPresenter` + `IdeaEditPresenter` +
   `IdeaListPresenter`), `idea-conversion`,
-  `idea-create`, `profile`, `project` (exports
-  `ProjectPresenter` plus `ProjectListPresenter`),
-  `project-detail`, `company`, `user`, plus
-  `index` (barrel), `ordered-keys` (helper), and
-  `flow-designer-view` (helper for the flow
-  designer page, exporting `build*` functions).
+  `idea-create`, `profile` (exports `ProfilePresenter`
+  + `ProfileEditPresenter`), `project` (exports
+  `ProjectPresenter` + `ProjectListPresenter`),
+  `project-detail` (exports
+  `ProjectDetailPresenter` + `ProjectDetailEditPresenter`),
+  `company` (exports `CompanyPresenter` +
+  `CompanyEditPresenter`), `user`, `working-styles`,
+  `workbox-inbox`, plus `index` (barrel),
+  `ordered-keys` (helper), and `flow-designer-view`
+  (helper for the flow designer page, exporting
+  `build*` functions).
 
 ### Import Conventions
 
@@ -182,7 +200,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 ### Adapter Conventions
 
-- **User-name resolution**: `userName(userMap, userId)` returns `''` only when `userId` itself is absent (legitimately unassigned). When `userId` is present but the user is not in the map, the function **throws** — a dangling reference is a data-integrity bug, not a formatting case. UI renders `'\u2014'` (em dash) for the legitimate-absence empty string. Never use magical fallback strings like `'Unknown'`.
+- **User-name resolution**: `userName(userMap, userId: Id)` throws on both missing and unknown userId. Parameter type is `Id`, not `Id | undefined` — a missing required reference is a bug, not a presentation case. Optional user references (a project with no lead yet, a work order with no transitions) must be modeled at the call site by branching on the upstream absence (`leadRow ? userName(...) : ''`), not by overloading `userName` with two policies. UI renders `'\u2014'` (em dash) via `DISPLAY_ABSENT` for legitimately absent values that the type system admits. Never use magical fallback strings like `'Unknown'`.
 - **Absent values**: Use `null` for semantically absent values in adapter return types (e.g., `confidence: ConfidenceLevel | null`). Persisted noun entities never use `null`.
 - **No adapter caching**: Each adapter function fetches its own data directly via `getUserMap()`. No `cachedUserMap` or `prefetched*` parameters — simplicity over micro-optimization of localStorage reads.
 - **Shared helpers**: `adapters/shared.ts` exports cross-module utilities (`getUserMap`, `userName`, `getCurrentUser`, `AuthContext`).
@@ -369,7 +387,7 @@ web-app/
   auth/                     # Login/signup (standalone)
   not-found/                # 404 page (standalone)
 
-SCHEMA.md                     # Database schema (18 tables, columns, types, defaults)
+SCHEMA.md                     # Database schema (19 tables, columns, types, defaults)
 DESIGN-SYSTEM.md              # Design system specification
 TEST-PLAN.md                  # Human-executable test plan (254 cases)
 ```
