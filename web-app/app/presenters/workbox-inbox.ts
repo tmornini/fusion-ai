@@ -2,6 +2,7 @@ import {
     html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import { iconGripVertical } from '../icons';
+import { DISPLAY_ABSENT } from '../core';
 import type {
     WorkOrderInboxRow,
 } from '../adapters';
@@ -63,7 +64,7 @@ export class WorkboxInboxPresenter {
             }</span>`;
         const name =
             item.lastTransitionerName();
-        const from = name ? name : '—';
+        const from = name ? name : DISPLAY_ABSENT;
         const grip = this.#showGrip
             ? html`<div class="${
                 'hidden-mobile text-muted'

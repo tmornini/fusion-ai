@@ -16,6 +16,7 @@ import {
 import {
     initials, formatDate,
     toDateInputValue,
+    DISPLAY_ABSENT,
 } from '../core';
 import type {
     ProjectView,
@@ -524,7 +525,7 @@ function buildMetricCell(
                             ? m.prefix
                                 + m.current
                                 + m.unit
-                            : '—'
+                            : DISPLAY_ABSENT
                     }</span>
                 </div>
                 <div class="${
@@ -565,7 +566,7 @@ function buildReadonlyBaselineCell(
     }">${
         m.baseline
             ? m.prefix + m.baseline + m.unit
-            : '—'
+            : DISPLAY_ABSENT
     }</span>`;
 }
 

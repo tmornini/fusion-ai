@@ -4,6 +4,8 @@ import {
     formatCompactCurrency,
 } from './adapters';
 
+const DISPLAY_ABSENT = '—';
+
 function initials(name: string): string {
     if (!name) return '';
     return name
@@ -25,7 +27,7 @@ function getTimeOfDay(): string {
 
 function formatDate(iso: string): string {
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return '—';
+    if (isNaN(d.getTime())) return DISPLAY_ABSENT;
     return d.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -38,7 +40,7 @@ function formatDateTime(
     iso: string,
 ): string {
     const d = new Date(iso);
-    if (isNaN(d.getTime())) return '\u2014';
+    if (isNaN(d.getTime())) return DISPLAY_ABSENT;
     return d.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -54,8 +56,6 @@ function toDateInputValue(
     if (!iso) return '';
     return iso.slice(0, 10);
 }
-
-const DISPLAY_ABSENT = '\u2014';
 
 function displayText(
     value: string,
