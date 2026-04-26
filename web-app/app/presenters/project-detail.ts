@@ -76,9 +76,10 @@ export function projectDraftFromView(
 }
 
 export function projectPatchFromDraft(
+    view: ProjectView,
     draft: ProjectDraftFields,
-    fallbackStatus: string,
 ): ProjectEntityPatch {
+    const fallbackStatus = view.statusValue();
     const status = isProjectStatus(draft.status)
         ? draft.status
         : (isProjectStatus(fallbackStatus)

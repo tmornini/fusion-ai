@@ -378,8 +378,8 @@ async function handleSave(): Promise<void> {
     }
     const projectId = state.view.idForLink();
     const patch = projectPatchFromDraft(
+        state.view,
         state.draft,
-        state.view.statusValue(),
     );
     try {
         await putProjectPatch(
