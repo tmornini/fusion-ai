@@ -12,7 +12,7 @@ import {
     getIdeas,
     getIdeaEntity,
     putIdea,
-    ideaChanged,
+    subscribeToIdeaChanges,
     isIdeaStatus,
 } from '../app/adapters';
 import {
@@ -92,7 +92,7 @@ export async function init(): Promise<void> {
         { signal },
     );
 
-    ideaChanged.subscribe(async () => {
+    subscribeToIdeaChanges(async () => {
         if (!presenter || !listEl) return;
         const updated = await getIdeas();
         presenter.update(updated);

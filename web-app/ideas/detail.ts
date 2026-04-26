@@ -24,7 +24,7 @@ import {
     getIdeaEntity,
     postActivity,
     putIdea,
-    ideaChanged,
+    subscribeToIdeaChanges,
     type Idea,
 } from '../app/adapters';
 
@@ -184,7 +184,7 @@ export async function init(
     buildPresenter().renderShell(container);
     bindStableListeners(container);
 
-    ideaChanged.subscribe(async () => {
+    subscribeToIdeaChanges(async () => {
         if (!pageContainer || !state) return;
         const fresh = await getIdea(ideaId);
         state = { kind: 'reading', idea: fresh };

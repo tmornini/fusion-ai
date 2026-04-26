@@ -18,8 +18,14 @@ import {
     createChannel,
 } from '../channels';
 
-export const projectChanged =
+const projectChangedChannel =
     createChannel<void>();
+
+export function subscribeToProjectChanges(
+    fn: () => void,
+): () => void {
+    return projectChangedChannel.subscribe(fn);
+}
 
 export {
     Project,
@@ -231,7 +237,7 @@ export async function putProject(
     entity: Omit<ProjectEntity, 'id'>,
 ): Promise<void> {
     await PUT(`projects/${id}`, entity);
-    projectChanged.send();
+    projectChangedChannel.send();
 }
 
 export async function putProjectPatch(

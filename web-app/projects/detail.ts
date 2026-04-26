@@ -18,7 +18,7 @@ import {
     putProjectPatch,
     getFlowsByProject,
     postFlowCreation,
-    projectChanged,
+    subscribeToProjectChanges,
     type ProjectView,
 } from '../app/adapters';
 import type {
@@ -148,7 +148,7 @@ export async function init(
     buildPresenter().renderShell(container);
     bindStableListeners(container);
 
-    projectChanged.subscribe(async () => {
+    subscribeToProjectChanges(async () => {
         if (!state || !pageContainer) {
             return;
         }

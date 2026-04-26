@@ -15,8 +15,14 @@ import {
     createChannel,
 } from '../channels';
 
-export const ideaChanged =
+const ideaChangedChannel =
     createChannel<void>();
+
+export function subscribeToIdeaChanges(
+    fn: () => void,
+): () => void {
+    return ideaChangedChannel.subscribe(fn);
+}
 
 export {
     Idea,
@@ -106,7 +112,7 @@ export async function putIdea(
     entity: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     await PUT(`ideas/${id}`, entity);
-    ideaChanged.send();
+    ideaChangedChannel.send();
 }
 
 export async function putIdeaSubmission(
