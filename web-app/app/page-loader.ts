@@ -2,7 +2,7 @@ import { log } from './logger';
 import { mutateHtml } from './safe-html';
 import {
     buildErrorState,
-    errorMessage,
+    formatErrorMessage,
 } from './loading-states';
 import {
     navigateTo,
@@ -116,7 +116,7 @@ export function handlePageLoadError(
         mutateHtml(
             container,
             buildErrorState(
-                errorMessage(
+                formatErrorMessage(
                     err,
                     'This page'
                     + ' failed to'

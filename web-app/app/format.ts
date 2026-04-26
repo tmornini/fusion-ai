@@ -26,9 +26,9 @@ function getTimeOfDay(): string {
 }
 
 function formatDate(iso: string): string {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return DISPLAY_ABSENT;
-    return d.toLocaleDateString('en-US', {
+    const parsedDate = new Date(iso);
+    if (isNaN(parsedDate.getTime())) return DISPLAY_ABSENT;
+    return parsedDate.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -39,9 +39,9 @@ function formatDate(iso: string): string {
 function formatDateTime(
     iso: string,
 ): string {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return DISPLAY_ABSENT;
-    return d.toLocaleString('en-US', {
+    const parsedDate = new Date(iso);
+    if (isNaN(parsedDate.getTime())) return DISPLAY_ABSENT;
+    return parsedDate.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',

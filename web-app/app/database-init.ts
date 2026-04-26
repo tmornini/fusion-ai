@@ -3,7 +3,7 @@ import {
     html, mutateHtml,
 } from './safe-html';
 import {
-    errorMessage,
+    formatErrorMessage,
 } from './loading-states';
 
 export async function initDatabase(
@@ -51,7 +51,7 @@ export function handleDatabaseError(
             border-radius:0.5rem;
             overflow:auto;
             white-space:pre-wrap"
->${errorMessage(
+>${formatErrorMessage(
     err, 'Unknown database error',
 )}</pre>
       <p>Try clearing site data

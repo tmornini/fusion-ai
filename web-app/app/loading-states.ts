@@ -191,7 +191,7 @@ export function buildEmptyState(
     </div>`;
 }
 
-export function errorMessage(
+export function formatErrorMessage(
     error: unknown,
     noMatchMessage: string,
 ): string {
@@ -264,7 +264,7 @@ export async function withLoadingState<T>(
         mutateHtml(
             container,
             buildErrorState(
-                errorMessage(
+                formatErrorMessage(
                     e,
                     'An unexpected'
                     + ' error'

@@ -75,7 +75,7 @@ export async function init(): Promise<void> {
         );
     }
 
-    bindFilters();
+    initUserListFilters();
     bindInviteDialog();
 }
 
@@ -417,7 +417,7 @@ function buildInviteDialog(
         </div>`;
 }
 
-function bindFilters(): void {
+function initUserListFilters(): void {
     $input('#user-search', document)
         ?.addEventListener(
             'input', onSearchInput,
