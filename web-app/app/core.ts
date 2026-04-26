@@ -1,4 +1,7 @@
-import { applyTheme } from './state';
+import {
+    applyTheme,
+    initListeners,
+} from './state';
 import {
     getPageName,
 } from './navigation';
@@ -39,6 +42,7 @@ export { initDropdown } from './theme-toggle';
 document.addEventListener(
     'DOMContentLoaded',
     async () => {
+        initListeners();
         applyTheme();
 
         let hasSchema: boolean;

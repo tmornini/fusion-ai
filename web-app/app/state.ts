@@ -204,8 +204,6 @@ function initListeners(): void {
     );
 }
 
-initListeners();
-
 export type { AppState };
 export {
     STORAGE_KEY_THEME,
@@ -217,4 +215,5 @@ export {
     setTheme,
     setSidebarCollapsed,
     isValidTheme,
+    initListeners,
 };
