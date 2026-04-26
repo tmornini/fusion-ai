@@ -60,7 +60,18 @@ import {
 import type {
     InteractionState,
 } from '../flow-interactions';
-import { FlowHistory } from '../flow-history';
+import {
+    buildFlowHistorySnapshot,
+    canUndo as historyCanUndo,
+    canRedo as historyCanRedo,
+    noteMutation as historyNoteMutation,
+    setHasUndoHistory,
+    pushRedo,
+    popRedo,
+} from '../flow-history';
+import type {
+    FlowHistorySnapshot,
+} from '../flow-history';
 import { iconArrowLeft } from '../icons';
 import {
     buildToolbar,
@@ -143,7 +154,7 @@ export class FlowDesignerPresenter {
     #canvasW: number;
     #canvasH: number;
     #needsFit: boolean;
-    #history: FlowHistory;
+    #history: FlowHistorySnapshot;
 
     constructor(
         graph: FlowGraph,
@@ -154,7 +165,7 @@ export class FlowDesignerPresenter {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
         this.#needsFit = true;
-        this.#history = new FlowHistory(
+        this.#history = buildFlowHistorySnapshot(
             hasUndoHistory,
         );
         const interaction =
@@ -184,7 +195,9 @@ export class FlowDesignerPresenter {
     }
 
     #noteMutation(): void {
-        this.#history.noteMutation();
+        this.#history = historyNoteMutation(
+            this.#history,
+        );
     }
 
     async #reloadGraphFromStore(
@@ -333,11 +346,11 @@ export class FlowDesignerPresenter {
     }
 
     canUndo(): boolean {
-        return this.#history.canUndo();
+        return historyCanUndo(this.#history);
     }
 
     canRedo(): boolean {
-        return this.#history.canRedo();
+        return historyCanRedo(this.#history);
     }
 
     async performUndo(): Promise<boolean> {
@@ -347,11 +360,12 @@ export class FlowDesignerPresenter {
         );
         const version = versions[0];
         if (!version) {
-            this.#history
-                .setHasUndoHistory(false);
+            this.#history = setHasUndoHistory(
+                this.#history, false,
+            );
             return false;
         }
-        this.#history.pushRedo({
+        this.#history = pushRedo(this.#history, {
             id: crypto.randomUUID(),
             flowId: this.#state.flowId,
             name: this.#state.flowName,
@@ -376,7 +390,8 @@ export class FlowDesignerPresenter {
         const remaining = await getFlowVersions(
             this.#state.flowId,
         );
-        this.#history.setHasUndoHistory(
+        this.#history = setHasUndoHistory(
+            this.#history,
             remaining.length > 0,
         );
         this.reconcileLayout();
@@ -385,15 +400,18 @@ export class FlowDesignerPresenter {
 
     async performRedo(): Promise<boolean> {
         if (this.#guardLocked()) return false;
-        const snapshot =
-            this.#history.popRedo();
-        if (!snapshot) return false;
+        const popped = popRedo(this.#history);
+        this.#history = popped.snapshot;
+        if (!popped.version) return false;
         await postFlowVersion(
             this.#state.flowId,
         );
-        this.#history
-            .setHasUndoHistory(true);
-        await putFlowFromVersion(snapshot);
+        this.#history = setHasUndoHistory(
+            this.#history, true,
+        );
+        await putFlowFromVersion(
+            popped.version,
+        );
         await this.#refreshState();
         this.reconcileLayout();
         return true;
