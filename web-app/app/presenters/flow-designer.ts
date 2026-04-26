@@ -495,6 +495,16 @@ export class FlowDesignerPresenter {
         return this.#state.interaction;
     }
 
+    isPanelOpen(): boolean {
+        return this.#state.interaction
+            .isPanelOpen;
+    }
+
+    closePanel(): void {
+        this.#state.interaction
+            .isPanelOpen = false;
+    }
+
     getNodePosition(id: string): {
         x: number;
         y: number;

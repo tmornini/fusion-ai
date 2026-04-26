@@ -497,9 +497,7 @@ function bindPanelActions(
                 'data-action',
             );
             if (action === 'close-panel') {
-                presenter
-                    .interactionState()
-                    .isPanelOpen = false;
+                presenter.closePanel();
                 update(
                     container, presenter,
                 );
@@ -791,14 +789,10 @@ function bindKeyboardShortcuts(
         (e: KeyboardEvent) => {
             if (
                 e.key === 'Escape'
-                && presenter
-                    .interactionState()
-                    .isPanelOpen
+                && presenter.isPanelOpen()
             ) {
                 e.preventDefault();
-                presenter
-                    .interactionState()
-                    .isPanelOpen = false;
+                presenter.closePanel();
                 update(
                     container, presenter,
                 );
