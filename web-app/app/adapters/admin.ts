@@ -19,10 +19,12 @@ import {
     getUserMap,
     userName,
 } from './shared';
+import type { FetchContext } from './shared';
 
 const RECENT_ACTIVITY_COUNT = 3;
 
 export async function getOrganization(
+    ctx?: FetchContext,
 ): Promise<Organization> {
     const [
         entity, company,
@@ -34,7 +36,7 @@ export async function getOrganization(
         GET<ActivityEntity[]>(
             'activities',
         ),
-        getUserMap(),
+        getUserMap(ctx),
         GET<ActivityActorEntity[]>(
             'activity-actors',
         ),
@@ -179,6 +181,7 @@ export async function putCompany(
 export { Activity } from '../../../api/types';
 
 export async function getActivityFeed(
+    ctx?: FetchContext,
 ): Promise<Activity[]> {
     const [
         activities, userMap,
@@ -187,7 +190,7 @@ export async function getActivityFeed(
         GET<ActivityEntity[]>(
             'activities',
         ),
-        getUserMap(),
+        getUserMap(ctx),
         GET<ActivityActorEntity[]>(
             'activity-actors',
         ),

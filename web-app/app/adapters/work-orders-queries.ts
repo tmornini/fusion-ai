@@ -21,6 +21,7 @@ import {
     getUserMap,
     userName,
 } from './shared';
+import type { FetchContext } from './shared';
 
 /* ── Types ───────────────── */
 
@@ -247,6 +248,7 @@ export function isExpiredClaim(
 /* ── Reads ───────────────── */
 
 export async function getAllWorkOrders(
+    ctx?: FetchContext,
 ): Promise<WorkOrderInboxRow[]> {
     const [
         workOrders, transitions,
@@ -261,7 +263,7 @@ export async function getAllWorkOrders(
         GET<WorkOrderClaimEntity[]>(
             'work-order-claims',
         ),
-        getUserMap(),
+        getUserMap(ctx),
     ]);
 
     const transitionsByWo = Map.groupBy(
@@ -378,6 +380,7 @@ export async function getWorkOrder(
 export async function getWorkOrderDetail(
     workOrderId: string,
     currentUserId: string,
+    ctx?: FetchContext,
 ): Promise<WorkOrderDetail> {
     const [
         wo, transitions,
@@ -392,7 +395,7 @@ export async function getWorkOrderDetail(
         GET<WorkOrderClaimEntity[]>(
             'work-order-claims',
         ),
-        getUserMap(),
+        getUserMap(ctx),
     ]);
 
     const fg = validateWorkOrderFlowGraph(

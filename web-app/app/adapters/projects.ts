@@ -14,6 +14,7 @@ import {
     getUserMap,
     userName,
 } from './shared';
+import type { FetchContext } from './shared';
 import {
     createChannel,
 } from '../channels';
@@ -188,6 +189,7 @@ export class ProjectView {
 
 export async function getProject(
     projectId: string,
+    ctx?: FetchContext,
 ): Promise<ProjectView> {
     const [
         entity, teamRows, userMap,
@@ -198,7 +200,7 @@ export async function getProject(
         GET<TeamMemberRow[]>(
             `projects/${projectId}/team`,
         ),
-        getUserMap(),
+        getUserMap(ctx),
     ]);
 
     const project = new Project(entity);

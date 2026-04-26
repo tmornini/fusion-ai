@@ -22,6 +22,7 @@ import {
     putProject,
     putProjectTeamMember,
     jsonObjectField,
+    createFetchContext,
 } from '../app/adapters';
 import {
     IdeaConversionPresenter,
@@ -60,12 +61,11 @@ export async function init(
     let presenter:
         IdeaConversionPresenter;
     try {
+        const ctx = createFetchContext();
         const [idea, users] =
             await Promise.all([
-                getIdea(
-                    ideaId,
-                ),
-                getManagedUsers(),
+                getIdea(ideaId, ctx),
+                getManagedUsers(ctx),
             ]);
         fields =
             initialConversionFields(idea);

@@ -20,6 +20,7 @@ import {
     getIdeas,
     getProjects,
     getTeamMembers,
+    createFetchContext,
 } from './adapters';
 import {
     PAGE_REGISTRY,
@@ -167,11 +168,12 @@ export function initCommandPalette(
             }),
         );
 
+        const ctx = createFetchContext();
         const [ideas, projects, members] =
             await Promise.all([
-                getIdeas(),
+                getIdeas(ctx),
                 getProjects(),
-                getTeamMembers(),
+                getTeamMembers(ctx),
             ]);
 
         const ideaItems:

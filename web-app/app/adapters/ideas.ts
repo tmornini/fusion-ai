@@ -11,6 +11,7 @@ import {
     getUserMap,
     userName,
 } from './shared';
+import type { FetchContext } from './shared';
 import {
     createChannel,
 } from '../channels';
@@ -33,12 +34,13 @@ export {
 } from '../../../api/types';
 
 export async function getIdeas(
+    ctx?: FetchContext,
 ): Promise<Idea[]> {
     const [
         ideas, userMap, submissions,
     ] = await Promise.all([
         GET<IdeaEntity[]>('ideas'),
-        getUserMap(),
+        getUserMap(ctx),
         GET<IdeaSubmissionEntity[]>(
             'idea-submissions',
         ),
@@ -70,6 +72,7 @@ export async function getIdeas(
 
 export async function getIdea(
     ideaId: string,
+    ctx?: FetchContext,
 ): Promise<Idea> {
     const [
         idea, userMap, submissions,
@@ -77,7 +80,7 @@ export async function getIdea(
         GET<IdeaEntity>(
             `ideas/${ideaId}`,
         ),
-        getUserMap(),
+        getUserMap(ctx),
         GET<IdeaSubmissionEntity[]>(
             'idea-submissions',
         ),
