@@ -6,10 +6,16 @@ import type {
 import {
     computeLayout,
     edgeWaypointKey,
+    NODE_WIDTH,
+    NODE_HEIGHT,
 } from './flow-layout';
 import {
     computeEdgeLabelWidth,
 } from './flow-graph';
+import type {
+    ViewBox,
+    DragMode,
+} from './flow-interactions';
 
 export type Waypoint = {
     readonly x: number;
@@ -36,6 +42,31 @@ export function applyMoveNodes(
             ...n,
             positionX: u.x,
             positionY: u.y,
+        };
+    });
+}
+
+export function applyDragPreview(
+    nodes: readonly GraphNode[],
+    drag: DragMode,
+): GraphNode[] {
+    if (drag.kind !== 'dragging') {
+        return [...nodes];
+    }
+    const dx =
+        drag.currentPointerX
+        - drag.startPointerX;
+    const dy =
+        drag.currentPointerY
+        - drag.startPointerY;
+    return nodes.map(n => {
+        const init =
+            drag.initialPositions.get(n.id);
+        if (!init) return n;
+        return {
+            ...n,
+            positionX: init.x + dx,
+            positionY: init.y + dy,
         };
     });
 }
@@ -272,4 +303,135 @@ export function applyAutoLayout(
         nodes: newNodes,
         edgeWaypoints,
     };
+}
+
+export interface ViewBoxOrigin {
+    readonly x: number;
+    readonly y: number;
+}
+
+export function applyPanToRevealSelected(
+    nodeId: string | null,
+    edgeId: string | null,
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+    viewBox: ViewBox,
+    canvasW: number,
+    panelWidthPx: number,
+): ViewBoxOrigin | null {
+    const center = selectionCenter(
+        nodeId, edgeId, nodes, edges,
+    );
+    if (!center) return null;
+    const panelW_svg =
+        panelWidthPx * viewBox.w / canvasW;
+    return {
+        x: center.x
+            - (viewBox.w + panelW_svg) / 2,
+        y: center.y - viewBox.h / 2,
+    };
+}
+
+function selectionCenter(
+    nodeId: string | null,
+    edgeId: string | null,
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+): { x: number; y: number } | null {
+    if (nodeId) {
+        const n = nodes.find(
+            nd => nd.id === nodeId,
+        );
+        if (!n) return null;
+        return {
+            x: n.positionX + NODE_WIDTH / 2,
+            y: n.positionY + NODE_HEIGHT / 2,
+        };
+    }
+    if (edgeId) {
+        const e = edges.find(
+            ed => ed.id === edgeId,
+        );
+        if (!e) return null;
+        const fn = nodes.find(
+            nd => nd.id === e.fromNodeId,
+        );
+        const tn = nodes.find(
+            nd => nd.id === e.toNodeId,
+        );
+        if (!fn || !tn) return null;
+        const fx = fn.positionX
+            + NODE_WIDTH / 2;
+        const fy = fn.positionY
+            + NODE_HEIGHT / 2;
+        const tx = tn.positionX
+            + NODE_WIDTH / 2;
+        const ty = tn.positionY
+            + NODE_HEIGHT / 2;
+        return {
+            x: (fx + tx) / 2,
+            y: (fy + ty) / 2,
+        };
+    }
+    return null;
+}
+
+export type SavedViewBox =
+    | { kind: 'none' }
+    | {
+        kind: 'saved';
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+    };
+
+export interface PanelTransitionResult {
+    readonly savedViewBox: SavedViewBox;
+    readonly viewBox: ViewBox;
+    readonly shouldPanToReveal: boolean;
+}
+
+export function applyPanelTransition(
+    isAutoFit: boolean,
+    isPanelOpen: boolean,
+    savedViewBox: SavedViewBox,
+    viewBox: ViewBox,
+): PanelTransitionResult | null {
+    if (isAutoFit) return null;
+    const wasOpen =
+        savedViewBox.kind === 'saved';
+    if (isPanelOpen && !wasOpen) {
+        return {
+            savedViewBox: {
+                kind: 'saved',
+                x: viewBox.x,
+                y: viewBox.y,
+                w: viewBox.w,
+                h: viewBox.h,
+            },
+            viewBox,
+            shouldPanToReveal: true,
+        };
+    }
+    if (!isPanelOpen && wasOpen) {
+        return {
+            savedViewBox: { kind: 'none' },
+            viewBox: {
+                x: savedViewBox.x,
+                y: savedViewBox.y,
+                w: savedViewBox.w,
+                h: savedViewBox.h,
+            },
+            shouldPanToReveal: false,
+        };
+    }
+    if (isPanelOpen && wasOpen) {
+        return {
+            savedViewBox,
+            viewBox,
+            shouldPanToReveal: true,
+        };
+    }
+    return null;
 }

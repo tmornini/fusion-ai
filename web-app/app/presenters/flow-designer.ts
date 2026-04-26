@@ -73,6 +73,7 @@ import type {
 } from '../flow-history';
 import {
     applyMoveNodes,
+    applyDragPreview,
     applyToggleLock,
     applyUpdateFlowName,
     applyAddNode,
@@ -84,9 +85,12 @@ import {
     applyAddField,
     applyDeleteField,
     applyAutoLayout,
+    applyPanToRevealSelected,
+    applyPanelTransition,
 } from '../flow-designer-actions';
 import type {
     Waypoint,
+    SavedViewBox,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -110,16 +114,6 @@ function serializeGraph(
         >,
     );
 }
-
-type SavedViewBox =
-    | { kind: 'none' }
-    | {
-        kind: 'saved';
-        x: number;
-        y: number;
-        w: number;
-        h: number;
-    };
 
 interface DesignerState {
     flowId: string;
@@ -551,112 +545,44 @@ export class FlowDesignerPresenter {
     }
 
     #panToRevealSelected(): void {
-        // Center the selection in the visible canvas
-        // region (the area not covered by the panel).
-        // The panel is anchored at the left edge of
-        // .flow-canvas-area with width PANEL_WIDTH_PX,
-        // so visible X spans [PANEL_WIDTH_PX, canvasW].
-        // Solving for vb.x such that selX lands at the
-        // visible center yields:
-        //   vb.x = selX - (vb.w + panelW_svg) / 2
         const sel =
             this.#state.interaction.selection;
-        let selX: number | undefined;
-        let selY: number | undefined;
-        const singleId = this
-            .#singleSelectedNodeId();
-        if (singleId) {
-            const n =
-                this.#state.nodes.find(
-                    nd => nd.id === singleId,
-                );
-            if (n) {
-                selX = n.positionX
-                    + NODE_WIDTH / 2;
-                selY = n.positionY
-                    + NODE_HEIGHT / 2;
-            }
-        }
-        if (sel.kind === 'edge') {
-            const e =
-                this.#state.edges.find(
-                    ed => ed.id
-                        === sel.edgeId,
-                );
-            if (e) {
-                const fn =
-                    this.#state.nodes
-                        .find(
-                            nd => nd.id
-                                === e
-                                .fromNodeId,
-                        );
-                const tn =
-                    this.#state.nodes
-                        .find(
-                            nd => nd.id
-                                === e
-                                .toNodeId,
-                        );
-                if (fn && tn) {
-                    const fx = fn.positionX
-                        + NODE_WIDTH / 2;
-                    const fy = fn.positionY
-                        + NODE_HEIGHT / 2;
-                    const tx = tn.positionX
-                        + NODE_WIDTH / 2;
-                    const ty = tn.positionY
-                        + NODE_HEIGHT / 2;
-                    selX = (fx + tx) / 2;
-                    selY = (fy + ty) / 2;
-                }
-            }
-        }
-        if (selX === undefined) return;
-        if (selY === undefined) return;
+        const edgeId =
+            sel.kind === 'edge'
+                ? sel.edgeId : null;
+        const origin = applyPanToRevealSelected(
+            this.#singleSelectedNodeId(),
+            edgeId,
+            this.#state.nodes,
+            this.#state.edges,
+            this.#state.interaction.viewBox,
+            this.#canvasW,
+            PANEL_WIDTH_PX,
+        );
+        if (!origin) return;
         const vb =
             this.#state.interaction.viewBox;
-        const panelW_svg =
-            PANEL_WIDTH_PX
-            * vb.w / this.#canvasW;
-        vb.x = selX
-            - (vb.w + panelW_svg) / 2;
-        vb.y = selY - vb.h / 2;
+        vb.x = origin.x;
+        vb.y = origin.y;
     }
 
     #handlePanelTransition(): void {
-        if (this.#state.isAutoFit) return;
-        const saved =
-            this.#state.savedViewBox;
-        const isOpen =
-            this.#state.isPanelOpen;
-        const wasOpen =
-            saved.kind === 'saved';
-        if (isOpen && !wasOpen) {
-            const vb =
-                this.#state.interaction
-                    .viewBox;
-            this.#state.savedViewBox = {
-                kind: 'saved',
-                x: vb.x,
-                y: vb.y,
-                w: vb.w,
-                h: vb.h,
-            };
-            this.#panToRevealSelected();
-        }
-        if (!isOpen && wasOpen) {
-            const vb =
-                this.#state.interaction
-                    .viewBox;
-            vb.x = saved.x;
-            vb.y = saved.y;
-            vb.w = saved.w;
-            vb.h = saved.h;
-            this.#state.savedViewBox =
-                { kind: 'none' };
-        }
-        if (isOpen && wasOpen) {
+        const result = applyPanelTransition(
+            this.#state.isAutoFit,
+            this.#state.isPanelOpen,
+            this.#state.savedViewBox,
+            this.#state.interaction.viewBox,
+        );
+        if (!result) return;
+        this.#state.savedViewBox =
+            result.savedViewBox;
+        const vb =
+            this.#state.interaction.viewBox;
+        vb.x = result.viewBox.x;
+        vb.y = result.viewBox.y;
+        vb.w = result.viewBox.w;
+        vb.h = result.viewBox.h;
+        if (result.shouldPanToReveal) {
             this.#panToRevealSelected();
         }
     }
@@ -1596,12 +1522,16 @@ Auto Fit</label>
                     y: n.positionY,
                 }),
             );
-        zoomToFitState(
-            this.#state.interaction,
+        const result = zoomToFitState(
             positions,
             this.#canvasW,
             this.#canvasH,
         );
+        if (!result) return;
+        this.#state.interaction.zoom =
+            result.zoom;
+        this.#state.interaction.viewBox =
+            { ...result.viewBox };
     }
 
     #canDelete(): boolean {
@@ -1880,28 +1810,10 @@ Auto Fit</label>
     }
 
     #nodesForRender(): GraphNode[] {
-        const drag =
-            this.#state.interaction.drag;
-        if (drag.kind !== 'dragging') {
-            return this.#state.nodes;
-        }
-        const dx =
-            drag.currentPointerX
-            - drag.startPointerX;
-        const dy =
-            drag.currentPointerY
-            - drag.startPointerY;
-        return this.#state.nodes.map(n => {
-            const init =
-                drag.initialPositions
-                    .get(n.id);
-            if (!init) return n;
-            return {
-                ...n,
-                positionX: init.x + dx,
-                positionY: init.y + dy,
-            };
-        });
+        return applyDragPreview(
+            this.#state.nodes,
+            this.#state.interaction.drag,
+        );
     }
 
     #buildCanvas(): SafeHtml {

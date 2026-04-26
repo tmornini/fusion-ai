@@ -995,16 +995,20 @@ function applyButtonZoom(
         cy - state.viewBox.h / 2;
 }
 
+export interface ZoomToFitResult {
+    readonly zoom: number;
+    readonly viewBox: ViewBox;
+}
+
 export function zoomToFit(
-    state: InteractionState,
-    nodePositions: {
+    nodePositions: readonly {
         x: number;
         y: number;
     }[],
     canvasW: number,
     canvasH: number,
-): void {
-    if (nodePositions.length === 0) return;
+): ZoomToFitResult | null {
+    if (nodePositions.length === 0) return null;
 
     let minX = Infinity;
     let minY = Infinity;
@@ -1043,14 +1047,19 @@ export function zoomToFit(
         vbW = contentH * containerAR;
     }
 
-    state.zoom = canvasW / vbW;
-    if (state.zoom > MAX_ZOOM) {
-        state.zoom = MAX_ZOOM;
+    let zoom = canvasW / vbW;
+    if (zoom > MAX_ZOOM) {
+        zoom = MAX_ZOOM;
         vbW = canvasW / MAX_ZOOM;
         vbH = canvasH / MAX_ZOOM;
     }
-    state.viewBox.x = cx - vbW / 2;
-    state.viewBox.y = cy - vbH / 2;
-    state.viewBox.w = vbW;
-    state.viewBox.h = vbH;
+    return {
+        zoom,
+        viewBox: {
+            x: cx - vbW / 2,
+            y: cy - vbH / 2,
+            w: vbW,
+            h: vbH,
+        },
+    };
 }
