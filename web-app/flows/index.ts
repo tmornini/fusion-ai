@@ -100,11 +100,10 @@ export async function init(
         },
     );
     if (!result) return;
-    const rendered = result.map(flow => {
-        const p = new FlowPresenter();
-        flow.presentCardInto(p);
-        return p.render();
-    });
+    const rendered = result.map(
+        flow =>
+            new FlowPresenter(flow).render(),
+    );
 
     setHtml(
         listEl,

@@ -252,42 +252,6 @@ export interface UserEntity {
     last_active: string;
 }
 
-export interface UserCardReceiver {
-    identity(
-        id: string,
-        fullName: string,
-        initials: string,
-    ): void;
-    role(text: string): void;
-    department(text: string): void;
-    email(text: string): void;
-    status(
-        label: string,
-        className: string,
-        isActive: boolean,
-        isPending: boolean,
-        isDeactivated: boolean,
-    ): void;
-    availability(value: number): void;
-    performance(
-        score: number,
-        projectsCompleted: number,
-        currentProjects: number,
-    ): void;
-    strengths(items: string[]): void;
-    teamDimensions(
-        dims: Record<string, number>,
-    ): void;
-    lastActive(isoDate: string): void;
-}
-
-export interface UserProfileReceiver {
-    populateField(
-        field: string,
-        value: string,
-    ): void;
-}
-
 export class User {
     readonly #id: string;
     readonly #firstName: string;
@@ -302,8 +266,6 @@ export class User {
     readonly #currentProjects: number;
     readonly #strengths: string;
     readonly #teamDimensions: string;
-    readonly #phone: string;
-    readonly #bio: string;
     readonly #lastActive: string;
 
     constructor(entity: UserEntity) {
@@ -329,8 +291,6 @@ export class User {
             entity.strengths;
         this.#teamDimensions =
             entity.team_dimensions;
-        this.#phone = entity.phone;
-        this.#bio = entity.bio;
         this.#lastActive =
             entity.last_active;
     }
@@ -457,76 +417,6 @@ export class User {
         );
     }
 
-    presentCardInto(
-        r: UserCardReceiver,
-    ): void {
-        const fn = this.fullName().trim();
-        if (fn.length === 0) {
-            throw new Error(
-                'Cannot compute initials'
-                + ' for empty fullName',
-            );
-        }
-        const parts = fn.split(/\s+/);
-        const ini = parts.length >= 2
-            ? parts[0]![0]!
-                + parts[parts.length - 1]![0]!
-            : fn.slice(0, 2);
-        r.identity(
-            this.#id,
-            fn,
-            ini.toUpperCase(),
-        );
-        r.role(this.#role);
-        r.department(this.#department);
-        r.email(this.#email);
-        r.status(
-            this.statusLabel(),
-            this.statusClassName(),
-            this.isActive(),
-            this.isPending(),
-            this.isDeactivated(),
-        );
-        r.availability(this.#availability);
-        r.performance(
-            this.#performanceScore,
-            this.#projectsCompleted,
-            this.#currentProjects,
-        );
-        r.strengths(
-            this.parsedStrengths(),
-        );
-        r.teamDimensions(
-            this.parsedTeamDimensions(),
-        );
-        r.lastActive(this.#lastActive);
-    }
-
-    presentProfileInto(
-        r: UserProfileReceiver,
-    ): void {
-        r.populateField(
-            'firstName', this.#firstName,
-        );
-        r.populateField(
-            'lastName', this.#lastName,
-        );
-        r.populateField(
-            'email', this.#email,
-        );
-        r.populateField(
-            'phone', this.#phone,
-        );
-        r.populateField(
-            'role', this.#role,
-        );
-        r.populateField(
-            'department', this.#department,
-        );
-        r.populateField(
-            'bio', this.#bio,
-        );
-    }
 }
 
 export interface IdeaEntity {
