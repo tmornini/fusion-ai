@@ -895,7 +895,19 @@ Auto Fit</label>
             this.#state.nodes.find(
                 n => n.id === toId,
             );
-        if (from?.isComplete) {
+        if (!from) {
+            throw new Error(
+                'addEdge: unknown fromId '
+                    + fromId,
+            );
+        }
+        if (!to) {
+            throw new Error(
+                'addEdge: unknown toId '
+                    + toId,
+            );
+        }
+        if (from.isComplete) {
             showToast(
                 'Cannot create transition'
                 + ' from end state',
@@ -903,7 +915,7 @@ Auto Fit</label>
             );
             return false;
         }
-        if (to?.isStart) {
+        if (to.isStart) {
             showToast(
                 'Cannot create transition'
                 + ' to start state',
@@ -923,7 +935,7 @@ Auto Fit</label>
             );
             return false;
         }
-        if (from?.isStart) {
+        if (from.isStart) {
             const hasOutgoing =
                 this.#state.edges.some(
                     e => e.fromNodeId
