@@ -471,6 +471,18 @@ ${posIndex === 0
         }
     }
 
+    function moveActiveIndex(
+        delta: number,
+    ): void {
+        const len =
+            state.filteredItems.length;
+        if (len === 0) return;
+        state.activeIndex =
+            (state.activeIndex + delta + len)
+            % len;
+        mutateActiveItem();
+    }
+
     function navigateToItem(
         index: number,
     ): void {
@@ -673,49 +685,14 @@ ${posIndex === 0
                     close();
                     return;
                 }
-                if (
-                    e.key === 'ArrowDown'
-                ) {
+                if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    if (
-                        state
-                            .filteredItems
-                            .length > 0
-                    ) {
-                        state
-                            .activeIndex =
-                            (state
-                                .activeIndex
-                                + 1)
-                            % state
-                                .filteredItems
-                                .length;
-                        mutateActiveItem();
-                    }
+                    moveActiveIndex(1);
                     return;
                 }
-                if (
-                    e.key === 'ArrowUp'
-                ) {
+                if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    if (
-                        state
-                            .filteredItems
-                            .length > 0
-                    ) {
-                        state
-                            .activeIndex =
-                            (state
-                                .activeIndex
-                                - 1
-                                + state
-                                    .filteredItems
-                                    .length)
-                            % state
-                                .filteredItems
-                                .length;
-                        mutateActiveItem();
-                    }
+                    moveActiveIndex(-1);
                     return;
                 }
                 if (
