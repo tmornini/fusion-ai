@@ -2,7 +2,7 @@ import {
     $, $input, $select, $textarea,
 } from '../app/dom';
 import {
-    html, setHtml,
+    html, mutateHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -60,7 +60,7 @@ export async function init(): Promise<void> {
     if (!users) return;
 
     presenter = new ManagedUsersPresenter(users);
-    setHtml(container, buildShellHtml(
+    mutateHtml(container, buildShellHtml(
         presenter.activeCount(),
         presenter.pendingCount(),
     ));

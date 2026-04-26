@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml,
+    html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import { $ } from '../dom';
 import {
@@ -108,7 +108,7 @@ export function ideaPatchFromDraft(
 function buildShell(
     container: HTMLElement,
 ): void {
-    setHtml(container, html`
+    mutateHtml(container, html`
 <div class="idea-detail-host">
     <div class="idea-detail-wrap">
         <div class="${
@@ -157,7 +157,7 @@ function setSlot(
 ): void {
     const slot = $(cls, container);
     if (!slot) return;
-    setHtml(slot, markup);
+    mutateHtml(slot, markup);
 }
 
 function updateWrapClass(
@@ -922,7 +922,7 @@ export class IdeaListPresenter {
     renderBadges(
         container: HTMLElement,
     ): void {
-        setHtml(
+        mutateHtml(
             container, this.#buildBadges(),
         );
     }
@@ -930,7 +930,7 @@ export class IdeaListPresenter {
     renderList(
         container: HTMLElement,
     ): void {
-        setHtml(container, this.#buildList());
+        mutateHtml(container, this.#buildList());
     }
 
     applyFilterToggle(

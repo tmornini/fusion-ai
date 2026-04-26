@@ -1,7 +1,7 @@
 import { $, $input } from '../app/dom';
 import {
     html,
-    setHtml,
+    mutateHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
@@ -45,7 +45,7 @@ export async function init(): Promise<void> {
     const root = $('#page-root', document);
     if (!root) return;
 
-    setHtml(root, html`
+    mutateHtml(root, html`
     <div class="${
         'min-h-screen flex bg-background'
     }">
@@ -404,7 +404,7 @@ export async function init(): Promise<void> {
         toggleMode.textContent = isLogin
             ? 'Sign up'
             : 'Sign in';
-        setHtml(
+        mutateHtml(
             submitBtn,
             html`${
                 isLogin
@@ -495,7 +495,7 @@ export async function init(): Promise<void> {
 
         if (emailErr || passErr) return;
 
-        setHtml(
+        mutateHtml(
             submitBtn,
             iconLoader(
                 20,

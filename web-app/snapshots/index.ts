@@ -14,7 +14,7 @@ import {
 import { log } from '../app/logger';
 import {
     html,
-    setHtml,
+    mutateHtml,
     SafeHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
@@ -145,7 +145,7 @@ export async function init(
         }
     }
 
-    setHtml(root, html`
+    mutateHtml(root, html`
     <div class="card snapshot-card">
         <div class="${
             'flex items-center gap-3'
@@ -445,7 +445,7 @@ async function mutateEmptyBanner(
             banner.id = BANNER_ID;
             banner.className =
                 'card empty-banner';
-            setHtml(
+            mutateHtml(
                 banner,
                 html`<span
                     class="empty-banner-icon"

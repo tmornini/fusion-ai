@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml, trusted,
+    html, mutateHtml, SafeHtml, trusted,
 } from '../safe-html';
 import { $ } from '../dom';
 import {
@@ -101,7 +101,7 @@ export function projectPatchFromDraft(
 function buildShell(
     container: HTMLElement,
 ): void {
-    setHtml(container, html`
+    mutateHtml(container, html`
 <div class="project-detail-host">
     <div class="project-detail-wrap">
         <div class="${
@@ -161,7 +161,7 @@ function setSlot(
 ): void {
     const slot = $(cls, container);
     if (!slot) return;
-    setHtml(slot, markup);
+    mutateHtml(slot, markup);
 }
 
 function buildBreadcrumb(

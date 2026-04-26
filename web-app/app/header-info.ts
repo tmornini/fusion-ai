@@ -35,12 +35,12 @@ async function getHeaderData(
 export async function mutateHeaderInfo(
 ): Promise<void> {
     const data = await getHeaderData();
-    const { html, setHtml } =
+    const { html, mutateHtml } =
         await import('./safe-html');
     const greetingEl =
         $('#header-greeting', document);
     if (greetingEl) {
-        setHtml(
+        mutateHtml(
             greetingEl,
             html`<span
 class="font-normal">Good ${
@@ -56,7 +56,7 @@ data.userName}`,
     const statsEl =
         $('#header-stats', document);
     if (statsEl) {
-        setHtml(
+        mutateHtml(
             statsEl,
             html`<span
 class="header-stat-label">${

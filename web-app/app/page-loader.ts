@@ -1,5 +1,5 @@
 import { log } from './logger';
-import { setHtml } from './safe-html';
+import { mutateHtml } from './safe-html';
 import {
     buildErrorState,
     errorMessage,
@@ -113,7 +113,7 @@ export function handlePageLoadError(
             'page-root',
         );
     if (container) {
-        setHtml(
+        mutateHtml(
             container,
             buildErrorState(
                 errorMessage(

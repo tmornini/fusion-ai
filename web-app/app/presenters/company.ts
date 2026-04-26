@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml,
+    html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import { $ } from '../dom';
 import {
@@ -16,7 +16,7 @@ export type CompanyFieldKey =
 function buildShell(
     container: HTMLElement,
 ): void {
-    setHtml(container, html`
+    mutateHtml(container, html`
 <div class="content-wrap">
     <div class="company-header-slot"></div>
     <div class="company-body-slot"></div>
@@ -31,7 +31,7 @@ function setHeader(
         '.company-header-slot', container,
     );
     if (!slot) return;
-    setHtml(slot, markup);
+    mutateHtml(slot, markup);
 }
 
 function setBody(
@@ -42,7 +42,7 @@ function setBody(
         '.company-body-slot', container,
     );
     if (!slot) return;
-    setHtml(slot, markup);
+    mutateHtml(slot, markup);
 }
 
 function buildHeader(

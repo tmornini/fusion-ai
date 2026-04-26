@@ -3,7 +3,7 @@ import {
     $textarea, createElement,
 } from '../app/dom';
 import { log } from '../app/logger';
-import { setHtml } from '../app/safe-html';
+import { mutateHtml } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import {
     buildSkeleton,
@@ -637,7 +637,7 @@ function showFieldEditor(
         '#field-editor-slot', container,
     );
     if (!slot) return;
-    setHtml(
+    mutateHtml(
         slot,
         presenter.buildFieldEditor(),
     );

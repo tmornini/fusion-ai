@@ -2,7 +2,7 @@ import { iconAlertTriangle } from './icons';
 import {
     SafeHtml,
     html,
-    setHtml,
+    mutateHtml,
     trusted,
 } from './safe-html';
 
@@ -251,7 +251,7 @@ export async function withLoadingState<T>(
     emptyState?: EmptyStateConfig,
     timeoutMs?: number,
 ): Promise<T | null> {
-    setHtml(container, skeletonHtml);
+    mutateHtml(container, skeletonHtml);
     const run = timeoutMs
         ? () => fetchWithTimeout(
             fetchFn, timeoutMs,
@@ -261,7 +261,7 @@ export async function withLoadingState<T>(
     try {
         data = await run();
     } catch (e) {
-        setHtml(
+        mutateHtml(
             container,
             buildErrorState(
                 errorMessage(
@@ -296,7 +296,7 @@ export async function withLoadingState<T>(
         && Array.isArray(data)
         && data.length === 0
     ) {
-        setHtml(
+        mutateHtml(
             container,
             buildEmptyState(
                 emptyState.icon,

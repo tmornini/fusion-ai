@@ -1,6 +1,6 @@
 import { log } from './logger';
 import {
-    html, setHtml,
+    html, mutateHtml,
 } from './safe-html';
 import {
     errorMessage,
@@ -39,7 +39,7 @@ export function handleDatabaseError(
         'core',
         err,
     );
-    setHtml(document.body, html`<div
+    mutateHtml(document.body, html`<div
         style="padding:2rem;
             font-family:sans-serif;
             max-width:40rem">

@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml,
+    html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import { iconGripVertical } from '../icons';
 import type {
@@ -42,7 +42,7 @@ export class WorkboxInboxPresenter {
     renderList(
         container: HTMLElement,
     ): void {
-        setHtml(container, html`${
+        mutateHtml(container, html`${
             this.#items.map(
                 i => this.#buildRow(i),
             )

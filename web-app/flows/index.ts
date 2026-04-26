@@ -3,7 +3,7 @@ import {
 } from '../app/dom';
 import {
     html,
-    setHtml,
+    mutateHtml,
 } from '../app/safe-html';
 import {
     buildSkeleton,
@@ -105,7 +105,7 @@ export async function init(
             new FlowPresenter(flow).render(),
     );
 
-    setHtml(
+    mutateHtml(
         listEl,
         html`${rendered}`,
     );

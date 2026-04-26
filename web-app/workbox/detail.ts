@@ -2,7 +2,7 @@ import {
     $, $required, attr,
 } from '../app/dom';
 import {
-    html, setHtml, trusted,
+    html, mutateHtml, trusted,
 } from '../app/safe-html';
 import type { SafeHtml } from '../app/safe-html';
 import { log } from '../app/logger';
@@ -526,7 +526,7 @@ export async function init(
     );
     if (!detail) return;
 
-    setHtml(
+    mutateHtml(
         container,
         buildDetailView(detail),
     );

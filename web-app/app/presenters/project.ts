@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml,
+    html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import {
     iconClock,
@@ -318,7 +318,7 @@ export class ProjectListPresenter {
     renderBadges(
         container: HTMLElement,
     ): void {
-        setHtml(
+        mutateHtml(
             container, this.#buildBadges(),
         );
     }
@@ -326,7 +326,7 @@ export class ProjectListPresenter {
     renderList(
         container: HTMLElement,
     ): void {
-        setHtml(container, this.#buildList());
+        mutateHtml(container, this.#buildList());
     }
 
     applyFilterToggle(

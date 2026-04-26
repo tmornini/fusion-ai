@@ -2,7 +2,7 @@ import {
     $, bindEnterToClick,
 } from '../app/dom';
 import {
-    html, setHtml,
+    html, mutateHtml,
 } from '../app/safe-html';
 import { showToast } from '../app/toast';
 import { log } from '../app/logger';
@@ -51,7 +51,7 @@ export async function init(
         '#convert-content', document,
     );
     if (!root) return;
-    setHtml(
+    mutateHtml(
         root,
         buildSkeleton('detail', 4),
     );
@@ -82,7 +82,7 @@ export async function init(
             'ideas',
             err,
         );
-        setHtml(
+        mutateHtml(
             root,
             buildErrorState(
                 'Failed to load idea'
@@ -131,7 +131,7 @@ export async function init(
             document,
         );
         if (!container) return;
-        setHtml(
+        mutateHtml(
             container,
             presenter.render(),
         );
@@ -348,7 +348,7 @@ export async function init(
                     document,
                 );
                 if (!btn) return;
-                setHtml(
+                mutateHtml(
                     btn,
                     html`${
                         iconLoader(16, '')
@@ -383,7 +383,7 @@ export async function init(
                         + ' try again.',
                         'error',
                     );
-                    setHtml(
+                    mutateHtml(
                         btn,
                         html`${'Create'
                             + ' Project'}

@@ -4,7 +4,7 @@ import {
     setTheme,
 } from './state';
 import { $, $$ } from './dom';
-import { setHtml } from './safe-html';
+import { mutateHtml } from './safe-html';
 import { showToast } from './toast';
 import { log } from './logger';
 import {
@@ -31,7 +31,7 @@ export function mutateThemeToggleIcon(
         const button =
             $(`#${id}`, document);
         if (button) {
-            setHtml(button, themeIcon);
+            mutateHtml(button, themeIcon);
             button.setAttribute(
                 'aria-label',
                 themeLabel,

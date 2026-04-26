@@ -3,7 +3,7 @@ import {
 } from './dom';
 import {
     html,
-    setHtml,
+    mutateHtml,
     SafeHtml,
     trusted,
     escapeForHtml,
@@ -325,7 +325,7 @@ export function initCommandPalette(
             state.filteredItems.length
             === 0
         ) {
-            setHtml(
+            mutateHtml(
                 state.list,
                 html`<div
 class="command-palette-empty"
@@ -416,7 +416,7 @@ ${posIndex === 0
             }
         }
 
-        setHtml(
+        mutateHtml(
             state.list,
             html`${markup}`,
         );
@@ -547,7 +547,7 @@ ${posIndex === 0
             'Search',
         );
 
-        setHtml(state.dialog, html`
+        mutateHtml(state.dialog, html`
     <div class="${
         'command-palette-input-wrapper'
     }">

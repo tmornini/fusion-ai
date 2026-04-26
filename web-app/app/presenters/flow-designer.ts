@@ -1,5 +1,5 @@
 import {
-    html, setHtml, trusted,
+    html, mutateHtml, trusted,
 } from '../safe-html';
 import type { SafeHtml } from '../safe-html';
 import { $ } from '../dom';
@@ -727,7 +727,7 @@ Auto Fit</label>
 </div>
 </div>
 </div>`;
-        setHtml(container, shell);
+        mutateHtml(container, shell);
         this.renderUpdate(container);
     }
 
@@ -783,7 +783,7 @@ Auto Fit</label>
                 this.#state.flowName,
                 this.#state.isEditingName,
             );
-        setHtml(slot, html`${nameHtml}
+        mutateHtml(slot, html`${nameHtml}
 <p class="text-sm text-muted"
     >${this.#state.flowDescription}</p>`);
     }
@@ -796,7 +796,7 @@ Auto Fit</label>
             container,
         );
         if (!slot) return;
-        setHtml(slot, this.#buildToolbar());
+        mutateHtml(slot, this.#buildToolbar());
     }
 
     #updatePanel(
@@ -807,7 +807,7 @@ Auto Fit</label>
             container,
         );
         if (!slot) return;
-        setHtml(slot, this.#buildPropsPanel());
+        mutateHtml(slot, this.#buildPropsPanel());
     }
 
     #updateCanvas(
@@ -818,7 +818,7 @@ Auto Fit</label>
             container,
         );
         if (!slot) return;
-        setHtml(slot, this.#buildCanvas());
+        mutateHtml(slot, this.#buildCanvas());
     }
 
     moveNodes(

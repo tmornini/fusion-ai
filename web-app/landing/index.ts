@@ -1,7 +1,7 @@
 import { $ } from '../app/dom';
 import {
     html,
-    setHtml,
+    mutateHtml,
     type SafeHtml,
 } from '../app/safe-html';
 import {
@@ -568,7 +568,7 @@ export async function init(): Promise<void> {
     const root = $('#page-root', document);
     if (!root) return;
 
-    setHtml(root, html`
+    mutateHtml(root, html`
     <div class="${
         'min-h-screen bg-background'
     }">
@@ -597,7 +597,7 @@ export async function init(): Promise<void> {
                     'hidden',
                     !isHidden,
                 );
-                setHtml(
+                mutateHtml(
                     toggle,
                     isHidden
                         ? iconX(24, '')

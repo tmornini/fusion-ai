@@ -1,5 +1,5 @@
 import {
-    html, setHtml, SafeHtml,
+    html, mutateHtml, SafeHtml,
 } from '../safe-html';
 import { $ } from '../dom';
 import {
@@ -34,7 +34,7 @@ export type ProfileFieldKey =
 function buildShell(
     container: HTMLElement,
 ): void {
-    setHtml(container, html`
+    mutateHtml(container, html`
 <div class="idea-detail-wrap">
     <div class="profile-header-slot"></div>
     <div class="profile-info-slot"></div>
@@ -50,7 +50,7 @@ function setSlot(
 ): void {
     const slot = $(cls, container);
     if (!slot) return;
-    setHtml(slot, markup);
+    mutateHtml(slot, markup);
 }
 
 function buildHeader(

@@ -5,7 +5,7 @@ import { showToast } from '../app/toast';
 import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states';
-import { setHtml } from '../app/safe-html';
+import { mutateHtml } from '../app/safe-html';
 import { log } from '../app/logger';
 import {
     navigateTo,
@@ -105,7 +105,7 @@ export async function init(
     );
     if (!container) return;
     pageContainer = container;
-    setHtml(
+    mutateHtml(
         container, buildSkeleton('detail', 4),
     );
 
@@ -121,7 +121,7 @@ export async function init(
             'getProject failed',
             'projects', err,
         );
-        setHtml(
+        mutateHtml(
             container,
             buildErrorState(
                 'Failed to load project'
