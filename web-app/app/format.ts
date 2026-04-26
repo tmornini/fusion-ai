@@ -13,10 +13,13 @@ function initials(name: string): string {
         .join('');
 }
 
+const NOON_HOUR = 12;
+const EVENING_HOUR = 18;
+
 function getTimeOfDay(): string {
     const hour = new Date().getHours();
-    if (hour < 12) return 'morning';
-    if (hour < 18) return 'afternoon';
+    if (hour < NOON_HOUR) return 'morning';
+    if (hour < EVENING_HOUR) return 'afternoon';
     return 'evening';
 }
 
