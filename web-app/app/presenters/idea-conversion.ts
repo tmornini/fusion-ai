@@ -20,7 +20,7 @@ import {
     User,
 } from '../adapters';
 
-type ConversionField =
+export type ConversionField =
     | 'project-name'
     | 'project-lead'
     | 'start-date'
@@ -30,7 +30,7 @@ type ConversionField =
     | 'success-criteria';
 
 const REQUIRED_FIELDS:
-    ConversionField[] = [
+    readonly ConversionField[] = [
     'project-name',
     'project-lead',
     'start-date',
@@ -39,8 +39,8 @@ const REQUIRED_FIELDS:
     'impact',
 ];
 
-const ALL_FIELDS:
-    ConversionField[] = [
+export const ALL_CONVERSION_FIELDS:
+    readonly ConversionField[] = [
     'project-name',
     'project-lead',
     'start-date',
@@ -49,6 +49,52 @@ const ALL_FIELDS:
     'impact',
     'success-criteria',
 ];
+
+export type ConversionFields = Record<
+    ConversionField, string
+>;
+
+export function initialConversionFields(
+    idea: Idea,
+): ConversionFields {
+    return {
+        'project-name': idea.titleText(),
+        'project-lead': '',
+        'start-date': '',
+        'target-end-date': '',
+        'budget': '',
+        'impact': '',
+        'success-criteria': '',
+    };
+}
+
+export function conversionRequiredCount(
+): number {
+    return REQUIRED_FIELDS.length;
+}
+
+export function conversionCompletedCount(
+    fields: ConversionFields,
+): number {
+    return REQUIRED_FIELDS.filter(
+        f => fields[f] !== '',
+    ).length;
+}
+
+export function conversionIsReady(
+    fields: ConversionFields,
+): boolean {
+    return REQUIRED_FIELDS.every(
+        f => fields[f] !== '',
+    );
+}
+
+export function conversionFieldIsReady(
+    fields: ConversionFields,
+    field: ConversionField,
+): boolean {
+    return fields[field] !== '';
+}
 
 interface LeadOption {
     readonly id: string;
@@ -64,13 +110,12 @@ export class IdeaConversionPresenter {
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
     readonly #leadOptions: LeadOption[];
-    #fields: Record<
-        ConversionField, string
-    >;
+    readonly #fields: ConversionFields;
 
     constructor(
         idea: Idea,
         users: User[],
+        fields: ConversionFields,
     ) {
         this.#title = idea.titleText();
         this.#problemStatement =
@@ -90,65 +135,16 @@ export class IdeaConversionPresenter {
                 fullName: u.fullName(),
                 role: u.roleLabel(),
             }));
-        this.#fields = {
-            'project-name': idea.titleText(),
-            'project-lead': '',
-            'start-date': '',
-            'target-end-date': '',
-            'budget': '',
-            'impact': '',
-            'success-criteria': '',
-        };
-    }
-
-    syncFields(
-        fields: Partial<Record<
-            ConversionField, string
-        >>,
-    ): void {
-        for (
-            const [k, v] of
-            Object.entries(fields)
-        ) {
-            this.#fields[
-                k as ConversionField
-            ] = v!.trim();
-        }
-    }
-
-    projectDetails(): Record<
-        ConversionField, string
-    > {
-        return { ...this.#fields };
-    }
-
-    isReady(): boolean {
-        return REQUIRED_FIELDS.every(
-            f => this.#fields[f] !== '',
-        );
-    }
-
-    fieldReady(
-        field: ConversionField,
-    ): boolean {
-        return this.#fields[field] !== '';
-    }
-
-    completedCount(): number {
-        return REQUIRED_FIELDS.filter(
-            f => this.#fields[f] !== '',
-        ).length;
-    }
-
-    requiredCount(): number {
-        return REQUIRED_FIELDS.length;
+        this.#fields = fields;
     }
 
     #fieldCheck(
         field: ConversionField,
     ): SafeHtml {
         const isSet =
-            this.#fields[field] !== '';
+            conversionFieldIsReady(
+                this.#fields, field,
+            );
         const cls = isSet
             ? 'field-check'
             : 'field-check hidden';
@@ -161,9 +157,11 @@ export class IdeaConversionPresenter {
 
     render(): SafeHtml {
         const completed =
-            this.completedCount();
+            conversionCompletedCount(
+                this.#fields,
+            );
         const required =
-            REQUIRED_FIELDS.length;
+            conversionRequiredCount();
         const percent =
             (completed / required)
             * 100;
@@ -704,10 +702,14 @@ export class IdeaConversionPresenter {
     }
 
     #buildConfirm(): SafeHtml {
-        const isReady = this.isReady();
+        const isReady = conversionIsReady(
+            this.#fields,
+        );
         const remaining =
-            REQUIRED_FIELDS.length
-            - this.completedCount();
+            conversionRequiredCount()
+            - conversionCompletedCount(
+                this.#fields,
+            );
         return html`
             <div class="${
                 'card p-6'

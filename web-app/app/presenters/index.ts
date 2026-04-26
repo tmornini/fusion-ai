@@ -6,6 +6,14 @@ export {
 } from './idea';
 export {
     IdeaConversionPresenter,
+    initialConversionFields,
+    conversionRequiredCount,
+    conversionCompletedCount,
+    conversionIsReady,
+    conversionFieldIsReady,
+    ALL_CONVERSION_FIELDS,
+    type ConversionField,
+    type ConversionFields,
 } from './idea-conversion';
 export {
     IdeaCreatePresenter,
