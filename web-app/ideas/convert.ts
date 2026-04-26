@@ -23,6 +23,7 @@ import {
     putProjectTeamMember,
     jsonObjectField,
     createFetchContext,
+    generateId,
 } from '../app/adapters';
 import {
     IdeaConversionPresenter,
@@ -362,7 +363,7 @@ export async function init(
                 }
 
                 const projectId =
-                    crypto.randomUUID();
+                    generateId();
                 try {
                     await performConversion(
                         ideaId,

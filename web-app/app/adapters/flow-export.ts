@@ -18,6 +18,7 @@ import type {
     StoredGraph,
     FlowFieldType,
 } from '../../../api/types';
+import { generateId } from './uuid';
 import {
     validateStoredGraphJson,
     parseOrThrow,
@@ -544,7 +545,7 @@ export async function postFlowFromBackup(
         const n
             of backup.flow.graph.nodes
     ) {
-        const newId = crypto.randomUUID();
+        const newId = generateId();
         idMap.set(n.id, newId);
         nodes.push({
             id: newId,
@@ -556,7 +557,7 @@ export async function postFlowFromBackup(
             isComplete: n.isComplete,
             fields: n.fields.map(
                 f => ({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     name: f.name,
                     fieldType: f.fieldType,
                     sortOrder: f.sortOrder,
@@ -583,7 +584,7 @@ export async function postFlowFromBackup(
                 );
             }
             return {
-                id: crypto.randomUUID(),
+                id: generateId(),
                 name: e.name,
                 description: e.description,
                 fromNodeId,
@@ -613,7 +614,7 @@ export async function postFlowFromBackup(
     await PUT<void>(
         'project-flows',
         {
-            id: crypto.randomUUID(),
+            id: generateId(),
             project_id: projectId,
             flow_id: flowId,
             created_at: now,
@@ -657,7 +658,7 @@ function remapParsedToDefaults(
             );
             continue;
         }
-        const newId = crypto.randomUUID();
+        const newId = generateId();
         idMap.set(n.mermaidId, newId);
         intermediates.push({
             parsed: n, newId,
@@ -741,7 +742,7 @@ function buildImportedEdges(
             e.fromId + '->' + e.toId,
         );
         edges.push({
-            id: crypto.randomUUID(),
+            id: generateId(),
             name: e.name,
             description: sc
                 ? sc.description
@@ -773,7 +774,7 @@ function autoWireDefaults(
         for (const id of intermediateIds) {
             if (!incoming.has(id)) {
                 extras.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     name: '',
                     description: '',
                     fromNodeId: startId,
@@ -786,7 +787,7 @@ function autoWireDefaults(
         for (const id of intermediateIds) {
             if (!outgoing.has(id)) {
                 extras.push({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     name: '',
                     description: '',
                     fromNodeId: id,
@@ -938,7 +939,7 @@ export async function postFlowFromMermaid(
     });
 
     await PUT<void>('project-flows', {
-        id: crypto.randomUUID(),
+        id: generateId(),
         project_id: projectId,
         flow_id: flowId,
         created_at: now,
@@ -1108,7 +1109,7 @@ function sidecarFieldsToGraph(
     sc: SidecarNode,
 ): GraphField[] {
     return sc.fields.map(f => ({
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: f.name,
         fieldType: f.fieldType,
         sortOrder: f.sortOrder,
@@ -1365,7 +1366,7 @@ export async function postFlowFromZip(
     });
 
     await PUT<void>('project-flows', {
-        id: crypto.randomUUID(),
+        id: generateId(),
         project_id: projectId,
         flow_id: flowId,
         created_at: now,

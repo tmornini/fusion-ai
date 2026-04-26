@@ -23,6 +23,7 @@ import {
     jsonArrayField,
     jsonObjectField,
     nowUtc,
+    generateId,
 } from '../app/adapters';
 import {
     ManagedUsersPresenter,
@@ -583,7 +584,7 @@ async function handleInvite(): Promise<void> {
     const bio = $textarea(
         '#invite-bio', document,
     )!.value;
-    const id = crypto.randomUUID();
+    const id = generateId();
     try {
         await putUser(
             id,

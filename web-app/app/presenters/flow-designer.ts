@@ -31,6 +31,7 @@ import type { FlowFieldType }
 import {
     jsonObjectField,
     nowUtc,
+    generateId,
 } from '../adapters';
 import {
     buildGraphSvg,
@@ -373,7 +374,7 @@ export class FlowDesignerPresenter {
             return false;
         }
         this.#history = pushRedo(this.#history, {
-            id: crypto.randomUUID(),
+            id: generateId(),
             flowId: this.#state.flowId,
             name: this.#state.flowName,
             description:
@@ -843,7 +844,7 @@ Auto Fit</label>
             + (this.#state.nodes.length - 1)
             * (NODE_WIDTH + NEW_NODE_OFFSET_X);
         const y = START_Y + NEW_NODE_OFFSET_Y;
-        const nodeId = crypto.randomUUID();
+        const nodeId = generateId();
         const fId = this.#state.flowId;
         try {
             await postNodeAddition({
@@ -951,7 +952,7 @@ Auto Fit</label>
                 return false;
             }
         }
-        const edgeId = crypto.randomUUID();
+        const edgeId = generateId();
         const fId = this.#state.flowId;
         try {
             await postEdgeConnection({
@@ -1282,7 +1283,7 @@ Auto Fit</label>
             this.#state.nodes.find(
                 n => n.id === nodeId,
             )!.fields.length;
-        const fieldId = crypto.randomUUID();
+        const fieldId = generateId();
         const fId = this.#state.flowId;
         try {
             await postFieldAddition({
@@ -1417,8 +1418,8 @@ Auto Fit</label>
                 return false;
             }
         }
-        const nodeId = crypto.randomUUID();
-        const edgeId = crypto.randomUUID();
+        const nodeId = generateId();
+        const edgeId = generateId();
         const fId = this.#state.flowId;
         const posX =
             x - NODE_WIDTH / 2;
@@ -1514,8 +1515,8 @@ Auto Fit</label>
             this.#computeDirectionPos(
                 fromNode, direction,
             );
-        const nodeId = crypto.randomUUID();
-        const edgeId = crypto.randomUUID();
+        const nodeId = generateId();
+        const edgeId = generateId();
         const fId = this.#state.flowId;
 
         try {

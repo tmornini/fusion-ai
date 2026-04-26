@@ -11,6 +11,7 @@ import {
     putIdea,
     putIdeaSubmission,
     jsonArrayField,
+    generateId,
 } from '../app/adapters';
 import {
     IdeaCreatePresenter,
@@ -128,7 +129,7 @@ export async function init():
             async () => {
                 formState = readFormFromDom();
                 const ideaId =
-                    crypto.randomUUID();
+                    generateId();
                 await putIdea(
                     ideaId,
                     {
@@ -170,7 +171,7 @@ export async function init():
                     },
                 );
                 await putIdeaSubmission(
-                    crypto.randomUUID(),
+                    generateId(),
                     ideaId,
                     'current',
                 );

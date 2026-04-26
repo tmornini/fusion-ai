@@ -24,3 +24,4 @@ export * from './work-orders-queries';
 export * from './work-orders-mutations';
 export * from './work-orders-deletions';
 export * from './flow-defaults';
+export * from './uuid';

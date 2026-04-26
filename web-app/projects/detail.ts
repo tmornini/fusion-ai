@@ -19,6 +19,7 @@ import {
     getFlowsByProject,
     postFlowCreation,
     subscribeToProjectChanges,
+    generateId,
     type ProjectView,
 } from '../app/adapters';
 import type {
@@ -410,7 +411,7 @@ async function handleNewFlowSubmit(
         );
         return;
     }
-    const flowId = crypto.randomUUID();
+    const flowId = generateId();
     try {
         await postFlowCreation({
             flowId,
