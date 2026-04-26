@@ -76,6 +76,8 @@ import type {
 } from '../flow-history';
 import {
     applyMoveNodes,
+    applyToggleLock,
+    applyUpdateFlowName,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -288,11 +290,13 @@ export class FlowDesignerPresenter {
     }
 
     toggleLocked(): void {
-        const next = !this.#state.isLocked;
-        this.#state.isLocked = next;
-        if (next && this.#state.isEditingName) {
-            this.#state.isEditingName = false;
-        }
+        const result = applyToggleLock(
+            this.#state.isLocked,
+            this.#state.isEditingName,
+        );
+        this.#state.isLocked = result.isLocked;
+        this.#state.isEditingName =
+            result.isEditingName;
         void this.#saveFlow(false);
     }
 
@@ -346,9 +350,10 @@ export class FlowDesignerPresenter {
 
     updateFlowName(name: string): void {
         if (this.#guardLocked()) return;
-        name = name.trim();
-        this.#state.flowName = name;
-        this.#state.isEditingName = false;
+        const result = applyUpdateFlowName(name);
+        this.#state.flowName = result.flowName;
+        this.#state.isEditingName =
+            result.isEditingName;
         void this.#saveFlow(true);
         this.#noteMutation();
     }

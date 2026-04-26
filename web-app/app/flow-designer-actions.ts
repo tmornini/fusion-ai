@@ -23,3 +23,34 @@ export function applyMoveNodes(
         };
     });
 }
+
+export interface LockToggleResult {
+    readonly isLocked: boolean;
+    readonly isEditingName: boolean;
+}
+
+export function applyToggleLock(
+    isLocked: boolean,
+    isEditingName: boolean,
+): LockToggleResult {
+    const next = !isLocked;
+    return {
+        isLocked: next,
+        isEditingName:
+            next ? false : isEditingName,
+    };
+}
+
+export interface FlowNameUpdateResult {
+    readonly flowName: string;
+    readonly isEditingName: boolean;
+}
+
+export function applyUpdateFlowName(
+    name: string,
+): FlowNameUpdateResult {
+    return {
+        flowName: name.trim(),
+        isEditingName: false,
+    };
+}
