@@ -1,4 +1,4 @@
-import { $, $$, attr } from '../app/dom';
+import { $, $$, getRequiredAttribute } from '../app/dom';
 import { mutateHtml } from '../app/safe-html';
 import {
     buildSkeleton, buildErrorState,
@@ -65,7 +65,7 @@ export async function init(): Promise<void> {
             navButton.addEventListener(
                 'click',
                 () => navigateTo(
-                    attr(
+                    getRequiredAttribute(
                         navButton,
                         'data-nav-to',
                     ),

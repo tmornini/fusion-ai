@@ -1,4 +1,4 @@
-import { $, attr, populateIcons } from '../app/dom';
+import { $, getRequiredAttribute, populateIcons } from '../app/dom';
 import { html } from '../app/safe-html';
 import {
     buildSkeleton,
@@ -139,7 +139,7 @@ function onBadgeClick(e: MouseEvent): void {
         '[data-status]',
     );
     if (!badge) return;
-    const s = attr(badge, 'data-status');
+    const s = getRequiredAttribute(badge, 'data-status');
     if (!isIdeaStatus(s)) return;
     ideaState = applyIdeaFilterToggle(
         ideaState, s,
@@ -157,7 +157,7 @@ function onCardClick(e: MouseEvent): void {
         );
     if (convertBtn) {
         navigateTo('idea-convert', {
-            ideaId: attr(
+            ideaId: getRequiredAttribute(
                 convertBtn,
                 'data-idea-convert',
             ),
@@ -170,7 +170,7 @@ function onCardClick(e: MouseEvent): void {
     );
     if (card) {
         navigateTo('idea-detail', {
-            ideaId: attr(
+            ideaId: getRequiredAttribute(
                 card, 'data-idea-card',
             ),
         });

@@ -1,5 +1,5 @@
 import {
-    $, populateIcons, attr,
+    $, populateIcons, getRequiredAttribute,
 } from '../app/dom';
 import {
     html, mutateHtml,
@@ -194,7 +194,7 @@ function onRowClick(e: MouseEvent): void {
         '[data-work-order-card]',
     );
     if (!card) return;
-    const id = attr(
+    const id = getRequiredAttribute(
         card, 'data-work-order-card',
     );
     navigateTo('workbox-detail', { id });

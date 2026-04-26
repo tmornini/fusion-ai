@@ -1,5 +1,5 @@
 import {
-    $, $required, attr,
+    $, $required, getRequiredAttribute,
 } from '../app/dom';
 import {
     html, mutateHtml, trusted,
@@ -58,7 +58,7 @@ function collectFieldValues(
             | HTMLTextAreaElement
         >('[data-field-id]');
     for (const input of inputs) {
-        const fieldId = attr(
+        const fieldId = getRequiredAttribute(
             input, 'data-field-id',
         );
         if (input.type === 'checkbox') {
@@ -360,7 +360,7 @@ function initTransitionButtons(
         btn.addEventListener(
             'click',
             async () => {
-                const edgeId = attr(
+                const edgeId = getRequiredAttribute(
                     btn, 'data-edge-id',
                 );
                 const values =

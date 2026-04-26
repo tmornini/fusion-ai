@@ -1,5 +1,5 @@
 import {
-    $, $select, attr, createElement,
+    $, $select, getRequiredAttribute, createElement,
 } from '../app/dom';
 import {
     html,
@@ -127,7 +127,7 @@ export async function init(
                 navigateTo(
                     'flow-detail',
                     {
-                        flowId: attr(
+                        flowId: getRequiredAttribute(
                             card,
                             'data-flow'
                             + '-card',

@@ -93,7 +93,7 @@ export function createElement<
     return document.createElement(tag);
 }
 
-export function attr(
+export function getRequiredAttribute(
     el: Element,
     name: string,
 ): string {
@@ -127,7 +127,7 @@ export function initToggleGroup(
     const buttons = $$(selector, document);
     for (const btn of buttons) {
         btn.addEventListener('click', () => {
-            const value = attr(btn, attrName);
+            const value = getRequiredAttribute(btn, attrName);
             for (const b of buttons) b.classList.toggle('active', b === btn);
             onChange(value);
         });

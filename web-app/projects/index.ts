@@ -1,4 +1,4 @@
-import { $, attr } from '../app/dom';
+import { $, getRequiredAttribute } from '../app/dom';
 import {
     buildSkeleton,
     withLoadingState,
@@ -120,7 +120,7 @@ function onBadgeClick(e: MouseEvent): void {
         '[data-status]',
     );
     if (!badge) return;
-    const s = attr(badge, 'data-status');
+    const s = getRequiredAttribute(badge, 'data-status');
     if (!isProjectStatus(s)) return;
     projectState = applyProjectFilterToggle(
         projectState, s,
@@ -138,7 +138,7 @@ function onCardClick(e: MouseEvent): void {
         );
     if (!card) return;
     navigateTo('project-detail', {
-        projectId: attr(
+        projectId: getRequiredAttribute(
             card, 'data-project-card',
         ),
     });
