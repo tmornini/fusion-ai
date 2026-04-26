@@ -2,6 +2,10 @@ import {
     getPreference,
     writePreference,
 } from './preferences-store';
+import {
+    mediaQueryMatches,
+    subscribeMediaQuery,
+} from './adapters/media-query';
 
 const STORAGE_KEY_THEME = 'fusion-theme';
 const STORAGE_KEY_SIDEBAR =
@@ -53,13 +57,15 @@ function loadStoredSidebarCollapsed(
     );
 }
 
+const MOBILE_QUERY = '(max-width: '
+    + MOBILE_BREAKPOINT_PX
+    + 'px)';
+const DARK_QUERY =
+    '(prefers-color-scheme: dark)';
+
 let state: Readonly<AppState> = {
     theme: loadStoredTheme(),
-    isMobile: window.matchMedia(
-        '(max-width: '
-        + MOBILE_BREAKPOINT_PX
-        + 'px)',
-    ).matches,
+    isMobile: mediaQueryMatches(MOBILE_QUERY),
     isSidebarCollapsed:
         loadStoredSidebarCollapsed(),
     isSidebarOpen: false,
@@ -91,11 +97,7 @@ function subscribe(
 
 function computeTheme(): 'light' | 'dark' {
     if (state.theme === 'system') {
-        const darkMediaQuery
-            = '(prefers-color-scheme: dark)';
-        return window
-            .matchMedia(darkMediaQuery)
-            .matches
+        return mediaQueryMatches(DARK_QUERY)
             ? 'dark'
             : 'light';
     }
@@ -140,38 +142,27 @@ function setSidebarCollapsed(
 }
 
 function initListeners(): void {
-    const darkQ =
-        '(prefers-color-scheme: dark)';
-    window.matchMedia(darkQ)
-        .addEventListener(
-            'change',
-            () => {
-                if (
-                    state.theme === 'system'
-                ) {
-                    applyTheme();
-                }
-            },
-        );
+    subscribeMediaQuery(
+        DARK_QUERY,
+        () => {
+            if (state.theme === 'system') {
+                applyTheme();
+            }
+        },
+    );
 
-    const mobileQ = '(max-width: '
-        + MOBILE_BREAKPOINT_PX
-        + 'px)';
-    window.matchMedia(mobileQ)
-        .addEventListener(
-            'change',
-            (e) => {
+    subscribeMediaQuery(
+        MOBILE_QUERY,
+        (matches) => {
+            setState({ isMobile: matches });
+            if (!matches) {
                 setState({
-                    isMobile: e.matches,
+                    isSidebarOpen: false,
+                    isSearchOpen: false,
                 });
-                if (!e.matches) {
-                    setState({
-                        isSidebarOpen: false,
-                        isSearchOpen: false,
-                    });
-                }
-            },
-        );
+            }
+        },
+    );
 
     window.addEventListener(
         'storage',
