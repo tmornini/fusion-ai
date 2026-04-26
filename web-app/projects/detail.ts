@@ -20,6 +20,7 @@ import {
     postFlowCreation,
     subscribeToProjectChanges,
     generateId,
+    createFetchContext,
     type ProjectView,
 } from '../app/adapters';
 import type {
@@ -113,8 +114,9 @@ export async function init(
     let project: ProjectView;
     let flows: FlowListItem[];
     try {
+        const ctx = createFetchContext();
         [project, flows] = await Promise.all([
-            getProject(projectId),
+            getProject(projectId, ctx),
             getFlowsByProject(projectId),
         ]);
     } catch (err) {
@@ -153,9 +155,10 @@ export async function init(
         if (!state || !pageContainer) {
             return;
         }
+        const ctx = createFetchContext();
         const [upd, updFlows] =
             await Promise.all([
-                getProject(projectId),
+                getProject(projectId, ctx),
                 getFlowsByProject(projectId),
             ]);
         state = {

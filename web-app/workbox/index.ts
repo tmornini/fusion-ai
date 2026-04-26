@@ -26,6 +26,8 @@ import {
     postWorkOrderCreation,
     putWorkOrder,
     getCurrentUser,
+    createFetchContext,
+    type FetchContext,
 } from '../app/adapters';
 import {
     WorkboxInboxPresenter,
@@ -53,11 +55,12 @@ export async function init(
     const archiveEl =
         $('#archive-list', document);
 
+    const ctx = createFetchContext();
     if (activeEl) {
-        await initActiveList(activeEl);
+        await initActiveList(activeEl, ctx);
     }
     if (archiveEl) {
-        await initArchiveList(archiveEl);
+        await initArchiveList(archiveEl, ctx);
     }
 
     await initCreateDropdown();
@@ -85,11 +88,12 @@ function renderTabs(): void {
 
 async function initActiveList(
     activeEl: HTMLElement,
+    ctx: FetchContext,
 ): Promise<void> {
     const items = await withLoadingState(
         activeEl,
         buildSkeleton('card-list', 4),
-        getActiveWorkOrders,
+        () => getActiveWorkOrders(ctx),
         init,
         {
             icon: iconMail(24, ''),
@@ -148,11 +152,12 @@ async function initActiveList(
 
 async function initArchiveList(
     archiveEl: HTMLElement,
+    ctx: FetchContext,
 ): Promise<void> {
     const items = await withLoadingState(
         archiveEl,
         buildSkeleton('card-list', 4),
-        getArchivedWorkOrders,
+        () => getArchivedWorkOrders(ctx),
         init,
         {
             icon: iconMail(24, ''),

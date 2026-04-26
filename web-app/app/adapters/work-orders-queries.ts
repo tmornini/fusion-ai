@@ -354,16 +354,18 @@ export async function getAllWorkOrders(
 }
 
 export async function getArchivedWorkOrders(
+    ctx?: FetchContext,
 ): Promise<WorkOrderInboxRow[]> {
-    const items = await getAllWorkOrders();
+    const items = await getAllWorkOrders(ctx);
     return items.filter(
         i => i.isCompleted(),
     );
 }
 
 export async function getActiveWorkOrders(
+    ctx?: FetchContext,
 ): Promise<WorkOrderInboxRow[]> {
-    const items = await getAllWorkOrders();
+    const items = await getAllWorkOrders(ctx);
     return items.filter(
         i => !i.isCompleted(),
     );
