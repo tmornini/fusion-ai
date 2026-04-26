@@ -14,8 +14,8 @@ import {
     closeDialog,
 } from '../app/core';
 import {
-    getProject, getProjectEntity,
-    putProject,
+    getProject,
+    putProjectPatch,
     getFlowsByProject,
     postFlowCreation,
     projectChanged,
@@ -382,16 +382,12 @@ async function handleSave(): Promise<void> {
         state.view.statusValue(),
     );
     try {
-        const entity = await getProjectEntity(
-            projectId,
+        await putProjectPatch(
+            projectId, trimStrings(patch),
         );
-        await putProject(projectId, {
-            ...entity,
-            ...trimStrings(patch),
-        });
     } catch (err) {
         log.error(
-            'putProject failed',
+            'putProjectPatch failed',
             'projects', err,
         );
         showToast(

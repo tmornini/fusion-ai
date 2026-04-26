@@ -234,6 +234,14 @@ export async function putProject(
     projectChanged.send();
 }
 
+export async function putProjectPatch(
+    id: string,
+    patch: Partial<Omit<ProjectEntity, 'id'>>,
+): Promise<void> {
+    const entity = await getProjectEntity(id);
+    await putProject(id, { ...entity, ...patch });
+}
+
 export interface TeamMemberAssignment {
     projectId: string;
     userId: string;
