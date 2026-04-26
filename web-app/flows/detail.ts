@@ -1,6 +1,6 @@
 import {
     $, $input, $inputRequired, $select,
-    $textarea, createElement,
+    $textarea,
 } from '../app/dom';
 import { log } from '../app/logger';
 import { mutateHtml } from '../app/safe-html';
@@ -18,6 +18,9 @@ import {
     getFlowZip,
     getFlowVersions,
 } from '../app/adapters';
+import {
+    downloadBlob,
+} from '../app/adapters/blob-download';
 import {
     bindInteractions,
 } from '../app/flow-interactions';
@@ -467,13 +470,7 @@ async function handleExportZip(
             unknown as ArrayBuffer],
         { type: 'application/zip' },
     );
-    const url =
-        URL.createObjectURL(blob);
-    const a = createElement('a');
-    a.href = url;
-    a.download = result.name;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, result.name);
     showToast(
         'Flow exported',
         'success',

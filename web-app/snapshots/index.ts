@@ -11,6 +11,9 @@ import {
 import {
     $, $input, $button, createElement,
 } from '../app/dom';
+import {
+    downloadBlob,
+} from '../app/adapters/blob-download';
 import { log } from '../app/logger';
 import {
     html,
@@ -377,19 +380,14 @@ export async function init(
                         'application/json',
                 },
             );
-            const url =
-                URL.createObjectURL(blob);
-            const downloadLink =
-                createElement('a');
-            downloadLink.href = url;
             const date = nowUtc()
                 .split('T')[0];
-            downloadLink.download =
+            downloadBlob(
+                blob,
                 'fusion-ai-snapshot-'
                 + date
-                + '.json';
-            downloadLink.click();
-            URL.revokeObjectURL(url);
+                + '.json',
+            );
             showToast(
                 'Snapshot downloaded'
                 + ' successfully.',
