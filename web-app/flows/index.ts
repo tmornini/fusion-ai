@@ -1,5 +1,5 @@
 import {
-    $, $select, attr,
+    $, $select, attr, createElement,
 } from '../app/dom';
 import {
     html,
@@ -236,10 +236,7 @@ async function openImportDialog(
 
     select.replaceChildren();
     for (const p of projects) {
-        const opt =
-            document.createElement(
-                'option',
-            );
+        const opt = createElement('option');
         opt.value = p.idForLink();
         opt.textContent =
             p.titleText();

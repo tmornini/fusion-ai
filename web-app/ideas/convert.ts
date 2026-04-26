@@ -142,10 +142,9 @@ export async function init(
         for (
             const field of ALL_CONVERSION_FIELDS
         ) {
-            const chk =
-                document.getElementById(
-                    `check-${field}`,
-                );
+            const chk = $(
+                `#check-${field}`, document,
+            );
             if (chk) {
                 chk.style.display =
                     conversionFieldIsReady(

@@ -1,5 +1,6 @@
 import {
     $, $input, $inputRequired, $select,
+    $textarea, createElement,
 } from '../app/dom';
 import { log } from '../app/logger';
 import { setHtml } from '../app/safe-html';
@@ -275,8 +276,8 @@ function bindCanvasInteractions(
     presenter: FlowDesignerPresenter,
     signal: AbortSignal,
 ): void {
-    const wrap = container.querySelector(
-        '.flow-canvas-wrap',
+    const wrap = $(
+        '.flow-canvas-wrap', container,
     );
     if (!(wrap instanceof HTMLElement)) {
         return;
@@ -461,8 +462,7 @@ async function handleExportZip(
     );
     const url =
         URL.createObjectURL(blob);
-    const a =
-        document.createElement('a');
+    const a = createElement('a');
     a.href = url;
     a.download = result.name;
     a.click();
@@ -655,10 +655,9 @@ async function handleSaveField(
     const reqEl = $inputRequired(
         '#new-field-required', container,
     );
-    const optEl = container
-        .querySelector<HTMLTextAreaElement>(
-            '#new-field-options',
-        );
+    const optEl = $textarea(
+        '#new-field-options', container,
+    );
     if (!optEl) {
         throw new Error(
             'Required: #new-field-options',
