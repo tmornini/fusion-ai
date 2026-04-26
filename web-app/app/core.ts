@@ -103,10 +103,6 @@ document.addEventListener(
                     page,
                 )
             ) {
-                const { navigateTo } =
-                    await import(
-                        './navigation'
-                    );
                 navigateTo('snapshots');
                 return;
             }
