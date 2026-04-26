@@ -181,11 +181,17 @@ export function computeLayout(
             );
             const canvasAspect =
                 canvasWidth / canvasHeight;
-            const mis = (a: number): number =>
-                Math.max(a, canvasAspect)
-                / Math.min(a, canvasAspect);
-            if (mis(computeBboxAspect(snakePos))
-                < mis(computeBboxAspect(sugiPos))) {
+            const snakeMismatch =
+                computeAspectMismatch(
+                    computeBboxAspect(snakePos),
+                    canvasAspect,
+                );
+            const sugiMismatch =
+                computeAspectMismatch(
+                    computeBboxAspect(sugiPos),
+                    canvasAspect,
+                );
+            if (snakeMismatch < sugiMismatch) {
                 return {
                     positions: fitToCanvas(
                         snakePos,
@@ -935,16 +941,17 @@ function fitToCanvas(
         if (isFinite(sX) && isFinite(sY)) {
             const sSmall = Math.min(sX, sY);
             const sBig = Math.max(sX, sY);
-            const capped = Math.min(
+            const cappedBig = Math.min(
                 sBig,
                 sSmall * MAX_ASPECT_STRETCH,
             );
-            scaleX = sX >= sY
-                ? capped
+            const isXBigger = sX >= sY;
+            scaleX = isXBigger
+                ? cappedBig
                 : sSmall;
-            scaleY = sY > sX
-                ? capped
-                : sSmall;
+            scaleY = isXBigger
+                ? sSmall
+                : cappedBig;
             scaleX = Math.max(scaleX, 1);
             scaleY = Math.max(scaleY, 0.4);
         }
@@ -1072,10 +1079,19 @@ function snakeColRow(
 ): { col: number; row: number } {
     const row = Math.floor(i / k);
     const rowEven = row % 2 === 0;
+    const colInRow = i % k;
     const col = rowEven
-        ? (i % k)
-        : (k - 1 - (i % k));
+        ? colInRow
+        : (k - 1 - colInRow);
     return { col, row };
+}
+
+function computeAspectMismatch(
+    aspect: number,
+    canvasAspect: number,
+): number {
+    return Math.max(aspect, canvasAspect)
+        / Math.min(aspect, canvasAspect);
 }
 
 function computeTopoSnake(

@@ -72,6 +72,28 @@ const FOCUSABLE_TABINDEX = '0';
 export type RectEdge =
     'right' | 'left' | 'top' | 'bottom';
 
+function getOtherNodeId(
+    edge: GraphEdge,
+    nodeId: string,
+): string | null {
+    if (edge.fromNodeId === nodeId) {
+        return edge.toNodeId;
+    }
+    if (edge.toNodeId === nodeId) {
+        return edge.fromNodeId;
+    }
+    return null;
+}
+
+function canonicalEdgeKey(
+    a: string,
+    b: string,
+): string {
+    return a < b
+        ? a + ':' + b
+        : b + ':' + a;
+}
+
 export function perimeterPoint(
     rx: number, ry: number,
     rw: number, rh: number,
@@ -146,11 +168,7 @@ function computePortPos(
     const perim = 2 * (w + h);
     const params = edges.flatMap(e => {
         const otherId =
-            e.fromNodeId === node.id
-                ? e.toNodeId
-                : e.toNodeId === node.id
-                    ? e.fromNodeId
-                    : null;
+            getOtherNodeId(e, node.id);
         if (!otherId) return [];
         const other =
             nodeMap.get(otherId);
@@ -828,6 +846,8 @@ export function buildEdgePreviewPath(
         + ' pointer-events="none"/>';
 }
 
+// Cubic Bézier B(t) = u³P0 + 3u²t P1 + 3ut² P2 + t³P3
+// where u = 1-t, P0..P3 are the control points.
 function bezierAt(
     pathD: string,
     t: number,
@@ -913,16 +933,10 @@ export function buildGraphSvg(
         if (!visited.has(n.id)) dfs(n.id);
     }
 
-    const pairKey = (
-        a: string, b: string,
-    ): string =>
-        a < b
-            ? a + ':' + b
-            : b + ':' + a;
     const pairCounts =
         new Map<string, number>();
     for (const edge of edges) {
-        const k = pairKey(
+        const k = canonicalEdgeKey(
             edge.fromNodeId,
             edge.toNodeId,
         );
@@ -944,7 +958,7 @@ export function buildGraphSvg(
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
         let aimOffset = 0;
-        const k = pairKey(
+        const k = canonicalEdgeKey(
             edge.fromNodeId,
             edge.toNodeId,
         );
