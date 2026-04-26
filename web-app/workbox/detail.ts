@@ -227,8 +227,7 @@ function buildHistoryEntry(
             <span
                 class="text-muted
                     ml-auto"
-            >${entry.userName
-                || '\u2014'}</span>
+            >${entry.userName}</span>
             <span
                 class="text-muted
                     text-sm"
