@@ -325,10 +325,11 @@ export async function getAllWorkOrders(
             flowName: fg.name,
             stateName: curNode.name,
             transitionerName:
-                userName(
-                    userMap,
-                    last?.user_id,
-                ),
+                last
+                    ? userName(
+                        userMap, last.user_id,
+                    )
+                    : '',
             lastTransitionedAt:
                 last?.transitioned_at
                     ?? wo.created_at,

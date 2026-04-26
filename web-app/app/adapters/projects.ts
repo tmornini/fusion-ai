@@ -202,9 +202,11 @@ export async function getProject(
 
     return new ProjectView(
         project,
-        userName(
-            userMap, leadRow?.user_id,
-        ),
+        leadRow
+            ? userName(
+                userMap, leadRow.user_id,
+            )
+            : '',
         teamRows.map(member => ({
             id: member.user_id,
             name: userName(
