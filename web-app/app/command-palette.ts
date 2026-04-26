@@ -636,34 +636,19 @@ ${posIndex === 0
                 '.command-palette-live',
             );
 
-        state.input
-            ?.addEventListener(
-                'input',
-                () => {
-                    if (
-                        state
-                            .debounceTimeoutId
-                    )
-                        clearTimeout(
-                            state
-                                .debounceTimeoutId,
-                        );
-                    state
-                        .debounceTimeoutId =
-                        setTimeout(
-                            () => {
-                                if (!state.input)
-                                    return;
-                                mutateResults(
-                                    state
-                                        .input
-                                        .value,
-                                );
-                            },
-                            DEBOUNCE_MS,
-                        );
-                },
+        function applyDebouncedQuery(): void {
+            if (!state.input) return;
+            mutateResults(state.input.value);
+        }
+
+        state.input?.addEventListener('input', () => {
+            if (state.debounceTimeoutId)
+                clearTimeout(state.debounceTimeoutId);
+            state.debounceTimeoutId = setTimeout(
+                applyDebouncedQuery,
+                DEBOUNCE_MS,
             );
+        });
 
         state.dialog.querySelector(
             '#command-palette-close',
