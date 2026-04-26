@@ -24,6 +24,7 @@ import {
 } from '../app/adapters/blob-download';
 import {
     bindInteractions,
+    type FlowGestureContext,
 } from '../app/flow-interactions';
 import {
     FlowDesignerPresenter,
@@ -79,6 +80,10 @@ class Debouncer {
 const saveDebouncer =
     new Debouncer(SAVE_DELAY_MS);
 
+let pushGestureContext:
+    | ((next: FlowGestureContext) => void)
+    | null = null;
+
 type PanelStateRef = { open: boolean };
 
 class PageState {
@@ -107,6 +112,12 @@ function update(
 ): void {
     saveDebouncer.flush();
     presenter.renderUpdate(container);
+    if (pushGestureContext) {
+        pushGestureContext({
+            isAutoFit: presenter.isAutoFit(),
+            isLocked: presenter.isLocked(),
+        });
+    }
 }
 
 function bindFlowNameEdit(
@@ -291,7 +302,7 @@ function bindCanvasInteractions(
     }
     const state =
         presenter.interactionState();
-    bindInteractions(
+    pushGestureContext = bindInteractions(
         wrap,
         state,
         () => update(container, presenter),
@@ -322,8 +333,10 @@ function bindCanvasInteractions(
         (id) =>
             presenter.getNodePosition(id),
         () => presenter.getAllNodes(),
-        () => presenter.isAutoFit(),
-        () => presenter.isLocked(),
+        {
+            isAutoFit: presenter.isAutoFit(),
+            isLocked: presenter.isLocked(),
+        },
         signal,
     );
 }

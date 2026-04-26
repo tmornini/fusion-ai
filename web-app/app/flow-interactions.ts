@@ -30,6 +30,11 @@ export interface ViewBox {
     h: number;
 }
 
+export type FlowGestureContext = Readonly<{
+    isAutoFit: boolean;
+    isLocked: boolean;
+}>;
+
 export type Selection =
     | { kind: 'none' }
     | {
@@ -192,7 +197,7 @@ function handlePointerDown(
     onUpdate: InteractionCallback,
     onPanelRequest: PanelRequestCallback,
     getNodePosition: NodePositionLookup,
-    isLocked: () => boolean,
+    isLocked: boolean,
 ): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
@@ -260,7 +265,7 @@ function handlePointerDown(
             state, nodeId, e,
         );
         onPanelRequest(isDbl);
-        if (isLocked()) {
+        if (isLocked) {
             onUpdate();
             return;
         }
@@ -675,10 +680,10 @@ function handleWheel(
     svg: SVGSVGElement,
     state: InteractionState,
     onUpdate: InteractionCallback,
-    isAutoFit: () => boolean,
+    isAutoFit: boolean,
 ): void {
     e.preventDefault();
-    if (isAutoFit()) {
+    if (isAutoFit) {
         toastAutoFitWheel();
         return;
     }
@@ -732,10 +737,10 @@ export function bindInteractions(
     ) => void,
     getNodePosition: NodePositionLookup,
     getAllNodes: NodeListLookup,
-    isAutoFit: () => boolean,
-    isLocked: () => boolean,
+    initialContext: FlowGestureContext,
     signal: AbortSignal,
-): void {
+): (next: FlowGestureContext) => void {
+    let context = initialContext;
     const cursorHost = wrap;
     if (state.isSpaceDown) {
         cursorHost.classList.add(
@@ -760,7 +765,8 @@ export function bindInteractions(
             handlePointerDown(
                 e, wrap, svg, state,
                 onUpdate, onPanelRequest,
-                getNodePosition, isLocked,
+                getNodePosition,
+                context.isLocked,
             );
         },
         { signal },
@@ -798,7 +804,7 @@ export function bindInteractions(
             if (!svg) return;
             handleWheel(
                 e, svg, state, onUpdate,
-                isAutoFit,
+                context.isAutoFit,
             );
         },
         { passive: false, signal },
@@ -855,7 +861,7 @@ export function bindInteractions(
         if (state.isSpaceDown === next) {
             return;
         }
-        if (next && isAutoFit()) {
+        if (next && context.isAutoFit) {
             showToast(
                 AUTOFIT_TOAST_MSG, 'error',
             );
@@ -894,6 +900,10 @@ export function bindInteractions(
         ),
         { signal },
     );
+
+    return (next) => {
+        context = next;
+    };
 }
 
 function handleCanvasNavigation(
