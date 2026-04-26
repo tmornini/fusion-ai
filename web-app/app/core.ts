@@ -16,6 +16,7 @@ import {
     initPageModule,
     handlePageLoadError,
 } from './page-loader';
+import { log } from './logger';
 
 export { navigateTo } from './navigation';
 export {
@@ -38,6 +39,11 @@ export {
     initTabs,
 } from './dialog';
 export { initDropdown } from './theme-toggle';
+
+async function loadAndInitCommandPalette(): Promise<void> {
+    const cp = await import('./command-palette');
+    cp.initCommandPalette();
+}
 
 document.addEventListener(
     'DOMContentLoaded',
@@ -80,20 +86,35 @@ document.addEventListener(
 
         const pageName = getPageName();
 
-        try {
-            if (
-                document.querySelector(
-                    '.sidebar-layout',
-                )
-            ) {
+        if (
+            document.querySelector(
+                '.sidebar-layout',
+            )
+        ) {
+            try {
                 await initSidebarLayout(
                     hasSchema,
                 );
+            } catch (err) {
+                log.warn(
+                    'sidebar layout init failed',
+                    'core',
+                    err,
+                );
             }
-            const cp = await import(
-                './command-palette'
+        }
+
+        try {
+            await loadAndInitCommandPalette();
+        } catch (err) {
+            log.warn(
+                'command palette init failed',
+                'core',
+                err,
             );
-            cp.initCommandPalette();
+        }
+
+        try {
             await initPageModule(pageName);
         } catch (err) {
             handlePageLoadError(
