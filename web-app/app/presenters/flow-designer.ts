@@ -72,6 +72,9 @@ import {
 import type {
     FlowHistorySnapshot,
 } from '../flow-history';
+import {
+    applyMoveNodes,
+} from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
     buildToolbar,
@@ -823,23 +826,9 @@ Auto Fit</label>
     ): void {
         if (this.#guardLocked()) return;
         if (updates.length === 0) return;
-        const fId = this.#state.flowId;
-        const updateMap = new Map(
-            updates.map(
-                u => [u.nodeId, u],
-            ),
+        this.#state.nodes = applyMoveNodes(
+            this.#state.nodes, updates,
         );
-        this.#state.nodes =
-            this.#state.nodes.map(n => {
-                const u =
-                    updateMap.get(n.id);
-                if (!u) return n;
-                return {
-                    ...n,
-                    positionX: u.x,
-                    positionY: u.y,
-                };
-            });
         void this.#saveFlow(true);
         this.#noteMutation();
         this.reconcileLayout();
