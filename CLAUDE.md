@@ -136,20 +136,34 @@ generate the markup the page injects into the DOM.
   mutate, and never touch the DOM directly. Page
   modules are responsible for the DOM; presenters are
   responsible for the HTML they hand over.
-  *Exception:* `FlowDesignerPresenter` retains
-  internal mutable state. Partial extraction
-  completed: panel state is hoisted out of
-  `InteractionState` (the gesture FSM uses an
-  `onPanelRequest` callback rather than mutating
-  panel directly); `FlowHistory` is now an
+  *Exception:* `FlowDesignerPresenter` retains an
+  internal `#state: DesignerState` field. The
+  state's mutation surface has been narrowed
+  significantly: every named transition lives in
+  `flow-designer-actions.ts` as a pure `apply*`
+  function (`applyMoveNodes`, `applyDragPreview`,
+  `applyToggleLock`, `applyUpdateFlowName`,
+  `applyAddNode`, `applyAddEdge`, `applyDeleteNodes`,
+  `applyDeleteEdge`, `applyUpdateNode`,
+  `applyUpdateEdge`, `applyAddField`,
+  `applyDeleteField`, `applyAutoLayout`,
+  `applyPanToRevealSelected`,
+  `applyPanelTransition`); `FlowHistory` is an
   immutable value with free transition functions;
-  `flow-designer-actions.ts` seeds pure transitions
-  (`applyMoveNodes`). Full migration to a
-  `FlowSnapshot` constructor argument and a
-  fully-pure presenter remains pending — it needs
-  manual regression coverage (F1–F46) that
-  includes drag/connect/marquee gestures that
-  synthetic PointerEvents cannot reliably drive.
+  `zoomToFit` in `flow-interactions.ts` returns a
+  fresh `{ zoom, viewBox }` rather than mutating in
+  place; the gesture FSM uses an `onPanelRequest`
+  callback rather than mutating panel state. The
+  remaining presenter methods are short adapters
+  that call a pure transition and copy the result
+  back into `#state`. Full type-level immutability
+  (a `FlowSnapshot` constructor argument with the
+  presenter reconstructed per render) remains
+  pending — it would be a structural rewrite rather
+  than a behavioral one, and needs manual
+  regression coverage (F1–F46) that includes
+  drag/connect/marquee gestures that synthetic
+  PointerEvents cannot reliably drive.
 - **Barrel**: `presenters/index.ts` re-exports every
   presenter class. Page modules import via
   `from '../app/presenters'`.
