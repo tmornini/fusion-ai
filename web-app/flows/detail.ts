@@ -75,6 +75,8 @@ class Debouncer {
 const saveDebouncer =
     new Debouncer(SAVE_DELAY_MS);
 
+type PanelStateRef = { open: boolean };
+
 class PageState {
     #projectId: string | undefined;
     readonly #interaction =
@@ -274,6 +276,7 @@ function bindBackButton(
 function bindCanvasInteractions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
+    panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {
     const wrap = $(
@@ -288,6 +291,10 @@ function bindCanvasInteractions(
         wrap,
         state,
         () => update(container, presenter),
+        (open) => {
+            panelStateRef.open = open;
+            presenter.setPanelOpen(open);
+        },
         (updates) => {
             presenter.moveNodes(updates);
             update(container, presenter);
@@ -476,6 +483,7 @@ async function handleExportZip(
 function bindPanelActions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
+    panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {
     const slot = $(
@@ -497,7 +505,8 @@ function bindPanelActions(
                 'data-action',
             );
             if (action === 'close-panel') {
-                presenter.closePanel();
+                panelStateRef.open = false;
+                presenter.setPanelOpen(false);
                 update(
                     container, presenter,
                 );
@@ -728,17 +737,21 @@ export async function init(
             FALLBACK_H,
             loaded.versions.length > 0,
         );
+    const panelStateRef: PanelStateRef =
+        { open: false };
     const signal = pageState.signal();
     presenter.renderShell(container);
     bindBackButton(container, signal);
     bindCanvasInteractions(
-        container, presenter, signal,
+        container, presenter,
+        panelStateRef, signal,
     );
     bindToolbarActions(
         container, presenter, signal,
     );
     bindPanelActions(
-        container, presenter, signal,
+        container, presenter,
+        panelStateRef, signal,
     );
     bindFlowNameEdit(
         container, presenter, signal,
@@ -747,7 +760,8 @@ export async function init(
         container, presenter, signal,
     );
     bindKeyboardShortcuts(
-        container, presenter, signal,
+        container, presenter,
+        panelStateRef, signal,
     );
     const initialWrap = container.querySelector(
         '.flow-canvas-wrap',
@@ -781,6 +795,7 @@ export async function init(
 function bindKeyboardShortcuts(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
+    panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {
     document.addEventListener(
@@ -788,10 +803,11 @@ function bindKeyboardShortcuts(
         (e: KeyboardEvent) => {
             if (
                 e.key === 'Escape'
-                && presenter.isPanelOpen()
+                && panelStateRef.open
             ) {
                 e.preventDefault();
-                presenter.closePanel();
+                panelStateRef.open = false;
+                presenter.setPanelOpen(false);
                 update(
                     container, presenter,
                 );

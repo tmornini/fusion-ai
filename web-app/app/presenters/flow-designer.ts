@@ -104,6 +104,7 @@ interface DesignerState {
     nodes: GraphNode[];
     edges: GraphEdge[];
     edgeWaypoints: Map<string, Waypoint[]>;
+    isPanelOpen: boolean;
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
 }
@@ -174,6 +175,7 @@ export class FlowDesignerPresenter {
             nodes: graph.nodes,
             edges: graph.edges,
             edgeWaypoints: emptyWaypoints(),
+            isPanelOpen: false,
             interaction,
             savedViewBox:
                 { kind: 'none' },
@@ -417,8 +419,7 @@ export class FlowDesignerPresenter {
         this.#state.edges = graph.edges;
         this.#state.interaction
             .selection = { kind: 'none' };
-        this.#state.interaction
-            .isPanelOpen = false;
+        this.#state.isPanelOpen = false;
     }
 
     #migrateToCenter(): void {
@@ -495,14 +496,8 @@ export class FlowDesignerPresenter {
         return this.#state.interaction;
     }
 
-    isPanelOpen(): boolean {
-        return this.#state.interaction
-            .isPanelOpen;
-    }
-
-    closePanel(): void {
-        this.#state.interaction
-            .isPanelOpen = false;
+    setPanelOpen(open: boolean): void {
+        this.#state.isPanelOpen = open;
     }
 
     getNodePosition(id: string): {
@@ -614,8 +609,7 @@ export class FlowDesignerPresenter {
         const saved =
             this.#state.savedViewBox;
         const isOpen =
-            this.#state.interaction
-                .isPanelOpen;
+            this.#state.isPanelOpen;
         const wasOpen =
             saved.kind === 'saved';
         if (isOpen && !wasOpen) {
@@ -1134,8 +1128,8 @@ Auto Fit</label>
                         ),
                 };
             });
-        const panelOpen = this.#state
-            .interaction.isPanelOpen;
+        const panelOpen =
+            this.#state.isPanelOpen;
         const effectiveW = panelOpen
             ? Math.max(
                 0,
@@ -1471,8 +1465,7 @@ Auto Fit</label>
                 kind: 'nodes',
                 nodeIds: new Set([nodeId]),
             };
-        this.#state.interaction
-            .isPanelOpen = false;
+        this.#state.isPanelOpen = false;
         this.reconcileLayout();
         return true;
     }
@@ -1753,12 +1746,11 @@ Auto Fit</label>
     }
 
     #buildPropsPanel(): SafeHtml {
-        const interaction =
-            this.#state.interaction;
-        if (!interaction.isPanelOpen) {
+        if (!this.#state.isPanelOpen) {
             return html``;
         }
-        const sel = interaction.selection;
+        const sel =
+            this.#state.interaction.selection;
 
         const singleNodeId = this
             .#singleSelectedNodeId();
