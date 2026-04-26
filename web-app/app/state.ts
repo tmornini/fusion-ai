@@ -69,6 +69,10 @@ let state: Readonly<AppState> = {
 
 const subs = new Set<StateListener>();
 
+function getState(): Readonly<AppState> {
+    return state;
+}
+
 function setState(
     partial: Partial<AppState>,
 ): void {
@@ -207,7 +211,7 @@ function initListeners(): void {
 export type { AppState };
 export {
     STORAGE_KEY_THEME,
-    state,
+    getState,
     setState,
     subscribe,
     computeTheme,

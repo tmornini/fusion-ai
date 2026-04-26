@@ -1,5 +1,5 @@
 import {
-    state,
+    getState,
     isValidTheme,
     setTheme,
 } from './state';
@@ -20,10 +20,11 @@ const THEME_TOGGLE_IDS = [
 
 export function mutateThemeToggleIcon(
 ): void {
+    const theme = getState().theme;
     const themeIcon =
-        state.theme === 'dark'
+        theme === 'dark'
             ? iconMoon(20, '')
-            : state.theme === 'light'
+            : theme === 'light'
                 ? iconSun(20, '')
                 : iconMonitor(20, '');
     const themeLabel = 'Toggle theme';
