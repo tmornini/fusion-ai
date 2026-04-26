@@ -10,6 +10,7 @@ import {
     iconLoader,
 } from '../app/icons';
 import { navigateTo } from '../app/core';
+import { getViewportWidth } from '../app/adapters';
 
 function validateEmail(
     email: string,
@@ -356,7 +357,7 @@ export async function init(): Promise<void> {
     const branding = $('#auth-branding', document);
     if (
         branding
-        && window.innerWidth >= 1024
+        && getViewportWidth() >= 1024
     ) {
         branding.classList.remove('hidden');
         branding.style.display = '';
@@ -364,7 +365,7 @@ export async function init(): Promise<void> {
     const mobileLogo = $('#mobile-logo', document);
     if (
         mobileLogo
-        && window.innerWidth >= 1024
+        && getViewportWidth() >= 1024
     ) {
         mobileLogo.classList.add('hidden');
     }

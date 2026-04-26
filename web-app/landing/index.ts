@@ -17,6 +17,7 @@ import {
     iconLineChart,
     iconMessageSquare,
 } from '../app/icons';
+import { setLocation } from '../app/adapters';
 
 const features = [
     {
@@ -615,15 +616,13 @@ export async function init(): Promise<void> {
             el.addEventListener(
                 'click',
                 () => {
-                    window.location.href =
-                        '../auth/index.html';
+                    setLocation('../auth/index.html');
                 },
             );
         });
 
     const AUTO_REDIRECT_MS = 2000;
     setTimeout(() => {
-        window.location.href =
-            '../dashboard/index.html';
+        setLocation('../dashboard/index.html');
     }, AUTO_REDIRECT_MS);
 }

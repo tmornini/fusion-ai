@@ -1,7 +1,7 @@
 import {
     getPreference,
     writePreference,
-} from './preferences-store';
+} from './adapters/preferences';
 import {
     mediaQueryMatches,
     subscribeMediaQuery,

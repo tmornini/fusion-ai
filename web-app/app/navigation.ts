@@ -1,4 +1,8 @@
 import { PAGE_REGISTRY } from './page-registry';
+import {
+    getQueryString,
+    setLocation,
+} from './adapters/location';
 
 function getPageName(): string {
     const name = document
@@ -16,7 +20,7 @@ function getPageName(): string {
 function getParams(): Record<string, string> {
     const params: Record<string, string> = {};
     new URLSearchParams(
-        window.location.search,
+        getQueryString(),
     ).forEach((value, key) => {
         params[key] = value;
     });
@@ -45,8 +49,7 @@ function navigateTo(
     page: string,
     params?: Record<string, string>,
 ): void {
-    window.location.href =
-        buildPageUrl(page, params);
+    setLocation(buildPageUrl(page, params));
 }
 
 export { buildPageUrl, navigateTo, getPageName, getParams };

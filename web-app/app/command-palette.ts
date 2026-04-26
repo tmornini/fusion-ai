@@ -21,6 +21,7 @@ import {
     getProjects,
     getTeamMembers,
     createFetchContext,
+    setLocation,
 } from './adapters';
 import {
     PAGE_REGISTRY,
@@ -490,7 +491,7 @@ ${posIndex === 0
             state.filteredItems[index];
         if (!item) return;
         close();
-        window.location.href = item.href;
+        setLocation(item.href);
     }
 
     function open(): void {

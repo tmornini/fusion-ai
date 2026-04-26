@@ -17,6 +17,7 @@ import {
     getFlowMermaid,
     getFlowZip,
     getFlowVersions,
+    postClipboardCopy,
 } from '../app/adapters';
 import {
     downloadBlob,
@@ -422,8 +423,7 @@ async function handleCopyMermaid(
         return;
     }
     try {
-        await navigator.clipboard
-            .writeText(text);
+        await postClipboardCopy(text);
     } catch (err) {
         log.error(
             'clipboard write failed',

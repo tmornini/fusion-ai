@@ -7,6 +7,7 @@ import {
     getSnapshot,
     getDataPresent,
     nowUtc,
+    getUrlParam,
 } from '../app/adapters';
 import {
     $, $input, $button, createElement,
@@ -436,10 +437,7 @@ const MISSING_TABLE_BANNER_ID =
 function mutateMissingTableBanner(
     root: HTMLElement,
 ): void {
-    const params = new URLSearchParams(
-        window.location.search,
-    );
-    const missing = params.get('missing-table');
+    const missing = getUrlParam('missing-table');
     if (!missing) return;
     if (
         $(
