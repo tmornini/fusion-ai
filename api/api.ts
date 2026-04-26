@@ -32,6 +32,10 @@ export class ApiError {
     ) {}
 }
 
+const HTTP_BAD_REQUEST = 400;
+const HTTP_NOT_FOUND = 404;
+const HTTP_INTERNAL_ERROR = 500;
+
 let adapter: DbAdapter | undefined;
 
 export function initApi(
@@ -462,7 +466,7 @@ const routes: Route[] = [
                     throw new ApiError(
                         'Missing or invalid'
                         + ' "role" field.',
-                        400,
+                        HTTP_BAD_REQUEST,
                     );
                 }
                 if (
@@ -473,7 +477,7 @@ const routes: Route[] = [
                     throw new ApiError(
                         'Missing or invalid'
                         + ' "type" field.',
-                        400,
+                        HTTP_BAD_REQUEST,
                     );
                 }
                 const tmId =
@@ -548,7 +552,7 @@ const routes: Route[] = [
                     'Missing or invalid'
                     + ' "json" field:'
                     + ' expected a string.',
-                    400,
+                    HTTP_BAD_REQUEST,
                 );
             }
             return db.importSnapshot(
@@ -622,7 +626,7 @@ export async function handleRequest(
                 error:
                     'Not found: ' + pathname,
             },
-            { status: 404 },
+            { status: HTTP_NOT_FOUND },
         );
     }
 
@@ -765,7 +769,7 @@ export async function handleRequest(
         ) {
             return Response.json(
                 { error: error.message },
-                { status: 404 },
+                { status: HTTP_NOT_FOUND },
             );
         }
         return Response.json(
@@ -775,7 +779,7 @@ export async function handleRequest(
                         ? error.message
                         : String(error),
             },
-            { status: 500 },
+            { status: HTTP_INTERNAL_ERROR },
         );
     }
 }
