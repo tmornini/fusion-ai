@@ -80,6 +80,8 @@ import {
     applyUpdateFlowName,
     applyAddNode,
     applyAddEdge,
+    applyDeleteNodes,
+    applyDeleteEdge,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -989,24 +991,15 @@ Auto Fit</label>
             .#deletableNodeIds();
         if (ids.length === 0) return false;
         const idSet = new Set(ids);
-        const nextNodes =
-            this.#state.nodes.filter(
-                n => !idSet.has(n.id),
-            );
-        const nextEdges =
-            this.#state.edges.filter(
-                e =>
-                    !idSet.has(
-                        e.fromNodeId,
-                    )
-                    && !idSet.has(
-                        e.toNodeId,
-                    ),
-            );
+        const result = applyDeleteNodes(
+            this.#state.nodes,
+            this.#state.edges,
+            idSet,
+        );
         const prevNodes = this.#state.nodes;
         const prevEdges = this.#state.edges;
-        this.#state.nodes = nextNodes;
-        this.#state.edges = nextEdges;
+        this.#state.nodes = result.nodes;
+        this.#state.edges = result.edges;
         try {
             await this.#saveFlow(true);
         } catch (err) {
@@ -1076,10 +1069,9 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.edges =
-            this.#state.edges.filter(
-                e => e.id !== edgeId,
-            );
+        this.#state.edges = applyDeleteEdge(
+            this.#state.edges, edgeId,
+        );
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };

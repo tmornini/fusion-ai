@@ -98,3 +98,33 @@ export function applyAddEdge(
         },
     ];
 }
+
+export interface DeleteNodesResult {
+    readonly nodes: GraphNode[];
+    readonly edges: GraphEdge[];
+}
+
+export function applyDeleteNodes(
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+    nodeIds: ReadonlySet<string>,
+): DeleteNodesResult {
+    return {
+        nodes: nodes.filter(
+            n => !nodeIds.has(n.id),
+        ),
+        edges: edges.filter(
+            e => !nodeIds.has(e.fromNodeId)
+                && !nodeIds.has(e.toNodeId),
+        ),
+    };
+}
+
+export function applyDeleteEdge(
+    edges: readonly GraphEdge[],
+    edgeId: string,
+): GraphEdge[] {
+    return edges.filter(
+        e => e.id !== edgeId,
+    );
+}
