@@ -1,7 +1,7 @@
 import {
     html, mutateHtml, SafeHtml,
 } from '../safe-html';
-import { $ } from '../dom';
+import { $required } from '../dom';
 import {
     orderedKeys,
 } from './ordered-keys';
@@ -155,8 +155,7 @@ function mutateSlot(
     cls: string,
     markup: SafeHtml,
 ): void {
-    const slot = $(cls, container);
-    if (!slot) return;
+    const slot = $required(cls, container);
     mutateHtml(slot, markup);
 }
 
@@ -164,10 +163,9 @@ function updateWrapClass(
     container: HTMLElement,
     isReviewable: boolean,
 ): void {
-    const wrap = $(
+    const wrap = $required(
         '.idea-detail-wrap', container,
     );
-    if (!wrap) return;
     wrap.classList.toggle(
         'has-footer-actions',
         isReviewable,
