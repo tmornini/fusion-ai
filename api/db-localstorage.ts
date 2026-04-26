@@ -1,5 +1,6 @@
 import {
     EntityNotFound,
+    MissingTableError,
 } from './db';
 import type {
     DbAdapter,
@@ -66,7 +67,9 @@ function readTable<T>(
     const raw = localStorage.getItem(
         KEY_PREFIX + tableName,
     );
-    if (!raw) return [];
+    if (raw === null) {
+        throw new MissingTableError(tableName);
+    }
     try {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) {

@@ -17,6 +17,8 @@ import {
     handlePageLoadError,
 } from './page-loader';
 import { log } from './logger';
+import { MissingTableError } from '../../api/db';
+import { navigateTo } from './navigation';
 
 export { navigateTo } from './navigation';
 export {
@@ -44,6 +46,31 @@ export { initDropdown } from './theme-toggle';
 async function loadAndInitCommandPalette(): Promise<void> {
     const cp = await import('./command-palette');
     cp.initCommandPalette();
+}
+
+function redirectIfMissingTable(
+    err: unknown,
+): boolean {
+    if (!(err instanceof MissingTableError)) {
+        return false;
+    }
+    if (getPageName() === 'snapshots') {
+        log.warn(
+            'missing table on snapshots page',
+            'core',
+            err,
+        );
+        return false;
+    }
+    log.warn(
+        'missing table; redirecting to snapshots',
+        'core',
+        err,
+    );
+    navigateTo('snapshots', {
+        'missing-table': err.table,
+    });
+    return true;
 }
 
 document.addEventListener(
@@ -97,6 +124,9 @@ document.addEventListener(
                     hasSchema,
                 );
             } catch (err) {
+                if (
+                    redirectIfMissingTable(err)
+                ) return;
                 log.warn(
                     'sidebar layout init failed',
                     'core',
@@ -108,6 +138,9 @@ document.addEventListener(
         try {
             await loadAndInitCommandPalette();
         } catch (err) {
+            if (
+                redirectIfMissingTable(err)
+            ) return;
             log.warn(
                 'command palette init failed',
                 'core',
@@ -118,6 +151,9 @@ document.addEventListener(
         try {
             await initPageModule(pageName);
         } catch (err) {
+            if (
+                redirectIfMissingTable(err)
+            ) return;
             handlePageLoadError(
                 pageName, err,
             );

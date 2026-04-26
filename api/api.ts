@@ -1,5 +1,8 @@
 import type { DbAdapter } from './db';
-import { EntityNotFound } from './db';
+import {
+    EntityNotFound,
+    MissingTableError,
+} from './db';
 import { nowUtc } from './types';
 import type {
     UserEntity,
@@ -746,6 +749,11 @@ export async function handleRequest(
                 );
         }
     } catch (error) {
+        if (
+            error instanceof MissingTableError
+        ) {
+            throw error;
+        }
         if (error instanceof ApiError) {
             return Response.json(
                 { error: error.message },

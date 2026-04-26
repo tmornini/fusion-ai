@@ -273,6 +273,7 @@ export async function init(
     </div>
     `);
 
+    mutateMissingTableBanner(root);
     await mutateEmptyBanner(root);
 
     const wipeBtn = $button(
@@ -427,6 +428,43 @@ export async function init(
         'click',
         () => void executePending(),
     );
+}
+
+const MISSING_TABLE_BANNER_ID =
+    'missing-table-banner';
+
+function mutateMissingTableBanner(
+    root: HTMLElement,
+): void {
+    const params = new URLSearchParams(
+        window.location.search,
+    );
+    const missing = params.get('missing-table');
+    if (!missing) return;
+    if (
+        $(
+            '#' + MISSING_TABLE_BANNER_ID,
+            document,
+        )
+    ) return;
+    const banner = createElement('div');
+    banner.id = MISSING_TABLE_BANNER_ID;
+    banner.className =
+        'card empty-banner';
+    banner.dataset['tone'] = 'warning';
+    mutateHtml(
+        banner,
+        html`<span
+            class="empty-banner-icon"
+            >${iconInfo(20, '')}</span>
+        <p class="text-sm m-0">${
+            'The schema is missing the "'
+            + missing
+            + '" table. Recreate the schema'
+            + ' below to continue.'
+        }</p>`,
+    );
+    root.prepend(banner);
 }
 
 async function mutateEmptyBanner(
