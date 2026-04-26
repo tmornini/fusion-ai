@@ -727,7 +727,15 @@ function buildImportedEdges(
     for (const e of parsedEdges) {
         const fromId = idMap.get(e.fromId);
         const toId = idMap.get(e.toId);
-        if (!fromId || !toId) continue;
+        if (!fromId || !toId) {
+            throw new Error(
+                'Flow import: edge '
+                + e.fromId + '->'
+                + e.toId
+                + ' references unknown'
+                + ' node(s)',
+            );
+        }
         if (fromId === toId) continue;
         const key =
             fromId + '->'

@@ -46,6 +46,50 @@ export type IdeaStatus =
     | 'archived'
     | 'deleted';
 
+export type ActivityType =
+    | 'idea_created'
+    | 'project_created'
+    | 'user_joined'
+    | 'status_changed'
+    | 'idea_converted';
+
+const ACTIVITY_TYPES:
+    readonly ActivityType[] = [
+    'idea_created',
+    'project_created',
+    'user_joined',
+    'status_changed',
+    'idea_converted',
+];
+
+export function isActivityType(
+    v: string,
+): v is ActivityType {
+    return (ACTIVITY_TYPES as readonly string[])
+        .includes(v);
+}
+
+export type DimensionKey =
+    | 'driver'
+    | 'analytical'
+    | 'expressive'
+    | 'amiable';
+
+const DIMENSION_KEYS:
+    readonly DimensionKey[] = [
+    'driver',
+    'analytical',
+    'expressive',
+    'amiable',
+];
+
+export function isDimensionKey(
+    v: string,
+): v is DimensionKey {
+    return (DIMENSION_KEYS as readonly string[])
+        .includes(v);
+}
+
 export type ProjectStatus =
     | 'submitted'
     | 'under-review'
@@ -1133,7 +1177,7 @@ export class Project {
 
 export class Activity {
     readonly #id: string;
-    readonly #type: string;
+    readonly #type: ActivityType;
     readonly #action: string;
     readonly #target: string;
     readonly #timestamp: string;
@@ -1145,6 +1189,12 @@ export class Activity {
         entity: ActivityEntity,
         actor: string,
     ) {
+        if (!isActivityType(entity.type)) {
+            throw new Error(
+                'Unknown activity type: '
+                + entity.type,
+            );
+        }
         this.#id = entity.id;
         this.#type = entity.type;
         this.#action = entity.action;
@@ -1166,7 +1216,7 @@ export class Activity {
             + ` ${this.#target}`;
     }
 
-    typeValue(): string {
+    typeValue(): ActivityType {
         return this.#type;
     }
 
