@@ -140,9 +140,9 @@ function mapWaypointsByEdgeId(
         const key = edgeWaypointKey(
             e.fromNodeId, e.toNodeId,
         );
-        const wp = byPair.get(key);
-        if (wp && wp.length > 0) {
-            result.set(e.id, wp);
+        const workingPair = byPair.get(key);
+        if (workingPair && workingPair.length > 0) {
+            result.set(e.id, workingPair);
         }
     }
     return result;
@@ -457,19 +457,19 @@ export class FlowDesignerPresenter {
             sumX += n.positionX;
             sumY += n.positionY;
         }
-        const cx = sumX / nodes.length;
-        const cy = sumY / nodes.length;
+        const centerX = sumX / nodes.length;
+        const centerY = sumY / nodes.length;
         if (
-            Math.abs(cx) <= 1
-            && Math.abs(cy) <= 1
+            Math.abs(centerX) <= 1
+            && Math.abs(centerY) <= 1
         ) return;
         this.#state.nodes = nodes.map(
             n => ({
                 ...n,
                 positionX:
-                    n.positionX - cx,
+                    n.positionX - centerX,
                 positionY:
-                    n.positionY - cy,
+                    n.positionY - centerY,
             }),
         );
         void this.#saveFlow(false);
@@ -1716,14 +1716,14 @@ Auto Fit</label>
         const vb =
             this.#state.interaction
                 .viewBox;
-        const cx = vb.x + vb.w / 2;
-        const cy = vb.y + vb.h / 2;
+        const centerX = vb.x + vb.w / 2;
+        const centerY = vb.y + vb.h / 2;
         const z =
             this.#state.interaction.zoom;
         vb.w = w / z;
         vb.h = h / z;
-        vb.x = cx - vb.w / 2;
-        vb.y = cy - vb.h / 2;
+        vb.x = centerX - vb.w / 2;
+        vb.y = centerY - vb.h / 2;
     }
 
     #applyZoomToFit(): void {
