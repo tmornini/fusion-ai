@@ -2,7 +2,7 @@ const MAX_TOASTS = 5;
 const TOAST_DURATION_MS = 3000;
 const TOAST_TRANSITION_MS = 300;
 
-function dismissToast(
+function closeActiveToast(
     toast: HTMLElement,
 ): void {
     toast.style.opacity = '0';
@@ -42,12 +42,12 @@ export function showToast(
     closeBtn.className = 'toast-close';
     closeBtn.setAttribute('aria-label', 'Dismiss');
     closeBtn.textContent = '\u00D7';
-    closeBtn.addEventListener('click', () => dismissToast(toast));
+    closeBtn.addEventListener('click', () => closeActiveToast(toast));
     toast.appendChild(closeBtn);
 
     container.appendChild(toast);
     setTimeout(
-            () => dismissToast(toast),
+            () => closeActiveToast(toast),
             TOAST_DURATION_MS,
     );
 }
