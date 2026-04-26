@@ -82,6 +82,10 @@ import {
     applyAddEdge,
     applyDeleteNodes,
     applyDeleteEdge,
+    applyUpdateNode,
+    applyUpdateEdge,
+    applyAddField,
+    applyDeleteField,
 } from '../flow-designer-actions';
 import { iconArrowLeft } from '../icons';
 import {
@@ -1173,16 +1177,14 @@ Auto Fit</label>
         name: string,
     ): void {
         if (this.#guardLocked()) return;
-        name = name.trim();
         const nodeId = this
             .#singleSelectedNodeId();
         if (!nodeId) return;
-        this.#state.nodes =
-            this.#state.nodes.map(
-                n => n.id === nodeId
-                    ? { ...n, name }
-                    : n,
-            );
+        this.#state.nodes = applyUpdateNode(
+            this.#state.nodes,
+            nodeId,
+            { name: name.trim() },
+        );
         void this.#saveFlow(true);
         this.#noteMutation();
     }
@@ -1191,19 +1193,14 @@ Auto Fit</label>
         desc: string,
     ): void {
         if (this.#guardLocked()) return;
-        desc = desc.trim();
         const nodeId = this
             .#singleSelectedNodeId();
         if (!nodeId) return;
-        this.#state.nodes =
-            this.#state.nodes.map(
-                n => n.id === nodeId
-                    ? {
-                        ...n,
-                        description: desc,
-                    }
-                    : n,
-            );
+        this.#state.nodes = applyUpdateNode(
+            this.#state.nodes,
+            nodeId,
+            { description: desc.trim() },
+        );
         void this.#saveFlow(true);
         this.#noteMutation();
     }
@@ -1212,18 +1209,15 @@ Auto Fit</label>
         name: string,
     ): void {
         if (this.#guardLocked()) return;
-        name = name.trim();
         const sel =
             this.#state.interaction
                 .selection;
         if (sel.kind !== 'edge') return;
-        const edgeId = sel.edgeId;
-        this.#state.edges =
-            this.#state.edges.map(
-                e => e.id === edgeId
-                    ? { ...e, name }
-                    : e,
-            );
+        this.#state.edges = applyUpdateEdge(
+            this.#state.edges,
+            sel.edgeId,
+            { name: name.trim() },
+        );
         void this.#saveFlow(true);
         this.#noteMutation();
     }
@@ -1232,21 +1226,15 @@ Auto Fit</label>
         desc: string,
     ): void {
         if (this.#guardLocked()) return;
-        desc = desc.trim();
         const sel =
             this.#state.interaction
                 .selection;
         if (sel.kind !== 'edge') return;
-        const edgeId = sel.edgeId;
-        this.#state.edges =
-            this.#state.edges.map(
-                e => e.id === edgeId
-                    ? {
-                        ...e,
-                        description: desc,
-                    }
-                    : e,
-            );
+        this.#state.edges = applyUpdateEdge(
+            this.#state.edges,
+            sel.edgeId,
+            { description: desc.trim() },
+        );
         void this.#saveFlow(true);
         this.#noteMutation();
     }
@@ -1300,18 +1288,10 @@ Auto Fit</label>
             isRequired,
             options,
         };
-        this.#state.nodes =
-            this.#state.nodes.map(
-                n => n.id === nodeId
-                    ? {
-                        ...n,
-                        fields: [
-                            ...n.fields,
-                            newField,
-                        ],
-                    }
-                    : n,
-            );
+        this.#state.nodes = applyAddField(
+            this.#state.nodes,
+            nodeId, newField,
+        );
         this.#noteMutation();
         return true;
     }
@@ -1340,19 +1320,10 @@ Auto Fit</label>
                 );
             return false;
         }
-        this.#state.nodes =
-            this.#state.nodes.map(
-                n => n.id === nodeId
-                    ? {
-                        ...n,
-                        fields:
-                            n.fields.filter(
-                                f => f.id
-                                    !== fieldId,
-                            ),
-                    }
-                    : n,
-            );
+        this.#state.nodes = applyDeleteField(
+            this.#state.nodes,
+            nodeId, fieldId,
+        );
         this.#noteMutation();
         return true;
     }

@@ -1,6 +1,7 @@
 import type {
     GraphNode,
     GraphEdge,
+    GraphField,
 } from './adapters/flows';
 
 export interface NodeMove {
@@ -126,5 +127,61 @@ export function applyDeleteEdge(
 ): GraphEdge[] {
     return edges.filter(
         e => e.id !== edgeId,
+    );
+}
+
+export function applyUpdateNode(
+    nodes: readonly GraphNode[],
+    nodeId: string,
+    patch: Partial<GraphNode>,
+): GraphNode[] {
+    return nodes.map(
+        n => n.id === nodeId
+            ? { ...n, ...patch }
+            : n,
+    );
+}
+
+export function applyUpdateEdge(
+    edges: readonly GraphEdge[],
+    edgeId: string,
+    patch: Partial<GraphEdge>,
+): GraphEdge[] {
+    return edges.map(
+        e => e.id === edgeId
+            ? { ...e, ...patch }
+            : e,
+    );
+}
+
+export function applyAddField(
+    nodes: readonly GraphNode[],
+    nodeId: string,
+    field: GraphField,
+): GraphNode[] {
+    return nodes.map(
+        n => n.id === nodeId
+            ? {
+                ...n,
+                fields: [...n.fields, field],
+            }
+            : n,
+    );
+}
+
+export function applyDeleteField(
+    nodes: readonly GraphNode[],
+    nodeId: string,
+    fieldId: string,
+): GraphNode[] {
+    return nodes.map(
+        n => n.id === nodeId
+            ? {
+                ...n,
+                fields: n.fields.filter(
+                    f => f.id !== fieldId,
+                ),
+            }
+            : n,
     );
 }
