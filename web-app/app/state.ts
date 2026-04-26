@@ -83,7 +83,8 @@ function setState(
     partial: Partial<AppState>,
 ): void {
     state = { ...state, ...partial };
-    subs.forEach(fn => fn());
+    const snapshot = [...subs];
+    snapshot.forEach(fn => fn());
 }
 
 function subscribe(
