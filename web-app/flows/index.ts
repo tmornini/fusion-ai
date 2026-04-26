@@ -260,19 +260,20 @@ async function handleFileSelect(
         const bytes = new Uint8Array(
             await file.arrayBuffer(),
         );
+        let backup: BackupV2 | undefined;
         try {
-            const backup =
+            backup =
                 await getBackupFromZip(bytes);
-            await handleV2Zip(
-                backup, input,
-            );
-            return;
         } catch (err) {
             log.info(
                 'not a v2 backup',
                 'flows',
                 err,
             );
+        }
+        if (backup) {
+            await handleV2Zip(backup, input);
+            return;
         }
     }
 
@@ -294,29 +295,37 @@ async function handleFileSelect(
         flowId: string;
         warnings: string[];
     };
-    try {
-        result = ext === 'zip'
-            ? await postFlowFromZip(
-                crypto.randomUUID(),
-                new Uint8Array(
-                    await file
-                        .arrayBuffer(),
-                ),
-                projectId,
-            )
-            : await postFlowFromMermaid(
-                crypto.randomUUID(),
-                await file.text(),
-                projectId,
+    const uuid = crypto.randomUUID();
+    if (ext === 'zip') {
+        const bytes = new Uint8Array(
+            await file.arrayBuffer(),
+        );
+        try {
+            result = await postFlowFromZip(
+                uuid, bytes, projectId,
             );
-    } catch (err) {
-        const msg =
-            err instanceof Error
+        } catch (err) {
+            const msg = err instanceof Error
                 ? err.message
                 : 'Import failed';
-        showToast(msg, 'error');
-        input.value = '';
-        return;
+            showToast(msg, 'error');
+            input.value = '';
+            return;
+        }
+    } else {
+        const text = await file.text();
+        try {
+            result = await postFlowFromMermaid(
+                uuid, text, projectId,
+            );
+        } catch (err) {
+            const msg = err instanceof Error
+                ? err.message
+                : 'Import failed';
+            showToast(msg, 'error');
+            input.value = '';
+            return;
+        }
     }
 
     input.value = '';
@@ -475,18 +484,10 @@ async function handleOverwrite(
     if (stOw.kind !== 'pending') return;
     closeDialog('import-flow');
     resetImportDialog();
+    let flowId: string;
     try {
-        const flowId =
+        flowId =
             await putFlowFromBackup(stOw.backup);
-        clearPending(input);
-        showToast(
-            'Flow overwritten',
-            'success',
-        );
-        navigateTo(
-            'flow-detail',
-            { flowId },
-        );
     } catch (err) {
         clearPending(input);
         const msg =
@@ -494,7 +495,11 @@ async function handleOverwrite(
                 ? err.message
                 : 'Overwrite failed';
         showToast(msg, 'error');
+        return;
     }
+    clearPending(input);
+    showToast('Flow overwritten', 'success');
+    navigateTo('flow-detail', { flowId });
 }
 
 async function handleCreateNew(
@@ -510,20 +515,11 @@ async function handleCreateNew(
     if (!projectId) return;
     closeDialog('import-flow');
     resetImportDialog();
+    let flowId: string;
     try {
-        const flowId =
-            await postFlowFromBackup(
-                crypto.randomUUID(),
-                stRe.backup, projectId,
-            );
-        clearPending(input);
-        showToast(
-            'Flow imported',
-            'success',
-        );
-        navigateTo(
-            'flow-detail',
-            { flowId },
+        flowId = await postFlowFromBackup(
+            crypto.randomUUID(),
+            stRe.backup, projectId,
         );
     } catch (err) {
         clearPending(input);
@@ -532,7 +528,11 @@ async function handleCreateNew(
                 ? err.message
                 : 'Import failed';
         showToast(msg, 'error');
+        return;
     }
+    clearPending(input);
+    showToast('Flow imported', 'success');
+    navigateTo('flow-detail', { flowId });
 }
 
 async function handleCreate(
@@ -553,20 +553,11 @@ async function handleCreate(
     }
     closeDialog('import-flow');
     resetImportDialog();
+    let flowId: string;
     try {
-        const flowId =
-            await postFlowFromBackup(
-                crypto.randomUUID(),
-                stNw.backup, projectId,
-            );
-        clearPending(input);
-        showToast(
-            'Flow imported',
-            'success',
-        );
-        navigateTo(
-            'flow-detail',
-            { flowId },
+        flowId = await postFlowFromBackup(
+            crypto.randomUUID(),
+            stNw.backup, projectId,
         );
     } catch (err) {
         clearPending(input);
@@ -575,5 +566,9 @@ async function handleCreate(
                 ? err.message
                 : 'Import failed';
         showToast(msg, 'error');
+        return;
     }
+    clearPending(input);
+    showToast('Flow imported', 'success');
+    navigateTo('flow-detail', { flowId });
 }

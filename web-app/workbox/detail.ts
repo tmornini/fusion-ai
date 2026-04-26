@@ -401,26 +401,6 @@ function initTransitionButtons(
                                 detail
                                     .currentNodeId(),
                         });
-                    await postActivity({
-                        type: 'status_changed',
-                        action:
-                            'transitioned'
-                            + ' work order',
-                        target:
-                            detail
-                                .flowNameText()
-                            + ' #'
-                            + detail
-                                .displayIdText(),
-                        status: '',
-                        feedback: '',
-                    });
-                    showToast(
-                        'Transition'
-                        + ' complete',
-                        'success',
-                    );
-                    navigateTo('workbox');
                 } catch (err) {
                     log.error(
                         'work order'
@@ -434,7 +414,27 @@ function initTransitionButtons(
                         + ' failed',
                         'error',
                     );
+                    return;
                 }
+                await postActivity({
+                    type: 'status_changed',
+                    action:
+                        'transitioned'
+                        + ' work order',
+                    target:
+                        detail
+                            .flowNameText()
+                        + ' #'
+                        + detail
+                            .displayIdText(),
+                    status: '',
+                    feedback: '',
+                });
+                showToast(
+                    'Transition complete',
+                    'success',
+                );
+                navigateTo('workbox');
             },
         );
     }
@@ -458,11 +458,6 @@ function initUnclaimButton(
                 await deleteWorkOrderClaim(
                     claimId,
                 );
-                showToast(
-                    'Work order released',
-                    'success',
-                );
-                navigateTo('workbox');
             } catch (err) {
                 log.error(
                     'work order release'
@@ -475,7 +470,13 @@ function initUnclaimButton(
                     + ' work order',
                     'error',
                 );
+                return;
             }
+            showToast(
+                'Work order released',
+                'success',
+            );
+            navigateTo('workbox');
         },
     );
 }
