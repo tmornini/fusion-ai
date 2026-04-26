@@ -632,9 +632,6 @@ async function handleSaveField(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
 ): Promise<void> {
-    if (
-        presenter.selectedNodeId() === null
-    ) return;
     const nameEl = $inputRequired(
         '#new-field-name', container,
     );

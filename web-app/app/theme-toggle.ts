@@ -1,5 +1,5 @@
 import {
-    getState,
+    getThemeIcon,
     isValidTheme,
     setTheme,
 } from './state';
@@ -7,11 +7,6 @@ import { $, $$ } from './dom';
 import { mutateHtml } from './safe-html';
 import { showToast } from './toast';
 import { log } from './logger';
-import {
-    iconSun,
-    iconMoon,
-    iconMonitor,
-} from './icons';
 
 const THEME_TOGGLE_IDS = [
     'theme-toggle',
@@ -20,13 +15,7 @@ const THEME_TOGGLE_IDS = [
 
 export function mutateThemeToggleIcon(
 ): void {
-    const theme = getState().theme;
-    const themeIcon =
-        theme === 'dark'
-            ? iconMoon(20, '')
-            : theme === 'light'
-                ? iconSun(20, '')
-                : iconMonitor(20, '');
+    const themeIcon = getThemeIcon(20, '');
     const themeLabel = 'Toggle theme';
     THEME_TOGGLE_IDS.forEach(id => {
         const button =

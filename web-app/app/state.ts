@@ -6,6 +6,12 @@ import {
     mediaQueryMatches,
     subscribeMediaQuery,
 } from './adapters/media-query';
+import {
+    iconSun,
+    iconMoon,
+    iconMonitor,
+} from './icons';
+import type { SafeHtml } from './safe-html';
 
 const STORAGE_KEY_THEME = 'fusion-theme';
 const STORAGE_KEY_SIDEBAR =
@@ -103,6 +109,19 @@ function computeTheme(): 'light' | 'dark' {
             : 'light';
     }
     return state.theme;
+}
+
+function getThemeIcon(
+    size: number,
+    cssClass: string,
+): SafeHtml {
+    if (state.theme === 'dark') {
+        return iconMoon(size, cssClass);
+    }
+    if (state.theme === 'light') {
+        return iconSun(size, cssClass);
+    }
+    return iconMonitor(size, cssClass);
 }
 
 function applyTheme(): void {
@@ -207,6 +226,7 @@ export {
     setState,
     subscribe,
     computeTheme,
+    getThemeIcon,
     applyTheme,
     setTheme,
     setSidebarCollapsed,
