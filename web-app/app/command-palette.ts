@@ -104,6 +104,7 @@ function buildHighlightedMatch(
     const escaped = escapeForHtml(text);
     const escapedQuery =
         escapeForHtml(query);
+    // Escape regex metachars so user input matches literally.
     const highlightPattern = new RegExp(
         `(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
         'gi',
