@@ -27,6 +27,11 @@ import {
 } from '../app/adapters';
 import {
     ManagedUsersPresenter,
+    buildInitialManagedUsersState,
+    applyManagedUsersSearch,
+    applyManagedUsersRole,
+    applyManagedUsersStatus,
+    type ManagedUsersState,
 } from '../app/presenters';
 
 const DEFAULT_DIM = 50;
@@ -34,8 +39,8 @@ const DEFAULT_DIM = 50;
 const pageAbort = new AbortController();
 const signal = pageAbort.signal;
 
-let presenter:
-    ManagedUsersPresenter | null = null;
+let usersState:
+    ManagedUsersState | null = null;
 let userListEl: HTMLElement | null = null;
 
 export async function init(): Promise<void> {
@@ -60,15 +65,18 @@ export async function init(): Promise<void> {
     );
     if (!users) return;
 
-    presenter = new ManagedUsersPresenter(users);
+    usersState =
+        buildInitialManagedUsersState(users);
+    const initialPresenter =
+        new ManagedUsersPresenter(usersState);
     mutateHtml(container, buildShellHtml(
-        presenter.activeCount(),
-        presenter.pendingCount(),
+        initialPresenter.activeCount(),
+        initialPresenter.pendingCount(),
     ));
 
     userListEl = $('#user-list', document);
     if (userListEl) {
-        presenter.renderList(userListEl);
+        rerenderUsers();
         userListEl.addEventListener(
             'click', onUserListClick,
             { signal },
@@ -77,6 +85,12 @@ export async function init(): Promise<void> {
 
     initUserListFilters();
     bindInviteDialog();
+}
+
+function rerenderUsers(): void {
+    if (!usersState || !userListEl) return;
+    new ManagedUsersPresenter(usersState)
+        .renderList(userListEl);
 }
 
 function buildShellHtml(
@@ -436,27 +450,33 @@ function initUserListFilters(): void {
 }
 
 function onSearchInput(e: Event): void {
-    if (!presenter || !userListEl) return;
+    if (!usersState || !userListEl) return;
     const target =
         e.target as HTMLInputElement;
-    presenter.setSearch(target.value);
-    presenter.renderList(userListEl);
+    usersState = applyManagedUsersSearch(
+        usersState, target.value,
+    );
+    rerenderUsers();
 }
 
 function onRoleChange(e: Event): void {
-    if (!presenter || !userListEl) return;
+    if (!usersState || !userListEl) return;
     const target =
         e.target as HTMLSelectElement;
-    presenter.setRole(target.value);
-    presenter.renderList(userListEl);
+    usersState = applyManagedUsersRole(
+        usersState, target.value,
+    );
+    rerenderUsers();
 }
 
 function onStatusChange(e: Event): void {
-    if (!presenter || !userListEl) return;
+    if (!usersState || !userListEl) return;
     const target =
         e.target as HTMLSelectElement;
-    presenter.setStatus(target.value);
-    presenter.renderList(userListEl);
+    usersState = applyManagedUsersStatus(
+        usersState, target.value,
+    );
+    rerenderUsers();
 }
 
 function onUserListClick(e: MouseEvent): void {

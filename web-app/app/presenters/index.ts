@@ -2,8 +2,13 @@ export {
     IdeaPresenter,
     IdeaEditPresenter,
     IdeaListPresenter,
+    buildInitialIdeaListState,
+    applyIdeaListUpdate,
+    applyIdeaFilterToggle,
     ideaDraftFromIdea,
     ideaPatchFromDraft,
+    type IdeaListState,
+    type IdeaListFilter,
     type IdeaFieldKey,
     type IdeaDraftFields,
     type IdeaEntityPatch,
@@ -28,6 +33,11 @@ export {
 export {
     ProjectPresenter,
     ProjectListPresenter,
+    buildInitialProjectListState,
+    applyProjectListUpdate,
+    applyProjectFilterToggle,
+    type ProjectListState,
+    type ProjectListFilter,
 } from './project';
 export {
     GaugePresenter,
@@ -39,6 +49,17 @@ export {
     UserPresenter,
     TeamListPresenter,
     ManagedUsersPresenter,
+    buildInitialTeamListState,
+    applyTeamListUpdate,
+    applyTeamSearch,
+    applyTeamSelection,
+    buildInitialManagedUsersState,
+    applyManagedUsersUpdate,
+    applyManagedUsersSearch,
+    applyManagedUsersRole,
+    applyManagedUsersStatus,
+    type TeamListState,
+    type ManagedUsersState,
 } from './user';
 export {
     FlowPresenter,

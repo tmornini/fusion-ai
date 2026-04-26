@@ -271,40 +271,49 @@ export class ProjectPresenter {
     }
 }
 
+export type ProjectListFilter =
+    | { kind: 'all' }
+    | { kind: 'filtered'; status: ProjectStatus };
+
+export type ProjectListState = {
+    projects: Project[];
+    filter: ProjectListFilter;
+};
+
+export function buildInitialProjectListState(
+    projects: Project[],
+): ProjectListState {
+    return { projects, filter: { kind: 'all' } };
+}
+
+export function applyProjectListUpdate(
+    state: ProjectListState,
+    projects: Project[],
+): ProjectListState {
+    return { ...state, projects };
+}
+
+export function applyProjectFilterToggle(
+    state: ProjectListState,
+    status: ProjectStatus,
+): ProjectListState {
+    const next: ProjectListFilter =
+        state.filter.kind === 'filtered'
+        && state.filter.status === status
+            ? { kind: 'all' }
+            : { kind: 'filtered', status };
+    return { ...state, filter: next };
+}
+
 export class ProjectListPresenter {
     #projects: ProjectPresenter[];
-    #filter:
-        | { kind: 'all' }
-        | {
-            kind: 'filtered';
-            status: ProjectStatus;
-        } = { kind: 'all' };
+    #filter: ProjectListFilter;
 
-    constructor(projects: Project[]) {
-        this.#projects = projects.map(
+    constructor(state: ProjectListState) {
+        this.#projects = state.projects.map(
             p => new ProjectPresenter(p),
         );
-    }
-
-    update(projects: Project[]): void {
-        this.#projects = projects.map(
-            p => new ProjectPresenter(p),
-        );
-    }
-
-    toggleFilter(
-        status: ProjectStatus,
-    ): void {
-        this.#filter =
-            this.#filter.kind
-                === 'filtered'
-            && this.#filter.status
-                === status
-                ? { kind: 'all' }
-                : {
-                    kind: 'filtered',
-                    status,
-                };
+        this.#filter = state.filter;
     }
 
     activeFilter():
@@ -327,16 +336,6 @@ export class ProjectListPresenter {
         container: HTMLElement,
     ): void {
         mutateHtml(container, this.#buildList());
-    }
-
-    applyFilterToggle(
-        status: ProjectStatus,
-        badgesEl: HTMLElement,
-        listEl: HTMLElement,
-    ): void {
-        this.toggleFilter(status);
-        this.renderBadges(badgesEl);
-        this.renderList(listEl);
     }
 
     #buildBadges(): SafeHtml {

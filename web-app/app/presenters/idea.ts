@@ -879,40 +879,49 @@ export class IdeaEditPresenter {
     }
 }
 
+export type IdeaListFilter =
+    | { kind: 'all' }
+    | { kind: 'filtered'; status: IdeaStatus };
+
+export type IdeaListState = {
+    ideas: Idea[];
+    filter: IdeaListFilter;
+};
+
+export function buildInitialIdeaListState(
+    ideas: Idea[],
+): IdeaListState {
+    return { ideas, filter: { kind: 'all' } };
+}
+
+export function applyIdeaListUpdate(
+    state: IdeaListState,
+    ideas: Idea[],
+): IdeaListState {
+    return { ...state, ideas };
+}
+
+export function applyIdeaFilterToggle(
+    state: IdeaListState,
+    status: IdeaStatus,
+): IdeaListState {
+    const next: IdeaListFilter =
+        state.filter.kind === 'filtered'
+        && state.filter.status === status
+            ? { kind: 'all' }
+            : { kind: 'filtered', status };
+    return { ...state, filter: next };
+}
+
 export class IdeaListPresenter {
     #ideas: IdeaPresenter[];
-    #filter:
-        | { kind: 'all' }
-        | {
-            kind: 'filtered';
-            status: IdeaStatus;
-        } = { kind: 'all' };
+    #filter: IdeaListFilter;
 
-    constructor(ideas: Idea[]) {
-        this.#ideas = ideas.map(
+    constructor(state: IdeaListState) {
+        this.#ideas = state.ideas.map(
             i => new IdeaPresenter(i),
         );
-    }
-
-    update(ideas: Idea[]): void {
-        this.#ideas = ideas.map(
-            i => new IdeaPresenter(i),
-        );
-    }
-
-    toggleFilter(
-        status: IdeaStatus,
-    ): void {
-        this.#filter =
-            this.#filter.kind
-                === 'filtered'
-            && this.#filter.status
-                === status
-                ? { kind: 'all' }
-                : {
-                    kind: 'filtered',
-                    status,
-                };
+        this.#filter = state.filter;
     }
 
     activeFilter():
@@ -935,16 +944,6 @@ export class IdeaListPresenter {
         container: HTMLElement,
     ): void {
         mutateHtml(container, this.#buildList());
-    }
-
-    applyFilterToggle(
-        status: IdeaStatus,
-        badgesEl: HTMLElement,
-        listEl: HTMLElement,
-    ): void {
-        this.toggleFilter(status);
-        this.renderBadges(badgesEl);
-        this.renderList(listEl);
     }
 
     #buildBadges(): SafeHtml {

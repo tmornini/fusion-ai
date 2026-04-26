@@ -17,6 +17,10 @@ import {
 } from '../app/adapters';
 import {
     IdeaListPresenter,
+    buildInitialIdeaListState,
+    applyIdeaListUpdate,
+    applyIdeaFilterToggle,
+    type IdeaListState,
 } from '../app/presenters';
 import {
     initDragReorder,
@@ -25,7 +29,7 @@ import {
 const pageAbort = new AbortController();
 const signal = pageAbort.signal;
 
-let presenter: IdeaListPresenter | null = null;
+let ideaState: IdeaListState | null = null;
 let listEl: HTMLElement | null = null;
 let badgesEl: HTMLElement | null = null;
 
@@ -72,34 +76,31 @@ export async function init(): Promise<void> {
 
     if (!ideas) return;
 
-    presenter = new IdeaListPresenter(ideas);
+    ideaState = buildInitialIdeaListState(ideas);
     listEl = teamListEl;
     badgesEl = $(
         '#status-badges', document,
     );
 
+    rerenderIdeas();
     if (badgesEl) {
-        presenter.renderBadges(badgesEl);
         badgesEl.addEventListener(
             'click', onBadgeClick,
             { signal },
         );
     }
-
-    presenter.renderList(listEl);
     listEl.addEventListener(
         'click', onCardClick,
         { signal },
     );
 
     subscribeToIdeaChanges(async () => {
-        if (!presenter || !listEl) return;
+        if (!ideaState || !listEl) return;
         const updated = await getIdeas();
-        presenter.update(updated);
-        if (badgesEl) {
-            presenter.renderBadges(badgesEl);
-        }
-        presenter.renderList(listEl);
+        ideaState = applyIdeaListUpdate(
+            ideaState, updated,
+        );
+        rerenderIdeas();
     });
 
     initDragReorder(
@@ -117,9 +118,19 @@ export async function init(): Promise<void> {
     );
 }
 
+function rerenderIdeas(): void {
+    if (!ideaState || !listEl) return;
+    const presenter =
+        new IdeaListPresenter(ideaState);
+    if (badgesEl) {
+        presenter.renderBadges(badgesEl);
+    }
+    presenter.renderList(listEl);
+}
+
 function onBadgeClick(e: MouseEvent): void {
     if (
-        !presenter || !badgesEl || !listEl
+        !ideaState || !badgesEl || !listEl
     ) return;
     if (
         !(e.target instanceof HTMLElement)
@@ -130,9 +141,10 @@ function onBadgeClick(e: MouseEvent): void {
     if (!badge) return;
     const s = attr(badge, 'data-status');
     if (!isIdeaStatus(s)) return;
-    presenter.applyFilterToggle(
-        s, badgesEl, listEl,
+    ideaState = applyIdeaFilterToggle(
+        ideaState, s,
     );
+    rerenderIdeas();
 }
 
 function onCardClick(e: MouseEvent): void {
