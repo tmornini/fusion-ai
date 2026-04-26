@@ -64,12 +64,12 @@ import type {
 } from '../flow-interactions';
 import {
     buildFlowHistorySnapshot,
-    canUndo as historyCanUndo,
-    canRedo as historyCanRedo,
-    noteMutation as historyNoteMutation,
+    canUndoFlowEdits,
+    canRedoFlowEdits,
+    recordFlowMutation,
     setHasUndoHistory,
-    pushRedo,
-    popRedo,
+    appendToRedoStack,
+    removeFromRedoStack,
 } from '../flow-history';
 import type {
     FlowHistorySnapshot,
@@ -203,7 +203,7 @@ export class FlowDesignerPresenter {
     }
 
     #noteMutation(): void {
-        this.#history = historyNoteMutation(
+        this.#history = recordFlowMutation(
             this.#history,
         );
     }
@@ -354,11 +354,11 @@ export class FlowDesignerPresenter {
     }
 
     canUndo(): boolean {
-        return historyCanUndo(this.#history);
+        return canUndoFlowEdits(this.#history);
     }
 
     canRedo(): boolean {
-        return historyCanRedo(this.#history);
+        return canRedoFlowEdits(this.#history);
     }
 
     async performUndo(): Promise<boolean> {
@@ -373,7 +373,7 @@ export class FlowDesignerPresenter {
             );
             return false;
         }
-        this.#history = pushRedo(this.#history, {
+        this.#history = appendToRedoStack(this.#history, {
             id: generateId(),
             flowId: this.#state.flowId,
             name: this.#state.flowName,
@@ -408,7 +408,7 @@ export class FlowDesignerPresenter {
 
     async performRedo(): Promise<boolean> {
         if (this.#guardLocked()) return false;
-        const popped = popRedo(this.#history);
+        const popped = removeFromRedoStack(this.#history);
         this.#history = popped.snapshot;
         if (!popped.version) return false;
         await postFlowVersion(
