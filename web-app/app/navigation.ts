@@ -49,27 +49,4 @@ function navigateTo(
         buildPageUrl(page, params);
 }
 
-function initPrefetch(): void {
-    if (location.protocol === 'file:') return;
-    const prefetched = new Set<string>();
-    document.addEventListener('pointerenter', (e) => {
-        if (!(e.target instanceof Element)) return;
-        const anchor = e.target.closest<HTMLAnchorElement>('a[href]');
-        if (!anchor) return;
-        const href = anchor.getAttribute('href');
-        if (
-            href
-            && href.endsWith('.html')
-            && !href.startsWith('http')
-            && !prefetched.has(href)
-        ) {
-            prefetched.add(href);
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.href = href;
-            document.head.appendChild(link);
-        }
-    }, { capture: true });
-}
-
-export { buildPageUrl, navigateTo, getPageName, getParams, initPrefetch };
+export { buildPageUrl, navigateTo, getPageName, getParams };

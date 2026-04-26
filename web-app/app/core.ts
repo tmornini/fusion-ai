@@ -1,7 +1,6 @@
 import { applyTheme } from './state';
 import {
     getPageName,
-    initPrefetch,
 } from './navigation';
 import {
     initSidebarLayout,
@@ -41,7 +40,6 @@ document.addEventListener(
     'DOMContentLoaded',
     async () => {
         applyTheme();
-        initPrefetch();
 
         let hasSchema: boolean;
         try {
