@@ -57,9 +57,15 @@ export async function getOrganization(
     const recent = activities
         .slice(0, RECENT_ACTIVITY_COUNT)
         .map(a => {
+            const actorId = actorMap.get(a.id);
+            if (!actorId) {
+                throw new Error(
+                    'Activity has no actor: '
+                    + a.id,
+                );
+            }
             const actor = userName(
-                userMap,
-                actorMap.get(a.id)!,
+                userMap, actorId,
             );
             const activity =
                 new Activity(a, actor);
@@ -194,13 +200,17 @@ export async function getActivityFeed(
             ],
         ),
     );
-    return activities.map(a =>
-        new Activity(
+    return activities.map(a => {
+        const actorId = actorMap.get(a.id);
+        if (!actorId) {
+            throw new Error(
+                'Activity has no actor: '
+                + a.id,
+            );
+        }
+        return new Activity(
             a,
-            userName(
-                userMap,
-                actorMap.get(a.id)!,
-            ),
-        ),
-    );
+            userName(userMap, actorId),
+        );
+    });
 }

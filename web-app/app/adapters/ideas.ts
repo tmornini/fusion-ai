@@ -37,29 +37,29 @@ export async function getIdeas(
             'idea-submissions',
         ),
     ]);
-    const submitterMap = new Map(
-        submissions.map(
-            s => [s.idea_id, s.user_id],
-        ),
-    );
-    const submittedAtMap = new Map(
-        submissions.map(
-            s => [
-                s.idea_id,
-                s.created_at,
-            ],
-        ),
+    const submissionMap = new Map(
+        submissions.map(s => [s.idea_id, s]),
     );
     return ideas
         .filter(ideaIsVisible)
-        .map(idea => new Idea(
-            idea,
-            userName(
-                userMap,
-                submitterMap.get(idea.id)!,
-            ),
-            submittedAtMap.get(idea.id)!,
-        ));
+        .map(idea => {
+            const submission =
+                submissionMap.get(idea.id);
+            if (!submission) {
+                throw new Error(
+                    'Idea has no submission: '
+                    + idea.id,
+                );
+            }
+            return new Idea(
+                idea,
+                userName(
+                    userMap,
+                    submission.user_id,
+                ),
+                submission.created_at,
+            );
+        });
 }
 
 export async function getIdea(

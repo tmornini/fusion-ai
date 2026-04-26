@@ -539,62 +539,57 @@ export async function postFlowFromBackup(
 
     const idMap =
         new Map<string, string>();
+    const nodes: GraphNode[] = [];
     for (
         const n
             of backup.flow.graph.nodes
     ) {
-        idMap.set(
-            n.id,
-            crypto.randomUUID(),
-        );
+        const newId = crypto.randomUUID();
+        idMap.set(n.id, newId);
+        nodes.push({
+            id: newId,
+            name: n.name,
+            description: n.description,
+            positionX: n.positionX,
+            positionY: n.positionY,
+            isStart: n.isStart,
+            isComplete: n.isComplete,
+            fields: n.fields.map(
+                f => ({
+                    id: crypto.randomUUID(),
+                    name: f.name,
+                    fieldType: f.fieldType,
+                    sortOrder: f.sortOrder,
+                    isRequired: f.isRequired,
+                    options: f.options,
+                }),
+            ),
+        });
     }
 
-    const nodes: GraphNode[] =
-        backup.flow.graph.nodes.map(
-            n => ({
-                id: idMap.get(n.id)!,
-                name: n.name,
-                description:
-                    n.description,
-                positionX: n.positionX,
-                positionY: n.positionY,
-                isStart: n.isStart,
-                isComplete: n.isComplete,
-                fields: n.fields.map(
-                    f => ({
-                        id: crypto
-                            .randomUUID(),
-                        name: f.name,
-                        fieldType:
-                            f.fieldType,
-                        sortOrder:
-                            f.sortOrder,
-                        isRequired:
-                            f.isRequired,
-                        options:
-                            f.options,
-                    }),
-                ),
-            }),
-        );
-
     const edges: GraphEdge[] =
-        backup.flow.graph.edges.map(
-            e => ({
+        backup.flow.graph.edges.map(e => {
+            const fromNodeId =
+                idMap.get(e.fromNodeId);
+            const toNodeId =
+                idMap.get(e.toNodeId);
+            if (!fromNodeId || !toNodeId) {
+                throw new Error(
+                    'Edge references unknown'
+                    + ' node: '
+                    + e.fromNodeId
+                    + ' -> '
+                    + e.toNodeId,
+                );
+            }
+            return {
                 id: crypto.randomUUID(),
                 name: e.name,
-                description:
-                    e.description,
-                fromNodeId:
-                    idMap.get(
-                        e.fromNodeId,
-                    )!,
-                toNodeId:
-                    idMap.get(
-                        e.toNodeId,
-                    )!,
-            }),
-        );
+                description: e.description,
+                fromNodeId,
+                toNodeId,
+            };
+        });
 
     await PUT<void>('flows', {
         id: flowId,
