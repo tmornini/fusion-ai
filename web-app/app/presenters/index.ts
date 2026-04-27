@@ -8,7 +8,6 @@ export {
     ideaDraftFromIdea,
     ideaPatchFromDraft,
     type IdeaListState,
-    type IdeaListFilter,
     type IdeaFieldKey,
     type IdeaDraftFields,
     type IdeaEntityPatch,
