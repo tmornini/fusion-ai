@@ -94,3 +94,6 @@ export {
 export {
     WorkboxInboxPresenter,
 } from './workbox-inbox';
+export {
+    buildFieldInputHtml,
+} from './workbox-detail';
