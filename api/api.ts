@@ -55,6 +55,10 @@ export function initApi(
     adapter = dbAdapter;
 }
 
+export function resetApi(): void {
+    adapter = undefined;
+}
+
 function getDbAdapter(): DbAdapter {
     if (!adapter) {
         throw new Error(
