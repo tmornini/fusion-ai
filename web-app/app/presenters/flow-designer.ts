@@ -274,7 +274,7 @@ export class FlowDesignerPresenter {
         return this.#state.isLocked;
     }
 
-    toggleLocked(): void {
+    withLockToggled(): FlowSnapshot {
         const result = applyToggleLock(
             this.#state.isLocked,
             this.#state.isEditingName,
@@ -283,13 +283,14 @@ export class FlowDesignerPresenter {
         this.#state.isEditingName =
             result.isEditingName;
         void this.#saveFlow(false);
+        return this.#state;
     }
 
     isAutoLayout(): boolean {
         return this.#state.isAutoLayout;
     }
 
-    toggleAutoLayout(): void {
+    withAutoLayoutToggled(): FlowSnapshot {
         const next =
             !this.#state.isAutoLayout;
         this.#state.isAutoLayout = next;
@@ -297,19 +298,21 @@ export class FlowDesignerPresenter {
         if (next) {
             this.reconcileLayout();
         }
+        return this.#state;
     }
 
     isAutoFit(): boolean {
         return this.#state.isAutoFit;
     }
 
-    toggleAutoFit(): void {
+    withAutoFitToggled(): FlowSnapshot {
         const next = !this.#state.isAutoFit;
         this.#state.isAutoFit = next;
         void this.#saveFlow(false);
         if (next) {
             this.#applyZoomToFit();
         }
+        return this.#state;
     }
 
     #guardLocked(): boolean {

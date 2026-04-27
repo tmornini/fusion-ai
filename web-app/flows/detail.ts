@@ -257,7 +257,6 @@ function bindFlowNameEdit(
 
 function bindSwitches(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
     signal: AbortSignal,
 ): void {
     $(
@@ -265,8 +264,11 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            presenter.toggleLocked();
-            update(container, presenter);
+            pageState.presenter()
+                .withLockToggled();
+            update(
+                container, pageState.presenter(),
+            );
         },
         { signal },
     );
@@ -276,8 +278,11 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            presenter.toggleAutoLayout();
-            update(container, presenter);
+            pageState.presenter()
+                .withAutoLayoutToggled();
+            update(
+                container, pageState.presenter(),
+            );
         },
         { signal },
     );
@@ -287,8 +292,11 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            presenter.toggleAutoFit();
-            update(container, presenter);
+            pageState.presenter()
+                .withAutoFitToggled();
+            update(
+                container, pageState.presenter(),
+            );
         },
         { signal },
     );
@@ -787,7 +795,7 @@ export async function init(
         container, presenter, signal,
     );
     bindSwitches(
-        container, presenter, signal,
+        container, signal,
     );
     bindKeyboardShortcuts(
         container, presenter,
