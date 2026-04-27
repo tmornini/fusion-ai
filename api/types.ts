@@ -818,18 +818,11 @@ export class Idea {
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
     readonly #readiness: ReadinessLevel;
-    readonly #waitingDays: number;
-    readonly #submittedAt: string;
     readonly #risks: string;
     readonly #assumptions: string;
     readonly #alignments: string;
-    readonly #submittedBy: string;
 
-    constructor(
-        entity: IdeaEntity,
-        submittedBy: string,
-        submittedAt: string,
-    ) {
+    constructor(entity: IdeaEntity) {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#position = entity.position;
@@ -845,20 +838,9 @@ export class Idea {
         this.#successMetrics =
             entity.success_metrics;
         this.#readiness = entity.readiness;
-        this.#submittedAt = submittedAt;
-        this.#waitingDays = this.#submittedAt
-            ? Math.max(0, Math.ceil(
-                msSinceUtc(
-                    this.#submittedAt,
-                )
-                / MS_PER_SECOND
-                / SECONDS_PER_DAY,
-            ))
-            : 0;
         this.#risks = entity.risks;
         this.#assumptions = entity.assumptions;
         this.#alignments = entity.alignments;
-        this.#submittedBy = submittedBy;
     }
 
     isDeleted(): boolean {
@@ -926,15 +908,9 @@ export class Idea {
     }
 
     matchesSearch(term: string): boolean {
-        const t = term.toLowerCase();
-        return (
-            this.#title
-                .toLowerCase()
-                .includes(t)
-            || this.#submittedBy
-                .toLowerCase()
-                .includes(t)
-        );
+        return this.#title
+            .toLowerCase()
+            .includes(term.toLowerCase());
     }
 
     idForLink(): string {
@@ -975,18 +951,6 @@ export class Idea {
 
     readinessValue(): ReadinessLevel {
         return this.#readiness;
-    }
-
-    waitingDaysCount(): number {
-        return this.#waitingDays;
-    }
-
-    submittedAtDate(): string {
-        return this.#submittedAt;
-    }
-
-    submittedByName(): string {
-        return this.#submittedBy;
     }
 }
 

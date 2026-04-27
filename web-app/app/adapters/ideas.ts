@@ -78,9 +78,15 @@ export type {
     IdeaSubmissionEntity,
 } from '../../../api/types.ts';
 
+export interface IdeaWithSubmitter {
+    readonly idea: Idea;
+    readonly submitterName: string;
+    readonly submittedAt: string;
+}
+
 export async function getIdeas(
     ctx?: FetchContext,
-): Promise<Idea[]> {
+): Promise<IdeaWithSubmitter[]> {
     const [
         ideas, userMap, submissions,
     ] = await Promise.all([
@@ -91,44 +97,45 @@ export async function getIdeas(
     const submissionMap = new Map(
         submissions.map(s => [s.idea_id, s]),
     );
-    return ideas.map(idea => {
+    return ideas.map(row => {
         const submission =
-            submissionMap.get(idea.id);
+            submissionMap.get(row.id);
         if (!submission) {
             throw new Error(
                 'Idea has no submission: '
-                + idea.id,
+                + row.id,
             );
         }
-        return new Idea(
-            idea,
-            userName(
+        return {
+            idea: new Idea(row),
+            submitterName: userName(
                 userMap,
                 submission.user_id,
             ),
-            submission.created_at,
-        );
+            submittedAt:
+                submission.created_at,
+        };
     });
 }
 
 export async function getIdea(
     ideaId: string,
     ctx?: FetchContext,
-): Promise<Idea> {
+): Promise<IdeaWithSubmitter> {
     const [
-        idea, submission, userMap,
+        row, submission, userMap,
     ] = await Promise.all([
         getIdeaRow(ideaId),
         getIdeaSubmissionRow(ideaId),
         getUserMap(ctx),
     ]);
-    return new Idea(
-        idea,
-        userName(
+    return {
+        idea: new Idea(row),
+        submitterName: userName(
             userMap, submission.user_id,
         ),
-        submission.created_at,
-    );
+        submittedAt: submission.created_at,
+    };
 }
 
 export async function putIdea(
