@@ -763,9 +763,10 @@ function medianY(
     ids: readonly string[],
     ys: Map<string, number>,
 ): number {
+    if (ids.length === 0) return 0;
     const vals = ids
         .map(id => ys.get(id)!)
-        .sort((a, b) => a - b);
+        .toSorted((a, b) => a - b);
     const mid = Math.floor(vals.length / 2);
     if (vals.length % 2 === 1) {
         return vals[mid]!;

@@ -255,8 +255,9 @@ export function buildDonutChart(
     let offset = 0;
     let arcs = '';
     data.forEach((datum, index) => {
-        const percentage =
-            datum.value / total;
+        const percentage = total > 0
+            ? datum.value / total
+            : 0;
         const dash =
             percentage * circumference;
         arcs +=
