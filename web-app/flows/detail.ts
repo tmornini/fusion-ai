@@ -613,8 +613,9 @@ function bindPanelActions(
             const value = target.value;
             if (id === 'prop-node-name') {
                 saveDebouncer.schedule(
-                    () => presenter
-                        .updateNodeName(
+                    () => pageState
+                        .presenter()
+                        .withNodeNamed(
                             value,
                         ),
                 );
@@ -622,8 +623,9 @@ function bindPanelActions(
                 id === 'prop-node-desc'
             ) {
                 saveDebouncer.schedule(
-                    () => presenter
-                        .updateNodeDescription(
+                    () => pageState
+                        .presenter()
+                        .withNodeDescribed(
                             value,
                         ),
                 );
@@ -631,8 +633,9 @@ function bindPanelActions(
                 id === 'prop-edge-name'
             ) {
                 saveDebouncer.schedule(
-                    () => presenter
-                        .updateEdgeName(
+                    () => pageState
+                        .presenter()
+                        .withEdgeNamed(
                             value,
                         ),
                 );
@@ -640,8 +643,9 @@ function bindPanelActions(
                 id === 'prop-edge-desc'
             ) {
                 saveDebouncer.schedule(
-                    () => presenter
-                        .updateEdgeDescription(
+                    () => pageState
+                        .presenter()
+                        .withEdgeDescribed(
                             value,
                         ),
                 );

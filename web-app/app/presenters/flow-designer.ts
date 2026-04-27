@@ -1052,13 +1052,15 @@ Auto Fit</label>
         void this.#saveFlow(false);
     }
 
-    updateNodeName(
+    withNodeNamed(
         name: string,
-    ): void {
-        if (this.#guardLocked()) return;
+    ): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const nodeId = this
             .#singleSelectedNodeId();
-        if (!nodeId) return;
+        if (!nodeId) return this.#state;
         this.#state.nodes = applyUpdateNode(
             this.#state.nodes,
             nodeId,
@@ -1066,15 +1068,18 @@ Auto Fit</label>
         );
         void this.#saveFlow(true);
         this.#noteMutation();
+        return this.#state;
     }
 
-    updateNodeDescription(
+    withNodeDescribed(
         desc: string,
-    ): void {
-        if (this.#guardLocked()) return;
+    ): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const nodeId = this
             .#singleSelectedNodeId();
-        if (!nodeId) return;
+        if (!nodeId) return this.#state;
         this.#state.nodes = applyUpdateNode(
             this.#state.nodes,
             nodeId,
@@ -1082,16 +1087,21 @@ Auto Fit</label>
         );
         void this.#saveFlow(true);
         this.#noteMutation();
+        return this.#state;
     }
 
-    updateEdgeName(
+    withEdgeNamed(
         name: string,
-    ): void {
-        if (this.#guardLocked()) return;
+    ): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const sel =
             this.#state.interaction
                 .selection;
-        if (sel.kind !== 'edge') return;
+        if (sel.kind !== 'edge') {
+            return this.#state;
+        }
         this.#state.edges = applyUpdateEdge(
             this.#state.edges,
             sel.edgeId,
@@ -1099,16 +1109,21 @@ Auto Fit</label>
         );
         void this.#saveFlow(true);
         this.#noteMutation();
+        return this.#state;
     }
 
-    updateEdgeDescription(
+    withEdgeDescribed(
         desc: string,
-    ): void {
-        if (this.#guardLocked()) return;
+    ): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const sel =
             this.#state.interaction
                 .selection;
-        if (sel.kind !== 'edge') return;
+        if (sel.kind !== 'edge') {
+            return this.#state;
+        }
         this.#state.edges = applyUpdateEdge(
             this.#state.edges,
             sel.edgeId,
@@ -1116,6 +1131,7 @@ Auto Fit</label>
         );
         void this.#saveFlow(true);
         this.#noteMutation();
+        return this.#state;
     }
 
     async addField(
