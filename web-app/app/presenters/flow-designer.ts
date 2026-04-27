@@ -351,8 +351,10 @@ export class FlowDesignerPresenter {
         return canRedoFlowEdits(this.#history);
     }
 
-    async performUndo(): Promise<boolean> {
-        if (this.#guardLocked()) return false;
+    async performUndo(): Promise<FlowSnapshot> {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const versions = await getFlowVersions(
             this.#state.flowId,
         );
@@ -361,7 +363,7 @@ export class FlowDesignerPresenter {
             this.#history = setHasUndoHistory(
                 this.#history, false,
             );
-            return false;
+            return this.#state;
         }
         this.#history = appendToRedoStack(this.#history, {
             id: generateId(),
@@ -393,14 +395,16 @@ export class FlowDesignerPresenter {
             remaining.length > 0,
         );
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
-    async performRedo(): Promise<boolean> {
-        if (this.#guardLocked()) return false;
+    async performRedo(): Promise<FlowSnapshot> {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const popped = removeFromRedoStack(this.#history);
         this.#history = popped.snapshot;
-        if (!popped.version) return false;
+        if (!popped.version) return this.#state;
         await postFlowVersion(
             this.#state.flowId,
         );
@@ -412,7 +416,7 @@ export class FlowDesignerPresenter {
         );
         await this.#refreshState();
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
     async #refreshState(): Promise<void> {

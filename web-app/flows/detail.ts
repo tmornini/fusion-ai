@@ -417,18 +417,20 @@ function bindToolbarActions(
             if (!action) return;
             if (action === 'undo') {
                 void (async () => {
-                    await presenter
+                    await pageState.presenter()
                         .performUndo();
                     update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     );
                 })();
             } else if (action === 'redo') {
                 void (async () => {
-                    await presenter
+                    await pageState.presenter()
                         .performRedo();
                     update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     );
                 })();
             } else if (action === 'zoom-in') {
@@ -909,10 +911,11 @@ function bindKeyboardShortcuts(
             ) {
                 e.preventDefault();
                 void (async () => {
-                    await presenter
+                    await pageState.presenter()
                         .performUndo();
                     update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     );
                 })();
             }
@@ -922,10 +925,11 @@ function bindKeyboardShortcuts(
             ) {
                 e.preventDefault();
                 void (async () => {
-                    await presenter
+                    await pageState.presenter()
                         .performRedo();
                     update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     );
                 })();
             }
