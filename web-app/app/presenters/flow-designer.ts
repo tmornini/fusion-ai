@@ -45,10 +45,6 @@ import {
     wouldBeCycle,
     NODE_WIDTH,
     NODE_HEIGHT,
-    HORIZONTAL_GAP,
-    VERTICAL_GAP,
-    START_X,
-    START_Y,
 } from '../flow-layout.ts';
 import {
     buildInteractionState,
@@ -100,9 +96,6 @@ import {
     buildEdgePanel,
     buildFlowNameHeader,
 } from './flow-designer-view.ts';
-
-const NEW_NODE_OFFSET_X = 120;
-const NEW_NODE_OFFSET_Y = 100;
 
 function serializeGraph(
     nodes: GraphNode[],
@@ -778,39 +771,6 @@ Auto Fit</label>
         return this.#state;
     }
 
-    async addNode(): Promise<boolean> {
-        const x = START_X
-            + (this.#state.nodes.length - 1)
-            * (NODE_WIDTH + NEW_NODE_OFFSET_X);
-        const y = START_Y + NEW_NODE_OFFSET_Y;
-        const nodeId = generateId();
-        const fId = this.#state.flowId;
-        try {
-            await postNodeAddition({
-                nodeId,
-                flowId: fId,
-                name: 'New State',
-                positionX: x,
-                positionY: y,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addNode',
-                    'Failed to add state',
-                );
-            return false;
-        }
-        this.#state.nodes = applyAddNode(
-            this.#state.nodes,
-            nodeId, 'New State', x, y,
-        );
-        this.#noteMutation();
-        this.withLayoutReconciled();
-        return true;
-    }
-
     async addEdge(
         fromId: string,
         toId: string,
@@ -1330,116 +1290,6 @@ Auto Fit</label>
         this.#state.isPanelOpen = false;
         this.withLayoutReconciled();
         return this.#state;
-    }
-
-    async addNodeWithEdge(
-        name: string,
-        transitionName: string,
-        direction: string,
-    ): Promise<boolean> {
-        if (this.#guardLocked()) {
-            return false;
-        }
-        const fromNodeId = this
-            .#singleSelectedNodeId();
-        if (!fromNodeId) return false;
-        const fromNode =
-            this.#state.nodes.find(
-                n => n.id === fromNodeId,
-            );
-        if (!fromNode) return false;
-
-        const pos =
-            this.#computeDirectionPos(
-                fromNode, direction,
-            );
-        const nodeId = generateId();
-        const edgeId = generateId();
-        const fId = this.#state.flowId;
-
-        try {
-            await postNodeAddition({
-                nodeId,
-                flowId: fId,
-                name,
-                positionX: pos.x,
-                positionY: pos.y,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addNodeWithEdge',
-                    'Failed to add state',
-                );
-            return false;
-        }
-        try {
-            await postEdgeConnection({
-                edgeId,
-                flowId: fId,
-                name: transitionName,
-                fromNodeId,
-                toNodeId: nodeId,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addNodeWithEdge',
-                    'Failed to connect'
-                    + ' transition',
-                );
-            return false;
-        }
-        this.#state.nodes = applyAddNode(
-            this.#state.nodes,
-            nodeId, name, pos.x, pos.y,
-        );
-        this.#state.edges = applyAddEdge(
-            this.#state.edges,
-            edgeId, transitionName,
-            fromNodeId, nodeId,
-        );
-        this.#noteMutation();
-        this.withLayoutReconciled();
-        return true;
-    }
-
-    #computeDirectionPos(
-        fromNode: GraphNode,
-        direction: string,
-    ): { x: number; y: number } {
-        switch (direction) {
-            case 'left':
-                return {
-                    x: fromNode.positionX
-                        - NODE_WIDTH
-                        - HORIZONTAL_GAP,
-                    y: fromNode.positionY,
-                };
-            case 'above':
-                return {
-                    x: fromNode.positionX,
-                    y: fromNode.positionY
-                        - NODE_HEIGHT
-                        - VERTICAL_GAP,
-                };
-            case 'below':
-                return {
-                    x: fromNode.positionX,
-                    y: fromNode.positionY
-                        + NODE_HEIGHT
-                        + VERTICAL_GAP,
-                };
-            default:
-                return {
-                    x: fromNode.positionX
-                        + NODE_WIDTH
-                        + HORIZONTAL_GAP,
-                    y: fromNode.positionY,
-                };
-        }
     }
 
     withZoomedIn(): FlowSnapshot {
