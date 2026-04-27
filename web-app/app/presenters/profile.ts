@@ -1,7 +1,7 @@
 import {
     html, mutateHtml, SafeHtml,
 } from '../safe-html';
-import { $ } from '../dom';
+import { $required } from '../dom';
 import {
     iconMail,
     iconPhone,
@@ -48,9 +48,7 @@ function mutateSlot(
     cls: string,
     markup: SafeHtml,
 ): void {
-    const slot = $(cls, container);
-    if (!slot) return;
-    mutateHtml(slot, markup);
+    mutateHtml($required(cls, container), markup);
 }
 
 function buildHeader(

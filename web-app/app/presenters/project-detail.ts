@@ -1,7 +1,7 @@
 import {
     html, mutateHtml, SafeHtml, trusted,
 } from '../safe-html';
-import { $ } from '../dom';
+import { $required } from '../dom';
 import {
     iconTrendingUp, iconClock,
     iconDollarSign,
@@ -161,9 +161,7 @@ function mutateSlot(
     cls: string,
     markup: SafeHtml,
 ): void {
-    const slot = $(cls, container);
-    if (!slot) return;
-    mutateHtml(slot, markup);
+    mutateHtml($required(cls, container), markup);
 }
 
 function buildBreadcrumb(

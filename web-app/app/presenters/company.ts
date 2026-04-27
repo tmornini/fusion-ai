@@ -1,7 +1,7 @@
 import {
     html, mutateHtml, SafeHtml,
 } from '../safe-html';
-import { $ } from '../dom';
+import { $required } from '../dom';
 import {
     iconBuilding, iconSave,
     iconEdit, iconX,
@@ -27,22 +27,24 @@ function mutateHeader(
     container: HTMLElement,
     markup: SafeHtml,
 ): void {
-    const slot = $(
-        '.company-header-slot', container,
+    mutateHtml(
+        $required(
+            '.company-header-slot', container,
+        ),
+        markup,
     );
-    if (!slot) return;
-    mutateHtml(slot, markup);
 }
 
 function mutateBody(
     container: HTMLElement,
     markup: SafeHtml,
 ): void {
-    const slot = $(
-        '.company-body-slot', container,
+    mutateHtml(
+        $required(
+            '.company-body-slot', container,
+        ),
+        markup,
     );
-    if (!slot) return;
-    mutateHtml(slot, markup);
 }
 
 function buildHeader(

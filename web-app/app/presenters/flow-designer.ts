@@ -2,7 +2,7 @@ import {
     html, mutateHtml, trusted,
 } from '../safe-html';
 import type { SafeHtml } from '../safe-html';
-import { $ } from '../dom';
+import { $, $required } from '../dom';
 import { log } from '../logger';
 import { showToast } from '../toast';
 import {
@@ -694,52 +694,56 @@ Auto Fit</label>
     #updateNameHeader(
         container: HTMLElement,
     ): void {
-        const slot = $(
-            '.flow-name-header-slot',
-            container,
-        );
-        if (!slot) return;
         const nameHtml =
             buildFlowNameHeader(
                 this.#state.flowName,
                 this.#state.isEditingName,
             );
-        mutateHtml(slot, html`${nameHtml}
+        mutateHtml(
+            $required(
+                '.flow-name-header-slot',
+                container,
+            ),
+            html`${nameHtml}
 <p class="text-sm text-muted"
-    >${this.#state.flowDescription}</p>`);
+    >${this.#state.flowDescription}</p>`,
+        );
     }
 
     #updateToolbar(
         container: HTMLElement,
     ): void {
-        const slot = $(
-            '.flow-toolbar-slot',
-            container,
+        mutateHtml(
+            $required(
+                '.flow-toolbar-slot',
+                container,
+            ),
+            this.#buildToolbar(),
         );
-        if (!slot) return;
-        mutateHtml(slot, this.#buildToolbar());
     }
 
     #updatePanel(
         container: HTMLElement,
     ): void {
-        const slot = $(
-            '.flow-props-slot',
-            container,
+        mutateHtml(
+            $required(
+                '.flow-props-slot',
+                container,
+            ),
+            this.#buildPropsPanel(),
         );
-        if (!slot) return;
-        mutateHtml(slot, this.#buildPropsPanel());
     }
 
     #updateCanvas(
         container: HTMLElement,
     ): void {
-        const slot = $(
-            '.flow-canvas-host',
-            container,
+        mutateHtml(
+            $required(
+                '.flow-canvas-host',
+                container,
+            ),
+            this.#buildCanvas(),
         );
-        if (!slot) return;
-        mutateHtml(slot, this.#buildCanvas());
     }
 
     moveNodes(
