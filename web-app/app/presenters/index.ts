@@ -15,7 +15,7 @@ export {
 } from './idea';
 export {
     IdeaConversionPresenter,
-    initialConversionFields,
+    buildInitialConversionFields,
     conversionRequiredCount,
     conversionCompletedCount,
     conversionIsReady,

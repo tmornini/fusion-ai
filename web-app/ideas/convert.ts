@@ -27,7 +27,7 @@ import {
 } from '../app/adapters';
 import {
     IdeaConversionPresenter,
-    initialConversionFields,
+    buildInitialConversionFields,
     conversionRequiredCount,
     conversionCompletedCount,
     conversionIsReady,
@@ -69,7 +69,7 @@ export async function init(
                 getManagedUsers(ctx),
             ]);
         fields =
-            initialConversionFields(idea);
+            buildInitialConversionFields(idea);
         presenter =
             new IdeaConversionPresenter(
                 idea,
