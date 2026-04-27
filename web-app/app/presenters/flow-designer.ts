@@ -297,7 +297,7 @@ export class FlowDesignerPresenter {
         this.#state.isAutoLayout = next;
         void this.#saveFlow(false);
         if (next) {
-            this.reconcileLayout();
+            this.withLayoutReconciled();
         }
         return this.#state;
     }
@@ -399,7 +399,7 @@ export class FlowDesignerPresenter {
             this.#history,
             remaining.length > 0,
         );
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -418,7 +418,7 @@ export class FlowDesignerPresenter {
             popped.version,
         );
         await this.#refreshState();
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -774,7 +774,7 @@ Auto Fit</label>
         );
         void this.#saveFlow(true);
         this.#noteMutation();
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return this.#state;
     }
 
@@ -807,7 +807,7 @@ Auto Fit</label>
             nodeId, 'New State', x, y,
         );
         this.#noteMutation();
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -908,7 +908,7 @@ Auto Fit</label>
             fromId, toId,
         );
         this.#noteMutation();
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -946,7 +946,7 @@ Auto Fit</label>
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -1005,7 +1005,7 @@ Auto Fit</label>
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -1025,7 +1025,7 @@ Auto Fit</label>
         return false;
     }
 
-    reconcileLayout(): void {
+    withLayoutReconciled(): FlowSnapshot {
         if (
             this.#state.isAutoLayout
             && !this.#state.isLocked
@@ -1035,6 +1035,7 @@ Auto Fit</label>
         if (this.#state.isAutoFit) {
             this.#applyZoomToFit();
         }
+        return this.#state;
     }
 
     #runAutoLayout(): void {
@@ -1327,7 +1328,7 @@ Auto Fit</label>
                 nodeIds: new Set([nodeId]),
             };
         this.#state.isPanelOpen = false;
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 
@@ -1401,7 +1402,7 @@ Auto Fit</label>
             fromNodeId, nodeId,
         );
         this.#noteMutation();
-        this.reconcileLayout();
+        this.withLayoutReconciled();
         return true;
     }
 

@@ -827,7 +827,7 @@ export async function init(
             pageState.presenter()
                 .withCanvasSize(w, h);
             pageState.presenter()
-                .reconcileLayout();
+                .withLayoutReconciled();
             update(
                 container, pageState.presenter(),
             );
