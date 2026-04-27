@@ -27,7 +27,7 @@ import {
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
-    getCurrentUser,
+    getCurrentUserRow,
     createFetchContext,
     type FetchContext,
 } from '../app/adapters/index.ts';
@@ -221,14 +221,13 @@ function onRowClick(e: MouseEvent): void {
 async function createWorkOrderForFlow(
     flowId: string,
 ): Promise<void> {
-    let auth: Awaited<
-        ReturnType<typeof getCurrentUser>
-    >;
+    let userId: string;
     try {
-        auth = await getCurrentUser();
+        const row = await getCurrentUserRow();
+        userId = row.id;
     } catch (err) {
         log.error(
-            'getCurrentUser failed',
+            'getCurrentUserRow failed',
             'workbox', err,
         );
         showToast(
@@ -240,7 +239,7 @@ async function createWorkOrderForFlow(
         const woId =
             await postWorkOrderCreation(
                 flowId,
-                auth.user.idForLink(),
+                userId,
             );
         showToast(
             'Work order created', 'success',

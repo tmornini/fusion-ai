@@ -25,7 +25,7 @@ import {
     postWorkOrderTransition,
     postWorkOrderClaim,
     deleteWorkOrderClaim,
-    getCurrentUser,
+    getCurrentUserRow,
     createFetchContext,
 } from '../app/adapters/index.ts';
 import type {
@@ -424,8 +424,8 @@ export async function init(
     );
     if (!container) return;
 
-    const { user } =
-        await getCurrentUser();
+    const userRow = await getCurrentUserRow();
+    const userId = userRow.id;
     const ctx = createFetchContext();
 
     const detail = await withLoadingState(
@@ -435,7 +435,7 @@ export async function init(
             let presenter =
                 await loadPresenter(
                     id,
-                    user.idForLink(),
+                    userId,
                     ctx,
                 );
             const claim =
@@ -446,12 +446,12 @@ export async function init(
                 && !presenter.isComplete()
             ) {
                 await postWorkOrderClaim(
-                    id, user.idForLink(),
+                    id, userId,
                 );
                 presenter =
                     await loadPresenter(
                         id,
-                        user.idForLink(),
+                        userId,
                         ctx,
                     );
             }
@@ -481,7 +481,7 @@ export async function init(
     ) {
         initTransitionButtons(
             container, detail,
-            user.idForLink(),
+            userId,
         );
         initUnclaimButton(
             container, detail,
