@@ -130,7 +130,7 @@ export function buildInitialFlowSnapshot(
 const PANEL_WIDTH_PX = 288;
 
 export class FlowDesignerPresenter {
-    #snapshot: FlowSnapshot;
+    readonly #snapshot: FlowSnapshot;
     #canvasW: number;
     #canvasH: number;
     #needsFit: boolean;
