@@ -7,7 +7,6 @@ import { log } from '../logger.ts';
 import { showToast } from '../toast.ts';
 import {
     putFlow,
-    getFlowGraph,
     postFlowVersion,
 } from '../adapters/index.ts';
 import type {
@@ -161,25 +160,6 @@ export class FlowDesignerPresenter {
         );
     }
 
-    async #reloadGraphFromStore(
-    ): Promise<void> {
-        const g = await getFlowGraph(
-            this.#snapshot.flowId,
-        );
-        this.#snapshot = {
-            ...this.#snapshot,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        };
-        this.#snapshot.interaction
-            .selection = { kind: 'none' };
-    }
-
     #buildSaveShape(): FlowSaveShape {
         return {
             name: this.#snapshot.flowName,
@@ -211,21 +191,6 @@ export class FlowDesignerPresenter {
             this.#snapshot.flowId,
             this.#buildSaveShape(),
         );
-    }
-
-    async #handleMutationError(
-        err: unknown,
-        context: string,
-        userMessage: string,
-    ): Promise<void> {
-        log.error(
-            context + ' failed',
-            'flow-designer',
-            err,
-        );
-        showToast(userMessage, 'error');
-        await this
-            .#reloadGraphFromStore();
     }
 
     withNameEditing(
@@ -336,27 +301,6 @@ export class FlowDesignerPresenter {
 
     canRedo(): boolean {
         return canRedoFlowEdits(this.#history);
-    }
-
-    async #refreshState(): Promise<void> {
-        const graph = await getFlowGraph(
-            this.#snapshot.flowId,
-        );
-        this.#snapshot = {
-            ...this.#snapshot,
-            flowName: graph.name,
-            flowDescription: graph.description,
-            isLocked: graph.isLocked,
-            isAutoLayout: graph.isAutoLayout,
-            isAutoFit: graph.isAutoFit,
-            lockTimeout: graph.lockTimeout,
-            createdAt: graph.createdAt,
-            nodes: graph.nodes,
-            edges: graph.edges,
-            isPanelOpen: false,
-        };
-        this.#snapshot.interaction
-            .selection = { kind: 'none' };
     }
 
     #migrateToCenter(): void {

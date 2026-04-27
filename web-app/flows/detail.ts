@@ -238,20 +238,9 @@ async function handleAddEdge(
         snap, fromId, toId,
     );
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current =
@@ -268,6 +257,27 @@ async function handleAddEdge(
         pageState.container(),
         pageState.presenter(),
     );
+}
+
+async function reportOpFailure(
+    toast: string,
+    toastVariant:
+        | 'success' | 'error' | 'warning' | 'info',
+    flowId: string,
+): Promise<void> {
+    showToast(toast, toastVariant);
+    const g = await getFlowGraph(flowId);
+    const current = pageState.presenter().snapshot();
+    commit({
+        ...current,
+        flowName: g.name,
+        flowDescription: g.description,
+        isLocked: g.isLocked,
+        lockTimeout: g.lockTimeout,
+        createdAt: g.createdAt,
+        nodes: g.nodes,
+        edges: g.edges,
+    });
 }
 
 async function handleUndo(): Promise<void> {
@@ -322,20 +332,9 @@ async function handleDeleteSelectedNodes(
     const op = await performDeleteSelectedNodes(snap);
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current = pageState.presenter().snapshot();
@@ -364,20 +363,9 @@ async function handleDeleteSelectedEdge(
     const op = await performDeleteSelectedEdge(snap);
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current = pageState.presenter().snapshot();
@@ -414,20 +402,9 @@ async function handleAddField(
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current = pageState.presenter().snapshot();
@@ -451,20 +428,9 @@ async function handleDeleteField(
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current = pageState.presenter().snapshot();
@@ -489,20 +455,9 @@ async function handleAddNodeAtPosition(
         snap, fromId, x, y,
     );
     if (op.kind === 'fail') {
-        showToast(op.toast, op.toastVariant);
-        const g = await getFlowGraph(snap.flowId);
-        const current =
-            pageState.presenter().snapshot();
-        commit({
-            ...current,
-            flowName: g.name,
-            flowDescription: g.description,
-            isLocked: g.isLocked,
-            lockTimeout: g.lockTimeout,
-            createdAt: g.createdAt,
-            nodes: g.nodes,
-            edges: g.edges,
-        });
+        await reportOpFailure(
+            op.toast, op.toastVariant, snap.flowId,
+        );
         return;
     }
     const current =
