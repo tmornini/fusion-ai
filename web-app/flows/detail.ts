@@ -458,10 +458,11 @@ function bindToolbarActions(
             } else if (
                 action === 'delete-selected'
             ) {
-                void presenter
+                void pageState.presenter()
                     .deleteSelected()
                     .then(() => update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     ));
             }
         },
@@ -891,10 +892,11 @@ function bindKeyboardShortcuts(
                 )
             ) {
                 e.preventDefault();
-                void presenter
+                void pageState.presenter()
                     .deleteSelected()
                     .then(() => update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     ));
             }
             const mod =

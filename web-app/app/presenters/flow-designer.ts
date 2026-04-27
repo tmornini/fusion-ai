@@ -873,13 +873,15 @@ Auto Fit</label>
     }
 
     async deleteSelectedNodes(
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         const ids = this
             .#deletableNodeIds();
-        if (ids.length === 0) return false;
+        if (ids.length === 0) {
+            return this.#state;
+        }
         const idSet = new Set(ids);
         const result = applyDeleteNodes(
             this.#state.nodes,
@@ -901,13 +903,13 @@ Auto Fit</label>
                     'deleteSelectedNodes',
                     'Failed to delete state',
                 );
-            return false;
+            return this.#state;
         }
         this.#noteMutation();
         this.#state.interaction
             .selection = { kind: 'none' };
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
     #deletableNodeIds(): string[] {
@@ -933,15 +935,15 @@ Auto Fit</label>
     }
 
     async deleteSelectedEdge(
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         const sel =
             this.#state.interaction
                 .selection;
         if (sel.kind !== 'edge') {
-            return false;
+            return this.#state;
         }
         const edgeId = sel.edgeId;
         try {
@@ -957,7 +959,7 @@ Auto Fit</label>
                     'Failed to delete'
                     + ' transition',
                 );
-            return false;
+            return this.#state;
         }
         this.#state.edges = applyDeleteEdge(
             this.#state.edges, edgeId,
@@ -966,11 +968,11 @@ Auto Fit</label>
         this.#state.interaction
             .selection = { kind: 'none' };
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
     async deleteSelected(
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         const sel =
             this.#state.interaction
                 .selection;
@@ -982,7 +984,7 @@ Auto Fit</label>
             return this
                 .deleteSelectedEdge();
         }
-        return false;
+        return this.#state;
     }
 
     withLayoutReconciled(): FlowSnapshot {
