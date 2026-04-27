@@ -40,6 +40,9 @@ import {
 import type {
     FlowHistorySnapshot,
 } from '../app/flow-history.ts';
+import {
+    performAddEdge,
+} from '../app/flow-operations.ts';
 
 const FALLBACK_W = 800;
 const FALLBACK_H = 600;
@@ -214,6 +217,47 @@ function commit(
     );
     pageState.setPresenter(presenter);
     update(pageState.container(), presenter);
+}
+
+async function handleAddEdge(
+    fromId: string,
+    toId: string,
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performAddEdge(
+        snap, fromId, toId,
+    );
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current =
+        pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        edges: [...current.edges, op.edge],
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
 }
 
 function update(
@@ -439,12 +483,7 @@ function bindCanvasInteractions(
             );
         },
         (fromId, toId) => {
-            void pageState.presenter()
-                .addEdge(fromId, toId)
-                .then(() => update(
-                    container,
-                    pageState.presenter(),
-                ));
+            void handleAddEdge(fromId, toId);
         },
         (fromId, x, y) => {
             void pageState.presenter()
