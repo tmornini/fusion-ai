@@ -14,7 +14,13 @@ import {
     putFlow,
     deleteEdge,
     deleteField,
+    deleteFlowVersion,
+    getFlowGraph,
+    getFlowVersions,
+    putFlowFromVersion,
     generateId,
+    nowUtc,
+    jsonObjectField,
 } from './adapters/index.ts';
 import {
     NODE_WIDTH,
@@ -23,7 +29,26 @@ import {
 import {
     applyDeleteNodes,
 } from './flow-designer-actions.ts';
+import {
+    setHasUndoHistory,
+    appendToRedoStack,
+    removeFromRedoStack,
+} from './flow-history.ts';
+import type {
+    FlowHistorySnapshot,
+} from './flow-history.ts';
 import { log } from './logger.ts';
+
+function serializeGraph(
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+) {
+    return jsonObjectField(
+        { nodes, edges } as unknown as Record<
+            string, unknown
+        >,
+    );
+}
 
 function singleSelectedNodeId(
     snap: FlowSnapshot,
@@ -451,5 +476,145 @@ export async function performDeleteField(
         fieldId,
         advanceHistory: true,
     };
+}
+
+export interface HistoryOpOk {
+    readonly freshSnap: FlowSnapshot;
+    readonly newHistory: FlowHistorySnapshot;
+}
+
+function applyServerGraph(
+    snap: FlowSnapshot,
+    graph: {
+        name: string;
+        description: string;
+        isLocked: boolean;
+        isAutoLayout: boolean;
+        isAutoFit: boolean;
+        lockTimeout: number;
+        createdAt: string;
+        nodes: GraphNode[];
+        edges: GraphEdge[];
+    },
+): FlowSnapshot {
+    return {
+        ...snap,
+        flowName: graph.name,
+        flowDescription: graph.description,
+        isLocked: graph.isLocked,
+        isAutoLayout: graph.isAutoLayout,
+        isAutoFit: graph.isAutoFit,
+        lockTimeout: graph.lockTimeout,
+        createdAt: graph.createdAt,
+        nodes: graph.nodes,
+        edges: graph.edges,
+        isPanelOpen: false,
+        interaction: {
+            ...snap.interaction,
+            selection: { kind: 'none' },
+        },
+    };
+}
+
+export async function performUndo(
+    snap: FlowSnapshot,
+    history: FlowHistorySnapshot,
+): Promise<OpResult<HistoryOpOk>> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    try {
+        const versions = await getFlowVersions(
+            snap.flowId,
+        );
+        const version = versions[0];
+        if (!version) {
+            return {
+                kind: 'ok',
+                freshSnap: snap,
+                newHistory: setHasUndoHistory(
+                    history, false,
+                ),
+            };
+        }
+        const stagedHistory = appendToRedoStack(
+            history,
+            {
+                id: generateId(),
+                flowId: snap.flowId,
+                name: snap.flowName,
+                description: snap.flowDescription,
+                isLocked: snap.isLocked,
+                isAutoLayout: snap.isAutoLayout,
+                isAutoFit: snap.isAutoFit,
+                lockTimeout: snap.lockTimeout,
+                graph: serializeGraph(
+                    snap.nodes, snap.edges,
+                ),
+                createdAt: nowUtc(),
+            },
+        );
+        await putFlowFromVersion(version);
+        await deleteFlowVersion(version.id);
+        const graph = await getFlowGraph(
+            snap.flowId,
+        );
+        const remaining = await getFlowVersions(
+            snap.flowId,
+        );
+        const newHistory = setHasUndoHistory(
+            stagedHistory,
+            remaining.length > 0,
+        );
+        return {
+            kind: 'ok',
+            freshSnap: applyServerGraph(snap, graph),
+            newHistory,
+        };
+    } catch (err) {
+        log.error(
+            'performUndo failed',
+            'flow-operations', err,
+        );
+        return failOp('Undo failed');
+    }
+}
+
+export async function performRedo(
+    snap: FlowSnapshot,
+    history: FlowHistorySnapshot,
+): Promise<OpResult<HistoryOpOk>> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    const popped = removeFromRedoStack(history);
+    if (!popped.version) {
+        return {
+            kind: 'ok',
+            freshSnap: snap,
+            newHistory: popped.snapshot,
+        };
+    }
+    try {
+        await postFlowVersion(snap.flowId);
+        await putFlowFromVersion(popped.version);
+        const graph = await getFlowGraph(
+            snap.flowId,
+        );
+        const newHistory = setHasUndoHistory(
+            popped.snapshot, true,
+        );
+        return {
+            kind: 'ok',
+            freshSnap: applyServerGraph(snap, graph),
+            newHistory,
+        };
+    } catch (err) {
+        log.error(
+            'performRedo failed',
+            'flow-operations', err,
+        );
+        return failOp('Redo failed');
+    }
 }
 

@@ -34,7 +34,6 @@ import {
 } from '../app/presenters/index.ts';
 import {
     buildFlowHistorySnapshot,
-    canUndoFlowEdits,
     recordFlowMutation,
 } from '../app/flow-history.ts';
 import type {
@@ -47,6 +46,8 @@ import {
     performDeleteSelectedEdge,
     performAddField,
     performDeleteField,
+    performUndo,
+    performRedo,
 } from '../app/flow-operations.ts';
 import {
     applyAddField,
@@ -222,7 +223,7 @@ function commit(
         next,
         pageState.canvasW(),
         pageState.canvasH(),
-        canUndoFlowEdits(pageState.history()),
+        pageState.history(),
     );
     pageState.setPresenter(presenter);
     update(pageState.container(), presenter);
@@ -262,6 +263,42 @@ async function handleAddEdge(
     commit(next, {
         advanceHistory: op.advanceHistory,
     });
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
+}
+
+async function handleUndo(): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performUndo(
+        snap, pageState.history(),
+    );
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        return;
+    }
+    pageState.setHistory(op.newHistory);
+    commit(op.freshSnap);
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
+}
+
+async function handleRedo(): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performRedo(
+        snap, pageState.history(),
+    );
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        return;
+    }
+    pageState.setHistory(op.newHistory);
+    commit(op.freshSnap);
     pageState.presenter().withLayoutReconciled();
     update(
         pageState.container(),
@@ -503,6 +540,7 @@ function update(
         isAutoFit: presenter.isAutoFit(),
         isLocked: presenter.isLocked(),
     });
+    pageState.setHistory(presenter.history());
 }
 
 function bindFlowNameEdit(
@@ -762,23 +800,9 @@ function bindToolbarActions(
             );
             if (!action) return;
             if (action === 'undo') {
-                void (async () => {
-                    await pageState.presenter()
-                        .performUndo();
-                    update(
-                        container,
-                        pageState.presenter(),
-                    );
-                })();
+                void handleUndo();
             } else if (action === 'redo') {
-                void (async () => {
-                    await pageState.presenter()
-                        .performRedo();
-                    update(
-                        container,
-                        pageState.presenter(),
-                    );
-                })();
+                void handleRedo();
             } else if (action === 'zoom-in') {
                 pageState.presenter()
                     .withZoomedIn();
@@ -1139,7 +1163,7 @@ export async function init(
             initialSnap,
             FALLBACK_W,
             FALLBACK_H,
-            loaded.versions.length > 0,
+            pageState.history(),
         );
     pageState.setPresenter(presenter);
     const panelStateRef: PanelStateRef =
@@ -1256,28 +1280,14 @@ function bindKeyboardShortcuts(
                 && !e.shiftKey
             ) {
                 e.preventDefault();
-                void (async () => {
-                    await pageState.presenter()
-                        .performUndo();
-                    update(
-                        container,
-                        pageState.presenter(),
-                    );
-                })();
+                void handleUndo();
             }
             if (
                 e.key === 'z'
                 && e.shiftKey
             ) {
                 e.preventDefault();
-                void (async () => {
-                    await pageState.presenter()
-                        .performRedo();
-                    update(
-                        container,
-                        pageState.presenter(),
-                    );
-                })();
+                void handleRedo();
             }
         },
         { signal },

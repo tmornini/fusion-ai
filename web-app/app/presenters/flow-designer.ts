@@ -9,9 +9,6 @@ import {
     putFlow,
     getFlowGraph,
     postFlowVersion,
-    getFlowVersions,
-    deleteFlowVersion,
-    putFlowFromVersion,
 } from '../adapters/index.ts';
 import type {
     GraphNode,
@@ -21,8 +18,6 @@ import type {
     FlowSaveShape,
 } from '../adapters/flows.ts';
 import {
-    jsonObjectField,
-    nowUtc,
     generateId,
 } from '../adapters/index.ts';
 import {
@@ -48,13 +43,9 @@ import type {
     InteractionState,
 } from '../flow-interactions.ts';
 import {
-    buildFlowHistorySnapshot,
     canUndoFlowEdits,
     canRedoFlowEdits,
     recordFlowMutation,
-    setHasUndoHistory,
-    appendToRedoStack,
-    removeFromRedoStack,
 } from '../flow-history.ts';
 import type {
     FlowHistorySnapshot,
@@ -82,17 +73,6 @@ import {
     buildEdgePanel,
     buildFlowNameHeader,
 } from './flow-designer-view.ts';
-
-function serializeGraph(
-    nodes: GraphNode[],
-    edges: GraphEdge[],
-) {
-    return jsonObjectField(
-        { nodes, edges } as unknown as Record<
-            string, unknown
-        >,
-    );
-}
 
 interface DesignerState {
     flowId: string;
@@ -161,16 +141,18 @@ export class FlowDesignerPresenter {
         snap: FlowSnapshot,
         canvasW: number,
         canvasH: number,
-        hasUndoHistory: boolean,
+        history: FlowHistorySnapshot,
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
         this.#needsFit = true;
-        this.#history = buildFlowHistorySnapshot(
-            hasUndoHistory,
-        );
+        this.#history = history;
         this.#snapshot = snap;
         this.#migrateToCenter();
+    }
+
+    history(): FlowHistorySnapshot {
+        return this.#history;
     }
 
     #noteMutation(): void {
@@ -354,74 +336,6 @@ export class FlowDesignerPresenter {
 
     canRedo(): boolean {
         return canRedoFlowEdits(this.#history);
-    }
-
-    async performUndo(): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const versions = await getFlowVersions(
-            this.#snapshot.flowId,
-        );
-        const version = versions[0];
-        if (!version) {
-            this.#history = setHasUndoHistory(
-                this.#history, false,
-            );
-            return this.#snapshot;
-        }
-        this.#history = appendToRedoStack(this.#history, {
-            id: generateId(),
-            flowId: this.#snapshot.flowId,
-            name: this.#snapshot.flowName,
-            description:
-                this.#snapshot.flowDescription,
-            isLocked: this.#snapshot.isLocked,
-            isAutoLayout:
-                this.#snapshot.isAutoLayout,
-            isAutoFit:
-                this.#snapshot.isAutoFit,
-            lockTimeout:
-                this.#snapshot.lockTimeout,
-            graph: serializeGraph(
-                this.#snapshot.nodes,
-                this.#snapshot.edges,
-            ),
-            createdAt: nowUtc(),
-        });
-        await putFlowFromVersion(version);
-        await deleteFlowVersion(version.id);
-        await this.#refreshState();
-        const remaining = await getFlowVersions(
-            this.#snapshot.flowId,
-        );
-        this.#history = setHasUndoHistory(
-            this.#history,
-            remaining.length > 0,
-        );
-        this.withLayoutReconciled();
-        return this.#snapshot;
-    }
-
-    async performRedo(): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const popped = removeFromRedoStack(this.#history);
-        this.#history = popped.snapshot;
-        if (!popped.version) return this.#snapshot;
-        await postFlowVersion(
-            this.#snapshot.flowId,
-        );
-        this.#history = setHasUndoHistory(
-            this.#history, true,
-        );
-        await putFlowFromVersion(
-            popped.version,
-        );
-        await this.#refreshState();
-        this.withLayoutReconciled();
-        return this.#snapshot;
     }
 
     async #refreshState(): Promise<void> {
