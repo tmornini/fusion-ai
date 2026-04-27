@@ -8,7 +8,6 @@ import { showToast } from '../toast.ts';
 import {
     putFlow,
     postFieldAddition,
-    deleteEdge,
     deleteField,
     getFlowGraph,
     postFlowVersion,
@@ -70,8 +69,6 @@ import {
     applyDragPreview,
     applyToggleLock,
     applyUpdateFlowName,
-    applyDeleteNodes,
-    applyDeleteEdge,
     applyUpdateNode,
     applyUpdateEdge,
     applyAddField,
@@ -795,125 +792,6 @@ Auto Fit</label>
         return this.#snapshot;
     }
 
-    async deleteSelectedNodes(
-    ): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const ids = this
-            .#deletableNodeIds();
-        if (ids.length === 0) {
-            return this.#snapshot;
-        }
-        const idSet = new Set(ids);
-        const result = applyDeleteNodes(
-            this.#snapshot.nodes,
-            this.#snapshot.edges,
-            idSet,
-        );
-        const prev = this.#snapshot;
-        this.#snapshot = {
-            ...this.#snapshot,
-            nodes: result.nodes,
-            edges: result.edges,
-        };
-        try {
-            await this.#saveFlow(true);
-        } catch (err) {
-            this.#snapshot = prev;
-            await this
-                .#handleMutationError(
-                    err,
-                    'deleteSelectedNodes',
-                    'Failed to delete state',
-                );
-            return this.#snapshot;
-        }
-        this.#noteMutation();
-        this.#snapshot.interaction
-            .selection = { kind: 'none' };
-        this.withLayoutReconciled();
-        return this.#snapshot;
-    }
-
-    #deletableNodeIds(): string[] {
-        const sel =
-            this.#snapshot.interaction
-                .selection;
-        if (sel.kind !== 'nodes') return [];
-        const result: string[] = [];
-        for (const id of sel.nodeIds) {
-            const n =
-                this.#snapshot.nodes.find(
-                    nd => nd.id === id,
-                );
-            if (
-                n
-                && !n.isStart
-                && !n.isComplete
-            ) {
-                result.push(id);
-            }
-        }
-        return result;
-    }
-
-    async deleteSelectedEdge(
-    ): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const sel =
-            this.#snapshot.interaction
-                .selection;
-        if (sel.kind !== 'edge') {
-            return this.#snapshot;
-        }
-        const edgeId = sel.edgeId;
-        try {
-            await deleteEdge(
-                edgeId,
-                this.#snapshot.flowId,
-            );
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'deleteSelectedEdge',
-                    'Failed to delete'
-                    + ' transition',
-                );
-            return this.#snapshot;
-        }
-        this.#snapshot = {
-            ...this.#snapshot,
-            edges: applyDeleteEdge(
-                this.#snapshot.edges, edgeId,
-            ),
-        };
-        this.#noteMutation();
-        this.#snapshot.interaction
-            .selection = { kind: 'none' };
-        this.withLayoutReconciled();
-        return this.#snapshot;
-    }
-
-    async deleteSelected(
-    ): Promise<FlowSnapshot> {
-        const sel =
-            this.#snapshot.interaction
-                .selection;
-        if (sel.kind === 'nodes') {
-            return this
-                .deleteSelectedNodes();
-        }
-        if (sel.kind === 'edge') {
-            return this
-                .deleteSelectedEdge();
-        }
-        return this.#snapshot;
-    }
-
     withLayoutReconciled(): FlowSnapshot {
         if (
             this.#snapshot.isAutoLayout
@@ -1282,9 +1160,20 @@ Auto Fit</label>
             this.#snapshot.interaction
                 .selection;
         if (sel.kind === 'nodes') {
-            return this
-                .#deletableNodeIds()
-                .length > 0;
+            for (const id of sel.nodeIds) {
+                const n =
+                    this.#snapshot.nodes.find(
+                        nd => nd.id === id,
+                    );
+                if (
+                    n
+                    && !n.isStart
+                    && !n.isComplete
+                ) {
+                    return true;
+                }
+            }
+            return false;
         }
         return sel.kind === 'edge';
     }

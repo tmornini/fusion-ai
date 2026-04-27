@@ -7,12 +7,18 @@ import type {
 import {
     postEdgeConnection,
     postNodeAddition,
+    postFlowVersion,
+    putFlow,
+    deleteEdge,
     generateId,
 } from './adapters/index.ts';
 import {
     NODE_WIDTH,
     NODE_HEIGHT,
 } from './flow-layout.ts';
+import {
+    applyDeleteNodes,
+} from './flow-designer-actions.ts';
 import { log } from './logger.ts';
 
 export type ToastVariant =
@@ -25,6 +31,10 @@ export interface OpFail {
     readonly kind: 'fail';
     readonly toast: string;
     readonly toastVariant: ToastVariant;
+}
+
+export interface OpNoop {
+    readonly kind: 'noop';
 }
 
 export type OpResult<TOk extends object> =
@@ -233,6 +243,100 @@ export async function performAddNodeAtPosition(
             toNodeId: nodeId,
         },
         selectId: nodeId,
+        advanceHistory: true,
+    };
+}
+
+export interface NodesDeleteOk {
+    readonly nodes: GraphNode[];
+    readonly edges: GraphEdge[];
+    readonly advanceHistory: true;
+}
+
+export async function performDeleteSelectedNodes(
+    snap: FlowSnapshot,
+): Promise<OpResult<NodesDeleteOk> | OpNoop> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    const sel = snap.interaction.selection;
+    if (sel.kind !== 'nodes') {
+        return { kind: 'noop' };
+    }
+    const deletableIds: string[] = [];
+    for (const id of sel.nodeIds) {
+        const n = snap.nodes.find(
+            nd => nd.id === id,
+        );
+        if (n && !n.isStart && !n.isComplete) {
+            deletableIds.push(id);
+        }
+    }
+    if (deletableIds.length === 0) {
+        return { kind: 'noop' };
+    }
+    const result = applyDeleteNodes(
+        snap.nodes, snap.edges,
+        new Set(deletableIds),
+    );
+    try {
+        await postFlowVersion(snap.flowId);
+        await putFlow(snap.flowId, {
+            name: snap.flowName,
+            description: snap.flowDescription,
+            isLocked: snap.isLocked,
+            isAutoLayout: snap.isAutoLayout,
+            isAutoFit: snap.isAutoFit,
+            lockTimeout: snap.lockTimeout,
+            nodes: result.nodes,
+            edges: result.edges,
+            createdAt: snap.createdAt,
+        });
+    } catch (err) {
+        log.error(
+            'performDeleteSelectedNodes failed',
+            'flow-operations', err,
+        );
+        return failOp('Failed to delete state');
+    }
+    return {
+        kind: 'ok',
+        nodes: result.nodes,
+        edges: result.edges,
+        advanceHistory: true,
+    };
+}
+
+export interface EdgeDeleteOk {
+    readonly edgeId: string;
+    readonly advanceHistory: true;
+}
+
+export async function performDeleteSelectedEdge(
+    snap: FlowSnapshot,
+): Promise<OpResult<EdgeDeleteOk> | OpNoop> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    const sel = snap.interaction.selection;
+    if (sel.kind !== 'edge') {
+        return { kind: 'noop' };
+    }
+    const edgeId = sel.edgeId;
+    try {
+        await deleteEdge(edgeId, snap.flowId);
+    } catch (err) {
+        log.error(
+            'performDeleteSelectedEdge failed',
+            'flow-operations', err,
+        );
+        return failOp(
+            'Failed to delete transition',
+        );
+    }
+    return {
+        kind: 'ok',
+        edgeId,
         advanceHistory: true,
     };
 }

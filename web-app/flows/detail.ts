@@ -43,6 +43,8 @@ import type {
 import {
     performAddEdge,
     performAddNodeAtPosition,
+    performDeleteSelectedNodes,
+    performDeleteSelectedEdge,
 } from '../app/flow-operations.ts';
 
 const FALLBACK_W = 800;
@@ -250,6 +252,101 @@ async function handleAddEdge(
     const next: FlowSnapshot = {
         ...current,
         edges: [...current.edges, op.edge],
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
+}
+
+async function handleDeleteSelected(): Promise<void> {
+    const sel = pageState.presenter()
+        .snapshot().interaction.selection;
+    if (sel.kind === 'nodes') {
+        await handleDeleteSelectedNodes();
+    } else if (sel.kind === 'edge') {
+        await handleDeleteSelectedEdge();
+    }
+}
+
+async function handleDeleteSelectedNodes(
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performDeleteSelectedNodes(snap);
+    if (op.kind === 'noop') return;
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current = pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        nodes: op.nodes,
+        edges: op.edges,
+        interaction: {
+            ...current.interaction,
+            selection: { kind: 'none' },
+        },
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
+}
+
+async function handleDeleteSelectedEdge(
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performDeleteSelectedEdge(snap);
+    if (op.kind === 'noop') return;
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current = pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        edges: current.edges.filter(
+            e => e.id !== op.edgeId,
+        ),
+        interaction: {
+            ...current.interaction,
+            selection: { kind: 'none' },
+        },
     };
     commit(next, {
         advanceHistory: op.advanceHistory,
@@ -625,12 +722,7 @@ function bindToolbarActions(
             } else if (
                 action === 'delete-selected'
             ) {
-                void pageState.presenter()
-                    .deleteSelected()
-                    .then(() => update(
-                        container,
-                        pageState.presenter(),
-                    ));
+                void handleDeleteSelected();
             }
         },
         { signal },
@@ -1079,12 +1171,7 @@ function bindKeyboardShortcuts(
                 )
             ) {
                 e.preventDefault();
-                void pageState.presenter()
-                    .deleteSelected()
-                    .then(() => update(
-                        container,
-                        pageState.presenter(),
-                    ));
+                void handleDeleteSelected();
             }
             const mod =
                 e.metaKey || e.ctrlKey;
