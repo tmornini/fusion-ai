@@ -502,10 +502,6 @@ export class FlowDesignerPresenter {
             : new Set<string>();
     }
 
-    flowId(): string {
-        return this.#state.flowId;
-    }
-
     interactionState(): InteractionState {
         return this.#state.interaction;
     }

@@ -345,6 +345,7 @@ function bindCanvasInteractions(
 function bindToolbarActions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
+    flowId: string,
     signal: AbortSignal,
 ): void {
     const slot = $(
@@ -393,15 +394,11 @@ function bindToolbarActions(
             } else if (
                 action === 'copy-mermaid'
             ) {
-                void handleCopyMermaid(
-                    presenter,
-                );
+                void handleCopyMermaid(flowId);
             } else if (
                 action === 'export-zip'
             ) {
-                void handleExportZip(
-                    presenter,
-                );
+                void handleExportZip(flowId);
             } else if (
                 action === 'delete-selected'
             ) {
@@ -417,9 +414,8 @@ function bindToolbarActions(
 }
 
 async function handleCopyMermaid(
-    presenter: FlowDesignerPresenter,
+    flowId: string,
 ): Promise<void> {
-    const flowId = presenter.flowId();
     let text: string;
     try {
         text =
@@ -457,9 +453,8 @@ async function handleCopyMermaid(
 }
 
 async function handleExportZip(
-    presenter: FlowDesignerPresenter,
+    flowId: string,
 ): Promise<void> {
-    const flowId = presenter.flowId();
     let result: {
         data: Uint8Array;
         name: string;
@@ -743,7 +738,7 @@ export async function init(
         panelStateRef, signal,
     );
     bindToolbarActions(
-        container, presenter, signal,
+        container, presenter, flowId, signal,
     );
     bindPanelActions(
         container, presenter,
