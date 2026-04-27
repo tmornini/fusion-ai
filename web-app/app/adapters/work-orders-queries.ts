@@ -29,9 +29,9 @@ export class WorkOrderInboxRow {
     readonly #id: string;
     readonly #displayId: string;
     readonly #flowName: string;
-    readonly #lastTransitionedAt: string;
+    readonly #lastTransitionedAt: string | null;
     readonly #stateName: string;
-    readonly #transitionerName: string;
+    readonly #transitionerName: string | null;
     readonly #completed: boolean;
     readonly #position: number;
 
@@ -40,8 +40,8 @@ export class WorkOrderInboxRow {
         displayId: string;
         flowName: string;
         stateName: string;
-        transitionerName: string;
-        lastTransitionedAt: string;
+        transitionerName: string | null;
+        lastTransitionedAt: string | null;
         completed: boolean;
         position: number;
     }) {
@@ -69,7 +69,7 @@ export class WorkOrderInboxRow {
         return this.#flowName;
     }
 
-    lastTransitionedAtDate(): string {
+    lastTransitionedAtDate(): string | null {
         return this.#lastTransitionedAt;
     }
 
@@ -81,7 +81,7 @@ export class WorkOrderInboxRow {
         return this.#stateName;
     }
 
-    lastTransitionerName(): string {
+    lastTransitionerName(): string | null {
         return this.#transitionerName;
     }
 
@@ -335,10 +335,11 @@ export async function getAllWorkOrders(
                     ? userName(
                         userMap, last.user_id,
                     )
-                    : '',
+                    : null,
             lastTransitionedAt:
-                last?.transitioned_at
-                    ?? wo.created_at,
+                last
+                    ? last.transitioned_at
+                    : null,
             completed: isCompleted,
             position: wo.position,
         }));

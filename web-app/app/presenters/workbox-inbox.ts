@@ -112,10 +112,13 @@ export class WorkboxInboxPresenter {
                             from
                         }</span>
                         <span class="ml-auto"
-                            >${relativeTime(
-                                item
-                                    .lastTransitionedAtDate(),
-                            )}</span>
+                            >${
+                                item.lastTransitionedAtDate()
+                                    ? relativeTime(
+                                        item.lastTransitionedAtDate()!,
+                                    )
+                                    : DISPLAY_ABSENT
+                            }</span>
                     </div>
                 </div>
             </div>
