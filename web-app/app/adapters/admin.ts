@@ -180,40 +180,21 @@ export async function putCompany(
 
 export { Activity } from '../../../api/types.ts';
 
-export async function getActivityFeed(
-    ctx?: FetchContext,
-): Promise<Activity[]> {
-    const [
-        activities, userMap,
-        activityActors,
-    ] = await Promise.all([
-        GET<ActivityEntity[]>(
-            'activities',
-        ),
-        getUserMap(ctx),
-        GET<ActivityActorEntity[]>(
-            'activity-actors',
-        ),
-    ]);
-    const actorMap = new Map(
-        activityActors.map(
-            a => [
-                a.activity_id,
-                a.user_id,
-            ],
-        ),
+export async function getActivityRows(
+): Promise<ActivityEntity[]> {
+    return GET<ActivityEntity[]>(
+        'activities',
     );
-    return activities.map(a => {
-        const actorId = actorMap.get(a.id);
-        if (!actorId) {
-            throw new Error(
-                'Activity has no actor: '
-                + a.id,
-            );
-        }
-        return new Activity(
-            a,
-            userName(userMap, actorId),
-        );
-    });
 }
+
+export async function getActivityActorRows(
+): Promise<ActivityActorEntity[]> {
+    return GET<ActivityActorEntity[]>(
+        'activity-actors',
+    );
+}
+
+export type {
+    ActivityEntity,
+    ActivityActorEntity,
+} from '../../../api/types.ts';
