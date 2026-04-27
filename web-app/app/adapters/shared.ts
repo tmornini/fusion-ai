@@ -6,6 +6,9 @@ import type {
 } from '../../../api/types.ts';
 import { User } from '../../../api/types.ts';
 
+export type { Id } from '../../../api/types.ts';
+export { User } from '../../../api/types.ts';
+
 export interface AuthContext {
     user: User;
     company: string;

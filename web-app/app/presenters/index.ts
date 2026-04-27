@@ -98,4 +98,5 @@ export {
 } from './workbox-inbox.ts';
 export {
     buildFieldInputHtml,
+    WorkboxDetailPresenter,
 } from './workbox-detail.ts';

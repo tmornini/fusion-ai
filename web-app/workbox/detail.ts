@@ -5,7 +5,10 @@ import {
     html, mutateHtml,
 } from '../app/safe-html.ts';
 import type { SafeHtml } from '../app/safe-html.ts';
-import { buildFieldInputHtml } from '../app/presenters/index.ts';
+import {
+    buildFieldInputHtml,
+    WorkboxDetailPresenter,
+} from '../app/presenters/index.ts';
 import { log } from '../app/logger.ts';
 import { showToast } from '../app/toast.ts';
 import {
@@ -14,15 +17,18 @@ import {
 } from '../app/loading-states.ts';
 import { navigateTo } from '../app/core.ts';
 import {
-    getWorkOrderDetail,
+    getWorkOrder,
+    getWorkOrderTransitionRows,
+    getWorkOrderClaimRows,
+    getUserMap,
     postActivity,
     postWorkOrderTransition,
     postWorkOrderClaim,
     deleteWorkOrderClaim,
     getCurrentUser,
+    createFetchContext,
 } from '../app/adapters/index.ts';
 import type {
-    WorkOrderDetail,
     HistoryEntry,
     HistoryFieldValue,
     GraphField,
@@ -137,7 +143,7 @@ function buildHistoryEntry(
 }
 
 function buildDetailView(
-    detail: WorkOrderDetail,
+    detail: WorkboxDetailPresenter,
 ): SafeHtml {
     const complete = detail.isComplete();
 
@@ -246,7 +252,7 @@ function buildDetailView(
 
 function initTransitionButtons(
     container: HTMLElement,
-    detail: WorkOrderDetail,
+    detail: WorkboxDetailPresenter,
     userId: string,
 ): void {
     const buttons =
@@ -338,7 +344,7 @@ function initTransitionButtons(
 
 function initUnclaimButton(
     container: HTMLElement,
-    detail: WorkOrderDetail,
+    detail: WorkboxDetailPresenter,
 ): void {
     const btn = $(
         '#unclaim-btn', container,
@@ -377,6 +383,31 @@ function initUnclaimButton(
     );
 }
 
+async function loadPresenter(
+    workOrderId: string,
+    currentUserId: string,
+    ctx: ReturnType<typeof createFetchContext>,
+): Promise<WorkboxDetailPresenter> {
+    const [
+        workOrder, transitions,
+        claims, userMap,
+    ] = await Promise.all([
+        getWorkOrder(workOrderId),
+        getWorkOrderTransitionRows(
+            workOrderId,
+        ),
+        getWorkOrderClaimRows(workOrderId),
+        getUserMap(ctx),
+    ]);
+    return new WorkboxDetailPresenter(
+        workOrder,
+        transitions,
+        claims,
+        userMap,
+        currentUserId,
+    );
+}
+
 /* ── Init ────────────────── */
 
 export async function init(
@@ -395,29 +426,36 @@ export async function init(
 
     const { user } =
         await getCurrentUser();
+    const ctx = createFetchContext();
 
     const detail = await withLoadingState(
         container,
         buildSkeleton('detail', 4),
         async () => {
-            let wo = await getWorkOrderDetail(
-                id, user.idForLink(),
-            );
+            let presenter =
+                await loadPresenter(
+                    id,
+                    user.idForLink(),
+                    ctx,
+                );
             const claim =
-                wo.claimStatus();
+                presenter.claimStatus();
             if (
                 (claim.kind !== 'claimed'
                     || !claim.byCurrentUser)
-                && !wo.isComplete()
+                && !presenter.isComplete()
             ) {
                 await postWorkOrderClaim(
                     id, user.idForLink(),
                 );
-                wo = await getWorkOrderDetail(
-                    id, user.idForLink(),
-                );
+                presenter =
+                    await loadPresenter(
+                        id,
+                        user.idForLink(),
+                        ctx,
+                    );
             }
-            return wo;
+            return presenter;
         },
         () => init(params),
     );
