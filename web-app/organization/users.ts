@@ -18,7 +18,7 @@ import {
     navigateTo, trimStrings,
 } from '../app/core.ts';
 import {
-    getManagedUsers, getUserEntity, putUser,
+    getManagedUsers, getUserRow, putUser,
     postActivity,
     jsonArrayField,
     jsonObjectField,
@@ -516,13 +516,13 @@ async function updateUserActivationStatus(
     next: 'active' | 'deactivated',
 ): Promise<void> {
     let entity: Awaited<
-        ReturnType<typeof getUserEntity>
+        ReturnType<typeof getUserRow>
     >;
     try {
-        entity = await getUserEntity(userId);
+        entity = await getUserRow(userId);
     } catch (err) {
         log.error(
-            'getUserEntity failed',
+            'getUserRow failed',
             'organization', err,
         );
         showToast(
