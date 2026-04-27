@@ -26,10 +26,16 @@ import type {
 } from './types.ts';
 
 export class ApiError {
+    readonly message: string;
+    readonly status: number;
+
     constructor(
-        readonly message: string,
-        readonly status: number,
-    ) {}
+        message: string,
+        status: number,
+    ) {
+        this.message = message;
+        this.status = status;
+    }
 }
 
 const HTTP_BAD_REQUEST = 400;
