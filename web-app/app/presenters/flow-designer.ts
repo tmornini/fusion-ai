@@ -814,9 +814,9 @@ Auto Fit</label>
     async addEdge(
         fromId: string,
         toId: string,
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         const from =
             this.#state.nodes.find(
@@ -844,7 +844,7 @@ Auto Fit</label>
                 + ' from end state',
                 'error',
             );
-            return false;
+            return this.#state;
         }
         if (to.isStart) {
             showToast(
@@ -852,7 +852,7 @@ Auto Fit</label>
                 + ' to start state',
                 'error',
             );
-            return false;
+            return this.#state;
         }
         const hasDuplicate =
             this.#state.edges.some(
@@ -864,7 +864,7 @@ Auto Fit</label>
                 'Transition already exists',
                 'error',
             );
-            return false;
+            return this.#state;
         }
         if (from.isStart) {
             const hasOutgoing =
@@ -879,7 +879,7 @@ Auto Fit</label>
                     + ' transition',
                     'error',
                 );
-                return false;
+                return this.#state;
             }
         }
         const edgeId = generateId();
@@ -900,7 +900,7 @@ Auto Fit</label>
                     'Failed to create'
                     + ' transition',
                 );
-            return false;
+            return this.#state;
         }
         this.#state.edges = applyAddEdge(
             this.#state.edges,
@@ -909,7 +909,7 @@ Auto Fit</label>
         );
         this.#noteMutation();
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
     async deleteSelectedNodes(
@@ -1237,22 +1237,22 @@ Auto Fit</label>
         fromNodeId: string,
         x: number,
         y: number,
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         const fromNode =
             this.#state.nodes.find(
                 n => n.id === fromNodeId,
             );
-        if (!fromNode) return false;
+        if (!fromNode) return this.#state;
         if (fromNode.isComplete) {
             showToast(
                 'Cannot create from'
                 + ' end state',
                 'error',
             );
-            return false;
+            return this.#state;
         }
         if (fromNode.isStart) {
             const hasOut =
@@ -1267,7 +1267,7 @@ Auto Fit</label>
                     + ' transition',
                     'error',
                 );
-                return false;
+                return this.#state;
             }
         }
         const nodeId = generateId();
@@ -1292,7 +1292,7 @@ Auto Fit</label>
                     'addNodeAtPosition',
                     'Failed to add state',
                 );
-            return false;
+            return this.#state;
         }
         try {
             await postEdgeConnection({
@@ -1310,7 +1310,7 @@ Auto Fit</label>
                     'Failed to connect'
                     + ' transition',
                 );
-            return false;
+            return this.#state;
         }
         this.#state.nodes = applyAddNode(
             this.#state.nodes,
@@ -1329,7 +1329,7 @@ Auto Fit</label>
             };
         this.#state.isPanelOpen = false;
         this.withLayoutReconciled();
-        return true;
+        return this.#state;
     }
 
     async addNodeWithEdge(
