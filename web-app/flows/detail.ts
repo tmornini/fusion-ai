@@ -432,13 +432,21 @@ function bindToolbarActions(
                     );
                 })();
             } else if (action === 'zoom-in') {
-                presenter.zoomIn();
-                update(container, presenter);
+                pageState.presenter()
+                    .withZoomedIn();
+                update(
+                    container,
+                    pageState.presenter(),
+                );
             } else if (
                 action === 'zoom-out'
             ) {
-                presenter.zoomOut();
-                update(container, presenter);
+                pageState.presenter()
+                    .withZoomedOut();
+                update(
+                    container,
+                    pageState.presenter(),
+                );
             } else if (
                 action === 'copy-mermaid'
             ) {
@@ -816,9 +824,13 @@ export async function init(
         const w = initialWrap.clientWidth;
         const h = initialWrap.clientHeight;
         if (w > 0 && h > 0) {
-            presenter.updateCanvasSize(w, h);
-            presenter.reconcileLayout();
-            update(container, presenter);
+            pageState.presenter()
+                .withCanvasSize(w, h);
+            pageState.presenter()
+                .reconcileLayout();
+            update(
+                container, pageState.presenter(),
+            );
         }
     }
     subscribeResize(container, () => {
@@ -831,8 +843,11 @@ export async function init(
         const w = liveWrap.clientWidth;
         const h = liveWrap.clientHeight;
         if (w > 0 && h > 0) {
-            presenter.updateCanvasSize(w, h);
-            update(container, presenter);
+            pageState.presenter()
+                .withCanvasSize(w, h);
+            update(
+                container, pageState.presenter(),
+            );
         }
     });
 }

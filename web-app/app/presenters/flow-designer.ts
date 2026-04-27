@@ -1441,20 +1441,26 @@ Auto Fit</label>
         }
     }
 
-    zoomIn(): void {
-        if (this.#guardAutoFit()) return;
+    withZoomedIn(): FlowSnapshot {
+        if (this.#guardAutoFit()) {
+            return this.#state;
+        }
         zoomInState(
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
+        return this.#state;
     }
 
-    zoomOut(): void {
-        if (this.#guardAutoFit()) return;
+    withZoomedOut(): FlowSnapshot {
+        if (this.#guardAutoFit()) {
+            return this.#state;
+        }
         zoomOutState(
             this.#state.interaction,
             this.#selectedFocalPt(),
         );
+        return this.#state;
     }
 
     #selectedFocalPt(): {
@@ -1526,15 +1532,15 @@ Auto Fit</label>
         return null;
     }
 
-    updateCanvasSize(
+    withCanvasSize(
         w: number, h: number,
-    ): void {
+    ): FlowSnapshot {
         this.#canvasW = w;
         this.#canvasH = h;
         if (this.#needsFit) {
             this.#needsFit = false;
             this.#applyZoomToFit();
-            return;
+            return this.#state;
         }
         const vb =
             this.#state.interaction
@@ -1547,6 +1553,7 @@ Auto Fit</label>
         vb.h = h / z;
         vb.x = centerX - vb.w / 2;
         vb.y = centerY - vb.h / 2;
+        return this.#state;
     }
 
     #applyZoomToFit(): void {
