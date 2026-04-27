@@ -133,6 +133,8 @@ interface DesignerState {
     savedViewBox: SavedViewBox;
 }
 
+export type FlowSnapshot = Readonly<DesignerState>;
+
 function emptyWaypoints(
 ): Map<string, Waypoint[]> {
     return new Map<string, Waypoint[]>();
@@ -504,6 +506,10 @@ export class FlowDesignerPresenter {
 
     interactionState(): InteractionState {
         return this.#state.interaction;
+    }
+
+    snapshot(): FlowSnapshot {
+        return this.#state;
     }
 
     setPanelOpen(open: boolean): void {

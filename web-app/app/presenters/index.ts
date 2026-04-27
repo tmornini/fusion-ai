@@ -87,6 +87,7 @@ export {
 } from './company.ts';
 export {
     FlowDesignerPresenter,
+    type FlowSnapshot,
 } from './flow-designer.ts';
 export {
     WorkingStylesPresenter,
