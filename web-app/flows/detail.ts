@@ -45,7 +45,13 @@ import {
     performAddNodeAtPosition,
     performDeleteSelectedNodes,
     performDeleteSelectedEdge,
+    performAddField,
+    performDeleteField,
 } from '../app/flow-operations.ts';
+import {
+    applyAddField,
+    applyDeleteField,
+} from '../app/flow-designer-actions.ts';
 
 const FALLBACK_W = 800;
 const FALLBACK_H = 600;
@@ -356,6 +362,84 @@ async function handleDeleteSelectedEdge(
         pageState.container(),
         pageState.presenter(),
     );
+}
+
+async function handleAddField(
+    name: string,
+    fieldType: string,
+    isRequired: boolean,
+    options: string[],
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performAddField(
+        snap, name, fieldType,
+        isRequired, options,
+    );
+    if (op.kind === 'noop') return;
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current = pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        nodes: applyAddField(
+            current.nodes, op.nodeId, op.field,
+        ),
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
+}
+
+async function handleDeleteField(
+    fieldId: string,
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performDeleteField(
+        snap, fieldId,
+    );
+    if (op.kind === 'noop') return;
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current = pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        nodes: applyDeleteField(
+            current.nodes, op.nodeId, op.fieldId,
+        ),
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
 }
 
 async function handleAddNodeAtPosition(
@@ -848,18 +932,11 @@ function bindPanelActions(
                         'data-field-id',
                     );
                 if (!fieldId) return;
-                void pageState.presenter()
-                    .deleteField(fieldId)
-                    .then(() => update(
-                        container,
-                        pageState.presenter(),
-                    ));
+                void handleDeleteField(fieldId);
             } else if (
                 action === 'save-field'
             ) {
-                void handleSaveField(
-                    container, presenter,
-                );
+                void handleSaveField(container);
             }
         },
         { signal },
@@ -962,7 +1039,6 @@ function showFieldEditor(
 
 async function handleSaveField(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
 ): Promise<void> {
     const nameEl = $inputRequired(
         '#new-field-name', container,
@@ -1004,11 +1080,10 @@ async function handleSaveField(
                 .map(s => s.trim())
                 .filter(s => s.length > 0)
             : [];
-    await pageState.presenter().addField(
+    await handleAddField(
         fieldName, fieldType,
         isRequired, options,
     );
-    update(container, pageState.presenter());
 }
 
 export async function init(

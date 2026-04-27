@@ -7,8 +7,6 @@ import { log } from '../logger.ts';
 import { showToast } from '../toast.ts';
 import {
     putFlow,
-    postFieldAddition,
-    deleteField,
     getFlowGraph,
     postFlowVersion,
     getFlowVersions,
@@ -18,13 +16,10 @@ import {
 import type {
     GraphNode,
     GraphEdge,
-    GraphField,
     FlowGraph,
     FlowVersion,
     FlowSaveShape,
 } from '../adapters/flows.ts';
-import type { FlowFieldType }
-    from '../adapters/flows.ts';
 import {
     jsonObjectField,
     nowUtc,
@@ -71,8 +66,6 @@ import {
     applyUpdateFlowName,
     applyUpdateNode,
     applyUpdateEdge,
-    applyAddField,
-    applyDeleteField,
     applyAutoLayout,
     applyPanToRevealSelected,
     applyPanelTransition,
@@ -912,101 +905,6 @@ Auto Fit</label>
             ),
         };
         void this.#saveFlow(true);
-        this.#noteMutation();
-        return this.#snapshot;
-    }
-
-    async addField(
-        name: string,
-        fieldType: string,
-        isRequired: boolean,
-        options: string[],
-    ): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        name = name.trim();
-        const nodeId = this
-            .#singleSelectedNodeId();
-        if (!nodeId) return this.#snapshot;
-        const sortOrder =
-            this.#snapshot.nodes.find(
-                n => n.id === nodeId,
-            )!.fields.length;
-        const fieldId = generateId();
-        const fId = this.#snapshot.flowId;
-        try {
-            await postFieldAddition({
-                fieldId,
-                flowId: fId,
-                nodeId,
-                name,
-                fieldType,
-                sortOrder,
-                isRequired,
-                options,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addField',
-                    'Failed to add field',
-                );
-            return this.#snapshot;
-        }
-        const typed =
-            fieldType as FlowFieldType;
-        const newField: GraphField = {
-            id: fieldId,
-            name,
-            fieldType: typed,
-            sortOrder,
-            isRequired,
-            options,
-        };
-        this.#snapshot = {
-            ...this.#snapshot,
-            nodes: applyAddField(
-                this.#snapshot.nodes,
-                nodeId, newField,
-            ),
-        };
-        this.#noteMutation();
-        return this.#snapshot;
-    }
-
-    async deleteField(
-        fieldId: string,
-    ): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const nodeId = this
-            .#singleSelectedNodeId();
-        if (!nodeId) return this.#snapshot;
-        try {
-            await deleteField(
-                fieldId,
-                nodeId,
-                this.#snapshot.flowId,
-            );
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'deleteField',
-                    'Failed to delete field',
-                );
-            return this.#snapshot;
-        }
-        this.#snapshot = {
-            ...this.#snapshot,
-            nodes: applyDeleteField(
-                this.#snapshot.nodes,
-                nodeId, fieldId,
-            ),
-        };
         this.#noteMutation();
         return this.#snapshot;
     }

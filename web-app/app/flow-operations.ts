@@ -2,14 +2,18 @@ import type { FlowSnapshot } from
     './presenters/flow-designer.ts';
 import type {
     GraphEdge,
+    GraphField,
     GraphNode,
+    FlowFieldType,
 } from './adapters/flows.ts';
 import {
     postEdgeConnection,
     postNodeAddition,
+    postFieldAddition,
     postFlowVersion,
     putFlow,
     deleteEdge,
+    deleteField,
     generateId,
 } from './adapters/index.ts';
 import {
@@ -20,6 +24,16 @@ import {
     applyDeleteNodes,
 } from './flow-designer-actions.ts';
 import { log } from './logger.ts';
+
+function singleSelectedNodeId(
+    snap: FlowSnapshot,
+): string | null {
+    const sel = snap.interaction.selection;
+    if (sel.kind !== 'nodes') return null;
+    if (sel.nodeIds.size !== 1) return null;
+    return sel.nodeIds.values().next().value
+        ?? null;
+}
 
 export type ToastVariant =
     | 'success'
@@ -337,6 +351,104 @@ export async function performDeleteSelectedEdge(
     return {
         kind: 'ok',
         edgeId,
+        advanceHistory: true,
+    };
+}
+
+export interface FieldAddOk {
+    readonly nodeId: string;
+    readonly field: GraphField;
+    readonly advanceHistory: true;
+}
+
+export async function performAddField(
+    snap: FlowSnapshot,
+    name: string,
+    fieldType: string,
+    isRequired: boolean,
+    options: string[],
+): Promise<OpResult<FieldAddOk> | OpNoop> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    const trimmed = name.trim();
+    const nodeId = singleSelectedNodeId(snap);
+    if (!nodeId) {
+        return { kind: 'noop' };
+    }
+    const node = snap.nodes.find(
+        n => n.id === nodeId,
+    );
+    if (!node) {
+        return { kind: 'noop' };
+    }
+    const sortOrder = node.fields.length;
+    const fieldId = generateId();
+    try {
+        await postFieldAddition({
+            fieldId,
+            flowId: snap.flowId,
+            nodeId,
+            name: trimmed,
+            fieldType,
+            sortOrder,
+            isRequired,
+            options,
+        });
+    } catch (err) {
+        log.error(
+            'performAddField failed',
+            'flow-operations', err,
+        );
+        return failOp('Failed to add field');
+    }
+    return {
+        kind: 'ok',
+        nodeId,
+        field: {
+            id: fieldId,
+            name: trimmed,
+            fieldType: fieldType as FlowFieldType,
+            sortOrder,
+            isRequired,
+            options,
+        },
+        advanceHistory: true,
+    };
+}
+
+export interface FieldDeleteOk {
+    readonly nodeId: string;
+    readonly fieldId: string;
+    readonly advanceHistory: true;
+}
+
+export async function performDeleteField(
+    snap: FlowSnapshot,
+    fieldId: string,
+): Promise<OpResult<FieldDeleteOk> | OpNoop> {
+    if (snap.isLocked) {
+        return failOp('Flow is locked');
+    }
+    const nodeId = singleSelectedNodeId(snap);
+    if (!nodeId) {
+        return { kind: 'noop' };
+    }
+    try {
+        await deleteField(
+            fieldId, nodeId, snap.flowId,
+        );
+    } catch (err) {
+        log.error(
+            'performDeleteField failed',
+            'flow-operations', err,
+        );
+        return failOp('Failed to delete field');
+    }
+    return {
+        kind: 'ok',
+        nodeId,
+        fieldId,
         advanceHistory: true,
     };
 }
