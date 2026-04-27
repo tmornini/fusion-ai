@@ -14,6 +14,7 @@ import {
     putIdea,
     subscribeToIdeaChanges,
     isIdeaStatus,
+    createFetchContext,
 } from '../app/adapters';
 import {
     IdeaListPresenter,
@@ -39,10 +40,11 @@ export async function init(): Promise<void> {
     );
     if (!teamListEl) return;
 
+    const ctx = createFetchContext();
     const ideas = await withLoadingState(
         teamListEl,
         buildSkeleton('card-list', 4),
-        getIdeas,
+        () => getIdeas(ctx),
         init,
         {
             icon: iconLightbulb(24, ''),

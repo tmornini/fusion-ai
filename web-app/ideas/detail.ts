@@ -25,6 +25,7 @@ import {
     postActivity,
     putIdea,
     subscribeToIdeaChanges,
+    createFetchContext,
     type Idea,
 } from '../app/adapters';
 
@@ -172,10 +173,11 @@ export async function init(
     if (!container) return;
     pageContainer = container;
 
+    const ctx = createFetchContext();
     const idea = await withLoadingState(
         container,
         buildSkeleton('detail', 4),
-        () => getIdea(ideaId),
+        () => getIdea(ideaId, ctx),
         () => init(params),
     );
     if (!idea) return;
@@ -186,7 +188,9 @@ export async function init(
 
     subscribeToIdeaChanges(async () => {
         if (!pageContainer || !state) return;
-        const fresh = await getIdea(ideaId);
+        const fresh = await getIdea(
+            ideaId, createFetchContext(),
+        );
         state = { kind: 'reading', idea: fresh };
         rerender();
     });
