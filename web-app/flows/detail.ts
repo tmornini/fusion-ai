@@ -42,6 +42,7 @@ import type {
 } from '../app/flow-history.ts';
 import {
     performAddEdge,
+    performAddNodeAtPosition,
 } from '../app/flow-operations.ts';
 
 const FALLBACK_W = 800;
@@ -249,6 +250,57 @@ async function handleAddEdge(
     const next: FlowSnapshot = {
         ...current,
         edges: [...current.edges, op.edge],
+    };
+    commit(next, {
+        advanceHistory: op.advanceHistory,
+    });
+    pageState.presenter().withLayoutReconciled();
+    update(
+        pageState.container(),
+        pageState.presenter(),
+    );
+}
+
+async function handleAddNodeAtPosition(
+    fromId: string,
+    x: number,
+    y: number,
+): Promise<void> {
+    const snap = pageState.presenter().snapshot();
+    const op = await performAddNodeAtPosition(
+        snap, fromId, x, y,
+    );
+    if (op.kind === 'fail') {
+        showToast(op.toast, op.toastVariant);
+        const g = await getFlowGraph(snap.flowId);
+        const current =
+            pageState.presenter().snapshot();
+        commit({
+            ...current,
+            flowName: g.name,
+            flowDescription: g.description,
+            isLocked: g.isLocked,
+            lockTimeout: g.lockTimeout,
+            createdAt: g.createdAt,
+            nodes: g.nodes,
+            edges: g.edges,
+        });
+        return;
+    }
+    const current =
+        pageState.presenter().snapshot();
+    const next: FlowSnapshot = {
+        ...current,
+        nodes: [...current.nodes, op.node],
+        edges: [...current.edges, op.edge],
+        isPanelOpen: false,
+        interaction: {
+            ...current.interaction,
+            selection: {
+                kind: 'nodes',
+                nodeIds: new Set([op.selectId]),
+            },
+        },
     };
     commit(next, {
         advanceHistory: op.advanceHistory,
@@ -486,14 +538,9 @@ function bindCanvasInteractions(
             void handleAddEdge(fromId, toId);
         },
         (fromId, x, y) => {
-            void pageState.presenter()
-                .addNodeAtPosition(
-                    fromId, x, y,
-                )
-                .then(() => update(
-                    container,
-                    pageState.presenter(),
-                ));
+            void handleAddNodeAtPosition(
+                fromId, x, y,
+            );
         },
         (id) => pageState.presenter()
             .getNodePosition(id),

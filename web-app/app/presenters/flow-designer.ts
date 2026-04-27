@@ -7,8 +7,6 @@ import { log } from '../logger.ts';
 import { showToast } from '../toast.ts';
 import {
     putFlow,
-    postNodeAddition,
-    postEdgeConnection,
     postFieldAddition,
     deleteEdge,
     deleteField,
@@ -72,8 +70,6 @@ import {
     applyDragPreview,
     applyToggleLock,
     applyUpdateFlowName,
-    applyAddNode,
-    applyAddEdge,
     applyDeleteNodes,
     applyDeleteEdge,
     applyUpdateNode,
@@ -1144,108 +1140,6 @@ Auto Fit</label>
         return this.#snapshot.nodes.find(
             n => n.id === nodeId,
         )!.name;
-    }
-
-    async addNodeAtPosition(
-        fromNodeId: string,
-        x: number,
-        y: number,
-    ): Promise<FlowSnapshot> {
-        if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const fromNode =
-            this.#snapshot.nodes.find(
-                n => n.id === fromNodeId,
-            );
-        if (!fromNode) return this.#snapshot;
-        if (fromNode.isComplete) {
-            showToast(
-                'Cannot create from'
-                + ' end state',
-                'error',
-            );
-            return this.#snapshot;
-        }
-        if (fromNode.isStart) {
-            const hasOut =
-                this.#snapshot.edges.some(
-                    e => e.fromNodeId
-                        === fromNodeId,
-                );
-            if (hasOut) {
-                showToast(
-                    'Start state allows'
-                    + ' only one outgoing'
-                    + ' transition',
-                    'error',
-                );
-                return this.#snapshot;
-            }
-        }
-        const nodeId = generateId();
-        const edgeId = generateId();
-        const fId = this.#snapshot.flowId;
-        const posX =
-            x - NODE_WIDTH / 2;
-        const posY =
-            y - NODE_HEIGHT / 2;
-        try {
-            await postNodeAddition({
-                nodeId,
-                flowId: fId,
-                name: 'New State',
-                positionX: posX,
-                positionY: posY,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addNodeAtPosition',
-                    'Failed to add state',
-                );
-            return this.#snapshot;
-        }
-        try {
-            await postEdgeConnection({
-                edgeId,
-                flowId: fId,
-                name: 'Transition',
-                fromNodeId,
-                toNodeId: nodeId,
-            });
-        } catch (err) {
-            await this
-                .#handleMutationError(
-                    err,
-                    'addNodeAtPosition',
-                    'Failed to connect'
-                    + ' transition',
-                );
-            return this.#snapshot;
-        }
-        this.#snapshot = {
-            ...this.#snapshot,
-            nodes: applyAddNode(
-                this.#snapshot.nodes,
-                nodeId, 'New State', posX, posY,
-            ),
-            edges: applyAddEdge(
-                this.#snapshot.edges,
-                edgeId, 'Transition',
-                fromNodeId, nodeId,
-            ),
-            isPanelOpen: false,
-        };
-        this.#noteMutation();
-        this.#snapshot.interaction
-            .selection = {
-                kind: 'nodes',
-                nodeIds: new Set([nodeId]),
-            };
-        this.withLayoutReconciled();
-        return this.#snapshot;
     }
 
     withZoomedIn(): FlowSnapshot {
