@@ -14,12 +14,22 @@ export interface AuthContext {
     company: string;
 }
 
+export async function getCurrentUserRow(
+): Promise<UserEntity> {
+    return GET<UserEntity>('current-user');
+}
+
+export async function getCompanyRow(
+): Promise<CompanyEntity> {
+    return GET<CompanyEntity>('company');
+}
+
 export async function getCurrentUser(
 ): Promise<AuthContext> {
     const [row, company] =
         await Promise.all([
-            GET<UserEntity>('current-user'),
-            GET<CompanyEntity>('company'),
+            getCurrentUserRow(),
+            getCompanyRow(),
         ]);
     return {
         user: new User(row),
