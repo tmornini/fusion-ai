@@ -543,8 +543,9 @@ function reduceCrossings(
             }
             return { id, bary: sum / ns.length };
         });
-        withBary.sort((a, b) => a.bary - b.bary);
-        return withBary.map(b => b.id);
+        return withBary
+            .toSorted((a, b) => a.bary - b.bary)
+            .map(b => b.id);
     };
 
     const sweepDown = (

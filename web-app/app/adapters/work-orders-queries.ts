@@ -293,7 +293,7 @@ export async function getAllWorkOrders(
                 `Work order ${wo.id} has no transitions`,
             );
         }
-        const woTransitions = rawTransitions.sort(
+        const woTransitions = rawTransitions.toSorted(
             (a, b) =>
                 a.transitioned_at
                     .localeCompare(
@@ -345,13 +345,11 @@ export async function getAllWorkOrders(
         }));
     }
 
-    items.sort(
+    return items.toSorted(
         (a, b) =>
             a.positionSortKey()
             - b.positionSortKey(),
     );
-
-    return items;
 }
 
 export async function getArchivedWorkOrders(
@@ -410,7 +408,7 @@ export async function getWorkOrderDetail(
             t => t.work_order_id
                 === workOrderId,
         )
-        .sort(
+        .toSorted(
             (a, b) =>
                 a.transitioned_at
                     .localeCompare(

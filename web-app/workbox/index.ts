@@ -138,14 +138,13 @@ async function initActiveList(
             }
             const updated =
                 await getActiveWorkOrders();
-            if (activePresenter) {
-                activePresenter.update(
-                    updated,
+            activePresenter =
+                new WorkboxInboxPresenter(
+                    updated, true,
                 );
-                activePresenter.renderList(
-                    activeEl,
-                );
-            }
+            activePresenter.renderList(
+                activeEl,
+            );
         },
     );
 }

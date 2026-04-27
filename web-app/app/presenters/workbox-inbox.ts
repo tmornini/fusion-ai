@@ -23,21 +23,15 @@ function relativeTime(iso: string): string {
 }
 
 export class WorkboxInboxPresenter {
-    #items: WorkOrderInboxRow[];
+    readonly #items: readonly WorkOrderInboxRow[];
     readonly #showGrip: boolean;
 
     constructor(
-        items: WorkOrderInboxRow[],
+        items: readonly WorkOrderInboxRow[],
         showGrip: boolean,
     ) {
         this.#items = items;
         this.#showGrip = showGrip;
-    }
-
-    update(
-        items: WorkOrderInboxRow[],
-    ): void {
-        this.#items = items;
     }
 
     renderList(
