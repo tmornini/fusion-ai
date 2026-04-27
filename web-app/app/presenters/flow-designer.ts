@@ -146,8 +146,8 @@ export class FlowDesignerPresenter {
         this.#canvasH = canvasH;
         this.#needsFit = true;
         this.#history = history;
-        this.#snapshot = snap;
-        this.#migrateToCenter();
+        this.#snapshot =
+            this.#computeMigrateToCenter(snap);
     }
 
     history(): FlowHistorySnapshot {
@@ -160,36 +160,32 @@ export class FlowDesignerPresenter {
         );
     }
 
-    #buildSaveShape(): FlowSaveShape {
+    #buildSaveShape(
+        snap: FlowSnapshot,
+    ): FlowSaveShape {
         return {
-            name: this.#snapshot.flowName,
-            description:
-                this.#snapshot.flowDescription,
-            isLocked: this.#snapshot.isLocked,
-            isAutoLayout:
-                this.#snapshot.isAutoLayout,
-            isAutoFit:
-                this.#snapshot.isAutoFit,
-            lockTimeout:
-                this.#snapshot.lockTimeout,
-            nodes: this.#snapshot.nodes,
-            edges: this.#snapshot.edges,
-            createdAt:
-                this.#snapshot.createdAt,
+            name: snap.flowName,
+            description: snap.flowDescription,
+            isLocked: snap.isLocked,
+            isAutoLayout: snap.isAutoLayout,
+            isAutoFit: snap.isAutoFit,
+            lockTimeout: snap.lockTimeout,
+            nodes: snap.nodes,
+            edges: snap.edges,
+            createdAt: snap.createdAt,
         };
     }
 
     async #saveFlow(
         versioned: boolean,
+        snap: FlowSnapshot,
     ): Promise<void> {
         if (versioned) {
-            await postFlowVersion(
-                this.#snapshot.flowId,
-            );
+            await postFlowVersion(snap.flowId);
         }
         await putFlow(
-            this.#snapshot.flowId,
-            this.#buildSaveShape(),
+            snap.flowId,
+            this.#buildSaveShape(snap),
         );
     }
 
@@ -199,11 +195,10 @@ export class FlowDesignerPresenter {
         if (editing && this.#guardLocked()) {
             return this.#snapshot;
         }
-        this.#snapshot = {
+        return {
             ...this.#snapshot,
             isEditingName: editing,
         };
-        return this.#snapshot;
     }
 
     isLocked(): boolean {
@@ -215,13 +210,13 @@ export class FlowDesignerPresenter {
             this.#snapshot.isLocked,
             this.#snapshot.isEditingName,
         );
-        this.#snapshot = {
+        const next = {
             ...this.#snapshot,
             isLocked: result.isLocked,
             isEditingName: result.isEditingName,
         };
-        void this.#saveFlow(false);
-        return this.#snapshot;
+        void this.#saveFlow(false, next);
+        return next;
     }
 
     isAutoLayout(): boolean {
@@ -229,17 +224,17 @@ export class FlowDesignerPresenter {
     }
 
     withAutoLayoutToggled(): FlowSnapshot {
-        const next =
+        const toggled =
             !this.#snapshot.isAutoLayout;
-        this.#snapshot = {
+        let next: FlowSnapshot = {
             ...this.#snapshot,
-            isAutoLayout: next,
+            isAutoLayout: toggled,
         };
-        void this.#saveFlow(false);
-        if (next) {
-            this.withLayoutReconciled();
+        void this.#saveFlow(false, next);
+        if (toggled) {
+            next = this.#applyLayoutReconcile(next);
         }
-        return this.#snapshot;
+        return next;
     }
 
     isAutoFit(): boolean {
@@ -247,16 +242,16 @@ export class FlowDesignerPresenter {
     }
 
     withAutoFitToggled(): FlowSnapshot {
-        const next = !this.#snapshot.isAutoFit;
-        this.#snapshot = {
+        const toggled = !this.#snapshot.isAutoFit;
+        const next: FlowSnapshot = {
             ...this.#snapshot,
-            isAutoFit: next,
+            isAutoFit: toggled,
         };
-        void this.#saveFlow(false);
-        if (next) {
-            this.#applyZoomToFit();
+        void this.#saveFlow(false, next);
+        if (toggled) {
+            this.#applyZoomToFit(next);
         }
-        return this.#snapshot;
+        return next;
     }
 
     #guardLocked(): boolean {
@@ -285,14 +280,14 @@ export class FlowDesignerPresenter {
             return this.#snapshot;
         }
         const result = applyUpdateFlowName(name);
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             flowName: result.flowName,
             isEditingName: result.isEditingName,
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, next);
         this.#noteMutation();
-        return this.#snapshot;
+        return next;
     }
 
     canUndo(): boolean {
@@ -303,9 +298,11 @@ export class FlowDesignerPresenter {
         return canRedoFlowEdits(this.#history);
     }
 
-    #migrateToCenter(): void {
-        const nodes = this.#snapshot.nodes;
-        if (nodes.length === 0) return;
+    #computeMigrateToCenter(
+        snap: FlowSnapshot,
+    ): FlowSnapshot {
+        const nodes = snap.nodes;
+        if (nodes.length === 0) return snap;
         let sumX = 0;
         let sumY = 0;
         for (const n of nodes) {
@@ -317,16 +314,17 @@ export class FlowDesignerPresenter {
         if (
             Math.abs(centerX) <= 1
             && Math.abs(centerY) <= 1
-        ) return;
-        this.#snapshot = {
-            ...this.#snapshot,
+        ) return snap;
+        const next = {
+            ...snap,
             nodes: nodes.map(n => ({
                 ...n,
                 positionX: n.positionX - centerX,
                 positionY: n.positionY - centerY,
             })),
         };
-        void this.#saveFlow(false);
+        void this.#saveFlow(false, next);
+        return next;
     }
 
     selectedNodeId(): string | null {
@@ -377,11 +375,11 @@ export class FlowDesignerPresenter {
     }
 
     withPanelOpen(open: boolean): FlowSnapshot {
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             isPanelOpen: open,
         };
-        return this.#snapshot;
+        return this.#handlePanelTransition(next);
     }
 
     getNodePosition(id: string): {
@@ -414,49 +412,57 @@ export class FlowDesignerPresenter {
         );
     }
 
-    #panToRevealSelected(): void {
-        const sel =
-            this.#snapshot.interaction.selection;
+    #panToRevealSelected(snap: FlowSnapshot): void {
+        const sel = snap.interaction.selection;
         const edgeId =
             sel.kind === 'edge'
                 ? sel.edgeId : null;
         const origin = applyPanToRevealSelected(
-            this.#singleSelectedNodeId(),
+            snap.interaction.selection.kind
+                === 'nodes'
+                && snap.interaction.selection
+                    .nodeIds.size === 1
+                ? snap.interaction.selection
+                    .nodeIds
+                    .values().next().value
+                    ?? null
+                : null,
             edgeId,
-            this.#snapshot.nodes,
-            this.#snapshot.edges,
-            this.#snapshot.interaction.viewBox,
+            snap.nodes,
+            snap.edges,
+            snap.interaction.viewBox,
             this.#canvasW,
             PANEL_WIDTH_PX,
         );
         if (!origin) return;
-        const vb =
-            this.#snapshot.interaction.viewBox;
+        const vb = snap.interaction.viewBox;
         vb.x = origin.x;
         vb.y = origin.y;
     }
 
-    #handlePanelTransition(): void {
+    #handlePanelTransition(
+        snap: FlowSnapshot,
+    ): FlowSnapshot {
         const result = applyPanelTransition(
-            this.#snapshot.isAutoFit,
-            this.#snapshot.isPanelOpen,
-            this.#snapshot.savedViewBox,
-            this.#snapshot.interaction.viewBox,
+            snap.isAutoFit,
+            snap.isPanelOpen,
+            snap.savedViewBox,
+            snap.interaction.viewBox,
         );
-        if (!result) return;
-        this.#snapshot = {
-            ...this.#snapshot,
+        if (!result) return snap;
+        const next: FlowSnapshot = {
+            ...snap,
             savedViewBox: result.savedViewBox,
         };
-        const vb =
-            this.#snapshot.interaction.viewBox;
+        const vb = next.interaction.viewBox;
         vb.x = result.viewBox.x;
         vb.y = result.viewBox.y;
         vb.w = result.viewBox.w;
         vb.h = result.viewBox.h;
         if (result.shouldPanToReveal) {
-            this.#panToRevealSelected();
+            this.#panToRevealSelected(next);
         }
+        return next;
     }
 
     renderShell(
@@ -527,7 +533,6 @@ Auto Fit</label>
     renderUpdate(
         container: HTMLElement,
     ): void {
-        this.#handlePanelTransition();
         this.#mutateSwitches(container);
         this.#updateNameHeader(container);
         this.#updateToolbar(container);
@@ -631,46 +636,57 @@ Auto Fit</label>
         if (updates.length === 0) {
             return this.#snapshot;
         }
-        this.#snapshot = {
+        const moved: FlowSnapshot = {
             ...this.#snapshot,
             nodes: applyMoveNodes(
                 this.#snapshot.nodes, updates,
             ),
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, moved);
         this.#noteMutation();
-        this.withLayoutReconciled();
-        return this.#snapshot;
+        return this.#applyLayoutReconcile(moved);
     }
 
     withLayoutReconciled(): FlowSnapshot {
-        if (
-            this.#snapshot.isAutoLayout
-            && !this.#snapshot.isLocked
-        ) {
-            this.#runAutoLayout();
-        }
-        if (this.#snapshot.isAutoFit) {
-            this.#applyZoomToFit();
-        }
-        return this.#snapshot;
+        return this.#applyLayoutReconcile(
+            this.#snapshot,
+        );
     }
 
-    #runAutoLayout(): void {
+    #applyLayoutReconcile(
+        snap: FlowSnapshot,
+    ): FlowSnapshot {
+        let next = snap;
+        if (
+            next.isAutoLayout
+            && !next.isLocked
+        ) {
+            next = this.#runAutoLayout(next);
+        }
+        if (next.isAutoFit) {
+            this.#applyZoomToFit(next);
+        }
+        return next;
+    }
+
+    #runAutoLayout(
+        snap: FlowSnapshot,
+    ): FlowSnapshot {
         const result = applyAutoLayout(
-            this.#snapshot.nodes,
-            this.#snapshot.edges,
+            snap.nodes,
+            snap.edges,
             this.#canvasW,
             this.#canvasH,
-            this.#snapshot.isPanelOpen,
+            snap.isPanelOpen,
             PANEL_WIDTH_PX,
         );
-        this.#snapshot = {
-            ...this.#snapshot,
+        const next: FlowSnapshot = {
+            ...snap,
             nodes: result.nodes,
             edgeWaypoints: result.edgeWaypoints,
         };
-        void this.#saveFlow(false);
+        void this.#saveFlow(false, next);
+        return next;
     }
 
     withNodeNamed(
@@ -682,7 +698,7 @@ Auto Fit</label>
         const nodeId = this
             .#singleSelectedNodeId();
         if (!nodeId) return this.#snapshot;
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             nodes: applyUpdateNode(
                 this.#snapshot.nodes,
@@ -690,9 +706,9 @@ Auto Fit</label>
                 { name: name.trim() },
             ),
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, next);
         this.#noteMutation();
-        return this.#snapshot;
+        return next;
     }
 
     withNodeDescribed(
@@ -704,7 +720,7 @@ Auto Fit</label>
         const nodeId = this
             .#singleSelectedNodeId();
         if (!nodeId) return this.#snapshot;
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             nodes: applyUpdateNode(
                 this.#snapshot.nodes,
@@ -712,9 +728,9 @@ Auto Fit</label>
                 { description: desc.trim() },
             ),
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, next);
         this.#noteMutation();
-        return this.#snapshot;
+        return next;
     }
 
     withEdgeNamed(
@@ -729,7 +745,7 @@ Auto Fit</label>
         if (sel.kind !== 'edge') {
             return this.#snapshot;
         }
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             edges: applyUpdateEdge(
                 this.#snapshot.edges,
@@ -737,9 +753,9 @@ Auto Fit</label>
                 { name: name.trim() },
             ),
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, next);
         this.#noteMutation();
-        return this.#snapshot;
+        return next;
     }
 
     withEdgeDescribed(
@@ -754,7 +770,7 @@ Auto Fit</label>
         if (sel.kind !== 'edge') {
             return this.#snapshot;
         }
-        this.#snapshot = {
+        const next: FlowSnapshot = {
             ...this.#snapshot,
             edges: applyUpdateEdge(
                 this.#snapshot.edges,
@@ -762,9 +778,9 @@ Auto Fit</label>
                 { description: desc.trim() },
             ),
         };
-        void this.#saveFlow(true);
+        void this.#saveFlow(true, next);
         this.#noteMutation();
-        return this.#snapshot;
+        return next;
     }
 
     selectedNodeName(): string {
@@ -874,7 +890,7 @@ Auto Fit</label>
         this.#canvasH = h;
         if (this.#needsFit) {
             this.#needsFit = false;
-            this.#applyZoomToFit();
+            this.#applyZoomToFit(this.#snapshot);
             return this.#snapshot;
         }
         const vb =
@@ -891,23 +907,21 @@ Auto Fit</label>
         return this.#snapshot;
     }
 
-    #applyZoomToFit(): void {
-        const positions =
-            this.#snapshot.nodes.map(
-                n => ({
-                    x: n.positionX,
-                    y: n.positionY,
-                }),
-            );
+    #applyZoomToFit(snap: FlowSnapshot): void {
+        const positions = snap.nodes.map(
+            n => ({
+                x: n.positionX,
+                y: n.positionY,
+            }),
+        );
         const result = zoomToFitState(
             positions,
             this.#canvasW,
             this.#canvasH,
         );
         if (!result) return;
-        this.#snapshot.interaction.zoom =
-            result.zoom;
-        this.#snapshot.interaction.viewBox =
+        snap.interaction.zoom = result.zoom;
+        snap.interaction.viewBox =
             { ...result.viewBox };
     }
 

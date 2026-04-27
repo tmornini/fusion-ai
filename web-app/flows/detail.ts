@@ -252,10 +252,8 @@ async function handleAddEdge(
     commit(next, {
         advanceHistory: op.advanceHistory,
     });
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -291,10 +289,8 @@ async function handleUndo(): Promise<void> {
     }
     pageState.setHistory(op.newHistory);
     commit(op.freshSnap);
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -309,10 +305,8 @@ async function handleRedo(): Promise<void> {
     }
     pageState.setHistory(op.newHistory);
     commit(op.freshSnap);
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -350,10 +344,8 @@ async function handleDeleteSelectedNodes(
     commit(next, {
         advanceHistory: op.advanceHistory,
     });
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -382,10 +374,8 @@ async function handleDeleteSelectedEdge(
     commit(next, {
         advanceHistory: op.advanceHistory,
     });
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -478,10 +468,8 @@ async function handleAddNodeAtPosition(
     commit(next, {
         advanceHistory: op.advanceHistory,
     });
-    pageState.presenter().withLayoutReconciled();
-    update(
-        pageState.container(),
-        pageState.presenter(),
+    commit(
+        pageState.presenter().withLayoutReconciled(),
     );
 }
 
@@ -522,11 +510,9 @@ function bindFlowNameEdit(
                 btn.id
                     === 'flow-name-edit-btn'
             ) {
-                pageState.presenter()
-                    .withNameEditing(true);
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withNameEditing(true),
                 );
                 const input = $input(
                     '#flow-name-input',
@@ -552,21 +538,18 @@ function bindFlowNameEdit(
                     );
                     return;
                 }
-                pageState.presenter()
-                    .withFlowName(name);
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withFlowName(name),
+                    { advanceHistory: true },
                 );
             } else if (
                 btn.id
                     === 'flow-name-cancel-btn'
             ) {
-                pageState.presenter()
-                    .withNameEditing(false);
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withNameEditing(false),
                 );
             }
         },
@@ -615,10 +598,9 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            pageState.presenter()
-                .withLockToggled();
-            update(
-                container, pageState.presenter(),
+            commit(
+                pageState.presenter()
+                    .withLockToggled(),
             );
         },
         { signal },
@@ -629,10 +611,9 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            pageState.presenter()
-                .withAutoLayoutToggled();
-            update(
-                container, pageState.presenter(),
+            commit(
+                pageState.presenter()
+                    .withAutoLayoutToggled(),
             );
         },
         { signal },
@@ -643,10 +624,9 @@ function bindSwitches(
     )?.addEventListener(
         'click',
         () => {
-            pageState.presenter()
-                .withAutoFitToggled();
-            update(
-                container, pageState.presenter(),
+            commit(
+                pageState.presenter()
+                    .withAutoFitToggled(),
             );
         },
         { signal },
@@ -698,14 +678,16 @@ function bindCanvasInteractions(
         ),
         (open) => {
             panelStateRef.open = open;
-            pageState.presenter()
-                .withPanelOpen(open);
+            commit(
+                pageState.presenter()
+                    .withPanelOpen(open),
+            );
         },
         (updates) => {
-            pageState.presenter()
-                .withNodesMoved(updates);
-            update(
-                container, pageState.presenter(),
+            commit(
+                pageState.presenter()
+                    .withNodesMoved(updates),
+                { advanceHistory: true },
             );
         },
         (fromId, toId) => {
@@ -891,11 +873,9 @@ function bindPanelActions(
             );
             if (action === 'close-panel') {
                 panelStateRef.open = false;
-                pageState.presenter()
-                    .withPanelOpen(false);
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withPanelOpen(false),
                 );
             } else if (
                 action === 'add-field'
@@ -938,41 +918,45 @@ function bindPanelActions(
             const value = target.value;
             if (id === 'prop-node-name') {
                 saveDebouncer.schedule(
-                    () => pageState
-                        .presenter()
-                        .withNodeNamed(
-                            value,
-                        ),
+                    () => commit(
+                        pageState.presenter()
+                            .withNodeNamed(value),
+                        { advanceHistory: true },
+                    ),
                 );
             } else if (
                 id === 'prop-node-desc'
             ) {
                 saveDebouncer.schedule(
-                    () => pageState
-                        .presenter()
-                        .withNodeDescribed(
-                            value,
-                        ),
+                    () => commit(
+                        pageState.presenter()
+                            .withNodeDescribed(
+                                value,
+                            ),
+                        { advanceHistory: true },
+                    ),
                 );
             } else if (
                 id === 'prop-edge-name'
             ) {
                 saveDebouncer.schedule(
-                    () => pageState
-                        .presenter()
-                        .withEdgeNamed(
-                            value,
-                        ),
+                    () => commit(
+                        pageState.presenter()
+                            .withEdgeNamed(value),
+                        { advanceHistory: true },
+                    ),
                 );
             } else if (
                 id === 'prop-edge-desc'
             ) {
                 saveDebouncer.schedule(
-                    () => pageState
-                        .presenter()
-                        .withEdgeDescribed(
-                            value,
-                        ),
+                    () => commit(
+                        pageState.presenter()
+                            .withEdgeDescribed(
+                                value,
+                            ),
+                        { advanceHistory: true },
+                    ),
                 );
             }
         },
@@ -1158,10 +1142,9 @@ export async function init(
             pageState.setNeedsFit(false);
             pageState.presenter()
                 .withCanvasSize(w, h);
-            pageState.presenter()
-                .withLayoutReconciled();
-            update(
-                container, pageState.presenter(),
+            commit(
+                pageState.presenter()
+                    .withLayoutReconciled(),
             );
         }
     }
@@ -1201,11 +1184,9 @@ function bindKeyboardShortcuts(
             ) {
                 e.preventDefault();
                 panelStateRef.open = false;
-                pageState.presenter()
-                    .withPanelOpen(false);
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withPanelOpen(false),
                 );
                 return;
             }
