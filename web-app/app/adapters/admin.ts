@@ -123,8 +123,6 @@ export async function putCompany(
     await PUT('company', { ...company });
 }
 
-export { Activity } from '../../../api/types.ts';
-
 export async function getActivityRows(
 ): Promise<ActivityEntity[]> {
     return GET<ActivityEntity[]>(
