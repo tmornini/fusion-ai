@@ -151,7 +151,6 @@ function update(
 
 function bindFlowNameEdit(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
     signal: AbortSignal,
 ): void {
     const slot = $(
@@ -174,10 +173,11 @@ function bindFlowNameEdit(
                 btn.id
                     === 'flow-name-edit-btn'
             ) {
-                presenter
-                    .startEditingName();
+                pageState.presenter()
+                    .withNameEditing(true);
                 update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
                 const input = $input(
                     '#flow-name-input',
@@ -213,10 +213,11 @@ function bindFlowNameEdit(
                 btn.id
                     === 'flow-name-cancel-btn'
             ) {
-                presenter
-                    .cancelEditingName();
+                pageState.presenter()
+                    .withNameEditing(false);
                 update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
             }
         },
@@ -353,7 +354,7 @@ function bindCanvasInteractions(
         },
         (updates) => {
             pageState.presenter()
-                .moveNodes(updates);
+                .withNodesMoved(updates);
             update(
                 container, pageState.presenter(),
             );
@@ -795,7 +796,7 @@ export async function init(
         panelStateRef, signal,
     );
     bindFlowNameEdit(
-        container, presenter, signal,
+        container, signal,
     );
     bindSwitches(
         container, signal,

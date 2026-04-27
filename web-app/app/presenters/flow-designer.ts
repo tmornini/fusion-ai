@@ -261,13 +261,14 @@ export class FlowDesignerPresenter {
             .#reloadGraphFromStore();
     }
 
-    startEditingName(): void {
-        if (this.#guardLocked()) return;
-        this.#state.isEditingName = true;
-    }
-
-    cancelEditingName(): void {
-        this.#state.isEditingName = false;
+    withNameEditing(
+        editing: boolean,
+    ): FlowSnapshot {
+        if (editing && this.#guardLocked()) {
+            return this.#state;
+        }
+        this.#state.isEditingName = editing;
+        return this.#state;
     }
 
     isLocked(): boolean {
@@ -755,21 +756,26 @@ Auto Fit</label>
         );
     }
 
-    moveNodes(
+    withNodesMoved(
         updates: Array<{
             nodeId: string;
             x: number;
             y: number;
         }>,
-    ): void {
-        if (this.#guardLocked()) return;
-        if (updates.length === 0) return;
+    ): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
+        if (updates.length === 0) {
+            return this.#state;
+        }
         this.#state.nodes = applyMoveNodes(
             this.#state.nodes, updates,
         );
         void this.#saveFlow(true);
         this.#noteMutation();
         this.reconcileLayout();
+        return this.#state;
     }
 
     async addNode(): Promise<boolean> {
