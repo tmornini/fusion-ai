@@ -30,7 +30,16 @@ import {
 import {
     FlowDesignerPresenter,
     buildInitialFlowSnapshot,
+    type FlowSnapshot,
 } from '../app/presenters/index.ts';
+import {
+    buildFlowHistorySnapshot,
+    canUndoFlowEdits,
+    recordFlowMutation,
+} from '../app/flow-history.ts';
+import type {
+    FlowHistorySnapshot,
+} from '../app/flow-history.ts';
 
 const FALLBACK_W = 800;
 const FALLBACK_H = 600;
@@ -134,9 +143,78 @@ class PageState {
     ): void {
         this.#presenter = p;
     }
+
+    #container: HTMLElement | null = null;
+    #canvasW: number = FALLBACK_W;
+    #canvasH: number = FALLBACK_H;
+    #needsFit: boolean = true;
+    #history: FlowHistorySnapshot =
+        buildFlowHistorySnapshot(false);
+
+    container(): HTMLElement {
+        if (!this.#container) {
+            throw new Error(
+                'pageState.container() called'
+                + ' before setContainer()',
+            );
+        }
+        return this.#container;
+    }
+
+    setContainer(c: HTMLElement): void {
+        this.#container = c;
+    }
+
+    canvasW(): number {
+        return this.#canvasW;
+    }
+
+    canvasH(): number {
+        return this.#canvasH;
+    }
+
+    setCanvasSize(w: number, h: number): void {
+        this.#canvasW = w;
+        this.#canvasH = h;
+    }
+
+    needsFit(): boolean {
+        return this.#needsFit;
+    }
+
+    setNeedsFit(value: boolean): void {
+        this.#needsFit = value;
+    }
+
+    history(): FlowHistorySnapshot {
+        return this.#history;
+    }
+
+    setHistory(h: FlowHistorySnapshot): void {
+        this.#history = h;
+    }
 }
 
 const pageState = new PageState();
+
+function commit(
+    next: FlowSnapshot,
+    opts?: { advanceHistory?: boolean },
+): void {
+    if (opts?.advanceHistory) {
+        pageState.setHistory(
+            recordFlowMutation(pageState.history()),
+        );
+    }
+    const presenter = new FlowDesignerPresenter(
+        next,
+        pageState.canvasW(),
+        pageState.canvasH(),
+        canUndoFlowEdits(pageState.history()),
+    );
+    pageState.setPresenter(presenter);
+    update(pageState.container(), presenter);
+}
 
 function update(
     container: HTMLElement,
@@ -773,6 +851,7 @@ export async function init(
         '#flow-designer', document,
     );
     if (!container) return;
+    pageState.setContainer(container);
 
     const loaded = await withLoadingState(
         container,
@@ -787,6 +866,14 @@ export async function init(
         },
     );
     if (!loaded) return;
+
+    pageState.setCanvasSize(FALLBACK_W, FALLBACK_H);
+    pageState.setNeedsFit(true);
+    pageState.setHistory(
+        buildFlowHistorySnapshot(
+            loaded.versions.length > 0,
+        ),
+    );
 
     const initialSnap =
         buildInitialFlowSnapshot(
@@ -835,6 +922,8 @@ export async function init(
         const w = initialWrap.clientWidth;
         const h = initialWrap.clientHeight;
         if (w > 0 && h > 0) {
+            pageState.setCanvasSize(w, h);
+            pageState.setNeedsFit(false);
             pageState.presenter()
                 .withCanvasSize(w, h);
             pageState.presenter()
@@ -854,6 +943,8 @@ export async function init(
         const w = liveWrap.clientWidth;
         const h = liveWrap.clientHeight;
         if (w > 0 && h > 0) {
+            pageState.setCanvasSize(w, h);
+            pageState.setNeedsFit(true);
             pageState.presenter()
                 .withCanvasSize(w, h);
             update(
