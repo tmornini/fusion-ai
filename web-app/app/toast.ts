@@ -1,6 +1,7 @@
 const MAX_TOASTS = 5;
 const TOAST_DURATION_MS = 3000;
 const TOAST_TRANSITION_MS = 300;
+const TOAST_CONTAINER_ID = 'toast-container';
 
 function closeActiveToast(
     toast: HTMLElement,
@@ -22,7 +23,9 @@ export function showToast(
         | 'warning'
         | 'info' = 'info',
 ): void {
-    const container = document.getElementById('toast-container');
+    const container = document.getElementById(
+        TOAST_CONTAINER_ID,
+    );
     if (!container) return;
 
     while (container.children.length >= MAX_TOASTS) {
