@@ -203,10 +203,11 @@ function bindFlowNameEdit(
                     );
                     return;
                 }
-                presenter
-                    .updateFlowName(name);
+                pageState.presenter()
+                    .withFlowName(name);
                 update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
             } else if (
                 btn.id
@@ -348,7 +349,7 @@ function bindCanvasInteractions(
         (open) => {
             panelStateRef.open = open;
             pageState.presenter()
-                .setPanelOpen(open);
+                .withPanelOpen(open);
         },
         (updates) => {
             pageState.presenter()
@@ -558,9 +559,11 @@ function bindPanelActions(
             );
             if (action === 'close-panel') {
                 panelStateRef.open = false;
-                presenter.setPanelOpen(false);
+                pageState.presenter()
+                    .withPanelOpen(false);
                 update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
             } else if (
                 action === 'add-field'
@@ -844,9 +847,11 @@ function bindKeyboardShortcuts(
             ) {
                 e.preventDefault();
                 panelStateRef.open = false;
-                presenter.setPanelOpen(false);
+                pageState.presenter()
+                    .withPanelOpen(false);
                 update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
                 return;
             }

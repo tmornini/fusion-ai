@@ -336,14 +336,17 @@ export class FlowDesignerPresenter {
         return true;
     }
 
-    updateFlowName(name: string): void {
-        if (this.#guardLocked()) return;
+    withFlowName(name: string): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#state;
+        }
         const result = applyUpdateFlowName(name);
         this.#state.flowName = result.flowName;
         this.#state.isEditingName =
             result.isEditingName;
         void this.#saveFlow(true);
         this.#noteMutation();
+        return this.#state;
     }
 
     canUndo(): boolean {
@@ -515,8 +518,9 @@ export class FlowDesignerPresenter {
         return this.#state;
     }
 
-    setPanelOpen(open: boolean): void {
+    withPanelOpen(open: boolean): FlowSnapshot {
         this.#state.isPanelOpen = open;
+        return this.#state;
     }
 
     getNodePosition(id: string): {
