@@ -90,6 +90,7 @@ class PageState {
     #pushGestureContext:
         | ((next: FlowGestureContext) => void)
         | null = null;
+    #presenter: FlowDesignerPresenter | null = null;
 
     projectId(): string | undefined {
         return this.#projectId;
@@ -115,6 +116,22 @@ class PageState {
         if (this.#pushGestureContext) {
             this.#pushGestureContext(next);
         }
+    }
+
+    presenter(): FlowDesignerPresenter {
+        if (!this.#presenter) {
+            throw new Error(
+                'pageState.presenter() called'
+                + ' before setPresenter()',
+            );
+        }
+        return this.#presenter;
+    }
+
+    setPresenter(
+        p: FlowDesignerPresenter,
+    ): void {
+        this.#presenter = p;
     }
 }
 
@@ -317,34 +334,43 @@ function bindCanvasInteractions(
     const push = bindInteractions(
         wrap,
         state,
-        () => update(container, presenter),
+        () => update(
+            container, pageState.presenter(),
+        ),
         (open) => {
             panelStateRef.open = open;
-            presenter.setPanelOpen(open);
+            pageState.presenter()
+                .setPanelOpen(open);
         },
         (updates) => {
-            presenter.moveNodes(updates);
-            update(container, presenter);
+            pageState.presenter()
+                .moveNodes(updates);
+            update(
+                container, pageState.presenter(),
+            );
         },
         (fromId, toId) => {
-            void presenter
+            void pageState.presenter()
                 .addEdge(fromId, toId)
                 .then(() => update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 ));
         },
         (fromId, x, y) => {
-            void presenter
+            void pageState.presenter()
                 .addNodeAtPosition(
                     fromId, x, y,
                 )
                 .then(() => update(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 ));
         },
-        (id) =>
-            presenter.getNodePosition(id),
-        () => presenter.getAllNodes(),
+        (id) => pageState.presenter()
+            .getNodePosition(id),
+        () => pageState.presenter()
+            .getAllNodes(),
         {
             isAutoFit: presenter.isAutoFit(),
             isLocked: presenter.isLocked(),
@@ -740,6 +766,7 @@ export async function init(
             FALLBACK_H,
             loaded.versions.length > 0,
         );
+    pageState.setPresenter(presenter);
     const panelStateRef: PanelStateRef =
         { open: false };
     const signal = pageState.signal();
