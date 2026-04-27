@@ -133,6 +133,33 @@ function emptyWaypoints(
     return new Map<string, Waypoint[]>();
 }
 
+export function buildInitialFlowSnapshot(
+    graph: FlowGraph,
+    canvasW: number,
+    canvasH: number,
+): FlowSnapshot {
+    const interaction = buildInteractionState(
+        canvasW, canvasH,
+    );
+    return {
+        flowId: graph.id,
+        flowName: graph.name,
+        flowDescription: graph.description,
+        isLocked: graph.isLocked,
+        isAutoLayout: graph.isAutoLayout,
+        isAutoFit: graph.isAutoFit,
+        lockTimeout: graph.lockTimeout,
+        createdAt: graph.createdAt,
+        isEditingName: false,
+        nodes: graph.nodes,
+        edges: graph.edges,
+        edgeWaypoints: emptyWaypoints(),
+        isPanelOpen: false,
+        interaction,
+        savedViewBox: { kind: 'none' },
+    };
+}
+
 // Must match .flow-props-panel width in pages.css
 // (18rem = 288px at 16px root).
 const PANEL_WIDTH_PX = 288;
@@ -145,7 +172,7 @@ export class FlowDesignerPresenter {
     #history: FlowHistorySnapshot;
 
     constructor(
-        graph: FlowGraph,
+        snap: FlowSnapshot,
         canvasW: number,
         canvasH: number,
         hasUndoHistory: boolean,
@@ -156,29 +183,7 @@ export class FlowDesignerPresenter {
         this.#history = buildFlowHistorySnapshot(
             hasUndoHistory,
         );
-        const interaction =
-            buildInteractionState(
-                canvasW, canvasH,
-            );
-        this.#state = {
-            flowId: graph.id,
-            flowName: graph.name,
-            flowDescription:
-                graph.description,
-            isLocked: graph.isLocked,
-            isAutoLayout: graph.isAutoLayout,
-            isAutoFit: graph.isAutoFit,
-            lockTimeout: graph.lockTimeout,
-            createdAt: graph.createdAt,
-            isEditingName: false,
-            nodes: graph.nodes,
-            edges: graph.edges,
-            edgeWaypoints: emptyWaypoints(),
-            isPanelOpen: false,
-            interaction,
-            savedViewBox:
-                { kind: 'none' },
-        };
+        this.#state = snap;
         this.#migrateToCenter();
     }
 

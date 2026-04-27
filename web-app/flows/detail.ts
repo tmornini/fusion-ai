@@ -29,6 +29,7 @@ import {
 } from '../app/flow-interactions.ts';
 import {
     FlowDesignerPresenter,
+    buildInitialFlowSnapshot,
 } from '../app/presenters/index.ts';
 
 const FALLBACK_W = 800;
@@ -787,9 +788,15 @@ export async function init(
     );
     if (!loaded) return;
 
+    const initialSnap =
+        buildInitialFlowSnapshot(
+            loaded.graph,
+            FALLBACK_W,
+            FALLBACK_H,
+        );
     const presenter =
         new FlowDesignerPresenter(
-            loaded.graph,
+            initialSnap,
             FALLBACK_W,
             FALLBACK_H,
             loaded.versions.length > 0,
