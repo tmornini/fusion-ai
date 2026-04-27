@@ -120,7 +120,7 @@ function param(
     index: number,
 ): string {
     const value = params[index];
-    if (value === undefined) {
+    if (value === undefined || value === '') {
         throw new Error(
             'Missing route param at index '
             + index,
