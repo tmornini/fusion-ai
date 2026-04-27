@@ -30,3 +30,4 @@ export * from './viewport';
 export * from './location';
 export * from './url-params';
 export * from './preferences';
+export * from './resize-observer';

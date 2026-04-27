@@ -18,6 +18,7 @@ import {
     getFlowZip,
     getFlowVersions,
     postClipboardCopy,
+    subscribeResize,
 } from '../app/adapters';
 import {
     downloadBlob,
@@ -770,7 +771,7 @@ export async function init(
             update(container, presenter);
         }
     }
-    const ro = new ResizeObserver(() => {
+    subscribeResize(container, () => {
         const liveWrap = container.querySelector(
             '.flow-canvas-wrap',
         );
@@ -784,7 +785,6 @@ export async function init(
             update(container, presenter);
         }
     });
-    ro.observe(container);
 }
 
 function bindKeyboardShortcuts(
