@@ -589,10 +589,11 @@ function bindPanelActions(
                         'data-field-id',
                     );
                 if (!fieldId) return;
-                void presenter
+                void pageState.presenter()
                     .deleteField(fieldId)
                     .then(() => update(
-                        container, presenter,
+                        container,
+                        pageState.presenter(),
                     ));
             } else if (
                 action === 'save-field'
@@ -744,11 +745,11 @@ async function handleSaveField(
                 .map(s => s.trim())
                 .filter(s => s.length > 0)
             : [];
-    await presenter.addField(
+    await pageState.presenter().addField(
         fieldName, fieldType,
         isRequired, options,
     );
-    update(container, presenter);
+    update(container, pageState.presenter());
 }
 
 export async function init(

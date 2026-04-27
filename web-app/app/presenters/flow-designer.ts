@@ -1102,14 +1102,14 @@ Auto Fit</label>
         fieldType: string,
         isRequired: boolean,
         options: string[],
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         name = name.trim();
         const nodeId = this
             .#singleSelectedNodeId();
-        if (!nodeId) return false;
+        if (!nodeId) return this.#state;
         const sortOrder =
             this.#state.nodes.find(
                 n => n.id === nodeId,
@@ -1134,7 +1134,7 @@ Auto Fit</label>
                     'addField',
                     'Failed to add field',
                 );
-            return false;
+            return this.#state;
         }
         const typed =
             fieldType as FlowFieldType;
@@ -1151,18 +1151,18 @@ Auto Fit</label>
             nodeId, newField,
         );
         this.#noteMutation();
-        return true;
+        return this.#state;
     }
 
     async deleteField(
         fieldId: string,
-    ): Promise<boolean> {
+    ): Promise<FlowSnapshot> {
         if (this.#guardLocked()) {
-            return false;
+            return this.#state;
         }
         const nodeId = this
             .#singleSelectedNodeId();
-        if (!nodeId) return false;
+        if (!nodeId) return this.#state;
         try {
             await deleteField(
                 fieldId,
@@ -1176,14 +1176,14 @@ Auto Fit</label>
                     'deleteField',
                     'Failed to delete field',
                 );
-            return false;
+            return this.#state;
         }
         this.#state.nodes = applyDeleteField(
             this.#state.nodes,
             nodeId, fieldId,
         );
         this.#noteMutation();
-        return true;
+        return this.#state;
     }
 
     selectedNodeName(): string {
