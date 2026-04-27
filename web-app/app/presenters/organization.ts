@@ -10,13 +10,26 @@ import {
     iconExternalLink,
 } from '../icons.ts';
 import { formatDate } from '../core.ts';
-import type { Organization } from '../adapters/index.ts';
+import {
+    Organization,
+    type OrganizationEntity,
+    type RecentActivityItem,
+} from '../adapters/index.ts';
 
 export class OrganizationPresenter {
     readonly #organization: Organization;
 
-    constructor(organization: Organization) {
-        this.#organization = organization;
+    constructor(
+        entity: OrganizationEntity,
+        companyName: string,
+        recentActivity:
+            readonly RecentActivityItem[],
+    ) {
+        this.#organization = new Organization(
+            entity,
+            companyName,
+            [...recentActivity],
+        );
     }
 
     buildPage(): SafeHtml {

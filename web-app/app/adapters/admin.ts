@@ -9,83 +9,28 @@ import type {
     ActivityActorEntity,
 } from '../../../api/types.ts';
 import {
-    Activity,
-    Organization,
     User,
     jsonArrayField,
 } from '../../../api/types.ts';
-export type { Organization };
-import {
-    getUserMap,
-    userName,
-} from './shared.ts';
-import type { FetchContext } from './shared.ts';
 
-const RECENT_ACTIVITY_COUNT = 3;
+export type {
+    OrganizationEntity,
+} from '../../../api/types.ts';
+export type { RecentActivityItem } from '../../../api/types.ts';
+export { Organization } from '../../../api/types.ts';
 
-export async function getOrganization(
-    ctx?: FetchContext,
-): Promise<Organization> {
-    const [
-        entity, company,
-        activities, userMap,
-        activityActors,
-    ] = await Promise.all([
-        GET<OrganizationEntity>('organization'),
-        GET<CompanyEntity>('company'),
-        GET<ActivityEntity[]>(
-            'activities',
-        ),
-        getUserMap(ctx),
-        GET<ActivityActorEntity[]>(
-            'activity-actors',
-        ),
-    ]);
+export const RECENT_ACTIVITY_COUNT = 3;
 
+export async function getOrganizationRow(
+): Promise<OrganizationEntity> {
+    const entity = await GET<
+        OrganizationEntity
+    >('organization');
     if (!entity.plan)
         throw new Error(
             'Organization not configured',
         );
-
-    const actorMap = new Map(
-        activityActors.map(
-            a => [
-                a.activity_id,
-                a.user_id,
-            ],
-        ),
-    );
-
-    const recent = activities
-        .slice(0, RECENT_ACTIVITY_COUNT)
-        .map(a => {
-            const actorId = actorMap.get(a.id);
-            if (!actorId) {
-                throw new Error(
-                    'Activity has no actor: '
-                    + a.id,
-                );
-            }
-            const actor = userName(
-                userMap, actorId,
-            );
-            const activity =
-                new Activity(a, actor);
-            return {
-                type: activity.typeValue(),
-                description:
-                    activity
-                    .formattedDescription(),
-                time: activity
-                    .timestampValue(),
-            };
-        });
-
-    return new Organization(
-        entity,
-        company.name,
-        recent,
-    );
+    return entity;
 }
 
 export interface Profile {
