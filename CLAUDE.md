@@ -289,6 +289,8 @@ web-app/
     components-layout.html     # Layout skeleton with component placeholders
     component-*.html          # UI components (sidebar, top-bar, mobile-header, mobile-sidebar)
     compose.ts                # Build-time script: layout + page → composed index.html
+    theme-init.ts             # Pre-app FOUC-prevention bundled to assets/theme-init.js (separate from app.js so strict CSP can forbid inline scripts)
+    root-redirect.ts          # Root-page schema-detection redirect bundled to assets/root-redirect.js
     core.ts                   # DOMContentLoaded bootstrap + re-exports from format.ts, navigation.ts, dialog.ts
     database-init.ts          # initDatabase(), handleDatabaseError()
     page-loader.ts            # Page module registry, loadAndInitPage(), handlePageLoadError()
@@ -408,8 +410,9 @@ Build steps (requires clean git working directory):
 1. Composes HTML pages: runs `web-app/app/compose.ts` to assemble `components-layout.html` with `component-*.html` files and each sidebar-layout page's HTML file, producing 18 composed files in the build directory. Respects `sourceDir` and `sourceFile` for both input resolution and output placement. Exits with error if any page is missing.
 2. Copies 5 standalone pages (`auth`, `landing`, `onboarding`, `not-found`, `flow-detail`) — also handled by `compose.ts`, which uses `copyFileSync` for standalone entries instead of templating
 3. Bundles TypeScript into a single IIFE (`assets/app.js`) via esbuild into the build directory
-4. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
-5. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) at the output path (default `~/Desktop/`), or skips zipping with `--no-zip`
+4. Bundles two pre-app bootstrap scripts as separate IIFEs: `assets/theme-init.js` (FOUC-prevention: applies stored theme + sidebar-collapsed before `app.js` loads) and `assets/root-redirect.js` (root-page schema-detection redirect). Both extracted from former inline `<script>` blocks so a strict CSP `script-src 'self'` can forbid inline scripts.
+5. Concatenates CSS modules in cascade order and minifies via esbuild into `assets/styles.css`, copies `*.woff2` and `favicon.ico` to the build directory
+6. Creates a distribution ZIP (`fusion-ai-<sha>.zip`) at the output path (default `~/Desktop/`), or skips zipping with `--no-zip`
 
 CLI options: `./build [--no-zip] [path/]`. The trailing `/` on the path argument is required. Default output is `~/Desktop/`. With `--no-zip`, the bundle directory is kept for direct serving via HTTP.
 
