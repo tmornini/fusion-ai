@@ -896,6 +896,11 @@ export function buildEdgePreviewPath(
 
 // Cubic Bézier B(t) = u³P0 + 3u²t P1 + 3ut² P2 + t³P3
 // where u = 1-t, P0..P3 are the control points.
+// Used to place an edge's label at parameter t along the
+// curve we drew. The SVG path mini-language separates
+// numbers with either commas or whitespace, so we split on
+// /[,\s]+/. We don't validate path syntax because we only
+// call this on paths constructed by this same file.
 function bezierAt(
     pathD: string,
     t: number,

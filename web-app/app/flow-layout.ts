@@ -348,6 +348,11 @@ function extractWaypoints(
     return result;
 }
 
+// Sugiyama layered layout requires a DAG. DFS from the start
+// node identifies back edges (edges that re-enter the
+// recursion stack); we reverse them in the layout structure
+// so layering can proceed. The renderer later draws reversed
+// edges dashed, signalling the original direction.
 function removeCycles(
     nodes: readonly LayoutInput[],
     edges: readonly LayoutEdge[],
@@ -422,6 +427,10 @@ function removeCycles(
     return { forwardEdges, reversedIds };
 }
 
+// Kahn's topological sort: in-degree zero means "all
+// predecessors already placed." Layer = max(parent layers)
+// + 1 so every edge goes from a lower layer to a higher
+// one — the foundation of the Sugiyama framework.
 function assignLayers(
     nodes: readonly LayoutInput[],
     forwardEdges: readonly LayoutEdge[],
@@ -502,6 +511,12 @@ function assignLayers(
     return layers;
 }
 
+// Sugiyama barycenter heuristic: each node's preferred
+// position in its layer is the mean of its neighbours'
+// positions in the adjacent layer. Sweeping up then down
+// reduces edge crossings; CROSSING_SWEEP_COUNT = 24 is
+// empirically sufficient for our typical 5–30 node graphs
+// (more sweeps do not converge faster on this scale).
 function reduceCrossings(
     layers: Layers,
     forwardEdges: readonly LayoutEdge[],
@@ -649,6 +664,12 @@ function reduceCrossings(
     return best;
 }
 
+// Y coordinates: forward pass places each node at the median
+// Y of its parents; backward pass refines using median Y of
+// children. Median resists outliers — a single stray child
+// far above does not pull the parent up; mean would. Nodes
+// already placed by fanout grouping are skipped so the
+// backward pass does not undo deliberate forward placement.
 function assignCoordinates(
     orderedLayers: Layers,
     forwardEdges: readonly LayoutEdge[],
@@ -980,6 +1001,10 @@ function fitToCanvas(
         });
     }
 
+    // Workflow charts read left-to-right top-to-bottom, like
+    // text. If the layout algorithm placed the start node
+    // right of (or below) the complete node, mirror the whole
+    // graph so the user reads it in the natural direction.
     const startId = nodes.find(
         n => n.isStart,
     )?.id;
@@ -1038,6 +1063,13 @@ function fitToCanvas(
     return result;
 }
 
+// When the topology is mostly linear (no node with 3+
+// children), Sugiyama produces a tall narrow column. Snake
+// layout instead wraps the topo order into a grid of
+// columns × rows that fills the canvas more evenly. We
+// compute both and pick whichever has the smaller aspect
+// mismatch with the canvas. columnsPerRow is derived from
+// available canvas height divided by per-row vertical span.
 function computeSnakeWrap(
     nodeCount: number,
     _canvasW: number,
