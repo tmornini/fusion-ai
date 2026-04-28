@@ -85,7 +85,7 @@ export async function init(): Promise<void> {
             );
     } catch (err) {
         log.error(
-            'getOrganizationRow failed',
+            'getOrganization failed',
             'organization',
             err,
         );

@@ -27,7 +27,7 @@ export type {
 export type { RecentActivityItem } from '../../../api/types.ts';
 export const RECENT_ACTIVITY_COUNT = 3;
 
-export async function getOrganizationRow(
+async function getOrganizationRow(
 ): Promise<OrganizationEntity> {
     const entity = await GET<
         OrganizationEntity
