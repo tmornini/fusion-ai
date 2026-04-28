@@ -1,8 +1,8 @@
 import {
-    isUserStatus,
-    isIdeaStatus,
-    isProjectStatus,
-    isReadinessLevel,
+    assertUserStatus,
+    assertIdeaStatus,
+    assertProjectStatus,
+    assertReadinessLevel,
 } from './types.ts';
 import type {
     GraphNode,
@@ -486,56 +486,36 @@ export function asUserStatus(
     value: unknown,
     label: string,
 ): UserStatus {
-    const str = asString(value, label);
-    if (!isUserStatus(str)) {
-        throw new Error(
-            'expected UserStatus for '
-            + label + ', got ' + str,
-        );
-    }
-    return str;
+    return assertUserStatus(
+        asString(value, label), label,
+    );
 }
 
 export function asIdeaStatus(
     value: unknown,
     label: string,
 ): IdeaStatus {
-    const str = asString(value, label);
-    if (!isIdeaStatus(str)) {
-        throw new Error(
-            'expected IdeaStatus for '
-            + label + ', got ' + str,
-        );
-    }
-    return str;
+    return assertIdeaStatus(
+        asString(value, label), label,
+    );
 }
 
 export function asProjectStatus(
     value: unknown,
     label: string,
 ): ProjectStatus {
-    const str = asString(value, label);
-    if (!isProjectStatus(str)) {
-        throw new Error(
-            'expected ProjectStatus for '
-            + label + ', got ' + str,
-        );
-    }
-    return str;
+    return assertProjectStatus(
+        asString(value, label), label,
+    );
 }
 
 export function asReadinessLevel(
     value: unknown,
     label: string,
 ): ReadinessLevel {
-    const str = asString(value, label);
-    if (!isReadinessLevel(str)) {
-        throw new Error(
-            'expected ReadinessLevel for '
-            + label + ', got ' + str,
-        );
-    }
-    return str;
+    return assertReadinessLevel(
+        asString(value, label), label,
+    );
 }
 
 // ── Key-set enforcement ──────────────
