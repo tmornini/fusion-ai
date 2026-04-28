@@ -33,6 +33,27 @@ import { nowUtc } from './types.ts';
 import {
     withSimulatedLatency,
 } from './latency.ts';
+import {
+    asString,
+    validateUserEntity,
+    validateIdeaEntity,
+    validateProjectEntity,
+    validateTeamEntity,
+    validateTeamProjectEntity,
+    validateTeamUserEntity,
+    validateActivityEntity,
+    validateFlowEntity,
+    validateFlowVersionEntity,
+    validateProjectFlowEntity,
+    validateWorkOrderEntity,
+    validateFlowWorkOrderEntity,
+    validateWorkOrderTransitionEntity,
+    validateWorkOrderClaimEntity,
+    validateCompanyEntity,
+    validateOrganizationEntity,
+    validateIdeaSubmissionEntity,
+    validateActivityActorEntity,
+} from './validators.ts';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -57,6 +78,96 @@ export class SnapshotRollbackFailed
         this.originalError = originalError;
         this.rollbackError = rollbackError;
         this.name = 'SnapshotRollbackFailed';
+    }
+}
+
+// Map table name → entity validator.
+// 'deleted' rows have shape {id, deleted_at}
+// — both plain strings; validated inline.
+function validateSnapshotRow(
+    table: string,
+    row: Record<string, unknown>,
+    rowIndex: number,
+): void {
+    const label =
+        'snapshot.' + table
+        + '[' + rowIndex + ']';
+    try {
+        switch (table) {
+            case 'users':
+                validateUserEntity(row);
+                break;
+            case 'ideas':
+                validateIdeaEntity(row);
+                break;
+            case 'projects':
+                validateProjectEntity(row);
+                break;
+            case 'teams':
+                validateTeamEntity(row);
+                break;
+            case 'team_projects':
+                validateTeamProjectEntity(row);
+                break;
+            case 'team_users':
+                validateTeamUserEntity(row);
+                break;
+            case 'activities':
+                validateActivityEntity(row);
+                break;
+            case 'flows':
+                validateFlowEntity(row);
+                break;
+            case 'flow_versions':
+                validateFlowVersionEntity(row);
+                break;
+            case 'project_flows':
+                validateProjectFlowEntity(row);
+                break;
+            case 'work_orders':
+                validateWorkOrderEntity(row);
+                break;
+            case 'flow_work_orders':
+                validateFlowWorkOrderEntity(row);
+                break;
+            case 'work_order_transitions':
+                validateWorkOrderTransitionEntity(
+                    row,
+                );
+                break;
+            case 'work_order_claims':
+                validateWorkOrderClaimEntity(row);
+                break;
+            case 'company':
+                validateCompanyEntity(row);
+                break;
+            case 'organization':
+                validateOrganizationEntity(row);
+                break;
+            case 'idea_submissions':
+                validateIdeaSubmissionEntity(row);
+                break;
+            case 'activity_actors':
+                validateActivityActorEntity(row);
+                break;
+            case 'deleted':
+                // Shape: {id, deleted_at}
+                asString(row['id'], label + '.id');
+                asString(
+                    row['deleted_at'],
+                    label + '.deleted_at',
+                );
+                break;
+        }
+    } catch (err) {
+        const msg =
+            err instanceof Error
+                ? err.message
+                : String(err);
+        throw new Error(
+            'Invalid snapshot row in '
+            + label + ': ' + msg,
+        );
     }
 }
 
@@ -597,13 +708,41 @@ export async function createLocalStorageAdapter(
                         + '" is not an array.',
                     );
                 }
+                const rowArr =
+                    Array.isArray(rows)
+                        ? rows
+                        : [];
+                for (
+                    let i = 0;
+                    i < rowArr.length;
+                    i++
+                ) {
+                    const row = rowArr[i];
+                    if (
+                        typeof row !== 'object'
+                        || row === null
+                        || Array.isArray(row)
+                    ) {
+                        throw new Error(
+                            'Invalid snapshot:'
+                            + ' row '
+                            + i
+                            + ' in table "'
+                            + table
+                            + '" is not an'
+                            + ' object.',
+                        );
+                    }
+                    const r = row as Record<
+                        string, unknown
+                    >;
+                    validateSnapshotRow(
+                        table, r, i,
+                    );
+                }
                 serialized.set(
                     table,
-                    JSON.stringify(
-                        Array.isArray(rows)
-                            ? rows
-                            : [],
-                    ),
+                    JSON.stringify(rowArr),
                 );
             }
 

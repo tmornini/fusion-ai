@@ -5,6 +5,30 @@ import type {
     StoredGraph,
     WorkOrderFlowGraph,
     FlowFieldType,
+    UserStatus,
+    IdeaStatus,
+    ProjectStatus,
+    ReadinessLevel,
+    JsonArrayField,
+    JsonObjectField,
+    UserEntity,
+    IdeaEntity,
+    ProjectEntity,
+    TeamEntity,
+    TeamProjectEntity,
+    TeamUserEntity,
+    ActivityEntity,
+    FlowEntity,
+    FlowVersionEntity,
+    WorkOrderEntity,
+    FlowWorkOrderEntity,
+    WorkOrderTransitionEntity,
+    WorkOrderClaimEntity,
+    CompanyEntity,
+    OrganizationEntity,
+    IdeaSubmissionEntity,
+    ActivityActorEntity,
+    ProjectFlowEntity,
 } from './types.ts';
 
 export interface Risk {
@@ -426,4 +450,652 @@ validateTransitionValuesJson(
         );
     }
     return out;
+}
+
+// ── JSON field helpers ────────────────
+
+function asJsonArrayField(
+    value: unknown,
+    label: string,
+): JsonArrayField {
+    const raw = asString(value, label);
+    const parsed = parseOrThrow(raw, label);
+    asArray(parsed, label);
+    return raw as JsonArrayField;
+}
+
+function asJsonObjectField(
+    value: unknown,
+    label: string,
+): JsonObjectField {
+    const raw = asString(value, label);
+    const parsed = parseOrThrow(raw, label);
+    asObject(parsed, label);
+    return raw as JsonObjectField;
+}
+
+// ── Enum validators ─────────────────
+
+const USER_STATUS_VALUES:
+    readonly UserStatus[] =
+    ['active', 'pending', 'deactivated'];
+
+export function asUserStatus(
+    value: unknown,
+    label: string,
+): UserStatus {
+    const str = asString(value, label);
+    if (
+        !(USER_STATUS_VALUES as
+            readonly string[]).includes(str)
+    ) {
+        throw new Error(
+            'expected UserStatus for '
+            + label + ', got ' + str,
+        );
+    }
+    return str as UserStatus;
+}
+
+const IDEA_STATUS_VALUES:
+    readonly IdeaStatus[] = [
+    'active', 'in-review', 'approved',
+    'promoted', 'sent-back',
+    'archived', 'deleted',
+];
+
+export function asIdeaStatus(
+    value: unknown,
+    label: string,
+): IdeaStatus {
+    const str = asString(value, label);
+    if (
+        !(IDEA_STATUS_VALUES as
+            readonly string[]).includes(str)
+    ) {
+        throw new Error(
+            'expected IdeaStatus for '
+            + label + ', got ' + str,
+        );
+    }
+    return str as IdeaStatus;
+}
+
+const PROJECT_STATUS_VALUES:
+    readonly ProjectStatus[] = [
+    'submitted', 'under-review',
+    'sent-back', 'approved',
+    'declined', 'completed', 'deleted',
+];
+
+export function asProjectStatus(
+    value: unknown,
+    label: string,
+): ProjectStatus {
+    const str = asString(value, label);
+    if (
+        !(PROJECT_STATUS_VALUES as
+            readonly string[]).includes(str)
+    ) {
+        throw new Error(
+            'expected ProjectStatus for '
+            + label + ', got ' + str,
+        );
+    }
+    return str as ProjectStatus;
+}
+
+const READINESS_LEVEL_VALUES:
+    readonly ReadinessLevel[] = [
+    'ready', 'needs-info', 'incomplete',
+];
+
+export function asReadinessLevel(
+    value: unknown,
+    label: string,
+): ReadinessLevel {
+    const str = asString(value, label);
+    if (
+        !(READINESS_LEVEL_VALUES as
+            readonly string[]).includes(str)
+    ) {
+        throw new Error(
+            'expected ReadinessLevel for '
+            + label + ', got ' + str,
+        );
+    }
+    return str as ReadinessLevel;
+}
+
+// ── Entity validators ────────────────
+
+export function validateUserEntity(
+    body: Record<string, unknown>,
+): Omit<UserEntity, 'id'> {
+    return {
+        first_name: asString(
+            body['first_name'], 'first_name',
+        ),
+        last_name: asString(
+            body['last_name'], 'last_name',
+        ),
+        email: asString(
+            body['email'], 'email',
+        ),
+        role: asString(
+            body['role'], 'role',
+        ),
+        department: asString(
+            body['department'], 'department',
+        ),
+        status: asUserStatus(
+            body['status'], 'status',
+        ),
+        availability: asNumber(
+            body['availability'],
+            'availability',
+        ),
+        performance_score: asNumber(
+            body['performance_score'],
+            'performance_score',
+        ),
+        projects_completed: asNumber(
+            body['projects_completed'],
+            'projects_completed',
+        ),
+        current_projects: asNumber(
+            body['current_projects'],
+            'current_projects',
+        ),
+        strengths: asJsonArrayField(
+            body['strengths'], 'strengths',
+        ),
+        team_dimensions: asJsonObjectField(
+            body['team_dimensions'],
+            'team_dimensions',
+        ),
+        phone: asString(
+            body['phone'], 'phone',
+        ),
+        bio: asString(
+            body['bio'], 'bio',
+        ),
+        last_active: asString(
+            body['last_active'], 'last_active',
+        ),
+    };
+}
+
+export function validateIdeaEntity(
+    body: Record<string, unknown>,
+): Omit<IdeaEntity, 'id'> {
+    return {
+        title: asString(
+            body['title'], 'title',
+        ),
+        position: asNumber(
+            body['position'], 'position',
+        ),
+        status: asIdeaStatus(
+            body['status'], 'status',
+        ),
+        problem_statement: asString(
+            body['problem_statement'],
+            'problem_statement',
+        ),
+        target_users: asString(
+            body['target_users'],
+            'target_users',
+        ),
+        proposed_solution: asString(
+            body['proposed_solution'],
+            'proposed_solution',
+        ),
+        expected_outcome: asString(
+            body['expected_outcome'],
+            'expected_outcome',
+        ),
+        success_metrics: asString(
+            body['success_metrics'],
+            'success_metrics',
+        ),
+        readiness: asReadinessLevel(
+            body['readiness'], 'readiness',
+        ),
+        risks: asJsonArrayField(
+            body['risks'], 'risks',
+        ),
+        assumptions: asJsonArrayField(
+            body['assumptions'],
+            'assumptions',
+        ),
+        alignments: asJsonArrayField(
+            body['alignments'], 'alignments',
+        ),
+    };
+}
+
+export function validateProjectEntity(
+    body: Record<string, unknown>,
+): Omit<ProjectEntity, 'id'> {
+    return {
+        title: asString(
+            body['title'], 'title',
+        ),
+        description: asString(
+            body['description'],
+            'description',
+        ),
+        status: asProjectStatus(
+            body['status'], 'status',
+        ),
+        progress: asNumber(
+            body['progress'], 'progress',
+        ),
+        start_date: asString(
+            body['start_date'], 'start_date',
+        ),
+        target_end_date: asString(
+            body['target_end_date'],
+            'target_end_date',
+        ),
+        estimated_duration: asNumber(
+            body['estimated_duration'],
+            'estimated_duration',
+        ),
+        actual_duration: asNumber(
+            body['actual_duration'],
+            'actual_duration',
+        ),
+        estimated_cost: asNumber(
+            body['estimated_cost'],
+            'estimated_cost',
+        ),
+        actual_cost: asNumber(
+            body['actual_cost'],
+            'actual_cost',
+        ),
+        estimated_impact: asNumber(
+            body['estimated_impact'],
+            'estimated_impact',
+        ),
+        actual_impact: asNumber(
+            body['actual_impact'],
+            'actual_impact',
+        ),
+        position: asNumber(
+            body['position'], 'position',
+        ),
+        business_context: asJsonObjectField(
+            body['business_context'],
+            'business_context',
+        ),
+        timeline_label: asString(
+            body['timeline_label'],
+            'timeline_label',
+        ),
+        budget_label: asString(
+            body['budget_label'],
+            'budget_label',
+        ),
+    };
+}
+
+export function validateTeamEntity(
+    body: Record<string, unknown>,
+): Omit<TeamEntity, 'id'> {
+    return {
+        role: asString(
+            body['role'], 'role',
+        ),
+        type: asString(
+            body['type'], 'type',
+        ),
+    };
+}
+
+export function validateTeamProjectEntity(
+    body: Record<string, unknown>,
+): Omit<TeamProjectEntity, 'id'> {
+    return {
+        team_id: asString(
+            body['team_id'], 'team_id',
+        ),
+        project_id: asString(
+            body['project_id'], 'project_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateTeamUserEntity(
+    body: Record<string, unknown>,
+): Omit<TeamUserEntity, 'id'> {
+    return {
+        team_id: asString(
+            body['team_id'], 'team_id',
+        ),
+        user_id: asString(
+            body['user_id'], 'user_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateActivityEntity(
+    body: Record<string, unknown>,
+): Omit<ActivityEntity, 'id'> {
+    return {
+        type: asString(
+            body['type'], 'type',
+        ),
+        action: asString(
+            body['action'], 'action',
+        ),
+        target: asString(
+            body['target'], 'target',
+        ),
+        timestamp: asString(
+            body['timestamp'], 'timestamp',
+        ),
+        status: asString(
+            body['status'], 'status',
+        ),
+        feedback: asString(
+            body['feedback'], 'feedback',
+        ),
+    };
+}
+
+export function validateFlowEntity(
+    body: Record<string, unknown>,
+): Omit<FlowEntity, 'id'> {
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        description: asString(
+            body['description'],
+            'description',
+        ),
+        is_locked: asBoolean(
+            body['is_locked'], 'is_locked',
+        ),
+        is_auto_layout: asBoolean(
+            body['is_auto_layout'],
+            'is_auto_layout',
+        ),
+        is_auto_fit: asBoolean(
+            body['is_auto_fit'],
+            'is_auto_fit',
+        ),
+        lock_timeout: asNumber(
+            body['lock_timeout'],
+            'lock_timeout',
+        ),
+        graph: asJsonObjectField(
+            body['graph'], 'graph',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+        updated_at: asString(
+            body['updated_at'], 'updated_at',
+        ),
+    };
+}
+
+export function validateFlowVersionEntity(
+    body: Record<string, unknown>,
+): Omit<FlowVersionEntity, 'id'> {
+    return {
+        flow_id: asString(
+            body['flow_id'], 'flow_id',
+        ),
+        name: asString(
+            body['name'], 'name',
+        ),
+        description: asString(
+            body['description'],
+            'description',
+        ),
+        is_locked: asBoolean(
+            body['is_locked'], 'is_locked',
+        ),
+        is_auto_layout: asBoolean(
+            body['is_auto_layout'],
+            'is_auto_layout',
+        ),
+        is_auto_fit: asBoolean(
+            body['is_auto_fit'],
+            'is_auto_fit',
+        ),
+        lock_timeout: asNumber(
+            body['lock_timeout'],
+            'lock_timeout',
+        ),
+        graph: asJsonObjectField(
+            body['graph'], 'graph',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateWorkOrderEntity(
+    body: Record<string, unknown>,
+): Omit<WorkOrderEntity, 'id'> {
+    return {
+        display_id: asString(
+            body['display_id'], 'display_id',
+        ),
+        flow_graph: asJsonObjectField(
+            body['flow_graph'], 'flow_graph',
+        ),
+        position: asNumber(
+            body['position'], 'position',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateFlowWorkOrderEntity(
+    body: Record<string, unknown>,
+): Omit<FlowWorkOrderEntity, 'id'> {
+    return {
+        flow_id: asString(
+            body['flow_id'], 'flow_id',
+        ),
+        work_order_id: asString(
+            body['work_order_id'],
+            'work_order_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function
+validateWorkOrderTransitionEntity(
+    body: Record<string, unknown>,
+): Omit<WorkOrderTransitionEntity, 'id'> {
+    return {
+        work_order_id: asString(
+            body['work_order_id'],
+            'work_order_id',
+        ),
+        from_node_id: asString(
+            body['from_node_id'],
+            'from_node_id',
+        ),
+        to_node_id: asString(
+            body['to_node_id'], 'to_node_id',
+        ),
+        user_id: asString(
+            body['user_id'], 'user_id',
+        ),
+        values: asJsonObjectField(
+            body['values'], 'values',
+        ),
+        transitioned_at: asString(
+            body['transitioned_at'],
+            'transitioned_at',
+        ),
+    };
+}
+
+export function validateWorkOrderClaimEntity(
+    body: Record<string, unknown>,
+): Omit<WorkOrderClaimEntity, 'id'> {
+    return {
+        work_order_id: asString(
+            body['work_order_id'],
+            'work_order_id',
+        ),
+        user_id: asString(
+            body['user_id'], 'user_id',
+        ),
+        claimed_at: asString(
+            body['claimed_at'], 'claimed_at',
+        ),
+    };
+}
+
+export function validateCompanyEntity(
+    body: Record<string, unknown>,
+): Omit<CompanyEntity, 'id'> {
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        domain: asString(
+            body['domain'], 'domain',
+        ),
+    };
+}
+
+export function validateOrganizationEntity(
+    body: Record<string, unknown>,
+): Omit<OrganizationEntity, 'id'> {
+    return {
+        plan: asString(
+            body['plan'], 'plan',
+        ),
+        plan_status: asString(
+            body['plan_status'], 'plan_status',
+        ),
+        next_billing: asString(
+            body['next_billing'],
+            'next_billing',
+        ),
+        seats: asNumber(
+            body['seats'], 'seats',
+        ),
+        used_seats: asNumber(
+            body['used_seats'], 'used_seats',
+        ),
+        projects_limit: asNumber(
+            body['projects_limit'],
+            'projects_limit',
+        ),
+        projects_current: asNumber(
+            body['projects_current'],
+            'projects_current',
+        ),
+        ideas_limit: asNumber(
+            body['ideas_limit'], 'ideas_limit',
+        ),
+        ideas_current: asNumber(
+            body['ideas_current'],
+            'ideas_current',
+        ),
+        storage_limit: asNumber(
+            body['storage_limit'],
+            'storage_limit',
+        ),
+        storage_current: asNumber(
+            body['storage_current'],
+            'storage_current',
+        ),
+        ai_credits_limit: asNumber(
+            body['ai_credits_limit'],
+            'ai_credits_limit',
+        ),
+        ai_credits_current: asNumber(
+            body['ai_credits_current'],
+            'ai_credits_current',
+        ),
+        health_score: asNumber(
+            body['health_score'],
+            'health_score',
+        ),
+        health_status: asString(
+            body['health_status'],
+            'health_status',
+        ),
+        last_activity: asString(
+            body['last_activity'],
+            'last_activity',
+        ),
+        active_users: asNumber(
+            body['active_users'],
+            'active_users',
+        ),
+    };
+}
+
+export function validateIdeaSubmissionEntity(
+    body: Record<string, unknown>,
+): Omit<IdeaSubmissionEntity, 'id'> {
+    return {
+        idea_id: asString(
+            body['idea_id'], 'idea_id',
+        ),
+        user_id: asString(
+            body['user_id'], 'user_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateActivityActorEntity(
+    body: Record<string, unknown>,
+): Omit<ActivityActorEntity, 'id'> {
+    return {
+        activity_id: asString(
+            body['activity_id'], 'activity_id',
+        ),
+        user_id: asString(
+            body['user_id'], 'user_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+export function validateProjectFlowEntity(
+    body: Record<string, unknown>,
+): Omit<ProjectFlowEntity, 'id'> {
+    return {
+        project_id: asString(
+            body['project_id'], 'project_id',
+        ),
+        flow_id: asString(
+            body['flow_id'], 'flow_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
 }
