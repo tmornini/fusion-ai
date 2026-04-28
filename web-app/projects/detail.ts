@@ -153,7 +153,7 @@ export async function init(
         const ctx = createFetchContext();
         [project, flows] = await Promise.all([
             loadProjectView(projectId, ctx),
-            getFlowsByProject(projectId),
+            getFlowsByProject(ctx, projectId),
         ]);
     } catch (err) {
         log.error(
@@ -195,7 +195,7 @@ export async function init(
         const [upd, updFlows] =
             await Promise.all([
                 loadProjectView(projectId, ctx),
-                getFlowsByProject(projectId),
+                getFlowsByProject(ctx, projectId),
             ]);
         state = {
             kind: 'reading',

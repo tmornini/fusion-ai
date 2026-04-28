@@ -85,7 +85,9 @@ export async function init(
     const result = await withLoadingState(
         listEl,
         buildSkeleton('card-list', 4),
-        getFlowsWithProjectNames,
+        () => getFlowsWithProjectNames(
+            createFetchContext(),
+        ),
         init,
         {
             icon: iconGitBranch(24, ''),
@@ -152,7 +154,9 @@ async function rerenderFlowList(
     listEl: HTMLElement,
 ): Promise<void> {
     const items =
-        await getFlowsWithProjectNames();
+        await getFlowsWithProjectNames(
+            createFetchContext(),
+        );
     const rendered = items.map(
         ({ summary, projectName }) =>
             new FlowPresenter(

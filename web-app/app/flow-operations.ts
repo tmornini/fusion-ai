@@ -11,6 +11,7 @@ import {
     DEFAULT_TRANSITION_NAME,
 } from '../../api/types.ts';
 import {
+    createFetchContext,
     postFlowVersion,
     putFlow,
     deleteFlowVersion,
@@ -589,6 +590,7 @@ export async function performUndo(
         await putFlowFromVersion(version);
         await deleteFlowVersion(version.id);
         const graph = await getFlowGraph(
+            createFetchContext(),
             snap.flowId,
         );
         const remaining = await getFlowVersions(
@@ -634,6 +636,7 @@ export async function performRedo(
         );
         await putFlowFromVersion(popped.version);
         const graph = await getFlowGraph(
+            createFetchContext(),
             snap.flowId,
         );
         const newHistory = recordUndoHistoryMark(

@@ -39,6 +39,7 @@ import {
     getFlowGraph,
 } from './flow-queries.ts';
 import type { FlowGraph } from './flow-queries.ts';
+import { createFetchContext } from './shared.ts';
 import {
     generateMermaid,
 } from '../mermaid-generate.ts';
@@ -69,7 +70,10 @@ export async function getFlowMermaid(
     flowId: string,
 ): Promise<string> {
     const graph =
-        await getFlowGraph(flowId);
+        await getFlowGraph(
+            createFetchContext(),
+            flowId,
+        );
     return generateMermaid(graph);
 }
 

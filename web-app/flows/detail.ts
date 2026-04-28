@@ -13,6 +13,7 @@ import {
     navigateTo,
 } from '../app/core.ts';
 import {
+    createFetchContext,
     getFlowGraph,
     getFlowMermaid,
     getFlowZip,
@@ -320,7 +321,9 @@ async function reportOpFailure(
     flowId: string,
 ): Promise<void> {
     showToast(toast, toastVariant);
-    const g = await getFlowGraph(flowId);
+    const g = await getFlowGraph(
+        createFetchContext(), flowId,
+    );
     const current = pageState.presenter().snapshot();
     commit({
         ...current,
@@ -1127,7 +1130,10 @@ export async function init(
         async () => {
             const [graph, versions] =
                 await Promise.all([
-                    getFlowGraph(flowId),
+                    getFlowGraph(
+                        createFetchContext(),
+                        flowId,
+                    ),
                     getFlowVersions(flowId),
                 ]);
             return { graph, versions };
