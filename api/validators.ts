@@ -1,3 +1,9 @@
+import {
+    isUserStatus,
+    isIdeaStatus,
+    isProjectStatus,
+    isReadinessLevel,
+} from './types.ts';
 import type {
     GraphNode,
     GraphEdge,
@@ -476,95 +482,60 @@ function asJsonObjectField(
 
 // ── Enum validators ─────────────────
 
-const USER_STATUS_VALUES:
-    readonly UserStatus[] =
-    ['active', 'pending', 'deactivated'];
-
 export function asUserStatus(
     value: unknown,
     label: string,
 ): UserStatus {
     const str = asString(value, label);
-    if (
-        !(USER_STATUS_VALUES as
-            readonly string[]).includes(str)
-    ) {
+    if (!isUserStatus(str)) {
         throw new Error(
             'expected UserStatus for '
             + label + ', got ' + str,
         );
     }
-    return str as UserStatus;
+    return str;
 }
-
-const IDEA_STATUS_VALUES:
-    readonly IdeaStatus[] = [
-    'active', 'in-review', 'approved',
-    'promoted', 'sent-back',
-    'archived', 'deleted',
-];
 
 export function asIdeaStatus(
     value: unknown,
     label: string,
 ): IdeaStatus {
     const str = asString(value, label);
-    if (
-        !(IDEA_STATUS_VALUES as
-            readonly string[]).includes(str)
-    ) {
+    if (!isIdeaStatus(str)) {
         throw new Error(
             'expected IdeaStatus for '
             + label + ', got ' + str,
         );
     }
-    return str as IdeaStatus;
+    return str;
 }
-
-const PROJECT_STATUS_VALUES:
-    readonly ProjectStatus[] = [
-    'submitted', 'under-review',
-    'sent-back', 'approved',
-    'declined', 'completed', 'deleted',
-];
 
 export function asProjectStatus(
     value: unknown,
     label: string,
 ): ProjectStatus {
     const str = asString(value, label);
-    if (
-        !(PROJECT_STATUS_VALUES as
-            readonly string[]).includes(str)
-    ) {
+    if (!isProjectStatus(str)) {
         throw new Error(
             'expected ProjectStatus for '
             + label + ', got ' + str,
         );
     }
-    return str as ProjectStatus;
+    return str;
 }
-
-const READINESS_LEVEL_VALUES:
-    readonly ReadinessLevel[] = [
-    'ready', 'needs-info', 'incomplete',
-];
 
 export function asReadinessLevel(
     value: unknown,
     label: string,
 ): ReadinessLevel {
     const str = asString(value, label);
-    if (
-        !(READINESS_LEVEL_VALUES as
-            readonly string[]).includes(str)
-    ) {
+    if (!isReadinessLevel(str)) {
         throw new Error(
             'expected ReadinessLevel for '
             + label + ', got ' + str,
         );
     }
-    return str as ReadinessLevel;
+    return str;
 }
 
 // ── Entity validators ────────────────
