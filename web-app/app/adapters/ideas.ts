@@ -44,9 +44,11 @@ export {
 } from '../../../api/types.ts';
 
 async function getIdeaRows(
+    ctx?: FetchContext,
 ): Promise<IdeaEntity[]> {
-    const all =
-        await GET<IdeaEntity[]>('ideas');
+    const all = ctx
+        ? await ctx.getIdeaRows()
+        : await GET<IdeaEntity[]>('ideas');
     return all.filter(ideaIsVisible);
 }
 
@@ -95,7 +97,7 @@ export async function getIdeas(
     const [
         ideas, userMap, submissions,
     ] = await Promise.all([
-        getIdeaRows(),
+        getIdeaRows(ctx),
         getUserMap(ctx),
         getIdeaSubmissionRows(),
     ]);

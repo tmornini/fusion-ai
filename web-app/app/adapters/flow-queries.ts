@@ -13,6 +13,7 @@ import { toBool } from '../../../api/types.ts';
 import {
     validateStoredGraphJson,
 } from '../../../api/validators.ts';
+import type { FetchContext } from './shared.ts';
 
 export type {
     GraphNode, GraphEdge, GraphField,
@@ -57,9 +58,11 @@ export interface FlowListItem {
 }
 
 export async function getFlows(
+    ctx?: FetchContext,
 ): Promise<FlowSummary[]> {
-    const flows =
-        await GET<FlowEntity[]>('flows');
+    const flows = ctx
+        ? await ctx.getFlowRows()
+        : await GET<FlowEntity[]>('flows');
     return flows.map(f => {
         const g = parseGraph(f.graph);
         return {

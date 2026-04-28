@@ -13,6 +13,7 @@ import {
     jsonArrayField,
 } from '../../../api/types.ts';
 import { notifyUserChange } from './teams.ts';
+import { getCurrentUserRow } from './shared.ts';
 
 export type {
     OrganizationEntity,
@@ -82,8 +83,7 @@ export async function getProfile(
 export async function putProfile(
     profile: Profile,
 ): Promise<void> {
-    const current =
-        await GET<UserEntity>('current-user');
+    const current = await getCurrentUserRow();
     const updated:
         Omit<UserEntity, 'id'> = {
             ...current,

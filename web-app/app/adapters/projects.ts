@@ -56,9 +56,11 @@ export function isTeamLead(
 }
 
 export async function getProjects(
+    ctx?: FetchContext,
 ): Promise<Project[]> {
-    const rows =
-        await GET<ProjectEntity[]>(
+    const rows = ctx
+        ? await ctx.getProjectRows()
+        : await GET<ProjectEntity[]>(
             'projects',
         );
     return rows
