@@ -35,10 +35,10 @@ import {
 import {
     buildFlowHistorySnapshot,
     recordFlowMutation,
-} from '../app/flow-operations.ts';
+} from '../app/flow-history.ts';
 import type {
     FlowHistorySnapshot,
-} from '../app/flow-operations.ts';
+} from '../app/flow-history.ts';
 import {
     performAddEdge,
     performAddNodeAtPosition,

@@ -304,6 +304,7 @@ web-app/
     dom.ts                    # querySelector wrappers ($, $$, $required, $input, $select, $textarea), attr(), populateIcons(), initToggleGroup(), bindEnterToClick()
     drag-reorder.ts           # initDragReorder() pointer-driven list reordering with hysteresis indicator
     flow-graph.ts             # SVG renderer for flow canvas (nodes, ports, bezier edges, label boxes)
+    flow-history.ts           # pure helpers (recordUndoHistoryMark, appendToRedoStack, removeFromRedoStack) for the flow designer page
     flow-interactions.ts      # Pointer/keyboard state machines: selection, drag, connect, pan, marquee
     flow-layout.ts            # Sugiyama-style layered graph layout (computeLayout, NODE_WIDTH, reachability)
     mermaid-generate.ts       # generateMermaid(graph): serialize FlowGraph to Mermaid flowchart text
