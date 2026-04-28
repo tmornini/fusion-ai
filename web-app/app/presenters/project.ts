@@ -179,23 +179,23 @@ export class ProjectPresenter {
 
     #buildMetrics(): SafeHtml {
         const project = this.#project;
-        const startDate = new Date(
+        const startDateMs = new Date(
             project.startDateValue(),
         ).getTime();
-        const endDate = new Date(
+        const endDateMs = new Date(
             project.targetEndDateValue(),
         ).getTime();
         const timeBudget =
-            isNaN(startDate) || isNaN(endDate)
+            isNaN(startDateMs) || isNaN(endDateMs)
                 ? 0
                 : Math.max(0, Math.ceil(
-                    (endDate - startDate)
+                    (endDateMs - startDateMs)
                     / MS_PER_DAY,
                 ));
-        const timeElapsed = isNaN(startDate)
+        const timeElapsed = isNaN(startDateMs)
             ? 0
             : Math.max(0, Math.floor(
-                (Date.now() - startDate)
+                (Date.now() - startDateMs)
                 / MS_PER_DAY,
             ));
         const costBudget =
@@ -208,7 +208,7 @@ export class ProjectPresenter {
             project.estimatedImpactScore();
         const impactActual =
             project.actualImpactScore();
-        const metricLabel = 'text-xs text-muted';
+        const metricLabelClasses = 'text-xs text-muted';
         return html`
     <div class="${
         'hidden-mobile project-metric-grid'
@@ -223,13 +223,13 @@ export class ProjectPresenter {
             }</div>
             <div>
                 <p class="${
-                    metricLabel
+                    metricLabelClasses
                 }">Time</p>
                 <p class="${
                     'text-sm font-medium'
                 }">${timeBudget
                     ? html`${timeElapsed}d <span
-                        class="${metricLabel}"
+                        class="${metricLabelClasses}"
                         >/ ${timeBudget}d</span>`
                     : html`&mdash;`
                 }</p>
@@ -245,14 +245,14 @@ export class ProjectPresenter {
             }</div>
             <div>
                 <p class="${
-                    metricLabel
+                    metricLabelClasses
                 }">Cost</p>
                 <p class="${
                     'text-sm font-medium'
                 }">${costBudget
                     ? html`${'$' + costActual}k
                         <span class="${
-                            metricLabel
+                            metricLabelClasses
                         }">/ ${'$'
                         + costBudget}k</span>`
                     : html`&mdash;`
@@ -269,13 +269,13 @@ export class ProjectPresenter {
             }</div>
             <div>
                 <p class="${
-                    metricLabel
+                    metricLabelClasses
                 }">Impact</p>
                 <p class="${
                     'text-sm font-medium'
                 }">${impactBudget
                     ? html`${impactActual} <span
-                        class="${metricLabel}"
+                        class="${metricLabelClasses}"
                         >/ ${impactBudget}</span>`
                     : html`&mdash;`
                 }</p>
