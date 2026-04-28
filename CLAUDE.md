@@ -65,7 +65,7 @@ protocol locally, but testing is HTTP-only.
 - **Source = Output Alignment**: Build output paths always use the registry's `sourceDir` and `sourceFile` (both are required fields on `PageEntry`). Both `compose.ts` and `navigateTo()` resolve output as `{sourceDir}/{sourceFile}.html`. So a page registered as `flow-detail` with `sourceDir: 'flows'` and `sourceFile: 'detail'` produces output at `flows/detail.html`, and `navigateTo('idea-detail')` generates `../ideas/detail.html` because `idea-detail` has `sourceDir: 'ideas'`, `sourceFile: 'detail'`. This keeps the developer's mental model simple: the file you edit is the file the browser loads.
 - **Auth**: Mock auth returning `demo@example.com`.
 - **Data**: REST-style API layer (`api/`) backed by localStorage. The `web-app/app/adapters/` directory contains adapter functions across 16 modules (with barrel re-export) that call `GET()`/`PUT()`/`POST()` and convert normalized DB rows into the denormalized shapes pages expect.
-- **Presentation**: The `web-app/app/presenters/` directory contains 15 presenter classes across 13 files (with barrel re-export) that wrap adapter-returned shapes and emit `SafeHtml`. Page modules instantiate presenters and call `build*` methods on them to produce markup — keeping rendering logic out of page modules and out of adapters.
+- **Presentation**: The `web-app/app/presenters/` directory contains 24 presenter classes across 20 files (with barrel re-export) that wrap adapter-returned shapes and emit `SafeHtml`. Page modules instantiate presenters and call `build*` methods on them to produce markup — keeping rendering logic out of page modules and out of adapters. The `WorkboxDetailPresenter` exposes a `buildPage()` method that orchestrates private `#build*` helpers; the rest of the presenters use the `build*` public-method shape.
 - **Database**: localStorage with JSON serialization, persisted across page navigations. Each table is stored as a `fusion-ai:tableName` key containing a JSON array of row objects. Deletion is recorded in a single `fusion-ai:deleted` tombstone table whose rows are `{id, deleted_at}` — entity rows themselves never carry a `deleted_at` column. `EntityStore.getAll()`/`getById()` filter against `deleted.allDeletedIds()`; `EntityStore.delete(id)` writes a tombstone row. History stores (`flow_versions`) hard-delete via splice. When no schema exists (no `fusion-ai:*` keys in localStorage), non-entry pages redirect to snapshots so users can initialize the environment. A snapshots page provides create pristine environment, wipe and load mock data, upload snapshot, and download snapshot operations. Extracting `created_at` and `updated_at` from entity rows (`FlowEntity`, `WorkOrderEntity`) into `flow_events` and `work_order_events` tables — the natural extension of the tombstone pattern — is **deferred until immediately before the Postgres backend migration**, when transactional guarantees make the multi-table writes natural and a single regression pass covers both changes.
 - **State**: Simple module-level variables + pub-sub pattern for theme (persisted to localStorage), mobile detection (matchMedia), auth, and sidebar state.
 - **Durations**: All numeric durations are persisted in seconds. UI displays days via `durationInDays(seconds)` from `format.ts`.
@@ -148,17 +148,22 @@ generate the markup the page injects into the DOM.
   `flow-designer`, `gauge`, `idea` (exports
   `IdeaPresenter` + `IdeaEditPresenter` +
   `IdeaListPresenter`), `idea-conversion`,
-  `idea-create`, `profile` (exports `ProfilePresenter`
-  + `ProfileEditPresenter`), `project` (exports
+  `idea-create`, `organization`, `profile`
+  (exports `ProfilePresenter` +
+  `ProfileEditPresenter`), `project` (exports
   `ProjectPresenter` + `ProjectListPresenter`),
   `project-detail` (exports
   `ProjectDetailPresenter` + `ProjectDetailEditPresenter`),
   `company` (exports `CompanyPresenter` +
-  `CompanyEditPresenter`), `user`, `working-styles`,
-  `workbox-inbox`, plus `index` (barrel),
-  `ordered-keys` (helper), and `flow-designer-view`
-  (helper for the flow designer page, exporting
-  `build*` functions).
+  `CompanyEditPresenter`), `user` (exports
+  `UserPresenter` + `ManagedUsersPresenter` +
+  `TeamListPresenter`), `working-styles`,
+  `workbox-detail` (exports `WorkboxDetailPresenter`
+  with `buildPage()`), `workbox-inbox`, plus `index`
+  (barrel), `ordered-keys` (helper), `list-filter`
+  (helper), and `flow-designer-view` (helper for
+  the flow designer page, exporting `build*`
+  functions).
 
 ### Import Conventions
 
@@ -183,6 +188,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 - `mutate*` — find existing DOM element(s) and update their content (side-effecting)
 - `init*` — set up event listeners and initial behavior
 - `toneFor*` / `levelFor*` — map a status/value to a string enum (`'success' | 'warning' | 'error'` etc.) used as a `data-tone` or `data-level` attribute value. Replaces the older `styleFor*` pattern that returned inline-style strings.
+- `assert*` — Telling-shape validators that take a raw value and return a typed value or throw (e.g., `assertUserStatus(v, label)` in `api/types.ts`). Used by `api/validators.ts` to call into `api/types.ts` enum validators in a single Telling expression rather than the `if (!isX(...)) throw` Asking pattern. The `is*` type-guard predicates remain available for legitimate type-narrowing call sites (filtering DOM event data, narrowing a known-string to a union).
 - `compute*` — pure calculation returning a derived value
 - `get*` — adapter functions that fetch and transform data (reads)
 - `put*` — adapter functions that write entity data (writes)
@@ -269,12 +275,12 @@ package.json                  # Project config (zero runtime dependencies)
 build                         # Executable build script
 
 api/
-  types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, IdeaStatus), User class, toBool
+  types.ts                    # Row types (snake_case), shared type aliases (Id, ConfidenceLevel, IdeaStatus), User class, toBool, assert*Status/Level Telling-shape validators
   db.ts                       # DbAdapter interface (EntityStore, SingletonStore, hasSchema, createSchema), EntityNotFound
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT/DELETE/POST URL routing
   mock-data.ts                # Mock data seed payload
-  validators.ts               # JSON validators for Risk[], StoredGraph, WorkOrderFlowGraph, transition values
+  validators.ts               # 18 validate*Entity row validators with assertOnlyKeys key-set enforcement; asUserStatus/asIdeaStatus/asProjectStatus/asReadinessLevel enum validators; asJsonArrayField/asJsonObjectField; JSON validators for Risk[], StoredGraph, WorkOrderFlowGraph, transition values
 
 web-app/
   index.html                  # Redirects to landing/index.html
@@ -297,7 +303,7 @@ web-app/
     header-info.ts            # Header greeting and stats
     navigation.ts             # navigateTo(), getPageName(), URL construction, link prefetch
     dialog.ts                 # openDialog(), closeDialog(), initTabs() dialog/tab helpers
-    icons.ts                  # ~100 SVG icon functions and lookup map
+    icons.ts                  # 102 exported SVG icon functions (tree-shakable); IconFn type alias
     state.ts                  # AppState, theme, mobile detection, pub-sub
     adapters/preferences.ts   # localStorage adapter for user preferences (theme, sidebar, log-level)
     channels.ts               # createChannel<T>() pub/sub for cross-page change notifications
@@ -312,7 +318,7 @@ web-app/
     mermaid-parse.ts          # parseMermaid(text): parse Mermaid flowchart/stateDiagram into ParsedFlowchart
     zip.ts                    # In-browser ZIP build/read (DEFLATE + CRC-32) for flow export/import
     toast.ts                  # showToast() auto-dismiss notifications
-    logger.ts                 # Lightweight logger using adapters/preferences for log-level
+    logger.ts                 # Lightweight logger; log.with(requestId) returns a BoundLogger that prefixes [req:XXXXXXXX] (8-char truncation) on all output. Level configured via adapters/preferences.
     safe-html.ts              # SafeHtml class, html tagged template, trusted(), setHtml()
     loading-states.ts         # Loading skeletons, error states, empty states, withLoadingState()
     adapters/                 # adapter functions across 16 modules (API → frontend shapes)
@@ -330,24 +336,30 @@ web-app/
       workbox-queries.ts      # getWorkboxItems, getWorkboxActive, getWorkboxArchive, getWorkboxItem, getFlowsForCreation
       workbox-mutations.ts    # postWorkOrderCreation, postWorkOrderTransition, postWorkOrderClaim, putWorkOrder
       workbox-deletions.ts    # deleteWorkOrderClaim
-      admin.ts                # getAccount, getProfile, getCompany, getActivityFeed
+      admin.ts                # Profile, Company, Organization, Activity value-object classes; ProfileDraft, CompanyDraft interfaces; getProfile, putProfile, getCompany, putCompany, getOrganization, getActivityRows, getActivityActorRows
       snapshots.ts            # deleteSchema, postSchemaCreation, postMockDataLoad, postBootstrap, putSnapshot, getSnapshot, getDataPresent
-    presenters/               # 15 presenter classes across 13 files (adapter shapes → SafeHtml)
+    presenters/               # 24 presenter classes across 20 files (adapter shapes → SafeHtml)
       index.ts                # Barrel re-export
       ordered-keys.ts         # Internal helper (not a presenter)
+      list-filter.ts          # Internal helper (StatusFilter type, toggleStatusFilter)
       account.ts              # AccountPresenter
-      activity.ts             # ActivityPresenter
+      activity.ts             # ActivityPresenter (consumes Activity value object)
       flow.ts                 # FlowPresenter
       flow-designer.ts        # FlowDesignerPresenter (flow canvas page)
+      flow-designer-view.ts   # Internal helper (build* functions for the flow designer page)
       gauge.ts                # GaugePresenter (dashboard gauges, receiver-style)
-      idea.ts                 # IdeaPresenter, IdeaListPresenter
+      idea.ts                 # IdeaPresenter, IdeaEditPresenter, IdeaListPresenter
       idea-conversion.ts      # IdeaConversionPresenter (idea → project flow)
       idea-create.ts          # IdeaCreatePresenter
-      profile.ts              # ProfilePresenter
+      organization.ts         # OrganizationPresenter (consumes Organization value object)
+      profile.ts              # ProfilePresenter, ProfileEditPresenter (consumes Profile value object)
       project.ts              # ProjectPresenter, ProjectListPresenter
-      project-detail.ts       # ProjectDetailPresenter
-      company.ts              # CompanyPresenter
-      user.ts                 # UserPresenter
+      project-detail.ts       # ProjectDetailPresenter, ProjectDetailEditPresenter
+      company.ts              # CompanyPresenter, CompanyEditPresenter (consumes Company value object)
+      user.ts                 # UserPresenter, ManagedUsersPresenter, TeamListPresenter
+      working-styles.ts       # WorkingStylesPresenter
+      workbox-detail.ts       # WorkboxDetailPresenter with public buildPage() and private #build* helpers
+      workbox-inbox.ts        # WorkboxInboxPresenter
     styles/                   # CSS modules (cascade-ordered) — build inputs
       fonts.css               # @font-face declarations
       tokens.css              # :root custom properties (light mode)
