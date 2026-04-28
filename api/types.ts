@@ -69,6 +69,19 @@ export function isActivityType(
         .includes(v);
 }
 
+export function assertActivityType(
+    v: string,
+    label: string,
+): ActivityType {
+    if (!isActivityType(v)) {
+        throw new Error(
+            'expected ActivityType for '
+                + label + ', got ' + v,
+        );
+    }
+    return v;
+}
+
 export type DimensionKey =
     | 'driver'
     | 'analytical'

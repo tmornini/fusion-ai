@@ -12,7 +12,7 @@ import type {
 import {
     User,
     jsonArrayField,
-    isActivityType,
+    assertActivityType,
 } from '../../../api/types.ts';
 import {
     initials,
@@ -369,15 +369,11 @@ export class Activity {
         entity: ActivityEntity,
         actor: string,
     ) {
-        if (!isActivityType(entity.type)) {
-            throw new Error(
-                'Unknown activity type: '
-                + entity.type,
-            );
-        }
         this.#entity = entity;
         this.#actor = actor;
-        this.#type = entity.type;
+        this.#type = assertActivityType(
+            entity.type, 'activity.type',
+        );
     }
 
     typeValue(): ActivityType {
