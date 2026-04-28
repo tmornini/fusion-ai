@@ -4,6 +4,7 @@ import {
     postBootstrap,
     postMockDataLoad,
     putSnapshotFromFile,
+    SnapshotTooLargeError,
     getSnapshot,
     getDataPresent,
     nowUtc,
@@ -353,12 +354,24 @@ export async function init(
                     'snapshots',
                     err,
                 );
-                showToast(
-                    'Failed to upload'
-                    + ' snapshot. Check'
-                    + ' file format.',
-                    'error',
-                );
+                if (
+                    err
+                    instanceof SnapshotTooLargeError
+                ) {
+                    showToast(
+                        'Snapshot too large'
+                        + ' for available storage.'
+                        + ' Free space and retry.',
+                        'error',
+                    );
+                } else {
+                    showToast(
+                        'Failed to upload'
+                        + ' snapshot. Check'
+                        + ' file format.',
+                        'error',
+                    );
+                }
                 importInput.value = '';
                 return;
             }
