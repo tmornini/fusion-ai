@@ -188,6 +188,7 @@ function initTransitionButtons(
 function initUnclaimButton(
     container: HTMLElement,
     detail: WorkboxDetailPresenter,
+    ctx: ReturnType<typeof createFetchContext>,
 ): void {
     const btn = $(
         '#unclaim-btn', container,
@@ -201,7 +202,7 @@ function initUnclaimButton(
         async () => {
             try {
                 await deleteWorkOrderClaim(
-                    claimId,
+                    ctx, claimId,
                 );
             } catch (err) {
                 log.error(
@@ -333,7 +334,7 @@ export async function init(
             userId, ctx,
         );
         initUnclaimButton(
-            container, detail,
+            container, detail, ctx,
         );
     }
 }
