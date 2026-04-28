@@ -27,6 +27,7 @@ import {
 } from './page-registry.ts';
 import { buildPageUrl } from './navigation.ts';
 import { pluralize } from './format.ts';
+import { log } from './logger.ts';
 
 interface SearchItem {
     id: string;
@@ -691,11 +692,55 @@ posIndex === state.activeIndex
             mutateResults(state.input.value);
         }
 
+        // Unit 6a instrumentation: same shape as the
+        // flow-save debouncer so both sites can be
+        // measured together.
+        let scheduleCount = 0;
+        let burstStart = 0;
         state.input?.addEventListener('input', () => {
-            if (state.debounceTimeoutId)
-                clearTimeout(state.debounceTimeoutId);
+            if (state.debounceTimeoutId) {
+                clearTimeout(
+                    state.debounceTimeoutId,
+                );
+            } else {
+                scheduleCount = 0;
+                burstStart = performance.now();
+            }
+            scheduleCount += 1;
+            const startedAt = burstStart;
+            const count = scheduleCount;
             state.debounceTimeoutId = setTimeout(
-                applyDebouncedQuery,
+                () => {
+                    const burstDurMs =
+                        performance.now() - startedAt;
+                    const ratePerSec =
+                        burstDurMs > 0
+                            ? count / (burstDurMs / 1000)
+                            : 0;
+                    const callStart =
+                        performance.now();
+                    applyDebouncedQuery();
+                    const callDurMs =
+                        performance.now() - callStart;
+                    log.info(
+                        'palette debouncer fire',
+                        'debouncer',
+                        {
+                            delayMs: DEBOUNCE_MS,
+                            burstSchedules: count,
+                            burstDurMs:
+                                Math.round(burstDurMs),
+                            keystrokesPerSec:
+                                Math.round(
+                                    ratePerSec * 10,
+                                ) / 10,
+                            callDurMs:
+                                Math.round(
+                                    callDurMs * 100,
+                                ) / 100,
+                        },
+                    );
+                },
                 DEBOUNCE_MS,
             );
         });

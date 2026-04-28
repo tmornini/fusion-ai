@@ -58,6 +58,9 @@ const FALLBACK_W = 800;
 const FALLBACK_H = 600;
 const SAVE_DELAY_MS = 800;
 
+// Unit 6a instrumentation: capture per-burst stats so
+// the debouncer can be measured against frame budget and
+// removed/lowered if it isn't earning its keep.
 class Debouncer {
     #timer: ReturnType<
         typeof setTimeout
@@ -66,6 +69,8 @@ class Debouncer {
         | (() => void)
         | undefined = undefined;
     readonly #delayMs: number;
+    #scheduleCount: number = 0;
+    #burstStart: number = 0;
 
     constructor(delayMs: number) {
         this.#delayMs = delayMs;
@@ -74,14 +79,48 @@ class Debouncer {
     schedule(fn: () => void): void {
         if (this.#timer !== undefined) {
             clearTimeout(this.#timer);
+        } else {
+            this.#scheduleCount = 0;
+            this.#burstStart =
+                performance.now();
         }
+        this.#scheduleCount += 1;
         this.#pending = fn;
+        const startedAt = this.#burstStart;
+        const count = this.#scheduleCount;
         this.#timer = setTimeout(
             () => {
+                const burstDurMs =
+                    performance.now() - startedAt;
+                const ratePerSec =
+                    burstDurMs > 0
+                        ? count / (burstDurMs / 1000)
+                        : 0;
+                const callStart =
+                    performance.now();
                 fn();
+                const callDurMs =
+                    performance.now() - callStart;
+                log.info(
+                    'flow save debouncer fire',
+                    'debouncer',
+                    {
+                        delayMs: this.#delayMs,
+                        burstSchedules: count,
+                        burstDurMs:
+                            Math.round(burstDurMs),
+                        keystrokesPerSec:
+                            Math.round(
+                                ratePerSec * 10,
+                            ) / 10,
+                        callDurMs:
+                            Math.round(
+                                callDurMs * 100,
+                            ) / 100,
+                    },
+                );
                 this.#timer = undefined;
-                this.#pending =
-                    undefined;
+                this.#pending = undefined;
             },
             this.#delayMs,
         );
@@ -95,7 +134,21 @@ class Debouncer {
         if (
             this.#pending !== undefined
         ) {
+            const callStart =
+                performance.now();
             this.#pending();
+            const callDurMs =
+                performance.now() - callStart;
+            log.info(
+                'flow save debouncer flush',
+                'debouncer',
+                {
+                    callDurMs:
+                        Math.round(
+                            callDurMs * 100,
+                        ) / 100,
+                },
+            );
             this.#pending = undefined;
         }
     }
