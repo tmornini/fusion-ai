@@ -106,14 +106,15 @@ async function transitionIdea(
     toStatus: IdeaTransition,
     feedback: string,
 ): Promise<void> {
+    const ctx = createFetchContext();
     const cfg = TRANSITION_CONFIG[toStatus]!;
     let title = '';
     try {
         const entity =
-            await getIdeaRow(ideaId);
+            await getIdeaRow(ctx, ideaId);
         title = entity.title;
         await putIdea(
-            ideaId,
+            ctx, ideaId,
             { ...entity, status: toStatus },
         );
     } catch (err) {
@@ -184,7 +185,7 @@ export async function init(
     const view = await withLoadingState(
         container,
         buildSkeleton('detail', 4),
-        () => getIdea(ideaId, ctx),
+        () => getIdea(ctx, ideaId),
         () => init(params),
     );
     if (!view) return;
@@ -196,7 +197,7 @@ export async function init(
     subscribeIdeaChanges(async () => {
         if (!pageContainer || !state) return;
         const fresh = await getIdea(
-            ideaId, createFetchContext(),
+            createFetchContext(), ideaId,
         );
         state = {
             kind: 'reading', view: fresh,
@@ -420,11 +421,12 @@ async function handleSave(): Promise<void> {
         state.draft,
     );
     const ideaId = state.view.idea.idForLink();
+    const ctx = createFetchContext();
     try {
         const entity = await getIdeaRow(
-            ideaId,
+            ctx, ideaId,
         );
-        await putIdea(ideaId, {
+        await putIdea(ctx, ideaId, {
             ...entity,
             ...trimStrings(patch),
         });

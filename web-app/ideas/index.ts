@@ -98,7 +98,9 @@ export async function init(): Promise<void> {
 
     subscribeIdeaChanges(async () => {
         if (!ideaState || !listEl) return;
-        const updated = await getIdeas();
+        const updated = await getIdeas(
+            createFetchContext(),
+        );
         ideaState = applyIdeaListUpdate(
             ideaState, updated,
         );
@@ -110,8 +112,11 @@ export async function init(): Promise<void> {
         '[data-idea-card]',
         'data-idea-card',
         async (id, newPosition) => {
-            const entity = await getIdeaRow(id);
-            await putIdea(id, {
+            const dragCtx = createFetchContext();
+            const entity = await getIdeaRow(
+                dragCtx, id,
+            );
+            await putIdea(dragCtx, id, {
                 ...entity,
                 position: newPosition,
             });

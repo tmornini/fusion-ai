@@ -93,16 +93,12 @@ export interface FetchContext {
 
 export function createFetchContext(
 ): FetchContext {
-    // Per-request memoization: each table
-    // is fetched at most once per ctx.
-    // The promise is captured the first
-    // time the getter is called (lazy)
-    // except getUserMap which is eager —
-    // the user map is needed by virtually
-    // every page, so kicking the fetch
-    // off at construction is a hot-path
-    // win, not premature optimization.
-    const userMapPromise = fetchUserMap();
+    // Per-request memoization: each table is
+    // fetched at most once per ctx. The promise
+    // is captured the first time the getter is
+    // called.
+    let userMapPromise:
+        Promise<Map<Id, User>> | null = null;
     let currentUserPromise:
         Promise<UserEntity> | null = null;
     let ideaRowsPromise:
@@ -117,7 +113,12 @@ export function createFetchContext(
         PUT: httpPut,
         DELETE: httpDelete,
         POST: httpPost,
-        getUserMap: () => userMapPromise,
+        getUserMap: () => {
+            if (!userMapPromise) {
+                userMapPromise = fetchUserMap();
+            }
+            return userMapPromise;
+        },
         getCurrentUser: () => {
             if (!currentUserPromise) {
                 currentUserPromise =

@@ -64,7 +64,7 @@ export async function init(
     >;
     try {
         [tuple, users] = await Promise.all([
-            getIdea(ideaId, ctx),
+            getIdea(ctx, ideaId),
             getManagedUsers(ctx),
         ]);
     } catch (err) {
@@ -368,6 +368,7 @@ export async function init(
                     generateCryptoSafeBase62();
                 try {
                     await performConversion(
+                        ctx,
                         ideaId,
                         projectId,
                         fields,
@@ -475,11 +476,13 @@ function parseFiniteNumber(
 }
 
 async function performConversion(
+    ctx: ReturnType<typeof createFetchContext>,
     ideaId: string,
     projectId: string,
     fields: ConversionFields,
 ): Promise<void> {
     await postIdeaConversion(
+        ctx,
         ideaId,
         projectId,
         {

@@ -1,4 +1,3 @@
-import { GET, PUT } from '../../../api/api.ts';
 import type {
     IdeaEntity,
     IdeaSubmissionEntity,
@@ -44,31 +43,34 @@ export {
 } from '../../../api/types.ts';
 
 async function getIdeaRows(
-    ctx?: FetchContext,
+    ctx: FetchContext,
 ): Promise<IdeaEntity[]> {
-    const all = ctx
-        ? await ctx.getIdeaRows()
-        : await GET<IdeaEntity[]>('ideas');
+    const all = await ctx.getIdeaRows();
     return all.filter(ideaIsVisible);
 }
 
 export async function getIdeaRow(
+    ctx: FetchContext,
     id: string,
 ): Promise<IdeaEntity> {
-    return GET<IdeaEntity>(`ideas/${id}`);
+    return ctx.GET<IdeaEntity>(
+        `ideas/${id}`,
+    );
 }
 
 async function getIdeaSubmissionRows(
+    ctx: FetchContext,
 ): Promise<IdeaSubmissionEntity[]> {
-    return GET<
+    return ctx.GET<
         IdeaSubmissionEntity[]
     >('idea-submissions');
 }
 
 async function getIdeaSubmissionRow(
+    ctx: FetchContext,
     ideaId: string,
 ): Promise<IdeaSubmissionEntity> {
-    const all = await getIdeaSubmissionRows();
+    const all = await getIdeaSubmissionRows(ctx);
     const found = all.find(
         s => s.idea_id === ideaId,
     );
@@ -92,14 +94,14 @@ export interface IdeaWithSubmitter {
 }
 
 export async function getIdeas(
-    ctx?: FetchContext,
+    ctx: FetchContext,
 ): Promise<IdeaWithSubmitter[]> {
     const [
         ideas, userMap, submissions,
     ] = await Promise.all([
         getIdeaRows(ctx),
         getUserMap(ctx),
-        getIdeaSubmissionRows(),
+        getIdeaSubmissionRows(ctx),
     ]);
     const submissionMap = new Map(
         submissions.map(s => [s.idea_id, s]),
@@ -126,14 +128,14 @@ export async function getIdeas(
 }
 
 export async function getIdea(
+    ctx: FetchContext,
     ideaId: string,
-    ctx?: FetchContext,
 ): Promise<IdeaWithSubmitter> {
     const [
         row, submission, userMap,
     ] = await Promise.all([
-        getIdeaRow(ideaId),
-        getIdeaSubmissionRow(ideaId),
+        getIdeaRow(ctx, ideaId),
+        getIdeaSubmissionRow(ctx, ideaId),
         getUserMap(ctx),
     ]);
     return {
@@ -146,19 +148,21 @@ export async function getIdea(
 }
 
 export async function putIdea(
+    ctx: FetchContext,
     id: string,
     entity: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
-    await PUT(`ideas/${id}`, entity);
+    await ctx.PUT(`ideas/${id}`, entity);
     ideaChangedChannel.send();
 }
 
 export async function putIdeaSubmission(
+    ctx: FetchContext,
     submissionId: string,
     ideaId: string,
     userId: string,
 ): Promise<void> {
-    await PUT(
+    await ctx.PUT(
         'idea-submissions/'
             + submissionId,
         {
@@ -170,7 +174,10 @@ export async function putIdeaSubmission(
 }
 
 // Idempotent: retry recovers from partial failure.
+// putProject/putProjectTeamMember calls still use the
+// singleton path; Unit 3.8 will thread ctx through.
 export async function postIdeaConversion(
+    ctx: FetchContext,
     ideaId: string,
     projectId: string,
     project: Omit<ProjectEntity, 'id'>,
@@ -183,8 +190,8 @@ export async function postIdeaConversion(
         role: 'lead',
         type: 'internal',
     });
-    const existing = await getIdeaRow(ideaId);
-    await putIdea(ideaId, {
+    const existing = await getIdeaRow(ctx, ideaId);
+    await putIdea(ctx, ideaId, {
         ...existing,
         status: 'promoted',
     });
