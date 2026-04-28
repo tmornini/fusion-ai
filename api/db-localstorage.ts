@@ -57,30 +57,6 @@ import {
 
 const KEY_PREFIX = 'fusion-ai:';
 
-const IMPORTING_SENTINEL_KEY =
-    KEY_PREFIX + '_importing';
-
-export class SnapshotRollbackFailed
-    extends Error {
-    readonly originalError: unknown;
-    readonly rollbackError: unknown;
-    constructor(
-        originalError: unknown,
-        rollbackError: unknown,
-    ) {
-        super(
-            'Snapshot import failed AND'
-            + ' rollback failed; database is'
-            + ' in indeterminate state.'
-            + ' Wipe and reload from'
-            + ' snapshots.',
-        );
-        this.originalError = originalError;
-        this.rollbackError = rollbackError;
-        this.name = 'SnapshotRollbackFailed';
-    }
-}
-
 // Map table name → entity validator.
 // 'deleted' rows have shape {id, deleted_at}
 // — both plain strings; validated inline.
@@ -751,37 +727,8 @@ export async function createLocalStorageAdapter(
                 );
             }
 
-            // Backup existing tables before
-            // any write. If a setItem fails
-            // mid-loop (e.g. quota exceeded
-            // on the 6th of 19 writes), we
-            // restore the old state so the
-            // database is never half-imported.
-            const backup = new Map<
-                string,
-                string | null
-            >();
-            for (
-                const table of TABLE_NAMES
-            ) {
-                backup.set(
-                    table,
-                    localStorage.getItem(
-                        KEY_PREFIX + table,
-                    ),
-                );
-            }
-            // Sentinel marks the database as
-            // in indeterminate state for the
-            // duration of the write loop. If
-            // we crash or both the write AND
-            // the rollback fail, the next
-            // bootstrap surfaces the
-            // snapshots page so the user
-            // can recover.
-            localStorage.setItem(
-                IMPORTING_SENTINEL_KEY, '1',
-            );
+            // Wipe old tables before writing
+            // new ones — replace, never merge.
             for (
                 const table of TABLE_NAMES
             ) {
@@ -804,43 +751,28 @@ export async function createLocalStorageAdapter(
                     );
                 }
             } catch (err) {
-                try {
-                    for (
-                        const [table, prev]
-                            of backup
-                    ) {
-                        if (prev !== null) {
-                            localStorage
-                                .setItem(
-                                    KEY_PREFIX
-                                    + table,
-                                    prev,
-                                );
-                        } else {
-                            localStorage
-                                .removeItem(
-                                    KEY_PREFIX
-                                    + table,
-                                );
-                        }
-                    }
-                } catch (rollbackErr) {
-                    // Sentinel stays set —
-                    // database is wedged.
-                    throw new
-                        SnapshotRollbackFailed(
-                            err,
-                            rollbackErr,
-                        );
+                // Mid-write failure (almost
+                // always QuotaExceededError
+                // despite the pre-flight cap).
+                // We trade rare-crash data
+                // preservation for write-path
+                // simplicity: wipe every
+                // table key so hasSchema()
+                // returns false on the next
+                // bootstrap and the app
+                // routes the user back to
+                // snapshots to re-import.
+                // Real atomicity arrives with
+                // Postgres.
+                for (
+                    const table of TABLE_NAMES
+                ) {
+                    localStorage.removeItem(
+                        KEY_PREFIX + table,
+                    );
                 }
-                localStorage.removeItem(
-                    IMPORTING_SENTINEL_KEY,
-                );
                 throw err;
             }
-            localStorage.removeItem(
-                IMPORTING_SENTINEL_KEY,
-            );
         },
 
         users:
