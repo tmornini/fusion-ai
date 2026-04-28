@@ -451,9 +451,11 @@ async function handleNewFlowSubmit(
         return;
     }
     const flowId = generateCryptoSafeBase62();
+    const linkId = generateCryptoSafeBase62();
     try {
         await postFlowCreation({
             flowId,
+            linkId,
             projectId,
             name,
             description: '',

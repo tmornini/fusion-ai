@@ -190,7 +190,10 @@ export async function performAddEdge(
         toId,
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(snap, snap.nodes, newEdges),
@@ -273,7 +276,10 @@ export async function performAddNodeAtPosition(
         nodeId,
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(snap, newNodes, newEdges),
@@ -327,7 +333,10 @@ export async function performDeleteSelectedNodes(
         new Set(deletableIds),
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(
@@ -369,7 +378,10 @@ export async function performDeleteSelectedEdge(
         snap.edges, edgeId,
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(snap, snap.nodes, newEdges),
@@ -431,7 +443,10 @@ export async function performAddField(
         snap.nodes, nodeId, field,
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(snap, newNodes, snap.edges),
@@ -472,7 +487,10 @@ export async function performDeleteField(
         snap.nodes, nodeId, fieldId,
     );
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlow(
             snap.flowId,
             snapToSave(snap, newNodes, snap.edges),
@@ -610,7 +628,10 @@ export async function performRedo(
         };
     }
     try {
-        await postFlowVersion(snap.flowId);
+        await postFlowVersion(
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
         await putFlowFromVersion(popped.version);
         const graph = await getFlowGraph(
             snap.flowId,

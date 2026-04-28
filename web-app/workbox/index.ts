@@ -29,6 +29,7 @@ import {
     putWorkOrder,
     getCurrentUserRow,
     createFetchContext,
+    generateCryptoSafeBase62,
     type FetchContext,
 } from '../app/adapters/index.ts';
 import {
@@ -239,17 +240,32 @@ async function createWorkOrderForFlow(
         );
         return;
     }
+    const workOrderId =
+        generateCryptoSafeBase62();
+    const flowLinkId =
+        generateCryptoSafeBase62();
+    const initTransitionId =
+        generateCryptoSafeBase62();
+    const postStartTransitionId =
+        generateCryptoSafeBase62();
+    const claimId =
+        generateCryptoSafeBase62();
     try {
-        const woId =
-            await postWorkOrderCreation(
-                flowId,
-                userId,
-            );
+        await postWorkOrderCreation({
+            workOrderId,
+            flowLinkId,
+            initTransitionId,
+            postStartTransitionId,
+            claimId,
+            flowId,
+            userId,
+        });
         showToast(
             'Work order created', 'success',
         );
         navigateTo(
-            'workbox-detail', { id: woId },
+            'workbox-detail',
+            { id: workOrderId },
         );
     } catch (err) {
         log.error(

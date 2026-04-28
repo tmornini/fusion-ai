@@ -64,6 +64,7 @@ async function createBaseFlow(
 ): Promise<void> {
     await postFlowCreation({
         flowId,
+        linkId: flowId + '-link',
         projectId: 'project-1',
         name: 'Test Flow',
         description: 'desc',

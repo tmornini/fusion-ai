@@ -13,9 +13,6 @@ import {
 import {
     buildStartAndCompleteNodes,
 } from './flow-defaults.ts';
-import {
-    generateCryptoSafeBase62,
-} from './crypto-safe-base62.ts';
 
 function putFlowGraph(
     graph: StoredGraph,
@@ -29,6 +26,7 @@ function putFlowGraph(
 
 export interface FlowCreationContext {
     flowId: string;
+    linkId: string;
     projectId: string;
     name: string;
     description: string;
@@ -59,7 +57,7 @@ export async function postFlowCreation(
     });
 
     await PUT<void>('project-flows', {
-        id: generateCryptoSafeBase62(),
+        id: ctx.linkId,
         project_id: ctx.projectId,
         flow_id: ctx.flowId,
         created_at: now,

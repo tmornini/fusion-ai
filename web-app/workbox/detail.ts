@@ -27,6 +27,7 @@ import {
     deleteWorkOrderClaim,
     getCurrentUserRow,
     createFetchContext,
+    generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
 import type {
     HistoryEntry,
@@ -294,6 +295,8 @@ function initTransitionButtons(
                 try {
                     await
                         postWorkOrderTransition({
+                            transitionId:
+                                generateCryptoSafeBase62(),
                             workOrderId:
                                 detail.idValue(),
                             edgeId,
@@ -465,6 +468,7 @@ export async function init(
                 && !presenter.isComplete()
             ) {
                 await postWorkOrderClaim(
+                    generateCryptoSafeBase62(),
                     id, userId,
                 );
                 presenter =
