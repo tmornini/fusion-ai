@@ -1,7 +1,8 @@
 import {
     createLocalStorageAdapter,
 } from '../../../api/db-localstorage.ts';
-import { initApi, GET } from '../../../api/api.ts';
+import { initApi } from '../../../api/api.ts';
+import { createFetchContext } from './shared.ts';
 
 export async function initAdapter(
 ): Promise<boolean> {
@@ -9,8 +10,9 @@ export async function initAdapter(
         await createLocalStorageAdapter();
     await adapter.initialize();
     initApi(adapter);
+    const ctx = createFetchContext();
     const schema =
-        await GET<string | null>(
+        await ctx.GET<string | null>(
             'snapshots/schema',
         );
     return schema !== null;
