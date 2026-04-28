@@ -1,4 +1,3 @@
-import { GET } from '../../../api/api.ts';
 import type {
     FlowEntity,
     WorkOrderEntity,
@@ -15,6 +14,7 @@ import {
 import {
     validateWorkOrderFlowGraphJson,
 } from '../../../api/validators.ts';
+import type { FetchContext } from './shared.ts';
 
 export type {
     WorkOrderEntity,
@@ -69,8 +69,9 @@ export function validateWorkOrderFlowGraph(
 // no values has no entry (Map.get returns undefined,
 // which the call site treats as "no field values").
 export async function getTransitionFieldValuesByTransition(
+    ctx: FetchContext,
 ): Promise<Map<Id, TransitionFieldValueEntity[]>> {
-    const all = await GET<
+    const all = await ctx.GET<
         TransitionFieldValueEntity[]
     >('transition-field-values');
     const byTransition = new Map<
@@ -106,38 +107,43 @@ export function isExpiredClaim(
 /* ── Reads ───────────────── */
 
 export async function getWorkOrderRows(
+    ctx: FetchContext,
 ): Promise<WorkOrderEntity[]> {
-    return GET<WorkOrderEntity[]>(
+    return ctx.GET<WorkOrderEntity[]>(
         'work-orders',
     );
 }
 
 export async function getAllWorkOrderTransitionRows(
+    ctx: FetchContext,
 ): Promise<WorkOrderTransitionEntity[]> {
-    return GET<
+    return ctx.GET<
         WorkOrderTransitionEntity[]
     >('work-order-transitions');
 }
 
 export async function getAllWorkOrderClaimRows(
+    ctx: FetchContext,
 ): Promise<WorkOrderClaimEntity[]> {
-    return GET<
+    return ctx.GET<
         WorkOrderClaimEntity[]
     >('work-order-claims');
 }
 
 export async function getWorkOrder(
+    ctx: FetchContext,
     id: string,
 ): Promise<WorkOrderEntity> {
-    return GET<WorkOrderEntity>(
+    return ctx.GET<WorkOrderEntity>(
         `work-orders/${id}`,
     );
 }
 
 export async function getWorkOrderTransitionRows(
+    ctx: FetchContext,
     workOrderId: string,
 ): Promise<WorkOrderTransitionEntity[]> {
-    const all = await GET<
+    const all = await ctx.GET<
         WorkOrderTransitionEntity[]
     >('work-order-transitions');
     return all.filter(
@@ -146,9 +152,10 @@ export async function getWorkOrderTransitionRows(
 }
 
 export async function getWorkOrderClaimRows(
+    ctx: FetchContext,
     workOrderId: string,
 ): Promise<WorkOrderClaimEntity[]> {
-    const all = await GET<
+    const all = await ctx.GET<
         WorkOrderClaimEntity[]
     >('work-order-claims');
     return all.filter(
@@ -157,12 +164,13 @@ export async function getWorkOrderClaimRows(
 }
 
 export async function getFlowsForCreation(
+    ctx: FetchContext,
 ): Promise<{
     id: string;
     name: string;
 }[]> {
     const flows =
-        await GET<FlowEntity[]>('flows');
+        await ctx.GET<FlowEntity[]>('flows');
     return flows.map(f => ({
         id: f.id,
         name: f.name,

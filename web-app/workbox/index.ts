@@ -73,24 +73,25 @@ export async function init(
     subscribeWorkOrderChanges(() => {
         if (activeEl) {
             void rerenderInbox(
-                activeEl, 'active',
+                activeEl, 'active', ctx,
             );
         }
         if (archiveEl) {
             void rerenderInbox(
-                archiveEl, 'archived',
+                archiveEl, 'archived', ctx,
             );
         }
     });
 
-    await initCreateDropdown();
+    await initCreateDropdown(ctx);
 }
 
 async function rerenderInbox(
     listEl: HTMLElement,
     mode: InboxMode,
+    ctx: FetchContext,
 ): Promise<void> {
-    const items = await loadInboxItems(mode);
+    const items = await loadInboxItems(mode, ctx);
     const presenter = new WorkboxInboxPresenter(
         items, mode === 'active',
     );
@@ -122,15 +123,15 @@ function renderTabs(): void {
 
 async function loadInboxItems(
     mode: InboxMode,
-    ctx?: FetchContext,
+    ctx: FetchContext,
 ): Promise<InboxItem[]> {
     const [
         workOrders, transitions,
         claims, userMap,
     ] = await Promise.all([
-        getWorkOrderRows(),
-        getAllWorkOrderTransitionRows(),
-        getAllWorkOrderClaimRows(),
+        getWorkOrderRows(ctx),
+        getAllWorkOrderTransitionRows(ctx),
+        getAllWorkOrderClaimRows(ctx),
         getUserMap(ctx),
     ]);
     return buildInboxItems(
@@ -172,7 +173,7 @@ async function initActiveList(
         async (id, newPosition) => {
             try {
                 const entity =
-                    await getWorkOrder(id);
+                    await getWorkOrder(ctx, id);
                 await putWorkOrder(id, {
                     ...entity,
                     position: newPosition,
@@ -189,7 +190,7 @@ async function initActiveList(
                 return;
             }
             const refreshed =
-                await loadInboxItems('active');
+                await loadInboxItems('active', ctx);
             activePresenter =
                 new WorkboxInboxPresenter(
                     refreshed, true,
@@ -308,6 +309,7 @@ async function createWorkOrderForFlow(
 }
 
 async function initCreateDropdown(
+    ctx: FetchContext,
 ): Promise<void> {
     populateIcons([
         [
@@ -322,7 +324,7 @@ async function initCreateDropdown(
     );
     if (!dropdownEl) return;
 
-    const flows = await getFlowsForCreation();
+    const flows = await getFlowsForCreation(ctx);
 
     setHtml(dropdownEl, html`${flows.map(
         f => html`<button

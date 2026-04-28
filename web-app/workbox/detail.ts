@@ -233,12 +233,12 @@ async function loadPresenter(
         fieldValuesByTransition,
         claims, userMap,
     ] = await Promise.all([
-        getWorkOrder(workOrderId),
+        getWorkOrder(ctx, workOrderId),
         getWorkOrderTransitionRows(
-            workOrderId,
+            ctx, workOrderId,
         ),
-        getTransitionFieldValuesByTransition(),
-        getWorkOrderClaimRows(workOrderId),
+        getTransitionFieldValuesByTransition(ctx),
+        getWorkOrderClaimRows(ctx, workOrderId),
         getUserMap(ctx),
     ]);
     return new WorkboxDetailPresenter(
