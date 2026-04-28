@@ -1,6 +1,3 @@
-import {
-    GET, PUT, DELETE,
-} from '../../../api/api.ts';
 import type {
     FlowEntity,
     FlowVersionEntity,
@@ -13,6 +10,7 @@ import {
 import {
     notifyFlowChange,
 } from './flow-mutations.ts';
+import type { FetchContext } from './shared.ts';
 
 export interface FlowVersion {
     id: string;
@@ -60,13 +58,14 @@ function compareRows(
 }
 
 export async function postFlowVersion(
+    ctx: FetchContext,
     versionId: string,
     flowId: string,
 ): Promise<void> {
-    const flow = await GET<FlowEntity>(
+    const flow = await ctx.GET<FlowEntity>(
         'flows/' + flowId,
     );
-    await PUT<void>('flow-versions', {
+    await ctx.PUT<void>('flow-versions', {
         id: versionId,
         flow_id: flowId,
         name: flow.name,
@@ -78,15 +77,15 @@ export async function postFlowVersion(
         graph: flow.graph,
         created_at: nowUtc(),
     });
-    const all = await GET<FlowVersionEntity[]>(
-        'flow-versions',
-    );
+    const all = await ctx.GET<
+        FlowVersionEntity[]
+    >('flow-versions');
     const mine = all
         .filter(v => v.flow_id === flowId)
         .sort(compareRows);
     const excess = mine.length - FLOW_VERSION_CAP;
     for (let i = 0; i < excess; i++) {
-        await DELETE(
+        await ctx.DELETE(
             'flow-versions/' + mine[i]!.id,
         );
     }
@@ -94,11 +93,12 @@ export async function postFlowVersion(
 }
 
 export async function getFlowVersions(
+    ctx: FetchContext,
     flowId: string,
 ): Promise<FlowVersion[]> {
-    const all = await GET<FlowVersionEntity[]>(
-        'flow-versions',
-    );
+    const all = await ctx.GET<
+        FlowVersionEntity[]
+    >('flow-versions');
     return all
         .filter(v => v.flow_id === flowId)
         .sort((a, b) => -compareRows(a, b))
@@ -106,19 +106,23 @@ export async function getFlowVersions(
 }
 
 export async function deleteFlowVersion(
+    ctx: FetchContext,
     versionId: string,
 ): Promise<void> {
-    await DELETE('flow-versions/' + versionId);
+    await ctx.DELETE(
+        'flow-versions/' + versionId,
+    );
     notifyFlowChange();
 }
 
 export async function putFlowFromVersion(
+    ctx: FetchContext,
     version: FlowVersion,
 ): Promise<void> {
-    const current = await GET<FlowEntity>(
+    const current = await ctx.GET<FlowEntity>(
         'flows/' + version.flowId,
     );
-    await PUT('flows/' + version.flowId, {
+    await ctx.PUT('flows/' + version.flowId, {
         name: version.name,
         description: version.description,
         is_locked: version.isLocked,

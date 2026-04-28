@@ -1128,13 +1128,11 @@ export async function init(
         container,
         buildSkeleton('detail', 1),
         async () => {
+            const ctx = createFetchContext();
             const [graph, versions] =
                 await Promise.all([
-                    getFlowGraph(
-                        createFetchContext(),
-                        flowId,
-                    ),
-                    getFlowVersions(flowId),
+                    getFlowGraph(ctx, flowId),
+                    getFlowVersions(ctx, flowId),
                 ]);
             return { graph, versions };
         },

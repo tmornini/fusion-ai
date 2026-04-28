@@ -182,14 +182,16 @@ export class FlowDesignerPresenter {
         versioned: boolean,
         snap: FlowSnapshot,
     ): Promise<void> {
+        const ctx = createFetchContext();
         if (versioned) {
             await postFlowVersion(
+                ctx,
                 generateCryptoSafeBase62(),
                 snap.flowId,
             );
         }
         await putFlow(
-            createFetchContext(),
+            ctx,
             snap.flowId,
             this.#buildSaveShape(snap),
         );
