@@ -1,6 +1,3 @@
-import {
-    GET, PUT, DELETE,
-} from '../../../api/api.ts';
 import type {
     FlowEntity,
     WorkOrderEntity,
@@ -22,6 +19,7 @@ import {
     createChannel,
     bridgeStorageToChannel,
 } from '../channels.ts';
+import type { FetchContext } from './shared.ts';
 
 const workOrderChangedChannel =
     createChannel<void>();
@@ -64,8 +62,9 @@ async function generateDisplayId(
 }
 
 async function nextWorkOrderPosition(
+    ctx: FetchContext,
 ): Promise<number> {
-    const existing = await GET<
+    const existing = await ctx.GET<
         WorkOrderEntity[]
     >('work-orders');
     if (existing.length === 0) {
@@ -88,10 +87,11 @@ export interface WorkOrderCreationInput {
 }
 
 export async function postWorkOrderCreation(
-    ctx: WorkOrderCreationInput,
+    ctx: FetchContext,
+    input: WorkOrderCreationInput,
 ): Promise<void> {
-    const flow = await GET<FlowEntity>(
-        `flows/${ctx.flowId}`,
+    const flow = await ctx.GET<FlowEntity>(
+        `flows/${input.flowId}`,
     );
     const graph: StoredGraph =
         validateStoredGraphJson(
@@ -127,9 +127,9 @@ export async function postWorkOrderCreation(
         postStartEdge.toNodeId;
 
     const displayId =
-        await generateDisplayId(ctx.workOrderId);
+        await generateDisplayId(input.workOrderId);
     const position =
-        await nextWorkOrderPosition();
+        await nextWorkOrderPosition(ctx);
     const now = nowUtc();
 
     const flowGraph: WorkOrderFlowGraph =
@@ -142,8 +142,8 @@ export async function postWorkOrderCreation(
             edges: graph.edges,
         };
 
-    await PUT<void>('work-orders', {
-        id: ctx.workOrderId,
+    await ctx.PUT<void>('work-orders', {
+        id: input.workOrderId,
         display_id: displayId,
         flow_graph: jsonObjectField(
             flowGraph as unknown as Record<
@@ -154,46 +154,46 @@ export async function postWorkOrderCreation(
         created_at: now,
     });
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'flow-work-orders',
         {
-            id: ctx.flowLinkId,
-            flow_id: ctx.flowId,
-            work_order_id: ctx.workOrderId,
+            id: input.flowLinkId,
+            flow_id: input.flowId,
+            work_order_id: input.workOrderId,
             created_at: now,
         },
     );
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'work-order-transitions',
         {
-            id: ctx.initTransitionId,
-            work_order_id: ctx.workOrderId,
+            id: input.initTransitionId,
+            work_order_id: input.workOrderId,
             from_node_id: '',
             to_node_id: startNode.id,
-            user_id: ctx.userId,
+            user_id: input.userId,
             transitioned_at: now,
         },
     );
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'work-order-transitions',
         {
-            id: ctx.postStartTransitionId,
-            work_order_id: ctx.workOrderId,
+            id: input.postStartTransitionId,
+            work_order_id: input.workOrderId,
             from_node_id: startNode.id,
             to_node_id: postStartNodeId,
-            user_id: ctx.userId,
+            user_id: input.userId,
             transitioned_at: now,
         },
     );
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'work-order-claims',
         {
-            id: ctx.claimId,
-            work_order_id: ctx.workOrderId,
-            user_id: ctx.userId,
+            id: input.claimId,
+            work_order_id: input.workOrderId,
+            user_id: input.userId,
             claimed_at: now,
         },
     );
@@ -212,14 +212,15 @@ export interface WorkOrderTransitionInput {
 }
 
 export async function postWorkOrderTransition(
-    ctx: WorkOrderTransitionInput,
+    ctx: FetchContext,
+    input: WorkOrderTransitionInput,
 ): Promise<void> {
     const {
         transitionId, workOrderId, edgeId,
         values, fieldValueIds, userId,
         currentNodeId,
-    } = ctx;
-    const wo = await GET<WorkOrderEntity>(
+    } = input;
+    const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
     const fg = validateWorkOrderFlowGraph(
@@ -237,7 +238,7 @@ export async function postWorkOrderTransition(
 
     const now = nowUtc();
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'work-order-transitions',
         {
             id: transitionId,
@@ -264,7 +265,7 @@ export async function postWorkOrderTransition(
                 + ' field ' + fieldId,
             );
         }
-        await PUT<void>(
+        await ctx.PUT<void>(
             'transition-field-values',
             {
                 id,
@@ -276,7 +277,7 @@ export async function postWorkOrderTransition(
     }
 
     const claims =
-        await GET<WorkOrderClaimEntity[]>(
+        await ctx.GET<WorkOrderClaimEntity[]>(
             'work-order-claims',
         );
     const claim = claims.find(
@@ -284,7 +285,7 @@ export async function postWorkOrderTransition(
             === workOrderId,
     );
     if (claim) {
-        await DELETE(
+        await ctx.DELETE(
             `work-order-claims/${claim.id}`,
         );
     }
@@ -293,10 +294,11 @@ export async function postWorkOrderTransition(
 }
 
 export async function putWorkOrder(
+    ctx: FetchContext,
     id: string,
     entity: Omit<WorkOrderEntity, 'id'>,
 ): Promise<void> {
-    await PUT(`work-orders/${id}`, entity);
+    await ctx.PUT(`work-orders/${id}`, entity);
     workOrderChangedChannel.send();
 }
 
@@ -313,13 +315,14 @@ export async function putWorkOrder(
 // disables the claim button while a
 // request is pending.
 export async function postWorkOrderClaim(
+    ctx: FetchContext,
     claimId: string,
     workOrderId: string,
     userId: string,
 ): Promise<void> {
     const now = nowUtc();
 
-    await PUT<void>(
+    await ctx.PUT<void>(
         'work-order-claims',
         {
             id: claimId,

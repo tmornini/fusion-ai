@@ -66,6 +66,7 @@ function initTransitionButtons(
     container: HTMLElement,
     detail: WorkboxDetailPresenter,
     userId: string,
+    ctx: ReturnType<typeof createFetchContext>,
 ): void {
     const buttons =
         container.querySelectorAll<
@@ -110,8 +111,9 @@ function initTransitionButtons(
                         generateCryptoSafeBase62();
                 }
                 try {
-                    await
-                        postWorkOrderTransition({
+                    await postWorkOrderTransition(
+                        ctx,
+                        {
                             transitionId:
                                 generateCryptoSafeBase62(),
                             workOrderId:
@@ -123,7 +125,8 @@ function initTransitionButtons(
                             currentNodeId:
                                 detail
                                     .currentNodeId(),
-                        });
+                        },
+                    );
                 } catch (err) {
                     log.error(
                         'work order'
@@ -290,6 +293,7 @@ export async function init(
                 && !presenter.isComplete()
             ) {
                 await postWorkOrderClaim(
+                    ctx,
                     generateCryptoSafeBase62(),
                     id, userId,
                 );
@@ -326,7 +330,7 @@ export async function init(
     ) {
         initTransitionButtons(
             container, detail,
-            userId,
+            userId, ctx,
         );
         initUnclaimButton(
             container, detail,

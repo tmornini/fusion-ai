@@ -174,7 +174,7 @@ async function initActiveList(
             try {
                 const entity =
                     await getWorkOrder(ctx, id);
-                await putWorkOrder(id, {
+                await putWorkOrder(ctx, id, {
                     ...entity,
                     position: newPosition,
                 });
@@ -254,10 +254,11 @@ function onRowClick(e: MouseEvent): void {
 
 async function createWorkOrderForFlow(
     flowId: string,
+    ctx: FetchContext,
 ): Promise<void> {
     let userId: string;
     try {
-        const row = await getCurrentUserRow();
+        const row = await getCurrentUserRow(ctx);
         userId = row.id;
     } catch (err) {
         log.error(
@@ -280,7 +281,7 @@ async function createWorkOrderForFlow(
     const claimId =
         generateCryptoSafeBase62();
     try {
-        await postWorkOrderCreation({
+        await postWorkOrderCreation(ctx, {
             workOrderId,
             flowLinkId,
             initTransitionId,
@@ -340,7 +341,7 @@ async function initCreateDropdown(
 
     dropdownEl.addEventListener(
         'click',
-        e => onDropdownClick(e, dropdownEl),
+        e => onDropdownClick(e, dropdownEl, ctx),
         { signal },
     );
 }
@@ -348,6 +349,7 @@ async function initCreateDropdown(
 function onDropdownClick(
     e: MouseEvent,
     dropdownEl: HTMLElement,
+    ctx: FetchContext,
 ): void {
     if (
         !(e.target instanceof Element)
@@ -361,5 +363,5 @@ function onDropdownClick(
     );
     if (!flowId) return;
     dropdownEl.classList.add('hidden');
-    void createWorkOrderForFlow(flowId);
+    void createWorkOrderForFlow(flowId, ctx);
 }

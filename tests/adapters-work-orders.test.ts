@@ -7,6 +7,10 @@ import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import {
+    createFetchContext,
+    type FetchContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
     postWorkOrderCreation,
     postWorkOrderTransition,
     postWorkOrderClaim,
@@ -42,11 +46,12 @@ function mintCreateIds(): CreateIds {
 }
 
 async function createWorkOrder(
+    ctx: FetchContext,
     flowId: string,
     userId: string,
 ): Promise<string> {
     const ids = mintCreateIds();
-    await postWorkOrderCreation({
+    await postWorkOrderCreation(ctx, {
         ...ids, flowId, userId,
     });
     return ids.workOrderId;
@@ -169,11 +174,15 @@ function buildLinearGraph(): StoredGraph {
     };
 }
 
-function setupDb(): MemoryDbAdapter {
+function setupDb(): {
+    db: MemoryDbAdapter;
+    ctx: FetchContext;
+} {
     const db = new MemoryDbAdapter();
     resetApi();
     initApi(db);
-    return db;
+    const ctx = createFetchContext();
+    return { db, ctx };
 }
 
 // ── postWorkOrderCreation ─────────
@@ -182,7 +191,7 @@ test(
     'postWorkOrderCreation populates '
     + 'all five tables in one call',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -193,7 +202,7 @@ test(
 
         const woId =
             await createWorkOrder(
-                'f1', 'u1',
+                ctx, 'f1', 'u1',
             );
 
         const wos = await db.workOrders
@@ -260,7 +269,7 @@ test(
     'postWorkOrderCreation throws '
     + 'when flow has no start node',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -279,7 +288,7 @@ test(
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    'f1', 'u1',
+                    ctx, 'f1', 'u1',
                 ),
             /no start node/,
         );
@@ -291,7 +300,7 @@ test(
     + 'when start has multiple '
     + 'outgoing edges',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -315,7 +324,7 @@ test(
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    'f1', 'u1',
+                    ctx, 'f1', 'u1',
                 ),
             /exactly one outgoing edge/,
         );
@@ -326,7 +335,7 @@ test(
     'postWorkOrderCreation increments '
     + 'position across calls',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -335,10 +344,10 @@ test(
             buildFlow(buildLinearGraph()),
         );
         await createWorkOrder(
-            'f1', 'u1',
+            ctx, 'f1', 'u1',
         );
         await createWorkOrder(
-            'f1', 'u1',
+            ctx, 'f1', 'u1',
         );
         const wos = await db.workOrders
             .getAll();
@@ -357,7 +366,7 @@ test(
     'postWorkOrderTransition records '
     + 'transition and deletes claim',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -367,7 +376,7 @@ test(
         );
         const woId =
             await createWorkOrder(
-                'f1', 'u1',
+                ctx, 'f1', 'u1',
             );
 
         const before =
@@ -381,12 +390,13 @@ test(
             claimsBefore.length, 1,
         );
 
-        await postWorkOrderTransition({
+        await postWorkOrderTransition(ctx, {
             transitionId:
                 generateCryptoSafeBase62(),
             workOrderId: woId,
             edgeId: 'e2',
             values: {},
+            fieldValueIds: {},
             userId: 'u1',
             currentNodeId: 'n-middle',
         });
@@ -418,7 +428,7 @@ test(
     'postWorkOrderTransition succeeds '
     + 'when no claim exists',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -428,7 +438,7 @@ test(
         );
         const woId =
             await createWorkOrder(
-                'f1', 'u1',
+                ctx, 'f1', 'u1',
             );
         // Manually clear any claim to
         // simulate an unclaimed
@@ -441,12 +451,13 @@ test(
                 .delete(c.id);
         }
 
-        await postWorkOrderTransition({
+        await postWorkOrderTransition(ctx, {
             transitionId:
                 generateCryptoSafeBase62(),
             workOrderId: woId,
             edgeId: 'e2',
             values: {},
+            fieldValueIds: {},
             userId: 'u1',
             currentNodeId: 'n-middle',
         });
@@ -464,7 +475,7 @@ test(
     'postWorkOrderTransition throws '
     + 'when edge id does not exist',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await db.users.put(
             'u1', buildUser('Alice'),
         );
@@ -474,16 +485,17 @@ test(
         );
         const woId =
             await createWorkOrder(
-                'f1', 'u1',
+                ctx, 'f1', 'u1',
             );
         await assert.rejects(
             () =>
-                postWorkOrderTransition({
+                postWorkOrderTransition(ctx, {
                     transitionId:
                         generateCryptoSafeBase62(),
                     workOrderId: woId,
                     edgeId: 'no-such-edge',
                     values: {},
+                    fieldValueIds: {},
                     userId: 'u1',
                     currentNodeId:
                         'n-middle',
@@ -499,7 +511,7 @@ test(
     'postWorkOrderClaim creates a '
     + 'claim row with correct fields',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         const before =
             await db.workOrderClaims
                 .getAll();
@@ -508,7 +520,7 @@ test(
         const claimId =
             generateCryptoSafeBase62();
         await postWorkOrderClaim(
-            claimId, 'w1', 'u1',
+            ctx, claimId, 'w1', 'u1',
         );
 
         const after =
@@ -539,12 +551,14 @@ test(
     + 'either throws or returns the '
     + 'existing claim id.',
     async () => {
-        const db = setupDb();
+        const { db, ctx } = setupDb();
         await postWorkOrderClaim(
+            ctx,
             generateCryptoSafeBase62(),
             'w1', 'u1',
         );
         await postWorkOrderClaim(
+            ctx,
             generateCryptoSafeBase62(),
             'w1', 'u1',
         );
