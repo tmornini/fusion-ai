@@ -3,8 +3,10 @@ import type {
     FlowEntity,
     WorkOrderEntity,
     WorkOrderTransitionEntity,
+    TransitionFieldValueEntity,
     WorkOrderClaimEntity,
     WorkOrderFlowGraph,
+    Id,
 } from '../../../api/types.ts';
 import {
     msSinceUtc,
@@ -12,12 +14,12 @@ import {
 } from '../../../api/types.ts';
 import {
     validateWorkOrderFlowGraphJson,
-    validateTransitionValuesJson,
 } from '../../../api/validators.ts';
 
 export type {
     WorkOrderEntity,
     WorkOrderTransitionEntity,
+    TransitionFieldValueEntity,
     WorkOrderClaimEntity,
     WorkOrderFlowGraph,
     GraphNode,
@@ -58,12 +60,35 @@ export function validateWorkOrderFlowGraph(
     );
 }
 
-export function parseTransitionValues(
-    raw: string,
-): Record<string, string> {
-    return validateTransitionValuesJson(
-        raw, 'transition.values',
-    );
+/* ── transition_field_values ─── */
+
+// Group all transition_field_values rows by their
+// parent transition_id. Callers iterate the work
+// order's transitions and look up its field/values
+// from the resulting map; each transition that wrote
+// no values has no entry (Map.get returns undefined,
+// which the call site treats as "no field values").
+export async function getTransitionFieldValuesByTransition(
+): Promise<Map<Id, TransitionFieldValueEntity[]>> {
+    const all = await GET<
+        TransitionFieldValueEntity[]
+    >('transition-field-values');
+    const byTransition = new Map<
+        Id,
+        TransitionFieldValueEntity[]
+    >();
+    for (const row of all) {
+        const list =
+            byTransition.get(row.transition_id);
+        if (list) {
+            list.push(row);
+        } else {
+            byTransition.set(
+                row.transition_id, [row],
+            );
+        }
+    }
+    return byTransition;
 }
 
 export function isExpiredClaim(

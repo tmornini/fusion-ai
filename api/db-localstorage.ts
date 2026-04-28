@@ -28,6 +28,7 @@ import type {
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
     WorkOrderClaimEntity,
+    TransitionFieldValueEntity,
 } from './types.ts';
 import { nowUtc } from './types.ts';
 import {
@@ -48,6 +49,7 @@ import {
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateWorkOrderTransitionEntity,
+    validateTransitionFieldValueEntity,
     validateWorkOrderClaimEntity,
     validateCompanyEntity,
     validateOrganizationEntity,
@@ -113,6 +115,11 @@ function validateSnapshotRow(
                 break;
             case 'work_order_transitions':
                 validateWorkOrderTransitionEntity(
+                    body,
+                );
+                break;
+            case 'transition_field_values':
+                validateTransitionFieldValueEntity(
                     body,
                 );
                 break;
@@ -571,6 +578,7 @@ export const TABLE_NAMES = [
     'work_orders',
     'flow_work_orders',
     'work_order_transitions',
+    'transition_field_values',
     'work_order_claims',
     'company',
     'organization',
@@ -836,6 +844,13 @@ export async function createLocalStorageAdapter(
                 WorkOrderTransitionEntity
             >(
                 'work_order_transitions',
+                deletedStore,
+            ),
+        transitionFieldValues:
+            createEntityStore<
+                TransitionFieldValueEntity
+            >(
+                'transition_field_values',
                 deletedStore,
             ),
         workOrderClaims:

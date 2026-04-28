@@ -280,7 +280,7 @@ api/
   db-localstorage.ts          # localStorage implementation with JSON serialization
   api.ts                      # GET/PUT/DELETE/POST URL routing
   mock-data.ts                # Mock data seed payload
-  validators.ts               # 18 validate*Entity row validators with assertOnlyKeys key-set enforcement; asUserStatus/asIdeaStatus/asProjectStatus/asReadinessLevel enum validators; asJsonArrayField/asJsonObjectField; JSON validators for Risk[], StoredGraph, WorkOrderFlowGraph, transition values
+  validators.ts               # 19 validate*Entity row validators with assertOnlyKeys key-set enforcement; asUserStatus/asIdeaStatus/asProjectStatus/asReadinessLevel enum validators; asJsonArrayField/asJsonObjectField; JSON validators for Risk[], StoredGraph, WorkOrderFlowGraph (per-transition field values now live in their own table, not as JSON)
 
 web-app/
   index.html                  # Redirects to landing/index.html

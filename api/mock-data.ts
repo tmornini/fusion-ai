@@ -13,6 +13,7 @@ import type {
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
+    TransitionFieldValueEntity,
 } from './types.ts';
 import {
     jsonArrayField,
@@ -2235,7 +2236,6 @@ export async function populateMockData(
             from_node_id: '',
             to_node_id: woNodeNew,
             user_id: woUserSarah,
-            values: jsonObjectField({}),
             transitioned_at:
                 woCreated,
         },
@@ -2245,7 +2245,6 @@ export async function populateMockData(
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
             user_id: woUserSarah,
-            values: jsonObjectField({}),
             transitioned_at:
                 woCreated,
         },
@@ -2256,18 +2255,6 @@ export async function populateMockData(
                 woNodeCapture,
             to_node_id: woNodeReview,
             user_id: woUserMike,
-            values: jsonObjectField({
-                [fCompanyName]:
-                    'Acme Corp',
-                [fEmail]:
-                    'onboard@acme.com',
-                [fPhone]:
-                    '+1-555-0100',
-                [fIndustry]:
-                    'Technology',
-                [fRevenue]: '5000000',
-                [fEmployees]: '250',
-            }),
             transitioned_at:
                 dt(13, 14, 30),
         },
@@ -2279,13 +2266,54 @@ export async function populateMockData(
             to_node_id:
                 woNodeComplete,
             user_id: woUserSarah,
-            values: jsonObjectField({
-                [fReviewerNotes]:
-                    'Approved.'
-                    + ' Strong fit.',
-            }),
             transitioned_at:
                 dt(12, 9, 15),
+        },
+    ];
+
+    const mockTransitionFieldValues:
+        TransitionFieldValueEntity[] = [
+        {
+            id: 'tfv-03-name-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fCompanyName,
+            value: 'Acme Corp',
+        },
+        {
+            id: 'tfv-03-email-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fEmail,
+            value: 'onboard@acme.com',
+        },
+        {
+            id: 'tfv-03-phone-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fPhone,
+            value: '+1-555-0100',
+        },
+        {
+            id: 'tfv-03-ind-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fIndustry,
+            value: 'Technology',
+        },
+        {
+            id: 'tfv-03-rev-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fRevenue,
+            value: '5000000',
+        },
+        {
+            id: 'tfv-03-emp-' + woId,
+            transition_id: 'wot-03-' + woId,
+            field_id: fEmployees,
+            value: '250',
+        },
+        {
+            id: 'tfv-04-notes-' + woId,
+            transition_id: 'wot-04-' + woId,
+            field_id: fReviewerNotes,
+            value: 'Approved. Strong fit.',
         },
     ];
 
@@ -2595,6 +2623,10 @@ export async function populateMockData(
         ),
         ...mockWoTransitions.map(r =>
             adapter.workOrderTransitions
+                .put(r.id, r),
+        ),
+        ...mockTransitionFieldValues.map(r =>
+            adapter.transitionFieldValues
                 .put(r.id, r),
         ),
     ]);

@@ -699,8 +699,18 @@ export interface WorkOrderTransitionEntity {
     from_node_id: Id;
     to_node_id: Id;
     user_id: Id;
-    values: JsonObjectField;
     transitioned_at: string;
+}
+
+// Per-field values written when a transition fires.
+// Replaces the former JSON `values` blob on
+// work_order_transitions — a relation belongs in a
+// table, not a column. (Codd 1NF.)
+export interface TransitionFieldValueEntity {
+    id: Id;
+    transition_id: Id;
+    field_id: Id;
+    value: string;
 }
 
 export interface WorkOrderClaimEntity {

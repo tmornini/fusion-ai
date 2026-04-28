@@ -18,6 +18,7 @@ import {
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateWorkOrderTransitionEntity,
+    validateTransitionFieldValueEntity,
     validateWorkOrderClaimEntity,
     validateCompanyEntity,
     validateOrganizationEntity,
@@ -289,6 +290,24 @@ const routes: Route[] = [
                 validateWorkOrderTransitionEntity(
                     withoutId(body),
                 ),
+            ),
+    }),
+    route('transition-field-values', {
+        get: (db) =>
+            db.transitionFieldValues
+                .getAll(),
+        put: (db, _params, body) =>
+            db.transitionFieldValues.put(
+                body.id as string,
+                validateTransitionFieldValueEntity(
+                    withoutId(body),
+                ),
+            ),
+    }),
+    route('transition-field-values/:id', {
+        delete: (db, params) =>
+            db.transitionFieldValues.delete(
+                param(params, 0),
             ),
     }),
     route('work-order-claims', {

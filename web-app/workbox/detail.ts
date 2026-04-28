@@ -17,6 +17,7 @@ import { navigateTo } from '../app/core.ts';
 import {
     getWorkOrder,
     getWorkOrderTransitionRows,
+    getTransitionFieldValuesByTransition,
     getWorkOrderClaimRows,
     getUserMap,
     postActivity,
@@ -102,6 +103,12 @@ function initTransitionButtons(
                     );
                     return;
                 }
+                const fieldValueIds:
+                    Record<string, string> = {};
+                for (const fid of Object.keys(values)) {
+                    fieldValueIds[fid] =
+                        generateCryptoSafeBase62();
+                }
                 try {
                     await
                         postWorkOrderTransition({
@@ -111,6 +118,7 @@ function initTransitionButtons(
                                 detail.idValue(),
                             edgeId,
                             values,
+                            fieldValueIds,
                             userId,
                             currentNodeId:
                                 detail
@@ -222,18 +230,21 @@ async function loadPresenter(
 ): Promise<WorkboxDetailPresenter> {
     const [
         workOrder, transitions,
+        fieldValuesByTransition,
         claims, userMap,
     ] = await Promise.all([
         getWorkOrder(workOrderId),
         getWorkOrderTransitionRows(
             workOrderId,
         ),
+        getTransitionFieldValuesByTransition(),
         getWorkOrderClaimRows(workOrderId),
         getUserMap(ctx),
     ]);
     return new WorkboxDetailPresenter(
         workOrder,
         transitions,
+        fieldValuesByTransition,
         claims,
         userMap,
         currentUserId,

@@ -164,10 +164,6 @@ export async function postWorkOrderCreation(
         },
     );
 
-    const emptyValues = jsonObjectField(
-        {} as Record<string, unknown>,
-    );
-
     await PUT<void>(
         'work-order-transitions',
         {
@@ -176,7 +172,6 @@ export async function postWorkOrderCreation(
             from_node_id: '',
             to_node_id: startNode.id,
             user_id: ctx.userId,
-            values: emptyValues,
             transitioned_at: now,
         },
     );
@@ -189,7 +184,6 @@ export async function postWorkOrderCreation(
             from_node_id: startNode.id,
             to_node_id: postStartNodeId,
             user_id: ctx.userId,
-            values: emptyValues,
             transitioned_at: now,
         },
     );
@@ -212,6 +206,7 @@ export interface WorkOrderTransitionInput {
     workOrderId: string;
     edgeId: string;
     values: Record<string, string>;
+    fieldValueIds: Record<string, string>;
     userId: string;
     currentNodeId: string;
 }
@@ -221,7 +216,8 @@ export async function postWorkOrderTransition(
 ): Promise<void> {
     const {
         transitionId, workOrderId, edgeId,
-        values, userId, currentNodeId,
+        values, fieldValueIds, userId,
+        currentNodeId,
     } = ctx;
     const wo = await GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
@@ -249,14 +245,35 @@ export async function postWorkOrderTransition(
             from_node_id: currentNodeId,
             to_node_id: edge.toNodeId,
             user_id: userId,
-            values: jsonObjectField(
-                values as Record<
-                    string, unknown
-                >,
-            ),
             transitioned_at: now,
         },
     );
+
+    // Each field/value pair becomes its own row
+    // in the transition_field_values table — Codd
+    // 1NF, replacing the former JSON blob. IDs
+    // are caller-supplied for retry safety.
+    for (
+        const [fieldId, value]
+            of Object.entries(values)
+    ) {
+        const id = fieldValueIds[fieldId];
+        if (id === undefined) {
+            throw new Error(
+                'Missing fieldValueId for'
+                + ' field ' + fieldId,
+            );
+        }
+        await PUT<void>(
+            'transition-field-values',
+            {
+                id,
+                transition_id: transitionId,
+                field_id: fieldId,
+                value,
+            },
+        );
+    }
 
     const claims =
         await GET<WorkOrderClaimEntity[]>(
