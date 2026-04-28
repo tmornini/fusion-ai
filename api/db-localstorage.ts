@@ -92,63 +92,68 @@ function validateSnapshotRow(
     const label =
         'snapshot.' + table
         + '[' + rowIndex + ']';
+    // Entity validators enforce an exact
+    // body-key set (no `id`). Stored rows
+    // carry `id` as their storage key — strip
+    // it before passing to each validator.
+    const { id: _id, ...body } = row;
     try {
         switch (table) {
             case 'users':
-                validateUserEntity(row);
+                validateUserEntity(body);
                 break;
             case 'ideas':
-                validateIdeaEntity(row);
+                validateIdeaEntity(body);
                 break;
             case 'projects':
-                validateProjectEntity(row);
+                validateProjectEntity(body);
                 break;
             case 'teams':
-                validateTeamEntity(row);
+                validateTeamEntity(body);
                 break;
             case 'team_projects':
-                validateTeamProjectEntity(row);
+                validateTeamProjectEntity(body);
                 break;
             case 'team_users':
-                validateTeamUserEntity(row);
+                validateTeamUserEntity(body);
                 break;
             case 'activities':
-                validateActivityEntity(row);
+                validateActivityEntity(body);
                 break;
             case 'flows':
-                validateFlowEntity(row);
+                validateFlowEntity(body);
                 break;
             case 'flow_versions':
-                validateFlowVersionEntity(row);
+                validateFlowVersionEntity(body);
                 break;
             case 'project_flows':
-                validateProjectFlowEntity(row);
+                validateProjectFlowEntity(body);
                 break;
             case 'work_orders':
-                validateWorkOrderEntity(row);
+                validateWorkOrderEntity(body);
                 break;
             case 'flow_work_orders':
-                validateFlowWorkOrderEntity(row);
+                validateFlowWorkOrderEntity(body);
                 break;
             case 'work_order_transitions':
                 validateWorkOrderTransitionEntity(
-                    row,
+                    body,
                 );
                 break;
             case 'work_order_claims':
-                validateWorkOrderClaimEntity(row);
+                validateWorkOrderClaimEntity(body);
                 break;
             case 'company':
-                validateCompanyEntity(row);
+                validateCompanyEntity(body);
                 break;
             case 'organization':
-                validateOrganizationEntity(row);
+                validateOrganizationEntity(body);
                 break;
             case 'idea_submissions':
-                validateIdeaSubmissionEntity(row);
+                validateIdeaSubmissionEntity(body);
                 break;
             case 'activity_actors':
-                validateActivityActorEntity(row);
+                validateActivityActorEntity(body);
                 break;
             case 'deleted':
                 // Shape: {id, deleted_at}

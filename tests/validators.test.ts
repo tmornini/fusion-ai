@@ -52,7 +52,32 @@ test('validateUserEntity rejects missing email', () => {
     delete (body as Record<string, unknown>)['email'];
     assert.throws(
         () => validateUserEntity(body),
-        /expected string for email/,
+        /missing required key "email"/,
+    );
+});
+
+test(
+    'validateUserEntity rejects unexpected key',
+    () => {
+    assert.throws(
+        () => validateUserEntity({
+            ...validUser,
+            admin: true,
+        }),
+        /unexpected key "admin"/,
+    );
+});
+
+test(
+    'validateUserEntity rejects missing required key',
+    () => {
+    const body = { ...validUser };
+    delete (
+        body as Record<string, unknown>
+    )['last_name'];
+    assert.throws(
+        () => validateUserEntity(body),
+        /missing required key "last_name"/,
     );
 });
 
@@ -86,6 +111,31 @@ test('validateIdeaEntity rejects bad status', () => {
             status: 'submitted',
         }),
         /expected IdeaStatus for status/,
+    );
+});
+
+test(
+    'validateIdeaEntity rejects unexpected key',
+    () => {
+    assert.throws(
+        () => validateIdeaEntity({
+            ...validIdea,
+            secret: 'pwned',
+        }),
+        /unexpected key "secret"/,
+    );
+});
+
+test(
+    'validateIdeaEntity rejects missing required key',
+    () => {
+    const body = { ...validIdea };
+    delete (
+        body as Record<string, unknown>
+    )['alignments'];
+    assert.throws(
+        () => validateIdeaEntity(body),
+        /missing required key "alignments"/,
     );
 });
 
@@ -142,7 +192,7 @@ test('validateTeamEntity accepts valid payload', () => {
 test('validateTeamEntity rejects missing role', () => {
     assert.throws(
         () => validateTeamEntity({ type: 'core' }),
-        /expected string for role/,
+        /missing required key "role"/,
     );
 });
 
@@ -160,13 +210,16 @@ test('validateTeamProjectEntity accepts valid payload', () => {
     assert.equal(result.team_id, 'tm-1');
 });
 
-test('validateTeamProjectEntity rejects missing project_id', () => {
+test(
+    'validateTeamProjectEntity rejects missing'
+    + ' project_id',
+    () => {
     assert.throws(
         () => validateTeamProjectEntity({
             team_id: 'tm-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for project_id/,
+        /missing required key "project_id"/,
     );
 });
 
@@ -190,7 +243,7 @@ test('validateTeamUserEntity rejects missing user_id', () => {
             team_id: 'tm-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for user_id/,
+        /missing required key "user_id"/,
     );
 });
 
@@ -211,12 +264,16 @@ test('validateActivityEntity accepts valid payload', () => {
     assert.equal(result.type, 'idea_created');
 });
 
-test('validateActivityEntity rejects missing timestamp', () => {
+test(
+    'validateActivityEntity rejects missing timestamp',
+    () => {
     const body = { ...validActivity };
-    delete (body as Record<string, unknown>)['timestamp'];
+    delete (
+        body as Record<string, unknown>
+    )['timestamp'];
     assert.throws(
         () => validateActivityEntity(body),
-        /expected string for timestamp/,
+        /missing required key "timestamp"/,
     );
 });
 
@@ -240,13 +297,40 @@ test('validateFlowEntity accepts valid payload', () => {
     assert.equal(result.is_locked, false);
 });
 
-test('validateFlowEntity rejects non-boolean is_locked', () => {
+test(
+    'validateFlowEntity rejects non-boolean is_locked',
+    () => {
     assert.throws(
         () => validateFlowEntity({
             ...validFlow,
             is_locked: 0,
         }),
         /expected boolean for is_locked/,
+    );
+});
+
+test(
+    'validateFlowEntity rejects unexpected key',
+    () => {
+    assert.throws(
+        () => validateFlowEntity({
+            ...validFlow,
+            admin: true,
+        }),
+        /unexpected key "admin"/,
+    );
+});
+
+test(
+    'validateFlowEntity rejects missing required key',
+    () => {
+    const body = { ...validFlow };
+    delete (
+        body as Record<string, unknown>
+    )['updated_at'];
+    assert.throws(
+        () => validateFlowEntity(body),
+        /missing required key "updated_at"/,
     );
 });
 
@@ -264,18 +348,24 @@ const validFlowVersion = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateFlowVersionEntity accepts valid payload', () => {
+test(
+    'validateFlowVersionEntity accepts valid payload',
+    () => {
     const result =
         validateFlowVersionEntity(validFlowVersion);
     assert.equal(result.flow_id, 'f-1');
 });
 
-test('validateFlowVersionEntity rejects missing flow_id', () => {
+test(
+    'validateFlowVersionEntity rejects missing flow_id',
+    () => {
     const body = { ...validFlowVersion };
-    delete (body as Record<string, unknown>)['flow_id'];
+    delete (
+        body as Record<string, unknown>
+    )['flow_id'];
     assert.throws(
         () => validateFlowVersionEntity(body),
-        /expected string for flow_id/,
+        /missing required key "flow_id"/,
     );
 });
 
@@ -297,13 +387,18 @@ const validWorkOrder = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateWorkOrderEntity accepts valid payload', () => {
+test(
+    'validateWorkOrderEntity accepts valid payload',
+    () => {
     const result =
         validateWorkOrderEntity(validWorkOrder);
     assert.equal(result.display_id, 'WO-001');
 });
 
-test('validateWorkOrderEntity rejects non-number position', () => {
+test(
+    'validateWorkOrderEntity rejects non-number'
+    + ' position',
+    () => {
     assert.throws(
         () => validateWorkOrderEntity({
             ...validWorkOrder,
@@ -321,7 +416,9 @@ const validFlowWorkOrder = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateFlowWorkOrderEntity accepts valid payload', () => {
+test(
+    'validateFlowWorkOrderEntity accepts valid payload',
+    () => {
     const result =
         validateFlowWorkOrderEntity(
             validFlowWorkOrder,
@@ -329,13 +426,16 @@ test('validateFlowWorkOrderEntity accepts valid payload', () => {
     assert.equal(result.flow_id, 'f-1');
 });
 
-test('validateFlowWorkOrderEntity rejects missing work_order_id', () => {
+test(
+    'validateFlowWorkOrderEntity rejects missing'
+    + ' work_order_id',
+    () => {
     assert.throws(
         () => validateFlowWorkOrderEntity({
             flow_id: 'f-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for work_order_id/,
+        /missing required key "work_order_id"/,
     );
 });
 
@@ -350,7 +450,10 @@ const validTransition = {
     transitioned_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateWorkOrderTransitionEntity accepts valid payload', () => {
+test(
+    'validateWorkOrderTransitionEntity accepts'
+    + ' valid payload',
+    () => {
     const result =
         validateWorkOrderTransitionEntity(
             validTransition,
@@ -363,10 +466,14 @@ test(
     + ' rejects missing transitioned_at',
     () => {
     const body = { ...validTransition };
-    delete (body as Record<string, unknown>)['transitioned_at'];
+    delete (
+        body as Record<string, unknown>
+    )['transitioned_at'];
     assert.throws(
-        () => validateWorkOrderTransitionEntity(body),
-        /expected string for transitioned_at/,
+        () => validateWorkOrderTransitionEntity(
+            body,
+        ),
+        /missing required key "transitioned_at"/,
     );
 });
 
@@ -378,19 +485,25 @@ const validClaim = {
     claimed_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateWorkOrderClaimEntity accepts valid payload', () => {
+test(
+    'validateWorkOrderClaimEntity accepts valid'
+    + ' payload',
+    () => {
     const result =
         validateWorkOrderClaimEntity(validClaim);
     assert.equal(result.user_id, 'u-1');
 });
 
-test('validateWorkOrderClaimEntity rejects missing claimed_at', () => {
+test(
+    'validateWorkOrderClaimEntity rejects missing'
+    + ' claimed_at',
+    () => {
     assert.throws(
         () => validateWorkOrderClaimEntity({
             work_order_id: 'wo-1',
             user_id: 'u-1',
         }),
-        /expected string for claimed_at/,
+        /missing required key "claimed_at"/,
     );
 });
 
@@ -412,7 +525,7 @@ test('validateCompanyEntity rejects missing domain', () => {
         () => validateCompanyEntity({
             name: 'Acme Corp',
         }),
-        /expected string for domain/,
+        /missing required key "domain"/,
     );
 });
 
@@ -438,20 +551,52 @@ const validOrg = {
     active_users: 5,
 };
 
-test('validateOrganizationEntity accepts valid payload', () => {
+test(
+    'validateOrganizationEntity accepts valid payload',
+    () => {
     const result =
         validateOrganizationEntity(validOrg);
     assert.equal(result.plan, 'pro');
     assert.equal(result.seats, 10);
 });
 
-test('validateOrganizationEntity rejects non-number seats', () => {
+test(
+    'validateOrganizationEntity rejects non-number'
+    + ' seats',
+    () => {
     assert.throws(
         () => validateOrganizationEntity({
             ...validOrg,
             seats: 'ten',
         }),
         /expected finite number for seats/,
+    );
+});
+
+test(
+    'validateOrganizationEntity rejects unexpected'
+    + ' key',
+    () => {
+    assert.throws(
+        () => validateOrganizationEntity({
+            ...validOrg,
+            admin: true,
+        }),
+        /unexpected key "admin"/,
+    );
+});
+
+test(
+    'validateOrganizationEntity rejects missing'
+    + ' required key',
+    () => {
+    const body = { ...validOrg };
+    delete (
+        body as Record<string, unknown>
+    )['active_users'];
+    assert.throws(
+        () => validateOrganizationEntity(body),
+        /missing required key "active_users"/,
     );
 });
 
@@ -463,7 +608,10 @@ const validIdeaSubmission = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateIdeaSubmissionEntity accepts valid payload', () => {
+test(
+    'validateIdeaSubmissionEntity accepts valid'
+    + ' payload',
+    () => {
     const result =
         validateIdeaSubmissionEntity(
             validIdeaSubmission,
@@ -471,13 +619,16 @@ test('validateIdeaSubmissionEntity accepts valid payload', () => {
     assert.equal(result.idea_id, 'i-1');
 });
 
-test('validateIdeaSubmissionEntity rejects missing idea_id', () => {
+test(
+    'validateIdeaSubmissionEntity rejects missing'
+    + ' idea_id',
+    () => {
     assert.throws(
         () => validateIdeaSubmissionEntity({
             user_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for idea_id/,
+        /missing required key "idea_id"/,
     );
 });
 
@@ -489,7 +640,10 @@ const validActivityActor = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateActivityActorEntity accepts valid payload', () => {
+test(
+    'validateActivityActorEntity accepts valid'
+    + ' payload',
+    () => {
     const result =
         validateActivityActorEntity(
             validActivityActor,
@@ -497,13 +651,16 @@ test('validateActivityActorEntity accepts valid payload', () => {
     assert.equal(result.activity_id, 'act-1');
 });
 
-test('validateActivityActorEntity rejects missing activity_id', () => {
+test(
+    'validateActivityActorEntity rejects missing'
+    + ' activity_id',
+    () => {
     assert.throws(
         () => validateActivityActorEntity({
             user_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for activity_id/,
+        /missing required key "activity_id"/,
     );
 });
 
@@ -515,7 +672,9 @@ const validProjectFlow = {
     created_at: '2024-01-01T00:00:00Z',
 };
 
-test('validateProjectFlowEntity accepts valid payload', () => {
+test(
+    'validateProjectFlowEntity accepts valid payload',
+    () => {
     const result =
         validateProjectFlowEntity(
             validProjectFlow,
@@ -523,12 +682,15 @@ test('validateProjectFlowEntity accepts valid payload', () => {
     assert.equal(result.project_id, 'p-1');
 });
 
-test('validateProjectFlowEntity rejects missing flow_id', () => {
+test(
+    'validateProjectFlowEntity rejects missing'
+    + ' flow_id',
+    () => {
     assert.throws(
         () => validateProjectFlowEntity({
             project_id: 'p-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
-        /expected string for flow_id/,
+        /missing required key "flow_id"/,
     );
 });
