@@ -1,7 +1,8 @@
 import {
-    GET,
-    PUT,
-    DELETE,
+    GET as httpGet,
+    PUT as httpPut,
+    DELETE as httpDelete,
+    POST as httpPost,
 } from '../../../api/api.ts';
 import type {
     Id,
@@ -24,18 +25,18 @@ export async function getCurrentUserRow(
     ctx?: FetchContext,
 ): Promise<UserEntity> {
     if (ctx) return ctx.getCurrentUser();
-    return GET<UserEntity>('current-user');
+    return httpGet<UserEntity>('current-user');
 }
 
 export async function getCompanyRow(
 ): Promise<CompanyEntity> {
-    return GET<CompanyEntity>('company');
+    return httpGet<CompanyEntity>('company');
 }
 
 async function fetchUserMap(
 ): Promise<Map<Id, User>> {
     const users =
-        await GET<UserEntity[]>('users');
+        await httpGet<UserEntity[]>('users');
     return new Map(
         users.map(
             entity => [
@@ -71,6 +72,16 @@ export interface Transaction {
 
 export interface FetchContext {
     readonly requestId: string;
+    GET<T>(resource: string): Promise<T>;
+    PUT<T>(
+        resource: string,
+        body: Record<string, unknown>,
+    ): Promise<T>;
+    DELETE(resource: string): Promise<void>;
+    POST<T>(
+        resource: string,
+        body: Record<string, unknown>,
+    ): Promise<T>;
     getUserMap(): Promise<Map<Id, User>>;
     getCurrentUser(): Promise<UserEntity>;
     getIdeaRows(): Promise<IdeaEntity[]>;
@@ -102,11 +113,15 @@ export function createFetchContext(
         Promise<FlowEntity[]> | null = null;
     return {
         requestId: generateCryptoSafeBase62(),
+        GET: httpGet,
+        PUT: httpPut,
+        DELETE: httpDelete,
+        POST: httpPost,
         getUserMap: () => userMapPromise,
         getCurrentUser: () => {
             if (!currentUserPromise) {
                 currentUserPromise =
-                    GET<UserEntity>(
+                    httpGet<UserEntity>(
                         'current-user',
                     );
             }
@@ -115,7 +130,7 @@ export function createFetchContext(
         getIdeaRows: () => {
             if (!ideaRowsPromise) {
                 ideaRowsPromise =
-                    GET<IdeaEntity[]>(
+                    httpGet<IdeaEntity[]>(
                         'ideas',
                     );
             }
@@ -124,7 +139,7 @@ export function createFetchContext(
         getProjectRows: () => {
             if (!projectRowsPromise) {
                 projectRowsPromise =
-                    GET<ProjectEntity[]>(
+                    httpGet<ProjectEntity[]>(
                         'projects',
                     );
             }
@@ -133,7 +148,7 @@ export function createFetchContext(
         getFlowRows: () => {
             if (!flowRowsPromise) {
                 flowRowsPromise =
-                    GET<FlowEntity[]>(
+                    httpGet<FlowEntity[]>(
                         'flows',
                     );
             }
@@ -144,12 +159,12 @@ export function createFetchContext(
         ): Promise<void> => {
             for (const op of tx.ops) {
                 if (op.method === 'put') {
-                    await PUT(
+                    await httpPut(
                         op.resource,
                         op.body,
                     );
                 } else {
-                    await DELETE(op.resource);
+                    await httpDelete(op.resource);
                 }
             }
             if (tx.notifyChannels) {
