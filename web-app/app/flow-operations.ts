@@ -196,6 +196,7 @@ export async function performAddEdge(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(snap, snap.nodes, newEdges),
         );
@@ -282,6 +283,7 @@ export async function performAddNodeAtPosition(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(snap, newNodes, newEdges),
         );
@@ -339,6 +341,7 @@ export async function performDeleteSelectedNodes(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(
                 snap, result.nodes, result.edges,
@@ -384,6 +387,7 @@ export async function performDeleteSelectedEdge(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(snap, snap.nodes, newEdges),
         );
@@ -449,6 +453,7 @@ export async function performAddField(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(snap, newNodes, snap.edges),
         );
@@ -493,6 +498,7 @@ export async function performDeleteField(
             snap.flowId,
         );
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             snapToSave(snap, newNodes, snap.edges),
         );

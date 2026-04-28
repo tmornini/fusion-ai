@@ -6,6 +6,7 @@ import { $, $required } from '../dom.ts';
 import { log } from '../logger.ts';
 import { showToast } from '../toast.ts';
 import {
+    createFetchContext,
     putFlow,
     postFlowVersion,
 } from '../adapters/index.ts';
@@ -188,6 +189,7 @@ export class FlowDesignerPresenter {
             );
         }
         await putFlow(
+            createFetchContext(),
             snap.flowId,
             this.#buildSaveShape(snap),
         );

@@ -458,13 +458,16 @@ async function handleNewFlowSubmit(
     const flowId = generateCryptoSafeBase62();
     const linkId = generateCryptoSafeBase62();
     try {
-        await postFlowCreation({
-            flowId,
-            linkId,
-            projectId,
-            name,
-            description: '',
-        });
+        await postFlowCreation(
+            createFetchContext(),
+            {
+                flowId,
+                linkId,
+                projectId,
+                name,
+                description: '',
+            },
+        );
     } catch (err) {
         log.error(
             'postFlowCreation failed',

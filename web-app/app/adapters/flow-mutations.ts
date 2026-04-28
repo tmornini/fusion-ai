@@ -1,4 +1,3 @@
-import { PUT } from '../../../api/api.ts';
 import type {
     FlowEntity,
     GraphNode,
@@ -17,6 +16,7 @@ import {
     createChannel,
     bridgeStorageToChannel,
 } from '../channels.ts';
+import type { FetchContext } from './shared.ts';
 
 const flowChangedChannel =
     createChannel<void>();
@@ -54,7 +54,8 @@ export interface FlowCreationInput {
 }
 
 export async function postFlowCreation(
-    ctx: FlowCreationInput,
+    ctx: FetchContext,
+    input: FlowCreationInput,
 ): Promise<void> {
     const now = nowUtc();
     const { start, complete } =
@@ -64,10 +65,10 @@ export async function postFlowCreation(
         edges: [],
     };
 
-    await PUT<void>('flows', {
-        id: ctx.flowId,
-        name: ctx.name,
-        description: ctx.description,
+    await ctx.PUT<void>('flows', {
+        id: input.flowId,
+        name: input.name,
+        description: input.description,
         is_locked: false,
         is_auto_layout: false,
         is_auto_fit: false,
@@ -77,10 +78,10 @@ export async function postFlowCreation(
         updated_at: now,
     });
 
-    await PUT<void>('project-flows', {
-        id: ctx.linkId,
-        project_id: ctx.projectId,
-        flow_id: ctx.flowId,
+    await ctx.PUT<void>('project-flows', {
+        id: input.linkId,
+        project_id: input.projectId,
+        flow_id: input.flowId,
         created_at: now,
     });
 
@@ -100,6 +101,7 @@ export interface FlowSaveShape {
 }
 
 export async function putFlow(
+    ctx: FetchContext,
     id: string,
     save: FlowSaveShape,
 ): Promise<void> {
@@ -119,6 +121,6 @@ export async function putFlow(
         created_at: save.createdAt,
         updated_at: nowUtc(),
     };
-    await PUT(`flows/${id}`, entity);
+    await ctx.PUT(`flows/${id}`, entity);
     flowChangedChannel.send();
 }

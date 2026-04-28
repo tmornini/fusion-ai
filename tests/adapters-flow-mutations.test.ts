@@ -7,6 +7,10 @@ import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import {
+    createFetchContext,
+    type FetchContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
     postFlowCreation,
     putFlow,
 } from
@@ -21,11 +25,15 @@ import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 
-function setupMemDb(): MemoryDbAdapter {
+function setupMemDb(): {
+    db: MemoryDbAdapter;
+    ctx: FetchContext;
+} {
     const db = new MemoryDbAdapter();
     resetApi();
     initApi(db);
-    return db;
+    const ctx = createFetchContext();
+    return { db, ctx };
 }
 
 function buildNode(
@@ -60,9 +68,10 @@ function buildEdge(
 }
 
 async function createBaseFlow(
+    ctx: FetchContext,
     flowId: string,
 ): Promise<void> {
-    await postFlowCreation({
+    await postFlowCreation(ctx, {
         flowId,
         linkId: flowId + '-link',
         projectId: 'project-1',
@@ -74,8 +83,8 @@ async function createBaseFlow(
 test(
     'postFlowCreation creates flow plus link',
     async () => {
-        setupMemDb();
-        await createBaseFlow('flow-1');
+        const { ctx } = setupMemDb();
+        await createBaseFlow(ctx, 'flow-1');
         const flow = await GET<FlowEntity>(
             'flows/flow-1',
         );
@@ -106,8 +115,8 @@ test(
 test(
     'putFlow persists every FlowSaveShape field',
     async () => {
-        setupMemDb();
-        await createBaseFlow('flow-1');
+        const { ctx } = setupMemDb();
+        await createBaseFlow(ctx, 'flow-1');
         const start = buildNode('start', {
             isStart: true,
         });
@@ -118,7 +127,7 @@ test(
         const edge = buildEdge(
             'e1', 'start', 'mid',
         );
-        await putFlow('flow-1', {
+        await putFlow(ctx, 'flow-1', {
             name: 'Renamed',
             description: 'New description',
             isLocked: true,
@@ -159,12 +168,12 @@ test(
     'putFlow replaces graph fully'
     + ' (no bleed-through from prior writes)',
     async () => {
-        setupMemDb();
-        await createBaseFlow('flow-1');
+        const { ctx } = setupMemDb();
+        await createBaseFlow(ctx, 'flow-1');
         const a = buildNode('a');
         const b = buildNode('b');
         const ab = buildEdge('ab', 'a', 'b');
-        await putFlow('flow-1', {
+        await putFlow(ctx, 'flow-1', {
             name: 'v1',
             description: '',
             isLocked: false,
@@ -176,7 +185,7 @@ test(
             createdAt:
                 '2026-01-01T00:00:00.000Z',
         });
-        await putFlow('flow-1', {
+        await putFlow(ctx, 'flow-1', {
             name: 'v2',
             description: '',
             isLocked: false,
@@ -203,8 +212,8 @@ test(
     'putFlow last-write-wins'
     + ' across two starting-from-same callers',
     async () => {
-        setupMemDb();
-        await createBaseFlow('flow-1');
+        const { ctx } = setupMemDb();
+        await createBaseFlow(ctx, 'flow-1');
         const baseNode = buildNode('base');
         const callerANodes = [
             baseNode, buildNode('a-added'),
@@ -212,7 +221,7 @@ test(
         const callerBNodes = [
             baseNode, buildNode('b-added'),
         ];
-        await putFlow('flow-1', {
+        await putFlow(ctx, 'flow-1', {
             name: 'caller-A',
             description: '',
             isLocked: false,
@@ -224,7 +233,7 @@ test(
             createdAt:
                 '2026-01-01T00:00:00.000Z',
         });
-        await putFlow('flow-1', {
+        await putFlow(ctx, 'flow-1', {
             name: 'caller-B',
             description: '',
             isLocked: false,
