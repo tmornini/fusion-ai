@@ -46,10 +46,10 @@ import {
     canUndoFlowEdits,
     canRedoFlowEdits,
     recordFlowMutation,
-} from '../flow-history.ts';
+} from '../flow-operations.ts';
 import type {
     FlowHistorySnapshot,
-} from '../flow-history.ts';
+} from '../flow-operations.ts';
 import {
     applyMoveNodes,
     applyDragPreview,
