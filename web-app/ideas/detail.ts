@@ -124,7 +124,7 @@ async function transitionIdea(
         showToast(cfg.failureToast, 'error');
         return;
     }
-    await postActivity({
+    await postActivity(ctx, {
         type: 'status_changed',
         action: cfg.activityAction,
         target: title,

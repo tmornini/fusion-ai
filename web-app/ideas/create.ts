@@ -179,7 +179,7 @@ export async function init():
                     ideaId,
                     'current',
                 );
-                await postActivity({
+                await postActivity(ctx, {
                     type: 'idea_created',
                     action:
                         'submitted new idea',

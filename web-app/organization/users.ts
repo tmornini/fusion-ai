@@ -694,13 +694,16 @@ async function handleInvite(): Promise<void> {
         return;
     }
     try {
-        await postActivity({
-            type: 'user_joined',
-            action: 'joined the team',
-            target: first + ' ' + last,
-            status: '',
-            feedback: '',
-        });
+        await postActivity(
+            createFetchContext(),
+            {
+                type: 'user_joined',
+                action: 'joined the team',
+                target: first + ' ' + last,
+                status: '',
+                feedback: '',
+            },
+        );
     } catch (err) {
         log.error(
             'postActivity failed',

@@ -406,7 +406,7 @@ export async function init(
                 }
                 const projectName =
                     fields['project-name'];
-                await postActivity({
+                await postActivity(ctx, {
                     type: 'idea_converted',
                     action:
                         'converted idea to'
@@ -415,7 +415,7 @@ export async function init(
                     status: '',
                     feedback: '',
                 });
-                await postActivity({
+                await postActivity(ctx, {
                     type: 'project_created',
                     action:
                         'created new project',

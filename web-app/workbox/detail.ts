@@ -152,7 +152,7 @@ function initTransitionButtons(
                 // toast — but it must not
                 // be silent either.
                 try {
-                    await postActivity({
+                    await postActivity(ctx, {
                         type: 'status_changed',
                         action:
                             'transitioned'
