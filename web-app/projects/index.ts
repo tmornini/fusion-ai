@@ -10,6 +10,7 @@ import {
     getProjectRow,
     putProject,
     isProjectStatus,
+    subscribeToProjectChanges,
     type ProjectStatus,
 } from '../app/adapters/index.ts';
 import {
@@ -75,6 +76,17 @@ export async function init(): Promise<void> {
         e => onCardClick(e),
         { signal },
     );
+
+    subscribeToProjectChanges(async () => {
+        if (!projectState || !projectListEl) {
+            return;
+        }
+        const updated = await getProjects();
+        projectState = applyProjectListUpdate(
+            projectState, updated,
+        );
+        rerenderProjects();
+    });
 
     initDragReorder(
         listEl,

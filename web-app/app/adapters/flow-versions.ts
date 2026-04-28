@@ -10,6 +10,9 @@ import {
     nowUtc,
     toBool,
 } from '../../../api/types.ts';
+import {
+    notifyFlowChange,
+} from './flow-mutations.ts';
 
 export interface FlowVersion {
     id: string;
@@ -87,6 +90,7 @@ export async function postFlowVersion(
             'flow-versions/' + mine[i]!.id,
         );
     }
+    notifyFlowChange();
 }
 
 export async function getFlowVersions(
@@ -105,6 +109,7 @@ export async function deleteFlowVersion(
     versionId: string,
 ): Promise<void> {
     await DELETE('flow-versions/' + versionId);
+    notifyFlowChange();
 }
 
 export async function putFlowFromVersion(
@@ -124,4 +129,5 @@ export async function putFlowFromVersion(
         created_at: current.created_at,
         updated_at: nowUtc(),
     });
+    notifyFlowChange();
 }

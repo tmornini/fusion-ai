@@ -18,6 +18,29 @@ import {
 import {
     validateWorkOrderFlowGraph,
 } from './work-orders-queries.ts';
+import {
+    createChannel,
+    bridgeStorageToChannel,
+} from '../channels.ts';
+
+const workOrderChangedChannel =
+    createChannel<void>();
+bridgeStorageToChannel(
+    [
+        'work-orders',
+        'work-order-transitions',
+        'work-order-claims',
+        'flow-work-orders',
+    ],
+    workOrderChangedChannel,
+);
+
+export function subscribeToWorkOrderChanges(
+    fn: () => void,
+): () => void {
+    return workOrderChangedChannel
+        .subscribe(fn);
+}
 
 const FIRST_POSITION = 1;
 const POSITION_STEP = 1;
@@ -180,6 +203,8 @@ export async function postWorkOrderCreation(
             claimed_at: now,
         },
     );
+
+    workOrderChangedChannel.send();
 }
 
 export interface TransitionContext {
@@ -246,6 +271,8 @@ export async function postWorkOrderTransition(
             `work-order-claims/${claim.id}`,
         );
     }
+
+    workOrderChangedChannel.send();
 }
 
 export async function putWorkOrder(
@@ -253,6 +280,7 @@ export async function putWorkOrder(
     entity: Omit<WorkOrderEntity, 'id'>,
 ): Promise<void> {
     await PUT(`work-orders/${id}`, entity);
+    workOrderChangedChannel.send();
 }
 
 // Two tabs can both read an empty
@@ -283,4 +311,6 @@ export async function postWorkOrderClaim(
             claimed_at: now,
         },
     );
+
+    workOrderChangedChannel.send();
 }

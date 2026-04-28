@@ -28,6 +28,7 @@ import {
     putFlowFromBackup,
     postFlowFromBackup,
     generateCryptoSafeBase62,
+    subscribeToFlowChanges,
 } from '../app/adapters/index.ts';
 import type {
     BackupV2,
@@ -176,7 +177,51 @@ export async function init(
         },
     );
 
+    subscribeToFlowChanges(
+        () => void rerenderFlowList(listEl),
+    );
+
     bindImport();
+}
+
+async function rerenderFlowList(
+    listEl: HTMLElement,
+): Promise<void> {
+    const [
+        flows, projectFlows, projects,
+    ] = await Promise.all([
+        getFlows(),
+        getProjectFlowRows(),
+        getProjects(),
+    ]);
+    const projectNameById = new Map(
+        projects.map(
+            p => [
+                p.idForLink(),
+                p.titleText(),
+            ],
+        ),
+    );
+    const projectNameByFlow = new Map<
+        string, string
+    >();
+    for (const pf of projectFlows) {
+        const name = projectNameById.get(
+            pf.project_id,
+        );
+        if (name !== undefined) {
+            projectNameByFlow.set(
+                pf.flow_id, name,
+            );
+        }
+    }
+    const rendered = flows.map(
+        flow => new FlowPresenter(
+            flow,
+            projectNameByFlow.get(flow.id),
+        ).render(),
+    );
+    setHtml(listEl, html`${rendered}`);
 }
 
 function bindImport(): void {

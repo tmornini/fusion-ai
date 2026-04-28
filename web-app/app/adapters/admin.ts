@@ -12,6 +12,7 @@ import {
     User,
     jsonArrayField,
 } from '../../../api/types.ts';
+import { notifyUserChange } from './teams.ts';
 
 export type {
     OrganizationEntity,
@@ -98,6 +99,7 @@ export async function putProfile(
             ),
         };
     await PUT('users/current', updated);
+    notifyUserChange();
 }
 
 export interface Company {

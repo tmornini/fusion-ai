@@ -19,10 +19,15 @@ import {
 } from './projects.ts';
 import {
     createChannel,
+    bridgeStorageToChannel,
 } from '../channels.ts';
 
 const ideaChangedChannel =
     createChannel<void>();
+bridgeStorageToChannel(
+    ['ideas', 'idea-submissions'],
+    ideaChangedChannel,
+);
 
 export function subscribeToIdeaChanges(
     fn: () => void,

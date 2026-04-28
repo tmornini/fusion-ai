@@ -13,6 +13,27 @@ import {
 import {
     buildStartAndCompleteNodes,
 } from './flow-defaults.ts';
+import {
+    createChannel,
+    bridgeStorageToChannel,
+} from '../channels.ts';
+
+const flowChangedChannel =
+    createChannel<void>();
+bridgeStorageToChannel(
+    ['flows', 'flow-versions', 'project-flows'],
+    flowChangedChannel,
+);
+
+export function subscribeToFlowChanges(
+    fn: () => void,
+): () => void {
+    return flowChangedChannel.subscribe(fn);
+}
+
+export function notifyFlowChange(): void {
+    flowChangedChannel.send();
+}
 
 function putFlowGraph(
     graph: StoredGraph,
@@ -62,6 +83,8 @@ export async function postFlowCreation(
         flow_id: ctx.flowId,
         created_at: now,
     });
+
+    flowChangedChannel.send();
 }
 
 export interface FlowSaveShape {
@@ -97,4 +120,5 @@ export async function putFlow(
         updated_at: nowUtc(),
     };
     await PUT(`flows/${id}`, entity);
+    flowChangedChannel.send();
 }

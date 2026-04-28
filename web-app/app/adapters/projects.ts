@@ -17,10 +17,15 @@ import {
 import type { FetchContext } from './shared.ts';
 import {
     createChannel,
+    bridgeStorageToChannel,
 } from '../channels.ts';
 
 const projectChangedChannel =
     createChannel<void>();
+bridgeStorageToChannel(
+    ['projects', 'project-team-members'],
+    projectChangedChannel,
+);
 
 export function subscribeToProjectChanges(
     fn: () => void,

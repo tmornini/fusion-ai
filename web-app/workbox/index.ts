@@ -30,6 +30,7 @@ import {
     getCurrentUserRow,
     createFetchContext,
     generateCryptoSafeBase62,
+    subscribeToWorkOrderChanges,
     type FetchContext,
 } from '../app/adapters/index.ts';
 import {
@@ -69,7 +70,34 @@ export async function init(
         await initArchiveList(archiveEl, ctx);
     }
 
+    subscribeToWorkOrderChanges(() => {
+        if (activeEl) {
+            void rerenderInbox(
+                activeEl, 'active',
+            );
+        }
+        if (archiveEl) {
+            void rerenderInbox(
+                archiveEl, 'archived',
+            );
+        }
+    });
+
     await initCreateDropdown();
+}
+
+async function rerenderInbox(
+    listEl: HTMLElement,
+    mode: InboxMode,
+): Promise<void> {
+    const items = await loadInboxItems(mode);
+    const presenter = new WorkboxInboxPresenter(
+        items, mode === 'active',
+    );
+    presenter.renderList(listEl);
+    if (mode === 'active') {
+        activePresenter = presenter;
+    }
 }
 
 function renderTabs(): void {
