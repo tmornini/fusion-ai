@@ -26,7 +26,7 @@ async function getHeaderData(
     const [userRow, company, stats] =
         await Promise.all([
             getCurrentUserRow(ctx),
-            getCompanyRow(),
+            getCompanyRow(ctx),
             getDashboardStats(ctx),
         ]);
     return {

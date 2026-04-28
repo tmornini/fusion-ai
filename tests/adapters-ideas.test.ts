@@ -1,9 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    initApi, resetApi,
-} from '../api/api.ts';
-import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import {
@@ -61,9 +58,7 @@ function setupDb(): {
     ctx: FetchContext;
 } {
     const db = new MemoryDbAdapter();
-    resetApi();
-    initApi(db);
-    const ctx = createFetchContext();
+    const ctx = createFetchContext(db);
     return { db, ctx };
 }
 

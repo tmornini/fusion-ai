@@ -93,10 +93,12 @@ The API layer is a set of TypeScript modules that provide a REST-style interface
   utility
 - **`api/db.ts`** — `DbAdapter` interface with `EntityStore<T>` and `SingletonStore<T>` patterns, plus `hasSchema()`/`createSchema()` lifecycle methods
 - **`api/db-localstorage.ts`** — localStorage implementation with JSON serialization
-- **`api/api.ts`** — `GET(resource)` / `PUT(resource, body)` / `DELETE(resource)` / `POST(resource, body)` URL routing
+- **`api/api.ts`** — pure routing. `handleRequest(adapter, request)` plus `GET(adapter, resource)` / `PUT(adapter, resource, body)` / `DELETE(adapter, resource)` / `POST(adapter, resource, body)` helpers. **No module-level adapter** — the adapter is threaded explicitly through every call.
 - **`api/mock-data.ts`** — Mock data seed payload + apply helper
 
 The `DbAdapter` interface is designed for easy migration to Postgres or other backends — implement the same interface and swap the import.
+
+The composition root is `web-app/app/adapters/init.ts`: `initAdapter()` constructs the LocalStorage adapter and `getDbAdapter()` returns it. Page modules construct a `FetchContext` per request via `createFetchContext()` (which defaults to `getDbAdapter()`); tests pass an explicit `MemoryDbAdapter` via `createFetchContext(db)`. Adapter functions take `ctx: FetchContext` as their first argument and use `ctx.GET/PUT/DELETE/POST/commit` — never the standalone `GET/PUT/DELETE/POST` from `api.ts`.
 
 ### Page Module Pattern
 
@@ -202,7 +204,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 - **User-name resolution**: `userName(userMap, userId: Id)` throws on both missing and unknown userId. Parameter type is `Id`, not `Id | undefined` — a missing required reference is a bug, not a presentation case. Optional user references (a project with no lead yet, a work order with no transitions) must be modeled at the call site by branching on the upstream absence (`leadRow ? userName(...) : ''`), not by overloading `userName` with two policies. UI renders `'\u2014'` (em dash) via `DISPLAY_ABSENT` for legitimately absent values that the type system admits. Never use magical fallback strings like `'Unknown'`.
 - **Absent values**: Use `null` for semantically absent values in adapter return types (e.g., `confidence: ConfidenceLevel | null`). Persisted noun entities never use `null`.
 - **No module-level adapter caching**: Adapters never hold long-lived caches (`cachedUserMap` etc.). Module-level state introduces cross-request leakage and contradicts the "share memory by communicating" article of faith.
-- **Request-scoped immutability via `FetchContext`**: A page-module `init()` may construct a `FetchContext` and thread it through multiple adapter calls so the *whole process executes against an immutable snapshot* of the underlying data. Motivation is idempotency and atomicity (Commandments VII and X), not performance: a process that reads `'users'` twice could see different data if another tab writes between the reads, breaking process atomicity. `ctx.getUserMap()` snapshots once and reuses; the ctx is constructed per request and discarded — never module-level. Adapters that need user data accept an optional `ctx?: FetchContext`; when omitted, they fetch fresh (backward-compatible default). When the backend migrates from localStorage to Postgres, this also avoids redundant database round-trips for free.
+- **`FetchContext` is the only I/O surface**: Every data-access adapter takes `ctx: FetchContext` as its first argument and uses `ctx.GET/PUT/DELETE/POST/commit` for I/O. The standalone `GET/PUT/DELETE/POST` exports in `api/api.ts` exist solely as the transport layer that `ctx` delegates to — adapters never import them directly. Page modules construct a fresh ctx per logical user action (`createFetchContext()` in production picks up the adapter from `init.ts`; tests pass `createFetchContext(db)`). The whole process executes against an immutable snapshot of the underlying data: `ctx.getUserMap()/getCurrentUser()/getIdeaRows()/getProjectRows()/getFlowRows()` are memoized for the life of the ctx so multiple adapter calls see the same view. Motivation is idempotency and atomicity (Commandments VII and X) — a process that reads `'users'` twice could otherwise see different data if another tab writes between the reads.
 - **Shared helpers**: `adapters/shared.ts` exports cross-module utilities (`getUserMap`, `userName`, `getCurrentUser`, `AuthContext`, `FetchContext`, `createFetchContext`).
 - **Platform-shim adapters vs data-access adapters**: the `adapters/` directory holds two categories. *Data-access* adapters (`ideas.ts`, `projects.ts`, `flow-queries.ts`, `dashboard.ts`, etc.) fetch and shape entity data through the API layer. *Platform-shim* adapters (`blob-download.ts`, `clipboard.ts`, `viewport.ts`, `location.ts`, `media-query.ts`, `resize-observer.ts`, `preferences.ts`, `url-params.ts`, `crypto-safe-base62.ts`) wrap browser primitives so the codebase speaks one voice — `setLocation(url)` instead of `window.location.href = url`, `postClipboardCopy(text)` instead of `navigator.clipboard.writeText(text)`. A one-line shim is not a code smell; it is the divorce point. When a platform feature evolves (clipboard permission flows, `visualViewport` semantics, ResizeObserver options, base62 vs UUID identity), the change happens in one place. Don't fold platform shims into call sites for LOC savings — the Article on Insulation through Adapters earns the file. Distinct from data-access adapters: platform shims are typically tiny (1–15 lines), don't take `ctx?: FetchContext`, don't return entity shapes, and don't go through the `api/` layer.
 
@@ -441,8 +443,8 @@ Two layers, both zero-dependency:
 
 `api/db-memory.ts` provides an in-memory `DbAdapter` so
 adapter and api-layer tests run without `localStorage`. Tests
-call `resetApi()` then `initApi(new MemoryDbAdapter())` per
-test to isolate state.
+construct a fresh `MemoryDbAdapter` and pass it to
+`createFetchContext(db)` per test for isolated state.
 
 Run via `./validate` (which also type-checks and lints) or
 directly: `node --test --strip-types tests/*.test.ts`.

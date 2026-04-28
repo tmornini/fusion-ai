@@ -1,3 +1,4 @@
+import type { DbAdapter } from '../../../api/db.ts';
 import {
     GET as httpGet,
     PUT as httpPut,
@@ -16,6 +17,7 @@ import { User } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
+import { getDbAdapter } from './init.ts';
 import type { Channel } from '../channels.ts';
 
 export type { Id } from '../../../api/types.ts';
@@ -25,25 +27,19 @@ export async function getCurrentUserRow(
     ctx?: FetchContext,
 ): Promise<UserEntity> {
     if (ctx) return ctx.getCurrentUser();
-    return httpGet<UserEntity>('current-user');
+    return httpGet<UserEntity>(
+        getDbAdapter(), 'current-user',
+    );
 }
 
 export async function getCompanyRow(
+    ctx?: FetchContext,
 ): Promise<CompanyEntity> {
-    return httpGet<CompanyEntity>('company');
-}
-
-async function fetchUserMap(
-): Promise<Map<Id, User>> {
-    const users =
-        await httpGet<UserEntity[]>('users');
-    return new Map(
-        users.map(
-            entity => [
-                entity.id,
-                new User(entity),
-            ],
-        ),
+    if (ctx) return ctx.GET<CompanyEntity>(
+        'company',
+    );
+    return httpGet<CompanyEntity>(
+        getDbAdapter(), 'company',
     );
 }
 
@@ -92,6 +88,7 @@ export interface FetchContext {
 }
 
 export function createFetchContext(
+    adapter: DbAdapter = getDbAdapter(),
 ): FetchContext {
     // Per-request memoization: each table is
     // fetched at most once per ctx. The promise
@@ -107,22 +104,43 @@ export function createFetchContext(
         Promise<ProjectEntity[]> | null = null;
     let flowRowsPromise:
         Promise<FlowEntity[]> | null = null;
-    return {
+    const ctx: FetchContext = {
         requestId: generateCryptoSafeBase62(),
-        GET: httpGet,
-        PUT: httpPut,
-        DELETE: httpDelete,
-        POST: httpPost,
+        GET: <T>(resource: string) =>
+            httpGet<T>(adapter, resource),
+        PUT: <T>(
+            resource: string,
+            body: Record<string, unknown>,
+        ) => httpPut<T>(adapter, resource, body),
+        DELETE: (resource: string) =>
+            httpDelete(adapter, resource),
+        POST: <T>(
+            resource: string,
+            body: Record<string, unknown>,
+        ) => httpPost<T>(adapter, resource, body),
         getUserMap: () => {
             if (!userMapPromise) {
-                userMapPromise = fetchUserMap();
+                userMapPromise = (async () => {
+                    const users =
+                        await ctx.GET<
+                            UserEntity[]
+                        >('users');
+                    return new Map(
+                        users.map(
+                            entity => [
+                                entity.id,
+                                new User(entity),
+                            ],
+                        ),
+                    );
+                })();
             }
             return userMapPromise;
         },
         getCurrentUser: () => {
             if (!currentUserPromise) {
                 currentUserPromise =
-                    httpGet<UserEntity>(
+                    ctx.GET<UserEntity>(
                         'current-user',
                     );
             }
@@ -131,7 +149,7 @@ export function createFetchContext(
         getIdeaRows: () => {
             if (!ideaRowsPromise) {
                 ideaRowsPromise =
-                    httpGet<IdeaEntity[]>(
+                    ctx.GET<IdeaEntity[]>(
                         'ideas',
                     );
             }
@@ -140,7 +158,7 @@ export function createFetchContext(
         getProjectRows: () => {
             if (!projectRowsPromise) {
                 projectRowsPromise =
-                    httpGet<ProjectEntity[]>(
+                    ctx.GET<ProjectEntity[]>(
                         'projects',
                     );
             }
@@ -149,7 +167,7 @@ export function createFetchContext(
         getFlowRows: () => {
             if (!flowRowsPromise) {
                 flowRowsPromise =
-                    httpGet<FlowEntity[]>(
+                    ctx.GET<FlowEntity[]>(
                         'flows',
                     );
             }
@@ -160,12 +178,12 @@ export function createFetchContext(
         ): Promise<void> => {
             for (const op of tx.ops) {
                 if (op.method === 'put') {
-                    await httpPut(
+                    await ctx.PUT(
                         op.resource,
                         op.body,
                     );
                 } else {
-                    await httpDelete(op.resource);
+                    await ctx.DELETE(op.resource);
                 }
             }
             if (tx.notifyChannels) {
@@ -177,13 +195,14 @@ export function createFetchContext(
             }
         },
     };
+    return ctx;
 }
 
 export async function getUserMap(
     ctx?: FetchContext,
 ): Promise<Map<Id, User>> {
     if (ctx) return ctx.getUserMap();
-    return fetchUserMap();
+    return createFetchContext().getUserMap();
 }
 
 export function userName(

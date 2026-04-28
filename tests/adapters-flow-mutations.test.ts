@@ -1,9 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    initApi, resetApi, GET,
-} from '../api/api.ts';
-import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import {
@@ -30,9 +27,7 @@ function setupMemDb(): {
     ctx: FetchContext;
 } {
     const db = new MemoryDbAdapter();
-    resetApi();
-    initApi(db);
-    const ctx = createFetchContext();
+    const ctx = createFetchContext(db);
     return { db, ctx };
 }
 
@@ -85,7 +80,7 @@ test(
     async () => {
         const { ctx } = setupMemDb();
         await createBaseFlow(ctx, 'flow-1');
-        const flow = await GET<FlowEntity>(
+        const flow = await ctx.GET<FlowEntity>(
             'flows/flow-1',
         );
         assert.equal(flow.id, 'flow-1');
@@ -95,7 +90,7 @@ test(
             DEFAULT_LOCK_TIMEOUT,
         );
         const links =
-            await GET<{
+            await ctx.GET<{
                 id: string;
                 project_id: string;
                 flow_id: string;
@@ -139,7 +134,7 @@ test(
             createdAt:
                 '2026-01-01T00:00:00.000Z',
         });
-        const flow = await GET<FlowEntity>(
+        const flow = await ctx.GET<FlowEntity>(
             'flows/flow-1',
         );
         assert.equal(flow.name, 'Renamed');
@@ -197,7 +192,7 @@ test(
             createdAt:
                 '2026-01-01T00:00:00.000Z',
         });
-        const flow = await GET<FlowEntity>(
+        const flow = await ctx.GET<FlowEntity>(
             'flows/flow-1',
         );
         const graph =
@@ -245,7 +240,7 @@ test(
             createdAt:
                 '2026-01-01T00:00:00.000Z',
         });
-        const flow = await GET<FlowEntity>(
+        const flow = await ctx.GET<FlowEntity>(
             'flows/flow-1',
         );
         assert.equal(flow.name, 'caller-B');
