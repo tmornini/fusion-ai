@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
+    initApi,
+    resetApi,
+} from '../api/api.ts';
+import { MemoryDbAdapter } from '../api/db-memory.ts';
+import {
+    createFetchContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
     putSnapshotFromFile,
     SnapshotTooLargeError,
 } from '../web-app/app/adapters/snapshots.ts';
@@ -18,6 +26,10 @@ test('SnapshotTooLargeError carries sizes', () => {
 });
 
 test('rejects file larger than half of available quota', async () => {
+    const db = new MemoryDbAdapter();
+    resetApi();
+    initApi(db);
+    const ctx = createFetchContext();
     const nav = navigator as unknown as {
         storage?: {
             estimate(): Promise<{
@@ -41,7 +53,7 @@ test('rejects file larger than half of available quota', async () => {
             'too-big.json',
         );
         await assert.rejects(
-            () => putSnapshotFromFile(file),
+            () => putSnapshotFromFile(ctx, file),
             SnapshotTooLargeError,
         );
     } finally {

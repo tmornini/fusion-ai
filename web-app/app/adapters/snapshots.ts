@@ -1,6 +1,6 @@
-import { GET, POST, PUT, DELETE } from '../../../api/api.ts';
 import { MissingTableError } from '../../../api/db.ts';
 import type { UserEntity } from '../../../api/types.ts';
+import type { FetchContext } from './shared.ts';
 
 // Fallback when navigator.storage.estimate() is
 // unavailable (older browsers, Node test runtime).
@@ -48,34 +48,43 @@ async function computeAvailableForUpload(
     return FALLBACK_SNAPSHOT_CAP_BYTES;
 }
 
-export async function deleteSchema(): Promise<void> {
-    await DELETE('snapshots/schema');
+export async function deleteSchema(
+    ctx: FetchContext,
+): Promise<void> {
+    await ctx.DELETE('snapshots/schema');
 }
 
 export async function postSchemaCreation(
+    ctx: FetchContext,
 ): Promise<void> {
-    await POST('snapshots/schema', {});
+    await ctx.POST('snapshots/schema', {});
 }
 
 export async function postMockDataLoad(
+    ctx: FetchContext,
 ): Promise<void> {
-    await POST(
+    await ctx.POST(
         'snapshots/mock-data', {},
     );
 }
 
 export async function postBootstrap(
+    ctx: FetchContext,
 ): Promise<void> {
-    await POST(
+    await ctx.POST(
         'snapshots/bootstrap', {},
     );
 }
 
-export async function putSnapshot(json: string): Promise<void> {
-    await PUT('snapshots/import', { json });
+export async function putSnapshot(
+    ctx: FetchContext,
+    json: string,
+): Promise<void> {
+    await ctx.PUT('snapshots/import', { json });
 }
 
 export async function putSnapshotFromFile(
+    ctx: FetchContext,
     file: File,
 ): Promise<void> {
     const available =
@@ -89,17 +98,21 @@ export async function putSnapshotFromFile(
         );
     }
     const json = await file.text();
-    await putSnapshot(json);
+    await putSnapshot(ctx, json);
 }
 
-export async function getSnapshot(): Promise<string> {
-    return GET<string>('snapshots/schema');
+export async function getSnapshot(
+    ctx: FetchContext,
+): Promise<string> {
+    return ctx.GET<string>('snapshots/schema');
 }
 
-export async function getDataPresent(): Promise<boolean> {
+export async function getDataPresent(
+    ctx: FetchContext,
+): Promise<boolean> {
     try {
         const users =
-            await GET<UserEntity[]>('users');
+            await ctx.GET<UserEntity[]>('users');
         return users.length > 0;
     } catch (err) {
         if (err instanceof MissingTableError) {
