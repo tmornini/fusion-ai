@@ -12,6 +12,7 @@ import {
 import { log } from '../app/logger.ts';
 import { trimStrings } from '../app/core.ts';
 import {
+    createFetchContext,
     getProfile,
     putProfile,
     Profile,
@@ -78,7 +79,9 @@ export async function init(): Promise<void> {
 
     let profile: Profile;
     try {
-        profile = await getProfile();
+        profile = await getProfile(
+            createFetchContext(),
+        );
     } catch (err) {
         log.error(
             'getProfile failed',
@@ -265,7 +268,9 @@ async function handleSave(): Promise<void> {
     }
     const trimmed = trimStrings(state.draft);
     try {
-        await putProfile(trimmed);
+        await putProfile(
+            createFetchContext(), trimmed,
+        );
     } catch (err) {
         log.error(
             'putProfile failed',
