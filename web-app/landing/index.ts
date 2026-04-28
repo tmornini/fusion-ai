@@ -229,6 +229,15 @@ function buildNavbar(): SafeHtml {
     </nav>`;
 }
 
+function buildCompanyLogos(
+    companies: readonly string[],
+): SafeHtml {
+    return html`${companies.map(
+        company =>
+            html`<span>${company}</span>`,
+    )}`;
+}
+
 function buildHero(): SafeHtml {
     return html`
     <section class="hero">
@@ -301,11 +310,8 @@ function buildHero(): SafeHtml {
                     <div class="${
                         'hero-trust-logos'
                     }">
-                        ${companies.map(
-                            company =>
-                                html`<span>${
-                                    company
-                                }</span>`,
+                        ${buildCompanyLogos(
+                            companies,
                         )}
                     </div>
                 </div>
