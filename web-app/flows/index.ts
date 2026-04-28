@@ -331,6 +331,7 @@ async function handleFileSelect(
         );
         try {
             result = await postFlowFromZip(
+                createFetchContext(),
                 uuid, bytes, projectId,
             );
         } catch (err) {
@@ -345,6 +346,7 @@ async function handleFileSelect(
         const text = await file.text();
         try {
             result = await postFlowFromMermaid(
+                createFetchContext(),
                 uuid, text, projectId,
             );
         } catch (err) {
@@ -389,7 +391,7 @@ async function handleV2Zip(
     try {
         resolution =
             await computeFlowBackupResolution(
-                backup,
+                createFetchContext(), backup,
             );
     } catch (err) {
         log.error(
@@ -516,7 +518,10 @@ async function handleOverwrite(
     let flowId: string;
     try {
         flowId =
-            await putFlowFromBackup(stOw.backup);
+            await putFlowFromBackup(
+                createFetchContext(),
+                stOw.backup,
+            );
     } catch (err) {
         clearPending(input);
         const msg =
@@ -547,6 +552,7 @@ async function handleCreateNew(
     let flowId: string;
     try {
         flowId = await postFlowFromBackup(
+            createFetchContext(),
             generateCryptoSafeBase62(),
             stRe.backup, projectId,
         );
@@ -585,6 +591,7 @@ async function handleCreate(
     let flowId: string;
     try {
         flowId = await postFlowFromBackup(
+            createFetchContext(),
             generateCryptoSafeBase62(),
             stNw.backup, projectId,
         );

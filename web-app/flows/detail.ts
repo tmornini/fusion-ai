@@ -835,7 +835,9 @@ async function handleCopyMermaid(
     let text: string;
     try {
         text =
-            await getFlowMermaid(flowId);
+            await getFlowMermaid(
+                createFetchContext(), flowId,
+            );
     } catch (err) {
         log.error(
             'getFlowMermaid failed',
@@ -877,7 +879,9 @@ async function handleExportZip(
     };
     try {
         result =
-            await getFlowZip(flowId);
+            await getFlowZip(
+                createFetchContext(), flowId,
+            );
     } catch (err) {
         log.error(
             'getFlowZip failed',
