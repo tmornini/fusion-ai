@@ -6,6 +6,7 @@ import {
 import { iconFolderKanban } from '../app/icons.ts';
 import { navigateTo } from '../app/core.ts';
 import {
+    createFetchContext,
     getProjects,
     getProjectRow,
     putProject,
@@ -37,10 +38,11 @@ export async function init(): Promise<void> {
     );
     if (!listEl) return;
 
+    const ctx = createFetchContext();
     const projects = await withLoadingState(
         listEl,
         buildSkeleton('card-list', 4),
-        getProjects,
+        () => getProjects(ctx),
         init,
         {
             icon: iconFolderKanban(24, ''),
@@ -81,7 +83,9 @@ export async function init(): Promise<void> {
         if (!projectState || !projectListEl) {
             return;
         }
-        const updated = await getProjects();
+        const updated = await getProjects(
+            createFetchContext(),
+        );
         projectState = applyProjectListUpdate(
             projectState, updated,
         );
@@ -93,14 +97,15 @@ export async function init(): Promise<void> {
         '[data-project-card]',
         'data-project-card',
         async (id, newPosition) => {
+            const dragCtx = createFetchContext();
             const entity =
-                await getProjectRow(id);
-            await putProject(id, {
+                await getProjectRow(dragCtx, id);
+            await putProject(dragCtx, id, {
                 ...entity,
                 position: newPosition,
             });
             const updated =
-                await getProjects();
+                await getProjects(dragCtx);
             if (!projectState) return;
             projectState = applyProjectListUpdate(
                 projectState, updated,

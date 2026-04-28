@@ -18,6 +18,7 @@ import {
     closeDialog,
 } from '../app/core.ts';
 import {
+    createFetchContext,
     getProjects,
     getFlowsWithProjectNames,
     postFlowFromMermaid,
@@ -247,7 +248,9 @@ async function openImportDialog(
     resetImportDialog();
     importStore.reset();
 
-    const projects = await getProjects();
+    const projects = await getProjects(
+        createFetchContext(),
+    );
     if (projects.length === 0) {
         showToast(
             'No projects available',

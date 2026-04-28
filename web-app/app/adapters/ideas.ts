@@ -174,8 +174,6 @@ export async function putIdeaSubmission(
 }
 
 // Idempotent: retry recovers from partial failure.
-// putProject/putProjectTeamMember calls still use the
-// singleton path; Unit 3.8 will thread ctx through.
 export async function postIdeaConversion(
     ctx: FetchContext,
     ideaId: string,
@@ -183,8 +181,8 @@ export async function postIdeaConversion(
     project: Omit<ProjectEntity, 'id'>,
     leadUserId: string,
 ): Promise<void> {
-    await putProject(projectId, project);
-    await putProjectTeamMember({
+    await putProject(ctx, projectId, project);
+    await putProjectTeamMember(ctx, {
         projectId,
         userId: leadUserId,
         role: 'lead',

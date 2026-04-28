@@ -82,8 +82,8 @@ async function loadProjectView(
     const [
         entity, teamRows, userMap,
     ] = await Promise.all([
-        getProjectRow(projectId),
-        getProjectTeamRows(projectId),
+        getProjectRow(ctx, projectId),
+        getProjectTeamRows(ctx, projectId),
         getUserMap(ctx),
     ]);
     const project = new Project(entity);
@@ -423,10 +423,11 @@ async function handleSave(): Promise<void> {
             state.draft,
         ),
     );
+    const ctx = createFetchContext();
     try {
         const entity =
-            await getProjectRow(projectId);
-        await putProject(projectId, {
+            await getProjectRow(ctx, projectId);
+        await putProject(ctx, projectId, {
             ...entity, ...patch,
         });
     } catch (err) {
