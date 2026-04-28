@@ -226,6 +226,13 @@ export async function putProjectPatch(
     await putProject(id, { ...entity, ...patch });
 }
 
+export async function putProjectPosition(
+    id: string,
+    position: number,
+): Promise<void> {
+    await putProjectPatch(id, { position });
+}
+
 export interface TeamMemberAssignment {
     projectId: string;
     userId: string;

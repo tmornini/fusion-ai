@@ -23,10 +23,9 @@ import {
     getAllWorkOrderTransitionRows,
     getAllWorkOrderClaimRows,
     getUserMap,
-    getWorkOrder,
     getFlowsForCreation,
     postWorkOrderCreation,
-    putWorkOrder,
+    putWorkOrderPosition,
     getCurrentUserRow,
     createFetchContext,
     generateCryptoSafeBase62,
@@ -171,12 +170,9 @@ async function initActiveList(
         'data-work-order-card',
         async (id, newPosition) => {
             try {
-                const entity =
-                    await getWorkOrder(id);
-                await putWorkOrder(id, {
-                    ...entity,
-                    position: newPosition,
-                });
+                await putWorkOrderPosition(
+                    id, newPosition,
+                );
             } catch (err) {
                 log.error(
                     'reorder failed',

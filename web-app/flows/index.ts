@@ -18,9 +18,8 @@ import {
     closeDialog,
 } from '../app/core.ts';
 import {
-    getFlows,
     getProjects,
-    getProjectFlowRows,
+    getFlowsWithProjectNames,
     postFlowFromMermaid,
     postFlowFromZip,
     getBackupFromZip,
@@ -85,43 +84,7 @@ export async function init(
     const result = await withLoadingState(
         listEl,
         buildSkeleton('card-list', 4),
-        async () => {
-            const [
-                flows, projectFlows, projects,
-            ] = await Promise.all([
-                getFlows(),
-                getProjectFlowRows(),
-                getProjects(),
-            ]);
-            const projectNameById = new Map(
-                projects.map(
-                    p => [
-                        p.idForLink(),
-                        p.titleText(),
-                    ],
-                ),
-            );
-            const projectNameByFlow = new Map<
-                string, string
-            >();
-            for (const pf of projectFlows) {
-                const name =
-                    projectNameById.get(
-                        pf.project_id,
-                    );
-                if (name !== undefined) {
-                    projectNameByFlow.set(
-                        pf.flow_id, name,
-                    );
-                }
-            }
-            return flows.map(flow => ({
-                flow,
-                projectName:
-                    projectNameByFlow
-                        .get(flow.id),
-            }));
-        },
+        getFlowsWithProjectNames,
         init,
         {
             icon: iconGitBranch(24, ''),
@@ -140,9 +103,9 @@ export async function init(
     );
     if (!result) return;
     const rendered = result.map(
-        ({ flow, projectName }) =>
+        ({ summary, projectName }) =>
             new FlowPresenter(
-                flow, projectName,
+                summary, projectName,
             ).render(),
     );
 
@@ -187,39 +150,13 @@ export async function init(
 async function rerenderFlowList(
     listEl: HTMLElement,
 ): Promise<void> {
-    const [
-        flows, projectFlows, projects,
-    ] = await Promise.all([
-        getFlows(),
-        getProjectFlowRows(),
-        getProjects(),
-    ]);
-    const projectNameById = new Map(
-        projects.map(
-            p => [
-                p.idForLink(),
-                p.titleText(),
-            ],
-        ),
-    );
-    const projectNameByFlow = new Map<
-        string, string
-    >();
-    for (const pf of projectFlows) {
-        const name = projectNameById.get(
-            pf.project_id,
-        );
-        if (name !== undefined) {
-            projectNameByFlow.set(
-                pf.flow_id, name,
-            );
-        }
-    }
-    const rendered = flows.map(
-        flow => new FlowPresenter(
-            flow,
-            projectNameByFlow.get(flow.id),
-        ).render(),
+    const items =
+        await getFlowsWithProjectNames();
+    const rendered = items.map(
+        ({ summary, projectName }) =>
+            new FlowPresenter(
+                summary, projectName,
+            ).render(),
     );
     setHtml(listEl, html`${rendered}`);
 }
