@@ -18,6 +18,7 @@ import {
     navigateTo, trimStrings,
 } from '../app/core.ts';
 import {
+    createFetchContext,
     getManagedUsers, getUserRow, putUser,
     postActivity,
     jsonArrayField,
@@ -53,7 +54,9 @@ export async function init(): Promise<void> {
     const users = await withLoadingState(
         container,
         buildSkeleton('table', 5),
-        getManagedUsers,
+        () => getManagedUsers(
+            createFetchContext(),
+        ),
         init,
         {
             icon: iconUsers(24, ''),
@@ -86,7 +89,9 @@ export async function init(): Promise<void> {
 
     subscribeUserChanges(async () => {
         if (!usersState || !userListEl) return;
-        const fresh = await getManagedUsers();
+        const fresh = await getManagedUsers(
+            createFetchContext(),
+        );
         usersState =
             buildInitialManagedUsersState(
                 fresh,
@@ -534,11 +539,12 @@ async function updateUserActivationStatus(
     userId: string,
     next: 'active' | 'deactivated',
 ): Promise<void> {
+    const ctx = createFetchContext();
     let entity: Awaited<
         ReturnType<typeof getUserRow>
     >;
     try {
-        entity = await getUserRow(userId);
+        entity = await getUserRow(ctx, userId);
     } catch (err) {
         log.error(
             'getUserRow failed',
@@ -552,7 +558,7 @@ async function updateUserActivationStatus(
     }
     const { id: _id, ...rest } = entity;
     try {
-        await putUser(userId, {
+        await putUser(ctx, userId, {
             ...rest,
             status: next,
         });
@@ -645,6 +651,7 @@ async function handleInvite(): Promise<void> {
     const id = generateCryptoSafeBase62();
     try {
         await putUser(
+            createFetchContext(),
             id,
             trimStrings({
                 first_name: first,

@@ -1,6 +1,3 @@
-import {
-    GET, PUT,
-} from '../../../api/api.ts';
 import type {
     UserEntity,
 } from '../../../api/types.ts';
@@ -36,7 +33,7 @@ export function notifyUserChange(): void {
 const TOP_MEMBERS_COUNT = 6;
 
 export async function getTeamMembers(
-    ctx?: FetchContext,
+    ctx: FetchContext,
 ): Promise<User[]> {
     const userMap = await getUserMap(ctx);
     return Array.from(userMap.values())
@@ -59,22 +56,26 @@ export type UserAccountStatus =
     | 'deactivated';
 
 export async function getManagedUsers(
-    ctx?: FetchContext,
+    ctx: FetchContext,
 ): Promise<User[]> {
     const userMap = await getUserMap(ctx);
     return Array.from(userMap.values());
 }
 
 export async function getUserRow(
+    ctx: FetchContext,
     id: string,
 ): Promise<UserEntity> {
-    return GET<UserEntity>(`users/${id}`);
+    return ctx.GET<UserEntity>(
+        `users/${id}`,
+    );
 }
 
 export async function putUser(
+    ctx: FetchContext,
     id: string,
     entity: Omit<UserEntity, 'id'>,
 ): Promise<void> {
-    await PUT(`users/${id}`, entity);
+    await ctx.PUT(`users/${id}`, entity);
     userChangedChannel.send();
 }
