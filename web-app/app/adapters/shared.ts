@@ -1,4 +1,8 @@
-import { GET } from '../../../api/api.ts';
+import {
+    GET,
+    PUT,
+    DELETE,
+} from '../../../api/api.ts';
 import type {
     Id,
     UserEntity,
@@ -11,6 +15,7 @@ import { User } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
+import type { Channel } from '../channels.ts';
 
 export type { Id } from '../../../api/types.ts';
 export { User } from '../../../api/types.ts';
@@ -41,6 +46,29 @@ async function fetchUserMap(
     );
 }
 
+// A unit of write work executed by ctx.commit().
+// `put` upserts a row by full state; `delete` removes
+// a row by its resource path. Sequenced in order;
+// best-effort, no rollback (real atomicity arrives
+// with Postgres). notifyChannels fire once after the
+// last op succeeds — single batched event per
+// channel per logical operation.
+export type WriteOp =
+    | {
+        method: 'put';
+        resource: string;
+        body: Record<string, unknown>;
+    }
+    | {
+        method: 'delete';
+        resource: string;
+    };
+
+export interface Transaction {
+    readonly ops: readonly WriteOp[];
+    readonly notifyChannels?: readonly Channel<void>[];
+}
+
 export interface FetchContext {
     readonly requestId: string;
     getUserMap(): Promise<Map<Id, User>>;
@@ -49,6 +77,7 @@ export interface FetchContext {
     getProjectRows(
     ): Promise<ProjectEntity[]>;
     getFlowRows(): Promise<FlowEntity[]>;
+    commit(tx: Transaction): Promise<void>;
 }
 
 export function createFetchContext(
@@ -109,6 +138,27 @@ export function createFetchContext(
                     );
             }
             return flowRowsPromise;
+        },
+        commit: async (
+            tx: Transaction,
+        ): Promise<void> => {
+            for (const op of tx.ops) {
+                if (op.method === 'put') {
+                    await PUT(
+                        op.resource,
+                        op.body,
+                    );
+                } else {
+                    await DELETE(op.resource);
+                }
+            }
+            if (tx.notifyChannels) {
+                for (
+                    const ch of tx.notifyChannels
+                ) {
+                    ch.send();
+                }
+            }
         },
     };
 }
