@@ -27,7 +27,7 @@ bridgeStorageToChannel(
     projectChangedChannel,
 );
 
-export function subscribeToProjectChanges(
+export function subscribeProjectChanges(
     fn: () => void,
 ): () => void {
     return projectChangedChannel.subscribe(fn);
@@ -42,7 +42,7 @@ export {
     COST_DIVISOR,
 } from '../../../api/types.ts';
 
-export interface TeamMemberRow {
+export interface TeamMemberEntity {
     id: string;
     user_id: string;
     role: string;
@@ -196,8 +196,8 @@ export class ProjectView {
 
 export async function getProjectTeamRows(
     projectId: string,
-): Promise<TeamMemberRow[]> {
-    return GET<TeamMemberRow[]>(
+): Promise<TeamMemberEntity[]> {
+    return GET<TeamMemberEntity[]>(
         `projects/${projectId}/team`,
     );
 }

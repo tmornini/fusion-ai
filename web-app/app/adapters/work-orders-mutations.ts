@@ -35,7 +35,7 @@ bridgeStorageToChannel(
     workOrderChangedChannel,
 );
 
-export function subscribeToWorkOrderChanges(
+export function subscribeWorkOrderChanges(
     fn: () => void,
 ): () => void {
     return workOrderChangedChannel
@@ -77,7 +77,7 @@ async function nextWorkOrderPosition(
     return maxPosition + POSITION_STEP;
 }
 
-export interface WorkOrderCreationContext {
+export interface WorkOrderCreationInput {
     workOrderId: string;
     flowLinkId: string;
     initTransitionId: string;
@@ -88,7 +88,7 @@ export interface WorkOrderCreationContext {
 }
 
 export async function postWorkOrderCreation(
-    ctx: WorkOrderCreationContext,
+    ctx: WorkOrderCreationInput,
 ): Promise<void> {
     const flow = await GET<FlowEntity>(
         `flows/${ctx.flowId}`,
@@ -207,7 +207,7 @@ export async function postWorkOrderCreation(
     workOrderChangedChannel.send();
 }
 
-export interface TransitionContext {
+export interface WorkOrderTransitionInput {
     transitionId: string;
     workOrderId: string;
     edgeId: string;
@@ -217,7 +217,7 @@ export interface TransitionContext {
 }
 
 export async function postWorkOrderTransition(
-    ctx: TransitionContext,
+    ctx: WorkOrderTransitionInput,
 ): Promise<void> {
     const {
         transitionId, workOrderId, edgeId,

@@ -11,7 +11,7 @@ import { navigateTo } from '../app/core.ts';
 import {
     getIdeas,
     putIdeaPosition,
-    subscribeToIdeaChanges,
+    subscribeIdeaChanges,
     isIdeaStatus,
     createFetchContext,
 } from '../app/adapters/index.ts';
@@ -95,7 +95,7 @@ export async function init(): Promise<void> {
         { signal },
     );
 
-    subscribeToIdeaChanges(async () => {
+    subscribeIdeaChanges(async () => {
         if (!ideaState || !listEl) return;
         const updated = await getIdeas();
         ideaState = applyIdeaListUpdate(

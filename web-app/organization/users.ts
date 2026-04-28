@@ -24,7 +24,7 @@ import {
     jsonObjectField,
     nowUtc,
     generateCryptoSafeBase62,
-    subscribeToUserChanges,
+    subscribeUserChanges,
 } from '../app/adapters/index.ts';
 import {
     ManagedUsersPresenter,
@@ -84,7 +84,7 @@ export async function init(): Promise<void> {
         );
     }
 
-    subscribeToUserChanges(async () => {
+    subscribeUserChanges(async () => {
         if (!usersState || !userListEl) return;
         const fresh = await getManagedUsers();
         usersState =

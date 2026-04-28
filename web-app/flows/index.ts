@@ -27,7 +27,7 @@ import {
     putFlowFromBackup,
     postFlowFromBackup,
     generateCryptoSafeBase62,
-    subscribeToFlowChanges,
+    subscribeFlowChanges,
 } from '../app/adapters/index.ts';
 import type {
     BackupV2,
@@ -140,7 +140,7 @@ export async function init(
         },
     );
 
-    subscribeToFlowChanges(
+    subscribeFlowChanges(
         () => void rerenderFlowList(listEl),
     );
 

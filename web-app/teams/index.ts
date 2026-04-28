@@ -14,7 +14,7 @@ import {
 } from '../app/core.ts';
 import {
     getTeamMembers,
-    subscribeToUserChanges,
+    subscribeUserChanges,
 } from '../app/adapters/index.ts';
 import {
     TeamListPresenter,
@@ -89,7 +89,7 @@ export async function init(): Promise<void> {
     rerenderTeam();
     bindStableListeners(listEl);
 
-    subscribeToUserChanges(async () => {
+    subscribeUserChanges(async () => {
         if (!teamState || !listEl) return;
         const fresh = await getTeamMembers();
         teamState = buildInitialTeamListState(

@@ -23,7 +23,7 @@ bridgeStorageToChannel(
     ['users'], userChangedChannel,
 );
 
-export function subscribeToUserChanges(
+export function subscribeUserChanges(
     fn: () => void,
 ): () => void {
     return userChangedChannel.subscribe(fn);

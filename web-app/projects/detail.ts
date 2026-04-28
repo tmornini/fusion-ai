@@ -24,7 +24,7 @@ import {
     putProjectPatch,
     getFlowsByProject,
     postFlowCreation,
-    subscribeToProjectChanges,
+    subscribeProjectChanges,
     generateCryptoSafeBase62,
     createFetchContext,
     type FetchContext,
@@ -187,7 +187,7 @@ export async function init(
     buildPresenter().renderShell(container);
     bindStableListeners(container);
 
-    subscribeToProjectChanges(async () => {
+    subscribeProjectChanges(async () => {
         if (!state || !pageContainer) {
             return;
         }

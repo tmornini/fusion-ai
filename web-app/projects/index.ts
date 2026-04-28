@@ -9,7 +9,7 @@ import {
     getProjects,
     putProjectPosition,
     isProjectStatus,
-    subscribeToProjectChanges,
+    subscribeProjectChanges,
     type ProjectStatus,
 } from '../app/adapters/index.ts';
 import {
@@ -76,7 +76,7 @@ export async function init(): Promise<void> {
         { signal },
     );
 
-    subscribeToProjectChanges(async () => {
+    subscribeProjectChanges(async () => {
         if (!projectState || !projectListEl) {
             return;
         }

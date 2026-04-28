@@ -25,7 +25,7 @@ bridgeStorageToChannel(
     flowChangedChannel,
 );
 
-export function subscribeToFlowChanges(
+export function subscribeFlowChanges(
     fn: () => void,
 ): () => void {
     return flowChangedChannel.subscribe(fn);
@@ -45,7 +45,7 @@ function putFlowGraph(
     );
 }
 
-export interface FlowCreationContext {
+export interface FlowCreationInput {
     flowId: string;
     linkId: string;
     projectId: string;
@@ -54,7 +54,7 @@ export interface FlowCreationContext {
 }
 
 export async function postFlowCreation(
-    ctx: FlowCreationContext,
+    ctx: FlowCreationInput,
 ): Promise<void> {
     const now = nowUtc();
     const { start, complete } =

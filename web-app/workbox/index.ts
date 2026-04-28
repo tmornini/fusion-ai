@@ -29,7 +29,7 @@ import {
     getCurrentUserRow,
     createFetchContext,
     generateCryptoSafeBase62,
-    subscribeToWorkOrderChanges,
+    subscribeWorkOrderChanges,
     type FetchContext,
 } from '../app/adapters/index.ts';
 import {
@@ -69,7 +69,7 @@ export async function init(
         await initArchiveList(archiveEl, ctx);
     }
 
-    subscribeToWorkOrderChanges(() => {
+    subscribeWorkOrderChanges(() => {
         if (activeEl) {
             void rerenderInbox(
                 activeEl, 'active',

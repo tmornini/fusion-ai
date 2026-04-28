@@ -30,7 +30,7 @@ bridgeStorageToChannel(
     ideaChangedChannel,
 );
 
-export function subscribeToIdeaChanges(
+export function subscribeIdeaChanges(
     fn: () => void,
 ): () => void {
     return ideaChangedChannel.subscribe(fn);
