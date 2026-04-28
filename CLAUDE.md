@@ -324,8 +324,7 @@ web-app/
       teams.ts                # getTeamMembers, getManagedUsers
       flows.ts                # Barrel re-export from flow-* modules
       flow-queries.ts         # getFlows, getFlowsByProject, getFlowGraph + graph types
-      flow-mutations.ts       # postFlowCreation, postNodeAddition, postEdgeConnection, postFieldAddition, putFlow, putGraph, putGraphSilent, putNode, putWfEdge, putField
-      flow-deletions.ts       # deleteNode, deleteEdge, deleteField
+      flow-mutations.ts       # postFlowCreation, putFlow (caller declares full state; node/edge/field changes flow through putFlow + applyAdd*/applyDelete* helpers)
       flow-versions.ts        # postFlowVersion, getFlowVersions, getLatestFlowVersion, deleteFlowVersion, putFlowFromVersion (persistent undo history)
       flow-export.ts          # getFlowMermaid, getFlowZip, postFlowFromMermaid, postFlowFromZip
       workbox-queries.ts      # getWorkboxItems, getWorkboxActive, getWorkboxArchive, getWorkboxItem, getFlowsForCreation
