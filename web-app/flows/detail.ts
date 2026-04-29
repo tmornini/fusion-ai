@@ -796,20 +796,16 @@ function bindToolbarActions(
             } else if (action === 'redo') {
                 void handleRedo();
             } else if (action === 'zoom-in') {
-                pageState.presenter()
-                    .withZoomedIn();
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withZoomedIn(),
                 );
             } else if (
                 action === 'zoom-out'
             ) {
-                pageState.presenter()
-                    .withZoomedOut();
-                update(
-                    container,
-                    pageState.presenter(),
+                commit(
+                    pageState.presenter()
+                        .withZoomedOut(),
                 );
             } else if (
                 action === 'copy-mermaid'
