@@ -341,8 +341,29 @@ function generateCompositeId(
     return `${prefix}-${parts.join('-')}`;
 }
 
+// Serializes async writes per store. Without this, two
+// Promise.all'd puts both await readTable, both see the
+// pre-write array, and both write back a 1-row result
+// (last writer wins). The chain forces each write to
+// observe the prior write's effect.
+function createSerializer():
+    <R>(fn: () => Promise<R>) => Promise<R> {
+    let tail: Promise<unknown> = Promise.resolve();
+    return function run<R>(
+        fn: () => Promise<R>,
+    ): Promise<R> {
+        const next = tail.then(fn, fn);
+        tail = next.then(
+            () => undefined,
+            () => undefined,
+        );
+        return next as Promise<R>;
+    };
+}
+
 function createDeletedStore(): DeletedStore {
     const TABLE = 'deleted';
+    const serialize = createSerializer();
     return {
         async isDeleted(
             id: string,
@@ -353,20 +374,22 @@ function createDeletedStore(): DeletedStore {
             return rows.some(r => r.id === id);
         },
         async record(id: string): Promise<void> {
-            const rows = await readTable<Deleted>(
-                TABLE,
-            );
-            if (
-                rows.some(r => r.id === id)
-            ) return;
-            const next: Deleted[] = [
-                ...rows,
-                {
-                    id,
-                    deleted_at: nowUtc(),
-                },
-            ];
-            await writeTable(TABLE, next);
+            return serialize(async () => {
+                const rows = await readTable<Deleted>(
+                    TABLE,
+                );
+                if (
+                    rows.some(r => r.id === id)
+                ) return;
+                const next: Deleted[] = [
+                    ...rows,
+                    {
+                        id,
+                        deleted_at: nowUtc(),
+                    },
+                ];
+                await writeTable(TABLE, next);
+            });
         },
         async allDeletedIds(
         ): Promise<Set<string>> {
@@ -386,6 +409,7 @@ function createEntityStore<
     tableName: string,
     deletedStore: DeletedStore,
 ): EntityStore<T> {
+    const serialize = createSerializer();
     return {
         async getAll(): Promise<T[]> {
             const rows = await readTable<T>(tableName);
@@ -420,23 +444,27 @@ function createEntityStore<
             id: string,
             fields: Omit<T, 'id'>,
         ): Promise<T> {
-            const rows = await readTable<T>(tableName);
-            const index = rows.findIndex(
-                entity => entity.id === id,
-            );
-            const serialized = serializeRecord(
-                fields as Record<string, unknown>,
-                tableName,
-            );
-            const written = {
-                ...serialized,
-                id,
-            } as T;
-            const next = index >= 0
-                ? rows.with(index, written)
-                : [...rows, written];
-            await writeTable(tableName, next);
-            return written;
+            return serialize(async () => {
+                const rows = await readTable<T>(
+                    tableName,
+                );
+                const index = rows.findIndex(
+                    entity => entity.id === id,
+                );
+                const serialized = serializeRecord(
+                    fields as Record<string, unknown>,
+                    tableName,
+                );
+                const written = {
+                    ...serialized,
+                    id,
+                } as T;
+                const next = index >= 0
+                    ? rows.with(index, written)
+                    : [...rows, written];
+                await writeTable(tableName, next);
+                return written;
+            });
         },
         async delete(id: string): Promise<void> {
             await deletedStore.record(id);
@@ -450,6 +478,7 @@ function createEntityStore<
 function createHistoryEntityStore<
     T extends { id: string },
 >(tableName: string): EntityStore<T> {
+    const serialize = createSerializer();
     return {
         async getAll(): Promise<T[]> {
             return await readTable<T>(tableName);
@@ -472,35 +501,43 @@ function createHistoryEntityStore<
             id: string,
             fields: Omit<T, 'id'>,
         ): Promise<T> {
-            const rows = await readTable<T>(tableName);
-            const index = rows.findIndex(
-                entity => entity.id === id,
-            );
-            const serialized = serializeRecord(
-                fields as Record<string, unknown>,
-                tableName,
-            );
-            const written = {
-                ...serialized,
-                id,
-            } as T;
-            const next = index >= 0
-                ? rows.with(index, written)
-                : [...rows, written];
-            await writeTable(tableName, next);
-            return written;
+            return serialize(async () => {
+                const rows = await readTable<T>(
+                    tableName,
+                );
+                const index = rows.findIndex(
+                    entity => entity.id === id,
+                );
+                const serialized = serializeRecord(
+                    fields as Record<string, unknown>,
+                    tableName,
+                );
+                const written = {
+                    ...serialized,
+                    id,
+                } as T;
+                const next = index >= 0
+                    ? rows.with(index, written)
+                    : [...rows, written];
+                await writeTable(tableName, next);
+                return written;
+            });
         },
         async delete(id: string): Promise<void> {
-            const rows = await readTable<T>(tableName);
-            const idx = rows.findIndex(
-                e => e.id === id,
-            );
-            if (idx >= 0) {
-                await writeTable(
+            return serialize(async () => {
+                const rows = await readTable<T>(
                     tableName,
-                    rows.toSpliced(idx, 1),
                 );
-            }
+                const idx = rows.findIndex(
+                    e => e.id === id,
+                );
+                if (idx >= 0) {
+                    await writeTable(
+                        tableName,
+                        rows.toSpliced(idx, 1),
+                    );
+                }
+            });
         },
     };
 }
@@ -508,6 +545,7 @@ function createHistoryEntityStore<
 function createSingletonStore<
     T extends { id: string },
 >(tableName: string): SingletonStore<T> {
+    const serialize = createSerializer();
     return {
         async get(): Promise<T> {
             const rows = await readTable<T>(tableName);
@@ -524,39 +562,43 @@ function createSingletonStore<
         async put(
             fields: Omit<T, 'id'>,
         ): Promise<T> {
-            const rows = await readTable<T>(tableName);
-            const serialized = serializeRecord(
-                fields as Record<string, unknown>,
-                tableName,
-            );
-            const index = rows.findIndex(
-                entity => entity.id === '1',
-            );
-
-            if (index >= 0) {
-                rows[index] = {
-                    ...serialized,
-                    id: '1',
-                } as T;
-            } else {
-                rows.push({
-                    ...serialized,
-                    id: '1',
-                } as T);
-            }
-
-            await writeTable(tableName, rows);
-            const pos = index >= 0
-                ? index
-                : rows.length - 1;
-            const written = rows[pos];
-            if (!written) {
-                throw new Error(
-                    'Internal error: entity'
-                    + ' not found after write',
+            return serialize(async () => {
+                const rows = await readTable<T>(
+                    tableName,
                 );
-            }
-            return written;
+                const serialized = serializeRecord(
+                    fields as Record<string, unknown>,
+                    tableName,
+                );
+                const index = rows.findIndex(
+                    entity => entity.id === '1',
+                );
+
+                if (index >= 0) {
+                    rows[index] = {
+                        ...serialized,
+                        id: '1',
+                    } as T;
+                } else {
+                    rows.push({
+                        ...serialized,
+                        id: '1',
+                    } as T);
+                }
+
+                await writeTable(tableName, rows);
+                const pos = index >= 0
+                    ? index
+                    : rows.length - 1;
+                const written = rows[pos];
+                if (!written) {
+                    throw new Error(
+                        'Internal error: entity'
+                        + ' not found after write',
+                    );
+                }
+                return written;
+            });
         },
     };
 }

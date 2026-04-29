@@ -112,6 +112,48 @@ test(
 );
 
 test(
+    'concurrent puts to same store do not race',
+    async () => {
+        installShim();
+        const adapter = await createLocalStorageAdapter();
+        await adapter.createSchema();
+        const ids = Array.from(
+            { length: 11 },
+            (_, i) => `u-${i}`,
+        );
+        await Promise.all(
+            ids.map(id => adapter.users.put(id, {
+                first_name: 'F' + id,
+                last_name: 'L' + id,
+                email: id + '@example.com',
+                role: 'member',
+                department: 'eng',
+                status: 'active',
+                phone: '',
+                avatar_color: '#000',
+                availability: 100,
+                performance_score: 50,
+                bio: '',
+                created_at: '2026-01-01T00:00:00.000Z',
+                updated_at: '2026-01-01T00:00:00.000Z',
+            })),
+        );
+        const all = await adapter.users.getAll();
+        assert.equal(
+            all.length, 11,
+            'all 11 concurrent puts must persist',
+        );
+        const gotIds = new Set(all.map(u => u.id));
+        for (const id of ids) {
+            assert.ok(
+                gotIds.has(id),
+                'expected id ' + id + ' present',
+            );
+        }
+    },
+);
+
+test(
     'legacy uncompressed flow_versions JSON reads correctly',
     async () => {
         const map = installShim();
