@@ -8,14 +8,12 @@ import type {
 } from '../../../api/types.ts';
 import {
     User,
-    jsonArrayField,
     assertActivityType,
 } from '../../../api/types.ts';
 import {
     initials,
     formatDate,
 } from '../format.ts';
-import { notifyUserChange } from './teams.ts';
 import { getCurrentUserRow } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 
@@ -278,30 +276,6 @@ export async function getProfile(
         teamDimensions:
             userObj.parsedTeamDimensions(),
     });
-}
-
-export async function putProfile(
-    ctx: FetchContext,
-    draft: ProfileDraft,
-): Promise<void> {
-    const current =
-        await getCurrentUserRow(ctx);
-    const updated:
-        Omit<UserEntity, 'id'> = {
-            ...current,
-            first_name: draft.firstName,
-            last_name: draft.lastName,
-            email: draft.email,
-            phone: draft.phone,
-            role: draft.role,
-            department: draft.department,
-            bio: draft.bio,
-            strengths: jsonArrayField(
-                draft.strengths,
-            ),
-        };
-    await ctx.PUT('users/current', updated);
-    notifyUserChange();
 }
 
 export interface CompanyDraft {

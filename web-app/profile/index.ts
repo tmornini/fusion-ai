@@ -14,9 +14,11 @@ import { trimStrings } from '../app/core.ts';
 import {
     createFetchContext,
     getProfile,
-    putProfile,
+    getCurrentUserRow,
+    putUser,
     Profile,
     type ProfileDraft,
+    jsonArrayField,
 } from '../app/adapters/index.ts';
 
 const pageAbort = new AbortController();
@@ -268,12 +270,25 @@ async function handleSave(): Promise<void> {
     }
     const trimmed = trimStrings(state.draft);
     try {
-        await putProfile(
-            createFetchContext(), trimmed,
-        );
+        const ctx = createFetchContext();
+        const current =
+            await getCurrentUserRow(ctx);
+        await putUser(ctx, current.id, {
+            ...current,
+            first_name: trimmed.firstName,
+            last_name: trimmed.lastName,
+            email: trimmed.email,
+            phone: trimmed.phone,
+            role: trimmed.role,
+            department: trimmed.department,
+            bio: trimmed.bio,
+            strengths: jsonArrayField(
+                trimmed.strengths,
+            ),
+        });
     } catch (err) {
         log.error(
-            'putProfile failed',
+            'profile save failed',
             'profile',
             err,
         );
