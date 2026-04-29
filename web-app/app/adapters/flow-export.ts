@@ -512,39 +512,6 @@ export async function computeFlowBackupResolution(
     };
 }
 
-export async function putFlowFromBackup(
-    ctx: FetchContext,
-    backup: BackupV2,
-): Promise<string> {
-    const current = await ctx.GET<FlowEntity>(
-        'flows/' + backup.flow.id,
-    );
-    await ctx.PUT(
-        'flows/' + backup.flow.id,
-        {
-            name: backup.flow.name,
-            description:
-                backup.flow.description,
-            is_locked:
-                backup.flow.isLocked,
-            is_auto_layout:
-                backup.flow.isAutoLayout,
-            is_auto_fit:
-                backup.flow.isAutoFit,
-            lock_timeout:
-                backup.flow.lockTimeout,
-            graph: putFlowGraph(
-                backup.flow.graph,
-            ),
-            created_at:
-                current.created_at,
-            updated_at: nowUtc(),
-        },
-    );
-    notifyFlowChange();
-    return backup.flow.id;
-}
-
 export async function postFlowFromBackup(
     ctx: FetchContext,
     flowId: string,

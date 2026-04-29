@@ -21,11 +21,12 @@ import {
     createFetchContext,
     getProjects,
     getFlowsWithProjectNames,
+    getFlowGraph,
+    putFlow,
     postFlowFromMermaid,
     postFlowFromZip,
     getBackupFromZip,
     computeFlowBackupResolution,
-    putFlowFromBackup,
     postFlowFromBackup,
     generateCryptoSafeBase62,
     subscribeFlowChanges,
@@ -515,13 +516,26 @@ async function handleOverwrite(
     if (stOw.kind !== 'pending') return;
     closeDialog('import-flow');
     resetImportDialog();
-    let flowId: string;
+    const flowId = stOw.backup.flow.id;
     try {
-        flowId =
-            await putFlowFromBackup(
-                createFetchContext(),
-                stOw.backup,
-            );
+        const ctx = createFetchContext();
+        const existing =
+            await getFlowGraph(ctx, flowId);
+        await putFlow(ctx, flowId, {
+            name: stOw.backup.flow.name,
+            description:
+                stOw.backup.flow.description,
+            isLocked: stOw.backup.flow.isLocked,
+            isAutoLayout:
+                stOw.backup.flow.isAutoLayout,
+            isAutoFit:
+                stOw.backup.flow.isAutoFit,
+            lockTimeout:
+                stOw.backup.flow.lockTimeout,
+            nodes: stOw.backup.flow.graph.nodes,
+            edges: stOw.backup.flow.graph.edges,
+            createdAt: existing.createdAt,
+        });
     } catch (err) {
         clearPending(input);
         const msg =
