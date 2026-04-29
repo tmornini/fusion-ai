@@ -8,8 +8,8 @@ import type {
     StoredGraph,
     FlowFieldType,
 } from '../../../api/types.ts';
-import { toBool } from '../../../api/types.ts';
 import {
+    asBoolean,
     validateStoredGraphJson,
 } from '../../../api/validators.ts';
 import type { FetchContext } from './shared.ts';
@@ -189,14 +189,17 @@ export async function getFlowGraph(
         id: flow.id,
         name: flow.name,
         description: flow.description,
-        isLocked: toBool(
+        isLocked: asBoolean(
             flow.is_locked,
+            'is_locked',
         ),
-        isAutoLayout: toBool(
+        isAutoLayout: asBoolean(
             flow.is_auto_layout,
+            'is_auto_layout',
         ),
-        isAutoFit: toBool(
+        isAutoFit: asBoolean(
             flow.is_auto_fit,
+            'is_auto_fit',
         ),
         lockTimeout: flow.lock_timeout,
         createdAt: flow.created_at,

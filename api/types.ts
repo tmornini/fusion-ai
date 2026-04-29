@@ -141,13 +141,6 @@ export function jsonObjectField(
     ) as JsonObjectField;
 }
 
-export function toBool(
-    value: unknown,
-): boolean {
-    return value === 1
-        || value === true;
-}
-
 function includes<T extends string>(
     values: readonly T[],
     v: string,

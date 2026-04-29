@@ -91,6 +91,27 @@ test(
 );
 
 test(
+    'booleans round-trip as booleans, not 1|0 numbers',
+    async () => {
+        installShim();
+        const adapter = await createLocalStorageAdapter();
+        await adapter.createSchema();
+        await adapter.flowVersions.put(
+            'fv-bool', baseVersion,
+        );
+        const got = await adapter.flowVersions.getById(
+            'fv-bool',
+        );
+        assert.strictEqual(got.is_locked, false);
+        assert.strictEqual(got.is_auto_layout, true);
+        assert.strictEqual(got.is_auto_fit, true);
+        assert.strictEqual(
+            typeof got.is_locked, 'boolean',
+        );
+    },
+);
+
+test(
     'legacy uncompressed flow_versions JSON reads correctly',
     async () => {
         const map = installShim();

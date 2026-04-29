@@ -2,7 +2,6 @@ import {
     nowUtc,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
-    toBool,
     projectIsNotDeleted,
 } from '../../../api/types.ts';
 import type {
@@ -296,14 +295,17 @@ function buildBackupJson(
             name: flow.name,
             description:
                 flow.description,
-            isLocked: toBool(
+            isLocked: asBoolean(
                 flow.is_locked,
+                'is_locked',
             ),
-            isAutoLayout: toBool(
+            isAutoLayout: asBoolean(
                 flow.is_auto_layout,
+                'is_auto_layout',
             ),
-            isAutoFit: toBool(
+            isAutoFit: asBoolean(
                 flow.is_auto_fit,
+                'is_auto_fit',
             ),
             lockTimeout:
                 flow.lock_timeout,
@@ -333,14 +335,17 @@ export async function getFlowZip(
         id: flow.id,
         name: flow.name,
         description: flow.description,
-        isLocked: toBool(
+        isLocked: asBoolean(
             flow.is_locked,
+            'is_locked',
         ),
-        isAutoLayout: toBool(
+        isAutoLayout: asBoolean(
             flow.is_auto_layout,
+            'is_auto_layout',
         ),
-        isAutoFit: toBool(
+        isAutoFit: asBoolean(
             flow.is_auto_fit,
+            'is_auto_fit',
         ),
         lockTimeout: flow.lock_timeout,
         createdAt: flow.created_at,

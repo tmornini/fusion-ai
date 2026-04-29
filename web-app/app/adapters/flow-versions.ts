@@ -5,8 +5,10 @@ import type {
 } from '../../../api/types.ts';
 import {
     nowUtc,
-    toBool,
 } from '../../../api/types.ts';
+import {
+    asBoolean,
+} from '../../../api/validators.ts';
 import {
     notifyFlowChange,
 } from './flow-mutations.ts';
@@ -35,11 +37,18 @@ function computeFlowVersion(
         flowId: row.flow_id,
         name: row.name,
         description: row.description,
-        isLocked: toBool(row.is_locked),
-        isAutoLayout: toBool(
-            row.is_auto_layout,
+        isLocked: asBoolean(
+            row.is_locked,
+            'is_locked',
         ),
-        isAutoFit: toBool(row.is_auto_fit),
+        isAutoLayout: asBoolean(
+            row.is_auto_layout,
+            'is_auto_layout',
+        ),
+        isAutoFit: asBoolean(
+            row.is_auto_fit,
+            'is_auto_fit',
+        ),
         lockTimeout: row.lock_timeout,
         graph: row.graph,
         createdAt: row.created_at,
