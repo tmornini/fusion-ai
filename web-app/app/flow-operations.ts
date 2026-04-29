@@ -17,10 +17,8 @@ import {
     deleteFlowVersion,
     getFlowGraph,
     getFlowVersions,
-    putFlowFromVersion,
     generateCryptoSafeBase62,
     nowUtc,
-    jsonObjectField,
 } from './adapters/index.ts';
 import type {
     FlowSaveShape,
@@ -53,17 +51,6 @@ function isIntermediateNode(
     return node !== undefined
         && !node.isStart
         && !node.isComplete;
-}
-
-function serializeGraph(
-    nodes: readonly GraphNode[],
-    edges: readonly GraphEdge[],
-) {
-    return jsonObjectField(
-        { nodes, edges } as unknown as Record<
-            string, unknown
-        >,
-    );
 }
 
 function singleSelectedNodeId(
@@ -600,13 +587,22 @@ export async function performUndo(
                 isAutoLayout: snap.isAutoLayout,
                 isAutoFit: snap.isAutoFit,
                 lockTimeout: snap.lockTimeout,
-                graph: serializeGraph(
-                    snap.nodes, snap.edges,
-                ),
+                nodes: snap.nodes,
+                edges: snap.edges,
                 createdAt: nowUtc(),
             },
         );
-        await putFlowFromVersion(ctx, version);
+        await putFlow(ctx, snap.flowId, {
+            name: version.name,
+            description: version.description,
+            isLocked: version.isLocked,
+            isAutoLayout: version.isAutoLayout,
+            isAutoFit: version.isAutoFit,
+            lockTimeout: version.lockTimeout,
+            nodes: version.nodes,
+            edges: version.edges,
+            createdAt: snap.createdAt,
+        });
         await deleteFlowVersion(ctx, version.id);
         const graph = await getFlowGraph(
             ctx, snap.flowId,
@@ -654,9 +650,18 @@ export async function performRedo(
             generateCryptoSafeBase62(),
             snap.flowId,
         );
-        await putFlowFromVersion(
-            ctx, popped.version,
-        );
+        const v = popped.version;
+        await putFlow(ctx, snap.flowId, {
+            name: v.name,
+            description: v.description,
+            isLocked: v.isLocked,
+            isAutoLayout: v.isAutoLayout,
+            isAutoFit: v.isAutoFit,
+            lockTimeout: v.lockTimeout,
+            nodes: v.nodes,
+            edges: v.edges,
+            createdAt: snap.createdAt,
+        });
         const graph = await getFlowGraph(
             ctx, snap.flowId,
         );

@@ -1,13 +1,15 @@
 import type {
     FlowEntity,
     FlowVersionEntity,
-    JsonObjectField,
+    GraphNode,
+    GraphEdge,
 } from '../../../api/types.ts';
 import {
     nowUtc,
 } from '../../../api/types.ts';
 import {
     asBoolean,
+    validateStoredGraphJson,
 } from '../../../api/validators.ts';
 import {
     notifyFlowChange,
@@ -23,7 +25,8 @@ export interface FlowVersion {
     isAutoLayout: boolean;
     isAutoFit: boolean;
     lockTimeout: number;
-    graph: JsonObjectField;
+    nodes: GraphNode[];
+    edges: GraphEdge[];
     createdAt: string;
 }
 
@@ -32,6 +35,9 @@ export const FLOW_VERSION_CAP = 10;
 function computeFlowVersion(
     row: FlowVersionEntity,
 ): FlowVersion {
+    const g = validateStoredGraphJson(
+        row.graph, 'flow.graph',
+    );
     return {
         id: row.id,
         flowId: row.flow_id,
@@ -50,7 +56,8 @@ function computeFlowVersion(
             'is_auto_fit',
         ),
         lockTimeout: row.lock_timeout,
-        graph: row.graph,
+        nodes: g.nodes,
+        edges: g.edges,
         createdAt: row.created_at,
     };
 }
@@ -124,23 +131,3 @@ export async function deleteFlowVersion(
     notifyFlowChange();
 }
 
-export async function putFlowFromVersion(
-    ctx: FetchContext,
-    version: FlowVersion,
-): Promise<void> {
-    const current = await ctx.GET<FlowEntity>(
-        'flows/' + version.flowId,
-    );
-    await ctx.PUT('flows/' + version.flowId, {
-        name: version.name,
-        description: version.description,
-        is_locked: version.isLocked,
-        is_auto_layout: version.isAutoLayout,
-        is_auto_fit: version.isAutoFit,
-        lock_timeout: version.lockTimeout,
-        graph: version.graph,
-        created_at: current.created_at,
-        updated_at: nowUtc(),
-    });
-    notifyFlowChange();
-}
