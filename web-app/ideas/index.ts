@@ -10,7 +10,6 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getIdeas,
-    getIdeaRow,
     putIdea,
     subscribeIdeaChanges,
     isIdeaStatus,
@@ -112,14 +111,17 @@ export async function init(): Promise<void> {
         '[data-idea-card]',
         'data-idea-card',
         async (id, newPosition) => {
-            const dragCtx = createFetchContext();
-            const entity = await getIdeaRow(
-                dragCtx, id,
+            if (!ideaState) return;
+            const tuple = ideaState.ideas
+                .find(t => t.entity.id === id);
+            if (!tuple) return;
+            await putIdea(
+                createFetchContext(), id,
+                {
+                    ...tuple.entity,
+                    position: newPosition,
+                },
             );
-            await putIdea(dragCtx, id, {
-                ...entity,
-                position: newPosition,
-            });
         },
     );
 }
