@@ -26,14 +26,9 @@ export const RECENT_ACTIVITY_COUNT = 3;
 async function getOrganizationRow(
     ctx: FetchContext,
 ): Promise<OrganizationEntity> {
-    const entity = await ctx.GET<
-        OrganizationEntity
-    >('organization');
-    if (!entity.plan)
-        throw new Error(
-            'Organization not configured',
-        );
-    return entity;
+    return ctx.GET<OrganizationEntity>(
+        'organization',
+    );
 }
 
 export class Organization {
