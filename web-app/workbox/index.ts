@@ -23,7 +23,6 @@ import {
     getAllWorkOrderTransitionRows,
     getAllWorkOrderClaimRows,
     getUserMap,
-    getWorkOrder,
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
@@ -31,6 +30,7 @@ import {
     generateCryptoSafeBase62,
     subscribeWorkOrderChanges,
     type FetchContext,
+    type WorkOrderEntity,
 } from '../app/adapters/index.ts';
 import {
     WorkboxInboxPresenter,
@@ -47,6 +47,8 @@ const signal = pageAbort.signal;
 
 let activePresenter:
     WorkboxInboxPresenter | null = null;
+let workOrderEntities:
+    Map<string, WorkOrderEntity> = new Map();
 
 export async function init(
     _params?: Record<string, string>,
@@ -133,6 +135,9 @@ async function loadInboxItems(
         getAllWorkOrderClaimRows(ctx),
         getUserMap(ctx),
     ]);
+    workOrderEntities = new Map(
+        workOrders.map(w => [w.id, w]),
+    );
     return buildInboxItems(
         workOrders, transitions, claims,
         userMap, mode,
@@ -170,9 +175,10 @@ async function initActiveList(
         '[data-work-order-card]',
         'data-work-order-card',
         async (id, newPosition) => {
+            const entity =
+                workOrderEntities.get(id);
+            if (!entity) return;
             try {
-                const entity =
-                    await getWorkOrder(ctx, id);
                 await putWorkOrder(ctx, id, {
                     ...entity,
                     position: newPosition,
