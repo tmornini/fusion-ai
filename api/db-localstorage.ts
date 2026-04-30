@@ -603,6 +603,152 @@ function createSingletonStore<
     };
 }
 
+async function clearAllTables(): Promise<void> {
+    for (const table of TABLE_NAMES) {
+        localStorage.removeItem(
+            KEY_PREFIX + table,
+        );
+    }
+}
+
+async function hasAnyTable(): Promise<boolean> {
+    return TABLE_NAMES.some(
+        table =>
+            localStorage.getItem(
+                KEY_PREFIX + table,
+            ) !== null,
+    );
+}
+
+async function seedEmptyTables(): Promise<void> {
+    for (const table of TABLE_NAMES) {
+        if (
+            localStorage.getItem(
+                KEY_PREFIX + table,
+            ) === null
+        ) {
+            await writeTable(table, []);
+        }
+    }
+}
+
+async function serializeAllTables(
+): Promise<string> {
+    const snapshot: Record<
+        string,
+        unknown[]
+    > = {};
+    for (const table of TABLE_NAMES) {
+        snapshot[table] = await readTable(
+            table,
+        );
+    }
+    return JSON.stringify(snapshot, null, 2);
+}
+
+// Parses + validates the snapshot JSON, returning
+// per-table serialized payloads ready for storage.
+// Throws with a precise message identifying which
+// table or row failed validation. Pure (no I/O).
+async function parseAndValidateSnapshot(
+    json: string,
+): Promise<Map<string, string>> {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(json);
+    } catch {
+        throw new Error(
+            'Invalid snapshot:'
+            + ' not valid JSON.',
+        );
+    }
+    if (
+        typeof parsed !== 'object'
+        || parsed === null
+        || Array.isArray(parsed)
+    ) {
+        throw new Error(
+            'Invalid snapshot: expected'
+            + ' an object with table'
+            + ' keys.',
+        );
+    }
+    const record = parsed as Record<
+        string, unknown
+    >;
+    const serialized = new Map<string, string>();
+    for (const table of TABLE_NAMES) {
+        const rows = record[table];
+        if (
+            rows !== undefined
+            && !Array.isArray(rows)
+        ) {
+            throw new Error(
+                'Invalid snapshot:'
+                + ' table "'
+                + table
+                + '" is not an array.',
+            );
+        }
+        const rowArr =
+            Array.isArray(rows) ? rows : [];
+        for (let i = 0; i < rowArr.length; i++) {
+            const row = rowArr[i];
+            if (
+                typeof row !== 'object'
+                || row === null
+                || Array.isArray(row)
+            ) {
+                throw new Error(
+                    'Invalid snapshot:'
+                    + ' row '
+                    + i
+                    + ' in table "'
+                    + table
+                    + '" is not an'
+                    + ' object.',
+                );
+            }
+            const r = row as Record<
+                string, unknown
+            >;
+            validateSnapshotRow(table, r, i);
+        }
+        serialized.set(
+            table, JSON.stringify(rowArr),
+        );
+    }
+    return serialized;
+}
+
+// Wipes existing tables, then writes serialized
+// payloads. On mid-write failure (e.g. quota
+// exceeded), wipes everything so the next
+// bootstrap detects no schema and routes the
+// user to re-import. Real atomicity arrives
+// with Postgres.
+async function applyValidatedSnapshot(
+    serialized: Map<string, string>,
+): Promise<void> {
+    await clearAllTables();
+    try {
+        for (
+            const [table, json] of serialized
+        ) {
+            const payload =
+                COMPRESSED_TABLES.has(table)
+                    ? await compressJson(json)
+                    : json;
+            localStorage.setItem(
+                KEY_PREFIX + table, payload,
+            );
+        }
+    } catch (err) {
+        await clearAllTables();
+        throw err;
+    }
+}
+
 export const TABLE_NAMES = [
     'users',
     'ideas',
@@ -641,185 +787,21 @@ export async function createLocalStorageAdapter(
         async flush(): Promise<void> {
         },
 
-        async deleteSchema(): Promise<void> {
-            for (const table of TABLE_NAMES) {
-                localStorage.removeItem(
-                    KEY_PREFIX + table,
-                );
-            }
-        },
-
-        async hasSchema(): Promise<boolean> {
-            return TABLE_NAMES.some(
-                table =>
-                    localStorage.getItem(
-                        KEY_PREFIX + table,
-                    ) !== null,
-            );
-        },
-
-        async createSchema(): Promise<void> {
-            for (const table of TABLE_NAMES) {
-                if (
-                    localStorage.getItem(
-                        KEY_PREFIX + table,
-                    ) === null
-                ) {
-                    await writeTable(table, []);
-                }
-            }
-        },
-
-        async exportSnapshot(
-        ): Promise<string> {
-            const snapshot: Record<
-                string,
-                unknown[]
-            > = {};
-            for (
-                const table of TABLE_NAMES
-            ) {
-                snapshot[table] = await readTable(
-                    table,
-                );
-            }
-            return JSON.stringify(
-                snapshot,
-                null,
-                2,
-            );
-        },
+        deleteSchema: clearAllTables,
+        hasSchema: hasAnyTable,
+        createSchema: seedEmptyTables,
+        exportSnapshot: serializeAllTables,
 
         async importSnapshot(
             json: string,
         ): Promise<void> {
-            let snapshot: unknown;
-            try {
-                snapshot = JSON.parse(json);
-            } catch {
-                throw new Error(
-                    'Invalid snapshot:'
-                    + ' not valid JSON.',
+            const serialized =
+                await parseAndValidateSnapshot(
+                    json,
                 );
-            }
-            if (
-                typeof snapshot !== 'object'
-                || snapshot === null
-                || Array.isArray(snapshot)
-            ) {
-                throw new Error(
-                    'Invalid snapshot: expected'
-                    + ' an object with table'
-                    + ' keys.',
-                );
-            }
-            const record = snapshot as Record<
-                string,
-                unknown
-            >;
-            const serialized = new Map<
-                string,
-                string
-            >();
-            for (
-                const table of TABLE_NAMES
-            ) {
-                const rows = record[table];
-                if (
-                    rows !== undefined
-                    && !Array.isArray(rows)
-                ) {
-                    throw new Error(
-                        'Invalid snapshot:'
-                        + ' table "'
-                        + table
-                        + '" is not an array.',
-                    );
-                }
-                const rowArr =
-                    Array.isArray(rows)
-                        ? rows
-                        : [];
-                for (
-                    let i = 0;
-                    i < rowArr.length;
-                    i++
-                ) {
-                    const row = rowArr[i];
-                    if (
-                        typeof row !== 'object'
-                        || row === null
-                        || Array.isArray(row)
-                    ) {
-                        throw new Error(
-                            'Invalid snapshot:'
-                            + ' row '
-                            + i
-                            + ' in table "'
-                            + table
-                            + '" is not an'
-                            + ' object.',
-                        );
-                    }
-                    const r = row as Record<
-                        string, unknown
-                    >;
-                    validateSnapshotRow(
-                        table, r, i,
-                    );
-                }
-                serialized.set(
-                    table,
-                    JSON.stringify(rowArr),
-                );
-            }
-
-            // Wipe old tables before writing
-            // new ones — replace, never merge.
-            for (
-                const table of TABLE_NAMES
-            ) {
-                localStorage.removeItem(
-                    KEY_PREFIX + table,
-                );
-            }
-            try {
-                for (
-                    const [table, json]
-                        of serialized
-                ) {
-                    const payload =
-                        COMPRESSED_TABLES.has(table)
-                            ? await compressJson(json)
-                            : json;
-                    localStorage.setItem(
-                        KEY_PREFIX + table,
-                        payload,
-                    );
-                }
-            } catch (err) {
-                // Mid-write failure (almost
-                // always QuotaExceededError
-                // despite the pre-flight cap).
-                // We trade rare-crash data
-                // preservation for write-path
-                // simplicity: wipe every
-                // table key so hasSchema()
-                // returns false on the next
-                // bootstrap and the app
-                // routes the user back to
-                // snapshots to re-import.
-                // Real atomicity arrives with
-                // Postgres.
-                for (
-                    const table of TABLE_NAMES
-                ) {
-                    localStorage.removeItem(
-                        KEY_PREFIX + table,
-                    );
-                }
-                throw err;
-            }
+            await applyValidatedSnapshot(
+                serialized,
+            );
         },
 
         users:
