@@ -16,9 +16,9 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getWorkOrder,
-    getWorkOrderTransitionRows,
+    getWorkOrderTransitionRowsByOrder,
     getTransitionFieldValuesByTransition,
-    getWorkOrderClaimRows,
+    getWorkOrderClaimRowsByOrder,
     getUserMap,
     postActivity,
     postWorkOrderTransition,
@@ -236,11 +236,11 @@ async function loadPresenter(
         claims, userMap,
     ] = await Promise.all([
         getWorkOrder(ctx, workOrderId),
-        getWorkOrderTransitionRows(
+        getWorkOrderTransitionRowsByOrder(
             ctx, workOrderId,
         ),
         getTransitionFieldValuesByTransition(ctx),
-        getWorkOrderClaimRows(ctx, workOrderId),
+        getWorkOrderClaimRowsByOrder(ctx, workOrderId),
         getUserMap(ctx),
     ]);
     return new WorkboxDetailPresenter(

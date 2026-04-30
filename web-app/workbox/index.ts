@@ -20,8 +20,8 @@ import {
 } from '../app/core.ts';
 import {
     getWorkOrderRows,
-    getAllWorkOrderTransitionRows,
-    getAllWorkOrderClaimRows,
+    getWorkOrderTransitionRows,
+    getWorkOrderClaimRows,
     getUserMap,
     getFlowsForCreation,
     postWorkOrderCreation,
@@ -131,8 +131,8 @@ async function loadInboxItems(
         claims, userMap,
     ] = await Promise.all([
         getWorkOrderRows(ctx),
-        getAllWorkOrderTransitionRows(ctx),
-        getAllWorkOrderClaimRows(ctx),
+        getWorkOrderTransitionRows(ctx),
+        getWorkOrderClaimRows(ctx),
         getUserMap(ctx),
     ]);
     workOrderEntities = new Map(

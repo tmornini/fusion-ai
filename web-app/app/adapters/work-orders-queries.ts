@@ -114,7 +114,7 @@ export async function getWorkOrderRows(
     );
 }
 
-export async function getAllWorkOrderTransitionRows(
+export async function getWorkOrderTransitionRows(
     ctx: FetchContext,
 ): Promise<WorkOrderTransitionEntity[]> {
     return ctx.GET<
@@ -122,7 +122,7 @@ export async function getAllWorkOrderTransitionRows(
     >('work-order-transitions');
 }
 
-export async function getAllWorkOrderClaimRows(
+export async function getWorkOrderClaimRows(
     ctx: FetchContext,
 ): Promise<WorkOrderClaimEntity[]> {
     return ctx.GET<
@@ -139,7 +139,7 @@ export async function getWorkOrder(
     );
 }
 
-export async function getWorkOrderTransitionRows(
+export async function getWorkOrderTransitionRowsByOrder(
     ctx: FetchContext,
     workOrderId: string,
 ): Promise<WorkOrderTransitionEntity[]> {
@@ -151,7 +151,7 @@ export async function getWorkOrderTransitionRows(
     );
 }
 
-export async function getWorkOrderClaimRows(
+export async function getWorkOrderClaimRowsByOrder(
     ctx: FetchContext,
     workOrderId: string,
 ): Promise<WorkOrderClaimEntity[]> {
