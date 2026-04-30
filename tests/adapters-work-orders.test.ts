@@ -395,7 +395,6 @@ test(
             edgeId: 'e2',
             values: {},
             fieldValueIds: {},
-            userId: 'u1',
             currentNodeId: 'n-middle',
         });
 
@@ -411,7 +410,9 @@ test(
                     === 'n-finish',
         );
         assert.ok(last);
-        assert.equal(last.user_id, 'u1');
+        assert.equal(
+            last.user_id, 'current',
+        );
 
         const claimsAfter =
             await db.workOrderClaims
@@ -456,7 +457,6 @@ test(
             edgeId: 'e2',
             values: {},
             fieldValueIds: {},
-            userId: 'u1',
             currentNodeId: 'n-middle',
         });
 
@@ -494,7 +494,6 @@ test(
                     edgeId: 'no-such-edge',
                     values: {},
                     fieldValueIds: {},
-                    userId: 'u1',
                     currentNodeId:
                         'n-middle',
                 }),

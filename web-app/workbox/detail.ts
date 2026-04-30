@@ -65,7 +65,6 @@ function collectFieldValues(
 function initTransitionButtons(
     container: HTMLElement,
     detail: WorkboxDetailPresenter,
-    userId: string,
     ctx: ReturnType<typeof createFetchContext>,
 ): void {
     const buttons =
@@ -121,7 +120,6 @@ function initTransitionButtons(
                             edgeId,
                             values,
                             fieldValueIds,
-                            userId,
                             currentNodeId:
                                 detail
                                     .currentNodeId(),
@@ -330,8 +328,7 @@ export async function init(
         !detail.isComplete()
     ) {
         initTransitionButtons(
-            container, detail,
-            userId, ctx,
+            container, detail, ctx,
         );
         initUnclaimButton(
             container, detail, ctx,

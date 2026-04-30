@@ -207,7 +207,6 @@ export interface WorkOrderTransitionInput {
     edgeId: string;
     values: Record<string, string>;
     fieldValueIds: Record<string, string>;
-    userId: string;
     currentNodeId: string;
 }
 
@@ -217,9 +216,10 @@ export async function postWorkOrderTransition(
 ): Promise<void> {
     const {
         transitionId, workOrderId, edgeId,
-        values, fieldValueIds, userId,
+        values, fieldValueIds,
         currentNodeId,
     } = input;
+    const user = await ctx.getCurrentUser();
     const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
@@ -245,7 +245,7 @@ export async function postWorkOrderTransition(
             work_order_id: workOrderId,
             from_node_id: currentNodeId,
             to_node_id: edge.toNodeId,
-            user_id: userId,
+            user_id: user.id,
             transitioned_at: now,
         },
     );
