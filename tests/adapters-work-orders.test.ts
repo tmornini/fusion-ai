@@ -189,9 +189,6 @@ test(
     + 'all five tables in one call',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         const graph = buildLinearGraph();
         await db.flows.put(
             'f1', buildFlow(graph),
@@ -267,9 +264,6 @@ test(
     + 'when flow has no start node',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         const graph: StoredGraph = {
             nodes: [
                 buildNode('a', 'A'),
@@ -298,9 +292,6 @@ test(
     + 'outgoing edges',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         const graph: StoredGraph = {
             nodes: [
                 buildNode(
@@ -333,9 +324,6 @@ test(
     + 'position across calls',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         await db.flows.put(
             'f1',
             buildFlow(buildLinearGraph()),
@@ -360,9 +348,6 @@ test(
     + 'transition and deletes claim',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         await db.flows.put(
             'f1',
             buildFlow(buildLinearGraph()),
@@ -423,9 +408,6 @@ test(
     + 'when no claim exists',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         await db.flows.put(
             'f1',
             buildFlow(buildLinearGraph()),
@@ -469,9 +451,6 @@ test(
     + 'when edge id does not exist',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.users.put(
-            'u1', buildUser('Alice'),
-        );
         await db.flows.put(
             'f1',
             buildFlow(buildLinearGraph()),
