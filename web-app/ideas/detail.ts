@@ -21,7 +21,6 @@ import {
 } from '../app/core.ts';
 import {
     getIdea,
-    getIdeaRow,
     postActivity,
     putIdea,
     subscribeIdeaChanges,
@@ -106,13 +105,12 @@ async function transitionIdea(
     toStatus: IdeaTransition,
     feedback: string,
 ): Promise<void> {
+    if (!state) return;
     const ctx = createFetchContext();
     const cfg = TRANSITION_CONFIG[toStatus]!;
-    let title = '';
+    const entity = state.view.entity;
+    const title = entity.title;
     try {
-        const entity =
-            await getIdeaRow(ctx, ideaId);
-        title = entity.title;
         await putIdea(
             ctx, ideaId,
             { ...entity, status: toStatus },
@@ -421,11 +419,9 @@ async function handleSave(): Promise<void> {
         state.draft,
     );
     const ideaId = state.view.idea.idForLink();
+    const entity = state.view.entity;
     const ctx = createFetchContext();
     try {
-        const entity = await getIdeaRow(
-            ctx, ideaId,
-        );
         await putIdea(ctx, ideaId, {
             ...entity,
             ...trimStrings(patch),

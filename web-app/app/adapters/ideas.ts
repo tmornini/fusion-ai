@@ -89,6 +89,7 @@ export type {
 
 export interface IdeaWithSubmitter {
     readonly idea: Idea;
+    readonly entity: IdeaEntity;
     readonly submitterName: string;
     readonly submittedAt: string;
 }
@@ -117,6 +118,7 @@ export async function getIdeas(
         }
         return {
             idea: new Idea(row),
+            entity: row,
             submitterName: userName(
                 userMap,
                 submission.user_id,
@@ -140,6 +142,7 @@ export async function getIdea(
     ]);
     return {
         idea: new Idea(row),
+        entity: row,
         submitterName: userName(
             userMap, submission.user_id,
         ),
