@@ -8,7 +8,7 @@
 
 (function redirectRoot(): void {
     const hasSchema = Object.keys(localStorage)
-        .some(k => k.indexOf('fusion-ai:') === 0);
+        .some(k => k.startsWith('fusion-ai:'));
     window.location.href = hasSchema
         ? 'landing/index.html'
         : 'snapshots/index.html';
