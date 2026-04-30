@@ -183,6 +183,7 @@ export async function postIdeaConversion(
     projectId: string,
     project: Omit<ProjectEntity, 'id'>,
     leadUserId: string,
+    promotedIdea: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     await putProject(ctx, projectId, project);
     await putProjectTeamMember(ctx, {
@@ -191,9 +192,5 @@ export async function postIdeaConversion(
         role: 'lead',
         type: 'internal',
     });
-    const existing = await getIdeaRow(ctx, ideaId);
-    await putIdea(ctx, ideaId, {
-        ...existing,
-        status: 'promoted',
-    });
+    await putIdea(ctx, ideaId, promotedIdea);
 }

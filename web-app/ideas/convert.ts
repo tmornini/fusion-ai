@@ -21,6 +21,7 @@ import {
     jsonObjectField,
     createFetchContext,
     generateCryptoSafeBase62,
+    type IdeaEntity,
 } from '../app/adapters/index.ts';
 import {
     IdeaConversionPresenter,
@@ -372,6 +373,7 @@ export async function init(
                         ideaId,
                         projectId,
                         fields,
+                        tuple.entity,
                     );
                 } catch (err) {
                     log.error(
@@ -480,6 +482,7 @@ async function performConversion(
     ideaId: string,
     projectId: string,
     fields: ConversionFields,
+    ideaEntity: IdeaEntity,
 ): Promise<void> {
     await postIdeaConversion(
         ctx,
@@ -516,5 +519,6 @@ async function performConversion(
                 fields['budget'],
         },
         fields['project-lead'],
+        { ...ideaEntity, status: 'promoted' },
     );
 }
