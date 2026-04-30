@@ -41,9 +41,15 @@ async function computeAvailableForUpload(
             : undefined;
     if (storage?.estimate) {
         const est = await storage.estimate();
-        const quota = est.quota ?? 0;
-        const usage = est.usage ?? 0;
-        return Math.max(0, quota - usage);
+        if (
+            est.quota === undefined
+            || est.usage === undefined
+        ) {
+            return FALLBACK_SNAPSHOT_CAP_BYTES;
+        }
+        return Math.max(
+            0, est.quota - est.usage,
+        );
     }
     return FALLBACK_SNAPSHOT_CAP_BYTES;
 }
