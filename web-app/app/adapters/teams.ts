@@ -13,6 +13,7 @@ export {
     AVAILABILITY_HIGH,
     AVAILABILITY_LOW,
 } from '../../../api/types.ts';
+export type { UserEntity } from '../../../api/types.ts';
 
 const userChangedChannel =
     createChannel<void>();
