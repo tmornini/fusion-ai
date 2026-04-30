@@ -27,7 +27,6 @@ import {
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
-    getCurrentUserRow,
     createFetchContext,
     generateCryptoSafeBase62,
     subscribeWorkOrderChanges,
@@ -256,20 +255,6 @@ async function createWorkOrderForFlow(
     flowId: string,
     ctx: FetchContext,
 ): Promise<void> {
-    let userId: string;
-    try {
-        const row = await getCurrentUserRow(ctx);
-        userId = row.id;
-    } catch (err) {
-        log.error(
-            'getCurrentUserRow failed',
-            'workbox', err,
-        );
-        showToast(
-            'Failed to load user', 'error',
-        );
-        return;
-    }
     const workOrderId =
         generateCryptoSafeBase62();
     const flowLinkId =
@@ -288,7 +273,6 @@ async function createWorkOrderForFlow(
             postStartTransitionId,
             claimId,
             flowId,
-            userId,
         });
         showToast(
             'Work order created', 'success',

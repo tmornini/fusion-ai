@@ -45,11 +45,10 @@ function mintCreateIds(): CreateIds {
 async function createWorkOrder(
     ctx: FetchContext,
     flowId: string,
-    userId: string,
 ): Promise<string> {
     const ids = mintCreateIds();
     await postWorkOrderCreation(ctx, {
-        ...ids, flowId, userId,
+        ...ids, flowId,
     });
     return ids.workOrderId;
 }
@@ -200,7 +199,7 @@ test(
 
         const woId =
             await createWorkOrder(
-                ctx, 'f1', 'u1',
+                ctx, 'f1',
             );
 
         const wos = await db.workOrders
@@ -258,7 +257,7 @@ test(
             woId,
         );
         assert.equal(
-            claims[0]!.user_id, 'u1',
+            claims[0]!.user_id, 'current',
         );
     },
 );
@@ -286,7 +285,7 @@ test(
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    ctx, 'f1', 'u1',
+                    ctx, 'f1',
                 ),
             /no start node/,
         );
@@ -322,7 +321,7 @@ test(
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    ctx, 'f1', 'u1',
+                    ctx, 'f1',
                 ),
             /exactly one outgoing edge/,
         );
@@ -341,12 +340,8 @@ test(
             'f1',
             buildFlow(buildLinearGraph()),
         );
-        await createWorkOrder(
-            ctx, 'f1', 'u1',
-        );
-        await createWorkOrder(
-            ctx, 'f1', 'u1',
-        );
+        await createWorkOrder(ctx, 'f1');
+        await createWorkOrder(ctx, 'f1');
         const wos = await db.workOrders
             .getAll();
         const positions = wos
@@ -374,7 +369,7 @@ test(
         );
         const woId =
             await createWorkOrder(
-                ctx, 'f1', 'u1',
+                ctx, 'f1',
             );
 
         const before =
@@ -437,7 +432,7 @@ test(
         );
         const woId =
             await createWorkOrder(
-                ctx, 'f1', 'u1',
+                ctx, 'f1',
             );
         // Manually clear any claim to
         // simulate an unclaimed
@@ -483,7 +478,7 @@ test(
         );
         const woId =
             await createWorkOrder(
-                ctx, 'f1', 'u1',
+                ctx, 'f1',
             );
         await assert.rejects(
             () =>

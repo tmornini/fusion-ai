@@ -83,13 +83,13 @@ export interface WorkOrderCreationInput {
     postStartTransitionId: string;
     claimId: string;
     flowId: string;
-    userId: string;
 }
 
 export async function postWorkOrderCreation(
     ctx: FetchContext,
     input: WorkOrderCreationInput,
 ): Promise<void> {
+    const user = await ctx.getCurrentUser();
     const flow = await ctx.GET<FlowEntity>(
         `flows/${input.flowId}`,
     );
@@ -171,7 +171,7 @@ export async function postWorkOrderCreation(
             work_order_id: input.workOrderId,
             from_node_id: '',
             to_node_id: startNode.id,
-            user_id: input.userId,
+            user_id: user.id,
             transitioned_at: now,
         },
     );
@@ -183,7 +183,7 @@ export async function postWorkOrderCreation(
             work_order_id: input.workOrderId,
             from_node_id: startNode.id,
             to_node_id: postStartNodeId,
-            user_id: input.userId,
+            user_id: user.id,
             transitioned_at: now,
         },
     );
@@ -193,7 +193,7 @@ export async function postWorkOrderCreation(
         {
             id: input.claimId,
             work_order_id: input.workOrderId,
-            user_id: input.userId,
+            user_id: user.id,
             claimed_at: now,
         },
     );
