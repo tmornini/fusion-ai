@@ -5,8 +5,7 @@ import { User } from '../../../api/types.ts';
 import { getUserMap } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 import {
-    createChannel,
-    bridgeStorageToChannel,
+    createSubscriptionChannel,
 } from '../channels.ts';
 export {
     User,
@@ -15,20 +14,17 @@ export {
 } from '../../../api/types.ts';
 export type { UserEntity } from '../../../api/types.ts';
 
-const userChangedChannel =
-    createChannel<void>();
-bridgeStorageToChannel(
-    ['users'], userChangedChannel,
-);
+const userChanges =
+    createSubscriptionChannel(['users']);
 
 export function subscribeUserChanges(
     fn: () => void,
 ): () => void {
-    return userChangedChannel.subscribe(fn);
+    return userChanges.subscribe(fn);
 }
 
 export function notifyUserChange(): void {
-    userChangedChannel.send();
+    userChanges.notify();
 }
 
 const TOP_MEMBERS_COUNT = 6;
@@ -78,5 +74,5 @@ export async function putUser(
     entity: Omit<UserEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`users/${id}`, entity);
-    userChangedChannel.send();
+    userChanges.notify();
 }

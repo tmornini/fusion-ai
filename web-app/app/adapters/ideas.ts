@@ -17,21 +17,18 @@ import {
     putProjectTeamMember,
 } from './projects.ts';
 import {
-    createChannel,
-    bridgeStorageToChannel,
+    createSubscriptionChannel,
 } from '../channels.ts';
 
-const ideaChangedChannel =
-    createChannel<void>();
-bridgeStorageToChannel(
-    ['ideas', 'idea-submissions'],
-    ideaChangedChannel,
-);
+const ideaChanges =
+    createSubscriptionChannel(
+        ['ideas', 'idea-submissions'],
+    );
 
 export function subscribeIdeaChanges(
     fn: () => void,
 ): () => void {
-    return ideaChangedChannel.subscribe(fn);
+    return ideaChanges.subscribe(fn);
 }
 
 export {
@@ -156,7 +153,7 @@ export async function putIdea(
     entity: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`ideas/${id}`, entity);
-    ideaChangedChannel.send();
+    ideaChanges.notify();
 }
 
 export async function putIdeaSubmission(

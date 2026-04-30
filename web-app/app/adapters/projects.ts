@@ -15,21 +15,18 @@ import {
 } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 import {
-    createChannel,
-    bridgeStorageToChannel,
+    createSubscriptionChannel,
 } from '../channels.ts';
 
-const projectChangedChannel =
-    createChannel<void>();
-bridgeStorageToChannel(
-    ['projects', 'project-team-members'],
-    projectChangedChannel,
-);
+const projectChanges =
+    createSubscriptionChannel(
+        ['projects', 'project-team-members'],
+    );
 
 export function subscribeProjectChanges(
     fn: () => void,
 ): () => void {
-    return projectChangedChannel.subscribe(fn);
+    return projectChanges.subscribe(fn);
 }
 
 export {
@@ -213,7 +210,7 @@ export async function putProject(
     entity: Omit<ProjectEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`projects/${id}`, entity);
-    projectChangedChannel.send();
+    projectChanges.notify();
 }
 
 export interface TeamMemberAssignment {

@@ -16,28 +16,24 @@ import {
     validateWorkOrderFlowGraph,
 } from './work-orders-queries.ts';
 import {
-    createChannel,
-    bridgeStorageToChannel,
+    createSubscriptionChannel,
 } from '../channels.ts';
 import type { FetchContext } from './shared.ts';
 
-const workOrderChangedChannel =
-    createChannel<void>();
-bridgeStorageToChannel(
-    [
-        'work-orders',
-        'work-order-transitions',
-        'work-order-claims',
-        'flow-work-orders',
-    ],
-    workOrderChangedChannel,
-);
+const workOrderChanges =
+    createSubscriptionChannel(
+        [
+            'work-orders',
+            'work-order-transitions',
+            'work-order-claims',
+            'flow-work-orders',
+        ],
+    );
 
 export function subscribeWorkOrderChanges(
     fn: () => void,
 ): () => void {
-    return workOrderChangedChannel
-        .subscribe(fn);
+    return workOrderChanges.subscribe(fn);
 }
 
 const FIRST_POSITION = 1;
@@ -198,7 +194,7 @@ export async function postWorkOrderCreation(
         },
     );
 
-    workOrderChangedChannel.send();
+    workOrderChanges.notify();
 }
 
 export interface WorkOrderTransitionInput {
@@ -290,7 +286,7 @@ export async function postWorkOrderTransition(
         );
     }
 
-    workOrderChangedChannel.send();
+    workOrderChanges.notify();
 }
 
 export async function putWorkOrder(
@@ -299,7 +295,7 @@ export async function putWorkOrder(
     entity: Omit<WorkOrderEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`work-orders/${id}`, entity);
-    workOrderChangedChannel.send();
+    workOrderChanges.notify();
 }
 
 // Two tabs can both read an empty
@@ -332,5 +328,5 @@ export async function postWorkOrderClaim(
         },
     );
 
-    workOrderChangedChannel.send();
+    workOrderChanges.notify();
 }
