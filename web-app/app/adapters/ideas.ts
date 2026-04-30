@@ -160,14 +160,14 @@ export async function putIdeaSubmission(
     ctx: FetchContext,
     submissionId: string,
     ideaId: string,
-    userId: string,
 ): Promise<void> {
+    const user = await ctx.getCurrentUser();
     await ctx.PUT(
         'idea-submissions/'
             + submissionId,
         {
             idea_id: ideaId,
-            user_id: userId,
+            user_id: user.id,
             created_at: nowUtc(),
         },
     );

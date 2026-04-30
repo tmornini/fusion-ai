@@ -177,7 +177,6 @@ export async function init():
                     ctx,
                     generateCryptoSafeBase62(),
                     ideaId,
-                    'current',
                 );
                 await postActivity(ctx, {
                     type: 'idea_created',
