@@ -257,13 +257,16 @@ export const allStrengths = [
 
 export async function getProfile(
     ctx: FetchContext,
-): Promise<Profile> {
+): Promise<{
+    profile: Profile;
+    entity: UserEntity;
+}> {
     const user =
         await ctx.GET<UserEntity>(
             'current-user',
         );
     const userObj = new User(user);
-    return new Profile({
+    const profile = new Profile({
         firstName: user.first_name,
         lastName: user.last_name,
         email: user.email,
@@ -276,6 +279,7 @@ export async function getProfile(
         teamDimensions:
             userObj.parsedTeamDimensions(),
     });
+    return { profile, entity: user };
 }
 
 export interface CompanyDraft {

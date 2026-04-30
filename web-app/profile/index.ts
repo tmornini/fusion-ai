@@ -14,10 +14,10 @@ import { trimStrings } from '../app/core.ts';
 import {
     createFetchContext,
     getProfile,
-    getCurrentUserRow,
     putUser,
     Profile,
     type ProfileDraft,
+    type UserEntity,
     jsonArrayField,
 } from '../app/adapters/index.ts';
 
@@ -28,10 +28,12 @@ type PageState =
     | {
         kind: 'reading';
         profile: Profile;
+        entity: UserEntity;
     }
     | {
         kind: 'editing';
         profile: Profile;
+        entity: UserEntity;
         draft: ProfileDraft;
     };
 
@@ -79,9 +81,12 @@ export async function init(): Promise<void> {
     if (!container) return;
     pageContainer = container;
 
-    let profile: Profile;
+    let loaded: {
+        profile: Profile;
+        entity: UserEntity;
+    };
     try {
-        profile = await getProfile(
+        loaded = await getProfile(
             createFetchContext(),
         );
     } catch (err) {
@@ -107,7 +112,11 @@ export async function init(): Promise<void> {
         return;
     }
 
-    state = { kind: 'reading', profile };
+    state = {
+        kind: 'reading',
+        profile: loaded.profile,
+        entity: loaded.entity,
+    };
     buildPresenter().renderShell(container);
     bindStableListeners(container);
 }
@@ -159,6 +168,7 @@ function onClick(
         state = {
             kind: 'editing',
             profile: state.profile,
+            entity: state.entity,
             draft: state.profile.toDraft(),
         };
         rerender();
@@ -172,6 +182,7 @@ function onClick(
         state = {
             kind: 'reading',
             profile: state.profile,
+            entity: state.entity,
         };
         rerender();
         return;
@@ -260,6 +271,7 @@ function onDocumentKeydown(
     state = {
         kind: 'reading',
         profile: state.profile,
+        entity: state.entity,
     };
     rerender();
 }
@@ -269,23 +281,25 @@ async function handleSave(): Promise<void> {
         return;
     }
     const trimmed = trimStrings(state.draft);
+    const current = state.entity;
+    const updated: Omit<UserEntity, 'id'> = {
+        ...current,
+        first_name: trimmed.firstName,
+        last_name: trimmed.lastName,
+        email: trimmed.email,
+        phone: trimmed.phone,
+        role: trimmed.role,
+        department: trimmed.department,
+        bio: trimmed.bio,
+        strengths: jsonArrayField(
+            trimmed.strengths,
+        ),
+    };
     try {
         const ctx = createFetchContext();
-        const current =
-            await getCurrentUserRow(ctx);
-        await putUser(ctx, current.id, {
-            ...current,
-            first_name: trimmed.firstName,
-            last_name: trimmed.lastName,
-            email: trimmed.email,
-            phone: trimmed.phone,
-            role: trimmed.role,
-            department: trimmed.department,
-            bio: trimmed.bio,
-            strengths: jsonArrayField(
-                trimmed.strengths,
-            ),
-        });
+        await putUser(
+            ctx, current.id, updated,
+        );
     } catch (err) {
         log.error(
             'profile save failed',
@@ -302,6 +316,7 @@ async function handleSave(): Promise<void> {
     state = {
         kind: 'reading',
         profile: new Profile(trimmed),
+        entity: { ...current, ...updated },
     };
     rerender();
 }
