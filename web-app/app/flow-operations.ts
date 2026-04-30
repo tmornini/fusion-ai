@@ -80,6 +80,24 @@ function snapToSave(
     };
 }
 
+async function commitFlowMutation(
+    snap: FlowSnapshot,
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+): Promise<void> {
+    const ctx = createFetchContext();
+    await postFlowVersion(
+        ctx,
+        generateCryptoSafeBase62(),
+        snap.flowId,
+    );
+    await putFlow(
+        ctx,
+        snap.flowId,
+        snapToSave(snap, nodes, edges),
+    );
+}
+
 export type ToastVariant =
     | 'success'
     | 'error'
@@ -178,16 +196,8 @@ export async function performAddEdge(
         toId,
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(snap, snap.nodes, newEdges),
+        await commitFlowMutation(
+            snap, snap.nodes, newEdges,
         );
     } catch (err) {
         log.error(
@@ -267,16 +277,8 @@ export async function performAddNodeAtPosition(
         nodeId,
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(snap, newNodes, newEdges),
+        await commitFlowMutation(
+            snap, newNodes, newEdges,
         );
     } catch (err) {
         log.error(
@@ -327,18 +329,8 @@ export async function performDeleteSelectedNodes(
         new Set(deletableIds),
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(
-                snap, result.nodes, result.edges,
-            ),
+        await commitFlowMutation(
+            snap, result.nodes, result.edges,
         );
     } catch (err) {
         log.error(
@@ -375,16 +367,8 @@ export async function performDeleteSelectedEdge(
         snap.edges, edgeId,
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(snap, snap.nodes, newEdges),
+        await commitFlowMutation(
+            snap, snap.nodes, newEdges,
         );
     } catch (err) {
         log.error(
@@ -443,16 +427,8 @@ export async function performAddField(
         snap.nodes, nodeId, field,
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(snap, newNodes, snap.edges),
+        await commitFlowMutation(
+            snap, newNodes, snap.edges,
         );
     } catch (err) {
         log.error(
@@ -490,16 +466,8 @@ export async function performDeleteField(
         snap.nodes, nodeId, fieldId,
     );
     try {
-        const ctx = createFetchContext();
-        await postFlowVersion(
-            ctx,
-            generateCryptoSafeBase62(),
-            snap.flowId,
-        );
-        await putFlow(
-            ctx,
-            snap.flowId,
-            snapToSave(snap, newNodes, snap.edges),
+        await commitFlowMutation(
+            snap, newNodes, snap.edges,
         );
     } catch (err) {
         log.error(
