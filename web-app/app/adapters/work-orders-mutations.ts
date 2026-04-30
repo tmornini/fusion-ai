@@ -318,8 +318,8 @@ export async function postWorkOrderClaim(
     ctx: FetchContext,
     claimId: string,
     workOrderId: string,
-    userId: string,
 ): Promise<void> {
+    const user = await ctx.getCurrentUser();
     const now = nowUtc();
 
     await ctx.PUT<void>(
@@ -327,7 +327,7 @@ export async function postWorkOrderClaim(
         {
             id: claimId,
             work_order_id: workOrderId,
-            user_id: userId,
+            user_id: user.id,
             claimed_at: now,
         },
     );

@@ -296,7 +296,7 @@ export async function init(
                 await postWorkOrderClaim(
                     ctx,
                     generateCryptoSafeBase62(),
-                    id, userId,
+                    id,
                 );
                 presenter =
                     await loadPresenter(
