@@ -33,6 +33,7 @@ import type {
 import { nowUtc } from './types.ts';
 import {
     withSimulatedLatency,
+    DEFAULT_LATENCY_CONFIG,
 } from './latency.ts';
 import {
     asString,
@@ -904,6 +905,9 @@ export async function createLocalStorageAdapter(
     };
 
     return simulateLatencyRequested()
-        ? withSimulatedLatency(adapter)
+        ? withSimulatedLatency(
+            adapter,
+            DEFAULT_LATENCY_CONFIG,
+        )
         : adapter;
 }
