@@ -235,44 +235,51 @@ async function readTable<T>(
     if (raw === null) {
         throw new MissingTableError(tableName);
     }
+    let json: string;
+    if (COMPRESSED_TABLES.has(tableName)) {
+        try {
+            json = await decompressJson(raw);
+        } catch (e) {
+            throw new Error(
+                'Decompressing table "'
+                + tableName + '" failed: '
+                + (e instanceof Error
+                    ? e.message
+                    : String(e)),
+            );
+        }
+    } else {
+        json = raw;
+    }
+    let parsed: unknown;
     try {
-        const json = COMPRESSED_TABLES.has(tableName)
-            ? await decompressJson(raw)
-            : raw;
-        const parsed = JSON.parse(json);
-        if (!Array.isArray(parsed)) {
-            throw new Error(
-                'Table "' + tableName
-                + '" is not an array.'
-                + ' Clear data or import'
-                + ' a valid snapshot.',
-            );
-        }
-        if (!parsed.every(isRowShaped)) {
-            throw new Error(
-                'Table "' + tableName
-                + '" has malformed row(s).'
-                + ' Clear data or import'
-                + ' a valid snapshot.',
-            );
-        }
-        return parsed as T[];
+        parsed = JSON.parse(json);
     } catch (e) {
-        if (e instanceof Error) {
-            throw new Error(
-                'Reading table "'
-                + tableName
-                + '" failed: '
-                + e.message,
-            );
-        }
+        throw new Error(
+            'Parsing table "'
+            + tableName + '" failed: '
+            + (e instanceof Error
+                ? e.message
+                : String(e)),
+        );
+    }
+    if (!Array.isArray(parsed)) {
         throw new Error(
             'Table "' + tableName
-            + '" has corrupt JSON.'
+            + '" is not an array.'
             + ' Clear data or import'
             + ' a valid snapshot.',
         );
     }
+    if (!parsed.every(isRowShaped)) {
+        throw new Error(
+            'Table "' + tableName
+            + '" has malformed row(s).'
+            + ' Clear data or import'
+            + ' a valid snapshot.',
+        );
+    }
+    return parsed as T[];
 }
 
 async function writeTable<T>(
