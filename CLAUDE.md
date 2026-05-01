@@ -319,9 +319,14 @@ subset of tables:
 | Agent-D | `ideas` |
 | Agent-E | `projects` (plus one flow via E7) |
 | Agent-F | `flows`, `flow_versions` |
-| Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims` |
+| Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims`, plus its own private flow in `flows`/`flow_versions` |
 | Agent-G | `users`, `teams`, `profile`, `company` |
 | Agent-CH | none (read-only) |
+
+Agent-F2 owns its source flow because `postWorkOrderCreation`
+freezes `flow_graph` at creation time. If Agent-F edits the
+shared flow concurrently, the captured snapshot reflects
+mid-edit state, not a clean baseline.
 
 Because `StorageEvent` propagation makes sibling changes visible
 to every tab, cross-boundary assertions use `≥ N` or
@@ -369,6 +374,7 @@ patterns apply only to the parallel run.
 - **Snapshot wipe-on-fail**: With pre-flight quota checks + per-row validation + column-level compression, mid-write failure is rare; when it does happen, `importSnapshot` wipes every `fusion-ai:<table>` key so the next bootstrap detects no schema and routes the user to the snapshots page to re-import. No backup, no sentinel, no rollback — real atomicity arrives with Postgres.
 - **Availability thresholds**: `AVAILABILITY_HIGH = 70`, `AVAILABILITY_LOW = 40`.
 - **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use relative paths. Code supports `file:///` locally but testing is HTTP-only.
+- **View Transition aborts**: rapid programmatic navigation surfaces `InvalidStateError` lines in console. Browser-internal (no app code calls `startViewTransition`); no app impact.
 
 ## Worktrees
 
