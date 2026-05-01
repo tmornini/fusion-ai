@@ -72,7 +72,7 @@ function drive(
 
 test(
     'port drag far-drop emits add-node'
-    + ' (AA27/AA31/F15/F23)',
+    + ' (AA27/AA31/F15)',
     () => {
         const inputs: FsmInput[] = [
             {
@@ -177,7 +177,7 @@ test(
 
 test(
     'shift-drag from port onto different node'
-    + ' emits add-edge (AA32/F19/F20/F21)',
+    + ' emits add-edge (AA32/F19)',
     () => {
         const inputs: FsmInput[] = [
             {
@@ -328,7 +328,7 @@ test(
 
 test(
     'plain port-drag then shift-key toggles'
-    + ' connect.isShift and updates target (F23)',
+    + ' connect.isShift (F23)',
     () => {
         const initialPress: FsmInput = {
             kind: 'pointer-down-on-node',
@@ -376,6 +376,8 @@ test(
     },
 );
 
+// F14 (autofit suppresses panel-open) is renderer-layer; the
+// FSM emits open-panel unconditionally. Not testable here.
 test(
     'double-click node opens panel; second tap'
     + ' within window flips open=true (AA28/F13)',
@@ -661,7 +663,7 @@ test(
 
 test(
     'edge double-click selects edge and opens'
-    + ' panel (AA30/F26)',
+    + ' panel (F26)',
     () => {
         const firstClick: FsmInput = {
             kind: 'pointer-down-on-edge',
@@ -716,7 +718,7 @@ test(
 
 test(
     'marquee drag covers two nodes → selection'
-    + ' contains both (F25)',
+    + ' contains both (marquee)',
     () => {
         const allNodes: NodeWithPos[] = [
             { id: 'n1', x: 50, y: 50 },
@@ -765,7 +767,7 @@ test(
 
 test(
     'marquee drag covering no nodes leaves'
-    + ' selection none (F25 negative)',
+    + ' selection none (marquee negative)',
     () => {
         const allNodes: NodeWithPos[] = [
             { id: 'n1', x: 500, y: 500 },
