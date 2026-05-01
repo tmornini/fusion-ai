@@ -3,7 +3,7 @@ import {
 } from '../channels.ts';
 import {
     TABLE_NAMES,
-} from '../../../api/db-localstorage.ts';
+} from '../../../api/db.ts';
 
 const schemaChanges =
     createSubscriptionChannel(TABLE_NAMES);
