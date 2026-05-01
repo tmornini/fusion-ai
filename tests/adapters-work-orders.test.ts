@@ -368,6 +368,9 @@ test(
         const fg = JSON.parse(
             wo.flow_graph,
         );
+        assert.equal(
+            fg.nodes[1].name, 'Doing work',
+        );
         assert.notEqual(
             fg.nodes[1].name, 'EDITED',
         );
