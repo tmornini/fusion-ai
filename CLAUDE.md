@@ -12,7 +12,8 @@ is a sin against Uniformity (Commandment III).
 ## Build & Dev Commands
 
 ```bash
-./validate             # Type-check + lint (works on dirty tree)
+./test                 # Run automated tests
+./validate             # Type-check + tests + lint (works on dirty tree)
 ./build                # Compile, bundle, minify, ZIP to ~/Desktop/
 ./build --no-zip dir/  # Bundle to dir/ without zipping (for testing)
 ./build dir/           # ZIP to dir/ instead of ~/Desktop/
@@ -39,7 +40,7 @@ cd ~/Desktop/fusion-test/ && python3 -m http.server 8080
 
 `~/Desktop/` is in the sandbox write allowlist; `TMPDIR=/tmp/claude` redirects tsx's IPC socket into the allowed path. `localhost` is reachable from the sandbox, so the Chrome MCP tools can drive the page normally.
 
-`./validate` runs `tsc --noEmit` (type checking), then `node --test --strip-types tests/*.test.ts` (automated tests against pure modules and the `api/`/`adapters/` layer), then enforces 78-character maximum line length on all `.ts`, `.html`, and `.css` files (excluding `compose.ts`).
+`./validate` runs `tsc --noEmit` (type checking), then `./test` (automated tests against pure modules and the `api/`/`adapters/` layer, via `node --test --strip-types tests/*.test.ts`), then enforces 78-character maximum line length on all `.ts`, `.html`, and `.css` files (excluding `compose.ts`).
 
 Automated tests cover pure modules and adapter behavior; UI behavior is still covered by the manual browser regression protocol — see `## Testing` below.
 
