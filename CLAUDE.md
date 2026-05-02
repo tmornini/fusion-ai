@@ -18,6 +18,7 @@ is a sin against Uniformity (Commandment III).
 ./build --no-zip dir/  # Bundle to dir/ without zipping (for testing)
 ./build dir/           # ZIP to dir/ instead of ~/Desktop/
 ./build --help         # Show usage
+./serve <port>         # Build + start local HTTP server on <port>
 ```
 
 **Always commit before building.** `./build` requires a clean working directory. Use `./validate` to catch type errors and lint issues before committing, then commit, then build.
@@ -25,20 +26,18 @@ is a sin against Uniformity (Commandment III).
 **Build and test locally:**
 
 ```bash
-./build --no-zip /tmp/fusion-test/
-cd /tmp/fusion-test/ && python3 -m http.server 8080
+./serve 8080
 # open http://localhost:8080/landing/index.html
 ```
 
 **When running under the Claude Code sandbox**, the defaults above fail two ways: `/tmp/` is not writable, and the tsx IPC pipe used by the `npx tsx` step inside `./build` lands in `$TMPDIR/tsx-501/…` which is outside the sandbox's allowed Unix-socket path (`/tmp/claude/tsx-501`). Use this invocation instead:
 
 ```bash
-TMPDIR=/tmp/claude ./build --no-zip ~/Desktop/fusion-test/
-cd ~/Desktop/fusion-test/ && python3 -m http.server 8080
+TMPDIR=/tmp/claude ./serve 8080
 # open http://localhost:8080/landing/index.html
 ```
 
-`~/Desktop/` is in the sandbox write allowlist; `TMPDIR=/tmp/claude` redirects tsx's IPC socket into the allowed path. `localhost` is reachable from the sandbox, so the Chrome MCP tools can drive the page normally.
+`TMPDIR=/tmp/claude` redirects both tsx's IPC socket and `./serve`'s temp build dir into the sandbox-allowed path. `localhost` is reachable from the sandbox, so the Chrome MCP tools can drive the page normally.
 
 `./validate` runs `tsc --noEmit` (type checking), then `./test` (automated tests against pure modules and the `api/`/`adapters/` layer, via `node --test --strip-types tests/*.test.ts`), then enforces 78-character maximum line length on all `.ts`, `.html`, and `.css` files (excluding `compose.ts`).
 
