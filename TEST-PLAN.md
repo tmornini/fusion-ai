@@ -318,7 +318,7 @@ on. Run these in order.
   Target Users, Proposed Solution, Expected
   Outcome, Success Metrics). PASS: all fields populated. No Details or Estimates cards.
 - [ ] **D12** Click "Edit" button. PASS: text fields become editable inputs/textareas, Save and Cancel buttons appear, Edit button hides.
-- [ ] **D13** Modify a field (e.g. Problem Statement or Expected Outcome — inline edit exposes the four textarea fields only; title is not editable here), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
+- [ ] **D13** Modify a field (e.g. Problem Statement or Expected Outcome), click "Save". PASS: toast "Idea saved" appears, page returns to view mode with updated data.
 
 ### Idea Detail — Edit & Actions
 

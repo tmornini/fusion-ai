@@ -15,7 +15,6 @@ const FAR_DROP_X = 500;
 const FAR_DROP_Y = 500;
 const CLOSE_DROP_X = 165;
 const CLOSE_DROP_Y = 33;
-const SVG_RECT = 800;
 
 function buildState(
     overrides: Partial<FsmState> = {},
@@ -59,7 +58,7 @@ function findActions<K extends Action['kind']>(
 function drive(
     state: FsmState,
     inputs: readonly FsmInput[],
-): { state: FsmState; actions: Action[] } {
+): { state: FsmState; actions: readonly Action[] } {
     let s = state;
     const out: Action[] = [];
     for (const i of inputs) {
@@ -94,8 +93,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -148,8 +147,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -198,8 +197,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: true,
                 hoverNodeId: 'n2',
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -249,8 +248,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: true,
                 hoverNodeId: 'n1',
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -299,8 +298,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: true,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -497,9 +496,6 @@ test(
             ...firstN1,
             now: 1000 + DBLCLICK_WITHIN_MS,
         };
-        const releaseN1Again: FsmInput = {
-            ...releaseN1,
-        };
         const firstN2: FsmInput = {
             kind: 'pointer-down-on-node',
             nodeId: 'n2',
@@ -527,7 +523,7 @@ test(
         };
         const r = drive(buildState(), [
             firstN1, releaseN1,
-            secondN1, releaseN1Again,
+            secondN1, releaseN1,
             firstN2, releaseN2, secondN2,
         ]);
         assert.equal(
@@ -572,8 +568,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: 'n1',
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-move',
@@ -581,8 +577,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -635,8 +631,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -737,8 +733,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',
@@ -784,8 +780,8 @@ test(
                 clientX: 0, clientY: 0,
                 isShift: false,
                 hoverNodeId: null,
-                svgRectW: SVG_RECT,
-                svgRectH: SVG_RECT,
+                svgRectW: 800,
+                svgRectH: 800,
             },
             {
                 kind: 'pointer-up',

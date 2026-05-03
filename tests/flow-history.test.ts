@@ -89,6 +89,7 @@ test(
             buildVersion('v1'),
         );
         const result = recordFlowMutation(seeded);
+        assert.notEqual(result, seeded);
         assert.equal(result.hasUndoHistory, true);
         assert.deepEqual(result.redoStack, []);
         // Input snapshot unchanged.
@@ -107,6 +108,7 @@ test(
         const off = recordUndoHistoryMark(
             seeded, false,
         );
+        assert.notEqual(off, seeded);
         assert.equal(off.hasUndoHistory, false);
         assert.equal(off.redoStack.length, 1);
         assert.equal(off.redoStack[0]?.id, 'v1');
@@ -122,6 +124,7 @@ test(
         const s = buildFlowHistorySnapshot(true);
         const v = buildVersion('v1');
         const next = appendToRedoStack(s, v);
+        assert.notEqual(next, s);
         assert.equal(next.redoStack.length, 1);
         assert.equal(next.redoStack[0]?.id, 'v1');
         assert.equal(next.hasUndoHistory, true);
@@ -137,7 +140,7 @@ test(
         const s = buildFlowHistorySnapshot(true);
         const r = removeFromRedoStack(s);
         assert.equal(r.version, undefined);
-        assert.equal(r.snapshot, s);
+        assert.deepEqual(r.snapshot, s);
     },
 );
 
@@ -154,6 +157,7 @@ test(
             v2,
         );
         const r = removeFromRedoStack(seeded);
+        assert.notEqual(r.snapshot, seeded);
         assert.equal(r.version?.id, 'v2');
         assert.equal(r.snapshot.redoStack.length, 1);
         assert.equal(
@@ -168,6 +172,10 @@ test(
     'F35 round-trip: pushing a version onto'
     + ' the redo stack then popping returns it',
     () => {
+        // Algorithmic core only. F35 in TEST-PLAN.md
+        // covers the full performUndo/performRedo
+        // user-visible round-trip in the manual
+        // browser regression protocol.
         const v = buildVersion('snapshot-pre-delete');
         const initial: FlowHistorySnapshot =
             buildFlowHistorySnapshot(true);
