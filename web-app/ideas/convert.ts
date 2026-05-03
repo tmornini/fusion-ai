@@ -1,5 +1,5 @@
 import {
-    $, bindEnterToClick,
+    $, bindEnterToClick, isFormField,
 } from '../app/dom.ts';
 import {
     html, setHtml,
@@ -114,14 +114,7 @@ export async function init(
                 `#convert-${field}`,
                 document,
             );
-            if (
-                el instanceof
-                    HTMLInputElement
-                || el instanceof
-                    HTMLSelectElement
-                || el instanceof
-                    HTMLTextAreaElement
-            ) {
+            if (isFormField(el)) {
                 next[field] =
                     el.value.trim();
             }

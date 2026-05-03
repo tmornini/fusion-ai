@@ -1,5 +1,5 @@
 import {
-    $, $inputRequired,
+    $, $inputRequired, isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
 import {
@@ -373,12 +373,8 @@ function onInput(
     if (!state || state.kind !== 'editing') {
         return;
     }
-    const target = e.target as
-        | HTMLInputElement
-        | HTMLSelectElement
-        | HTMLTextAreaElement
-        | null;
-    if (!target) return;
+    const target = e.target;
+    if (!isFormField(target)) return;
     const field = target.getAttribute(
         'data-project-field',
     );
