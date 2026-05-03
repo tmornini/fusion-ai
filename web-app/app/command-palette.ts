@@ -26,6 +26,8 @@ import {
     Project,
     User,
 } from './adapters/index.ts';
+// init.ts is the composition root —
+// intentionally outside the adapter barrel.
 import {
     getDbAdapter,
 } from './adapters/init.ts';
@@ -884,13 +886,25 @@ posIndex === state.activeIndex
     void (async () => {
         const adapter = getDbAdapter();
         if (await adapter.hasSchema()) {
-            void getSearchIndex();
+            getSearchIndex().catch(
+                err => log.warn(
+                    'eager search index load failed',
+                    'palette',
+                    err,
+                ),
+            );
             return;
         }
         const unsub = subscribeSchemaChanges(
             () => {
                 unsub();
-                void getSearchIndex();
+                getSearchIndex().catch(
+                    err => log.warn(
+                        'eager search index load failed',
+                        'palette',
+                        err,
+                    ),
+                );
             },
         );
     })();
