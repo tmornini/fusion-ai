@@ -272,9 +272,7 @@ function commit(
     opts?: { advanceHistory?: boolean },
 ): void {
     if (opts?.advanceHistory) {
-        pageState.setHistory(
-            recordFlowMutation(pageState.history()),
-        );
+        pageState.setHistory(recordFlowMutation());
     }
     const presenter = new FlowDesignerPresenter(
         next,

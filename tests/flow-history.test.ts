@@ -82,18 +82,11 @@ test(
 
 test(
     'recordFlowMutation sets hasUndoHistory'
-    + ' and clears the redo stack (F37)',
+    + ' and leaves redo stack empty (F37)',
     () => {
-        const seeded = appendToRedoStack(
-            buildFlowHistorySnapshot(false),
-            buildVersion('v1'),
-        );
-        const result = recordFlowMutation(seeded);
-        assert.notEqual(result, seeded);
+        const result = recordFlowMutation();
         assert.equal(result.hasUndoHistory, true);
         assert.deepEqual(result.redoStack, []);
-        // Input snapshot unchanged.
-        assert.equal(seeded.redoStack.length, 1);
     },
 );
 

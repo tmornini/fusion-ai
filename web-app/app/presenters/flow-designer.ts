@@ -157,9 +157,7 @@ export class FlowDesignerPresenter {
     }
 
     #noteMutation(): void {
-        this.#history = recordFlowMutation(
-            this.#history,
-        );
+        this.#history = recordFlowMutation();
     }
 
     #buildSaveShape(
