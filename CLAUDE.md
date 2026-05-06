@@ -94,11 +94,15 @@ discriminated unions, pan needs Space+mousedown),
 propagates its new state to the presenter via the
 `request-update` action payload, consumed by detail.ts through
 `presenter.withInteractionState(state)` — the single sanctioned
-seam, no shared mutable state. When the properties panel is
-open, both Auto Layout (`applyAutoLayout`) and Auto Fit
-(`zoomToFit`) account for the panel-occupied right portion via
-`PANEL_WIDTH_PX`; panel toggles re-run layout reconcile so the
-visible canvas refits symmetrically on open and close.
+seam, no shared mutable state. The properties
+panel is positioned on the LEFT (`pages.css` `.flow-props-panel`
+uses `left: 0`); the visible canvas occupies pixels
+`[PANEL_WIDTH_PX, canvasW]`. When the panel is open, both Auto
+Layout (`applyAutoLayout`) and Auto Fit (`zoomToFit`) account
+for the panel-occupied left portion via `PANEL_WIDTH_PX`; panel
+toggles trigger `withFitReconciled` (Auto Fit only) so the
+visible canvas refits symmetrically on open and close without
+re-running Auto Layout.
 
 ### API Layer (`/api`)
 
