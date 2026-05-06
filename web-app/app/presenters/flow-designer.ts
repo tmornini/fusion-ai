@@ -398,6 +398,15 @@ export class FlowDesignerPresenter {
         return this.#handlePanelTransition(next);
     }
 
+    withInteractionState(
+        state: InteractionState,
+    ): FlowSnapshot {
+        return {
+            ...this.#snapshot,
+            interaction: state,
+        };
+    }
+
     getNodePosition(id: string): {
         x: number;
         y: number;
