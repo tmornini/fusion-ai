@@ -419,7 +419,7 @@ export function bindInteractions(
                     getNodePosition(nodeId);
                 const positions =
                     buildSelectedPositions(
-                        state,
+                        currentState,
                         nodeId,
                         getNodePosition,
                     );
