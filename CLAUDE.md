@@ -94,7 +94,11 @@ discriminated unions, pan needs Space+mousedown),
 propagates its new state to the presenter via the
 `request-update` action payload, consumed by detail.ts through
 `presenter.withInteractionState(state)` — the single sanctioned
-seam, no shared mutable state.
+seam, no shared mutable state. When the properties panel is
+open, both Auto Layout (`applyAutoLayout`) and Auto Fit
+(`zoomToFit`) account for the panel-occupied right portion via
+`PANEL_WIDTH_PX`; panel toggles re-run layout reconcile so the
+visible canvas refits symmetrically on open and close.
 
 ### API Layer (`/api`)
 

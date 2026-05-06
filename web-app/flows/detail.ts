@@ -739,6 +739,10 @@ function bindCanvasInteractions(
                 pageState.presenter()
                     .withPanelOpen(open),
             );
+            commit(
+                pageState.presenter()
+                    .withLayoutReconciled(),
+            );
         },
         (updates) => {
             commit(
@@ -930,6 +934,10 @@ function bindPanelActions(
                 commit(
                     pageState.presenter()
                         .withPanelOpen(false),
+                );
+                commit(
+                    pageState.presenter()
+                        .withLayoutReconciled(),
                 );
             } else if (
                 action === 'add-field'
@@ -1242,6 +1250,10 @@ function bindKeyboardShortcuts(
                 commit(
                     pageState.presenter()
                         .withPanelOpen(false),
+                );
+                commit(
+                    pageState.presenter()
+                        .withLayoutReconciled(),
                 );
                 return;
             }

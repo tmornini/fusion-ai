@@ -945,11 +945,13 @@ Auto Fit</label>
                 y: n.positionY,
             }),
         );
+        const panelOffset = snap.isPanelOpen
+            ? PANEL_WIDTH_PX : 0;
         const result = zoomToFitState(
             positions,
             this.#canvasW,
             this.#canvasH,
-            0,
+            panelOffset,
         );
         if (!result) return;
         snap.interaction.zoom = result.zoom;
