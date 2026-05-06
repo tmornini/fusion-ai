@@ -729,8 +729,9 @@ function bindCanvasInteractions(
     const push = bindInteractions(
         wrap,
         state,
-        () => update(
-            container, pageState.presenter(),
+        (next) => commit(
+            pageState.presenter()
+                .withInteractionState(next),
         ),
         (open) => {
             panelStateRef.open = open;

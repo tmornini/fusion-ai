@@ -119,7 +119,7 @@ export type Action =
         kind: 'open-panel';
         open: boolean;
     }
-    | { kind: 'request-update' }
+    | { kind: 'request-update'; state: FsmState }
     | { kind: 'capture-pointer' }
     | { kind: 'release-pointer' }
     | {

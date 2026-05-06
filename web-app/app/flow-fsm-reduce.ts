@@ -60,38 +60,43 @@ function onCanvasPointerDown(
     }>,
 ): FsmResult {
     if (state.isSpaceDown) {
-        return {
-            state: {
-                ...state,
-                pan: {
-                    kind: 'panning',
-                    startX: input.clientX,
-                    startY: input.clientY,
-                },
+        const next: FsmState = {
+            ...state,
+            pan: {
+                kind: 'panning',
+                startX: input.clientX,
+                startY: input.clientY,
             },
+        };
+        return {
+            state: next,
             actions: [
                 { kind: 'capture-pointer' },
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
-    return {
-        state: {
-            ...state,
-            lastClick: { kind: 'none' },
-            selection: { kind: 'none' },
-            marquee: {
-                kind: 'selecting',
-                startX: input.svgX,
-                startY: input.svgY,
-                currentX: input.svgX,
-                currentY: input.svgY,
-            },
+    const next: FsmState = {
+        ...state,
+        lastClick: { kind: 'none' },
+        selection: { kind: 'none' },
+        marquee: {
+            kind: 'selecting',
+            startX: input.svgX,
+            startY: input.svgY,
+            currentX: input.svgX,
+            currentY: input.svgY,
         },
+    };
+    return {
+        state: next,
         actions: [
             { kind: 'open-panel', open: false },
             { kind: 'capture-pointer' },
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -116,32 +121,36 @@ function onNodePointerDown(
         time: input.now,
     };
     if (input.isPort || !input.isDraggable) {
-        return {
-            state: {
-                ...state,
-                lastClick,
-                selection: {
-                    kind: 'nodes',
-                    nodeIds: new Set([
-                        input.nodeId,
-                    ]),
-                },
-                connect: {
-                    kind: 'connecting',
-                    fromNodeId: input.nodeId,
-                    toX: input.svgX,
-                    toY: input.svgY,
-                    isShift: input.isShift,
-                    target: { kind: 'none' },
-                },
+        const next: FsmState = {
+            ...state,
+            lastClick,
+            selection: {
+                kind: 'nodes',
+                nodeIds: new Set([
+                    input.nodeId,
+                ]),
             },
+            connect: {
+                kind: 'connecting',
+                fromNodeId: input.nodeId,
+                toX: input.svgX,
+                toY: input.svgY,
+                isShift: input.isShift,
+                target: { kind: 'none' },
+            },
+        };
+        return {
+            state: next,
             actions: [
                 {
                     kind: 'open-panel',
                     open: isDbl,
                 },
                 { kind: 'capture-pointer' },
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
@@ -153,18 +162,22 @@ function onNodePointerDown(
             input.isMeta,
         );
     if (input.isLocked) {
+        const next: FsmState = {
+            ...state,
+            lastClick,
+            selection: newSelection,
+        };
         return {
-            state: {
-                ...state,
-                lastClick,
-                selection: newSelection,
-            },
+            state: next,
             actions: [
                 {
                     kind: 'open-panel',
                     open: isDbl,
                 },
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
@@ -186,25 +199,26 @@ function onNodePointerDown(
             });
         }
     }
-    return {
-        state: {
-            ...state,
-            lastClick,
-            selection: newSelection,
-            drag: {
-                kind: 'dragging',
-                anchorNodeId: input.nodeId,
-                startPointerX: input.svgX,
-                startPointerY: input.svgY,
-                currentPointerX: input.svgX,
-                currentPointerY: input.svgY,
-                initialPositions,
-            },
+    const next: FsmState = {
+        ...state,
+        lastClick,
+        selection: newSelection,
+        drag: {
+            kind: 'dragging',
+            anchorNodeId: input.nodeId,
+            startPointerX: input.svgX,
+            startPointerY: input.svgY,
+            currentPointerX: input.svgX,
+            currentPointerY: input.svgY,
+            initialPositions,
         },
+    };
+    return {
+        state: next,
         actions: [
             { kind: 'open-panel', open: isDbl },
             { kind: 'capture-pointer' },
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -215,18 +229,19 @@ function startPanFromNode(
         kind: 'pointer-down-on-node';
     }>,
 ): FsmResult {
-    return {
-        state: {
-            ...state,
-            pan: {
-                kind: 'panning',
-                startX: input.svgX,
-                startY: input.svgY,
-            },
+    const next: FsmState = {
+        ...state,
+        pan: {
+            kind: 'panning',
+            startX: input.svgX,
+            startY: input.svgY,
         },
+    };
+    return {
+        state: next,
         actions: [
             { kind: 'capture-pointer' },
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -281,22 +296,23 @@ function onEdgePointerDown(
         && input.edgeId === state.lastClick.id
         && input.now - state.lastClick.time
             < DBLCLICK_MS;
-    return {
-        state: {
-            ...state,
-            selection: {
-                kind: 'edge',
-                edgeId: input.edgeId,
-            },
-            lastClick: {
-                kind: 'clicked',
-                id: input.edgeId,
-                time: input.now,
-            },
+    const next: FsmState = {
+        ...state,
+        selection: {
+            kind: 'edge',
+            edgeId: input.edgeId,
         },
+        lastClick: {
+            kind: 'clicked',
+            id: input.edgeId,
+            time: input.now,
+        },
+    };
+    return {
+        state: next,
         actions: [
             { kind: 'open-panel', open: isDbl },
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -308,17 +324,21 @@ function onPointerMove(
     }>,
 ): FsmResult {
     if (state.drag.kind === 'dragging') {
-        return {
-            state: {
-                ...state,
-                drag: {
-                    ...state.drag,
-                    currentPointerX: input.svgX,
-                    currentPointerY: input.svgY,
-                },
+        const next: FsmState = {
+            ...state,
+            drag: {
+                ...state.drag,
+                currentPointerX: input.svgX,
+                currentPointerY: input.svgY,
             },
+        };
+        return {
+            state: next,
             actions: [
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
@@ -331,19 +351,23 @@ function onPointerMove(
                 id: input.hoverNodeId,
             }
             : { kind: 'none' as const };
-        return {
-            state: {
-                ...state,
-                connect: {
-                    ...state.connect,
-                    toX: input.svgX,
-                    toY: input.svgY,
-                    isShift: input.isShift,
-                    target,
-                },
+        const next: FsmState = {
+            ...state,
+            connect: {
+                ...state.connect,
+                toX: input.svgX,
+                toY: input.svgY,
+                isShift: input.isShift,
+                target,
             },
+        };
+        return {
+            state: next,
             actions: [
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
@@ -356,39 +380,47 @@ function onPointerMove(
             state.viewBox.w / input.svgRectW;
         const scaleY =
             state.viewBox.h / input.svgRectH;
-        return {
-            state: {
-                ...state,
-                viewBox: {
-                    ...state.viewBox,
-                    x: state.viewBox.x
-                        - dx * scaleX,
-                    y: state.viewBox.y
-                        - dy * scaleY,
-                },
-                pan: {
-                    kind: 'panning',
-                    startX: input.clientX,
-                    startY: input.clientY,
-                },
+        const next: FsmState = {
+            ...state,
+            viewBox: {
+                ...state.viewBox,
+                x: state.viewBox.x
+                    - dx * scaleX,
+                y: state.viewBox.y
+                    - dy * scaleY,
             },
+            pan: {
+                kind: 'panning',
+                startX: input.clientX,
+                startY: input.clientY,
+            },
+        };
+        return {
+            state: next,
             actions: [
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
     if (state.marquee.kind === 'selecting') {
-        return {
-            state: {
-                ...state,
-                marquee: {
-                    ...state.marquee,
-                    currentX: input.svgX,
-                    currentY: input.svgY,
-                },
+        const next: FsmState = {
+            ...state,
+            marquee: {
+                ...state.marquee,
+                currentX: input.svgX,
+                currentY: input.svgY,
             },
+        };
+        return {
+            state: next,
             actions: [
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
@@ -402,14 +434,15 @@ function onPointerUp(
     }>,
 ): FsmResult {
     if (state.pan.kind === 'panning') {
+        const next: FsmState = {
+            ...state,
+            pan: { kind: 'idle' },
+        };
         return {
-            state: {
-                ...state,
-                pan: { kind: 'idle' },
-            },
+            state: next,
             actions: [
                 { kind: 'release-pointer' },
-                { kind: 'request-update' },
+                { kind: 'request-update', state: next },
             ],
         };
     }
@@ -434,15 +467,16 @@ function onPointerUp(
                 y: init.y + dy,
             });
         }
+        const next: FsmState = {
+            ...state,
+            drag: { kind: 'idle' },
+        };
         return {
-            state: {
-                ...state,
-                drag: { kind: 'idle' },
-            },
+            state: next,
             actions: [
                 { kind: 'move-nodes', updates },
                 { kind: 'release-pointer' },
-                { kind: 'request-update' },
+                { kind: 'request-update', state: next },
             ],
         };
     }
@@ -503,13 +537,17 @@ function finishConnect(
             });
         }
     }
+    const next: FsmState = {
+        ...state,
+        connect: { kind: 'idle' },
+    };
     actions.push({ kind: 'release-pointer' });
-    actions.push({ kind: 'request-update' });
+    actions.push({
+        kind: 'request-update',
+        state: next,
+    });
     return {
-        state: {
-            ...state,
-            connect: { kind: 'idle' },
-        },
+        state: next,
         actions,
     };
 }
@@ -541,20 +579,21 @@ function finishMarquee(
             hits.add(n.id);
         }
     }
+    const next: FsmState = {
+        ...state,
+        selection: hits.size === 0
+            ? { kind: 'none' }
+            : {
+                kind: 'nodes',
+                nodeIds: hits,
+            },
+        marquee: { kind: 'idle' },
+    };
     return {
-        state: {
-            ...state,
-            selection: hits.size === 0
-                ? { kind: 'none' }
-                : {
-                    kind: 'nodes',
-                    nodeIds: hits,
-                },
-            marquee: { kind: 'idle' },
-        },
+        state: next,
         actions: [
             { kind: 'release-pointer' },
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -594,17 +633,18 @@ function onWheel(
     const newY =
         input.svgY
         - (input.svgY - state.viewBox.y) * ratio;
-    return {
-        state: {
-            ...state,
-            zoom: nextZoom,
-            viewBox: {
-                x: newX, y: newY,
-                w: newW, h: newH,
-            },
+    const next: FsmState = {
+        ...state,
+        zoom: nextZoom,
+        viewBox: {
+            x: newX, y: newY,
+            w: newW, h: newH,
         },
+    };
+    return {
+        state: next,
         actions: [
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -674,16 +714,17 @@ function onShiftKey(
     if (state.connect.kind !== 'connecting') {
         return { state, actions: [] };
     }
-    return {
-        state: {
-            ...state,
-            connect: {
-                ...state.connect,
-                isShift: input.isShift,
-            },
+    const next: FsmState = {
+        ...state,
+        connect: {
+            ...state.connect,
+            isShift: input.isShift,
         },
+    };
+    return {
+        state: next,
         actions: [
-            { kind: 'request-update' },
+            { kind: 'request-update', state: next },
         ],
     };
 }
@@ -695,40 +736,48 @@ function onCanvasKeyActivate(
     }>,
 ): FsmResult {
     if (input.nodeId) {
-        return {
-            state: {
-                ...state,
-                selection: {
-                    kind: 'nodes',
-                    nodeIds: new Set([
-                        input.nodeId,
-                    ]),
-                },
+        const next: FsmState = {
+            ...state,
+            selection: {
+                kind: 'nodes',
+                nodeIds: new Set([
+                    input.nodeId,
+                ]),
             },
+        };
+        return {
+            state: next,
             actions: [
                 {
                     kind: 'open-panel',
                     open: true,
                 },
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }
     if (input.edgeId) {
-        return {
-            state: {
-                ...state,
-                selection: {
-                    kind: 'edge',
-                    edgeId: input.edgeId,
-                },
+        const next: FsmState = {
+            ...state,
+            selection: {
+                kind: 'edge',
+                edgeId: input.edgeId,
             },
+        };
+        return {
+            state: next,
             actions: [
                 {
                     kind: 'open-panel',
                     open: true,
                 },
-                { kind: 'request-update' },
+                {
+                    kind: 'request-update',
+                    state: next,
+                },
             ],
         };
     }

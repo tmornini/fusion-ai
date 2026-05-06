@@ -375,3 +375,82 @@ test(
         assert.notEqual(r.state.zoom, 1.0);
     },
 );
+
+test(
+    'request-update carries the new state'
+    + ' (FSM-to-presenter sync contract)',
+    () => {
+        const state = buildState();
+        const input: FsmInput = {
+            kind: 'pointer-down-on-node',
+            nodeId: 'n1',
+            isPort: false,
+            isDraggable: true,
+            isShift: false,
+            isMeta: false,
+            isLocked: false,
+            svgX: 0, svgY: 0,
+            now: 1000,
+            selectedPositions: new Map([
+                ['n1', { x: 0, y: 0 }],
+            ]),
+        };
+        const r = reduceFsm(state, input);
+        const update = findAction(
+            r.actions, 'request-update',
+        );
+        assert.ok(update);
+        assert.equal(update.state, r.state);
+        assert.equal(
+            update.state.selection.kind, 'nodes',
+        );
+    },
+);
+
+test(
+    'second click within DBLCLICK window emits'
+    + ' open-panel:true and request-update with'
+    + ' selection set (double-click integration)',
+    () => {
+        const state0 = buildState();
+        const downInput = (now: number): FsmInput => ({
+            kind: 'pointer-down-on-node',
+            nodeId: 'n1',
+            isPort: false,
+            isDraggable: true,
+            isShift: false,
+            isMeta: false,
+            isLocked: false,
+            svgX: 0, svgY: 0,
+            now,
+            selectedPositions: new Map([
+                ['n1', { x: 0, y: 0 }],
+            ]),
+        });
+        const r1 = reduceFsm(
+            state0, downInput(1000),
+        );
+        const r2 = reduceFsm(
+            r1.state, downInput(1200),
+        );
+        const open = findAction(
+            r2.actions, 'open-panel',
+        );
+        assert.equal(open?.open, true);
+        const update = findAction(
+            r2.actions, 'request-update',
+        );
+        assert.ok(update);
+        assert.equal(
+            update.state.selection.kind, 'nodes',
+        );
+        if (
+            update.state.selection.kind === 'nodes'
+        ) {
+            assert.ok(
+                update.state.selection
+                    .nodeIds.has('n1'),
+            );
+        }
+    },
+);

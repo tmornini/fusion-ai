@@ -151,7 +151,9 @@ export type NodeListLookup = (
     y: number;
 }>;
 
-export type InteractionCallback = () => void;
+export type InteractionCallback = (
+    state: InteractionState,
+) => void;
 
 export function buildInteractionState(
     viewBoxW: number,
@@ -317,7 +319,7 @@ export function bindInteractions(
                 onPanelRequest(action.open);
                 return;
             case 'request-update':
-                onUpdate();
+                onUpdate(action.state);
                 return;
             case 'capture-pointer':
                 if (
