@@ -90,7 +90,11 @@ with pan, marquee, drag, and edge connection. Layers:
 discriminated unions, pan needs Space+mousedown),
 `mermaid-{generate,parse}.ts` (round-trip text format),
 `zip.ts` (in-browser ZIP). Integration point:
-`adapters/flow-export.ts`.
+`adapters/flow-export.ts`. The FSM (`flow-fsm-reduce.ts`)
+propagates its new state to the presenter via the
+`request-update` action payload, consumed by detail.ts through
+`presenter.withInteractionState(state)` — the single sanctioned
+seam, no shared mutable state.
 
 ### API Layer (`/api`)
 
