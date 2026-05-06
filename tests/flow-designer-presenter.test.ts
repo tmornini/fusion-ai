@@ -205,3 +205,59 @@ test(
         );
     },
 );
+
+test(
+    'withFitReconciled does NOT re-run auto'
+    + '-layout when isAutoLayout is true and'
+    + ' isAutoFit is false (Bug 2 contract)',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            isAutoLayout: true,
+            isAutoFit: false,
+            nodes: [
+                node('n1', -250, -50),
+                node('n2', 250, 50),
+            ],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 1200, 800,
+        );
+        const presenter =
+            new FlowDesignerPresenter(
+                snap, 1200, 800,
+                buildFlowHistorySnapshot(false),
+            );
+        const before = presenter.snapshot().nodes;
+        const beforeN1 = before.find(
+            n => n.id === 'n1',
+        )!;
+        const beforeN2 = before.find(
+            n => n.id === 'n2',
+        )!;
+        const next =
+            presenter.withFitReconciled();
+        const afterN1 = next.nodes.find(
+            n => n.id === 'n1',
+        )!;
+        const afterN2 = next.nodes.find(
+            n => n.id === 'n2',
+        )!;
+        assert.equal(
+            afterN1.positionX,
+            beforeN1.positionX,
+        );
+        assert.equal(
+            afterN1.positionY,
+            beforeN1.positionY,
+        );
+        assert.equal(
+            afterN2.positionX,
+            beforeN2.positionX,
+        );
+        assert.equal(
+            afterN2.positionY,
+            beforeN2.positionY,
+        );
+    },
+);
