@@ -792,7 +792,7 @@ export function zoomToFit(
         zoom,
         viewBox: {
             x: cx
-                - vbW * effectiveW
+                - vbW * (canvasW + panelOffsetPx)
                     / (2 * canvasW),
             y: cy - vbH / 2,
             w: vbW,

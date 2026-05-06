@@ -55,7 +55,8 @@ test(
 
 test(
     'zoomToFit with panel offset centers content'
-    + ' in the left visible region',
+    + ' in the right visible region (panel is'
+    + ' on the left)',
     () => {
         const positions = [
             { x: -300, y: -200 },
@@ -67,14 +68,13 @@ test(
         assert.ok(r);
         const cx =
             ((-300) + (300 + NODE_WIDTH)) / 2;
-        const effectiveW = CANVAS_W - PANEL;
         const vb = r.viewBox;
         const pixelXOfContentCenter =
             (cx - vb.x) * CANVAS_W / vb.w;
         assert.ok(
             Math.abs(
                 pixelXOfContentCenter
-                - effectiveW / 2,
+                - (CANVAS_W + PANEL) / 2,
             ) < 0.5,
         );
     },
@@ -149,7 +149,7 @@ test(
 test(
     'zoomToFit panel offset shifts content'
     + ' pixel position from full-canvas center'
-    + ' to left-visible center',
+    + ' to right-visible center (panel on left)',
     () => {
         const positions = [
             { x: -100, y: -100 },
@@ -177,9 +177,9 @@ test(
         );
         assert.ok(
             Math.abs(
-                pixelX1 - (CANVAS_W - PANEL) / 2,
+                pixelX1 - (CANVAS_W + PANEL) / 2,
             ) < 0.5,
         );
-        assert.ok(pixelX1 < pixelX0);
+        assert.ok(pixelX1 > pixelX0);
     },
 );
