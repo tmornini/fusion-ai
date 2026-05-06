@@ -738,6 +738,7 @@ export function zoomToFit(
     }[],
     canvasW: number,
     canvasH: number,
+    panelOffsetPx: number,
 ): ZoomToFitResult | null {
     if (nodePositions.length === 0) return null;
 
@@ -766,18 +767,19 @@ export function zoomToFit(
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
 
-    const containerAR = canvasW / canvasH;
-    const contentAR =
-        contentW / contentH;
+    const effectiveW = canvasW - panelOffsetPx;
+    const canvasAR = canvasW / canvasH;
+    const visibleAR = effectiveW / canvasH;
+    const contentAR = contentW / contentH;
 
     let vbW: number;
     let vbH: number;
-    if (contentAR > containerAR) {
-        vbW = contentW;
-        vbH = contentW / containerAR;
+    if (contentAR > visibleAR) {
+        vbW = contentW * canvasW / effectiveW;
+        vbH = vbW / canvasAR;
     } else {
         vbH = contentH;
-        vbW = contentH * containerAR;
+        vbW = vbH * canvasAR;
     }
 
     let zoom = canvasW / vbW;
@@ -789,7 +791,9 @@ export function zoomToFit(
     return {
         zoom,
         viewBox: {
-            x: cx - vbW / 2,
+            x: cx
+                - vbW * effectiveW
+                    / (2 * canvasW),
             y: cy - vbH / 2,
             w: vbW,
             h: vbH,

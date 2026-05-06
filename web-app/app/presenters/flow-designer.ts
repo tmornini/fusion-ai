@@ -949,6 +949,7 @@ Auto Fit</label>
             positions,
             this.#canvasW,
             this.#canvasH,
+            0,
         );
         if (!result) return;
         snap.interaction.zoom = result.zoom;
