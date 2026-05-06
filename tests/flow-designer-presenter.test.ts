@@ -114,3 +114,94 @@ test(
         assert.equal(next.edges, original.edges);
     },
 );
+
+const node = (
+    id: string, x = 0, y = 0,
+) => ({
+    id,
+    name: id.toUpperCase(),
+    description: '',
+    positionX: x,
+    positionY: y,
+    isStart: false,
+    isComplete: false,
+    fields: [],
+});
+
+function buildPresenterWithNodes(
+    isAutoFit: boolean,
+): FlowDesignerPresenter {
+    const graph = {
+        ...emptyGraph,
+        isAutoFit,
+        nodes: [
+            node('n1', -100, -100),
+            node('n2', 100, 100),
+        ],
+    };
+    const snap = buildInitialFlowSnapshot(
+        graph, 1200, 800,
+    );
+    return new FlowDesignerPresenter(
+        snap, 1200, 800,
+        buildFlowHistorySnapshot(false),
+    );
+}
+
+test(
+    'withFitReconciled when isAutoFit is false'
+    + ' returns snapshot with viewBox unchanged',
+    () => {
+        const presenter =
+            buildPresenterWithNodes(false);
+        const before =
+            presenter.snapshot()
+                .interaction.viewBox;
+        const beforeX = before.x;
+        const beforeY = before.y;
+        const beforeW = before.w;
+        const beforeH = before.h;
+        const next =
+            presenter.withFitReconciled();
+        assert.equal(
+            next.interaction.viewBox.x, beforeX,
+        );
+        assert.equal(
+            next.interaction.viewBox.y, beforeY,
+        );
+        assert.equal(
+            next.interaction.viewBox.w, beforeW,
+        );
+        assert.equal(
+            next.interaction.viewBox.h, beforeH,
+        );
+    },
+);
+
+test(
+    'withFitReconciled when isAutoFit is true'
+    + ' updates viewBox to fit content',
+    () => {
+        const presenter =
+            buildPresenterWithNodes(true);
+        const before =
+            presenter.snapshot()
+                .interaction.viewBox;
+        const beforeX = before.x;
+        const beforeW = before.w;
+        const next =
+            presenter.withFitReconciled();
+        const after =
+            next.interaction.viewBox;
+        const xChanged =
+            Math.abs(after.x - beforeX) > 0.001;
+        const wChanged =
+            Math.abs(after.w - beforeW) > 0.001;
+        assert.ok(
+            xChanged || wChanged,
+            'viewBox should change when'
+            + ' isAutoFit is true and nodes'
+            + ' exist',
+        );
+    },
+);
