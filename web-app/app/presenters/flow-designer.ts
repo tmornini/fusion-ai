@@ -1035,14 +1035,7 @@ Auto Fit</label>
 
     tryShowFieldEditor(
         container: HTMLElement,
-    ):
-        | 'opened'
-        | 'no-selection'
-        | 'locked'
-    {
-        if (this.selectedNodeId() === null) {
-            return 'no-selection';
-        }
+    ): 'opened' | 'locked' {
         if (this.isLocked()) {
             return 'locked';
         }

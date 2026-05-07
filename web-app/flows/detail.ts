@@ -782,7 +782,6 @@ function bindCanvasInteractions(
 
 function bindToolbarActions(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
     flowId: string,
     signal: AbortSignal,
 ): void {
@@ -945,7 +944,6 @@ function parseCrewSelectValue(
 
 function bindPanelActions(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
     panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {
@@ -1003,7 +1001,8 @@ function bindPanelActions(
                 action === 'add-field'
             ) {
                 showFieldEditor(
-                    container, presenter,
+                    container,
+                    pageState.presenter(),
                 );
             } else if (
                 action === 'delete-field'
@@ -1240,11 +1239,10 @@ export async function init(
         panelStateRef, signal,
     );
     bindToolbarActions(
-        container, presenter, flowId, signal,
+        container, flowId, signal,
     );
     bindPanelActions(
-        container, presenter,
-        panelStateRef, signal,
+        container, panelStateRef, signal,
     );
     bindFlowNameEdit(
         container, signal,
@@ -1253,8 +1251,7 @@ export async function init(
         container, signal,
     );
     bindKeyboardShortcuts(
-        container, presenter,
-        panelStateRef, signal,
+        container, panelStateRef, signal,
     );
     const initialWrap = container.querySelector(
         '.flow-canvas-wrap',
@@ -1296,7 +1293,6 @@ export async function init(
 
 function bindKeyboardShortcuts(
     container: HTMLElement,
-    presenter: FlowDesignerPresenter,
     panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {
