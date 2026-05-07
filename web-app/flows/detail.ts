@@ -735,6 +735,8 @@ function bindCanvasInteractions(
         wrap,
         state,
         (next) => {
+            const prevSelected = pageState
+                .presenter().selectedNodeId();
             commit(
                 pageState.presenter()
                     .withInteractionState(next),
@@ -743,6 +745,21 @@ function bindCanvasInteractions(
                 pageState.presenter()
                     .withFitReconciled(),
             );
+            const nowSelected = pageState
+                .presenter().selectedNodeId();
+            const isPanelOpen = pageState
+                .presenter().snapshot()
+                .isPanelOpen;
+            if (
+                prevSelected !== nowSelected
+                && nowSelected !== null
+                && isPanelOpen
+            ) {
+                commit(
+                    pageState.presenter()
+                        .withSelectionCentered(),
+                );
+            }
         },
         (open) => {
             panelStateRef.open = open;
