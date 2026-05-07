@@ -21,8 +21,11 @@ import type {
     Id,
 } from '../adapters/index.ts';
 import { User } from '../adapters/index.ts';
-import { CREW_MODELS }
-    from '../../../api/types.ts';
+import {
+    CREW_MODELS,
+    START_NODE_DEFAULT_NAME,
+    END_NODE_DEFAULT_NAME,
+} from '../../../api/types.ts';
 
 export function buildFieldBadge(
     fieldType: string,
@@ -162,13 +165,14 @@ export function buildNodePanel(
     const isSpecial =
         node.isStart || node.isComplete;
     if (isSpecial) {
-        const kind = node.isStart
-            ? 'Start' : 'End';
+        const label = node.isStart
+            ? START_NODE_DEFAULT_NAME
+            : END_NODE_DEFAULT_NAME;
         return html`<div
 class="flow-props-panel">
 <div class="flow-props-header"
 ><h3 class="text-sm font-semibold"
-    >${kind} State</h3>
+    >${label}</h3>
 <button
     class="btn btn-ghost btn-icon btn-xs"
     data-action="close-panel"
@@ -178,7 +182,7 @@ class="flow-props-panel">
 <div class="mb-2">
 <label class="text-xs text-muted"
     >Name</label>
-<div class="text-sm">${node.name}</div>
+<div class="text-sm">${label}</div>
 </div>
 <div class="mb-3">
 <label class="text-xs text-muted"
@@ -211,10 +215,18 @@ class="text-sm text-muted"
         ? node.crew.model : '';
     return html`<div
 class="flow-props-panel">
-<div class="${
-    'flow-props-header'
-    + ' flow-props-header-with-crew'
-}">
+<div class="flow-props-header"
+><h3 class="text-sm font-semibold"
+    >State Properties</h3>
+<button
+    class="btn btn-ghost btn-icon btn-xs"
+    data-action="close-panel"
+    aria-label="Close"
+    >${iconX(14, '')}</button>
+</div>
+<div class="mb-2">
+<label class="text-xs text-muted"
+    >Crew</label>
 <select class="input input-sm"
     id="prop-node-crew"${lockAttr}>
 <option value="unassigned"${
@@ -235,11 +247,6 @@ ${CREW_MODELS.map(m => html`<option
     }>${m}</option>`)}
 </optgroup>
 </select>
-<button
-    class="btn btn-ghost btn-icon btn-xs"
-    data-action="close-panel"
-    aria-label="Close"
-    >${iconX(14, '')}</button>
 </div>
 <div class="mb-2">
 <label class="text-xs text-muted"
