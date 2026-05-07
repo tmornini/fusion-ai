@@ -10,6 +10,11 @@ import {
     NODE_WIDTH, NODE_HEIGHT,
 } from './flow-layout.ts';
 import { pluralize } from './format.ts';
+import { iconAlertTriangle } from './icons.ts';
+import {
+    START_NODE_DEFAULT_NAME,
+    END_NODE_DEFAULT_NAME,
+} from '../../api/types.ts';
 
 function nodeHasConnections(
     nodeId: string,
@@ -464,9 +469,14 @@ function buildNode(
         ? NODE_LABEL_Y_CENTERED
         : NODE_LABEL_Y;
 
+    const displayName = node.isStart
+        ? START_NODE_DEFAULT_NAME
+        : node.isComplete
+        ? END_NODE_DEFAULT_NAME
+        : node.name;
     const nameEsc = escapeForHtml(
         truncateLabel(
-            node.name, NODE_MAX_CHARS,
+            displayName, NODE_MAX_CHARS,
         ),
     );
     inner += '<text'
@@ -518,7 +528,20 @@ function buildNode(
             + '</circle>';
     }
 
-    const labelEsc = escapeForHtml(node.name);
+    if (
+        !isSpecial
+        && node.crew.kind === 'unassigned'
+    ) {
+        inner += '<g'
+            + ' class="flow-node-hazard"'
+            + ' transform="translate(6, 42)"'
+            + ' aria-hidden="true">'
+            + iconAlertTriangle(16, '')
+                .toString()
+            + '</g>';
+    }
+
+    const labelEsc = escapeForHtml(displayName);
     const ariaCurrent = isSelected
         ? ' aria-current="true"' : '';
     return trusted(
