@@ -694,6 +694,14 @@ Auto Fit</label>
         return this.#snapshot;
     }
 
+    withSelectionCentered(): FlowSnapshot {
+        if (!this.#snapshot.isPanelOpen) {
+            return this.#snapshot;
+        }
+        this.#panToRevealSelected(this.#snapshot);
+        return this.#snapshot;
+    }
+
     #applyLayoutReconcile(
         snap: FlowSnapshot,
     ): FlowSnapshot {
