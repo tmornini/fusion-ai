@@ -1165,28 +1165,15 @@ svg.flow-canvas.flow-canvas-locked .flow-edge rect {
   justify-content: space-between;
 }
 
-.flow-props-header.flow-props-header-with-crew {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.flow-props-header-with-crew > select {
-  justify-self: center;
-  min-width: 0;
-  max-width: 14rem;
-}
-
-.flow-props-header-with-crew > button {
-  justify-self: end;
-}
-
 svg.flow-canvas [data-node-id] {
   transition:
       opacity var(--duration-fast)
       var(--ease-default);
   cursor: pointer;
+}
+
+.flow-node-hazard {
+  color: hsl(var(--warning));
 }
 
 svg.flow-canvas [data-node-id]:hover {
