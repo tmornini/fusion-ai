@@ -191,3 +191,42 @@ test(
         assert.equal(flows1, flows2);
     },
 );
+
+test(
+    'FetchContext memoizes user rows',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.users.put('u1', buildUserRow(
+            'u1', 'Alice', 'Adams',
+        ));
+        const ctx = createFetchContext(db);
+        const rows1 = await ctx.getUserRows();
+        await db.users.put('u2', buildUserRow(
+            'u2', 'Bob', 'Brown',
+        ));
+        const rows2 = await ctx.getUserRows();
+        assert.equal(rows1, rows2);
+        assert.equal(rows1.length, 1);
+    },
+);
+
+test(
+    'getUserRows and getUserMap share one'
+    + ' underlying fetch',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.users.put('u1', buildUserRow(
+            'u1', 'Alice', 'Adams',
+        ));
+        const ctx = createFetchContext(db);
+        const rows1 = await ctx.getUserRows();
+        // If getUserMap re-fetches, the post-mutation
+        // state would leak into the map.
+        await db.users.put('u2', buildUserRow(
+            'u2', 'Bob', 'Brown',
+        ));
+        const map = await ctx.getUserMap();
+        assert.equal(map.size, rows1.length);
+        assert.equal(map.size, 1);
+    },
+);

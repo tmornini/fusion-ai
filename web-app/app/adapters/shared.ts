@@ -79,6 +79,7 @@ export interface FetchContext {
         body: Record<string, unknown>,
     ): Promise<T>;
     getUserMap(): Promise<Map<Id, User>>;
+    getUserRows(): Promise<UserEntity[]>;
     getCurrentUser(): Promise<UserEntity>;
     getIdeaRows(): Promise<IdeaEntity[]>;
     getProjectRows(
@@ -94,6 +95,8 @@ export function createFetchContext(
     // fetched at most once per ctx. The promise
     // is captured the first time the getter is
     // called.
+    let userRowsPromise:
+        Promise<UserEntity[]> | null = null;
     let userMapPromise:
         Promise<Map<Id, User>> | null = null;
     let currentUserPromise:
@@ -118,15 +121,22 @@ export function createFetchContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
+        getUserRows: () => {
+            if (!userRowsPromise) {
+                userRowsPromise =
+                    ctx.GET<UserEntity[]>(
+                        'users',
+                    );
+            }
+            return userRowsPromise;
+        },
         getUserMap: () => {
             if (!userMapPromise) {
                 userMapPromise = (async () => {
-                    const users =
-                        await ctx.GET<
-                            UserEntity[]
-                        >('users');
+                    const rows =
+                        await ctx.getUserRows();
                     return new Map(
-                        users.map(
+                        rows.map(
                             entity => [
                                 entity.id,
                                 new User(entity),
