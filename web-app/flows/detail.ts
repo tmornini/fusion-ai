@@ -729,10 +729,16 @@ function bindCanvasInteractions(
     const push = bindInteractions(
         wrap,
         state,
-        (next) => commit(
-            pageState.presenter()
-                .withInteractionState(next),
-        ),
+        (next) => {
+            commit(
+                pageState.presenter()
+                    .withInteractionState(next),
+            );
+            commit(
+                pageState.presenter()
+                    .withFitReconciled(),
+            );
+        },
         (open) => {
             panelStateRef.open = open;
             commit(

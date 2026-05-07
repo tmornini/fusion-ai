@@ -99,10 +99,14 @@ panel is positioned on the LEFT (`pages.css` `.flow-props-panel`
 uses `left: 0`); the visible canvas occupies pixels
 `[PANEL_WIDTH_PX, canvasW]`. When the panel is open, both Auto
 Layout (`applyAutoLayout`) and Auto Fit (`zoomToFit`) account
-for the panel-occupied left portion via `PANEL_WIDTH_PX`; panel
-toggles trigger `withFitReconciled` (Auto Fit only) so the
-visible canvas refits symmetrically on open and close without
-re-running Auto Layout.
+for the panel-occupied left portion via `PANEL_WIDTH_PX`. The
+presenter's `withFitReconciled` runs both Auto Layout and Auto
+Fit when `isAutoFit` is true (no-op otherwise), so panel
+toggles re-flow the layout for the new effective width and
+re-fit the visible canvas symmetrically. The detail-page
+`request-update` callback runs `withFitReconciled` after
+`withInteractionState` so the auto-fit viewBox is the final
+state, not stomped by the FSM's frozen viewBox.
 
 ### API Layer (`/api`)
 
