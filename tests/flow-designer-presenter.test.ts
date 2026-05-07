@@ -367,3 +367,189 @@ test(
         );
     },
 );
+
+// tryShowFieldEditor coverage. The method's
+// only DOM contact is querySelector on the
+// container and an HTML write on the slot —
+// no showToast, no fetch — so a stub container
+// suffices. The "+ Add Field" button click in
+// detail.ts hands the CURRENT
+// pageState.presenter() to this method; the
+// method's job is to write the form into the
+// slot or report 'locked'. These tests pin
+// that contract.
+
+interface StubSlot {
+    captured: string;
+    writes: number;
+}
+
+function makeStubSlot(): StubSlot {
+    const state: StubSlot = {
+        captured: '', writes: 0,
+    };
+    Object.defineProperty(
+        state, 'innerHTML', {
+            set(v: string): void {
+                state.captured = v;
+                state.writes++;
+            },
+            get(): string {
+                return state.captured;
+            },
+        },
+    );
+    return state;
+}
+
+function makeStubContainer(
+    slot: StubSlot,
+): HTMLElement {
+    return {
+        querySelector: (sel: string) =>
+            sel === '#field-editor-slot'
+                ? slot
+                : null,
+    } as unknown as HTMLElement;
+}
+
+function buildPresenterWithSelection(
+    nodeId: string,
+    isLocked: boolean,
+): FlowDesignerPresenter {
+    const graph = {
+        ...emptyGraph,
+        isLocked,
+        nodes: [node(nodeId, 0, 0)],
+    };
+    const initial = buildInitialFlowSnapshot(
+        graph, 800, 600, new Map(),
+    );
+    const seed = new FlowDesignerPresenter(
+        initial, 800, 600,
+        buildFlowHistorySnapshot(false),
+    );
+    const selectedSnap =
+        seed.withInteractionState({
+            ...initial.interaction,
+            selection: {
+                kind: 'nodes',
+                nodeIds: new Set([nodeId]),
+            },
+        });
+    return new FlowDesignerPresenter(
+        selectedSnap, 800, 600,
+        buildFlowHistorySnapshot(false),
+    );
+}
+
+test(
+    'tryShowFieldEditor returns "opened" and'
+    + ' writes the form into the slot when a'
+    + ' node is selected and the flow is not'
+    + ' locked',
+    () => {
+        const presenter =
+            buildPresenterWithSelection(
+                'n1', false,
+            );
+        const slot = makeStubSlot();
+        const container = makeStubContainer(slot);
+        const result = presenter
+            .tryShowFieldEditor(container);
+        assert.equal(result, 'opened');
+        assert.equal(slot.writes, 1);
+        assert.match(
+            slot.captured,
+            /flow-field-editor/,
+        );
+        assert.match(
+            slot.captured,
+            /id="new-field-name"/,
+        );
+        assert.match(
+            slot.captured,
+            /data-action="save-field"/,
+        );
+    },
+);
+
+test(
+    'tryShowFieldEditor returns "locked" and'
+    + ' does not write to the slot when the'
+    + ' flow is locked',
+    () => {
+        const presenter =
+            buildPresenterWithSelection(
+                'n1', true,
+            );
+        const slot = makeStubSlot();
+        const container = makeStubContainer(slot);
+        const result = presenter
+            .tryShowFieldEditor(container);
+        assert.equal(result, 'locked');
+        assert.equal(slot.writes, 0);
+        assert.equal(slot.captured, '');
+    },
+);
+
+// Regression for the captured-presenter bug
+// (detail.ts:1006). The "+ Add Field" click
+// handler used to pass a presenter captured at
+// init time — when no node was selected — so
+// the resulting tryShowFieldEditor call saw a
+// no-selection state and silently bailed.
+// After the fix, the handler reads
+// pageState.presenter() lazily, so it sees the
+// selection that exists at click time. This
+// test pins the contract the bug violated: a
+// presenter built from a snapshot with
+// selection reports a non-null selectedNodeId,
+// AND the original presenter remains
+// unchanged — immutability is what the
+// captured-reference pattern weaponized into
+// staleness.
+test(
+    'a presenter built from withInteractionState'
+    + ' reports the selected node, and the'
+    + ' source presenter remains unchanged',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('n1', 0, 0)],
+        };
+        const initial = buildInitialFlowSnapshot(
+            graph, 800, 600, new Map(),
+        );
+        const initialPresenter =
+            new FlowDesignerPresenter(
+                initial, 800, 600,
+                buildFlowHistorySnapshot(false),
+            );
+        assert.equal(
+            initialPresenter.selectedNodeId(),
+            null,
+        );
+        const selectedSnap =
+            initialPresenter.withInteractionState({
+                ...initial.interaction,
+                selection: {
+                    kind: 'nodes',
+                    nodeIds: new Set(['n1']),
+                },
+            });
+        const selectedPresenter =
+            new FlowDesignerPresenter(
+                selectedSnap, 800, 600,
+                buildFlowHistorySnapshot(false),
+            );
+        assert.equal(
+            selectedPresenter.selectedNodeId(),
+            'n1',
+        );
+        assert.equal(
+            initialPresenter.selectedNodeId(),
+            null,
+        );
+    },
+);

@@ -762,6 +762,37 @@ on. Run these in order.
   reverts to its previous selection — Crew changes are
   undoable like name/description changes.
 
+### Field Editor (Node Panel)
+
+- [ ] **F68** Single-select a regular node (not Start/End)
+  to open the properties panel. Click "+ Add Field". PASS:
+  the field editor form appears below the button — name
+  input, type select, required checkbox, options textarea,
+  and an "Add" button are visible inside the panel.
+  (Regression for the captured-presenter bug at
+  `detail.ts:1006`: this exact click used to do nothing
+  because the handler closed over a presenter captured at
+  init time, which had no selection.)
+- [ ] **F69** Continuing from F68, type "Email" in the name
+  input, change type to "email", check Required. Click
+  Add. PASS: a row "Email" with an "email" type badge and
+  a red asterisk appears in the fields list. The form
+  remains visible so additional fields can be added.
+- [ ] **F70** Continuing from F69, click the delete control
+  on the "Email" field row. PASS: the row disappears from
+  the fields list.
+- [ ] **F71** Lock the flow via the toolbar checkbox.
+  Single-select a regular node and click "+ Add Field".
+  PASS: a "Flow is locked" toast appears; the field
+  editor form is NOT injected into the panel.
+- [ ] **F72** Single-select a regular node. Change the Crew
+  dropdown from Unassigned to a model. Click "+ Add Field"
+  in the same panel. PASS: the field editor form appears.
+  (Regression: a Crew commit replaces the presenter, so a
+  click handler that captured a stale presenter would have
+  acted on the pre-commit snapshot — this case proves the
+  handler reads the current presenter at click time.)
+
 ---
 
 ## F2. Workbox
