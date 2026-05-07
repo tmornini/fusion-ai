@@ -18,7 +18,8 @@ import {
 import {
     getIdeas,
     getProjects,
-    getTeamMembers,
+    getUsers,
+    featuredTeamMembers,
     createFetchContext,
     setLocation,
     subscribeSchemaChanges,
@@ -295,12 +296,14 @@ export function initCommandPalette(
         state.isDataLoaded = true;
 
         const ctx = createFetchContext();
-        const [ideas, projects, members] =
+        const [ideas, projects, users] =
             await Promise.all([
                 getIdeas(ctx),
                 getProjects(ctx),
-                getTeamMembers(ctx),
+                getUsers(ctx),
             ]);
+        const members =
+            featuredTeamMembers(users);
 
         state.allItems = [
             ...ideas.map(ideaToSearchItem),

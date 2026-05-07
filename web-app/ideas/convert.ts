@@ -15,7 +15,7 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getIdea,
-    getManagedUsers,
+    getUsers,
     postActivity,
     postIdeaConversion,
     jsonObjectField,
@@ -61,16 +61,16 @@ export async function init(
         ReturnType<typeof getIdea>
     >;
     let users: Awaited<
-        ReturnType<typeof getManagedUsers>
+        ReturnType<typeof getUsers>
     >;
     try {
         [tuple, users] = await Promise.all([
             getIdea(ctx, ideaId),
-            getManagedUsers(ctx),
+            getUsers(ctx),
         ]);
     } catch (err) {
         log.error(
-            'getIdea or getManagedUsers'
+            'getIdea or getUsers'
             + ' failed',
             'ideas',
             err,
