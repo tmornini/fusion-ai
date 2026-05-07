@@ -219,8 +219,16 @@ Labels render at the bezier midpoint in a pill with
 `--color-card-bg` background. Bidirectional pairs
 are separated with a perpendicular offset.
 
-**Selection**: Blue glow filter on selected node,
-thicker stroke (3px) on selected edge.
+**Selection**: `--accent` gold glow filter on
+selected node, thicker stroke (3 px) on selected edge.
+
+**Locked**: When a flow is locked, all node rectangles,
+edge paths, and edge-label backgrounds re-stroke in
+`--accent-text` (theme-adapted gold). The dot grid
+renders in its default unlocked colors. Per-type
+border colors (Start green, Complete red, Regular
+blue, Cycle amber-dashed) are visually overridden by
+the locked-state stroke and restored when unlocked.
 
 **Constraints**:
 - No duplicate edges (same direction between a pair)

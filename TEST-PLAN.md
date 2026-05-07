@@ -153,7 +153,7 @@ on. Run these in order.
   node. PASS: properties panel appears showing
   State Name input, Description input, empty
   Fields list, and outgoing transitions. The
-  node gets a blue glow selection effect on the
+  node gets a gold glow selection effect on the
   canvas.
 - [ ] **AA29** Edit the state name in the
   properties panel to "Data Capture". PASS: the
@@ -494,7 +494,7 @@ on. Run these in order.
   and drag to create a new node attached here.
   Hold Shift to connect to an existing node
   instead."
-- [ ] **F11** Click a node. PASS: node gets blue
+- [ ] **F11** Click a node. PASS: node gets gold
   glow selection effect. Double-click the node.
   PASS: properties panel appears showing state
   name, description, form fields list, and
@@ -580,7 +580,7 @@ on. Run these in order.
   dropdown, toggle required. PASS: field appears
   in the fields list with lowercase type badge
   (e.g. "text") and red asterisk (*) if required.
-- [ ] **F26** Click an edge to select it (blue glow).
+- [ ] **F26** Click an edge to select it (gold glow).
   Double-click to open properties panel. PASS:
   panel shows transition name, description,
   from/to state names. Edit the name. PASS: label
@@ -642,8 +642,14 @@ on. Run these in order.
   Delete toolbar button becomes disabled, and opening a properties
   panel shows fields as read-only (inputs `disabled`). Auto Layout
   remains enabled because it only repositions nodes without
-  changing structure. Untoggle Locked: ports return, the Delete
-  button re-enables, fields become editable.
+  changing structure. Visual confirmation: nodes render with gold
+  strokes regardless of type (Start, Complete, Regular), edges
+  render with gold strokes (cycles remain dashed), edge-label
+  backgrounds gain gold strokes, and the dot-grid background
+  renders unchanged from its unlocked appearance. Untoggle Locked:
+  ports return, the Delete button re-enables, fields become
+  editable, and per-type colors return (Start green, Complete red,
+  Regular blue, Cycle amber).
 - [ ] **F41** With a non-trivial flow loaded, click "Copy Mermaid"
   in the toolbar. PASS: toast confirms the clipboard copy. Paste the
   clipboard contents into a text editor — the result is valid Mermaid

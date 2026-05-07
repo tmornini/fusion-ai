@@ -350,7 +350,6 @@ function buildDefs(): string {
         + '"indefinite"/>'
         + '</feGaussianBlur>'
         + '<feFlood'
-        + ` flood-color="${BLUE}"`
         + ' flood-opacity="0.8"'
         + ' result="color"/>'
         + '<feComposite'

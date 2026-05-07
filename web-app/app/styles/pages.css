@@ -1080,12 +1080,14 @@ svg.flow-canvas {
   user-select: none;
 }
 
-svg.flow-canvas.flow-canvas-locked .flow-grid-bg {
-  fill: hsl(var(--yellow-300));
+#flow-glow feFlood {
+  flood-color: hsl(var(--accent));
 }
 
-svg.flow-canvas.flow-canvas-locked #flow-grid circle {
-  fill: hsl(var(--blue-900));
+svg.flow-canvas.flow-canvas-locked .flow-node rect,
+svg.flow-canvas.flow-canvas-locked .flow-edge path,
+svg.flow-canvas.flow-canvas-locked .flow-edge rect {
+  stroke: hsl(var(--accent-text));
 }
 
 .flow-node:focus,
