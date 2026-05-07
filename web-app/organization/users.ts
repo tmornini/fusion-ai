@@ -19,15 +19,13 @@ import {
 } from '../app/core.ts';
 import {
     createFetchContext,
-    getManagedUsers, putUser,
+    getUsers, putUser, putUserStatus,
     postActivity,
     jsonArrayField,
     jsonObjectField,
     nowUtc,
     generateCryptoSafeBase62,
     subscribeUserChanges,
-    type FetchContext,
-    type UserEntity,
 } from '../app/adapters/index.ts';
 import {
     ManagedUsersPresenter,
@@ -45,27 +43,7 @@ const signal = pageAbort.signal;
 
 let usersState:
     ManagedUsersState | null = null;
-let userEntities:
-    Map<string, UserEntity> = new Map();
 let userListEl: HTMLElement | null = null;
-
-async function loadUsersAndEntities(
-    ctx: FetchContext,
-): Promise<{
-    users: Awaited<ReturnType<typeof getManagedUsers>>;
-    entities: Map<string, UserEntity>;
-}> {
-    const [users, rows] = await Promise.all([
-        getManagedUsers(ctx),
-        ctx.GET<UserEntity[]>('users'),
-    ]);
-    return {
-        users,
-        entities: new Map(
-            rows.map(r => [r.id, r]),
-        ),
-    };
-}
 
 export async function init(): Promise<void> {
     const container = $(
@@ -73,12 +51,10 @@ export async function init(): Promise<void> {
     );
     if (!container) return;
 
-    const loaded = await withLoadingState(
+    const users = await withLoadingState(
         container,
         buildSkeleton('table', 5),
-        () => loadUsersAndEntities(
-            createFetchContext(),
-        ),
+        () => getUsers(createFetchContext()),
         init,
         {
             icon: iconUsers(24, ''),
@@ -89,13 +65,10 @@ export async function init(): Promise<void> {
                 + ' collaborating.',
         },
     );
-    if (!loaded) return;
+    if (!users) return;
 
     usersState =
-        buildInitialManagedUsersState(
-            loaded.users,
-        );
-    userEntities = loaded.entities;
+        buildInitialManagedUsersState(users);
     const initialPresenter =
         new ManagedUsersPresenter(usersState);
     setHtml(container, buildShellHtml(
@@ -114,15 +87,11 @@ export async function init(): Promise<void> {
 
     subscribeUserChanges(async () => {
         if (!usersState || !userListEl) return;
-        const fresh =
-            await loadUsersAndEntities(
-                createFetchContext(),
-            );
+        const fresh = await getUsers(
+            createFetchContext(),
+        );
         usersState =
-            buildInitialManagedUsersState(
-                fresh.users,
-            );
-        userEntities = fresh.entities;
+            buildInitialManagedUsersState(fresh);
         rerenderUsers();
     });
 
@@ -566,18 +535,15 @@ async function updateUserActivationStatus(
     userId: string,
     next: 'active' | 'deactivated',
 ): Promise<void> {
-    const entity = userEntities.get(userId);
-    if (!entity) return;
-    const { id: _id, ...rest } = entity;
-    const ctx = createFetchContext();
     try {
-        await putUser(ctx, userId, {
-            ...rest,
-            status: next,
-        });
+        await putUserStatus(
+            createFetchContext(),
+            userId,
+            next,
+        );
     } catch (err) {
         log.error(
-            'putUser failed',
+            'putUserStatus failed',
             'organization', err,
         );
         showToast(
