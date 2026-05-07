@@ -100,13 +100,15 @@ uses `left: 0`); the visible canvas occupies pixels
 `[PANEL_WIDTH_PX, canvasW]`. When the panel is open, both Auto
 Layout (`applyAutoLayout`) and Auto Fit (`zoomToFit`) account
 for the panel-occupied left portion via `PANEL_WIDTH_PX`. The
-presenter's `withFitReconciled` runs both Auto Layout and Auto
-Fit when `isAutoFit` is true (no-op otherwise), so panel
-toggles re-flow the layout for the new effective width and
-re-fit the visible canvas symmetrically. The detail-page
-`request-update` callback runs `withFitReconciled` after
-`withInteractionState` so the auto-fit viewBox is the final
-state, not stomped by the FSM's frozen viewBox.
+presenter's `withFitReconciled` runs Auto Fit only when
+`isAutoFit` is true (no-op otherwise), so panel toggles and
+selection updates re-fit the visible canvas symmetrically
+without re-laying out nodes. Explicit auto-layout fires only
+via `withAutoLayoutToggled`, `withLayoutReconciled`, and the
+`withNodesMoved` chain — never via `withFitReconciled`. The
+detail-page `request-update` callback runs `withFitReconciled`
+after `withInteractionState` so the auto-fit viewBox is the
+final state, not stomped by the FSM's frozen viewBox.
 
 ### API Layer (`/api`)
 

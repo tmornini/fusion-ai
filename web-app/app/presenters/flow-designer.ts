@@ -679,11 +679,10 @@ Auto Fit</label>
     }
 
     withFitReconciled(): FlowSnapshot {
-        if (this.#snapshot.isAutoFit) {
-            return this.#applyLayoutReconcile(
-                this.#snapshot,
-            );
+        if (!this.#snapshot.isAutoFit) {
+            return this.#snapshot;
         }
+        this.#applyZoomToFit(this.#snapshot);
         return this.#snapshot;
     }
 

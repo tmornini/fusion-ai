@@ -262,3 +262,65 @@ test(
     },
 );
 
+test(
+    'withFitReconciled re-fits viewBox but does'
+    + ' NOT move nodes when isAutoLayout and'
+    + ' isAutoFit are both true',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            isAutoLayout: true,
+            isAutoFit: true,
+            nodes: [
+                node('n1', -250, -50),
+                node('n2', 250, 50),
+            ],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 1200, 800,
+        );
+        const presenter =
+            new FlowDesignerPresenter(
+                snap, 1200, 800,
+                buildFlowHistorySnapshot(false),
+            );
+        const before = presenter.snapshot();
+        const beforeN1 = before.nodes.find(
+            n => n.id === 'n1',
+        )!;
+        const beforeN2 = before.nodes.find(
+            n => n.id === 'n2',
+        )!;
+        const beforeVb = before.interaction.viewBox;
+        const next =
+            presenter.withFitReconciled();
+        const afterN1 = next.nodes.find(
+            n => n.id === 'n1',
+        )!;
+        const afterN2 = next.nodes.find(
+            n => n.id === 'n2',
+        )!;
+        assert.equal(
+            afterN1.positionX, beforeN1.positionX,
+        );
+        assert.equal(
+            afterN1.positionY, beforeN1.positionY,
+        );
+        assert.equal(
+            afterN2.positionX, beforeN2.positionX,
+        );
+        assert.equal(
+            afterN2.positionY, beforeN2.positionY,
+        );
+        const after = next.interaction.viewBox;
+        const xChanged =
+            Math.abs(after.x - beforeVb.x) > 0.001;
+        const wChanged =
+            Math.abs(after.w - beforeVb.w) > 0.001;
+        assert.ok(
+            xChanged || wChanged,
+            'viewBox should change (auto-fit ran)',
+        );
+    },
+);
+
