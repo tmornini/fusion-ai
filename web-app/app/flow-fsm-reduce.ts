@@ -140,10 +140,10 @@ function onNodePointerDown(
         return {
             state: next,
             actions: [
-                {
-                    kind: 'open-panel',
-                    open: isDbl,
-                },
+                ...(isDbl ? [{
+                    kind: 'open-panel' as const,
+                    open: true,
+                }] : []),
                 { kind: 'capture-pointer' },
                 {
                     kind: 'request-update',
@@ -168,10 +168,10 @@ function onNodePointerDown(
         return {
             state: next,
             actions: [
-                {
-                    kind: 'open-panel',
-                    open: isDbl,
-                },
+                ...(isDbl ? [{
+                    kind: 'open-panel' as const,
+                    open: true,
+                }] : []),
                 {
                     kind: 'request-update',
                     state: next,
@@ -214,7 +214,10 @@ function onNodePointerDown(
     return {
         state: next,
         actions: [
-            { kind: 'open-panel', open: isDbl },
+            ...(isDbl ? [{
+                kind: 'open-panel' as const,
+                open: true,
+            }] : []),
             { kind: 'capture-pointer' },
             { kind: 'request-update', state: next },
         ],
@@ -309,7 +312,10 @@ function onEdgePointerDown(
     return {
         state: next,
         actions: [
-            { kind: 'open-panel', open: isDbl },
+            ...(isDbl ? [{
+                kind: 'open-panel' as const,
+                open: true,
+            }] : []),
             { kind: 'request-update', state: next },
         ],
     };

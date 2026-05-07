@@ -375,12 +375,15 @@ test(
     },
 );
 
-// The FSM emits open-panel unconditionally. F14's
-// integration-layer behavior — panel opens regardless
-// of Auto Fit, with the canvas re-fitting to the
-// panel-aware visible region when Auto Fit is on — is
-// composed in detail.ts via withPanelOpen +
-// withFitReconciled. Not testable here.
+// The FSM emits open-panel only on double-click,
+// preserving panel state on single-click so a click
+// from one node to another updates selection without
+// closing an already-open panel. F14's integration-
+// layer behavior — panel opens regardless of Auto
+// Fit, with the canvas re-fitting to the panel-aware
+// visible region when Auto Fit is on — is composed
+// in detail.ts via withPanelOpen + withFitReconciled.
+// Not testable here.
 test(
     'double-click node opens panel; second tap'
     + ' within window flips open=true (AA28/F13)',
@@ -418,9 +421,8 @@ test(
         const panels = findActions(
             r.actions, 'open-panel',
         );
-        assert.equal(panels.length, 2);
-        assert.equal(panels[0]?.open, false);
-        assert.equal(panels[1]?.open, true);
+        assert.equal(panels.length, 1);
+        assert.equal(panels[0]?.open, true);
     },
 );
 
@@ -461,9 +463,7 @@ test(
         const panels = findActions(
             r.actions, 'open-panel',
         );
-        assert.equal(panels.length, 2);
-        assert.equal(panels[0]?.open, false);
-        assert.equal(panels[1]?.open, false);
+        assert.equal(panels.length, 0);
     },
 );
 
@@ -689,9 +689,8 @@ test(
         const panels = findActions(
             r.actions, 'open-panel',
         );
-        assert.equal(panels.length, 2);
-        assert.equal(panels[0]?.open, false);
-        assert.equal(panels[1]?.open, true);
+        assert.equal(panels.length, 1);
+        assert.equal(panels[0]?.open, true);
     },
 );
 
@@ -712,7 +711,7 @@ test(
         const panel = findAction(
             r.actions, 'open-panel',
         );
-        assert.equal(panel?.open, false);
+        assert.equal(panel, undefined);
     },
 );
 
