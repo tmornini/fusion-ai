@@ -597,6 +597,9 @@ export interface GraphField {
     options: string[];
 }
 
+export const START_NODE_DEFAULT_NAME = 'Create';
+export const END_NODE_DEFAULT_NAME = 'Archive';
+
 export const CREW_MODELS = [
     'Grok 4.20 Heavy',
     'Claude Opus 4.7 Max',
