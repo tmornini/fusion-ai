@@ -1085,7 +1085,7 @@ svg.flow-canvas {
 }
 
 svg.flow-canvas.flow-canvas-locked .flow-node rect,
-svg.flow-canvas.flow-canvas-locked .flow-edge path,
+svg.flow-canvas.flow-canvas-locked .flow-edge path[marker-end],
 svg.flow-canvas.flow-canvas-locked .flow-edge rect {
   stroke: hsl(var(--accent-text));
 }
