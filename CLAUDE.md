@@ -104,22 +104,37 @@ for the panel-occupied left portion via `PANEL_WIDTH_PX`. The
 presenter's `withFitReconciled` runs Auto Fit only when
 `isAutoFit` is true (no-op otherwise), so panel toggles and
 selection updates re-fit the visible canvas symmetrically
-without re-laying out nodes. Explicit auto-layout fires only
-via `withAutoLayoutToggled`, `withLayoutReconciled`, and the
-`withNodesMoved` chain — never via `withFitReconciled`. The
-detail-page `request-update` callback runs `withFitReconciled`
-after `withInteractionState` so the auto-fit viewBox is the
-final state, not stomped by the FSM's frozen viewBox. Regular
-nodes (not Start/End) carry a `crew: Crew` field — a
+without re-laying out nodes. Viewport scale/translate
+operations (zoom, pan, Auto Fit, panel toggle, selection
+centering) MUST NOT invoke Auto Layout. Explicit auto-layout
+fires only via `withAutoLayoutToggled`, `withLayoutReconciled`,
+and the `withNodesMoved` chain — never via `withFitReconciled`
+or `withSelectionCentered`. The detail-page `request-update`
+callback runs `withFitReconciled` after `withInteractionState`
+so the auto-fit viewBox is the final state, not stomped by the
+FSM's frozen viewBox; on selection change while the panel is
+open, it then runs `withSelectionCentered` to pan the newly
+selected node to the visible canvas center (zoom unchanged).
+The two special nodes (`isStart` / `isComplete`) display as
+"Create" and "Archive" — names live in `START_NODE_DEFAULT_NAME`
+and `END_NODE_DEFAULT_NAME` constants in `api/types.ts` and
+override `node.name` at SVG-render and panel-render time, so
+existing flows whose persisted name is "Start"/"End" still
+display the new labels without a data migration. Regular
+nodes (not start/end) carry a `crew: Crew` field — a
 3-variant discriminated union (`unassigned`/`user`/`model`)
-persisted on the node and rendered in the panel header as a
-centered `<select>` with `<optgroup>` sections. Crew respects
-`isLocked` (disabled when locked) but is otherwise cosmetic —
-not consumed by execution, layout, mermaid, or export. Model
-names live in `CREW_MODELS` in `api/types.ts`. The
-`<select>` value crosses the DOM seam as `'user:<id>'` /
-`'model:<name>'` / `'unassigned'` and is parsed back to the
-typed union via `parseCrewSelectValue` in `flows/detail.ts`.
+persisted on the node and rendered in the panel body as a
+labeled `<select>` with `<optgroup>` sections, matching the
+Name/Description label pattern. Crew respects `isLocked`
+(disabled when locked) but is otherwise cosmetic — not
+consumed by execution, layout, mermaid, or export. Regular
+nodes whose crew is `unassigned` render a hazard triangle
+(`iconAlertTriangle` colored via `.flow-node-hazard`) in the
+bottom-left corner of the node SVG. Model names live in
+`CREW_MODELS` in `api/types.ts`. The `<select>` value crosses
+the DOM seam as `'user:<id>'` / `'model:<name>'` /
+`'unassigned'` and is parsed back to the typed union via
+`parseCrewSelectValue` in `flows/detail.ts`.
 
 ### API Layer (`/api`)
 
