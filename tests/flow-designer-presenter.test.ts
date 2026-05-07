@@ -58,7 +58,7 @@ test(
                 x: -400, y: -300, w: 800, h: 600,
             },
             zoom: 1.5,
-            isSpaceDown: false,
+            isPanMode: false,
         };
         const next = presenter
             .withInteractionState(state);
@@ -99,7 +99,7 @@ test(
                 x: 0, y: 0, w: 100, h: 100,
             },
             zoom: 2.0,
-            isSpaceDown: true,
+            isPanMode: true,
         };
         const next = presenter
             .withInteractionState(state);

@@ -678,6 +678,43 @@ on. Run these in order.
   survived navigation because versions are persisted to the schema,
   not held in memory.
 
+### Space Toggle (Pan Mode)
+
+- [ ] **F47** With the canvas focused, tap the spacebar once.
+  PASS: a primary-colored outline appears around the canvas; the
+  cursor becomes `grab` over canvas, nodes, and edges.
+- [ ] **F48** With pan mode on, tap the spacebar a second time.
+  PASS: the outline disappears and the cursor returns to its
+  default state.
+- [ ] **F49** With pan mode on, drag the canvas, release, then
+  drag again. PASS: both drags pan the viewport — pan mode
+  persists across multiple drags until toggled off.
+- [ ] **F50** Hold the spacebar down for two seconds without
+  releasing. PASS: pan mode toggles on exactly once; browser
+  auto-repeat does not chatter the toggle.
+- [ ] **F51** Begin dragging a node. While the drag is in flight,
+  tap the spacebar. PASS: the drag completes unchanged; pan mode
+  state is unchanged when the drag ends.
+- [ ] **F52** Begin a marquee selection on empty canvas. While the
+  marquee is in flight, tap the spacebar. PASS: the marquee
+  continues; pan mode state is unchanged when pointer-up
+  resolves.
+- [ ] **F53** Shift-drag from a node port to begin a connect
+  gesture. While connecting, tap the spacebar. PASS: the connect
+  gesture continues; pan mode state is unchanged at pointer-up.
+- [ ] **F54** With pan mode on and a pan drag in flight, tap the
+  spacebar mid-drag. PASS: the pan drag continues; pan mode
+  state is unchanged until the drag ends.
+- [ ] **F55** Toggle Auto-Fit on. With pan mode off, tap the
+  spacebar. PASS: an error toast appears ("Disable Auto-Fit to
+  change the view"); pan mode stays off.
+- [ ] **F56** With pan mode on, toggle Auto-Fit on, then tap the
+  spacebar. PASS: pan mode turns off cleanly with no toast —
+  exiting pan mode is always permitted.
+- [ ] **F57** Focus a text input (e.g. node name in the panel).
+  Tap the spacebar. PASS: a literal space character is inserted
+  into the input; pan mode state is unchanged.
+
 ---
 
 ## F2. Workbox

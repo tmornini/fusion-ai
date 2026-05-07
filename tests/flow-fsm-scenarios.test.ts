@@ -28,7 +28,7 @@ function buildState(
         marquee: { kind: 'idle' },
         viewBox: { x: 0, y: 0, w: 800, h: 600 },
         zoom: 1.0,
-        isSpaceDown: false,
+        isPanMode: false,
         ...overrides,
     };
 }

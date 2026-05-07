@@ -130,7 +130,7 @@ export interface InteractionState {
     marquee: MarqueeMode;
     viewBox: ViewBox;
     zoom: number;
-    isSpaceDown: boolean;
+    isPanMode: boolean;
 }
 
 export type PanelRequestCallback =
@@ -173,7 +173,7 @@ export function buildInteractionState(
             h: viewBoxH,
         },
         zoom: 1.0,
-        isSpaceDown: false,
+        isPanMode: false,
     };
 }
 
@@ -280,7 +280,7 @@ export function bindInteractions(
     let context = initialContext;
     let currentState: InteractionState = state;
     let activePointerId: number | null = null;
-    if (currentState.isSpaceDown) {
+    if (currentState.isPanMode) {
         wrap.classList.add(
             'flow-pan-cursor',
         );
@@ -396,7 +396,7 @@ export function bindInteractions(
                 svg, e.clientX, e.clientY,
             );
 
-            if (currentState.isSpaceDown) {
+            if (currentState.isPanMode) {
                 dispatch({
                     kind:
                         'pointer-down-on-canvas',
@@ -607,24 +607,18 @@ export function bindInteractions(
         ke: KeyboardEvent,
     ): void => {
         if (ke.key !== ' ') return;
+        // auto-repeat would chatter the toggle
+        if (ke.repeat) return;
         if (isFormFocused()) return;
         ke.preventDefault();
-        if (ke.type === 'keydown') {
-            dispatch({
-                kind: 'space-down',
-                isAutoFit: context.isAutoFit,
-                isFormFocused: false,
-            });
-        } else {
-            dispatch({ kind: 'space-up' });
-        }
+        dispatch({
+            kind: 'space-toggle',
+            isAutoFit: context.isAutoFit,
+            isFormFocused: false,
+        });
     };
     window.addEventListener(
         'keydown', handleSpace,
-        { signal },
-    );
-    window.addEventListener(
-        'keyup', handleSpace,
         { signal },
     );
 

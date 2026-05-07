@@ -84,11 +84,10 @@ export type FsmInput =
         isAutoFit: boolean;
     }
     | {
-        kind: 'space-down';
+        kind: 'space-toggle';
         isAutoFit: boolean;
         isFormFocused: boolean;
     }
-    | { kind: 'space-up' }
     | {
         kind: 'shift-key';
         isShift: boolean;

@@ -40,10 +40,8 @@ export function reduceFsm(
             return onPointerUp(state, input);
         case 'wheel':
             return onWheel(state, input);
-        case 'space-down':
-            return onSpaceDown(state, input);
-        case 'space-up':
-            return onSpaceUp(state);
+        case 'space-toggle':
+            return onSpaceToggle(state, input);
         case 'shift-key':
             return onShiftKey(state, input);
         case 'canvas-key-activate':
@@ -59,7 +57,7 @@ function onCanvasPointerDown(
         kind: 'pointer-down-on-canvas';
     }>,
 ): FsmResult {
-    if (state.isSpaceDown) {
+    if (state.isPanMode) {
         const next: FsmState = {
             ...state,
             pan: {
@@ -107,7 +105,7 @@ function onNodePointerDown(
         kind: 'pointer-down-on-node';
     }>,
 ): FsmResult {
-    if (state.isSpaceDown) {
+    if (state.isPanMode) {
         return startPanFromNode(state, input);
     }
     const isDbl =
@@ -649,19 +647,25 @@ function onWheel(
     };
 }
 
-function onSpaceDown(
+function onSpaceToggle(
     state: FsmState,
     input: Extract<FsmInput, {
-        kind: 'space-down';
+        kind: 'space-toggle';
     }>,
 ): FsmResult {
     if (input.isFormFocused) {
         return { state, actions: [] };
     }
-    if (state.isSpaceDown) {
+    if (
+        state.drag.kind === 'dragging'
+        || state.connect.kind === 'connecting'
+        || state.marquee.kind === 'selecting'
+        || state.pan.kind === 'panning'
+    ) {
         return { state, actions: [] };
     }
-    if (input.isAutoFit) {
+    const turningOn = !state.isPanMode;
+    if (turningOn && input.isAutoFit) {
         return {
             state,
             actions: [
@@ -676,31 +680,13 @@ function onSpaceDown(
     return {
         state: {
             ...state,
-            isSpaceDown: true,
+            isPanMode: turningOn,
         },
         actions: [
-            { kind: 'set-pan-cursor', on: true },
-        ],
-    };
-}
-
-function onSpaceUp(
-    state: FsmState,
-): FsmResult {
-    if (!state.isSpaceDown) {
-        return { state, actions: [] };
-    }
-    const newPan = state.pan.kind === 'panning'
-        ? { kind: 'idle' as const }
-        : state.pan;
-    return {
-        state: {
-            ...state,
-            isSpaceDown: false,
-            pan: newPan,
-        },
-        actions: [
-            { kind: 'set-pan-cursor', on: false },
+            {
+                kind: 'set-pan-cursor',
+                on: turningOn,
+            },
         ],
     };
 }

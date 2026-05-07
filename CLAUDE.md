@@ -87,7 +87,8 @@ The Flow Designer (`flows/detail.html`) renders an SVG canvas
 with pan, marquee, drag, and edge connection. Layers:
 `flow-layout.ts` (Sugiyama layout), `flow-graph.ts` (SVG render),
 `flow-interactions.ts` (pointer/keyboard state machines —
-discriminated unions, pan needs Space+mousedown),
+discriminated unions, pan toggles via Space: one tap on,
+one tap off; toggle is ignored mid-gesture),
 `mermaid-{generate,parse}.ts` (round-trip text format),
 `zip.ts` (in-browser ZIP). Integration point:
 `adapters/flow-export.ts`. The FSM (`flow-fsm-reduce.ts`)
