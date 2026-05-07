@@ -514,10 +514,14 @@ on. Run these in order.
   the new selection and the canvas re-centers on
   it.
 - [ ] **F14** Enable Auto Fit, then double-click a
-  node. PASS: the panel-open gesture is gated by
-  Auto Fit — a toast reports the action is blocked.
-  Turn Auto Fit off and double-click again. PASS:
-  panel opens and the canvas centers on the node.
+  node. PASS: panel opens and the canvas re-fits to
+  the panel-aware visible region (no toast, no
+  blocking — Auto Fit handles the re-fit via
+  `withFitReconciled`'s `panelOffsetPx`). Turn Auto
+  Fit off and double-click again. PASS: panel opens
+  and the canvas pans to keep the node visible, and
+  the previous viewBox is saved for restoration when
+  the panel closes.
 - [ ] **F15** Drag from a middle node's port into
   empty canvas past 20 pixels, without holding
   Shift. PASS: during the drag a faint bezier

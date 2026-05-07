@@ -375,8 +375,12 @@ test(
     },
 );
 
-// F14 (autofit suppresses panel-open) is renderer-layer; the
-// FSM emits open-panel unconditionally. Not testable here.
+// The FSM emits open-panel unconditionally. F14's
+// integration-layer behavior — panel opens regardless
+// of Auto Fit, with the canvas re-fitting to the
+// panel-aware visible region when Auto Fit is on — is
+// composed in detail.ts via withPanelOpen +
+// withFitReconciled. Not testable here.
 test(
     'double-click node opens panel; second tap'
     + ' within window flips open=true (AA28/F13)',
