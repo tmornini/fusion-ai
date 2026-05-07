@@ -14,7 +14,8 @@ import {
 } from '../app/core.ts';
 import {
     createFetchContext,
-    getTeamMembers,
+    getUsers,
+    featuredTeamMembers,
     subscribeUserChanges,
 } from '../app/adapters/index.ts';
 import {
@@ -41,8 +42,10 @@ export async function init(): Promise<void> {
     const result = await withLoadingState(
         teamListEl,
         buildSkeleton('card-list', 4),
-        () => getTeamMembers(
-            createFetchContext(),
+        async () => featuredTeamMembers(
+            await getUsers(
+                createFetchContext(),
+            ),
         ),
         init,
         {
@@ -94,8 +97,10 @@ export async function init(): Promise<void> {
 
     subscribeUserChanges(async () => {
         if (!teamState || !listEl) return;
-        const fresh = await getTeamMembers(
-            createFetchContext(),
+        const fresh = featuredTeamMembers(
+            await getUsers(
+                createFetchContext(),
+            ),
         );
         teamState = buildInitialTeamListState(
             fresh,
