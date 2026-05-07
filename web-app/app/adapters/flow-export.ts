@@ -2,6 +2,7 @@ import {
     nowUtc,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
+    DEFAULT_CREW,
     projectIsNotDeleted,
 } from '../../../api/types.ts';
 import type {
@@ -537,6 +538,7 @@ export async function postFlowFromBackup(
             positionY: n.positionY,
             isStart: n.isStart,
             isComplete: n.isComplete,
+            crew: n.crew,
             fields: n.fields.map(
                 f => ({
                     id: generateCryptoSafeBase62(),
@@ -889,6 +891,7 @@ export async function postFlowFromMermaid(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
+                    crew: DEFAULT_CREW,
                     fields: [],
                 };
             },
@@ -1309,6 +1312,7 @@ export async function postFlowFromZip(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
+                    crew: DEFAULT_CREW,
                     fields: sc
                         ? sidecarFieldsToGraph(
                             sc,

@@ -19,6 +19,8 @@ import {
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
     validateProjectFlowEntity,
+    asCrew,
+    asStoredGraph,
 } from '../api/validators.ts';
 
 // --- UserEntity ---
@@ -709,3 +711,143 @@ test(
         /missing required key "flow_id"/,
     );
 });
+
+// --- asCrew (Crew discriminated union) ---
+
+test('asCrew accepts unassigned variant', () => {
+    const result = asCrew(
+        { kind: 'unassigned' }, 'crew',
+    );
+    assert.equal(result.kind, 'unassigned');
+});
+
+test('asCrew accepts user variant', () => {
+    const result = asCrew(
+        { kind: 'user', userId: 'u-1' },
+        'crew',
+    );
+    assert.equal(result.kind, 'user');
+    if (result.kind === 'user') {
+        assert.equal(result.userId, 'u-1');
+    }
+});
+
+test('asCrew accepts model variant', () => {
+    const result = asCrew(
+        { kind: 'model', model: 'Copilot' },
+        'crew',
+    );
+    assert.equal(result.kind, 'model');
+    if (result.kind === 'model') {
+        assert.equal(result.model, 'Copilot');
+    }
+});
+
+test('asCrew rejects invalid kind', () => {
+    assert.throws(
+        () => asCrew(
+            { kind: 'invalid' }, 'crew',
+        ),
+        /crew\.kind in/,
+    );
+});
+
+test('asCrew rejects user without userId', () => {
+    assert.throws(
+        () => asCrew(
+            { kind: 'user' }, 'crew',
+        ),
+    );
+});
+
+test('asCrew rejects unknown model', () => {
+    assert.throws(
+        () => asCrew(
+            { kind: 'model', model: 'Unknown' },
+            'crew',
+        ),
+        /CrewModel/,
+    );
+});
+
+// --- asGraphNode lazy crew migration ---
+
+const baseNode = {
+    id: 'n1',
+    name: 'N',
+    description: '',
+    positionX: 0,
+    positionY: 0,
+    isStart: false,
+    isComplete: false,
+    fields: [],
+};
+
+test(
+    'asStoredGraph defaults missing crew to'
+    + ' unassigned',
+    () => {
+        const result = asStoredGraph(
+            { nodes: [baseNode], edges: [] },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.crew.kind, 'unassigned');
+    },
+);
+
+test(
+    'asStoredGraph round-trips a user crew',
+    () => {
+        const result = asStoredGraph(
+            {
+                nodes: [
+                    {
+                        ...baseNode,
+                        crew: {
+                            kind: 'user',
+                            userId: 'u-1',
+                        },
+                    },
+                ],
+                edges: [],
+            },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.crew.kind, 'user');
+        if (n.crew.kind === 'user') {
+            assert.equal(
+                n.crew.userId, 'u-1',
+            );
+        }
+    },
+);
+
+test(
+    'asStoredGraph round-trips a model crew',
+    () => {
+        const result = asStoredGraph(
+            {
+                nodes: [
+                    {
+                        ...baseNode,
+                        crew: {
+                            kind: 'model',
+                            model: 'Copilot',
+                        },
+                    },
+                ],
+                edges: [],
+            },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.crew.kind, 'model');
+        if (n.crew.kind === 'model') {
+            assert.equal(
+                n.crew.model, 'Copilot',
+            );
+        }
+    },
+);

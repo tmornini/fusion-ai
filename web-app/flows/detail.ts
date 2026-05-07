@@ -18,9 +18,14 @@ import {
     getFlowMermaid,
     getFlowZip,
     getFlowVersions,
+    getUserMap,
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
+import {
+    isCrewModel,
+} from '../../api/types.ts';
+import type { Crew } from '../../api/types.ts';
 import {
     downloadBlob,
 } from '../app/adapters/blob-download.ts';
@@ -911,6 +916,33 @@ async function handleExportZip(
     );
 }
 
+function parseCrewSelectValue(
+    raw: string,
+): Crew {
+    if (raw === 'unassigned') {
+        return { kind: 'unassigned' };
+    }
+    if (raw.startsWith('user:')) {
+        return {
+            kind: 'user',
+            userId: raw.slice(5),
+        };
+    }
+    if (raw.startsWith('model:')) {
+        const model = raw.slice(6);
+        if (!isCrewModel(model)) {
+            throw new Error(
+                'invalid crew model: '
+                    + model,
+            );
+        }
+        return { kind: 'model', model };
+    }
+    throw new Error(
+        'invalid crew value: ' + raw,
+    );
+}
+
 function bindPanelActions(
     container: HTMLElement,
     presenter: FlowDesignerPresenter,
@@ -921,6 +953,28 @@ function bindPanelActions(
         '.flow-props-slot', container,
     );
     if (!slot) return;
+    slot.addEventListener(
+        'change',
+        (e) => {
+            const target = e.target;
+            if (
+                !(target instanceof
+                    HTMLSelectElement)
+            ) return;
+            if (
+                target.id !== 'prop-node-crew'
+            ) return;
+            const crew = parseCrewSelectValue(
+                target.value,
+            );
+            commit(
+                pageState.presenter()
+                    .withNodeCrew(crew),
+                { advanceHistory: true },
+            );
+        },
+        { signal },
+    );
     slot.addEventListener(
         'click',
         (e) => {
@@ -1142,12 +1196,13 @@ export async function init(
         buildSkeleton('detail', 1),
         async () => {
             const ctx = createFetchContext();
-            const [graph, versions] =
+            const [graph, versions, userMap] =
                 await Promise.all([
                     getFlowGraph(ctx, flowId),
                     getFlowVersions(ctx, flowId),
+                    getUserMap(ctx),
                 ]);
-            return { graph, versions };
+            return { graph, versions, userMap };
         },
     );
     if (!loaded) return;
@@ -1165,6 +1220,7 @@ export async function init(
             loaded.graph,
             FALLBACK_W,
             FALLBACK_H,
+            loaded.userMap,
         );
     const presenter =
         new FlowDesignerPresenter(

@@ -9,6 +9,10 @@ import {
     createFetchContext,
     putFlow,
     postFlowVersion,
+    User,
+} from '../adapters/index.ts';
+import type {
+    Id,
 } from '../adapters/index.ts';
 import type {
     GraphNode,
@@ -17,6 +21,7 @@ import type {
     FlowVersion,
     FlowSaveShape,
 } from '../adapters/flows.ts';
+import type { Crew } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../adapters/index.ts';
@@ -91,6 +96,7 @@ interface DesignerState {
     isPanelOpen: boolean;
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
+    userMap: Map<Id, User>;
 }
 
 export type FlowSnapshot = Readonly<DesignerState>;
@@ -104,6 +110,7 @@ export function buildInitialFlowSnapshot(
     graph: FlowGraph,
     canvasW: number,
     canvasH: number,
+    userMap: Map<Id, User>,
 ): FlowSnapshot {
     const interaction = buildInteractionState(
         canvasW, canvasH,
@@ -124,6 +131,7 @@ export function buildInitialFlowSnapshot(
         isPanelOpen: false,
         interaction,
         savedViewBox: { kind: 'none' },
+        userMap,
     };
 }
 
@@ -766,6 +774,26 @@ Auto Fit</label>
         return next;
     }
 
+    withNodeCrew(crew: Crew): FlowSnapshot {
+        if (this.#guardLocked()) {
+            return this.#snapshot;
+        }
+        const nodeId = this
+            .#singleSelectedNodeId();
+        if (!nodeId) return this.#snapshot;
+        const next: FlowSnapshot = {
+            ...this.#snapshot,
+            nodes: applyUpdateNode(
+                this.#snapshot.nodes,
+                nodeId,
+                { crew },
+            ),
+        };
+        void this.#saveFlow(true, next);
+        this.#noteMutation();
+        return next;
+    }
+
     withEdgeNamed(
         name: string,
     ): FlowSnapshot {
@@ -1053,6 +1081,7 @@ Auto Fit</label>
             return buildNodePanel(
                 node, outgoing,
                 this.#snapshot.isLocked,
+                this.#snapshot.userMap,
             );
         }
 

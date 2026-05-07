@@ -3,6 +3,8 @@ import {
     assertIdeaStatus,
     assertProjectStatus,
     assertReadinessLevel,
+    isCrewModel,
+    DEFAULT_CREW,
 } from './types.ts';
 import type {
     GraphNode,
@@ -11,6 +13,7 @@ import type {
     StoredGraph,
     WorkOrderFlowGraph,
     FlowFieldType,
+    Crew,
     UserStatus,
     IdeaStatus,
     ProjectStatus,
@@ -281,6 +284,46 @@ function asGraphField(
     };
 }
 
+export function asCrew(
+    value: unknown,
+    label: string,
+): Crew {
+    const obj = asObject(value, label);
+    const kind = asString(
+        obj['kind'], label + '.kind',
+    );
+    if (kind === 'unassigned') {
+        return { kind: 'unassigned' };
+    }
+    if (kind === 'user') {
+        return {
+            kind: 'user',
+            userId: asString(
+                obj['userId'],
+                label + '.userId',
+            ),
+        };
+    }
+    if (kind === 'model') {
+        const model = asString(
+            obj['model'], label + '.model',
+        );
+        if (!isCrewModel(model)) {
+            throw new Error(
+                'expected CrewModel for '
+                    + label + '.model, got '
+                    + model,
+            );
+        }
+        return { kind: 'model', model };
+    }
+    throw new Error(
+        'expected crew.kind in {unassigned,'
+            + ' user, model} for ' + label
+            + ', got ' + kind,
+    );
+}
+
 function asGraphNode(
     value: unknown,
     label: string,
@@ -290,6 +333,11 @@ function asGraphNode(
         obj['fields'],
         label + '.fields',
     );
+    const crew: Crew = 'crew' in obj
+        ? asCrew(
+            obj['crew'], label + '.crew',
+        )
+        : DEFAULT_CREW;
     return {
         id: asString(
             obj['id'], label + '.id',
@@ -317,6 +365,7 @@ function asGraphNode(
             obj['isComplete'],
             label + '.isComplete',
         ),
+        crew,
         fields: fieldsArr.map((f, i) =>
             asGraphField(
                 f,

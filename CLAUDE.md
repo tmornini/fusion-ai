@@ -109,7 +109,17 @@ via `withAutoLayoutToggled`, `withLayoutReconciled`, and the
 `withNodesMoved` chain — never via `withFitReconciled`. The
 detail-page `request-update` callback runs `withFitReconciled`
 after `withInteractionState` so the auto-fit viewBox is the
-final state, not stomped by the FSM's frozen viewBox.
+final state, not stomped by the FSM's frozen viewBox. Regular
+nodes (not Start/End) carry a `crew: Crew` field — a
+3-variant discriminated union (`unassigned`/`user`/`model`)
+persisted on the node and rendered in the panel header as a
+centered `<select>` with `<optgroup>` sections. Crew respects
+`isLocked` (disabled when locked) but is otherwise cosmetic —
+not consumed by execution, layout, mermaid, or export. Model
+names live in `CREW_MODELS` in `api/types.ts`. The
+`<select>` value crosses the DOM seam as `'user:<id>'` /
+`'model:<name>'` / `'unassigned'` and is parsed back to the
+typed union via `parseCrewSelectValue` in `flows/detail.ts`.
 
 ### API Layer (`/api`)
 

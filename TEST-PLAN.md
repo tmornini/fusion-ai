@@ -150,9 +150,11 @@ on. Run these in order.
   a default name. The start node is also
   draggable by its body.
 - [ ] **AA28** Double-click the new blue-bordered
-  node. PASS: properties panel appears showing
-  State Name input, Description input, empty
-  Fields list, and outgoing transitions. The
+  node. PASS: properties panel appears with the
+  Crew dropdown centered in the header (no "State
+  Properties" title), close button on the right,
+  and below: State Name input, Description input,
+  empty Fields list, and outgoing transitions. The
   node gets a gold glow selection effect on the
   canvas.
 - [ ] **AA29** Edit the state name in the
@@ -496,9 +498,11 @@ on. Run these in order.
   instead."
 - [ ] **F11** Click a node. PASS: node gets gold
   glow selection effect. Double-click the node.
-  PASS: properties panel appears showing state
-  name, description, form fields list, and
-  outgoing transitions.
+  PASS: properties panel appears with the Crew
+  dropdown centered in the header (regular nodes
+  only — Start/End nodes still show their kind
+  title), and below: state name, description,
+  form fields list, and outgoing transitions.
 - [ ] **F12** Pan so a node sits near the right
   edge of the canvas, then double-click it. PASS:
   the properties panel slides out from the
@@ -640,7 +644,8 @@ on. Run these in order.
 - [ ] **F40** Toggle the Locked checkbox in the designer header.
   PASS: connection ports disappear from all middle nodes, the
   Delete toolbar button becomes disabled, and opening a properties
-  panel shows fields as read-only (inputs `disabled`). Auto Layout
+  panel shows fields as read-only (inputs `disabled`, Crew
+  dropdown also `disabled` and unresponsive to clicks). Auto Layout
   remains enabled because it only repositions nodes without
   changing structure. Visual confirmation: nodes render with gold
   strokes regardless of type (Start, Complete, Regular), edges
@@ -648,8 +653,9 @@ on. Run these in order.
   backgrounds gain gold strokes, and the dot-grid background
   renders unchanged from its unlocked appearance. Untoggle Locked:
   ports return, the Delete button re-enables, fields become
-  editable, and per-type colors return (Start green, Complete red,
-  Regular blue, Cycle amber).
+  editable, the Crew dropdown becomes interactive again, and
+  per-type colors return (Start green, Complete red, Regular blue,
+  Cycle amber).
 - [ ] **F41** With a non-trivial flow loaded, click "Copy Mermaid"
   in the toolbar. PASS: toast confirms the clipboard copy. Paste the
   clipboard contents into a text editor — the result is valid Mermaid
@@ -714,6 +720,43 @@ on. Run these in order.
 - [ ] **F57** Focus a text input (e.g. node name in the panel).
   Tap the spacebar. PASS: a literal space character is inserted
   into the input; pan mode state is unchanged.
+
+### Crew Dropdown (Node Panel)
+
+- [ ] **F58** Open a regular-node properties panel and click
+  the Crew dropdown. PASS: the dropdown opens showing
+  "Unassigned" first, then a "Users" group containing every
+  system user sorted alphabetically by full name, then a
+  "Models" group containing exactly: Grok 4.20 Heavy,
+  Claude Opus 4.7 Max, Gemini 3.1 Pro, Copilot, GPT-5.4 Pro
+  (in declared order).
+- [ ] **F59** Select a user from the Crew dropdown. Reload the
+  page and reopen the same node panel. PASS: the dropdown
+  shows the same user selected.
+- [ ] **F60** Select a model from the Crew dropdown. Reload
+  the page and reopen the same node panel. PASS: the dropdown
+  shows the same model selected.
+- [ ] **F61** With a user or model assigned, change the
+  selection to "Unassigned". Reload the page. PASS: the
+  dropdown shows "Unassigned" selected.
+- [ ] **F62** Lock the flow via the toolbar checkbox. Open a
+  regular-node panel. PASS: the Crew dropdown is visible but
+  `disabled`; clicking it does nothing.
+- [ ] **F63** Open a Start-node panel. PASS: the header shows
+  "Start State" title and close button — no Crew dropdown.
+- [ ] **F64** Open an End-node panel. PASS: the header shows
+  "End State" title and close button — no Crew dropdown.
+- [ ] **F65** Open an edge panel. PASS: the header shows
+  "Transition Properties" title and close button — no Crew
+  dropdown.
+- [ ] **F66** Inspect `localStorage['fusion-ai:flow_versions']`
+  before and after a Crew change. PASS: a new version row
+  appears for the flow after the change (Crew changes
+  participate in versioning).
+- [ ] **F67** Select a user via the Crew dropdown, then press
+  Cmd+Z (Mac) / Ctrl+Z (Win/Linux). PASS: the dropdown
+  reverts to its previous selection — Crew changes are
+  undoable like name/description changes.
 
 ---
 

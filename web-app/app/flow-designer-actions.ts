@@ -7,6 +7,7 @@ import {
     DEFAULT_NODE_DESCRIPTION,
     DEFAULT_EDGE_DESCRIPTION,
     DEFAULT_NODE_FIELDS,
+    DEFAULT_CREW,
 } from '../../api/types.ts';
 import {
     computeLayout,
@@ -127,6 +128,7 @@ export function applyAddNode(
             positionY,
             isStart: false,
             isComplete: false,
+            crew: DEFAULT_CREW,
             fields: [...DEFAULT_NODE_FIELDS],
         },
     ];

@@ -18,7 +18,11 @@ import type {
     GraphField,
     GraphNode,
     GraphEdge,
+    Id,
 } from '../adapters/index.ts';
+import { User } from '../adapters/index.ts';
+import { CREW_MODELS }
+    from '../../../api/types.ts';
 
 export function buildFieldBadge(
     fieldType: string,
@@ -153,6 +157,7 @@ export function buildNodePanel(
     node: GraphNode,
     outgoing: GraphEdge[],
     isLocked: boolean,
+    userMap: Map<Id, User>,
 ): SafeHtml {
     const isSpecial =
         node.isStart || node.isComplete;
@@ -191,11 +196,45 @@ class="text-sm text-muted"
         .map(f => buildFieldRow(f));
     const lockAttr =
         trusted(isLocked ? ' disabled' : '');
+    const sortedUsers = Array.from(
+        userMap.values(),
+    ).sort((a, b) =>
+        a.fullName().localeCompare(
+            b.fullName(),
+        ),
+    );
+    const isUnassigned =
+        node.crew.kind === 'unassigned';
+    const selUser = node.crew.kind === 'user'
+        ? node.crew.userId : '';
+    const selModel = node.crew.kind === 'model'
+        ? node.crew.model : '';
     return html`<div
 class="flow-props-panel">
-<div class="flow-props-header"
-><h3 class="text-sm font-semibold"
-    >State Properties</h3>
+<div class="${
+    'flow-props-header'
+    + ' flow-props-header-with-crew'
+}">
+<select class="input input-sm"
+    id="prop-node-crew"${lockAttr}>
+<option value="unassigned"${
+    trusted(isUnassigned ? ' selected' : '')
+    }>Unassigned</option>
+<optgroup label="Users">
+${sortedUsers.map(u => html`<option
+    value="user:${u.idForLink()}"${
+    trusted(selUser === u.idForLink()
+        ? ' selected' : '')
+    }>${u.fullName()}</option>`)}
+</optgroup>
+<optgroup label="Models">
+${CREW_MODELS.map(m => html`<option
+    value="model:${m}"${
+    trusted(selModel === m
+        ? ' selected' : '')
+    }>${m}</option>`)}
+</optgroup>
+</select>
 <button
     class="btn btn-ghost btn-icon btn-xs"
     data-action="close-panel"

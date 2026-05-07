@@ -27,7 +27,7 @@ const emptyGraph = {
 
 function buildPresenter(): FlowDesignerPresenter {
     const snap = buildInitialFlowSnapshot(
-        emptyGraph, 800, 600,
+        emptyGraph, 800, 600, new Map(),
     );
     return new FlowDesignerPresenter(
         snap, 800, 600,
@@ -125,6 +125,7 @@ const node = (
     positionY: y,
     isStart: false,
     isComplete: false,
+    crew: { kind: 'unassigned' as const },
     fields: [],
 });
 
@@ -140,7 +141,7 @@ function buildPresenterWithNodes(
         ],
     };
     const snap = buildInitialFlowSnapshot(
-        graph, 1200, 800,
+        graph, 1200, 800, new Map(),
     );
     return new FlowDesignerPresenter(
         snap, 1200, 800,
@@ -221,7 +222,7 @@ test(
             ],
         };
         const snap = buildInitialFlowSnapshot(
-            graph, 1200, 800,
+            graph, 1200, 800, new Map(),
         );
         const presenter =
             new FlowDesignerPresenter(
@@ -277,7 +278,7 @@ test(
             ],
         };
         const snap = buildInitialFlowSnapshot(
-            graph, 1200, 800,
+            graph, 1200, 800, new Map(),
         );
         const presenter =
             new FlowDesignerPresenter(
@@ -324,3 +325,45 @@ test(
     },
 );
 
+// Successful-mutation coverage of withNodeCrew
+// lives in flow-designer-actions.test.ts as a
+// direct applyUpdateNode test. The presenter
+// wrapping triggers #saveFlow which calls
+// createFetchContext() with the default
+// LocalStorage adapter — not available under
+// node:test. Same reason no other withNode*
+// mutation test exists in this file.
+//
+// Locked-state coverage of withNodeCrew is
+// manual (TEST-PLAN F51). The presenter's
+// #guardLocked() invokes showToast(), which
+// depends on document — no DOM under
+// node:test.
+
+test(
+    'withNodeCrew is a no-op when no node'
+    + ' is selected',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('n1', 0, 0)],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 800, 600, new Map(),
+        );
+        const presenter =
+            new FlowDesignerPresenter(
+                snap, 800, 600,
+                buildFlowHistorySnapshot(false),
+            );
+        const next = presenter.withNodeCrew({
+            kind: 'model', model: 'Copilot',
+        });
+        const n = next.nodes.find(
+            x => x.id === 'n1',
+        )!;
+        assert.equal(
+            n.crew.kind, 'unassigned',
+        );
+    },
+);

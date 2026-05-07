@@ -1195,6 +1195,7 @@ export async function populateMockData(
                         positionY: 30,
                         isStart: true,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1206,6 +1207,7 @@ export async function populateMockData(
                         positionY: 140,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [
                             {
                                 id: '5JZ0LeKdPCa4QMtg1RsF1M',
@@ -1318,6 +1320,7 @@ export async function populateMockData(
                         positionY: 250,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [
                             {
                                 id: 'AdQlKf43JV6yrhQbyskDkR',
@@ -1341,6 +1344,7 @@ export async function populateMockData(
                         positionY: 370,
                         isStart: false,
                         isComplete: true,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                 ],
@@ -1406,6 +1410,7 @@ export async function populateMockData(
                         positionY: -236,
                         isStart: true,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1416,6 +1421,7 @@ export async function populateMockData(
                         positionY: 358,
                         isStart: false,
                         isComplete: true,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1426,6 +1432,7 @@ export async function populateMockData(
                         positionY: -234,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1437,6 +1444,7 @@ export async function populateMockData(
                         positionY: -230,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1447,6 +1455,7 @@ export async function populateMockData(
                         positionY: -232,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1457,6 +1466,7 @@ export async function populateMockData(
                         positionY: -231,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1467,6 +1477,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1477,6 +1488,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1487,6 +1499,7 @@ export async function populateMockData(
                         positionY: 22,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1497,6 +1510,7 @@ export async function populateMockData(
                         positionY: 141,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1507,6 +1521,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1517,6 +1532,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1527,6 +1543,7 @@ export async function populateMockData(
                         positionY: 278,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1537,6 +1554,7 @@ export async function populateMockData(
                         positionY: -3,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1548,6 +1566,7 @@ export async function populateMockData(
                         positionY: -7,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1559,6 +1578,7 @@ export async function populateMockData(
                         positionY: 81,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1570,6 +1590,7 @@ export async function populateMockData(
                         positionY: 274,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1581,6 +1602,7 @@ export async function populateMockData(
                         positionY: 214,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                 ],
@@ -1780,6 +1802,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: true,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1790,6 +1813,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1800,6 +1824,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1810,6 +1835,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1820,6 +1846,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1830,6 +1857,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1840,6 +1868,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1850,6 +1879,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1860,6 +1890,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1870,6 +1901,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1880,6 +1912,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1890,6 +1923,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1900,6 +1934,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1910,6 +1945,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1920,6 +1956,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1930,6 +1967,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                     {
@@ -1940,6 +1978,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: true,
+                        crew: { kind: 'unassigned' },
                         fields: [],
                     },
                 ],

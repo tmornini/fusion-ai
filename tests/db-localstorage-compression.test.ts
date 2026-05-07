@@ -40,6 +40,7 @@ const baseVersion = {
                 name: 'Start',
                 isStart: true,
                 isComplete: false,
+                crew: { kind: 'unassigned' },
                 fields: [],
                 positionX: 0,
                 positionY: 0,

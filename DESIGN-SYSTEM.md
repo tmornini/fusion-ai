@@ -238,6 +238,34 @@ the locked-state stroke and restored when unlocked.
 - Bidirectional pairs separated with perpendicular
   offset
 
+**Properties panel header**: Regular nodes display
+the panel with a Crew `<select>` centered in the
+header (no "State Properties" title) and the close
+button on the right, via the
+`.flow-props-header-with-crew` modifier on
+`.flow-props-header`. Start/End/Edge panels keep
+the original 2-column flex layout with their title
+on the left. The Crew `<select>` uses
+`<optgroup label="Users">` and
+`<optgroup label="Models">` to group its options.
+
+### Form Controls
+
+`<select class="input">` with flat `<option>`
+children is the standard pattern for dropdowns
+across the app (project status, profile
+department, filter selectors, etc.).
+
+When a select has semantically distinct option
+groups, use native `<optgroup label="...">` rather
+than disabled-option separators or custom dropdown
+components. The Crew dropdown on flow node panels
+is the introducing case — `<optgroup>` is the
+codebase's standard for grouped selects from this
+point forward (Commandment III: one codebase, one
+voice). Browser default styling (bold-italic group
+labels) is fine; no override needed.
+
 ### Dark Mode
 
 CSS custom properties on `:root` define light theme values. The `[data-theme="dark"]` selector overrides them for dark mode. Toggle is persisted to `localStorage` and respects `prefers-color-scheme` for initial detection.

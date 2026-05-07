@@ -597,6 +597,30 @@ export interface GraphField {
     options: string[];
 }
 
+export const CREW_MODELS = [
+    'Grok 4.20 Heavy',
+    'Claude Opus 4.7 Max',
+    'Gemini 3.1 Pro',
+    'Copilot',
+    'GPT-5.4 Pro',
+] as const;
+
+export type CrewModel =
+    (typeof CREW_MODELS)[number];
+
+export function isCrewModel(
+    v: string,
+): v is CrewModel {
+    return (
+        CREW_MODELS as readonly string[]
+    ).includes(v);
+}
+
+export type Crew =
+    | { kind: 'unassigned' }
+    | { kind: 'user'; userId: Id }
+    | { kind: 'model'; model: CrewModel };
+
 export interface GraphNode {
     id: string;
     name: string;
@@ -605,6 +629,7 @@ export interface GraphNode {
     positionY: number;
     isStart: boolean;
     isComplete: boolean;
+    crew: Crew;
     fields: GraphField[];
 }
 
@@ -636,6 +661,8 @@ export const DEFAULT_NEW_STATE_NAME =
     'New State';
 export const DEFAULT_TRANSITION_NAME =
     'Transition';
+export const DEFAULT_CREW: Crew =
+    { kind: 'unassigned' };
 
 export interface FlowEntity {
     id: Id;
