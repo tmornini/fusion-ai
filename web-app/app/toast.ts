@@ -1,5 +1,5 @@
 const MAX_TOASTS = 5;
-const TOAST_DURATION_MS = 3000;
+const TOAST_DURATION_MS = 6000;
 const TOAST_TRANSITION_MS = 300;
 const TOAST_CONTAINER_ID = 'toast-container';
 
