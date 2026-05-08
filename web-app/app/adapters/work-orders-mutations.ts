@@ -140,59 +140,81 @@ export async function postWorkOrderCreation(
             edges: graph.edges,
         };
 
-    await ctx.PUT<void>(
-        `work-orders/${input.workOrderId}`,
-        {
-            display_id: displayId,
-            flow_graph: jsonObjectField(
-                flowGraph as unknown as Record<
-                    string, unknown
-                >,
-            ),
-            position,
-            created_at: now,
-        },
+    const flowGraphField = jsonObjectField(
+        flowGraph as unknown as Record<
+            string, unknown
+        >,
     );
-
-    await ctx.PUT<void>(
-        `flow-work-orders/${input.flowLinkId}`,
-        {
-            flow_id: input.flowId,
-            work_order_id: input.workOrderId,
-            created_at: now,
-        },
-    );
-
-    await ctx.PUT<void>(
-        `work-order-transitions/${input.initTransitionId}`,
-        {
-            work_order_id: input.workOrderId,
-            from_node_id: '',
-            to_node_id: startNode.id,
-            person_id: person.id,
-            transitioned_at: now,
-        },
-    );
-
-    await ctx.PUT<void>(
-        `work-order-transitions/${input.postStartTransitionId}`,
-        {
-            work_order_id: input.workOrderId,
-            from_node_id: startNode.id,
-            to_node_id: postStartNodeId,
-            person_id: person.id,
-            transitioned_at: now,
-        },
-    );
-
-    await ctx.PUT<void>(
-        `work-order-claims/${input.claimId}`,
-        {
-            work_order_id: input.workOrderId,
-            person_id: person.id,
-            claimed_at: now,
-        },
-    );
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `work-orders/`
+                    + `${input.workOrderId}`,
+                body: {
+                    display_id: displayId,
+                    flow_graph: flowGraphField,
+                    position,
+                    created_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `flow-work-orders/`
+                    + `${input.flowLinkId}`,
+                body: {
+                    flow_id: input.flowId,
+                    work_order_id:
+                        input.workOrderId,
+                    created_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `work-order-transitions/`
+                    + `${input.initTransitionId}`,
+                body: {
+                    work_order_id:
+                        input.workOrderId,
+                    from_node_id: '',
+                    to_node_id: startNode.id,
+                    person_id: person.id,
+                    transitioned_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `work-order-transitions/`
+                    + `${
+                        input.postStartTransitionId
+                    }`,
+                body: {
+                    work_order_id:
+                        input.workOrderId,
+                    from_node_id: startNode.id,
+                    to_node_id: postStartNodeId,
+                    person_id: person.id,
+                    transitioned_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `work-order-claims/`
+                    + `${input.claimId}`,
+                body: {
+                    work_order_id:
+                        input.workOrderId,
+                    person_id: person.id,
+                    claimed_at: now,
+                },
+            },
+        ],
+    });
 
     workOrderChanges.notify();
 }
