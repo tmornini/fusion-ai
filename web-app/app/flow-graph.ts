@@ -534,8 +534,10 @@ function buildNode(
     ) {
         inner += '<g'
             + ' class="flow-node-hazard"'
-            + ' transform="translate(6, 42)"'
-            + ' aria-hidden="true">'
+            + ' transform="translate(6, 42)">'
+            + '<title>'
+            + 'No crew assigned to this node.'
+            + '</title>'
             + iconAlertTriangle(16, '')
                 .toString()
             + '</g>';
