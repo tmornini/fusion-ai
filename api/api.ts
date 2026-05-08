@@ -288,9 +288,11 @@ const routes: Route[] = [
     route('flow-work-orders', {
         get: (db) =>
             db.flowWorkOrders.getAll(),
-        put: (db, _params, body) =>
+    }),
+    route('flow-work-orders/:id', {
+        put: (db, params, body) =>
             db.flowWorkOrders.put(
-                body.id as string,
+                param(params, 0),
                 validateFlowWorkOrderEntity(
                     withoutId(body),
                 ),

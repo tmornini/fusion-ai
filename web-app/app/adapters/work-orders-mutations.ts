@@ -153,9 +153,8 @@ export async function postWorkOrderCreation(
     );
 
     await ctx.PUT<void>(
-        'flow-work-orders',
+        `flow-work-orders/${input.flowLinkId}`,
         {
-            id: input.flowLinkId,
             flow_id: input.flowId,
             work_order_id: input.workOrderId,
             created_at: now,
