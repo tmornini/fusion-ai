@@ -78,10 +78,6 @@ export async function populateMockData(
             role: 'Project Lead',
             department: 'Operations',
             status: 'active',
-            availability: 85,
-            performance_score: 94,
-            projects_completed: 12,
-            current_projects: 3,
             strengths: [
                 'Strategic Planning',
                 'Team Leadership',
@@ -98,7 +94,6 @@ export async function populateMockData(
                 + ' thrives on aligning'
                 + ' cross-functional teams'
                 + ' around strategic goals.',
-            last_active: dt(0, 16, 0),
         },
         {
             id: 'bLP3X1hb1mSz8gY9neogU3',
@@ -108,10 +103,6 @@ export async function populateMockData(
             role: 'ML Engineer',
             department: 'Engineering',
             status: 'active',
-            availability: 60,
-            performance_score: 91,
-            projects_completed: 8,
-            current_projects: 2,
             strengths: [
                 'Machine Learning',
                 'Python',
@@ -128,7 +119,6 @@ export async function populateMockData(
                 + ' scalable data pipelines'
                 + ' and production-grade'
                 + ' model deployment.',
-            last_active: dt(1, 15, 30),
         },
         {
             id: 'zyTbfbjcGEfbpCsNTP0XjX',
@@ -138,10 +128,6 @@ export async function populateMockData(
             role: 'Data Scientist',
             department: 'Analytics',
             status: 'active',
-            availability: 70,
-            performance_score: 88,
-            projects_completed: 6,
-            current_projects: 2,
             strengths: [
                 'Statistical Analysis',
                 'Visualization',
@@ -158,7 +144,6 @@ export async function populateMockData(
                 + ' about turning complex'
                 + ' datasets into actionable'
                 + ' business insights.',
-            last_active: dt(0, 17, 0),
         },
         {
             id: '6xBfK5If82JKfThXb1wlzS',
@@ -168,10 +153,6 @@ export async function populateMockData(
             role: 'Backend Developer',
             department: 'Engineering',
             status: 'active',
-            availability: 40,
-            performance_score: 86,
-            projects_completed: 10,
-            current_projects: 4,
             strengths: [
                 'API Development',
                 'Database Design',
@@ -188,7 +169,6 @@ export async function populateMockData(
                 + ' builds reliable APIs'
                 + ' and loves optimizing'
                 + ' database performance.',
-            last_active: dt(0, 14, 0),
         },
         {
             id: '53J8h9dr76XFqCjYcNVwIR',
@@ -198,10 +178,6 @@ export async function populateMockData(
             role: 'UX Designer',
             department: 'Design',
             status: 'pending',
-            availability: 90,
-            performance_score: 92,
-            projects_completed: 15,
-            current_projects: 1,
             strengths: [
                 'User Research',
                 'Prototyping',
@@ -218,7 +194,6 @@ export async function populateMockData(
                 + ' crafting intuitive'
                 + ' experiences grounded in'
                 + ' user research.',
-            last_active: dt(0, 9, 15),
         },
         {
             id: 'I5ntELi16X3N3JYCCnxMjZ',
@@ -228,10 +203,6 @@ export async function populateMockData(
             role: 'Product Manager',
             department: 'Product',
             status: 'active',
-            availability: 55,
-            performance_score: 89,
-            projects_completed: 7,
-            current_projects: 3,
             strengths: [
                 'Roadmap Planning',
                 'Stakeholder Management',
@@ -248,7 +219,6 @@ export async function populateMockData(
                 + ' translating customer'
                 + ' needs into clear'
                 + ' roadmaps.',
-            last_active: dt(0, 11, 45),
         },
         {
             id: 'WxQn4LVWb76YkmqK5B0EPp',
@@ -258,10 +228,6 @@ export async function populateMockData(
             role: 'manager',
             department: 'Product',
             status: 'active',
-            availability: 80,
-            performance_score: 85,
-            projects_completed: 5,
-            current_projects: 2,
             strengths: [
                 'Product Strategy',
                 'Team Management',
@@ -277,7 +243,6 @@ export async function populateMockData(
                 + ' with a knack for'
                 + ' spotting market gaps'
                 + ' and coaching teams.',
-            last_active: dt(0, 17, 30),
         },
         {
             id: 'jBoWiyWxj7pp4sG3JgX5l2',
@@ -287,10 +252,6 @@ export async function populateMockData(
             role: 'member',
             department: 'Engineering',
             status: 'active',
-            availability: 75,
-            performance_score: 83,
-            projects_completed: 4,
-            current_projects: 2,
             strengths: [
                 'Frontend Development',
                 'React',
@@ -307,7 +268,6 @@ export async function populateMockData(
                 + ' cares deeply about'
                 + ' performance and'
                 + ' accessible UI patterns.',
-            last_active: dt(2, 14, 0),
         },
         {
             id: 'Trf1Up2jMsPhEnjbW4Ji1n',
@@ -317,10 +277,6 @@ export async function populateMockData(
             role: 'viewer',
             department: 'Sales',
             status: 'active',
-            availability: 70,
-            performance_score: 80,
-            projects_completed: 3,
-            current_projects: 1,
             strengths: [
                 'Sales Strategy',
                 'Client Relations',
@@ -336,7 +292,6 @@ export async function populateMockData(
                 + ' builds lasting client'
                 + ' relationships through'
                 + ' consultative selling.',
-            last_active: dt(1, 18, 0),
         },
         {
             id: 'oU0bIe0eUC33mTbZrxdogC',
@@ -346,10 +301,6 @@ export async function populateMockData(
             role: 'member',
             department: 'Engineering',
             status: 'deactivated',
-            availability: 0,
-            performance_score: 78,
-            projects_completed: 6,
-            current_projects: 0,
             strengths: [
                 'Backend Development',
                 'Python',
@@ -365,7 +316,6 @@ export async function populateMockData(
                 + ' strong Python skills'
                 + ' and a focus on clean'
                 + ' architecture.',
-            last_active: dt(7, 18, 0),
         },
         {
             id: 'current',
@@ -375,10 +325,6 @@ export async function populateMockData(
             role: 'Admin',
             department: 'Product',
             status: 'active',
-            availability: 100,
-            performance_score: 95,
-            projects_completed: 20,
-            current_projects: 5,
             strengths: [
                 'Strategic Planning',
                 'Data Analysis',
@@ -394,7 +340,6 @@ export async function populateMockData(
             bio: 'Passionate about building'
                 + ' products that solve'
                 + ' real problems.',
-            last_active: dt(0, 18, 0),
         },
     ];
 
@@ -2581,10 +2526,6 @@ export async function populateBootstrapData(
             role: 'Admin',
             department: 'Product',
             status: 'active' as PersonStatus,
-            availability: 100,
-            performance_score: 95,
-            projects_completed: 20,
-            current_projects: 5,
             strengths: jsonArrayField([
                 'Strategic Planning',
                 'Data Analysis',
@@ -2600,7 +2541,6 @@ export async function populateBootstrapData(
             bio: 'Passionate about building'
                 + ' products that solve'
                 + ' real problems.',
-            last_active: dt(0, 18, 0),
         }),
         adapter.organization.put({
             name: 'Stark Industries',

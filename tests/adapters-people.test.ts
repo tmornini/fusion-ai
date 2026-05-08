@@ -22,7 +22,6 @@ function buildPersonRow(args: {
     first?: string;
     last?: string;
     department?: string;
-    performance?: number;
     status?: 'active' | 'pending' | 'deactivated';
 }) {
     const first = args.first ?? 'Alice';
@@ -36,17 +35,11 @@ function buildPersonRow(args: {
         role: 'product_manager',
         department: args.department ?? 'Product',
         status: args.status ?? 'active',
-        availability: 80,
-        performance_score:
-            args.performance ?? 85,
-        projects_completed: 0,
-        current_projects: 0,
         strengths: jsonArrayField([]),
         team_dimensions:
             jsonObjectField({ driver: 50 }),
         phone: '',
         bio: '',
-        last_active: '2026-01-01T00:00:00Z',
     };
 }
 
@@ -102,26 +95,6 @@ test(
         }));
         const result = featuredPeople([
             populated, noDept,
-        ]);
-        assert.equal(result.length, 1);
-        assert.equal(
-            result[0].idForLink(), 'u1',
-        );
-    },
-);
-
-test(
-    'featuredPeople filters out people'
-    + ' with zero performance score',
-    () => {
-        const populated = new Person(
-            buildPersonRow({ id: 'u1' }),
-        );
-        const noPerf = new Person(buildPersonRow({
-            id: 'u2', performance: 0,
-        }));
-        const result = featuredPeople([
-            populated, noPerf,
         ]);
         assert.equal(result.length, 1);
         assert.equal(

@@ -71,14 +71,11 @@ function buildPerson(
             + '@example.com',
         phone: '',
         role: 'product_manager',
-        availability: 80,
-        is_active: 1,
+        status: 'active',
+        strengths: '[]' as never,
+        team_dimensions: '{}' as never,
         bio: '',
         department: 'Product',
-        created_at:
-            '2026-01-01T00:00:00Z',
-        updated_at:
-            '2026-01-01T00:00:00Z',
     };
 }
 

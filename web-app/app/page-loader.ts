@@ -45,12 +45,12 @@ const pageModules: Record<
         import(
             '../organization/index'
         ),
-    profile: () =>
-        import('../profile/index'),
     billing: () =>
         import('../billing/index'),
     people: () =>
         import('../people/index'),
+    'people-detail': () =>
+        import('../people/detail'),
     snapshots: () =>
         import('../snapshots/index'),
     'design-system': () =>

@@ -603,10 +603,8 @@ export function assertOnlyKeys(
 const PERSON_BODY_KEYS: readonly string[] = [
     'first_name', 'last_name', 'email',
     'role', 'department', 'status',
-    'availability', 'performance_score',
-    'projects_completed', 'current_projects',
     'strengths', 'team_dimensions',
-    'phone', 'bio', 'last_active',
+    'phone', 'bio',
 ];
 
 export function validatePersonEntity(
@@ -634,22 +632,6 @@ export function validatePersonEntity(
         status: asPersonStatus(
             body['status'], 'status',
         ),
-        availability: asNumber(
-            body['availability'],
-            'availability',
-        ),
-        performance_score: asNumber(
-            body['performance_score'],
-            'performance_score',
-        ),
-        projects_completed: asNumber(
-            body['projects_completed'],
-            'projects_completed',
-        ),
-        current_projects: asNumber(
-            body['current_projects'],
-            'current_projects',
-        ),
         strengths: asJsonArrayField(
             body['strengths'], 'strengths',
         ),
@@ -662,9 +644,6 @@ export function validatePersonEntity(
         ),
         bio: asString(
             body['bio'], 'bio',
-        ),
-        last_active: asString(
-            body['last_active'], 'last_active',
         ),
     };
 }

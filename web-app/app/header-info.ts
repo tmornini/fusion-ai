@@ -2,6 +2,7 @@ import { $ } from './dom.ts';
 import { navigateTo } from './navigation.ts';
 
 interface HeaderData {
+    personId: string;
     personName: string;
     organization: string;
     greeting: string;
@@ -30,6 +31,7 @@ async function getHeaderData(
             getDashboardStats(ctx),
         ]);
     return {
+        personId: personRow.id,
         personName:
             new Person(personRow).fullName(),
         organization: org.nameText(),
@@ -55,8 +57,10 @@ headerInfo.personName}`,
         );
         greetingEl.addEventListener(
             'click',
-            () =>
-                navigateTo('profile'),
+            () => navigateTo(
+                'people-detail',
+                { personId: headerInfo.personId },
+            ),
         );
     }
     const statsEl =

@@ -8,10 +8,13 @@ import {
 } from '../channels.ts';
 export {
     Person,
-    AVAILABILITY_HIGH,
-    AVAILABILITY_LOW,
+    USER_STATUS_CONFIG,
+    isPersonStatus,
 } from '../../../api/types.ts';
-export type { PersonEntity } from '../../../api/types.ts';
+export type {
+    PersonEntity,
+    PersonStatus,
+} from '../../../api/types.ts';
 
 const personChanges =
     createSubscriptionChannel(['people']);
@@ -56,11 +59,18 @@ export function featuredPeople(
     people: Person[],
 ): Person[] {
     return people
-        .filter(person =>
-            person.hasDepartment()
-            && person.hasPerformanceScore(),
-        )
+        .filter(person => person.hasDepartment())
         .slice(0, TOP_MEMBERS_COUNT);
+}
+
+export async function getPerson(
+    ctx: FetchContext,
+    id: string,
+): Promise<Person> {
+    const row = await ctx.GET<PersonEntity>(
+        `people/${id}`,
+    );
+    return new Person(row);
 }
 
 export async function getPersonRow(

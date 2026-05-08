@@ -171,16 +171,10 @@ test(
                     phone: '',
                     role: 'product_manager',
                     status: 'active',
-                    availability: 80,
-                    performance_score: 50,
-                    projects_completed: 0,
-                    current_projects: 0,
                     strengths: '[]',
                     team_dimensions: '{}',
                     bio: '',
                     department: 'Product',
-                    last_active:
-                        '2026-01-01T00:00:00Z',
                     rogue_field: 'invalid',
                 },
             ],
@@ -208,16 +202,10 @@ test(
                     phone: '',
                     role: 'product_manager',
                     status: 'active',
-                    availability: 80,
-                    performance_score: 50,
-                    projects_completed: 0,
-                    current_projects: 0,
                     strengths: '[]',
                     team_dimensions: '{}',
                     bio: '',
                     department: 'Product',
-                    last_active:
-                        '2026-01-01T00:00:00Z',
                 },
             ],
         });
@@ -283,14 +271,11 @@ test(
             email: 'a@example.com',
             phone: '',
             role: 'product_manager',
-            availability: 80,
-            is_active: true,
+            status: 'active',
+            strengths: '[]' as never,
+            team_dimensions: '{}' as never,
             bio: '',
             department: 'Product',
-            created_at:
-                '2026-01-01T00:00:00Z',
-            updated_at:
-                '2026-01-01T00:00:00Z',
         });
         await adapter.createSchema();
         const people = await adapter.people.getAll();

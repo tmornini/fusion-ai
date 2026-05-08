@@ -21,12 +21,11 @@ function buildPersonRow(
         email: `${first}@example.com`.toLowerCase(),
         phone: '',
         role: 'product_manager',
-        availability: 80,
-        is_active: 1 as 0 | 1,
+        status: 'active' as const,
+        strengths: '[]' as const,
+        team_dimensions: '{}' as const,
         bio: '',
         department: 'Product',
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
     };
 }
 

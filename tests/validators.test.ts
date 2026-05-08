@@ -28,15 +28,10 @@ const validPerson = {
     role: 'Engineer',
     department: 'R&D',
     status: 'active',
-    availability: 80,
-    performance_score: 90,
-    projects_completed: 5,
-    current_projects: 2,
     strengths: '["analytical"]',
     team_dimensions: '{"driver":0.5}',
     phone: '555-1234',
     bio: 'Pioneer',
-    last_active: '2024-01-01T00:00:00Z',
 };
 
 test('validatePersonEntity accepts valid payload', () => {

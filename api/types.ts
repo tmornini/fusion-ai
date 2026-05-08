@@ -112,9 +112,6 @@ export type ProjectStatus =
     | 'completed'
     | 'deleted';
 
-export const AVAILABILITY_HIGH = 70;
-export const AVAILABILITY_LOW = 40;
-
 export type StoredBoolean = 0 | 1;
 
 export type JsonArrayField = string & {
@@ -344,15 +341,10 @@ export interface PersonEntity {
     role: string;
     department: string;
     status: PersonStatus;
-    availability: number;
-    performance_score: number;
-    projects_completed: number;
-    current_projects: number;
     strengths: JsonArrayField;
     team_dimensions: JsonObjectField;
     phone: string;
     bio: string;
-    last_active: string;
 }
 
 export class Person {
@@ -363,13 +355,10 @@ export class Person {
     readonly #role: string;
     readonly #department: string;
     readonly #status: PersonStatus;
-    readonly #availability: number;
-    readonly #performanceScore: number;
-    readonly #projectsCompleted: number;
-    readonly #currentProjects: number;
     readonly #strengths: string;
     readonly #teamDimensions: string;
-    readonly #lastActive: string;
+    readonly #phone: string;
+    readonly #bio: string;
 
     constructor(entity: PersonEntity) {
         this.#id = entity.id;
@@ -382,24 +371,24 @@ export class Person {
         this.#department =
             entity.department;
         this.#status = entity.status;
-        this.#availability =
-            entity.availability;
-        this.#performanceScore =
-            entity.performance_score;
-        this.#projectsCompleted =
-            entity.projects_completed;
-        this.#currentProjects =
-            entity.current_projects;
         this.#strengths =
             entity.strengths;
         this.#teamDimensions =
             entity.team_dimensions;
-        this.#lastActive =
-            entity.last_active;
+        this.#phone = entity.phone;
+        this.#bio = entity.bio;
     }
 
     idForLink(): string {
         return this.#id;
+    }
+
+    firstNameText(): string {
+        return this.#firstName;
+    }
+
+    lastNameText(): string {
+        return this.#lastName;
     }
 
     fullName(): string {
@@ -419,6 +408,14 @@ export class Person {
 
     emailAddress(): string {
         return this.#email;
+    }
+
+    phoneNumber(): string {
+        return this.#phone;
+    }
+
+    bioText(): string {
+        return this.#bio;
     }
 
     isActive(): boolean {
@@ -455,30 +452,6 @@ export class Person {
 
     hasDepartment(): boolean {
         return this.#department !== '';
-    }
-
-    hasPerformanceScore(): boolean {
-        return this.#performanceScore > 0;
-    }
-
-    availabilityScore(): number {
-        return this.#availability;
-    }
-
-    performanceScoreValue(): number {
-        return this.#performanceScore;
-    }
-
-    projectsCompletedCount(): number {
-        return this.#projectsCompleted;
-    }
-
-    currentProjectsCount(): number {
-        return this.#currentProjects;
-    }
-
-    lastActiveDate(): string {
-        return this.#lastActive;
     }
 
     statusValue(): PersonStatus {

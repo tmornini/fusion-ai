@@ -45,7 +45,6 @@ export {
     PersonPresenter,
     ManagedPeoplePresenter,
     buildInitialManagedPeopleState,
-    applyManagedPeopleUpdate,
     applyManagedPeopleSearch,
     applyManagedPeopleRole,
     applyManagedPeopleStatus,
@@ -69,10 +68,14 @@ export {
     type GeneralInfoFieldKey,
 } from './organization.ts';
 export {
-    ProfilePresenter,
-    ProfileEditPresenter,
-    type ProfileFieldKey,
-} from './profile.ts';
+    PersonDetailPresenter,
+    PersonDetailEditPresenter,
+    personDraftFromPerson,
+    personPatchFromDraft,
+    isPersonFieldKey,
+    type PersonDraftFields,
+    type PersonFieldKey,
+} from './person-detail.ts';
 export {
     FlowDesignerPresenter,
     buildInitialFlowSnapshot,

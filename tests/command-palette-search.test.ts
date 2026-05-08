@@ -77,16 +77,10 @@ function buildPerson(
         role,
         department,
         status: 'active',
-        availability: 100,
-        performance_score: 80,
-        projects_completed: 0,
-        current_projects: 0,
         strengths: jsonArrayField([]),
         team_dimensions: jsonObjectField({}),
         phone: '',
         bio: '',
-        last_active:
-            '2026-01-01T00:00:00.000Z',
     });
 }
 

@@ -1,13 +1,9 @@
 import type {
-    PersonEntity,
     OrganizationEntity,
 } from '../../../api/types.ts';
-import { Person } from '../../../api/types.ts';
 import {
-    initials,
     formatDate,
 } from '../format.ts';
-import { getCurrentPersonRow } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 
 export type {
@@ -159,149 +155,6 @@ putOrganizationGeneralInfo(
         domain: draft.domain,
     });
 }
-
-export interface ProfileDraft {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    role: string;
-    department: string;
-    bio: string;
-    strengths: string[];
-    teamDimensions: Record<string, number>;
-}
-
-export class Profile {
-    readonly #firstName: string;
-    readonly #lastName: string;
-    readonly #email: string;
-    readonly #phone: string;
-    readonly #role: string;
-    readonly #department: string;
-    readonly #bio: string;
-    readonly #strengths: string[];
-    readonly #teamDimensions:
-        Record<string, number>;
-
-    constructor(draft: ProfileDraft) {
-        this.#firstName = draft.firstName;
-        this.#lastName = draft.lastName;
-        this.#email = draft.email;
-        this.#phone = draft.phone;
-        this.#role = draft.role;
-        this.#department = draft.department;
-        this.#bio = draft.bio;
-        this.#strengths = draft.strengths;
-        this.#teamDimensions =
-            draft.teamDimensions;
-    }
-
-    fullName(): string {
-        return (
-            this.#firstName
-            + ' '
-            + this.#lastName
-        ).trim();
-    }
-
-    initialsText(): string {
-        return initials(this.fullName());
-    }
-
-    firstNameText(): string {
-        return this.#firstName;
-    }
-
-    lastNameText(): string {
-        return this.#lastName;
-    }
-
-    emailText(): string {
-        return this.#email;
-    }
-
-    phoneText(): string {
-        return this.#phone;
-    }
-
-    roleText(): string {
-        return this.#role;
-    }
-
-    departmentText(): string {
-        return this.#department;
-    }
-
-    bioText(): string {
-        return this.#bio;
-    }
-
-    strengthsList(): string[] {
-        return this.#strengths;
-    }
-
-    teamDimensionsMap(): Record<string, number> {
-        return this.#teamDimensions;
-    }
-
-    toDraft(): ProfileDraft {
-        return {
-            firstName: this.#firstName,
-            lastName: this.#lastName,
-            email: this.#email,
-            phone: this.#phone,
-            role: this.#role,
-            department: this.#department,
-            bio: this.#bio,
-            strengths: [...this.#strengths],
-            teamDimensions: {
-                ...this.#teamDimensions,
-            },
-        };
-    }
-}
-
-export const allStrengths = [
-    'Strategic Planning',
-    'Data Analysis',
-    'Stakeholder Management',
-    'Agile Methods',
-    'Team Leadership',
-    'Risk Management',
-    'Budget Planning',
-    'Technical Writing',
-    'User Research',
-    'Prototyping',
-];
-
-export async function getProfile(
-    ctx: FetchContext,
-): Promise<{
-    profile: Profile;
-    entity: PersonEntity;
-}> {
-    const person =
-        await ctx.GET<PersonEntity>(
-            'current-person',
-        );
-    const personObj = new Person(person);
-    const profile = new Profile({
-        firstName: person.first_name,
-        lastName: person.last_name,
-        email: person.email,
-        phone: person.phone,
-        role: person.role,
-        department: person.department,
-        bio: person.bio,
-        strengths:
-            personObj.parsedStrengths(),
-        teamDimensions:
-            personObj.parsedTeamDimensions(),
-    });
-    return { profile, entity: person };
-}
-
 
 export type {
     ActivityEntity,

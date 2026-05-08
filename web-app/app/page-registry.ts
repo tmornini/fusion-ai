@@ -112,14 +112,13 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'organization billing plan',
     },
-    profile: {
-        title: 'Profile',
+    'people-detail': {
+        title: 'Person',
         layout: 'sidebar',
-        sourceDir: 'profile',
-        sourceFile: 'index',
+        sourceDir: 'people',
+        sourceFile: 'detail',
         icon: iconPerson,
-        keywords:
-            'profile settings personal',
+        searchable: false,
     },
     billing: {
         title: 'Billing',

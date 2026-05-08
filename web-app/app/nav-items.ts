@@ -5,7 +5,6 @@ import {
     iconFolderKanban,
     iconGitBranch,
     iconMail,
-    iconPerson,
     iconBuilding,
     iconPeople,
     iconSettings,
@@ -51,12 +50,6 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         pageLink: 'workbox',
         label: 'Workbox',
         icon: iconMail,
-    },
-    {
-        href: '../profile/index.html',
-        pageLink: 'profile',
-        label: 'Profile',
-        icon: iconPerson,
     },
     {
         href: '../organization/index.html',

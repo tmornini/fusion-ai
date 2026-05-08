@@ -1,24 +1,30 @@
-import { $ } from '../app/dom.ts';
+import { $, isFormField } from '../app/dom.ts';
 import {
-    ProfilePresenter,
-    ProfileEditPresenter,
-    type ProfileFieldKey,
+    PersonDetailPresenter,
+    PersonDetailEditPresenter,
+    personDraftFromPerson,
+    personPatchFromDraft,
+    isPersonFieldKey,
+    type PersonDraftFields,
 } from '../app/presenters/index.ts';
-import { setHtml } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
-import {
-    buildErrorState,
-} from '../app/loading-states.ts';
 import { log } from '../app/logger.ts';
-import { trimStrings } from '../app/core.ts';
+import {
+    buildSkeleton,
+    withLoadingState,
+} from '../app/loading-states.ts';
+import {
+    navigateTo,
+    trimStrings,
+} from '../app/core.ts';
 import {
     createFetchContext,
-    getProfile,
+    getPerson,
+    getPersonRow,
     putPerson,
-    Profile,
-    type ProfileDraft,
-    type PersonEntity,
-    jsonArrayField,
+    subscribePersonChanges,
+    type Person,
+    type PersonStatus,
 } from '../app/adapters/index.ts';
 
 const pageAbort = new AbortController();
@@ -27,34 +33,20 @@ const signal = pageAbort.signal;
 type PageState =
     | {
         kind: 'reading';
-        profile: Profile;
-        entity: PersonEntity;
+        person: Person;
     }
     | {
         kind: 'editing';
-        profile: Profile;
-        entity: PersonEntity;
-        draft: ProfileDraft;
+        person: Person;
+        draft: PersonDraftFields;
     };
 
 let state: PageState | null = null;
 let pageContainer: HTMLElement | null = null;
 
-const FIELDS: ReadonlySet<ProfileFieldKey> =
-    new Set([
-        'firstName', 'lastName', 'email',
-        'phone', 'role', 'department', 'bio',
-    ]);
-
-function isFieldKey(
-    s: string | null,
-): s is ProfileFieldKey {
-    return s !== null
-        && FIELDS.has(s as ProfileFieldKey);
-}
-
 function buildPresenter():
-    ProfilePresenter | ProfileEditPresenter
+    | PersonDetailPresenter
+    | PersonDetailEditPresenter
 {
     if (state === null) {
         throw new Error(
@@ -62,9 +54,9 @@ function buildPresenter():
         );
     }
     return state.kind === 'reading'
-        ? new ProfilePresenter(state.profile)
-        : new ProfileEditPresenter(
-            state.profile, state.draft,
+        ? new PersonDetailPresenter(state.person)
+        : new PersonDetailEditPresenter(
+            state.person, state.draft,
         );
 }
 
@@ -74,51 +66,42 @@ function rerender(): void {
         .renderUpdate(pageContainer);
 }
 
-export async function init(): Promise<void> {
-    const container = $(
-        '#profile-content', document,
-    );
-    if (!container) return;
-    pageContainer = container;
-    bindStableListeners(container);
-
-    let loaded: {
-        profile: Profile;
-        entity: PersonEntity;
-    };
-    try {
-        loaded = await getProfile(
-            createFetchContext(),
-        );
-    } catch (err) {
-        log.error(
-            'getProfile failed',
-            'profile',
-            err,
-        );
-        setHtml(
-            container,
-            buildErrorState(
-                'Failed to load profile.',
-                'Try Again',
-            ),
-        );
-        container
-            .querySelector('[data-retry-btn]')
-            ?.addEventListener(
-                'click',
-                () => init(),
-                { signal },
-            );
+export async function init(
+    params?: Record<string, string>,
+): Promise<void> {
+    const personId = params?.personId;
+    if (!personId) {
+        navigateTo('people');
         return;
     }
 
-    state = {
-        kind: 'reading',
-        profile: loaded.profile,
-        entity: loaded.entity,
-    };
+    const container = $(
+        '#person-detail-content', document,
+    );
+    if (!container) return;
+    pageContainer = container;
+
+    const ctx = createFetchContext();
+    const person = await withLoadingState(
+        container,
+        buildSkeleton('detail', 4),
+        () => getPerson(ctx, personId),
+        () => init(params),
+    );
+    if (!person) return;
+
+    state = { kind: 'reading', person };
     buildPresenter().renderShell(container);
+    bindStableListeners(container);
+
+    subscribePersonChanges(async () => {
+        if (!pageContainer || !state) return;
+        const fresh = await getPerson(
+            createFetchContext(), personId,
+        );
+        state = { kind: 'reading', person: fresh };
+        rerender();
+    });
 }
 
 function bindStableListeners(
@@ -148,41 +131,41 @@ function bindStableListeners(
     );
 }
 
-function onClick(
-    e: MouseEvent,
-): void {
+function onClick(e: MouseEvent): void {
     const target = e.target as Element | null;
     if (!target) return;
 
     const actionEl = target.closest(
-        '[data-profile-action]',
+        '[data-person-action]',
     );
     const action = actionEl?.getAttribute(
-        'data-profile-action',
+        'data-person-action',
     );
+    if (action === 'back') {
+        navigateTo('people');
+        return;
+    }
     if (action === 'edit') {
-        if (
-            !state
-            || state.kind !== 'reading'
-        ) return;
+        if (!state || state.kind !== 'reading') {
+            return;
+        }
         state = {
             kind: 'editing',
-            profile: state.profile,
-            entity: state.entity,
-            draft: state.profile.toDraft(),
+            person: state.person,
+            draft: personDraftFromPerson(
+                state.person,
+            ),
         };
         rerender();
         return;
     }
     if (action === 'cancel') {
-        if (
-            !state
-            || state.kind !== 'editing'
-        ) return;
+        if (!state || state.kind !== 'editing') {
+            return;
+        }
         state = {
             kind: 'reading',
-            profile: state.profile,
-            entity: state.entity,
+            person: state.person,
         };
         rerender();
         return;
@@ -204,8 +187,7 @@ function onClick(
             'data-strength',
         );
         if (name) {
-            const cur =
-                state.draft.strengths;
+            const cur = state.draft.strengths;
             const i = cur.indexOf(name);
             const next = i >= 0
                 ? cur.filter(
@@ -224,22 +206,26 @@ function onClick(
     }
 }
 
-function onInput(
-    e: Event,
-): void {
+function onInput(e: Event): void {
     if (!state || state.kind !== 'editing') {
         return;
     }
-    const target = e.target as
-        | HTMLInputElement
-        | HTMLSelectElement
-        | HTMLTextAreaElement
-        | null;
-    if (!target) return;
+    const target = e.target;
+    if (!isFormField(target)) return;
     const field = target.getAttribute(
-        'data-profile-field',
+        'data-person-field',
     );
-    if (!isFieldKey(field)) return;
+    if (!isPersonFieldKey(field)) return;
+    if (field === 'status') {
+        state = {
+            ...state,
+            draft: {
+                ...state.draft,
+                status: target.value as PersonStatus,
+            },
+        };
+        return;
+    }
     state = {
         ...state,
         draft: {
@@ -270,8 +256,7 @@ function onDocumentKeydown(
     e.preventDefault();
     state = {
         kind: 'reading',
-        profile: state.profile,
-        entity: state.entity,
+        person: state.person,
     };
     rerender();
 }
@@ -280,43 +265,38 @@ async function handleSave(): Promise<void> {
     if (!state || state.kind !== 'editing') {
         return;
     }
-    const trimmed = trimStrings(state.draft);
-    const current = state.entity;
-    const updated: Omit<PersonEntity, 'id'> = {
-        ...current,
-        first_name: trimmed.firstName,
-        last_name: trimmed.lastName,
-        email: trimmed.email,
-        phone: trimmed.phone,
-        role: trimmed.role,
-        department: trimmed.department,
-        bio: trimmed.bio,
-        strengths: jsonArrayField(
-            trimmed.strengths,
-        ),
-    };
+    const personId = state.person.idForLink();
+    const ctx = createFetchContext();
+    let row;
     try {
-        const ctx = createFetchContext();
-        await putPerson(
-            ctx, current.id, updated,
-        );
+        row = await getPersonRow(ctx, personId);
     } catch (err) {
         log.error(
-            'profile save failed',
-            'profile',
-            err,
+            'getPersonRow failed',
+            'people', err,
         );
         showToast(
-            'Failed to save profile',
-            'error',
+            'Failed to save person', 'error',
         );
         return;
     }
-    showToast('Profile saved', 'success');
-    state = {
-        kind: 'reading',
-        profile: new Profile(trimmed),
-        entity: { ...current, ...updated },
-    };
-    rerender();
+    const patch = trimStrings(
+        personPatchFromDraft(state.draft),
+    );
+    const { id: _id, ...rest } = row;
+    try {
+        await putPerson(ctx, personId, {
+            ...rest, ...patch,
+        });
+    } catch (err) {
+        log.error(
+            'putPerson failed',
+            'people', err,
+        );
+        showToast(
+            'Failed to save person', 'error',
+        );
+        return;
+    }
+    showToast('Person saved', 'success');
 }

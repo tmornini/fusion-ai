@@ -10,7 +10,7 @@ import {
 } from '../app/loading-states.ts';
 import { log } from '../app/logger.ts';
 import {
-    iconPeople, iconPersonPlus, iconSearch,
+    iconPersonPlus, iconSearch,
     iconChevronRight, iconSend,
 } from '../app/icons.ts';
 import {
@@ -19,11 +19,11 @@ import {
 } from '../app/core.ts';
 import {
     createFetchContext,
-    getPeople, putPerson, putPersonStatus,
+    getPeople, putPerson,
+    getCurrentPersonRow,
     postActivity,
     jsonArrayField,
     jsonObjectField,
-    nowUtc,
     generateCryptoSafeBase62,
     subscribePersonChanges,
 } from '../app/adapters/index.ts';
@@ -51,24 +51,26 @@ export async function init(): Promise<void> {
     );
     if (!container) return;
 
-    const people = await withLoadingState(
+    const ctx = createFetchContext();
+    const loaded = await withLoadingState(
         container,
         buildSkeleton('table', 5),
-        () => getPeople(createFetchContext()),
-        init,
-        {
-            icon: iconPeople(24, ''),
-            title: 'No People Yet',
-            description:
-                'Invite people to your'
-                + ' organization to start'
-                + ' collaborating.',
+        async () => {
+            const [people, currentRow] =
+                await Promise.all([
+                    getPeople(ctx),
+                    getCurrentPersonRow(ctx),
+                ]);
+            return { people, currentRow };
         },
+        init,
     );
-    if (!people) return;
+    if (!loaded) return;
 
     peopleState =
-        buildInitialManagedPeopleState(people);
+        buildInitialManagedPeopleState(
+            loaded.people, loaded.currentRow.id,
+        );
     const initialPresenter =
         new ManagedPeoplePresenter(peopleState);
     setHtml(container, buildShellHtml(
@@ -91,7 +93,10 @@ export async function init(): Promise<void> {
             createFetchContext(),
         );
         peopleState =
-            buildInitialManagedPeopleState(fresh);
+            buildInitialManagedPeopleState(
+                fresh,
+                peopleState.currentPersonId,
+            );
         rerenderPeople();
     });
 
@@ -401,28 +406,6 @@ function buildInviteDialog(
                             }" />
                     </div>
                 </div>
-                <div class="flex gap-3">
-                    <div class="flex-1">
-                        <label class="${
-                            'label mb-1 block'
-                        }">Availability %</label>
-                        <input class="input"
-                            type="number"
-                            min="0" max="100"
-                            id="invite-avail"
-                            placeholder="0-100" />
-                    </div>
-                    <div class="flex-1">
-                        <label class="${
-                            'label mb-1 block'
-                        }">Performance</label>
-                        <input class="input"
-                            type="number"
-                            min="0" max="100"
-                            id="invite-perf"
-                            placeholder="0-100" />
-                    </div>
-                </div>
                 <div>
                     <label class="${
                         'label mb-1 block'
@@ -502,63 +485,18 @@ function onStatusChange(e: Event): void {
 function onPersonListClick(e: MouseEvent): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
-    const deactivate = target.closest(
-        '[data-deactivate-person]',
+    const row = target.closest(
+        '[data-person-id]',
     );
-    if (deactivate) {
-        const id = deactivate.getAttribute(
-            'data-deactivate-person',
-        );
-        if (id) {
-            void updatePersonActivationStatus(
-                id, 'deactivated',
-            );
-        }
-        return;
-    }
-    const reactivate = target.closest(
-        '[data-reactivate-person]',
+    if (!row) return;
+    const personId = row.getAttribute(
+        'data-person-id',
     );
-    if (reactivate) {
-        const id = reactivate.getAttribute(
-            'data-reactivate-person',
+    if (personId) {
+        navigateTo(
+            'people-detail', { personId },
         );
-        if (id) {
-            void updatePersonActivationStatus(
-                id, 'active',
-            );
-        }
     }
-}
-
-async function updatePersonActivationStatus(
-    personId: string,
-    next: 'active' | 'deactivated',
-): Promise<void> {
-    try {
-        await putPersonStatus(
-            createFetchContext(),
-            personId,
-            next,
-        );
-    } catch (err) {
-        log.error(
-            'putPersonStatus failed',
-            'organization', err,
-        );
-        showToast(
-            'Failed to update person status',
-            'error',
-        );
-        return;
-    }
-    showToast(
-        next === 'deactivated'
-            ? 'Person deactivated'
-            : 'Person reactivated',
-        'success',
-    );
-    navigateTo('people');
 }
 
 function bindInviteDialog(): void {
@@ -614,16 +552,6 @@ async function handleInvite(): Promise<void> {
     const phone = $input(
         '#invite-phone', document,
     )!.value;
-    const avail = Number(
-        $input(
-            '#invite-avail', document,
-        )!.value,
-    );
-    const perf = Number(
-        $input(
-            '#invite-perf', document,
-        )!.value,
-    );
     const bio = $textarea(
         '#invite-bio', document,
     )!.value;
@@ -642,10 +570,6 @@ async function handleInvite(): Promise<void> {
                     'active'
                     | 'pending'
                     | 'deactivated',
-                availability: avail,
-                performance_score: perf,
-                projects_completed: 0,
-                current_projects: 0,
                 strengths:
                     jsonArrayField([]),
                 team_dimensions:
@@ -659,7 +583,6 @@ async function handleInvite(): Promise<void> {
                     }),
                 phone,
                 bio,
-                last_active: nowUtc(),
             }),
         );
     } catch (err) {

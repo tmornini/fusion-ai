@@ -1,4 +1,5 @@
 import { $ } from './dom.ts';
+import { navigateTo } from './navigation.ts';
 
 const SIDEBAR_PERSON_NAME_IDS = [
     'sidebar-person-name',
@@ -12,6 +13,7 @@ const SIDEBAR_PERSON_ORG_IDS = [
 
 async function getSidebarPerson(
 ): Promise<{
+    id: string;
     name: string;
     organization: string;
 }> {
@@ -28,6 +30,7 @@ async function getSidebarPerson(
             getOrganization(ctx),
         ]);
     return {
+        id: personRow.id,
         name: new Person(personRow).fullName(),
         organization: org.nameText(),
     };
@@ -53,5 +56,17 @@ export async function mutateSidebarPerson(
         if (el)
             el.textContent =
                 sidebarPerson.organization;
+    }
+    const chips = document.querySelectorAll<
+        HTMLElement
+    >('.sidebar-person');
+    for (const chip of chips) {
+        chip.addEventListener(
+            'click',
+            () => navigateTo(
+                'people-detail',
+                { personId: sidebarPerson.id },
+            ),
+        );
     }
 }
