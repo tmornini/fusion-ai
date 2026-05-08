@@ -334,15 +334,15 @@ const routes: Route[] = [
         get: (db) =>
             db.workOrderClaims
                 .getAll(),
-        put: (db, _params, body) =>
+    }),
+    route('work-order-claims/:id', {
+        put: (db, params, body) =>
             db.workOrderClaims.put(
-                body.id as string,
+                param(params, 0),
                 validateWorkOrderClaimEntity(
                     withoutId(body),
                 ),
             ),
-    }),
-    route('work-order-claims/:id', {
         delete: (db, params) =>
             db.workOrderClaims.delete(
                 param(params, 0),

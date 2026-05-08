@@ -184,9 +184,8 @@ export async function postWorkOrderCreation(
     );
 
     await ctx.PUT<void>(
-        'work-order-claims',
+        `work-order-claims/${input.claimId}`,
         {
-            id: input.claimId,
             work_order_id: input.workOrderId,
             person_id: person.id,
             claimed_at: now,
@@ -316,9 +315,8 @@ export async function postWorkOrderClaim(
     const now = nowUtc();
 
     await ctx.PUT<void>(
-        'work-order-claims',
+        `work-order-claims/${claimId}`,
         {
-            id: claimId,
             work_order_id: workOrderId,
             person_id: person.id,
             claimed_at: now,
