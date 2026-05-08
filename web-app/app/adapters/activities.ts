@@ -38,23 +38,31 @@ export async function postActivity(
         generateCryptoSafeBase62();
     const actorId = generateCryptoSafeBase62();
     const timestamp = nowUtc();
-    await ctx.PUT(
-        `activities/${activityId}`,
-        {
-            type: input.type,
-            action: input.action,
-            target: input.target,
-            timestamp,
-            status: input.status,
-            feedback: input.feedback,
-        },
-    );
-    await ctx.PUT(
-        `activity-actors/${actorId}`,
-        {
-            activity_id: activityId,
-            person_id: personRow.id,
-            created_at: timestamp,
-        },
-    );
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `activities/${activityId}`,
+                body: {
+                    type: input.type,
+                    action: input.action,
+                    target: input.target,
+                    timestamp,
+                    status: input.status,
+                    feedback: input.feedback,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `activity-actors/${actorId}`,
+                body: {
+                    activity_id: activityId,
+                    person_id: personRow.id,
+                    created_at: timestamp,
+                },
+            },
+        ],
+    });
 }
