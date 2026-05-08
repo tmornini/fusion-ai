@@ -232,18 +232,18 @@ const routes: Route[] = [
     route('flow-versions', {
         get: (db) =>
             db.flowVersions.getAll(),
-        put: (db, _params, body) =>
-            db.flowVersions.put(
-                body.id as string,
-                validateFlowVersionEntity(
-                    withoutId(body),
-                ),
-            ),
     }),
     route('flow-versions/:id', {
         get: (db, params) =>
             db.flowVersions.getById(
                 param(params, 0),
+            ),
+        put: (db, params, body) =>
+            db.flowVersions.put(
+                param(params, 0),
+                validateFlowVersionEntity(
+                    withoutId(body),
+                ),
             ),
         delete: (db, params) =>
             db.flowVersions.delete(
