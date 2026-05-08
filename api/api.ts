@@ -316,15 +316,15 @@ const routes: Route[] = [
         get: (db) =>
             db.transitionFieldValues
                 .getAll(),
-        put: (db, _params, body) =>
+    }),
+    route('transition-field-values/:id', {
+        put: (db, params, body) =>
             db.transitionFieldValues.put(
-                body.id as string,
+                param(params, 0),
                 validateTransitionFieldValueEntity(
                     withoutId(body),
                 ),
             ),
-    }),
-    route('transition-field-values/:id', {
         delete: (db, params) =>
             db.transitionFieldValues.delete(
                 param(params, 0),

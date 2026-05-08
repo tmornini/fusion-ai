@@ -260,9 +260,8 @@ export async function postWorkOrderTransition(
             );
         }
         await ctx.PUT<void>(
-            'transition-field-values',
+            `transition-field-values/${id}`,
             {
-                id,
                 transition_id: transitionId,
                 field_id: fieldId,
                 value,
