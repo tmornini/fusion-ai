@@ -4,7 +4,6 @@ import {
     assertProjectStatus,
     assertReadinessLevel,
     isCrewModel,
-    DEFAULT_NODE_ASSIGNMENT,
 } from './types.ts';
 import type {
     GraphNode,
@@ -284,13 +283,6 @@ function asGraphField(
     };
 }
 
-// User-private role ids share their own
-// prefix with the roles adapter; duplicating
-// the constant here keeps the api layer
-// independent of web-app/app code.
-const USER_PRIVATE_ROLE_PREFIX_FOR_VALIDATOR =
-    'user-private:';
-
 export function asNodeAssignment(
     value: unknown,
     label: string,
@@ -309,24 +301,6 @@ export function asNodeAssignment(
                 obj['roleId'],
                 label + '.roleId',
             ),
-        };
-    }
-    // Legacy translator: pre-Phase-E flow_graph
-    // blobs carry kind:'person'. Translate on
-    // read to kind:'role' with the person's
-    // user-private synthetic id. Lazy migration;
-    // eager migration in database-init.ts
-    // converges stored data within one release.
-    if (kind === 'person') {
-        const personId = asString(
-            obj['personId'],
-            label + '.personId',
-        );
-        return {
-            kind: 'role',
-            roleId:
-                USER_PRIVATE_ROLE_PREFIX_FOR_VALIDATOR
-                + personId,
         };
     }
     if (kind === 'model') {
@@ -358,11 +332,9 @@ function asGraphNode(
         obj['fields'],
         label + '.fields',
     );
-    const crew: NodeAssignment = 'crew' in obj
-        ? asNodeAssignment(
-            obj['crew'], label + '.crew',
-        )
-        : DEFAULT_NODE_ASSIGNMENT;
+    const crew = asNodeAssignment(
+        obj['crew'], label + '.crew',
+    );
     return {
         id: asString(
             obj['id'], label + '.id',

@@ -633,25 +633,6 @@ test('asNodeAssignment accepts the new role variant', () => {
     }
 });
 
-test(
-    'asNodeAssignment translates legacy person'
-    + ' shape to role with user-private id'
-    + ' (lazy migration)',
-    () => {
-        const result = asNodeAssignment(
-            { kind: 'person', personId: 'u-1' },
-            'assignment',
-        );
-        assert.equal(result.kind, 'role');
-        if (result.kind === 'role') {
-            assert.equal(
-                result.roleId,
-                'user-private:u-1',
-            );
-        }
-    },
-);
-
 test('asNodeAssignment accepts model variant', () => {
     const result = asNodeAssignment(
         { kind: 'model', model: 'Copilot' },
@@ -671,19 +652,6 @@ test('asNodeAssignment rejects invalid kind', () => {
         /assignment\.kind in/,
     );
 });
-
-test(
-    'asNodeAssignment rejects legacy person'
-    + ' shape without personId',
-    () => {
-        assert.throws(
-            () => asNodeAssignment(
-                { kind: 'person' },
-                'assignment',
-            ),
-        );
-    },
-);
 
 test(
     'asNodeAssignment rejects role without'
@@ -708,7 +676,7 @@ test('asNodeAssignment rejects unknown model', () => {
     );
 });
 
-// --- asGraphNode lazy crew migration ---
+// --- asGraphNode crew validation ---
 
 const baseNode = {
     id: 'n1',
@@ -722,15 +690,14 @@ const baseNode = {
 };
 
 test(
-    'asStoredGraph defaults missing crew to'
-    + ' unassigned',
+    'asStoredGraph throws on missing crew',
     () => {
-        const result = asStoredGraph(
-            { nodes: [baseNode], edges: [] },
-            'graph',
+        assert.throws(
+            () => asStoredGraph(
+                { nodes: [baseNode], edges: [] },
+                'graph',
+            ),
         );
-        const n = result.nodes[0]!;
-        assert.equal(n.crew.kind, 'unassigned');
     },
 );
 
@@ -757,36 +724,6 @@ test(
         if (n.crew.kind === 'role') {
             assert.equal(
                 n.crew.roleId, 'r-eng',
-            );
-        }
-    },
-);
-
-test(
-    'asStoredGraph translates legacy person'
-    + ' crew to role with user-private id',
-    () => {
-        const result = asStoredGraph(
-            {
-                nodes: [
-                    {
-                        ...baseNode,
-                        crew: {
-                            kind: 'person',
-                            personId: 'u-1',
-                        },
-                    },
-                ],
-                edges: [],
-            },
-            'graph',
-        );
-        const n = result.nodes[0]!;
-        assert.equal(n.crew.kind, 'role');
-        if (n.crew.kind === 'role') {
-            assert.equal(
-                n.crew.roleId,
-                'user-private:u-1',
             );
         }
     },

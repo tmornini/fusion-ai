@@ -154,30 +154,6 @@ test(
 );
 
 test(
-    'legacy uncompressed flow_versions JSON reads correctly',
-    async () => {
-        const map = installShim();
-        const legacyRow = {
-            id: 'fv-legacy',
-            ...baseVersion,
-            is_locked: 0,
-            is_auto_layout: 1,
-            is_auto_fit: 1,
-        };
-        map.set(
-            KEY_PREFIX + 'flow_versions',
-            JSON.stringify([legacyRow]),
-        );
-        const adapter = await createLocalStorageAdapter();
-        const got = await adapter.flowVersions.getById(
-            'fv-legacy',
-        );
-        assert.equal(got.id, 'fv-legacy');
-        assert.equal(got.name, 'Test Flow');
-    },
-);
-
-test(
     'work_order_transitions write produces gz1: prefix',
     async () => {
         const map = installShim();
