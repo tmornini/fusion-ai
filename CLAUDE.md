@@ -49,7 +49,7 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 
 ## Architecture
 
-**Vanilla TypeScript** with zero runtime dependencies. Enterprise innovation management platform with modules for ideas, projects, teams, flows, workbox, and analytics. Every page is a standalone HTML file served via HTTP. The code also supports `file:///` protocol locally, but testing is HTTP-only.
+**Vanilla TypeScript** with zero runtime dependencies. Enterprise innovation management platform with modules for ideas, projects, people, flows, workbox, and analytics. Every page is a standalone HTML file served via HTTP. The code also supports `file:///` protocol locally, but testing is HTTP-only.
 
 ### Key Layers
 
@@ -152,7 +152,7 @@ tests pass `createFetchContext(db)` with a `MemoryDbAdapter`.
 
 ### Page Module Pattern
 
-Every entry in `PAGE_REGISTRY` declares both `sourceDir` and `sourceFile` explicitly (e.g., `flow-detail` → `web-app/flows/detail.ts` + `web-app/flows/detail.html`). The most common values are `index`, `detail`, `create`, `convert`, and the named `organization/` files (`users`, `activity-feed`, `onboarding`). Each page module exports:
+Every entry in `PAGE_REGISTRY` declares both `sourceDir` and `sourceFile` explicitly (e.g., `flow-detail` → `web-app/flows/detail.ts` + `web-app/flows/detail.html`). The most common values are `index`, `detail`, `create`, and `convert`. Each page module exports:
 - `init(): Promise<void>` — fetches data, populates DOM placeholders, binds event listeners
 
 Sidebar-layout pages have `index.html` containing page content that gets composed with the layout template. Standalone pages have a complete hand-written `index.html` with a `<div id="page-root">` that `init()` renders into.
@@ -315,7 +315,7 @@ Run via `./validate` (which also type-checks and lints) or
 directly: `node --test --strip-types tests/*.test.ts`.
 
 **Manual browser regression** for UI behavior: a pass against
-`TEST-PLAN.md` (254 cases), driven either by a single human
+`TEST-PLAN.md` (265 cases), driven either by a single human
 tester serially or by Claude Code agents in parallel via the
 `claude-in-chrome` MCP. Anything DOM-driven (gestures, layout,
 visual rendering) lives here. Pure transitions, adapters, and
@@ -339,9 +339,9 @@ time budgets while keeping per-entity mutation domains disjoint:
    - Agent-CH — Dashboard + Reference (C1–C7, H1–H2), read-only
    - Agent-D — Ideas (D1–D37)
    - Agent-E — Projects (E1–E11)
-   - Agent-F — Flows (F1–F46)
+   - Agent-F — Flows (F1–F74)
    - Agent-F2 — Workbox (WB1–WB19)
-   - Agent-G — Admin (G1–G29, G36–G37; skip G30–G35)
+   - Agent-G — Admin (G9–G14, G19–G24, G36–G40; skip G30–G35; G1–G8/G15–G18/G25–G29 retired)
 4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
    Mutates global UI state (theme, sidebar, command palette) —
    no concurrent agents.
@@ -364,7 +364,7 @@ subset of tables:
 | Agent-E | `projects` (plus one flow via E7) |
 | Agent-F | `flows`, `flow_versions` |
 | Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims`, plus its own private flow in `flows`/`flow_versions` |
-| Agent-G | `users`, `teams`, `profile`, `company` |
+| Agent-G | `users`, `profile`, `organization` |
 | Agent-CH | none (read-only) |
 
 Agent-F2 owns its source flow because `postWorkOrderCreation`

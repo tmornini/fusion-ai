@@ -49,17 +49,17 @@ See `CLAUDE.md` section `## Testing`.
 |---|--:|
 | A. Build & Setup | 5 |
 | AA. Data Entry Workflow | 43 |
-| B. Entry Pages | 16 |
+| B. Entry Pages | 14 |
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 37 |
 | E. Core: Projects | 11 |
-| F. Tools | 46 |
+| F. Tools | 74 |
 | F2. Workbox | 19 |
-| G. Admin Pages | 37 |
+| G. Admin Pages | 23 |
 | H. Reference & System | 2 |
-| I. Cross-Cutting Concerns | 28 |
+| I. Cross-Cutting Concerns | 27 |
 | J. Teardown | 3 |
-| **Total** | **254** |
+| **Total** | **265** |
 
 ---
 
@@ -83,21 +83,21 @@ on. Run these in order.
 
 - [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
 - [ ] **AA2** Open DevTools, verify localStorage has `fusion-ai:*` keys (19 tables as empty arrays plus bootstrap data, including the `deleted` tombstone table).
-- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), company "Stark Industries" with "Business" plan.
+- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`) on the "Business" plan.
 
 ### AA2. Create Users
 
-- [ ] **AA4** Navigate to Organization > Users. Click "Invite User". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [ ] **AA4** Navigate to People (sidebar). Click "Invite User". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
 - [ ] **AA5** Fill all fields for user "Sarah Chen" (Engineering Manager, Engineering dept, active status). Submit. PASS: toast confirms creation, user appears in the list.
-- [ ] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on Users page with correct name, email, role, and status badge.
-- [ ] **AA7** Navigate to Teams page. PASS: users display with correct availability color coding and performance stats.
+- [ ] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on People page with correct name, email, role, and status badge.
+- [ ] **AA7** Reload the People page. PASS: users display with correct availability color coding and status badges.
 
-### AA3. Profile & Company
+### AA3. Profile & Organization
 
 - [ ] **AA8** Navigate to Profile. Edit fields (phone, bio, strengths). Click "Save Changes". PASS: toast "Profile saved" appears.
 - [ ] **AA9** Navigate away, return to Profile. PASS: edited fields persist with saved values.
-- [ ] **AA10** Navigate to Company. Edit a field (e.g. Domain). Click save. PASS: success toast appears.
-- [ ] **AA11** Navigate away, return to Settings. PASS: edited field persists with saved value.
+- [ ] **AA10** Navigate to Organization. In the General Information card, click Edit, change Domain (e.g. `acmecorp.io`), click Save. PASS: success toast "Organization saved" appears.
+- [ ] **AA11** Navigate away, return to Organization. PASS: edited Domain persists with saved value, card is back in read mode.
 
 ### AA4. Create Ideas
 
@@ -116,8 +116,8 @@ on. Run these in order.
 - [ ] **AA18** On Ideas list, filter by "In Review". Click idea #1. PASS: navigates to idea detail with approval footer.
 - [ ] **AA19** Click "Approve". PASS: idea status changes to approved, confirmation shown.
 - [ ] **AA20** Approve idea #4 as well (it was submitted for review in AA16). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
-- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 6 required fields (Project Name, Lead, Start Date, End Date, Cost, Impact).
-- [ ] **AA22** Fill all required fields: Project Name, select "Sarah Chen" as project lead, Start Date, Target End Date, Cost. Click "Create Project". PASS: navigates to project detail for the new project.
+- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 5 required fields (Project Name, Start Date, Target End Date, Budget, Impact). No Project Lead field — the team data model has been retired.
+- [ ] **AA22** Fill all required fields: Project Name, Start Date, Target End Date, Budget, Impact. Click "Create Project". PASS: navigates to project detail for the new project.
 - [ ] **AA23** On project detail, click "Edit". Set fields (title, description, status, start date, end date, cost baseline, impact baseline) to match mock data. Save. PASS: project data persists.
 - [ ] **AA24** Approve remaining ideas (7, 8, 9, 10) from Ideas list (filter by "In Review"), then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status and progress.
 
@@ -221,9 +221,9 @@ on. Run these in order.
 - [ ] **AA41** Edit profile: change phone number.
   Save, navigate away, return. PASS: changed phone
   persists.
-- [ ] **AA42** Edit company: change
-  Domain. Save, navigate away, return. PASS:
-  changed Domain persists.
+- [ ] **AA42** Edit organization: in the General
+  Information card, change Domain. Save, navigate
+  away, return. PASS: changed Domain persists.
 
 ### AA12. Snapshot Round-Trip
 
@@ -254,18 +254,13 @@ on. Run these in order.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter `test@example.com`, password `password123`, click "Sign in →". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`.
 - [ ] **B10** Click "Don't have an account?" toggle. PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with arrow icon.
-- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `organization/onboarding.html`.
-
-### Onboarding Page (`onboarding/`)
-
-- [ ] **B12** Page renders centered welcome section with sparkle icon, "Welcome to Fusion AI" heading, and descriptive text. PASS: layout is complete, no console errors.
-- [ ] **B13** Click "Go to Dashboard" button. PASS: navigates to `dashboard/index.html`.
+- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `dashboard/index.html` after a brief delay (the dedicated onboarding page has been retired — sign-up routes straight to the dashboard).
 
 ### Auth Validation Edge Cases
 
-- [ ] **B14** In Sign In mode, enter valid email, valid password, then clear email and submit. PASS: email error reappears.
-- [ ] **B15** Toggle between Sign In and Sign Up modes multiple times. PASS: form resets cleanly each time, no layout glitches.
-- [ ] **B16** Footer shows "By continuing, you agree to our Terms of Service and Privacy Policy." PASS: text is visible.
+- [ ] **B12** In Sign In mode, enter valid email, valid password, then clear email and submit. PASS: email error reappears.
+- [ ] **B13** Toggle between Sign In and Sign Up modes multiple times. PASS: form resets cleanly each time, no layout glitches.
+- [ ] **B14** Footer shows "By continuing, you agree to our Terms of Service and Privacy Policy." PASS: text is visible.
 
 ---
 
@@ -275,9 +270,11 @@ on. Run these in order.
 - [ ] **C2** Sidebar shows flat navigation
   links in this order: Dashboard, Ideas,
   Projects, Flows, Workbox, Profile,
-  Organization, Teams, Company,
-  Billing, Snapshots, Design System. PASS:
-  all 12 links present, in order, and styled.
+  Organization, People, Billing, Snapshots,
+  Design System. PASS: all 11 links present,
+  in order, and styled. (Teams, Company, and
+  Activity Feed sidebar entries have been
+  retired.)
 - [ ] **C3** Header shows search bar, greeting
   ("Good {morning/afternoon/evening}, Tony
   Stark" — varies by time of day), company
@@ -344,8 +341,8 @@ on. Run these in order.
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 6 required fields: Project Name, Project Lead (dropdown of active users), Start Date, Target End Date, Budget, Impact. Sticky sidebar shows "Problem & Solution" with title, problem, solution, and expected outcome.
-- [ ] **D23** With required fields empty, "Create Project" button is disabled and progress bar shows 0/6. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 6 required fields are filled.
+- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 5 required fields: Project Name, Start Date, Target End Date, Budget, Impact. Sticky sidebar shows "Problem & Solution" with title, problem, solution, and expected outcome. (No Project Lead field — that selector and its underlying TeamEntity have been retired.)
+- [ ] **D23** With required fields empty, "Create Project" button is disabled and progress bar shows 0/5. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 5 required fields are filled.
 - [ ] **D24** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
 ### Idea Status Filtering (`ideas/index.html`)
@@ -397,9 +394,10 @@ on. Run these in order.
   baseline vs. current metrics. PASS: all cards
   render with data. Baseline/current metrics
   show em dash when values are zero or missing.
-- [ ] **E5** Sidebar shows Team card listing
-  project team members with roles. PASS: team
-  members render with names and role badges.
+- [ ] **E5** Sidebar shows the Flows section
+  (Team card has been retired with the team
+  data model). PASS: no Team card on the
+  project sidebar.
 - [ ] **E6** Flows section shows linked flows with
   node/edge counts. For approved projects, a "New
   Flow" button is visible. For non-approved
@@ -452,8 +450,14 @@ on. Run these in order.
 ### Flow Designer (`flows/detail.html?flowId=...`)
 
 - [ ] **F7** Navigate to a flow designer page.
-  PASS: toolbar runs vertically along the left
-  edge of the canvas with Undo/Redo, Zoom −/+,
+  PASS: page wears the standard sidebar + top-bar
+  layout (formerly standalone) — left sidebar with
+  the global nav, top bar with search/greeting/
+  organization stats/theme toggle, and the flow
+  designer occupying the remaining content area.
+  Toolbar runs vertically along the left edge of
+  the canvas (inside the content area, not the
+  global sidebar) with Undo/Redo, Zoom −/+,
   Copy Mermaid, Export, and Delete (trash icon)
   arranged top-to-bottom. The header above the
   canvas hosts the Back button and three header
@@ -792,6 +796,26 @@ on. Run these in order.
   click handler that captured a stale presenter would have
   acted on the pre-commit snapshot — this case proves the
   handler reads the current presenter at click time.)
+- [ ] **F73** On a regular (non-start, non-complete)
+  node whose Crew is set to Unassigned, observe that
+  a hazard triangle icon renders in the bottom-left
+  corner of the node card (colored via the
+  `.flow-node-hazard` rule). Hover the triangle.
+  PASS: after the OS hover delay, the native browser
+  tooltip displays "No crew assigned to this node."
+  (delivered via an SVG `<title>` element, matching
+  the existing port-circle tooltip pattern). Set the
+  node's Crew to a user or a model. PASS: the
+  hazard triangle disappears.
+- [ ] **F74** With the Properties panel closed,
+  confirm the flow canvas fills the content area
+  to the right of the global sidebar (panel-aware
+  fit honors `PANEL_WIDTH_PX`). Open the panel,
+  pan the canvas, then close the panel via the X.
+  PASS: pan/zoom/auto-fit/panel-toggle interactions
+  read the *content-area* clientWidth, not the
+  full viewport — the global sidebar does not
+  steal canvas space.
 
 ---
 
@@ -907,21 +931,18 @@ on. Run these in order.
 
 ## G. Admin Pages
 
-### Team (`teams/index.html`)
+### Team (RETIRED)
 
-- [ ] **G1** Navigate to `teams/index.html`. PASS: shows roster of seeded team members with initials avatars, names, roles, departments, availability percentage badges, strength chips, performance stats (percentage, active count, completed count), and status dots (green=available, yellow=busy, red=limited). Search input and "Activity Feed" / "Add Member" buttons visible.
-- [ ] **G2** Click a team member card. PASS: right-side detail panel populates with member name, role, email, and large avatar with initials.
-- [ ] **G3** Detail panel shows two tabs (Dimensions, Performance). Click between tabs. PASS: tab content switches — Dimensions shows Mover/Shaker/Prover/Maker scores with progress bars.
-- [ ] **G4** Click a different team member card. PASS: detail panel updates to show the newly selected member's information.
-- [ ] **G5** Type a name in the search input. PASS: team member cards filter in real-time by name, role, or department.
-- [ ] **G6** Click "Add Member" button. PASS: add-member dialog opens with Full Name + Email + Role + Department fields and send button.
-- [ ] **G7** Enter an email address and click send. PASS: toast confirms invitation, dialog closes.
-- [ ] **G8** In DevTools console run: `const u = JSON.parse(localStorage.getItem('fusion-ai:users')); u[0].availability = 90; u[1].availability = 50; u[2].availability = 20; localStorage.setItem('fusion-ai:users', JSON.stringify(u)); location.reload();` PASS: rendered `.status-dot[data-tone]` elements include `success`, `warning`, and `error` (one each, mapped from `>=70`, `>=40`, `<40` respectively in `toneForAvailability`). Pinned to known data so the test does not depend on seed-data variety surviving prior data mutations.
+> Cases G1–G8 retired. The standalone Teams page
+> and the underlying TeamEntity/TeamProjectEntity/
+> TeamUserEntity data model have been removed. Roster
+> review now lives on the People page (formerly the
+> Manage Users page) — see G19–G24.
 
-### Account (`organization/index.html`)
+### Organization (`organization/index.html`)
 
-- [ ] **G9** Navigate to `organization/index.html`. PASS: shows account overview with plan info, billing date, seat usage, and resource usage bars. (The overview values on this page are currently hardcoded placeholders — 18/25 seats, 12 Projects, 47 Ideas — not computed from live tables. Verify the page renders without error; numeric accuracy will be addressed when the values are wired to the database.)
-- [ ] **G10** Health score (92, "excellent") is displayed. PASS: score and label visible. (Also hardcoded; see G9.)
+- [ ] **G9** Navigate to `organization/index.html`. PASS: page wears the standard sidebar + top-bar layout. Shows the page header "Organization", a General Information card at the top with read-only Organization Name and Domain plus an Edit button, then the overview card (plan info, health badge, seats stats), the Usage Overview card with progress bars, and the Security & Administration card linking to People and Billing. (Overview gauge values are hardcoded placeholders — verify the page renders without error; numeric accuracy will be addressed when wired to live tables.)
+- [ ] **G10** In the General Information card, click Edit. PASS: page header swaps Edit for Save/Cancel; the card body switches the read-only fields to two inputs prefilled with the current Organization Name and Domain. Health score (92, "excellent") still renders in the overview card below.
 
 ### Profile (`profile/`)
 
@@ -930,28 +951,36 @@ on. Run these in order.
 - [ ] **G13** Edit a field (e.g. phone), toggle strengths, and click "Save Changes". PASS: toast "Profile saved" appears.
 - [ ] **G14** Navigate away from Profile (e.g. to Dashboard), then return to Profile. PASS: the edited field retains the saved value — data was persisted to the database, not just displayed via toast.
 
-### Company (`company/`)
+### Company (RETIRED)
 
-- [ ] **G15** Navigate to `company/`. PASS: shows the current Company form — Name (e.g. "Stark Industries") and Domain (e.g. "acmecorp.com"). The broader settings feature is being reduced; additional fields may be removed in upcoming work.
-- [ ] **G17** Edit Name (or Domain) and click save. PASS: success toast or save completes without error.
-- [ ] **G18** Navigate away from Settings, then return. PASS: the edited setting retains the saved value — data was persisted to the database.
+> Cases G15–G18 retired. The standalone Company
+> page has been folded into the Organization page
+> (G9–G10) — Company Name and Domain are now part
+> of the OrganizationEntity, edited via the General
+> Information card, and persisted by `PUT
+> /api/organization`. The CompanyEntity, its store,
+> validator, REST route, and presenter have been
+> removed.
 
-### Manage Users (`organization/users.html`)
+### People (`users/index.html`)
 
-- [ ] **G19** Navigate to `organization/users.html`. PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
+- [ ] **G19** Navigate to `users/index.html` (also reachable via the "People" sidebar entry, which replaced the retired "Teams" entry). PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
 - [ ] **G20** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list.
 - [ ] **G21** Deactivated user (James Miller) is visually distinguished with "Deactivated" badge (X icon) and reduced opacity styling. PASS: clearly different from active users.
 - [ ] **G22** Pending users show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active users.
 - [ ] **G23** "Invite User" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
 - [ ] **G24** Fill all required fields and submit the invite dialog. PASS: toast confirms user creation, new user appears in the user list with correct name, email, role, and status badge.
 
-### Activity Feed (`organization/activity-feed.html`)
+### Activity Feed (RETIRED)
 
-- [ ] **G25** Navigate to `organization/activity-feed.html`. PASS: shows seeded activity entries with type icons and timestamps. Search input ("Search activity...") and type filter dropdown ("All Activity") visible.
-- [ ] **G26** Activity types include idea created, project created, user joined, status changed, idea converted, and comment added. PASS: multiple distinct types visible with appropriate icons (lightbulb, folder, user-plus, edit, arrow-right).
-- [ ] **G27** Each activity entry shows actor name, action verb, target name, and meta info (score badge, status badge, or quoted feedback text). PASS: entries have full context.
-- [ ] **G28** Type in the search input. PASS: activity entries filter by actor name or target name in real-time.
-- [ ] **G29** Select a type from the filter dropdown (e.g. "Ideas"). PASS: only activities of that type shown. Filter options: All Activity, Ideas, Projects, Teams. Reset to "All Activity" → full list returns.
+> Cases G25–G29 retired. The standalone Activity
+> Feed page has been removed along with the
+> orphaned read-side adapters (getActivityRows,
+> getActivityActorRows, ActivityPresenter, the
+> Activity wrapper class, RecentActivityItem,
+> RECENT_ACTIVITY_COUNT). Activities are still
+> WRITTEN by ideas/workbox/users via postActivity;
+> no UI currently reads them.
 
 ### Snapshots (`snapshots/`) — Run These Last
 
@@ -968,7 +997,7 @@ on. Run these in order.
   inline error reports the upload failed with a human-readable
   message; existing data in localStorage is untouched (verify via
   DevTools that no fusion-ai:* keys were overwritten or cleared).
-- [ ] **G36** On `organization/users.html`, each active or pending
+- [ ] **G36** On `users/index.html`, each active or pending
   user row shows a user-X icon button (aria-label "Deactivate
   user") and each deactivated row shows a user-check icon button
   ("Reactivate user"). Click an active user's deactivate button.
@@ -993,6 +1022,29 @@ feature is implemented.
   renders without console errors. Sidebar highlights
   the Billing link as active. No runtime JS errors
   from the empty `init()`.
+
+### Organization General Information — Edit Cycle
+
+- [ ] **G38** On `organization/index.html`, click
+  Edit on the General Information card. Modify the
+  Domain to a new value. Click Cancel. PASS: card
+  returns to read mode, Domain shows the original
+  (unmodified) value, no toast fires.
+- [ ] **G39** Click Edit again. Modify Domain.
+  Press `Escape`. PASS: card returns to read mode,
+  Domain shows the original value (Escape behaves
+  identically to Cancel; same code path as the
+  Profile and former Company edit pages).
+- [ ] **G40** Click Edit. Modify both Organization
+  Name and Domain. Click Save. PASS: toast
+  "Organization saved" fires at top-center,
+  card returns to read mode showing the new
+  values. Reload the page. PASS: new values
+  persist (round-tripped through `PUT
+  /api/organization`). Inspect localStorage:
+  `fusion-ai:organization` row has the updated
+  `name` and `domain` fields alongside the
+  unchanged plan/seats/billing fields.
 
 ---
 
@@ -1047,9 +1099,9 @@ feature is implemented.
 
 ### Toasts
 
-- [ ] **I23** Trigger a toast (e.g. save profile, or use DB Admin reload). PASS: toast appears at bottom or corner of screen, auto-dismisses after ~3 seconds with fade-out.
+- [ ] **I23** Trigger a toast (e.g. save profile, or use DB Admin reload). PASS: toast appears at top-center of the viewport (fixed to `top: var(--space-4); left: 50%; translateX(-50%)`), auto-dismisses after ~6 seconds with fade-out. (Toast position was migrated from bottom-right to top-center.)
 - [ ] **I24** While a toast is visible, click its close button (×). PASS: toast dismisses immediately without waiting for auto-dismiss timer.
-- [ ] **I25** Trigger multiple toasts in rapid succession (e.g. save profile repeatedly). PASS: toasts stack visibly (up to 5). When a 6th toast arrives, the oldest is removed.
+- [ ] **I25** Trigger multiple toasts in rapid succession (e.g. save profile repeatedly). PASS: toasts stack visibly with the *newest at the top*, older ones flowing downward (`prepend` ordering, not `appendChild`). Up to 5 visible. When a 6th toast arrives, the *oldest* — at the bottom of the stack — is removed.
 
 ### Snapshot Round-Trip
 
@@ -1085,7 +1137,7 @@ feature is implemented.
 | Browser & Version | |
 | OS | |
 | Build SHA | |
-| Tests Passed | /253 |
-| Tests Failed | /253 |
-| Tests Skipped | /253 |
+| Tests Passed | /265 |
+| Tests Failed | /265 |
+| Tests Skipped | /265 |
 | Notes | |
