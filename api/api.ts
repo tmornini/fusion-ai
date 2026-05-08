@@ -302,9 +302,11 @@ const routes: Route[] = [
         get: (db) =>
             db.workOrderTransitions
                 .getAll(),
-        put: (db, _params, body) =>
+    }),
+    route('work-order-transitions/:id', {
+        put: (db, params, body) =>
             db.workOrderTransitions.put(
-                body.id as string,
+                param(params, 0),
                 validateWorkOrderTransitionEntity(
                     withoutId(body),
                 ),

@@ -162,9 +162,8 @@ export async function postWorkOrderCreation(
     );
 
     await ctx.PUT<void>(
-        'work-order-transitions',
+        `work-order-transitions/${input.initTransitionId}`,
         {
-            id: input.initTransitionId,
             work_order_id: input.workOrderId,
             from_node_id: '',
             to_node_id: startNode.id,
@@ -174,9 +173,8 @@ export async function postWorkOrderCreation(
     );
 
     await ctx.PUT<void>(
-        'work-order-transitions',
+        `work-order-transitions/${input.postStartTransitionId}`,
         {
-            id: input.postStartTransitionId,
             work_order_id: input.workOrderId,
             from_node_id: startNode.id,
             to_node_id: postStartNodeId,
@@ -236,9 +234,8 @@ export async function postWorkOrderTransition(
     const now = nowUtc();
 
     await ctx.PUT<void>(
-        'work-order-transitions',
+        `work-order-transitions/${transitionId}`,
         {
-            id: transitionId,
             work_order_id: workOrderId,
             from_node_id: currentNodeId,
             to_node_id: edge.toNodeId,
