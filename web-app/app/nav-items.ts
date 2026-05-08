@@ -12,6 +12,7 @@ import {
     iconDatabase,
     iconPalette,
     iconShield,
+    iconBriefcase,
 } from './icons.ts';
 
 interface SidebarNavItem {
@@ -69,6 +70,12 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         pageLink: 'roles',
         label: 'Roles',
         icon: iconShield,
+    },
+    {
+        href: '../crews/index.html',
+        pageLink: 'crews',
+        label: 'Crews',
+        icon: iconBriefcase,
     },
     {
         href: '../billing/index.html',

@@ -12,6 +12,7 @@ import {
     iconDatabase,
     iconPalette,
     iconShield,
+    iconBriefcase,
 } from './icons.ts';
 
 export interface PageEntry {
@@ -146,6 +147,14 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconShield,
         keywords: 'roles teams membership',
+    },
+    crews: {
+        title: 'Crews',
+        layout: 'sidebar',
+        sourceDir: 'crews',
+        sourceFile: 'index',
+        icon: iconBriefcase,
+        keywords: 'crews collaborate team',
     },
     snapshots: {
         title: 'Snapshots',
