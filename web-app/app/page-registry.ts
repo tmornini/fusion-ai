@@ -25,6 +25,7 @@ export interface PageEntry {
     icon?: IconFn;
     keywords?: string;
     searchable?: boolean;
+    requiresSchema?: boolean;
     loader: () => Promise<{
         init: (
             params?: Record<string, string>,
@@ -222,6 +223,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconDatabase,
         keywords:
             'data export import wipe',
+        requiresSchema: false,
         loader: () => import('../snapshots/index'),
     },
     'design-system': {
@@ -233,6 +235,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconPalette,
         keywords:
             'components ui reference',
+        requiresSchema: false,
         loader: () => import('../design-system/index'),
     },
     auth: {
@@ -241,6 +244,7 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'auth',
         sourceFile: 'index',
         searchable: false,
+        requiresSchema: false,
         loader: () => import('../auth/index'),
     },
     landing: {
@@ -249,6 +253,7 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'landing',
         sourceFile: 'index',
         searchable: false,
+        requiresSchema: false,
         loader: () => import('../landing/index'),
     },
     'not-found': {
@@ -257,6 +262,7 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'not-found',
         sourceFile: 'index',
         searchable: false,
+        requiresSchema: false,
         loader: () => import('../not-found/index'),
     },
 };
