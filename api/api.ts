@@ -19,6 +19,10 @@ import {
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
+    validateRoleEntity,
+    validateRoleMembershipEntity,
+    validateCrewEntity,
+    validateCrewRoleMembershipEntity,
 } from './validators.ts';
 
 export class ApiError {
@@ -129,6 +133,80 @@ const routes: Route[] = [
     route('activity-actors', {
         get: (db) =>
             db.activityActors.getAll(),
+    }),
+    route('roles', {
+        get: (db) => db.roles.getAll(),
+    }),
+    route('roles/:id', {
+        get: (db, params) =>
+            db.roles.getById(
+                param(params, 0),
+            ),
+        put: (db, params, body) =>
+            db.roles.put(
+                param(params, 0),
+                validateRoleEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.roles.delete(
+                param(params, 0),
+            ),
+    }),
+    route('role-memberships', {
+        get: (db) =>
+            db.roleMemberships.getAll(),
+    }),
+    route('role-memberships/:id', {
+        put: (db, params, body) =>
+            db.roleMemberships.put(
+                param(params, 0),
+                validateRoleMembershipEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.roleMemberships.delete(
+                param(params, 0),
+            ),
+    }),
+    route('crews', {
+        get: (db) => db.crews.getAll(),
+    }),
+    route('crews/:id', {
+        get: (db, params) =>
+            db.crews.getById(
+                param(params, 0),
+            ),
+        put: (db, params, body) =>
+            db.crews.put(
+                param(params, 0),
+                validateCrewEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.crews.delete(
+                param(params, 0),
+            ),
+    }),
+    route('crew-role-memberships', {
+        get: (db) =>
+            db.crewRoleMemberships.getAll(),
+    }),
+    route('crew-role-memberships/:id', {
+        put: (db, params, body) =>
+            db.crewRoleMemberships.put(
+                param(params, 0),
+                validateCrewRoleMembershipEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.crewRoleMemberships.delete(
+                param(params, 0),
+            ),
     }),
     route('flows', {
         get: (db) =>

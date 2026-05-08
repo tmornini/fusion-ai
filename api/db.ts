@@ -10,6 +10,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -128,6 +132,18 @@ export interface DbAdapter {
         EntityStore<
             ActivityActorEntity
         >;
+    roles:
+        EntityStore<RoleEntity>;
+    roleMemberships:
+        EntityStore<
+            RoleMembershipEntity
+        >;
+    crews:
+        EntityStore<CrewEntity>;
+    crewRoleMemberships:
+        EntityStore<
+            CrewRoleMembershipEntity
+        >;
     deleted: DeletedStore;
 }
 
@@ -147,5 +163,9 @@ export const TABLE_NAMES = [
     'organization',
     'idea_submissions',
     'activity_actors',
+    'roles',
+    'role_memberships',
+    'crews',
+    'crew_role_memberships',
     'deleted',
 ];

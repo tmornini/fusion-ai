@@ -10,6 +10,10 @@ import type {
     ActivityActorEntity,
     FlowEntity,
     ProjectFlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -75,7 +79,7 @@ export async function populateMockData(
             first_name: 'Sarah',
             last_name: 'Chen',
             email: 'sarah.chen@company.com',
-            role: 'Project Lead',
+            title: 'Project Lead',
             department: 'Operations',
             status: 'active',
             strengths: [
@@ -100,7 +104,7 @@ export async function populateMockData(
             first_name: 'Mike',
             last_name: 'Thompson',
             email: 'mike.thompson@company.com',
-            role: 'ML Engineer',
+            title: 'ML Engineer',
             department: 'Engineering',
             status: 'active',
             strengths: [
@@ -125,7 +129,7 @@ export async function populateMockData(
             first_name: 'Jessica',
             last_name: 'Park',
             email: 'jessica.park@company.com',
-            role: 'Data Scientist',
+            title: 'Data Scientist',
             department: 'Analytics',
             status: 'active',
             strengths: [
@@ -150,7 +154,7 @@ export async function populateMockData(
             first_name: 'David',
             last_name: 'Martinez',
             email: 'david.martinez@company.com',
-            role: 'Backend Developer',
+            title: 'Backend Developer',
             department: 'Engineering',
             status: 'active',
             strengths: [
@@ -175,7 +179,7 @@ export async function populateMockData(
             first_name: 'Emily',
             last_name: 'Rodriguez',
             email: 'emily.rodriguez@company.com',
-            role: 'UX Designer',
+            title: 'UX Designer',
             department: 'Design',
             status: 'pending',
             strengths: [
@@ -200,7 +204,7 @@ export async function populateMockData(
             first_name: 'Alex',
             last_name: 'Kim',
             email: 'alex.kim@company.com',
-            role: 'Product Manager',
+            title: 'Product Manager',
             department: 'Product',
             status: 'active',
             strengths: [
@@ -225,7 +229,7 @@ export async function populateMockData(
             first_name: 'Marcus',
             last_name: 'Johnson',
             email: 'marcus@acmecorp.com',
-            role: 'manager',
+            title: 'manager',
             department: 'Product',
             status: 'active',
             strengths: [
@@ -249,7 +253,7 @@ export async function populateMockData(
             first_name: 'David',
             last_name: 'Kim',
             email: 'david.kim@company.com',
-            role: 'member',
+            title: 'member',
             department: 'Engineering',
             status: 'active',
             strengths: [
@@ -274,7 +278,7 @@ export async function populateMockData(
             first_name: 'Lisa',
             last_name: 'Wang',
             email: 'lisa@acmecorp.com',
-            role: 'viewer',
+            title: 'viewer',
             department: 'Sales',
             status: 'active',
             strengths: [
@@ -298,7 +302,7 @@ export async function populateMockData(
             first_name: 'James',
             last_name: 'Miller',
             email: 'james@acmecorp.com',
-            role: 'member',
+            title: 'member',
             department: 'Engineering',
             status: 'deactivated',
             strengths: [
@@ -322,7 +326,7 @@ export async function populateMockData(
             first_name: 'Tony',
             last_name: 'Stark',
             email: 'demo@example.com',
-            role: 'Admin',
+            title: 'Admin',
             department: 'Product',
             status: 'active',
             strengths: [
@@ -2478,6 +2482,88 @@ export async function populateMockData(
         },
     ];
 
+    const roles: RoleEntity[] = [
+        {
+            id: 'role_engineering',
+            name: 'Engineering',
+            description:
+                'Builds and maintains'
+                + ' the platform.',
+            created_at: dt(0, 9, 0),
+        },
+        {
+            id: 'role_qa',
+            name: 'QA',
+            description:
+                'Verifies that what ships'
+                + ' matches what was promised.',
+            created_at: dt(0, 9, 0),
+        },
+        {
+            id: 'role_product',
+            name: 'Product',
+            description:
+                'Decides what is worth'
+                + ' building, and why.',
+            created_at: dt(0, 9, 0),
+        },
+    ];
+
+    const roleMemberships:
+        RoleMembershipEntity[] = [
+        {
+            id: 'rm_eng_david',
+            role_id: 'role_engineering',
+            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            created_at: dt(0, 9, 5),
+        },
+        {
+            id: 'rm_eng_james',
+            role_id: 'role_engineering',
+            person_id: 'oU0bIe0eUC33mTbZrxdogC',
+            created_at: dt(0, 9, 5),
+        },
+        {
+            id: 'rm_qa_lisa',
+            role_id: 'role_qa',
+            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            created_at: dt(0, 9, 6),
+        },
+        {
+            id: 'rm_product_marcus',
+            role_id: 'role_product',
+            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            created_at: dt(0, 9, 7),
+        },
+    ];
+
+    const crews: CrewEntity[] = [
+        {
+            id: 'crew_delivery',
+            name: 'Delivery Squad',
+            description:
+                'Engineering and QA working'
+                + ' together on shipments.',
+            created_at: dt(0, 10, 0),
+        },
+    ];
+
+    const crewRoleMemberships:
+        CrewRoleMembershipEntity[] = [
+        {
+            id: 'crm_delivery_eng',
+            crew_id: 'crew_delivery',
+            role_id: 'role_engineering',
+            created_at: dt(0, 10, 5),
+        },
+        {
+            id: 'crm_delivery_qa',
+            crew_id: 'crew_delivery',
+            role_id: 'role_qa',
+            created_at: dt(0, 10, 5),
+        },
+    ];
+
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
@@ -2512,6 +2598,22 @@ export async function populateMockData(
             adapter.transitionFieldValues
                 .put(r.id, r),
         ),
+        ...roles.map(r =>
+            adapter.roles.put(r.id, r),
+        ),
+        ...roleMemberships.map(r =>
+            adapter.roleMemberships.put(
+                r.id, r,
+            ),
+        ),
+        ...crews.map(c =>
+            adapter.crews.put(c.id, c),
+        ),
+        ...crewRoleMemberships.map(r =>
+            adapter.crewRoleMemberships.put(
+                r.id, r,
+            ),
+        ),
     ]);
 }
 
@@ -2523,7 +2625,7 @@ export async function populateBootstrapData(
             first_name: 'Tony',
             last_name: 'Stark',
             email: 'demo@example.com',
-            role: 'Admin',
+            title: 'Admin',
             department: 'Product',
             status: 'active' as PersonStatus,
             strengths: jsonArrayField([

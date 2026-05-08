@@ -11,8 +11,16 @@ import type {
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
 } from '../../../api/types.ts';
-import { Person } from '../../../api/types.ts';
+import {
+    Person,
+    Role,
+    Crew,
+} from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -73,6 +81,12 @@ export interface FetchContext {
     getProjectRows(
     ): Promise<ProjectEntity[]>;
     getFlowRows(): Promise<FlowEntity[]>;
+    getRoleMap(): Promise<Map<Id, Role>>;
+    getRoleMembershipRows(
+    ): Promise<RoleMembershipEntity[]>;
+    getCrewMap(): Promise<Map<Id, Crew>>;
+    getCrewRoleMembershipRows(
+    ): Promise<CrewRoleMembershipEntity[]>;
     commit(tx: Transaction): Promise<void>;
 }
 
@@ -95,6 +109,16 @@ export function createFetchContext(
         Promise<ProjectEntity[]> | null = null;
     let flowRowsPromise:
         Promise<FlowEntity[]> | null = null;
+    let roleMapPromise:
+        Promise<Map<Id, Role>> | null = null;
+    let roleMembershipRowsPromise:
+        Promise<RoleMembershipEntity[]>
+        | null = null;
+    let crewMapPromise:
+        Promise<Map<Id, Crew>> | null = null;
+    let crewRoleMembershipRowsPromise:
+        Promise<CrewRoleMembershipEntity[]>
+        | null = null;
     const ctx: FetchContext = {
         requestId: generateCryptoSafeBase62(),
         GET: <T>(resource: string) =>
@@ -170,6 +194,64 @@ export function createFetchContext(
                     );
             }
             return flowRowsPromise;
+        },
+        getRoleMap: () => {
+            if (!roleMapPromise) {
+                roleMapPromise = (async () => {
+                    const rows = await ctx
+                        .GET<RoleEntity[]>(
+                            'roles',
+                        );
+                    return new Map(
+                        rows.map(
+                            entity => [
+                                entity.id,
+                                new Role(entity),
+                            ],
+                        ),
+                    );
+                })();
+            }
+            return roleMapPromise;
+        },
+        getRoleMembershipRows: () => {
+            if (!roleMembershipRowsPromise) {
+                roleMembershipRowsPromise =
+                    ctx.GET<
+                        RoleMembershipEntity[]
+                    >('role-memberships');
+            }
+            return roleMembershipRowsPromise;
+        },
+        getCrewMap: () => {
+            if (!crewMapPromise) {
+                crewMapPromise = (async () => {
+                    const rows = await ctx
+                        .GET<CrewEntity[]>(
+                            'crews',
+                        );
+                    return new Map(
+                        rows.map(
+                            entity => [
+                                entity.id,
+                                new Crew(entity),
+                            ],
+                        ),
+                    );
+                })();
+            }
+            return crewMapPromise;
+        },
+        getCrewRoleMembershipRows: () => {
+            if (
+                !crewRoleMembershipRowsPromise
+            ) {
+                crewRoleMembershipRowsPromise =
+                    ctx.GET<
+                        CrewRoleMembershipEntity[]
+                    >('crew-role-memberships');
+            }
+            return crewRoleMembershipRowsPromise;
         },
         commit: async (
             tx: Transaction,

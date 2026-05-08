@@ -338,7 +338,7 @@ export interface PersonEntity {
     first_name: string;
     last_name: string;
     email: string;
-    role: string;
+    title: string;
     department: string;
     status: PersonStatus;
     strengths: JsonArrayField;
@@ -352,7 +352,7 @@ export class Person {
     readonly #firstName: string;
     readonly #lastName: string;
     readonly #email: string;
-    readonly #role: string;
+    readonly #title: string;
     readonly #department: string;
     readonly #status: PersonStatus;
     readonly #strengths: string;
@@ -367,7 +367,7 @@ export class Person {
         this.#lastName =
             entity.last_name;
         this.#email = entity.email;
-        this.#role = entity.role;
+        this.#title = entity.title;
         this.#department =
             entity.department;
         this.#status = entity.status;
@@ -398,8 +398,8 @@ export class Person {
         ).trim();
     }
 
-    roleLabel(): string {
-        return this.#role;
+    titleLabel(): string {
+        return this.#title;
     }
 
     departmentLabel(): string {
@@ -484,7 +484,7 @@ export class Person {
             || this.#email
                 .toLowerCase()
                 .includes(t)
-            || this.#role
+            || this.#title
                 .toLowerCase()
                 .includes(t)
             || this.#department
@@ -572,9 +572,9 @@ export function isCrewModel(
     ).includes(v);
 }
 
-export type Crew =
+export type NodeAssignment =
     | { kind: 'unassigned' }
-    | { kind: 'person'; personId: Id }
+    | { kind: 'role'; roleId: Id }
     | { kind: 'model'; model: CrewModel };
 
 export interface GraphNode {
@@ -585,7 +585,7 @@ export interface GraphNode {
     positionY: number;
     isStart: boolean;
     isComplete: boolean;
-    crew: Crew;
+    crew: NodeAssignment;
     fields: GraphField[];
 }
 
@@ -617,7 +617,7 @@ export const DEFAULT_NEW_STATE_NAME =
     'New State';
 export const DEFAULT_TRANSITION_NAME =
     'Transition';
-export const DEFAULT_CREW: Crew =
+export const DEFAULT_NODE_ASSIGNMENT: NodeAssignment =
     { kind: 'unassigned' };
 
 export interface FlowEntity {
@@ -738,6 +738,34 @@ export interface ProjectFlowEntity {
     id: Id;
     project_id: Id;
     flow_id: Id;
+    created_at: string;
+}
+
+export interface RoleEntity {
+    id: Id;
+    name: string;
+    description: string;
+    created_at: string;
+}
+
+export interface RoleMembershipEntity {
+    id: Id;
+    role_id: Id;
+    person_id: Id;
+    created_at: string;
+}
+
+export interface CrewEntity {
+    id: Id;
+    name: string;
+    description: string;
+    created_at: string;
+}
+
+export interface CrewRoleMembershipEntity {
+    id: Id;
+    crew_id: Id;
+    role_id: Id;
     created_at: string;
 }
 
@@ -1203,6 +1231,68 @@ export class Project {
         return this.#title
             .toLowerCase()
             .includes(t);
+    }
+}
+
+export class Role {
+    readonly #id: Id;
+    readonly #name: string;
+    readonly #description: string;
+    readonly #createdAt: string;
+
+    constructor(entity: RoleEntity) {
+        this.#id = entity.id;
+        this.#name = entity.name;
+        this.#description =
+            entity.description;
+        this.#createdAt = entity.created_at;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    nameText(): string {
+        return this.#name;
+    }
+
+    descriptionText(): string {
+        return this.#description;
+    }
+
+    createdAtValue(): string {
+        return this.#createdAt;
+    }
+}
+
+export class Crew {
+    readonly #id: Id;
+    readonly #name: string;
+    readonly #description: string;
+    readonly #createdAt: string;
+
+    constructor(entity: CrewEntity) {
+        this.#id = entity.id;
+        this.#name = entity.name;
+        this.#description =
+            entity.description;
+        this.#createdAt = entity.created_at;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    nameText(): string {
+        return this.#name;
+    }
+
+    descriptionText(): string {
+        return this.#description;
+    }
+
+    createdAtValue(): string {
+        return this.#createdAt;
     }
 }
 

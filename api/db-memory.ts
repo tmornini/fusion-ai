@@ -20,6 +20,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -165,6 +169,14 @@ interface Tables {
     projectFlows: Map<
         string, ProjectFlowEntity
     >;
+    roles: Map<string, RoleEntity>;
+    roleMemberships: Map<
+        string, RoleMembershipEntity
+    >;
+    crews: Map<string, CrewEntity>;
+    crewRoleMemberships: Map<
+        string, CrewRoleMembershipEntity
+    >;
     workOrders: Map<string, WorkOrderEntity>;
     flowWorkOrders: Map<
         string, FlowWorkOrderEntity
@@ -220,6 +232,14 @@ export class MemoryDbAdapter
         EntityStore<IdeaSubmissionEntity>;
     readonly activityActors:
         EntityStore<ActivityActorEntity>;
+    readonly roles:
+        EntityStore<RoleEntity>;
+    readonly roleMemberships:
+        EntityStore<RoleMembershipEntity>;
+    readonly crews:
+        EntityStore<CrewEntity>;
+    readonly crewRoleMemberships:
+        EntityStore<CrewRoleMembershipEntity>;
     readonly deleted: DeletedStore;
 
     constructor() {
@@ -301,6 +321,24 @@ export class MemoryDbAdapter
             new MemEntityStore(
                 'activity_actors',
                 t.activityActors, ds,
+            );
+        this.roles =
+            new MemEntityStore(
+                'roles', t.roles, ds,
+            );
+        this.roleMemberships =
+            new MemEntityStore(
+                'role_memberships',
+                t.roleMemberships, ds,
+            );
+        this.crews =
+            new MemEntityStore(
+                'crews', t.crews, ds,
+            );
+        this.crewRoleMemberships =
+            new MemEntityStore(
+                'crew_role_memberships',
+                t.crewRoleMemberships, ds,
             );
     }
 
@@ -385,6 +423,10 @@ function buildTables(): Tables {
         ideaSubmissions: new Map(),
         activityActors: new Map(),
         projectFlows: new Map(),
+        roles: new Map(),
+        roleMemberships: new Map(),
+        crews: new Map(),
+        crewRoleMemberships: new Map(),
         workOrders: new Map(),
         flowWorkOrders: new Map(),
         workOrderTransitions: new Map(),

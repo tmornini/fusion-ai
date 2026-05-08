@@ -20,7 +20,10 @@ import type {
     GraphEdge,
     Id,
 } from '../adapters/index.ts';
-import { Person } from '../adapters/index.ts';
+import {
+    Person,
+    Role,
+} from '../adapters/index.ts';
 import {
     CREW_MODELS,
     START_NODE_DEFAULT_NAME,
@@ -161,6 +164,7 @@ export function buildNodePanel(
     outgoing: GraphEdge[],
     isLocked: boolean,
     personMap: Map<Id, Person>,
+    roleMap: Map<Id, Role>,
 ): SafeHtml {
     const isSpecial =
         node.isStart || node.isComplete;
@@ -207,10 +211,17 @@ class="text-sm text-muted"
             b.fullName(),
         ),
     );
+    const sortedRoles = Array.from(
+        roleMap.values(),
+    ).sort((a, b) =>
+        a.nameText().localeCompare(
+            b.nameText(),
+        ),
+    );
     const isUnassigned =
         node.crew.kind === 'unassigned';
-    const selPerson = node.crew.kind === 'person'
-        ? node.crew.personId : '';
+    const selRoleId = node.crew.kind === 'role'
+        ? node.crew.roleId : '';
     const selModel = node.crew.kind === 'model'
         ? node.crew.model : '';
     return html`<div
@@ -226,18 +237,30 @@ class="flow-props-panel">
 </div>
 <div class="mb-2">
 <label class="text-xs text-muted"
-    >Crew</label>
+    >Assignment</label>
 <select class="input input-sm"
-    id="prop-node-crew"${lockAttr}>
+    id="prop-node-assignment"${lockAttr}>
 <option value="unassigned"${
     trusted(isUnassigned ? ' selected' : '')
     }>Unassigned</option>
-<optgroup label="People">
-${sortedPeople.map(p => html`<option
-    value="person:${p.idForLink()}"${
-    trusted(selPerson === p.idForLink()
+<optgroup label="Roles">
+${sortedRoles.map(r => html`<option
+    value="role:${r.idForLink()}"${
+    trusted(selRoleId === r.idForLink()
         ? ' selected' : '')
-    }>${p.fullName()}</option>`)}
+    }>${r.nameText()}</option>`)}
+</optgroup>
+<optgroup label="People (private)">
+${sortedPeople.map(p => {
+    const privateRoleId =
+        'user-private:' + p.idForLink();
+    return html`<option
+    value="role:${privateRoleId}"
+    data-role-private="user"${
+    trusted(selRoleId === privateRoleId
+        ? ' selected' : '')
+    }>${p.fullName()}</option>`;
+})}
 </optgroup>
 <optgroup label="Models">
 ${CREW_MODELS.map(m => html`<option

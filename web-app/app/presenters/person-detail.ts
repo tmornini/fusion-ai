@@ -13,12 +13,16 @@ import {
     iconBriefcase,
     iconStar,
     iconCheckCircle2,
+    iconShield,
+    iconTrash,
 } from '../icons.ts';
 import {
     Person,
+    Role,
     USER_STATUS_CONFIG,
     type PersonStatus,
     type PersonEntity,
+    type Member,
     isPersonStatus,
     jsonArrayField,
 } from '../adapters/index.ts';
@@ -53,7 +57,7 @@ export interface PersonDraftFields {
     lastName: string;
     email: string;
     phone: string;
-    role: string;
+    title: string;
     department: string;
     status: PersonStatus;
     bio: string;
@@ -65,7 +69,7 @@ export type PersonFieldKey =
     | 'lastName'
     | 'email'
     | 'phone'
-    | 'role'
+    | 'title'
     | 'department'
     | 'status'
     | 'bio';
@@ -73,7 +77,7 @@ export type PersonFieldKey =
 const FIELD_KEYS: ReadonlySet<PersonFieldKey> =
     new Set([
         'firstName', 'lastName', 'email',
-        'phone', 'role', 'department',
+        'phone', 'title', 'department',
         'status', 'bio',
     ]);
 
@@ -92,7 +96,7 @@ export function personDraftFromPerson(
         lastName: person.lastNameText(),
         email: person.emailAddress(),
         phone: person.phoneNumber(),
-        role: person.roleLabel(),
+        title: person.titleLabel(),
         department: person.departmentLabel(),
         status: person.statusValue(),
         bio: person.bioText(),
@@ -104,14 +108,14 @@ export function personPatchFromDraft(
     draft: PersonDraftFields,
 ): Pick<PersonEntity,
     | 'first_name' | 'last_name' | 'email'
-    | 'phone' | 'role' | 'department'
+    | 'phone' | 'title' | 'department'
     | 'status' | 'bio' | 'strengths'> {
     return {
         first_name: draft.firstName,
         last_name: draft.lastName,
         email: draft.email,
         phone: draft.phone,
-        role: draft.role,
+        title: draft.title,
         department: draft.department,
         status: draft.status,
         bio: draft.bio,
@@ -158,6 +162,9 @@ function buildShell(
         </div>
         <div class="${
             'stack-lg person-cards-slot'
+        }"></div>
+        <div class="${
+            'person-roles-slot mt-6'
         }"></div>
     </div>
 </div>`);
@@ -219,7 +226,7 @@ function buildReadonlyTitleSection(
             </span>
         </div>
         <p class="text-sm text-muted">
-            ${person.roleLabel()}
+            ${person.titleLabel()}
             •
             ${person.departmentLabel()}
         </p>`;
@@ -250,7 +257,7 @@ function buildEditableTitleSection(
             </span>
         </div>
         <p class="text-sm text-muted">
-            ${draft.role}
+            ${draft.title}
             • ${draft.department}
         </p>`;
 }
@@ -439,8 +446,8 @@ function buildReadonlyPersonalInfoBody(
             'grid grid-cols-2 gap-4 mb-4'
         }">
             ${buildReadonlyField(
-                'Role',
-                person.roleLabel(),
+                'Title',
+                person.titleLabel(),
                 iconBriefcase(16, ''),
             )}
             ${buildReadonlyField(
@@ -505,10 +512,10 @@ function buildEditablePersonalInfoBody(
             'grid grid-cols-2 gap-4 mb-4'
         }">
             ${buildEditableField(
-                'person-role',
-                'role',
-                'Role',
-                draft.role,
+                'person-title',
+                'title',
+                'Title',
+                draft.title,
                 'text',
                 iconBriefcase(16, ''),
             )}
@@ -619,6 +626,135 @@ function buildTeamDimensionsCard(
     return new WorkingStylesPresenter(
         person.parsedTeamDimensions(),
     ).buildCard();
+}
+
+export function buildPersonRolesSection(
+    members: readonly Member[],
+    userPrivateRole: Role | null,
+    availableRoles: readonly Role[],
+): SafeHtml {
+    return html`
+<section class="${
+    'person-roles-card card p-4'
+}">
+    <h2 class="${
+        'text-base font-semibold mb-3 flex'
+        + ' items-center gap-2'
+    }">
+        ${iconShield(16, '')}
+        Roles
+    </h2>
+    ${buildMembershipsList(
+        members, userPrivateRole,
+    )}
+    ${buildAddToRoleSelect(availableRoles)}
+</section>`;
+}
+
+function buildMembershipsList(
+    members: readonly Member[],
+    userPrivateRole: Role | null,
+): SafeHtml {
+    const hasAny = members.length > 0
+        || userPrivateRole !== null;
+    if (!hasAny) {
+        return html`<p class="${
+            'text-sm text-muted mb-3'
+        }">
+            Not a member of any role yet.
+        </p>`;
+    }
+    return html`<ul class="${
+        'stack-sm mb-3'
+    }">
+        ${members.map(buildMembershipRow)}
+        ${userPrivateRole === null
+            ? html``
+            : buildUserPrivateRow(
+                userPrivateRole,
+            )}
+    </ul>`;
+}
+
+function buildMembershipRow(
+    m: Member,
+): SafeHtml {
+    return html`<li class="${
+        'flex items-center'
+        + ' justify-between gap-2'
+        + ' role-membership-row'
+    }">
+        <span class="${
+            'inline-flex items-center'
+            + ' gap-2'
+        }">${m.role.nameText()}</span>
+        <button class="${
+            'btn btn-ghost btn-icon btn-xs'
+        }"
+            aria-label="${
+                'Remove from '
+                + m.role.nameText()
+            }"
+            data-role-action="remove"
+            data-membership-id="${
+                m.membershipId
+            }">
+            ${iconTrash(14, '')}
+        </button>
+    </li>`;
+}
+
+function buildUserPrivateRow(
+    role: Role,
+): SafeHtml {
+    return html`<li class="${
+        'flex items-center'
+        + ' justify-between gap-2'
+        + ' role-membership-row'
+    }"
+        data-role-private="user">
+        <span class="${
+            'inline-flex items-center'
+            + ' gap-2'
+        }">
+            ${role.nameText()}
+            <span class="${
+                'text-xs text-muted'
+            }">(your private role)</span>
+        </span>
+    </li>`;
+}
+
+function buildAddToRoleSelect(
+    availableRoles: readonly Role[],
+): SafeHtml {
+    if (availableRoles.length === 0) {
+        return html``;
+    }
+    return html`<div class="${
+        'flex items-center gap-2'
+    }">
+        <select id="person-add-role-select"
+            class="${
+                'input input-narrow flex-1'
+            }"
+            aria-label="${
+                'Add this person to a role'
+            }">
+            ${availableRoles.map(
+                r => html`<option
+                    value="${r.idForLink()}">
+                    ${r.nameText()}
+                </option>`,
+            )}
+        </select>
+        <button class="${
+            'btn btn-secondary btn-sm'
+        }"
+            data-role-action="add">
+            Add
+        </button>
+    </div>`;
 }
 
 export class PersonDetailPresenter {

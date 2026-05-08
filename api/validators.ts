@@ -4,7 +4,7 @@ import {
     assertProjectStatus,
     assertReadinessLevel,
     isCrewModel,
-    DEFAULT_CREW,
+    DEFAULT_NODE_ASSIGNMENT,
 } from './types.ts';
 import type {
     GraphNode,
@@ -13,7 +13,7 @@ import type {
     StoredGraph,
     WorkOrderFlowGraph,
     FlowFieldType,
-    Crew,
+    NodeAssignment,
     PersonStatus,
     IdeaStatus,
     ProjectStatus,
@@ -35,6 +35,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
 } from './types.ts';
 
 export interface Risk {
@@ -280,10 +284,17 @@ function asGraphField(
     };
 }
 
-export function asCrew(
+// User-private role ids share their own
+// prefix with the roles adapter; duplicating
+// the constant here keeps the api layer
+// independent of web-app/app code.
+const USER_PRIVATE_ROLE_PREFIX_FOR_VALIDATOR =
+    'user-private:';
+
+export function asNodeAssignment(
     value: unknown,
     label: string,
-): Crew {
+): NodeAssignment {
     const obj = asObject(value, label);
     const kind = asString(
         obj['kind'], label + '.kind',
@@ -291,13 +302,31 @@ export function asCrew(
     if (kind === 'unassigned') {
         return { kind: 'unassigned' };
     }
-    if (kind === 'person') {
+    if (kind === 'role') {
         return {
-            kind: 'person',
-            personId: asString(
-                obj['personId'],
-                label + '.personId',
+            kind: 'role',
+            roleId: asString(
+                obj['roleId'],
+                label + '.roleId',
             ),
+        };
+    }
+    // Legacy translator: pre-Phase-E flow_graph
+    // blobs carry kind:'person'. Translate on
+    // read to kind:'role' with the person's
+    // user-private synthetic id. Lazy migration;
+    // eager migration in database-init.ts
+    // converges stored data within one release.
+    if (kind === 'person') {
+        const personId = asString(
+            obj['personId'],
+            label + '.personId',
+        );
+        return {
+            kind: 'role',
+            roleId:
+                USER_PRIVATE_ROLE_PREFIX_FOR_VALIDATOR
+                + personId,
         };
     }
     if (kind === 'model') {
@@ -314,8 +343,8 @@ export function asCrew(
         return { kind: 'model', model };
     }
     throw new Error(
-        'expected crew.kind in {unassigned,'
-            + ' person, model} for ' + label
+        'expected assignment.kind in {unassigned,'
+            + ' role, model} for ' + label
             + ', got ' + kind,
     );
 }
@@ -329,11 +358,11 @@ function asGraphNode(
         obj['fields'],
         label + '.fields',
     );
-    const crew: Crew = 'crew' in obj
-        ? asCrew(
+    const crew: NodeAssignment = 'crew' in obj
+        ? asNodeAssignment(
             obj['crew'], label + '.crew',
         )
-        : DEFAULT_CREW;
+        : DEFAULT_NODE_ASSIGNMENT;
     return {
         id: asString(
             obj['id'], label + '.id',
@@ -602,7 +631,7 @@ export function assertOnlyKeys(
 
 const PERSON_BODY_KEYS: readonly string[] = [
     'first_name', 'last_name', 'email',
-    'role', 'department', 'status',
+    'title', 'department', 'status',
     'strengths', 'team_dimensions',
     'phone', 'bio',
 ];
@@ -623,8 +652,8 @@ export function validatePersonEntity(
         email: asString(
             body['email'], 'email',
         ),
-        role: asString(
-            body['role'], 'role',
+        title: asString(
+            body['title'], 'title',
         ),
         department: asString(
             body['department'], 'department',
@@ -1240,6 +1269,104 @@ export function validateProjectFlowEntity(
         ),
         flow_id: asString(
             body['flow_id'], 'flow_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const ROLE_BODY_KEYS: readonly string[] = [
+    'name', 'description', 'created_at',
+];
+
+export function validateRoleEntity(
+    body: Record<string, unknown>,
+): Omit<RoleEntity, 'id'> {
+    assertOnlyKeys(
+        body, ROLE_BODY_KEYS, 'RoleEntity',
+    );
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        description: asString(
+            body['description'], 'description',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const ROLE_MEMBERSHIP_BODY_KEYS:
+    readonly string[] = [
+    'role_id', 'person_id', 'created_at',
+];
+
+export function validateRoleMembershipEntity(
+    body: Record<string, unknown>,
+): Omit<RoleMembershipEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        ROLE_MEMBERSHIP_BODY_KEYS,
+        'RoleMembershipEntity',
+    );
+    return {
+        role_id: asString(
+            body['role_id'], 'role_id',
+        ),
+        person_id: asString(
+            body['person_id'], 'person_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const CREW_BODY_KEYS: readonly string[] = [
+    'name', 'description', 'created_at',
+];
+
+export function validateCrewEntity(
+    body: Record<string, unknown>,
+): Omit<CrewEntity, 'id'> {
+    assertOnlyKeys(
+        body, CREW_BODY_KEYS, 'CrewEntity',
+    );
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        description: asString(
+            body['description'], 'description',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const CREW_ROLE_MEMBERSHIP_BODY_KEYS:
+    readonly string[] = [
+    'crew_id', 'role_id', 'created_at',
+];
+
+export function validateCrewRoleMembershipEntity(
+    body: Record<string, unknown>,
+): Omit<CrewRoleMembershipEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        CREW_ROLE_MEMBERSHIP_BODY_KEYS,
+        'CrewRoleMembershipEntity',
+    );
+    return {
+        crew_id: asString(
+            body['crew_id'], 'crew_id',
+        ),
+        role_id: asString(
+            body['role_id'], 'role_id',
         ),
         created_at: asString(
             body['created_at'], 'created_at',

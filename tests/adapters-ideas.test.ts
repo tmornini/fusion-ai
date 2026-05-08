@@ -24,7 +24,7 @@ function buildPerson(id: string, name: string) {
         email: `${name}@example.com`
             .toLowerCase(),
         phone: '',
-        role: 'product_manager' as const,
+        title: 'product_manager' as const,
         status: 'active' as const,
         strengths: '[]' as const,
         team_dimensions: '{}' as const,

@@ -29,13 +29,7 @@ export function notifyPersonChange(): void {
     personChanges.notify();
 }
 
-const TOP_MEMBERS_COUNT = 6;
-
-export type PersonRole =
-    | 'admin'
-    | 'manager'
-    | 'member'
-    | 'viewer';
+const TOP_PEOPLE_COUNT = 6;
 
 export type PersonAccountStatus =
     | 'active'
@@ -60,7 +54,7 @@ export function featuredPeople(
 ): Person[] {
     return people
         .filter(person => person.hasDepartment())
-        .slice(0, TOP_MEMBERS_COUNT);
+        .slice(0, TOP_PEOPLE_COUNT);
 }
 
 export async function getPerson(

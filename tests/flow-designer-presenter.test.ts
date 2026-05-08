@@ -325,7 +325,7 @@ test(
     },
 );
 
-// Successful-mutation coverage of withNodeCrew
+// Successful-mutation coverage of withNodeAssignment
 // lives in flow-designer-actions.test.ts as a
 // direct applyUpdateNode test. The presenter
 // wrapping triggers #saveFlow which calls
@@ -334,14 +334,14 @@ test(
 // node:test. Same reason no other withNode*
 // mutation test exists in this file.
 //
-// Locked-state coverage of withNodeCrew is
+// Locked-state coverage of withNodeAssignment is
 // manual (TEST-PLAN F51). The presenter's
 // #guardLocked() invokes showToast(), which
 // depends on document — no DOM under
 // node:test.
 
 test(
-    'withNodeCrew is a no-op when no node'
+    'withNodeAssignment is a no-op when no node'
     + ' is selected',
     () => {
         const graph = {
@@ -356,7 +356,7 @@ test(
                 snap, 800, 600,
                 buildFlowHistorySnapshot(false),
             );
-        const next = presenter.withNodeCrew({
+        const next = presenter.withNodeAssignment({
             kind: 'model', model: 'Copilot',
         });
         const n = next.nodes.find(

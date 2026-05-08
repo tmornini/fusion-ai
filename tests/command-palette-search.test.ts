@@ -65,7 +65,7 @@ function buildProject(
 function buildPerson(
     id: string,
     first: string, last: string,
-    role = 'engineer',
+    title = 'engineer',
     department = 'Eng',
 ): Person {
     return new Person({
@@ -74,7 +74,7 @@ function buildPerson(
         last_name: last,
         email: first.toLowerCase()
             + '@example.com',
-        role,
+        title,
         department,
         status: 'active',
         strengths: jsonArrayField([]),
@@ -268,7 +268,7 @@ test(
         assert.equal(out.category, 'people');
         assert.ok(
             out.keywords.includes('pm'),
-            'role in keywords',
+            'title in keywords',
         );
         assert.ok(
             out.keywords.includes('Product'),

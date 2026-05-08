@@ -46,7 +46,7 @@ export {
     ManagedPeoplePresenter,
     buildInitialManagedPeopleState,
     applyManagedPeopleSearch,
-    applyManagedPeopleRole,
+    applyManagedPeopleTitle,
     applyManagedPeopleStatus,
     type ManagedPeopleState,
 } from './person.ts';
@@ -70,6 +70,7 @@ export {
 export {
     PersonDetailPresenter,
     PersonDetailEditPresenter,
+    buildPersonRolesSection,
     personDraftFromPerson,
     personPatchFromDraft,
     isPersonFieldKey,

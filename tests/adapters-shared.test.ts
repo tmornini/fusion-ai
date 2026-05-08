@@ -20,7 +20,7 @@ function buildPersonRow(
         last_name: last,
         email: `${first}@example.com`.toLowerCase(),
         phone: '',
-        role: 'product_manager',
+        title: 'product_manager',
         status: 'active' as const,
         strengths: '[]' as const,
         team_dimensions: '{}' as const,

@@ -426,6 +426,34 @@ export function computeEdgeLabelWidth(
     );
 }
 
+// User-private role ids share their own
+// prefix; mirrored here so flow-graph.ts is
+// not coupled to the roles adapter.
+const USER_PRIVATE_ROLE_PREFIX_FOR_GRAPH =
+    'user-private:';
+
+export function shouldShowHazard(
+    node: GraphNode,
+    roleMemberCounts:
+        ReadonlyMap<string, number>,
+): boolean {
+    const a = node.crew;
+    if (a.kind === 'unassigned') return true;
+    if (a.kind === 'role') {
+        // User-private roles always have
+        // cardinality 1 by construction.
+        if (a.roleId.startsWith(
+            USER_PRIVATE_ROLE_PREFIX_FOR_GRAPH,
+        )) {
+            return false;
+        }
+        const count = roleMemberCounts
+            .get(a.roleId) ?? 0;
+        return count === 0;
+    }
+    return false;
+}
+
 function buildNode(
     node: GraphNode,
     isSelected: boolean,
@@ -433,6 +461,8 @@ function buildNode(
     portPos: {
         x: number; y: number;
     } | null,
+    roleMemberCounts:
+        ReadonlyMap<string, number>,
 ): SafeHtml {
     const { positionX, positionY } = node;
     const halfH = NODE_HEIGHT / 2;
@@ -530,13 +560,15 @@ function buildNode(
 
     if (
         !isSpecial
-        && node.crew.kind === 'unassigned'
+        && shouldShowHazard(
+            node, roleMemberCounts,
+        )
     ) {
         inner += '<g'
             + ' class="flow-node-hazard"'
             + ' transform="translate(6, 42)">'
             + '<title>'
-            + 'No crew assigned to this node.'
+            + 'No assignment for this node.'
             + '</title>'
             + iconAlertTriangle(16, '')
                 .toString()
@@ -976,6 +1008,8 @@ export function buildGraphSvg(
         string,
         readonly { x: number; y: number }[]
     >,
+    roleMemberCounts:
+        ReadonlyMap<string, number> = new Map(),
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -1087,6 +1121,7 @@ export function buildGraphSvg(
             buildNode(
                 node, isSelected,
                 isLocked, portPos,
+                roleMemberCounts,
             ).toString();
     }
 

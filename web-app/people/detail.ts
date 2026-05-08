@@ -1,12 +1,16 @@
-import { $, isFormField } from '../app/dom.ts';
+import {
+    $, $select, isFormField,
+} from '../app/dom.ts';
 import {
     PersonDetailPresenter,
     PersonDetailEditPresenter,
+    buildPersonRolesSection,
     personDraftFromPerson,
     personPatchFromDraft,
     isPersonFieldKey,
     type PersonDraftFields,
 } from '../app/presenters/index.ts';
+import { setHtml } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
 import { log } from '../app/logger.ts';
 import {
@@ -23,6 +27,14 @@ import {
     getPersonRow,
     putPerson,
     subscribePersonChanges,
+    getRoles,
+    getMembersForPerson,
+    addMember,
+    removeMember,
+    subscribeRoleChanges,
+    subscribeMembershipChanges,
+    userPrivateRoleFor,
+    isUserPrivateRoleId,
     type Person,
     type PersonStatus,
 } from '../app/adapters/index.ts';
@@ -94,6 +106,8 @@ export async function init(
     buildPresenter().renderShell(container);
     bindStableListeners(container);
 
+    void renderRolesSection(personId);
+
     subscribePersonChanges(async () => {
         if (!pageContainer || !state) return;
         const fresh = await getPerson(
@@ -102,6 +116,50 @@ export async function init(
         state = { kind: 'reading', person: fresh };
         rerender();
     });
+
+    subscribeMembershipChanges(() => {
+        void renderRolesSection(personId);
+    });
+    subscribeRoleChanges(() => {
+        void renderRolesSection(personId);
+    });
+}
+
+async function renderRolesSection(
+    personId: string,
+): Promise<void> {
+    if (!pageContainer || !state) return;
+    const slot = pageContainer.querySelector(
+        '.person-roles-slot',
+    );
+    if (!(slot instanceof HTMLElement)) return;
+    const ctx = createFetchContext();
+    const [members, roles] = await Promise.all([
+        getMembersForPerson(ctx, personId),
+        getRoles(ctx),
+    ]);
+    const memberRoleIds = new Set(
+        members.map(m => m.role.idForLink()),
+    );
+    const availableRoles = roles.filter(
+        r => !isUserPrivateRoleId(
+            r.idForLink(),
+        ) && !memberRoleIds.has(
+            r.idForLink(),
+        ),
+    );
+    const userPrivateRole = state.person
+        .isDeactivated()
+        ? null
+        : userPrivateRoleFor(state.person);
+    setHtml(
+        slot,
+        buildPersonRolesSection(
+            members,
+            userPrivateRole,
+            availableRoles,
+        ),
+    );
 }
 
 function bindStableListeners(
@@ -134,6 +192,29 @@ function bindStableListeners(
 function onClick(e: MouseEvent): void {
     const target = e.target as Element | null;
     if (!target) return;
+
+    const roleActionEl = target.closest(
+        '[data-role-action]',
+    );
+    const roleAction = roleActionEl?.getAttribute(
+        'data-role-action',
+    );
+    if (roleAction === 'add') {
+        void handleAddToRole();
+        return;
+    }
+    if (roleAction === 'remove') {
+        const membershipId = roleActionEl
+            ?.getAttribute(
+                'data-membership-id',
+            );
+        if (membershipId) {
+            void handleRemoveFromRole(
+                membershipId,
+            );
+        }
+        return;
+    }
 
     const actionEl = target.closest(
         '[data-person-action]',
@@ -299,4 +380,51 @@ async function handleSave(): Promise<void> {
         return;
     }
     showToast('Person saved', 'success');
+}
+
+async function handleAddToRole(): Promise<void> {
+    if (!state) return;
+    const personId = state.person.idForLink();
+    const select = $select(
+        '#person-add-role-select', document,
+    );
+    if (!select) return;
+    const roleId = select.value;
+    if (!roleId) return;
+    try {
+        await addMember(
+            createFetchContext(),
+            roleId, personId,
+        );
+        showToast('Added to role', 'success');
+    } catch (err) {
+        log.error(
+            'addMember failed',
+            'people', err,
+        );
+        showToast(
+            'Failed to add to role', 'error',
+        );
+    }
+}
+
+async function handleRemoveFromRole(
+    membershipId: string,
+): Promise<void> {
+    try {
+        await removeMember(
+            createFetchContext(), membershipId,
+        );
+        showToast(
+            'Removed from role', 'success',
+        );
+    } catch (err) {
+        log.error(
+            'removeMember failed',
+            'people', err,
+        );
+        showToast(
+            'Failed to remove from role', 'error',
+        );
+    }
 }

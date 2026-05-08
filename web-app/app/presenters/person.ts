@@ -3,37 +3,13 @@ import {
 } from '../safe-html.ts';
 import { initials } from '../core.ts';
 import {
-    iconStar,
-    iconBriefcase,
     iconCheckCircle2,
     iconClock,
     iconPersonX,
-    iconShield,
 } from '../icons.ts';
 import {
     type Person,
 } from '../adapters/index.ts';
-
-const ROLE_LABELS: Record<
-    string,
-    { label: string; icon: (
-        size: number,
-        cssClass: string,
-    ) => SafeHtml }
-> = {
-    admin: {
-        label: 'Admin',
-        icon: iconShield,
-    },
-    manager: {
-        label: 'Manager',
-        icon: iconBriefcase,
-    },
-    member: {
-        label: 'Member',
-        icon: iconStar,
-    },
-};
 
 export class PersonPresenter {
     readonly #person: Person;
@@ -52,7 +28,7 @@ export class PersonPresenter {
         return this.#person.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#person.roleLabel()
+            || this.#person.titleLabel()
                 .toLowerCase()
                 .includes(query)
             || this.#person.departmentLabel()
@@ -71,11 +47,11 @@ export class PersonPresenter {
                 .includes(query);
     }
 
-    matchesRoleFilter(
-        role: string,
+    matchesTitleFilter(
+        title: string,
     ): boolean {
-        return role === 'all'
-            || this.#person.roleLabel() === role;
+        return title === 'all'
+            || this.#person.titleLabel() === title;
     }
 
     matchesStatusFilter(
@@ -136,7 +112,7 @@ export class PersonPresenter {
                 </div>
             </div>
             <div class="flex-1">
-                ${this.#buildRoleBadge()}
+                ${this.#buildTitleBadge()}
             </div>
             <div class="${
                 'flex-1'
@@ -182,22 +158,12 @@ export class PersonPresenter {
         </span>`;
     }
 
-    #buildRoleBadge(): SafeHtml {
-        const cfg =
-            ROLE_LABELS[this.#person.roleLabel()];
-        if (!cfg)
-            return html`<span
-                class="${
-                    'badge badge-secondary'
-                }">
-                ${this.#person.roleLabel()}
-            </span>`;
+    #buildTitleBadge(): SafeHtml {
         return html`<span
             class="${
                 'badge badge-secondary'
             }">
-            ${cfg.icon(12, '')}
-            ${cfg.label}
+            ${this.#person.titleLabel()}
         </span>`;
     }
 }
@@ -206,7 +172,7 @@ export type ManagedPeopleState = {
     people: Person[];
     currentPersonId: string;
     search: string;
-    role: string;
+    title: string;
     status: string;
 };
 
@@ -218,7 +184,7 @@ export function buildInitialManagedPeopleState(
         people,
         currentPersonId,
         search: '',
-        role: 'all',
+        title: 'all',
         status: 'all',
     };
 }
@@ -233,11 +199,11 @@ export function applyManagedPeopleSearch(
     };
 }
 
-export function applyManagedPeopleRole(
+export function applyManagedPeopleTitle(
     state: ManagedPeopleState,
-    role: string,
+    title: string,
 ): ManagedPeopleState {
-    return { ...state, role };
+    return { ...state, title };
 }
 
 export function applyManagedPeopleStatus(
@@ -251,7 +217,7 @@ export class ManagedPeoplePresenter {
     #presenters: PersonPresenter[];
     #currentPersonId: string;
     #search: string;
-    #role: string;
+    #title: string;
     #status: string;
 
     constructor(state: ManagedPeopleState) {
@@ -261,7 +227,7 @@ export class ManagedPeoplePresenter {
         this.#currentPersonId =
             state.currentPersonId;
         this.#search = state.search;
-        this.#role = state.role;
+        this.#title = state.title;
         this.#status = state.status;
     }
 
@@ -290,8 +256,8 @@ export class ManagedPeoplePresenter {
                     || p.matchesUserSearch(
                         this.#search,
                     ))
-                && p.matchesRoleFilter(
-                    this.#role,
+                && p.matchesTitleFilter(
+                    this.#title,
                 )
                 && p.matchesStatusFilter(
                     this.#status,

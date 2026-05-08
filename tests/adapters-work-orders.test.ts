@@ -70,7 +70,7 @@ function buildPerson(
         email: name.toLowerCase()
             + '@example.com',
         phone: '',
-        role: 'product_manager',
+        title: 'product_manager',
         status: 'active',
         strengths: '[]' as never,
         team_dimensions: '{}' as never,

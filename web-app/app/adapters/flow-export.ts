@@ -2,7 +2,7 @@ import {
     nowUtc,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
-    DEFAULT_CREW,
+    DEFAULT_NODE_ASSIGNMENT,
     projectIsNotDeleted,
 } from '../../../api/types.ts';
 import type {
@@ -891,7 +891,7 @@ export async function postFlowFromMermaid(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
-                    crew: DEFAULT_CREW,
+                    crew: DEFAULT_NODE_ASSIGNMENT,
                     fields: [],
                 };
             },
@@ -1312,7 +1312,7 @@ export async function postFlowFromZip(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
-                    crew: DEFAULT_CREW,
+                    crew: DEFAULT_NODE_ASSIGNMENT,
                     fields: sc
                         ? sidecarFieldsToGraph(
                             sc,

@@ -214,22 +214,22 @@ export function projectToSearchItem(
 }
 
 export function personToSearchItem(
-    member: Person,
+    person: Person,
 ): SearchItem {
     return {
-        id: 'person-' + member.idForLink(),
-        title: member.fullName(),
-        meta: member.roleLabel()
+        id: 'person-' + person.idForLink(),
+        title: person.fullName(),
+        meta: person.titleLabel()
             + ' · '
-            + member.departmentLabel(),
+            + person.departmentLabel(),
         category: 'people',
         icon: iconPerson(
             PALETTE_ICON_SIZE_SM, '',
         ),
         href: buildPageUrl('people'),
-        keywords: member.roleLabel()
-            + ' ' + member.departmentLabel()
-            + ' ' + member.emailAddress(),
+        keywords: person.titleLabel()
+            + ' ' + person.departmentLabel()
+            + ' ' + person.emailAddress(),
     };
 }
 

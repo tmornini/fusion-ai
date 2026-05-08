@@ -21,6 +21,10 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
+    RoleEntity,
+    RoleMembershipEntity,
+    CrewEntity,
+    CrewRoleMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -49,6 +53,10 @@ import {
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
+    validateRoleEntity,
+    validateRoleMembershipEntity,
+    validateCrewEntity,
+    validateCrewRoleMembershipEntity,
 } from './validators.ts';
 
 const KEY_PREFIX = 'fusion-ai:';
@@ -119,6 +127,20 @@ function validateSnapshotRow(
                 break;
             case 'activity_actors':
                 validateActivityActorEntity(body);
+                break;
+            case 'roles':
+                validateRoleEntity(body);
+                break;
+            case 'role_memberships':
+                validateRoleMembershipEntity(body);
+                break;
+            case 'crews':
+                validateCrewEntity(body);
+                break;
+            case 'crew_role_memberships':
+                validateCrewRoleMembershipEntity(
+                    body,
+                );
                 break;
             case 'deleted':
                 // Shape: {id, deleted_at}
@@ -847,6 +869,28 @@ export async function createLocalStorageAdapter(
             createEntityStore<
                 ActivityActorEntity
             >('activity_actors', deletedStore),
+        roles:
+            createEntityStore<
+                RoleEntity
+            >('roles', deletedStore),
+        roleMemberships:
+            createEntityStore<
+                RoleMembershipEntity
+            >(
+                'role_memberships',
+                deletedStore,
+            ),
+        crews:
+            createEntityStore<
+                CrewEntity
+            >('crews', deletedStore),
+        crewRoleMemberships:
+            createEntityStore<
+                CrewRoleMembershipEntity
+            >(
+                'crew_role_memberships',
+                deletedStore,
+            ),
         deleted: deletedStore,
     };
 

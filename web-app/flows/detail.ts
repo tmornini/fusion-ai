@@ -22,10 +22,13 @@ import {
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
+import type {
+    FetchContext,
+} from '../app/adapters/index.ts';
 import {
     isCrewModel,
 } from '../../api/types.ts';
-import type { Crew } from '../../api/types.ts';
+import type { NodeAssignment } from '../../api/types.ts';
 import {
     downloadBlob,
 } from '../app/adapters/blob-download.ts';
@@ -932,30 +935,45 @@ async function handleExportZip(
     );
 }
 
-function parseCrewSelectValue(
+async function buildRoleMemberCounts(
+    ctx: FetchContext,
+): Promise<Map<string, number>> {
+    const rows =
+        await ctx.getRoleMembershipRows();
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+        counts.set(
+            row.role_id,
+            (counts.get(row.role_id) ?? 0) + 1,
+        );
+    }
+    return counts;
+}
+
+function parseNodeAssignmentSelectValue(
     raw: string,
-): Crew {
+): NodeAssignment {
     if (raw === 'unassigned') {
         return { kind: 'unassigned' };
     }
-    if (raw.startsWith('person:')) {
+    if (raw.startsWith('role:')) {
         return {
-            kind: 'person',
-            personId: raw.slice(7),
+            kind: 'role',
+            roleId: raw.slice(5),
         };
     }
     if (raw.startsWith('model:')) {
         const model = raw.slice(6);
         if (!isCrewModel(model)) {
             throw new Error(
-                'invalid crew model: '
+                'invalid assignment model: '
                     + model,
             );
         }
         return { kind: 'model', model };
     }
     throw new Error(
-        'invalid crew value: ' + raw,
+        'invalid assignment value: ' + raw,
     );
 }
 
@@ -977,14 +995,14 @@ function bindPanelActions(
                     HTMLSelectElement)
             ) return;
             if (
-                target.id !== 'prop-node-crew'
+                target.id !== 'prop-node-assignment'
             ) return;
-            const crew = parseCrewSelectValue(
+            const assignment = parseNodeAssignmentSelectValue(
                 target.value,
             );
             commit(
                 pageState.presenter()
-                    .withNodeCrew(crew),
+                    .withNodeAssignment(assignment),
                 { advanceHistory: true },
             );
         },
@@ -1212,13 +1230,22 @@ export async function init(
         buildSkeleton('detail', 1),
         async () => {
             const ctx = createFetchContext();
-            const [graph, versions, personMap] =
-                await Promise.all([
-                    getFlowGraph(ctx, flowId),
-                    getFlowVersions(ctx, flowId),
-                    getPersonMap(ctx),
-                ]);
-            return { graph, versions, personMap };
+            const [
+                graph, versions,
+                personMap, roleMap,
+                roleMemberCounts,
+            ] = await Promise.all([
+                getFlowGraph(ctx, flowId),
+                getFlowVersions(ctx, flowId),
+                getPersonMap(ctx),
+                ctx.getRoleMap(),
+                buildRoleMemberCounts(ctx),
+            ]);
+            return {
+                graph, versions,
+                personMap, roleMap,
+                roleMemberCounts,
+            };
         },
     );
     if (!loaded) return;
@@ -1237,6 +1264,8 @@ export async function init(
             FALLBACK_W,
             FALLBACK_H,
             loaded.personMap,
+            loaded.roleMap,
+            loaded.roleMemberCounts,
         );
     const presenter =
         new FlowDesignerPresenter(

@@ -32,7 +32,7 @@ function buildPersonRow(args: {
         last_name: last,
         email:
             `${first}@example.com`.toLowerCase(),
-        role: 'product_manager',
+        title: 'product_manager',
         department: args.department ?? 'Product',
         status: args.status ?? 'active',
         strengths: jsonArrayField([]),

@@ -31,7 +31,7 @@ import {
     ManagedPeoplePresenter,
     buildInitialManagedPeopleState,
     applyManagedPeopleSearch,
-    applyManagedPeopleRole,
+    applyManagedPeopleTitle,
     applyManagedPeopleStatus,
     type ManagedPeopleState,
 } from '../app/presenters/index.ts';
@@ -187,24 +187,12 @@ function buildShellHtml(
                 </div>
                 <select class="${
                     'input input-narrow'
-                }" id="role-filter"
+                }" id="title-filter"
                     aria-label="${
-                        'Filter by role'
+                        'Filter by title'
                     }">
                     <option value="all">
-                        All Roles
-                    </option>
-                    <option value="admin">
-                        Admin
-                    </option>
-                    <option value="manager">
-                        Manager
-                    </option>
-                    <option value="member">
-                        Member
-                    </option>
-                    <option value="viewer">
-                        Viewer
+                        All Titles
                     </option>
                 </select>
                 <select class="${
@@ -331,22 +319,13 @@ function buildInviteDialog(
                     <div class="flex-1">
                         <label class="${
                             'label mb-1 block'
-                        }">Role</label>
-                        <select class="input"
-                            id="invite-role">
-                            <option value="${
-                                'member'
-                            }">Member</option>
-                            <option value="${
-                                'admin'
-                            }">Admin</option>
-                            <option value="${
-                                'manager'
-                            }">Manager</option>
-                            <option value="${
-                                'viewer'
-                            }">Viewer</option>
-                        </select>
+                        }">Title</label>
+                        <input class="input"
+                            type="text"
+                            placeholder="${
+                                'e.g. Engineer'
+                            }"
+                            id="invite-title" />
                     </div>
                     <div class="flex-1">
                         <label class="${
@@ -440,9 +419,9 @@ function initPersonListFilters(): void {
             'input', onSearchInput,
             { signal },
         );
-    $select('#role-filter', document)
+    $select('#title-filter', document)
         ?.addEventListener(
-            'change', onRoleChange,
+            'change', onTitleChange,
             { signal },
         );
     $select('#status-filter', document)
@@ -462,11 +441,11 @@ function onSearchInput(e: Event): void {
     rerenderPeople();
 }
 
-function onRoleChange(e: Event): void {
+function onTitleChange(e: Event): void {
     if (!peopleState || !personListEl) return;
     const target =
         e.target as HTMLSelectElement;
-    peopleState = applyManagedPeopleRole(
+    peopleState = applyManagedPeopleTitle(
         peopleState, target.value,
     );
     rerenderPeople();
@@ -540,8 +519,8 @@ async function handleInvite(): Promise<void> {
         );
         return;
     }
-    const role = $select(
-        '#invite-role', document,
+    const title = $input(
+        '#invite-title', document,
     )!.value;
     const dept = $select(
         '#invite-department', document,
@@ -564,7 +543,7 @@ async function handleInvite(): Promise<void> {
                 first_name: first,
                 last_name: last,
                 email,
-                role,
+                title,
                 department: dept,
                 status: status as
                     'active'

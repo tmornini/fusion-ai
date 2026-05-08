@@ -10,6 +10,7 @@ import {
     putFlow,
     postFlowVersion,
     Person,
+    Role,
 } from '../adapters/index.ts';
 import type {
     Id,
@@ -21,7 +22,7 @@ import type {
     FlowVersion,
     FlowSaveShape,
 } from '../adapters/flows.ts';
-import type { Crew } from '../../../api/types.ts';
+import type { NodeAssignment } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../adapters/index.ts';
@@ -97,6 +98,8 @@ interface DesignerState {
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
     personMap: Map<Id, Person>;
+    roleMap: Map<Id, Role>;
+    roleMemberCounts: Map<Id, number>;
 }
 
 export type FlowSnapshot = Readonly<DesignerState>;
@@ -111,6 +114,9 @@ export function buildInitialFlowSnapshot(
     canvasW: number,
     canvasH: number,
     personMap: Map<Id, Person>,
+    roleMap: Map<Id, Role> = new Map(),
+    roleMemberCounts: Map<Id, number>
+        = new Map(),
 ): FlowSnapshot {
     const interaction = buildInteractionState(
         canvasW, canvasH,
@@ -132,6 +138,8 @@ export function buildInitialFlowSnapshot(
         interaction,
         savedViewBox: { kind: 'none' },
         personMap,
+        roleMap,
+        roleMemberCounts,
     };
 }
 
@@ -782,7 +790,9 @@ Auto Fit</label>
         return next;
     }
 
-    withNodeCrew(crew: Crew): FlowSnapshot {
+    withNodeAssignment(
+        assignment: NodeAssignment,
+    ): FlowSnapshot {
         if (this.#guardLocked()) {
             return this.#snapshot;
         }
@@ -794,7 +804,7 @@ Auto Fit</label>
             nodes: applyUpdateNode(
                 this.#snapshot.nodes,
                 nodeId,
-                { crew },
+                { crew: assignment },
             ),
         };
         void this.#saveFlow(true, next);
@@ -1083,6 +1093,7 @@ Auto Fit</label>
                 node, outgoing,
                 this.#snapshot.isLocked,
                 this.#snapshot.personMap,
+                this.#snapshot.roleMap,
             );
         }
 
@@ -1330,6 +1341,7 @@ Auto Fit</label>
             isConn,
             marqueeRect,
             this.#snapshot.edgeWaypoints,
+            this.#snapshot.roleMemberCounts,
         );
         const preview =
             this.#buildConnectPreview();
