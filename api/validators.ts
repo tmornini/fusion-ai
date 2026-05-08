@@ -31,7 +31,6 @@ import type {
     WorkOrderTransitionEntity,
     TransitionFieldValueEntity,
     WorkOrderClaimEntity,
-    CompanyEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
@@ -1097,30 +1096,9 @@ export function validateWorkOrderClaimEntity(
     };
 }
 
-const COMPANY_BODY_KEYS: readonly string[] = [
-    'name', 'domain',
-];
-
-export function validateCompanyEntity(
-    body: Record<string, unknown>,
-): Omit<CompanyEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        COMPANY_BODY_KEYS,
-        'CompanyEntity',
-    );
-    return {
-        name: asString(
-            body['name'], 'name',
-        ),
-        domain: asString(
-            body['domain'], 'domain',
-        ),
-    };
-}
-
 const ORGANIZATION_BODY_KEYS:
     readonly string[] = [
+    'name', 'domain',
     'plan', 'plan_status', 'next_billing',
     'seats', 'used_seats', 'projects_limit',
     'projects_current', 'ideas_limit',
@@ -1140,6 +1118,12 @@ export function validateOrganizationEntity(
         'OrganizationEntity',
     );
     return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        domain: asString(
+            body['domain'], 'domain',
+        ),
         plan: asString(
             body['plan'], 'plan',
         ),

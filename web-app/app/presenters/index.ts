@@ -65,17 +65,14 @@ export {
 } from './project-detail.ts';
 export {
     OrganizationPresenter,
+    OrganizationEditPresenter,
+    type GeneralInfoFieldKey,
 } from './organization.ts';
 export {
     ProfilePresenter,
     ProfileEditPresenter,
     type ProfileFieldKey,
 } from './profile.ts';
-export {
-    CompanyPresenter,
-    CompanyEditPresenter,
-    type CompanyFieldKey,
-} from './company.ts';
 export {
     FlowDesignerPresenter,
     buildInitialFlowSnapshot,

@@ -337,7 +337,7 @@ test(
             'work_order_transitions',
             'transition_field_values',
             'work_order_claims',
-            'company', 'organization',
+            'organization',
             'idea_submissions',
             'activity_actors', 'deleted',
         ];

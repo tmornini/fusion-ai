@@ -8,7 +8,6 @@ import {
 import type {
     Id,
     UserEntity,
-    CompanyEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -29,17 +28,6 @@ export async function getCurrentUserRow(
     if (ctx) return ctx.getCurrentUser();
     return httpGet<UserEntity>(
         getDbAdapter(), 'current-user',
-    );
-}
-
-export async function getCompanyRow(
-    ctx?: FetchContext,
-): Promise<CompanyEntity> {
-    if (ctx) return ctx.GET<CompanyEntity>(
-        'company',
-    );
-    return httpGet<CompanyEntity>(
-        getDbAdapter(), 'company',
     );
 }
 

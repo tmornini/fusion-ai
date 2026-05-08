@@ -16,22 +16,22 @@ async function getHeaderData(
     const {
         createFetchContext,
         getCurrentUserRow,
-        getCompanyRow,
+        getOrganization,
         getDashboardStats,
         User,
     } = await import('./adapters');
     const { getTimeOfDay } =
         await import('./format');
     const ctx = createFetchContext();
-    const [userRow, company, stats] =
+    const [userRow, org, stats] =
         await Promise.all([
             getCurrentUserRow(ctx),
-            getCompanyRow(ctx),
+            getOrganization(ctx),
             getDashboardStats(ctx),
         ]);
     return {
         userName: new User(userRow).fullName(),
-        company: company.name,
+        company: org.nameText(),
         greeting: getTimeOfDay(),
         stats,
     };

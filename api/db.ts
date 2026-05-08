@@ -6,7 +6,6 @@ import type {
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
-    CompanyEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
@@ -119,8 +118,6 @@ export interface DbAdapter {
         EntityStore<
             WorkOrderClaimEntity
         >;
-    company:
-        SingletonStore<CompanyEntity>;
     organization:
         SingletonStore<OrganizationEntity>;
     ideaSubmissions:
@@ -147,7 +144,6 @@ export const TABLE_NAMES = [
     'work_order_transitions',
     'transition_field_values',
     'work_order_claims',
-    'company',
     'organization',
     'idea_submissions',
     'activity_actors',

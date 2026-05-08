@@ -6,7 +6,6 @@ import {
     getUserMap,
     userName,
     getCurrentUserRow,
-    getCompanyRow,
 } from '../web-app/app/adapters/shared.ts';
 import { User } from '../api/types.ts';
 
@@ -111,19 +110,6 @@ test('getCurrentUserRow returns UserEntity', async () => {
     );
     assert.equal(row.first_name, 'Alice');
     assert.equal(row.last_name, 'Adams');
-});
-
-test('getCompanyRow returns CompanyEntity', async () => {
-    const db = new MemoryDbAdapter();
-    await db.company.put({
-        name: 'Acme Corp',
-        domain: 'acme.example',
-    });
-    const row = await getCompanyRow(
-        createFetchContext(db),
-    );
-    assert.equal(row.name, 'Acme Corp');
-    assert.equal(row.domain, 'acme.example');
 });
 
 test(

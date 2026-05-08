@@ -876,11 +876,9 @@ export async function populateMockData(
         ...ideas.map(idea =>
             adapter.ideas.put(idea.id, idea),
         ),
-        adapter.company.put({
+        adapter.organization.put({
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-        }),
-        adapter.organization.put({
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0, 0),
@@ -2604,11 +2602,9 @@ export async function populateBootstrapData(
                 + ' real problems.',
             last_active: dt(0, 18, 0),
         }),
-        adapter.company.put({
+        adapter.organization.put({
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-        }),
-        adapter.organization.put({
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0, 0),

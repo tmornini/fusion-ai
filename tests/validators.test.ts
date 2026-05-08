@@ -11,7 +11,6 @@ import {
     validateFlowWorkOrderEntity,
     validateWorkOrderTransitionEntity,
     validateWorkOrderClaimEntity,
-    validateCompanyEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -451,31 +450,11 @@ test(
     );
 });
 
-// --- CompanyEntity ---
-
-const validCompany = {
-    name: 'Acme Corp',
-    domain: 'acme.com',
-};
-
-test('validateCompanyEntity accepts valid payload', () => {
-    const result =
-        validateCompanyEntity(validCompany);
-    assert.equal(result.name, 'Acme Corp');
-});
-
-test('validateCompanyEntity rejects missing domain', () => {
-    assert.throws(
-        () => validateCompanyEntity({
-            name: 'Acme Corp',
-        }),
-        /missing required key "domain"/,
-    );
-});
-
 // --- OrganizationEntity ---
 
 const validOrg = {
+    name: 'Acme Corp',
+    domain: 'acme.com',
     plan: 'pro',
     plan_status: 'active',
     next_billing: '2025-01-01',

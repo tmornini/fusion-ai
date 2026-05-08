@@ -724,14 +724,10 @@ export interface WorkOrderClaimEntity {
     claimed_at: string;
 }
 
-export interface CompanyEntity {
+export interface OrganizationEntity {
     id: Id;
     name: string;
     domain: string;
-}
-
-export interface OrganizationEntity {
-    id: Id;
     plan: string;
     plan_status: string;
     next_billing: string;

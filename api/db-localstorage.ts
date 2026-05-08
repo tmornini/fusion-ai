@@ -17,7 +17,6 @@ import type {
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
-    CompanyEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
@@ -47,7 +46,6 @@ import {
     validateWorkOrderTransitionEntity,
     validateTransitionFieldValueEntity,
     validateWorkOrderClaimEntity,
-    validateCompanyEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -112,9 +110,6 @@ function validateSnapshotRow(
                 break;
             case 'work_order_claims':
                 validateWorkOrderClaimEntity(body);
-                break;
-            case 'company':
-                validateCompanyEntity(body);
                 break;
             case 'organization':
                 validateOrganizationEntity(body);
@@ -837,11 +832,6 @@ export async function createLocalStorageAdapter(
             >(
                 'work_order_claims',
                 deletedStore,
-            ),
-
-        company:
-            createSingletonStore<CompanyEntity>(
-                'company',
             ),
 
         organization:

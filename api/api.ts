@@ -16,7 +16,6 @@ import {
     validateWorkOrderTransitionEntity,
     validateTransitionFieldValueEntity,
     validateWorkOrderClaimEntity,
-    validateCompanyEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -282,16 +281,6 @@ const routes: Route[] = [
             ),
     }),
 
-    route('company', {
-        get: (db) =>
-            db.company.get(),
-        put: (db, _, payload) =>
-            db.company.put(
-                validateCompanyEntity(
-                    withoutId(payload),
-                ),
-            ),
-    }),
     route('organization', {
         get: (db) => db.organization.get(),
         put: (db, _, payload) =>

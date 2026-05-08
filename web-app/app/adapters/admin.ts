@@ -1,7 +1,6 @@
 import type {
     UserEntity,
     OrganizationEntity,
-    CompanyEntity,
 } from '../../../api/types.ts';
 import { User } from '../../../api/types.ts';
 import {
@@ -28,6 +27,21 @@ export class Organization {
 
     constructor(entity: OrganizationEntity) {
         this.#entity = entity;
+    }
+
+    nameText(): string {
+        return this.#entity.name;
+    }
+
+    domainText(): string {
+        return this.#entity.domain;
+    }
+
+    toGeneralInfoDraft(): GeneralInfoDraft {
+        return {
+            name: this.#entity.name,
+            domain: this.#entity.domain,
+        };
     }
 
     planLabel(): string {
@@ -125,6 +139,25 @@ export async function getOrganization(
     const entity =
         await getOrganizationRow(ctx);
     return new Organization(entity);
+}
+
+export interface GeneralInfoDraft {
+    name: string;
+    domain: string;
+}
+
+export async function
+putOrganizationGeneralInfo(
+    ctx: FetchContext,
+    draft: GeneralInfoDraft,
+): Promise<void> {
+    const current = await getOrganizationRow(ctx);
+    const { id: _id, ...rest } = current;
+    await ctx.PUT('organization', {
+        ...rest,
+        name: draft.name,
+        domain: draft.domain,
+    });
 }
 
 export interface ProfileDraft {
@@ -269,53 +302,6 @@ export async function getProfile(
     return { profile, entity: user };
 }
 
-export interface CompanyDraft {
-    name: string;
-    domain: string;
-}
-
-export class Company {
-    readonly #name: string;
-    readonly #domain: string;
-
-    constructor(draft: CompanyDraft) {
-        this.#name = draft.name;
-        this.#domain = draft.domain;
-    }
-
-    nameText(): string {
-        return this.#name;
-    }
-
-    domainText(): string {
-        return this.#domain;
-    }
-
-    toDraft(): CompanyDraft {
-        return {
-            name: this.#name,
-            domain: this.#domain,
-        };
-    }
-}
-
-export async function getCompany(
-    ctx: FetchContext,
-): Promise<Company> {
-    const row =
-        await ctx.GET<CompanyEntity>('company');
-    return new Company({
-        name: row.name,
-        domain: row.domain,
-    });
-}
-
-export async function putCompany(
-    ctx: FetchContext,
-    draft: CompanyDraft,
-): Promise<void> {
-    await ctx.PUT('company', { ...draft });
-}
 
 export type {
     ActivityEntity,

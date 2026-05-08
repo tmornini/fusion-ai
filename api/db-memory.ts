@@ -16,7 +16,6 @@ import type {
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
-    CompanyEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
@@ -154,7 +153,6 @@ interface Tables {
     flowVersions: Map<
         string, FlowVersionEntity
     >;
-    company: Map<string, CompanyEntity>;
     organization: Map<
         string, OrganizationEntity
     >;
@@ -216,8 +214,6 @@ export class MemoryDbAdapter
         >;
     readonly workOrderClaims:
         EntityStore<WorkOrderClaimEntity>;
-    readonly company:
-        SingletonStore<CompanyEntity>;
     readonly organization:
         SingletonStore<OrganizationEntity>;
     readonly ideaSubmissions:
@@ -290,10 +286,6 @@ export class MemoryDbAdapter
             new MemEntityStore(
                 'work_order_claims',
                 t.workOrderClaims, ds,
-            );
-        this.company =
-            new MemSingletonStore(
-                'company', t.company,
             );
         this.organization =
             new MemSingletonStore(
@@ -389,7 +381,6 @@ function buildTables(): Tables {
         activities: new Map(),
         flows: new Map(),
         flowVersions: new Map(),
-        company: new Map(),
         organization: new Map(),
         ideaSubmissions: new Map(),
         activityActors: new Map(),
