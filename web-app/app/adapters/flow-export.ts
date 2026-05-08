@@ -565,32 +565,43 @@ export async function postFlowFromBackup(
             };
         });
 
-    await ctx.PUT<void>(`flows/${flowId}`, {
-        name: backup.flow.name,
-        description:
-            backup.flow.description,
-        is_locked: backup.flow.isLocked,
-        is_auto_layout:
-            backup.flow.isAutoLayout,
-        is_auto_fit:
-            backup.flow.isAutoFit,
-        lock_timeout:
-            backup.flow.lockTimeout,
-        graph: putFlowGraph({
-            nodes, edges,
-        }),
-        created_at: now,
-        updated_at: now,
+    const linkId = generateCryptoSafeBase62();
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `flows/${flowId}`,
+                body: {
+                    name: backup.flow.name,
+                    description:
+                        backup.flow.description,
+                    is_locked:
+                        backup.flow.isLocked,
+                    is_auto_layout:
+                        backup.flow.isAutoLayout,
+                    is_auto_fit:
+                        backup.flow.isAutoFit,
+                    lock_timeout:
+                        backup.flow.lockTimeout,
+                    graph: putFlowGraph({
+                        nodes, edges,
+                    }),
+                    created_at: now,
+                    updated_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `project-flows/${linkId}`,
+                body: {
+                    project_id: projectId,
+                    flow_id: flowId,
+                    created_at: now,
+                },
+            },
+        ],
     });
-
-    await ctx.PUT<void>(
-        `project-flows/${generateCryptoSafeBase62()}`,
-        {
-            project_id: projectId,
-            flow_id: flowId,
-            created_at: now,
-        },
-    );
 
     notifyFlowChange();
     return flowId;
@@ -901,27 +912,38 @@ export async function postFlowFromMermaid(
                 + ' intermediate state',
         );
     }
-    await ctx.PUT<void>(`flows/${flowId}`, {
-        name:
-            firstNode.name + ' (import)',
-        description: '',
-        is_locked: false,
-        is_auto_layout: true,
-        is_auto_fit: true,
-        lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: putFlowGraph(graph),
-        created_at: now,
-        updated_at: now,
+    const linkId = generateCryptoSafeBase62();
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `flows/${flowId}`,
+                body: {
+                    name: firstNode.name
+                        + ' (import)',
+                    description: '',
+                    is_locked: false,
+                    is_auto_layout: true,
+                    is_auto_fit: true,
+                    lock_timeout:
+                        DEFAULT_LOCK_TIMEOUT,
+                    graph: putFlowGraph(graph),
+                    created_at: now,
+                    updated_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `project-flows/${linkId}`,
+                body: {
+                    project_id: projectId,
+                    flow_id: flowId,
+                    created_at: now,
+                },
+            },
+        ],
     });
-
-    await ctx.PUT<void>(
-        `project-flows/${generateCryptoSafeBase62()}`,
-        {
-            project_id: projectId,
-            flow_id: flowId,
-            created_at: now,
-        },
-    );
 
     notifyFlowChange();
     return {
@@ -1336,26 +1358,37 @@ export async function postFlowFromZip(
         ? sidecar.description
         : firstNode!.name;
 
-    await ctx.PUT<void>(`flows/${flowId}`, {
-        name: flowName,
-        description: flowDesc,
-        is_locked: false,
-        is_auto_layout: true,
-        is_auto_fit: true,
-        lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: putFlowGraph(graph),
-        created_at: now,
-        updated_at: now,
+    const linkId = generateCryptoSafeBase62();
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `flows/${flowId}`,
+                body: {
+                    name: flowName,
+                    description: flowDesc,
+                    is_locked: false,
+                    is_auto_layout: true,
+                    is_auto_fit: true,
+                    lock_timeout:
+                        DEFAULT_LOCK_TIMEOUT,
+                    graph: putFlowGraph(graph),
+                    created_at: now,
+                    updated_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `project-flows/${linkId}`,
+                body: {
+                    project_id: projectId,
+                    flow_id: flowId,
+                    created_at: now,
+                },
+            },
+        ],
     });
-
-    await ctx.PUT<void>(
-        `project-flows/${generateCryptoSafeBase62()}`,
-        {
-            project_id: projectId,
-            flow_id: flowId,
-            created_at: now,
-        },
-    );
 
     notifyFlowChange();
     return {
