@@ -19,6 +19,7 @@ export interface PageEntry {
     title: string;
     layout: 'sidebar' | 'standalone';
     inSidebarNav?: boolean;
+    sidebarKey?: string;
     sourceDir: string;
     sourceFile: string;
     icon?: IconFn;
@@ -58,6 +59,7 @@ export const PAGE_REGISTRY: Record<
     'idea-detail': {
         title: 'Idea Detail',
         layout: 'sidebar',
+        sidebarKey: 'ideas',
         sourceDir: 'ideas',
         sourceFile: 'detail',
         icon: iconLightbulb,
@@ -67,6 +69,7 @@ export const PAGE_REGISTRY: Record<
     'idea-create': {
         title: 'Create Idea',
         layout: 'sidebar',
+        sidebarKey: 'ideas',
         sourceDir: 'ideas',
         sourceFile: 'create',
         icon: iconLightbulb,
@@ -76,6 +79,7 @@ export const PAGE_REGISTRY: Record<
     'idea-convert': {
         title: 'Convert Idea',
         layout: 'sidebar',
+        sidebarKey: 'ideas',
         sourceDir: 'ideas',
         sourceFile: 'convert',
         icon: iconLightbulb,
@@ -96,6 +100,7 @@ export const PAGE_REGISTRY: Record<
     'project-detail': {
         title: 'Project Detail',
         layout: 'sidebar',
+        sidebarKey: 'projects',
         sourceDir: 'projects',
         sourceFile: 'detail',
         icon: iconFolderKanban,
@@ -117,6 +122,7 @@ export const PAGE_REGISTRY: Record<
     'flow-detail': {
         title: 'Flow Designer',
         layout: 'sidebar',
+        sidebarKey: 'flows',
         sourceDir: 'flows',
         sourceFile: 'detail',
         icon: iconGitBranch,
@@ -137,6 +143,7 @@ export const PAGE_REGISTRY: Record<
     'workbox-detail': {
         title: 'Work Order',
         layout: 'sidebar',
+        sidebarKey: 'workbox',
         sourceDir: 'workbox',
         sourceFile: 'detail',
         icon: iconMail,
@@ -167,6 +174,7 @@ export const PAGE_REGISTRY: Record<
     'people-detail': {
         title: 'Person',
         layout: 'sidebar',
+        sidebarKey: 'people',
         sourceDir: 'people',
         sourceFile: 'detail',
         icon: iconPerson,
