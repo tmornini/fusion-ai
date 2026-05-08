@@ -5,7 +5,6 @@ const NAV_GROUP_CHILDREN:
     Record<string, string[]> = {
         organization: [
             'users',
-            'activity-feed',
         ],
         ideas: [
             'idea-create',

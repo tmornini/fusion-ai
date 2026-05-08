@@ -2,14 +2,8 @@ import type {
     UserEntity,
     OrganizationEntity,
     CompanyEntity,
-    ActivityEntity,
-    ActivityActorEntity,
-    ActivityType,
 } from '../../../api/types.ts';
-import {
-    User,
-    assertActivityType,
-} from '../../../api/types.ts';
+import { User } from '../../../api/types.ts';
 import {
     initials,
     formatDate,
@@ -20,8 +14,6 @@ import type { FetchContext } from './shared.ts';
 export type {
     OrganizationEntity,
 } from '../../../api/types.ts';
-export type { RecentActivityItem } from '../../../api/types.ts';
-export const RECENT_ACTIVITY_COUNT = 3;
 
 async function getOrganizationRow(
     ctx: FetchContext,
@@ -323,93 +315,6 @@ export async function putCompany(
     draft: CompanyDraft,
 ): Promise<void> {
     await ctx.PUT('company', { ...draft });
-}
-
-export async function getActivityRows(
-    ctx: FetchContext,
-): Promise<ActivityEntity[]> {
-    return ctx.GET<ActivityEntity[]>(
-        'activities',
-    );
-}
-
-export async function getActivityActorRows(
-    ctx: FetchContext,
-): Promise<ActivityActorEntity[]> {
-    return ctx.GET<ActivityActorEntity[]>(
-        'activity-actors',
-    );
-}
-
-export class Activity {
-    readonly #entity: ActivityEntity;
-    readonly #actor: string;
-    readonly #type: ActivityType;
-
-    constructor(
-        entity: ActivityEntity,
-        actor: string,
-    ) {
-        this.#entity = entity;
-        this.#actor = actor;
-        this.#type = assertActivityType(
-            entity.type, 'activity.type',
-        );
-    }
-
-    typeValue(): ActivityType {
-        return this.#type;
-    }
-
-    actorText(): string {
-        return this.#actor;
-    }
-
-    actionText(): string {
-        return this.#entity.action;
-    }
-
-    targetText(): string {
-        return this.#entity.target;
-    }
-
-    timestampText(): string {
-        return this.#entity.timestamp;
-    }
-
-    statusText(): string {
-        return this.#entity.status;
-    }
-
-    feedbackText(): string {
-        return this.#entity.feedback;
-    }
-
-    hasStatus(): boolean {
-        return this.#entity.status !== '';
-    }
-
-    hasFeedback(): boolean {
-        return this.#entity.feedback !== '';
-    }
-
-    matchesQuery(q: string): boolean {
-        const lower = q.toLowerCase();
-        return (
-            this.#actor
-                .toLowerCase()
-                .includes(lower)
-            || this.#entity.target
-                .toLowerCase()
-                .includes(lower)
-        );
-    }
-
-    matchesTypes(
-        types: readonly string[],
-    ): boolean {
-        return types.includes(this.#type);
-    }
 }
 
 export type {

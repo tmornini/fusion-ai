@@ -42,9 +42,6 @@ export {
     GaugePresenter,
 } from './gauge.ts';
 export {
-    ActivityPresenter,
-} from './activity.ts';
-export {
     UserPresenter,
     TeamListPresenter,
     ManagedUsersPresenter,

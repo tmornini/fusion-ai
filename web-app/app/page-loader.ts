@@ -57,11 +57,6 @@ const pageModules: Record<
         import(
             '../organization/users'
         ),
-    'activity-feed': () =>
-        import(
-            '../organization/'
-            + 'activity-feed'
-        ),
     snapshots: () =>
         import('../snapshots/index'),
     'design-system': () =>

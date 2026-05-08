@@ -11,7 +11,6 @@ import {
 } from '../icons.ts';
 import type {
     Organization,
-    RecentActivityItem,
 } from '../adapters/index.ts';
 
 const STAT_VALUE_2XL = 'text-2xl font-bold';
@@ -43,18 +42,13 @@ function buildStatCell(
 export class OrganizationPresenter {
     readonly #org: Organization;
     readonly #companyName: string;
-    readonly #recentActivity:
-        readonly RecentActivityItem[];
 
     constructor(
         org: Organization,
         companyName: string,
-        recentActivity:
-            readonly RecentActivityItem[],
     ) {
         this.#org = org;
         this.#companyName = companyName;
-        this.#recentActivity = recentActivity;
     }
 
     buildPage(): SafeHtml {

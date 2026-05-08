@@ -156,14 +156,6 @@ export const PAGE_REGISTRY: Record<
         icon: iconUsers,
         keywords: 'users invite manage admin',
     },
-    'activity-feed': {
-        title: 'Activity Feed',
-        layout: 'sidebar',
-        sourceDir: 'organization',
-        sourceFile: 'activity-feed',
-        icon: iconActivity,
-        keywords: 'activity feed log',
-    },
     snapshots: {
         title: 'Snapshots',
         layout: 'sidebar',

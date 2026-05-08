@@ -10,13 +10,7 @@ import {
 import {
     getOrganization,
     getCompany,
-    getActivityRows,
-    getActivityActorRows,
-    getUserMap,
-    userName,
     createFetchContext,
-    RECENT_ACTIVITY_COUNT,
-    type RecentActivityItem,
 } from '../app/adapters/index.ts';
 import {
     OrganizationPresenter,
@@ -35,53 +29,14 @@ export async function init(): Promise<void> {
     const ctx = createFetchContext();
     let presenter: OrganizationPresenter;
     try {
-        const [
-            org, company,
-            activities, actors, userMap,
-        ] = await Promise.all([
+        const [org, company] = await Promise.all([
             getOrganization(ctx),
             getCompany(ctx),
-            getActivityRows(ctx),
-            getActivityActorRows(ctx),
-            getUserMap(ctx),
         ]);
-        const actorMap = new Map(
-            actors.map(a => [
-                a.activity_id, a.user_id,
-            ]),
-        );
-        const recent: RecentActivityItem[] =
-            activities
-                .slice(
-                    0, RECENT_ACTIVITY_COUNT,
-                )
-                .map(a => {
-                    const actorId =
-                        actorMap.get(a.id);
-                    if (!actorId) {
-                        throw new Error(
-                            'Activity has'
-                            + ' no actor: '
-                            + a.id,
-                        );
-                    }
-                    const actor = userName(
-                        userMap, actorId,
-                    );
-                    return {
-                        type: a.type,
-                        description:
-                            actor + ' '
-                            + a.action + ' '
-                            + a.target,
-                        time: a.timestamp,
-                    };
-                });
         presenter =
             new OrganizationPresenter(
                 org,
                 company.nameText(),
-                recent,
             );
     } catch (err) {
         log.error(
