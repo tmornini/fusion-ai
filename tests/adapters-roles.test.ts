@@ -7,6 +7,7 @@ import {
 import {
     getRoles,
     getRole,
+    getPersistedRoles,
     putRole,
     deleteRole,
     getMembersOfRole,
@@ -273,6 +274,39 @@ test(
             count >= 2,
             'expected at least 2 notifications',
         );
+    },
+);
+
+test(
+    'getPersistedRoles returns only persisted'
+    + ' roles, not user-private',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await seedPerson(db, 'p-1', 'Alice');
+        await seedPerson(db, 'p-2', 'Bob');
+        await seedRole(db, 'r-eng', 'Engineering');
+        const ctx = createFetchContext(db);
+        const persisted =
+            await getPersistedRoles(ctx);
+        assert.equal(persisted.length, 1);
+        assert.equal(
+            persisted[0].nameText(),
+            'Engineering',
+        );
+    },
+);
+
+test(
+    'getPersistedRoles returns empty when no'
+    + ' roles exist even with people present',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await seedPerson(db, 'p-1', 'Alice');
+        await seedPerson(db, 'p-2', 'Bob');
+        const ctx = createFetchContext(db);
+        const persisted =
+            await getPersistedRoles(ctx);
+        assert.equal(persisted.length, 0);
     },
 );
 

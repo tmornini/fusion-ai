@@ -11,6 +11,7 @@ import {
     iconCreditCard,
     iconDatabase,
     iconPalette,
+    iconShield,
 } from './icons.ts';
 
 interface SidebarNavItem {
@@ -62,6 +63,12 @@ export const SIDEBAR_NAV_ITEMS: readonly SidebarNavItem[] = [
         pageLink: 'people',
         label: 'People',
         icon: iconPeople,
+    },
+    {
+        href: '../roles/index.html',
+        pageLink: 'roles',
+        label: 'Roles',
+        icon: iconShield,
     },
     {
         href: '../billing/index.html',

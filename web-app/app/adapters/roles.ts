@@ -128,6 +128,16 @@ export async function getRoles(
     return [...persisted, ...userPrivate];
 }
 
+// User-private roles are derived per-person and
+// belong to membership UIs; the index of named roles
+// the organization manages excludes them by intent.
+export async function getPersistedRoles(
+    ctx: FetchContext,
+): Promise<Role[]> {
+    const map = await ctx.getRoleMap();
+    return Array.from(map.values());
+}
+
 export async function getRole(
     ctx: FetchContext,
     id: Id,

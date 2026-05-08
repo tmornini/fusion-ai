@@ -95,3 +95,11 @@ export {
     buildFieldInputHtml,
     WorkboxDetailPresenter,
 } from './workbox-detail.ts';
+export {
+    RolePresenter,
+    RoleListPresenter,
+    buildInitialRoleListState,
+    applyRoleListSearch,
+    applyRoleListUpdate,
+    type RoleListState,
+} from './role.ts';

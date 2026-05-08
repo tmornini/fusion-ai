@@ -11,6 +11,7 @@ import {
     iconCreditCard,
     iconDatabase,
     iconPalette,
+    iconShield,
 } from './icons.ts';
 
 export interface PageEntry {
@@ -137,6 +138,14 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconPeople,
         keywords: 'people invite manage admin',
+    },
+    roles: {
+        title: 'Roles',
+        layout: 'sidebar',
+        sourceDir: 'roles',
+        sourceFile: 'index',
+        icon: iconShield,
+        keywords: 'roles teams membership',
     },
     snapshots: {
         title: 'Snapshots',
