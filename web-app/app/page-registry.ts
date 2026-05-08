@@ -23,6 +23,11 @@ export interface PageEntry {
     icon?: IconFn;
     keywords?: string;
     searchable?: boolean;
+    loader: () => Promise<{
+        init: (
+            params?: Record<string, string>,
+        ) => void | Promise<void>;
+    }>;
 }
 
 export const PAGE_REGISTRY: Record<
@@ -36,6 +41,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconHome,
         keywords: 'home overview',
+        loader: () => import('../dashboard/index'),
     },
     workbox: {
         title: 'Workbox',
@@ -45,6 +51,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconMail,
         keywords:
             'workbox inbox work order',
+        loader: () => import('../workbox/index'),
     },
     'workbox-detail': {
         title: 'Work Order',
@@ -53,6 +60,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'detail',
         icon: iconMail,
         searchable: false,
+        loader: () => import('../workbox/detail'),
     },
     ideas: {
         title: 'Ideas',
@@ -61,6 +69,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconLightbulb,
         keywords: 'ideas list innovation',
+        loader: () => import('../ideas/index'),
     },
     'idea-detail': {
         title: 'Idea Detail',
@@ -69,6 +78,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'detail',
         icon: iconLightbulb,
         searchable: false,
+        loader: () => import('../ideas/detail'),
     },
     projects: {
         title: 'Projects',
@@ -78,6 +88,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconFolderKanban,
         keywords:
             'projects list kanban',
+        loader: () => import('../projects/index'),
     },
     'project-detail': {
         title: 'Project Detail',
@@ -86,6 +97,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'detail',
         icon: iconFolderKanban,
         searchable: false,
+        loader: () => import('../projects/detail'),
     },
     flows: {
         title: 'Flows',
@@ -96,6 +108,7 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'flow, process,'
             + ' state machine',
+        loader: () => import('../flows/index'),
     },
     'flow-detail': {
         title: 'Flow Designer',
@@ -104,6 +117,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'detail',
         icon: iconGitBranch,
         searchable: false,
+        loader: () => import('../flows/detail'),
     },
     organization: {
         title: 'Organization',
@@ -113,6 +127,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconSettings,
         keywords:
             'organization billing plan',
+        loader: () => import('../organization/index'),
     },
     'people-detail': {
         title: 'Person',
@@ -121,6 +136,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'detail',
         icon: iconPerson,
         searchable: false,
+        loader: () => import('../people/detail'),
     },
     billing: {
         title: 'Billing',
@@ -131,6 +147,7 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'billing plan invoices'
             + ' payment',
+        loader: () => import('../billing/index'),
     },
     people: {
         title: 'People',
@@ -139,6 +156,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconPeople,
         keywords: 'people invite manage admin',
+        loader: () => import('../people/index'),
     },
     roles: {
         title: 'Roles',
@@ -147,6 +165,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconShield,
         keywords: 'roles teams membership',
+        loader: () => import('../roles/index'),
     },
     crews: {
         title: 'Crews',
@@ -155,6 +174,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         icon: iconBriefcase,
         keywords: 'crews collaborate team',
+        loader: () => import('../crews/index'),
     },
     snapshots: {
         title: 'Snapshots',
@@ -164,6 +184,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconDatabase,
         keywords:
             'data export import wipe',
+        loader: () => import('../snapshots/index'),
     },
     'design-system': {
         title: 'Design System',
@@ -173,6 +194,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconPalette,
         keywords:
             'components ui reference',
+        loader: () => import('../design-system/index'),
     },
     'idea-create': {
         title: 'Create Idea',
@@ -181,6 +203,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'create',
         icon: iconLightbulb,
         keywords: 'new idea submit',
+        loader: () => import('../ideas/create'),
     },
     'idea-convert': {
         title: 'Convert Idea',
@@ -189,6 +212,7 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'convert',
         icon: iconLightbulb,
         searchable: false,
+        loader: () => import('../ideas/convert'),
     },
     auth: {
         title: 'Authentication',
@@ -196,6 +220,7 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'auth',
         sourceFile: 'index',
         searchable: false,
+        loader: () => import('../auth/index'),
     },
     landing: {
         title: 'Landing',
@@ -203,6 +228,7 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'landing',
         sourceFile: 'index',
         searchable: false,
+        loader: () => import('../landing/index'),
     },
     'not-found': {
         title: '404 Not Found',
@@ -210,5 +236,6 @@ export const PAGE_REGISTRY: Record<
         sourceDir: 'not-found',
         sourceFile: 'index',
         searchable: false,
+        loader: () => import('../not-found/index'),
     },
 };
