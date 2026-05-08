@@ -55,11 +55,11 @@ See `CLAUDE.md` section `## Testing`.
 | E. Core: Projects | 11 |
 | F. Tools | 74 |
 | F2. Workbox | 19 |
-| G. Admin Pages | 23 |
+| G. Admin Pages | 27 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 27 |
 | J. Teardown | 3 |
-| **Total** | **265** |
+| **Total** | **269** |
 
 ---
 
@@ -87,15 +87,15 @@ on. Run these in order.
 
 ### AA2. Create Users
 
-- [ ] **AA4** Navigate to People (sidebar). Click "Invite Person". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [ ] **AA4** Navigate to People (sidebar). Click "Invite Person". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, and Bio.
 - [ ] **AA5** Fill all fields for user "Sarah Chen" (Engineering Manager, Engineering dept, active status). Submit. PASS: toast confirms creation, user appears in the list.
 - [ ] **AA6** Repeat for all 10 people: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on People page with correct name, email, role, and status badge.
-- [ ] **AA7** Reload the People page. PASS: people display with correct availability color coding and status badges.
+- [ ] **AA7** Reload the People page. PASS: people display with correct status badges (Active / Pending / Deactivated).
 
-### AA3. Profile & Organization
+### AA3. Person Detail & Organization
 
-- [ ] **AA8** Navigate to Profile. Edit fields (phone, bio, strengths). Click "Save Changes". PASS: toast "Profile saved" appears.
-- [ ] **AA9** Navigate away, return to Profile. PASS: edited fields persist with saved values.
+- [ ] **AA8** On People, click the current user's "You" row at the top. PASS: navigates to that person's detail page; read mode shows avatar, name, role, department, status badge, email, phone, role, department, bio, strengths chips, and a Working Styles card.
+- [ ] **AA9** Click Edit, change Phone and Bio, toggle one strength on and one off, click Save. PASS: toast "Person saved" appears. Navigate away and return to detail. PASS: edited Phone, Bio, and strengths persist.
 - [ ] **AA10** Navigate to Organization. In the General Information card, click Edit, change Domain (e.g. `acmecorp.io`), click Save. PASS: success toast "Organization saved" appears.
 - [ ] **AA11** Navigate away, return to Organization. PASS: edited Domain persists with saved value, card is back in read mode.
 
@@ -218,9 +218,9 @@ on. Run these in order.
 - [ ] **AA40** Edit flow: navigate to flow
   designer, rename a state (auto-saves). Navigate
   away, return. PASS: changed state name persists.
-- [ ] **AA41** Edit profile: change phone number.
-  Save, navigate away, return. PASS: changed phone
-  persists.
+- [ ] **AA41** Edit person: navigate to a person's
+  detail page, click Edit, change phone number, Save.
+  Navigate away, return. PASS: changed phone persists.
 - [ ] **AA42** Edit organization: in the General
   Information card, change Domain. Save, navigate
   away, return. PASS: changed Domain persists.
@@ -269,12 +269,14 @@ on. Run these in order.
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
 - [ ] **C2** Sidebar shows flat navigation
   links in this order: Dashboard, Ideas,
-  Projects, Flows, Workbox, Profile,
-  Organization, People, Billing, Snapshots,
-  Design System. PASS: all 11 links present,
-  in order, and styled. (Teams, Company, and
-  Activity Feed sidebar entries have been
-  retired.)
+  Projects, Flows, Workbox, Organization,
+  People, Billing, Snapshots, Design System.
+  PASS: all 10 links present, in order, and
+  styled. (Teams, Company, Activity Feed, and
+  Profile sidebar entries have been retired —
+  the current user's detail is reachable via
+  the sidebar account chip and the header
+  greeting.)
 - [ ] **C3** Header shows search bar, greeting
   ("Good {morning/afternoon/evening}, Tony
   Stark" — varies by time of day), company
@@ -944,31 +946,31 @@ on. Run these in order.
 - [ ] **G9** Navigate to `organization/index.html`. PASS: page wears the standard sidebar + top-bar layout. Shows the page header "Organization", a General Information card at the top with read-only Organization Name and Domain plus an Edit button, then the overview card (plan info, health badge, seats stats), the Usage Overview card with progress bars, and the Security & Administration card linking to People and Billing. (Overview gauge values are hardcoded placeholders — verify the page renders without error; numeric accuracy will be addressed when wired to live tables.)
 - [ ] **G10** In the General Information card, click Edit. PASS: page header swaps Edit for Save/Cancel; the card body switches the read-only fields to two inputs prefilled with the current Organization Name and Domain. Health score (92, "excellent") still renders in the overview card below.
 
-### Profile (`profile/`)
+### Person Detail (`people/detail.html`)
 
-- [ ] **G11** Navigate to `profile/`. PASS: shows profile form with avatar (initials), First Name, Last Name, Email, Phone, Role, Department (dropdown), and Bio fields for the current user (Tony Stark / demo@example.com).
-- [ ] **G12** Strength chips are displayed with pre-selected strengths shown in primary style with checkmark icons. Click an unselected chip. PASS: chip toggles to primary/selected style. Click a selected chip. PASS: chip toggles to secondary/unselected style.
-- [ ] **G13** Edit a field (e.g. phone), toggle strengths, and click "Save Changes". PASS: toast "Profile saved" appears.
-- [ ] **G14** Navigate away from Profile (e.g. to Dashboard), then return to Profile. PASS: the edited field retains the saved value — data was persisted to the database, not just displayed via toast.
+- [ ] **G11** From `people/index.html`, click any person's row. PASS: navigates to that person's detail page; URL carries `?personId=<id>`. Read mode shows avatar (initials), name + status badge, role · department subtitle, Personal Information card (First Name, Last Name, Email, Phone, Role, Department, Bio), Working Styles card (4-axis dimensions), and Strengths card (chips of selected strengths).
+- [ ] **G12** Click the sidebar account chip (lower-left). PASS: navigates to the current user's `people-detail` page. Click the header greeting ("Good {time-of-day}, {name}"). PASS: also navigates to the current user's `people-detail` page.
+- [ ] **G13** Click Edit. PASS: header swaps Edit for Cancel/Save; Personal Information card switches to inputs (First/Last Name text, Email email-input, Phone text, Role text, Department select, Status select, Bio textarea); Strengths card switches to a tag picker (chips toggle on click between primary/secondary). Working Styles card stays read-only.
+- [ ] **G14** Edit Phone and Bio, toggle one strength on and one off, change Status from Active to Pending, click Save. PASS: toast "Person saved" appears. Navigate away (e.g. to Dashboard) and return. PASS: all edits persist; the row on `people/index.html` reflects the new status badge.
+- [ ] **G15** Click Edit, change a field, press `Escape`. PASS: edits discarded, view returns to read mode unchanged.
+- [ ] **G16** Click Edit, change a text field, press `Enter` while focused on the input. PASS: save fires (toast "Person saved").
+- [ ] **G17** On `people/index.html`, the current user's row appears TWICE — once at the top with `data-self="true"` (CSS distinguishes it: accent left border, subtle background tint) and once inline in the list with `data-self="false"`. PASS: HTML is otherwise identical between the two; only the `data-self` attribute and CSS treatment differ.
+- [ ] **G18** From `people-detail`, click the back button. PASS: returns to `people/index.html`.
 
-### Company (RETIRED)
-
-> Cases G15–G18 retired. The standalone Company
-> page has been folded into the Organization page
-> (G9–G10) — Company Name and Domain are now part
-> of the OrganizationEntity, edited via the General
-> Information card, and persisted by `PUT
-> /api/organization`. The CompanyEntity, its store,
-> validator, REST route, and presenter have been
-> removed.
+> The previous Company page (formerly cases G15–G18)
+> has been folded into the Organization page (G9–G10);
+> the renumbered G15–G18 above cover the new Person
+> Detail page that replaced the retired Profile page.
+> The CompanyEntity, its store, validator, REST route,
+> and presenter have been removed.
 
 ### People (`people/index.html`)
 
-- [ ] **G19** Navigate to `people/index.html` (also reachable via the "People" sidebar entry, which replaced the retired "Teams" entry). PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
-- [ ] **G20** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list.
+- [ ] **G19** Navigate to `people/index.html` (also reachable via the "People" sidebar entry, which replaced the retired "Teams" entry). PASS: shows the current user's row at the top with `data-self="true"` styling (accent border + subtle tint), then a header row, then the full people table with avatar, name, email, role badge (job title), department, and status badge (Active/Pending/Deactivated). Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible. The current user appears again inside the list (the duplicate is intentional).
+- [ ] **G20** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list. The "You" row at the top is unaffected by filters (always visible).
 - [ ] **G21** Deactivated person (James Miller) is visually distinguished with "Deactivated" badge (X icon) and reduced opacity styling. PASS: clearly different from active people.
 - [ ] **G22** Pending people show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active people.
-- [ ] **G23** "Invite Person" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [ ] **G23** "Invite Person" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Phone, and Bio.
 - [ ] **G24** Fill all required fields and submit the invite dialog. PASS: toast confirms user creation, new user appears in the user list with correct name, email, role, and status badge.
 
 ### Activity Feed (RETIRED)
@@ -997,17 +999,16 @@ on. Run these in order.
   inline error reports the upload failed with a human-readable
   message; existing data in localStorage is untouched (verify via
   DevTools that no fusion-ai:* keys were overwritten or cleared).
-- [ ] **G36** On `people/index.html`, each active or pending
-  user row shows a user-X icon button (aria-label "Deactivate
-  user") and each deactivated row shows a user-check icon button
-  ("Reactivate user"). Click an active user's deactivate button.
-  PASS: a toast "Person deactivated" fires and the list reloads with
-  the user's badge changed to "Deactivated" and reduced opacity
-  styling; the user no longer counts toward the active header
-  stat. Click the reactivate button on a deactivated row. PASS: a
-  toast "Person reactivated" fires and the user returns to active.
-  The action is intentionally reversible with a single click, so
-  no confirmation dialog is required.
+- [ ] **G36** On `people/index.html`, status mutation lives on
+  the detail page rather than as inline row buttons. Click any
+  active or pending person's row. PASS: navigates to their detail
+  page. Click Edit, change Status to "Deactivated", click Save.
+  PASS: toast "Person saved" fires; navigating back to the people
+  list shows the row with the "Deactivated" badge and reduced
+  opacity styling, and the active count in the header has dropped
+  by one. Repeat in reverse to reactivate. The deactivate flow is
+  no longer a single-click action — it is part of the same edit
+  cycle as every other field.
 
 ### Billing (`billing/`) — STUB
 
@@ -1034,7 +1035,7 @@ feature is implemented.
   Press `Escape`. PASS: card returns to read mode,
   Domain shows the original value (Escape behaves
   identically to Cancel; same code path as the
-  Profile and former Company edit pages).
+  Person Detail and former Company edit pages).
 - [ ] **G40** Click Edit. Modify both Organization
   Name and Domain. Click Save. PASS: toast
   "Organization saved" fires at top-center,
@@ -1099,9 +1100,9 @@ feature is implemented.
 
 ### Toasts
 
-- [ ] **I23** Trigger a toast (e.g. save profile, or use DB Admin reload). PASS: toast appears at top-center of the viewport (fixed to `top: var(--space-4); left: 50%; translateX(-50%)`), auto-dismisses after ~6 seconds with fade-out. (Toast position was migrated from bottom-right to top-center.)
+- [ ] **I23** Trigger a toast (e.g. save an idea, or use DB Admin reload). PASS: toast appears at top-center of the viewport (fixed to `top: var(--space-4); left: 50%; translateX(-50%)`), auto-dismisses after ~6 seconds with fade-out. (Toast position was migrated from bottom-right to top-center.)
 - [ ] **I24** While a toast is visible, click its close button (×). PASS: toast dismisses immediately without waiting for auto-dismiss timer.
-- [ ] **I25** Trigger multiple toasts in rapid succession (e.g. save profile repeatedly). PASS: toasts stack visibly with the *newest at the top*, older ones flowing downward (`prepend` ordering, not `appendChild`). Up to 5 visible. When a 6th toast arrives, the *oldest* — at the bottom of the stack — is removed.
+- [ ] **I25** Trigger multiple toasts in rapid succession (e.g. save an idea repeatedly). PASS: toasts stack visibly with the *newest at the top*, older ones flowing downward (`prepend` ordering, not `appendChild`). Up to 5 visible. When a 6th toast arrives, the *oldest* — at the bottom of the stack — is removed.
 
 ### Snapshot Round-Trip
 

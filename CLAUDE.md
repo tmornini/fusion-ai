@@ -170,7 +170,9 @@ Editable detail views split into two presenters: a read presenter
 shape). The page module owns a `PageState` discriminated union
 (`{kind: 'reading'} | {kind: 'editing', draft}`) and constructs
 the appropriate one per render. This pattern applies to `Idea`,
-`Profile`, `Company`, and `ProjectDetail`.
+`Person`, and `ProjectDetail`. The word "Member" is reserved for a
+future `(user, role)` join — do not name a member-rendering
+construct until that scroll opens.
 
 `presenters/index.ts` is the barrel; page modules import from
 `'../app/presenters'`. `WorkboxDetailPresenter` uses a public
@@ -315,7 +317,7 @@ Run via `./validate` (which also type-checks and lints) or
 directly: `node --test --strip-types tests/*.test.ts`.
 
 **Manual browser regression** for UI behavior: a pass against
-`TEST-PLAN.md` (265 cases), driven either by a single human
+`TEST-PLAN.md` (269 cases), driven either by a single human
 tester serially or by Claude Code agents in parallel via the
 `claude-in-chrome` MCP. Anything DOM-driven (gestures, layout,
 visual rendering) lives here. Pure transitions, adapters, and
@@ -364,7 +366,7 @@ subset of tables:
 | Agent-E | `projects` (plus one flow via E7) |
 | Agent-F | `flows`, `flow_versions` |
 | Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims`, plus its own private flow in `flows`/`flow_versions` |
-| Agent-G | `people`, `profile`, `organization` |
+| Agent-G | `people`, `organization` |
 | Agent-CH | none (read-only) |
 
 Agent-F2 owns its source flow because `postWorkOrderCreation`
@@ -416,7 +418,6 @@ patterns apply only to the parallel run.
 - **Snapshots wipe-first**: All snapshot operations (pristine, mock data, import) call `DELETE('snapshots/schema')` before writing — there is no merge, only replace.
 - **Snapshot quota pre-flight**: `putSnapshotFromFile` consults `navigator.storage.estimate()` and rejects with `SnapshotTooLargeError` if `file.size` exceeds half of `quota - usage` (the import doubles peak memory while parsing). Falls back to a 5 MB hard cap when `navigator.storage.estimate()` is unavailable.
 - **Snapshot wipe-on-fail**: With pre-flight quota checks + per-row validation + column-level compression, mid-write failure is rare; when it does happen, `importSnapshot` wipes every `fusion-ai:<table>` key so the next bootstrap detects no schema and routes the user to the snapshots page to re-import. No backup, no sentinel, no rollback — real atomicity arrives with Postgres.
-- **Availability thresholds**: `AVAILABILITY_HIGH = 70`, `AVAILABILITY_LOW = 40`.
 - **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use relative paths. Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts**: rapid programmatic navigation surfaces `InvalidStateError` lines in console. Browser-internal (no app code calls `startViewTransition`); no app impact.
 
