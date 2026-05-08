@@ -19,6 +19,7 @@ import {
     isUserPrivateRoleId,
     personIdFromUserPrivateRoleId,
     userPrivateRoleFor,
+    getMembersOfRole,
 } from './roles.ts';
 
 export {
@@ -234,4 +235,37 @@ export async function removeRoleFromCrew(
         `crew-role-memberships/${membershipId}`,
     );
     crewRoleMembershipChanges.notify();
+}
+
+// Resolves every distinct person who participates
+// in a crew via any of its roles, including the
+// owner of any user-private role attached to the
+// crew. The set is deduplicated; a person who
+// belongs to two roles in one crew counts once.
+export async function getMembersOfCrew(
+    ctx: FetchContext,
+    crewId: Id,
+): Promise<Set<Id>> {
+    const roles = await getRolesInCrew(
+        ctx, crewId,
+    );
+    const personIds = new Set<Id>();
+    for (const role of roles) {
+        const id = role.idForLink();
+        if (isUserPrivateRoleId(id)) {
+            personIds.add(
+                personIdFromUserPrivateRoleId(id),
+            );
+            continue;
+        }
+        const members = await getMembersOfRole(
+            ctx, id,
+        );
+        for (const m of members) {
+            personIds.add(
+                m.person.idForLink(),
+            );
+        }
+    }
+    return personIds;
 }

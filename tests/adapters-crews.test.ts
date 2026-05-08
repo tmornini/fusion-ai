@@ -11,10 +11,12 @@ import {
     deleteCrew,
     getRolesInCrew,
     getCrewsContainingRole,
+    getMembersOfCrew,
     addRoleToCrew,
     removeRoleFromCrew,
 } from '../web-app/app/adapters/crews.ts';
 import {
+    addMember,
     userPrivateRoleId,
     isUserPrivateRole,
 } from '../web-app/app/adapters/roles.ts';
@@ -267,5 +269,64 @@ test(
             ),
             /unknown person ghost/,
         );
+    },
+);
+
+test(
+    'getMembersOfCrew unions every person in'
+    + ' every role of the crew, deduplicated',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await seedCrew(db, 'c-1', 'Squad');
+        await seedRole(db, 'r-eng', 'Eng');
+        await seedRole(db, 'r-qa', 'QA');
+        await seedPerson(db, 'p-1', 'Alice');
+        await seedPerson(db, 'p-2', 'Bob');
+        await addMember(
+            createFetchContext(db),
+            'r-eng', 'p-1',
+        );
+        await addMember(
+            createFetchContext(db),
+            'r-eng', 'p-2',
+        );
+        await addMember(
+            createFetchContext(db),
+            'r-qa', 'p-1',
+        );
+        await addRoleToCrew(
+            createFetchContext(db),
+            'c-1', 'r-eng',
+        );
+        await addRoleToCrew(
+            createFetchContext(db),
+            'c-1', 'r-qa',
+        );
+        const members = await getMembersOfCrew(
+            createFetchContext(db), 'c-1',
+        );
+        assert.equal(members.size, 2);
+        assert.ok(members.has('p-1'));
+        assert.ok(members.has('p-2'));
+    },
+);
+
+test(
+    'getMembersOfCrew includes user-private'
+    + ' role owners directly',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await seedCrew(db, 'c-1', 'Squad');
+        await seedPerson(db, 'p-1', 'Alice');
+        await addRoleToCrew(
+            createFetchContext(db),
+            'c-1',
+            userPrivateRoleId('p-1'),
+        );
+        const members = await getMembersOfCrew(
+            createFetchContext(db), 'c-1',
+        );
+        assert.equal(members.size, 1);
+        assert.ok(members.has('p-1'));
     },
 );

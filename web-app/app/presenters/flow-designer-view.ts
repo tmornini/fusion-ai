@@ -23,6 +23,7 @@ import type {
 import {
     Person,
     Role,
+    Crew,
 } from '../adapters/index.ts';
 import {
     CREW_MODELS,
@@ -165,6 +166,7 @@ export function buildNodePanel(
     isLocked: boolean,
     personMap: Map<Id, Person>,
     roleMap: Map<Id, Role>,
+    crewMap: Map<Id, Crew> = new Map(),
 ): SafeHtml {
     const isSpecial =
         node.isStart || node.isComplete;
@@ -218,10 +220,19 @@ class="text-sm text-muted"
             b.nameText(),
         ),
     );
+    const sortedCrews = Array.from(
+        crewMap.values(),
+    ).sort((a, b) =>
+        a.nameText().localeCompare(
+            b.nameText(),
+        ),
+    );
     const isUnassigned =
         node.crew.kind === 'unassigned';
     const selRoleId = node.crew.kind === 'role'
         ? node.crew.roleId : '';
+    const selCrewId = node.crew.kind === 'crew'
+        ? node.crew.crewId : '';
     const selModel = node.crew.kind === 'model'
         ? node.crew.model : '';
     return html`<div
@@ -261,6 +272,13 @@ ${sortedPeople.map(p => {
         ? ' selected' : '')
     }>${p.fullName()}</option>`;
 })}
+</optgroup>
+<optgroup label="Crews">
+${sortedCrews.map(c => html`<option
+    value="crew:${c.idForLink()}"${
+    trusted(selCrewId === c.idForLink()
+        ? ' selected' : '')
+    }>${c.nameText()}</option>`)}
 </optgroup>
 <optgroup label="Models">
 ${CREW_MODELS.map(m => html`<option

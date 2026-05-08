@@ -575,6 +575,7 @@ export function isCrewModel(
 export type NodeAssignment =
     | { kind: 'unassigned' }
     | { kind: 'role'; roleId: Id }
+    | { kind: 'crew'; crewId: Id }
     | { kind: 'model'; model: CrewModel };
 
 export interface GraphNode {

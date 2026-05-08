@@ -303,6 +303,15 @@ export function asNodeAssignment(
             ),
         };
     }
+    if (kind === 'crew') {
+        return {
+            kind: 'crew',
+            crewId: asString(
+                obj['crewId'],
+                label + '.crewId',
+            ),
+        };
+    }
     if (kind === 'model') {
         const model = asString(
             obj['model'], label + '.model',
@@ -318,8 +327,8 @@ export function asNodeAssignment(
     }
     throw new Error(
         'expected assignment.kind in {unassigned,'
-            + ' role, model} for ' + label
-            + ', got ' + kind,
+            + ' role, crew, model} for '
+            + label + ', got ' + kind,
     );
 }
 

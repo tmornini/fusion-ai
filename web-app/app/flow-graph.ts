@@ -436,6 +436,8 @@ export function shouldShowHazard(
     node: GraphNode,
     roleMemberCounts:
         ReadonlyMap<string, number>,
+    crewMemberCounts:
+        ReadonlyMap<string, number> = new Map(),
 ): boolean {
     const a = node.crew;
     if (a.kind === 'unassigned') return true;
@@ -451,6 +453,11 @@ export function shouldShowHazard(
             .get(a.roleId) ?? 0;
         return count === 0;
     }
+    if (a.kind === 'crew') {
+        const count = crewMemberCounts
+            .get(a.crewId) ?? 0;
+        return count === 0;
+    }
     return false;
 }
 
@@ -462,6 +469,8 @@ function buildNode(
         x: number; y: number;
     } | null,
     roleMemberCounts:
+        ReadonlyMap<string, number>,
+    crewMemberCounts:
         ReadonlyMap<string, number>,
 ): SafeHtml {
     const { positionX, positionY } = node;
@@ -562,6 +571,7 @@ function buildNode(
         !isSpecial
         && shouldShowHazard(
             node, roleMemberCounts,
+            crewMemberCounts,
         )
     ) {
         inner += '<g'
@@ -1010,6 +1020,8 @@ export function buildGraphSvg(
     >,
     roleMemberCounts:
         ReadonlyMap<string, number> = new Map(),
+    crewMemberCounts:
+        ReadonlyMap<string, number> = new Map(),
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -1122,6 +1134,7 @@ export function buildGraphSvg(
                 node, isSelected,
                 isLocked, portPos,
                 roleMemberCounts,
+                crewMemberCounts,
             ).toString();
     }
 

@@ -88,8 +88,10 @@ export {
 export {
     WorkboxInboxPresenter,
     buildInboxItems,
+    isWorkOrderVisibleToPerson,
     type InboxMode,
     type InboxItem,
+    type VisibilityScope,
 } from './workbox-inbox.ts';
 export {
     buildFieldInputHtml,

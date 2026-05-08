@@ -644,6 +644,30 @@ test('asNodeAssignment accepts model variant', () => {
     }
 });
 
+test('asNodeAssignment accepts crew variant', () => {
+    const result = asNodeAssignment(
+        { kind: 'crew', crewId: 'c-1' },
+        'assignment',
+    );
+    assert.equal(result.kind, 'crew');
+    if (result.kind === 'crew') {
+        assert.equal(result.crewId, 'c-1');
+    }
+});
+
+test(
+    'asNodeAssignment rejects crew without'
+    + ' crewId',
+    () => {
+        assert.throws(
+            () => asNodeAssignment(
+                { kind: 'crew' },
+                'assignment',
+            ),
+        );
+    },
+);
+
 test('asNodeAssignment rejects invalid kind', () => {
     assert.throws(
         () => asNodeAssignment(
@@ -753,6 +777,33 @@ test(
             assert.equal(
                 n.crew.model, 'Copilot',
             );
+        }
+    },
+);
+
+test(
+    'asStoredGraph round-trips a crew'
+    + ' assignment',
+    () => {
+        const result = asStoredGraph(
+            {
+                nodes: [
+                    {
+                        ...baseNode,
+                        crew: {
+                            kind: 'crew',
+                            crewId: 'c-1',
+                        },
+                    },
+                ],
+                edges: [],
+            },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.crew.kind, 'crew');
+        if (n.crew.kind === 'crew') {
+            assert.equal(n.crew.crewId, 'c-1');
         }
     },
 );

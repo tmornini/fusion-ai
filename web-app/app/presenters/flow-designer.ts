@@ -11,6 +11,7 @@ import {
     postFlowVersion,
     Person,
     Role,
+    Crew,
 } from '../adapters/index.ts';
 import type {
     Id,
@@ -100,6 +101,8 @@ interface DesignerState {
     personMap: Map<Id, Person>;
     roleMap: Map<Id, Role>;
     roleMemberCounts: Map<Id, number>;
+    crewMap: Map<Id, Crew>;
+    crewMemberCounts: Map<Id, number>;
 }
 
 export type FlowSnapshot = Readonly<DesignerState>;
@@ -116,6 +119,9 @@ export function buildInitialFlowSnapshot(
     personMap: Map<Id, Person>,
     roleMap: Map<Id, Role> = new Map(),
     roleMemberCounts: Map<Id, number>
+        = new Map(),
+    crewMap: Map<Id, Crew> = new Map(),
+    crewMemberCounts: Map<Id, number>
         = new Map(),
 ): FlowSnapshot {
     const interaction = buildInteractionState(
@@ -140,6 +146,8 @@ export function buildInitialFlowSnapshot(
         personMap,
         roleMap,
         roleMemberCounts,
+        crewMap,
+        crewMemberCounts,
     };
 }
 
@@ -1094,6 +1102,7 @@ Auto Fit</label>
                 this.#snapshot.isLocked,
                 this.#snapshot.personMap,
                 this.#snapshot.roleMap,
+                this.#snapshot.crewMap,
             );
         }
 
@@ -1342,6 +1351,7 @@ Auto Fit</label>
             marqueeRect,
             this.#snapshot.edgeWaypoints,
             this.#snapshot.roleMemberCounts,
+            this.#snapshot.crewMemberCounts,
         );
         const preview =
             this.#buildConnectPreview();

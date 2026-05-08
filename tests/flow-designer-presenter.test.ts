@@ -368,6 +368,34 @@ test(
     },
 );
 
+test(
+    'withNodeAssignment is a no-op for a crew'
+    + ' variant when no node is selected',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('n1', 0, 0)],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 800, 600, new Map(),
+        );
+        const presenter =
+            new FlowDesignerPresenter(
+                snap, 800, 600,
+                buildFlowHistorySnapshot(false),
+            );
+        const next = presenter.withNodeAssignment({
+            kind: 'crew', crewId: 'c-1',
+        });
+        const n = next.nodes.find(
+            x => x.id === 'n1',
+        )!;
+        assert.equal(
+            n.crew.kind, 'unassigned',
+        );
+    },
+);
+
 // tryShowFieldEditor coverage. The method's
 // only DOM contact is querySelector on the
 // container and an HTML write on the slot —

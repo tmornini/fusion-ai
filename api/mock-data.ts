@@ -1156,7 +1156,11 @@ export async function populateMockData(
                         positionY: 140,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        crew: {
+                            kind: 'crew',
+                            crewId:
+                                'crew_design',
+                        },
                         fields: [
                             {
                                 id: '5JZ0LeKdPCa4QMtg1RsF1M',
@@ -2546,6 +2550,14 @@ export async function populateMockData(
                 + ' together on shipments.',
             created_at: dt(0, 10, 0),
         },
+        {
+            id: 'crew_design',
+            name: 'Design Crew',
+            description:
+                'Product and the demo user'
+                + ' shaping the experience.',
+            created_at: dt(0, 10, 1),
+        },
     ];
 
     const crewRoleMemberships:
@@ -2561,6 +2573,18 @@ export async function populateMockData(
             crew_id: 'crew_delivery',
             role_id: 'role_qa',
             created_at: dt(0, 10, 5),
+        },
+        {
+            id: 'crm_design_product',
+            crew_id: 'crew_design',
+            role_id: 'role_product',
+            created_at: dt(0, 10, 6),
+        },
+        {
+            id: 'crm_design_current',
+            crew_id: 'crew_design',
+            role_id: 'user-private:current',
+            created_at: dt(0, 10, 6),
         },
     ];
 

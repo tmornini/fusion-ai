@@ -19,6 +19,7 @@ import {
     getFlowZip,
     getFlowVersions,
     getPersonMap,
+    getMembersOfCrew,
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
@@ -950,6 +951,20 @@ async function buildRoleMemberCounts(
     return counts;
 }
 
+async function buildCrewMemberCounts(
+    ctx: FetchContext,
+): Promise<Map<string, number>> {
+    const crewMap = await ctx.getCrewMap();
+    const counts = new Map<string, number>();
+    for (const crewId of crewMap.keys()) {
+        const members = await getMembersOfCrew(
+            ctx, crewId,
+        );
+        counts.set(crewId, members.size);
+    }
+    return counts;
+}
+
 function parseNodeAssignmentSelectValue(
     raw: string,
 ): NodeAssignment {
@@ -960,6 +975,12 @@ function parseNodeAssignmentSelectValue(
         return {
             kind: 'role',
             roleId: raw.slice(5),
+        };
+    }
+    if (raw.startsWith('crew:')) {
+        return {
+            kind: 'crew',
+            crewId: raw.slice(5),
         };
     }
     if (raw.startsWith('model:')) {
@@ -1234,17 +1255,21 @@ export async function init(
                 graph, versions,
                 personMap, roleMap,
                 roleMemberCounts,
+                crewMap, crewMemberCounts,
             ] = await Promise.all([
                 getFlowGraph(ctx, flowId),
                 getFlowVersions(ctx, flowId),
                 getPersonMap(ctx),
                 ctx.getRoleMap(),
                 buildRoleMemberCounts(ctx),
+                ctx.getCrewMap(),
+                buildCrewMemberCounts(ctx),
             ]);
             return {
                 graph, versions,
                 personMap, roleMap,
                 roleMemberCounts,
+                crewMap, crewMemberCounts,
             };
         },
     );
@@ -1266,6 +1291,8 @@ export async function init(
             loaded.personMap,
             loaded.roleMap,
             loaded.roleMemberCounts,
+            loaded.crewMap,
+            loaded.crewMemberCounts,
         );
     const presenter =
         new FlowDesignerPresenter(

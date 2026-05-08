@@ -135,3 +135,61 @@ test(
         );
     },
 );
+
+test(
+    'hazard renders for a crew-assigned node'
+    + ' when the crew has no members',
+    () => {
+        const node = buildNode(
+            'n1',
+            { kind: 'crew', crewId: 'c-1' },
+        );
+        const crewCounts = new Map([
+            ['c-1', 0],
+        ]);
+        assert.equal(
+            shouldShowHazard(
+                node, new Map(), crewCounts,
+            ),
+            true,
+        );
+    },
+);
+
+test(
+    'hazard renders for a crew-assigned node'
+    + ' when the crew has no entry (treat as'
+    + ' zero)',
+    () => {
+        const node = buildNode(
+            'n1',
+            { kind: 'crew', crewId: 'c-1' },
+        );
+        assert.equal(
+            shouldShowHazard(
+                node, new Map(), new Map(),
+            ),
+            true,
+        );
+    },
+);
+
+test(
+    'hazard does NOT render for a crew-assigned'
+    + ' node with at least one member',
+    () => {
+        const node = buildNode(
+            'n1',
+            { kind: 'crew', crewId: 'c-1' },
+        );
+        const crewCounts = new Map([
+            ['c-1', 3],
+        ]);
+        assert.equal(
+            shouldShowHazard(
+                node, new Map(), crewCounts,
+            ),
+            false,
+        );
+    },
+);
