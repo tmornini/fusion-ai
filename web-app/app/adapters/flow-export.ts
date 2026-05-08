@@ -595,9 +595,8 @@ export async function postFlowFromBackup(
     });
 
     await ctx.PUT<void>(
-        'project-flows',
+        `project-flows/${generateCryptoSafeBase62()}`,
         {
-            id: generateCryptoSafeBase62(),
             project_id: projectId,
             flow_id: flowId,
             created_at: now,
@@ -926,12 +925,14 @@ export async function postFlowFromMermaid(
         updated_at: now,
     });
 
-    await ctx.PUT<void>('project-flows', {
-        id: generateCryptoSafeBase62(),
-        project_id: projectId,
-        flow_id: flowId,
-        created_at: now,
-    });
+    await ctx.PUT<void>(
+        `project-flows/${generateCryptoSafeBase62()}`,
+        {
+            project_id: projectId,
+            flow_id: flowId,
+            created_at: now,
+        },
+    );
 
     notifyFlowChange();
     return {
@@ -1358,12 +1359,14 @@ export async function postFlowFromZip(
         updated_at: now,
     });
 
-    await ctx.PUT<void>('project-flows', {
-        id: generateCryptoSafeBase62(),
-        project_id: projectId,
-        flow_id: flowId,
-        created_at: now,
-    });
+    await ctx.PUT<void>(
+        `project-flows/${generateCryptoSafeBase62()}`,
+        {
+            project_id: projectId,
+            flow_id: flowId,
+            created_at: now,
+        },
+    );
 
     notifyFlowChange();
     return {

@@ -78,8 +78,7 @@ export async function postFlowCreation(
         updated_at: now,
     });
 
-    await ctx.PUT<void>('project-flows', {
-        id: input.linkId,
+    await ctx.PUT<void>(`project-flows/${input.linkId}`, {
         project_id: input.projectId,
         flow_id: input.flowId,
         created_at: now,

@@ -254,15 +254,15 @@ const routes: Route[] = [
         get: (db) =>
             db.projectFlows
                 .getAll(),
-        put: (db, _params, body) =>
+    }),
+    route('project-flows/:id', {
+        put: (db, params, body) =>
             db.projectFlows.put(
-                body.id as string,
+                param(params, 0),
                 validateProjectFlowEntity(
                     withoutId(body),
                 ),
             ),
-    }),
-    route('project-flows/:id', {
         delete: (db, params) =>
             db.projectFlows.delete(
                 param(params, 0),
