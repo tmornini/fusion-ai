@@ -3,7 +3,6 @@ import {
     assertIdeaStatus,
     assertProjectStatus,
     assertReadinessLevel,
-    isCrewModel,
 } from './types.ts';
 import type {
     GraphNode,
@@ -38,6 +37,8 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
 } from './types.ts';
 
 export interface Risk {
@@ -313,17 +314,13 @@ export function asNodeAssignment(
         };
     }
     if (kind === 'model') {
-        const model = asString(
-            obj['model'], label + '.model',
-        );
-        if (!isCrewModel(model)) {
-            throw new Error(
-                'expected CrewModel for '
-                    + label + '.model, got '
-                    + model,
-            );
-        }
-        return { kind: 'model', model };
+        return {
+            kind: 'model',
+            modelId: asString(
+                obj['modelId'],
+                label + '.modelId',
+            ),
+        };
     }
     throw new Error(
         'expected assignment.kind in {unassigned,'
@@ -1348,6 +1345,59 @@ export function validateCrewRoleMembershipEntity(
         ),
         role_id: asString(
             body['role_id'], 'role_id',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const MODEL_BODY_KEYS: readonly string[] = [
+    'name', 'provider', 'description',
+    'created_at',
+];
+
+export function validateModelEntity(
+    body: Record<string, unknown>,
+): Omit<ModelEntity, 'id'> {
+    assertOnlyKeys(
+        body, MODEL_BODY_KEYS, 'ModelEntity',
+    );
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        provider: asString(
+            body['provider'], 'provider',
+        ),
+        description: asString(
+            body['description'], 'description',
+        ),
+        created_at: asString(
+            body['created_at'], 'created_at',
+        ),
+    };
+}
+
+const ROLE_MODEL_MEMBERSHIP_BODY_KEYS:
+    readonly string[] = [
+    'role_id', 'model_id', 'created_at',
+];
+
+export function validateRoleModelMembershipEntity(
+    body: Record<string, unknown>,
+): Omit<RoleModelMembershipEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        ROLE_MODEL_MEMBERSHIP_BODY_KEYS,
+        'RoleModelMembershipEntity',
+    );
+    return {
+        role_id: asString(
+            body['role_id'], 'role_id',
+        ),
+        model_id: asString(
+            body['model_id'], 'model_id',
         ),
         created_at: asString(
             body['created_at'], 'created_at',

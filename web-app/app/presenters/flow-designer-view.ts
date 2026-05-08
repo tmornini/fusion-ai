@@ -24,9 +24,9 @@ import {
     Person,
     Role,
     Crew,
+    Model,
 } from '../adapters/index.ts';
 import {
-    CREW_MODELS,
     START_NODE_DEFAULT_NAME,
     END_NODE_DEFAULT_NAME,
 } from '../../../api/types.ts';
@@ -167,6 +167,7 @@ export function buildNodePanel(
     personMap: Map<Id, Person>,
     roleMap: Map<Id, Role>,
     crewMap: Map<Id, Crew> = new Map(),
+    modelMap: Map<Id, Model> = new Map(),
 ): SafeHtml {
     const isSpecial =
         node.isStart || node.isComplete;
@@ -227,14 +228,21 @@ class="text-sm text-muted"
             b.nameText(),
         ),
     );
+    const sortedModels = Array.from(
+        modelMap.values(),
+    ).sort((a, b) =>
+        a.nameText().localeCompare(
+            b.nameText(),
+        ),
+    );
     const isUnassigned =
         node.crew.kind === 'unassigned';
     const selRoleId = node.crew.kind === 'role'
         ? node.crew.roleId : '';
     const selCrewId = node.crew.kind === 'crew'
         ? node.crew.crewId : '';
-    const selModel = node.crew.kind === 'model'
-        ? node.crew.model : '';
+    const selModelId = node.crew.kind === 'model'
+        ? node.crew.modelId : '';
     return html`<div
 class="flow-props-panel">
 <div class="flow-props-header"
@@ -281,11 +289,11 @@ ${sortedCrews.map(c => html`<option
     }>${c.nameText()}</option>`)}
 </optgroup>
 <optgroup label="Models">
-${CREW_MODELS.map(m => html`<option
-    value="model:${m}"${
-    trusted(selModel === m
+${sortedModels.map(m => html`<option
+    value="model:${m.idForLink()}"${
+    trusted(selModelId === m.idForLink()
         ? ' selected' : '')
-    }>${m}</option>`)}
+    }>${m.nameText()}</option>`)}
 </optgroup>
 </select>
 </div>

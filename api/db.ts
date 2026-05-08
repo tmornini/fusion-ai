@@ -14,6 +14,8 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -144,6 +146,12 @@ export interface DbAdapter {
         EntityStore<
             CrewRoleMembershipEntity
         >;
+    models:
+        EntityStore<ModelEntity>;
+    roleModelMemberships:
+        EntityStore<
+            RoleModelMembershipEntity
+        >;
     deleted: DeletedStore;
 }
 
@@ -167,5 +175,7 @@ export const TABLE_NAMES = [
     'role_memberships',
     'crews',
     'crew_role_memberships',
+    'models',
+    'role_model_memberships',
     'deleted',
 ];

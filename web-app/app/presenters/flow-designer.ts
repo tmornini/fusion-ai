@@ -12,6 +12,7 @@ import {
     Person,
     Role,
     Crew,
+    Model,
 } from '../adapters/index.ts';
 import type {
     Id,
@@ -103,6 +104,7 @@ interface DesignerState {
     roleMemberCounts: Map<Id, number>;
     crewMap: Map<Id, Crew>;
     crewMemberCounts: Map<Id, number>;
+    modelMap: Map<Id, Model>;
 }
 
 export type FlowSnapshot = Readonly<DesignerState>;
@@ -123,6 +125,7 @@ export function buildInitialFlowSnapshot(
     crewMap: Map<Id, Crew> = new Map(),
     crewMemberCounts: Map<Id, number>
         = new Map(),
+    modelMap: Map<Id, Model> = new Map(),
 ): FlowSnapshot {
     const interaction = buildInteractionState(
         canvasW, canvasH,
@@ -148,6 +151,7 @@ export function buildInitialFlowSnapshot(
         roleMemberCounts,
         crewMap,
         crewMemberCounts,
+        modelMap,
     };
 }
 
@@ -1103,6 +1107,7 @@ Auto Fit</label>
                 this.#snapshot.personMap,
                 this.#snapshot.roleMap,
                 this.#snapshot.crewMap,
+                this.#snapshot.modelMap,
             );
         }
 

@@ -15,6 +15,8 @@ import {
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
     validateProjectFlowEntity,
+    validateModelEntity,
+    validateRoleModelMembershipEntity,
     asNodeAssignment,
     asStoredGraph,
 } from '../api/validators.ts';
@@ -613,6 +615,91 @@ test(
     );
 });
 
+// --- validateModelEntity ---
+
+const validModel = {
+    name: 'Claude Opus 4.7 Max',
+    provider: 'Anthropic',
+    description: 'Long context, deep reasoning.',
+    created_at: '2024-01-01T00:00:00Z',
+};
+
+test(
+    'validateModelEntity accepts valid payload',
+    () => {
+        const result = validateModelEntity(
+            validModel,
+        );
+        assert.equal(
+            result.name, 'Claude Opus 4.7 Max',
+        );
+        assert.equal(
+            result.provider, 'Anthropic',
+        );
+    },
+);
+
+test(
+    'validateModelEntity rejects unexpected key',
+    () => {
+        assert.throws(
+            () => validateModelEntity({
+                ...validModel,
+                surprise: 'oops',
+            }),
+        );
+    },
+);
+
+test(
+    'validateModelEntity rejects missing name',
+    () => {
+        const { name: _omit, ...rest } =
+            validModel;
+        assert.throws(
+            () => validateModelEntity(rest),
+        );
+    },
+);
+
+// --- validateRoleModelMembershipEntity ---
+
+const validRoleModelMembership = {
+    role_id: 'role_engineering',
+    model_id: 'model_claude_opus',
+    created_at: '2024-01-01T00:00:00Z',
+};
+
+test(
+    'validateRoleModelMembershipEntity accepts'
+    + ' valid payload',
+    () => {
+        const result =
+            validateRoleModelMembershipEntity(
+                validRoleModelMembership,
+            );
+        assert.equal(
+            result.model_id,
+            'model_claude_opus',
+        );
+    },
+);
+
+test(
+    'validateRoleModelMembershipEntity rejects'
+    + ' missing model_id',
+    () => {
+        const { model_id: _omit, ...rest } =
+            validRoleModelMembership;
+        assert.throws(
+            () =>
+                validateRoleModelMembershipEntity(
+                    rest,
+                ),
+        );
+    },
+);
+
 // --- asNodeAssignment (NodeAssignment discriminated union) ---
 
 test('asNodeAssignment accepts unassigned variant', () => {
@@ -635,14 +722,30 @@ test('asNodeAssignment accepts the new role variant', () => {
 
 test('asNodeAssignment accepts model variant', () => {
     const result = asNodeAssignment(
-        { kind: 'model', model: 'Copilot' },
+        { kind: 'model', modelId: 'm-1' },
         'assignment',
     );
     assert.equal(result.kind, 'model');
     if (result.kind === 'model') {
-        assert.equal(result.model, 'Copilot');
+        assert.equal(result.modelId, 'm-1');
     }
 });
+
+test(
+    'asNodeAssignment rejects the old model'
+    + ' shape (string model field)',
+    () => {
+        assert.throws(
+            () => asNodeAssignment(
+                {
+                    kind: 'model',
+                    model: 'Copilot',
+                },
+                'assignment',
+            ),
+        );
+    },
+);
 
 test('asNodeAssignment accepts crew variant', () => {
     const result = asNodeAssignment(
@@ -690,15 +793,18 @@ test(
     },
 );
 
-test('asNodeAssignment rejects unknown model', () => {
-    assert.throws(
-        () => asNodeAssignment(
-            { kind: 'model', model: 'Unknown' },
-            'assignment',
-        ),
-        /CrewModel/,
-    );
-});
+test(
+    'asNodeAssignment rejects model without'
+    + ' modelId',
+    () => {
+        assert.throws(
+            () => asNodeAssignment(
+                { kind: 'model' },
+                'assignment',
+            ),
+        );
+    },
+);
 
 // --- asGraphNode crew validation ---
 
@@ -763,7 +869,7 @@ test(
                         ...baseNode,
                         crew: {
                             kind: 'model',
-                            model: 'Copilot',
+                            modelId: 'm-1',
                         },
                     },
                 ],
@@ -775,7 +881,7 @@ test(
         assert.equal(n.crew.kind, 'model');
         if (n.crew.kind === 'model') {
             assert.equal(
-                n.crew.model, 'Copilot',
+                n.crew.modelId, 'm-1',
             );
         }
     },

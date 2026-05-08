@@ -14,6 +14,8 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -2588,6 +2590,53 @@ export async function populateMockData(
         },
     ];
 
+    const models: ModelEntity[] = [
+        {
+            id: 'model_claude_opus',
+            name: 'Claude Opus 4.7 Max',
+            provider: 'Anthropic',
+            description:
+                'Anthropic flagship — long'
+                + ' context, deep reasoning.',
+            created_at: dt(0, 11, 0),
+        },
+        {
+            id: 'model_claude_sonnet',
+            name: 'Claude Sonnet 4.6',
+            provider: 'Anthropic',
+            description:
+                'Anthropic mid-tier — fast'
+                + ' and capable.',
+            created_at: dt(0, 11, 0),
+        },
+        {
+            id: 'model_gpt_5_4_pro',
+            name: 'GPT-5.4 Pro',
+            provider: 'OpenAI',
+            description:
+                'OpenAI multimodal flagship.',
+            created_at: dt(0, 11, 0),
+        },
+        {
+            id: 'model_grok_heavy',
+            name: 'Grok 4.20 Heavy',
+            provider: 'xAI',
+            description:
+                'xAI heavy-compute model.',
+            created_at: dt(0, 11, 0),
+        },
+    ];
+
+    const roleModelMemberships:
+        RoleModelMembershipEntity[] = [
+        {
+            id: 'rmm_eng_claude_opus',
+            role_id: 'role_engineering',
+            model_id: 'model_claude_opus',
+            created_at: dt(0, 11, 5),
+        },
+    ];
+
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
@@ -2632,6 +2681,14 @@ export async function populateMockData(
         ),
         ...crews.map(c =>
             adapter.crews.put(c.id, c),
+        ),
+        ...models.map(m =>
+            adapter.models.put(m.id, m),
+        ),
+        ...roleModelMemberships.map(r =>
+            adapter.roleModelMemberships.put(
+                r.id, r,
+            ),
         ),
         ...crewRoleMemberships.map(r =>
             adapter.crewRoleMemberships.put(

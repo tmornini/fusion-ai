@@ -357,7 +357,7 @@ test(
                 buildFlowHistorySnapshot(false),
             );
         const next = presenter.withNodeAssignment({
-            kind: 'model', model: 'Copilot',
+            kind: 'model', modelId: 'm-1',
         });
         const n = next.nodes.find(
             x => x.id === 'n1',

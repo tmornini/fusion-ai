@@ -25,6 +25,8 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -57,6 +59,8 @@ import {
     validateRoleMembershipEntity,
     validateCrewEntity,
     validateCrewRoleMembershipEntity,
+    validateModelEntity,
+    validateRoleModelMembershipEntity,
 } from './validators.ts';
 
 const KEY_PREFIX = 'fusion-ai:';
@@ -139,6 +143,14 @@ function validateSnapshotRow(
                 break;
             case 'crew_role_memberships':
                 validateCrewRoleMembershipEntity(
+                    body,
+                );
+                break;
+            case 'models':
+                validateModelEntity(body);
+                break;
+            case 'role_model_memberships':
+                validateRoleModelMembershipEntity(
                     body,
                 );
                 break;
@@ -889,6 +901,17 @@ export async function createLocalStorageAdapter(
                 CrewRoleMembershipEntity
             >(
                 'crew_role_memberships',
+                deletedStore,
+            ),
+        models:
+            createEntityStore<
+                ModelEntity
+            >('models', deletedStore),
+        roleModelMemberships:
+            createEntityStore<
+                RoleModelMembershipEntity
+            >(
+                'role_model_memberships',
                 deletedStore,
             ),
         deleted: deletedStore,

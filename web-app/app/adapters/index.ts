@@ -18,6 +18,7 @@ export * from './projects.ts';
 export * from './people.ts';
 export * from './roles.ts';
 export * from './crews.ts';
+export * from './models.ts';
 export * from './admin.ts';
 export * from './activities.ts';
 export * from './snapshots.ts';

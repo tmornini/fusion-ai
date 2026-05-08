@@ -24,6 +24,8 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -177,6 +179,10 @@ interface Tables {
     crewRoleMemberships: Map<
         string, CrewRoleMembershipEntity
     >;
+    models: Map<string, ModelEntity>;
+    roleModelMemberships: Map<
+        string, RoleModelMembershipEntity
+    >;
     workOrders: Map<string, WorkOrderEntity>;
     flowWorkOrders: Map<
         string, FlowWorkOrderEntity
@@ -240,6 +246,12 @@ export class MemoryDbAdapter
         EntityStore<CrewEntity>;
     readonly crewRoleMemberships:
         EntityStore<CrewRoleMembershipEntity>;
+    readonly models:
+        EntityStore<ModelEntity>;
+    readonly roleModelMemberships:
+        EntityStore<
+            RoleModelMembershipEntity
+        >;
     readonly deleted: DeletedStore;
 
     constructor() {
@@ -340,6 +352,15 @@ export class MemoryDbAdapter
                 'crew_role_memberships',
                 t.crewRoleMemberships, ds,
             );
+        this.models =
+            new MemEntityStore(
+                'models', t.models, ds,
+            );
+        this.roleModelMemberships =
+            new MemEntityStore(
+                'role_model_memberships',
+                t.roleModelMemberships, ds,
+            );
     }
 
     async initialize(): Promise<void> {}
@@ -427,6 +448,8 @@ function buildTables(): Tables {
         roleMemberships: new Map(),
         crews: new Map(),
         crewRoleMemberships: new Map(),
+        models: new Map(),
+        roleModelMemberships: new Map(),
         workOrders: new Map(),
         flowWorkOrders: new Map(),
         workOrderTransitions: new Map(),

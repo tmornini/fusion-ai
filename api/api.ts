@@ -23,6 +23,8 @@ import {
     validateRoleMembershipEntity,
     validateCrewEntity,
     validateCrewRoleMembershipEntity,
+    validateModelEntity,
+    validateRoleModelMembershipEntity,
 } from './validators.ts';
 
 export class ApiError {
@@ -205,6 +207,43 @@ const routes: Route[] = [
             ),
         delete: (db, params) =>
             db.crewRoleMemberships.delete(
+                param(params, 0),
+            ),
+    }),
+    route('models', {
+        get: (db) => db.models.getAll(),
+    }),
+    route('models/:id', {
+        get: (db, params) =>
+            db.models.getById(
+                param(params, 0),
+            ),
+        put: (db, params, body) =>
+            db.models.put(
+                param(params, 0),
+                validateModelEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.models.delete(
+                param(params, 0),
+            ),
+    }),
+    route('role-model-memberships', {
+        get: (db) =>
+            db.roleModelMemberships.getAll(),
+    }),
+    route('role-model-memberships/:id', {
+        put: (db, params, body) =>
+            db.roleModelMemberships.put(
+                param(params, 0),
+                validateRoleModelMembershipEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, params) =>
+            db.roleModelMemberships.delete(
                 param(params, 0),
             ),
     }),

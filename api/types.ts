@@ -553,30 +553,11 @@ export interface GraphField {
 export const START_NODE_DEFAULT_NAME = 'Create';
 export const END_NODE_DEFAULT_NAME = 'Archive';
 
-export const CREW_MODELS = [
-    'Grok 4.20 Heavy',
-    'Claude Opus 4.7 Max',
-    'Gemini 3.1 Pro',
-    'Copilot',
-    'GPT-5.4 Pro',
-] as const;
-
-export type CrewModel =
-    (typeof CREW_MODELS)[number];
-
-export function isCrewModel(
-    v: string,
-): v is CrewModel {
-    return (
-        CREW_MODELS as readonly string[]
-    ).includes(v);
-}
-
 export type NodeAssignment =
     | { kind: 'unassigned' }
     | { kind: 'role'; roleId: Id }
     | { kind: 'crew'; crewId: Id }
-    | { kind: 'model'; model: CrewModel };
+    | { kind: 'model'; modelId: Id };
 
 export interface GraphNode {
     id: string;
@@ -767,6 +748,21 @@ export interface CrewRoleMembershipEntity {
     id: Id;
     crew_id: Id;
     role_id: Id;
+    created_at: string;
+}
+
+export interface ModelEntity {
+    id: Id;
+    name: string;
+    provider: string;
+    description: string;
+    created_at: string;
+}
+
+export interface RoleModelMembershipEntity {
+    id: Id;
+    role_id: Id;
+    model_id: Id;
     created_at: string;
 }
 
@@ -1286,6 +1282,43 @@ export class Crew {
 
     nameText(): string {
         return this.#name;
+    }
+
+    descriptionText(): string {
+        return this.#description;
+    }
+
+    createdAtValue(): string {
+        return this.#createdAt;
+    }
+}
+
+export class Model {
+    readonly #id: Id;
+    readonly #name: string;
+    readonly #provider: string;
+    readonly #description: string;
+    readonly #createdAt: string;
+
+    constructor(entity: ModelEntity) {
+        this.#id = entity.id;
+        this.#name = entity.name;
+        this.#provider = entity.provider;
+        this.#description =
+            entity.description;
+        this.#createdAt = entity.created_at;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    nameText(): string {
+        return this.#name;
+    }
+
+    providerText(): string {
+        return this.#provider;
     }
 
     descriptionText(): string {

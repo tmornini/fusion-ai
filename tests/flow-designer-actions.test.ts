@@ -233,14 +233,14 @@ test('applyUpdateNode patches crew variant', () => {
         {
             crew: {
                 kind: 'model',
-                model: 'Copilot',
+                modelId: 'm-1',
             },
         },
     );
     assert.equal(result[0]?.crew.kind, 'model');
     if (result[0]?.crew.kind === 'model') {
         assert.equal(
-            result[0].crew.model, 'Copilot',
+            result[0].crew.modelId, 'm-1',
         );
     }
     assert.equal(

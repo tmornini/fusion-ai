@@ -26,9 +26,6 @@ import {
 import type {
     FetchContext,
 } from '../app/adapters/index.ts';
-import {
-    isCrewModel,
-} from '../../api/types.ts';
 import type { NodeAssignment } from '../../api/types.ts';
 import {
     downloadBlob,
@@ -984,14 +981,10 @@ function parseNodeAssignmentSelectValue(
         };
     }
     if (raw.startsWith('model:')) {
-        const model = raw.slice(6);
-        if (!isCrewModel(model)) {
-            throw new Error(
-                'invalid assignment model: '
-                    + model,
-            );
-        }
-        return { kind: 'model', model };
+        return {
+            kind: 'model',
+            modelId: raw.slice(6),
+        };
     }
     throw new Error(
         'invalid assignment value: ' + raw,
@@ -1256,6 +1249,7 @@ export async function init(
                 personMap, roleMap,
                 roleMemberCounts,
                 crewMap, crewMemberCounts,
+                modelMap,
             ] = await Promise.all([
                 getFlowGraph(ctx, flowId),
                 getFlowVersions(ctx, flowId),
@@ -1264,12 +1258,14 @@ export async function init(
                 buildRoleMemberCounts(ctx),
                 ctx.getCrewMap(),
                 buildCrewMemberCounts(ctx),
+                ctx.getModelMap(),
             ]);
             return {
                 graph, versions,
                 personMap, roleMap,
                 roleMemberCounts,
                 crewMap, crewMemberCounts,
+                modelMap,
             };
         },
     );
@@ -1293,6 +1289,7 @@ export async function init(
             loaded.roleMemberCounts,
             loaded.crewMap,
             loaded.crewMemberCounts,
+            loaded.modelMap,
         );
     const presenter =
         new FlowDesignerPresenter(

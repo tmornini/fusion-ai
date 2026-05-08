@@ -31,7 +31,7 @@ test(
     () => {
         assert.equal(
             isWorkOrderVisibleToPerson(
-                { kind: 'model', model: 'Copilot' },
+                { kind: 'model', modelId: 'm-1' },
                 EMPTY_SCOPE,
             ),
             false,

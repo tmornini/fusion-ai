@@ -124,7 +124,7 @@ test(
             'n1',
             {
                 kind: 'model',
-                model: 'Copilot',
+                modelId: 'm-1',
             },
         );
         assert.equal(

@@ -15,11 +15,14 @@ import type {
     RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
+    ModelEntity,
+    RoleModelMembershipEntity,
 } from '../../../api/types.ts';
 import {
     Person,
     Role,
     Crew,
+    Model,
 } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
@@ -87,6 +90,9 @@ export interface FetchContext {
     getCrewMap(): Promise<Map<Id, Crew>>;
     getCrewRoleMembershipRows(
     ): Promise<CrewRoleMembershipEntity[]>;
+    getModelMap(): Promise<Map<Id, Model>>;
+    getRoleModelMembershipRows(
+    ): Promise<RoleModelMembershipEntity[]>;
     commit(tx: Transaction): Promise<void>;
 }
 
@@ -118,6 +124,11 @@ export function createFetchContext(
         Promise<Map<Id, Crew>> | null = null;
     let crewRoleMembershipRowsPromise:
         Promise<CrewRoleMembershipEntity[]>
+        | null = null;
+    let modelMapPromise:
+        Promise<Map<Id, Model>> | null = null;
+    let roleModelMembershipRowsPromise:
+        Promise<RoleModelMembershipEntity[]>
         | null = null;
     const ctx: FetchContext = {
         requestId: generateCryptoSafeBase62(),
@@ -252,6 +263,36 @@ export function createFetchContext(
                     >('crew-role-memberships');
             }
             return crewRoleMembershipRowsPromise;
+        },
+        getModelMap: () => {
+            if (!modelMapPromise) {
+                modelMapPromise = (async () => {
+                    const rows = await ctx
+                        .GET<ModelEntity[]>(
+                            'models',
+                        );
+                    return new Map(
+                        rows.map(
+                            entity => [
+                                entity.id,
+                                new Model(entity),
+                            ],
+                        ),
+                    );
+                })();
+            }
+            return modelMapPromise;
+        },
+        getRoleModelMembershipRows: () => {
+            if (
+                !roleModelMembershipRowsPromise
+            ) {
+                roleModelMembershipRowsPromise =
+                    ctx.GET<
+                        RoleModelMembershipEntity[]
+                    >('role-model-memberships');
+            }
+            return roleModelMembershipRowsPromise;
         },
         commit: async (
             tx: Transaction,
