@@ -6,7 +6,7 @@ import {
     iconFolderKanban,
     iconGitBranch,
     iconPeople,
-    iconSettings,
+    iconBuilding,
     iconPerson,
     iconCreditCard,
     iconDatabase,
@@ -18,6 +18,7 @@ import {
 export interface PageEntry {
     title: string;
     layout: 'sidebar' | 'standalone';
+    inSidebarNav?: boolean;
     sourceDir: string;
     sourceFile: string;
     icon?: IconFn;
@@ -37,6 +38,7 @@ export const PAGE_REGISTRY: Record<
     dashboard: {
         title: 'Dashboard',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'dashboard',
         sourceFile: 'index',
         icon: iconHome,
@@ -46,6 +48,7 @@ export const PAGE_REGISTRY: Record<
     ideas: {
         title: 'Ideas',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'ideas',
         sourceFile: 'index',
         icon: iconLightbulb,
@@ -82,6 +85,7 @@ export const PAGE_REGISTRY: Record<
     projects: {
         title: 'Projects',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'projects',
         sourceFile: 'index',
         icon: iconFolderKanban,
@@ -101,6 +105,7 @@ export const PAGE_REGISTRY: Record<
     flows: {
         title: 'Flows',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'flows',
         sourceFile: 'index',
         icon: iconGitBranch,
@@ -121,6 +126,7 @@ export const PAGE_REGISTRY: Record<
     workbox: {
         title: 'Workbox',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'workbox',
         sourceFile: 'index',
         icon: iconMail,
@@ -140,9 +146,10 @@ export const PAGE_REGISTRY: Record<
     organization: {
         title: 'Organization',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'organization',
         sourceFile: 'index',
-        icon: iconSettings,
+        icon: iconBuilding,
         keywords:
             'organization billing plan',
         loader: () => import('../organization/index'),
@@ -150,6 +157,7 @@ export const PAGE_REGISTRY: Record<
     people: {
         title: 'People',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'people',
         sourceFile: 'index',
         icon: iconPeople,
@@ -168,6 +176,7 @@ export const PAGE_REGISTRY: Record<
     roles: {
         title: 'Roles',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'roles',
         sourceFile: 'index',
         icon: iconShield,
@@ -177,6 +186,7 @@ export const PAGE_REGISTRY: Record<
     crews: {
         title: 'Crews',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'crews',
         sourceFile: 'index',
         icon: iconBriefcase,
@@ -186,6 +196,7 @@ export const PAGE_REGISTRY: Record<
     billing: {
         title: 'Billing',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'billing',
         sourceFile: 'index',
         icon: iconCreditCard,
@@ -197,6 +208,7 @@ export const PAGE_REGISTRY: Record<
     snapshots: {
         title: 'Snapshots',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'snapshots',
         sourceFile: 'index',
         icon: iconDatabase,
@@ -207,6 +219,7 @@ export const PAGE_REGISTRY: Record<
     'design-system': {
         title: 'Design System',
         layout: 'sidebar',
+        inSidebarNav: true,
         sourceDir: 'design-system',
         sourceFile: 'index',
         icon: iconPalette,
