@@ -210,10 +210,10 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 ### Adapter Conventions
 
-- **`userName(userMap, userId: Id)`** throws on both missing and
-  unknown userId. Optional user references must branch at the
-  call site (`leadRow ? userName(...) : ''`) — never overload
-  `userName` with a fallback. UI renders `'—'` via
+- **`personName(personMap, personId: Id)`** throws on both missing
+  and unknown personId. Optional person references must branch at
+  the call site (`leadRow ? personName(...) : ''`) — never overload
+  `personName` with a fallback. UI renders `'—'` via
   `DISPLAY_ABSENT` for legitimately absent values. Never use
   magic strings like `'Unknown'`.
 - **`FetchContext` is the only I/O surface.** Every data-access
@@ -221,7 +221,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
   `ctx.GET/PUT/DELETE/POST/commit`. The standalone `GET/PUT/...`
   exports in `api/api.ts` are the transport `ctx` delegates to —
   adapters never import them directly. A ctx executes against an
-  immutable snapshot: `ctx.getUserMap()`, `ctx.getIdeaRows()`,
+  immutable snapshot: `ctx.getPersonMap()`, `ctx.getIdeaRows()`,
   etc. are memoized for its lifetime so multiple adapter calls
   see the same view.
 - **Platform-shim vs data-access adapters share `adapters/`.**
@@ -330,7 +330,7 @@ time budgets while keeping per-entity mutation domains disjoint:
    produce the distribution ZIP, `./build --no-zip` for the test
    server, start HTTP server, open tab 0. Covers A1–A5.
 2. **Phase 1 — Data setup** (one agent, serial): AA1–AA43 in
-   tab 0. Creates pristine environment, users, ideas, projects,
+   tab 0. Creates pristine environment, people, ideas, projects,
    one flow. Populates the shared database that Phase 2
    verifies.
 3. **Phase 2 — Parallel verification** (7 agents concurrent,
@@ -364,7 +364,7 @@ subset of tables:
 | Agent-E | `projects` (plus one flow via E7) |
 | Agent-F | `flows`, `flow_versions` |
 | Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims`, plus its own private flow in `flows`/`flow_versions` |
-| Agent-G | `users`, `profile`, `organization` |
+| Agent-G | `people`, `profile`, `organization` |
 | Agent-CH | none (read-only) |
 
 Agent-F2 owns its source flow because `postWorkOrderCreation`
