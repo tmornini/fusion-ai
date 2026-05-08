@@ -212,13 +212,6 @@ export const PAGE_REGISTRY: Record<
         sourceFile: 'index',
         searchable: false,
     },
-    onboarding: {
-        title: 'Onboarding',
-        layout: 'standalone',
-        sourceDir: 'organization',
-        sourceFile: 'onboarding',
-        searchable: false,
-    },
     'not-found': {
         title: '404 Not Found',
         layout: 'standalone',

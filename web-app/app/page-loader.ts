@@ -72,11 +72,6 @@ const pageModules: Record<
         import('../landing/index'),
     auth: () =>
         import('../auth/index'),
-    onboarding: () =>
-        import(
-            '../organization/'
-            + 'onboarding'
-        ),
     'not-found': () =>
         import('../not-found/index'),
 };
