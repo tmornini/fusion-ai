@@ -271,13 +271,6 @@ const routes: Route[] = [
     route('work-orders', {
         get: (db) =>
             db.workOrders.getAll(),
-        put: (db, _params, body) =>
-            db.workOrders.put(
-                body.id as string,
-                validateWorkOrderEntity(
-                    withoutId(body),
-                ),
-            ),
     }),
     route('work-orders/:id', {
         get: (db, params) =>

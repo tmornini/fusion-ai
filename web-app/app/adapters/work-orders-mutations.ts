@@ -138,17 +138,19 @@ export async function postWorkOrderCreation(
             edges: graph.edges,
         };
 
-    await ctx.PUT<void>('work-orders', {
-        id: input.workOrderId,
-        display_id: displayId,
-        flow_graph: jsonObjectField(
-            flowGraph as unknown as Record<
-                string, unknown
-            >,
-        ),
-        position,
-        created_at: now,
-    });
+    await ctx.PUT<void>(
+        `work-orders/${input.workOrderId}`,
+        {
+            display_id: displayId,
+            flow_graph: jsonObjectField(
+                flowGraph as unknown as Record<
+                    string, unknown
+                >,
+            ),
+            position,
+            created_at: now,
+        },
+    );
 
     await ctx.PUT<void>(
         'flow-work-orders',
