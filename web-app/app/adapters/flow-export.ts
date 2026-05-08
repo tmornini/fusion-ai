@@ -576,8 +576,7 @@ export async function postFlowFromBackup(
             };
         });
 
-    await ctx.PUT<void>('flows', {
-        id: flowId,
+    await ctx.PUT<void>(`flows/${flowId}`, {
         name: backup.flow.name,
         description:
             backup.flow.description,
@@ -914,8 +913,7 @@ export async function postFlowFromMermaid(
                 + ' intermediate state',
         );
     }
-    await ctx.PUT<void>('flows', {
-        id: flowId,
+    await ctx.PUT<void>(`flows/${flowId}`, {
         name:
             firstNode.name + ' (import)',
         description: '',
@@ -1348,8 +1346,7 @@ export async function postFlowFromZip(
         ? sidecar.description
         : firstNode!.name;
 
-    await ctx.PUT<void>('flows', {
-        id: flowId,
+    await ctx.PUT<void>(`flows/${flowId}`, {
         name: flowName,
         description: flowDesc,
         is_locked: false,

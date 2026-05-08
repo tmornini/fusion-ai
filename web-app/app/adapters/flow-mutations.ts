@@ -66,8 +66,7 @@ export async function postFlowCreation(
         edges: [],
     };
 
-    await ctx.PUT<void>('flows', {
-        id: input.flowId,
+    await ctx.PUT<void>(`flows/${input.flowId}`, {
         name: input.name,
         description: input.description,
         is_locked: false,

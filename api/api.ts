@@ -211,13 +211,6 @@ const routes: Route[] = [
     route('flows', {
         get: (db) =>
             db.flows.getAll(),
-        put: (db, _params, body) =>
-            db.flows.put(
-                body.id as string,
-                validateFlowEntity(
-                    withoutId(body),
-                ),
-            ),
     }),
     route('flows/:id', {
         get: (db, params) =>
