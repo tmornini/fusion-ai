@@ -27,6 +27,10 @@ export function subscribeProjectChanges(
     return projectChanges.subscribe(fn);
 }
 
+export function notifyProjectChange(): void {
+    projectChanges.notify();
+}
+
 export {
     Project,
     type ProjectStatus,

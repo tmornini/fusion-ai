@@ -12,7 +12,9 @@ import {
     personName,
 } from './shared.ts';
 import type { FetchContext } from './shared.ts';
-import { putProject } from './projects.ts';
+import {
+    notifyProjectChange,
+} from './projects.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -171,6 +173,11 @@ export async function putIdeaSubmission(
 }
 
 // Idempotent: retry recovers from partial failure.
+// Inlined writes (rather than delegating to the
+// putProject / putIdea helpers) so the project and
+// idea writes commit together as one logical
+// operation. The helpers stay — they have other
+// callers whose writes are genuinely independent.
 export async function postIdeaConversion(
     ctx: FetchContext,
     ideaId: string,
@@ -178,6 +185,26 @@ export async function postIdeaConversion(
     project: Omit<ProjectEntity, 'id'>,
     promotedIdea: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
-    await putProject(ctx, projectId, project);
-    await putIdea(ctx, ideaId, promotedIdea);
+    type AnyBody = Record<string, unknown>;
+    const projectBody =
+        project as unknown as AnyBody;
+    const ideaBody =
+        promotedIdea as unknown as AnyBody;
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `projects/${projectId}`,
+                body: projectBody,
+            },
+            {
+                method: 'put',
+                resource: `ideas/${ideaId}`,
+                body: ideaBody,
+            },
+        ],
+    });
+    notifyProjectChange();
+    ideaChanges.notify();
 }
