@@ -18,7 +18,9 @@ import {
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
-import type { FetchContext } from './shared.ts';
+import type {
+    FetchContext, WriteOp,
+} from './shared.ts';
 
 const workOrderChanges =
     createSubscriptionChannel(
@@ -232,21 +234,11 @@ export async function postWorkOrderTransition(
 
     const now = nowUtc();
 
-    await ctx.PUT<void>(
-        `work-order-transitions/${transitionId}`,
-        {
-            work_order_id: workOrderId,
-            from_node_id: currentNodeId,
-            to_node_id: edge.toNodeId,
-            person_id: person.id,
-            transitioned_at: now,
-        },
-    );
-
     // Each field/value pair becomes its own row
     // in the transition_field_values table — Codd
     // 1NF, replacing the former JSON blob. IDs
     // are caller-supplied for retry safety.
+    const fieldValueOps: WriteOp[] = [];
     for (
         const [fieldId, value]
             of Object.entries(values)
@@ -258,14 +250,16 @@ export async function postWorkOrderTransition(
                 + ' field ' + fieldId,
             );
         }
-        await ctx.PUT<void>(
-            `transition-field-values/${id}`,
-            {
+        fieldValueOps.push({
+            method: 'put',
+            resource:
+                `transition-field-values/${id}`,
+            body: {
                 transition_id: transitionId,
                 field_id: fieldId,
                 value,
             },
-        );
+        });
     }
 
     const claims =
@@ -276,11 +270,33 @@ export async function postWorkOrderTransition(
         c => c.work_order_id
             === workOrderId,
     );
-    if (claim) {
-        await ctx.DELETE(
-            `work-order-claims/${claim.id}`,
-        );
-    }
+    const claimDelete: WriteOp[] = claim
+        ? [{
+            method: 'delete',
+            resource:
+                `work-order-claims/${claim.id}`,
+        }]
+        : [];
+
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `work-order-transitions/`
+                    + `${transitionId}`,
+                body: {
+                    work_order_id: workOrderId,
+                    from_node_id: currentNodeId,
+                    to_node_id: edge.toNodeId,
+                    person_id: person.id,
+                    transitioned_at: now,
+                },
+            },
+            ...fieldValueOps,
+            ...claimDelete,
+        ],
+    });
 
     workOrderChanges.notify();
 }
