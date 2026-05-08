@@ -51,6 +51,10 @@ const pageModules: Record<
         import('../people/index'),
     'people-detail': () =>
         import('../people/detail'),
+    roles: () =>
+        import('../roles/index'),
+    crews: () =>
+        import('../crews/index'),
     snapshots: () =>
         import('../snapshots/index'),
     'design-system': () =>
