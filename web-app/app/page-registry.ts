@@ -9,7 +9,6 @@ import {
     iconSettings,
     iconUser,
     iconCreditCard,
-    iconActivity,
     iconDatabase,
     iconPalette,
 } from './icons.ts';
