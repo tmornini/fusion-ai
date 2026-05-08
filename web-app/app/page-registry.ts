@@ -98,7 +98,7 @@ export const PAGE_REGISTRY: Record<
     },
     'flow-detail': {
         title: 'Flow Designer',
-        layout: 'standalone',
+        layout: 'sidebar',
         sourceDir: 'flows',
         sourceFile: 'detail',
         icon: iconGitBranch,
