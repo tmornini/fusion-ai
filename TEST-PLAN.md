@@ -87,10 +87,10 @@ on. Run these in order.
 
 ### AA2. Create Users
 
-- [ ] **AA4** Navigate to People (sidebar). Click "Invite User". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [ ] **AA4** Navigate to People (sidebar). Click "Invite Person". PASS: invite dialog opens with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
 - [ ] **AA5** Fill all fields for user "Sarah Chen" (Engineering Manager, Engineering dept, active status). Submit. PASS: toast confirms creation, user appears in the list.
-- [ ] **AA6** Repeat for all 10 users: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on People page with correct name, email, role, and status badge.
-- [ ] **AA7** Reload the People page. PASS: users display with correct availability color coding and status badges.
+- [ ] **AA6** Repeat for all 10 people: Sarah Chen, Mike Thompson, Jessica Park, David Martinez, Emily Rodriguez (pending), Alex Kim, Marcus Johnson, David Kim, Lisa Wang, James Miller (deactivated). PASS: all 10 appear on People page with correct name, email, role, and status badge.
+- [ ] **AA7** Reload the People page. PASS: people display with correct availability color coding and status badges.
 
 ### AA3. Profile & Organization
 
@@ -924,7 +924,7 @@ on. Run these in order.
 - [ ] **WB19** After transitioning a work order through at least
   two states, read `fusion-ai:work_order_transitions` from DevTools.
   PASS: each row has an immutable shape (from_node_id, to_node_id,
-  user_id, values, transitioned_at). Verify no app code path mutates
+  person_id, values, transitioned_at). Verify no app code path mutates
   an existing transition row — transitions are append-only.
 
 ---
@@ -937,7 +937,7 @@ on. Run these in order.
 > and the underlying TeamEntity/TeamProjectEntity/
 > TeamUserEntity data model have been removed. Roster
 > review now lives on the People page (formerly the
-> Manage Users page) — see G19–G24.
+> Manage People page) — see G19–G24.
 
 ### Organization (`organization/index.html`)
 
@@ -962,13 +962,13 @@ on. Run these in order.
 > validator, REST route, and presenter have been
 > removed.
 
-### People (`users/index.html`)
+### People (`people/index.html`)
 
-- [ ] **G19** Navigate to `users/index.html` (also reachable via the "People" sidebar entry, which replaced the retired "Teams" entry). PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
+- [ ] **G19** Navigate to `people/index.html` (also reachable via the "People" sidebar entry, which replaced the retired "Teams" entry). PASS: shows user table with avatar, name, email, role badge (job title), department, status badge (Active/Pending/Deactivated), and last active time. Header shows active/pending user counts. Search input and two filter dropdowns (All Roles, All Status) visible.
 - [ ] **G20** Type in the search input. PASS: filters user list by name or email in real-time. Role and status dropdowns also filter the list.
-- [ ] **G21** Deactivated user (James Miller) is visually distinguished with "Deactivated" badge (X icon) and reduced opacity styling. PASS: clearly different from active users.
-- [ ] **G22** Pending users show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active users.
-- [ ] **G23** "Invite User" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
+- [ ] **G21** Deactivated person (James Miller) is visually distinguished with "Deactivated" badge (X icon) and reduced opacity styling. PASS: clearly different from active people.
+- [ ] **G22** Pending people show "Pending" badge with clock icon and "Invite sent" text. PASS: visually distinct from active people.
+- [ ] **G23** "Invite Person" button is visible. PASS: clicking it opens the invite dialog with fields for First Name, Last Name, Email, Role, Department, Status, Phone, Availability %, Performance, and Bio.
 - [ ] **G24** Fill all required fields and submit the invite dialog. PASS: toast confirms user creation, new user appears in the user list with correct name, email, role, and status badge.
 
 ### Activity Feed (RETIRED)
@@ -997,15 +997,15 @@ on. Run these in order.
   inline error reports the upload failed with a human-readable
   message; existing data in localStorage is untouched (verify via
   DevTools that no fusion-ai:* keys were overwritten or cleared).
-- [ ] **G36** On `users/index.html`, each active or pending
+- [ ] **G36** On `people/index.html`, each active or pending
   user row shows a user-X icon button (aria-label "Deactivate
   user") and each deactivated row shows a user-check icon button
   ("Reactivate user"). Click an active user's deactivate button.
-  PASS: a toast "User deactivated" fires and the list reloads with
+  PASS: a toast "Person deactivated" fires and the list reloads with
   the user's badge changed to "Deactivated" and reduced opacity
   styling; the user no longer counts toward the active header
   stat. Click the reactivate button on a deactivated row. PASS: a
-  toast "User reactivated" fires and the user returns to active.
+  toast "Person reactivated" fires and the user returns to active.
   The action is intentionally reversible with a single click, so
   no confirmation dialog is required.
 
