@@ -43,25 +43,6 @@ export const PAGE_REGISTRY: Record<
         keywords: 'home overview',
         loader: () => import('../dashboard/index'),
     },
-    workbox: {
-        title: 'Workbox',
-        layout: 'sidebar',
-        sourceDir: 'workbox',
-        sourceFile: 'index',
-        icon: iconMail,
-        keywords:
-            'workbox inbox work order',
-        loader: () => import('../workbox/index'),
-    },
-    'workbox-detail': {
-        title: 'Work Order',
-        layout: 'sidebar',
-        sourceDir: 'workbox',
-        sourceFile: 'detail',
-        icon: iconMail,
-        searchable: false,
-        loader: () => import('../workbox/detail'),
-    },
     ideas: {
         title: 'Ideas',
         layout: 'sidebar',
@@ -79,6 +60,24 @@ export const PAGE_REGISTRY: Record<
         icon: iconLightbulb,
         searchable: false,
         loader: () => import('../ideas/detail'),
+    },
+    'idea-create': {
+        title: 'Create Idea',
+        layout: 'sidebar',
+        sourceDir: 'ideas',
+        sourceFile: 'create',
+        icon: iconLightbulb,
+        keywords: 'new idea submit',
+        loader: () => import('../ideas/create'),
+    },
+    'idea-convert': {
+        title: 'Convert Idea',
+        layout: 'sidebar',
+        sourceDir: 'ideas',
+        sourceFile: 'convert',
+        icon: iconLightbulb,
+        searchable: false,
+        loader: () => import('../ideas/convert'),
     },
     projects: {
         title: 'Projects',
@@ -119,6 +118,25 @@ export const PAGE_REGISTRY: Record<
         searchable: false,
         loader: () => import('../flows/detail'),
     },
+    workbox: {
+        title: 'Workbox',
+        layout: 'sidebar',
+        sourceDir: 'workbox',
+        sourceFile: 'index',
+        icon: iconMail,
+        keywords:
+            'workbox inbox work order',
+        loader: () => import('../workbox/index'),
+    },
+    'workbox-detail': {
+        title: 'Work Order',
+        layout: 'sidebar',
+        sourceDir: 'workbox',
+        sourceFile: 'detail',
+        icon: iconMail,
+        searchable: false,
+        loader: () => import('../workbox/detail'),
+    },
     organization: {
         title: 'Organization',
         layout: 'sidebar',
@@ -129,26 +147,6 @@ export const PAGE_REGISTRY: Record<
             'organization billing plan',
         loader: () => import('../organization/index'),
     },
-    'people-detail': {
-        title: 'Person',
-        layout: 'sidebar',
-        sourceDir: 'people',
-        sourceFile: 'detail',
-        icon: iconPerson,
-        searchable: false,
-        loader: () => import('../people/detail'),
-    },
-    billing: {
-        title: 'Billing',
-        layout: 'sidebar',
-        sourceDir: 'billing',
-        sourceFile: 'index',
-        icon: iconCreditCard,
-        keywords:
-            'billing plan invoices'
-            + ' payment',
-        loader: () => import('../billing/index'),
-    },
     people: {
         title: 'People',
         layout: 'sidebar',
@@ -157,6 +155,15 @@ export const PAGE_REGISTRY: Record<
         icon: iconPeople,
         keywords: 'people invite manage admin',
         loader: () => import('../people/index'),
+    },
+    'people-detail': {
+        title: 'Person',
+        layout: 'sidebar',
+        sourceDir: 'people',
+        sourceFile: 'detail',
+        icon: iconPerson,
+        searchable: false,
+        loader: () => import('../people/detail'),
     },
     roles: {
         title: 'Roles',
@@ -175,6 +182,17 @@ export const PAGE_REGISTRY: Record<
         icon: iconBriefcase,
         keywords: 'crews collaborate team',
         loader: () => import('../crews/index'),
+    },
+    billing: {
+        title: 'Billing',
+        layout: 'sidebar',
+        sourceDir: 'billing',
+        sourceFile: 'index',
+        icon: iconCreditCard,
+        keywords:
+            'billing plan invoices'
+            + ' payment',
+        loader: () => import('../billing/index'),
     },
     snapshots: {
         title: 'Snapshots',
@@ -195,24 +213,6 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'components ui reference',
         loader: () => import('../design-system/index'),
-    },
-    'idea-create': {
-        title: 'Create Idea',
-        layout: 'sidebar',
-        sourceDir: 'ideas',
-        sourceFile: 'create',
-        icon: iconLightbulb,
-        keywords: 'new idea submit',
-        loader: () => import('../ideas/create'),
-    },
-    'idea-convert': {
-        title: 'Convert Idea',
-        layout: 'sidebar',
-        sourceDir: 'ideas',
-        sourceFile: 'convert',
-        icon: iconLightbulb,
-        searchable: false,
-        loader: () => import('../ideas/convert'),
     },
     auth: {
         title: 'Authentication',
