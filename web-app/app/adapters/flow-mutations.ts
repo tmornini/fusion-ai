@@ -66,22 +66,38 @@ export async function postFlowCreation(
         edges: [],
     };
 
-    await ctx.PUT<void>(`flows/${input.flowId}`, {
-        name: input.name,
-        description: input.description,
-        is_locked: false,
-        is_auto_layout: false,
-        is_auto_fit: false,
-        lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: putFlowGraph(graph),
-        created_at: now,
-        updated_at: now,
-    });
-
-    await ctx.PUT<void>(`project-flows/${input.linkId}`, {
-        project_id: input.projectId,
-        flow_id: input.flowId,
-        created_at: now,
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `flows/${input.flowId}`,
+                body: {
+                    name: input.name,
+                    description:
+                        input.description,
+                    is_locked: false,
+                    is_auto_layout: false,
+                    is_auto_fit: false,
+                    lock_timeout:
+                        DEFAULT_LOCK_TIMEOUT,
+                    graph: putFlowGraph(graph),
+                    created_at: now,
+                    updated_at: now,
+                },
+            },
+            {
+                method: 'put',
+                resource:
+                    `project-flows/`
+                    + `${input.linkId}`,
+                body: {
+                    project_id: input.projectId,
+                    flow_id: input.flowId,
+                    created_at: now,
+                },
+            },
+        ],
     });
 
     flowChanges.notify();
