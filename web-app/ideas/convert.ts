@@ -15,7 +15,6 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getIdea,
-    getUsers,
     postActivity,
     postIdeaConversion,
     jsonObjectField,
@@ -60,18 +59,11 @@ export async function init(
     let tuple: Awaited<
         ReturnType<typeof getIdea>
     >;
-    let users: Awaited<
-        ReturnType<typeof getUsers>
-    >;
     try {
-        [tuple, users] = await Promise.all([
-            getIdea(ctx, ideaId),
-            getUsers(ctx),
-        ]);
+        tuple = await getIdea(ctx, ideaId);
     } catch (err) {
         log.error(
-            'getIdea or getUsers'
-            + ' failed',
+            'getIdea failed',
             'ideas',
             err,
         );
@@ -95,7 +87,6 @@ export async function init(
         IdeaConversionPresenter =
         new IdeaConversionPresenter(
             tuple.idea,
-            users,
             buildInitialConversionFields(
                 tuple.idea,
             ),
@@ -517,7 +508,6 @@ async function performConversion(
             budget_label:
                 fields['budget'],
         },
-        fields['project-lead'],
         { ...ideaEntity, status: 'promoted' },
     );
 }

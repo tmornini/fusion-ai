@@ -330,8 +330,7 @@ test(
         const parsed = JSON.parse(json);
         const expected = [
             'users', 'ideas', 'projects',
-            'teams', 'team_projects',
-            'team_users', 'activities',
+            'activities',
             'flows', 'flow_versions',
             'project_flows', 'work_orders',
             'flow_work_orders',

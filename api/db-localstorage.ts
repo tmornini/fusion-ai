@@ -14,9 +14,6 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamEntity,
-    TeamProjectEntity,
-    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -41,9 +38,6 @@ import {
     validateUserEntity,
     validateIdeaEntity,
     validateProjectEntity,
-    validateTeamEntity,
-    validateTeamProjectEntity,
-    validateTeamUserEntity,
     validateActivityEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -87,15 +81,6 @@ function validateSnapshotRow(
                 break;
             case 'projects':
                 validateProjectEntity(body);
-                break;
-            case 'teams':
-                validateTeamEntity(body);
-                break;
-            case 'team_projects':
-                validateTeamProjectEntity(body);
-                break;
-            case 'team_users':
-                validateTeamUserEntity(body);
                 break;
             case 'activities':
                 validateActivityEntity(body);
@@ -805,19 +790,6 @@ export async function createLocalStorageAdapter(
                 'projects',
                 deletedStore,
             ),
-
-        teams:
-            createEntityStore<
-                TeamEntity
-            >('teams', deletedStore),
-        teamProjects:
-            createEntityStore<
-                TeamProjectEntity
-            >('team_projects', deletedStore),
-        teamUsers:
-            createEntityStore<
-                TeamUserEntity
-            >('team_users', deletedStore),
 
         activities:
             createEntityStore<ActivityEntity>(

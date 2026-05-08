@@ -3,9 +3,6 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamEntity,
-    TeamProjectEntity,
-    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -92,18 +89,6 @@ export interface DbAdapter {
         EntityStore<IdeaEntity>;
     projects:
         EntityStore<ProjectEntity>;
-    teams:
-        EntityStore<
-            TeamEntity
-        >;
-    teamProjects:
-        EntityStore<
-            TeamProjectEntity
-        >;
-    teamUsers:
-        EntityStore<
-            TeamUserEntity
-        >;
     activities:
         EntityStore<ActivityEntity>;
     flows:
@@ -153,9 +138,6 @@ export const TABLE_NAMES = [
     'users',
     'ideas',
     'projects',
-    'teams',
-    'team_projects',
-    'team_users',
     'activities',
     'flows',
     'flow_versions',

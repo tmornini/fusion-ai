@@ -3,14 +3,10 @@ import {
     EntityNotFound,
     MissingTableError,
 } from './db.ts';
-import { nowUtc } from './types.ts';
 import {
     validateUserEntity,
     validateIdeaEntity,
     validateProjectEntity,
-    validateTeamEntity,
-    validateTeamProjectEntity,
-    validateTeamUserEntity,
     validateActivityEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -135,21 +131,6 @@ const routes: Route[] = [
         get: (db) =>
             db.activityActors.getAll(),
     }),
-    route('teams', {
-        get: (db) =>
-            db.teams.getAll(),
-    }),
-    route('team-projects', {
-        get: (db) =>
-            db.teamProjects
-                .getAll(),
-    }),
-    route('team-users', {
-        get: (db) =>
-            db.teamUsers
-                .getAll(),
-    }),
-
     route('flows', {
         get: (db) =>
             db.flows.getAll(),
@@ -391,160 +372,6 @@ const routes: Route[] = [
                 ),
             ),
     }),
-    route('teams/:id', {
-        put: (db, p, payload) =>
-            db.teams.put(
-                param(p, 0),
-                validateTeamEntity(
-                    withoutId(payload),
-                ),
-            ),
-    }),
-    route(
-        'team-projects/:id',
-        {
-            put: (db, p, payload) =>
-                db.teamProjects
-                    .put(
-                        param(p, 0),
-                        validateTeamProjectEntity(
-                            withoutId(payload),
-                        ),
-                    ),
-        },
-    ),
-    route(
-        'team-users/:id',
-        {
-            put: (db, p, payload) =>
-                db.teamUsers
-                    .put(
-                        param(p, 0),
-                        validateTeamUserEntity(
-                            withoutId(payload),
-                        ),
-                    ),
-        },
-    ),
-    route('projects/:projectId/team', {
-        get: async (db, p) => {
-            const pid = param(p, 0);
-            const [
-                tmProjects,
-                memberships,
-                tmUsers,
-            ] = await Promise.all([
-                db.teamProjects
-                    .getAll(),
-                db.teams
-                    .getAll(),
-                db.teamUsers
-                    .getAll(),
-            ]);
-            const membershipIds = new Set(
-                tmProjects
-                    .filter(
-                        l => l.project_id
-                            === pid,
-                    )
-                    .map(
-                        l =>
-                            l.team_id,
-                    ),
-            );
-            const userByMembership = new Map(
-                tmUsers.map(
-                    u => [
-                        u.team_id,
-                        u.user_id,
-                    ],
-                ),
-            );
-            return memberships
-                .filter(
-                    m =>
-                        membershipIds.has(
-                            m.id,
-                        ),
-                )
-                .map(m => ({
-                    id: m.id,
-                    user_id:
-                        userByMembership
-                            .get(m.id)!,
-                    role: m.role,
-                    type: m.type,
-                }));
-        },
-    }),
-
-    route(
-        'projects/:projectId/team/:userId',
-        {
-            put: async (db, p, payload) => {
-                const pid = param(p, 0);
-                const uid = param(p, 1);
-                if (
-                    typeof payload.role
-                        !== 'string'
-                    || payload.role === ''
-                ) {
-                    throw new ApiError(
-                        'Missing or invalid'
-                        + ' "role" field.',
-                        HTTP_BAD_REQUEST,
-                    );
-                }
-                if (
-                    typeof payload.type
-                        !== 'string'
-                    || payload.type === ''
-                ) {
-                    throw new ApiError(
-                        'Missing or invalid'
-                        + ' "type" field.',
-                        HTTP_BAD_REQUEST,
-                    );
-                }
-                const tmId =
-                    `tm-${pid}-${uid}`;
-                const membership =
-                    await db.teams
-                        .put(tmId, {
-                            role:
-                                payload.role as
-                                    string,
-                            type:
-                                payload.type as
-                                    string,
-                        });
-                const projLinkId =
-                    `tmp-${tmId}`;
-                const userLinkId =
-                    `tmu-${tmId}`;
-                await Promise.all([
-                    db.teamProjects
-                        .put(projLinkId, {
-                            team_id:
-                                tmId,
-                            project_id: pid,
-                            created_at:
-                                nowUtc(),
-                        }),
-                    db.teamUsers
-                        .put(userLinkId, {
-                            team_id:
-                                tmId,
-                            user_id: uid,
-                            created_at:
-                                nowUtc(),
-                        }),
-                ]);
-                return membership;
-            },
-        },
-    ),
-
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())

@@ -4,9 +4,6 @@ import {
     validateUserEntity,
     validateIdeaEntity,
     validateProjectEntity,
-    validateTeamEntity,
-    validateTeamProjectEntity,
-    validateTeamUserEntity,
     validateActivityEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -176,76 +173,6 @@ test('validateProjectEntity rejects bad status', () => {
             status: 'unknown-status',
         }),
         /expected ProjectStatus for status/,
-    );
-});
-
-// --- TeamEntity ---
-
-const validTeam = {
-    role: 'Developer',
-    type: 'core',
-};
-
-test('validateTeamEntity accepts valid payload', () => {
-    const result = validateTeamEntity(validTeam);
-    assert.equal(result.role, 'Developer');
-});
-
-test('validateTeamEntity rejects missing role', () => {
-    assert.throws(
-        () => validateTeamEntity({ type: 'core' }),
-        /missing required key "role"/,
-    );
-});
-
-// --- TeamProjectEntity ---
-
-const validTeamProject = {
-    team_id: 'tm-1',
-    project_id: 'p-1',
-    created_at: '2024-01-01T00:00:00Z',
-};
-
-test('validateTeamProjectEntity accepts valid payload', () => {
-    const result =
-        validateTeamProjectEntity(validTeamProject);
-    assert.equal(result.team_id, 'tm-1');
-});
-
-test(
-    'validateTeamProjectEntity rejects missing'
-    + ' project_id',
-    () => {
-    assert.throws(
-        () => validateTeamProjectEntity({
-            team_id: 'tm-1',
-            created_at: '2024-01-01T00:00:00Z',
-        }),
-        /missing required key "project_id"/,
-    );
-});
-
-// --- TeamUserEntity ---
-
-const validTeamUser = {
-    team_id: 'tm-1',
-    user_id: 'u-1',
-    created_at: '2024-01-01T00:00:00Z',
-};
-
-test('validateTeamUserEntity accepts valid payload', () => {
-    const result =
-        validateTeamUserEntity(validTeamUser);
-    assert.equal(result.user_id, 'u-1');
-});
-
-test('validateTeamUserEntity rejects missing user_id', () => {
-    assert.throws(
-        () => validateTeamUserEntity({
-            team_id: 'tm-1',
-            created_at: '2024-01-01T00:00:00Z',
-        }),
-        /missing required key "user_id"/,
     );
 });
 

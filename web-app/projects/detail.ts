@@ -15,10 +15,6 @@ import {
 } from '../app/core.ts';
 import {
     getProjectRow,
-    getProjectTeamRows,
-    getUserMap,
-    userName,
-    isTeamLead,
     Project,
     ProjectView,
     putProject,
@@ -85,29 +81,11 @@ async function loadProjectView(
     view: ProjectView;
     entity: ProjectEntity;
 }> {
-    const [
-        entity, teamRows, userMap,
-    ] = await Promise.all([
-        getProjectRow(ctx, projectId),
-        getProjectTeamRows(ctx, projectId),
-        getUserMap(ctx),
-    ]);
-    const project = new Project(entity);
-    const leadRow = teamRows.find(isTeamLead);
+    const entity = await getProjectRow(
+        ctx, projectId,
+    );
     const view = new ProjectView(
-        project,
-        leadRow
-            ? userName(
-                userMap, leadRow.user_id,
-            )
-            : '',
-        teamRows.map(member => ({
-            id: member.user_id,
-            name: userName(
-                userMap, member.user_id,
-            ),
-            role: member.role,
-        })),
+        new Project(entity),
     );
     return { view, entity };
 }

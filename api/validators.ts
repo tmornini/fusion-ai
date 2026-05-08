@@ -23,9 +23,6 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamEntity,
-    TeamProjectEntity,
-    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -815,77 +812,6 @@ export function validateProjectEntity(
     };
 }
 
-const TEAM_BODY_KEYS: readonly string[] = [
-    'role', 'type',
-];
-
-export function validateTeamEntity(
-    body: Record<string, unknown>,
-): Omit<TeamEntity, 'id'> {
-    assertOnlyKeys(
-        body, TEAM_BODY_KEYS, 'TeamEntity',
-    );
-    return {
-        role: asString(
-            body['role'], 'role',
-        ),
-        type: asString(
-            body['type'], 'type',
-        ),
-    };
-}
-
-const TEAM_PROJECT_BODY_KEYS:
-    readonly string[] = [
-    'team_id', 'project_id', 'created_at',
-];
-
-export function validateTeamProjectEntity(
-    body: Record<string, unknown>,
-): Omit<TeamProjectEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        TEAM_PROJECT_BODY_KEYS,
-        'TeamProjectEntity',
-    );
-    return {
-        team_id: asString(
-            body['team_id'], 'team_id',
-        ),
-        project_id: asString(
-            body['project_id'], 'project_id',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const TEAM_USER_BODY_KEYS:
-    readonly string[] = [
-    'team_id', 'user_id', 'created_at',
-];
-
-export function validateTeamUserEntity(
-    body: Record<string, unknown>,
-): Omit<TeamUserEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        TEAM_USER_BODY_KEYS,
-        'TeamUserEntity',
-    );
-    return {
-        team_id: asString(
-            body['team_id'], 'team_id',
-        ),
-        user_id: asString(
-            body['user_id'], 'user_id',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
 
 const ACTIVITY_BODY_KEYS: readonly string[] = [
     'type', 'action', 'target',

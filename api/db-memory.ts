@@ -13,9 +13,6 @@ import type {
     UserEntity,
     IdeaEntity,
     ProjectEntity,
-    TeamEntity,
-    TeamProjectEntity,
-    TeamUserEntity,
     ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -152,11 +149,6 @@ interface Tables {
     users: Map<string, UserEntity>;
     ideas: Map<string, IdeaEntity>;
     projects: Map<string, ProjectEntity>;
-    teams: Map<string, TeamEntity>;
-    teamProjects: Map<
-        string, TeamProjectEntity
-    >;
-    teamUsers: Map<string, TeamUserEntity>;
     activities: Map<string, ActivityEntity>;
     flows: Map<string, FlowEntity>;
     flowVersions: Map<
@@ -202,12 +194,6 @@ export class MemoryDbAdapter
         EntityStore<IdeaEntity>;
     readonly projects:
         EntityStore<ProjectEntity>;
-    readonly teams:
-        EntityStore<TeamEntity>;
-    readonly teamProjects:
-        EntityStore<TeamProjectEntity>;
-    readonly teamUsers:
-        EntityStore<TeamUserEntity>;
     readonly activities:
         EntityStore<ActivityEntity>;
     readonly flows:
@@ -260,20 +246,6 @@ export class MemoryDbAdapter
         this.projects =
             new MemEntityStore(
                 'projects', t.projects, ds,
-            );
-        this.teams =
-            new MemEntityStore(
-                'teams', t.teams, ds,
-            );
-        this.teamProjects =
-            new MemEntityStore(
-                'team_projects',
-                t.teamProjects, ds,
-            );
-        this.teamUsers =
-            new MemEntityStore(
-                'team_users',
-                t.teamUsers, ds,
             );
         this.activities =
             new MemEntityStore(
@@ -414,9 +386,6 @@ function buildTables(): Tables {
         users: new Map(),
         ideas: new Map(),
         projects: new Map(),
-        teams: new Map(),
-        teamProjects: new Map(),
-        teamUsers: new Map(),
         activities: new Map(),
         flows: new Map(),
         flowVersions: new Map(),

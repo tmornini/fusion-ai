@@ -12,10 +12,7 @@ import {
     userName,
 } from './shared.ts';
 import type { FetchContext } from './shared.ts';
-import {
-    putProject,
-    putProjectTeamMember,
-} from './projects.ts';
+import { putProject } from './projects.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -179,15 +176,8 @@ export async function postIdeaConversion(
     ideaId: string,
     projectId: string,
     project: Omit<ProjectEntity, 'id'>,
-    leadUserId: string,
     promotedIdea: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     await putProject(ctx, projectId, project);
-    await putProjectTeamMember(ctx, {
-        projectId,
-        userId: leadUserId,
-        role: 'lead',
-        type: 'internal',
-    });
     await putIdea(ctx, ideaId, promotedIdea);
 }
