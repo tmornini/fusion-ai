@@ -60,6 +60,21 @@ function collectFieldValues(
     return values;
 }
 
+function hasEmptyRequiredField(
+    fields: readonly {
+        id: string;
+        isRequired: boolean;
+    }[],
+    values: Record<string, string>,
+): boolean {
+    return fields
+        .filter(f => f.isRequired)
+        .some(f => {
+            const v = values[f.id];
+            return v === undefined || v === '';
+        });
+}
+
 /* ── Event wiring ────────── */
 
 function initTransitionButtons(
@@ -82,18 +97,10 @@ function initTransitionButtons(
                     collectFieldValues(
                         container,
                     );
-                const hasEmpty =
-                    detail
-                        .renderableFields()
-                        .filter(
-                            f => f.isRequired,
-                        )
-                        .some(f => {
-                            const v
-                                = values[f.id];
-                            return v === undefined
-                                || v === '';
-                        });
+                const hasEmpty = hasEmptyRequiredField(
+                    detail.renderableFields(),
+                    values,
+                );
                 if (hasEmpty) {
                     showToast(
                         'Please fill'
