@@ -4,7 +4,7 @@ import {
 import {
     iconCreditCard, iconBuilding,
     iconCrown, iconCheckCircle2,
-    iconActivity, iconUsers,
+    iconActivity, iconPeople,
     iconFolderKanban, iconLightbulb,
     iconCalendar, iconTrendingUp,
     iconExternalLink,
@@ -207,8 +207,8 @@ function buildOverviewCard(
                        lg:grid-cols-4 gap-4"
             >
                 ${buildStatCell(
-                    iconUsers(16, ''),
-                    'Active Users',
+                    iconPeople(16, ''),
+                    'Active People',
                     html`${seats.used}<span class="${
                         'text-sm font-normal'
                         + ' text-muted'
@@ -308,7 +308,7 @@ function buildUsageCard(
             </h3>
             <div class="flex flex-col gap-4">
                 ${buildUsageBar(
-                    'User Seats',
+                    'Seats',
                     org.usedSeats(),
                     org.totalSeats(),
                 )}
@@ -352,7 +352,7 @@ function buildAdminCard(): SafeHtml {
                     data-nav-to="users"
                 >
                     <span class="text-muted"
-                    >${iconUsers(20, '')}</span>
+                    >${iconPeople(20, '')}</span>
                     <div class="flex-fill"
                     >
                         <p class="${

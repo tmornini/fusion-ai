@@ -4,7 +4,7 @@ import {
 import { iconGripVertical } from '../icons.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
 import {
-    userName,
+    personName,
     validateWorkOrderFlowGraph,
     isExpiredClaim,
     type WorkOrderEntity,
@@ -12,7 +12,7 @@ import {
     type WorkOrderClaimEntity,
     type Id,
 } from '../adapters/index.ts';
-import type { User } from '../adapters/index.ts';
+import type { Person } from '../adapters/index.ts';
 import {
     SECONDS_PER_DAY,
     MS_PER_SECOND,
@@ -170,7 +170,7 @@ export function buildInboxItems(
         readonly WorkOrderTransitionEntity[],
     claims:
         readonly WorkOrderClaimEntity[],
-    userMap: Map<Id, User>,
+    personMap: Map<Id, Person>,
     mode: InboxMode,
 ): InboxItem[] {
     const transitionsByWo = Map.groupBy(
@@ -252,8 +252,8 @@ export function buildInboxItems(
             flowName: fg.name,
             stateName: curNode.name,
             transitionerName: last
-                ? userName(
-                    userMap, last.user_id,
+                ? personName(
+                    personMap, last.person_id,
                 )
                 : null,
             lastTransitionedAt: last

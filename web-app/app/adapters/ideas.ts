@@ -8,8 +8,8 @@ import {
     ideaIsVisible,
 } from '../../../api/types.ts';
 import {
-    getUserMap,
-    userName,
+    getPersonMap,
+    personName,
 } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 import { putProject } from './projects.ts';
@@ -92,10 +92,10 @@ export async function getIdeas(
     ctx: FetchContext,
 ): Promise<IdeaWithSubmitter[]> {
     const [
-        ideas, userMap, submissions,
+        ideas, personMap, submissions,
     ] = await Promise.all([
         getIdeaRows(ctx),
-        getUserMap(ctx),
+        getPersonMap(ctx),
         getIdeaSubmissionRows(ctx),
     ]);
     const submissionMap = new Map(
@@ -113,9 +113,9 @@ export async function getIdeas(
         return {
             idea: new Idea(row),
             entity: row,
-            submitterName: userName(
-                userMap,
-                submission.user_id,
+            submitterName: personName(
+                personMap,
+                submission.person_id,
             ),
             submittedAt:
                 submission.created_at,
@@ -128,17 +128,17 @@ export async function getIdea(
     ideaId: string,
 ): Promise<IdeaWithSubmitter> {
     const [
-        row, submission, userMap,
+        row, submission, personMap,
     ] = await Promise.all([
         getIdeaRow(ctx, ideaId),
         getIdeaSubmissionRow(ctx, ideaId),
-        getUserMap(ctx),
+        getPersonMap(ctx),
     ]);
     return {
         idea: new Idea(row),
         entity: row,
-        submitterName: userName(
-            userMap, submission.user_id,
+        submitterName: personName(
+            personMap, submission.person_id,
         ),
         submittedAt: submission.created_at,
     };
@@ -158,13 +158,13 @@ export async function putIdeaSubmission(
     submissionId: string,
     ideaId: string,
 ): Promise<void> {
-    const user = await ctx.getCurrentUser();
+    const person = await ctx.getCurrentPerson();
     await ctx.PUT(
         'idea-submissions/'
             + submissionId,
         {
             idea_id: ideaId,
-            user_id: user.id,
+            person_id: person.id,
             created_at: nowUtc(),
         },
     );

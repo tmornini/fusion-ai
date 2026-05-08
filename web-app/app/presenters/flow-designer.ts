@@ -9,7 +9,7 @@ import {
     createFetchContext,
     putFlow,
     postFlowVersion,
-    User,
+    Person,
 } from '../adapters/index.ts';
 import type {
     Id,
@@ -96,7 +96,7 @@ interface DesignerState {
     isPanelOpen: boolean;
     interaction: InteractionState;
     savedViewBox: SavedViewBox;
-    userMap: Map<Id, User>;
+    personMap: Map<Id, Person>;
 }
 
 export type FlowSnapshot = Readonly<DesignerState>;
@@ -110,7 +110,7 @@ export function buildInitialFlowSnapshot(
     graph: FlowGraph,
     canvasW: number,
     canvasH: number,
-    userMap: Map<Id, User>,
+    personMap: Map<Id, Person>,
 ): FlowSnapshot {
     const interaction = buildInteractionState(
         canvasW, canvasH,
@@ -131,7 +131,7 @@ export function buildInitialFlowSnapshot(
         isPanelOpen: false,
         interaction,
         savedViewBox: { kind: 'none' },
-        userMap,
+        personMap,
     };
 }
 
@@ -1082,7 +1082,7 @@ Auto Fit</label>
             return buildNodePanel(
                 node, outgoing,
                 this.#snapshot.isLocked,
-                this.#snapshot.userMap,
+                this.#snapshot.personMap,
             );
         }
 

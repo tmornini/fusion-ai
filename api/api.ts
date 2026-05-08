@@ -4,7 +4,7 @@ import {
     MissingTableError,
 } from './db.ts';
 import {
-    validateUserEntity,
+    validatePersonEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateActivityEntity,
@@ -110,8 +110,8 @@ function withoutId(
 
 
 const routes: Route[] = [
-    route('users', {
-        get: (db) => db.users.getAll(),
+    route('people', {
+        get: (db) => db.people.getAll(),
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),
@@ -290,18 +290,18 @@ const routes: Route[] = [
                 ),
             ),
     }),
-    route('current-user', {
+    route('current-person', {
         get: (db) =>
-            db.users.getById('current'),
+            db.people.getById('current'),
     }),
 
-    route('users/:id', {
+    route('people/:id', {
         get: (db, p) =>
-            db.users.getById(param(p, 0)),
+            db.people.getById(param(p, 0)),
         put: (db, p, payload) =>
-            db.users.put(
+            db.people.put(
                 param(p, 0),
-                validateUserEntity(
+                validatePersonEntity(
                     withoutId(payload),
                 ),
             ),

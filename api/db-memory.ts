@@ -10,7 +10,7 @@ import type {
 } from './db.ts';
 import type {
     Deleted,
-    UserEntity,
+    PersonEntity,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -145,7 +145,7 @@ class MemDeletedStore implements DeletedStore {
 }
 
 interface Tables {
-    users: Map<string, UserEntity>;
+    people: Map<string, PersonEntity>;
     ideas: Map<string, IdeaEntity>;
     projects: Map<string, ProjectEntity>;
     activities: Map<string, ActivityEntity>;
@@ -186,8 +186,8 @@ export class MemoryDbAdapter
 {
     #tables: Tables | null = null;
     readonly #deletedStore: MemDeletedStore;
-    readonly users:
-        EntityStore<UserEntity>;
+    readonly people:
+        EntityStore<PersonEntity>;
     readonly ideas:
         EntityStore<IdeaEntity>;
     readonly projects:
@@ -231,9 +231,9 @@ export class MemoryDbAdapter
         this.deleted = this.#deletedStore;
         const t = this.#tables;
         const ds = this.#deletedStore;
-        this.users =
+        this.people =
             new MemEntityStore(
-                'users', t.users, ds,
+                'people', t.people, ds,
             );
         this.ideas =
             new MemEntityStore(
@@ -375,7 +375,7 @@ export class MemoryDbAdapter
 
 function buildTables(): Tables {
     return {
-        users: new Map(),
+        people: new Map(),
         ideas: new Map(),
         projects: new Map(),
         activities: new Map(),

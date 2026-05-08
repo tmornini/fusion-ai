@@ -85,7 +85,7 @@ export async function postWorkOrderCreation(
     ctx: FetchContext,
     input: WorkOrderCreationInput,
 ): Promise<void> {
-    const user = await ctx.getCurrentUser();
+    const person = await ctx.getCurrentPerson();
     const flow = await ctx.GET<FlowEntity>(
         `flows/${input.flowId}`,
     );
@@ -167,7 +167,7 @@ export async function postWorkOrderCreation(
             work_order_id: input.workOrderId,
             from_node_id: '',
             to_node_id: startNode.id,
-            user_id: user.id,
+            person_id: person.id,
             transitioned_at: now,
         },
     );
@@ -179,7 +179,7 @@ export async function postWorkOrderCreation(
             work_order_id: input.workOrderId,
             from_node_id: startNode.id,
             to_node_id: postStartNodeId,
-            user_id: user.id,
+            person_id: person.id,
             transitioned_at: now,
         },
     );
@@ -189,7 +189,7 @@ export async function postWorkOrderCreation(
         {
             id: input.claimId,
             work_order_id: input.workOrderId,
-            user_id: user.id,
+            person_id: person.id,
             claimed_at: now,
         },
     );
@@ -215,7 +215,7 @@ export async function postWorkOrderTransition(
         values, fieldValueIds,
         currentNodeId,
     } = input;
-    const user = await ctx.getCurrentUser();
+    const person = await ctx.getCurrentPerson();
     const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
@@ -241,7 +241,7 @@ export async function postWorkOrderTransition(
             work_order_id: workOrderId,
             from_node_id: currentNodeId,
             to_node_id: edge.toNodeId,
-            user_id: user.id,
+            person_id: person.id,
             transitioned_at: now,
         },
     );
@@ -315,7 +315,7 @@ export async function postWorkOrderClaim(
     claimId: string,
     workOrderId: string,
 ): Promise<void> {
-    const user = await ctx.getCurrentUser();
+    const person = await ctx.getCurrentPerson();
     const now = nowUtc();
 
     await ctx.PUT<void>(
@@ -323,7 +323,7 @@ export async function postWorkOrderClaim(
         {
             id: claimId,
             work_order_id: workOrderId,
-            user_id: user.id,
+            person_id: person.id,
             claimed_at: now,
         },
     );

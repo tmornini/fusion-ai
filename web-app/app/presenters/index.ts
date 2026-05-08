@@ -42,15 +42,15 @@ export {
     GaugePresenter,
 } from './gauge.ts';
 export {
-    UserPresenter,
-    ManagedUsersPresenter,
-    buildInitialManagedUsersState,
-    applyManagedUsersUpdate,
-    applyManagedUsersSearch,
-    applyManagedUsersRole,
-    applyManagedUsersStatus,
-    type ManagedUsersState,
-} from './user.ts';
+    PersonPresenter,
+    ManagedPeoplePresenter,
+    buildInitialManagedPeopleState,
+    applyManagedPeopleUpdate,
+    applyManagedPeopleSearch,
+    applyManagedPeopleRole,
+    applyManagedPeopleStatus,
+    type ManagedPeopleState,
+} from './person.ts';
 export {
     FlowPresenter,
 } from './flow.ts';

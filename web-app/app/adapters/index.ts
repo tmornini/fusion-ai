@@ -15,7 +15,7 @@ export * from './schema.ts';
 export * from './dashboard.ts';
 export * from './ideas.ts';
 export * from './projects.ts';
-export * from './teams.ts';
+export * from './people.ts';
 export * from './admin.ts';
 export * from './activities.ts';
 export * from './snapshots.ts';

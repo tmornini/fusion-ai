@@ -4,13 +4,13 @@ import {
     searchItems,
     ideaToSearchItem,
     projectToSearchItem,
-    memberToSearchItem,
+    personToSearchItem,
 } from '../web-app/app/command-palette.ts';
 import type {
     SearchItem,
 } from '../web-app/app/command-palette.ts';
 import {
-    Idea, Project, User,
+    Idea, Project, Person,
     jsonArrayField,
     jsonObjectField,
 } from '../api/types.ts';
@@ -62,13 +62,13 @@ function buildProject(
     });
 }
 
-function buildUser(
+function buildPerson(
     id: string,
     first: string, last: string,
     role = 'engineer',
     department = 'Eng',
-): User {
-    return new User({
+): Person {
+    return new Person({
         id,
         first_name: first,
         last_name: last,
@@ -261,10 +261,10 @@ test(
 );
 
 test(
-    'memberToSearchItem builds correct shape',
+    'personToSearchItem builds correct shape',
     () => {
-        const out = memberToSearchItem(
-            buildUser(
+        const out = personToSearchItem(
+            buildPerson(
                 'u1', 'Carol', 'Smith',
                 'pm', 'Product',
             ),
@@ -292,8 +292,8 @@ test(
 test(
     'searchItems search by member email works',
     () => {
-        const memberItem = memberToSearchItem(
-            buildUser(
+        const memberItem = personToSearchItem(
+            buildPerson(
                 'u1', 'Carol', 'Smith',
             ),
         );

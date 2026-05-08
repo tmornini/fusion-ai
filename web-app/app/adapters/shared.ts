@@ -7,12 +7,12 @@ import {
 } from '../../../api/api.ts';
 import type {
     Id,
-    UserEntity,
+    PersonEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
 } from '../../../api/types.ts';
-import { User } from '../../../api/types.ts';
+import { Person } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -20,14 +20,14 @@ import { getDbAdapter } from './init.ts';
 import type { Channel } from '../channels.ts';
 
 export type { Id } from '../../../api/types.ts';
-export { User } from '../../../api/types.ts';
+export { Person } from '../../../api/types.ts';
 
-export async function getCurrentUserRow(
+export async function getCurrentPersonRow(
     ctx?: FetchContext,
-): Promise<UserEntity> {
-    if (ctx) return ctx.getCurrentUser();
-    return httpGet<UserEntity>(
-        getDbAdapter(), 'current-user',
+): Promise<PersonEntity> {
+    if (ctx) return ctx.getCurrentPerson();
+    return httpGet<PersonEntity>(
+        getDbAdapter(), 'current-person',
     );
 }
 
@@ -66,9 +66,9 @@ export interface FetchContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getUserMap(): Promise<Map<Id, User>>;
-    getUserRows(): Promise<UserEntity[]>;
-    getCurrentUser(): Promise<UserEntity>;
+    getPersonMap(): Promise<Map<Id, Person>>;
+    getPersonRows(): Promise<PersonEntity[]>;
+    getCurrentPerson(): Promise<PersonEntity>;
     getIdeaRows(): Promise<IdeaEntity[]>;
     getProjectRows(
     ): Promise<ProjectEntity[]>;
@@ -83,12 +83,12 @@ export function createFetchContext(
     // fetched at most once per ctx. The promise
     // is captured the first time the getter is
     // called.
-    let userRowsPromise:
-        Promise<UserEntity[]> | null = null;
-    let userMapPromise:
-        Promise<Map<Id, User>> | null = null;
-    let currentUserPromise:
-        Promise<UserEntity> | null = null;
+    let personRowsPromise:
+        Promise<PersonEntity[]> | null = null;
+    let personMapPromise:
+        Promise<Map<Id, Person>> | null = null;
+    let currentPersonPromise:
+        Promise<PersonEntity> | null = null;
     let ideaRowsPromise:
         Promise<IdeaEntity[]> | null = null;
     let projectRowsPromise:
@@ -109,40 +109,40 @@ export function createFetchContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getUserRows: () => {
-            if (!userRowsPromise) {
-                userRowsPromise =
-                    ctx.GET<UserEntity[]>(
-                        'users',
+        getPersonRows: () => {
+            if (!personRowsPromise) {
+                personRowsPromise =
+                    ctx.GET<PersonEntity[]>(
+                        'people',
                     );
             }
-            return userRowsPromise;
+            return personRowsPromise;
         },
-        getUserMap: () => {
-            if (!userMapPromise) {
-                userMapPromise = (async () => {
+        getPersonMap: () => {
+            if (!personMapPromise) {
+                personMapPromise = (async () => {
                     const rows =
-                        await ctx.getUserRows();
+                        await ctx.getPersonRows();
                     return new Map(
                         rows.map(
                             entity => [
                                 entity.id,
-                                new User(entity),
+                                new Person(entity),
                             ],
                         ),
                     );
                 })();
             }
-            return userMapPromise;
+            return personMapPromise;
         },
-        getCurrentUser: () => {
-            if (!currentUserPromise) {
-                currentUserPromise =
-                    ctx.GET<UserEntity>(
-                        'current-user',
+        getCurrentPerson: () => {
+            if (!currentPersonPromise) {
+                currentPersonPromise =
+                    ctx.GET<PersonEntity>(
+                        'current-person',
                     );
             }
-            return currentUserPromise;
+            return currentPersonPromise;
         },
         getIdeaRows: () => {
             if (!ideaRowsPromise) {
@@ -196,23 +196,23 @@ export function createFetchContext(
     return ctx;
 }
 
-export async function getUserMap(
+export async function getPersonMap(
     ctx?: FetchContext,
-): Promise<Map<Id, User>> {
-    if (ctx) return ctx.getUserMap();
-    return createFetchContext().getUserMap();
+): Promise<Map<Id, Person>> {
+    if (ctx) return ctx.getPersonMap();
+    return createFetchContext().getPersonMap();
 }
 
-export function userName(
-    userMap: Map<Id, User>,
-    userId: Id,
+export function personName(
+    personMap: Map<Id, Person>,
+    personId: Id,
 ): string {
-    const user = userMap.get(userId);
-    if (!user) {
+    const person = personMap.get(personId);
+    if (!person) {
         throw new Error(
-            'userName: unknown user '
-                + userId,
+            'personName: unknown person '
+                + personId,
         );
     }
-    return user.fullName();
+    return person.fullName();
 }

@@ -20,7 +20,7 @@ import type {
     GraphEdge,
     Id,
 } from '../adapters/index.ts';
-import { User } from '../adapters/index.ts';
+import { Person } from '../adapters/index.ts';
 import {
     CREW_MODELS,
     START_NODE_DEFAULT_NAME,
@@ -160,7 +160,7 @@ export function buildNodePanel(
     node: GraphNode,
     outgoing: GraphEdge[],
     isLocked: boolean,
-    userMap: Map<Id, User>,
+    personMap: Map<Id, Person>,
 ): SafeHtml {
     const isSpecial =
         node.isStart || node.isComplete;
@@ -200,8 +200,8 @@ class="text-sm text-muted"
         .map(f => buildFieldRow(f));
     const lockAttr =
         trusted(isLocked ? ' disabled' : '');
-    const sortedUsers = Array.from(
-        userMap.values(),
+    const sortedPeople = Array.from(
+        personMap.values(),
     ).sort((a, b) =>
         a.fullName().localeCompare(
             b.fullName(),
@@ -209,8 +209,8 @@ class="text-sm text-muted"
     );
     const isUnassigned =
         node.crew.kind === 'unassigned';
-    const selUser = node.crew.kind === 'user'
-        ? node.crew.userId : '';
+    const selPerson = node.crew.kind === 'person'
+        ? node.crew.personId : '';
     const selModel = node.crew.kind === 'model'
         ? node.crew.model : '';
     return html`<div
@@ -232,12 +232,12 @@ class="flow-props-panel">
 <option value="unassigned"${
     trusted(isUnassigned ? ' selected' : '')
     }>Unassigned</option>
-<optgroup label="Users">
-${sortedUsers.map(u => html`<option
-    value="user:${u.idForLink()}"${
-    trusted(selUser === u.idForLink()
+<optgroup label="People">
+${sortedPeople.map(p => html`<option
+    value="person:${p.idForLink()}"${
+    trusted(selPerson === p.idForLink()
         ? ' selected' : '')
-    }>${u.fullName()}</option>`)}
+    }>${p.fullName()}</option>`)}
 </optgroup>
 <optgroup label="Models">
 ${CREW_MODELS.map(m => html`<option

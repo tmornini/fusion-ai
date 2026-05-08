@@ -2,8 +2,8 @@ import { $ } from './dom.ts';
 import { navigateTo } from './navigation.ts';
 
 interface HeaderData {
-    userName: string;
-    company: string;
+    personName: string;
+    organization: string;
     greeting: string;
     stats: ReadonlyArray<{
         value: string | number;
@@ -15,23 +15,24 @@ async function getHeaderData(
 ): Promise<HeaderData> {
     const {
         createFetchContext,
-        getCurrentUserRow,
+        getCurrentPersonRow,
         getOrganization,
         getDashboardStats,
-        User,
+        Person,
     } = await import('./adapters');
     const { getTimeOfDay } =
         await import('./format');
     const ctx = createFetchContext();
-    const [userRow, org, stats] =
+    const [personRow, org, stats] =
         await Promise.all([
-            getCurrentUserRow(ctx),
+            getCurrentPersonRow(ctx),
             getOrganization(ctx),
             getDashboardStats(ctx),
         ]);
     return {
-        userName: new User(userRow).fullName(),
-        company: org.nameText(),
+        personName:
+            new Person(personRow).fullName(),
+        organization: org.nameText(),
         greeting: getTimeOfDay(),
         stats,
     };
@@ -50,7 +51,7 @@ export async function mutateHeaderInfo(
             html`<span
 class="font-normal">Good ${
 headerInfo.greeting},</span> ${
-headerInfo.userName}`,
+headerInfo.personName}`,
         );
         greetingEl.addEventListener(
             'click',
@@ -65,7 +66,7 @@ headerInfo.userName}`,
             statsEl,
             html`<span
 class="header-stat-label">${
-headerInfo.company}</span>${
+headerInfo.organization}</span>${
 headerInfo.stats.map(
     (stat) =>
         html`<div

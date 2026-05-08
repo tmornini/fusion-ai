@@ -12,20 +12,20 @@ import {
     iconSearch,
     iconLightbulb,
     iconFolderKanban,
-    iconUser,
+    iconPerson,
     iconX,
 } from './icons.ts';
 import {
     getIdeas,
     getProjects,
-    getUsers,
-    featuredTeamMembers,
+    getPeople,
+    featuredPeople,
     createFetchContext,
     setLocation,
     subscribeSchemaChanges,
     type IdeaWithSubmitter,
     Project,
-    User,
+    Person,
 } from './adapters/index.ts';
 // init.ts is the composition root —
 // intentionally outside the adapter barrel.
@@ -213,8 +213,8 @@ export function projectToSearchItem(
     };
 }
 
-export function memberToSearchItem(
-    member: User,
+export function personToSearchItem(
+    member: Person,
 ): SearchItem {
     return {
         id: 'person-' + member.idForLink(),
@@ -223,10 +223,10 @@ export function memberToSearchItem(
             + ' · '
             + member.departmentLabel(),
         category: 'people',
-        icon: iconUser(
+        icon: iconPerson(
             PALETTE_ICON_SIZE_SM, '',
         ),
-        href: buildPageUrl('users'),
+        href: buildPageUrl('people'),
         keywords: member.roleLabel()
             + ' ' + member.departmentLabel()
             + ' ' + member.emailAddress(),
@@ -296,21 +296,21 @@ export function initCommandPalette(
         state.isDataLoaded = true;
 
         const ctx = createFetchContext();
-        const [ideas, projects, users] =
+        const [ideas, projects, people] =
             await Promise.all([
                 getIdeas(ctx),
                 getProjects(ctx),
-                getUsers(ctx),
+                getPeople(ctx),
             ]);
         const members =
-            featuredTeamMembers(users);
+            featuredPeople(people);
 
         state.allItems = [
             ...ideas.map(ideaToSearchItem),
             ...projects.map(
                 projectToSearchItem,
             ),
-            ...members.map(memberToSearchItem),
+            ...members.map(personToSearchItem),
             ...pages.map(pageToSearchItem),
         ];
     }

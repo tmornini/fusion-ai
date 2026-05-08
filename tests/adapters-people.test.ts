@@ -5,19 +5,19 @@ import {
     createFetchContext,
 } from '../web-app/app/adapters/shared.ts';
 import {
-    getUsers,
-    getUserRows,
-    featuredTeamMembers,
-    putUserStatus,
-    subscribeUserChanges,
-} from '../web-app/app/adapters/teams.ts';
+    getPeople,
+    getPersonRows,
+    featuredPeople,
+    putPersonStatus,
+    subscribePersonChanges,
+} from '../web-app/app/adapters/people.ts';
 import {
-    User,
+    Person,
     jsonArrayField,
     jsonObjectField,
 } from '../api/types.ts';
 
-function buildUserRow(args: {
+function buildPersonRow(args: {
     id: string;
     first?: string;
     last?: string;
@@ -52,35 +52,35 @@ function buildUserRow(args: {
 
 async function seed(
     db: MemoryDbAdapter,
-    rows: Array<ReturnType<typeof buildUserRow>>,
+    rows: Array<ReturnType<typeof buildPersonRow>>,
 ) {
     for (const row of rows) {
         const { id, ...rest } = row;
-        await db.users.put(id, rest);
+        await db.people.put(id, rest);
     }
 }
 
-test('getUsers returns all users', async () => {
+test('getPeople returns all people', async () => {
     const db = new MemoryDbAdapter();
     await seed(db, [
-        buildUserRow({ id: 'u1' }),
-        buildUserRow({ id: 'u2', first: 'Bob' }),
+        buildPersonRow({ id: 'u1' }),
+        buildPersonRow({ id: 'u2', first: 'Bob' }),
     ]);
     const ctx = createFetchContext(db);
-    const users = await getUsers(ctx);
-    assert.equal(users.length, 2);
-    assert.ok(users[0] instanceof User);
+    const people = await getPeople(ctx);
+    assert.equal(people.length, 2);
+    assert.ok(people[0] instanceof Person);
 });
 
 test(
-    'getUserRows returns raw entities',
+    'getPersonRows returns raw entities',
     async () => {
         const db = new MemoryDbAdapter();
         await seed(db, [
-            buildUserRow({ id: 'u1' }),
+            buildPersonRow({ id: 'u1' }),
         ]);
         const ctx = createFetchContext(db);
-        const rows = await getUserRows(ctx);
+        const rows = await getPersonRows(ctx);
         assert.equal(rows.length, 1);
         assert.equal(rows[0].id, 'u1');
         assert.equal(
@@ -90,17 +90,17 @@ test(
 );
 
 test(
-    'featuredTeamMembers filters out users'
+    'featuredPeople filters out people'
     + ' missing department',
     () => {
-        const populated = new User(
-            buildUserRow({ id: 'u1' }),
+        const populated = new Person(
+            buildPersonRow({ id: 'u1' }),
         );
-        const noDept = new User(buildUserRow({
+        const noDept = new Person(buildPersonRow({
             id: 'u2',
             department: '',
         }));
-        const result = featuredTeamMembers([
+        const result = featuredPeople([
             populated, noDept,
         ]);
         assert.equal(result.length, 1);
@@ -111,16 +111,16 @@ test(
 );
 
 test(
-    'featuredTeamMembers filters out users'
+    'featuredPeople filters out people'
     + ' with zero performance score',
     () => {
-        const populated = new User(
-            buildUserRow({ id: 'u1' }),
+        const populated = new Person(
+            buildPersonRow({ id: 'u1' }),
         );
-        const noPerf = new User(buildUserRow({
+        const noPerf = new Person(buildPersonRow({
             id: 'u2', performance: 0,
         }));
-        const result = featuredTeamMembers([
+        const result = featuredPeople([
             populated, noPerf,
         ]);
         assert.equal(result.length, 1);
@@ -131,50 +131,50 @@ test(
 );
 
 test(
-    'featuredTeamMembers slices to 6',
+    'featuredPeople slices to 6',
     () => {
-        const users = Array.from(
+        const people = Array.from(
             { length: 10 },
-            (_, i) => new User(buildUserRow({
+            (_, i) => new Person(buildPersonRow({
                 id: `u${i}`,
             })),
         );
-        const result = featuredTeamMembers(users);
+        const result = featuredPeople(people);
         assert.equal(result.length, 6);
     },
 );
 
 test(
-    'putUserStatus flips status on the row',
+    'putPersonStatus flips status on the row',
     async () => {
         const db = new MemoryDbAdapter();
         await seed(db, [
-            buildUserRow({
+            buildPersonRow({
                 id: 'u1', status: 'active',
             }),
         ]);
         const ctx = createFetchContext(db);
-        await putUserStatus(
+        await putPersonStatus(
             ctx, 'u1', 'deactivated',
         );
-        const row = await db.users.getById('u1');
+        const row = await db.people.getById('u1');
         assert.equal(row.status, 'deactivated');
     },
 );
 
 test(
-    'putUserStatus notifies userChanges',
+    'putPersonStatus notifies personChanges',
     async () => {
         const db = new MemoryDbAdapter();
         await seed(db, [
-            buildUserRow({ id: 'u1' }),
+            buildPersonRow({ id: 'u1' }),
         ]);
         let fired = 0;
-        const unsub = subscribeUserChanges(
+        const unsub = subscribePersonChanges(
             () => { fired += 1; },
         );
         try {
-            await putUserStatus(
+            await putPersonStatus(
                 createFetchContext(db),
                 'u1', 'deactivated',
             );
@@ -186,15 +186,15 @@ test(
 );
 
 test(
-    'putUserStatus throws on unknown user',
+    'putPersonStatus throws on unknown person',
     async () => {
         const db = new MemoryDbAdapter();
         const ctx = createFetchContext(db);
         await assert.rejects(
-            () => putUserStatus(
+            () => putPersonStatus(
                 ctx, 'missing', 'active',
             ),
-            /unknown user missing/,
+            /unknown person missing/,
         );
     },
 );

@@ -10,8 +10,8 @@ import {
     MS_PER_DAY,
 } from '../../../api/types.ts';
 import {
-    getUserMap,
-    userName,
+    getPersonMap,
+    personName,
 } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 import {

@@ -5,9 +5,9 @@ import {
     iconLightbulb,
     iconFolderKanban,
     iconGitBranch,
-    iconUsers,
+    iconPeople,
     iconSettings,
-    iconUser,
+    iconPerson,
     iconCreditCard,
     iconDatabase,
     iconPalette,
@@ -117,7 +117,7 @@ export const PAGE_REGISTRY: Record<
         layout: 'sidebar',
         sourceDir: 'profile',
         sourceFile: 'index',
-        icon: iconUser,
+        icon: iconPerson,
         keywords:
             'profile settings personal',
     },
@@ -131,13 +131,13 @@ export const PAGE_REGISTRY: Record<
             'billing plan invoices'
             + ' payment',
     },
-    users: {
+    people: {
         title: 'People',
         layout: 'sidebar',
-        sourceDir: 'users',
+        sourceDir: 'people',
         sourceFile: 'index',
-        icon: iconUsers,
-        keywords: 'people users invite manage admin',
+        icon: iconPeople,
+        keywords: 'people invite manage admin',
     },
     snapshots: {
         title: 'Snapshots',

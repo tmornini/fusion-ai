@@ -1,5 +1,5 @@
 import { MissingTableError } from '../../../api/db.ts';
-import type { UserEntity } from '../../../api/types.ts';
+import type { PersonEntity } from '../../../api/types.ts';
 import type { FetchContext } from './shared.ts';
 
 // Fallback when navigator.storage.estimate() is
@@ -113,7 +113,7 @@ export async function getSnapshot(
     return ctx.GET<string>('snapshots/schema');
 }
 
-// Bypasses ctx.getUserRows() on purpose: a missing
+// Bypasses ctx.getPersonRows() on purpose: a missing
 // table is the expected non-error path here, and the
 // memoized accessor would cache the rejection for any
 // later caller sharing this ctx.
@@ -121,9 +121,9 @@ export async function getDataPresent(
     ctx: FetchContext,
 ): Promise<boolean> {
     try {
-        const users =
-            await ctx.GET<UserEntity[]>('users');
-        return users.length > 0;
+        const people =
+            await ctx.GET<PersonEntity[]>('people');
+        return people.length > 0;
     } catch (err) {
         if (err instanceof MissingTableError) {
             return false;

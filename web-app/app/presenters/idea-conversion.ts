@@ -11,7 +11,7 @@ import {
     iconTarget,
     iconRocket,
     iconCalendar,
-    iconUsers,
+    iconPeople,
     iconTrendingUp,
     iconCheckCircle2,
 } from '../icons.ts';
@@ -583,7 +583,7 @@ export class IdeaConversionPresenter {
                 <div class="flex
                     items-center
                     gap-2 mb-6">
-                    ${iconUsers(
+                    ${iconPeople(
                         20,
                         'text-primary',
                     )}

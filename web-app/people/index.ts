@@ -10,7 +10,7 @@ import {
 } from '../app/loading-states.ts';
 import { log } from '../app/logger.ts';
 import {
-    iconUsers, iconUserPlus, iconSearch,
+    iconPeople, iconPersonPlus, iconSearch,
     iconChevronRight, iconSend,
 } from '../app/icons.ts';
 import {
@@ -19,21 +19,21 @@ import {
 } from '../app/core.ts';
 import {
     createFetchContext,
-    getUsers, putUser, putUserStatus,
+    getPeople, putPerson, putPersonStatus,
     postActivity,
     jsonArrayField,
     jsonObjectField,
     nowUtc,
     generateCryptoSafeBase62,
-    subscribeUserChanges,
+    subscribePersonChanges,
 } from '../app/adapters/index.ts';
 import {
-    ManagedUsersPresenter,
-    buildInitialManagedUsersState,
-    applyManagedUsersSearch,
-    applyManagedUsersRole,
-    applyManagedUsersStatus,
-    type ManagedUsersState,
+    ManagedPeoplePresenter,
+    buildInitialManagedPeopleState,
+    applyManagedPeopleSearch,
+    applyManagedPeopleRole,
+    applyManagedPeopleStatus,
+    type ManagedPeopleState,
 } from '../app/presenters/index.ts';
 
 const DEFAULT_DIM = 50;
@@ -41,61 +41,61 @@ const DEFAULT_DIM = 50;
 const pageAbort = new AbortController();
 const signal = pageAbort.signal;
 
-let usersState:
-    ManagedUsersState | null = null;
-let userListEl: HTMLElement | null = null;
+let peopleState:
+    ManagedPeopleState | null = null;
+let personListEl: HTMLElement | null = null;
 
 export async function init(): Promise<void> {
     const container = $(
-        '#manage-users-content', document,
+        '#manage-people-content', document,
     );
     if (!container) return;
 
-    const users = await withLoadingState(
+    const people = await withLoadingState(
         container,
         buildSkeleton('table', 5),
-        () => getUsers(createFetchContext()),
+        () => getPeople(createFetchContext()),
         init,
         {
-            icon: iconUsers(24, ''),
-            title: 'No Users Yet',
+            icon: iconPeople(24, ''),
+            title: 'No People Yet',
             description:
-                'Invite users to your'
+                'Invite people to your'
                 + ' organization to start'
                 + ' collaborating.',
         },
     );
-    if (!users) return;
+    if (!people) return;
 
-    usersState =
-        buildInitialManagedUsersState(users);
+    peopleState =
+        buildInitialManagedPeopleState(people);
     const initialPresenter =
-        new ManagedUsersPresenter(usersState);
+        new ManagedPeoplePresenter(peopleState);
     setHtml(container, buildShellHtml(
         initialPresenter.activeCount(),
         initialPresenter.pendingCount(),
     ));
 
-    userListEl = $('#user-list', document);
-    if (userListEl) {
-        rerenderUsers();
-        userListEl.addEventListener(
-            'click', onUserListClick,
+    personListEl = $('#person-list', document);
+    if (personListEl) {
+        rerenderPeople();
+        personListEl.addEventListener(
+            'click', onPersonListClick,
             { signal },
         );
     }
 
-    subscribeUserChanges(async () => {
-        if (!usersState || !userListEl) return;
-        const fresh = await getUsers(
+    subscribePersonChanges(async () => {
+        if (!peopleState || !personListEl) return;
+        const fresh = await getPeople(
             createFetchContext(),
         );
-        usersState =
-            buildInitialManagedUsersState(fresh);
-        rerenderUsers();
+        peopleState =
+            buildInitialManagedPeopleState(fresh);
+        rerenderPeople();
     });
 
-    initUserListFilters();
+    initPersonListFilters();
     bindInviteDialog();
 }
 
@@ -107,10 +107,10 @@ function isMissingInviteRequiredFields(
     return !first || !last || !email;
 }
 
-function rerenderUsers(): void {
-    if (!usersState || !userListEl) return;
-    new ManagedUsersPresenter(usersState)
-        .renderList(userListEl);
+function rerenderPeople(): void {
+    if (!peopleState || !personListEl) return;
+    new ManagedPeoplePresenter(peopleState)
+        .renderList(personListEl);
 }
 
 function buildShellHtml(
@@ -124,12 +124,12 @@ function buildShellHtml(
                 + ' gap-2 text-sm'
                 + ' text-muted mb-6'
             }">
-                <a href="index.html"
+                <a href="../organization/index.html"
                     class="text-primary">
                     Organization
                 </a>
                 ${iconChevronRight(14, '')}
-                <span>Manage Users</span>
+                <span>Manage People</span>
             </nav>
 
             <div class="${
@@ -140,10 +140,10 @@ function buildShellHtml(
                     <h1 class="${
                         'text-3xl font-display'
                         + ' font-bold mb-2'
-                    }">Manage Users</h1>
+                    }">Manage People</h1>
                     <p class="text-muted">
                         ${activeCount}
-                        active users,
+                        active people,
                         ${pendingCount}
                         pending invitations
                     </p>
@@ -151,8 +151,8 @@ function buildShellHtml(
                 <button class="${
                     'btn btn-primary gap-2'
                 }" id="invite-btn">
-                    ${iconUserPlus(16, '')}
-                    Invite User
+                    ${iconPersonPlus(16, '')}
+                    Invite Person
                 </button>
             </div>
 
@@ -174,7 +174,7 @@ function buildShellHtml(
                             'Search by name'
                             + ' or email...'
                         }"
-                        id="user-search"
+                        id="person-search"
                         aria-label="${
                             'Search by name'
                             + ' or email'
@@ -235,7 +235,7 @@ function buildShellHtml(
                         'flex-2 text-xs'
                         + ' font-medium'
                         + ' text-muted'
-                    }">User</div>
+                    }">Person</div>
                     <div class="${
                         'flex-1 text-xs'
                         + ' font-medium'
@@ -255,7 +255,7 @@ function buildShellHtml(
                         'table-action-cell'
                     }"></div>
                 </div>
-                <div id="user-list"></div>
+                <div id="person-list"></div>
             </div>
 
             ${buildInviteDialog()}
@@ -281,8 +281,8 @@ function buildInviteDialog(
                     + ' flex items-center'
                     + ' gap-2'
                 }">
-                    ${iconUserPlus(20, '')}
-                    Add User
+                    ${iconPersonPlus(20, '')}
+                    Add Person
                 </h3>
             </div>
             <div class="${
@@ -318,7 +318,7 @@ function buildInviteDialog(
                     <input class="input"
                         type="email"
                         placeholder="${
-                            'user@company.com'
+                            'person@company.com'
                         }"
                         id="invite-email" />
                 </div>
@@ -445,14 +445,14 @@ function buildInviteDialog(
                     'btn btn-primary gap-2'
                 }" id="invite-submit">
                     ${iconSend(16, '')}
-                    Add User
+                    Add Person
                 </button>
             </div>
         </div>`;
 }
 
-function initUserListFilters(): void {
-    $input('#user-search', document)
+function initPersonListFilters(): void {
+    $input('#person-search', document)
         ?.addEventListener(
             'input', onSearchInput,
             { signal },
@@ -470,95 +470,95 @@ function initUserListFilters(): void {
 }
 
 function onSearchInput(e: Event): void {
-    if (!usersState || !userListEl) return;
+    if (!peopleState || !personListEl) return;
     const target =
         e.target as HTMLInputElement;
-    usersState = applyManagedUsersSearch(
-        usersState, target.value,
+    peopleState = applyManagedPeopleSearch(
+        peopleState, target.value,
     );
-    rerenderUsers();
+    rerenderPeople();
 }
 
 function onRoleChange(e: Event): void {
-    if (!usersState || !userListEl) return;
+    if (!peopleState || !personListEl) return;
     const target =
         e.target as HTMLSelectElement;
-    usersState = applyManagedUsersRole(
-        usersState, target.value,
+    peopleState = applyManagedPeopleRole(
+        peopleState, target.value,
     );
-    rerenderUsers();
+    rerenderPeople();
 }
 
 function onStatusChange(e: Event): void {
-    if (!usersState || !userListEl) return;
+    if (!peopleState || !personListEl) return;
     const target =
         e.target as HTMLSelectElement;
-    usersState = applyManagedUsersStatus(
-        usersState, target.value,
+    peopleState = applyManagedPeopleStatus(
+        peopleState, target.value,
     );
-    rerenderUsers();
+    rerenderPeople();
 }
 
-function onUserListClick(e: MouseEvent): void {
+function onPersonListClick(e: MouseEvent): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
     const deactivate = target.closest(
-        '[data-deactivate-user]',
+        '[data-deactivate-person]',
     );
     if (deactivate) {
         const id = deactivate.getAttribute(
-            'data-deactivate-user',
+            'data-deactivate-person',
         );
         if (id) {
-            void updateUserActivationStatus(
+            void updatePersonActivationStatus(
                 id, 'deactivated',
             );
         }
         return;
     }
     const reactivate = target.closest(
-        '[data-reactivate-user]',
+        '[data-reactivate-person]',
     );
     if (reactivate) {
         const id = reactivate.getAttribute(
-            'data-reactivate-user',
+            'data-reactivate-person',
         );
         if (id) {
-            void updateUserActivationStatus(
+            void updatePersonActivationStatus(
                 id, 'active',
             );
         }
     }
 }
 
-async function updateUserActivationStatus(
-    userId: string,
+async function updatePersonActivationStatus(
+    personId: string,
     next: 'active' | 'deactivated',
 ): Promise<void> {
     try {
-        await putUserStatus(
+        await putPersonStatus(
             createFetchContext(),
-            userId,
+            personId,
             next,
         );
     } catch (err) {
         log.error(
-            'putUserStatus failed',
+            'putPersonStatus failed',
             'organization', err,
         );
         showToast(
-            'Failed to update user status',
+            'Failed to update person status',
             'error',
         );
         return;
     }
     showToast(
         next === 'deactivated'
-            ? 'User deactivated'
-            : 'User reactivated',
+            ? 'Person deactivated'
+            : 'Person reactivated',
         'success',
     );
-    navigateTo('users');
+    navigateTo('people');
 }
 
 function bindInviteDialog(): void {
@@ -629,7 +629,7 @@ async function handleInvite(): Promise<void> {
     )!.value;
     const id = generateCryptoSafeBase62();
     try {
-        await putUser(
+        await putPerson(
             createFetchContext(),
             id,
             trimStrings({
@@ -664,11 +664,11 @@ async function handleInvite(): Promise<void> {
         );
     } catch (err) {
         log.error(
-            'putUser failed',
+            'putPerson failed',
             'organization', err,
         );
         showToast(
-            'Failed to create user', 'error',
+            'Failed to add person', 'error',
         );
         return;
     }
@@ -676,7 +676,7 @@ async function handleInvite(): Promise<void> {
         await postActivity(
             createFetchContext(),
             {
-                type: 'user_joined',
+                type: 'person_joined',
                 action: 'joined the team',
                 target: first + ' ' + last,
                 status: '',
@@ -689,11 +689,11 @@ async function handleInvite(): Promise<void> {
             'organization', err,
         );
         showToast(
-            'Failed to create user', 'error',
+            'Failed to add person', 'error',
         );
         return;
     }
-    showToast('User created', 'success');
+    showToast('Person added', 'success');
     closeDialog('invite');
-    navigateTo('users');
+    navigateTo('people');
 }

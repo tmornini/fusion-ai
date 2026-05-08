@@ -3,7 +3,7 @@ import {
 } from '../safe-html.ts';
 import { initials, formatDate } from '../core.ts';
 import {
-    iconUsers,
+    iconPeople,
     iconStar,
     iconTrendingUp,
     iconBriefcase,
@@ -13,14 +13,14 @@ import {
     iconCheckCircle2,
     iconAlertCircle,
     iconClock,
-    iconUserX,
-    iconUserCheck,
+    iconPersonX,
+    iconPersonCheck,
     iconShield,
 } from '../icons.ts';
 import {
     AVAILABILITY_HIGH,
     AVAILABILITY_LOW,
-    type User,
+    type Person,
 } from '../adapters/index.ts';
 import {
     WorkingStylesPresenter,
@@ -69,27 +69,27 @@ const ROLE_LABELS: Record<
     },
 };
 
-export class UserPresenter {
-    readonly #user: User;
+export class PersonPresenter {
+    readonly #person: Person;
 
-    constructor(user: User) {
-        this.#user = user;
+    constructor(person: Person) {
+        this.#person = person;
     }
 
     idForLink(): string {
-        return this.#user.idForLink();
+        return this.#person.idForLink();
     }
 
     matchesSearch(
         query: string,
     ): boolean {
-        return this.#user.fullName()
+        return this.#person.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#user.roleLabel()
+            || this.#person.roleLabel()
                 .toLowerCase()
                 .includes(query)
-            || this.#user.departmentLabel()
+            || this.#person.departmentLabel()
                 .toLowerCase()
                 .includes(query);
     }
@@ -97,10 +97,10 @@ export class UserPresenter {
     matchesUserSearch(
         query: string,
     ): boolean {
-        return this.#user.fullName()
+        return this.#person.fullName()
             .toLowerCase()
             .includes(query)
-            || this.#user.emailAddress()
+            || this.#person.emailAddress()
                 .toLowerCase()
                 .includes(query);
     }
@@ -109,21 +109,21 @@ export class UserPresenter {
         role: string,
     ): boolean {
         return role === 'all'
-            || this.#user.roleLabel() === role;
+            || this.#person.roleLabel() === role;
     }
 
     matchesStatusFilter(
         status: string,
     ): boolean {
         return status === 'all'
-            || this.#user.statusValue() === status;
+            || this.#person.statusValue() === status;
     }
 
     buildMemberCard(
         selectedId: string | null,
     ): SafeHtml {
         const selectedClass =
-            selectedId === this.#user.idForLink()
+            selectedId === this.#person.idForLink()
                 ? ' card-selected'
                 : '';
         return html`
@@ -133,7 +133,7 @@ export class UserPresenter {
             + ' cursor-pointer'
             + selectedClass
         }"
-        data-member-card="${this.#user.idForLink()}"
+        data-member-card="${this.#person.idForLink()}"
     >
         <div class="flex items-start gap-4">
             <div class="avatar-frame">
@@ -146,12 +146,12 @@ export class UserPresenter {
                         }"
                     >${
                         initials(
-                            this.#user.fullName(),
+                            this.#person.fullName(),
                         )
                     }</span>
                 </div>
                 ${buildStatusDot(
-                    this.#user.availabilityScore(),
+                    this.#person.availabilityScore(),
                 )}
             </div>
             <div class="flex-fill">
@@ -166,25 +166,25 @@ export class UserPresenter {
                         'font-semibold'
                         + ' text-sm'
                     }">
-                        ${this.#user.fullName()}
+                        ${this.#person.fullName()}
                     </h3>
                     <span
                         class="pill"
                         data-tone="${
                             toneForAvailability(
-                                this.#user
+                                this.#person
                                 .availabilityScore(),
                             )
                         }"
                     >${
-                        this.#user.availabilityScore()
+                        this.#person.availabilityScore()
                     }%</span>
                 </div>
                 <p class="${
                     'text-xs text-muted mb-2'
                 }">
-                    ${this.#user.roleLabel()}
-                    \u2022 ${this.#user.departmentLabel()}
+                    ${this.#person.roleLabel()}
+                    \u2022 ${this.#person.departmentLabel()}
                 </p>
                 <div
                     class="${
@@ -192,7 +192,7 @@ export class UserPresenter {
                         + ' gap-1.5 mb-2'
                     }"
                 >
-                    ${this.#user
+                    ${this.#person
                         .parsedStrengths()
                         .slice(0, 3)
                         .map(s => html`
@@ -223,7 +223,7 @@ export class UserPresenter {
                         ${iconTrendingUp(
                             14, 'text-success',
                         )}
-                        ${this.#user
+                        ${this.#person
                             .performanceScoreValue()
                         }%
                     </span>
@@ -234,7 +234,7 @@ export class UserPresenter {
                         }"
                     >
                         ${iconBriefcase(14, '')}
-                        ${this.#user
+                        ${this.#person
                             .currentProjectsCount()
                         } active
                     </span>
@@ -248,7 +248,7 @@ export class UserPresenter {
                         ${iconAward(
                             14, 'text-primary',
                         )}
-                        ${this.#user
+                        ${this.#person
                             .projectsCompletedCount()}
                         completed
                     </span>
@@ -263,9 +263,9 @@ export class UserPresenter {
 
     buildMemberDetail(): SafeHtml {
         return html`
-    <div class="user-detail-wrap">
+    <div class="person-detail-wrap">
         <div class="${
-            'user-detail-header'
+            'person-detail-header'
         }">
             <div class="${
                 'avatar avatar-2xl'
@@ -279,7 +279,7 @@ export class UserPresenter {
                     }"
                 >${
                     initials(
-                        this.#user.fullName(),
+                        this.#person.fullName(),
                     )
                 }</span>
             </div>
@@ -288,12 +288,12 @@ export class UserPresenter {
                     'text-lg font-display'
                     + ' font-semibold'
                 }"
-            >${this.#user.fullName()}</h3>
+            >${this.#person.fullName()}</h3>
             <p class="text-sm text-muted">
-                ${this.#user.roleLabel()}
+                ${this.#person.roleLabel()}
             </p>
             <p class="text-xs text-muted">
-                ${this.#user.emailAddress()}
+                ${this.#person.emailAddress()}
             </p>
         </div>
         ${this.#buildDimensionsTab()}
@@ -305,8 +305,8 @@ export class UserPresenter {
         return html`
         <div class="${
             'flex items-center '
-            + 'gap-4 p-4 user-row-divider '
-            + (this.#user.isDeactivated()
+            + 'gap-4 p-4 person-row-divider '
+            + (this.#person.isDeactivated()
                 ? 'opacity-50' : '')
         }">
             <div class="${
@@ -323,7 +323,7 @@ export class UserPresenter {
                             + 'text-primary'
                         }">
                         ${initials(
-                            this.#user.fullName(),
+                            this.#person.fullName(),
                         )}
                     </span>
                 </div>
@@ -334,7 +334,7 @@ export class UserPresenter {
                         'font-medium '
                         + 'truncate'
                     }">
-                        ${this.#user.fullName()}
+                        ${this.#person.fullName()}
                     </p>
                     <p
                         class="${
@@ -342,7 +342,7 @@ export class UserPresenter {
                             + 'text-muted '
                             + 'truncate'
                         }">
-                        ${this.#user.emailAddress()}
+                        ${this.#person.emailAddress()}
                     </p>
                 </div>
             </div>
@@ -353,7 +353,7 @@ export class UserPresenter {
                 'flex-1'
                 + ' text-sm text-muted'
             }">
-                ${this.#user.departmentLabel()}
+                ${this.#person.departmentLabel()}
             </div>
             <div class="flex-1">
                 ${this.#buildStatusBadge()}
@@ -361,31 +361,31 @@ export class UserPresenter {
                     'text-xs text-muted'
                     + ' mt-1'
                 }">
-                    ${this.#user.isPending()
+                    ${this.#person.isPending()
                         ? 'Invite sent'
                         : 'Last active '
                             + formatDate(
-                                this.#user
+                                this.#person
                                 .lastActiveDate(),
                             )}
                 </p>
             </div>
             <div class="flex-shrink-0">
-                ${this.#user.isDeactivated()
+                ${this.#person.isDeactivated()
                     ? html`<button
                         class="${
                             'btn btn-ghost '
                             + 'btn-icon btn-sm'
                         }"
-                        data-reactivate-user="${
-                            this.#user
+                        data-reactivate-person="${
+                            this.#person
                                 .idForLink()
                         }"
-                        title="Reactivate user"
+                        title="Reactivate person"
                         aria-label="${
-                            'Reactivate user'
+                            'Reactivate person'
                         }">
-                        ${iconUserCheck(
+                        ${iconPersonCheck(
                             16, '',
                         )}
                     </button>`
@@ -394,15 +394,15 @@ export class UserPresenter {
                             'btn btn-ghost '
                             + 'btn-icon btn-sm'
                         }"
-                        data-deactivate-user="${
-                            this.#user
+                        data-deactivate-person="${
+                            this.#person
                                 .idForLink()
                         }"
-                        title="Deactivate user"
+                        title="Deactivate person"
                         aria-label="${
-                            'Deactivate user'
+                            'Deactivate person'
                         }">
-                        ${iconUserX(
+                        ${iconPersonX(
                             16, '',
                         )}
                     </button>`}
@@ -411,7 +411,7 @@ export class UserPresenter {
     }
 
     #buildStatusBadge(): SafeHtml {
-        if (this.#user.isActive())
+        if (this.#person.isActive())
             return html`<span
                 class="${
                     'status-badge-success'
@@ -419,7 +419,7 @@ export class UserPresenter {
                 ${iconCheckCircle2(14, '')}
                 Active
             </span>`;
-        if (this.#user.isPending())
+        if (this.#person.isPending())
             return html`<span
                 class="${
                     'status-badge-warning'
@@ -431,20 +431,20 @@ export class UserPresenter {
             class="${
                 'status-badge-error'
             }">
-            ${iconUserX(14, '')}
+            ${iconPersonX(14, '')}
             Deactivated
         </span>`;
     }
 
     #buildRoleBadge(): SafeHtml {
         const cfg =
-            ROLE_LABELS[this.#user.roleLabel()];
+            ROLE_LABELS[this.#person.roleLabel()];
         if (!cfg)
             return html`<span
                 class="${
                     'badge badge-secondary'
                 }">
-                ${this.#user.roleLabel()}
+                ${this.#person.roleLabel()}
             </span>`;
         return html`<span
             class="${
@@ -458,7 +458,7 @@ export class UserPresenter {
     #buildDimensionsTab(): SafeHtml {
         const styles =
             new WorkingStylesPresenter(
-                this.#user
+                this.#person
                     .parsedTeamDimensions(),
             );
         return html`
@@ -509,7 +509,7 @@ export class UserPresenter {
                         + ' perf-hero-value'
                     }"
                 >${
-                    this.#user.performanceScoreValue()
+                    this.#person.performanceScoreValue()
                 }%</div>
                 <p class="${
                     'text-xs text-muted'
@@ -533,7 +533,7 @@ export class UserPresenter {
                             + 'perf-stat-value'
                         }"
                     >${
-                        this.#user
+                        this.#person
                             .projectsCompletedCount()
                     }</div>
                     <p class="${
@@ -553,7 +553,7 @@ export class UserPresenter {
                             + 'perf-stat-value'
                         }"
                     >${
-                        this.#user
+                        this.#person
                             .currentProjectsCount()
                     }</div>
                     <p class="${
@@ -567,64 +567,64 @@ export class UserPresenter {
     }
 }
 
-export type ManagedUsersState = {
-    users: User[];
+export type ManagedPeopleState = {
+    people: Person[];
     search: string;
     role: string;
     status: string;
 };
 
-export function buildInitialManagedUsersState(
-    users: User[],
-): ManagedUsersState {
+export function buildInitialManagedPeopleState(
+    people: Person[],
+): ManagedPeopleState {
     return {
-        users,
+        people,
         search: '',
         role: 'all',
         status: 'all',
     };
 }
 
-export function applyManagedUsersUpdate(
-    state: ManagedUsersState,
-    users: User[],
-): ManagedUsersState {
-    return { ...state, users };
+export function applyManagedPeopleUpdate(
+    state: ManagedPeopleState,
+    people: Person[],
+): ManagedPeopleState {
+    return { ...state, people };
 }
 
-export function applyManagedUsersSearch(
-    state: ManagedUsersState,
+export function applyManagedPeopleSearch(
+    state: ManagedPeopleState,
     query: string,
-): ManagedUsersState {
+): ManagedPeopleState {
     return {
         ...state,
         search: query.toLowerCase(),
     };
 }
 
-export function applyManagedUsersRole(
-    state: ManagedUsersState,
+export function applyManagedPeopleRole(
+    state: ManagedPeopleState,
     role: string,
-): ManagedUsersState {
+): ManagedPeopleState {
     return { ...state, role };
 }
 
-export function applyManagedUsersStatus(
-    state: ManagedUsersState,
+export function applyManagedPeopleStatus(
+    state: ManagedPeopleState,
     status: string,
-): ManagedUsersState {
+): ManagedPeopleState {
     return { ...state, status };
 }
 
-export class ManagedUsersPresenter {
-    #presenters: UserPresenter[];
+export class ManagedPeoplePresenter {
+    #presenters: PersonPresenter[];
     #search: string;
     #role: string;
     #status: string;
 
-    constructor(state: ManagedUsersState) {
-        this.#presenters = state.users.map(
-            u => new UserPresenter(u),
+    constructor(state: ManagedPeopleState) {
+        this.#presenters = state.people.map(
+            u => new PersonPresenter(u),
         );
         this.#search = state.search;
         this.#role = state.role;

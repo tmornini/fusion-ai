@@ -11,7 +11,7 @@ import type {
 } from './db.ts';
 import type {
     Deleted,
-    UserEntity,
+    PersonEntity,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -34,7 +34,7 @@ import {
 } from './latency.ts';
 import {
     asString,
-    validateUserEntity,
+    validatePersonEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateActivityEntity,
@@ -71,8 +71,8 @@ function validateSnapshotRow(
     const { id: _id, ...body } = row;
     try {
         switch (table) {
-            case 'users':
-                validateUserEntity(body);
+            case 'people':
+                validatePersonEntity(body);
                 break;
             case 'ideas':
                 validateIdeaEntity(body);
@@ -769,9 +769,9 @@ export async function createLocalStorageAdapter(
             );
         },
 
-        users:
-            createEntityStore<UserEntity>(
-                'users',
+        people:
+            createEntityStore<PersonEntity>(
+                'people',
                 deletedStore,
             ),
         ideas:

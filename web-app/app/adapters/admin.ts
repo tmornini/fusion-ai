@@ -1,13 +1,13 @@
 import type {
-    UserEntity,
+    PersonEntity,
     OrganizationEntity,
 } from '../../../api/types.ts';
-import { User } from '../../../api/types.ts';
+import { Person } from '../../../api/types.ts';
 import {
     initials,
     formatDate,
 } from '../format.ts';
-import { getCurrentUserRow } from './shared.ts';
+import { getCurrentPersonRow } from './shared.ts';
 import type { FetchContext } from './shared.ts';
 
 export type {
@@ -128,8 +128,8 @@ export class Organization {
         return this.#entity.last_activity;
     }
 
-    activeUsersCount(): number {
-        return this.#entity.active_users;
+    activePeopleCount(): number {
+        return this.#entity.active_people;
     }
 }
 
@@ -279,27 +279,27 @@ export async function getProfile(
     ctx: FetchContext,
 ): Promise<{
     profile: Profile;
-    entity: UserEntity;
+    entity: PersonEntity;
 }> {
-    const user =
-        await ctx.GET<UserEntity>(
-            'current-user',
+    const person =
+        await ctx.GET<PersonEntity>(
+            'current-person',
         );
-    const userObj = new User(user);
+    const personObj = new Person(person);
     const profile = new Profile({
-        firstName: user.first_name,
-        lastName: user.last_name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        department: user.department,
-        bio: user.bio,
+        firstName: person.first_name,
+        lastName: person.last_name,
+        email: person.email,
+        phone: person.phone,
+        role: person.role,
+        department: person.department,
+        bio: person.bio,
         strengths:
-            userObj.parsedStrengths(),
+            personObj.parsedStrengths(),
         teamDimensions:
-            userObj.parsedTeamDimensions(),
+            personObj.parsedTeamDimensions(),
     });
-    return { profile, entity: user };
+    return { profile, entity: person };
 }
 
 

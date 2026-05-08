@@ -18,7 +18,7 @@ import {
     getFlowMermaid,
     getFlowZip,
     getFlowVersions,
-    getUserMap,
+    getPersonMap,
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
@@ -938,10 +938,10 @@ function parseCrewSelectValue(
     if (raw === 'unassigned') {
         return { kind: 'unassigned' };
     }
-    if (raw.startsWith('user:')) {
+    if (raw.startsWith('person:')) {
         return {
-            kind: 'user',
-            userId: raw.slice(5),
+            kind: 'person',
+            personId: raw.slice(7),
         };
     }
     if (raw.startsWith('model:')) {
@@ -1212,13 +1212,13 @@ export async function init(
         buildSkeleton('detail', 1),
         async () => {
             const ctx = createFetchContext();
-            const [graph, versions, userMap] =
+            const [graph, versions, personMap] =
                 await Promise.all([
                     getFlowGraph(ctx, flowId),
                     getFlowVersions(ctx, flowId),
-                    getUserMap(ctx),
+                    getPersonMap(ctx),
                 ]);
-            return { graph, versions, userMap };
+            return { graph, versions, personMap };
         },
     );
     if (!loaded) return;
@@ -1236,7 +1236,7 @@ export async function init(
             loaded.graph,
             FALLBACK_W,
             FALLBACK_H,
-            loaded.userMap,
+            loaded.personMap,
         );
     const presenter =
         new FlowDesignerPresenter(

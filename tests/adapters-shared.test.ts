@@ -3,13 +3,13 @@ import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
     createFetchContext,
-    getUserMap,
-    userName,
-    getCurrentUserRow,
+    getPersonMap,
+    personName,
+    getCurrentPersonRow,
 } from '../web-app/app/adapters/shared.ts';
-import { User } from '../api/types.ts';
+import { Person } from '../api/types.ts';
 
-function buildUserRow(
+function buildPersonRow(
     id: string,
     first: string,
     last: string,
@@ -30,33 +30,33 @@ function buildUserRow(
     };
 }
 
-test('userName returns fullName for known id', () => {
-    const map = new Map<string, User>([
-        ['u1', new User(
-            buildUserRow('u1', 'Alice', 'Adams'),
+test('personName returns fullName for known id', () => {
+    const map = new Map<string, Person>([
+        ['u1', new Person(
+            buildPersonRow('u1', 'Alice', 'Adams'),
         )],
     ]);
     assert.equal(
-        userName(map, 'u1'),
+        personName(map, 'u1'),
         'Alice Adams',
     );
 });
 
-test('userName throws for unknown id', () => {
-    const map = new Map<string, User>();
+test('personName throws for unknown id', () => {
+    const map = new Map<string, Person>();
     assert.throws(
-        () => userName(map, 'missing'),
-        /unknown user/,
+        () => personName(map, 'missing'),
+        /unknown person/,
     );
 });
 
-test('getUserMap fetches users via adapter', async () => {
+test('getPersonMap fetches people via adapter', async () => {
     const db = new MemoryDbAdapter();
-    await db.users.put('u1', buildUserRow(
+    await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
     const ctx = createFetchContext(db);
-    const map = await getUserMap(ctx);
+    const map = await getPersonMap(ctx);
     assert.equal(map.size, 1);
     assert.equal(
         map.get('u1')?.fullName(),
@@ -64,18 +64,18 @@ test('getUserMap fetches users via adapter', async () => {
     );
 });
 
-test('FetchContext memoizes user map across calls', async () => {
+test('FetchContext memoizes person map across calls', async () => {
     const db = new MemoryDbAdapter();
-    await db.users.put('u1', buildUserRow(
+    await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
     const ctx = createFetchContext(db);
-    const m1 = await ctx.getUserMap();
+    const m1 = await ctx.getPersonMap();
     // Mutate underlying data after first fetch
-    await db.users.put('u2', buildUserRow(
+    await db.people.put('u2', buildPersonRow(
         'u2', 'Bob', 'Brown',
     ));
-    const m2 = await ctx.getUserMap();
+    const m2 = await ctx.getPersonMap();
     // Same Promise → same Map → m2 reflects ONLY first fetch
     assert.equal(m1, m2);
     assert.equal(m1.size, 1);
@@ -83,29 +83,29 @@ test('FetchContext memoizes user map across calls', async () => {
 
 test('Fresh ctx re-fetches each call', async () => {
     const db = new MemoryDbAdapter();
-    await db.users.put('u1', buildUserRow(
+    await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
     const m1 = await createFetchContext(db)
-        .getUserMap();
-    await db.users.put('u2', buildUserRow(
+        .getPersonMap();
+    await db.people.put('u2', buildPersonRow(
         'u2', 'Bob', 'Brown',
     ));
     const m2 = await createFetchContext(db)
-        .getUserMap();
+        .getPersonMap();
     assert.notEqual(m1, m2);
     assert.equal(m1.size, 1);
     assert.equal(m2.size, 2);
 });
 
-test('getCurrentUserRow returns UserEntity', async () => {
+test('getCurrentPersonRow returns PersonEntity', async () => {
     const db = new MemoryDbAdapter();
-    await db.users.put('current', {
-        ...buildUserRow(
+    await db.people.put('current', {
+        ...buildPersonRow(
             'current', 'Alice', 'Adams',
         ),
     });
-    const row = await getCurrentUserRow(
+    const row = await getCurrentPersonRow(
         createFetchContext(db),
     );
     assert.equal(row.first_name, 'Alice');
@@ -113,23 +113,23 @@ test('getCurrentUserRow returns UserEntity', async () => {
 });
 
 test(
-    'FetchContext memoizes currentUser'
+    'FetchContext memoizes currentPerson'
     + ' across calls',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.users.put('current', {
-            ...buildUserRow(
+        await db.people.put('current', {
+            ...buildPersonRow(
                 'current', 'Alice', 'Adams',
             ),
         });
         const ctx = createFetchContext(db);
-        const u1 = await ctx.getCurrentUser();
-        await db.users.put('current', {
-            ...buildUserRow(
+        const u1 = await ctx.getCurrentPerson();
+        await db.people.put('current', {
+            ...buildPersonRow(
                 'current', 'Renamed', 'Adams',
             ),
         });
-        const u2 = await ctx.getCurrentUser();
+        const u2 = await ctx.getCurrentPerson();
         // Same Promise → first snapshot stays
         assert.equal(u1, u2);
         assert.equal(u1.first_name, 'Alice');
@@ -158,7 +158,7 @@ test(
     + ' and flow row fetches',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.users.put('u1', buildUserRow(
+        await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
         const ctx = createFetchContext(db);
@@ -179,39 +179,39 @@ test(
 );
 
 test(
-    'FetchContext memoizes user rows',
+    'FetchContext memoizes person rows',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.users.put('u1', buildUserRow(
+        await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
         const ctx = createFetchContext(db);
-        const rows1 = await ctx.getUserRows();
-        await db.users.put('u2', buildUserRow(
+        const rows1 = await ctx.getPersonRows();
+        await db.people.put('u2', buildPersonRow(
             'u2', 'Bob', 'Brown',
         ));
-        const rows2 = await ctx.getUserRows();
+        const rows2 = await ctx.getPersonRows();
         assert.equal(rows1, rows2);
         assert.equal(rows1.length, 1);
     },
 );
 
 test(
-    'getUserRows and getUserMap share one'
+    'getPersonRows and getPersonMap share one'
     + ' underlying fetch',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.users.put('u1', buildUserRow(
+        await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
         const ctx = createFetchContext(db);
-        const rows1 = await ctx.getUserRows();
-        // If getUserMap re-fetches, the post-mutation
+        const rows1 = await ctx.getPersonRows();
+        // If getPersonMap re-fetches, the post-mutation
         // state would leak into the map.
-        await db.users.put('u2', buildUserRow(
+        await db.people.put('u2', buildPersonRow(
             'u2', 'Bob', 'Brown',
         ));
-        const map = await ctx.getUserMap();
+        const map = await ctx.getPersonMap();
         assert.equal(map.size, rows1.length);
         assert.equal(map.size, 1);
     },

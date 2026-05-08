@@ -14,10 +14,10 @@ import { trimStrings } from '../app/core.ts';
 import {
     createFetchContext,
     getProfile,
-    putUser,
+    putPerson,
     Profile,
     type ProfileDraft,
-    type UserEntity,
+    type PersonEntity,
     jsonArrayField,
 } from '../app/adapters/index.ts';
 
@@ -28,12 +28,12 @@ type PageState =
     | {
         kind: 'reading';
         profile: Profile;
-        entity: UserEntity;
+        entity: PersonEntity;
     }
     | {
         kind: 'editing';
         profile: Profile;
-        entity: UserEntity;
+        entity: PersonEntity;
         draft: ProfileDraft;
     };
 
@@ -84,7 +84,7 @@ export async function init(): Promise<void> {
 
     let loaded: {
         profile: Profile;
-        entity: UserEntity;
+        entity: PersonEntity;
     };
     try {
         loaded = await getProfile(
@@ -282,7 +282,7 @@ async function handleSave(): Promise<void> {
     }
     const trimmed = trimStrings(state.draft);
     const current = state.entity;
-    const updated: Omit<UserEntity, 'id'> = {
+    const updated: Omit<PersonEntity, 'id'> = {
         ...current,
         first_name: trimmed.firstName,
         last_name: trimmed.lastName,
@@ -297,7 +297,7 @@ async function handleSave(): Promise<void> {
     };
     try {
         const ctx = createFetchContext();
-        await putUser(
+        await putPerson(
             ctx, current.id, updated,
         );
     } catch (err) {

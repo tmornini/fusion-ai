@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    validateUserEntity,
+    validatePersonEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateActivityEntity,
@@ -19,9 +19,9 @@ import {
     asStoredGraph,
 } from '../api/validators.ts';
 
-// --- UserEntity ---
+// --- PersonEntity ---
 
-const validUser = {
+const validPerson = {
     first_name: 'Ada',
     last_name: 'Lovelace',
     email: 'ada@example.com',
@@ -39,27 +39,27 @@ const validUser = {
     last_active: '2024-01-01T00:00:00Z',
 };
 
-test('validateUserEntity accepts valid payload', () => {
-    const result = validateUserEntity(validUser);
+test('validatePersonEntity accepts valid payload', () => {
+    const result = validatePersonEntity(validPerson);
     assert.equal(result.first_name, 'Ada');
     assert.equal(result.status, 'active');
 });
 
-test('validateUserEntity rejects missing email', () => {
-    const body = { ...validUser };
+test('validatePersonEntity rejects missing email', () => {
+    const body = { ...validPerson };
     delete (body as Record<string, unknown>)['email'];
     assert.throws(
-        () => validateUserEntity(body),
+        () => validatePersonEntity(body),
         /missing required key "email"/,
     );
 });
 
 test(
-    'validateUserEntity rejects unexpected key',
+    'validatePersonEntity rejects unexpected key',
     () => {
     assert.throws(
-        () => validateUserEntity({
-            ...validUser,
+        () => validatePersonEntity({
+            ...validPerson,
             admin: true,
         }),
         /unexpected key "admin"/,
@@ -67,14 +67,14 @@ test(
 });
 
 test(
-    'validateUserEntity rejects missing required key',
+    'validatePersonEntity rejects missing required key',
     () => {
-    const body = { ...validUser };
+    const body = { ...validPerson };
     delete (
         body as Record<string, unknown>
     )['last_name'];
     assert.throws(
-        () => validateUserEntity(body),
+        () => validatePersonEntity(body),
         /missing required key "last_name"/,
     );
 });
@@ -373,7 +373,7 @@ const validTransition = {
     work_order_id: 'wo-1',
     from_node_id: 'n-1',
     to_node_id: 'n-2',
-    user_id: 'u-1',
+    person_id: 'u-1',
     transitioned_at: '2024-01-01T00:00:00Z',
 };
 
@@ -424,7 +424,7 @@ test(
 
 const validClaim = {
     work_order_id: 'wo-1',
-    user_id: 'u-1',
+    person_id: 'u-1',
     claimed_at: '2024-01-01T00:00:00Z',
 };
 
@@ -434,7 +434,7 @@ test(
     () => {
     const result =
         validateWorkOrderClaimEntity(validClaim);
-    assert.equal(result.user_id, 'u-1');
+    assert.equal(result.person_id, 'u-1');
 });
 
 test(
@@ -444,7 +444,7 @@ test(
     assert.throws(
         () => validateWorkOrderClaimEntity({
             work_order_id: 'wo-1',
-            user_id: 'u-1',
+            person_id: 'u-1',
         }),
         /missing required key "claimed_at"/,
     );
@@ -471,7 +471,7 @@ const validOrg = {
     health_score: 85,
     health_status: 'healthy',
     last_activity: '2024-01-01T00:00:00Z',
-    active_users: 5,
+    active_people: 5,
 };
 
 test(
@@ -516,10 +516,10 @@ test(
     const body = { ...validOrg };
     delete (
         body as Record<string, unknown>
-    )['active_users'];
+    )['active_people'];
     assert.throws(
         () => validateOrganizationEntity(body),
-        /missing required key "active_users"/,
+        /missing required key "active_people"/,
     );
 });
 
@@ -527,7 +527,7 @@ test(
 
 const validIdeaSubmission = {
     idea_id: 'i-1',
-    user_id: 'u-1',
+    person_id: 'u-1',
     created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -548,7 +548,7 @@ test(
     () => {
     assert.throws(
         () => validateIdeaSubmissionEntity({
-            user_id: 'u-1',
+            person_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
         /missing required key "idea_id"/,
@@ -559,7 +559,7 @@ test(
 
 const validActivityActor = {
     activity_id: 'act-1',
-    user_id: 'u-1',
+    person_id: 'u-1',
     created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -580,7 +580,7 @@ test(
     () => {
     assert.throws(
         () => validateActivityActorEntity({
-            user_id: 'u-1',
+            person_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
         /missing required key "activity_id"/,
@@ -627,14 +627,14 @@ test('asCrew accepts unassigned variant', () => {
     assert.equal(result.kind, 'unassigned');
 });
 
-test('asCrew accepts user variant', () => {
+test('asCrew accepts person variant', () => {
     const result = asCrew(
-        { kind: 'user', userId: 'u-1' },
+        { kind: 'person', personId: 'u-1' },
         'crew',
     );
-    assert.equal(result.kind, 'user');
-    if (result.kind === 'user') {
-        assert.equal(result.userId, 'u-1');
+    assert.equal(result.kind, 'person');
+    if (result.kind === 'person') {
+        assert.equal(result.personId, 'u-1');
     }
 });
 
@@ -658,10 +658,10 @@ test('asCrew rejects invalid kind', () => {
     );
 });
 
-test('asCrew rejects user without userId', () => {
+test('asCrew rejects person without personId', () => {
     assert.throws(
         () => asCrew(
-            { kind: 'user' }, 'crew',
+            { kind: 'person' }, 'crew',
         ),
     );
 });
@@ -703,7 +703,7 @@ test(
 );
 
 test(
-    'asStoredGraph round-trips a user crew',
+    'asStoredGraph round-trips a person crew',
     () => {
         const result = asStoredGraph(
             {
@@ -711,8 +711,8 @@ test(
                     {
                         ...baseNode,
                         crew: {
-                            kind: 'user',
-                            userId: 'u-1',
+                            kind: 'person',
+                            personId: 'u-1',
                         },
                     },
                 ],
@@ -721,10 +721,10 @@ test(
             'graph',
         );
         const n = result.nodes[0]!;
-        assert.equal(n.crew.kind, 'user');
-        if (n.crew.kind === 'user') {
+        assert.equal(n.crew.kind, 'person');
+        if (n.crew.kind === 'person') {
             assert.equal(
-                n.crew.userId, 'u-1',
+                n.crew.personId, 'u-1',
             );
         }
     },

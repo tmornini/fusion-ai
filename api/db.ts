@@ -1,6 +1,6 @@
 import type {
     Id,
-    UserEntity,
+    PersonEntity,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -82,8 +82,8 @@ export interface DbAdapter {
         json: string,
     ): Promise<void>;
 
-    users:
-        EntityStore<UserEntity>;
+    people:
+        EntityStore<PersonEntity>;
     ideas:
         EntityStore<IdeaEntity>;
     projects:
@@ -132,7 +132,7 @@ export interface DbAdapter {
 }
 
 export const TABLE_NAMES = [
-    'users',
+    'people',
     'ideas',
     'projects',
     'activities',

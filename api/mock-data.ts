@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type {
-    UserEntity,
-    UserStatus,
+    PersonEntity,
+    PersonStatus,
     ReadinessLevel,
     IdeaEntity,
     ProjectEntity,
@@ -56,8 +56,8 @@ function dt(
         + `T${h}:${mi}:00.000000Z`;
 }
 
-type SeedUser = Omit<
-    UserEntity,
+type SeedPerson = Omit<
+    PersonEntity,
     'strengths' | 'team_dimensions'
 > & {
     strengths: string[];
@@ -69,7 +69,7 @@ type SeedUser = Omit<
 export async function populateMockData(
     adapter: DbAdapter,
 ): Promise<void> {
-    const users: SeedUser[] = [
+    const people: SeedPerson[] = [
         {
             id: 'LhfaUUf4IumVsCSGB4xjdK',
             first_name: 'Sarah',
@@ -398,14 +398,14 @@ export async function populateMockData(
         },
     ];
 
-    await Promise.all(users.map(user =>
-        adapter.users.put(user.id, {
-            ...user,
+    await Promise.all(people.map(person =>
+        adapter.people.put(person.id, {
+            ...person,
             strengths:
-                jsonArrayField(user.strengths),
+                jsonArrayField(person.strengths),
             team_dimensions:
                 jsonObjectField(
-                    user.team_dimensions,
+                    person.team_dimensions,
                 ),
         }),
     ));
@@ -895,7 +895,7 @@ export async function populateMockData(
             health_score: 92,
             health_status: 'excellent',
             last_activity: dt(0, 16, 0),
-            active_users: 14,
+            active_people: 14,
         }),
     ]);
 
@@ -2210,9 +2210,9 @@ export async function populateMockData(
         'wDcQp0cIycrtWXEde6IsB1';
     const woNodeComplete =
         '8jSnGiQ4Hedb2G75Y5aT7O';
-    const woUserSarah =
+    const woPersonSarah =
         'LhfaUUf4IumVsCSGB4xjdK';
-    const woUserMike =
+    const woPersonMike =
         'bLP3X1hb1mSz8gY9neogU3';
     const fCompanyName =
         '5JZ0LeKdPCa4QMtg1RsF1M';
@@ -2275,7 +2275,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: '',
             to_node_id: woNodeNew,
-            user_id: woUserSarah,
+            person_id: woPersonSarah,
             transitioned_at:
                 woCreated,
         },
@@ -2284,7 +2284,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            user_id: woUserSarah,
+            person_id: woPersonSarah,
             transitioned_at:
                 woCreated,
         },
@@ -2294,7 +2294,7 @@ export async function populateMockData(
             from_node_id:
                 woNodeCapture,
             to_node_id: woNodeReview,
-            user_id: woUserMike,
+            person_id: woPersonMike,
             transitioned_at:
                 dt(13, 14, 30),
         },
@@ -2305,7 +2305,7 @@ export async function populateMockData(
                 woNodeReview,
             to_node_id:
                 woNodeComplete,
-            user_id: woUserSarah,
+            person_id: woPersonSarah,
             transitioned_at:
                 dt(12, 9, 15),
         },
@@ -2404,67 +2404,67 @@ export async function populateMockData(
         {
             id: 'k4dY2dPq90mQVwwCkhWIo3',
             idea_id: 'eT5xdKjzLDmuRn3r7XMX4R',
-            user_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(75, 9, 30),
         },
         {
             id: 'XC7hsfNJueKQ8q0UfCuC7o',
             idea_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
-            user_id: 'bLP3X1hb1mSz8gY9neogU3',
+            person_id: 'bLP3X1hb1mSz8gY9neogU3',
             created_at: dt(70, 9, 0),
         },
         {
             id: 'YmzT46BbGVFALpiXFDnlVd',
             idea_id: 'wuCMQqo4IkEksx7MYmu8g2',
-            user_id: '53J8h9dr76XFqCjYcNVwIR',
+            person_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(65, 9, 0),
         },
         {
             id: 'cmoTu4GRGmO8y5QrfPIHSm',
             idea_id: 'ojOEXtdzdtTZtpM81TxVca',
-            user_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
             created_at: dt(55, 9, 0),
         },
         {
             id: 'kIUtvgTOLPjsSmAEVOhPb1',
             idea_id: 'T2vAafLDcshDONlYxpzPLc',
-            user_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(50, 9, 0),
         },
         {
             id: 'r04u9qpJKSyNjP9Owxr5Be',
             idea_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
-            user_id: 'zyTbfbjcGEfbpCsNTP0XjX',
+            person_id: 'zyTbfbjcGEfbpCsNTP0XjX',
             created_at: dt(45, 9, 0),
         },
         {
             id: '2mPJTlujj1RF6gexFwbDqJ',
             idea_id: 'MCxK0hzT9CPjJx1ZV5unfr',
-            user_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(75, 10, 0),
         },
         {
             id: 'caBSqTgzDnvP8joamAG9OG',
             idea_id: 'SUb4gKXsZ1OsEauzqszg0t',
-            user_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(35, 9, 0),
         },
         {
             id: 'UfsCp7WYUybhwxD170okb4',
             idea_id: 'gxa84W9KvEgD0wT1F4TOM9',
-            user_id: '53J8h9dr76XFqCjYcNVwIR',
+            person_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(30, 9, 0),
         },
         {
             id: 'mbTZAQbC5cJSEIzhEEFpyq',
             idea_id: '1Z68gROMrlTAfPEGiyJJAY',
-            user_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
             created_at: dt(25, 9, 0),
         },
         {
             id: '0LjTHFflWNaDZkKDqxmwJi',
             idea_id: 'Q2On2xwMpFdzOklBQJXrni',
-            user_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(20, 9, 0),
         },
     ];
@@ -2474,61 +2474,61 @@ export async function populateMockData(
         {
             id: 'b46Mr8QWIMo4EDBxxhfkWL',
             activity_id: 'Ng6GWmx7DNmLsGshK3lBfU',
-            user_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(0, 17, 50),
         },
         {
             id: 'pgyIzpoLgG8Vv6FgYF4DV8',
             activity_id: 'p3H9tGtQwFwQXpUiYyinT6',
-            user_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(0, 17, 35),
         },
         {
             id: 'SJalTSor6JhpoPincDXLeY',
             activity_id: '5PGE1WlEOTkSaNYjiBXLMA',
-            user_id: '53J8h9dr76XFqCjYcNVwIR',
+            person_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(0, 17, 0),
         },
         {
             id: 'JvodSYYA6w1ithWEirfNVg',
             activity_id: 'fOqTfg9JPs73xsnC4QUmHs',
-            user_id: '6xBfK5If82JKfThXb1wlzS',
+            person_id: '6xBfK5If82JKfThXb1wlzS',
             created_at: dt(0, 16, 0),
         },
         {
             id: 'BExIeH5NDiGVGQnrP8phOs',
             activity_id: '3pBQbQp4LPK2udgd21HlTm',
-            user_id: 'I5ntELi16X3N3JYCCnxMjZ',
+            person_id: 'I5ntELi16X3N3JYCCnxMjZ',
             created_at: dt(0, 15, 0),
         },
         {
             id: 'pC3hoLmzaVyxJSGOHsmV5j',
             activity_id: 'CqXHcyiDNzFVcoUM2M1Tl3',
-            user_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(0, 14, 0),
         },
         {
             id: 'PsG42X7oevXgC5DRy4irTW',
             activity_id: 'Kj75MtFxnEpFZs4MSK1emd',
-            user_id: 'oU0bIe0eUC33mTbZrxdogC',
+            person_id: 'oU0bIe0eUC33mTbZrxdogC',
             created_at: dt(0, 13, 0),
         },
         {
             id: 'bPgxi8YCw4yTFctLef62gB',
             activity_id: 'xRmfZFNV8GYDQmq8j09Fsc',
-            user_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(0, 12, 0),
         },
         {
             id: '2dp7FPj4gjWYtfR78D3wI2',
             activity_id: 'hP80lUSXqn1PSleymgE3Ks',
-            user_id: '53J8h9dr76XFqCjYcNVwIR',
+            person_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(1, 18, 0),
         },
         {
             id: 'Rf5G2Dh1ejnvzxbpW6hcrm',
             activity_id: 'XMltAG0dpolQLDTfd5GLWj',
-            user_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(1, 15, 0),
         },
     ];
@@ -2574,13 +2574,13 @@ export async function populateBootstrapData(
     adapter: DbAdapter,
 ): Promise<void> {
     await Promise.all([
-        adapter.users.put('current', {
+        adapter.people.put('current', {
             first_name: 'Tony',
             last_name: 'Stark',
             email: 'demo@example.com',
             role: 'Admin',
             department: 'Product',
-            status: 'active' as UserStatus,
+            status: 'active' as PersonStatus,
             availability: 100,
             performance_score: 95,
             projects_completed: 20,
@@ -2621,7 +2621,7 @@ export async function populateBootstrapData(
             health_score: 92,
             health_status: 'excellent',
             last_activity: dt(0, 16, 0),
-            active_users: 14,
+            active_people: 14,
         }),
     ]);
 }

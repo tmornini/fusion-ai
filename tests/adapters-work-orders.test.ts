@@ -53,7 +53,7 @@ async function createWorkOrder(
     return ids.workOrderId;
 }
 import type {
-    UserEntity,
+    PersonEntity,
     FlowEntity,
     GraphNode,
     GraphEdge,
@@ -61,9 +61,9 @@ import type {
     WorkOrderClaimEntity,
 } from '../api/types.ts';
 
-function buildUser(
+function buildPerson(
     name: string,
-): Omit<UserEntity, 'id'> {
+): Omit<PersonEntity, 'id'> {
     return {
         first_name: name,
         last_name: 'Test',
@@ -176,8 +176,8 @@ async function setupDb(): Promise<{
     ctx: FetchContext;
 }> {
     const db = new MemoryDbAdapter();
-    await db.users.put(
-        'current', buildUser('Demo'),
+    await db.people.put(
+        'current', buildPerson('Demo'),
     );
     const ctx = createFetchContext(db);
     return { db, ctx };
@@ -255,7 +255,7 @@ test(
             woId,
         );
         assert.equal(
-            claims[0]!.user_id, 'current',
+            claims[0]!.person_id, 'current',
         );
     },
 );
@@ -428,7 +428,7 @@ test(
         );
         assert.ok(last);
         assert.equal(
-            last.user_id, 'current',
+            last.person_id, 'current',
         );
 
         const claimsAfter =
@@ -541,7 +541,7 @@ test(
             claim.work_order_id, 'w1',
         );
         assert.equal(
-            claim.user_id, 'current',
+            claim.person_id, 'current',
         );
         assert.ok(claim.claimed_at);
     },
@@ -575,7 +575,7 @@ test(
                 .getAll();
         assert.equal(claims.length, 2);
         // Both rows reference the same
-        // (work_order_id, user_id) pair.
+        // (work_order_id, person_id) pair.
         const woIds = new Set(
             claims.map(
                 (c: WorkOrderClaimEntity) =>

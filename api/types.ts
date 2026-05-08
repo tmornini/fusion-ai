@@ -27,7 +27,7 @@ export type FlowFieldType =
     | 'radio'
     | 'image';
 
-export type UserStatus =
+export type PersonStatus =
     | 'active'
     | 'pending'
     | 'deactivated';
@@ -49,7 +49,7 @@ export type IdeaStatus =
 export type ActivityType =
     | 'idea_created'
     | 'project_created'
-    | 'user_joined'
+    | 'person_joined'
     | 'status_changed'
     | 'idea_converted';
 
@@ -57,7 +57,7 @@ const ACTIVITY_TYPES:
     readonly ActivityType[] = [
     'idea_created',
     'project_created',
-    'user_joined',
+    'person_joined',
     'status_changed',
     'idea_converted',
 ];
@@ -240,24 +240,24 @@ export function assertIdeaStatus(
     return v;
 }
 
-const USER_STATUSES: readonly UserStatus[] =
+const PERSON_STATUSES: readonly PersonStatus[] =
     ['active', 'pending', 'deactivated'];
 
-export function isUserStatus(
+export function isPersonStatus(
     v: string,
-): v is UserStatus {
+): v is PersonStatus {
     return includes(
-        USER_STATUSES, v,
+        PERSON_STATUSES, v,
     );
 }
 
-export function assertUserStatus(
+export function assertPersonStatus(
     v: string,
     label: string,
-): UserStatus {
-    if (!includes(USER_STATUSES, v)) {
+): PersonStatus {
+    if (!includes(PERSON_STATUSES, v)) {
         throw new Error(
-            'expected UserStatus for '
+            'expected PersonStatus for '
                 + label + ', got ' + v,
         );
     }
@@ -336,14 +336,14 @@ export interface Deleted {
     deleted_at: string;
 }
 
-export interface UserEntity {
+export interface PersonEntity {
     id: Id;
     first_name: string;
     last_name: string;
     email: string;
     role: string;
     department: string;
-    status: UserStatus;
+    status: PersonStatus;
     availability: number;
     performance_score: number;
     projects_completed: number;
@@ -355,14 +355,14 @@ export interface UserEntity {
     last_active: string;
 }
 
-export class User {
+export class Person {
     readonly #id: string;
     readonly #firstName: string;
     readonly #lastName: string;
     readonly #email: string;
     readonly #role: string;
     readonly #department: string;
-    readonly #status: UserStatus;
+    readonly #status: PersonStatus;
     readonly #availability: number;
     readonly #performanceScore: number;
     readonly #projectsCompleted: number;
@@ -371,7 +371,7 @@ export class User {
     readonly #teamDimensions: string;
     readonly #lastActive: string;
 
-    constructor(entity: UserEntity) {
+    constructor(entity: PersonEntity) {
         this.#id = entity.id;
         this.#firstName =
             entity.first_name;
@@ -481,7 +481,7 @@ export class User {
         return this.#lastActive;
     }
 
-    statusValue(): UserStatus {
+    statusValue(): PersonStatus {
         return this.#status;
     }
 
@@ -601,7 +601,7 @@ export function isCrewModel(
 
 export type Crew =
     | { kind: 'unassigned' }
-    | { kind: 'user'; userId: Id }
+    | { kind: 'person'; personId: Id }
     | { kind: 'model'; model: CrewModel };
 
 export interface GraphNode {
@@ -702,7 +702,7 @@ export interface WorkOrderTransitionEntity {
     work_order_id: Id;
     from_node_id: Id;
     to_node_id: Id;
-    user_id: Id;
+    person_id: Id;
     transitioned_at: string;
 }
 
@@ -720,7 +720,7 @@ export interface TransitionFieldValueEntity {
 export interface WorkOrderClaimEntity {
     id: Id;
     work_order_id: Id;
-    user_id: Id;
+    person_id: Id;
     claimed_at: string;
 }
 
@@ -744,20 +744,20 @@ export interface OrganizationEntity {
     health_score: number;
     health_status: string;
     last_activity: string;
-    active_users: number;
+    active_people: number;
 }
 
 export interface IdeaSubmissionEntity {
     id: Id;
     idea_id: Id;
-    user_id: Id;
+    person_id: Id;
     created_at: string;
 }
 
 export interface ActivityActorEntity {
     id: Id;
     activity_id: Id;
-    user_id: Id;
+    person_id: Id;
     created_at: string;
 }
 
@@ -775,7 +775,7 @@ export interface StatusDisplay {
 }
 
 export const USER_STATUS_CONFIG: Record<
-    UserStatus,
+    PersonStatus,
     StatusDisplay
 > = {
     active: {

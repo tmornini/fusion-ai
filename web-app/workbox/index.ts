@@ -22,7 +22,7 @@ import {
     getWorkOrderRows,
     getWorkOrderTransitionRows,
     getWorkOrderClaimRows,
-    getUserMap,
+    getPersonMap,
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
@@ -128,19 +128,19 @@ async function loadInboxItems(
 ): Promise<InboxItem[]> {
     const [
         workOrders, transitions,
-        claims, userMap,
+        claims, personMap,
     ] = await Promise.all([
         getWorkOrderRows(ctx),
         getWorkOrderTransitionRows(ctx),
         getWorkOrderClaimRows(ctx),
-        getUserMap(ctx),
+        getPersonMap(ctx),
     ]);
     workOrderEntities = new Map(
         workOrders.map(w => [w.id, w]),
     );
     return buildInboxItems(
         workOrders, transitions, claims,
-        userMap, mode,
+        personMap, mode,
     );
 }
 

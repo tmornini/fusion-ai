@@ -49,8 +49,8 @@ const pageModules: Record<
         import('../profile/index'),
     billing: () =>
         import('../billing/index'),
-    users: () =>
-        import('../users/index'),
+    people: () =>
+        import('../people/index'),
     snapshots: () =>
         import('../snapshots/index'),
     'design-system': () =>

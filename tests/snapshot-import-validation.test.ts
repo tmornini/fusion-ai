@@ -98,11 +98,11 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: { not: 'an array' },
+            people: { not: 'an array' },
         });
         await assert.rejects(
             () => adapter.importSnapshot(json),
-            /table "users" is not an array/,
+            /table "people" is not an array/,
         );
     },
 );
@@ -114,11 +114,11 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: ['not an object'],
+            people: ['not an object'],
         });
         await assert.rejects(
             () => adapter.importSnapshot(json),
-            /row 0 in table "users" is not an object/,
+            /row 0 in table "people" is not an object/,
         );
     },
 );
@@ -130,11 +130,11 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: [null],
+            people: [null],
         });
         await assert.rejects(
             () => adapter.importSnapshot(json),
-            /row 0 in table "users" is not an object/,
+            /row 0 in table "people" is not an object/,
         );
     },
 );
@@ -146,11 +146,11 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: [['not', 'an', 'object']],
+            people: [['not', 'an', 'object']],
         });
         await assert.rejects(
             () => adapter.importSnapshot(json),
-            /row 0 in table "users" is not an object/,
+            /row 0 in table "people" is not an object/,
         );
     },
 );
@@ -162,7 +162,7 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: [
+            people: [
                 {
                     id: 'u1',
                     first_name: 'Alice',
@@ -187,7 +187,7 @@ test(
         });
         await assert.rejects(
             () => adapter.importSnapshot(json),
-            /snapshot\.users\[0\]/,
+            /snapshot\.people\[0\]/,
         );
     },
 );
@@ -199,7 +199,7 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         const json = JSON.stringify({
-            users: [
+            people: [
                 {
                     id: 'u1',
                     first_name: 'Alice',
@@ -223,7 +223,7 @@ test(
         });
         await adapter.importSnapshot(json);
         const stored = map.get(
-            KEY_PREFIX + 'users',
+            KEY_PREFIX + 'people',
         );
         assert.ok(stored, 'users should persist');
     },
@@ -237,7 +237,7 @@ test(
             await createLocalStorageAdapter();
         await adapter.importSnapshot('{}');
         const usersBlob = map.get(
-            KEY_PREFIX + 'users',
+            KEY_PREFIX + 'people',
         );
         assert.equal(
             usersBlob,
@@ -277,7 +277,7 @@ test(
         const adapter =
             await createLocalStorageAdapter();
         await adapter.createSchema();
-        await adapter.users.put('u1', {
+        await adapter.people.put('u1', {
             first_name: 'Alice',
             last_name: 'Adams',
             email: 'a@example.com',
@@ -293,13 +293,13 @@ test(
                 '2026-01-01T00:00:00Z',
         });
         await adapter.createSchema();
-        const users = await adapter.users.getAll();
+        const people = await adapter.people.getAll();
         assert.equal(
-            users.length, 1,
+            people.length, 1,
             'second createSchema preserves data',
         );
         assert.ok(
-            map.get(KEY_PREFIX + 'users'),
+            map.get(KEY_PREFIX + 'people'),
         );
     },
 );
@@ -329,7 +329,7 @@ test(
             await adapter.exportSnapshot();
         const parsed = JSON.parse(json);
         const expected = [
-            'users', 'ideas', 'projects',
+            'people', 'ideas', 'projects',
             'activities',
             'flows', 'flow_versions',
             'project_flows', 'work_orders',
