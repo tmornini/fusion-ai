@@ -43,18 +43,12 @@ export {
 } from './gauge.ts';
 export {
     UserPresenter,
-    TeamListPresenter,
     ManagedUsersPresenter,
-    buildInitialTeamListState,
-    applyTeamListUpdate,
-    applyTeamSearch,
-    applyTeamSelection,
     buildInitialManagedUsersState,
     applyManagedUsersUpdate,
     applyManagedUsersSearch,
     applyManagedUsersRole,
     applyManagedUsersStatus,
-    type TeamListState,
     type ManagedUsersState,
 } from './user.ts';
 export {

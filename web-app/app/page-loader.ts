@@ -41,8 +41,6 @@ const pageModules: Record<
         import('../flows/index'),
     'flow-detail': () =>
         import('../flows/detail'),
-    teams: () =>
-        import('../teams/index'),
     organization: () =>
         import(
             '../organization/index'
@@ -54,9 +52,7 @@ const pageModules: Record<
     billing: () =>
         import('../billing/index'),
     users: () =>
-        import(
-            '../organization/users'
-        ),
+        import('../users/index'),
     snapshots: () =>
         import('../snapshots/index'),
     'design-system': () =>

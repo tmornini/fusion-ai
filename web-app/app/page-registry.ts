@@ -103,14 +103,6 @@ export const PAGE_REGISTRY: Record<
         icon: iconGitBranch,
         searchable: false,
     },
-    teams: {
-        title: 'Teams',
-        layout: 'sidebar',
-        sourceDir: 'teams',
-        sourceFile: 'index',
-        icon: iconUsers,
-        keywords: 'team members roster',
-    },
     organization: {
         title: 'Organization',
         layout: 'sidebar',
@@ -148,12 +140,12 @@ export const PAGE_REGISTRY: Record<
             + ' payment',
     },
     users: {
-        title: 'Users',
+        title: 'People',
         layout: 'sidebar',
-        sourceDir: 'organization',
-        sourceFile: 'users',
+        sourceDir: 'users',
+        sourceFile: 'index',
         icon: iconUsers,
-        keywords: 'users invite manage admin',
+        keywords: 'people users invite manage admin',
     },
     snapshots: {
         title: 'Snapshots',

@@ -226,7 +226,7 @@ export function memberToSearchItem(
         icon: iconUser(
             PALETTE_ICON_SIZE_SM, '',
         ),
-        href: buildPageUrl('teams'),
+        href: buildPageUrl('users'),
         keywords: member.roleLabel()
             + ' ' + member.departmentLabel()
             + ' ' + member.emailAddress(),
