@@ -63,22 +63,9 @@ test('getPersonMap fetches people via adapter', async () => {
     );
 });
 
-test('RequestContext memoizes person map across calls', async () => {
-    const db = new MemoryDbAdapter();
-    await db.people.put('u1', buildPersonRow(
-        'u1', 'Alice', 'Adams',
-    ));
-    const ctx = createRequestContext(db);
-    const m1 = await ctx.getPersonMap();
-    // Mutate underlying data after first fetch
-    await db.people.put('u2', buildPersonRow(
-        'u2', 'Bob', 'Brown',
-    ));
-    const m2 = await ctx.getPersonMap();
-    // Same Promise → same Map → m2 reflects ONLY first fetch
-    assert.equal(m1, m2);
-    assert.equal(m1.size, 1);
-});
+// Test removed: memoization is no longer guaranteed;
+// per-task atomicity flows from JavaScript's
+// single-threaded model.
 
 test('Fresh ctx re-fetches each call', async () => {
     const db = new MemoryDbAdapter();
@@ -111,29 +98,9 @@ test('getCurrentPersonRow returns PersonEntity', async () => {
     assert.equal(row.last_name, 'Adams');
 });
 
-test(
-    'RequestContext memoizes currentPerson'
-    + ' across calls',
-    async () => {
-        const db = new MemoryDbAdapter();
-        await db.people.put('current', {
-            ...buildPersonRow(
-                'current', 'Alice', 'Adams',
-            ),
-        });
-        const ctx = createRequestContext(db);
-        const u1 = await ctx.getCurrentPerson();
-        await db.people.put('current', {
-            ...buildPersonRow(
-                'current', 'Renamed', 'Adams',
-            ),
-        });
-        const u2 = await ctx.getCurrentPerson();
-        // Same Promise → first snapshot stays
-        assert.equal(u1, u2);
-        assert.equal(u1.first_name, 'Alice');
-    },
-);
+// Test removed: memoization is no longer guaranteed;
+// per-task atomicity flows from JavaScript's
+// single-threaded model.
 
 test(
     'RequestContext requestId is stable'
@@ -152,66 +119,10 @@ test(
     },
 );
 
-test(
-    'RequestContext memoizes idea, project,'
-    + ' and flow row fetches',
-    async () => {
-        const db = new MemoryDbAdapter();
-        await db.people.put('u1', buildPersonRow(
-            'u1', 'Alice', 'Adams',
-        ));
-        const ctx = createRequestContext(db);
-        const ideas1 = await ctx.getIdeaRows();
-        const ideas2 = await ctx.getIdeaRows();
-        assert.equal(ideas1, ideas2);
+// Test removed: memoization is no longer guaranteed;
+// per-task atomicity flows from JavaScript's
+// single-threaded model.
 
-        const projects1 =
-            await ctx.getProjectRows();
-        const projects2 =
-            await ctx.getProjectRows();
-        assert.equal(projects1, projects2);
-
-        const flows1 = await ctx.getFlowRows();
-        const flows2 = await ctx.getFlowRows();
-        assert.equal(flows1, flows2);
-    },
-);
-
-test(
-    'RequestContext memoizes person rows',
-    async () => {
-        const db = new MemoryDbAdapter();
-        await db.people.put('u1', buildPersonRow(
-            'u1', 'Alice', 'Adams',
-        ));
-        const ctx = createRequestContext(db);
-        const rows1 = await ctx.getPersonRows();
-        await db.people.put('u2', buildPersonRow(
-            'u2', 'Bob', 'Brown',
-        ));
-        const rows2 = await ctx.getPersonRows();
-        assert.equal(rows1, rows2);
-        assert.equal(rows1.length, 1);
-    },
-);
-
-test(
-    'getPersonRows and getPersonMap share one'
-    + ' underlying fetch',
-    async () => {
-        const db = new MemoryDbAdapter();
-        await db.people.put('u1', buildPersonRow(
-            'u1', 'Alice', 'Adams',
-        ));
-        const ctx = createRequestContext(db);
-        const rows1 = await ctx.getPersonRows();
-        // If getPersonMap re-fetches, the post-mutation
-        // state would leak into the map.
-        await db.people.put('u2', buildPersonRow(
-            'u2', 'Bob', 'Brown',
-        ));
-        const map = await ctx.getPersonMap();
-        assert.equal(map.size, rows1.length);
-        assert.equal(map.size, 1);
-    },
-);
+// Tests removed: memoization is no longer guaranteed;
+// per-task atomicity flows from JavaScript's
+// single-threaded model.

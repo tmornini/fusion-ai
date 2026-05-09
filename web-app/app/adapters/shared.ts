@@ -120,37 +120,6 @@ export interface RequestContext {
 export function createRequestContext(
     adapter: DbAdapter = getDbAdapter(),
 ): RequestContext {
-    // Per-request memoization: each table is
-    // fetched at most once per ctx. The promise
-    // is captured the first time the getter is
-    // called.
-    let personRowsPromise:
-        Promise<PersonEntity[]> | null = null;
-    let personMapPromise:
-        Promise<Map<Id, Person>> | null = null;
-    let currentPersonPromise:
-        Promise<PersonEntity> | null = null;
-    let ideaRowsPromise:
-        Promise<IdeaEntity[]> | null = null;
-    let projectRowsPromise:
-        Promise<ProjectEntity[]> | null = null;
-    let flowRowsPromise:
-        Promise<FlowEntity[]> | null = null;
-    let roleMapPromise:
-        Promise<Map<Id, Role>> | null = null;
-    let roleMembershipRowsPromise:
-        Promise<RoleMembershipEntity[]>
-        | null = null;
-    let crewMapPromise:
-        Promise<Map<Id, Crew>> | null = null;
-    let crewRoleMembershipRowsPromise:
-        Promise<CrewRoleMembershipEntity[]>
-        | null = null;
-    let modelMapPromise:
-        Promise<Map<Id, Model>> | null = null;
-    let roleModelMembershipRowsPromise:
-        Promise<RoleModelMembershipEntity[]>
-        | null = null;
     const ctx: RequestContext = {
         requestId: generateCryptoSafeBase62(),
         GET: <T>(resource: string) =>
@@ -165,156 +134,84 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getPersonRows: () => {
-            if (!personRowsPromise) {
-                personRowsPromise =
-                    ctx.GET<PersonEntity[]>(
-                        'people',
-                    );
-            }
-            return personRowsPromise;
+        getPersonRows: () =>
+            ctx.GET<PersonEntity[]>('people'),
+        getPersonMap: async () => {
+            const rows =
+                await ctx.getPersonRows();
+            return new Map(
+                rows.map(
+                    entity => [
+                        entity.id,
+                        new Person(entity),
+                    ],
+                ),
+            );
         },
-        getPersonMap: () => {
-            if (!personMapPromise) {
-                personMapPromise = (async () => {
-                    const rows =
-                        await ctx.getPersonRows();
-                    return new Map(
-                        rows.map(
-                            entity => [
-                                entity.id,
-                                new Person(entity),
-                            ],
-                        ),
-                    );
-                })();
-            }
-            return personMapPromise;
+        getCurrentPerson: () =>
+            ctx.GET<PersonEntity>(
+                'current-person',
+            ),
+        getIdeaRows: () =>
+            ctx.GET<IdeaEntity[]>('ideas'),
+        getProjectRows: () =>
+            ctx.GET<ProjectEntity[]>('projects'),
+        getFlowRows: () =>
+            ctx.GET<FlowEntity[]>('flows'),
+        getRoleMap: async () => {
+            const rows =
+                await ctx.GET<RoleEntity[]>(
+                    'roles',
+                );
+            return new Map(
+                rows.map(
+                    entity => [
+                        entity.id,
+                        new Role(entity),
+                    ],
+                ),
+            );
         },
-        getCurrentPerson: () => {
-            if (!currentPersonPromise) {
-                currentPersonPromise =
-                    ctx.GET<PersonEntity>(
-                        'current-person',
-                    );
-            }
-            return currentPersonPromise;
+        getRoleMembershipRows: () =>
+            ctx.GET<RoleMembershipEntity[]>(
+                'role-memberships',
+            ),
+        getCrewMap: async () => {
+            const rows =
+                await ctx.GET<CrewEntity[]>(
+                    'crews',
+                );
+            return new Map(
+                rows.map(
+                    entity => [
+                        entity.id,
+                        new Crew(entity),
+                    ],
+                ),
+            );
         },
-        getIdeaRows: () => {
-            if (!ideaRowsPromise) {
-                ideaRowsPromise =
-                    ctx.GET<IdeaEntity[]>(
-                        'ideas',
-                    );
-            }
-            return ideaRowsPromise;
+        getCrewRoleMembershipRows: () =>
+            ctx.GET<CrewRoleMembershipEntity[]>(
+                'crew-role-memberships',
+            ),
+        getModelMap: async () => {
+            const rows =
+                await ctx.GET<ModelEntity[]>(
+                    'models',
+                );
+            return new Map(
+                rows.map(
+                    entity => [
+                        entity.id,
+                        new Model(entity),
+                    ],
+                ),
+            );
         },
-        getProjectRows: () => {
-            if (!projectRowsPromise) {
-                projectRowsPromise =
-                    ctx.GET<ProjectEntity[]>(
-                        'projects',
-                    );
-            }
-            return projectRowsPromise;
-        },
-        getFlowRows: () => {
-            if (!flowRowsPromise) {
-                flowRowsPromise =
-                    ctx.GET<FlowEntity[]>(
-                        'flows',
-                    );
-            }
-            return flowRowsPromise;
-        },
-        getRoleMap: () => {
-            if (!roleMapPromise) {
-                roleMapPromise = (async () => {
-                    const rows = await ctx
-                        .GET<RoleEntity[]>(
-                            'roles',
-                        );
-                    return new Map(
-                        rows.map(
-                            entity => [
-                                entity.id,
-                                new Role(entity),
-                            ],
-                        ),
-                    );
-                })();
-            }
-            return roleMapPromise;
-        },
-        getRoleMembershipRows: () => {
-            if (!roleMembershipRowsPromise) {
-                roleMembershipRowsPromise =
-                    ctx.GET<
-                        RoleMembershipEntity[]
-                    >('role-memberships');
-            }
-            return roleMembershipRowsPromise;
-        },
-        getCrewMap: () => {
-            if (!crewMapPromise) {
-                crewMapPromise = (async () => {
-                    const rows = await ctx
-                        .GET<CrewEntity[]>(
-                            'crews',
-                        );
-                    return new Map(
-                        rows.map(
-                            entity => [
-                                entity.id,
-                                new Crew(entity),
-                            ],
-                        ),
-                    );
-                })();
-            }
-            return crewMapPromise;
-        },
-        getCrewRoleMembershipRows: () => {
-            if (
-                !crewRoleMembershipRowsPromise
-            ) {
-                crewRoleMembershipRowsPromise =
-                    ctx.GET<
-                        CrewRoleMembershipEntity[]
-                    >('crew-role-memberships');
-            }
-            return crewRoleMembershipRowsPromise;
-        },
-        getModelMap: () => {
-            if (!modelMapPromise) {
-                modelMapPromise = (async () => {
-                    const rows = await ctx
-                        .GET<ModelEntity[]>(
-                            'models',
-                        );
-                    return new Map(
-                        rows.map(
-                            entity => [
-                                entity.id,
-                                new Model(entity),
-                            ],
-                        ),
-                    );
-                })();
-            }
-            return modelMapPromise;
-        },
-        getRoleModelMembershipRows: () => {
-            if (
-                !roleModelMembershipRowsPromise
-            ) {
-                roleModelMembershipRowsPromise =
-                    ctx.GET<
-                        RoleModelMembershipEntity[]
-                    >('role-model-memberships');
-            }
-            return roleModelMembershipRowsPromise;
-        },
+        getRoleModelMembershipRows: () =>
+            ctx.GET<RoleModelMembershipEntity[]>(
+                'role-model-memberships',
+            ),
         commit: async (
             tx: Transaction,
         ): Promise<void> => {
