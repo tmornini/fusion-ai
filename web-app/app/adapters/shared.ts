@@ -7,15 +7,12 @@ import {
 } from '../../../api/api.ts';
 import type {
     Id,
-    RoleEntity,
-    RoleMembershipEntity,
     CrewEntity,
     CrewRoleMembershipEntity,
     ModelEntity,
     RoleModelMembershipEntity,
 } from '../../../api/types.ts';
 import {
-    Role,
     Crew,
     Model,
 } from '../../../api/types.ts';
@@ -81,9 +78,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getRoleMap(): Promise<Map<Id, Role>>;
-    getRoleMembershipRows(
-    ): Promise<RoleMembershipEntity[]>;
     getCrewMap(): Promise<Map<Id, Crew>>;
     getCrewRoleMembershipRows(
     ): Promise<CrewRoleMembershipEntity[]>;
@@ -110,24 +104,6 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getRoleMap: async () => {
-            const rows =
-                await ctx.GET<RoleEntity[]>(
-                    'roles',
-                );
-            return new Map(
-                rows.map(
-                    entity => [
-                        entity.id,
-                        new Role(entity),
-                    ],
-                ),
-            );
-        },
-        getRoleMembershipRows: () =>
-            ctx.GET<RoleMembershipEntity[]>(
-                'role-memberships',
-            ),
         getCrewMap: async () => {
             const rows =
                 await ctx.GET<CrewEntity[]>(

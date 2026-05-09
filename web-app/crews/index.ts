@@ -20,6 +20,7 @@ import {
     createRequestContext,
     getCrews,
     getPersonMap,
+    getRoleMap,
     putCrew,
     deleteCrew,
     addRoleToCrew,
@@ -65,7 +66,7 @@ export async function init(): Promise<void> {
             ] = await Promise.all([
                 getCrews(ctx),
                 ctx.getCrewRoleMembershipRows(),
-                ctx.getRoleMap(),
+                getRoleMap(ctx),
                 getPersonMap(ctx),
                 getPersistedRoles(ctx),
             ]);
@@ -114,7 +115,7 @@ async function refresh(): Promise<void> {
     ] = await Promise.all([
         getCrews(ctx),
         ctx.getCrewRoleMembershipRows(),
-        ctx.getRoleMap(),
+        getRoleMap(ctx),
         getPersonMap(ctx),
         getPersistedRoles(ctx),
     ]);

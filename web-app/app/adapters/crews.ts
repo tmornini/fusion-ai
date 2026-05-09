@@ -20,6 +20,7 @@ import {
     personIdFromUserPrivateRoleId,
     userPrivateRoleFor,
     getMembersOfRole,
+    getRoleMap,
 } from './roles.ts';
 import {
     getPersonMap,
@@ -126,7 +127,7 @@ export async function getRolesInCrew(
         memberships, roleMap, personMap,
     ] = await Promise.all([
         ctx.getCrewRoleMembershipRows(),
-        ctx.getRoleMap(),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     return memberships
@@ -191,7 +192,7 @@ export async function addRoleToCrew(
     const [crewMap, roleMap, personMap] =
         await Promise.all([
             ctx.getCrewMap(),
-            ctx.getRoleMap(),
+            getRoleMap(ctx),
             getPersonMap(ctx),
         ]);
     if (!crewMap.has(crewId)) {

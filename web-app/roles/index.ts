@@ -19,6 +19,7 @@ import {
 import {
     createRequestContext,
     getPersistedRoles,
+    getRoleMembershipRows,
     putRole,
     deleteRole,
     generateCryptoSafeBase62,
@@ -55,7 +56,7 @@ export async function init(): Promise<void> {
             const [roles, memberships] =
                 await Promise.all([
                     getPersistedRoles(ctx),
-                    ctx.getRoleMembershipRows(),
+                    getRoleMembershipRows(ctx),
                 ]);
             return { roles, memberships };
         },
@@ -90,7 +91,7 @@ async function refresh(): Promise<void> {
     const [roles, memberships] =
         await Promise.all([
             getPersistedRoles(ctx),
-            ctx.getRoleMembershipRows(),
+            getRoleMembershipRows(ctx),
         ]);
     roleState = applyRoleListUpdate(
         roleState, roles, memberships,

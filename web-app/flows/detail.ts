@@ -19,6 +19,8 @@ import {
     getFlowZip,
     getFlowVersions,
     getPersonMap,
+    getRoleMap,
+    getRoleMembershipRows,
     getMembersOfCrew,
     postClipboardCopy,
     subscribeResize,
@@ -937,7 +939,7 @@ async function buildRoleMemberCounts(
     ctx: RequestContext,
 ): Promise<Map<string, number>> {
     const rows =
-        await ctx.getRoleMembershipRows();
+        await getRoleMembershipRows(ctx);
     const counts = new Map<string, number>();
     for (const row of rows) {
         counts.set(
@@ -1254,7 +1256,7 @@ export async function init(
                 getFlowGraph(ctx, flowId),
                 getFlowVersions(ctx, flowId),
                 getPersonMap(ctx),
-                ctx.getRoleMap(),
+                getRoleMap(ctx),
                 buildRoleMemberCounts(ctx),
                 ctx.getCrewMap(),
                 buildCrewMemberCounts(ctx),

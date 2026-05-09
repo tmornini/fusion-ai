@@ -113,11 +113,34 @@ export function userPrivateRoleFor(
     });
 }
 
+export async function getRoleMap(
+    ctx: RequestContext,
+): Promise<Map<Id, Role>> {
+    const rows =
+        await ctx.GET<RoleEntity[]>('roles');
+    return new Map(
+        rows.map(
+            entity => [
+                entity.id,
+                new Role(entity),
+            ],
+        ),
+    );
+}
+
+export async function getRoleMembershipRows(
+    ctx: RequestContext,
+): Promise<RoleMembershipEntity[]> {
+    return ctx.GET<RoleMembershipEntity[]>(
+        'role-memberships',
+    );
+}
+
 export async function getRoles(
     ctx: RequestContext,
 ): Promise<Role[]> {
     const [roleMap, personMap] = await Promise.all([
-        ctx.getRoleMap(),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     const persisted = Array.from(
@@ -137,7 +160,7 @@ export async function getRoles(
 export async function getPersistedRoles(
     ctx: RequestContext,
 ): Promise<Role[]> {
-    const map = await ctx.getRoleMap();
+    const map = await getRoleMap(ctx);
     return Array.from(map.values());
 }
 
@@ -145,7 +168,7 @@ export async function getRole(
     ctx: RequestContext,
     id: Id,
 ): Promise<Role> {
-    const map = await ctx.getRoleMap();
+    const map = await getRoleMap(ctx);
     const role = map.get(id);
     if (!role) {
         throw new Error(
@@ -175,7 +198,7 @@ export async function deleteRole(
     roleId: Id,
 ): Promise<void> {
     const memberships =
-        await ctx.getRoleMembershipRows();
+        await getRoleMembershipRows(ctx);
     const cascadeIds = memberships
         .filter(m => m.role_id === roleId)
         .map(m => m.id);
@@ -203,8 +226,8 @@ export async function getMembersOfRole(
     const [
         memberships, roleMap, personMap,
     ] = await Promise.all([
-        ctx.getRoleMembershipRows(),
-        ctx.getRoleMap(),
+        getRoleMembershipRows(ctx),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     const role = roleMap.get(roleId);
@@ -228,8 +251,8 @@ export async function getRolesForPerson(
     const [
         memberships, roleMap, personMap,
     ] = await Promise.all([
-        ctx.getRoleMembershipRows(),
-        ctx.getRoleMap(),
+        getRoleMembershipRows(ctx),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     const persisted = memberships
@@ -261,8 +284,8 @@ export async function getMembersForPerson(
     const [
         memberships, roleMap, personMap,
     ] = await Promise.all([
-        ctx.getRoleMembershipRows(),
-        ctx.getRoleMap(),
+        getRoleMembershipRows(ctx),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     return memberships
@@ -296,7 +319,7 @@ export async function addMember(
         );
     }
     const [roleMap, personMap] = await Promise.all([
-        ctx.getRoleMap(),
+        getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
     if (!roleMap.has(roleId)) {

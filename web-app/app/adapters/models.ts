@@ -15,6 +15,9 @@ import {
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
+import {
+    getRoleMap,
+} from './roles.ts';
 
 export {
     Model,
@@ -141,7 +144,7 @@ export async function getRolesContainingModel(
     const [memberships, roleMap] =
         await Promise.all([
             ctx.getRoleModelMembershipRows(),
-            ctx.getRoleMap(),
+            getRoleMap(ctx),
         ]);
     const roleIds = new Set(
         memberships
@@ -161,7 +164,7 @@ export async function addModelToRole(
 ): Promise<void> {
     const [roleMap, modelMap] =
         await Promise.all([
-            ctx.getRoleMap(),
+            getRoleMap(ctx),
             ctx.getModelMap(),
         ]);
     if (!roleMap.has(roleId)) {
