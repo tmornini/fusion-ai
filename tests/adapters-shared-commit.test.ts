@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    createFetchContext,
+    createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import {
     createChannel,
@@ -21,7 +21,7 @@ test(
     'ctx.commit runs all ops in supplied order',
     async () => {
         const db = new MemoryDbAdapter();
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         await ctx.commit({
             ops: [
                 {
@@ -53,7 +53,7 @@ test(
     + ' exactly once after ops complete',
     async () => {
         const db = new MemoryDbAdapter();
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const ch1 = createChannel<void>();
         const ch2 = createChannel<void>();
         let count1 = 0;
@@ -85,7 +85,7 @@ test(
     + ' notifyChannels',
     async () => {
         const db = new MemoryDbAdapter();
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const ch = createChannel<void>();
         let count = 0;
         ch.subscribe(() => { count++; });
@@ -103,7 +103,7 @@ test(
     + ' contract)',
     async () => {
         const db = new MemoryDbAdapter();
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const ch = createChannel<void>();
         let count = 0;
         ch.subscribe(() => { count++; });

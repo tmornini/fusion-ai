@@ -6,7 +6,7 @@ import type {
     ActivityType,
 } from '../../../api/types.ts';
 import { getCurrentPersonRow } from './shared.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -29,7 +29,7 @@ export interface ActivityInput {
 }
 
 export async function postActivity(
-    ctx: FetchContext,
+    ctx: RequestContext,
     input: ActivityInput,
 ): Promise<void> {
     const personRow =

@@ -17,7 +17,7 @@ import {
     trimStrings,
 } from '../app/core.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getCrews,
     putCrew,
     deleteCrew,
@@ -52,7 +52,7 @@ export async function init(): Promise<void> {
     );
     if (!container) return;
 
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const loaded = await withLoadingState(
         container,
         buildSkeleton('table', 5),
@@ -106,7 +106,7 @@ export async function init(): Promise<void> {
 
 async function refresh(): Promise<void> {
     if (!crewState) return;
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const [
         crews, memberships, roleMap,
         personMap, persistedRoles,
@@ -459,7 +459,7 @@ async function handleCreate(): Promise<void> {
     const id = generateCryptoSafeBase62();
     try {
         await putCrew(
-            createFetchContext(),
+            createRequestContext(),
             id,
             {
                 name: trimmed.name,
@@ -494,7 +494,7 @@ async function handleDelete(): Promise<void> {
     pendingDeleteId = null;
     try {
         await deleteCrew(
-            createFetchContext(), id,
+            createRequestContext(), id,
         );
     } catch (err) {
         log.error(
@@ -523,7 +523,7 @@ async function handleAddRole(
     if (!roleId) return;
     try {
         await addRoleToCrew(
-            createFetchContext(),
+            createRequestContext(),
             crewId, roleId,
         );
     } catch (err) {
@@ -544,7 +544,7 @@ async function handleRemoveRole(
 ): Promise<void> {
     try {
         await removeRoleFromCrew(
-            createFetchContext(),
+            createRequestContext(),
             membershipId,
         );
     } catch (err) {

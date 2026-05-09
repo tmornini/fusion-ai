@@ -11,7 +11,7 @@ import {
     getPersonMap,
     personName,
 } from './shared.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     notifyProjectChange,
 } from './projects.ts';
@@ -39,14 +39,14 @@ export {
 } from '../../../api/types.ts';
 
 async function getIdeaRows(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<IdeaEntity[]> {
     const all = await ctx.getIdeaRows();
     return all.filter(ideaIsVisible);
 }
 
 export async function getIdeaRow(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
 ): Promise<IdeaEntity> {
     return ctx.GET<IdeaEntity>(
@@ -55,7 +55,7 @@ export async function getIdeaRow(
 }
 
 async function getIdeaSubmissionRows(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<IdeaSubmissionEntity[]> {
     return ctx.GET<
         IdeaSubmissionEntity[]
@@ -63,7 +63,7 @@ async function getIdeaSubmissionRows(
 }
 
 async function getIdeaSubmissionRow(
-    ctx: FetchContext,
+    ctx: RequestContext,
     ideaId: string,
 ): Promise<IdeaSubmissionEntity> {
     const all = await getIdeaSubmissionRows(ctx);
@@ -91,7 +91,7 @@ export interface IdeaWithSubmitter {
 }
 
 export async function getIdeas(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<IdeaWithSubmitter[]> {
     const [
         ideas, personMap, submissions,
@@ -126,7 +126,7 @@ export async function getIdeas(
 }
 
 export async function getIdea(
-    ctx: FetchContext,
+    ctx: RequestContext,
     ideaId: string,
 ): Promise<IdeaWithSubmitter> {
     const [
@@ -147,7 +147,7 @@ export async function getIdea(
 }
 
 export async function putIdea(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     entity: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
@@ -156,7 +156,7 @@ export async function putIdea(
 }
 
 export async function putIdeaSubmission(
-    ctx: FetchContext,
+    ctx: RequestContext,
     submissionId: string,
     ideaId: string,
 ): Promise<void> {
@@ -179,7 +179,7 @@ export async function putIdeaSubmission(
 // operation. The helpers stay — they have other
 // callers whose writes are genuinely independent.
 export async function postIdeaConversion(
-    ctx: FetchContext,
+    ctx: RequestContext,
     ideaId: string,
     projectId: string,
     project: Omit<ProjectEntity, 'id'>,

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getPersonMap,
     personName,
     getCurrentPersonRow,
@@ -54,7 +54,7 @@ test('getPersonMap fetches people via adapter', async () => {
     await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
-    const ctx = createFetchContext(db);
+    const ctx = createRequestContext(db);
     const map = await getPersonMap(ctx);
     assert.equal(map.size, 1);
     assert.equal(
@@ -63,12 +63,12 @@ test('getPersonMap fetches people via adapter', async () => {
     );
 });
 
-test('FetchContext memoizes person map across calls', async () => {
+test('RequestContext memoizes person map across calls', async () => {
     const db = new MemoryDbAdapter();
     await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
-    const ctx = createFetchContext(db);
+    const ctx = createRequestContext(db);
     const m1 = await ctx.getPersonMap();
     // Mutate underlying data after first fetch
     await db.people.put('u2', buildPersonRow(
@@ -85,12 +85,12 @@ test('Fresh ctx re-fetches each call', async () => {
     await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
-    const m1 = await createFetchContext(db)
+    const m1 = await createRequestContext(db)
         .getPersonMap();
     await db.people.put('u2', buildPersonRow(
         'u2', 'Bob', 'Brown',
     ));
-    const m2 = await createFetchContext(db)
+    const m2 = await createRequestContext(db)
         .getPersonMap();
     assert.notEqual(m1, m2);
     assert.equal(m1.size, 1);
@@ -105,14 +105,14 @@ test('getCurrentPersonRow returns PersonEntity', async () => {
         ),
     });
     const row = await getCurrentPersonRow(
-        createFetchContext(db),
+        createRequestContext(db),
     );
     assert.equal(row.first_name, 'Alice');
     assert.equal(row.last_name, 'Adams');
 });
 
 test(
-    'FetchContext memoizes currentPerson'
+    'RequestContext memoizes currentPerson'
     + ' across calls',
     async () => {
         const db = new MemoryDbAdapter();
@@ -121,7 +121,7 @@ test(
                 'current', 'Alice', 'Adams',
             ),
         });
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const u1 = await ctx.getCurrentPerson();
         await db.people.put('current', {
             ...buildPersonRow(
@@ -136,12 +136,12 @@ test(
 );
 
 test(
-    'FetchContext requestId is stable'
+    'RequestContext requestId is stable'
     + ' and unique',
     () => {
         const db = new MemoryDbAdapter();
-        const a = createFetchContext(db);
-        const b = createFetchContext(db);
+        const a = createRequestContext(db);
+        const b = createRequestContext(db);
         assert.equal(
             a.requestId, a.requestId,
         );
@@ -153,14 +153,14 @@ test(
 );
 
 test(
-    'FetchContext memoizes idea, project,'
+    'RequestContext memoizes idea, project,'
     + ' and flow row fetches',
     async () => {
         const db = new MemoryDbAdapter();
         await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const ideas1 = await ctx.getIdeaRows();
         const ideas2 = await ctx.getIdeaRows();
         assert.equal(ideas1, ideas2);
@@ -178,13 +178,13 @@ test(
 );
 
 test(
-    'FetchContext memoizes person rows',
+    'RequestContext memoizes person rows',
     async () => {
         const db = new MemoryDbAdapter();
         await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const rows1 = await ctx.getPersonRows();
         await db.people.put('u2', buildPersonRow(
             'u2', 'Bob', 'Brown',
@@ -203,7 +203,7 @@ test(
         await db.people.put('u1', buildPersonRow(
             'u1', 'Alice', 'Adams',
         ));
-        const ctx = createFetchContext(db);
+        const ctx = createRequestContext(db);
         const rows1 = await ctx.getPersonRows();
         // If getPersonMap re-fetches, the post-mutation
         // state would leak into the map.

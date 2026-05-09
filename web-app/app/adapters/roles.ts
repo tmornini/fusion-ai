@@ -8,7 +8,7 @@ import {
     Person,
     nowUtc,
 } from '../../../api/types.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -111,7 +111,7 @@ export function userPrivateRoleFor(
 }
 
 export async function getRoles(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Role[]> {
     const [roleMap, personMap] = await Promise.all([
         ctx.getRoleMap(),
@@ -132,14 +132,14 @@ export async function getRoles(
 // belong to membership UIs; the index of named roles
 // the organization manages excludes them by intent.
 export async function getPersistedRoles(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Role[]> {
     const map = await ctx.getRoleMap();
     return Array.from(map.values());
 }
 
 export async function getRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
 ): Promise<Role> {
     const map = await ctx.getRoleMap();
@@ -153,7 +153,7 @@ export async function getRole(
 }
 
 export async function putRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
     entity: Omit<RoleEntity, 'id'>,
 ): Promise<void> {
@@ -168,7 +168,7 @@ export async function putRole(
 // primitive the platform provides — never
 // simulated at the application layer.
 export async function deleteRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
 ): Promise<void> {
     const memberships =
@@ -194,7 +194,7 @@ export async function deleteRole(
 }
 
 export async function getMembersOfRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
 ): Promise<Member[]> {
     const [
@@ -219,7 +219,7 @@ export async function getMembersOfRole(
 }
 
 export async function getRolesForPerson(
-    ctx: FetchContext,
+    ctx: RequestContext,
     personId: Id,
 ): Promise<Role[]> {
     const [
@@ -252,7 +252,7 @@ export async function getRolesForPerson(
 }
 
 export async function getMembersForPerson(
-    ctx: FetchContext,
+    ctx: RequestContext,
     personId: Id,
 ): Promise<Member[]> {
     const [
@@ -281,7 +281,7 @@ export async function getMembersForPerson(
 }
 
 export async function addMember(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
     personId: Id,
 ): Promise<void> {
@@ -320,7 +320,7 @@ export async function addMember(
 }
 
 export async function removeMember(
-    ctx: FetchContext,
+    ctx: RequestContext,
     membershipId: Id,
 ): Promise<void> {
     await ctx.DELETE(

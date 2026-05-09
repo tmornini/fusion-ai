@@ -2,7 +2,7 @@ import type {
     PersonEntity,
 } from '../../../api/types.ts';
 import { Person } from '../../../api/types.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -37,14 +37,14 @@ export type PersonAccountStatus =
     | 'deactivated';
 
 export async function getPeople(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Person[]> {
     const personMap = await ctx.getPersonMap();
     return Array.from(personMap.values());
 }
 
 export async function getPersonRows(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<PersonEntity[]> {
     return ctx.getPersonRows();
 }
@@ -58,7 +58,7 @@ export function featuredPeople(
 }
 
 export async function getPerson(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
 ): Promise<Person> {
     const row = await ctx.GET<PersonEntity>(
@@ -68,7 +68,7 @@ export async function getPerson(
 }
 
 export async function getPersonRow(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
 ): Promise<PersonEntity> {
     return ctx.GET<PersonEntity>(
@@ -77,7 +77,7 @@ export async function getPersonRow(
 }
 
 export async function putPerson(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     entity: Omit<PersonEntity, 'id'>,
 ): Promise<void> {
@@ -86,7 +86,7 @@ export async function putPerson(
 }
 
 export async function putPersonStatus(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     next: PersonAccountStatus,
 ): Promise<void> {

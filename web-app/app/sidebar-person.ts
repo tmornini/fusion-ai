@@ -18,12 +18,12 @@ async function getSidebarPerson(
     organization: string;
 }> {
     const {
-        createFetchContext,
+        createRequestContext,
         getCurrentPersonRow,
         getOrganization,
         Person,
     } = await import('./adapters');
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const [personRow, org] =
         await Promise.all([
             getCurrentPersonRow(ctx),

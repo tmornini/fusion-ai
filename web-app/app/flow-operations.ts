@@ -11,7 +11,7 @@ import {
     DEFAULT_TRANSITION_NAME,
 } from '../../api/types.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     postFlowVersion,
     putFlow,
     deleteFlowVersion,
@@ -85,7 +85,7 @@ async function commitFlowMutation(
     nodes: GraphNode[],
     edges: GraphEdge[],
 ): Promise<void> {
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     await postFlowVersion(
         ctx,
         generateCryptoSafeBase62(),
@@ -542,7 +542,7 @@ export async function performUndo(
         return failOp('Flow is locked');
     }
     try {
-        const ctx = createFetchContext();
+        const ctx = createRequestContext();
         const versions = await getFlowVersions(
             ctx, snap.flowId,
         );
@@ -624,7 +624,7 @@ export async function performRedo(
         };
     }
     try {
-        const ctx = createFetchContext();
+        const ctx = createRequestContext();
         await postFlowVersion(
             ctx,
             generateCryptoSafeBase62(),

@@ -15,7 +15,7 @@ import {
     notifyFlowChange,
 } from './flow-mutations.ts';
 import type {
-    FetchContext, WriteOp,
+    RequestContext, WriteOp,
 } from './shared.ts';
 
 export interface FlowVersion {
@@ -76,7 +76,7 @@ function compareRows(
 }
 
 export async function postFlowVersion(
-    ctx: FetchContext,
+    ctx: RequestContext,
     versionId: string,
     flowId: string,
 ): Promise<void> {
@@ -128,7 +128,7 @@ export async function postFlowVersion(
 }
 
 export async function getFlowVersions(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
 ): Promise<FlowVersion[]> {
     const all = await ctx.GET<
@@ -141,7 +141,7 @@ export async function getFlowVersions(
 }
 
 export async function deleteFlowVersion(
-    ctx: FetchContext,
+    ctx: RequestContext,
     versionId: string,
 ): Promise<void> {
     await ctx.DELETE(

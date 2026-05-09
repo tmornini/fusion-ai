@@ -36,7 +36,7 @@ import {
     getFlowGraph,
 } from './flow-queries.ts';
 import type { FlowGraph } from './flow-queries.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     generateMermaid,
 } from '../mermaid-generate.ts';
@@ -64,7 +64,7 @@ import {
 /* ── Mermaid export ──────────────── */
 
 export async function getFlowMermaid(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
 ): Promise<string> {
     const graph =
@@ -255,7 +255,7 @@ function buildDialogConfig(
 }
 
 async function getFlowBackupData(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
 ): Promise<{
     flow: FlowEntity;
@@ -317,7 +317,7 @@ function buildBackupJson(
 }
 
 export async function getFlowZip(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
 ): Promise<{
     data: Uint8Array;
@@ -470,7 +470,7 @@ export async function getBackupFromZip(
 }
 
 export async function computeFlowBackupResolution(
-    ctx: FetchContext,
+    ctx: RequestContext,
     backup: Backup,
 ): Promise<ImportResolution> {
     const [flows, projects] =
@@ -503,7 +503,7 @@ export async function computeFlowBackupResolution(
 }
 
 export async function postFlowFromBackup(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
     backup: Backup,
     projectId: string,
@@ -793,7 +793,7 @@ function putFlowGraph(
 }
 
 export async function postFlowFromMermaid(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
     text: string,
     projectId: string,
@@ -1132,7 +1132,7 @@ function applySidecarToDefault(
 }
 
 export async function postFlowFromZip(
-    ctx: FetchContext,
+    ctx: RequestContext,
     flowId: string,
     data: Uint8Array,
     projectId: string,

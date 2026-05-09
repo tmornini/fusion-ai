@@ -34,7 +34,7 @@ export type { Id } from '../../../api/types.ts';
 export { Person } from '../../../api/types.ts';
 
 export async function getCurrentPersonRow(
-    ctx?: FetchContext,
+    ctx?: RequestContext,
 ): Promise<PersonEntity> {
     if (ctx) return ctx.getCurrentPerson();
     return httpGet<PersonEntity>(
@@ -65,7 +65,7 @@ export interface Transaction {
     readonly notifyChannels?: readonly Channel<void>[];
 }
 
-export interface FetchContext {
+export interface RequestContext {
     readonly requestId: string;
     GET<T>(resource: string): Promise<T>;
     PUT<T>(
@@ -96,9 +96,9 @@ export interface FetchContext {
     commit(tx: Transaction): Promise<void>;
 }
 
-export function createFetchContext(
+export function createRequestContext(
     adapter: DbAdapter = getDbAdapter(),
-): FetchContext {
+): RequestContext {
     // Per-request memoization: each table is
     // fetched at most once per ctx. The promise
     // is captured the first time the getter is
@@ -130,7 +130,7 @@ export function createFetchContext(
     let roleModelMembershipRowsPromise:
         Promise<RoleModelMembershipEntity[]>
         | null = null;
-    const ctx: FetchContext = {
+    const ctx: RequestContext = {
         requestId: generateCryptoSafeBase62(),
         GET: <T>(resource: string) =>
             httpGet<T>(adapter, resource),
@@ -320,10 +320,10 @@ export function createFetchContext(
 }
 
 export async function getPersonMap(
-    ctx?: FetchContext,
+    ctx?: RequestContext,
 ): Promise<Map<Id, Person>> {
     if (ctx) return ctx.getPersonMap();
-    return createFetchContext().getPersonMap();
+    return createRequestContext().getPersonMap();
 }
 
 export function personName(

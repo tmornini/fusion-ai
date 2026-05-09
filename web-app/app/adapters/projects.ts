@@ -13,7 +13,7 @@ import {
     getPersonMap,
     personName,
 } from './shared.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -41,7 +41,7 @@ export {
 } from '../../../api/types.ts';
 
 export async function getProjects(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Project[]> {
     const rows = await ctx.getProjectRows();
     return rows
@@ -151,7 +151,7 @@ export class ProjectView {
 }
 
 export async function getProjectRow(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
 ): Promise<ProjectEntity> {
     return ctx.GET<ProjectEntity>(
@@ -160,7 +160,7 @@ export async function getProjectRow(
 }
 
 export async function putProject(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     entity: Omit<ProjectEntity, 'id'>,
 ): Promise<void> {

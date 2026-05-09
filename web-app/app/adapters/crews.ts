@@ -8,7 +8,7 @@ import {
     Role,
     nowUtc,
 } from '../../../api/types.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -54,14 +54,14 @@ export function subscribeCrewRoleMembershipChanges(
 }
 
 export async function getCrews(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Crew[]> {
     const map = await ctx.getCrewMap();
     return Array.from(map.values());
 }
 
 export async function getCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
 ): Promise<Crew> {
     const map = await ctx.getCrewMap();
@@ -75,7 +75,7 @@ export async function getCrew(
 }
 
 export async function putCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
     entity: Omit<CrewEntity, 'id'>,
 ): Promise<void> {
@@ -90,7 +90,7 @@ export async function putCrew(
 // primitive the platform provides — never
 // simulated at the application layer.
 export async function deleteCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     crewId: Id,
 ): Promise<void> {
     const memberships =
@@ -116,7 +116,7 @@ export async function deleteCrew(
 }
 
 export async function getRolesInCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     crewId: Id,
 ): Promise<Role[]> {
     const [
@@ -162,7 +162,7 @@ export async function getRolesInCrew(
 }
 
 export async function getCrewsContainingRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
 ): Promise<Crew[]> {
     const [
@@ -181,7 +181,7 @@ export async function getCrewsContainingRole(
 }
 
 export async function addRoleToCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     crewId: Id,
     roleId: Id,
 ): Promise<void> {
@@ -228,7 +228,7 @@ export async function addRoleToCrew(
 }
 
 export async function removeRoleFromCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     membershipId: Id,
 ): Promise<void> {
     await ctx.DELETE(
@@ -243,7 +243,7 @@ export async function removeRoleFromCrew(
 // crew. The set is deduplicated; a person who
 // belongs to two roles in one crew counts once.
 export async function getMembersOfCrew(
-    ctx: FetchContext,
+    ctx: RequestContext,
     crewId: Id,
 ): Promise<Set<Id>> {
     const roles = await getRolesInCrew(

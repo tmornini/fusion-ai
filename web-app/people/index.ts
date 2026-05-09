@@ -18,7 +18,7 @@ import {
     navigateTo, trimStrings,
 } from '../app/core.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getPeople, putPerson,
     getCurrentPersonRow,
     postActivity,
@@ -51,7 +51,7 @@ export async function init(): Promise<void> {
     );
     if (!container) return;
 
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const loaded = await withLoadingState(
         container,
         buildSkeleton('table', 5),
@@ -90,7 +90,7 @@ export async function init(): Promise<void> {
     subscribePersonChanges(async () => {
         if (!peopleState || !personListEl) return;
         const fresh = await getPeople(
-            createFetchContext(),
+            createRequestContext(),
         );
         peopleState =
             buildInitialManagedPeopleState(
@@ -537,7 +537,7 @@ async function handleInvite(): Promise<void> {
     const id = generateCryptoSafeBase62();
     try {
         await putPerson(
-            createFetchContext(),
+            createRequestContext(),
             id,
             trimStrings({
                 first_name: first,
@@ -576,7 +576,7 @@ async function handleInvite(): Promise<void> {
     }
     try {
         await postActivity(
-            createFetchContext(),
+            createRequestContext(),
             {
                 type: 'person_joined',
                 action: 'joined the team',

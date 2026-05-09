@@ -7,7 +7,7 @@ import {
 import {
     formatCompactCurrency,
 } from '../format.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 
 export type GaugeIcon =
     | 'clock'
@@ -37,7 +37,7 @@ export interface GaugeData {
 }
 
 export async function getDashboardGauges(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<GaugeData[]> {
     const allProjects =
         await ctx.getProjectRows();
@@ -166,7 +166,7 @@ export async function getDashboardGauges(
 }
 
 export async function getDashboardStats(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<
     { label: string; value: number }[]
 > {

@@ -13,7 +13,7 @@ import {
     navigateTo,
 } from '../app/core.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getFlowGraph,
     getFlowMermaid,
     getFlowZip,
@@ -24,7 +24,7 @@ import {
     subscribeResize,
 } from '../app/adapters/index.ts';
 import type {
-    FetchContext,
+    RequestContext,
 } from '../app/adapters/index.ts';
 import type { NodeAssignment } from '../../api/types.ts';
 import {
@@ -326,7 +326,7 @@ async function reportOpFailure(
 ): Promise<void> {
     showToast(toast, toastVariant);
     const g = await getFlowGraph(
-        createFetchContext(), flowId,
+        createRequestContext(), flowId,
     );
     const current = pageState.presenter().snapshot();
     commit({
@@ -863,7 +863,7 @@ async function handleCopyMermaid(
     try {
         text =
             await getFlowMermaid(
-                createFetchContext(), flowId,
+                createRequestContext(), flowId,
             );
     } catch (err) {
         log.error(
@@ -907,7 +907,7 @@ async function handleExportZip(
     try {
         result =
             await getFlowZip(
-                createFetchContext(), flowId,
+                createRequestContext(), flowId,
             );
     } catch (err) {
         log.error(
@@ -934,7 +934,7 @@ async function handleExportZip(
 }
 
 async function buildRoleMemberCounts(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Map<string, number>> {
     const rows =
         await ctx.getRoleMembershipRows();
@@ -949,7 +949,7 @@ async function buildRoleMemberCounts(
 }
 
 async function buildCrewMemberCounts(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Map<string, number>> {
     const crewMap = await ctx.getCrewMap();
     const counts = new Map<string, number>();
@@ -1243,7 +1243,7 @@ export async function init(
         container,
         buildSkeleton('detail', 1),
         async () => {
-            const ctx = createFetchContext();
+            const ctx = createRequestContext();
             const [
                 graph, versions,
                 personMap, roleMap,

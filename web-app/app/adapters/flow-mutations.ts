@@ -15,7 +15,7 @@ import {
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 
 const flowChanges =
     createSubscriptionChannel(
@@ -55,7 +55,7 @@ export interface FlowCreationInput {
 }
 
 export async function postFlowCreation(
-    ctx: FetchContext,
+    ctx: RequestContext,
     input: FlowCreationInput,
 ): Promise<void> {
     const now = nowUtc();
@@ -116,7 +116,7 @@ export interface FlowSaveShape {
 }
 
 export async function putFlow(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
 ): Promise<void> {

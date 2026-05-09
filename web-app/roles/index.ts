@@ -17,7 +17,7 @@ import {
     trimStrings,
 } from '../app/core.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getPersistedRoles,
     putRole,
     deleteRole,
@@ -47,7 +47,7 @@ export async function init(): Promise<void> {
     );
     if (!container) return;
 
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const loaded = await withLoadingState(
         container,
         buildSkeleton('table', 5),
@@ -86,7 +86,7 @@ export async function init(): Promise<void> {
 
 async function refresh(): Promise<void> {
     if (!roleState) return;
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const [roles, memberships] =
         await Promise.all([
             getPersistedRoles(ctx),
@@ -382,7 +382,7 @@ async function handleCreate(): Promise<void> {
     const id = generateCryptoSafeBase62();
     try {
         await putRole(
-            createFetchContext(),
+            createRequestContext(),
             id,
             {
                 name: trimmed.name,
@@ -417,7 +417,7 @@ async function handleDelete(): Promise<void> {
     pendingDeleteId = null;
     try {
         await deleteRole(
-            createFetchContext(), id,
+            createRequestContext(), id,
         );
     } catch (err) {
         log.error(

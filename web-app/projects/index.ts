@@ -6,7 +6,7 @@ import {
 import { iconFolderKanban } from '../app/icons.ts';
 import { navigateTo } from '../app/core.ts';
 import {
-    createFetchContext,
+    createRequestContext,
     getProjects,
     putProject,
     isProjectStatus,
@@ -35,7 +35,7 @@ let projectListEl: HTMLElement | null = null;
 let projectBadgesEl: HTMLElement | null = null;
 
 async function loadProjectsAndEntities(
-    ctx: ReturnType<typeof createFetchContext>,
+    ctx: ReturnType<typeof createRequestContext>,
 ): Promise<{
     projects: Awaited<ReturnType<typeof getProjects>>;
     entities: Map<string, ProjectEntity>;
@@ -58,7 +58,7 @@ export async function init(): Promise<void> {
     );
     if (!listEl) return;
 
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const loaded = await withLoadingState(
         listEl,
         buildSkeleton('card-list', 4),
@@ -108,7 +108,7 @@ export async function init(): Promise<void> {
         }
         const refreshed =
             await loadProjectsAndEntities(
-                createFetchContext(),
+                createRequestContext(),
             );
         projectState = applyProjectListUpdate(
             projectState, refreshed.projects,
@@ -126,7 +126,7 @@ export async function init(): Promise<void> {
                 projectEntities.get(id);
             if (!entity) return;
             await putProject(
-                createFetchContext(), id,
+                createRequestContext(), id,
                 {
                     ...entity,
                     position: newPosition,

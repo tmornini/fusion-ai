@@ -25,7 +25,7 @@ import {
     postWorkOrderClaim,
     deleteWorkOrderClaim,
     getCurrentPersonRow,
-    createFetchContext,
+    createRequestContext,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
 
@@ -80,7 +80,7 @@ function hasEmptyRequiredField(
 function initTransitionButtons(
     container: HTMLElement,
     detail: WorkboxDetailPresenter,
-    ctx: ReturnType<typeof createFetchContext>,
+    ctx: ReturnType<typeof createRequestContext>,
 ): void {
     const buttons =
         container.querySelectorAll<
@@ -193,7 +193,7 @@ function initTransitionButtons(
 function initUnclaimButton(
     container: HTMLElement,
     detail: WorkboxDetailPresenter,
-    ctx: ReturnType<typeof createFetchContext>,
+    ctx: ReturnType<typeof createRequestContext>,
 ): void {
     const btn = $(
         '#unclaim-btn', container,
@@ -235,7 +235,7 @@ function initUnclaimButton(
 async function loadPresenter(
     workOrderId: string,
     currentPersonId: string,
-    ctx: ReturnType<typeof createFetchContext>,
+    ctx: ReturnType<typeof createRequestContext>,
 ): Promise<WorkboxDetailPresenter> {
     const [
         workOrder, transitions,
@@ -276,7 +276,7 @@ export async function init(
     );
     if (!container) return;
 
-    const ctx = createFetchContext();
+    const ctx = createRequestContext();
     const personRow =
         await getCurrentPersonRow(ctx);
     const personId = personRow.id;

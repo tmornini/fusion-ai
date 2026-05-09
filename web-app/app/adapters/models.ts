@@ -8,7 +8,7 @@ import {
     Role,
     nowUtc,
 } from '../../../api/types.ts';
-import type { FetchContext } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -48,14 +48,14 @@ export function subscribeRoleModelMembershipChanges(
 }
 
 export async function getModels(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<Model[]> {
     const map = await ctx.getModelMap();
     return Array.from(map.values());
 }
 
 export async function getModel(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
 ): Promise<Model> {
     const map = await ctx.getModelMap();
@@ -69,7 +69,7 @@ export async function getModel(
 }
 
 export async function putModel(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: Id,
     entity: Omit<ModelEntity, 'id'>,
 ): Promise<void> {
@@ -82,7 +82,7 @@ export async function putModel(
 // the model itself, in a single ctx.commit.
 // Article on Atomicity.
 export async function deleteModel(
-    ctx: FetchContext,
+    ctx: RequestContext,
     modelId: Id,
 ): Promise<void> {
     const memberships =
@@ -108,7 +108,7 @@ export async function deleteModel(
 }
 
 export async function getModelsInRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
 ): Promise<Model[]> {
     const [memberships, modelMap] =
@@ -135,7 +135,7 @@ export async function getModelsInRole(
 }
 
 export async function getRolesContainingModel(
-    ctx: FetchContext,
+    ctx: RequestContext,
     modelId: Id,
 ): Promise<Role[]> {
     const [memberships, roleMap] =
@@ -155,7 +155,7 @@ export async function getRolesContainingModel(
 }
 
 export async function addModelToRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     roleId: Id,
     modelId: Id,
 ): Promise<void> {
@@ -189,7 +189,7 @@ export async function addModelToRole(
 }
 
 export async function removeModelFromRole(
-    ctx: FetchContext,
+    ctx: RequestContext,
     membershipId: Id,
 ): Promise<void> {
     await ctx.DELETE(

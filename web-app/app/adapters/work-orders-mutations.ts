@@ -19,7 +19,7 @@ import {
     createSubscriptionChannel,
 } from '../channels.ts';
 import type {
-    FetchContext, WriteOp,
+    RequestContext, WriteOp,
 } from './shared.ts';
 
 const workOrderChanges =
@@ -60,7 +60,7 @@ async function generateDisplayId(
 }
 
 async function nextWorkOrderPosition(
-    ctx: FetchContext,
+    ctx: RequestContext,
 ): Promise<number> {
     const existing = await ctx.GET<
         WorkOrderEntity[]
@@ -84,7 +84,7 @@ export interface WorkOrderCreationInput {
 }
 
 export async function postWorkOrderCreation(
-    ctx: FetchContext,
+    ctx: RequestContext,
     input: WorkOrderCreationInput,
 ): Promise<void> {
     const person = await ctx.getCurrentPerson();
@@ -229,7 +229,7 @@ export interface WorkOrderTransitionInput {
 }
 
 export async function postWorkOrderTransition(
-    ctx: FetchContext,
+    ctx: RequestContext,
     input: WorkOrderTransitionInput,
 ): Promise<void> {
     const {
@@ -324,7 +324,7 @@ export async function postWorkOrderTransition(
 }
 
 export async function putWorkOrder(
-    ctx: FetchContext,
+    ctx: RequestContext,
     id: string,
     entity: Omit<WorkOrderEntity, 'id'>,
 ): Promise<void> {
@@ -345,7 +345,7 @@ export async function putWorkOrder(
 // disables the claim button while a
 // request is pending.
 export async function postWorkOrderClaim(
-    ctx: FetchContext,
+    ctx: RequestContext,
     claimId: string,
     workOrderId: string,
 ): Promise<void> {
