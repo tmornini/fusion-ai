@@ -7,11 +7,12 @@ import {
     Idea, nowUtc,
     ideaIsVisible,
 } from '../../../api/types.ts';
+import type { RequestContext } from './shared.ts';
 import {
     getPersonMap,
     personName,
-} from './shared.ts';
-import type { RequestContext } from './shared.ts';
+    getCurrentPerson,
+} from './people.ts';
 import {
     notifyProjectChange,
 } from './projects.ts';
@@ -160,7 +161,7 @@ export async function putIdeaSubmission(
     submissionId: string,
     ideaId: string,
 ): Promise<void> {
-    const person = await ctx.getCurrentPerson();
+    const person = await getCurrentPerson(ctx);
     await ctx.PUT(
         'idea-submissions/'
             + submissionId,

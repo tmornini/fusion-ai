@@ -21,6 +21,9 @@ import {
 import type {
     RequestContext, WriteOp,
 } from './shared.ts';
+import {
+    getCurrentPerson,
+} from './people.ts';
 
 const workOrderChanges =
     createSubscriptionChannel(
@@ -87,7 +90,7 @@ export async function postWorkOrderCreation(
     ctx: RequestContext,
     input: WorkOrderCreationInput,
 ): Promise<void> {
-    const person = await ctx.getCurrentPerson();
+    const person = await getCurrentPerson(ctx);
     const flow = await ctx.GET<FlowEntity>(
         `flows/${input.flowId}`,
     );
@@ -237,7 +240,7 @@ export async function postWorkOrderTransition(
         values, fieldValueIds,
         currentNodeId,
     } = input;
-    const person = await ctx.getCurrentPerson();
+    const person = await getCurrentPerson(ctx);
     const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
     );
@@ -349,7 +352,7 @@ export async function postWorkOrderClaim(
     claimId: string,
     workOrderId: string,
 ): Promise<void> {
-    const person = await ctx.getCurrentPerson();
+    const person = await getCurrentPerson(ctx);
     const now = nowUtc();
 
     await ctx.PUT<void>(

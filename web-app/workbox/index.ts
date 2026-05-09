@@ -23,7 +23,7 @@ import {
     getWorkOrderTransitionRows,
     getWorkOrderClaimRows,
     getPersonMap,
-    getCurrentPersonRow,
+    getCurrentPerson,
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
@@ -139,7 +139,7 @@ async function loadInboxItems(
         getWorkOrderTransitionRows(ctx),
         getWorkOrderClaimRows(ctx),
         getPersonMap(ctx),
-        getCurrentPersonRow(ctx),
+        getCurrentPerson(ctx),
         buildVisibilityScope(ctx),
     ]);
     workOrderEntities = new Map(

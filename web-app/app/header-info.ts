@@ -16,7 +16,7 @@ async function getHeaderData(
 ): Promise<HeaderData> {
     const {
         createRequestContext,
-        getCurrentPersonRow,
+        getCurrentPerson,
         getOrganization,
         getDashboardStats,
         Person,
@@ -26,7 +26,7 @@ async function getHeaderData(
     const ctx = createRequestContext();
     const [personRow, org, stats] =
         await Promise.all([
-            getCurrentPersonRow(ctx),
+            getCurrentPerson(ctx),
             getOrganization(ctx),
             getDashboardStats(ctx),
         ]);

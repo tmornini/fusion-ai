@@ -5,8 +5,10 @@ import {
 import type {
     ActivityType,
 } from '../../../api/types.ts';
-import { getCurrentPersonRow } from './shared.ts';
 import type { RequestContext } from './shared.ts';
+import {
+    getCurrentPerson,
+} from './people.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -33,7 +35,7 @@ export async function postActivity(
     input: ActivityInput,
 ): Promise<void> {
     const personRow =
-        await getCurrentPersonRow(ctx);
+        await getCurrentPerson(ctx);
     const activityId =
         generateCryptoSafeBase62();
     const actorId = generateCryptoSafeBase62();

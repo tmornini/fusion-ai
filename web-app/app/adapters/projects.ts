@@ -9,11 +9,11 @@ import {
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../../../api/types.ts';
+import type { RequestContext } from './shared.ts';
 import {
     getPersonMap,
     personName,
-} from './shared.ts';
-import type { RequestContext } from './shared.ts';
+} from './people.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';

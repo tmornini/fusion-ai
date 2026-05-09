@@ -7,7 +7,6 @@ import {
 } from '../../../api/api.ts';
 import type {
     Id,
-    PersonEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -19,7 +18,6 @@ import type {
     RoleModelMembershipEntity,
 } from '../../../api/types.ts';
 import {
-    Person,
     Role,
     Crew,
     Model,
@@ -29,18 +27,6 @@ import {
 } from './crypto-safe-base62.ts';
 import { getDbAdapter } from './init.ts';
 import type { Channel } from '../channels.ts';
-
-export type { Id } from '../../../api/types.ts';
-export { Person } from '../../../api/types.ts';
-
-export async function getCurrentPersonRow(
-    ctx?: RequestContext,
-): Promise<PersonEntity> {
-    if (ctx) return ctx.getCurrentPerson();
-    return httpGet<PersonEntity>(
-        getDbAdapter(), 'current-person',
-    );
-}
 
 // A unit of write work executed by ctx.commit().
 // `put` upserts a row by full state; `delete` removes
@@ -98,9 +84,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getPersonMap(): Promise<Map<Id, Person>>;
-    getPersonRows(): Promise<PersonEntity[]>;
-    getCurrentPerson(): Promise<PersonEntity>;
     getIdeaRows(): Promise<IdeaEntity[]>;
     getProjectRows(
     ): Promise<ProjectEntity[]>;
@@ -134,24 +117,6 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getPersonRows: () =>
-            ctx.GET<PersonEntity[]>('people'),
-        getPersonMap: async () => {
-            const rows =
-                await ctx.getPersonRows();
-            return new Map(
-                rows.map(
-                    entity => [
-                        entity.id,
-                        new Person(entity),
-                    ],
-                ),
-            );
-        },
-        getCurrentPerson: () =>
-            ctx.GET<PersonEntity>(
-                'current-person',
-            ),
         getIdeaRows: () =>
             ctx.GET<IdeaEntity[]>('ideas'),
         getProjectRows: () =>
@@ -251,23 +216,3 @@ export function createRequestContext(
     return ctx;
 }
 
-export async function getPersonMap(
-    ctx?: RequestContext,
-): Promise<Map<Id, Person>> {
-    if (ctx) return ctx.getPersonMap();
-    return createRequestContext().getPersonMap();
-}
-
-export function personName(
-    personMap: Map<Id, Person>,
-    personId: Id,
-): string {
-    const person = personMap.get(personId);
-    if (!person) {
-        throw new Error(
-            'personName: unknown person '
-                + personId,
-        );
-    }
-    return person.fullName();
-}

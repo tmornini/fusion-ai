@@ -1,4 +1,5 @@
 import type {
+    Id,
     PersonEntity,
 } from '../../../api/types.ts';
 import { Person } from '../../../api/types.ts';
@@ -12,6 +13,7 @@ export {
     isPersonStatus,
 } from '../../../api/types.ts';
 export type {
+    Id,
     PersonEntity,
     PersonStatus,
 } from '../../../api/types.ts';
@@ -29,6 +31,42 @@ export function notifyPersonChange(): void {
     personChanges.notify();
 }
 
+export async function getPersonRows(
+    ctx: RequestContext,
+): Promise<PersonEntity[]> {
+    return ctx.GET<PersonEntity[]>('people');
+}
+
+export async function getPersonMap(
+    ctx: RequestContext,
+): Promise<Map<Id, Person>> {
+    const rows = await getPersonRows(ctx);
+    return new Map(
+        rows.map(
+            entity => [entity.id, new Person(entity)],
+        ),
+    );
+}
+
+export async function getCurrentPerson(
+    ctx: RequestContext,
+): Promise<PersonEntity> {
+    return ctx.GET<PersonEntity>('current-person');
+}
+
+export function personName(
+    personMap: Map<Id, Person>,
+    personId: Id,
+): string {
+    const person = personMap.get(personId);
+    if (!person) {
+        throw new Error(
+            'personName: unknown person ' + personId,
+        );
+    }
+    return person.fullName();
+}
+
 const TOP_PEOPLE_COUNT = 6;
 
 export type PersonAccountStatus =
@@ -39,14 +77,8 @@ export type PersonAccountStatus =
 export async function getPeople(
     ctx: RequestContext,
 ): Promise<Person[]> {
-    const personMap = await ctx.getPersonMap();
+    const personMap = await getPersonMap(ctx);
     return Array.from(personMap.values());
-}
-
-export async function getPersonRows(
-    ctx: RequestContext,
-): Promise<PersonEntity[]> {
-    return ctx.getPersonRows();
 }
 
 export function featuredPeople(
@@ -90,7 +122,7 @@ export async function putPersonStatus(
     id: string,
     next: PersonAccountStatus,
 ): Promise<void> {
-    const rows = await ctx.getPersonRows();
+    const rows = await getPersonRows(ctx);
     const row = rows.find(r => r.id === id);
     if (!row) {
         throw new Error(

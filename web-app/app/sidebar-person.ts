@@ -19,14 +19,14 @@ async function getSidebarPerson(
 }> {
     const {
         createRequestContext,
-        getCurrentPersonRow,
+        getCurrentPerson,
         getOrganization,
         Person,
     } = await import('./adapters');
     const ctx = createRequestContext();
     const [personRow, org] =
         await Promise.all([
-            getCurrentPersonRow(ctx),
+            getCurrentPerson(ctx),
             getOrganization(ctx),
         ]);
     return {

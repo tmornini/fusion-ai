@@ -113,10 +113,10 @@ export async function getSnapshot(
     return ctx.GET<string>('snapshots/schema');
 }
 
-// Bypasses ctx.getPersonRows() on purpose: a missing
-// table is the expected non-error path here, and the
-// memoized accessor would cache the rejection for any
-// later caller sharing this ctx.
+// Uses ctx.GET directly on purpose: a missing table
+// is the expected non-error path here, and a
+// higher-level accessor could obscure the error
+// type for any later caller sharing this ctx.
 export async function getDataPresent(
     ctx: RequestContext,
 ): Promise<boolean> {

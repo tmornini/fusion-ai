@@ -15,6 +15,9 @@ import {
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
+import {
+    getPersonMap,
+} from './people.ts';
 
 export {
     Role,
@@ -115,7 +118,7 @@ export async function getRoles(
 ): Promise<Role[]> {
     const [roleMap, personMap] = await Promise.all([
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     const persisted = Array.from(
         roleMap.values(),
@@ -202,7 +205,7 @@ export async function getMembersOfRole(
     ] = await Promise.all([
         ctx.getRoleMembershipRows(),
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     const role = roleMap.get(roleId);
     if (!role) {
@@ -227,7 +230,7 @@ export async function getRolesForPerson(
     ] = await Promise.all([
         ctx.getRoleMembershipRows(),
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     const persisted = memberships
         .filter(m => m.person_id === personId)
@@ -260,7 +263,7 @@ export async function getMembersForPerson(
     ] = await Promise.all([
         ctx.getRoleMembershipRows(),
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     return memberships
         .filter(m => m.person_id === personId)
@@ -294,7 +297,7 @@ export async function addMember(
     }
     const [roleMap, personMap] = await Promise.all([
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     if (!roleMap.has(roleId)) {
         throw new Error(

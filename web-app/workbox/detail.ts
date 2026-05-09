@@ -24,7 +24,7 @@ import {
     postWorkOrderTransition,
     postWorkOrderClaim,
     deleteWorkOrderClaim,
-    getCurrentPersonRow,
+    getCurrentPerson,
     createRequestContext,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
@@ -278,7 +278,7 @@ export async function init(
 
     const ctx = createRequestContext();
     const personRow =
-        await getCurrentPersonRow(ctx);
+        await getCurrentPerson(ctx);
     const personId = personRow.id;
 
     const detail = await withLoadingState(

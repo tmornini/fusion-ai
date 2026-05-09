@@ -20,7 +20,7 @@ import {
 import {
     createRequestContext,
     getPeople, putPerson,
-    getCurrentPersonRow,
+    getCurrentPerson,
     postActivity,
     jsonArrayField,
     jsonObjectField,
@@ -59,7 +59,7 @@ export async function init(): Promise<void> {
             const [people, currentRow] =
                 await Promise.all([
                     getPeople(ctx),
-                    getCurrentPersonRow(ctx),
+                    getCurrentPerson(ctx),
                 ]);
             return { people, currentRow };
         },

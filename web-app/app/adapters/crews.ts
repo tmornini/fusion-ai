@@ -21,6 +21,9 @@ import {
     userPrivateRoleFor,
     getMembersOfRole,
 } from './roles.ts';
+import {
+    getPersonMap,
+} from './people.ts';
 
 export {
     Crew,
@@ -124,7 +127,7 @@ export async function getRolesInCrew(
     ] = await Promise.all([
         ctx.getCrewRoleMembershipRows(),
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
     ]);
     return memberships
         .filter(m => m.crew_id === crewId)
@@ -189,7 +192,7 @@ export async function addRoleToCrew(
         await Promise.all([
             ctx.getCrewMap(),
             ctx.getRoleMap(),
-            ctx.getPersonMap(),
+            getPersonMap(ctx),
         ]);
     if (!crewMap.has(crewId)) {
         throw new Error(

@@ -19,6 +19,7 @@ import {
 import {
     createRequestContext,
     getCrews,
+    getPersonMap,
     putCrew,
     deleteCrew,
     addRoleToCrew,
@@ -65,7 +66,7 @@ export async function init(): Promise<void> {
                 getCrews(ctx),
                 ctx.getCrewRoleMembershipRows(),
                 ctx.getRoleMap(),
-                ctx.getPersonMap(),
+                getPersonMap(ctx),
                 getPersistedRoles(ctx),
             ]);
             return {
@@ -114,7 +115,7 @@ async function refresh(): Promise<void> {
         getCrews(ctx),
         ctx.getCrewRoleMembershipRows(),
         ctx.getRoleMap(),
-        ctx.getPersonMap(),
+        getPersonMap(ctx),
         getPersistedRoles(ctx),
     ]);
     crewState = applyCrewListUpdate(

@@ -3,10 +3,12 @@ import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
     createRequestContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
     getPersonMap,
     personName,
-    getCurrentPersonRow,
-} from '../web-app/app/adapters/shared.ts';
+    getCurrentPerson,
+} from '../web-app/app/adapters/people.ts';
 import { Person } from '../api/types.ts';
 
 function buildPersonRow(
@@ -72,26 +74,28 @@ test('Fresh ctx re-fetches each call', async () => {
     await db.people.put('u1', buildPersonRow(
         'u1', 'Alice', 'Adams',
     ));
-    const m1 = await createRequestContext(db)
-        .getPersonMap();
+    const m1 = await getPersonMap(
+        createRequestContext(db),
+    );
     await db.people.put('u2', buildPersonRow(
         'u2', 'Bob', 'Brown',
     ));
-    const m2 = await createRequestContext(db)
-        .getPersonMap();
+    const m2 = await getPersonMap(
+        createRequestContext(db),
+    );
     assert.notEqual(m1, m2);
     assert.equal(m1.size, 1);
     assert.equal(m2.size, 2);
 });
 
-test('getCurrentPersonRow returns PersonEntity', async () => {
+test('getCurrentPerson returns PersonEntity', async () => {
     const db = new MemoryDbAdapter();
     await db.people.put('current', {
         ...buildPersonRow(
             'current', 'Alice', 'Adams',
         ),
     });
-    const row = await getCurrentPersonRow(
+    const row = await getCurrentPerson(
         createRequestContext(db),
     );
     assert.equal(row.first_name, 'Alice');
