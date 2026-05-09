@@ -13,6 +13,7 @@ import {
     validateStoredGraphJson,
 } from '../../../api/validators.ts';
 import type { RequestContext } from './shared.ts';
+import { getFlowRows } from './flows.ts';
 
 export type {
     GraphNode, GraphEdge, GraphField,
@@ -59,7 +60,7 @@ export interface FlowListItem {
 export async function getFlows(
     ctx: RequestContext,
 ): Promise<FlowSummary[]> {
-    const flows = await ctx.getFlowRows();
+    const flows = await getFlowRows(ctx);
     return flows.map(f => {
         const g = parseGraph(f.graph);
         return {

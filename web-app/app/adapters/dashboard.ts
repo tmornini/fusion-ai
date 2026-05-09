@@ -10,6 +10,7 @@ import {
 import type { RequestContext } from './shared.ts';
 import { getIdeaRows } from './ideas.ts';
 import { getProjectRows } from './projects.ts';
+import { getFlowRows } from './flows.ts';
 
 export type GaugeIcon =
     | 'clock'
@@ -176,7 +177,7 @@ export async function getDashboardStats(
         await Promise.all([
             getIdeaRows(ctx),
             getProjectRows(ctx),
-            ctx.getFlowRows(),
+            getFlowRows(ctx),
         ]);
 
     return [

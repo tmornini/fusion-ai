@@ -7,7 +7,6 @@ import {
 } from '../../../api/api.ts';
 import type {
     Id,
-    FlowEntity,
     RoleEntity,
     RoleMembershipEntity,
     CrewEntity,
@@ -82,7 +81,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getFlowRows(): Promise<FlowEntity[]>;
     getRoleMap(): Promise<Map<Id, Role>>;
     getRoleMembershipRows(
     ): Promise<RoleMembershipEntity[]>;
@@ -112,8 +110,6 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getFlowRows: () =>
-            ctx.GET<FlowEntity[]>('flows'),
         getRoleMap: async () => {
             const rows =
                 await ctx.GET<RoleEntity[]>(
