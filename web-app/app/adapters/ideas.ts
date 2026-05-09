@@ -39,10 +39,16 @@ export {
     IDEA_STATUS_CONFIG,
 } from '../../../api/types.ts';
 
-async function getIdeaRows(
+export async function getIdeaRows(
     ctx: RequestContext,
 ): Promise<IdeaEntity[]> {
-    const all = await ctx.getIdeaRows();
+    return ctx.GET<IdeaEntity[]>('ideas');
+}
+
+async function getVisibleIdeaRows(
+    ctx: RequestContext,
+): Promise<IdeaEntity[]> {
+    const all = await getIdeaRows(ctx);
     return all.filter(ideaIsVisible);
 }
 
@@ -97,7 +103,7 @@ export async function getIdeas(
     const [
         ideas, personMap, submissions,
     ] = await Promise.all([
-        getIdeaRows(ctx),
+        getVisibleIdeaRows(ctx),
         getPersonMap(ctx),
         getIdeaSubmissionRows(ctx),
     ]);

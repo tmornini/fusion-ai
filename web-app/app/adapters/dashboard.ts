@@ -8,6 +8,7 @@ import {
     formatCompactCurrency,
 } from '../format.ts';
 import type { RequestContext } from './shared.ts';
+import { getIdeaRows } from './ideas.ts';
 
 export type GaugeIcon =
     | 'clock'
@@ -172,7 +173,7 @@ export async function getDashboardStats(
 > {
     const [ideas, projects, flows] =
         await Promise.all([
-            ctx.getIdeaRows(),
+            getIdeaRows(ctx),
             ctx.getProjectRows(),
             ctx.getFlowRows(),
         ]);

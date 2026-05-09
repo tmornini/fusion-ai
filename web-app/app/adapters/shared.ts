@@ -7,7 +7,6 @@ import {
 } from '../../../api/api.ts';
 import type {
     Id,
-    IdeaEntity,
     ProjectEntity,
     FlowEntity,
     RoleEntity,
@@ -84,7 +83,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getIdeaRows(): Promise<IdeaEntity[]>;
     getProjectRows(
     ): Promise<ProjectEntity[]>;
     getFlowRows(): Promise<FlowEntity[]>;
@@ -117,8 +115,6 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getIdeaRows: () =>
-            ctx.GET<IdeaEntity[]>('ideas'),
         getProjectRows: () =>
             ctx.GET<ProjectEntity[]>('projects'),
         getFlowRows: () =>
