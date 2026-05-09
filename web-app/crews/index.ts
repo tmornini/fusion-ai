@@ -19,6 +19,7 @@ import {
 import {
     createRequestContext,
     getCrews,
+    getCrewRoleMembershipRows,
     getPersonMap,
     getRoleMap,
     putCrew,
@@ -65,7 +66,7 @@ export async function init(): Promise<void> {
                 persistedRoles,
             ] = await Promise.all([
                 getCrews(ctx),
-                ctx.getCrewRoleMembershipRows(),
+                getCrewRoleMembershipRows(ctx),
                 getRoleMap(ctx),
                 getPersonMap(ctx),
                 getPersistedRoles(ctx),
@@ -114,7 +115,7 @@ async function refresh(): Promise<void> {
         personMap, persistedRoles,
     ] = await Promise.all([
         getCrews(ctx),
-        ctx.getCrewRoleMembershipRows(),
+        getCrewRoleMembershipRows(ctx),
         getRoleMap(ctx),
         getPersonMap(ctx),
         getPersistedRoles(ctx),

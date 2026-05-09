@@ -22,6 +22,7 @@ import {
     getRoleMap,
     getRoleMembershipRows,
     getMembersOfCrew,
+    getCrewMap,
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
@@ -953,7 +954,7 @@ async function buildRoleMemberCounts(
 async function buildCrewMemberCounts(
     ctx: RequestContext,
 ): Promise<Map<string, number>> {
-    const crewMap = await ctx.getCrewMap();
+    const crewMap = await getCrewMap(ctx);
     const counts = new Map<string, number>();
     for (const crewId of crewMap.keys()) {
         const members = await getMembersOfCrew(
@@ -1258,7 +1259,7 @@ export async function init(
                 getPersonMap(ctx),
                 getRoleMap(ctx),
                 buildRoleMemberCounts(ctx),
-                ctx.getCrewMap(),
+                getCrewMap(ctx),
                 buildCrewMemberCounts(ctx),
                 ctx.getModelMap(),
             ]);

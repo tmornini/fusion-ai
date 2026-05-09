@@ -44,6 +44,26 @@ const crewRoleMembershipChanges =
         'crew_role_memberships',
     ]);
 
+export async function getCrewMap(
+    ctx: RequestContext,
+): Promise<Map<Id, Crew>> {
+    const rows =
+        await ctx.GET<CrewEntity[]>('crews');
+    return new Map(
+        rows.map(
+            entity => [entity.id, new Crew(entity)],
+        ),
+    );
+}
+
+export async function getCrewRoleMembershipRows(
+    ctx: RequestContext,
+): Promise<CrewRoleMembershipEntity[]> {
+    return ctx.GET<CrewRoleMembershipEntity[]>(
+        'crew-role-memberships',
+    );
+}
+
 export function subscribeCrewChanges(
     fn: () => void,
 ): () => void {
@@ -60,7 +80,7 @@ export function subscribeCrewRoleMembershipChanges(
 export async function getCrews(
     ctx: RequestContext,
 ): Promise<Crew[]> {
-    const map = await ctx.getCrewMap();
+    const map = await getCrewMap(ctx);
     return Array.from(map.values());
 }
 
@@ -68,7 +88,7 @@ export async function getCrew(
     ctx: RequestContext,
     id: Id,
 ): Promise<Crew> {
-    const map = await ctx.getCrewMap();
+    const map = await getCrewMap(ctx);
     const crew = map.get(id);
     if (!crew) {
         throw new Error(
@@ -98,7 +118,7 @@ export async function deleteCrew(
     crewId: Id,
 ): Promise<void> {
     const memberships =
-        await ctx.getCrewRoleMembershipRows();
+        await getCrewRoleMembershipRows(ctx);
     const cascadeIds = memberships
         .filter(m => m.crew_id === crewId)
         .map(m => m.id);
@@ -126,7 +146,7 @@ export async function getRolesInCrew(
     const [
         memberships, roleMap, personMap,
     ] = await Promise.all([
-        ctx.getCrewRoleMembershipRows(),
+        getCrewRoleMembershipRows(ctx),
         getRoleMap(ctx),
         getPersonMap(ctx),
     ]);
@@ -172,8 +192,8 @@ export async function getCrewsContainingRole(
     const [
         memberships, crewMap,
     ] = await Promise.all([
-        ctx.getCrewRoleMembershipRows(),
-        ctx.getCrewMap(),
+        getCrewRoleMembershipRows(ctx),
+        getCrewMap(ctx),
     ]);
     const crewIds = new Set(
         memberships
@@ -191,7 +211,7 @@ export async function addRoleToCrew(
 ): Promise<void> {
     const [crewMap, roleMap, personMap] =
         await Promise.all([
-            ctx.getCrewMap(),
+            getCrewMap(ctx),
             getRoleMap(ctx),
             getPersonMap(ctx),
         ]);

@@ -28,6 +28,7 @@ import {
     postWorkOrderCreation,
     putWorkOrder,
     getMembersOfCrew,
+    getCrewMap,
     getRoleMembershipRows,
     createRequestContext,
     generateCryptoSafeBase62,
@@ -170,7 +171,7 @@ async function buildVisibilityScope(
     const [memberships, crewMap] =
         await Promise.all([
             getRoleMembershipRows(ctx),
-            ctx.getCrewMap(),
+            getCrewMap(ctx),
         ]);
     const roleMemberSetByRoleId =
         new Map<Id, Set<Id>>();
