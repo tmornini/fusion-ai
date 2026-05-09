@@ -7,6 +7,7 @@ import { iconFolderKanban } from '../app/icons.ts';
 import { navigateTo } from '../app/core.ts';
 import {
     createRequestContext,
+    getProjectRows,
     getProjects,
     putProject,
     isProjectStatus,
@@ -41,7 +42,7 @@ async function loadProjectsAndEntities(
     entities: Map<string, ProjectEntity>;
 }> {
     const [rows, projects] = await Promise.all([
-        ctx.getProjectRows(),
+        getProjectRows(ctx),
         getProjects(ctx),
     ]);
     return {

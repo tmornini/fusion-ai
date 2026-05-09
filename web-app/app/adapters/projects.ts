@@ -40,10 +40,16 @@ export {
     COST_DIVISOR,
 } from '../../../api/types.ts';
 
+export async function getProjectRows(
+    ctx: RequestContext,
+): Promise<ProjectEntity[]> {
+    return ctx.GET<ProjectEntity[]>('projects');
+}
+
 export async function getProjects(
     ctx: RequestContext,
 ): Promise<Project[]> {
-    const rows = await ctx.getProjectRows();
+    const rows = await getProjectRows(ctx);
     return rows
         .filter(projectIsNotDeleted)
         .map(row => new Project(row));

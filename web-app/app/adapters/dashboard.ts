@@ -9,6 +9,7 @@ import {
 } from '../format.ts';
 import type { RequestContext } from './shared.ts';
 import { getIdeaRows } from './ideas.ts';
+import { getProjectRows } from './projects.ts';
 
 export type GaugeIcon =
     | 'clock'
@@ -41,7 +42,7 @@ export async function getDashboardGauges(
     ctx: RequestContext,
 ): Promise<GaugeData[]> {
     const allProjects =
-        await ctx.getProjectRows();
+        await getProjectRows(ctx);
     const projects = allProjects.filter(
         projectIsApproved,
     );
@@ -174,7 +175,7 @@ export async function getDashboardStats(
     const [ideas, projects, flows] =
         await Promise.all([
             getIdeaRows(ctx),
-            ctx.getProjectRows(),
+            getProjectRows(ctx),
             ctx.getFlowRows(),
         ]);
 
