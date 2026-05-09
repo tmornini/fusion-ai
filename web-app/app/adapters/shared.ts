@@ -5,14 +5,6 @@ import {
     DELETE as httpDelete,
     POST as httpPost,
 } from '../../../api/api.ts';
-import type {
-    Id,
-    ModelEntity,
-    RoleModelMembershipEntity,
-} from '../../../api/types.ts';
-import {
-    Model,
-} from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -75,9 +67,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    getModelMap(): Promise<Map<Id, Model>>;
-    getRoleModelMembershipRows(
-    ): Promise<RoleModelMembershipEntity[]>;
     commit(tx: Transaction): Promise<void>;
 }
 
@@ -98,24 +87,6 @@ export function createRequestContext(
             resource: string,
             body: Record<string, unknown>,
         ) => httpPost<T>(adapter, resource, body),
-        getModelMap: async () => {
-            const rows =
-                await ctx.GET<ModelEntity[]>(
-                    'models',
-                );
-            return new Map(
-                rows.map(
-                    entity => [
-                        entity.id,
-                        new Model(entity),
-                    ],
-                ),
-            );
-        },
-        getRoleModelMembershipRows: () =>
-            ctx.GET<RoleModelMembershipEntity[]>(
-                'role-model-memberships',
-            ),
         commit: async (
             tx: Transaction,
         ): Promise<void> => {

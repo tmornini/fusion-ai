@@ -23,6 +23,7 @@ import {
     getRoleMembershipRows,
     getMembersOfCrew,
     getCrewMap,
+    getModelMap,
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
@@ -1261,7 +1262,7 @@ export async function init(
                 buildRoleMemberCounts(ctx),
                 getCrewMap(ctx),
                 buildCrewMemberCounts(ctx),
-                ctx.getModelMap(),
+                getModelMap(ctx),
             ]);
             return {
                 graph, versions,

@@ -27,6 +27,26 @@ export type {
     RoleModelMembershipEntity,
 } from '../../../api/types.ts';
 
+export async function getModelMap(
+    ctx: RequestContext,
+): Promise<Map<Id, Model>> {
+    const rows =
+        await ctx.GET<ModelEntity[]>('models');
+    return new Map(
+        rows.map(
+            entity => [entity.id, new Model(entity)],
+        ),
+    );
+}
+
+export async function getRoleModelMembershipRows(
+    ctx: RequestContext,
+): Promise<RoleModelMembershipEntity[]> {
+    return ctx.GET<RoleModelMembershipEntity[]>(
+        'role-model-memberships',
+    );
+}
+
 const modelChanges =
     createSubscriptionChannel([
         'models', 'role_model_memberships',
@@ -53,7 +73,7 @@ export function subscribeRoleModelMembershipChanges(
 export async function getModels(
     ctx: RequestContext,
 ): Promise<Model[]> {
-    const map = await ctx.getModelMap();
+    const map = await getModelMap(ctx);
     return Array.from(map.values());
 }
 
@@ -61,7 +81,7 @@ export async function getModel(
     ctx: RequestContext,
     id: Id,
 ): Promise<Model> {
-    const map = await ctx.getModelMap();
+    const map = await getModelMap(ctx);
     const model = map.get(id);
     if (!model) {
         throw new Error(
@@ -89,7 +109,7 @@ export async function deleteModel(
     modelId: Id,
 ): Promise<void> {
     const memberships =
-        await ctx.getRoleModelMembershipRows();
+        await getRoleModelMembershipRows(ctx);
     const cascadeIds = memberships
         .filter(m => m.model_id === modelId)
         .map(m => m.id);
@@ -116,8 +136,8 @@ export async function getModelsInRole(
 ): Promise<Model[]> {
     const [memberships, modelMap] =
         await Promise.all([
-            ctx.getRoleModelMembershipRows(),
-            ctx.getModelMap(),
+            getRoleModelMembershipRows(ctx),
+            getModelMap(ctx),
         ]);
     return memberships
         .filter(m => m.role_id === roleId)
@@ -143,7 +163,7 @@ export async function getRolesContainingModel(
 ): Promise<Role[]> {
     const [memberships, roleMap] =
         await Promise.all([
-            ctx.getRoleModelMembershipRows(),
+            getRoleModelMembershipRows(ctx),
             getRoleMap(ctx),
         ]);
     const roleIds = new Set(
@@ -165,7 +185,7 @@ export async function addModelToRole(
     const [roleMap, modelMap] =
         await Promise.all([
             getRoleMap(ctx),
-            ctx.getModelMap(),
+            getModelMap(ctx),
         ]);
     if (!roleMap.has(roleId)) {
         throw new Error(
