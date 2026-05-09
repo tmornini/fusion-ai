@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
     createRequestContext,
+    CommitError,
 } from '../web-app/app/adapters/shared.ts';
 import {
     createChannel,
@@ -98,45 +99,113 @@ test(
 );
 
 test(
-    'ctx.commit propagates op error and skips'
-    + ' remaining ops + notify (no-rollback'
-    + ' contract)',
+    'ctx.commit throws CommitError naming the'
+    + ' failed op and exposing applied prefix',
     async () => {
         const db = new MemoryDbAdapter();
         const ctx = createRequestContext(db);
         const ch = createChannel<void>();
         let count = 0;
         ch.subscribe(() => { count++; });
-        await assert.rejects(
-            () => ctx.commit({
-                ops: [
-                    {
-                        method: 'put',
-                        resource: 'roles/r-1',
-                        body: buildRoleBody('A'),
-                    },
-                    {
-                        method: 'put',
-                        resource: 'roles/r-2',
-                        body: {
-                            rogue_field: 'oops',
-                        },
-                    },
-                    {
-                        method: 'put',
-                        resource: 'roles/r-3',
-                        body: buildRoleBody('C'),
-                    },
-                ],
+        const goodA = {
+            method: 'put' as const,
+            resource: 'roles/r-1',
+            body: buildRoleBody('A'),
+        };
+        const bad = {
+            method: 'put' as const,
+            resource: 'roles/r-2',
+            body: { rogue_field: 'oops' },
+        };
+        const goodC = {
+            method: 'put' as const,
+            resource: 'roles/r-3',
+            body: buildRoleBody('C'),
+        };
+        let caught: unknown;
+        try {
+            await ctx.commit({
+                ops: [goodA, bad, goodC],
                 notifyChannels: [ch],
-            }),
-        );
+            });
+        } catch (e) {
+            caught = e;
+        }
+        assert.ok(caught instanceof CommitError);
+        const err = caught as CommitError;
+        assert.equal(err.failedAt, 1);
+        assert.equal(err.applied.length, 1);
+        assert.equal(err.applied[0], goodA);
+        assert.ok(err.cause instanceof Error);
+        // No rollback: first op landed.
         const all = await db.roles.getAll();
-        // The first op landed; the third never
-        // ran. No rollback — that's the contract
-        // we're locking in until Postgres lands.
         assert.equal(all.length, 1);
         assert.equal(all[0]!.name, 'A');
+        // Channel did NOT fire.
         assert.equal(count, 0);
+    },
+);
+
+test(
+    'ctx.commit CommitError reports failedAt 0'
+    + ' when first op fails',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = createRequestContext(db);
+        const bad = {
+            method: 'put' as const,
+            resource: 'roles/r-1',
+            body: { rogue_field: 'oops' },
+        };
+        let caught: unknown;
+        try {
+            await ctx.commit({ ops: [bad] });
+        } catch (e) { caught = e; }
+        assert.ok(caught instanceof CommitError);
+        assert.equal(
+            (caught as CommitError).failedAt, 0,
+        );
+        assert.equal(
+            (caught as CommitError).applied.length,
+            0,
+        );
+    },
+);
+
+test(
+    'ctx.commit CommitError reports failedAt N-1'
+    + ' when final op fails',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = createRequestContext(db);
+        const goodA = {
+            method: 'put' as const,
+            resource: 'roles/r-1',
+            body: buildRoleBody('A'),
+        };
+        const goodB = {
+            method: 'put' as const,
+            resource: 'roles/r-2',
+            body: buildRoleBody('B'),
+        };
+        const bad = {
+            method: 'put' as const,
+            resource: 'roles/r-3',
+            body: { rogue_field: 'oops' },
+        };
+        let caught: unknown;
+        try {
+            await ctx.commit({
+                ops: [goodA, goodB, bad],
+            });
+        } catch (e) { caught = e; }
+        assert.ok(caught instanceof CommitError);
+        assert.equal(
+            (caught as CommitError).failedAt, 2,
+        );
+        assert.equal(
+            (caught as CommitError).applied.length,
+            2,
+        );
     },
 );

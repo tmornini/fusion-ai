@@ -65,6 +65,27 @@ export interface Transaction {
     readonly notifyChannels?: readonly Channel<void>[];
 }
 
+export class CommitError extends Error {
+    readonly failedAt: number;
+    readonly applied: readonly WriteOp[];
+    readonly cause: Error;
+    constructor(
+        failedAt: number,
+        applied: readonly WriteOp[],
+        cause: Error,
+    ) {
+        super(
+            'commit failed at op['
+            + failedAt + ']: '
+            + cause.message,
+        );
+        this.name = 'CommitError';
+        this.failedAt = failedAt;
+        this.applied = applied;
+        this.cause = cause;
+    }
+}
+
 export interface RequestContext {
     readonly requestId: string;
     GET<T>(resource: string): Promise<T>;
@@ -297,14 +318,28 @@ export function createRequestContext(
         commit: async (
             tx: Transaction,
         ): Promise<void> => {
-            for (const op of tx.ops) {
-                if (op.method === 'put') {
-                    await ctx.PUT(
-                        op.resource,
-                        op.body,
+            const applied: WriteOp[] = [];
+            for (
+                const [i, op] of tx.ops.entries()
+            ) {
+                try {
+                    if (op.method === 'put') {
+                        await ctx.PUT(
+                            op.resource,
+                            op.body,
+                        );
+                    } else {
+                        await ctx.DELETE(
+                            op.resource,
+                        );
+                    }
+                    applied.push(op);
+                } catch (e) {
+                    throw new CommitError(
+                        i,
+                        applied,
+                        e as Error,
                     );
-                } else {
-                    await ctx.DELETE(op.resource);
                 }
             }
             if (tx.notifyChannels) {
