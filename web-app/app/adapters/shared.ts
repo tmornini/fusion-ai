@@ -13,10 +13,12 @@ import type { Channel } from '../channels.ts';
 
 // A unit of write work executed by ctx.commit().
 // `put` upserts a row by full state; `delete` removes
-// a row by its resource path. Sequenced in order;
-// best-effort, no rollback (real atomicity arrives
-// with Postgres). notifyChannels fire once after the
-// last op succeeds — single batched event per
+// a row by its resource path. Sequenced in order; on
+// failure, commit() throws CommitError(failedAt,
+// applied, cause) so the caller can name the failed
+// op and reconcile. No rollback (real atomicity
+// arrives with Postgres). notifyChannels fire only
+// after all ops succeed — single batched event per
 // channel per logical operation.
 export type WriteOp =
     | {
