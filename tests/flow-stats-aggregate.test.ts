@@ -6,9 +6,13 @@ import {
     clipInterval,
     type FlowStatsInput,
     type FlowStatsModel,
+    type FlowPath,
 } from '../web-app/app/flow-stats-aggregate.ts';
-import type { JsonObjectField }
-    from '../api/types.ts';
+import type {
+    JsonObjectField,
+    WorkOrderEntity,
+    WorkOrderTransitionEntity,
+} from '../api/types.ts';
 
 export function makeFixture(): FlowStatsInput {
     return {
@@ -612,4 +616,122 @@ test('user-private role and model nodes never hazard', () => {
     const m = buildFlowStats({ ...f, nodes });
     assert.equal(m.nodes.find(n => n.id === 'a')!.hasHazard, false);
     assert.equal(m.nodes.find(n => n.id === 'b')!.hasHazard, false);
+});
+
+test('groups completed paths and sorts by frequency desc', () => {
+    const f = makeFixture();
+    const t = (msAgo: number) => tBefore(f, msAgo);
+    const H = 3600 * 1000;
+    function happyTrans(woId: string, startMs: number) {
+        return [
+            { id:woId+'A', work_order_id:woId,
+              from_node_id:'',
+              to_node_id:'c', person_id:'p1',
+              transitioned_at:t(startMs) },
+            { id:woId+'B', work_order_id:woId,
+              from_node_id:'c',
+              to_node_id:'a', person_id:'p1',
+              transitioned_at:t(startMs) },
+            { id:woId+'C', work_order_id:woId,
+              from_node_id:'a',
+              to_node_id:'b', person_id:'p1',
+              transitioned_at:t(startMs - 1*H) },
+            { id:woId+'D', work_order_id:woId,
+              from_node_id:'b',
+              to_node_id:'z', person_id:'p1',
+              transitioned_at:t(startMs - 2*H) },
+        ];
+    }
+    const loopTrans = [
+        { id:'lA', work_order_id:'wl',
+          from_node_id:'',
+          to_node_id:'c', person_id:'p1',
+          transitioned_at:t(10*H) },
+        { id:'lB', work_order_id:'wl',
+          from_node_id:'c',
+          to_node_id:'a', person_id:'p1',
+          transitioned_at:t(10*H) },
+        { id:'lC', work_order_id:'wl',
+          from_node_id:'a',
+          to_node_id:'b', person_id:'p1',
+          transitioned_at:t(9*H) },
+        { id:'lD', work_order_id:'wl',
+          from_node_id:'b',
+          to_node_id:'a', person_id:'p1',
+          transitioned_at:t(8*H) },
+        { id:'lE', work_order_id:'wl',
+          from_node_id:'a',
+          to_node_id:'b', person_id:'p1',
+          transitioned_at:t(7*H) },
+        { id:'lF', work_order_id:'wl',
+          from_node_id:'b',
+          to_node_id:'z', person_id:'p1',
+          transitioned_at:t(6*H) },
+    ];
+    const input: FlowStatsInput = { ...f,
+        workOrders: [
+            emptyWO('w1', t(10*H)),
+            emptyWO('w2', t(9*H)),
+            emptyWO('w3', t(8*H)),
+            emptyWO('wl', t(10*H)),
+        ],
+        transitions: [
+            ...happyTrans('w1', 10 * H),
+            ...happyTrans('w2',  9 * H),
+            ...happyTrans('w3',  8 * H),
+            ...loopTrans,
+        ],
+    };
+    const m = buildFlowStats(input);
+    assert.equal(m.pathEntries.length, 2);
+    const top = m.pathEntries[0]! as
+        { kind: 'path'; path: FlowPath };
+    assert.deepEqual(top.path.nodeIds, ['c','a','b','z']);
+    assert.equal(top.path.workOrderCount, 3);
+    assert.equal(top.path.sharePct, 75);
+    assert.deepEqual(top.path.edgeIds, ['e1','e2','e3']);
+    const second = m.pathEntries[1]! as
+        { kind: 'path'; path: FlowPath };
+    assert.deepEqual(second.path.nodeIds,
+        ['c','a','b','a','b','z']);
+    assert.equal(second.path.workOrderCount, 1);
+    assert.equal(second.path.sharePct, 25);
+});
+
+test('collapses long tail into a rest bucket', () => {
+    const f = makeFixture();
+    const t = (msAgo: number) => tBefore(f, msAgo);
+    const H = 3600 * 1000;
+    const workOrders: WorkOrderEntity[] = [];
+    const transitions: WorkOrderTransitionEntity[] = [];
+    for (let i = 0; i < 10; i++) {
+        const woId = 'w' + i;
+        workOrders.push(emptyWO(woId, t(50 * H)));
+        let step = 0;
+        let nowAgoH = 50;
+        const push = (from: string, to: string) =>
+            transitions.push({
+                id: woId + '-' + (step++),
+                work_order_id: woId,
+                from_node_id: from, to_node_id: to,
+                person_id: 'p1',
+                transitioned_at: t(nowAgoH-- * H),
+            });
+        push('', 'c');
+        push('c', 'a');
+        for (let k = 0; k < i; k++) {
+            push('a', 'b');
+            push('b', 'a');
+        }
+        push('a', 'b');
+        push('b', 'z');
+    }
+    const m = buildFlowStats({ ...f, workOrders, transitions });
+    assert.equal(m.pathEntries.length, 9);
+    assert.equal(m.pathEntries[8]!.kind, 'rest');
+    const rest = m.pathEntries[8]! as
+        { kind:'rest'; count:number;
+          combinedSharePct:number };
+    assert.equal(rest.count, 2);
+    assert.equal(rest.combinedSharePct, 20);
 });

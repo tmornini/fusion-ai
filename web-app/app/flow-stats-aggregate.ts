@@ -540,10 +540,72 @@ export function buildFlowStats(
         };
     });
 
+    const MAX_VISIBLE_PATHS = 8;
+
+    const edgeIdByPair = new Map<string, string>();
+    for (const e of input.edges) {
+        edgeIdByPair.set(
+            e.fromNodeId + '\0' + e.toNodeId, e.id,
+        );
+    }
+
+    interface PathBucket {
+        nodeIds: string[];
+        edgeIds: string[];
+        count: number;
+    }
+    const byKey = new Map<string, PathBucket>();
+    for (const run of runs) {
+        if (!run.completed) continue;
+        const ids = run.pathNodeIds.slice();
+        const key = JSON.stringify(ids);
+        const cur = byKey.get(key);
+        if (cur) { cur.count++; continue; }
+        const edgeIds: string[] = [];
+        for (let i = 0; i + 1 < ids.length; i++) {
+            const eid = edgeIdByPair.get(
+                ids[i]! + '\0' + ids[i + 1]!,
+            );
+            if (eid !== undefined) edgeIds.push(eid);
+        }
+        byKey.set(key, { nodeIds: ids, edgeIds, count: 1 });
+    }
+    const sortedBuckets =
+        Array.from(byKey.values())
+             .sort((a, b) => b.count - a.count);
+    const totalCompleted =
+        sortedBuckets.reduce((s, b) => s + b.count, 0);
+    const visible = sortedBuckets.slice(0, MAX_VISIBLE_PATHS);
+    const restBuckets = sortedBuckets.slice(MAX_VISIBLE_PATHS);
+    const pathEntries: PathEntry[] = visible.map(b => ({
+        kind: 'path',
+        path: {
+            nodeIds: b.nodeIds, edgeIds: b.edgeIds,
+            workOrderCount: b.count,
+            sharePct: totalCompleted > 0
+                ? Math.round(
+                    (b.count / totalCompleted) * 100,
+                )
+                : 0,
+        },
+    }));
+    if (restBuckets.length > 0) {
+        const restCount =
+            restBuckets.reduce((s, b) => s + b.count, 0);
+        pathEntries.push({
+            kind: 'rest', count: restCount,
+            combinedSharePct: totalCompleted > 0
+                ? Math.round(
+                    (restCount / totalCompleted) * 100,
+                )
+                : 0,
+        });
+    }
+
     return {
         nodes: stats,
         edges: input.edges,
-        pathEntries: [],
+        pathEntries,
         completedWorkOrderCount:
             runs.filter(r => r.completed).length,
         incompleteWorkOrderCount:
