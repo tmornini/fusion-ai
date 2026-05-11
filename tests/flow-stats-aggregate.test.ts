@@ -285,3 +285,96 @@ test(
         );
     },
 );
+
+test(
+    'per-node percentiles, visits, WIP,'
+    + ' throughput, revisit',
+    () => {
+        const f = makeFixture();
+        const t = (msAgo: number) =>
+            tBefore(f, msAgo);
+        const H = 3600 * 1000;
+        // w1: c→a(2h)→b(1h)→z   (complete)
+        // w2: c→a(4h)→b→a(1h)→b→z  (a revisited)
+        // w3: c→a  (still in-flight at a)
+        const input: FlowStatsInput = { ...f,
+            workOrders: [
+                emptyWO('w1', t(3 * H)),
+                emptyWO('w2', t(6 * H)),
+                emptyWO('w3', t(1 * H)),
+            ],
+            transitions: [
+                { id: '1a', work_order_id: 'w1',
+                  from_node_id: '',
+                  to_node_id: 'c', person_id: 'p1',
+                  transitioned_at: t(3 * H) },
+                { id: '1b', work_order_id: 'w1',
+                  from_node_id: 'c',
+                  to_node_id: 'a', person_id: 'p1',
+                  transitioned_at: t(3 * H) },
+                { id: '1c', work_order_id: 'w1',
+                  from_node_id: 'a',
+                  to_node_id: 'b', person_id: 'p1',
+                  transitioned_at: t(1 * H) },
+                { id: '1d', work_order_id: 'w1',
+                  from_node_id: 'b',
+                  to_node_id: 'z', person_id: 'p1',
+                  transitioned_at: t(0) },
+                { id: '2a', work_order_id: 'w2',
+                  from_node_id: '',
+                  to_node_id: 'c', person_id: 'p2',
+                  transitioned_at: t(6 * H) },
+                { id: '2b', work_order_id: 'w2',
+                  from_node_id: 'c',
+                  to_node_id: 'a', person_id: 'p2',
+                  transitioned_at: t(6 * H) },
+                { id: '2c', work_order_id: 'w2',
+                  from_node_id: 'a',
+                  to_node_id: 'b', person_id: 'p2',
+                  transitioned_at: t(2 * H) },
+                { id: '2d', work_order_id: 'w2',
+                  from_node_id: 'b',
+                  to_node_id: 'a', person_id: 'p2',
+                  transitioned_at: t(2 * H) },
+                { id: '2e', work_order_id: 'w2',
+                  from_node_id: 'a',
+                  to_node_id: 'b', person_id: 'p2',
+                  transitioned_at: t(1 * H) },
+                { id: '2f', work_order_id: 'w2',
+                  from_node_id: 'b',
+                  to_node_id: 'z', person_id: 'p2',
+                  transitioned_at: t(0) },
+                { id: '3a', work_order_id: 'w3',
+                  from_node_id: '',
+                  to_node_id: 'c', person_id: 'p3',
+                  transitioned_at: t(1 * H) },
+                { id: '3b', work_order_id: 'w3',
+                  from_node_id: 'c',
+                  to_node_id: 'a', person_id: 'p3',
+                  transitioned_at: t(1 * H) },
+            ],
+        };
+        const m = buildFlowStats(input);
+        const a = m.nodes.find(n => n.id === 'a')!;
+        const b = m.nodes.find(n => n.id === 'b')!;
+        // a visits: w1×1 + w2×2 + w3×1 = 4
+        assert.equal(a.visitsInWindow, 4);
+        assert.equal(a.distinctWorkOrders, 3);
+        assert.equal(a.currentlyHere, 1);
+        // revisits: w2's 2nd visit → 1/4 = 25%
+        assert.equal(a.revisitRatePct, 25);
+        // throughput: 4 / (90/7) ≈ 0.31
+        assert.equal(
+            a.throughputPerWeek.toFixed(2), '0.31',
+        );
+        assert.equal(b.visitsInWindow, 3);
+        assert.equal(b.currentlyHere, 0);
+        // a sojourns sorted: [3600, 3600, 7200, 14400]
+        // avg 7200, median (q*(n-1)=1.5 between
+        // idx1=3600 and idx2=7200) = 5400,
+        // p90 (idx=2.7 → 7200+0.7*(14400-7200) = 12240)
+        assert.equal(a.avgSeconds,    7200);
+        assert.equal(a.medianSeconds, 5400);
+        assert.equal(a.p90Seconds,    12240);
+    },
+);

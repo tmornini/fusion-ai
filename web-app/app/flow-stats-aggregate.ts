@@ -228,6 +228,73 @@ export function buildFlowStats(
         }
     }
 
+    // Second pass: visit counts, percentile arrays,
+    // WIP, and revisit tracking.
+    // We count a visit whenever the sojourn interval
+    // *touches* the window (not just when sec > 0),
+    // because an instantaneous occupancy (enterMs ===
+    // exitMs within the window) is a real visit but
+    // yields sec === 0 after clipInterval.
+    const sojournsByNode = new Map<string, number[]>();
+    const visitsByNode   = new Map<string, number>();
+    const woIdsByNode    =
+        new Map<string, Set<string>>();
+    const revisitsByNode = new Map<string, number>();
+    const currentlyAt   = new Map<string, number>();
+
+    for (const run of runs) {
+        const seenInRun = new Set<string>();
+        for (const s of run.sojourns) {
+            if (s.enterMs > winHi
+                || s.exitMs < winLo) continue;
+            const sec = clipInterval(
+                s.enterMs, s.exitMs, winLo, winHi,
+            );
+            if (sec > 0) {
+                const arr =
+                    sojournsByNode.get(s.nodeId) ?? [];
+                arr.push(sec);
+                sojournsByNode.set(s.nodeId, arr);
+            }
+            visitsByNode.set(
+                s.nodeId,
+                (visitsByNode.get(s.nodeId) ?? 0) + 1,
+            );
+            const woIds =
+                woIdsByNode.get(s.nodeId)
+                ?? new Set<string>();
+            woIds.add(run.workOrderId);
+            woIdsByNode.set(s.nodeId, woIds);
+            if (seenInRun.has(s.nodeId)) {
+                revisitsByNode.set(
+                    s.nodeId,
+                    (revisitsByNode.get(s.nodeId) ?? 0)
+                    + 1,
+                );
+            }
+            seenInRun.add(s.nodeId);
+        }
+        // A run whose last path node isn't the
+        // complete node contributes to WIP at that
+        // node.
+        if (!run.completed
+            && run.pathNodeIds.length > 0) {
+            const last =
+                run.pathNodeIds[
+                    run.pathNodeIds.length - 1
+                ]!;
+            const lastNode = nodeById.get(last);
+            if (lastNode && !lastNode.isComplete) {
+                currentlyAt.set(
+                    last,
+                    (currentlyAt.get(last) ?? 0) + 1,
+                );
+            }
+        }
+    }
+
+    const weeks = input.windowDays / 7;
+
     const stats: NodeStat[] = input.nodes.map(n => {
         const sec = nodeSec.get(n.id) ?? 0;
         const heatPct =
@@ -238,7 +305,45 @@ export function buildFlowStats(
                 : 0;
         const heatT =
             Math.min(1, Math.max(0, heatPct / 100));
-        return { ...emptyNodeStat(n), heatPct, heatT };
+        const sojourns =
+            (sojournsByNode.get(n.id) ?? [])
+            .slice()
+            .sort((x, y) => x - y);
+        const visits   = visitsByNode.get(n.id) ?? 0;
+        const revisits =
+            revisitsByNode.get(n.id) ?? 0;
+        return { ...emptyNodeStat(n),
+            heatPct, heatT,
+            avgSeconds: sojourns.length === 0
+                ? null
+                : Math.round(
+                    sojourns.reduce(
+                        (acc, x) => acc + x, 0,
+                    ) / sojourns.length,
+                ),
+            medianSeconds: sojourns.length === 0
+                ? null
+                : Math.round(
+                    quantile(sojourns, 0.5),
+                ),
+            p90Seconds: sojourns.length === 0
+                ? null
+                : Math.round(
+                    quantile(sojourns, 0.9),
+                ),
+            visitsInWindow:     visits,
+            distinctWorkOrders:
+                woIdsByNode.get(n.id)?.size ?? 0,
+            currentlyHere:
+                currentlyAt.get(n.id) ?? 0,
+            throughputPerWeek:
+                weeks > 0 ? visits / weeks : 0,
+            revisitRatePct: visits > 0
+                ? Math.round(
+                    (revisits / visits) * 100,
+                )
+                : 0,
+        };
     });
 
     return {
