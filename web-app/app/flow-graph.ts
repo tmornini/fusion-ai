@@ -14,6 +14,7 @@ import { iconAlertTriangle } from './icons.ts';
 import {
     START_NODE_DEFAULT_NAME,
     END_NODE_DEFAULT_NAME,
+    isUserPrivateRoleId,
 } from '../../api/types.ts';
 
 function nodeHasConnections(
@@ -426,12 +427,6 @@ export function computeEdgeLabelWidth(
     );
 }
 
-// User-private role ids share their own
-// prefix; mirrored here so flow-graph.ts is
-// not coupled to the roles adapter.
-const USER_PRIVATE_ROLE_PREFIX_FOR_GRAPH =
-    'user-private:';
-
 export function shouldShowHazard(
     node: GraphNode,
     roleMemberCounts:
@@ -444,9 +439,7 @@ export function shouldShowHazard(
     if (a.kind === 'role') {
         // User-private roles always have
         // cardinality 1 by construction.
-        if (a.roleId.startsWith(
-            USER_PRIVATE_ROLE_PREFIX_FOR_GRAPH,
-        )) {
+        if (isUserPrivateRoleId(a.roleId)) {
             return false;
         }
         const count = roleMemberCounts

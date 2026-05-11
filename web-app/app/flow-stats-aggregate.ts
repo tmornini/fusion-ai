@@ -5,11 +5,11 @@ import type {
     WorkOrderEntity,
     WorkOrderTransitionEntity,
 } from '../../api/types.ts';
-import { MS_PER_DAY } from '../../api/types.ts';
 import {
+    MS_PER_DAY,
     isUserPrivateRoleId,
     personIdFromUserPrivateRoleId,
-} from './adapters/roles.ts';
+} from '../../api/types.ts';
 
 export interface FlowStatsInput {
     readonly nodes: readonly GraphNode[];
