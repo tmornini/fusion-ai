@@ -1866,6 +1866,15 @@ html[data-page="flow-stats"] .page-content {
   min-height: 0;
   overflow: hidden;
 }
+/* The page-content fragment wraps .flow-stats in #flow-stats;   */
+/* keep it in the flex chain so the canvas shrinks to make room  */
+/* for the stepper bar and legend instead of pushing them off.   */
+html[data-page="flow-stats"] #flow-stats {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
 
 .flow-stats {
   display: flex;
