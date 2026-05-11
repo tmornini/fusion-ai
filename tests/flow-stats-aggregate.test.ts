@@ -529,3 +529,87 @@ test('model-assigned node carries modelName,'
         a.assignmentLabel, 'Model: Claude Opus',
     );
 });
+
+test('branch split distributes outgoing transitions across edges', () => {
+    const f = makeFixture();
+    const t = (msAgo: number) => tBefore(f, msAgo);
+    const H = 3600 * 1000;
+    // b has two outgoing edges (e3 approve→z, e4 revise→a).
+    // 8 OUT from b: 6 to z, 2 to a.
+    const enters = Array.from({ length: 8 }, (_, i) => ({
+        id:'in'+i, work_order_id:'w'+i,
+        from_node_id:'a', to_node_id:'b', person_id:'p1',
+        transitioned_at:t((20-i) * H),
+    }));
+    const outs = [
+        { id:'o1', work_order_id:'w0', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(0) },
+        { id:'o2', work_order_id:'w1', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(1*H) },
+        { id:'o3', work_order_id:'w2', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(2*H) },
+        { id:'o4', work_order_id:'w3', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(3*H) },
+        { id:'o5', work_order_id:'w4', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(4*H) },
+        { id:'o6', work_order_id:'w5', from_node_id:'b',
+          to_node_id:'z', person_id:'p1', transitioned_at:t(5*H) },
+        { id:'o7', work_order_id:'w6', from_node_id:'b',
+          to_node_id:'a', person_id:'p1', transitioned_at:t(6*H) },
+        { id:'o8', work_order_id:'w7', from_node_id:'b',
+          to_node_id:'a', person_id:'p1', transitioned_at:t(7*H) },
+    ];
+    const input: FlowStatsInput = { ...f,
+        workOrders: Array.from({length:8}, (_, i) =>
+            emptyWO('w' + i, t(20 * H))),
+        transitions: [...enters, ...outs],
+    };
+    const m = buildFlowStats(input);
+    const b = m.nodes.find(n => n.id === 'b')!;
+    assert.equal(b.branchSplit.length, 2);
+    assert.equal(b.branchSplit[0]!.label, 'approve');
+    assert.equal(b.branchSplit[0]!.pct, 75);
+    assert.equal(b.branchSplit[1]!.label, 'revise');
+    assert.equal(b.branchSplit[1]!.pct, 25);
+});
+
+test('branchSplit empty on linear (single-out) nodes', () => {
+    const m = buildFlowStats(makeFixture());
+    assert.equal(
+        m.nodes.find(n => n.id === 'a')!.branchSplit.length, 0);
+});
+
+test('hasHazard fires on unassigned non-special nodes', () => {
+    const m = buildFlowStats(makeFixture());
+    assert.equal(m.nodes.find(n => n.id === 'a')!.hasHazard, true);
+    assert.equal(m.nodes.find(n => n.id === 'b')!.hasHazard, true);
+    assert.equal(m.nodes.find(n => n.id === 'c')!.hasHazard, false);
+    assert.equal(m.nodes.find(n => n.id === 'z')!.hasHazard, false);
+});
+
+test('hasHazard fires on empty-role and empty-crew assignments', () => {
+    const f = makeFixture();
+    const nodes = f.nodes.map(n =>
+        n.id === 'a'
+            ? { ...n, crew: { kind:'role' as const, roleId:'empty' } }
+        : n.id === 'b'
+            ? { ...n, crew: { kind:'crew' as const, crewId:'empty' } }
+        : n);
+    const m = buildFlowStats({ ...f, nodes });
+    assert.equal(m.nodes.find(n => n.id === 'a')!.hasHazard, true);
+    assert.equal(m.nodes.find(n => n.id === 'b')!.hasHazard, true);
+});
+
+test('user-private role and model nodes never hazard', () => {
+    const f = makeFixture();
+    const nodes = f.nodes.map(n =>
+        n.id === 'a'
+            ? { ...n, crew: { kind:'role' as const,
+                              roleId:'user-private:p7' } }
+        : n.id === 'b'
+            ? { ...n, crew: { kind:'model' as const, modelId:'m1' } }
+        : n);
+    const m = buildFlowStats({ ...f, nodes });
+    assert.equal(m.nodes.find(n => n.id === 'a')!.hasHazard, false);
+    assert.equal(m.nodes.find(n => n.id === 'b')!.hasHazard, false);
+});

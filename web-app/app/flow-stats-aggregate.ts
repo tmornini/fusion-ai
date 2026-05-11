@@ -384,6 +384,15 @@ export function buildFlowStats(
         outByNode.set(t.from_node_id, inner);
     }
 
+    // Precompute outgoing edges per node so each
+    // node's branchSplit can look them up in O(1).
+    const outgoingEdgesByNode = new Map<string, GraphEdge[]>();
+    for (const e of input.edges) {
+        const arr = outgoingEdgesByNode.get(e.fromNodeId) ?? [];
+        arr.push(e);
+        outgoingEdgesByNode.set(e.fromNodeId, arr);
+    }
+
     const stats: NodeStat[] = input.nodes.map(n => {
         const sec = nodeSec.get(n.id) ?? 0;
         const heatPct =
@@ -444,6 +453,51 @@ export function buildFlowStats(
                 inCurrentClan: clan.ids.has(pid),
             };
         }
+        const outEdges =
+            outgoingEdgesByNode.get(n.id) ?? [];
+        let branchSplit: NodeStat['branchSplit'] = [];
+        if (outEdges.length > 1) {
+            // Count OUT-transitions per target within
+            // the window to compute route percentages.
+            const perTarget = new Map<string, number>();
+            for (const tx of input.transitions) {
+                if (tx.from_node_id !== n.id) continue;
+                const ms = Date.parse(tx.transitioned_at);
+                if (ms < winLo || ms > winHi) continue;
+                perTarget.set(tx.to_node_id,
+                    (perTarget.get(tx.to_node_id) ?? 0)
+                    + 1);
+            }
+            const total =
+                Array.from(perTarget.values())
+                     .reduce((s, v) => s + v, 0);
+            branchSplit = outEdges.map(e => ({
+                edgeId: e.id,
+                // Edge name trumps target node name;
+                // fall back to target node id last.
+                label: e.name !== ''
+                    ? e.name
+                    : (nodeById.get(e.toNodeId)?.name
+                       ?? e.toNodeId),
+                toNodeId: e.toNodeId,
+                pct: total > 0
+                    ? Math.round(
+                        ((perTarget.get(e.toNodeId)
+                          ?? 0) / total) * 100)
+                    : 0,
+            })).sort((a, b) => b.pct - a.pct);
+        }
+
+        // Unassigned, zero-member-role, and
+        // zero-member-crew nodes are hazardous —
+        // but never special nodes (start/complete),
+        // user-private roles (clan always ≥ 1),
+        // or model-assigned nodes.
+        const hasHazard =
+            !n.isStart && !n.isComplete
+            && n.crew.kind !== 'model'
+            && clan.ids.size === 0;
+
         return { ...emptyNodeStat(n),
             heatPct, heatT,
             avgSeconds: sojourns.length === 0
@@ -480,6 +534,9 @@ export function buildFlowStats(
             topProducer,
             modelName:       clan.modelName,
             assignmentLabel: clan.label,
+            outgoingEdgeIds: outEdges.map(e => e.id),
+            branchSplit,
+            hasHazard,
         };
     });
 
