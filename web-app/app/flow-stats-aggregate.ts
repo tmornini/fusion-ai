@@ -136,3 +136,29 @@ export function buildFlowStats(
         pathsWithDroppedStepsCount: 0,
     };
 }
+
+export function quantile(
+    sorted: readonly number[],
+    q: number,
+): number {
+    if (sorted.length === 0) return 0;
+    if (sorted.length === 1) return sorted[0]!;
+    const idx = q * (sorted.length - 1);
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    if (lo === hi) return sorted[lo]!;
+    return sorted[lo]!
+        + (sorted[hi]! - sorted[lo]!) * (idx - lo);
+}
+
+export function clipInterval(
+    startMs: number, endMs: number,
+    loMs:    number, hiMs:  number,
+): number {
+    if (endMs <= startMs) return 0;
+    const start = Math.max(startMs, loMs);
+    const end   = Math.min(endMs,   hiMs);
+    return end <= start
+        ? 0
+        : Math.round((end - start) / 1000);
+}

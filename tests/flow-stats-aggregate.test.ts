@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     buildFlowStats,
+    quantile,
+    clipInterval,
     type FlowStatsInput,
     type FlowStatsModel,
 } from '../web-app/app/flow-stats-aggregate.ts';
@@ -62,6 +64,27 @@ export function makeFixture(): FlowStatsInput {
         crewNameById:   new Map(),
     };
 }
+
+test('quantile is linear-interpolation, p50 is true median', () => {
+    assert.equal(quantile([60, 120, 180, 240, 300], 0.5), 180);
+    assert.equal(quantile([60, 120, 180, 240, 300], 0.9), 276);
+    assert.equal(quantile([10],                    0.5),  10);
+    assert.equal(quantile([1, 3],                  0.5),   2);
+});
+
+test('quantile on empty input returns 0', () => {
+    assert.equal(quantile([], 0.5), 0);
+});
+
+test('clipInterval returns overlap in seconds', () => {
+    // window [10000, 100000] ms = [10s, 100s].
+    assert.equal(clipInterval(50000,  80000, 10000, 100000), 30);
+    assert.equal(clipInterval(0,      50000, 10000, 100000), 40);
+    assert.equal(clipInterval(-100000, 200000, 10000, 100000), 90);
+    assert.equal(clipInterval(0,      5000,  10000, 100000), 0);
+    assert.equal(clipInterval(110000, 200000, 10000, 100000), 0);
+    assert.equal(clipInterval(80000,  50000, 10000, 100000), 0);
+});
 
 test(
     'buildFlowStats returns the structural shape'
