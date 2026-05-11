@@ -41,7 +41,7 @@ const WARN = '#d97706';
 const GREEN = '#16a34a';
 const RED = '#b91c1c';
 
-const GRID_CELL = 24;
+export const GRID_CELL = 24;
 const GRID_DOT_RADIUS = 0.7;
 
 // Glow filter on highlighted edges. Filter
@@ -65,7 +65,7 @@ const STROKE_NORMAL = 2;
 const STROKE_START = 2.5;
 const STROKE_COMPLETE = 3;
 
-const NODE_RADIUS = 10;
+export const NODE_RADIUS = 10;
 
 const PORT_RADIUS = 5;
 const PORT_STROKE = 2;
