@@ -5,6 +5,8 @@ import { buildStatsGraphSvg }
 import type {
     FlowStatsModel, NodeStat,
 } from '../web-app/app/flow-stats-aggregate.ts';
+import { FlowStatsPresenter }
+    from '../web-app/app/presenters/flow-stats.ts';
 
 function model(): FlowStatsModel {
     const node =
@@ -122,4 +124,133 @@ test('no highlight ⇒ no data-dim or data-on-path anywhere', () => {
     const html = buildStatsGraphSvg(model(), VB, null).toString();
     assert.doesNotMatch(html, /data-dim="true"/);
     assert.doesNotMatch(html, /data-on-path="true"/);
+});
+
+// ---- FlowStatsPresenter tests ----
+
+function modelWithPaths(): FlowStatsModel {
+    return {
+        ...model(),
+        completedWorkOrderCount: 12,
+        incompleteWorkOrderCount: 3,
+        pathEntries: [
+            {
+                kind: 'path',
+                path: {
+                    nodeIds: ['c', 'a', 'z'],
+                    edgeIds: ['e1', 'e2'],
+                    workOrderCount: 9,
+                    sharePct: 75,
+                },
+            },
+            {
+                kind: 'path',
+                path: {
+                    nodeIds: ['c', 'a'],
+                    edgeIds: ['e1'],
+                    workOrderCount: 2,
+                    sharePct: 17,
+                },
+            },
+            {
+                kind: 'rest',
+                count: 1,
+                combinedSharePct: 8,
+            },
+        ],
+    };
+}
+
+test('buildShell contains required structural elements', () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildShell().toString();
+    assert.match(s, /id="flow-stats-back"/);
+    assert.match(s,
+        /class="flow-stats-canvas-host"/);
+    assert.match(s,
+        /id="flow-stats-card"[^>]*class="[^"]*hidden/);
+    assert.match(s, /Trailing 90 days/);
+    // no dropped nodes in this fixture
+    assert.doesNotMatch(s,
+        /omitted from this view/i);
+});
+
+test('buildShell includes footnote when droppedNodeIds non-empty',
+    () => {
+    const m: FlowStatsModel = {
+        ...modelWithPaths(),
+        droppedNodeIds: new Set(['x']),
+        pathsWithDroppedStepsCount: 2,
+    };
+    const p = new FlowStatsPresenter(
+        m, { x: 0, y: 0, w: 600, h: 200 },
+    );
+    assert.match(
+        p.buildShell().toString(),
+        /omitted from this view/i,
+    );
+});
+
+test('buildStepperBar idx 0: path label, 75%, prev disabled',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildStepperBar(
+        { selectedPathIndex: 0 },
+    ).toString();
+    assert.match(s, /Path\s+1\s+of\s+3/);
+    assert.match(s,
+        /75%\s+of\s+12\s+work\s+orders/);
+    assert.match(s,
+        /data-stepper="prev"[^>]*disabled/);
+    // next must NOT be disabled at idx 0
+    assert.doesNotMatch(s,
+        /data-stepper="next"[^>]*disabled/);
+    // in-flight count appended
+    assert.match(s, /3\s+in\s+flight/);
+});
+
+test('buildStepperBar idx 1: prev not disabled', () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildStepperBar(
+        { selectedPathIndex: 1 },
+    ).toString();
+    assert.doesNotMatch(s,
+        /data-stepper="prev"[^>]*disabled/);
+});
+
+test('buildStepperBar idx 2: rest entry, next disabled', () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildStepperBar(
+        { selectedPathIndex: 2 },
+    ).toString();
+    assert.match(s, /\+\s*1\s+rarer paths/);
+    assert.match(s, /8%/);
+    assert.match(s,
+        /data-stepper="next"[^>]*disabled/);
+});
+
+test('buildLegend: structure, end labels, no linear-gradient',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildLegend().toString();
+    assert.match(s, /class="flow-stats-legend"/);
+    assert.match(s, />\s*0%\s*</);
+    assert.match(s, />\s*100%\s*</);
+    assert.doesNotMatch(s,
+        /linear-gradient\(/i);
 });
