@@ -1834,3 +1834,287 @@ svg.flow-canvas [data-edge-id] {
   color: hsl(var(--error-text));
 }
 
+/* ==========================================
+   48. FLOW STATS
+   ========================================== */
+/*
+ * Read-only diagram, 4-stop heat ramp via --heat-t (0..1):
+ *   blue @0 -> green @0.5 -> yellow @0.75 -> red @1
+ * Three chained color-mix calls, one per segment; each
+ * segment fraction is clamped to its t-range with clamp/calc.
+ */
+
+html[data-page="flow-stats"],
+html[data-page="flow-stats"] body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+html[data-page="flow-stats"] #page-root {
+  display: flex;
+  flex-direction: column;
+}
+html[data-page="flow-stats"] .sidebar-layout {
+  height: 100vh;
+}
+html[data-page="flow-stats"] .main-content {
+  min-height: 0;
+}
+html[data-page="flow-stats"] .page-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.flow-stats {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.flow-stats-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid hsl(var(--border));
+}
+.flow-stats-title-block {
+  flex: 1;
+  min-width: 0;
+}
+.flow-stats-flow-name {
+  margin: 0;
+}
+.flow-stats-flow-desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: hsl(var(--muted-foreground));
+}
+.flow-stats-window-badge {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+}
+
+.flow-stats-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.flow-stats-canvas-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  margin: var(--space-3);
+}
+.flow-stats-canvas-host {
+  width: 100%;
+  height: 100%;
+}
+svg.flow-stats-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.flow-stats-grid-bg {
+  /* --color-surface falls back to --card when absent */
+  fill: hsl(var(--color-surface, var(--card)));
+}
+
+/* Heat fill -- the doctrine. blue->green->yellow->red, */
+/* non-uniform stops, three chained color-mix segments.  */
+svg.flow-stats-canvas .flow-stats-node-rect {
+  --seg1: clamp(
+      0%,
+      calc(var(--heat-t, 0) / 0.5 * 100%),
+      100%);
+  --seg2: clamp(
+      0%,
+      calc((var(--heat-t, 0) - 0.5) / 0.25 * 100%),
+      100%);
+  --seg3: clamp(
+      0%,
+      calc((var(--heat-t, 0) - 0.75) / 0.25 * 100%),
+      100%);
+  --c01: color-mix(
+      in oklch,
+      hsl(var(--heat-stop-low)),
+      hsl(var(--heat-stop-mid)) var(--seg1));
+  --c012: color-mix(
+      in oklch,
+      var(--c01),
+      hsl(var(--heat-stop-high)) var(--seg2));
+  fill: color-mix(
+      in oklch,
+      var(--c012),
+      hsl(var(--heat-stop-peak)) var(--seg3));
+  stroke: hsl(var(--border-strong));
+  stroke-width: 2;
+}
+svg.flow-stats-canvas
+    [data-special="start"] .flow-stats-node-rect {
+  stroke: hsl(var(--success));
+  stroke-width: 2.5;
+}
+svg.flow-stats-canvas
+    [data-special="archive"] .flow-stats-node-rect {
+  stroke: hsl(var(--error));
+  stroke-width: 3;
+}
+
+.flow-stats-node-name {
+  fill: hsl(var(--foreground));
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.flow-stats-node-face {
+  fill: hsl(var(--muted-foreground));
+  font-size: 11px;
+  pointer-events: none;
+}
+.flow-stats-node-hazard {
+  color: hsl(var(--warning));
+}
+.flow-stats-node {
+  cursor: pointer;
+}
+.flow-stats-node:hover .flow-stats-node-rect {
+  stroke-width: 2.5;
+}
+
+/* Path highlight: on-path nodes/edges get accent stroke; */
+/* off-path elements fade to near-transparent.            */
+[data-dim="true"] {
+  opacity: 0.28;
+}
+[data-on-path="true"] .flow-stats-node-rect {
+  stroke: hsl(var(--accent));
+  stroke-width: 4;
+}
+[data-on-path="true"] path[marker-end] {
+  stroke: hsl(var(--accent));
+  stroke-width: 4;
+  marker-end: url(#flow-stats-arrow-accent);
+}
+
+.flow-stats-card {
+  position: absolute;
+  z-index: 20;
+  max-width: 22rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
+  /* Page module sets --card-x / --card-y (unitless px). */
+  left: clamp(
+      0px,
+      calc(var(--card-x, 0) * 1px),
+      calc(100% - 22rem));
+  top: clamp(
+      0px,
+      calc(var(--card-y, 0) * 1px - 50%),
+      calc(100% - 8rem));
+}
+.flow-stats-card.hidden {
+  display: none;
+}
+.flow-stats-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+.flow-stats-card-grid dt {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.flow-stats-card-grid dd {
+  margin: 0;
+  font-weight: 600;
+}
+.flow-stats-card-wide {
+  grid-column: 1 / -1;
+}
+.flow-stats-card-title {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.flow-stats-card-sub {
+  display: block;
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+
+.flow-stats-stepper-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+}
+.flow-stats-stepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.flow-stats-stepper-label {
+  font-size: var(--text-sm);
+  color: hsl(var(--muted-foreground));
+}
+
+.flow-stats-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+}
+.flow-stats-legend-end {
+  color: hsl(var(--muted-foreground));
+}
+.flow-stats-legend-bar {
+  display: inline-block;
+  height: 0.75rem;
+  flex: 1;
+  border-radius: 2px;
+  background: linear-gradient(
+      to right,
+      hsl(var(--heat-stop-low))  0%,
+      hsl(var(--heat-stop-mid)) 50%,
+      hsl(var(--heat-stop-high)) 75%,
+      hsl(var(--heat-stop-peak)) 100%);
+}
+.flow-stats-legend-caption {
+  color: hsl(var(--muted-foreground));
+  margin-left: var(--space-3);
+}
+.flow-stats-footnote {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border));
+}
+
+/* Below 768px the card becomes a bottom sheet. */
+@media (max-width: 767px) {
+  .flow-stats-card {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    max-width: none;
+    border-radius:
+      var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
