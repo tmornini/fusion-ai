@@ -2198,6 +2198,54 @@ export async function populateMockData(
         });
     }
 
+    // Parsed once so all prc WO snapshots
+    // match the live flow_graph shape.
+    const prcFlowGraph =
+        mockFlows[2]!.graph;
+    const prcGraphParsed = JSON.parse(
+        prcFlowGraph,
+    ) as { nodes: unknown; edges: unknown };
+    function prcGraph(): JsonObjectField {
+        return jsonObjectField({
+            flowId:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            name:
+                'Layout Test: Proposal'
+                + ' Review Cycle',
+            description:
+                'Exercises multi-exit'
+                + ' fans, nested'
+                + ' decisions,'
+                + ' convergence, and'
+                + ' cycles for Auto'
+                + ' Layout testing',
+            lockTimeout:
+                DEFAULT_LOCK_TIMEOUT,
+            nodes: prcGraphParsed.nodes,
+            edges: prcGraphParsed.edges,
+        });
+    }
+
+    // prc node id constants
+    const prcNodeStart =
+        'qfuFbfKwwlpKAewu3Uujb7';
+    const prcNodeDraft =
+        'M3HcytVGj8JNjrFS0AyVfA';
+    const prcNodeSubmit =
+        'T6I6dn4MKD50QZXlvxIm9I';
+    const prcNodeTriage =
+        'OHPERFEO1EMfDoGZnccF5F';
+    const prcNodeQuickRev =
+        'NHIpcNdKKV4gbT4QOkkXEO';
+    const prcNodeDecision =
+        'rWdJ5vz4hm9dLVhBYROSoK';
+    const prcNodeApproved =
+        '4zi5yzNsiA89SzrcEityhr';
+    const prcNodeRevise =
+        '8yXx35sqhjAb3lfkSWbsG2';
+    const prcNodeArchive =
+        '9r0eSQ4ndyaRoYbKTTDpW2';
+
     const fCompanyName =
         '5JZ0LeKdPCa4QMtg1RsF1M';
     const fEmail =
@@ -2519,6 +2567,54 @@ export async function populateMockData(
             position: 38,
             created_at: dt(103, 10, 0),
         },
+        // Proposal Review Cycle (prc01-prc06):
+        // second flow demo -- 4 happy-path, 1
+        // revisit, 1 in-flight.
+        {
+            id: 'prc01AaBbCcDdEeFfGgHhIi',
+            display_id: 'prc01aabb',
+            flow_graph: prcGraph(),
+            position: 39,
+            created_at: dt(60, 9, 0),
+        },
+        {
+            id: 'prc02JjKkLlMmNnOoPpQqRr',
+            display_id: 'prc02jjkk',
+            flow_graph: prcGraph(),
+            position: 40,
+            created_at: dt(45, 10, 0),
+        },
+        {
+            id: 'prc03SsTtUuVvWwXxYyZz00',
+            display_id: 'prc03sstt',
+            flow_graph: prcGraph(),
+            position: 41,
+            created_at: dt(30, 8, 0),
+        },
+        {
+            id: 'prc04A1B2C3D4E5F6G7H8I9',
+            display_id: 'prc04a1b2',
+            flow_graph: prcGraph(),
+            position: 42,
+            created_at: dt(20, 11, 0),
+        },
+        // prc05: revisit -- Decision sends back
+        // to Revise then Draft before completing.
+        {
+            id: 'prc05J1K2L3M4N5O6P7Q8R9',
+            display_id: 'prc05j1k2',
+            flow_graph: prcGraph(),
+            position: 43,
+            created_at: dt(15, 9, 0),
+        },
+        // prc06: in-flight -- stuck at Decision.
+        {
+            id: 'prc06S1T2U3V4W5X6Y7Z800',
+            display_id: 'prc06s1t2',
+            flow_graph: prcGraph(),
+            position: 44,
+            created_at: dt(5, 10, 0),
+        },
     ];
 
     const mockFlowWorkOrders:
@@ -2830,6 +2926,55 @@ export async function populateMockData(
             work_order_id:
                 'wo38Ix3aW6fSzGuNkpC9R',
             created_at: dt(103, 10, 0),
+        },
+        // prc join rows (Proposal Review Cycle)
+        {
+            id: 'fwo-prc01AaBbCcDdEeFfGgHhIi',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            created_at: dt(60, 9, 0),
+        },
+        {
+            id: 'fwo-prc02JjKkLlMmNnOoPpQqRr',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            created_at: dt(45, 10, 0),
+        },
+        {
+            id: 'fwo-prc03SsTtUuVvWwXxYyZz00',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            created_at: dt(30, 8, 0),
+        },
+        {
+            id: 'fwo-prc04A1B2C3D4E5F6G7H8I9',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            created_at: dt(20, 11, 0),
+        },
+        {
+            id: 'fwo-prc05J1K2L3M4N5O6P7Q8R9',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            created_at: dt(15, 9, 0),
+        },
+        {
+            id: 'fwo-prc06S1T2U3V4W5X6Y7Z800',
+            flow_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            created_at: dt(5, 10, 0),
         },
     ];
 
@@ -4305,6 +4450,484 @@ export async function populateMockData(
             person_id: woPersonMike,
             transitioned_at: dt(100, 9, 0),
         },
+        // prc01: happy path, ~3 day draft sojourn
+        {
+            id: 'wprc01-1',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonSarah,
+            transitioned_at: dt(60, 9, 0),
+        },
+        {
+            id: 'wprc01-2',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonSarah,
+            transitioned_at: dt(60, 9, 5),
+        },
+        {
+            id: 'wprc01-3',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonMike,
+            transitioned_at: dt(57, 10, 0),
+        },
+        {
+            id: 'wprc01-4',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonMike,
+            transitioned_at: dt(57, 10, 30),
+        },
+        {
+            id: 'wprc01-5',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(57, 11, 0),
+        },
+        {
+            id: 'wprc01-6',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(56, 14, 0),
+        },
+        {
+            id: 'wprc01-7',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeApproved,
+            person_id: woPersonSarah,
+            transitioned_at: dt(56, 15, 0),
+        },
+        {
+            id: 'wprc01-8',
+            work_order_id:
+                'prc01AaBbCcDdEeFfGgHhIi',
+            from_node_id: prcNodeApproved,
+            to_node_id: prcNodeArchive,
+            person_id: woPersonSarah,
+            transitioned_at: dt(55, 9, 0),
+        },
+        // prc02: happy path, ~2 day draft sojourn
+        {
+            id: 'wprc02-1',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonMike,
+            transitioned_at: dt(45, 10, 0),
+        },
+        {
+            id: 'wprc02-2',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonMike,
+            transitioned_at: dt(45, 10, 10),
+        },
+        {
+            id: 'wprc02-3',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonMike,
+            transitioned_at: dt(43, 9, 0),
+        },
+        {
+            id: 'wprc02-4',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(43, 9, 20),
+        },
+        {
+            id: 'wprc02-5',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(43, 10, 0),
+        },
+        {
+            id: 'wprc02-6',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonSarah,
+            transitioned_at: dt(42, 14, 0),
+        },
+        {
+            id: 'wprc02-7',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeApproved,
+            person_id: woPersonSarah,
+            transitioned_at: dt(42, 15, 0),
+        },
+        {
+            id: 'wprc02-8',
+            work_order_id:
+                'prc02JjKkLlMmNnOoPpQqRr',
+            from_node_id: prcNodeApproved,
+            to_node_id: prcNodeArchive,
+            person_id: woPersonMike,
+            transitioned_at: dt(41, 10, 0),
+        },
+        // prc03: happy path, ~1 day draft sojourn
+        {
+            id: 'wprc03-1',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonSarah,
+            transitioned_at: dt(30, 8, 0),
+        },
+        {
+            id: 'wprc03-2',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonSarah,
+            transitioned_at: dt(30, 8, 10),
+        },
+        {
+            id: 'wprc03-3',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonCurrent,
+            transitioned_at: dt(29, 9, 0),
+        },
+        {
+            id: 'wprc03-4',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonCurrent,
+            transitioned_at: dt(29, 9, 15),
+        },
+        {
+            id: 'wprc03-5',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(29, 10, 0),
+        },
+        {
+            id: 'wprc03-6',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(28, 15, 0),
+        },
+        {
+            id: 'wprc03-7',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeApproved,
+            person_id: woPersonMike,
+            transitioned_at: dt(28, 16, 0),
+        },
+        {
+            id: 'wprc03-8',
+            work_order_id:
+                'prc03SsTtUuVvWwXxYyZz00',
+            from_node_id: prcNodeApproved,
+            to_node_id: prcNodeArchive,
+            person_id: woPersonMike,
+            transitioned_at: dt(27, 9, 0),
+        },
+        // prc04: happy path, ~4 day draft sojourn
+        {
+            id: 'wprc04-1',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonMike,
+            transitioned_at: dt(20, 11, 0),
+        },
+        {
+            id: 'wprc04-2',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonMike,
+            transitioned_at: dt(20, 11, 5),
+        },
+        {
+            id: 'wprc04-3',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(16, 10, 0),
+        },
+        {
+            id: 'wprc04-4',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonSarah,
+            transitioned_at: dt(16, 10, 20),
+        },
+        {
+            id: 'wprc04-5',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonSarah,
+            transitioned_at: dt(16, 11, 0),
+        },
+        {
+            id: 'wprc04-6',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonSarah,
+            transitioned_at: dt(15, 14, 0),
+        },
+        {
+            id: 'wprc04-7',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeApproved,
+            person_id: woPersonMike,
+            transitioned_at: dt(15, 15, 30),
+        },
+        {
+            id: 'wprc04-8',
+            work_order_id:
+                'prc04A1B2C3D4E5F6G7H8I9',
+            from_node_id: prcNodeApproved,
+            to_node_id: prcNodeArchive,
+            person_id: woPersonMike,
+            transitioned_at: dt(14, 9, 0),
+        },
+        // prc05: revisit -- Decision sends to
+        // Revise, then Draft again, then completes
+        {
+            id: 'wprc05-1',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonSarah,
+            transitioned_at: dt(15, 9, 0),
+        },
+        {
+            id: 'wprc05-2',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonSarah,
+            transitioned_at: dt(15, 9, 10),
+        },
+        {
+            id: 'wprc05-3',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonMike,
+            transitioned_at: dt(14, 10, 0),
+        },
+        {
+            id: 'wprc05-4',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonMike,
+            transitioned_at: dt(14, 10, 15),
+        },
+        {
+            id: 'wprc05-5',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(14, 11, 0),
+        },
+        {
+            id: 'wprc05-6',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(13, 14, 0),
+        },
+        // Decision routes to Revise (revisit)
+        {
+            id: 'wprc05-7',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeRevise,
+            person_id: woPersonCurrent,
+            transitioned_at: dt(13, 15, 0),
+        },
+        // Revise sends back to Draft
+        {
+            id: 'wprc05-8',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeRevise,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonSarah,
+            transitioned_at: dt(12, 9, 0),
+        },
+        {
+            id: 'wprc05-9',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonSarah,
+            transitioned_at: dt(11, 10, 0),
+        },
+        {
+            id: 'wprc05-10',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonMike,
+            transitioned_at: dt(11, 10, 20),
+        },
+        {
+            id: 'wprc05-11',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonMike,
+            transitioned_at: dt(11, 11, 0),
+        },
+        {
+            id: 'wprc05-12',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(10, 14, 0),
+        },
+        {
+            id: 'wprc05-13',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeDecision,
+            to_node_id: prcNodeApproved,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(10, 15, 0),
+        },
+        {
+            id: 'wprc05-14',
+            work_order_id:
+                'prc05J1K2L3M4N5O6P7Q8R9',
+            from_node_id: prcNodeApproved,
+            to_node_id: prcNodeArchive,
+            person_id: woPersonSarah,
+            transitioned_at: dt(9, 9, 0),
+        },
+        // prc06: in-flight -- stuck at Decision
+        {
+            id: 'wprc06-1',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: '',
+            to_node_id: prcNodeStart,
+            person_id: woPersonMike,
+            transitioned_at: dt(5, 10, 0),
+        },
+        {
+            id: 'wprc06-2',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: prcNodeStart,
+            to_node_id: prcNodeDraft,
+            person_id: woPersonMike,
+            transitioned_at: dt(5, 10, 8),
+        },
+        {
+            id: 'wprc06-3',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: prcNodeDraft,
+            to_node_id: prcNodeSubmit,
+            person_id: woPersonCurrent,
+            transitioned_at: dt(4, 11, 0),
+        },
+        {
+            id: 'wprc06-4',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: prcNodeSubmit,
+            to_node_id: prcNodeTriage,
+            person_id: woPersonSarah,
+            transitioned_at: dt(4, 11, 20),
+        },
+        {
+            id: 'wprc06-5',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: prcNodeTriage,
+            to_node_id: prcNodeQuickRev,
+            person_id: woPersonSarah,
+            transitioned_at: dt(4, 12, 0),
+        },
+        {
+            id: 'wprc06-6',
+            work_order_id:
+                'prc06S1T2U3V4W5X6Y7Z800',
+            from_node_id: prcNodeQuickRev,
+            to_node_id: prcNodeDecision,
+            person_id: woPersonMarcus,
+            transitioned_at: dt(3, 14, 0),
+        },
+        // stays at Decision -- no more transitions
     ];
 
     const mockTransitionFieldValues:
