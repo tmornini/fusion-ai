@@ -5,6 +5,7 @@ import type {
     WorkOrderEntity,
     WorkOrderTransitionEntity,
 } from '../../api/types.ts';
+import { MS_PER_DAY } from '../../api/types.ts';
 
 export interface FlowStatsInput {
     readonly nodes: readonly GraphNode[];
@@ -122,18 +123,136 @@ function emptyNodeStat(n: GraphNode): NodeStat {
     };
 }
 
+interface Sojourn {
+    readonly nodeId: string;
+    readonly enterMs: number;
+    readonly exitMs: number;
+    readonly personId: string;
+}
+
+interface WoRun {
+    readonly workOrderId: string;
+    readonly sojourns: readonly Sojourn[];
+    readonly pathNodeIds: readonly string[];
+    readonly completed: boolean;
+    readonly hadDroppedStep: boolean;
+}
+
+function reconstructRuns(
+    input: FlowStatsInput,
+    nodeById: ReadonlyMap<string, GraphNode>,
+): {
+    runs: readonly WoRun[];
+    droppedNodeIds: ReadonlySet<string>;
+} {
+    const byWo =
+        new Map<string, WorkOrderTransitionEntity[]>();
+    for (const t of input.transitions) {
+        const arr = byWo.get(t.work_order_id) ?? [];
+        arr.push(t);
+        byWo.set(t.work_order_id, arr);
+    }
+    const dropped = new Set<string>();
+    const runs: WoRun[] = [];
+    for (const [woId, ts] of byWo) {
+        ts.sort((a, b) =>
+            a.transitioned_at.localeCompare(
+                b.transitioned_at,
+            ),
+        );
+        const sojourns: Sojourn[] = [];
+        const pathNodeIds: string[] = [];
+        let completed = false;
+        let hadDropped = false;
+        for (let i = 0; i < ts.length; i++) {
+            const t = ts[i]!;
+            const node = nodeById.get(t.to_node_id);
+            if (!node) {
+                dropped.add(t.to_node_id);
+                hadDropped = true;
+                continue;
+            }
+            pathNodeIds.push(node.id);
+            const enterMs =
+                Date.parse(t.transitioned_at);
+            const nextT = ts[i + 1];
+            // Open-ended sojourn uses nowMs as the
+            // exit so in-flight WOs contribute heat.
+            const exitMs = nextT
+                ? Date.parse(nextT.transitioned_at)
+                : input.nowMs;
+            if (!node.isStart && !node.isComplete) {
+                sojourns.push({
+                    nodeId: node.id,
+                    enterMs, exitMs,
+                    personId: t.person_id,
+                });
+            }
+            if (node.isComplete) completed = true;
+        }
+        runs.push({
+            workOrderId: woId,
+            sojourns,
+            pathNodeIds,
+            completed,
+            hadDroppedStep: hadDropped,
+        });
+    }
+    return { runs, droppedNodeIds: dropped };
+}
+
 export function buildFlowStats(
     input: FlowStatsInput,
 ): FlowStatsModel {
+    const nodeById = new Map(
+        input.nodes.map(n => [n.id, n]),
+    );
+    const winLo =
+        input.nowMs - input.windowDays * MS_PER_DAY;
+    const winHi = input.nowMs;
+    const { runs, droppedNodeIds } =
+        reconstructRuns(input, nodeById);
+
+    const nodeSec = new Map<string, number>();
+    let flowSec = 0;
+    for (const run of runs) {
+        for (const s of run.sojourns) {
+            const sec = clipInterval(
+                s.enterMs, s.exitMs, winLo, winHi,
+            );
+            nodeSec.set(
+                s.nodeId,
+                (nodeSec.get(s.nodeId) ?? 0) + sec,
+            );
+            flowSec += sec;
+        }
+    }
+
+    const stats: NodeStat[] = input.nodes.map(n => {
+        const sec = nodeSec.get(n.id) ?? 0;
+        const heatPct =
+            flowSec > 0
+            && !n.isStart
+            && !n.isComplete
+                ? (sec / flowSec) * 100
+                : 0;
+        const heatT =
+            Math.min(1, Math.max(0, heatPct / 100));
+        return { ...emptyNodeStat(n), heatPct, heatT };
+    });
+
     return {
-        nodes: input.nodes.map(emptyNodeStat),
+        nodes: stats,
         edges: input.edges,
         pathEntries: [],
-        completedWorkOrderCount: 0,
-        incompleteWorkOrderCount: 0,
+        completedWorkOrderCount:
+            runs.filter(r => r.completed).length,
+        incompleteWorkOrderCount:
+            runs.filter(r => !r.completed).length,
         windowDays: input.windowDays,
-        droppedNodeIds: new Set(),
-        pathsWithDroppedStepsCount: 0,
+        droppedNodeIds,
+        pathsWithDroppedStepsCount:
+            runs.filter(r => r.hadDroppedStep).length,
     };
 }
 
