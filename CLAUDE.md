@@ -193,9 +193,11 @@ adapter; threaded explicitly**), `api/mock-data.ts`,
 `api/validators.ts`. The `DbAdapter` interface is the migration
 seam to Postgres.
 
-The composition root is `web-app/app/adapters/init.ts`.
-`createFetchContext()` defaults to the LocalStorage adapter;
-tests pass `createFetchContext(db)` with a `MemoryDbAdapter`.
+`web-app/app/adapters/init.ts` wires the production LocalStorage
+adapter singleton (`initAdapter()` / `getDbAdapter()`).
+`web-app/app/adapters/shared.ts` defines the `RequestContext`
+interface and `createRequestContext(adapter?)`, defaulting to
+that singleton; tests pass it a `MemoryDbAdapter`.
 
 ### Page Module Pattern
 
@@ -282,8 +284,8 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
   `personName` with a fallback. UI renders `'—'` via
   `DISPLAY_ABSENT` for legitimately absent values. Never use
   magic strings like `'Unknown'`.
-- **`FetchContext` is the only I/O surface.** Every data-access
-  adapter takes `ctx: FetchContext` first and uses
+- **`RequestContext` is the only I/O surface.** Every data-access
+  adapter takes `ctx: RequestContext` first and uses
   `ctx.GET/PUT/DELETE/POST/commit`. The standalone `GET/PUT/...`
   exports in `api/api.ts` are the transport `ctx` delegates to —
   adapters never import them directly. A ctx executes against an
