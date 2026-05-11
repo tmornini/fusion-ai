@@ -254,3 +254,168 @@ test('buildLegend: structure, end labels, no linear-gradient',
     assert.doesNotMatch(s,
         /linear-gradient\(/i);
 });
+
+// ---- buildCard / renderCard tests ----
+
+function nodeStat(
+    over: Partial<NodeStat> & { id: string },
+): NodeStat {
+    return {
+        id: over.id,
+        displayName:
+            over.displayName ?? over.id.toUpperCase(),
+        isStart: over.isStart ?? false,
+        isComplete: over.isComplete ?? false,
+        positionX: over.positionX ?? 0,
+        positionY: over.positionY ?? 0,
+        outgoingEdgeIds:
+            over.outgoingEdgeIds ?? [],
+        heatPct: over.heatPct ?? 0,
+        heatT: over.heatT ?? 0,
+        avgSeconds: over.avgSeconds ?? null,
+        medianSeconds: over.medianSeconds ?? null,
+        p90Seconds: over.p90Seconds ?? null,
+        visitsInWindow: over.visitsInWindow ?? 0,
+        distinctWorkOrders:
+            over.distinctWorkOrders ?? 0,
+        currentlyHere: over.currentlyHere ?? 0,
+        throughputPerWeek:
+            over.throughputPerWeek ?? 0,
+        revisitRatePct: over.revisitRatePct ?? 0,
+        clanSize: over.clanSize ?? 0,
+        activeProducerCount:
+            over.activeProducerCount ?? 0,
+        topProducer: over.topProducer ?? null,
+        modelName: over.modelName ?? null,
+        assignmentLabel:
+            over.assignmentLabel ?? 'Unassigned',
+        hasHazard: over.hasHazard ?? false,
+        branchSplit: over.branchSplit ?? [],
+    };
+}
+
+test('rich card renders all stat blocks for a regular node',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = nodeStat({
+        id: 'a', displayName: 'Review',
+        heatPct: 58, heatT: 0.58,
+        avgSeconds: 414720,
+        medianSeconds: 259200,
+        p90Seconds: 777600,
+        visitsInWindow: 138,
+        distinctWorkOrders: 124,
+        currentlyHere: 12,
+        throughputPerWeek: 11,
+        revisitRatePct: 18,
+        clanSize: 5,
+        activeProducerCount: 3,
+        topProducer: {
+            name: 'Lee', vsClanAvgPct: 140,
+            sharePct: 31, inCurrentClan: true,
+        },
+        assignmentLabel: 'Crew: Design',
+        branchSplit: [
+            {
+                edgeId: 'e3', label: 'approve',
+                toNodeId: 'z', pct: 81,
+            },
+            {
+                edgeId: 'e4', label: 'revise',
+                toNodeId: 'a', pct: 19,
+            },
+        ],
+    });
+    const html = p.buildCard(s).toString();
+    assert.match(html, />\s*58%\s*</);
+    assert.match(html, /4\.8d/);
+    assert.match(html, /3d/);
+    // 777600s = 1.3 weeks (formatMinAscending
+    // prefers weeks over days above 7d)
+    assert.match(html, /1\.3w/);
+    assert.match(html, />\s*138\s*</);
+    assert.match(html, />\s*124\s*</);
+    assert.match(html, />\s*12\s*</);
+    assert.match(html, />\s*~11\/wk\s*</);
+    assert.match(html, />\s*18%\s*</);
+    assert.match(html, />\s*5\s*</);
+    assert.match(html, />\s*3\s*</);
+    assert.match(html, /Lee/);
+    assert.match(html, /140%/);
+    assert.match(html, /31%/);
+    assert.doesNotMatch(html, /not in current clan/);
+    assert.match(html, /Crew:\s*Design/);
+    assert.match(html, /approve\s+81%/);
+    assert.match(html, /revise\s+19%/);
+});
+
+test('top producer not in clan is flagged', () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = nodeStat({
+        id: 'a',
+        topProducer: {
+            name: 'Zed', vsClanAvgPct: 400,
+            sharePct: 100, inCurrentClan: false,
+        },
+    });
+    const html = p.buildCard(s).toString();
+    assert.match(html, /Zed/);
+    assert.match(html, /not in current clan/);
+});
+
+test('model node card shows model name, no clan or producer',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = nodeStat({
+        id: 'a', modelName: 'Claude Opus',
+        assignmentLabel: 'Model: Claude Opus',
+    });
+    const html = p.buildCard(s).toString();
+    assert.match(html, /Claude Opus/);
+    assert.doesNotMatch(html, /Clan size/);
+    assert.doesNotMatch(html, /Top producer/);
+});
+
+test('special-node card is lean (no clan/producer/branch)',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = nodeStat({
+        id: 'c', isStart: true,
+        displayName: 'Create',
+    });
+    const html = p.buildCard(s).toString();
+    assert.doesNotMatch(html, /Top producer/);
+    assert.doesNotMatch(html, /Clan size/);
+    // null durations render as em-dash
+    assert.match(html, /—/);
+});
+
+test('renderCard hides the slot when nodeId is null', () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const classes = new Set<string>();
+    const cardEl = {
+        classList: classes,
+    } as unknown as HTMLElement;
+    const container = {
+        querySelector: (sel: string) =>
+            sel === '#flow-stats-card'
+                ? cardEl : null,
+    } as unknown as HTMLElement;
+    p.renderCard(container, null);
+    assert.ok(classes.has('hidden'));
+});

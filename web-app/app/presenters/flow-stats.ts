@@ -3,15 +3,38 @@
 // touch the DOM via setHtml — never mixed.
 import type {
     FlowStatsModel,
+    NodeStat,
 } from '../flow-stats-aggregate.ts';
 import {
-    html, trusted, setHtml,
+    html, trusted, setHtml, escapeForHtml,
     type SafeHtml,
 } from '../safe-html.ts';
 import { iconArrowLeft } from '../icons.ts';
 import {
     buildStatsGraphSvg,
 } from '../flow-stats-graph.ts';
+import {
+    DISPLAY_ABSENT,
+} from '../format.ts';
+import {
+    formatMinAscending,
+} from '../duration-units.ts';
+
+// DASH is the canonical absent-value marker;
+// fmtDur guards both null and 0 (no data).
+const DASH = DISPLAY_ABSENT;
+function fmtDur(sec: number | null): string {
+    return sec === null || sec === 0
+        ? DASH
+        : formatMinAscending(sec);
+}
+// Throughput below 1/wk shown as "<1/wk" to
+// avoid implying false precision.
+function fmtThroughput(n: number): string {
+    return n < 1
+        ? '<1/wk'
+        : `~${Math.round(n)}/wk`;
+}
 
 // ViewBox mirrors the parameter shape expected
 // by buildStatsGraphSvg; kept local so this
@@ -236,7 +259,139 @@ ${this.buildLegend()}${footnote}</div>`;
                 }),
             );
         }
-        // card rendering deferred to Task 14
+        this.renderCard(container, ui.pinnedNodeId
+            ?? ui.hoveredNodeId ?? null);
+    }
+
+    buildCard(s: NodeStat): SafeHtml {
+        const special =
+            s.isStart || s.isComplete;
+
+        // People block: suppressed for special
+        // nodes; model nodes show model name;
+        // regular nodes show clan + producer.
+        const peopleBlock: SafeHtml =
+            special
+            ? trusted('')
+            : s.modelName !== null
+            ? html`<div class="${
+                'flow-stats-card-wide'
+            }"><dt>Model</dt><dd>${
+                s.modelName
+            }</dd></div>`
+            : ((): SafeHtml => {
+                const tp = s.topProducer;
+                const topRow: SafeHtml =
+                    tp !== null
+                    ? html`<div class="${
+                        'flow-stats-card-wide'
+                    }"><dt>Top producer</dt><dd>${
+                        tp.name
+                    }${
+                        tp.vsClanAvgPct !== null
+                        ? trusted(
+                            ` · ${tp.vsClanAvgPct
+                            }% of clan avg`,
+                        )
+                        : trusted('')
+                    }${
+                        tp.sharePct !== null
+                        ? trusted(
+                            ` · ${tp.sharePct
+                            }% of node's work`,
+                        )
+                        : trusted('')
+                    }${
+                        !tp.inCurrentClan
+                        ? trusted(
+                            ' (not in current clan)',
+                        )
+                        : trusted('')
+                    }</dd></div>`
+                    : trusted('');
+                return html`<div><dt>Clan size</dt><dd>${
+                    s.clanSize
+                }</dd></div><div><dt>Active producers</dt><dd>${
+                    s.activeProducerCount
+                }</dd></div>${topRow}`;
+            })();
+
+        // Branch split: suppressed for special
+        // nodes and when there are no branches.
+        const branchBlock: SafeHtml =
+            special || s.branchSplit.length === 0
+            ? trusted('')
+            : html`<div class="${
+                'flow-stats-card-wide'
+            }"><dt>Next</dt><dd>${
+                trusted(
+                    s.branchSplit
+                        .map(b =>
+                            `${escapeForHtml(b.label)}`
+                            + ` ${b.pct}%`,
+                        )
+                        .join(' · '),
+                )
+            }</dd></div>`;
+
+        return html`<div class="${
+            'flow-stats-card-inner'
+        }"><div class="${
+            'flow-stats-card-title'
+        }">${
+            s.displayName
+        }<span class="${
+            'flow-stats-card-sub'
+        }">${
+            s.assignmentLabel
+        }</span></div><dl class="${
+            'flow-stats-card-grid'
+        }"><div><dt>% of flow time</dt><dd>${
+            Math.round(s.heatPct)
+        }%</dd></div><div><dt>Avg</dt><dd>${
+            trusted(fmtDur(s.avgSeconds))
+        }</dd></div><div><dt>Median</dt><dd>${
+            trusted(fmtDur(s.medianSeconds))
+        }</dd></div><div><dt>p90</dt><dd>${
+            trusted(fmtDur(s.p90Seconds))
+        }</dd></div><div><dt>Visits (90d)</dt><dd>${
+            s.visitsInWindow
+        }</dd></div><div><dt>Distinct WOs</dt><dd>${
+            s.distinctWorkOrders
+        }</dd></div><div><dt>Here now</dt><dd>${
+            s.currentlyHere
+        }</dd></div><div><dt>Throughput</dt><dd>${
+            trusted(fmtThroughput(s.throughputPerWeek))
+        }</dd></div><div><dt>Loop-back</dt><dd>${
+            s.revisitRatePct
+        }%</dd></div>${
+            peopleBlock
+        }${
+            branchBlock
+        }</dl></div>`;
+    }
+
+    renderCard(
+        container: HTMLElement,
+        nodeId: string | null,
+    ): void {
+        const cardEl = container.querySelector(
+            '#flow-stats-card',
+        ) as HTMLElement | null;
+        if (!cardEl) return;
+        if (nodeId === null) {
+            cardEl.classList.add('hidden');
+            return;
+        }
+        const s = this.#model.nodes.find(
+            n => n.id === nodeId,
+        );
+        if (!s) {
+            cardEl.classList.add('hidden');
+            return;
+        }
+        setHtml(cardEl, this.buildCard(s));
+        cardEl.classList.remove('hidden');
     }
 
     #highlightFor(
