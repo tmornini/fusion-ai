@@ -378,3 +378,154 @@ test(
         assert.equal(a.p90Seconds,    12240);
     },
 );
+
+test('resolves clan, identifies top producer'
+    + ' + vsClanAvg + share', () => {
+    const f = makeFixture();
+    const nodes = f.nodes.map(n =>
+        n.id === 'a'
+            ? { ...n,
+                crew: {
+                    kind: 'role' as const,
+                    roleId: 'r1',
+                } }
+            : n);
+    const t = (msAgo: number) => tBefore(f, msAgo);
+    const H = 3600 * 1000;
+    // 4 OUT-transitions from a: p1×3, p2×1.
+    // p3 in clan but inactive.
+    const input: FlowStatsInput = { ...f, nodes,
+        workOrders: [emptyWO('w', t(10 * H))],
+        transitions: [
+            { id: 'in0', work_order_id: 'w',
+              from_node_id: '',
+              to_node_id: 'c', person_id: 'p1',
+              transitioned_at: t(10 * H) },
+            { id: 'in1', work_order_id: 'w',
+              from_node_id: 'c',
+              to_node_id: 'a', person_id: 'p1',
+              transitioned_at: t(10 * H) },
+            { id: 'o1', work_order_id: 'w',
+              from_node_id: 'a',
+              to_node_id: 'b', person_id: 'p1',
+              transitioned_at: t(9 * H) },
+            { id: 'r1', work_order_id: 'w',
+              from_node_id: 'b',
+              to_node_id: 'a', person_id: 'p1',
+              transitioned_at: t(8 * H) },
+            { id: 'o2', work_order_id: 'w',
+              from_node_id: 'a',
+              to_node_id: 'b', person_id: 'p1',
+              transitioned_at: t(7 * H) },
+            { id: 'r2', work_order_id: 'w',
+              from_node_id: 'b',
+              to_node_id: 'a', person_id: 'p1',
+              transitioned_at: t(6 * H) },
+            { id: 'o3', work_order_id: 'w',
+              from_node_id: 'a',
+              to_node_id: 'b', person_id: 'p1',
+              transitioned_at: t(5 * H) },
+            { id: 'r3', work_order_id: 'w',
+              from_node_id: 'b',
+              to_node_id: 'a', person_id: 'p2',
+              transitioned_at: t(4 * H) },
+            { id: 'o4', work_order_id: 'w',
+              from_node_id: 'a',
+              to_node_id: 'b', person_id: 'p2',
+              transitioned_at: t(3 * H) },
+            { id: 'fin', work_order_id: 'w',
+              from_node_id: 'b',
+              to_node_id: 'z', person_id: 'p2',
+              transitioned_at: t(0) },
+        ],
+        roleMemberSetByRoleId: new Map([
+            ['r1', new Set(['p1', 'p2', 'p3'])],
+        ]),
+        personNameById: new Map([
+            ['p1', 'Alex'],
+            ['p2', 'Bea'],
+            ['p3', 'Cy'],
+        ]),
+        roleNameById: new Map([['r1', 'Reviewer']]),
+    };
+    const m = buildFlowStats(input);
+    const a = m.nodes.find(n => n.id === 'a')!;
+    assert.equal(a.clanSize, 3);
+    assert.equal(a.activeProducerCount, 2);
+    assert.equal(a.assignmentLabel, 'Role: Reviewer');
+    assert.ok(a.topProducer);
+    assert.equal(a.topProducer!.name, 'Alex');
+    assert.equal(a.topProducer!.sharePct, 75);
+    assert.equal(a.topProducer!.vsClanAvgPct, 225);
+    assert.equal(a.topProducer!.inCurrentClan, true);
+});
+
+test('top producer outside the current clan'
+    + ' is flagged', () => {
+    const f = makeFixture();
+    const nodes = f.nodes.map(n =>
+        n.id === 'a'
+            ? { ...n,
+                crew: {
+                    kind: 'role' as const,
+                    roleId: 'r1',
+                } }
+            : n);
+    const t = (msAgo: number) => tBefore(f, msAgo);
+    const H = 3600 * 1000;
+    const input: FlowStatsInput = { ...f, nodes,
+        workOrders: [emptyWO('w', t(2 * H))],
+        transitions: [
+            { id: '1', work_order_id: 'w',
+              from_node_id: '',
+              to_node_id: 'c', person_id: 'p1',
+              transitioned_at: t(2 * H) },
+            { id: '2', work_order_id: 'w',
+              from_node_id: 'c',
+              to_node_id: 'a', person_id: 'p1',
+              transitioned_at: t(2 * H) },
+            { id: '3', work_order_id: 'w',
+              from_node_id: 'a',
+              to_node_id: 'z', person_id: 'p9',
+              transitioned_at: t(0) },
+        ],
+        roleMemberSetByRoleId: new Map([
+            ['r1', new Set(['p1'])],
+        ]),
+        personNameById: new Map([
+            ['p1', 'Alex'],
+            ['p9', 'Zed'],
+        ]),
+        roleNameById: new Map([['r1', 'Reviewer']]),
+    };
+    const m = buildFlowStats(input);
+    const a = m.nodes.find(n => n.id === 'a')!;
+    assert.equal(a.topProducer!.name, 'Zed');
+    assert.equal(a.topProducer!.inCurrentClan, false);
+});
+
+test('model-assigned node carries modelName,'
+    + ' no clan, no producer', () => {
+    const f = makeFixture();
+    const nodes = f.nodes.map(n =>
+        n.id === 'a'
+            ? { ...n,
+                crew: {
+                    kind: 'model' as const,
+                    modelId: 'm1',
+                } }
+            : n);
+    const input: FlowStatsInput = { ...f, nodes,
+        modelNameById: new Map([
+            ['m1', 'Claude Opus'],
+        ]),
+    };
+    const m = buildFlowStats(input);
+    const a = m.nodes.find(n => n.id === 'a')!;
+    assert.equal(a.modelName, 'Claude Opus');
+    assert.equal(a.clanSize, 0);
+    assert.equal(a.topProducer, null);
+    assert.equal(
+        a.assignmentLabel, 'Model: Claude Opus',
+    );
+});

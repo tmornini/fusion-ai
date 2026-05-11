@@ -6,6 +6,10 @@ import type {
     WorkOrderTransitionEntity,
 } from '../../api/types.ts';
 import { MS_PER_DAY } from '../../api/types.ts';
+import {
+    isUserPrivateRoleId,
+    personIdFromUserPrivateRoleId,
+} from './adapters/roles.ts';
 
 export interface FlowStatsInput {
     readonly nodes: readonly GraphNode[];
@@ -201,6 +205,71 @@ function reconstructRuns(
     return { runs, droppedNodeIds: dropped };
 }
 
+// Resolves the clan (member set) and display label
+// for a node based on its NodeAssignment variant.
+// User-private roles short-circuit to the one person
+// encoded in the role id — same rule as workbox-inbox.
+function resolveClan(
+    n: GraphNode,
+    input: FlowStatsInput,
+): { ids: ReadonlySet<string>;
+     label: string;
+     modelName: string | null } {
+    const c = n.crew;
+    switch (c.kind) {
+        case 'unassigned':
+            return {
+                ids: new Set(),
+                label: 'Unassigned',
+                modelName: null,
+            };
+        case 'role': {
+            if (isUserPrivateRoleId(c.roleId)) {
+                const pid =
+                    personIdFromUserPrivateRoleId(
+                        c.roleId,
+                    );
+                return {
+                    ids: new Set([pid]),
+                    label: 'Role: '
+                        + (input.personNameById
+                               .get(pid) ?? '—'),
+                    modelName: null,
+                };
+            }
+            return {
+                ids: input.roleMemberSetByRoleId
+                         .get(c.roleId)
+                     ?? new Set(),
+                label: 'Role: '
+                    + (input.roleNameById
+                           .get(c.roleId) ?? '—'),
+                modelName: null,
+            };
+        }
+        case 'crew':
+            return {
+                ids: input.crewMemberSetByCrewId
+                         .get(c.crewId)
+                     ?? new Set(),
+                label: 'Crew: '
+                    + (input.crewNameById
+                           .get(c.crewId) ?? '—'),
+                modelName: null,
+            };
+        case 'model': {
+            const mn =
+                input.modelNameById.get(c.modelId)
+                ?? null;
+            return {
+                ids: new Set(),
+                label: 'Model: ' + (mn ?? '—'),
+                modelName: mn,
+            };
+        }
+    }
+}
+
 export function buildFlowStats(
     input: FlowStatsInput,
 ): FlowStatsModel {
@@ -295,6 +364,26 @@ export function buildFlowStats(
 
     const weeks = input.windowDays / 7;
 
+    // Count OUT-transitions per (node, person) within
+    // the window.  Transitions with from_node_id='' are
+    // creation events and carry no producer signal.
+    const outByNode =
+        new Map<string, Map<string, number>>();
+    for (const t of input.transitions) {
+        if (t.from_node_id === '') continue;
+        if (!nodeById.has(t.from_node_id)) continue;
+        const ms = Date.parse(t.transitioned_at);
+        if (ms < winLo || ms > winHi) continue;
+        const inner =
+            outByNode.get(t.from_node_id)
+            ?? new Map<string, number>();
+        inner.set(
+            t.person_id,
+            (inner.get(t.person_id) ?? 0) + 1,
+        );
+        outByNode.set(t.from_node_id, inner);
+    }
+
     const stats: NodeStat[] = input.nodes.map(n => {
         const sec = nodeSec.get(n.id) ?? 0;
         const heatPct =
@@ -312,6 +401,49 @@ export function buildFlowStats(
         const visits   = visitsByNode.get(n.id) ?? 0;
         const revisits =
             revisitsByNode.get(n.id) ?? 0;
+        const clan = resolveClan(n, input);
+        const outMap =
+            outByNode.get(n.id)
+            ?? new Map<string, number>();
+        const totalOut = Array.from(outMap.values())
+            .reduce((s, v) => s + v, 0);
+        let topProducer: NodeStat['topProducer'] =
+            null;
+        if (totalOut > 0) {
+            // Tiebreak: name ascending, then id.
+            const sorted =
+                Array.from(outMap.entries())
+                .sort((a, b) => {
+                    if (b[1] !== a[1])
+                        return b[1] - a[1];
+                    const na =
+                        input.personNameById.get(a[0])
+                        ?? a[0];
+                    const nb =
+                        input.personNameById.get(b[0])
+                        ?? b[0];
+                    if (na !== nb)
+                        return na.localeCompare(nb);
+                    return a[0].localeCompare(b[0]);
+                });
+            const [pid, count] = sorted[0]!;
+            topProducer = {
+                name:
+                    input.personNameById.get(pid)
+                    ?? pid,
+                sharePct: Math.round(
+                    (count / totalOut) * 100,
+                ),
+                vsClanAvgPct: clan.ids.size > 0
+                    ? Math.round(
+                        (count
+                         / (totalOut / clan.ids.size)
+                        ) * 100,
+                    )
+                    : null,
+                inCurrentClan: clan.ids.has(pid),
+            };
+        }
         return { ...emptyNodeStat(n),
             heatPct, heatT,
             avgSeconds: sojourns.length === 0
@@ -343,6 +475,11 @@ export function buildFlowStats(
                     (revisits / visits) * 100,
                 )
                 : 0,
+            clanSize:            clan.ids.size,
+            activeProducerCount: outMap.size,
+            topProducer,
+            modelName:       clan.modelName,
+            assignmentLabel: clan.label,
         };
     });
 
