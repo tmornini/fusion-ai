@@ -102,3 +102,24 @@ test('edges carry data-edge-id and no interactive attributes', () => {
     assert.match(html, /<g[^>]*data-edge-id="e1"/);
     assert.match(html, /<g[^>]*data-edge-id="e2"/);
 });
+
+test('highlight set marks on-path and dims off-path nodes/edges',
+    () => {
+    const highlight = {
+        nodeIds: new Set(['c', 'a']),
+        edgeIds: new Set(['e1']),
+    };
+    const html =
+        buildStatsGraphSvg(model(), VB, highlight).toString();
+    assert.match(html, /data-node-id="c"[^>]*data-on-path="true"/);
+    assert.match(html, /data-node-id="a"[^>]*data-on-path="true"/);
+    assert.match(html, /data-node-id="z"[^>]*data-dim="true"/);
+    assert.match(html, /data-edge-id="e1"[^>]*data-on-path="true"/);
+    assert.match(html, /data-edge-id="e2"[^>]*data-dim="true"/);
+});
+
+test('no highlight ⇒ no data-dim or data-on-path anywhere', () => {
+    const html = buildStatsGraphSvg(model(), VB, null).toString();
+    assert.doesNotMatch(html, /data-dim="true"/);
+    assert.doesNotMatch(html, /data-on-path="true"/);
+});
