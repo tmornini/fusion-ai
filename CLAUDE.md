@@ -172,7 +172,17 @@ the already-exported edge-path helpers (`perimeterPoint`,
 pure `flow-cycle-edges.ts` (the designer's back-edge DFS,
 extracted so both renderers mark loop-backs identically),
 `iconAlertTriangle`, and the START/END display-name
-constants. Its emitted SVG carries *none* of the editor's
+constants. Node positions, though, do *not* come from
+the renderer: `getFlowGraph` runs `flow-graph-layout.ts`'s
+`withRenderableLayout`, which lays a flow out
+(`computeLayout`) whenever it is `is_auto_layout` or its
+stored positions are degenerate — so the stats renderer
+and the designer both start from real coordinates, not
+the persisted (0,0) placeholders. `runFlowLayout` /
+`runLayoutFromInputs` is the one `computeLayout` wrapper,
+shared by `getFlowGraph`, the designer's `applyAutoLayout`,
+and `flow-export`'s mermaid-import path (Commandment IX).
+Its emitted SVG carries *none* of the editor's
 interactivity tells (no `<animate>`, `role="button"`,
 `tabindex`, connection ports, `data-connect-port`,
 `aria-current`) and *no paint either* — edge/node strokes,
@@ -320,7 +330,10 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
   join table (relational truth per Codd), **not** through each
   work order's frozen `flow_graph.flowId`. It returns
   `{ model, graph }` so the page can derive the canvas viewBox
-  from the *current* flow graph's node positions.
+  from the flow graph's node positions — which `getFlowGraph`
+  has already resolved to a real layout (`computeLayout` runs
+  for `is_auto_layout` or degenerately-positioned flows), so
+  the stats canvas never collapses onto one scaled-up node.
 - **Mutation adapters return `Promise<void>`.**
   Change-awareness flows through notification channels (e.g.,
   `ideaChanges.notify()`), never through return values —
