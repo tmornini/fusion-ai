@@ -7,15 +7,16 @@ import {
     subscribeMediaQuery,
 } from './adapters/media-query.ts';
 import {
+    STORAGE_KEY_THEME,
+    STORAGE_KEY_SIDEBAR,
+} from './storage-keys.ts';
+import {
     iconSun,
     iconMoon,
     iconMonitor,
 } from './icons.ts';
 import type { SafeHtml } from './safe-html.ts';
 
-const STORAGE_KEY_THEME = 'fusion-theme';
-const STORAGE_KEY_SIDEBAR =
-    'fusion-sidebar-collapsed';
 const MOBILE_BREAKPOINT_PX = 768;
 const BOOL_STRING_TRUE = 'true';
 const BOOL_STRING_FALSE = 'false';
@@ -237,7 +238,6 @@ function initListeners(): void {
 
 export type { AppState };
 export {
-    STORAGE_KEY_THEME,
     getState,
     setState,
     subscribe,

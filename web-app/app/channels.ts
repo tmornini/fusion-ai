@@ -1,3 +1,8 @@
+import {
+    STORAGE_KEY_PREFIX,
+    STORAGE_KEY_TOMBSTONE,
+} from './storage-keys.ts';
+
 type Listener<T> = (value: T) => void;
 
 export interface Channel<T> {
@@ -27,10 +32,6 @@ export function createChannel<T>(
     };
 }
 
-const STORAGE_KEY_PREFIX = 'fusion-ai:';
-const TOMBSTONE_KEY =
-    STORAGE_KEY_PREFIX + 'deleted';
-
 export function bridgeStorageToChannel(
     tableNames: readonly string[],
     channel: Channel<void>,
@@ -47,7 +48,7 @@ export function bridgeStorageToChannel(
             if (e.key === null) return;
             if (
                 watchedKeys.has(e.key)
-                || e.key === TOMBSTONE_KEY
+                || e.key === STORAGE_KEY_TOMBSTONE
             ) {
                 channel.send();
             }
