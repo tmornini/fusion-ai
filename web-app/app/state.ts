@@ -7,6 +7,9 @@ import {
     subscribeMediaQuery,
 } from './adapters/media-query.ts';
 import {
+    subscribeStorageEvent,
+} from './adapters/storage-event.ts';
+import {
     STORAGE_KEY_THEME,
     STORAGE_KEY_SIDEBAR,
 } from './storage-keys.ts';
@@ -200,40 +203,37 @@ function initListeners(): void {
         },
     );
 
-    window.addEventListener(
-        'storage',
-        (e) => {
-            if (
-                e.key === STORAGE_KEY_THEME
-                && isValidTheme(e.newValue)
-            ) {
-                setState({
-                    theme: e.newValue,
-                });
-                applyResolvedTheme();
-            }
-            if (
-                e.key === STORAGE_KEY_SIDEBAR
-                && (
-                    e.newValue
-                        === BOOL_STRING_TRUE
-                    || e.newValue
-                        === BOOL_STRING_FALSE
-                )
-            ) {
-                const collapsed =
-                    e.newValue
-                        === BOOL_STRING_TRUE;
-                setState({
-                    isSidebarCollapsed:
-                        collapsed,
-                });
-                applySidebarCollapsed(
+    subscribeStorageEvent((e) => {
+        if (
+            e.key === STORAGE_KEY_THEME
+            && isValidTheme(e.newValue)
+        ) {
+            setState({
+                theme: e.newValue,
+            });
+            applyResolvedTheme();
+        }
+        if (
+            e.key === STORAGE_KEY_SIDEBAR
+            && (
+                e.newValue
+                    === BOOL_STRING_TRUE
+                || e.newValue
+                    === BOOL_STRING_FALSE
+            )
+        ) {
+            const collapsed =
+                e.newValue
+                    === BOOL_STRING_TRUE;
+            setState({
+                isSidebarCollapsed:
                     collapsed,
-                );
-            }
-        },
-    );
+            });
+            applySidebarCollapsed(
+                collapsed,
+            );
+        }
+    });
 }
 
 export type { AppState };

@@ -2,6 +2,9 @@ import {
     STORAGE_KEY_PREFIX,
     STORAGE_KEY_TOMBSTONE,
 } from './storage-keys.ts';
+import {
+    subscribeStorageEvent,
+} from './adapters/storage-event.ts';
 
 type Listener<T> = (value: T) => void;
 
@@ -36,24 +39,20 @@ export function bridgeStorageToChannel(
     tableNames: readonly string[],
     channel: Channel<void>,
 ): void {
-    if (typeof window === 'undefined') return;
     const watchedKeys = new Set(
         tableNames.map(
             t => STORAGE_KEY_PREFIX + t,
         ),
     );
-    window.addEventListener(
-        'storage',
-        (e) => {
-            if (e.key === null) return;
-            if (
-                watchedKeys.has(e.key)
-                || e.key === STORAGE_KEY_TOMBSTONE
-            ) {
-                channel.send();
-            }
-        },
-    );
+    subscribeStorageEvent((e) => {
+        if (e.key === null) return;
+        if (
+            watchedKeys.has(e.key)
+            || e.key === STORAGE_KEY_TOMBSTONE
+        ) {
+            channel.send();
+        }
+    });
 }
 
 export interface SubscriptionChannel {
