@@ -218,3 +218,53 @@ test(
         );
     },
 );
+
+test(
+    'getFlowStats lays out an auto-layout flow so the'
+    + ' returned graph and stat model are not degenerate',
+    async () => {
+        const db = new MemoryDbAdapter();
+        // buildFlow is is_auto_layout; buildTestGraph
+        // seeds c→a→z all at (0,0).
+        await db.flows.put(
+            'f1',
+            buildFlow('AutoLayout', buildTestGraph()),
+        );
+        await db.workOrders.put('wo1', {
+            display_id: 'WO-1',
+            flow_graph: jsonObjectField({}) as never,
+            position: 1,
+            created_at: daysAgo(10),
+        });
+        await db.flowWorkOrders.put('fwo1', {
+            flow_id: 'f1',
+            work_order_id: 'wo1',
+            created_at: daysAgo(10),
+        });
+        await db.workOrderTransitions.put('t1', {
+            work_order_id: 'wo1',
+            from_node_id: '',
+            to_node_id: 'c',
+            person_id: 'p1',
+            transitioned_at: daysAgo(10),
+        });
+        const ctx = createRequestContext(db);
+        const { model, graph } =
+            await getFlowStats(ctx, 'f1');
+        const graphPos = new Set(
+            graph.nodes.map(
+                n => `${n.positionX},${n.positionY}`,
+            ),
+        );
+        assert.equal(graphPos.size, 3);
+        const c = graph.nodes.find(n => n.id === 'c')!;
+        const z = graph.nodes.find(n => n.id === 'z')!;
+        assert.ok(c.positionX < z.positionX);
+        const modelPos = new Set(
+            model.nodes.map(
+                n => `${n.positionX},${n.positionY}`,
+            ),
+        );
+        assert.equal(modelPos.size, 3);
+    },
+);
