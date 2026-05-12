@@ -11,6 +11,9 @@ import {
     STORAGE_KEY_THEME,
     STORAGE_KEY_SIDEBAR,
 } from './storage-keys.ts';
+import {
+    mediaQueryMatches,
+} from './adapters/media-query.ts';
 
 (function applyTheme(): void {
     const stored = localStorage.getItem(
@@ -18,9 +21,9 @@ import {
     );
     const dark = stored === 'dark'
         || (stored !== 'light'
-            && matchMedia(
+            && mediaQueryMatches(
                 '(prefers-color-scheme: dark)',
-            ).matches);
+            ));
     if (dark) {
         const root = document.documentElement;
         root.setAttribute('data-theme', 'dark');
