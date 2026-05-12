@@ -126,6 +126,26 @@ test('no highlight ⇒ no data-dim or data-on-path anywhere', () => {
     assert.doesNotMatch(html, /data-on-path="true"/);
 });
 
+test('a back-edge gets data-cycle; forward edges do not', () => {
+    const m = model();
+    const cyclic: FlowStatsModel = {
+        ...m,
+        edges: [
+            ...m.edges,
+            { id: 'e3', name: '', description: '',
+              fromNodeId: 'z', toNodeId: 'a' },
+        ],
+    };
+    const html =
+        buildStatsGraphSvg(cyclic, VB, null).toString();
+    assert.match(html,
+        /data-edge-id="e3"[^>]*data-cycle="true"/);
+    assert.doesNotMatch(html,
+        /data-edge-id="e1"[^>]*data-cycle="true"/);
+    assert.doesNotMatch(html,
+        /data-edge-id="e2"[^>]*data-cycle="true"/);
+});
+
 // ---- FlowStatsPresenter tests ----
 
 function modelWithPaths(): FlowStatsModel {
@@ -239,6 +259,19 @@ test('buildStepperBar idx 2: rest entry, next disabled', () => {
     assert.match(s, /8%/);
     assert.match(s,
         /data-stepper="next"[^>]*disabled/);
+});
+
+test('buildStepperBar names the control with an eyebrow',
+    () => {
+    const p = new FlowStatsPresenter(
+        modelWithPaths(),
+        { x: 0, y: 0, w: 600, h: 200 },
+    );
+    const s = p.buildStepperBar(
+        { selectedPathIndex: 0 },
+    ).toString();
+    assert.match(s, /flow-stats-stepper-eyebrow/);
+    assert.match(s, /Most-traveled paths/);
 });
 
 test('buildLegend: structure, end labels, no linear-gradient',

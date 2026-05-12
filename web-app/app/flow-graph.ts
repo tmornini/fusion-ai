@@ -10,6 +10,7 @@ import {
     NODE_WIDTH, NODE_HEIGHT,
 } from './flow-layout.ts';
 import { pluralize } from './format.ts';
+import { findCycleEdgeIds } from './flow-cycle-edges.ts';
 import { iconAlertTriangle } from './icons.ts';
 import {
     START_NODE_DEFAULT_NAME,
@@ -1020,34 +1021,7 @@ export function buildGraphSvg(
         nodes.map(n => [n.id, n]),
     );
 
-    const outAdj = new Map<string, GraphEdge[]>();
-    for (const n of nodes) {
-        outAdj.set(n.id, []);
-    }
-    for (const edge of edges) {
-        outAdj.get(edge.fromNodeId)?.push(edge);
-    }
-    const cycleEdgeIds = new Set<string>();
-    const visited = new Set<string>();
-    const onStack = new Set<string>();
-    const dfs = (id: string): void => {
-        visited.add(id);
-        onStack.add(id);
-        const outs = outAdj.get(id) ?? [];
-        for (const e of outs) {
-            if (onStack.has(e.toNodeId)) {
-                cycleEdgeIds.add(e.id);
-            } else if (!visited.has(e.toNodeId)) {
-                dfs(e.toNodeId);
-            }
-        }
-        onStack.delete(id);
-    };
-    const startNode = nodes.find(n => n.isStart);
-    if (startNode) dfs(startNode.id);
-    for (const n of nodes) {
-        if (!visited.has(n.id)) dfs(n.id);
-    }
+    const cycleEdgeIds = findCycleEdgeIds(nodes, edges);
 
     const pairCounts =
         new Map<string, number>();

@@ -168,20 +168,36 @@ shares only the pure pieces: geometry constants
 (`NODE_WIDTH`/`NODE_HEIGHT` from `flow-layout.ts`,
 `NODE_RADIUS` / `GRID_CELL` exported from `flow-graph.ts`),
 the already-exported edge-path helpers (`perimeterPoint`,
-`whichEdge`, `controlOffset`), `iconAlertTriangle`, and the
-START/END display-name constants. Its emitted SVG carries
-*none* of the editor's interactivity tells: no `<animate>`
-element, no `role="button"`, no `tabindex`, no connection
-ports, no `data-connect-port`, no `aria-current`. Heat fill
-is a per-node `style="--heat-t:${t}"` custom property; CSS
-computes the color via a 4-stop chained
-`color-mix(in oklch, ...)` driven by `--heat-t`. Path
-selection highlights via `data-on-path` / `data-dim`
-attributes, not an animated filter (the editor uses a glow;
-the stats canvas does not). The aggregate logic lives in the
-pure module `flow-stats-aggregate.ts`
-(`buildFlowStats(input) → model`); the I/O wrapper is
-`adapters/flow-stats.ts`'s `getFlowStats(ctx, flowId)`.
+`whichEdge`, `controlOffset`), `findCycleEdgeIds` from the
+pure `flow-cycle-edges.ts` (the designer's back-edge DFS,
+extracted so both renderers mark loop-backs identically),
+`iconAlertTriangle`, and the START/END display-name
+constants. Its emitted SVG carries *none* of the editor's
+interactivity tells (no `<animate>`, `role="button"`,
+`tabindex`, connection ports, `data-connect-port`,
+`aria-current`) and *no paint either* — edge/node strokes,
+the arrowhead, the loop-back dash all live in `pages.css`
+(`§48 FLOW STATS`); the renderer emits structure (`d`,
+`transform`, `x/y`, `class`, `data-*`) only. The one
+presentational inline attribute is the per-node
+`style="--heat-t:${t}"`; CSS computes the fill via a 4-stop
+chained `color-mix(in oklch, ...)` driven by `--heat-t`.
+Loop-back edges carry `data-cycle="true"` → CSS dashes +
+warning-colours them, mirroring the designer; the single
+`#stats-arrow` marker's head tracks each line's own stroke
+via `fill: context-stroke`, so default / on-path / cycle
+arrows match for free. Path selection highlights via
+`data-on-path` / `data-dim` (off-path fades *and*
+desaturates, leaving the lit path the only colour on the
+canvas), never an animated filter — the editor uses a glow;
+the stats canvas does not. A path is lit by default (the
+most-travelled one), so `.flow-stats-body:has([data-on-path])`
+accent-flags the stepper bar — itself an eyebrow-labelled
+widget ("Most-traveled paths") — tying control to canvas. The
+aggregate logic lives in the pure module
+`flow-stats-aggregate.ts` (`buildFlowStats(input) → model`);
+the I/O wrapper is `adapters/flow-stats.ts`'s
+`getFlowStats(ctx, flowId)`.
 
 ### API Layer (`/api`)
 

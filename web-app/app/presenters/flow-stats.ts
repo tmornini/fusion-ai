@@ -173,7 +173,13 @@ ${this.buildLegend()}${footnote}</div>`;
                 ? ' disabled' : '',
         );
 
-        return html`<div class="${
+        // Eyebrow names the control so a first-time
+        // reader knows the stepper walks the flow's
+        // paths from most- to least-travelled; styling
+        // is in pages.css.
+        return html`<span class="${
+            'flow-stats-stepper-eyebrow'
+        }">Most-traveled paths</span><div class="${
             'flow-stats-stepper'
         }"><button data-stepper="prev"${prevDis} class="${
             'btn btn-ghost btn-icon'

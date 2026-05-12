@@ -15,6 +15,7 @@ import {
     NODE_RADIUS, GRID_CELL,
     perimeterPoint, whichEdge, controlOffset,
 } from './flow-graph.ts';
+import { findCycleEdgeIds } from './flow-cycle-edges.ts';
 import { iconAlertTriangle } from './icons.ts';
 import { formatMinAscending } from './duration-units.ts';
 import {
@@ -26,6 +27,11 @@ import type {
 } from './flow-stats-aggregate.ts';
 
 // --- local geometry constants -------------------------
+// Geometry only. Every paint property — edge/arrowhead
+// stroke & dash, node text size/anchor/fill/halo, grid
+// colours — lives in pages.css (`§48 FLOW STATS`); this
+// renderer emits structure (d, transform, x/y, class,
+// data-*), nothing presentational.
 
 const GRID_DOT_RADIUS = 0.7;
 
@@ -33,19 +39,11 @@ const ARROW_VIEWBOX  = 10;
 const ARROW_MIDPOINT = 5;
 const ARROW_MARKER   = 8;
 
-const EDGE_STROKE = 2;
-
-// Curve tension: fraction of inter-node distance used
-// for Bézier control arms (capped at MAX_CONTROL_ARM).
-const CURVE_TENSION   = 0.25;
-const MAX_CONTROL_ARM = 50;
-
-// Node text layout — coordinates are SVG units relative
-// to the top-left of the node rectangle (NODE_HEIGHT=64).
-const NODE_NAME_Y   = 28;
-const NODE_FACE_Y   = 46;
-const NODE_TEXT_FONT_SIZE_NAME = 13;
-const NODE_TEXT_FONT_SIZE_FACE = 12;
+// Node text layout — y is an SVG unit relative to the
+// top-left of the node rect (NODE_HEIGHT=64); x and
+// text-anchor are set in CSS.
+const NODE_NAME_Y = 28;
+const NODE_FACE_Y = 46;
 
 // Hazard glyph sits in the bottom-left of the node rect.
 const HAZARD_ICON_SIZE = 16;
@@ -98,11 +96,10 @@ function buildDefs(patternId: string): string {
         + ' patternTransform="translate('
         + String(-halfCell) + ', '
         + String(-halfCell) + ')">'
-        + '<circle cx="' + String(gridCenter) + '"'
+        + '<circle class="flow-stats-grid-dot"'
+        + ' cx="' + String(gridCenter) + '"'
         + ' cy="' + String(gridCenter) + '"'
-        + ' r="' + String(GRID_DOT_RADIUS) + '"'
-        + ' fill="var('
-        + '--color-muted-foreground, #5a6480)"/>'
+        + ' r="' + String(GRID_DOT_RADIUS) + '"/>'
         + '</pattern>'
         + '<marker id="stats-arrow"'
         + markerAttrs
@@ -121,9 +118,7 @@ function buildGrid(
         + ' x="' + String(vb.x) + '"'
         + ' y="' + String(vb.y) + '"'
         + ' width="' + String(vb.w) + '"'
-        + ' height="' + String(vb.h) + '"'
-        + ' fill="var('
-        + '--color-surface, #1a1f2e)"/>'
+        + ' height="' + String(vb.h) + '"/>'
         + '<rect'
         + ' x="' + String(vb.x) + '"'
         + ' y="' + String(vb.y) + '"'
@@ -137,6 +132,7 @@ function buildEdge(
     fromStat: NodeStat,
     toStat:   NodeStat,
     highlight: Highlight | null,
+    isCycle: boolean,
 ): string {
     const fromCx = fromStat.positionX + NODE_WIDTH / 2;
     const fromCy = fromStat.positionY + NODE_HEIGHT / 2;
@@ -191,19 +187,17 @@ function buildEdge(
         && highlight.edgeIds.has(edge.id);
     const dimAttr    = dim    ? ' data-dim="true"'     : '';
     const onPathAttr = onPath ? ' data-on-path="true"' : '';
+    const cycleAttr  = isCycle ? ' data-cycle="true"'  : '';
 
     const idEsc = escapeForHtml(edge.id);
     return '<g'
         + ' class="flow-stats-edge"'
         + ' data-edge-id="' + idEsc + '"'
+        + cycleAttr
         + dimAttr + onPathAttr + '>'
         + '<path'
-        + ' d="' + pathD + '"'
-        + ' fill="none"'
         + ' class="flow-stats-edge-path"'
-        + ' stroke="hsl(var(--border-strong))"'
-        + ' stroke-width="' + String(EDGE_STROKE) + '"'
-        + ' marker-end="url(#stats-arrow)"/>'
+        + ' d="' + pathD + '"/>'
         + '</g>';
 }
 
@@ -241,19 +235,13 @@ function buildNode(
     inner += '<text'
         + ' class="flow-stats-node-name"'
         + ' x="' + String(halfW) + '"'
-        + ' y="' + String(NODE_NAME_Y) + '"'
-        + ' text-anchor="middle"'
-        + ' font-size="'
-        + String(NODE_TEXT_FONT_SIZE_NAME) + '">'
+        + ' y="' + String(NODE_NAME_Y) + '">'
         + nameEsc + '</text>';
 
     inner += '<text'
         + ' class="flow-stats-node-face"'
         + ' x="' + String(halfW) + '"'
-        + ' y="' + String(NODE_FACE_Y) + '"'
-        + ' text-anchor="middle"'
-        + ' font-size="'
-        + String(NODE_TEXT_FONT_SIZE_FACE) + '">'
+        + ' y="' + String(NODE_FACE_Y) + '">'
         + faceEsc + '</text>';
 
     if (n.hasHazard) {
@@ -320,6 +308,9 @@ export function buildStatsGraphSvg(
     const nodeById = new Map(
         model.nodes.map(n => [n.id, n]),
     );
+    const cycleEdgeIds = findCycleEdgeIds(
+        model.nodes, model.edges,
+    );
 
     let edgeMarkup = '';
     for (const edge of model.edges) {
@@ -328,6 +319,7 @@ export function buildStatsGraphSvg(
         if (!from || !to) continue;
         edgeMarkup += buildEdge(
             edge, from, to, highlight,
+            cycleEdgeIds.has(edge.id),
         );
     }
 
