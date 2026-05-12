@@ -1933,6 +1933,9 @@ html[data-page="flow-stats"] #flow-stats {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  /* Matches .flow-stats-grid-bg so the letterboxed */
+  /* margins around the SVG's viewBox don't show a seam. */
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-lg);
   margin: var(--space-3);

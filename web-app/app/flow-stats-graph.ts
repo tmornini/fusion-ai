@@ -35,9 +35,12 @@ import type {
 
 const GRID_DOT_RADIUS = 0.7;
 
+// Arrowhead: a fixed size in user units (markerUnits=
+// userSpaceOnUse below) so it doesn't balloon with the
+// edge's stroke-width when a path is highlighted.
 const ARROW_VIEWBOX  = 10;
 const ARROW_MIDPOINT = 5;
-const ARROW_MARKER   = 8;
+const ARROW_MARKER   = 12;
 
 // Node text layout — y is an SVG unit relative to the
 // top-left of the node rect (NODE_HEIGHT=64); x and
@@ -87,6 +90,7 @@ function buildDefs(patternId: string): string {
         + ' refY="' + String(ARROW_MIDPOINT) + '"'
         + ' markerWidth="' + String(ARROW_MARKER) + '"'
         + ' markerHeight="' + String(ARROW_MARKER) + '"'
+        + ' markerUnits="userSpaceOnUse"'
         + ' orient="auto-start-reverse">';
     return '<defs>'
         + '<pattern id="' + patternId + '"'
