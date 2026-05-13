@@ -273,18 +273,11 @@ ${this.buildLegend()}${footnote}</div>`;
         const special =
             s.isStart || s.isComplete;
 
-        // People block: suppressed for special
-        // nodes; model nodes show model name;
-        // regular nodes show clan + producer.
+        // Workers block: suppressed for special
+        // nodes; regular nodes show clan + producer.
         const peopleBlock: SafeHtml =
             special
             ? trusted('')
-            : s.modelName !== null
-            ? html`<div class="${
-                'flow-stats-card-wide'
-            }"><dt>Model</dt><dd>${
-                s.modelName
-            }</dd></div>`
             : ((): SafeHtml => {
                 const tp = s.topProducer;
                 const topRow: SafeHtml =

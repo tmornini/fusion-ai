@@ -49,10 +49,6 @@ export async function getFlowStats(
             t => woIds.has(t.work_order_id),
         );
 
-    // The FlowStatsInput field name still
-    // says "personNameById" — Phase 5 will
-    // rename it to workerNameById once
-    // flow-stats-aggregate.ts is rewritten.
     const workerNameById = new Map<Id, string>();
     for (const [id, w] of workerMap) {
         workerNameById.set(
@@ -70,12 +66,7 @@ export async function getFlowStats(
         transitions,
         nowMs: Date.now(),
         windowDays: 90,
-        roleMemberSetByRoleId: new Map(),
-        crewMemberSetByCrewId: new Map(),
-        personNameById: workerNameById,
-        modelNameById: new Map(),
-        roleNameById: new Map(),
-        crewNameById: new Map(),
+        workerNameById,
     };
     return { model: buildFlowStats(input), graph };
 }

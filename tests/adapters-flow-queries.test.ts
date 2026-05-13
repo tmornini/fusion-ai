@@ -54,7 +54,7 @@ function buildNode(
         positionY: 0,
         isStart: false,
         isComplete: false,
-        crew: { kind: 'unassigned' },
+        workerIds: [],
         fields: [],
         ...overrides,
     };

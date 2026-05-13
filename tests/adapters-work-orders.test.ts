@@ -53,7 +53,7 @@ async function createWorkOrder(
     return ids.workOrderId;
 }
 import type {
-    PersonEntity,
+    HumanWorkerEntity,
     FlowEntity,
     GraphNode,
     GraphEdge,
@@ -61,9 +61,9 @@ import type {
     WorkOrderClaimEntity,
 } from '../api/types.ts';
 
-function buildPerson(
+function buildHumanWorker(
     name: string,
-): Omit<PersonEntity, 'id'> {
+): Omit<HumanWorkerEntity, 'id'> {
     return {
         first_name: name,
         last_name: 'Test',
@@ -92,7 +92,7 @@ function buildNode(
         positionY: 0,
         isStart: false,
         isComplete: false,
-        crew: { kind: 'unassigned' },
+        workerIds: [],
         fields: [],
         ...overrides,
     };
@@ -146,6 +146,7 @@ function buildLinearGraph(): StoredGraph {
             buildNode(
                 'n-middle',
                 'Doing work',
+                { workerIds: ['current'] },
             ),
             buildNode(
                 'n-finish',
@@ -173,8 +174,8 @@ async function setupDb(): Promise<{
     ctx: RequestContext;
 }> {
     const db = new MemoryDbAdapter();
-    await db.people.put(
-        'current', buildPerson('Demo'),
+    await db.workers.put(
+        'current', buildHumanWorker('Demo'),
     );
     const ctx = createRequestContext(db);
     return { db, ctx };
@@ -262,10 +263,17 @@ test(
     + 'when flow has no start node',
     async () => {
         const { db, ctx } = await setupDb();
+        // Each regular node carries a worker so
+        // the publish gate passes; the start-node
+        // check is what we are exercising.
         const graph: StoredGraph = {
             nodes: [
-                buildNode('a', 'A'),
-                buildNode('b', 'B'),
+                buildNode('a', 'A', {
+                    workerIds: ['current'],
+                }),
+                buildNode('b', 'B', {
+                    isComplete: true,
+                }),
             ],
             edges: [
                 buildEdge('e', 'a', 'b'),
@@ -290,14 +298,24 @@ test(
     + 'outgoing edges',
     async () => {
         const { db, ctx } = await setupDb();
+        // Workers on regular nodes so the publish
+        // gate passes; the multi-outgoing-edge
+        // check on the start node is what we want
+        // to exercise.
         const graph: StoredGraph = {
             nodes: [
                 buildNode(
                     's', 'Start',
                     { isStart: true },
                 ),
-                buildNode('a', 'A'),
-                buildNode('b', 'B'),
+                buildNode('a', 'A', {
+                    workerIds: ['current'],
+                    isComplete: true,
+                }),
+                buildNode('b', 'B', {
+                    workerIds: ['current'],
+                    isComplete: true,
+                }),
             ],
             edges: [
                 buildEdge('e1', 's', 'a'),

@@ -4,13 +4,13 @@ import {
     searchItems,
     ideaToSearchItem,
     projectToSearchItem,
-    personToSearchItem,
+    humanWorkerToSearchItem,
 } from '../web-app/app/command-palette.ts';
 import type {
     SearchItem,
 } from '../web-app/app/command-palette.ts';
 import {
-    Idea, Project, Person,
+    Idea, Project, HumanWorker,
     jsonArrayField,
     jsonObjectField,
 } from '../api/types.ts';
@@ -62,13 +62,13 @@ function buildProject(
     });
 }
 
-function buildPerson(
+function buildHumanWorker(
     id: string,
     first: string, last: string,
     title = 'engineer',
     department = 'Eng',
-): Person {
-    return new Person({
+): HumanWorker {
+    return new HumanWorker({
         id,
         first_name: first,
         last_name: last,
@@ -255,17 +255,17 @@ test(
 );
 
 test(
-    'personToSearchItem builds correct shape',
+    'humanWorkerToSearchItem builds correct shape',
     () => {
-        const out = personToSearchItem(
-            buildPerson(
+        const out = humanWorkerToSearchItem(
+            buildHumanWorker(
                 'u1', 'Carol', 'Smith',
                 'pm', 'Product',
             ),
         );
-        assert.equal(out.id, 'person-u1');
+        assert.equal(out.id, 'worker-u1');
         assert.equal(out.title, 'Carol Smith');
-        assert.equal(out.category, 'people');
+        assert.equal(out.category, 'workers');
         assert.ok(
             out.keywords.includes('pm'),
             'title in keywords',
@@ -284,15 +284,15 @@ test(
 );
 
 test(
-    'searchItems search by member email works',
+    'searchItems search by worker email works',
     () => {
-        const memberItem = personToSearchItem(
-            buildPerson(
+        const workerItem = humanWorkerToSearchItem(
+            buildHumanWorker(
                 'u1', 'Carol', 'Smith',
             ),
         );
         const out = searchItems(
-            [memberItem], 'carol@',
+            [workerItem], 'carol@',
         );
         assert.equal(out.length, 1);
     },

@@ -7,8 +7,6 @@ import type {
 } from '../../api/types.ts';
 import {
     MS_PER_DAY,
-    isUserPrivateRoleId,
-    personIdFromUserPrivateRoleId,
 } from '../../api/types.ts';
 import { shouldShowWorkerHazard } from './flow-graph.ts';
 import type { WorkerHazardLevel } from './flow-graph.ts';
@@ -22,17 +20,7 @@ export interface FlowStatsInput {
         readonly WorkOrderTransitionEntity[];
     readonly nowMs: number;
     readonly windowDays: number;
-    readonly roleMemberSetByRoleId:
-        ReadonlyMap<Id, ReadonlySet<Id>>;
-    readonly crewMemberSetByCrewId:
-        ReadonlyMap<Id, ReadonlySet<Id>>;
-    readonly personNameById:
-        ReadonlyMap<Id, string>;
-    readonly modelNameById:
-        ReadonlyMap<Id, string>;
-    readonly roleNameById:
-        ReadonlyMap<Id, string>;
-    readonly crewNameById:
+    readonly workerNameById:
         ReadonlyMap<Id, string>;
 }
 
@@ -62,7 +50,6 @@ export interface NodeStat {
         readonly sharePct: number | null;
         readonly inCurrentClan: boolean;
     } | null;
-    readonly modelName: string | null;
     readonly assignmentLabel: string;
     readonly workerHazard: WorkerHazardLevel | null;
     readonly branchSplit: readonly {
@@ -122,7 +109,6 @@ function emptyNodeStat(n: GraphNode): NodeStat {
         clanSize: 0,
         activeProducerCount: 0,
         topProducer: null,
-        modelName: null,
         assignmentLabel: 'Unassigned',
         workerHazard: null,
         branchSplit: [],
@@ -207,69 +193,27 @@ function reconstructRuns(
     return { runs, droppedNodeIds: dropped };
 }
 
-// Resolves the clan (member set) and display label
-// for a node based on its NodeAssignment variant.
-// User-private roles short-circuit to the one person
-// encoded in the role id — same rule as workbox-inbox.
+// A node's clan IS its workerIds directly.
+// The label lists the workers' display names,
+// or "Unassigned" if the list is empty.
 function resolveClan(
     n: GraphNode,
     input: FlowStatsInput,
 ): { ids: ReadonlySet<string>;
-     label: string;
-     modelName: string | null } {
-    const c = n.crew;
-    switch (c.kind) {
-        case 'unassigned':
-            return {
-                ids: new Set(),
-                label: 'Unassigned',
-                modelName: null,
-            };
-        case 'role': {
-            if (isUserPrivateRoleId(c.roleId)) {
-                const pid =
-                    personIdFromUserPrivateRoleId(
-                        c.roleId,
-                    );
-                return {
-                    ids: new Set([pid]),
-                    label: 'Role: '
-                        + (input.personNameById
-                               .get(pid) ?? '—'),
-                    modelName: null,
-                };
-            }
-            return {
-                ids: input.roleMemberSetByRoleId
-                         .get(c.roleId)
-                     ?? new Set(),
-                label: 'Role: '
-                    + (input.roleNameById
-                           .get(c.roleId) ?? '—'),
-                modelName: null,
-            };
-        }
-        case 'crew':
-            return {
-                ids: input.crewMemberSetByCrewId
-                         .get(c.crewId)
-                     ?? new Set(),
-                label: 'Crew: '
-                    + (input.crewNameById
-                           .get(c.crewId) ?? '—'),
-                modelName: null,
-            };
-        case 'model': {
-            const mn =
-                input.modelNameById.get(c.modelId)
-                ?? null;
-            return {
-                ids: new Set(),
-                label: 'Model: ' + (mn ?? '—'),
-                modelName: mn,
-            };
-        }
+     label: string } {
+    if (n.workerIds.length === 0) {
+        return {
+            ids: new Set(),
+            label: 'Unassigned',
+        };
     }
+    const names = n.workerIds.map(id =>
+        input.workerNameById.get(id) ?? id,
+    );
+    return {
+        ids: new Set(n.workerIds),
+        label: names.join(', '),
+    };
 }
 
 export function buildFlowStats(
@@ -428,10 +372,10 @@ export function buildFlowStats(
                     if (b[1] !== a[1])
                         return b[1] - a[1];
                     const na =
-                        input.personNameById.get(a[0])
+                        input.workerNameById.get(a[0])
                         ?? a[0];
                     const nb =
-                        input.personNameById.get(b[0])
+                        input.workerNameById.get(b[0])
                         ?? b[0];
                     if (na !== nb)
                         return na.localeCompare(nb);
@@ -440,7 +384,7 @@ export function buildFlowStats(
             const [pid, count] = sorted[0]!;
             topProducer = {
                 name:
-                    input.personNameById.get(pid)
+                    input.workerNameById.get(pid)
                     ?? pid,
                 sharePct: Math.round(
                     (count / totalOut) * 100,
@@ -531,7 +475,6 @@ export function buildFlowStats(
             clanSize:            clan.ids.size,
             activeProducerCount: outMap.size,
             topProducer,
-            modelName:       clan.modelName,
             assignmentLabel: clan.label,
             outgoingEdgeIds: outEdges.map(e => e.id),
             branchSplit,

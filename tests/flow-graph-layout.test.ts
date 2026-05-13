@@ -30,7 +30,7 @@ function node(id: string, o: NodeOpts = {}): GraphNode {
         positionY: o.positionY ?? 0,
         isStart: o.isStart ?? false,
         isComplete: o.isComplete ?? false,
-        crew: { kind: 'unassigned' },
+        workerIds: [],
         fields: [],
     };
 }
