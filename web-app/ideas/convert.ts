@@ -312,14 +312,6 @@ export async function init(
             submitSel,
         );
         bindEnterToClick(
-            '#convert-start-date',
-            submitSel,
-        );
-        bindEnterToClick(
-            '#convert-target-end-date',
-            submitSel,
-        );
-        bindEnterToClick(
             '#convert-budget', submitSel,
         );
         bindEnterToClick(
