@@ -136,12 +136,14 @@ export async function init(
                 `#check-${field}`, document,
             );
             if (chk) {
-                chk.style.display =
+                chk.setAttribute(
+                    'data-ready',
                     conversionFieldIsReady(
                         fields, field,
                     )
-                        ? ''
-                        : 'none';
+                        ? 'true'
+                        : 'false',
+                );
             }
         }
         const count =
