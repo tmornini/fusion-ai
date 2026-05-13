@@ -557,3 +557,35 @@ Do not use git worktrees. Work directly in the main checkout.
 Worktrees fragment review surface, hide state from the
 working tree, and add ceremony without buying isolation that
 small focused commits don't already provide.
+
+## Subagents
+
+Subagents inherit no scripture and read no CLAUDE.md by
+default. Before delegating to a general-purpose Agent, the
+dispatching agent MUST push down the relevant Church of Code
+doctrine AND the codebase-specific patterns in the prompt:
+
+- **Voice rules**: 78-char max line, 4-space indent, no
+  inline styles (use CSS custom properties + classes per
+  the styling section above), present-tense imperative
+  commit messages, Co-Authored-By trailer.
+- **Commandments touched by the task** — name them. If the
+  work involves naming, cite Uniformity (III). If it
+  introduces an abstraction, cite Generality (IX) and the
+  third-instance threshold. If it crosses a boundary, cite
+  Validation at edges. If it removes something, cite
+  Simplicity (VIII).
+- **Abominations the task specifically risks** — name them.
+  Null, Default Values, Internal Defense, Greedy Catch,
+  Coupling, Magical Values, Cleverness — say which apply,
+  with examples relevant to the file the agent will touch.
+- **Existing codebase patterns to match** — RequestContext
+  as the only argument to adapter methods, SafeHtml from
+  presenters, snake_case storage / camelCase domain,
+  HTTP-verb adapter naming (`get_noun`/`put_noun`/`delete_noun`/
+  `post_noun_operation`), validators at the gate not
+  downstream, no untyped `any` from external boundaries.
+
+An agent of the Church does not unleash unwashed heathens on
+the codebase. Cite the doctrine the subagent is expected to
+honor; do not assume it knows.
