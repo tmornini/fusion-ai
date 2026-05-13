@@ -1,5 +1,4 @@
 import type {
-    FlowEntity,
     FlowWorkOrderEntity,
     WorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -172,16 +171,3 @@ export async function getWorkOrderClaimRowsByOrder(
     );
 }
 
-export async function getFlowsForCreation(
-    ctx: RequestContext,
-): Promise<{
-    id: string;
-    name: string;
-}[]> {
-    const flows =
-        await ctx.GET<FlowEntity[]>('flows');
-    return flows.map(f => ({
-        id: f.id,
-        name: f.name,
-    }));
-}

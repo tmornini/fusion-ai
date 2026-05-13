@@ -24,6 +24,10 @@ import type {
 import {
     getCurrentHumanWorker,
 } from './workers.ts';
+import {
+    validateFlowForCreation,
+    formatFlowProblem,
+} from './flow-publish.ts';
 
 const workOrderChanges =
     createSubscriptionChannel(
@@ -94,6 +98,15 @@ export async function postWorkOrderCreation(
     const flow = await ctx.GET<FlowEntity>(
         `flows/${input.flowId}`,
     );
+    const readiness = validateFlowForCreation(flow);
+    if (!readiness.ready) {
+        throw new Error(
+            'flow not ready: '
+            + readiness.problems
+                .map(formatFlowProblem)
+                .join('; '),
+        );
+    }
     const graph: StoredGraph =
         validateStoredGraphJson(
             flow.graph, 'flow.graph',

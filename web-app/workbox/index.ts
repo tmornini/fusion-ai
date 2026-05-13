@@ -12,6 +12,7 @@ import {
 } from '../app/loading-states.ts';
 import {
     iconMail, iconArchive, iconPlus,
+    iconNoEntry,
 } from '../app/icons.ts';
 import {
     navigateTo,
@@ -29,6 +30,7 @@ import {
     createRequestContext,
     generateCryptoSafeBase62,
     subscribeWorkOrderChanges,
+    type FlowPickerEntry,
     type RequestContext,
     type WorkOrderEntity,
 } from '../app/adapters/index.ts';
@@ -315,14 +317,38 @@ async function initCreateDropdown(
     );
     if (!dropdownEl) return;
 
-    const flows = await getFlowsForCreation(ctx);
+    const { ready, notReady } =
+        await getFlowsForCreation(ctx);
 
-    setHtml(dropdownEl, html`${flows.map(
-        f => html`<button
-            class="dropdown-item"
-            data-flow-id="${f.id}"
-        >${f.name}</button>`,
-    )}`);
+    if (ready.length === 0 && notReady.length === 0) {
+        setHtml(dropdownEl, html`<div
+            class="dropdown-empty"
+        >No flows available</div>`);
+    } else {
+        const readySection =
+            ready.length > 0
+                ? html`<div
+                        class="dropdown-section-label"
+                    >READY</div>${ready.map(
+                        f => html`<button
+                            class="dropdown-item"
+                            data-flow-id="${f.id}"
+                        >${f.name}</button>`,
+                    )}`
+                : html``;
+        const notReadySection =
+            notReady.length > 0
+                ? html`<div
+                        class="dropdown-section-label"
+                    >NOT READY</div>${
+                        notReady.map(buildNotReadyRow)
+                    }`
+                : html``;
+        setHtml(
+            dropdownEl,
+            html`${readySection}${notReadySection}`,
+        );
+    }
 
     initDropdown(
         'create-work-order-btn',
@@ -334,6 +360,25 @@ async function initCreateDropdown(
         e => onDropdownClick(e, dropdownEl, ctx),
         { signal },
     );
+}
+
+function buildNotReadyRow(f: FlowPickerEntry) {
+    const count = f.problemCount ?? 0;
+    const subtitle = count === 1
+        ? '1 node needs attention'
+        : `${count} nodes need attention`;
+    return html`<div
+        class="dropdown-item-disabled"
+        aria-disabled="true"
+    ><span
+        class="not-ready-icon"
+    >${iconNoEntry(16, '')}</span><span
+        class="not-ready-body"
+    ><span
+        class="not-ready-name"
+    >${f.name}</span><span
+        class="not-ready-subtitle"
+    >${subtitle}</span></span></div>`;
 }
 
 function onDropdownClick(
