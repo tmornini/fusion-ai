@@ -10,6 +10,8 @@ import {
     isUserPrivateRoleId,
     personIdFromUserPrivateRoleId,
 } from '../../api/types.ts';
+import { shouldShowWorkerHazard } from './flow-graph.ts';
+import type { WorkerHazardLevel } from './flow-graph.ts';
 
 export interface FlowStatsInput {
     readonly nodes: readonly GraphNode[];
@@ -62,7 +64,7 @@ export interface NodeStat {
     } | null;
     readonly modelName: string | null;
     readonly assignmentLabel: string;
-    readonly hasHazard: boolean;
+    readonly workerHazard: WorkerHazardLevel | null;
     readonly branchSplit: readonly {
         readonly edgeId: string;
         readonly label: string;
@@ -122,7 +124,7 @@ function emptyNodeStat(n: GraphNode): NodeStat {
         topProducer: null,
         modelName: null,
         assignmentLabel: 'Unassigned',
-        hasHazard: false,
+        workerHazard: null,
         branchSplit: [],
     };
 }
@@ -488,15 +490,12 @@ export function buildFlowStats(
             })).sort((a, b) => b.pct - a.pct);
         }
 
-        // Unassigned, zero-member-role, and
-        // zero-member-crew nodes are hazardous —
-        // but never special nodes (start/complete),
-        // user-private roles (clan always ≥ 1),
-        // or model-assigned nodes.
-        const hasHazard =
-            !n.isStart && !n.isComplete
-            && n.crew.kind !== 'model'
-            && clan.ids.size === 0;
+        // Two-tier hazard rendering — see
+        // shouldShowWorkerHazard in flow-graph.ts.
+        // Shared with the designer canvas so both
+        // surfaces escalate identically.
+        const workerHazard =
+            shouldShowWorkerHazard(n, input.edges);
 
         return { ...emptyNodeStat(n),
             heatPct, heatT,
@@ -536,7 +535,7 @@ export function buildFlowStats(
             assignmentLabel: clan.label,
             outgoingEdgeIds: outEdges.map(e => e.id),
             branchSplit,
-            hasHazard,
+            workerHazard,
         };
     });
 

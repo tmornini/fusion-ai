@@ -22,20 +22,15 @@ import {
     getWorkOrderRows,
     getWorkOrderTransitionRows,
     getWorkOrderClaimRows,
-    getPersonMap,
-    getCurrentPerson,
+    getWorkerMap,
     getFlowsForCreation,
     postWorkOrderCreation,
     putWorkOrder,
-    getMembersOfCrew,
-    getCrewMap,
-    getRoleMembershipRows,
     createRequestContext,
     generateCryptoSafeBase62,
     subscribeWorkOrderChanges,
     type RequestContext,
     type WorkOrderEntity,
-    type Id,
 } from '../app/adapters/index.ts';
 import {
     WorkboxInboxPresenter,
@@ -133,71 +128,20 @@ async function loadInboxItems(
 ): Promise<InboxItem[]> {
     const [
         workOrders, transitions,
-        claims, personMap,
-        currentPerson,
-        scope,
+        claims, workerMap,
     ] = await Promise.all([
         getWorkOrderRows(ctx),
         getWorkOrderTransitionRows(ctx),
         getWorkOrderClaimRows(ctx),
-        getPersonMap(ctx),
-        getCurrentPerson(ctx),
-        buildVisibilityScope(ctx),
+        getWorkerMap(ctx),
     ]);
     workOrderEntities = new Map(
         workOrders.map(w => [w.id, w]),
     );
     return buildInboxItems(
         workOrders, transitions, claims,
-        personMap, mode,
-        {
-            currentPersonId: currentPerson.id,
-            roleMemberSetByRoleId:
-                scope.roleMemberSetByRoleId,
-            crewMemberSetByCrewId:
-                scope.crewMemberSetByCrewId,
-        },
+        workerMap, mode,
     );
-}
-
-async function buildVisibilityScope(
-    ctx: RequestContext,
-): Promise<{
-    roleMemberSetByRoleId:
-        ReadonlyMap<Id, ReadonlySet<Id>>;
-    crewMemberSetByCrewId:
-        ReadonlyMap<Id, ReadonlySet<Id>>;
-}> {
-    const [memberships, crewMap] =
-        await Promise.all([
-            getRoleMembershipRows(ctx),
-            getCrewMap(ctx),
-        ]);
-    const roleMemberSetByRoleId =
-        new Map<Id, Set<Id>>();
-    for (const m of memberships) {
-        const set =
-            roleMemberSetByRoleId
-                .get(m.role_id) ?? new Set();
-        set.add(m.person_id);
-        roleMemberSetByRoleId.set(
-            m.role_id, set,
-        );
-    }
-    const crewMemberSetByCrewId =
-        new Map<Id, ReadonlySet<Id>>();
-    for (const crewId of crewMap.keys()) {
-        const members = await getMembersOfCrew(
-            ctx, crewId,
-        );
-        crewMemberSetByCrewId.set(
-            crewId, members,
-        );
-    }
-    return {
-        roleMemberSetByRoleId,
-        crewMemberSetByCrewId,
-    };
 }
 
 async function initActiveList(

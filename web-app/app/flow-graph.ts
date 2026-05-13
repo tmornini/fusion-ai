@@ -11,11 +11,13 @@ import {
 } from './flow-layout.ts';
 import { pluralize } from './format.ts';
 import { findCycleEdgeIds } from './flow-cycle-edges.ts';
-import { iconAlertTriangle } from './icons.ts';
+import {
+    iconAlertTriangle,
+    iconNoEntry,
+} from './icons.ts';
 import {
     START_NODE_DEFAULT_NAME,
     END_NODE_DEFAULT_NAME,
-    isUserPrivateRoleId,
 } from '../../api/types.ts';
 
 function nodeHasConnections(
@@ -428,44 +430,30 @@ export function computeEdgeLabelWidth(
     );
 }
 
-export function shouldShowHazard(
+export type WorkerHazardLevel = 'warning' | 'danger';
+
+export function shouldShowWorkerHazard(
     node: GraphNode,
-    roleMemberCounts:
-        ReadonlyMap<string, number>,
-    crewMemberCounts:
-        ReadonlyMap<string, number> = new Map(),
-): boolean {
-    const a = node.crew;
-    if (a.kind === 'unassigned') return true;
-    if (a.kind === 'role') {
-        // User-private roles always have
-        // cardinality 1 by construction.
-        if (isUserPrivateRoleId(a.roleId)) {
-            return false;
-        }
-        const count = roleMemberCounts
-            .get(a.roleId) ?? 0;
-        return count === 0;
-    }
-    if (a.kind === 'crew') {
-        const count = crewMemberCounts
-            .get(a.crewId) ?? 0;
-        return count === 0;
-    }
-    return false;
+    allEdges: readonly GraphEdge[],
+): WorkerHazardLevel | null {
+    if (node.isStart || node.isComplete) return null;
+    const outCount = allEdges
+        .filter(e => e.fromNodeId === node.id)
+        .length;
+    if (node.workerIds.length === 0) return 'danger';
+    if (outCount === 0) return 'danger';
+    if (node.workerIds.length === 1) return 'warning';
+    return null;
 }
 
 function buildNode(
     node: GraphNode,
+    edges: readonly GraphEdge[],
     isSelected: boolean,
     isLocked: boolean,
     portPos: {
         x: number; y: number;
     } | null,
-    roleMemberCounts:
-        ReadonlyMap<string, number>,
-    crewMemberCounts:
-        ReadonlyMap<string, number>,
 ): SafeHtml {
     const { positionX, positionY } = node;
     const halfH = NODE_HEIGHT / 2;
@@ -561,20 +549,30 @@ function buildNode(
             + '</circle>';
     }
 
-    if (
-        !isSpecial
-        && shouldShowHazard(
-            node, roleMemberCounts,
-            crewMemberCounts,
-        )
-    ) {
+    const hazardLevel =
+        shouldShowWorkerHazard(node, edges);
+    if (hazardLevel === 'warning') {
         inner += '<g'
-            + ' class="flow-node-hazard"'
+            + ' class="flow-node-warning"'
             + ' transform="translate(6, 42)">'
             + '<title>'
-            + 'No assignment for this node.'
+            + 'Single worker assigned (no backup)'
             + '</title>'
             + iconAlertTriangle(16, '')
+                .toString()
+            + '</g>';
+    } else if (hazardLevel === 'danger') {
+        const dangerTitle =
+            node.workerIds.length === 0
+                ? 'Workers required'
+                : 'Dead end (no outgoing edges)';
+        inner += '<g'
+            + ' class="flow-node-danger"'
+            + ' transform="translate(6, 42)">'
+            + '<title>'
+            + dangerTitle
+            + '</title>'
+            + iconNoEntry(16, '')
                 .toString()
             + '</g>';
     }
@@ -1012,10 +1010,6 @@ export function buildGraphSvg(
         string,
         readonly { x: number; y: number }[]
     >,
-    roleMemberCounts:
-        ReadonlyMap<string, number> = new Map(),
-    crewMemberCounts:
-        ReadonlyMap<string, number> = new Map(),
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -1098,10 +1092,8 @@ export function buildGraphSvg(
             : null;
         nodeMarkup +=
             buildNode(
-                node, isSelected,
+                node, edges, isSelected,
                 isLocked, portPos,
-                roleMemberCounts,
-                crewMemberCounts,
             ).toString();
     }
 

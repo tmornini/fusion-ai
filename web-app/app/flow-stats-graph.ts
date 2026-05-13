@@ -16,7 +16,10 @@ import {
     perimeterPoint, whichEdge, controlOffset,
 } from './flow-graph.ts';
 import { findCycleEdgeIds } from './flow-cycle-edges.ts';
-import { iconAlertTriangle } from './icons.ts';
+import {
+    iconAlertTriangle,
+    iconNoEntry,
+} from './icons.ts';
 import { formatMinAscending } from './duration-units.ts';
 import {
     START_NODE_DEFAULT_NAME,
@@ -248,16 +251,37 @@ function buildNode(
         + ' y="' + String(NODE_FACE_Y) + '">'
         + faceEsc + '</text>';
 
-    if (n.hasHazard) {
+    if (n.workerHazard === 'warning') {
         inner += '<g'
-            + ' class="flow-stats-node-hazard"'
+            + ' class="flow-stats-node-warning"'
             + ' transform="translate('
             + String(HAZARD_X) + ', '
             + String(HAZARD_Y) + ')">'
             + '<title>'
-            + 'No assignment for this node.'
+            + 'Single worker assigned (no backup)'
             + '</title>'
             + iconAlertTriangle(HAZARD_ICON_SIZE, '')
+                .toString()
+            + '</g>';
+    } else if (n.workerHazard === 'danger') {
+        // Dead-end is the only danger variant the
+        // stats canvas can self-disambiguate
+        // (NodeStat carries outgoingEdgeIds but
+        // not workerIds); zero-workers falls
+        // through to the same generic title.
+        const dangerTitle =
+            n.outgoingEdgeIds.length === 0
+                ? 'Dead end (no outgoing edges)'
+                : 'Workers required';
+        inner += '<g'
+            + ' class="flow-stats-node-danger"'
+            + ' transform="translate('
+            + String(HAZARD_X) + ', '
+            + String(HAZARD_Y) + ')">'
+            + '<title>'
+            + dangerTitle
+            + '</title>'
+            + iconNoEntry(HAZARD_ICON_SIZE, '')
                 .toString()
             + '</g>';
     }

@@ -2,7 +2,7 @@ import {
     nowUtc,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
-    DEFAULT_NODE_ASSIGNMENT,
+    DEFAULT_NODE_WORKER_IDS,
     projectIsNotDeleted,
 } from '../../../api/types.ts';
 import type {
@@ -522,7 +522,7 @@ export async function postFlowFromBackup(
             positionY: n.positionY,
             isStart: n.isStart,
             isComplete: n.isComplete,
-            crew: n.crew,
+            workerIds: n.workerIds,
             fields: n.fields.map(
                 f => ({
                     id: generateCryptoSafeBase62(),
@@ -871,7 +871,9 @@ export async function postFlowFromMermaid(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
-                    crew: DEFAULT_NODE_ASSIGNMENT,
+                    workerIds: [
+                        ...DEFAULT_NODE_WORKER_IDS,
+                    ],
                     fields: [],
                 };
             },
@@ -1304,7 +1306,9 @@ export async function postFlowFromZip(
                     positionY: pos.y,
                     isStart: false,
                     isComplete: false,
-                    crew: DEFAULT_NODE_ASSIGNMENT,
+                    workerIds: [
+                        ...DEFAULT_NODE_WORKER_IDS,
+                    ],
                     fields: sc
                         ? sidecarFieldsToGraph(
                             sc,

@@ -2,7 +2,7 @@ import type { GraphNode } from '../../../api/types.ts';
 import {
     DEFAULT_NODE_DESCRIPTION,
     DEFAULT_NODE_FIELDS,
-    DEFAULT_NODE_ASSIGNMENT,
+    DEFAULT_NODE_WORKER_IDS,
 } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
@@ -29,7 +29,7 @@ export function buildStartAndCompleteNodes(): {
             positionY: DEFAULT_START_Y,
             isStart: true,
             isComplete: false,
-            crew: DEFAULT_NODE_ASSIGNMENT,
+            workerIds: [...DEFAULT_NODE_WORKER_IDS],
             fields: [...DEFAULT_NODE_FIELDS],
         },
         complete: {
@@ -41,7 +41,7 @@ export function buildStartAndCompleteNodes(): {
             positionY: DEFAULT_COMPLETE_Y,
             isStart: false,
             isComplete: true,
-            crew: DEFAULT_NODE_ASSIGNMENT,
+            workerIds: [...DEFAULT_NODE_WORKER_IDS],
             fields: [...DEFAULT_NODE_FIELDS],
         },
     };

@@ -3,7 +3,7 @@ import {
 } from '../safe-html.ts';
 import type { SafeHtml } from '../safe-html.ts';
 import {
-    personName,
+    workerName,
     validateWorkOrderFlowGraph,
     isExpiredClaim,
     type WorkOrderEntity,
@@ -17,9 +17,9 @@ import {
     type HistoryEntry,
     type HistoryFieldValue,
     type ClaimStatus,
-    type Id,
 } from '../adapters/index.ts';
-import type { Person } from '../adapters/index.ts';
+import type { Worker } from '../adapters/index.ts';
+import type { Id } from '../../../api/types.ts';
 import {
     iconArrowLeft,
     iconClock,
@@ -150,7 +150,7 @@ export class WorkboxDetailPresenter {
             >,
         claims:
             readonly WorkOrderClaimEntity[],
-        personMap: Map<Id, Person>,
+        workerMap: Map<Id, Worker>,
         currentPersonId: string,
     ) {
         this.#workOrder = workOrder;
@@ -181,7 +181,7 @@ export class WorkboxDetailPresenter {
             sorted,
             fieldValuesByTransition,
             this.#flowGraph.nodes,
-            personMap,
+            workerMap,
         );
 
         const active = claims.find(
@@ -394,7 +394,7 @@ export class WorkboxDetailPresenter {
                 <span
                     class="text-muted
                         ml-auto"
-                >${entry.personName}</span>
+                >${entry.workerName}</span>
                 <span
                     class="text-muted
                         text-sm"
@@ -496,7 +496,7 @@ function buildHistory(
             readonly TransitionFieldValueEntity[]
         >,
     nodes: readonly GraphNode[],
-    personMap: Map<Id, Person>,
+    workerMap: Map<Id, Worker>,
 ): HistoryEntry[] {
     const fieldNameMap = new Map<
         string, string
@@ -538,8 +538,8 @@ function buildHistory(
             toNodeName: nodeNameById(
                 nodes, t.to_node_id,
             ),
-            personName: personName(
-                personMap, t.person_id,
+            workerName: workerName(
+                workerMap, t.person_id,
             ),
             transitionedAt:
                 t.transitioned_at,

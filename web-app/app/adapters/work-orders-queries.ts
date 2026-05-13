@@ -38,7 +38,7 @@ export interface HistoryFieldValue {
 export interface HistoryEntry {
     fromNodeName: string;
     toNodeName: string;
-    personName: string;
+    workerName: string;
     transitionedAt: string;
     fieldValues: HistoryFieldValue[];
 }
