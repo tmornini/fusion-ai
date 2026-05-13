@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type {
-    PersonEntity,
-    PersonStatus,
+    HumanWorkerEntity,
+    WorkerStatus,
     ReadinessLevel,
     IdeaEntity,
     ProjectEntity,
@@ -10,12 +10,7 @@ import type {
     ActivityActorEntity,
     FlowEntity,
     ProjectFlowEntity,
-    RoleEntity,
-    RoleMembershipEntity,
-    CrewEntity,
-    CrewRoleMembershipEntity,
-    ModelEntity,
-    RoleModelMembershipEntity,
+    AIWorkerEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     WorkOrderTransitionEntity,
@@ -63,8 +58,8 @@ function dt(
         + `T${h}:${mi}:00.000000Z`;
 }
 
-type SeedPerson = Omit<
-    PersonEntity,
+type SeedHumanWorker = Omit<
+    HumanWorkerEntity,
     'strengths' | 'team_dimensions'
 > & {
     strengths: string[];
@@ -76,7 +71,7 @@ type SeedPerson = Omit<
 export async function populateMockData(
     adapter: DbAdapter,
 ): Promise<void> {
-    const people: SeedPerson[] = [
+    const workers: SeedHumanWorker[] = [
         {
             id: 'LhfaUUf4IumVsCSGB4xjdK',
             first_name: 'Sarah',
@@ -350,14 +345,14 @@ export async function populateMockData(
         },
     ];
 
-    await Promise.all(people.map(person =>
-        adapter.people.put(person.id, {
-            ...person,
+    await Promise.all(workers.map(worker =>
+        adapter.workers.put(worker.id, {
+            ...worker,
             strengths:
-                jsonArrayField(person.strengths),
+                jsonArrayField(worker.strengths),
             team_dimensions:
                 jsonObjectField(
-                    person.team_dimensions,
+                    worker.team_dimensions,
                 ),
         }),
     ));
@@ -1147,7 +1142,7 @@ export async function populateMockData(
                         positionY: 30,
                         isStart: true,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1159,11 +1154,10 @@ export async function populateMockData(
                         positionY: 140,
                         isStart: false,
                         isComplete: false,
-                        crew: {
-                            kind: 'crew',
-                            crewId:
-                                'crew_design',
-                        },
+                        workerIds: [
+                            'WxQn4LVWb76YkmqK5B0EPp',
+                            'current',
+                        ],
                         fields: [
                             {
                                 id: '5JZ0LeKdPCa4QMtg1RsF1M',
@@ -1276,7 +1270,7 @@ export async function populateMockData(
                         positionY: 250,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [
                             {
                                 id: 'AdQlKf43JV6yrhQbyskDkR',
@@ -1300,7 +1294,7 @@ export async function populateMockData(
                         positionY: 370,
                         isStart: false,
                         isComplete: true,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                 ],
@@ -1366,7 +1360,7 @@ export async function populateMockData(
                         positionY: -236,
                         isStart: true,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1377,7 +1371,7 @@ export async function populateMockData(
                         positionY: 358,
                         isStart: false,
                         isComplete: true,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1388,7 +1382,7 @@ export async function populateMockData(
                         positionY: -234,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1400,7 +1394,7 @@ export async function populateMockData(
                         positionY: -230,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1411,7 +1405,7 @@ export async function populateMockData(
                         positionY: -232,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1422,7 +1416,7 @@ export async function populateMockData(
                         positionY: -231,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1433,7 +1427,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1444,7 +1438,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1455,7 +1449,7 @@ export async function populateMockData(
                         positionY: 22,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1466,7 +1460,7 @@ export async function populateMockData(
                         positionY: 141,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1477,7 +1471,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1488,7 +1482,7 @@ export async function populateMockData(
                         positionY: -108,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1499,7 +1493,7 @@ export async function populateMockData(
                         positionY: 278,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1510,7 +1504,7 @@ export async function populateMockData(
                         positionY: -3,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1522,7 +1516,7 @@ export async function populateMockData(
                         positionY: -7,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1534,7 +1528,7 @@ export async function populateMockData(
                         positionY: 81,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1546,7 +1540,7 @@ export async function populateMockData(
                         positionY: 274,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1558,7 +1552,7 @@ export async function populateMockData(
                         positionY: 214,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                 ],
@@ -1758,7 +1752,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: true,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1769,7 +1763,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1780,7 +1774,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1791,7 +1785,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1802,7 +1796,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1813,7 +1807,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1824,7 +1818,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1835,7 +1829,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1846,7 +1840,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1857,7 +1851,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1868,7 +1862,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1879,7 +1873,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1890,7 +1884,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1901,7 +1895,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1912,7 +1906,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1923,7 +1917,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: false,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                     {
@@ -1934,7 +1928,7 @@ export async function populateMockData(
                         positionY: 0,
                         isStart: false,
                         isComplete: true,
-                        crew: { kind: 'unassigned' },
+                        workerIds: [],
                         fields: [],
                     },
                 ],
@@ -2170,8 +2164,8 @@ export async function populateMockData(
         'LhfaUUf4IumVsCSGB4xjdK';
     const woPersonMike =
         'bLP3X1hb1mSz8gY9neogU3';
-    // crew_design members: Marcus (role_product)
-    // and the current user (user-private:current)
+    // Data Capture node workers: Marcus and the
+    // current user (the in-clan workers)
     const woPersonMarcus =
         'WxQn4LVWb76YkmqK5B0EPp';
     const woPersonCurrent = 'current';
@@ -2533,8 +2527,9 @@ export async function populateMockData(
         },
         // ── out-of-clan runs (WO35-WO36) ─────────
         // OUT-transition from Data Capture is by
-        // Sarah or Mike — neither is in crew_design
-        // — so topProducer.inCurrentClan is false.
+        // Sarah or Mike — neither is among that
+        // node's workers, so topProducer.inCurrentClan
+        // is false.
         {
             id: 'wo35Fu0xT3cPwDrkImZ6O',
             display_id: 'i5k7m9h1',
@@ -4295,7 +4290,7 @@ export async function populateMockData(
             person_id: woPersonCurrent,
             transitioned_at: dt(1, 10, 0),
         },
-        // out-of-clan WO35: Sarah (not in crew_design)
+        // out-of-clan WO35: Sarah (not in DC workers)
         // transitions DC out
         {
             id: 'wot35-1-wo35Fu0xT3cPwDrkImZ6O',
@@ -4333,7 +4328,7 @@ export async function populateMockData(
             person_id: woPersonMike,
             transitioned_at: dt(31, 14, 0),
         },
-        // out-of-clan WO36: Mike (not in crew_design)
+        // out-of-clan WO36: Mike (not in DC workers)
         // transitions DC out
         {
             id: 'wot36-1-wo36Gv1yU4dQxEslJnA7P',
@@ -5152,109 +5147,7 @@ export async function populateMockData(
         },
     ];
 
-    const roles: RoleEntity[] = [
-        {
-            id: 'role_engineering',
-            name: 'Engineering',
-            description:
-                'Builds and maintains'
-                + ' the platform.',
-            created_at: dt(0, 9, 0),
-        },
-        {
-            id: 'role_qa',
-            name: 'QA',
-            description:
-                'Verifies that what ships'
-                + ' matches what was promised.',
-            created_at: dt(0, 9, 0),
-        },
-        {
-            id: 'role_product',
-            name: 'Product',
-            description:
-                'Decides what is worth'
-                + ' building, and why.',
-            created_at: dt(0, 9, 0),
-        },
-    ];
-
-    const roleMemberships:
-        RoleMembershipEntity[] = [
-        {
-            id: 'rm_eng_david',
-            role_id: 'role_engineering',
-            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            created_at: dt(0, 9, 5),
-        },
-        {
-            id: 'rm_eng_james',
-            role_id: 'role_engineering',
-            person_id: 'oU0bIe0eUC33mTbZrxdogC',
-            created_at: dt(0, 9, 5),
-        },
-        {
-            id: 'rm_qa_lisa',
-            role_id: 'role_qa',
-            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            created_at: dt(0, 9, 6),
-        },
-        {
-            id: 'rm_product_marcus',
-            role_id: 'role_product',
-            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            created_at: dt(0, 9, 7),
-        },
-    ];
-
-    const crews: CrewEntity[] = [
-        {
-            id: 'crew_delivery',
-            name: 'Delivery Squad',
-            description:
-                'Engineering and QA working'
-                + ' together on shipments.',
-            created_at: dt(0, 10, 0),
-        },
-        {
-            id: 'crew_design',
-            name: 'Design Crew',
-            description:
-                'Product and the demo user'
-                + ' shaping the experience.',
-            created_at: dt(0, 10, 1),
-        },
-    ];
-
-    const crewRoleMemberships:
-        CrewRoleMembershipEntity[] = [
-        {
-            id: 'crm_delivery_eng',
-            crew_id: 'crew_delivery',
-            role_id: 'role_engineering',
-            created_at: dt(0, 10, 5),
-        },
-        {
-            id: 'crm_delivery_qa',
-            crew_id: 'crew_delivery',
-            role_id: 'role_qa',
-            created_at: dt(0, 10, 5),
-        },
-        {
-            id: 'crm_design_product',
-            crew_id: 'crew_design',
-            role_id: 'role_product',
-            created_at: dt(0, 10, 6),
-        },
-        {
-            id: 'crm_design_current',
-            crew_id: 'crew_design',
-            role_id: 'user-private:current',
-            created_at: dt(0, 10, 6),
-        },
-    ];
-
-    const models: ModelEntity[] = [
+    const aiWorkers: AIWorkerEntity[] = [
         {
             id: 'model_claude_opus',
             name: 'Claude Opus 4.7 Max',
@@ -5262,6 +5155,8 @@ export async function populateMockData(
             description:
                 'Anthropic flagship — long'
                 + ' context, deep reasoning.',
+            auth_token:
+                'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
             created_at: dt(0, 11, 0),
         },
         {
@@ -5271,6 +5166,8 @@ export async function populateMockData(
             description:
                 'Anthropic mid-tier — fast'
                 + ' and capable.',
+            auth_token:
+                'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
             created_at: dt(0, 11, 0),
         },
         {
@@ -5279,6 +5176,8 @@ export async function populateMockData(
             provider: 'OpenAI',
             description:
                 'OpenAI multimodal flagship.',
+            auth_token:
+                'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
             created_at: dt(0, 11, 0),
         },
         {
@@ -5287,17 +5186,9 @@ export async function populateMockData(
             provider: 'xAI',
             description:
                 'xAI heavy-compute model.',
+            auth_token:
+                'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
             created_at: dt(0, 11, 0),
-        },
-    ];
-
-    const roleModelMemberships:
-        RoleModelMembershipEntity[] = [
-        {
-            id: 'rmm_eng_claude_opus',
-            role_id: 'role_engineering',
-            model_id: 'model_claude_opus',
-            created_at: dt(0, 11, 5),
         },
     ];
 
@@ -5335,29 +5226,8 @@ export async function populateMockData(
             adapter.transitionFieldValues
                 .put(r.id, r),
         ),
-        ...roles.map(r =>
-            adapter.roles.put(r.id, r),
-        ),
-        ...roleMemberships.map(r =>
-            adapter.roleMemberships.put(
-                r.id, r,
-            ),
-        ),
-        ...crews.map(c =>
-            adapter.crews.put(c.id, c),
-        ),
-        ...models.map(m =>
-            adapter.models.put(m.id, m),
-        ),
-        ...roleModelMemberships.map(r =>
-            adapter.roleModelMemberships.put(
-                r.id, r,
-            ),
-        ),
-        ...crewRoleMemberships.map(r =>
-            adapter.crewRoleMemberships.put(
-                r.id, r,
-            ),
+        ...aiWorkers.map(m =>
+            adapter.aiWorkers.put(m.id, m),
         ),
     ]);
 }
@@ -5366,13 +5236,13 @@ export async function populateBootstrapData(
     adapter: DbAdapter,
 ): Promise<void> {
     await Promise.all([
-        adapter.people.put('current', {
+        adapter.workers.put('current', {
             first_name: 'Tony',
             last_name: 'Stark',
             email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',
-            status: 'active' as PersonStatus,
+            status: 'active' as WorkerStatus,
             strengths: jsonArrayField([
                 'Strategic Planning',
                 'Data Analysis',

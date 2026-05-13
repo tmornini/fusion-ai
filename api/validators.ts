@@ -1,5 +1,5 @@
 import {
-    assertPersonStatus,
+    assertWorkerStatus,
     assertIdeaStatus,
     assertProjectStatus,
     assertReadinessLevel,
@@ -11,14 +11,15 @@ import type {
     StoredGraph,
     WorkOrderFlowGraph,
     FlowFieldType,
-    NodeAssignment,
-    PersonStatus,
+    WorkerId,
+    WorkerStatus,
     IdeaStatus,
     ProjectStatus,
     ReadinessLevel,
     JsonArrayField,
     JsonObjectField,
-    PersonEntity,
+    HumanWorkerEntity,
+    AIWorkerEntity,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -33,12 +34,6 @@ import type {
     IdeaSubmissionEntity,
     ActivityActorEntity,
     ProjectFlowEntity,
-    RoleEntity,
-    RoleMembershipEntity,
-    CrewEntity,
-    CrewRoleMembershipEntity,
-    ModelEntity,
-    RoleModelMembershipEntity,
 } from './types.ts';
 
 export interface Risk {
@@ -284,48 +279,16 @@ function asGraphField(
     };
 }
 
-export function asNodeAssignment(
+export function asWorkerIds(
     value: unknown,
     label: string,
-): NodeAssignment {
-    const obj = asObject(value, label);
-    const kind = asString(
-        obj['kind'], label + '.kind',
-    );
-    if (kind === 'unassigned') {
-        return { kind: 'unassigned' };
-    }
-    if (kind === 'role') {
-        return {
-            kind: 'role',
-            roleId: asString(
-                obj['roleId'],
-                label + '.roleId',
-            ),
-        };
-    }
-    if (kind === 'crew') {
-        return {
-            kind: 'crew',
-            crewId: asString(
-                obj['crewId'],
-                label + '.crewId',
-            ),
-        };
-    }
-    if (kind === 'model') {
-        return {
-            kind: 'model',
-            modelId: asString(
-                obj['modelId'],
-                label + '.modelId',
-            ),
-        };
-    }
-    throw new Error(
-        'expected assignment.kind in {unassigned,'
-            + ' role, crew, model} for '
-            + label + ', got ' + kind,
+): WorkerId[] {
+    const arr = asArray(value, label);
+    return arr.map((v, i) =>
+        asString(
+            v,
+            label + '[' + i + ']',
+        ),
     );
 }
 
@@ -338,8 +301,9 @@ function asGraphNode(
         obj['fields'],
         label + '.fields',
     );
-    const crew = asNodeAssignment(
-        obj['crew'], label + '.crew',
+    const workerIds = asWorkerIds(
+        obj['workerIds'],
+        label + '.workerIds',
     );
     return {
         id: asString(
@@ -368,7 +332,7 @@ function asGraphNode(
             obj['isComplete'],
             label + '.isComplete',
         ),
-        crew,
+        workerIds,
         fields: fieldsArr.map((f, i) =>
             asGraphField(
                 f,
@@ -518,11 +482,11 @@ function asJsonObjectField(
 
 // ── Enum validators ─────────────────
 
-export function asPersonStatus(
+export function asWorkerStatus(
     value: unknown,
     label: string,
-): PersonStatus {
-    return assertPersonStatus(
+): WorkerStatus {
+    return assertWorkerStatus(
         asString(value, label), label,
     );
 }
@@ -607,18 +571,21 @@ export function assertOnlyKeys(
 
 // ── Entity validators ────────────────
 
-const PERSON_BODY_KEYS: readonly string[] = [
+const HUMAN_WORKER_BODY_KEYS:
+    readonly string[] = [
     'first_name', 'last_name', 'email',
     'title', 'department', 'status',
     'strengths', 'team_dimensions',
     'phone', 'bio',
 ];
 
-export function validatePersonEntity(
+export function validateHumanWorkerEntity(
     body: Record<string, unknown>,
-): Omit<PersonEntity, 'id'> {
+): Omit<HumanWorkerEntity, 'id'> {
     assertOnlyKeys(
-        body, PERSON_BODY_KEYS, 'PersonEntity',
+        body,
+        HUMAN_WORKER_BODY_KEYS,
+        'HumanWorkerEntity',
     );
     return {
         first_name: asString(
@@ -636,7 +603,7 @@ export function validatePersonEntity(
         department: asString(
             body['department'], 'department',
         ),
-        status: asPersonStatus(
+        status: asWorkerStatus(
             body['status'], 'status',
         ),
         strengths: asJsonArrayField(
@@ -651,6 +618,52 @@ export function validatePersonEntity(
         ),
         bio: asString(
             body['bio'], 'bio',
+        ),
+    };
+}
+
+const AI_WORKER_BODY_KEYS:
+    readonly string[] = [
+    'name', 'provider', 'description',
+    'auth_token', 'created_at',
+];
+
+// auth_token must be non-empty —
+// Sin of Null / Default Values fires
+// otherwise (empty would be a sentinel for
+// "not set"). Future feature will add
+// provider-side validation; this gate is
+// the first line of defense today.
+export function validateAIWorkerEntity(
+    body: Record<string, unknown>,
+): Omit<AIWorkerEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        AI_WORKER_BODY_KEYS,
+        'AIWorkerEntity',
+    );
+    const authToken = asString(
+        body['auth_token'], 'auth_token',
+    );
+    if (authToken === '') {
+        throw new Error(
+            'auth_token must be non-empty'
+            + ' on AIWorkerEntity',
+        );
+    }
+    return {
+        name: asString(
+            body['name'], 'name',
+        ),
+        provider: asString(
+            body['provider'], 'provider',
+        ),
+        description: asString(
+            body['description'], 'description',
+        ),
+        auth_token: authToken,
+        created_at: asString(
+            body['created_at'], 'created_at',
         ),
     };
 }
@@ -1254,153 +1267,3 @@ export function validateProjectFlowEntity(
     };
 }
 
-const ROLE_BODY_KEYS: readonly string[] = [
-    'name', 'description', 'created_at',
-];
-
-export function validateRoleEntity(
-    body: Record<string, unknown>,
-): Omit<RoleEntity, 'id'> {
-    assertOnlyKeys(
-        body, ROLE_BODY_KEYS, 'RoleEntity',
-    );
-    return {
-        name: asString(
-            body['name'], 'name',
-        ),
-        description: asString(
-            body['description'], 'description',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const ROLE_MEMBERSHIP_BODY_KEYS:
-    readonly string[] = [
-    'role_id', 'person_id', 'created_at',
-];
-
-export function validateRoleMembershipEntity(
-    body: Record<string, unknown>,
-): Omit<RoleMembershipEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        ROLE_MEMBERSHIP_BODY_KEYS,
-        'RoleMembershipEntity',
-    );
-    return {
-        role_id: asString(
-            body['role_id'], 'role_id',
-        ),
-        person_id: asString(
-            body['person_id'], 'person_id',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const CREW_BODY_KEYS: readonly string[] = [
-    'name', 'description', 'created_at',
-];
-
-export function validateCrewEntity(
-    body: Record<string, unknown>,
-): Omit<CrewEntity, 'id'> {
-    assertOnlyKeys(
-        body, CREW_BODY_KEYS, 'CrewEntity',
-    );
-    return {
-        name: asString(
-            body['name'], 'name',
-        ),
-        description: asString(
-            body['description'], 'description',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const CREW_ROLE_MEMBERSHIP_BODY_KEYS:
-    readonly string[] = [
-    'crew_id', 'role_id', 'created_at',
-];
-
-export function validateCrewRoleMembershipEntity(
-    body: Record<string, unknown>,
-): Omit<CrewRoleMembershipEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        CREW_ROLE_MEMBERSHIP_BODY_KEYS,
-        'CrewRoleMembershipEntity',
-    );
-    return {
-        crew_id: asString(
-            body['crew_id'], 'crew_id',
-        ),
-        role_id: asString(
-            body['role_id'], 'role_id',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const MODEL_BODY_KEYS: readonly string[] = [
-    'name', 'provider', 'description',
-    'created_at',
-];
-
-export function validateModelEntity(
-    body: Record<string, unknown>,
-): Omit<ModelEntity, 'id'> {
-    assertOnlyKeys(
-        body, MODEL_BODY_KEYS, 'ModelEntity',
-    );
-    return {
-        name: asString(
-            body['name'], 'name',
-        ),
-        provider: asString(
-            body['provider'], 'provider',
-        ),
-        description: asString(
-            body['description'], 'description',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
-
-const ROLE_MODEL_MEMBERSHIP_BODY_KEYS:
-    readonly string[] = [
-    'role_id', 'model_id', 'created_at',
-];
-
-export function validateRoleModelMembershipEntity(
-    body: Record<string, unknown>,
-): Omit<RoleModelMembershipEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        ROLE_MODEL_MEMBERSHIP_BODY_KEYS,
-        'RoleModelMembershipEntity',
-    );
-    return {
-        role_id: asString(
-            body['role_id'], 'role_id',
-        ),
-        model_id: asString(
-            body['model_id'], 'model_id',
-        ),
-        created_at: asString(
-            body['created_at'], 'created_at',
-        ),
-    };
-}
