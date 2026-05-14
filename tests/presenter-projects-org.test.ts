@@ -131,7 +131,6 @@ function makeProject(overrides: {
         position: overrides.position ?? 0,
         business_context: jsonObjectField({}),
         timeline_label: '',
-        budget_label: '',
     });
 }
 

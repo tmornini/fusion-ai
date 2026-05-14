@@ -800,7 +800,6 @@ const PROJECT_BODY_KEYS: readonly string[] = [
     'actual_cost', 'estimated_impact',
     'actual_impact', 'position',
     'business_context', 'timeline_label',
-    'budget_label',
 ];
 
 export function validateProjectEntity(
@@ -856,9 +855,6 @@ export function validateProjectEntity(
         ),
         timeline_label: pickString(
             body, 'timeline_label',
-        ),
-        budget_label: pickString(
-            body, 'budget_label',
         ),
     };
 }

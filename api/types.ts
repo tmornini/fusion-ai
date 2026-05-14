@@ -627,7 +627,6 @@ export interface ProjectEntity {
     position: number;
     business_context: JsonObjectField;
     timeline_label: string;
-    budget_label: string;
 }
 
 export interface ActivityEntity {
@@ -1112,7 +1111,6 @@ export class Project {
     readonly #position: number;
     readonly #businessContext: string;
     readonly #timelineLabel: string;
-    readonly #budgetLabel: string;
 
     constructor(entity: ProjectEntity) {
         this.#id = entity.id;
@@ -1142,17 +1140,10 @@ export class Project {
             entity.business_context;
         this.#timelineLabel =
             entity.timeline_label;
-        this.#budgetLabel =
-            entity.budget_label;
     }
 
     isDeleted(): boolean {
         return this.#status === 'deleted';
-    }
-
-    isOverBudget(): boolean {
-        return this.#actualCost
-            > this.#estimatedCost;
     }
 
     isOverdue(): boolean {

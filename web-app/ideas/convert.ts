@@ -501,8 +501,6 @@ async function performConversion(
             business_context:
                 jsonObjectField({}),
             timeline_label: '',
-            budget_label:
-                fields['budget'],
         },
         { ...ideaEntity, status: 'promoted' },
     );

@@ -242,7 +242,6 @@ const validProject = {
     position: 1,
     business_context: '{}',
     timeline_label: 'Q1',
-    budget_label: '$1K',
 };
 
 test('validateProjectEntity accepts valid payload', () => {

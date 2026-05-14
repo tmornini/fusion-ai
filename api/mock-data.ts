@@ -911,7 +911,6 @@ export async function populateMockData(
                 ],
             }),
             timeline_label: '3-4 months',
-            budget_label: '$45,000',
         },
         {
             id: 'jRE2Tj32NHsFGZIeEADp0p',
@@ -936,7 +935,6 @@ export async function populateMockData(
             position: 2,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
-            budget_label: 'Under Budget',
         },
         {
             id: 'YXUxtljJj6ebsQEFZ5nSI1',
@@ -962,7 +960,6 @@ export async function populateMockData(
             position: 3,
             business_context: jsonObjectField({}),
             timeline_label: 'At Risk',
-            budget_label: 'Under Budget',
         },
         {
             id: 'sf1hZEIvey6seX1fbUwXMq',
@@ -987,7 +984,6 @@ export async function populateMockData(
             position: 4,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
-            budget_label: 'On Budget',
         },
         {
             id: 'efwJPwQFljYHZYMuhetyow',
@@ -1013,7 +1009,6 @@ export async function populateMockData(
             position: 5,
             business_context: jsonObjectField({}),
             timeline_label: 'Overdue',
-            budget_label: 'Under Budget',
         },
         {
             id: 'zzcBNqWXtKs6kt7ggcRndY',
@@ -1039,7 +1034,6 @@ export async function populateMockData(
             position: 6,
             business_context: jsonObjectField({}),
             timeline_label: 'On Track',
-            budget_label: 'Under Budget',
         },
     ];
 

@@ -128,7 +128,6 @@ function putProject(
         position: 0,
         business_context: '{}',
         timeline_label: '',
-        budget_label: '',
     });
 }
 

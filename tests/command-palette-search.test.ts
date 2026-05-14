@@ -58,7 +58,6 @@ function buildProject(
         position: 1,
         business_context: jsonObjectField({}),
         timeline_label: '',
-        budget_label: '',
     });
 }
 
