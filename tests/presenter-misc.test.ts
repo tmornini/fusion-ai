@@ -48,7 +48,7 @@ function makeGauge(
     isOverrunning: boolean,
 ): GaugeData {
     return {
-        title: 'Cost Budget',
+        title: 'Cost Baseline',
         icon: 'dollarSign',
         iconCssClass: 'text-primary',
         theme: 'blue',
@@ -166,7 +166,7 @@ test(
                 false,
             ),
         ).render().toString();
-        assert.match(out, /Cost Budget/);
+        assert.match(out, /Cost Baseline/);
         assert.match(out, /class="icon-box"/);
         assert.match(out, /Baseline/);
         assert.match(out, /Current/);
@@ -268,8 +268,8 @@ test(
                 false,
             ),
         ).render().toString();
-        assert.match(out, /id="outer-cost-budget"/);
-        assert.match(out, /id="inner-cost-budget"/);
+        assert.match(out, /id="outer-cost-baseline"/);
+        assert.match(out, /id="inner-cost-baseline"/);
     },
 );
 
