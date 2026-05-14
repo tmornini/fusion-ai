@@ -1380,7 +1380,7 @@ svg.flow-canvas [data-edge-id] {
   font-size: var(--text-sm);
   color: hsl(var(--muted-foreground));
   pointer-events: none;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .not-ready-icon {
