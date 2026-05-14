@@ -169,8 +169,10 @@ export async function init(
             pFill instanceof
             HTMLElement
         ) {
-            pFill.style.width =
-                `${pct}%`;
+            pFill.style.setProperty(
+                '--convert-progress',
+                `${pct}%`,
+            );
         }
         const isReady =
             conversionIsReady(fields);
