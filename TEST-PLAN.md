@@ -2,6 +2,33 @@
 
 > **Encoding:** `- [ ]` = pending, `- [ ]` = PASS, `- [FAIL]` = failure (add note)
 
+### How to invoke
+
+When the user says "run the test plan", the agent:
+
+1. Reads `CLAUDE.md` `## Testing` (six-phase protocol,
+   mutation domains, MCP limitations) — required context,
+   not optional reference.
+2. Executes section **AT** as a fail-fast gate; any AT
+   failure aborts the run before A1's build.
+3. Executes A1–A5 preflight; on success spawns the
+   six-phase parallel protocol (Phase 1 serial data setup,
+   Phase 2 seven concurrent agents, Phase 3 cross-cutting
+   alone, Phase 4 snapshot lifecycle alone, Phase 5
+   teardown). Or runs serially if `--serial` is requested.
+4. Emits the run summary in the canonical format
+   documented at the bottom of this file (`## Summary
+   Format`). The summary is the conversational artifact;
+   this document is NOT mutated by the run.
+
+This document plus `CLAUDE.md` `## Testing` is the complete
+contract — no other coordination state is read or written.
+
+BLOCKED ≠ FAIL. BLOCKED is reserved for known MCP
+environmental limits (pointer-capture gestures,
+`resize_window`, file I/O) — never used to mask a real
+failure.
+
 ### Scope
 
 This plan covers **UI behavior** — anything that requires a browser
@@ -44,7 +71,9 @@ note pointing at the test file.
 
 ### Protocol
 
-All sections are executed over HTTP. Two execution modes:
+The automated layer (`## AT`) runs first as a fail-fast
+gate. On green, the browser regression runs over HTTP in
+one of two modes:
 
 - **Serial (single human tester)**:
   `./build --no-zip /tmp/fusion-test/` then
@@ -59,20 +88,27 @@ All sections are executed over HTTP. Two execution modes:
 
 ### Execution Order
 
-Sections A through AA establish a pristine environment and populate
-it through the UI. Sections B through J then verify every page
-renders correctly against that data.
+**AT (automated tests) precedes everything.** Any AT
+failure aborts the run before A1's build — the expensive
+browser layer never tests against a validate-broken tree.
 
-In the serial run the plan is a single continuous regression pass.
-In the parallel run B–J split across seven agents each with its
-own browser tab and disjoint entity mutation domain; I runs alone
-(global UI state); G30–G35 run alone last (they wipe the database).
-See `CLAUDE.md` section `## Testing`.
+After AT passes, sections A through AA establish a pristine
+environment and populate it through the UI. Sections B
+through J then verify every page renders correctly against
+that data.
+
+In the serial run the plan is a single continuous regression
+pass. In the parallel run B–J split across seven agents
+each with its own browser tab and disjoint entity mutation
+domain; I runs alone (global UI state); G30–G35 run alone
+last (they wipe the database). See `CLAUDE.md` section
+`## Testing`.
 
 ## Summary
 
 | Section | Tests |
 |---|--:|
+| AT. Automated Test Suite | 3 |
 | A. Build & Setup | 5 |
 | AA. Data Entry Workflow | 46 |
 | B. Entry Pages | 14 |
@@ -80,20 +116,32 @@ See `CLAUDE.md` section `## Testing`.
 | D. Core: Ideas Workflow | 37 |
 | E. Core: Projects | 11 |
 | F. Tools | 74 |
-| F2. Workbox | 26 |
+| F2. Workbox | 25 |
 | FS. Flow Statistics | 9 |
 | G. Admin Pages | 27 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 28 |
 | J. Teardown | 3 |
-| **Total** | **289** |
+| **Total** | **291** |
+
+---
+
+## AT. Automated Test Suite
+
+The automated layer is the gate. Any AT failure aborts the
+run before A1's build. The single canonical invocation is
+`./validate`, which composes all three sub-steps.
+
+- [ ] **AT1** Run `npx tsc --noEmit -p web-app/app/tsconfig.json`. PASS: exits 0; no diagnostics emitted.
+- [ ] **AT2** Run `./test` (delegates to `node --test --strip-types tests/*.test.ts`). PASS: exits 0; the runner's final summary reports `pass N` with `fail 0`.
+- [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script.
 
 ---
 
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 13 page directories (`auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `landing`, `not-found`, `organization`, `projects`, `snapshots`, `workbox`, `workers`) with 21 HTML page files, plus root `index.html`.
+- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 13 page directories (`auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `landing`, `not-found`, `organization`, `projects`, `snapshots`, `workbox`, `workers`) with 22 HTML page files (including `flows/stats.html`), plus root `index.html`.
 - [ ] **A3** Start an HTTP server from the build directory (`cd /tmp/fusion-test/ && python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
@@ -166,13 +214,14 @@ on. Run these in order.
 - [ ] **AA9a** From an AI worker detail, click Edit,
   change Description, leave Auth Token blank (placeholder
   reads "Leave blank to keep current token"), click Save.
-  PASS: toast "Worker saved" fires; on reopen the masked
-  token is unchanged. Click Edit again, type a new token,
-  Save. PASS: on reopen the masked-token last 4 chars
-  reflect the new value.
-- [ ] **AA10** Navigate to Organization. In the General
-  Information card, click Edit, change Domain
-  (e.g. `acmecorp.io`), click Save. PASS: success toast
+  PASS: toast "AI worker saved" fires; on reopen the
+  masked token is unchanged. Click Edit again, type a new
+  token, Save. PASS: on reopen the masked-token last 4
+  chars reflect the new value.
+- [ ] **AA10** Navigate to Organization. Click the
+  page-level Edit button (a single button at the page
+  header, not per-card), change Domain (e.g.
+  `acmecorp.io`), click Save. PASS: success toast
   "Organization saved" appears.
 - [ ] **AA11** Navigate away, return to Organization.
   PASS: edited Domain persists with saved value, card is
@@ -370,7 +419,7 @@ on. Run these in order.
 - [ ] **B7** Enter `notanemail` in email, leave password empty. PASS: "Please enter a valid email address" error on email.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter `test@example.com`, password `password123`, click "Sign in →". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`.
-- [ ] **B10** Click "Don't have an account?" toggle. PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with arrow icon.
+- [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
 - [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `dashboard/index.html` after a brief delay (the dedicated onboarding page has been retired — sign-up routes straight to the dashboard).
 
 ### Auth Validation Edge Cases
@@ -503,7 +552,7 @@ on. Run these in order.
 
 ### Projects List (`projects/`)
 
-- [ ] **E1** Navigate to `projects/`. PASS: table/list shows 6 seeded projects with title, status, and progress. Project cards show "—" (em-dash) for missing/zero metric values (time, cost, impact).
+- [ ] **E1** Navigate to `projects/`. PASS: table/list shows 6 seeded projects with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value."
 - [ ] **E2** Click a status filter badge (e.g. "Active"). PASS: project list filters to show only projects with that status. Click the same badge again or "All". PASS: full list returns.
 - [ ] **E3** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
 
@@ -1352,11 +1401,11 @@ the claude-in-chrome MCP.
   the Auth Token field becomes a `type="password"` input
   with placeholder "Leave blank to keep current token" and
   the security-warning paragraph below. Save with the token
-  field blank. PASS: toast "Worker saved"; on reopen the
+  field blank. PASS: toast "AI worker saved"; on reopen the
   masked token is unchanged.
 - [ ] **G24b** Click Edit again, type a new token, click
-  Save. PASS: toast "Worker saved"; on reopen the masked
-  token's last 4 chars match the new value.
+  Save. PASS: toast "AI worker saved"; on reopen the
+  masked token's last 4 chars match the new value.
 
 ### Snapshots (`snapshots/`) — Run These Last
 
@@ -1369,15 +1418,22 @@ verify the four operation cards, the file-picker affordance, the
 post-operation redirect, and that pages render against the
 restored data.)
 
-- [ ] **G30** Navigate to `snapshots/`. PASS: shows 4 operation cards: Create Pristine Environment, Wipe and Load Mock Data, Upload Snapshot, Download Snapshot.
+- [ ] **G30** Navigate to `snapshots/`. PASS: shows 3 operation cards (Create Pristine Environment, Wipe and Load Mock Data, Download Snapshot) plus an Upload Snapshot affordance rendered as a labeled file-input (`<input type="file" id="upload-input">`), not a fourth button card.
 - [ ] **G31** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
 - [ ] **G32** Click "Create Pristine Environment", confirm
   the dialog. PASS: redirects to `dashboard/index.html`.
   Dashboard renders with zeroed-out metrics (empty
-  database). All 17 `fusion-ai:*` keys exist in
-  localStorage as empty arrays — including
-  `fusion-ai:workers` and `fusion-ai:ai_workers`. The full
-  table set is the constant `TABLE_NAMES` in `api/db.ts`;
+  database). 15 of the 17 `fusion-ai:*` keys are present
+  as empty arrays; `fusion-ai:workers` and
+  `fusion-ai:organization` are bootstrap-seeded by
+  `postBootstrap` after the pristine wipe — `workers`
+  holds the current user (Tony Stark), `organization`
+  holds Stark Industries. Empty-array tables persisted
+  via column-compression appear as a `gz1:H4sI…`
+  sentinel rather than the literal `[]` string; the
+  `db-localstorage` adapter decodes them transparently.
+  The full table set is the constant `TABLE_NAMES` in
+  `api/db.ts`;
   cross-check against that. No tables outside that list
   appear under any `fusion-ai:*` key.
 - [ ] **G33** Click "Wipe and Load Mock Data". PASS: redirects to `dashboard/index.html`. Navigate to `ideas/` — 11 ideas are back.
@@ -1390,7 +1446,12 @@ restored data.)
   inline error reports the upload failed with a human-readable
   message; existing data in localStorage is untouched (verify via
   DevTools that no fusion-ai:* keys were overwritten or cleared).
-  (The rejection logic and the wipe-on-fail behavior are covered
+  Note: malformed JSON is rejected at parse time — BEFORE any
+  write — so the wipe-on-fail path is NOT exercised by this case.
+  Wipe-on-fail fires for the rarer scenario where parse succeeds
+  but a per-row validator throws mid-write; that path is covered
+  by `tests/snapshot-wipe-on-fail.test.ts`. The pre-parse
+  rejection logic and the wipe-on-fail behavior are covered
   by `tests/snapshot-import-validation.test.ts` and
   `tests/snapshot-wipe-on-fail.test.ts` — this case verifies the
   error toast/inline-error surfaces in the UI.)
@@ -1525,16 +1586,60 @@ feature is implemented.
 
 ---
 
-## Execution Log
+## Summary Format
 
-| Field | Value |
-|---|---|
-| Tester | |
-| Date | |
-| Browser & Version | |
-| OS | |
-| Build SHA | |
-| Tests Passed | /289 |
-| Tests Failed | /289 |
-| Tests Skipped | /289 |
-| Notes | |
+The run produces a single conversational summary in the
+following format. This is the contract `## How to invoke`
+references. The doc itself is NOT mutated by the run.
+
+```
+# Test Plan Run — <ISO-8601 timestamp, Zulu>
+
+Build SHA: <git rev-parse --short HEAD>  (clean | dirty: N files)
+Mode: parallel-agents | serial
+
+## Automated (AT)
+- AT1 tsc: PASS (0 diagnostics)
+- AT2 ./test: PASS (N/N, 0 fail, Xs)
+- AT3 ./validate: PASS (lint clean)
+
+## Manual Browser Regression
+Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
+
+| Phase / Agent | Sections          | Pass | Blocked | Fail |
+|---------------|-------------------|-----:|--------:|-----:|
+| Preflight     | A1–A5             |    5 |       0 |    0 |
+| Phase-1       | AA1–AA43+subs     |    X |       Y |    Z |
+| Agent-B       | B1–B14            |   14 |       0 |    0 |
+| Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
+| Agent-D       | D1–D37            |    X |       Y |    Z |
+| Agent-E       | E1–E11            |   11 |       0 |    0 |
+| Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
+| Agent-F2      | WB1–WB22 + subs   |   25 |       0 |    0 |
+| Agent-G       | G9–14,19–24,36–40 |    X |       0 |    0 |
+| Phase-3       | I1–I28            |    X |       Y |    Z |
+| Phase-4       | G30–G35           |    6 |       0 |    0 |
+| Teardown      | J1–J3             |    3 |       0 |    0 |
+
+## BLOCKED detail (known MCP limitations — NOT failures)
+- <case ID>: <one-line reason>
+
+## FAIL detail
+(none) | <case ID>: <one-line symptom>
+
+## Drift Candidates
+| Case | Mode | Symptom | Likely cause |
+|------|------|---------|--------------|
+(none) | ... | ... | ...
+```
+
+A fully green run with no drift produces zero rows in FAIL
+and Drift Candidates, a one-line BLOCKED list, and fits in
+under 50 lines.
+
+`BLOCKED` is reserved for known MCP environmental limits
+(pointer-capture gestures, `resize_window`, file I/O).
+`FAIL` is for real regressions. A case that "mostly passes
+but one subassertion drifts" is scored PASS with the drift
+noted in the Drift Candidates table — the agent surfaces;
+the user adjudicates.
