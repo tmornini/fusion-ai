@@ -601,6 +601,16 @@ count checks are non-zero + consistency, not numeric equality.
   `javascript_tool` and dispatching a synthetic change event.
 - **Keyboard events** (arrows, Cmd+K, Delete, Tab) work
   normally and bypass the pointer-capture limitation.
+- **`kill` syscall against the background HTTP server**: the
+  Claude Code sandbox rejects `kill -TERM` and `kill -9`
+  against PIDs of long-running background tasks started via
+  the Bash tool's `run_in_background: true` (EPERM). Phase 5
+  teardown's **J1** ("Stop the HTTP server") cannot terminate
+  the process from within the sandbox; mark J1 BLOCKED with
+  the reason "sandbox EPERM on kill". The server is cleaned
+  up at session end. Workaround: the user terminates manually
+  after the run via `lsof -ti tcp:8080 | xargs kill -9`
+  outside the sandbox.
 
 ### Serial single-tester mode
 
