@@ -388,13 +388,19 @@ on. Run these in order.
 
 - [ ] **AA43** Navigate to Snapshots. Click
   "Download Snapshot". PASS: JSON file downloads
-  with all manually-entered data. Click "Create
+  with all manually-entered data. In **serial
+  mode** continue the round-trip: Click "Create
   Pristine Environment", confirm. PASS: all data
   wiped. Click "Upload Snapshot", select the
   downloaded file. PASS: all data restored.
-  Spot-check 3 pages to confirm data matches.
-  (Snapshot serialization/validation, the quota
-  pre-flight, and wipe-on-fail are covered by
+  Spot-check 3 pages to confirm data matches. In
+  **parallel mode** stop after the download step
+  to preserve the Phase 2 baseline — the wipe +
+  upload round-trip is exercised again at I26
+  (Phase 3) and G34 (Phase 4) on a different
+  baseline. (Snapshot serialization/validation,
+  the quota pre-flight, and wipe-on-fail are
+  covered by
   `tests/snapshot-import-validation.test.ts`,
   `tests/snapshot-quota.test.ts`, and
   `tests/snapshot-wipe-on-fail.test.ts` — this
