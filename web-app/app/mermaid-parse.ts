@@ -1,8 +1,3 @@
-import {
-    START_NODE_DEFAULT_NAME,
-    END_NODE_DEFAULT_NAME,
-} from '../../api/types.ts';
-
 export interface ParsedNode {
     mermaidId: string;
     name: string;
@@ -319,8 +314,8 @@ function parseStateDiagram(
         nodes.set(id, {
             mermaidId: id,
             name: kind === 'start'
-                ? START_NODE_DEFAULT_NAME
-                : END_NODE_DEFAULT_NAME,
+                ? 'Create'
+                : 'Archive',
             isStart: kind === 'start',
             isComplete: kind === 'complete',
         });

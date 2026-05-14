@@ -22,8 +22,6 @@ import {
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
     SECONDS_PER_HOUR,
-    START_NODE_DEFAULT_NAME,
-    END_NODE_DEFAULT_NAME,
 } from './types.ts';
 
 const now = new Date();
@@ -1130,7 +1128,7 @@ export async function populateMockData(
                 nodes: [
                     {
                         id: 'lzkYvFNCEHARBQmZ4YHAn4',
-                        name: START_NODE_DEFAULT_NAME,
+                        name: 'Create',
                         description: '',
                         positionX: 40,
                         positionY: 30,
@@ -1282,7 +1280,7 @@ export async function populateMockData(
                     },
                     {
                         id: '8jSnGiQ4Hedb2G75Y5aT7O',
-                        name: END_NODE_DEFAULT_NAME,
+                        name: 'Archive',
                         description: '',
                         positionX: 680,
                         positionY: 370,
@@ -1348,7 +1346,7 @@ export async function populateMockData(
                 nodes: [
                     {
                         id: 'N8iGVHrr3iv0OCqICw2oWo',
-                        name: START_NODE_DEFAULT_NAME,
+                        name: 'Create',
                         description: '',
                         positionX: -702,
                         positionY: -236,
@@ -1359,7 +1357,7 @@ export async function populateMockData(
                     },
                     {
                         id: 'nKbwVydJZixw20nvP2XqfF',
-                        name: END_NODE_DEFAULT_NAME,
+                        name: 'Archive',
                         description: '',
                         positionX: 436,
                         positionY: 358,
@@ -1740,7 +1738,7 @@ export async function populateMockData(
                 nodes: [
                     {
                         id: 'qfuFbfKwwlpKAewu3Uujb7',
-                        name: START_NODE_DEFAULT_NAME,
+                        name: 'Create',
                         description: '',
                         positionX: 0,
                         positionY: 0,
@@ -1916,7 +1914,7 @@ export async function populateMockData(
                     },
                     {
                         id: '9r0eSQ4ndyaRoYbKTTDpW2',
-                        name: END_NODE_DEFAULT_NAME,
+                        name: 'Archive',
                         description: '',
                         positionX: 0,
                         positionY: 0,
