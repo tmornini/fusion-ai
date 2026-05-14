@@ -654,8 +654,8 @@ export interface GraphNode {
     description: string;
     positionX: number;
     positionY: number;
-    isStart: boolean;
-    isComplete: boolean;
+    isCreate: boolean;
+    isArchive: boolean;
     workerIds: WorkerId[];
     fields: GraphField[];
 }

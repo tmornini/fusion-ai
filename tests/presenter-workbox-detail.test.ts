@@ -55,8 +55,8 @@ function makeNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -90,7 +90,7 @@ function makeFlowGraph(
             }),
             makeNode({
                 id: 'n-2', name: 'Done',
-                isComplete: true,
+                isArchive: true,
             }),
         ],
         edges: [
@@ -341,7 +341,7 @@ test(
         assert.equal(
             presenter.currentNodeId(), 'n-2',
         );
-        assert.equal(presenter.isComplete(), true);
+        assert.equal(presenter.isArchive(), true);
     },
 );
 
@@ -373,7 +373,7 @@ test(
                 }),
                 makeNode({
                     id: 'n-2', name: 'Done',
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
         });

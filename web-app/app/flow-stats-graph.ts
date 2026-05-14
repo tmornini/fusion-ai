@@ -215,7 +215,7 @@ function buildNode(
 
     // Face stat: avg sojourn for regular nodes with
     // data; em-dash for start/complete/no-data.
-    const isSpecial = n.isStart || n.isComplete;
+    const isSpecial = n.isCreate || n.isArchive;
     const face = (!isSpecial && n.avgSeconds !== null)
         ? formatMinAscending(n.avgSeconds)
         : '—';
@@ -289,9 +289,9 @@ function buildNode(
     const onPathAttr = onPath ? ' data-on-path="true"' : '';
 
     // data-special only on start/complete nodes.
-    const specialAttr = n.isStart
+    const specialAttr = n.isCreate
         ? ' data-special="start"'
-        : n.isComplete
+        : n.isArchive
         ? ' data-special="archive"'
         : '';
 

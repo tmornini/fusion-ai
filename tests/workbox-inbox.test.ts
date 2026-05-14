@@ -64,8 +64,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -113,13 +113,13 @@ function buildLinearGraph(): StoredGraph {
     return {
         nodes: [
             buildNode('n-start', 'Start', {
-                isStart: true,
+                isCreate: true,
             }),
             buildNode('n-middle', 'Doing work', {
                 workerIds: ['current'],
             }),
             buildNode('n-finish', 'Done', {
-                isComplete: true,
+                isArchive: true,
             }),
         ],
         edges: [

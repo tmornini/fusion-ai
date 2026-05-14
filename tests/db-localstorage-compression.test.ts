@@ -39,8 +39,8 @@ const baseVersion = {
             {
                 id: 'n1',
                 name: 'Start',
-                isStart: true,
-                isComplete: false,
+                isCreate: true,
+                isArchive: false,
                 workerIds: [],
                 fields: [],
                 positionX: 0,

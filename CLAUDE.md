@@ -120,7 +120,7 @@ so the auto-fit viewBox is the final state, not stomped by the
 FSM's frozen viewBox; on selection change while the panel is
 open, it then runs `withSelectionCentered` to pan the newly
 selected node to the visible canvas center (zoom unchanged).
-The two special nodes (`isStart` / `isComplete`) persist
+The two special nodes (`isCreate` / `isArchive`) persist
 their `name` field directly as "Create" and "Archive" — no
 constants, no render-time override. The flow renderer, the
 stats renderer, the properties panel header, and the mermaid
@@ -145,8 +145,8 @@ pure helper `parseWorkerIdsFromPanel(panelEl)` in
 Hazards are two-tier and shared across the designer +
 stats canvases via the pure predicate
 `shouldShowWorkerHazard(node, allEdges)` in
-`web-app/app/flow-graph.ts`. Precedence: `isStart` /
-`isComplete` → no hazard ever; zero workers → `'danger'`
+`web-app/app/flow-graph.ts`. Precedence: `isCreate` /
+`isArchive` → no hazard ever; zero workers → `'danger'`
 (red `iconNoEntry`, class `.flow-node-danger` /
 `.flow-stats-node-danger`); zero outgoing edges (strict
 dead-end) → `'danger'`; exactly one worker → `'warning'`

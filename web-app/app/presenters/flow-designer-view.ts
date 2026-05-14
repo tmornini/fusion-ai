@@ -161,7 +161,7 @@ export function buildNodePanel(
     ais: AIWorker[],
 ): SafeHtml {
     const isSpecial =
-        node.isStart || node.isComplete;
+        node.isCreate || node.isArchive;
     if (isSpecial) {
         const label = node.name;
         return html`<div

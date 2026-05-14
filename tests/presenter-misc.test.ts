@@ -98,8 +98,8 @@ function makeNode(
         description: 'Manager review step',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...over,
@@ -541,7 +541,7 @@ test(
     () => {
         const out = buildNodePanel(
             makeNode({
-                isStart: true,
+                isCreate: true,
                 name: 'Create',
             }),
             [], false,
@@ -560,7 +560,7 @@ test(
     () => {
         const out = buildNodePanel(
             makeNode({
-                isComplete: true,
+                isArchive: true,
                 name: 'Archive',
             }),
             [], false,

@@ -324,13 +324,13 @@ function asGraphNode(
             obj['positionY'],
             label + '.positionY',
         ),
-        isStart: asBoolean(
-            obj['isStart'],
-            label + '.isStart',
+        isCreate: asBoolean(
+            obj['isCreate'],
+            label + '.isCreate',
         ),
-        isComplete: asBoolean(
-            obj['isComplete'],
-            label + '.isComplete',
+        isArchive: asBoolean(
+            obj['isArchive'],
+            label + '.isArchive',
         ),
         workerIds,
         fields: fieldsArr.map((f, i) =>

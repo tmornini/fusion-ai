@@ -27,8 +27,8 @@ export interface FlowStatsInput {
 export interface NodeStat {
     readonly id: string;
     readonly displayName: string;
-    readonly isStart: boolean;
-    readonly isComplete: boolean;
+    readonly isCreate: boolean;
+    readonly isArchive: boolean;
     readonly positionX: number;
     readonly positionY: number;
     readonly outgoingEdgeIds: readonly string[];
@@ -91,8 +91,8 @@ function emptyNodeStat(n: GraphNode): NodeStat {
     return {
         id: n.id,
         displayName: n.name,
-        isStart: n.isStart,
-        isComplete: n.isComplete,
+        isCreate: n.isCreate,
+        isArchive: n.isArchive,
         positionX: n.positionX,
         positionY: n.positionY,
         outgoingEdgeIds: [],
@@ -173,14 +173,14 @@ function reconstructRuns(
             const exitMs = nextT
                 ? Date.parse(nextT.transitioned_at)
                 : input.nowMs;
-            if (!node.isStart && !node.isComplete) {
+            if (!node.isCreate && !node.isArchive) {
                 sojourns.push({
                     nodeId: node.id,
                     enterMs, exitMs,
                     personId: t.person_id,
                 });
             }
-            if (node.isComplete) completed = true;
+            if (node.isArchive) completed = true;
         }
         runs.push({
             workOrderId: woId,
@@ -299,7 +299,7 @@ export function buildFlowStats(
                     run.pathNodeIds.length - 1
                 ]!;
             const lastNode = nodeById.get(last);
-            if (lastNode && !lastNode.isComplete) {
+            if (lastNode && !lastNode.isArchive) {
                 currentlyAt.set(
                     last,
                     (currentlyAt.get(last) ?? 0) + 1,
@@ -343,8 +343,8 @@ export function buildFlowStats(
         const sec = nodeSec.get(n.id) ?? 0;
         const heatPct =
             flowSec > 0
-            && !n.isStart
-            && !n.isComplete
+            && !n.isCreate
+            && !n.isArchive
                 ? (sec / flowSec) * 100
                 : 0;
         const heatT =

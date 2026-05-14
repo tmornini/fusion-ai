@@ -35,8 +35,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -81,11 +81,11 @@ function buildFlowEntity(
 function readyGraph(): StoredGraph {
     return {
         nodes: [
-            buildNode('start', { isStart: true }),
+            buildNode('start', { isCreate: true }),
             buildNode('mid', {
                 workerIds: ['hw_1'],
             }),
-            buildNode('done', { isComplete: true }),
+            buildNode('done', { isArchive: true }),
         ],
         edges: [
             buildEdge('e1', 'start', 'mid'),
@@ -115,11 +115,11 @@ test(
         const graph: StoredGraph = {
             nodes: [
                 buildNode('start', {
-                    isStart: true,
+                    isCreate: true,
                 }),
                 buildNode('mid'),
                 buildNode('done', {
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
             edges: [
@@ -147,7 +147,7 @@ test(
         const graph: StoredGraph = {
             nodes: [
                 buildNode('start', {
-                    isStart: true,
+                    isCreate: true,
                 }),
                 buildNode('mid', {
                     workerIds: ['hw_1'],
@@ -156,7 +156,7 @@ test(
                     workerIds: ['hw_1'],
                 }),
                 buildNode('done', {
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
             // orphan has no outgoing edge
@@ -183,14 +183,14 @@ test(
         const graph: StoredGraph = {
             nodes: [
                 buildNode('start', {
-                    isStart: true,
+                    isCreate: true,
                     // intentionally empty
                 }),
                 buildNode('mid', {
                     workerIds: ['hw_1'],
                 }),
                 buildNode('done', {
-                    isComplete: true,
+                    isArchive: true,
                     // intentionally empty
                 }),
             ],
@@ -214,11 +214,11 @@ test(
         const badGraph: StoredGraph = {
             nodes: [
                 buildNode('start', {
-                    isStart: true,
+                    isCreate: true,
                 }),
                 buildNode('mid'),
                 buildNode('done', {
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
             edges: [

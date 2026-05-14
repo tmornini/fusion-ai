@@ -271,7 +271,7 @@ ${this.buildLegend()}${footnote}</div>`;
 
     buildCard(s: NodeStat): SafeHtml {
         const special =
-            s.isStart || s.isComplete;
+            s.isCreate || s.isArchive;
 
         // Workers block: suppressed for special
         // nodes; regular nodes show clan + producer.

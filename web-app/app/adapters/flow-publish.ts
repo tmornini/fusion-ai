@@ -26,7 +26,7 @@ export function validateFlowForCreation(
     );
     const problems: FlowProblem[] = [];
     for (const node of graph.nodes) {
-        if (node.isStart || node.isComplete) {
+        if (node.isCreate || node.isArchive) {
             continue;
         }
         const level = shouldShowWorkerHazard(

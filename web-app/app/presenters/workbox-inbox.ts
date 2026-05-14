@@ -231,7 +231,7 @@ export function buildInboxItems(
                 + ' node ' + lastToId,
             );
         }
-        const completed = curNode.isComplete;
+        const completed = curNode.isArchive;
 
         const claim =
             claimByWo.get(wo.id);

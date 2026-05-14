@@ -296,7 +296,7 @@ export async function init(
             if (
                 (claim.kind !== 'claimed'
                     || !claim.byCurrentPerson)
-                && !presenter.isComplete()
+                && !presenter.isArchive()
             ) {
                 await postWorkOrderClaim(
                     ctx,
@@ -332,7 +332,7 @@ export async function init(
     }
 
     if (
-        !detail.isComplete()
+        !detail.isArchive()
     ) {
         initTransitionButtons(
             container, detail, ctx,

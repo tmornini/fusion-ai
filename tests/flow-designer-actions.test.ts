@@ -18,8 +18,8 @@ const node = (id: string, x = 0, y = 0) => ({
     description: '',
     positionX: x,
     positionY: y,
-    isStart: false,
-    isComplete: false,
+    isCreate: false,
+    isArchive: false,
     workerIds: [] as string[],
     fields: [],
 });
@@ -216,10 +216,10 @@ test('applyUpdateNode patches matching id', () => {
     ];
     const result = applyUpdateNode(
         nodes, 'a',
-        { name: 'Alpha', isStart: true },
+        { name: 'Alpha', isCreate: true },
     );
     assert.equal(result[0]?.name, 'Alpha');
-    assert.equal(result[0]?.isStart, true);
+    assert.equal(result[0]?.isCreate, true);
     assert.equal(result[1]?.name, 'B');
 });
 

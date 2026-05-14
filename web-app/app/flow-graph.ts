@@ -432,7 +432,7 @@ export function shouldShowWorkerHazard(
     node: GraphNode,
     allEdges: readonly GraphEdge[],
 ): WorkerHazardLevel | null {
-    if (node.isStart || node.isComplete) return null;
+    if (node.isCreate || node.isArchive) return null;
     const outCount = allEdges
         .filter(e => e.fromNodeId === node.id)
         .length;
@@ -457,10 +457,10 @@ function buildNode(
 
     let borderColor = BLUE;
     let strokeW = STROKE_NORMAL;
-    if (node.isStart) {
+    if (node.isCreate) {
         borderColor = GREEN;
         strokeW = STROKE_START;
-    } else if (node.isComplete) {
+    } else if (node.isArchive) {
         borderColor = RED;
         strokeW = STROKE_COMPLETE;
     }
@@ -481,7 +481,7 @@ function buildNode(
         + ` stroke-width="${strokeW}"/>`;
 
     const isSpecial =
-        node.isStart || node.isComplete;
+        node.isCreate || node.isArchive;
     const labelY = isSpecial
         ? NODE_LABEL_Y_CENTERED
         : NODE_LABEL_Y;
@@ -763,7 +763,7 @@ function buildEdge(
 
     const strokeWidth = EDGE_STROKE;
 
-    if (fromNode.isStart) {
+    if (fromNode.isCreate) {
         return trusted(
             '<g aria-hidden="true">'
             + '<path'
@@ -1068,8 +1068,8 @@ export function buildGraphSvg(
         const isSelected =
             selectedNodeIds.has(node.id);
         const isSpecial =
-            node.isStart
-            || node.isComplete;
+            node.isCreate
+            || node.isArchive;
         const hasEdges = isSpecial
             && nodeHasConnections(
                 node.id, edges,

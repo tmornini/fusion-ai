@@ -113,7 +113,7 @@ export async function postWorkOrderCreation(
         );
 
     const startNode = graph.nodes.find(
-        n => n.isStart,
+        n => n.isCreate,
     );
     if (!startNode) {
         throw new Error(

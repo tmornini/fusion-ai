@@ -12,7 +12,7 @@ function model(): FlowStatsModel {
     const node =
         (over: Partial<NodeStat> & { id: string }): NodeStat => ({
             id: over.id, displayName: over.id.toUpperCase(),
-            isStart: false, isComplete: false,
+            isCreate: false, isArchive: false,
             positionX: 0, positionY: 0,
             outgoingEdgeIds: [], heatPct: 0, heatT: 0,
             avgSeconds: null, medianSeconds: null, p90Seconds: null,
@@ -25,7 +25,7 @@ function model(): FlowStatsModel {
         });
     return {
         nodes: [
-            node({ id:'c', displayName:'Create',  isStart:true,
+            node({ id:'c', displayName:'Create',  isCreate:true,
                    positionX:0,   positionY:0 }),
             node({ id:'a', displayName:'A',
                    positionX:200, positionY:0,
@@ -33,7 +33,7 @@ function model(): FlowStatsModel {
                    avgSeconds: 510,
                    outgoingEdgeIds: ['e2'],
                    workerHazard: 'danger' }),
-            node({ id:'z', displayName:'Archive', isComplete:true,
+            node({ id:'z', displayName:'Archive', isArchive:true,
                    positionX:400, positionY:0 }),
         ],
         edges: [
@@ -316,8 +316,8 @@ function nodeStat(
         id: over.id,
         displayName:
             over.displayName ?? over.id.toUpperCase(),
-        isStart: over.isStart ?? false,
-        isComplete: over.isComplete ?? false,
+        isCreate: over.isCreate ?? false,
+        isArchive: over.isArchive ?? false,
         positionX: over.positionX ?? 0,
         positionY: over.positionY ?? 0,
         outgoingEdgeIds:
@@ -427,7 +427,7 @@ test('special-node card is lean (no clan/producer/branch)',
         { x: 0, y: 0, w: 600, h: 200 },
     );
     const s = nodeStat({
-        id: 'c', isStart: true,
+        id: 'c', isCreate: true,
         displayName: 'Create',
     });
     const html = p.buildCard(s).toString();

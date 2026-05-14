@@ -712,8 +712,8 @@ const baseNode = {
     description: '',
     positionX: 0,
     positionY: 0,
-    isStart: false,
-    isComplete: false,
+    isCreate: false,
+    isArchive: false,
     fields: [],
 };
 

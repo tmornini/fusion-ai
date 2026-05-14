@@ -90,8 +90,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -141,7 +141,7 @@ function buildLinearGraph(): StoredGraph {
             buildNode(
                 'n-start',
                 'Start',
-                { isStart: true },
+                { isCreate: true },
             ),
             buildNode(
                 'n-middle',
@@ -151,7 +151,7 @@ function buildLinearGraph(): StoredGraph {
             buildNode(
                 'n-finish',
                 'Done',
-                { isComplete: true },
+                { isArchive: true },
             ),
         ],
         edges: [
@@ -272,7 +272,7 @@ test(
                     workerIds: ['current'],
                 }),
                 buildNode('b', 'B', {
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
             edges: [
@@ -306,15 +306,15 @@ test(
             nodes: [
                 buildNode(
                     's', 'Start',
-                    { isStart: true },
+                    { isCreate: true },
                 ),
                 buildNode('a', 'A', {
                     workerIds: ['current'],
-                    isComplete: true,
+                    isArchive: true,
                 }),
                 buildNode('b', 'B', {
                     workerIds: ['current'],
-                    isComplete: true,
+                    isArchive: true,
                 }),
             ],
             edges: [

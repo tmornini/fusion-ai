@@ -20,8 +20,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds,
         fields: [],
         ...overrides,
@@ -105,7 +105,7 @@ test(
     + ' of worker count',
     () => {
         const n = buildNode('n1', [], {
-            isStart: true,
+            isCreate: true,
         });
         assert.equal(
             shouldShowWorkerHazard(n, []),
@@ -119,7 +119,7 @@ test(
     + ' regardless of worker count',
     () => {
         const n = buildNode('n1', [], {
-            isComplete: true,
+            isArchive: true,
         });
         assert.equal(
             shouldShowWorkerHazard(n, []),

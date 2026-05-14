@@ -33,8 +33,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -84,16 +84,16 @@ function daysAgo(d: number): string {
     ).toISOString();
 }
 
-// c→a→z graph: c isStart, z isComplete, a regular
+// c→a→z graph: c isCreate, z isArchive, a regular
 function buildTestGraph(): StoredGraph {
     return {
         nodes: [
             buildNode('c', 'Create', {
-                isStart: true,
+                isCreate: true,
             }),
             buildNode('a', 'Active'),
             buildNode('z', 'Done', {
-                isComplete: true,
+                isArchive: true,
             }),
         ],
         edges: [

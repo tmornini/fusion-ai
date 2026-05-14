@@ -81,8 +81,8 @@ interface SidecarNode {
     description: string;
     positionX: number;
     positionY: number;
-    isStart: boolean;
-    isComplete: boolean;
+    isCreate: boolean;
+    isArchive: boolean;
     fields: SidecarField[];
 }
 
@@ -107,8 +107,8 @@ function buildSidecar(
             description: n.description,
             positionX: n.positionX,
             positionY: n.positionY,
-            isStart: n.isStart,
-            isComplete: n.isComplete,
+            isCreate: n.isCreate,
+            isArchive: n.isArchive,
             fields: n.fields.map(f => ({
                 name: f.name,
                 fieldType: f.fieldType,
@@ -520,8 +520,8 @@ export async function postFlowFromBackup(
             description: n.description,
             positionX: n.positionX,
             positionY: n.positionY,
-            isStart: n.isStart,
-            isComplete: n.isComplete,
+            isCreate: n.isCreate,
+            isArchive: n.isArchive,
             workerIds: n.workerIds,
             fields: n.fields.map(
                 f => ({
@@ -626,11 +626,11 @@ function remapParsedToDefaults(
     const intermediates: IntermediateParsed[] =
         [];
     for (const n of parsed) {
-        if (n.isStart) {
+        if (n.isCreate) {
             idMap.set(n.mermaidId, startId);
             continue;
         }
-        if (n.isComplete) {
+        if (n.isArchive) {
             idMap.set(
                 n.mermaidId, completeId,
             );
@@ -654,20 +654,20 @@ function layoutImportedGraph(
     const inputs: LayoutInput[] = [
         {
             id: startId,
-            isStart: true,
-            isComplete: false,
+            isCreate: true,
+            isArchive: false,
         },
         ...intermediates.map(
             ({ newId }) => ({
                 id: newId,
-                isStart: false,
-                isComplete: false,
+                isCreate: false,
+                isArchive: false,
             }),
         ),
         {
             id: completeId,
-            isStart: false,
-            isComplete: true,
+            isCreate: false,
+            isArchive: true,
         },
     ];
     return runLayoutFromInputs(inputs, edges, {
@@ -805,9 +805,9 @@ export async function postFlowFromMermaid(
         );
 
     const hasExplicitStart =
-        parsed.nodes.some(n => n.isStart);
+        parsed.nodes.some(n => n.isCreate);
     const hasExplicitComplete =
-        parsed.nodes.some(n => n.isComplete);
+        parsed.nodes.some(n => n.isArchive);
 
     const intermediateIds = intermediates
         .map(({ newId }) => newId);
@@ -869,8 +869,8 @@ export async function postFlowFromMermaid(
                     description: p.name,
                     positionX: pos.x,
                     positionY: pos.y,
-                    isStart: false,
-                    isComplete: false,
+                    isCreate: false,
+                    isArchive: false,
                     workerIds: [
                         ...DEFAULT_NODE_WORKER_IDS,
                     ],
@@ -1007,13 +1007,13 @@ function asSidecarNode(
             obj['positionY'],
             label + '.positionY',
         ),
-        isStart: asBoolean(
-            obj['isStart'],
-            label + '.isStart',
+        isCreate: asBoolean(
+            obj['isCreate'],
+            label + '.isCreate',
         ),
-        isComplete: asBoolean(
-            obj['isComplete'],
-            label + '.isComplete',
+        isArchive: asBoolean(
+            obj['isArchive'],
+            label + '.isArchive',
         ),
         fields: fieldsArr.map((f, i) =>
             asSidecarField(
@@ -1207,11 +1207,11 @@ export async function postFlowFromZip(
         );
 
     const sidecarStart = sidecar?.nodes.find(
-        n => n.isStart,
+        n => n.isCreate,
     );
     const sidecarComplete =
         sidecar?.nodes.find(
-            n => n.isComplete,
+            n => n.isArchive,
         );
     applySidecarToDefault(
         start, sidecarStart,
@@ -1221,9 +1221,9 @@ export async function postFlowFromZip(
     );
 
     const hasExplicitStart =
-        parsed.nodes.some(n => n.isStart);
+        parsed.nodes.some(n => n.isCreate);
     const hasExplicitComplete =
-        parsed.nodes.some(n => n.isComplete);
+        parsed.nodes.some(n => n.isArchive);
 
     const intermediateIds = intermediates
         .map(({ newId }) => newId);
@@ -1304,8 +1304,8 @@ export async function postFlowFromZip(
                         : p.name,
                     positionX: pos.x,
                     positionY: pos.y,
-                    isStart: false,
-                    isComplete: false,
+                    isCreate: false,
+                    isArchive: false,
                     workerIds: [
                         ...DEFAULT_NODE_WORKER_IDS,
                     ],

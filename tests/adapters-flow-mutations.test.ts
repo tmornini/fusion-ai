@@ -41,8 +41,8 @@ function buildNode(
         description: '',
         positionX: 0,
         positionY: 0,
-        isStart: false,
-        isComplete: false,
+        isCreate: false,
+        isArchive: false,
         workerIds: [],
         fields: [],
         ...overrides,
@@ -114,10 +114,10 @@ test(
         const { ctx } = setupMemDb();
         await createBaseFlow(ctx, 'flow-1');
         const start = buildNode('start', {
-            isStart: true,
+            isCreate: true,
         });
         const complete = buildNode('end', {
-            isComplete: true,
+            isArchive: true,
         });
         const middle = buildNode('mid');
         const edge = buildEdge(

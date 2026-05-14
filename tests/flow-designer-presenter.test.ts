@@ -123,8 +123,8 @@ const node = (
     description: '',
     positionX: x,
     positionY: y,
-    isStart: false,
-    isComplete: false,
+    isCreate: false,
+    isArchive: false,
     workerIds: [] as string[],
     fields: [],
 });

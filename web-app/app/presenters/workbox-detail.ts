@@ -217,8 +217,8 @@ export class WorkboxDetailPresenter {
         return this.#workOrder.display_id;
     }
 
-    isComplete(): boolean {
-        return this.#currentNode.isComplete;
+    isArchive(): boolean {
+        return this.#currentNode.isArchive;
     }
 
     currentNodeId(): string {
@@ -235,7 +235,7 @@ export class WorkboxDetailPresenter {
     }
 
     buildPage(): SafeHtml {
-        const complete = this.isComplete();
+        const complete = this.isArchive();
 
         const fields = complete
             ? html``

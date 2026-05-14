@@ -1027,8 +1027,8 @@ Auto Fit</label>
                     );
                 if (
                     n
-                    && !n.isStart
-                    && !n.isComplete
+                    && !n.isCreate
+                    && !n.isArchive
                 ) {
                     return true;
                 }
