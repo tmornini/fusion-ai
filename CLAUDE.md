@@ -120,12 +120,16 @@ so the auto-fit viewBox is the final state, not stomped by the
 FSM's frozen viewBox; on selection change while the panel is
 open, it then runs `withSelectionCentered` to pan the newly
 selected node to the visible canvas center (zoom unchanged).
-The two special nodes (`isStart` / `isComplete`) display as
-"Create" and "Archive" — names live in `START_NODE_DEFAULT_NAME`
-and `END_NODE_DEFAULT_NAME` constants in `api/types.ts` and
-override `node.name` at SVG-render and panel-render time, so
-existing flows whose persisted name is "Start"/"End" still
-display the new labels without a data migration. Regular
+The two special nodes (`isStart` / `isComplete`) persist
+their `name` field directly as "Create" and "Archive" — no
+constants, no render-time override. The flow renderer, the
+stats renderer, the properties panel header, and the mermaid
+generator all read `node.name` and emit it verbatim;
+persistence and presentation share one vocabulary. The
+mermaid parser does not translate either: a legacy `.mmd`
+file that names its special nodes `[Start]` / `[End]`
+imports with those literal names, surfacing the staleness
+rather than masking it via a shim. Regular
 nodes (not start/end) carry a `workerIds: WorkerId[]` field
 (zero or more) persisted on the node and rendered in the
 panel body as a `<fieldset>` with two `<div class=

@@ -244,8 +244,8 @@ on. Run these in order.
 - [ ] **AA18** On Ideas list, filter by "In Review". Click idea #1. PASS: navigates to idea detail with approval footer.
 - [ ] **AA19** Click "Approve". PASS: idea status changes to approved, confirmation shown.
 - [ ] **AA20** Approve idea #4 as well (it was submitted for review in AA16). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in-review/active).
-- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 5 required fields (Project Name, Start Date, Target End Date, Budget, Impact). No Project Lead field — the team data model has been retired.
-- [ ] **AA22** Fill all required fields: Project Name, Start Date, Target End Date, Budget, Impact. Click "Create Project". PASS: navigates to project detail for the new project.
+- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 5 required fields (Project Name, Start Date, Target End Date, Cost, Impact). No Project Lead field — the team data model has been retired.
+- [ ] **AA22** Fill all required fields: Project Name, Start Date, Target End Date, Cost, Impact. Click "Create Project". PASS: navigates to project detail for the new project.
 - [ ] **AA23** On project detail, click "Edit". Set fields (title, description, status, start date, end date, cost baseline, impact baseline) to match mock data. Save. PASS: project data persists.
 - [ ] **AA24** Approve remaining ideas (7, 8, 9, 10) from Ideas list (filter by "In Review"), then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status and progress.
 
@@ -261,8 +261,8 @@ on. Run these in order.
   creation limited to approved projects only".
 - [ ] **AA26** Click "New Flow". PASS: navigates
   to the flow designer page. The SVG canvas
-  shows two nodes: "Start" (start, top-left with
-  green border) and "End" (end, bottom-right
+  shows two nodes: "Create" (start, top-left with
+  green border) and "Archive" (end, bottom-right
   with red 3-px border) connected by no edges.
   Toolbar shows Undo, Redo, Delete (trash icon),
   Auto Layout, Zoom −/Show All/+,
@@ -302,7 +302,7 @@ on. Run these in order.
   (auto-saves via 800ms debounce).
 - [ ] **AA30** Double-click the edge between
   start and "Data Capture". PASS: no properties
-  panel opens — the outgoing edge from Start is
+  panel opens — the outgoing edge from Create is
   intentionally not interactive. The edge has no
   name label visible on the canvas, just a plain
   blue arrow.
@@ -325,7 +325,7 @@ on. Run these in order.
   check recognises the release would close a
   loop. Release to create the cycle edge; rename
   it "needs revision". Hold Shift and drag from
-  "Review" onto "End". PASS: preview is a
+  "Review" onto "Archive". PASS: preview is a
   solid-blue curved bezier (no return path).
   Release to create the edge; rename it
   "approve".
@@ -510,7 +510,7 @@ on. Run these in order.
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 5 required fields: Project Name, Start Date, Target End Date, Budget, Impact. Sticky sidebar shows "Problem & Solution" with title, problem, solution, and expected outcome. (No Project Lead field — that selector and its underlying TeamEntity have been retired.)
+- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 5 required fields: Project Name, Start Date, Target End Date, Cost, Impact. Sticky sidebar shows "Problem & Solution" with title, problem, solution, and expected outcome. (No Project Lead field — that selector and its underlying TeamEntity have been retired.)
 - [ ] **D23** With required fields empty, "Create Project" button is disabled and progress bar shows 0/5. Fill fields one at a time. PASS: progress bar increments with each field, checkmarks appear next to completed fields, button enables only when all 5 required fields are filled.
 - [ ] **D24** Fill all required fields (progress bar reaches 100%), click "Create Project". PASS: navigates to project detail page for the newly created project.
 
@@ -662,7 +662,7 @@ opens and renders.)
   a level.
 - [ ] **F10** Connection ports (small circles) are
   visible on every middle node when the flow is
-  unlocked. Start and complete nodes show a port
+  unlocked. Create and Archive nodes show a port
   only when they have no connected edges yet —
   per `canShowPort` in `web-app/app/flow-graph.ts`,
   ports render when not locked AND (not a
@@ -679,7 +679,7 @@ opens and renders.)
   glow selection effect. Double-click the node.
   PASS: properties panel appears with the
   "State Properties" title and close button on
-  the right (regular nodes only — Start/End
+  the right (regular nodes only — Create/Archive
   nodes still show their kind title), then a
   Workers fieldset (HUMANS / AIs checkbox
   groups), then state name, description, form
@@ -730,7 +730,7 @@ opens and renders.)
 - [ ] **F18** Toggle the Auto Layout header
   switch. PASS:
   all nodes reposition based on their rank from
-  start. Start is placed top-left, complete
+  start. Create is placed top-left, Archive
   bottom-right, others arranged by graph depth.
 - [ ] **F19** Hold Shift and drag from a middle
   node's port over another middle node, then
@@ -861,13 +861,13 @@ states, and that the canvas re-renders after each step.)
   unresponsive to clicks). Auto Layout remains enabled because
   it only repositions nodes without changing structure. Visual
   confirmation: nodes render with gold strokes regardless of
-  type (Start, Complete, Regular), edges render with gold
+  type (Create, Archive, Regular), edges render with gold
   strokes (cycles remain dashed), edge-label backgrounds gain
   gold strokes, and the dot-grid background renders unchanged
   from its unlocked appearance. Untoggle Locked: ports return,
   the Delete button re-enables, fields become editable, the
   Workers checkboxes become interactive again, and per-type
-  colors return (Start green, Complete red, Regular blue,
+  colors return (Create green, Archive red, Regular blue,
   Cycle amber).
 - [ ] **F41** With a non-trivial flow loaded, click "Copy Mermaid"
   in the toolbar. PASS: toast confirms the clipboard copy, and the
@@ -972,10 +972,10 @@ states, and that the canvas re-renders after each step.)
   Workers fieldset is rendered with the `disabled`
   attribute; clicking does nothing.
 - [ ] **F63** Open a Start-node panel. PASS: the header
-  shows the "Start State" title and close button — no
-  Workers fieldset (Start nodes never assign workers).
+  shows the "Create" title and close button — no
+  Workers fieldset (Create nodes never assign workers).
 - [ ] **F64** Open an End-node panel. PASS: the header
-  shows the "End State" title and close button — no
+  shows the "Archive" title and close button — no
   Workers fieldset.
 - [ ] **F65** Open an edge panel. PASS: the header shows
   "Transition Properties" title and close button — no
@@ -991,7 +991,7 @@ states, and that the canvas re-renders after each step.)
 
 ### Field Editor (Node Panel)
 
-- [ ] **F68** Single-select a regular node (not Start/End)
+- [ ] **F68** Single-select a regular node (not Create/Archive)
   to open the properties panel. Click "+ Add Field". PASS:
   the field editor form appears below the button — name
   input, type select, required checkbox, options textarea,
@@ -1052,7 +1052,7 @@ states, and that the canvas re-renders after each step.)
 
 ### AA13. Workbox Source Flow
 
-- [ ] **AA-WB-SETUP** Create one Workbox-only flow named `WB Test Flow` with three nodes: Start → Capture (text + select fields) → Done (`is_complete: true`). This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow.
+- [ ] **AA-WB-SETUP** Create one Workbox-only flow named `WB Test Flow` with three nodes: Create → Capture (text + select fields) → Archive (`is_complete: true`). This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow.
 
 ### Workbox Inbox (`workbox/`)
 
@@ -1261,13 +1261,13 @@ the claude-in-chrome MCP.
     - **Zero workers** → red octagon (`iconNoEntry`,
       `.flow-stats-node-danger`); tooltip "Workers
       required".
-    - **Zero outgoing edges** (non-End node) → red octagon;
+    - **Zero outgoing edges** (non-Archive node) → red octagon;
       tooltip "Dead end (no outgoing edges)".
     - **One worker AND ≥1 outgoing edge** → yellow triangle
       (`iconAlertTriangle`, `.flow-stats-node-warning`);
       tooltip "Single worker assigned (no backup)".
     - **≥2 workers AND ≥1 outgoing edge** → no badge.
-  Start and Archive (End) never display a badge. The
+  Create and Archive never display a badge. The
   card subtitle shows the assigned workers' names joined
   by ", " (or "Unassigned" if `workerIds` is empty).
 - [ ] **FS7** Path stepper: `Path 1 of M, X% of N work
