@@ -8,8 +8,6 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 
-const DEFAULT_START_NAME = 'Start';
-const DEFAULT_COMPLETE_NAME = 'End';
 const DEFAULT_START_X = -300;
 const DEFAULT_START_Y = 0;
 const DEFAULT_COMPLETE_X = 300;
@@ -22,7 +20,7 @@ export function buildStartAndCompleteNodes(): {
     return {
         start: {
             id: generateCryptoSafeBase62(),
-            name: DEFAULT_START_NAME,
+            name: 'Create',
             description:
                 DEFAULT_NODE_DESCRIPTION,
             positionX: DEFAULT_START_X,
@@ -34,7 +32,7 @@ export function buildStartAndCompleteNodes(): {
         },
         complete: {
             id: generateCryptoSafeBase62(),
-            name: DEFAULT_COMPLETE_NAME,
+            name: 'Archive',
             description:
                 DEFAULT_NODE_DESCRIPTION,
             positionX: DEFAULT_COMPLETE_X,
