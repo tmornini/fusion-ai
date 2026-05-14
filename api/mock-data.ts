@@ -16,12 +16,17 @@ import type {
     WorkOrderTransitionEntity,
     TransitionFieldValueEntity,
     JsonObjectField,
+    Id,
+    GraphNode,
+    GraphEdge,
 } from './types.ts';
 import {
     jsonArrayField,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
     SECONDS_PER_HOUR,
+    MS_PER_SECOND,
+    MS_PER_DAY,
 } from './types.ts';
 
 const now = new Date();
@@ -54,6 +59,334 @@ function dt(
     const mi = pad(d.getUTCMinutes());
     return `${y}-${mo}-${da}`
         + `T${h}:${mi}:00.000000Z`;
+}
+
+const MS_PER_HOUR =
+    SECONDS_PER_HOUR * MS_PER_SECOND;
+const CREATE_DWELL_MS = 1000;
+
+function mulberry32(
+    seed: number,
+): () => number {
+    let s = seed >>> 0;
+    return () => {
+        s = (s + 0x6D2B79F5) >>> 0;
+        let t = s;
+        t = Math.imul(
+            t ^ (t >>> 15), t | 1,
+        );
+        t ^= t + Math.imul(
+            t ^ (t >>> 7), t | 61,
+        );
+        return (
+            (t ^ (t >>> 14)) >>> 0
+        ) / 4294967296;
+    };
+}
+
+function sampleUniform(
+    rng: () => number,
+    lo: number,
+    hi: number,
+): number {
+    return lo + (hi - lo) * rng();
+}
+
+function sampleNormal(
+    rng: () => number,
+    mean: number,
+    sigma: number,
+): number {
+    const u1 = rng();
+    const u2 = rng();
+    const z = Math.sqrt(-2 * Math.log(u1))
+        * Math.cos(2 * Math.PI * u2);
+    return mean + sigma * z;
+}
+
+function sampleLogNormal(
+    rng: () => number,
+    meanHours: number,
+    sigma: number,
+): number {
+    const z = sampleNormal(rng, 0, 1);
+    return Math.exp(
+        Math.log(meanHours) + sigma * z,
+    );
+}
+
+function pickWeighted<T>(
+    rng: () => number,
+    items: readonly T[],
+    weightOf: (t: T) => number,
+): T {
+    let total = 0;
+    for (const it of items) {
+        total += weightOf(it);
+    }
+    const r = rng() * total;
+    let cum = 0;
+    for (const it of items) {
+        cum += weightOf(it);
+        if (r <= cum) return it;
+    }
+    return items[items.length - 1]!;
+}
+
+const B62_ALPHABET =
+    'abcdefghijklmnopqrstuvwxyz'
+    + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    + '0123456789';
+
+function b62Id(
+    rng: () => number,
+    len: number,
+): string {
+    let s = '';
+    for (let i = 0; i < len; i++) {
+        const idx = Math.floor(
+            rng() * B62_ALPHABET.length,
+        );
+        s += B62_ALPHABET[idx];
+    }
+    return s;
+}
+
+function isoFromMs(ms: number): string {
+    const d = new Date(ms);
+    const y = d.getUTCFullYear();
+    const mo = pad(d.getUTCMonth() + 1);
+    const da = pad(d.getUTCDate());
+    const h = pad(d.getUTCHours());
+    const mi = pad(d.getUTCMinutes());
+    const s = pad(d.getUTCSeconds());
+    return `${y}-${mo}-${da}`
+        + `T${h}:${mi}:${s}.000000Z`;
+}
+
+interface FlowSeedSpec {
+    readonly flowId: Id;
+    readonly name: string;
+    readonly description: string;
+    readonly nodes: readonly GraphNode[];
+    readonly edges: readonly GraphEdge[];
+    readonly creator: GraphNode;
+    readonly archive: GraphNode;
+}
+
+interface PathProfile {
+    readonly nodeIds: readonly Id[];
+    readonly edgeIds: readonly Id[];
+    readonly weight: number;
+}
+
+interface SojournProfile {
+    readonly meanHoursByNodeId:
+        ReadonlyMap<Id, number>;
+    readonly sigmaByNodeId:
+        ReadonlyMap<Id, number>;
+}
+
+interface WorkerSkill {
+    readonly byWorkerAndNode:
+        ReadonlyMap<
+            Id,
+            ReadonlyMap<Id, number>
+        >;
+    readonly jitterPct: number;
+}
+
+interface GeneratedFlowData {
+    readonly workOrders:
+        readonly WorkOrderEntity[];
+    readonly flowWorkOrders:
+        readonly FlowWorkOrderEntity[];
+    readonly transitions:
+        readonly WorkOrderTransitionEntity[];
+}
+
+function generateFlowWorkload(args: {
+    readonly flow: FlowSeedSpec;
+    readonly paths: readonly PathProfile[];
+    readonly sojourn: SojournProfile;
+    readonly skill: WorkerSkill;
+    readonly totalWorkOrders: number;
+    readonly oldestDaysAgo: number;
+    readonly newestDaysAgo: number;
+    readonly idPrefix: string;
+    readonly seed: number;
+}): GeneratedFlowData {
+    const {
+        flow, paths, sojourn, skill,
+        totalWorkOrders, oldestDaysAgo,
+        newestDaysAgo, idPrefix, seed,
+    } = args;
+
+    const rng = mulberry32(seed);
+    const nodeById = new Map(
+        flow.nodes.map(n => [n.id, n]),
+    );
+    const creatorId = flow.creator.id;
+    const archiveId = flow.archive.id;
+
+    const frozenFlowGraph = jsonObjectField({
+        flowId: flow.flowId,
+        name: flow.name,
+        description: flow.description,
+        lockTimeout: DEFAULT_LOCK_TIMEOUT,
+        nodes: flow.nodes,
+        edges: flow.edges,
+    });
+
+    const workOrders: WorkOrderEntity[] = [];
+    const flowWorkOrders:
+        FlowWorkOrderEntity[] = [];
+    const transitions:
+        WorkOrderTransitionEntity[] = [];
+
+    const nowMs = now.getTime();
+
+    for (let i = 0; i < totalWorkOrders; i++) {
+        const woId = idPrefix + 'w'
+            + b62Id(rng, 20);
+        const displayId = b62Id(rng, 8);
+        const path = pickWeighted(
+            rng, paths, p => p.weight,
+        );
+        const N = path.nodeIds.length;
+
+        const createdAtDaysAgo = sampleUniform(
+            rng, newestDaysAgo, oldestDaysAgo,
+        );
+        const createdAtMs =
+            nowMs - createdAtDaysAgo * MS_PER_DAY;
+        let cursorMs = createdAtMs;
+
+        const stepWorker: (Id | null)[] = [];
+        for (const nid of path.nodeIds) {
+            if (
+                nid === creatorId
+                || nid === archiveId
+            ) {
+                stepWorker.push(null);
+                continue;
+            }
+            const node = nodeById.get(nid)!;
+            stepWorker.push(pickWeighted(
+                rng, node.workerIds, () => 1,
+            ));
+        }
+
+        const stepSojournMs: number[] = [];
+        for (let j = 0; j < N; j++) {
+            const nid = path.nodeIds[j]!;
+            if (
+                nid === creatorId
+                || nid === archiveId
+            ) {
+                stepSojournMs.push(0);
+                continue;
+            }
+            const mean =
+                sojourn.meanHoursByNodeId
+                    .get(nid)!;
+            const sigma =
+                sojourn.sigmaByNodeId
+                    .get(nid)!;
+            const worker = stepWorker[j]!;
+            const sk = skill.byWorkerAndNode
+                .get(worker)!.get(nid)!;
+            const jit = sampleUniform(
+                rng,
+                1 - skill.jitterPct,
+                1 + skill.jitterPct,
+            );
+            const hours = sampleLogNormal(
+                rng, mean, sigma,
+            ) * sk * jit;
+            stepSojournMs.push(
+                hours * MS_PER_HOUR,
+            );
+        }
+
+        // The worker who takes the WO into the
+        // first working node also stamps the
+        // from='' and Create-exit transitions.
+        const creatorPerson = stepWorker[1]!;
+
+        transitions.push({
+            id: idPrefix + 't-'
+                + pad(i) + '-00-' + woId,
+            work_order_id: woId,
+            from_node_id: '',
+            to_node_id: path.nodeIds[0]!,
+            person_id: creatorPerson,
+            transitioned_at:
+                isoFromMs(cursorMs),
+        });
+
+        if (N >= 2) {
+            cursorMs += CREATE_DWELL_MS;
+            transitions.push({
+                id: idPrefix + 't-'
+                    + pad(i) + '-01-' + woId,
+                work_order_id: woId,
+                from_node_id:
+                    path.nodeIds[0]!,
+                to_node_id:
+                    path.nodeIds[1]!,
+                person_id: creatorPerson,
+                transitioned_at:
+                    isoFromMs(cursorMs),
+            });
+        }
+
+        for (let j = 2; j < N; j++) {
+            cursorMs += stepSojournMs[j - 1]!;
+            // Clamp long-tail sojourns that
+            // would overrun today, so no
+            // transition is future-dated.
+            if (cursorMs >= nowMs) {
+                cursorMs = nowMs - 1000;
+            }
+            transitions.push({
+                id: idPrefix + 't-'
+                    + pad(i) + '-'
+                    + pad(j) + '-' + woId,
+                work_order_id: woId,
+                from_node_id:
+                    path.nodeIds[j - 1]!,
+                to_node_id:
+                    path.nodeIds[j]!,
+                person_id:
+                    stepWorker[j - 1]!,
+                transitioned_at:
+                    isoFromMs(cursorMs),
+            });
+        }
+
+        workOrders.push({
+            id: woId,
+            display_id: displayId,
+            flow_graph: frozenFlowGraph,
+            position: 100 + i,
+            created_at:
+                isoFromMs(createdAtMs),
+        });
+        flowWorkOrders.push({
+            id: idPrefix + 'fwo-' + woId,
+            flow_id: flow.flowId,
+            work_order_id: woId,
+            created_at:
+                isoFromMs(createdAtMs),
+        });
+    }
+
+    return {
+        workOrders,
+        flowWorkOrders,
+        transitions,
+    };
 }
 
 type SeedHumanWorker = Omit<
@@ -844,192 +1177,437 @@ export async function populateMockData(
         }),
     ]);
 
+    const l2cProjectId =
+        'L2cP01SalesPip3l1n3L01';
+
     const projects: ProjectEntity[] = [
         {
             id: 'u6YkHhlGc91oDMkr3x0isa',
             title: 'AI-Powered Customer'
                 + ' Segmentation',
             description:
-                'Implement machine learning'
-                + ' model to automatically'
-                + ' segment customers based'
-                + ' on behavior, purchase'
-                + ' history, and engagement'
-                + ' patterns.',
+                'Machine-learning model'
+                + ' that segments customers'
+                + ' in real time from'
+                + ' behavior, purchase'
+                + ' history, and engagement.',
             status: 'approved',
-            progress: 72,
-            start_date: dt(60, 0, 0),
-            target_end_date: dt(-30, 0, 0),
-            estimated_duration: 120 * SECONDS_PER_HOUR,
-            actual_duration: 85 * SECONDS_PER_HOUR,
-            estimated_cost: 45000,
-            actual_cost: 38000,
-            estimated_impact: 85,
-            actual_impact: 78,
+            progress: 67,
+            start_date: dt(60, 9, 0),
+            target_end_date: dt(-30, 9, 0),
+            estimated_duration:
+                160 * SECONDS_PER_HOUR,
+            actual_duration:
+                92 * SECONDS_PER_HOUR,
+            estimated_cost: 88000,
+            actual_cost: 51000,
+            estimated_impact: 88,
+            actual_impact: 0,
             position: 1,
             business_context: jsonObjectField({
                 problem:
-                    'Current manual'
-                    + ' segmentation takes 2'
-                    + ' weeks and is often'
-                    + ' outdated by the time'
-                    + " it's complete."
-                    + ' Marketing campaigns'
-                    + ' suffer from poor'
-                    + ' targeting.',
+                    'Manual segmentation'
+                    + ' takes two weeks and'
+                    + ' is stale by the time'
+                    + ' it ships.',
                 expectedOutcome:
-                    'Real-time customer'
-                    + ' segments that update'
-                    + ' automatically,'
-                    + ' enabling personalized'
-                    + ' marketing with 40%'
-                    + ' better conversion'
-                    + ' rates.',
+                    'Real-time segments'
+                    + ' that update'
+                    + ' automatically and'
+                    + ' lift conversion 40%.',
                 successMetrics: [
-                    'Reduce segmentation'
-                        + ' time from 2 weeks'
-                        + ' to real-time',
-                    'Improve campaign'
-                        + ' conversion rates'
-                        + ' by 40%',
-                    'Increase customer'
-                        + ' lifetime value'
-                        + ' by 25%',
+                    'Segmentation time:'
+                        + ' weeks to seconds',
+                    'Conversion rate +40%',
+                    'Customer LTV +25%',
                 ],
                 constraints: [
-                    'Must integrate with'
-                        + ' existing CRM'
-                        + ' (Salesforce)',
-                    'GDPR compliance'
-                        + ' required for EU'
-                        + ' customers',
-                    'Budget capped at'
-                        + ' $50,000 for'
-                        + ' Phase 1',
+                    'Salesforce CRM'
+                        + ' integration',
+                    'GDPR compliance for EU',
+                    'Phase 1 capped at $90k',
                 ],
             }),
-            timeline_label: '3-4 months',
+            timeline_label: 'On Track',
         },
         {
             id: 'jRE2Tj32NHsFGZIeEADp0p',
             title: 'Automated Report'
                 + ' Generation',
             description:
-                'Build an automated'
-                + ' pipeline that aggregates'
-                + ' multiple data sources'
-                + ' and generates formatted'
-                + ' reports on a schedule.',
+                'Pipeline that aggregates'
+                + ' multiple sources and'
+                + ' ships formatted reports'
+                + ' on a schedule.',
             status: 'completed',
             progress: 100,
-            start_date: dt(90, 9, 0),
-            target_end_date: dt(57, 9, 0),
-            estimated_duration: 80 * SECONDS_PER_HOUR,
-            actual_duration: 60 * SECONDS_PER_HOUR,
-            estimated_cost: 32000,
-            actual_cost: 28000,
-            estimated_impact: 78,
-            actual_impact: 82,
+            start_date: dt(110, 9, 0),
+            target_end_date: dt(45, 9, 0),
+            estimated_duration:
+                80 * SECONDS_PER_HOUR,
+            actual_duration:
+                75 * SECONDS_PER_HOUR,
+            estimated_cost: 56000,
+            actual_cost: 58000,
+            estimated_impact: 72,
+            actual_impact: 78,
             position: 2,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
         },
         {
-            id: 'YXUxtljJj6ebsQEFZ5nSI1',
+            id: l2cProjectId,
+            title: 'Sales Pipeline'
+                + ' Modernization',
+            description:
+                'Replace the legacy lead'
+                + ' workflow with a triage-'
+                + 'first pipeline:'
+                + ' discovery, qualification,'
+                + ' proposal, negotiation,'
+                + ' close.',
+            status: 'approved',
+            progress: 69,
+            start_date: dt(55, 9, 0),
+            target_end_date: dt(-25, 9, 0),
+            estimated_duration:
+                144 * SECONDS_PER_HOUR,
+            actual_duration:
+                88 * SECONDS_PER_HOUR,
+            estimated_cost: 78000,
+            actual_cost: 48000,
+            estimated_impact: 91,
+            actual_impact: 0,
+            position: 3,
+            business_context: jsonObjectField({
+                problem:
+                    'Leads sit untriaged'
+                    + ' for days; mid-funnel'
+                    + ' drops are'
+                    + ' unattributed.',
+                expectedOutcome:
+                    'AI-assisted triage'
+                    + ' cuts time-to-'
+                    + 'discovery by 80% and'
+                    + ' surfaces every'
+                    + ' stalled deal.',
+                successMetrics: [
+                    'Triage SLA < 4 hours',
+                    'Win rate +12 points',
+                    'Qualified pipeline +35%',
+                ],
+                constraints: [
+                    'Salesforce integration',
+                    'AI worker auth tokens'
+                        + ' rotated quarterly',
+                ],
+            }),
+            timeline_label: 'On Track',
+        },
+        {
+            id: 'P04PredMa1ntzyXY010203',
             title: 'Predictive Maintenance'
                 + ' System',
             description:
-                'Deploy IoT sensors with'
-                + ' ML models to predict'
+                'IoT sensors plus ML'
+                + ' models that predict'
                 + ' equipment failures'
-                + ' before they occur,'
-                + ' reducing unplanned'
-                + ' downtime.',
+                + ' before they occur.',
             status: 'under-review',
-            progress: 22,
-            start_date: dt(45, 9, 0),
-            target_end_date: dt(-28, 9, 0),
-            estimated_duration: 200 * SECONDS_PER_HOUR,
-            actual_duration: 45 * SECONDS_PER_HOUR,
-            estimated_cost: 75000,
-            actual_cost: 18000,
-            estimated_impact: 90,
+            progress: 17,
+            start_date: dt(18, 9, 0),
+            target_end_date: dt(-90, 9, 0),
+            estimated_duration:
+                220 * SECONDS_PER_HOUR,
+            actual_duration:
+                12 * SECONDS_PER_HOUR,
+            estimated_cost: 110000,
+            actual_cost: 7000,
+            estimated_impact: 84,
             actual_impact: 0,
-            position: 3,
+            position: 4,
             business_context: jsonObjectField({}),
-            timeline_label: 'At Risk',
+            timeline_label: 'Just Started',
         },
         {
-            id: 'sf1hZEIvey6seX1fbUwXMq',
+            id: 'P05RtAna1ytcsXY010203Z',
             title: 'Real-time Analytics'
                 + ' Dashboard',
             description:
-                'Create a live dashboard'
-                + ' with streaming data'
-                + ' pipelines and automated'
-                + ' anomaly alerts for'
-                + ' leadership.',
+                'Live dashboard with'
+                + ' streaming pipelines and'
+                + ' automated anomaly alerts'
+                + ' for leadership.',
             status: 'completed',
             progress: 100,
-            start_date: dt(75, 9, 0),
-            target_end_date: dt(47, 9, 0),
-            estimated_duration: 60 * SECONDS_PER_HOUR,
-            actual_duration: 55 * SECONDS_PER_HOUR,
-            estimated_cost: 28000,
-            actual_cost: 26000,
-            estimated_impact: 72,
-            actual_impact: 70,
-            position: 4,
+            start_date: dt(95, 9, 0),
+            target_end_date: dt(40, 9, 0),
+            estimated_duration:
+                64 * SECONDS_PER_HOUR,
+            actual_duration:
+                70 * SECONDS_PER_HOUR,
+            estimated_cost: 50000,
+            actual_cost: 52000,
+            estimated_impact: 76,
+            actual_impact: 81,
+            position: 5,
             business_context: jsonObjectField({}),
             timeline_label: 'Completed',
         },
         {
-            id: 'efwJPwQFljYHZYMuhetyow',
+            id: 'P06SmInvOptZyXY010203A',
             title: 'Smart Inventory'
                 + ' Optimization',
             description:
-                'Implement demand'
-                + ' forecasting with'
+                'Demand forecasting with'
                 + ' automatic reorder'
-                + ' triggers to reduce'
-                + ' carrying costs and'
-                + ' stockout incidents.',
+                + ' triggers to cut carrying'
+                + ' costs and stockouts.',
             status: 'sent-back',
-            progress: 15,
-            start_date: dt(50, 9, 0),
-            target_end_date: dt(7, 9, 0),
-            estimated_duration: 100 * SECONDS_PER_HOUR,
-            actual_duration: 30 * SECONDS_PER_HOUR,
-            estimated_cost: 38000,
-            actual_cost: 12000,
-            estimated_impact: 68,
+            progress: 76,
+            start_date: dt(38, 9, 0),
+            target_end_date: dt(-12, 9, 0),
+            estimated_duration:
+                96 * SECONDS_PER_HOUR,
+            actual_duration:
+                28 * SECONDS_PER_HOUR,
+            estimated_cost: 64000,
+            actual_cost: 84000,
+            estimated_impact: 67,
             actual_impact: 0,
-            position: 5,
+            position: 6,
             business_context: jsonObjectField({}),
-            timeline_label: 'Overdue',
+            timeline_label: 'Over Budget',
         },
         {
-            id: 'zzcBNqWXtKs6kt7ggcRndY',
+            id: 'P07Empl0yTrainZyXY00B0',
             title: 'Employee Training'
                 + ' Assistant',
             description:
-                'Build an AI training'
-                + ' assistant that delivers'
+                'AI training assistant'
+                + ' that delivers'
                 + ' personalized learning'
                 + ' paths and answers'
-                + ' procedural questions'
-                + ' for new hires.',
+                + ' procedural questions for'
+                + ' new hires.',
             status: 'under-review',
-            progress: 18,
-            start_date: dt(14, 9, 0),
-            target_end_date: dt(-28, 9, 0),
-            estimated_duration: 90 * SECONDS_PER_HOUR,
-            actual_duration: 20 * SECONDS_PER_HOUR,
-            estimated_cost: 35000,
-            actual_cost: 8000,
+            progress: 10,
+            start_date: dt(12, 9, 0),
+            target_end_date: dt(-110, 9, 0),
+            estimated_duration:
+                96 * SECONDS_PER_HOUR,
+            actual_duration:
+                6 * SECONDS_PER_HOUR,
+            estimated_cost: 60000,
+            actual_cost: 3500,
             estimated_impact: 65,
             actual_impact: 0,
-            position: 6,
+            position: 7,
+            business_context: jsonObjectField({}),
+            timeline_label: 'Just Started',
+        },
+        {
+            id: 'P08CustSuppKn0wXY01C0D',
+            title: 'Customer Support'
+                + ' Knowledge Base',
+            description:
+                'Unified knowledge hub'
+                + ' with AI-assisted search'
+                + ' across tickets,'
+                + ' runbooks, and product'
+                + ' docs.',
+            status: 'approved',
+            progress: 69,
+            start_date: dt(48, 9, 0),
+            target_end_date: dt(-22, 9, 0),
+            estimated_duration:
+                110 * SECONDS_PER_HOUR,
+            actual_duration:
+                65 * SECONDS_PER_HOUR,
+            estimated_cost: 64000,
+            actual_cost: 42000,
+            estimated_impact: 73,
+            actual_impact: 0,
+            position: 8,
+            business_context: jsonObjectField({}),
+            timeline_label: 'On Track',
+        },
+        {
+            id: 'P09C0mp1AudAut0mXY01E0',
+            title: 'Compliance Audit'
+                + ' Automation',
+            description:
+                'Auto-collect evidence,'
+                + ' reconcile control'
+                + ' mappings, and ship the'
+                + ' annual SOC 2 dossier in'
+                + ' hours rather than weeks.',
+            status: 'approved',
+            progress: 86,
+            start_date: dt(72, 9, 0),
+            target_end_date: dt(-12, 9, 0),
+            estimated_duration:
+                180 * SECONDS_PER_HOUR,
+            actual_duration:
+                122 * SECONDS_PER_HOUR,
+            estimated_cost: 102000,
+            actual_cost: 142000,
+            estimated_impact: 81,
+            actual_impact: 0,
+            position: 9,
+            business_context: jsonObjectField({}),
+            timeline_label: 'Over Budget',
+        },
+        {
+            id: 'P10MlRgD1s4stRc1XY01FG',
+            title: 'Multi-Region Disaster'
+                + ' Recovery',
+            description:
+                'Active-active failover'
+                + ' across two regions with'
+                + ' five-minute RPO and'
+                + ' fifteen-minute RTO.',
+            status: 'approved',
+            progress: 91,
+            start_date: dt(82, 9, 0),
+            target_end_date: dt(-8, 9, 0),
+            estimated_duration:
+                240 * SECONDS_PER_HOUR,
+            actual_duration:
+                168 * SECONDS_PER_HOUR,
+            estimated_cost: 134000,
+            actual_cost: 99000,
+            estimated_impact: 93,
+            actual_impact: 0,
+            position: 10,
+            business_context: jsonObjectField({}),
+            timeline_label: 'On Track',
+        },
+        {
+            id: 'P11V0iceField0psXY01HJ',
+            title: 'Voice-Driven Field'
+                + ' Operations',
+            description:
+                'Hands-free voice agent'
+                + ' for field techs: ticket'
+                + ' updates, parts lookup,'
+                + ' and onsite knowledge'
+                + ' access.',
+            status: 'approved',
+            progress: 53,
+            start_date: dt(40, 9, 0),
+            target_end_date: dt(-35, 9, 0),
+            estimated_duration:
+                132 * SECONDS_PER_HOUR,
+            actual_duration:
+                58 * SECONDS_PER_HOUR,
+            estimated_cost: 76000,
+            actual_cost: 36000,
+            estimated_impact: 68,
+            actual_impact: 0,
+            position: 11,
+            business_context: jsonObjectField({}),
+            timeline_label: 'On Track',
+        },
+        {
+            id: 'P12CarbF00tprXY01K0L0M',
+            title: 'Carbon Footprint'
+                + ' Tracking',
+            description:
+                'Ingest fleet, facility,'
+                + ' and supplier emissions,'
+                + ' then surface the live'
+                + ' carbon ledger for ESG'
+                + ' reporting.',
+            status: 'completed',
+            progress: 100,
+            start_date: dt(120, 9, 0),
+            target_end_date: dt(35, 9, 0),
+            estimated_duration:
+                100 * SECONDS_PER_HOUR,
+            actual_duration:
+                90 * SECONDS_PER_HOUR,
+            estimated_cost: 62000,
+            actual_cost: 56000,
+            estimated_impact: 70,
+            actual_impact: 73,
+            position: 12,
+            business_context: jsonObjectField({}),
+            timeline_label: 'Completed',
+        },
+        {
+            id: 'P13W0rk4rcF0r3castsXY1',
+            title: 'Workforce Capacity'
+                + ' Forecasting',
+            description:
+                'Predict staffing demand'
+                + ' by region and skill,'
+                + ' then surface gaps eight'
+                + ' weeks before they bite.',
+            status: 'under-review',
+            progress: 17,
+            start_date: dt(22, 9, 0),
+            target_end_date: dt(-105, 9, 0),
+            estimated_duration:
+                160 * SECONDS_PER_HOUR,
+            actual_duration:
+                14 * SECONDS_PER_HOUR,
+            estimated_cost: 90000,
+            actual_cost: 8500,
+            estimated_impact: 79,
+            actual_impact: 0,
+            position: 13,
+            business_context: jsonObjectField({}),
+            timeline_label: 'Just Started',
+        },
+        {
+            id: 'P14SmartD0cumtR0utngX1',
+            title: 'Smart Document Routing',
+            description:
+                'Classify and route'
+                + ' inbound docs by content,'
+                + ' urgency, and customer'
+                + ' tier without a human'
+                + ' bottleneck.',
+            status: 'approved',
+            progress: 78,
+            start_date: dt(65, 9, 0),
+            target_end_date: dt(-18, 9, 0),
+            estimated_duration:
+                120 * SECONDS_PER_HOUR,
+            actual_duration:
+                78 * SECONDS_PER_HOUR,
+            estimated_cost: 70000,
+            actual_cost: 45000,
+            estimated_impact: 71,
+            actual_impact: 0,
+            position: 14,
+            business_context: jsonObjectField({}),
+            timeline_label: 'On Track',
+        },
+        {
+            id: 'P15Inv3st0rRep0rtP1Y00',
+            title: 'Investor Reporting'
+                + ' Portal',
+            description:
+                'Self-serve portal for'
+                + ' LPs with quarterly'
+                + ' statements, capital-call'
+                + ' workflows, and'
+                + ' audit-ready exports.',
+            status: 'approved',
+            progress: 67,
+            start_date: dt(58, 9, 0),
+            target_end_date: dt(-28, 9, 0),
+            estimated_duration:
+                100 * SECONDS_PER_HOUR,
+            actual_duration:
+                60 * SECONDS_PER_HOUR,
+            estimated_cost: 56000,
+            actual_cost: 34000,
+            estimated_impact: 66,
+            actual_impact: 0,
+            position: 15,
             business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
@@ -1110,6 +1688,210 @@ export async function populateMockData(
     ];
 
     const wfTimestamp = dt(60, 9, 0);
+
+    const l2cFlowId = 'L2cfL3adt0Cl0s3FzMxR02';
+    const l2cProjectFlowId =
+        'L2cPF01Pr0jL3adt0Cl001';
+
+    const l2cCreateNodeId =
+        'L2cN01Cr3atL3adClsXY02';
+    const l2cTriageNodeId =
+        'L2cN02Tr1agL3adClsAB03';
+    const l2cDiscoveryNodeId =
+        'L2cN03D1scvL3adClsCD04';
+    const l2cQualifNodeId =
+        'L2cN04Qu41fL3adClsEF05';
+    const l2cProposalNodeId =
+        'L2cN05Pr0psL3adClsGH06';
+    const l2cNegotNodeId =
+        'L2cN06N3g0tL3adClsIJ07';
+    const l2cClosedNodeId =
+        'L2cN07Cl0sdL3adClsKL08';
+
+    const l2cStartEdgeId =
+        'L2cE01CreatTr1agL2cZ01';
+    const l2cQualifyEdgeId =
+        'L2cE02Tr1agD1scvL2cY02';
+    const l2cDisqualifyEdgeId =
+        'L2cE03Tr1agCl0sdL2cX03';
+    const l2cPromisingEdgeId =
+        'L2cE04D1scvQu41fL2cW04';
+    const l2cGoEdgeId =
+        'L2cE05Qu41fPr0psL2cV05';
+    const l2cNeedsInfoEdgeId =
+        'L2cE06Qu41fD1scvL2cU06';
+    const l2cSubmitEdgeId =
+        'L2cE07Pr0psN3g0tL2cT07';
+    const l2cWonEdgeId =
+        'L2cE08N3g0tCl0sdL2cS08';
+    const l2cReviseEdgeId =
+        'L2cE09N3g0tPr0psL2cR09';
+
+    const workerSarah = 'LhfaUUf4IumVsCSGB4xjdK';
+    const workerMarcus =
+        'WxQn4LVWb76YkmqK5B0EPp';
+    const workerMike = 'bLP3X1hb1mSz8gY9neogU3';
+    const workerLisa = 'Trf1Up2jMsPhEnjbW4Ji1n';
+    const workerClaude = 'model_claude_sonnet';
+
+    const leadToCloseDescription =
+        'Sales pipeline: triage, discovery,'
+        + ' qualification, proposal,'
+        + ' negotiation, close.';
+
+    const leadToCloseNodes: GraphNode[] = [
+        {
+            id: l2cCreateNodeId,
+            name: 'Create',
+            description: '',
+            positionX: 40,
+            positionY: 30,
+            isCreate: true,
+            isArchive: false,
+            workerIds: [],
+            fields: [],
+        },
+        {
+            id: l2cTriageNodeId,
+            name: 'Inbound Triage',
+            description: '',
+            positionX: 220,
+            positionY: 100,
+            isCreate: false,
+            isArchive: false,
+            workerIds: [
+                workerLisa, workerClaude,
+            ],
+            fields: [],
+        },
+        {
+            id: l2cDiscoveryNodeId,
+            name: 'Discovery Call',
+            description: '',
+            positionX: 400,
+            positionY: 180,
+            isCreate: false,
+            isArchive: false,
+            workerIds: [
+                workerSarah, workerMarcus,
+            ],
+            fields: [],
+        },
+        {
+            id: l2cQualifNodeId,
+            name: 'Qualification',
+            description: '',
+            positionX: 580,
+            positionY: 260,
+            isCreate: false,
+            isArchive: false,
+            workerIds: [
+                workerSarah, workerMarcus,
+            ],
+            fields: [],
+        },
+        {
+            id: l2cProposalNodeId,
+            name: 'Proposal Drafting',
+            description: '',
+            positionX: 760,
+            positionY: 340,
+            isCreate: false,
+            isArchive: false,
+            workerIds: [
+                workerMike, workerSarah,
+            ],
+            fields: [],
+        },
+        {
+            id: l2cNegotNodeId,
+            name: 'Negotiation',
+            description: '',
+            positionX: 940,
+            positionY: 420,
+            isCreate: false,
+            isArchive: false,
+            workerIds: [workerSarah],
+            fields: [],
+        },
+        {
+            id: l2cClosedNodeId,
+            name: 'Closed',
+            description: '',
+            positionX: 1120,
+            positionY: 500,
+            isCreate: false,
+            isArchive: true,
+            workerIds: [],
+            fields: [],
+        },
+    ];
+
+    const leadToCloseEdges: GraphEdge[] = [
+        {
+            id: l2cStartEdgeId,
+            name: 'start',
+            description: '',
+            fromNodeId: l2cCreateNodeId,
+            toNodeId: l2cTriageNodeId,
+        },
+        {
+            id: l2cQualifyEdgeId,
+            name: 'qualify',
+            description: '',
+            fromNodeId: l2cTriageNodeId,
+            toNodeId: l2cDiscoveryNodeId,
+        },
+        {
+            id: l2cDisqualifyEdgeId,
+            name: 'disqualify',
+            description: '',
+            fromNodeId: l2cTriageNodeId,
+            toNodeId: l2cClosedNodeId,
+        },
+        {
+            id: l2cPromisingEdgeId,
+            name: 'promising',
+            description: '',
+            fromNodeId: l2cDiscoveryNodeId,
+            toNodeId: l2cQualifNodeId,
+        },
+        {
+            id: l2cGoEdgeId,
+            name: 'go',
+            description: '',
+            fromNodeId: l2cQualifNodeId,
+            toNodeId: l2cProposalNodeId,
+        },
+        {
+            id: l2cNeedsInfoEdgeId,
+            name: 'needs info',
+            description: '',
+            fromNodeId: l2cQualifNodeId,
+            toNodeId: l2cDiscoveryNodeId,
+        },
+        {
+            id: l2cSubmitEdgeId,
+            name: 'submit',
+            description: '',
+            fromNodeId: l2cProposalNodeId,
+            toNodeId: l2cNegotNodeId,
+        },
+        {
+            id: l2cWonEdgeId,
+            name: 'won',
+            description: '',
+            fromNodeId: l2cNegotNodeId,
+            toNodeId: l2cClosedNodeId,
+        },
+        {
+            id: l2cReviseEdgeId,
+            name: 'revise terms',
+            description: '',
+            fromNodeId: l2cNegotNodeId,
+            toNodeId: l2cProposalNodeId,
+        },
+    ];
 
     const mockFlows:
         FlowEntity[] = [
@@ -2133,6 +2915,23 @@ export async function populateMockData(
                             'M3HcytVGj8JNjrFS0AyVfA',
                     },
                 ],
+            }),
+            created_at: wfTimestamp,
+            updated_at: wfTimestamp,
+        },
+        {
+            id: l2cFlowId,
+            name: 'Lead-to-Close',
+            description:
+                leadToCloseDescription,
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout:
+                DEFAULT_LOCK_TIMEOUT,
+            graph: jsonObjectField({
+                nodes: leadToCloseNodes,
+                edges: leadToCloseEdges,
             }),
             created_at: wfTimestamp,
             updated_at: wfTimestamp,
@@ -4983,7 +5782,195 @@ export async function populateMockData(
             flow_id: '7COt7Kf4OaOBg6AjaNO04s',
             created_at: wfTimestamp,
         },
+        {
+            id: l2cProjectFlowId,
+            project_id: l2cProjectId,
+            flow_id: l2cFlowId,
+            created_at: wfTimestamp,
+        },
     ];
+
+    const leadToClosePaths:
+        PathProfile[] = [
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cClosedNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.45,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cClosedNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cDisqualifyEdgeId,
+            ],
+            weight: 0.20,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cClosedNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cNeedsInfoEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.15,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cClosedNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cReviseEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.12,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+            ],
+            weight: 0.08,
+        },
+    ];
+
+    const leadToCloseSojourn:
+        SojournProfile = {
+        meanHoursByNodeId:
+            new Map<Id, number>([
+                [l2cTriageNodeId, 8],
+                [l2cDiscoveryNodeId, 36],
+                [l2cQualifNodeId, 22 * 24],
+                [l2cProposalNodeId, 24],
+                [l2cNegotNodeId, 24],
+            ]),
+        sigmaByNodeId:
+            new Map<Id, number>([
+                [l2cTriageNodeId, 0.5],
+                [l2cDiscoveryNodeId, 0.5],
+                [l2cQualifNodeId, 1.4],
+                [l2cProposalNodeId, 0.5],
+                [l2cNegotNodeId, 0.5],
+            ]),
+    };
+
+    const leadToCloseSkill: WorkerSkill = {
+        byWorkerAndNode: new Map<
+            Id, ReadonlyMap<Id, number>
+        >([
+            [workerSarah, new Map<
+                Id, number
+            >([
+                [l2cDiscoveryNodeId, 0.75],
+                [l2cQualifNodeId, 0.55],
+                [l2cProposalNodeId, 0.80],
+                [l2cNegotNodeId, 0.70],
+            ])],
+            [workerMarcus, new Map<
+                Id, number
+            >([
+                [l2cDiscoveryNodeId, 1.10],
+                [l2cQualifNodeId, 1.10],
+            ])],
+            [workerMike, new Map<
+                Id, number
+            >([
+                [l2cProposalNodeId, 0.85],
+            ])],
+            [workerLisa, new Map<
+                Id, number
+            >([
+                [l2cTriageNodeId, 0.90],
+            ])],
+            [workerClaude, new Map<
+                Id, number
+            >([
+                [l2cTriageNodeId, 0.60],
+            ])],
+        ]),
+        jitterPct: 0.15,
+    };
+
+    const leadToCloseSpec: FlowSeedSpec = {
+        flowId: l2cFlowId,
+        name: 'Lead-to-Close',
+        description: leadToCloseDescription,
+        nodes: leadToCloseNodes,
+        edges: leadToCloseEdges,
+        creator: leadToCloseNodes[0]!,
+        archive: leadToCloseNodes[6]!,
+    };
+
+    const leadToCloseData =
+        generateFlowWorkload({
+            flow: leadToCloseSpec,
+            paths: leadToClosePaths,
+            sojourn: leadToCloseSojourn,
+            skill: leadToCloseSkill,
+            totalWorkOrders: 100,
+            oldestDaysAgo: 80,
+            newestDaysAgo: 5,
+            idPrefix: 'lc',
+            seed: 0xC0DEF00D,
+        });
 
     await Promise.all([
         ...projects.map(project =>
@@ -5220,6 +6207,19 @@ export async function populateMockData(
         ),
         ...aiWorkers.map(m =>
             adapter.aiWorkers.put(m.id, m),
+        ),
+        ...leadToCloseData.workOrders.map(r =>
+            adapter.workOrders.put(r.id, r),
+        ),
+        ...leadToCloseData.flowWorkOrders
+            .map(r =>
+                adapter.flowWorkOrders.put(
+                    r.id, r,
+                ),
+            ),
+        ...leadToCloseData.transitions.map(r =>
+            adapter.workOrderTransitions
+                .put(r.id, r),
         ),
     ]);
 }
