@@ -648,9 +648,6 @@ export interface GraphField {
     options: string[];
 }
 
-export const START_NODE_DEFAULT_NAME = 'Create';
-export const END_NODE_DEFAULT_NAME = 'Archive';
-
 export interface GraphNode {
     id: string;
     name: string;
