@@ -1705,7 +1705,7 @@ export async function populateMockData(
         'L2cN05Pr0psL3adClsGH06';
     const l2cNegotNodeId =
         'L2cN06N3g0tL3adClsIJ07';
-    const l2cClosedNodeId =
+    const l2cArchiveNodeId =
         'L2cN07Cl0sdL3adClsKL08';
 
     const l2cStartEdgeId =
@@ -1815,8 +1815,8 @@ export async function populateMockData(
             fields: [],
         },
         {
-            id: l2cClosedNodeId,
-            name: 'Closed',
+            id: l2cArchiveNodeId,
+            name: 'Archive',
             description: '',
             positionX: 1120,
             positionY: 500,
@@ -1847,7 +1847,7 @@ export async function populateMockData(
             name: 'disqualify',
             description: '',
             fromNodeId: l2cTriageNodeId,
-            toNodeId: l2cClosedNodeId,
+            toNodeId: l2cArchiveNodeId,
         },
         {
             id: l2cPromisingEdgeId,
@@ -1882,7 +1882,7 @@ export async function populateMockData(
             name: 'won',
             description: '',
             fromNodeId: l2cNegotNodeId,
-            toNodeId: l2cClosedNodeId,
+            toNodeId: l2cArchiveNodeId,
         },
         {
             id: l2cReviseEdgeId,
@@ -5800,7 +5800,7 @@ export async function populateMockData(
                 l2cQualifNodeId,
                 l2cProposalNodeId,
                 l2cNegotNodeId,
-                l2cClosedNodeId,
+                l2cArchiveNodeId,
             ],
             edgeIds: [
                 l2cStartEdgeId,
@@ -5816,7 +5816,7 @@ export async function populateMockData(
             nodeIds: [
                 l2cCreateNodeId,
                 l2cTriageNodeId,
-                l2cClosedNodeId,
+                l2cArchiveNodeId,
             ],
             edgeIds: [
                 l2cStartEdgeId,
@@ -5834,7 +5834,7 @@ export async function populateMockData(
                 l2cQualifNodeId,
                 l2cProposalNodeId,
                 l2cNegotNodeId,
-                l2cClosedNodeId,
+                l2cArchiveNodeId,
             ],
             edgeIds: [
                 l2cStartEdgeId,
@@ -5858,7 +5858,7 @@ export async function populateMockData(
                 l2cNegotNodeId,
                 l2cProposalNodeId,
                 l2cNegotNodeId,
-                l2cClosedNodeId,
+                l2cArchiveNodeId,
             ],
             edgeIds: [
                 l2cStartEdgeId,
