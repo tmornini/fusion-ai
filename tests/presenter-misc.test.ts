@@ -542,7 +542,7 @@ test(
         const out = buildNodePanel(
             makeNode({
                 isStart: true,
-                name: 'Start',
+                name: 'Create',
             }),
             [], false,
             [], [],
@@ -561,7 +561,7 @@ test(
         const out = buildNodePanel(
             makeNode({
                 isComplete: true,
-                name: 'End',
+                name: 'Archive',
             }),
             [], false,
             [], [],

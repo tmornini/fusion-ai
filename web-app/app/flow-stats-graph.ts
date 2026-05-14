@@ -21,10 +21,6 @@ import {
     iconNoEntry,
 } from './icons.ts';
 import { formatMinAscending } from './duration-units.ts';
-import {
-    START_NODE_DEFAULT_NAME,
-    END_NODE_DEFAULT_NAME,
-} from '../../api/types.ts';
 import type {
     FlowStatsModel, NodeStat,
 } from './flow-stats-aggregate.ts';
@@ -214,12 +210,7 @@ function buildNode(
 ): string {
     const halfW = NODE_WIDTH / 2;
 
-    // Display name: special nodes use canonical labels.
-    const displayName = n.isStart
-        ? START_NODE_DEFAULT_NAME
-        : n.isComplete
-        ? END_NODE_DEFAULT_NAME
-        : n.displayName;
+    const displayName = n.displayName;
     const nameEsc = escapeForHtml(displayName);
 
     // Face stat: avg sojourn for regular nodes with

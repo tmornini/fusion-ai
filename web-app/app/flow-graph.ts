@@ -15,10 +15,6 @@ import {
     iconAlertTriangle,
     iconNoEntry,
 } from './icons.ts';
-import {
-    START_NODE_DEFAULT_NAME,
-    END_NODE_DEFAULT_NAME,
-} from '../../api/types.ts';
 
 function nodeHasConnections(
     nodeId: string,
@@ -490,11 +486,7 @@ function buildNode(
         ? NODE_LABEL_Y_CENTERED
         : NODE_LABEL_Y;
 
-    const displayName = node.isStart
-        ? START_NODE_DEFAULT_NAME
-        : node.isComplete
-        ? END_NODE_DEFAULT_NAME
-        : node.name;
+    const displayName = node.name;
     const nameEsc = escapeForHtml(
         truncateLabel(
             displayName, NODE_MAX_CHARS,

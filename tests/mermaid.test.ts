@@ -55,7 +55,7 @@ test('generateMermaid emits complete with triple parens', () => {
         nodes: [
             {
                 id: 'n2',
-                name: 'End',
+                name: 'Archive',
                 description: '',
                 positionX: 0,
                 positionY: 0,
@@ -66,7 +66,7 @@ test('generateMermaid emits complete with triple parens', () => {
             },
         ],
     } as never);
-    assert.match(result, /n2\(\(\(End\)\)\)/);
+    assert.match(result, /n2\(\(\(Archive\)\)\)/);
 });
 
 test('generateMermaid sanitizes dashes in IDs', () => {
@@ -238,7 +238,7 @@ test('mermaid round-trip preserves structure', () => {
         ...minimalGraph,
         nodes: [
             {
-                id: 's', name: 'Start',
+                id: 's', name: 'Create',
                 description: '',
                 positionX: 0, positionY: 0,
                 isStart: true,
@@ -256,7 +256,7 @@ test('mermaid round-trip preserves structure', () => {
                 fields: [],
             },
             {
-                id: 'e', name: 'End',
+                id: 'e', name: 'Archive',
                 description: '',
                 positionX: 0, positionY: 0,
                 isStart: false,

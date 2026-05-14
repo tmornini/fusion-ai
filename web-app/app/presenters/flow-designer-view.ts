@@ -23,10 +23,6 @@ import {
     HumanWorker,
     AIWorker,
 } from '../adapters/index.ts';
-import {
-    START_NODE_DEFAULT_NAME,
-    END_NODE_DEFAULT_NAME,
-} from '../../../api/types.ts';
 
 export function buildFieldBadge(
     fieldType: string,
@@ -167,9 +163,7 @@ export function buildNodePanel(
     const isSpecial =
         node.isStart || node.isComplete;
     if (isSpecial) {
-        const label = node.isStart
-            ? START_NODE_DEFAULT_NAME
-            : END_NODE_DEFAULT_NAME;
+        const label = node.name;
         return html`<div
 class="flow-props-panel">
 <div class="flow-props-header"
