@@ -585,8 +585,12 @@ count checks are non-zero + consistency, not numeric equality.
   use pointer-capture semantics. Affected tests include
   AA27–AA34, F15, F19–F23, D36, D37, E11. Work around by
   validating end-state via direct JSON injection into
-  `fusion-ai:flows`, then reloading and verifying render. Mark
-  BLOCKED if neither path confirms behavior.
+  `fusion-ai:flows`, then reloading and verifying render. When
+  the injection succeeds and the SVG renders the expected end
+  state, the case is **PASS** with the note `verified via JSON
+  injection` — NOT BLOCKED. `BLOCKED` is reserved for cases
+  where neither gesture nor injection produces a verifiable
+  end state.
 - **`resize_window`** does not change the CSS viewport;
   responsive tests at specific widths (I10) cannot be driven.
   Inspect `responsive.css` manually to verify media queries.
