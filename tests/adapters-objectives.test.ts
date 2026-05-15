@@ -200,7 +200,27 @@ test('postObjectiveDeprecation tombstones an objective',
         assert.equal(tombstones[0]!.objective_id, 'o1');
     });
 
-test('postObjectiveReactivation removes tombstone',
+test('postObjectiveReactivation returns objective to active list',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Rev', 'd', 0,
+        );
+        await postObjectiveDeprecation(ctx, 'o1');
+        await postObjectiveReactivation(ctx, 'o1');
+        const active = await getActiveObjectives(ctx);
+        assert.ok(
+            active.some(o => o.id === 'o1'),
+            'objective must return to active list',
+        );
+        const deprecated =
+            await db.deprecatedObjectives.getAll();
+        assert.equal(deprecated.length, 0,
+            'deprecation row must be spliced');
+    });
+
+test('reactivation does not write to deleted keyspace',
     async () => {
         const db = new MemoryDbAdapter();
         const ctx = ctxFor(db);
@@ -210,8 +230,10 @@ test('postObjectiveReactivation removes tombstone',
         await postObjectiveDeprecation(ctx, 'o1');
         await postObjectiveReactivation(ctx, 'o1');
         const tombstones =
-            await db.deprecatedObjectives.getAll();
-        assert.equal(tombstones.length, 0);
+            await db.deleted.allDeletedIds();
+        assert.ok(!tombstones.has('o1'),
+            'history-store delete must splice, not'
+            + ' tombstone');
     });
 
 test('postObjectiveReordering updates positions',
