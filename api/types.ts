@@ -610,7 +610,7 @@ export interface IdeaEntity {
     alignments: JsonArrayField;
 }
 
-export type ObjectiveId = string;
+export type ObjectiveId = Id;
 
 export interface Objective {
     id: ObjectiveId;
