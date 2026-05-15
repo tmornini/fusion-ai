@@ -4,7 +4,6 @@ import {
 import {
     iconClock,
     iconDollarSign,
-    iconTrendingUp,
     iconGripVertical,
     iconCheckCircle2,
     iconXCircle,
@@ -204,10 +203,6 @@ export class ProjectPresenter {
         const costActual =
             project.actualCostAmount()
             / COST_DIVISOR;
-        const impactBaseline =
-            project.estimatedImpactScore();
-        const impactActual =
-            project.actualImpactScore();
         const metricLabelClasses = 'text-xs text-muted';
         return html`
     <div class="${
@@ -255,28 +250,6 @@ export class ProjectPresenter {
                             metricLabelClasses
                         }">/ ${'$'
                         + costBaseline}k</span>`
-                    : html`&mdash;`
-                }</p>
-            </div>
-        </div>
-        <div class="${
-            'flex items-center gap-2'
-        }">
-            <div class="metric-icon-box">${
-                iconTrendingUp(
-                    16, 'text-primary',
-                )
-            }</div>
-            <div>
-                <p class="${
-                    metricLabelClasses
-                }">Impact</p>
-                <p class="${
-                    'text-sm font-medium'
-                }">${impactBaseline
-                    ? html`${impactActual} <span
-                        class="${metricLabelClasses}"
-                        >/ ${impactBaseline}</span>`
                     : html`&mdash;`
                 }</p>
             </div>

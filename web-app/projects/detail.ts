@@ -64,7 +64,7 @@ const FIELDS: ReadonlySet<ProjectFieldKey> =
     new Set([
         'title', 'description', 'status',
         'startDate', 'targetEndDate',
-        'costBaseline', 'impactBaseline',
+        'costBaseline',
     ]);
 
 const SUBMIT_ON_ENTER_IDS:
