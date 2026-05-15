@@ -7,23 +7,7 @@ import {
     type Deleted,
     type Id,
 } from './types.ts';
-
-// Per-store serializer mutex; see store-entity.ts.
-function createSerializer():
-    <R>(fn: () => Promise<R>) => Promise<R>
-{
-    let tail: Promise<unknown> = Promise.resolve();
-    return function run<R>(
-        fn: () => Promise<R>,
-    ): Promise<R> {
-        const next = tail.then(fn, fn);
-        tail = next.then(
-            () => undefined,
-            () => undefined,
-        );
-        return next as Promise<R>;
-    };
-}
+import { createSerializer } from './store-serializer.ts';
 
 const TABLE = 'deleted';
 
