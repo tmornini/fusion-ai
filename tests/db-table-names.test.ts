@@ -13,7 +13,7 @@ test('TABLE_NAMES includes the five new tables', () => {
     ];
     for (const name of expected) {
         assert.ok(
-            TABLE_NAMES.includes(name as never),
+            TABLE_NAMES.includes(name),
             `TABLE_NAMES missing ${name}`,
         );
     }

@@ -848,7 +848,8 @@ export async function createLocalStorageAdapter(
             >('activity_actors', deletedStore),
         objectives:
             createEntityStore<Objective>(
-                'objectives', deletedStore,
+                'objectives',
+                deletedStore,
             ),
         objectiveRevisions:
             createHistoryEntityStore<
