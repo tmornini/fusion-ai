@@ -6342,7 +6342,7 @@ export async function populateMockData(
             const minActuals =
                 p.status === 'completed' ? 1 : 0;
             const baseActualTime =
-                baselineStart + 86400000;
+                baselineStart + MS_PER_DAY;
             for (
                 let i = 0; i < OBJECTIVE_SEEDS.length; i++
             ) {
