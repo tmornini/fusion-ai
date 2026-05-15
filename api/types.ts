@@ -1134,8 +1134,6 @@ export class Project {
     readonly #actualDuration: number;
     readonly #estimatedCost: number;
     readonly #actualCost: number;
-    readonly #estimatedImpact: number;
-    readonly #actualImpact: number;
     readonly #position: number;
     readonly #businessContext: string;
     readonly #timelineLabel: string;
@@ -1159,10 +1157,6 @@ export class Project {
             entity.estimated_cost;
         this.#actualCost =
             entity.actual_cost;
-        this.#estimatedImpact =
-            entity.estimated_impact;
-        this.#actualImpact =
-            entity.actual_impact;
         this.#position = entity.position;
         this.#businessContext =
             entity.business_context;
@@ -1277,14 +1271,6 @@ export class Project {
 
     actualCostAmount(): number {
         return this.#actualCost;
-    }
-
-    estimatedImpactScore(): number {
-        return this.#estimatedImpact;
-    }
-
-    actualImpactScore(): number {
-        return this.#actualImpact;
     }
 
     positionSortKey(): number {
