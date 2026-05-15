@@ -426,6 +426,15 @@ const routes: Route[] = [
             ),
     }),
 
+    route('project-objective-baseline-scores', {
+        get: (db) =>
+            db.projectObjectiveBaselineScores.getAll(),
+    }),
+    route('project-objective-actual-scores', {
+        get: (db) =>
+            db.projectObjectiveActualScores.getAll(),
+    }),
+
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())
