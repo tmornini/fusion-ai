@@ -11,6 +11,11 @@ import {
     getActiveObjectives,
     getCurrentObjectiveDefinition,
     getObjectiveDefinitionAt,
+    postObjectiveCreation,
+    postObjectiveRevision,
+    postObjectiveDeprecation,
+    postObjectiveReactivation,
+    postObjectiveReordering,
 } from '../web-app/app/adapters/objectives.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
@@ -151,4 +156,85 @@ test('getObjectiveDefinitionAt returns historical name',
             ctx, 'o1', '2026-05-14T12:00:00.000Z',
         );
         assert.equal(histDef.name, 'Old');
+    });
+
+test('postObjectiveCreation writes objective + revision',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Revenue', 'Top line', 0,
+        );
+        const o = await db.objectives.getById('o1');
+        assert.equal(o.id, 'o1');
+        const revs = await db.objectiveRevisions.getAll();
+        assert.equal(revs.length, 1);
+        assert.equal(revs[0]!.name, 'Revenue');
+    });
+
+test('postObjectiveRevision appends a revision row',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Revenue', 'd1', 0,
+        );
+        await postObjectiveRevision(
+            ctx, 'o1', 'Revenue Growth', 'd2',
+        );
+        const revs = await db.objectiveRevisions.getAll();
+        assert.equal(revs.length, 2);
+    });
+
+test('postObjectiveDeprecation tombstones an objective',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Revenue', 'd', 0,
+        );
+        await postObjectiveDeprecation(ctx, 'o1');
+        const tombstones =
+            await db.deprecatedObjectives.getAll();
+        assert.equal(tombstones.length, 1);
+        assert.equal(tombstones[0]!.objective_id, 'o1');
+    });
+
+test('postObjectiveReactivation removes tombstone',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Rev', 'd', 0,
+        );
+        await postObjectiveDeprecation(ctx, 'o1');
+        await postObjectiveReactivation(ctx, 'o1');
+        const tombstones =
+            await db.deprecatedObjectives.getAll();
+        assert.equal(tombstones.length, 0);
+    });
+
+test('postObjectiveReordering updates positions',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'A', 'd', 0,
+        );
+        await postObjectiveCreation(
+            ctx, 'o2', 'B', 'd', 1,
+        );
+        await postObjectiveCreation(
+            ctx, 'o3', 'C', 'd', 2,
+        );
+        await postObjectiveReordering(
+            ctx, ['o3', 'o1', 'o2'],
+        );
+        const all = await db.objectives.getAll();
+        const map = new Map(
+            all.map(o => [o.id, o.position]),
+        );
+        assert.equal(map.get('o3'), 0);
+        assert.equal(map.get('o1'), 1);
+        assert.equal(map.get('o2'), 2);
     });

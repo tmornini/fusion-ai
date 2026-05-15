@@ -20,6 +20,9 @@ import {
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
+    validateObjectiveEntity,
+    validateObjectiveRevisionEntity,
+    validateDeprecatedObjectiveEntity,
 } from './validators.ts';
 
 export class ApiError {
@@ -380,14 +383,47 @@ const routes: Route[] = [
             db.objectives.getById(
                 param(p, 0),
             ),
+        put: (db, p, body) =>
+            db.objectives.put(
+                param(p, 0),
+                validateObjectiveEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, p) =>
+            db.objectives.delete(
+                param(p, 0),
+            ),
     }),
     route('objective-revisions', {
         get: (db) =>
             db.objectiveRevisions.getAll(),
     }),
+    route('objective-revisions/:id', {
+        put: (db, p, body) =>
+            db.objectiveRevisions.put(
+                param(p, 0),
+                validateObjectiveRevisionEntity(
+                    withoutId(body),
+                ),
+            ),
+    }),
     route('deprecated-objectives', {
         get: (db) =>
             db.deprecatedObjectives.getAll(),
+    }),
+    route('deprecated-objectives/:id', {
+        put: (db, p, body) =>
+            db.deprecatedObjectives.put(
+                param(p, 0),
+                validateDeprecatedObjectiveEntity(
+                    withoutId(body),
+                ),
+            ),
+        delete: (db, p) =>
+            db.deprecatedObjectives.delete(
+                param(p, 0),
+            ),
     }),
 
     route('snapshots/schema', {
