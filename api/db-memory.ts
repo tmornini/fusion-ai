@@ -6,6 +6,7 @@ import type {
     DbAdapter,
     DeletedStore,
     SingletonStore,
+    EntityStore as IEntityStore,
 } from './db.ts';
 import type {
     Deleted,
@@ -35,6 +36,8 @@ import { nowUtc, type Id } from './types.ts';
 import { MemoryStorageBackend }
     from './backend-memory.ts';
 import { EntityStore } from './store-entity.ts';
+import { HistoryEntityStore }
+    from './store-history-entity.ts';
 
 class MemSingletonStore<
     T extends { id: string },
@@ -126,40 +129,40 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly #organizationStore:
         MemSingletonStore<OrganizationEntity>;
 
-    readonly workers: EntityStore<HumanWorkerEntity>;
-    readonly aiWorkers: EntityStore<AIWorkerEntity>;
-    readonly ideas: EntityStore<IdeaEntity>;
-    readonly projects: EntityStore<ProjectEntity>;
-    readonly activities: EntityStore<ActivityEntity>;
-    readonly flows: EntityStore<FlowEntity>;
+    readonly workers: IEntityStore<HumanWorkerEntity>;
+    readonly aiWorkers: IEntityStore<AIWorkerEntity>;
+    readonly ideas: IEntityStore<IdeaEntity>;
+    readonly projects: IEntityStore<ProjectEntity>;
+    readonly activities: IEntityStore<ActivityEntity>;
+    readonly flows: IEntityStore<FlowEntity>;
     readonly flowVersions:
-        EntityStore<FlowVersionEntity>;
+        IEntityStore<FlowVersionEntity>;
     readonly projectFlows:
-        EntityStore<ProjectFlowEntity>;
-    readonly workOrders: EntityStore<WorkOrderEntity>;
+        IEntityStore<ProjectFlowEntity>;
+    readonly workOrders: IEntityStore<WorkOrderEntity>;
     readonly flowWorkOrders:
-        EntityStore<FlowWorkOrderEntity>;
+        IEntityStore<FlowWorkOrderEntity>;
     readonly workOrderTransitions:
-        EntityStore<WorkOrderTransitionEntity>;
+        IEntityStore<WorkOrderTransitionEntity>;
     readonly transitionFieldValues:
-        EntityStore<TransitionFieldValueEntity>;
+        IEntityStore<TransitionFieldValueEntity>;
     readonly workOrderClaims:
-        EntityStore<WorkOrderClaimEntity>;
+        IEntityStore<WorkOrderClaimEntity>;
     readonly organization:
         SingletonStore<OrganizationEntity>;
     readonly ideaSubmissions:
-        EntityStore<IdeaSubmissionEntity>;
+        IEntityStore<IdeaSubmissionEntity>;
     readonly activityActors:
-        EntityStore<ActivityActorEntity>;
-    readonly objectives: EntityStore<Objective>;
+        IEntityStore<ActivityActorEntity>;
+    readonly objectives: IEntityStore<Objective>;
     readonly objectiveRevisions:
-        EntityStore<ObjectiveRevision>;
+        IEntityStore<ObjectiveRevision>;
     readonly deprecatedObjectives:
-        EntityStore<DeprecatedObjective>;
+        IEntityStore<DeprecatedObjective>;
     readonly projectObjectiveBaselineScores:
-        EntityStore<ProjectObjectiveBaselineScore>;
+        IEntityStore<ProjectObjectiveBaselineScore>;
     readonly projectObjectiveActualScores:
-        EntityStore<ProjectObjectiveActualScore>;
+        IEntityStore<ProjectObjectiveActualScore>;
     readonly deleted: DeletedStore;
 
     constructor() {
@@ -187,7 +190,9 @@ export class MemoryDbAdapter implements DbAdapter {
         this.flows =
             new EntityStore('flows', b, ds);
         this.flowVersions =
-            new EntityStore('flow_versions', b, ds);
+            new HistoryEntityStore(
+                'flow_versions', b,
+            );
         this.projectFlows =
             new EntityStore('project_flows', b, ds);
         this.workOrders =
@@ -219,22 +224,22 @@ export class MemoryDbAdapter implements DbAdapter {
         this.objectives =
             new EntityStore('objectives', b, ds);
         this.objectiveRevisions =
-            new EntityStore(
-                'objective_revisions', b, ds,
+            new HistoryEntityStore(
+                'objective_revisions', b,
             );
         this.deprecatedObjectives =
             new EntityStore(
                 'deprecated_objectives', b, ds,
             );
         this.projectObjectiveBaselineScores =
-            new EntityStore(
+            new HistoryEntityStore(
                 'project_objective_baseline_scores',
-                b, ds,
+                b,
             );
         this.projectObjectiveActualScores =
-            new EntityStore(
+            new HistoryEntityStore(
                 'project_objective_actual_scores',
-                b, ds,
+                b,
             );
     }
 

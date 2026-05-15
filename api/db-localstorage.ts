@@ -12,6 +12,8 @@ import type {
 import { LocalStorageBackend } from
     './backend-localstorage.ts';
 import { EntityStore } from './store-entity.ts';
+import { HistoryEntityStore }
+    from './store-history-entity.ts';
 import type {
     Deleted,
     HumanWorkerEntity,
@@ -405,76 +407,6 @@ function createDeletedStore(): DeletedStore {
     };
 }
 
-// History tables hold immutable point-in-time facts.
-// Their only valid removal is eviction (for cap
-// enforcement) — true hard delete, no tombstone.
-function createHistoryEntityStore<
-    T extends { id: string },
->(tableName: string): IEntityStore<T> {
-    const serialize = createSerializer();
-    return {
-        async getAll(): Promise<T[]> {
-            return await readTable<T>(tableName);
-        },
-        async getById(
-            id: string,
-        ): Promise<T> {
-            const rows = await readTable<T>(tableName);
-            const row = rows.find(
-                entity => entity.id === id,
-            );
-            if (!row) {
-                throw new EntityNotFound(
-                    tableName, id,
-                );
-            }
-            return row;
-        },
-        async put(
-            id: string,
-            fields: Omit<T, 'id'>,
-        ): Promise<T> {
-            return serialize(async () => {
-                const rows = await readTable<T>(
-                    tableName,
-                );
-                const index = rows.findIndex(
-                    entity => entity.id === id,
-                );
-                const serialized = serializeRecord(
-                    fields as Record<string, unknown>,
-                    tableName,
-                );
-                const written = {
-                    ...serialized,
-                    id,
-                } as T;
-                const next = index >= 0
-                    ? rows.with(index, written)
-                    : [...rows, written];
-                await writeTable(tableName, next);
-                return written;
-            });
-        },
-        async delete(id: string): Promise<void> {
-            return serialize(async () => {
-                const rows = await readTable<T>(
-                    tableName,
-                );
-                const idx = rows.findIndex(
-                    e => e.id === id,
-                );
-                if (idx >= 0) {
-                    await writeTable(
-                        tableName,
-                        rows.toSpliced(idx, 1),
-                    );
-                }
-            });
-        },
-    };
-}
-
 function createSingletonStore<
     T extends { id: string },
 >(tableName: string): SingletonStore<T> {
@@ -717,8 +649,8 @@ export async function createLocalStorageAdapter(
             'flows', backend, deletedStore,
         ),
         flowVersions:
-            createHistoryEntityStore<FlowVersionEntity>(
-                'flow_versions',
+            new HistoryEntityStore<FlowVersionEntity>(
+                'flow_versions', backend,
             ),
         projectFlows: new EntityStore<ProjectFlowEntity>(
             'project_flows', backend, deletedStore,
@@ -764,8 +696,8 @@ export async function createLocalStorageAdapter(
             'objectives', backend, deletedStore,
         ),
         objectiveRevisions:
-            createHistoryEntityStore<ObjectiveRevision>(
-                'objective_revisions',
+            new HistoryEntityStore<ObjectiveRevision>(
+                'objective_revisions', backend,
             ),
         deprecatedObjectives:
             new EntityStore<DeprecatedObjective>(
@@ -773,13 +705,19 @@ export async function createLocalStorageAdapter(
                 backend, deletedStore,
             ),
         projectObjectiveBaselineScores:
-            createHistoryEntityStore<
+            new HistoryEntityStore<
                 ProjectObjectiveBaselineScore
-            >('project_objective_baseline_scores'),
+            >(
+                'project_objective_baseline_scores',
+                backend,
+            ),
         projectObjectiveActualScores:
-            createHistoryEntityStore<
+            new HistoryEntityStore<
                 ProjectObjectiveActualScore
-            >('project_objective_actual_scores'),
+            >(
+                'project_objective_actual_scores',
+                backend,
+            ),
         deleted: deletedStore,
     };
 
