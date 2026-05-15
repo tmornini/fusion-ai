@@ -29,6 +29,24 @@ environmental limits (pointer-capture gestures,
 `resize_window`, file I/O) — never used to mask a real
 failure.
 
+### Sub-agent invocation contract
+
+Every agent dispatched by the orchestrator — Phase 1
+serial agent, all seven Phase 2 agents, the Phase 3
+cross-cutting agent, and the Phase 4 snapshot-lifecycle
+agent — MUST begin its turn by invoking the
+`church-of-code:church-of-code` skill via the Skill tool
+and reading `CHURCH-OF-CODE-small-context.md` in full.
+Subagents inherit no scripture and read no CLAUDE.md by
+default (see CLAUDE.md § Subagents). The orchestrator's
+dispatch prompt MUST embed this requirement as the first
+line of every sub-agent prompt.
+
+After the scripture, each sub-agent reads
+`/Users/tmornini/code/fusion-ai/CLAUDE.md` in full, then
+begins its assigned case list. The discipline costs
+context; the discipline IS the point.
+
 ### Scope
 
 This plan covers **UI behavior** — anything that requires a browser
@@ -110,7 +128,7 @@ last (they wipe the database). See `CLAUDE.md` section
 |---|--:|
 | AT. Automated Test Suite | 3 |
 | A. Build & Setup | 5 |
-| AA. Data Entry Workflow | 46 |
+| AA. Data Entry Workflow | 47 |
 | B. Entry Pages | 14 |
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 37 |
@@ -122,7 +140,8 @@ last (they wipe the database). See `CLAUDE.md` section
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 28 |
 | J. Teardown | 3 |
-| **Total** | **291** |
+| K. Objectives & Scoring | 30 |
+| **Total** | **322** |
 
 ---
 
@@ -226,6 +245,15 @@ on. Run these in order.
 - [ ] **AA11** Navigate away, return to Organization.
   PASS: edited Domain persists with saved value, card is
   back in read mode.
+- [ ] **AA-Obj** On the Organization page, locate the
+  Objectives box. Click `+ Add objective` five times,
+  creating in order: "Revenue Growth", "Cost Reduction",
+  "Customer Satisfaction", "Team Wellbeing", "Operational
+  Efficiency". PASS: all five appear in the active list
+  in the order created. End-state delivered to Phase 2:
+  5 active objectives — required by Agent-E's K9–K23
+  scoring lifecycle, which has a read-dependency on the
+  Organization Objectives produced here.
 
 ### AA4. Create Ideas
 
@@ -456,10 +484,21 @@ on. Run these in order.
   stats ("Stark Industries · 11 Ideas ·
   6 Projects · 1 Flows"), and theme toggle.
   PASS: elements visible and styled.
-- [ ] **C4** Dashboard displays 3 gauge/metric cards (Time, Cost, Impact) with baseline and current values. PASS: cards render with non-zero values and concentric arc gauges.
+- [ ] **C4** Dashboard renders 5 surfaces in order: Time
+  gauge, Cost gauge, Impact gauge, Portfolio Impact card
+  (new bipolar arc, post-b2c0684), Aggregate Objectives
+  box (new full-width row below, post-b2c0684). PASS: all
+  5 render with baseline and current values; the 3 gauges
+  show concentric arcs; the Portfolio Impact card shows
+  its bipolar arc; the Aggregates box shows per-objective
+  rows.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
-- [ ] **C7** Check that seed data populates all dashboard widgets. PASS: no "No data" empty states on initial load (seed data provides content for all widgets).
+- [ ] **C7** Check that seed data populates all 5 dashboard
+  surfaces (3 gauges + Portfolio Impact card + Aggregate
+  Objectives box). PASS: no "No data" empty states on
+  initial load against the Phase 1 baseline (10 humans,
+  4 AIs, 11 ideas, 6 projects, 1 flow, 5 objectives).
 
 ---
 
@@ -1413,7 +1452,14 @@ the claude-in-chrome MCP.
   Save. PASS: toast "AI worker saved"; on reopen the
   masked token's last 4 chars match the new value.
 
-### Snapshots (`snapshots/`) — Run These Last
+### Snapshots (`snapshots/`) — Phase 4 (Run These Last)
+
+**Phase 4 — Snapshot lifecycle & objective wipe.** Cases
+G30–G35 (snapshot lifecycle) and K8 (DevTools localStorage
+wipe → Organization empty-state check → mock-data restore)
+all destroy and restore the shared database. They MUST run
+alone in tab 0 after Phase 3 completes — never concurrent
+with Phase 2.
 
 (Snapshot serialization, per-row import-validation, the quota
 pre-flight, column-level compression, and wipe-on-fail are
@@ -1586,8 +1632,9 @@ feature is implemented.
 
 ## K. Objectives & Scoring
 
-Owner agents: Agent-G (K1–K8), Agent-E (K9–K23 + K30),
-Agent-CH (K27–K29). Mutation domain delta:
+Owner agents: Agent-G (K1–K6 in Phase 2, K8 in Phase 4),
+Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
+domain delta:
 
 - Agent-G adds: `objectives`, `objective_revisions`,
   `deprecated_objectives`
@@ -1595,7 +1642,14 @@ Agent-CH (K27–K29). Mutation domain delta:
   `project_objective_actual_scores`
 - Agent-CH stays read-only
 
-### K1–K8 — Organization Objectives box (Agent-G)
+### K1–K6 — Organization Objectives box (Agent-G, Phase 2)
+
+K7 has been reassigned to Agent-E and appears at the end of
+the K30 subsection. K8 has been moved to Phase 4 alongside
+G30–G35 (snapshot lifecycle) and is documented in the
+Snapshots section below — it MUST NOT run in Phase 2
+because it wipes localStorage, which is shared across the
+seven Phase 2 agents.
 
 **K1.** Open Organization page; confirm Objectives box
 renders below the existing Overview/Usage/Admin cards with
@@ -1621,11 +1675,12 @@ if it returns to the active list.
 **K6.** Drag an objective to a new position. PASS if the
 new position persists across a page reload.
 
-**K7.** Open an existing project's history modal (created
-in K30). PASS if events that predate a K3 edit display the
-OLD name, not the new one (temporal name resolution).
+**K8.** **Phase 4 case** — runs alone alongside G30–G35
+after Phase 2 and Phase 3 complete. Catastrophic if run
+in Phase 2 because it wipes localStorage, which is shared
+across all seven Phase 2 agents.
 
-**K8.** Empty state: wipe localStorage via DevTools
+Empty state: wipe localStorage via DevTools
 (Application > Local Storage > Clear All), then navigate
 to the Organization page. PASS if the empty-state copy
 "No objectives yet. Add one to get started." renders
@@ -1735,7 +1790,13 @@ Objectives box (new full-width row below).
 project. PASS if the dashboard cards update within ~1
 second (StorageEvent + scoreChanges propagation).
 
-### K30 — Project history modal (Agent-E)
+### K30 + K7 — Project history modal & temporal name resolution (Agent-E)
+
+K7 runs LAST in Agent-E's block, after K30. K7 verifies the
+temporal-name-resolution invariant that K30 only describes;
+it has a cross-agent prerequisite on K3 (Agent-G's objective
+rename in Phase 2). The orchestrator embeds the polling
+contract in Agent-E's dispatch prompt.
 
 **K30.** Open an approved project's View history modal.
 PASS if:
@@ -1747,6 +1808,17 @@ PASS if:
   NEW name
 - Baseline revisions appear as their own event rows (not
   collapsed)
+
+**K7.** After K30 has run AND Agent-G's K3 has executed
+(verify via
+`localStorage.getItem('fusion-ai:objective_revisions')` —
+≥1 row with a `name` change confirms K3 ran), reopen the
+project's history modal. PASS if events that predate the
+K3 edit display the OLD objective name, not the new one
+(temporal name resolution). If after 10 minutes
+`objective_revisions` shows no rename, mark K7 BLOCKED
+with reason "no K3 rename to verify against — Agent-G did
+not produce the prerequisite in time".
 
 ---
 
