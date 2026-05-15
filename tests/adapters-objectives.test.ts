@@ -8,6 +8,9 @@ import {
     getObjectives,
     getDeprecatedObjectiveIds,
     getObjectiveRevisions,
+    getActiveObjectives,
+    getCurrentObjectiveDefinition,
+    getObjectiveDefinitionAt,
 } from '../web-app/app/adapters/objectives.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
@@ -80,4 +83,72 @@ test('getObjectiveRevisions returns all for an objective',
         for (const r of revs) {
             assert.equal(r.objective_id, 'o1');
         }
+    });
+
+test('getActiveObjectives filters deprecated',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o2', { position: 1 });
+        await db.deprecatedObjectives.put('o2', {
+            objective_id: 'o2',
+            deprecated_at: '2026-05-14T00:00:00.000Z',
+        });
+        const ctx = ctxFor(db);
+        const active = await getActiveObjectives(ctx);
+        assert.equal(active.length, 1);
+        assert.equal(active[0]!.id, 'o1');
+    });
+
+test('getCurrentObjectiveDefinition returns latest revision',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.objectiveRevisions.put(
+            'o1:2026-05-14T00:00:00.000Z',
+            {
+                objective_id: 'o1', name: 'Old',
+                description: 'd1',
+                revised_at: '2026-05-14T00:00:00.000Z',
+            },
+        );
+        await db.objectiveRevisions.put(
+            'o1:2026-05-15T00:00:00.000Z',
+            {
+                objective_id: 'o1', name: 'New',
+                description: 'd2',
+                revised_at: '2026-05-15T00:00:00.000Z',
+            },
+        );
+        const ctx = ctxFor(db);
+        const def = await getCurrentObjectiveDefinition(
+            ctx, 'o1',
+        );
+        assert.equal(def.name, 'New');
+        assert.equal(def.description, 'd2');
+    });
+
+test('getObjectiveDefinitionAt returns historical name',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.objectiveRevisions.put(
+            'o1:2026-05-14T00:00:00.000Z',
+            {
+                objective_id: 'o1', name: 'Old',
+                description: 'd1',
+                revised_at: '2026-05-14T00:00:00.000Z',
+            },
+        );
+        await db.objectiveRevisions.put(
+            'o1:2026-05-15T00:00:00.000Z',
+            {
+                objective_id: 'o1', name: 'New',
+                description: 'd2',
+                revised_at: '2026-05-15T00:00:00.000Z',
+            },
+        );
+        const ctx = ctxFor(db);
+        const histDef = await getObjectiveDefinitionAt(
+            ctx, 'o1', '2026-05-14T12:00:00.000Z',
+        );
+        assert.equal(histDef.name, 'Old');
     });
