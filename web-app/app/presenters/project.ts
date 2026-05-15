@@ -24,6 +24,18 @@ import {
 import {
     orderedKeys,
 } from './ordered-keys.ts';
+import {
+    formatSigned, toneForScore,
+} from '../scoring-format.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
+
+type ScoreRow = {
+    projectId: string;
+    baselineAvg: number | undefined;
+    latestActualAvg: number | undefined;
+    baselineCount: number;
+    totalActiveObjectives: number;
+};
 
 const STATUS_ICONS: Record<
     ProjectStatus,
@@ -88,6 +100,7 @@ export class ProjectPresenter {
     buildCard(
         view: string,
         showGrip: boolean,
+        score?: ScoreRow,
     ): SafeHtml {
         const statusIcon = STATUS_ICONS[
             this.#project.statusValue()
@@ -133,8 +146,37 @@ export class ProjectPresenter {
                 }</span>
             </div>
             ${this.#buildMetrics()}
+            ${this.#buildScoreCell(score)}
             ${this.#buildProgressRing()}
         </div>
+    </div>`;
+    }
+
+    #buildScoreCell(
+        score: ScoreRow | undefined,
+    ): SafeHtml {
+        const projected = score?.baselineAvg;
+        const hasScore = projected !== undefined;
+        const tone = hasScore
+            ? toneForScore(projected)
+            : 'neutral';
+        const display = hasScore
+            ? formatSigned(projected)
+            : DISPLAY_ABSENT;
+        return html`
+    <div class="projected-impact-cell"
+        data-score-present="${hasScore}"
+        data-score-value="${
+            hasScore ? projected : ''
+        }">
+        <strong data-tone="${tone}">${
+            display
+        }</strong>${score ? html`
+        <span class="meta">${
+            score.baselineCount
+        }/${
+            score.totalActiveObjectives
+        }</span>` : html``}
     </div>`;
     }
 
@@ -294,12 +336,21 @@ export function applyProjectFilterToggle(
 export class ProjectListPresenter {
     #projects: ProjectPresenter[];
     #filter: ProjectListFilter;
+    readonly #scoreMap: ReadonlyMap<
+        string, ScoreRow
+    >;
 
-    constructor(state: ProjectListState) {
+    constructor(
+        state: ProjectListState,
+        scoreMap: ReadonlyMap<
+            string, ScoreRow
+        > = new Map(),
+    ) {
         this.#projects = state.projects.map(
             p => new ProjectPresenter(p),
         );
         this.#filter = state.filter;
+        this.#scoreMap = scoreMap;
     }
 
     activeFilter():
@@ -373,7 +424,11 @@ export class ProjectListPresenter {
             f.kind === 'all';
         return html`${sorted.map(
             p => p.buildCard(
-                'position', hasGrip,
+                'position',
+                hasGrip,
+                this.#scoreMap.get(
+                    p.idForLink(),
+                ),
             ),
         )}`;
     }
