@@ -1,19 +1,15 @@
 import {
-    EntityNotFound,
     MissingTableError,
     TABLE_NAMES,
 } from './db.ts';
-import type {
-    DbAdapter,
-    DeletedStore,
-    EntityStore as IEntityStore,
-    SingletonStore,
-} from './db.ts';
+import type { DbAdapter } from './db.ts';
 import { LocalStorageBackend } from
     './backend-localstorage.ts';
 import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
+import { SingletonStore } from './store-singleton.ts';
+import { DeletedStore } from './store-deleted.ts';
 import type {
     Deleted,
     HumanWorkerEntity,
@@ -365,93 +361,6 @@ function createSerializer():
     };
 }
 
-function createDeletedStore(): DeletedStore {
-    const TABLE = 'deleted';
-    const serialize = createSerializer();
-    return {
-        async isDeleted(
-            id: string,
-        ): Promise<boolean> {
-            const rows = await readTable<Deleted>(
-                TABLE,
-            );
-            return rows.some(r => r.id === id);
-        },
-        async record(id: string): Promise<void> {
-            return serialize(async () => {
-                const rows = await readTable<Deleted>(
-                    TABLE,
-                );
-                if (
-                    rows.some(r => r.id === id)
-                ) return;
-                const next: Deleted[] = [
-                    ...rows,
-                    {
-                        id,
-                        deleted_at: nowUtc(),
-                    },
-                ];
-                await writeTable(TABLE, next);
-            });
-        },
-        async allDeletedIds(
-        ): Promise<Set<string>> {
-            const rows = await readTable<Deleted>(
-                TABLE,
-            );
-            return new Set(
-                rows.map(r => r.id),
-            );
-        },
-    };
-}
-
-function createSingletonStore<
-    T extends { id: string },
->(tableName: string): SingletonStore<T> {
-    const serialize = createSerializer();
-    return {
-        async get(): Promise<T> {
-            const rows = await readTable<T>(tableName);
-            const row = rows.find(
-                entity => entity.id === '1',
-            );
-            if (row) return row;
-            throw new Error(
-                'Singleton "' + tableName
-                + '" not found. Load data'
-                + ' via snapshots.',
-            );
-        },
-        async put(
-            fields: Omit<T, 'id'>,
-        ): Promise<T> {
-            return serialize(async () => {
-                const rows = await readTable<T>(
-                    tableName,
-                );
-                const serialized = serializeRecord(
-                    fields as Record<string, unknown>,
-                    tableName,
-                );
-                const index = rows.findIndex(
-                    entity => entity.id === '1',
-                );
-                const written = {
-                    ...serialized,
-                    id: '1',
-                } as T;
-                const next = index >= 0
-                    ? rows.with(index, written)
-                    : [...rows, written];
-                await writeTable(tableName, next);
-                return written;
-            });
-        },
-    };
-}
-
 async function clearAllTables(): Promise<void> {
     for (const table of TABLE_NAMES) {
         localStorage.removeItem(
@@ -601,7 +510,7 @@ async function applyValidatedSnapshot(
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {
     const backend = new LocalStorageBackend();
-    const deletedStore = createDeletedStore();
+    const deletedStore = new DeletedStore(backend);
 
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {
@@ -679,8 +588,8 @@ export async function createLocalStorageAdapter(
                 backend, deletedStore,
             ),
         organization:
-            createSingletonStore<OrganizationEntity>(
-                'organization',
+            new SingletonStore<OrganizationEntity>(
+                'organization', backend,
             ),
         ideaSubmissions:
             new EntityStore<IdeaSubmissionEntity>(

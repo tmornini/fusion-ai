@@ -1,15 +1,11 @@
-import {
-    EntityNotFound,
-    TABLE_NAMES,
-} from './db.ts';
+import { TABLE_NAMES } from './db.ts';
 import type {
     DbAdapter,
-    DeletedStore,
-    SingletonStore,
+    DeletedStore as IDeletedStore,
+    SingletonStore as ISingletonStore,
     EntityStore as IEntityStore,
 } from './db.ts';
 import type {
-    Deleted,
     HumanWorkerEntity,
     AIWorkerEntity,
     IdeaEntity,
@@ -32,102 +28,16 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
-import { nowUtc, type Id } from './types.ts';
 import { MemoryStorageBackend }
     from './backend-memory.ts';
 import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
-
-class MemSingletonStore<
-    T extends { id: string },
-> implements SingletonStore<T>
-{
-    readonly #table: string;
-    readonly #data: Map<string, T> = new Map();
-
-    constructor(table: string) {
-        this.#table = table;
-    }
-
-    async get(): Promise<T> {
-        const all = [...this.#data.values()];
-        if (all.length === 0) {
-            throw new EntityNotFound(
-                this.#table, '<singleton>',
-            );
-        }
-        return all[0]!;
-    }
-
-    async put(
-        fields: Omit<T, 'id'>,
-    ): Promise<T> {
-        const existing =
-            [...this.#data.values()][0];
-        const id = existing?.id ?? 'singleton';
-        const next = {
-            ...fields, id,
-        } as unknown as T;
-        this.#data.clear();
-        this.#data.set(id, next);
-        return next;
-    }
-
-    async allRows(): Promise<T[]> {
-        return [...this.#data.values()];
-    }
-
-    async restore(row: T | undefined): Promise<void> {
-        this.#data.clear();
-        if (row) {
-            this.#data.set(row.id, row);
-        }
-    }
-
-    async clear(): Promise<void> {
-        this.#data.clear();
-    }
-}
-
-class MemDeletedStore implements DeletedStore {
-    readonly #data: Map<string, Deleted> = new Map();
-
-    async isDeleted(id: Id): Promise<boolean> {
-        return this.#data.has(id);
-    }
-
-    async record(id: Id): Promise<void> {
-        this.#data.set(id, {
-            id, deleted_at: nowUtc(),
-        });
-    }
-
-    async allDeletedIds(): Promise<Set<Id>> {
-        return new Set(this.#data.keys());
-    }
-
-    async allRows(): Promise<Deleted[]> {
-        return [...this.#data.values()];
-    }
-
-    async restore(rows: readonly Deleted[]): Promise<void> {
-        this.#data.clear();
-        for (const row of rows) {
-            this.#data.set(row.id, row);
-        }
-    }
-
-    async clear(): Promise<void> {
-        this.#data.clear();
-    }
-}
+import { SingletonStore } from './store-singleton.ts';
+import { DeletedStore } from './store-deleted.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
     readonly #backend: MemoryStorageBackend;
-    readonly #deletedStore: MemDeletedStore;
-    readonly #organizationStore:
-        MemSingletonStore<OrganizationEntity>;
 
     readonly workers: IEntityStore<HumanWorkerEntity>;
     readonly aiWorkers: IEntityStore<AIWorkerEntity>;
@@ -149,7 +59,7 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly workOrderClaims:
         IEntityStore<WorkOrderClaimEntity>;
     readonly organization:
-        SingletonStore<OrganizationEntity>;
+        ISingletonStore<OrganizationEntity>;
     readonly ideaSubmissions:
         IEntityStore<IdeaSubmissionEntity>;
     readonly activityActors:
@@ -163,20 +73,18 @@ export class MemoryDbAdapter implements DbAdapter {
         IEntityStore<ProjectObjectiveBaselineScore>;
     readonly projectObjectiveActualScores:
         IEntityStore<ProjectObjectiveActualScore>;
-    readonly deleted: DeletedStore;
+    readonly deleted: IDeletedStore;
 
     constructor() {
         this.#backend = new MemoryStorageBackend();
-        this.#deletedStore = new MemDeletedStore();
-        this.#organizationStore =
-            new MemSingletonStore<OrganizationEntity>(
-                'organization',
-            );
-        this.deleted = this.#deletedStore;
-        this.organization = this.#organizationStore;
-
         const b = this.#backend;
-        const ds = this.#deletedStore;
+        const ds = new DeletedStore(b);
+        this.deleted = ds;
+        this.organization =
+            new SingletonStore<OrganizationEntity>(
+                'organization', b,
+            );
+
         this.workers =
             new EntityStore('workers', b, ds);
         this.aiWorkers =
@@ -256,24 +164,12 @@ export class MemoryDbAdapter implements DbAdapter {
 
     async deleteSchema(): Promise<void> {
         await this.#backend.clearAll();
-        await this.#deletedStore.clear();
-        await this.#organizationStore.clear();
     }
 
     async exportSnapshot(): Promise<string> {
         const obj: Record<string, unknown[]> = {};
         for (const table of TABLE_NAMES) {
-            if (table === 'organization') {
-                obj[table] =
-                    await this.#organizationStore
-                        .allRows();
-            } else if (table === 'deleted') {
-                obj[table] =
-                    await this.#deletedStore.allRows();
-            } else {
-                obj[table] =
-                    await this.#backend.read(table);
-            }
+            obj[table] = await this.#backend.read(table);
         }
         return JSON.stringify(obj);
     }
@@ -281,24 +177,11 @@ export class MemoryDbAdapter implements DbAdapter {
     async importSnapshot(json: string): Promise<void> {
         const obj = JSON.parse(json) as
             Record<string, { id: string }[]>;
-        await this.deleteSchema();
+        await this.#backend.clearAll();
         for (const table of TABLE_NAMES) {
             const rows = obj[table];
-            if (!rows) continue;
-            if (table === 'organization') {
-                await this.#organizationStore.restore(
-                    rows[0] as
-                        | OrganizationEntity
-                        | undefined,
-                );
-            } else if (table === 'deleted') {
-                await this.#deletedStore.restore(
-                    rows as Deleted[],
-                );
-            } else {
-                await this.#backend.write(
-                    table, rows,
-                );
+            if (rows) {
+                await this.#backend.write(table, rows);
             }
         }
     }
