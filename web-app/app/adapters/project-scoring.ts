@@ -47,3 +47,17 @@ export async function getActualScoresForProject(
         r => r.project_id === projectId,
     );
 }
+
+export async function getProjectScoring(
+    ctx: RequestContext,
+    projectId: Id,
+): Promise<{
+    baseline: ProjectObjectiveBaselineScore[];
+    actual: ProjectObjectiveActualScore[];
+}> {
+    const [baseline, actual] = await Promise.all([
+        getBaselineScoresForProject(ctx, projectId),
+        getActualScoresForProject(ctx, projectId),
+    ]);
+    return { baseline, actual };
+}
