@@ -45,7 +45,7 @@ export async function getDeprecatedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
     const rows = await ctx.GET<DeprecatedObjective[]>(
-        'deprecated_objectives',
+        'deprecated-objectives',
     );
     return new Set(rows.map(r => r.objective_id));
 }
@@ -55,7 +55,7 @@ export async function getObjectiveRevisions(
     id: ObjectiveId,
 ): Promise<ObjectiveRevision[]> {
     const all = await ctx.GET<ObjectiveRevision[]>(
-        'objective_revisions',
+        'objective-revisions',
     );
     return all.filter(
         r => r.objective_id === id,

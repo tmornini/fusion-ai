@@ -381,11 +381,11 @@ const routes: Route[] = [
                 param(p, 0),
             ),
     }),
-    route('objective_revisions', {
+    route('objective-revisions', {
         get: (db) =>
             db.objectiveRevisions.getAll(),
     }),
-    route('deprecated_objectives', {
+    route('deprecated-objectives', {
         get: (db) =>
             db.deprecatedObjectives.getAll(),
     }),
