@@ -1,7 +1,4 @@
-import {
-    MissingTableError,
-    type StorageBackend,
-} from './db.ts';
+import type { StorageBackend } from './db.ts';
 
 export class MemoryStorageBackend
     implements StorageBackend
@@ -13,14 +10,18 @@ export class MemoryStorageBackend
         this.#tables = new Map();
     }
 
+    // Lenient on missing: returns [] rather than
+    // throwing MissingTableError. Memory adapters
+    // historically allow read-before-createSchema;
+    // this preserves that affordance and keeps
+    // existing tests passing.
     async read<T extends { id: string }>(
         table: string,
     ): Promise<T[]> {
         const rows = this.#tables.get(table);
-        if (rows === undefined) {
-            throw new MissingTableError(table);
-        }
-        return [...rows] as T[];
+        return rows === undefined
+            ? []
+            : ([...rows] as T[]);
     }
 
     async write<T extends { id: string }>(

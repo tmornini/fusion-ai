@@ -6,9 +6,12 @@ import {
 import type {
     DbAdapter,
     DeletedStore,
-    EntityStore,
+    EntityStore as IEntityStore,
     SingletonStore,
 } from './db.ts';
+import { LocalStorageBackend } from
+    './backend-localstorage.ts';
+import { EntityStore } from './store-entity.ts';
 import type {
     Deleted,
     HumanWorkerEntity,
@@ -402,81 +405,12 @@ function createDeletedStore(): DeletedStore {
     };
 }
 
-function createEntityStore<
-    T extends { id: string },
->(
-    tableName: string,
-    deletedStore: DeletedStore,
-): EntityStore<T> {
-    const serialize = createSerializer();
-    return {
-        async getAll(): Promise<T[]> {
-            const rows = await readTable<T>(tableName);
-            const deletedIds =
-                await deletedStore.allDeletedIds();
-            return rows.filter(
-                row => !deletedIds.has(row.id),
-            );
-        },
-        async getById(
-            id: string,
-        ): Promise<T> {
-            if (
-                await deletedStore.isDeleted(id)
-            ) {
-                throw new EntityNotFound(
-                    tableName, id,
-                );
-            }
-            const rows = await readTable<T>(tableName);
-            const row = rows.find(
-                entity => entity.id === id,
-            );
-            if (!row) {
-                throw new EntityNotFound(
-                    tableName, id,
-                );
-            }
-            return row;
-        },
-        async put(
-            id: string,
-            fields: Omit<T, 'id'>,
-        ): Promise<T> {
-            return serialize(async () => {
-                const rows = await readTable<T>(
-                    tableName,
-                );
-                const index = rows.findIndex(
-                    entity => entity.id === id,
-                );
-                const serialized = serializeRecord(
-                    fields as Record<string, unknown>,
-                    tableName,
-                );
-                const written = {
-                    ...serialized,
-                    id,
-                } as T;
-                const next = index >= 0
-                    ? rows.with(index, written)
-                    : [...rows, written];
-                await writeTable(tableName, next);
-                return written;
-            });
-        },
-        async delete(id: string): Promise<void> {
-            await deletedStore.record(id);
-        },
-    };
-}
-
 // History tables hold immutable point-in-time facts.
 // Their only valid removal is eviction (for cap
 // enforcement) — true hard delete, no tombstone.
 function createHistoryEntityStore<
     T extends { id: string },
->(tableName: string): EntityStore<T> {
+>(tableName: string): IEntityStore<T> {
     const serialize = createSerializer();
     return {
         async getAll(): Promise<T[]> {
@@ -734,6 +668,7 @@ async function applyValidatedSnapshot(
 
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {
+    const backend = new LocalStorageBackend();
     const deletedStore = createDeletedStore();
 
     const adapter: DbAdapter = {
@@ -763,117 +698,88 @@ export async function createLocalStorageAdapter(
             );
         },
 
-        workers:
-            createEntityStore<HumanWorkerEntity>(
-                'workers',
-                deletedStore,
-            ),
-        aiWorkers:
-            createEntityStore<AIWorkerEntity>(
-                'ai_workers',
-                deletedStore,
-            ),
-        ideas:
-            createEntityStore<IdeaEntity>(
-                'ideas',
-                deletedStore,
-            ),
-
-        projects:
-            createEntityStore<ProjectEntity>(
-                'projects',
-                deletedStore,
-            ),
-
-        activities:
-            createEntityStore<ActivityEntity>(
-                'activities',
-                deletedStore,
-            ),
-
-        flows:
-            createEntityStore<
-                FlowEntity
-            >('flows', deletedStore),
+        workers: new EntityStore<HumanWorkerEntity>(
+            'workers', backend, deletedStore,
+        ),
+        aiWorkers: new EntityStore<AIWorkerEntity>(
+            'ai_workers', backend, deletedStore,
+        ),
+        ideas: new EntityStore<IdeaEntity>(
+            'ideas', backend, deletedStore,
+        ),
+        projects: new EntityStore<ProjectEntity>(
+            'projects', backend, deletedStore,
+        ),
+        activities: new EntityStore<ActivityEntity>(
+            'activities', backend, deletedStore,
+        ),
+        flows: new EntityStore<FlowEntity>(
+            'flows', backend, deletedStore,
+        ),
         flowVersions:
-            createHistoryEntityStore<
-                FlowVersionEntity
-            >('flow_versions'),
-        projectFlows:
-            createEntityStore<
-                ProjectFlowEntity
-            >('project_flows', deletedStore),
-        workOrders:
-            createEntityStore<
-                WorkOrderEntity
-            >('work_orders', deletedStore),
+            createHistoryEntityStore<FlowVersionEntity>(
+                'flow_versions',
+            ),
+        projectFlows: new EntityStore<ProjectFlowEntity>(
+            'project_flows', backend, deletedStore,
+        ),
+        workOrders: new EntityStore<WorkOrderEntity>(
+            'work_orders', backend, deletedStore,
+        ),
         flowWorkOrders:
-            createEntityStore<
-                FlowWorkOrderEntity
-            >('flow_work_orders', deletedStore),
+            new EntityStore<FlowWorkOrderEntity>(
+                'flow_work_orders',
+                backend, deletedStore,
+            ),
         workOrderTransitions:
-            createEntityStore<
-                WorkOrderTransitionEntity
-            >(
+            new EntityStore<WorkOrderTransitionEntity>(
                 'work_order_transitions',
-                deletedStore,
+                backend, deletedStore,
             ),
         transitionFieldValues:
-            createEntityStore<
-                TransitionFieldValueEntity
-            >(
+            new EntityStore<TransitionFieldValueEntity>(
                 'transition_field_values',
-                deletedStore,
+                backend, deletedStore,
             ),
         workOrderClaims:
-            createEntityStore<
-                WorkOrderClaimEntity
-            >(
+            new EntityStore<WorkOrderClaimEntity>(
                 'work_order_claims',
-                deletedStore,
+                backend, deletedStore,
             ),
-
         organization:
             createSingletonStore<OrganizationEntity>(
                 'organization',
             ),
-
         ideaSubmissions:
-            createEntityStore<
-                IdeaSubmissionEntity
-            >('idea_submissions', deletedStore),
-        activityActors:
-            createEntityStore<
-                ActivityActorEntity
-            >('activity_actors', deletedStore),
-        objectives:
-            createEntityStore<Objective>(
-                'objectives',
-                deletedStore,
+            new EntityStore<IdeaSubmissionEntity>(
+                'idea_submissions',
+                backend, deletedStore,
             ),
+        activityActors:
+            new EntityStore<ActivityActorEntity>(
+                'activity_actors',
+                backend, deletedStore,
+            ),
+        objectives: new EntityStore<Objective>(
+            'objectives', backend, deletedStore,
+        ),
         objectiveRevisions:
-            createHistoryEntityStore<
-                ObjectiveRevision
-            >('objective_revisions'),
+            createHistoryEntityStore<ObjectiveRevision>(
+                'objective_revisions',
+            ),
         deprecatedObjectives:
-            createEntityStore<
-                DeprecatedObjective
-            >(
+            new EntityStore<DeprecatedObjective>(
                 'deprecated_objectives',
-                deletedStore,
+                backend, deletedStore,
             ),
         projectObjectiveBaselineScores:
             createHistoryEntityStore<
                 ProjectObjectiveBaselineScore
-            >(
-                'project_objective_baseline_scores',
-            ),
+            >('project_objective_baseline_scores'),
         projectObjectiveActualScores:
             createHistoryEntityStore<
                 ProjectObjectiveActualScore
-            >(
-                'project_objective_actual_scores',
-            ),
+            >('project_objective_actual_scores'),
         deleted: deletedStore,
     };
 
