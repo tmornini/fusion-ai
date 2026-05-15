@@ -610,6 +610,39 @@ export interface IdeaEntity {
     alignments: JsonArrayField;
 }
 
+export type ObjectiveId = string;
+
+export interface Objective {
+    id: ObjectiveId;
+    position: number;
+}
+
+export interface ObjectiveRevision {
+    objective_id: ObjectiveId;
+    name: string;
+    description: string;
+    revised_at: string;
+}
+
+export interface DeprecatedObjective {
+    objective_id: ObjectiveId;
+    deprecated_at: string;
+}
+
+export interface ProjectObjectiveBaselineScore {
+    project_id: Id;
+    objective_id: ObjectiveId;
+    score: number;
+    scored_at: string;
+}
+
+export interface ProjectObjectiveActualScore {
+    project_id: Id;
+    objective_id: ObjectiveId;
+    score: number;
+    scored_at: string;
+}
+
 export interface ProjectEntity {
     id: Id;
     title: string;
