@@ -5,6 +5,7 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
+import { nowUtc } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
     getActiveObjectives,
@@ -13,6 +14,9 @@ import { latestPerPair } from '../scoring-format.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
+import {
+    generateCryptoSafeBase62,
+} from './crypto-safe-base62.ts';
 
 const projectScoreChanges =
     createSubscriptionChannel([
@@ -231,6 +235,56 @@ export async function getObjectiveAggregates(
         });
     }
     return result;
+}
+
+export async function postProjectBaselineScoring(
+    ctx: RequestContext,
+    projectId: Id,
+    scores: Array<{
+        objectiveId: ObjectiveId;
+        score: number;
+    }>,
+): Promise<void> {
+    const scoredAt = nowUtc();
+    const ops = scores.map(s => ({
+        method: 'put' as const,
+        resource:
+            `project-objective-baseline-scores/`
+            + generateCryptoSafeBase62(),
+        body: {
+            project_id: projectId,
+            objective_id: s.objectiveId,
+            score: s.score,
+            scored_at: scoredAt,
+        },
+    }));
+    await ctx.commit({ ops });
+    notifyProjectScoreChange();
+}
+
+export async function postProjectActualMeasurement(
+    ctx: RequestContext,
+    projectId: Id,
+    scores: Array<{
+        objectiveId: ObjectiveId;
+        score: number;
+    }>,
+): Promise<void> {
+    const scoredAt = nowUtc();
+    const ops = scores.map(s => ({
+        method: 'put' as const,
+        resource:
+            `project-objective-actual-scores/`
+            + generateCryptoSafeBase62(),
+        body: {
+            project_id: projectId,
+            objective_id: s.objectiveId,
+            score: s.score,
+            scored_at: scoredAt,
+        },
+    }));
+    await ctx.commit({ ops });
+    notifyProjectScoreChange();
 }
 
 export async function getProjectsScoreColumn(

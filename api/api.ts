@@ -23,6 +23,8 @@ import {
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateDeprecatedObjectiveEntity,
+    validateBaselineScoreEntity,
+    validateActualScoreEntity,
 } from './validators.ts';
 
 export class ApiError {
@@ -430,9 +432,27 @@ const routes: Route[] = [
         get: (db) =>
             db.projectObjectiveBaselineScores.getAll(),
     }),
+    route('project-objective-baseline-scores/:id', {
+        put: (db, p, body) =>
+            db.projectObjectiveBaselineScores.put(
+                param(p, 0),
+                validateBaselineScoreEntity(
+                    withoutId(body),
+                ),
+            ),
+    }),
     route('project-objective-actual-scores', {
         get: (db) =>
             db.projectObjectiveActualScores.getAll(),
+    }),
+    route('project-objective-actual-scores/:id', {
+        put: (db, p, body) =>
+            db.projectObjectiveActualScores.put(
+                param(p, 0),
+                validateActualScoreEntity(
+                    withoutId(body),
+                ),
+            ),
     }),
 
     route('snapshots/schema', {

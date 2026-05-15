@@ -10,6 +10,8 @@ import {
     getPortfolioImpactSummary,
     getObjectiveAggregates,
     getProjectsScoreColumn,
+    postProjectBaselineScoring,
+    postProjectActualMeasurement,
 } from '../web-app/app/adapters/project-scoring.ts';
 
 test('getBaselineScoresForProject returns project rows',
@@ -163,4 +165,30 @@ test('getProjectsScoreColumn returns per-project rollup',
         );
         assert.equal(byId.get('p1')!.baselineAvg, 60);
         assert.equal(byId.get('p2')!.baselineAvg, -20);
+    });
+
+test('postProjectBaselineScoring appends event rows',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = createRequestContext(db);
+        await postProjectBaselineScoring(ctx, 'p1', [
+            { objectiveId: 'o1', score: 50 },
+            { objectiveId: 'o2', score: -30 },
+        ]);
+        const rows =
+            await db.projectObjectiveBaselineScores.getAll();
+        assert.equal(rows.length, 2);
+    });
+
+test('postProjectActualMeasurement appends actual rows',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = createRequestContext(db);
+        await postProjectActualMeasurement(ctx, 'p1', [
+            { objectiveId: 'o1', score: 33 },
+        ]);
+        const rows =
+            await db.projectObjectiveActualScores.getAll();
+        assert.equal(rows.length, 1);
+        assert.equal(rows[0]!.score, 33);
     });
