@@ -6,6 +6,7 @@ import type {
     DeprecatedObjective,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    ProjectEntity,
 } from '../api/types.ts';
 
 test('Objective shape compiles', () => {
@@ -50,4 +51,14 @@ test('ProjectObjectiveActualScore shape compiles', () => {
         scored_at: '2026-05-14T00:00:00.000Z',
     };
     assert.equal(v.score, -10);
+});
+
+test('ProjectEntity no longer carries impact fields', () => {
+    type ImpactKey =
+        Extract<keyof ProjectEntity,
+            'estimated_impact' | 'actual_impact'>;
+    const noImpact: [ImpactKey] extends [never]
+        ? true
+        : false = true;
+    assert.equal(noImpact, true);
 });

@@ -655,8 +655,6 @@ export interface ProjectEntity {
     actual_duration: number; // seconds
     estimated_cost: number;
     actual_cost: number;
-    estimated_impact: number;
-    actual_impact: number;
     position: number;
     business_context: JsonObjectField;
     timeline_label: string;
