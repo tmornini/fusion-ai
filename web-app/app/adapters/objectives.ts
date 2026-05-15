@@ -9,6 +9,9 @@ import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
+import {
+    generateCryptoSafeBase62,
+} from './crypto-safe-base62.ts';
 
 const objectiveChanges =
     createSubscriptionChannel([
@@ -25,29 +28,6 @@ export function subscribeObjectiveChanges(
 
 export function notifyObjectiveChange(): void {
     objectiveChanges.notify();
-}
-
-// Monotonic revision sequence counter.
-// Two revisions in the same millisecond would collide
-// on the composite key `${objectiveId}:${isoTimestamp}`;
-// we append a zero-padded sequence to guarantee
-// uniqueness while preserving lexicographic sort order.
-let _revisionSeq = 0;
-let _revisionSeqTs = '';
-function revisionKey(
-    id: ObjectiveId,
-    revisedAt: string,
-): string {
-    if (revisedAt !== _revisionSeqTs) {
-        _revisionSeqTs = revisedAt;
-        _revisionSeq = 0;
-    }
-    const seq = _revisionSeq++;
-    const suffix =
-        seq === 0
-            ? ''
-            : `_${String(seq).padStart(3, '0')}`;
-    return `${id}:${revisedAt}${suffix}`;
 }
 
 export async function getObjective(
@@ -151,6 +131,7 @@ export async function postObjectiveCreation(
     position: number,
 ): Promise<void> {
     const revisedAt = nowUtc();
+    const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
             {
@@ -161,8 +142,7 @@ export async function postObjectiveCreation(
             {
                 method: 'put',
                 resource:
-                    `objective-revisions/`
-                    + revisionKey(id, revisedAt),
+                    `objective-revisions/${revisionId}`,
                 body: {
                     objective_id: id,
                     name,
@@ -182,12 +162,12 @@ export async function postObjectiveRevision(
     description: string,
 ): Promise<void> {
     const revisedAt = nowUtc();
+    const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [{
             method: 'put',
             resource:
-                `objective-revisions/`
-                + revisionKey(id, revisedAt),
+                `objective-revisions/${revisionId}`,
             body: {
                 objective_id: id,
                 name,
