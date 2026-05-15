@@ -481,7 +481,7 @@ and copied — read it, don't read this section.
 Two layers, both zero-dependency:
 
 **Automated tests** (Node's built-in `node:test` runner with
-`--strip-types`, no devDependencies; 657 tests). Tests cover
+`--strip-types`, no devDependencies). Tests cover
 pure modules, flow-edit business logic and the connection-
 validation rules (`tests/flow-operations.test.ts`), the flow
 version/query adapters, every data adapter (including
@@ -508,7 +508,7 @@ Run via `./validate` (which also type-checks and lints) or
 directly: `node --test --strip-types tests/*.test.ts`.
 
 **Manual browser regression** for UI behavior: a pass against
-`TEST-PLAN.md` (~289 cases), driven either by a single human
+`TEST-PLAN.md`, driven either by a single human
 tester serially or by Claude Code agents in parallel via the
 `claude-in-chrome` MCP. Anything DOM-driven (gestures, layout,
 visual rendering) lives here; where a manual case is the browser
