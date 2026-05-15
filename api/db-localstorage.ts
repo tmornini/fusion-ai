@@ -700,9 +700,8 @@ export async function createLocalStorageAdapter(
                 'objective_revisions', backend,
             ),
         deprecatedObjectives:
-            new EntityStore<DeprecatedObjective>(
-                'deprecated_objectives',
-                backend, deletedStore,
+            new HistoryEntityStore<DeprecatedObjective>(
+                'deprecated_objectives', backend,
             ),
         projectObjectiveBaselineScores:
             new HistoryEntityStore<

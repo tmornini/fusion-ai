@@ -228,8 +228,8 @@ export class MemoryDbAdapter implements DbAdapter {
                 'objective_revisions', b,
             );
         this.deprecatedObjectives =
-            new EntityStore(
-                'deprecated_objectives', b, ds,
+            new HistoryEntityStore(
+                'deprecated_objectives', b,
             );
         this.projectObjectiveBaselineScores =
             new HistoryEntityStore(
