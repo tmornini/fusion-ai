@@ -393,6 +393,50 @@ type SeedHumanWorker = Omit<
     >;
 };
 
+const MOCK_SEED_TIMESTAMP =
+    '2026-01-01T00:00:00.000Z';
+
+export const OBJECTIVE_SEEDS: Array<{
+    id: string;
+    position: number;
+    name: string;
+    description: string;
+}> = [
+    {
+        id: 'RgT2mNvKpQ8xLsYwBzHcUe',
+        position: 0,
+        name: 'Revenue Growth',
+        description:
+            'Drive sustainable top-line growth',
+    },
+    {
+        id: 'JkW7aEqFdX3nOiPtVhMrCy',
+        position: 1,
+        name: 'Cost Reduction',
+        description: 'Minimize operational waste',
+    },
+    {
+        id: 'bDf6uStZlA9eGmYjIoNcWq',
+        position: 2,
+        name: 'Customer Satisfaction',
+        description: 'Improve user-perceived value',
+    },
+    {
+        id: 'CvH4wRnXkU1pQsBgTyEzMo',
+        position: 3,
+        name: 'Team Wellbeing',
+        description:
+            'Sustainable, energizing work',
+    },
+    {
+        id: 'hL8iFjOdAe5rKtPmVcBwGx',
+        position: 4,
+        name: 'Operational Efficiency',
+        description:
+            'Reduce friction in delivery',
+    },
+];
+
 export async function populateMockData(
     adapter: DbAdapter,
 ): Promise<void> {
@@ -6215,6 +6259,21 @@ export async function populateMockData(
                 .put(r.id, r),
         ),
     ]);
+
+    for (const seed of OBJECTIVE_SEEDS) {
+        await adapter.objectives.put(seed.id, {
+            position: seed.position,
+        });
+        await adapter.objectiveRevisions.put(
+            `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
+            {
+                objective_id: seed.id,
+                name: seed.name,
+                description: seed.description,
+                revised_at: MOCK_SEED_TIMESTAMP,
+            },
+        );
+    }
 }
 
 export async function populateBootstrapData(
