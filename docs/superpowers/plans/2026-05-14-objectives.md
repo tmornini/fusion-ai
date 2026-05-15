@@ -64,11 +64,20 @@ shape.
 
 ## Phase 1 — Foundation
 
-This phase lands the schema, types, validators, mock data,
-and schema-version bootstrap. After this phase the suite of
-existing tests must still pass; the new automated tests
-written here exercise only entity validators and mock-data
-seeding. Nothing is wired into pages yet.
+This phase lands the schema, types, validators, and mock
+data. The new automated tests written here exercise only
+entity validators, the `DbAdapter` typed-property surface,
+and mock-data seeding. Nothing is wired into pages yet.
+
+Phase 1 deliberately leaves `tsc --noEmit` reporting
+errors against the live presenters and adapters that
+still reference the deleted `estimated_impact` /
+`actual_impact` fields (and the deleted `Project`
+methods). Those references get cleaned up in Phase 3
+(presenters) and Phase 2 (`ProjectView`). Tests run via
+`node --test --strip-types` and pass at every step;
+`./validate` will report type errors until Phase 3
+completes.
 
 ### Task 1.1: Add new row types to `api/types.ts`
 
@@ -170,14 +179,14 @@ export interface DeprecatedObjective {
 }
 
 export interface ProjectObjectiveBaselineScore {
-    project_id: ProjectId;
+    project_id: Id;
     objective_id: ObjectiveId;
     score: number;
     scored_at: string;
 }
 
 export interface ProjectObjectiveActualScore {
-    project_id: ProjectId;
+    project_id: Id;
     objective_id: ObjectiveId;
     score: number;
     scored_at: string;
@@ -256,10 +265,19 @@ git add api/types.ts tests/types-objectives.test.ts
 git commit -m "remove estimated_impact and actual_impact from ProjectEntity"
 ```
 
-### Task 1.3: Add new tables to `TABLE_NAMES`
+### Task 1.3: Wire five new tables through `DbAdapter`
+
+The `DbAdapter` interface (`api/db.ts:73-135`) carries one
+typed `EntityStore<T>` property per table — there is no
+generic `db.put(tableName, ...)` API. Registering five new
+table *names* without also wiring five new typed properties
+through both adapter implementations would leave the new
+tables unreachable. This task wires them end-to-end.
 
 **Files:**
 - Modify: `api/db.ts`
+- Modify: `api/db-localstorage.ts`
+- Modify: `api/db-memory.ts`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -269,6 +287,7 @@ Create `tests/db-table-names.test.ts`:
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { TABLE_NAMES } from '../api/db.ts';
+import { MemoryDbAdapter } from '../api/db-memory.ts';
 
 test('TABLE_NAMES includes the five new tables', () => {
     const expected = [
@@ -285,45 +304,194 @@ test('TABLE_NAMES includes the five new tables', () => {
         );
     }
 });
+
+test('MemoryDbAdapter exposes the five new EntityStores',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.objectives.put('o1', { position: 0 });
+        const all = await db.objectives.getAll();
+        assert.equal(all.length, 1);
+        assert.equal(all[0]!.id, 'o1');
+
+        await db.objectiveRevisions.put('o1:t1', {
+            objective_id: 'o1',
+            name: 'Revenue',
+            description: 'd',
+            revised_at: '2026-05-14T00:00:00.000Z',
+        });
+        const revs =
+            await db.objectiveRevisions.getAll();
+        assert.equal(revs.length, 1);
+
+        await db.deprecatedObjectives.put('o1', {
+            objective_id: 'o1',
+            deprecated_at: '2026-05-14T00:00:00.000Z',
+        });
+        const deps =
+            await db.deprecatedObjectives.getAll();
+        assert.equal(deps.length, 1);
+
+        await db.projectObjectiveBaselineScores.put(
+            'p1:o1:t1', {
+                project_id: 'p1',
+                objective_id: 'o1',
+                score: 42,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            },
+        );
+        const bs = await
+            db.projectObjectiveBaselineScores.getAll();
+        assert.equal(bs.length, 1);
+
+        await db.projectObjectiveActualScores.put(
+            'p1:o1:t2', {
+                project_id: 'p1',
+                objective_id: 'o1',
+                score: -10,
+                scored_at: '2026-05-15T00:00:00.000Z',
+            },
+        );
+        const ac = await
+            db.projectObjectiveActualScores.getAll();
+        assert.equal(ac.length, 1);
+    });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `node --test --strip-types tests/db-table-names.test.ts`
 
-Expected: FAIL — at least one of the five new names is
-missing.
+Expected: FAIL — the new names are missing from
+`TABLE_NAMES`, and `MemoryDbAdapter` carries no
+`objectives` / `objectiveRevisions` / etc. property.
 
-- [ ] **Step 3: Add the five new names to `TABLE_NAMES`**
+- [ ] **Step 3a: Add the five new names to `TABLE_NAMES`**
 
-In `api/db.ts`, locate the `TABLE_NAMES` array. Add the
-five new entries, preserving alphabetical-ish grouping:
+In `api/db.ts`, append to the `TABLE_NAMES` array:
 
 ```ts
 export const TABLE_NAMES = [
-    // ...existing entries...
+    // ...existing entries unchanged...
     'objectives',
     'objective_revisions',
     'deprecated_objectives',
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
-] as const;
+];
 ```
+
+- [ ] **Step 3b: Add five typed properties to
+`interface DbAdapter`**
+
+Still in `api/db.ts`, in the `DbAdapter` interface
+(currently lines 73-135), add five typed properties
+mirroring the existing pattern (e.g.,
+`workers: EntityStore<HumanWorkerEntity>`):
+
+```ts
+objectives:
+    EntityStore<Objective>;
+objectiveRevisions:
+    EntityStore<ObjectiveRevision>;
+deprecatedObjectives:
+    EntityStore<DeprecatedObjective>;
+projectObjectiveBaselineScores:
+    EntityStore<ProjectObjectiveBaselineScore>;
+projectObjectiveActualScores:
+    EntityStore<ProjectObjectiveActualScore>;
+```
+
+Add the five new row types to the top-of-file
+`import type { ... }` block. The five entity types must
+each carry an `id: string` field at the row level (see
+`EntityStore<T extends { id: string }>` constraint at line
+48). Task 1.1 already defines these — `Objective.id`
+exists; the other four need an `id` field added in the
+row-type definitions so they satisfy the constraint.
+Update the four interfaces to include `id: string` if not
+already present.
+
+- [ ] **Step 3c: Wire localStorage adapter**
+
+In `api/db-localstorage.ts`, in `createLocalStorageAdapter`
+(near line 730), add five new property bindings using the
+existing `createEntityStore<T>` factory:
+
+```ts
+objectives:
+    createEntityStore<Objective>(
+        'objectives', deletedStore,
+    ),
+objectiveRevisions:
+    createHistoryEntityStore<ObjectiveRevision>(
+        'objective_revisions',
+    ),
+deprecatedObjectives:
+    createEntityStore<DeprecatedObjective>(
+        'deprecated_objectives', deletedStore,
+    ),
+projectObjectiveBaselineScores:
+    createHistoryEntityStore<
+        ProjectObjectiveBaselineScore
+    >('project_objective_baseline_scores'),
+projectObjectiveActualScores:
+    createHistoryEntityStore<
+        ProjectObjectiveActualScore
+    >('project_objective_actual_scores'),
+```
+
+Use `createHistoryEntityStore` (not the deleted-aware
+variant) for the three event-log tables — revisions and
+score events are append-only point-in-time facts and
+never tombstone.
+
+Import the five row types at the top of the file.
+
+- [ ] **Step 3d: Wire MemoryDbAdapter**
+
+In `api/db-memory.ts`:
+
+1. Extend the `Tables` interface (line 148) with the five
+   new `Map<string, T>` entries (camelCase keys matching
+   the `DbAdapter` property names).
+2. Extend the `MemoryDbAdapter` class (line 186) with the
+   five new `readonly` property declarations.
+3. In the constructor, instantiate each via
+   `new MemEntityStore(tableName, t.<prop>, ds)`.
+4. In `buildTables` (line 384), seed each with `new Map()`.
+
+Use snake_case as the first `MemEntityStore` argument
+(e.g. `'objectives'`, `'objective_revisions'`) — that
+matches `TABLE_NAMES` and the localStorage key.
+
+Import the five row types at the top of the file.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `node --test --strip-types tests/db-table-names.test.ts`
 
-Expected: PASS.
+Expected: PASS — both tests pass; `adapter.objectives.put`
+and `getAll` round-trip cleanly.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add api/db.ts tests/db-table-names.test.ts
-git commit -m "register five new tables for objectives and scoring"
+git add api/db.ts api/db-localstorage.ts api/db-memory.ts \
+    tests/db-table-names.test.ts
+git commit -m "wire five new objective and scoring tables"
 ```
 
 ### Task 1.4: Add five entity validators to `api/validators.ts`
+
+The codebase has nine existing entity validators all named
+`validate*Entity` (see `validateHumanWorkerEntity` at line
+653, `validateAIWorkerEntity` at 707, `validateProjectEntity`
+at 805, etc.). The shape helpers `asString` (line 105) and
+`asNumber` (line 120) are the only sanctioned primitives;
+introducing a parallel vocabulary of `assertNonEmptyString` /
+`assertTimestamp` / `assertScoreValue` / `assertNonNegativeInt`
+would be a Uniformity violation (Commandment III). Match the
+existing voice.
 
 **Files:**
 - Modify: `api/validators.ts`
@@ -336,30 +504,34 @@ Create `tests/validators-objectives.test.ts`:
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    assertObjective,
-    assertObjectiveRevision,
-    assertDeprecatedObjective,
-    assertBaselineScore,
-    assertActualScore,
+    validateObjectiveEntity,
+    validateObjectiveRevisionEntity,
+    validateDeprecatedObjectiveEntity,
+    validateBaselineScoreEntity,
+    validateActualScoreEntity,
 } from '../api/validators.ts';
 
-test('assertObjective accepts valid', () => {
-    const v = assertObjective({ id: 'o1', position: 0 });
-    assert.equal(v.id, 'o1');
+test('validateObjectiveEntity accepts valid', () => {
+    const v = validateObjectiveEntity({ position: 0 });
+    assert.equal(v.position, 0);
 });
 
-test('assertObjective rejects missing id', () => {
-    assert.throws(() => assertObjective({ position: 0 }));
-});
+test('validateObjectiveEntity rejects non-integer position',
+    () => {
+        assert.throws(
+            () => validateObjectiveEntity({ position: 1.5 }),
+        );
+    });
 
-test('assertObjective rejects non-integer position', () => {
-    assert.throws(
-        () => assertObjective({ id: 'o1', position: 1.5 }),
-    );
-});
+test('validateObjectiveEntity rejects negative position',
+    () => {
+        assert.throws(
+            () => validateObjectiveEntity({ position: -1 }),
+        );
+    });
 
-test('assertObjectiveRevision accepts valid', () => {
-    const v = assertObjectiveRevision({
+test('validateObjectiveRevisionEntity accepts valid', () => {
+    const v = validateObjectiveRevisionEntity({
         objective_id: 'o1',
         name: 'Revenue',
         description: 'Top line',
@@ -368,37 +540,28 @@ test('assertObjectiveRevision accepts valid', () => {
     assert.equal(v.name, 'Revenue');
 });
 
-test('assertObjectiveRevision rejects missing name', () => {
-    assert.throws(
-        () => assertObjectiveRevision({
-            objective_id: 'o1',
-            description: 'x',
-            revised_at: '2026-05-14T00:00:00.000Z',
-        }),
-    );
-});
+test('validateObjectiveRevisionEntity rejects empty name',
+    () => {
+        assert.throws(
+            () => validateObjectiveRevisionEntity({
+                objective_id: 'o1',
+                name: '',
+                description: 'd',
+                revised_at: '2026-05-14T00:00:00.000Z',
+            }),
+        );
+    });
 
-test('assertObjectiveRevision rejects bad timestamp', () => {
-    assert.throws(
-        () => assertObjectiveRevision({
-            objective_id: 'o1',
-            name: 'Revenue',
-            description: 'x',
-            revised_at: 'yesterday',
-        }),
-    );
-});
-
-test('assertDeprecatedObjective accepts valid', () => {
-    const v = assertDeprecatedObjective({
+test('validateDeprecatedObjectiveEntity accepts valid', () => {
+    const v = validateDeprecatedObjectiveEntity({
         objective_id: 'o1',
         deprecated_at: '2026-05-14T00:00:00.000Z',
     });
     assert.equal(v.objective_id, 'o1');
 });
 
-test('assertBaselineScore accepts 0', () => {
-    const v = assertBaselineScore({
+test('validateBaselineScoreEntity accepts 0', () => {
+    const v = validateBaselineScoreEntity({
         project_id: 'p1',
         objective_id: 'o1',
         score: 0,
@@ -407,60 +570,72 @@ test('assertBaselineScore accepts 0', () => {
     assert.equal(v.score, 0);
 });
 
-test('assertBaselineScore accepts -100 and +100', () => {
-    assert.equal(
-        assertBaselineScore({
-            project_id: 'p1', objective_id: 'o1',
-            score: -100,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }).score,
-        -100,
-    );
-    assert.equal(
-        assertBaselineScore({
-            project_id: 'p1', objective_id: 'o1',
-            score: 100,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }).score,
-        100,
-    );
-});
-
-test('assertBaselineScore rejects out-of-range', () => {
-    assert.throws(() => assertBaselineScore({
-        project_id: 'p1', objective_id: 'o1',
-        score: 101,
-        scored_at: '2026-05-14T00:00:00.000Z',
-    }));
-    assert.throws(() => assertBaselineScore({
-        project_id: 'p1', objective_id: 'o1',
-        score: -101,
-        scored_at: '2026-05-14T00:00:00.000Z',
-    }));
-});
-
-test('assertBaselineScore rejects non-integer', () => {
-    assert.throws(() => assertBaselineScore({
-        project_id: 'p1', objective_id: 'o1',
-        score: 12.5,
-        scored_at: '2026-05-14T00:00:00.000Z',
-    }));
-});
-
-test('assertActualScore has same rules as baseline', () => {
-    const v = assertActualScore({
-        project_id: 'p1', objective_id: 'o1',
-        score: -50,
-        scored_at: '2026-05-14T00:00:00.000Z',
+test('validateBaselineScoreEntity accepts -100 and +100',
+    () => {
+        assert.equal(
+            validateBaselineScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: -100,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }).score,
+            -100,
+        );
+        assert.equal(
+            validateBaselineScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: 100,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }).score,
+            100,
+        );
     });
-    assert.equal(v.score, -50);
-    assert.throws(() => assertActualScore({
-        project_id: 'p1', objective_id: 'o1',
-        score: 200,
-        scored_at: '2026-05-14T00:00:00.000Z',
-    }));
-});
+
+test('validateBaselineScoreEntity rejects out-of-range',
+    () => {
+        assert.throws(() => validateBaselineScoreEntity({
+            project_id: 'p1', objective_id: 'o1',
+            score: 101,
+            scored_at: '2026-05-14T00:00:00.000Z',
+        }));
+        assert.throws(() => validateBaselineScoreEntity({
+            project_id: 'p1', objective_id: 'o1',
+            score: -101,
+            scored_at: '2026-05-14T00:00:00.000Z',
+        }));
+    });
+
+test('validateBaselineScoreEntity rejects non-integer',
+    () => {
+        assert.throws(() => validateBaselineScoreEntity({
+            project_id: 'p1', objective_id: 'o1',
+            score: 12.5,
+            scored_at: '2026-05-14T00:00:00.000Z',
+        }));
+    });
+
+test('validateActualScoreEntity has same rules as baseline',
+    () => {
+        const v = validateActualScoreEntity({
+            project_id: 'p1', objective_id: 'o1',
+            score: -50,
+            scored_at: '2026-05-14T00:00:00.000Z',
+        });
+        assert.equal(v.score, -50);
+        assert.throws(() => validateActualScoreEntity({
+            project_id: 'p1', objective_id: 'o1',
+            score: 200,
+            scored_at: '2026-05-14T00:00:00.000Z',
+        }));
+    });
 ```
+
+Note: the entity body validators take the body *without* the
+`id` field (see how `validateProjectEntity` accepts `Omit<
+ProjectEntity, 'id'>` at line 807) — `id` is the storage key,
+stripped before validation in `db-localstorage.ts:73`. The
+score-event tables use composite keys (`p1:o1:t1`) as `id`;
+the body fields are `project_id`, `objective_id`, `score`,
+`scored_at`.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -471,160 +646,203 @@ Expected: FAIL — none of the five validators exist yet.
 
 - [ ] **Step 3: Add validators to `api/validators.ts`**
 
-Look at existing `assertHumanWorkerEntity` /
-`assertAIWorkerEntity` for the codebase's validator
-pattern. Then add (after existing assert functions):
+Read `validateProjectEntity` (line 805) and
+`validateAIWorkerEntity` (line 707) for the exact voice —
+`assertOnlyKeys` enumerates allowed body keys; each field
+extracted via `pickString` / `pickNumber` (existing helpers
+in `api/validators.ts`). Reuse those primitives.
+
+One genuinely new primitive earns its place: the
+`[-100, +100]` integer score check. Match the lower-camelCase
+shape-helper convention (`asString` / `asNumber`):
 
 ```ts
-const RFC_3339_ZULU =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+// inside api/validators.ts, near asNumber
 
-function assertNonEmptyString(v: unknown, name: string)
-    : string {
-    if (typeof v !== 'string' || v.length === 0) {
-        throw new Error(`${name} must be non-empty string`);
-    }
-    return v;
-}
-
-function assertTimestamp(v: unknown, name: string): string {
-    const s = assertNonEmptyString(v, name);
-    if (!RFC_3339_ZULU.test(s)) {
-        throw new Error(`${name} must be RFC-3339 zulu`);
-    }
-    return s;
-}
-
-function assertScoreValue(v: unknown): number {
+export function asScore(
+    value: unknown,
+    label: string,
+): number {
     if (
-        typeof v !== 'number'
-        || !Number.isInteger(v)
-        || v < -100
-        || v > 100
+        typeof value !== 'number'
+        || !Number.isInteger(value)
+        || value < -100
+        || value > 100
     ) {
         throw new Error(
-            'score must be integer in [-100, +100]',
+            'expected integer in [-100, +100] for '
+                + label
+                + ', got '
+                + JSON.stringify(value),
         );
     }
-    return v;
+    return value;
 }
 
-function assertNonNegativeInt(v: unknown, name: string)
-    : number {
-    if (
-        typeof v !== 'number'
-        || !Number.isInteger(v)
-        || v < 0
-    ) {
-        throw new Error(`${name} must be non-negative int`);
+export function asNonNegativeInteger(
+    value: unknown,
+    label: string,
+): number {
+    const n = asNumber(value, label);
+    if (!Number.isInteger(n) || n < 0) {
+        throw new Error(
+            'expected non-negative integer for '
+                + label + ', got ' + String(n),
+        );
     }
-    return v;
+    return n;
 }
+```
 
-export function assertObjective(v: unknown): Objective {
-    if (v === null || typeof v !== 'object') {
-        throw new Error('Objective must be an object');
-    }
-    const o = v as Record<string, unknown>;
+(One genuinely new helper per genuinely new shape;
+`asNonNegativeInteger` is also new because no existing
+field type matches it — verify by grep before adding.)
+
+Then add the five entity validators, matching the body-key
+pattern of `validateProjectEntity` exactly:
+
+```ts
+const OBJECTIVE_BODY_KEYS: readonly string[] = [
+    'position',
+];
+
+export function validateObjectiveEntity(
+    body: Record<string, unknown>,
+): Omit<Objective, 'id'> {
+    assertOnlyKeys(
+        body, OBJECTIVE_BODY_KEYS, 'Objective',
+    );
     return {
-        id: assertNonEmptyString(o.id, 'Objective.id'),
-        position: assertNonNegativeInt(
-            o.position,
-            'Objective.position',
+        position: asNonNegativeInteger(
+            body.position, 'Objective.position',
         ),
     };
 }
 
-export function assertObjectiveRevision(
-    v: unknown,
-): ObjectiveRevision {
-    if (v === null || typeof v !== 'object') {
-        throw new Error('ObjectiveRevision must be object');
+const OBJECTIVE_REVISION_BODY_KEYS:
+    readonly string[] = [
+    'objective_id', 'name',
+    'description', 'revised_at',
+];
+
+export function validateObjectiveRevisionEntity(
+    body: Record<string, unknown>,
+): Omit<ObjectiveRevision, 'id'> {
+    assertOnlyKeys(
+        body,
+        OBJECTIVE_REVISION_BODY_KEYS,
+        'ObjectiveRevision',
+    );
+    const name = pickString(body, 'name');
+    if (name === '') {
+        throw new Error(
+            'ObjectiveRevision.name must be non-empty',
+        );
     }
-    const o = v as Record<string, unknown>;
     return {
-        objective_id: assertNonEmptyString(
-            o.objective_id, 'ObjectiveRevision.objective_id',
+        objective_id: pickString(
+            body, 'objective_id',
         ),
-        name: assertNonEmptyString(
-            o.name, 'ObjectiveRevision.name',
+        name,
+        description: pickString(
+            body, 'description',
         ),
-        description: assertNonEmptyString(
-            o.description, 'ObjectiveRevision.description',
-        ),
-        revised_at: assertTimestamp(
-            o.revised_at, 'ObjectiveRevision.revised_at',
+        revised_at: pickString(
+            body, 'revised_at',
         ),
     };
 }
 
-export function assertDeprecatedObjective(
-    v: unknown,
-): DeprecatedObjective {
-    if (v === null || typeof v !== 'object') {
-        throw new Error('DeprecatedObjective must be object');
-    }
-    const o = v as Record<string, unknown>;
+const DEPRECATED_OBJECTIVE_BODY_KEYS:
+    readonly string[] = [
+    'objective_id', 'deprecated_at',
+];
+
+export function validateDeprecatedObjectiveEntity(
+    body: Record<string, unknown>,
+): Omit<DeprecatedObjective, 'id'> {
+    assertOnlyKeys(
+        body,
+        DEPRECATED_OBJECTIVE_BODY_KEYS,
+        'DeprecatedObjective',
+    );
     return {
-        objective_id: assertNonEmptyString(
-            o.objective_id,
-            'DeprecatedObjective.objective_id',
+        objective_id: pickString(
+            body, 'objective_id',
         ),
-        deprecated_at: assertTimestamp(
-            o.deprecated_at,
-            'DeprecatedObjective.deprecated_at',
+        deprecated_at: pickString(
+            body, 'deprecated_at',
         ),
     };
 }
 
-export function assertBaselineScore(
-    v: unknown,
-): ProjectObjectiveBaselineScore {
-    if (v === null || typeof v !== 'object') {
-        throw new Error('BaselineScore must be object');
-    }
-    const o = v as Record<string, unknown>;
+const BASELINE_SCORE_BODY_KEYS:
+    readonly string[] = [
+    'project_id', 'objective_id',
+    'score', 'scored_at',
+];
+
+export function validateBaselineScoreEntity(
+    body: Record<string, unknown>,
+): Omit<ProjectObjectiveBaselineScore, 'id'> {
+    assertOnlyKeys(
+        body,
+        BASELINE_SCORE_BODY_KEYS,
+        'BaselineScore',
+    );
     return {
-        project_id: assertNonEmptyString(
-            o.project_id, 'BaselineScore.project_id',
+        project_id: pickString(
+            body, 'project_id',
         ),
-        objective_id: assertNonEmptyString(
-            o.objective_id, 'BaselineScore.objective_id',
+        objective_id: pickString(
+            body, 'objective_id',
         ),
-        score: assertScoreValue(o.score),
-        scored_at: assertTimestamp(
-            o.scored_at, 'BaselineScore.scored_at',
+        score: asScore(
+            body.score, 'BaselineScore.score',
+        ),
+        scored_at: pickString(
+            body, 'scored_at',
         ),
     };
 }
 
-export function assertActualScore(
-    v: unknown,
-): ProjectObjectiveActualScore {
-    if (v === null || typeof v !== 'object') {
-        throw new Error('ActualScore must be object');
-    }
-    const o = v as Record<string, unknown>;
+const ACTUAL_SCORE_BODY_KEYS:
+    readonly string[] = [
+    'project_id', 'objective_id',
+    'score', 'scored_at',
+];
+
+export function validateActualScoreEntity(
+    body: Record<string, unknown>,
+): Omit<ProjectObjectiveActualScore, 'id'> {
+    assertOnlyKeys(
+        body,
+        ACTUAL_SCORE_BODY_KEYS,
+        'ActualScore',
+    );
     return {
-        project_id: assertNonEmptyString(
-            o.project_id, 'ActualScore.project_id',
+        project_id: pickString(
+            body, 'project_id',
         ),
-        objective_id: assertNonEmptyString(
-            o.objective_id, 'ActualScore.objective_id',
+        objective_id: pickString(
+            body, 'objective_id',
         ),
-        score: assertScoreValue(o.score),
-        scored_at: assertTimestamp(
-            o.scored_at, 'ActualScore.scored_at',
+        score: asScore(
+            body.score, 'ActualScore.score',
+        ),
+        scored_at: pickString(
+            body, 'scored_at',
         ),
     };
 }
 ```
 
-Also add the imports for the five row types at the top of
-`api/validators.ts` if not already imported:
+Add the five row types to the top-of-file `import type`
+block:
 
 ```ts
 import type {
+    // ...existing imports unchanged...
     Objective,
     ObjectiveRevision,
     DeprecatedObjective,
@@ -647,7 +865,7 @@ git add api/validators.ts tests/validators-objectives.test.ts
 git commit -m "add validators for objective and score entities"
 ```
 
-### Task 1.5: Drop obsolete fields from `assertProject`
+### Task 1.5: Drop obsolete fields from `validateProjectEntity`
 
 **Files:**
 - Modify: `api/validators.ts`
@@ -657,12 +875,13 @@ git commit -m "add validators for objective and score entities"
 Add to `tests/validators-objectives.test.ts`:
 
 ```ts
-import { assertProjectEntity } from '../api/validators.ts';
+import {
+    validateProjectEntity,
+} from '../api/validators.ts';
 
-test('assertProjectEntity ignores legacy impact fields',
+test('validateProjectEntity ignores legacy impact fields',
     () => {
         const baseValid = {
-            id: 'p1',
             title: 't',
             description: 'd',
             status: 'submitted',
@@ -677,7 +896,7 @@ test('assertProjectEntity ignores legacy impact fields',
             business_context: {},
             timeline_label: 'q1',
         };
-        const v = assertProjectEntity(baseValid);
+        const v = validateProjectEntity(baseValid);
         assert.equal(
             'estimated_impact' in (v as object),
             false,
@@ -689,27 +908,26 @@ test('assertProjectEntity ignores legacy impact fields',
     });
 ```
 
-(If the existing `assertProjectEntity` is named differently
-in the codebase — e.g., `validateProjectEntity` — adapt the
-import.)
-
 - [ ] **Step 2: Run test to verify it fails**
 
 Run:
 `node --test --strip-types tests/validators-objectives.test.ts`
 
-Expected: FAIL — current `assertProjectEntity` likely
-throws because `estimated_impact` / `actual_impact` are
-absent (it still requires them).
+Expected: FAIL — current `validateProjectEntity`
+(`api/validators.ts:805`) still extracts
+`estimated_impact` and `actual_impact` and lists them in
+`PROJECT_BODY_KEYS`, so the unknown-key path differs from
+the new shape.
 
-- [ ] **Step 3: Remove impact-field assertions from
-`assertProjectEntity`**
+- [ ] **Step 3: Remove impact-field handling from
+`validateProjectEntity`**
 
-In `api/validators.ts`, locate `assertProjectEntity` (or
-its existing name). DELETE the two lines that copy
-`estimated_impact` and `actual_impact` from input to
-output (and any associated `assertNonNegativeInt` /
-`assertInteger` calls for those two fields).
+In `api/validators.ts`:
+1. Delete `'estimated_impact'` and `'actual_impact'` from
+   the `PROJECT_BODY_KEYS` array (line 795-803).
+2. Delete the two `estimated_impact: pickNumber(...)` and
+   `actual_impact: pickNumber(...)` lines from the return
+   object inside `validateProjectEntity` (line 844-849).
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -725,132 +943,64 @@ git add api/validators.ts tests/validators-objectives.test.ts
 git commit -m "drop legacy impact field validation from project entity"
 ```
 
-### Task 1.6: Add `SCHEMA_VERSION` constant and bootstrap check
-
-**Files:**
-- Create: `api/schema-version.ts`
-- Modify: `web-app/app/database-init.ts`
-
-- [ ] **Step 1: Write the failing test**
-
-Create `tests/schema-version.test.ts`:
-
-```ts
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { SCHEMA_VERSION } from '../api/schema-version.ts';
-
-test('SCHEMA_VERSION is a positive integer', () => {
-    assert.equal(typeof SCHEMA_VERSION, 'number');
-    assert.ok(Number.isInteger(SCHEMA_VERSION));
-    assert.ok(SCHEMA_VERSION >= 1);
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `node --test --strip-types tests/schema-version.test.ts`
-
-Expected: FAIL — module does not exist.
-
-- [ ] **Step 3: Create `api/schema-version.ts`**
-
-```ts
-export const SCHEMA_VERSION = 2;
-export const SCHEMA_VERSION_KEY = 'fusion-ai:schema_version';
-```
-
-(Pick `2` because there's an implicit `1` in the existing
-schema before this change.)
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `node --test --strip-types tests/schema-version.test.ts`
-
-Expected: PASS.
-
-- [ ] **Step 5: Add bootstrap check to
-`web-app/app/database-init.ts`**
-
-Read the existing `database-init.ts` to learn the bootstrap
-flow. Locate the function that runs at app startup (likely
-`initDatabase()` or `bootstrap()`). At its **beginning**,
-add:
-
-```ts
-import {
-    SCHEMA_VERSION,
-    SCHEMA_VERSION_KEY,
-} from '../../api/schema-version.ts';
-import { TABLE_NAMES } from '../../api/db.ts';
-
-function checkSchemaVersion(): void {
-    const stored = localStorage.getItem(SCHEMA_VERSION_KEY);
-    const parsed = stored === null
-        ? 0
-        : Number.parseInt(stored, 10);
-    if (parsed < SCHEMA_VERSION) {
-        for (const table of TABLE_NAMES) {
-            localStorage.removeItem(`fusion-ai:${table}`);
-        }
-        localStorage.removeItem('fusion-ai:deleted');
-        localStorage.setItem(
-            SCHEMA_VERSION_KEY,
-            String(SCHEMA_VERSION),
-        );
-    }
-}
-```
-
-Call `checkSchemaVersion()` at the top of the bootstrap
-function (before mock-data population).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add api/schema-version.ts web-app/app/database-init.ts tests/schema-version.test.ts
-git commit -m "add schema version constant and wipe-on-mismatch bootstrap"
-```
+> **Note:** A SCHEMA_VERSION/bootstrap-wipe task was
+> originally planned here and removed during plan
+> revision (Premature Generalization, Internal Defense
+> — see Church of Code Book of Abominations).
+> Schema migration belongs with Postgres, not with the
+> first localStorage change.
 
 ### Task 1.7: Seed objectives + revisions in `populateMockData`
+
+The `DbAdapter` exposes typed `EntityStore` properties per
+table; `populateMockData` writes via `adapter.workers.put(
+id, fields)` etc. (see `api/mock-data.ts:674`). The body
+passed to `put` is `Omit<T, 'id'>` — no `id` field — because
+the storage key is the first argument. Match that voice.
 
 **Files:**
 - Modify: `api/mock-data.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create or update `tests/mock-data-objectives.test.ts`:
+Create `tests/mock-data-objectives.test.ts`:
 
 ```ts
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { populateMockData } from '../api/mock-data.ts';
-import { assertObjective } from '../api/validators.ts';
-import { assertObjectiveRevision } from
-    '../api/validators.ts';
+import {
+    validateObjectiveEntity,
+    validateObjectiveRevisionEntity,
+} from '../api/validators.ts';
 
 test('populateMockData seeds 5 objectives', async () => {
     const db = new MemoryDbAdapter();
     await populateMockData(db);
-    const rows = await db.getAll('objectives');
+    const rows = await db.objectives.getAll();
     assert.equal(rows.length, 5);
-    for (const r of rows) assertObjective(r);
+    for (const r of rows) {
+        const { id: _id, ...body } = r;
+        validateObjectiveEntity(body);
+    }
 });
 
 test('populateMockData seeds one revision per objective',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const revs = await db.getAll('objective_revisions');
+        const revs =
+            await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 5);
-        for (const r of revs) assertObjectiveRevision(r);
-        const objIds = new Set(
-            (await db.getAll('objectives'))
-                .map((o: any) => o.id),
-        );
+        for (const r of revs) {
+            const { id: _id, ...body } = r;
+            validateObjectiveRevisionEntity(body);
+        }
+        const objs = await db.objectives.getAll();
+        const objIds = new Set(objs.map(o => o.id));
         const revObjIds = new Set(
-            revs.map((r: any) => r.objective_id),
+            revs.map(r => r.objective_id),
         );
         assert.deepEqual(revObjIds, objIds);
     });
@@ -859,14 +1009,11 @@ test('populateMockData seeds zero deprecated objectives',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const rows = await db.getAll('deprecated_objectives');
+        const rows =
+            await db.deprecatedObjectives.getAll();
         assert.equal(rows.length, 0);
     });
 ```
-
-(If `MemoryDbAdapter.getAll` is named differently — e.g.,
-`list` — adapt the calls. Read `api/db-memory.ts` for the
-exact surface.)
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -878,8 +1025,8 @@ objectives.
 
 - [ ] **Step 3: Add seeding logic to `populateMockData`**
 
-In `api/mock-data.ts`, near where projects are populated,
-add:
+In `api/mock-data.ts`, add near the `workers.put` block (see
+line 673):
 
 ```ts
 const OBJECTIVE_SEEDS: Array<{
@@ -908,12 +1055,10 @@ const OBJECTIVE_SEEDS: Array<{
 const MOCK_SEED_TIMESTAMP = '2026-01-01T00:00:00.000Z';
 
 for (const seed of OBJECTIVE_SEEDS) {
-    await db.put('objectives', seed.id, {
-        id: seed.id,
+    await adapter.objectives.put(seed.id, {
         position: seed.position,
     });
-    await db.put(
-        'objective_revisions',
+    await adapter.objectiveRevisions.put(
         `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
         {
             objective_id: seed.id,
@@ -925,9 +1070,9 @@ for (const seed of OBJECTIVE_SEEDS) {
 }
 ```
 
-(If the DbAdapter uses different key conventions or method
-names, adapt accordingly — read `api/db-memory.ts` for the
-exact interface.)
+(The `Omit<T, 'id'>` body shape mirrors how
+`adapter.workers.put` is called at line 674 — the id is
+the first arg, the body is the second.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -957,25 +1102,24 @@ test('approved projects have full baseline coverage',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const projects = await db.getAll('projects');
+        const projects = await db.projects.getAll();
         const approved = projects.filter(
-            (p: any) => p.status === 'approved',
+            p => p.status === 'approved',
         );
-        const objCount = (await db.getAll('objectives'))
-            .length;
+        const objCount =
+            (await db.objectives.getAll()).length;
+        const allBaselines = await
+            db.projectObjectiveBaselineScores.getAll();
         for (const p of approved) {
-            const baselines = (
-                await db.getAll(
-                    'project_objective_baseline_scores',
-                )
-            ).filter((b: any) => b.project_id === p.id);
             const pairs = new Set(
-                baselines.map((b: any) => b.objective_id),
+                allBaselines
+                    .filter(b => b.project_id === p.id)
+                    .map(b => b.objective_id),
             );
             assert.equal(
                 pairs.size,
                 objCount,
-                `project ${p.id} missing baseline coverage`,
+                `project ${p.id} missing coverage`,
             );
         }
     });
@@ -984,31 +1128,30 @@ test('completed projects have at least one actual per pair',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const projects = await db.getAll('projects');
+        const projects = await db.projects.getAll();
         const completed = projects.filter(
-            (p: any) => p.status === 'completed',
+            p => p.status === 'completed',
         );
+        const allBaselines = await
+            db.projectObjectiveBaselineScores.getAll();
+        const allActuals = await
+            db.projectObjectiveActualScores.getAll();
         for (const p of completed) {
-            const baselines = (
-                await db.getAll(
-                    'project_objective_baseline_scores',
-                )
-            ).filter((b: any) => b.project_id === p.id);
             const pairs = new Set(
-                baselines.map((b: any) => b.objective_id),
+                allBaselines
+                    .filter(b => b.project_id === p.id)
+                    .map(b => b.objective_id),
             );
-            const actuals = (
-                await db.getAll(
-                    'project_objective_actual_scores',
-                )
-            ).filter((a: any) => a.project_id === p.id);
             const actualPairs = new Set(
-                actuals.map((a: any) => a.objective_id),
+                allActuals
+                    .filter(a => a.project_id === p.id)
+                    .map(a => a.objective_id),
             );
             for (const pair of pairs) {
                 assert.ok(
                     actualPairs.has(pair),
-                    `project ${p.id} missing actual for ${pair}`,
+                    `project ${p.id} missing `
+                        + `actual for ${pair}`,
                 );
             }
         }
@@ -1017,16 +1160,16 @@ test('completed projects have at least one actual per pair',
 test('submitted projects have zero scores', async () => {
     const db = new MemoryDbAdapter();
     await populateMockData(db);
-    const projects = await db.getAll('projects');
+    const projects = await db.projects.getAll();
     const submitted = projects.filter(
-        (p: any) => p.status === 'submitted',
+        p => p.status === 'submitted',
     );
+    const allBaselines = await
+        db.projectObjectiveBaselineScores.getAll();
     for (const p of submitted) {
-        const baselines = (
-            await db.getAll(
-                'project_objective_baseline_scores',
-            )
-        ).filter((b: any) => b.project_id === p.id);
+        const baselines = allBaselines.filter(
+            b => b.project_id === p.id,
+        );
         assert.equal(baselines.length, 0);
     }
 });
@@ -1045,8 +1188,7 @@ score rows.
 In `api/mock-data.ts`, after the existing project loop, add:
 
 ```ts
-const allProjects = await db.getAll('projects');
-const seedTime = MOCK_SEED_TIMESTAMP;
+const allProjects = await adapter.projects.getAll();
 
 function deterministicScore(
     seed: string,
@@ -1084,35 +1226,43 @@ for (const p of allProjects) {
             ),
         );
 
-    const baselineDuration =
+    const baselineStart =
         new Date(p.start_date).getTime();
     for (let i = 0; i < baselineCoverage; i++) {
-        const obj = OBJECTIVE_SEEDS[i];
+        const obj = OBJECTIVE_SEEDS[i]!;
         const score = deterministicScore(
             `${p.id}:${obj.id}:baseline`,
             -100,
             100,
         );
         const scoredAt = new Date(
-            baselineDuration + i * 1000,
+            baselineStart + i * 1000,
         ).toISOString();
-        await db.put(
-            'project_objective_baseline_scores',
-            `${p.id}:${obj.id}:${scoredAt}`,
-            {
-                project_id: p.id,
-                objective_id: obj.id,
-                score,
-                scored_at: scoredAt,
-            },
-        );
+        await adapter
+            .projectObjectiveBaselineScores
+            .put(
+                `${p.id}:${obj.id}:${scoredAt}`,
+                {
+                    project_id: p.id,
+                    objective_id: obj.id,
+                    score,
+                    scored_at: scoredAt,
+                },
+            );
     }
 
-    if (p.status === 'approved' || p.status === 'completed') {
-        const minActuals = p.status === 'completed' ? 1 : 0;
-        const baseActualTime = baselineDuration + 86400000;
-        for (let i = 0; i < OBJECTIVE_SEEDS.length; i++) {
-            const obj = OBJECTIVE_SEEDS[i];
+    if (
+        p.status === 'approved'
+        || p.status === 'completed'
+    ) {
+        const minActuals =
+            p.status === 'completed' ? 1 : 0;
+        const baseActualTime =
+            baselineStart + 86400000;
+        for (
+            let i = 0; i < OBJECTIVE_SEEDS.length; i++
+        ) {
+            const obj = OBJECTIVE_SEEDS[i]!;
             const nActuals =
                 minActuals
                 + deterministicScore(
@@ -1127,26 +1277,25 @@ for (const p of allProjects) {
                     100,
                 );
                 const scoredAt = new Date(
-                    baseActualTime + (i * 10 + k) * 1000,
+                    baseActualTime
+                        + (i * 10 + k) * 1000,
                 ).toISOString();
-                await db.put(
-                    'project_objective_actual_scores',
-                    `${p.id}:${obj.id}:${scoredAt}`,
-                    {
-                        project_id: p.id,
-                        objective_id: obj.id,
-                        score,
-                        scored_at: scoredAt,
-                    },
-                );
+                await adapter
+                    .projectObjectiveActualScores
+                    .put(
+                        `${p.id}:${obj.id}:${scoredAt}`,
+                        {
+                            project_id: p.id,
+                            objective_id: obj.id,
+                            score,
+                            scored_at: scoredAt,
+                        },
+                    );
             }
         }
     }
 }
 ```
-
-(If `db.put` takes different arguments, adapt. Read
-`api/db-memory.ts` for the exact `put` signature.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1226,6 +1375,15 @@ git commit -m "add ValidationResult generic for gate predicates"
 
 ### Task 2.2: `adapters/objectives.ts` — read primitives
 
+The codebase routing scheme exposes only `GET /<noun>` and
+`GET /<noun>/<id>` (see `api/api.ts:113-310`). Query
+parameters are not parsed. Filtered reads use the fetch-all
++ filter-in-adapter pattern — see
+`adapters/work-orders-queries.ts:150-159` for the canonical
+example. Notification channels are per-adapter, created via
+`createSubscriptionChannel(['table_name'])`, mirroring the
+existing pattern at `adapters/projects.ts:14-28`.
+
 **Files:**
 - Create: `web-app/app/adapters/objectives.ts`
 
@@ -1246,13 +1404,13 @@ import {
     getObjectiveRevisions,
 } from '../web-app/app/adapters/objectives.ts';
 
-function ctxFor(db) {
+function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);
 }
 
 test('getObjective returns a single row', async () => {
     const db = new MemoryDbAdapter();
-    await db.put('objectives', 'o1', { id: 'o1', position: 0 });
+    await db.objectives.put('o1', { position: 0 });
     const ctx = ctxFor(db);
     const v = await getObjective(ctx, 'o1');
     assert.equal(v.id, 'o1');
@@ -1261,8 +1419,8 @@ test('getObjective returns a single row', async () => {
 
 test('getObjectives returns all', async () => {
     const db = new MemoryDbAdapter();
-    await db.put('objectives', 'o1', { id: 'o1', position: 0 });
-    await db.put('objectives', 'o2', { id: 'o2', position: 1 });
+    await db.objectives.put('o1', { position: 0 });
+    await db.objectives.put('o2', { position: 1 });
     const ctx = ctxFor(db);
     const rows = await getObjectives(ctx);
     assert.equal(rows.length, 2);
@@ -1270,7 +1428,7 @@ test('getObjectives returns all', async () => {
 
 test('getDeprecatedObjectiveIds returns a Set', async () => {
     const db = new MemoryDbAdapter();
-    await db.put('deprecated_objectives', 'o1', {
+    await db.deprecatedObjectives.put('o1', {
         objective_id: 'o1',
         deprecated_at: '2026-05-14T00:00:00.000Z',
     });
@@ -1283,8 +1441,7 @@ test('getDeprecatedObjectiveIds returns a Set', async () => {
 test('getObjectiveRevisions returns all for an objective',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-14T00:00:00.000Z',
             {
                 objective_id: 'o1',
@@ -1293,8 +1450,7 @@ test('getObjectiveRevisions returns all for an objective',
                 revised_at: '2026-05-14T00:00:00.000Z',
             },
         );
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-15T00:00:00.000Z',
             {
                 objective_id: 'o1',
@@ -1303,9 +1459,21 @@ test('getObjectiveRevisions returns all for an objective',
                 revised_at: '2026-05-15T00:00:00.000Z',
             },
         );
+        await db.objectiveRevisions.put(
+            'o2:2026-05-14T00:00:00.000Z',
+            {
+                objective_id: 'o2',
+                name: 'Cost',
+                description: 'd',
+                revised_at: '2026-05-14T00:00:00.000Z',
+            },
+        );
         const ctx = ctxFor(db);
         const revs = await getObjectiveRevisions(ctx, 'o1');
         assert.equal(revs.length, 2);
+        for (const r of revs) {
+            assert.equal(r.objective_id, 'o1');
+        }
     });
 ```
 
@@ -1318,10 +1486,8 @@ Expected: FAIL — module does not exist.
 
 - [ ] **Step 3: Create the module**
 
-Use the route conventions documented in `api/api.ts`. The
-template-literal interpolations `objectives/<id>` and the
-collection routes match the codebase pattern. Verify by
-reading `api/api.ts` for the existing route shapes.
+Reads go through `ctx.GET<T>(resource)` exactly as
+`adapters/work-orders-queries.ts` does:
 
 ```ts
 // web-app/app/adapters/objectives.ts
@@ -1330,54 +1496,73 @@ import type {
     Objective,
     ObjectiveId,
     ObjectiveRevision,
+    DeprecatedObjective,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
-    assertObjective,
-    assertObjectiveRevision,
-    assertDeprecatedObjective,
-} from '../../../api/validators.ts';
+    createSubscriptionChannel,
+} from '../channels.ts';
+
+const objectiveChanges =
+    createSubscriptionChannel([
+        'objectives',
+        'objective_revisions',
+        'deprecated_objectives',
+    ]);
+
+export function subscribeObjectiveChanges(
+    fn: () => void,
+): () => void {
+    return objectiveChanges.subscribe(fn);
+}
+
+export function notifyObjectiveChange(): void {
+    objectiveChanges.notify();
+}
 
 export async function getObjective(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<Objective> {
-    const raw = await ctx.GET(
-        'objectives/' + id,
+    return ctx.GET<Objective>(
+        `objectives/${id}`,
     );
-    return assertObjective(raw);
 }
 
 export async function getObjectives(
     ctx: RequestContext,
 ): Promise<Objective[]> {
-    const raws = await ctx.GET('objectives');
-    return (raws as unknown[]).map(assertObjective);
+    return ctx.GET<Objective[]>('objectives');
 }
 
 export async function getDeprecatedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
-    const raws = await ctx.GET('deprecated_objectives');
-    const validated = (raws as unknown[])
-        .map(assertDeprecatedObjective);
-    return new Set(validated.map(v => v.objective_id));
+    const rows = await ctx.GET<DeprecatedObjective[]>(
+        'deprecated_objectives',
+    );
+    return new Set(rows.map(r => r.objective_id));
 }
 
 export async function getObjectiveRevisions(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<ObjectiveRevision[]> {
-    const raws = await ctx.GET(
-        'objective_revisions?objective_id=' + id,
+    const all = await ctx.GET<ObjectiveRevision[]>(
+        'objective_revisions',
     );
-    return (raws as unknown[]).map(assertObjectiveRevision);
+    return all.filter(
+        r => r.objective_id === id,
+    );
 }
 ```
 
-(Adapt route strings to match the existing `api/api.ts`
-routing scheme. The semantic is GET-one-row by id and
-GET-collection optionally filtered.)
+The adapter trusts the `ctx.GET` payload's row shape —
+validation happens at the DB write boundary
+(`db-localstorage.ts` runs the entity validator before each
+`put`), not on read. This matches how every other adapter
+in the codebase handles reads (e.g.,
+`adapters/work-orders-queries.ts`).
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1389,8 +1574,9 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add web-app/app/adapters/objectives.ts tests/adapters-objectives.test.ts
-git commit -m "add objective read primitives"
+git add web-app/app/adapters/objectives.ts \
+    tests/adapters-objectives.test.ts
+git commit -m "add objective read primitives and channel"
 ```
 
 ### Task 2.3: `objectives.ts` — active retrieval + definition resolution
@@ -1412,13 +1598,9 @@ import {
 test('postActiveObjectivesRetrieval filters deprecated',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put('objectives', 'o1', {
-            id: 'o1', position: 0,
-        });
-        await db.put('objectives', 'o2', {
-            id: 'o2', position: 1,
-        });
-        await db.put('deprecated_objectives', 'o2', {
+        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o2', { position: 1 });
+        await db.deprecatedObjectives.put('o2', {
             objective_id: 'o2',
             deprecated_at: '2026-05-14T00:00:00.000Z',
         });
@@ -1427,14 +1609,13 @@ test('postActiveObjectivesRetrieval filters deprecated',
             ctx,
         );
         assert.equal(active.length, 1);
-        assert.equal(active[0].id, 'o1');
+        assert.equal(active[0]!.id, 'o1');
     });
 
 test('postCurrentObjectiveDefinition returns latest revision',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-14T00:00:00.000Z',
             {
                 objective_id: 'o1', name: 'Old',
@@ -1442,8 +1623,7 @@ test('postCurrentObjectiveDefinition returns latest revision',
                 revised_at: '2026-05-14T00:00:00.000Z',
             },
         );
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-15T00:00:00.000Z',
             {
                 objective_id: 'o1', name: 'New',
@@ -1462,8 +1642,7 @@ test('postCurrentObjectiveDefinition returns latest revision',
 test('postObjectiveDefinitionAtTime returns historical name',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-14T00:00:00.000Z',
             {
                 objective_id: 'o1', name: 'Old',
@@ -1471,8 +1650,7 @@ test('postObjectiveDefinitionAtTime returns historical name',
                 revised_at: '2026-05-14T00:00:00.000Z',
             },
         );
-        await db.put(
-            'objective_revisions',
+        await db.objectiveRevisions.put(
             'o1:2026-05-15T00:00:00.000Z',
             {
                 objective_id: 'o1', name: 'New',
@@ -1523,7 +1701,7 @@ export async function postCurrentObjectiveDefinition(
     revs.sort((a, b) =>
         b.revised_at.localeCompare(a.revised_at),
     );
-    const latest = revs[0];
+    const latest = revs[0]!;
     return {
         name: latest.name,
         description: latest.description,
@@ -1541,13 +1719,14 @@ export async function postObjectiveDefinitionAtTime(
     );
     if (eligible.length === 0) {
         throw new Error(
-            'no revision of ' + id + ' at or before ' + atTime,
+            'no revision of ' + id
+            + ' at or before ' + atTime,
         );
     }
     eligible.sort((a, b) =>
         b.revised_at.localeCompare(a.revised_at),
     );
-    const latest = eligible[0];
+    const latest = eligible[0]!;
     return {
         name: latest.name,
         description: latest.description,
@@ -1570,6 +1749,14 @@ git commit -m "add active retrieval and temporal definition resolution"
 ```
 
 ### Task 2.4: `objectives.ts` — write operations
+
+The `ctx.commit` signature (`adapters/shared.ts:34-37`)
+carries `notifyChannels?: readonly Channel<void>[]` —
+Channel objects, not strings. The existing pattern is to
+call `ctx.commit({ ops })` then call the local notify
+helper (see `adapters/flow-mutations.ts:69-103` for the
+canonical example: `await ctx.commit({ ops: [...] });
+flowChanges.notify();`). Match that voice.
 
 **Files:**
 - Modify: `web-app/app/adapters/objectives.ts`
@@ -1594,11 +1781,11 @@ test('postObjectiveCreation writes objective + revision',
         await postObjectiveCreation(
             ctx, 'o1', 'Revenue', 'Top line', 0,
         );
-        const o = await db.get('objectives', 'o1');
+        const o = await db.objectives.getById('o1');
         assert.equal(o.id, 'o1');
-        const revs = await db.getAll('objective_revisions');
+        const revs = await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 1);
-        assert.equal(revs[0].name, 'Revenue');
+        assert.equal(revs[0]!.name, 'Revenue');
     });
 
 test('postObjectiveRevision appends a revision row',
@@ -1611,7 +1798,7 @@ test('postObjectiveRevision appends a revision row',
         await postObjectiveRevision(
             ctx, 'o1', 'Revenue Growth', 'd2',
         );
-        const revs = await db.getAll('objective_revisions');
+        const revs = await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 2);
     });
 
@@ -1623,40 +1810,50 @@ test('postObjectiveDeprecation tombstones an objective',
             ctx, 'o1', 'Revenue', 'd', 0,
         );
         await postObjectiveDeprecation(ctx, 'o1');
-        const tombstones = await db.getAll(
-            'deprecated_objectives',
-        );
+        const tombstones =
+            await db.deprecatedObjectives.getAll();
         assert.equal(tombstones.length, 1);
-        assert.equal(tombstones[0].objective_id, 'o1');
+        assert.equal(tombstones[0]!.objective_id, 'o1');
     });
 
-test('postObjectiveReactivation removes tombstone', async () => {
-    const db = new MemoryDbAdapter();
-    const ctx = ctxFor(db);
-    await postObjectiveCreation(ctx, 'o1', 'Rev', 'd', 0);
-    await postObjectiveDeprecation(ctx, 'o1');
-    await postObjectiveReactivation(ctx, 'o1');
-    const tombstones = await db.getAll(
-        'deprecated_objectives',
-    );
-    assert.equal(tombstones.length, 0);
-});
+test('postObjectiveReactivation removes tombstone',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Rev', 'd', 0,
+        );
+        await postObjectiveDeprecation(ctx, 'o1');
+        await postObjectiveReactivation(ctx, 'o1');
+        const tombstones =
+            await db.deprecatedObjectives.getAll();
+        assert.equal(tombstones.length, 0);
+    });
 
-test('postObjectiveReordering updates positions', async () => {
-    const db = new MemoryDbAdapter();
-    const ctx = ctxFor(db);
-    await postObjectiveCreation(ctx, 'o1', 'A', 'd', 0);
-    await postObjectiveCreation(ctx, 'o2', 'B', 'd', 1);
-    await postObjectiveCreation(ctx, 'o3', 'C', 'd', 2);
-    await postObjectiveReordering(ctx, ['o3', 'o1', 'o2']);
-    const all = await db.getAll('objectives');
-    const map = new Map(
-        all.map(o => [o.id, o.position]),
-    );
-    assert.equal(map.get('o3'), 0);
-    assert.equal(map.get('o1'), 1);
-    assert.equal(map.get('o2'), 2);
-});
+test('postObjectiveReordering updates positions',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'A', 'd', 0,
+        );
+        await postObjectiveCreation(
+            ctx, 'o2', 'B', 'd', 1,
+        );
+        await postObjectiveCreation(
+            ctx, 'o3', 'C', 'd', 2,
+        );
+        await postObjectiveReordering(
+            ctx, ['o3', 'o1', 'o2'],
+        );
+        const all = await db.objectives.getAll();
+        const map = new Map(
+            all.map(o => [o.id, o.position]),
+        );
+        assert.equal(map.get('o3'), 0);
+        assert.equal(map.get('o1'), 1);
+        assert.equal(map.get('o2'), 2);
+    });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -1668,17 +1865,14 @@ Expected: FAIL — five new operations are missing.
 
 - [ ] **Step 3: Add write operations**
 
-Append to `web-app/app/adapters/objectives.ts`. Use string
-concatenation to build resource URLs (the codebase uses
-this pattern in adapters that call ctx.GET / ctx.PUT —
-verify by reading `adapters/flow-publish.ts`). The
-`notifyChannels` field on the commit transaction handles
-post-commit notifications.
+Append to `web-app/app/adapters/objectives.ts`. Each write
+calls `ctx.commit({ ops })`, then `notifyObjectiveChange()`
+(the local helper added in Task 2.2). Template literals
+for resource paths match the existing voice (see
+`adapters/flow-mutations.ts:73`):
 
 ```ts
-function nowZulu(): string {
-    return new Date().toISOString();
-}
+import { nowUtc } from '../../../api/types.ts';
 
 export async function postObjectiveCreation(
     ctx: RequestContext,
@@ -1687,19 +1881,19 @@ export async function postObjectiveCreation(
     description: string,
     position: number,
 ): Promise<void> {
-    const revisedAt = nowZulu();
+    const revisedAt = nowUtc();
     await ctx.commit({
         ops: [
             {
                 method: 'put',
-                resource: 'objectives/' + id,
-                body: { id, position },
+                resource: `objectives/${id}`,
+                body: { position },
             },
             {
                 method: 'put',
                 resource:
-                    'objective_revisions/'
-                    + id + ':' + revisedAt,
+                    `objective_revisions/`
+                    + `${id}:${revisedAt}`,
                 body: {
                     objective_id: id,
                     name,
@@ -1708,8 +1902,8 @@ export async function postObjectiveCreation(
                 },
             },
         ],
-        notifyChannels: ['objectiveChanges'],
     });
+    notifyObjectiveChange();
 }
 
 export async function postObjectiveRevision(
@@ -1718,13 +1912,13 @@ export async function postObjectiveRevision(
     name: string,
     description: string,
 ): Promise<void> {
-    const revisedAt = nowZulu();
+    const revisedAt = nowUtc();
     await ctx.commit({
         ops: [{
             method: 'put',
             resource:
-                'objective_revisions/'
-                + id + ':' + revisedAt,
+                `objective_revisions/`
+                + `${id}:${revisedAt}`,
             body: {
                 objective_id: id,
                 name,
@@ -1732,8 +1926,8 @@ export async function postObjectiveRevision(
                 revised_at: revisedAt,
             },
         }],
-        notifyChannels: ['objectiveChanges'],
     });
+    notifyObjectiveChange();
 }
 
 export async function postObjectiveDeprecation(
@@ -1743,14 +1937,14 @@ export async function postObjectiveDeprecation(
     await ctx.commit({
         ops: [{
             method: 'put',
-            resource: 'deprecated_objectives/' + id,
+            resource: `deprecated_objectives/${id}`,
             body: {
                 objective_id: id,
-                deprecated_at: nowZulu(),
+                deprecated_at: nowUtc(),
             },
         }],
-        notifyChannels: ['objectiveChanges'],
     });
+    notifyObjectiveChange();
 }
 
 export async function postObjectiveReactivation(
@@ -1760,10 +1954,10 @@ export async function postObjectiveReactivation(
     await ctx.commit({
         ops: [{
             method: 'delete',
-            resource: 'deprecated_objectives/' + id,
+            resource: `deprecated_objectives/${id}`,
         }],
-        notifyChannels: ['objectiveChanges'],
     });
+    notifyObjectiveChange();
 }
 
 export async function postObjectiveReordering(
@@ -1772,13 +1966,11 @@ export async function postObjectiveReordering(
 ): Promise<void> {
     const ops = idsInOrder.map((id, i) => ({
         method: 'put' as const,
-        resource: 'objectives/' + id,
-        body: { id, position: i },
+        resource: `objectives/${id}`,
+        body: { position: i },
     }));
-    await ctx.commit({
-        ops,
-        notifyChannels: ['objectiveChanges'],
-    });
+    await ctx.commit({ ops });
+    notifyObjectiveChange();
 }
 ```
 
@@ -1792,7 +1984,8 @@ Expected: PASS — five new test cases pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add web-app/app/adapters/objectives.ts tests/adapters-objectives.test.ts
+git add web-app/app/adapters/objectives.ts \
+    tests/adapters-objectives.test.ts
 git commit -m "add objective write operations"
 ```
 
@@ -1801,6 +1994,14 @@ git commit -m "add objective write operations"
 ## Phase 2 — Adapters (part 2: scoring + publish)
 
 ### Task 2.5: `adapters/project-scoring.ts` — read primitives
+
+The score event-log tables are read via `ctx.GET<T[]>(
+'project_objective_baseline_scores')` (no query parameters
+— see `api/api.ts:113-310`) and filtered in the adapter,
+matching the pattern in `adapters/work-orders-queries.ts:
+150-159`. The adapter creates its own
+`createSubscriptionChannel(['...'])` exactly as
+`adapters/projects.ts:14-28` does.
 
 **Files:**
 - Create: `web-app/app/adapters/project-scoring.ts`
@@ -1823,8 +2024,7 @@ import {
 test('getBaselineScoresForProject returns project rows',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'project_objective_baseline_scores',
+        await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1',
             {
                 project_id: 'p1', objective_id: 'o1',
@@ -1832,8 +2032,7 @@ test('getBaselineScoresForProject returns project rows',
                 scored_at: '2026-05-14T00:00:00.000Z',
             },
         );
-        await db.put(
-            'project_objective_baseline_scores',
+        await db.projectObjectiveBaselineScores.put(
             'p2:o1:t1',
             {
                 project_id: 'p2', objective_id: 'o1',
@@ -1846,14 +2045,13 @@ test('getBaselineScoresForProject returns project rows',
             ctx, 'p1',
         );
         assert.equal(rows.length, 1);
-        assert.equal(rows[0].score, 50);
+        assert.equal(rows[0]!.score, 50);
     });
 
 test('getActualScoresForProject returns project rows',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'project_objective_actual_scores',
+        await db.projectObjectiveActualScores.put(
             'p1:o1:t1',
             {
                 project_id: 'p1', objective_id: 'o1',
@@ -1866,7 +2064,7 @@ test('getActualScoresForProject returns project rows',
             ctx, 'p1',
         );
         assert.equal(rows.length, 1);
-        assert.equal(rows[0].score, 33);
+        assert.equal(rows[0]!.score, 33);
     });
 ```
 
@@ -1877,49 +2075,63 @@ Run:
 
 Expected: FAIL — module does not exist.
 
-- [ ] **Step 3: Create the module with primitives**
+- [ ] **Step 3: Create the module with channel + primitives**
 
 ```ts
 // web-app/app/adapters/project-scoring.ts
 
 import type {
-    ProjectId,
+    Id,
     ObjectiveId,
+    ProjectEntity,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
-    assertBaselineScore,
-    assertActualScore,
-} from '../../../api/validators.ts';
+    createSubscriptionChannel,
+} from '../channels.ts';
+
+const projectScoreChanges =
+    createSubscriptionChannel([
+        'project_objective_baseline_scores',
+        'project_objective_actual_scores',
+    ]);
+
+export function subscribeProjectScoreChanges(
+    fn: () => void,
+): () => void {
+    return projectScoreChanges.subscribe(fn);
+}
+
+export function notifyProjectScoreChange(): void {
+    projectScoreChanges.notify();
+}
 
 export async function getBaselineScoresForProject(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
 ): Promise<ProjectObjectiveBaselineScore[]> {
-    const raws = await ctx.GET(
-        'project_objective_baseline_scores'
-        + '?project_id=' + projectId,
+    const all = await ctx.GET<
+        ProjectObjectiveBaselineScore[]
+    >('project_objective_baseline_scores');
+    return all.filter(
+        r => r.project_id === projectId,
     );
-    return (raws as unknown[]).map(assertBaselineScore);
 }
 
 export async function getActualScoresForProject(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
 ): Promise<ProjectObjectiveActualScore[]> {
-    const raws = await ctx.GET(
-        'project_objective_actual_scores'
-        + '?project_id=' + projectId,
+    const all = await ctx.GET<
+        ProjectObjectiveActualScore[]
+    >('project_objective_actual_scores');
+    return all.filter(
+        r => r.project_id === projectId,
     );
-    return (raws as unknown[]).map(assertActualScore);
 }
 ```
-
-(Verify route-with-query-param convention against
-`api/api.ts`. The semantic is "GET all rows for this
-project.")
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1951,8 +2163,7 @@ import { postProjectScoringRetrieval } from
 test('postProjectScoringRetrieval returns both lists',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.put(
-            'project_objective_baseline_scores',
+        await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1',
             {
                 project_id: 'p1', objective_id: 'o1',
@@ -1960,8 +2171,7 @@ test('postProjectScoringRetrieval returns both lists',
                 scored_at: '2026-05-14T00:00:00.000Z',
             },
         );
-        await db.put(
-            'project_objective_actual_scores',
+        await db.projectObjectiveActualScores.put(
             'p1:o1:t2',
             {
                 project_id: 'p1', objective_id: 'o1',
@@ -1975,8 +2185,8 @@ test('postProjectScoringRetrieval returns both lists',
         );
         assert.equal(r.baseline.length, 1);
         assert.equal(r.actual.length, 1);
-        assert.equal(r.baseline[0].score, 50);
-        assert.equal(r.actual[0].score, 33);
+        assert.equal(r.baseline[0]!.score, 50);
+        assert.equal(r.actual[0]!.score, 33);
     });
 ```
 
@@ -1992,7 +2202,7 @@ Expected: FAIL — function does not exist.
 ```ts
 export async function postProjectScoringRetrieval(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
 ): Promise<{
     baseline: ProjectObjectiveBaselineScore[];
     actual: ProjectObjectiveActualScore[];
@@ -2035,50 +2245,46 @@ import {
     postProjectsScoreColumn,
 } from '../web-app/app/adapters/project-scoring.ts';
 
-async function seedTwoApprovedProjects(db) {
-    await db.put('projects', 'p1', {
-        id: 'p1', status: 'approved', title: 't1',
+async function seedTwoApprovedProjects(
+    db: MemoryDbAdapter,
+): Promise<void> {
+    const projectBody = {
         description: 'd', progress: 0,
         start_date: '2026-05-14T00:00:00.000Z',
         target_end_date: '2026-05-14T00:00:00.000Z',
         estimated_duration: 0, actual_duration: 0,
         estimated_cost: 0, actual_cost: 0,
-        position: 0, business_context: {},
+        business_context: '{}',
         timeline_label: 'q1',
+    };
+    await db.projects.put('p1', {
+        ...projectBody,
+        status: 'approved' as const,
+        title: 't1', position: 0,
     });
-    await db.put('projects', 'p2', {
-        id: 'p2', status: 'approved', title: 't2',
-        description: 'd', progress: 0,
-        start_date: '2026-05-14T00:00:00.000Z',
-        target_end_date: '2026-05-14T00:00:00.000Z',
-        estimated_duration: 0, actual_duration: 0,
-        estimated_cost: 0, actual_cost: 0,
-        position: 1, business_context: {},
-        timeline_label: 'q1',
+    await db.projects.put('p2', {
+        ...projectBody,
+        status: 'approved' as const,
+        title: 't2', position: 1,
     });
-    await db.put('objectives', 'o1', {
-        id: 'o1', position: 0,
+    await db.objectives.put('o1', { position: 0 });
+    await db.objectiveRevisions.put('o1:t0', {
+        objective_id: 'o1', name: 'O', description: 'd',
+        revised_at: '2026-05-14T00:00:00.000Z',
     });
-    await db.put(
-        'objective_revisions', 'o1:t0',
-        {
-            objective_id: 'o1', name: 'O', description: 'd',
-            revised_at: '2026-05-14T00:00:00.000Z',
-        },
-    );
-    await db.put(
-        'project_objective_baseline_scores',
+    await db.projectObjectiveBaselineScores.put(
         'p1:o1:t1',
         {
-            project_id: 'p1', objective_id: 'o1', score: 60,
+            project_id: 'p1', objective_id: 'o1',
+            score: 60,
             scored_at: '2026-05-14T00:00:00.000Z',
         },
     );
-    await db.put(
-        'project_objective_baseline_scores',
+    await db.projectObjectiveBaselineScores.put(
         'p2:o1:t1',
         {
-            project_id: 'p2', objective_id: 'o1', score: -20,
+            project_id: 'p2', objective_id: 'o1',
+            score: -20,
             scored_at: '2026-05-14T00:00:00.000Z',
         },
     );
@@ -2101,9 +2307,9 @@ test('postObjectiveAggregates returns per-objective rows',
         const ctx = createRequestContext(db);
         const rows = await postObjectiveAggregates(ctx);
         assert.equal(rows.length, 1);
-        assert.equal(rows[0].objectiveId, 'o1');
-        assert.equal(rows[0].baselineMean, 20);
-        assert.equal(rows[0].projectsBaselineScored, 2);
+        assert.equal(rows[0]!.objectiveId, 'o1');
+        assert.equal(rows[0]!.baselineMean, 20);
+        assert.equal(rows[0]!.projectsBaselineScored, 2);
     });
 
 test('postProjectsScoreColumn returns per-project rollup',
@@ -2115,8 +2321,8 @@ test('postProjectsScoreColumn returns per-project rollup',
         const byId = new Map(
             rows.map(r => [r.projectId, r]),
         );
-        assert.equal(byId.get('p1').baselineAvg, 60);
-        assert.equal(byId.get('p2').baselineAvg, -20);
+        assert.equal(byId.get('p1')!.baselineAvg, 60);
+        assert.equal(byId.get('p2')!.baselineAvg, -20);
     });
 ```
 
@@ -2132,23 +2338,17 @@ Expected: FAIL — three new aggregates don't exist.
 The implementation does argmax-per-pair on the event log
 then averages. Pseudocode:
 
+Imports `latestPerPair` from the shared module added in
+Task 2.13 (do not redefine inline):
+
 ```ts
-import { postActiveObjectivesRetrieval, getDeprecatedObjectiveIds }
-    from './objectives.ts';
+import {
+    postActiveObjectivesRetrieval,
+    getDeprecatedObjectiveIds,
+} from './objectives.ts';
+import { latestPerPair } from '../scoring-format.ts';
 
-function latestPerPair(rows) {
-    const map = new Map();
-    for (const r of rows) {
-        const key = r.project_id + ':' + r.objective_id;
-        const prev = map.get(key);
-        if (!prev || r.scored_at > prev.scored_at) {
-            map.set(key, r);
-        }
-    }
-    return Array.from(map.values());
-}
-
-function meanOrUndefined(xs) {
+function meanOrUndefined(xs: number[]): number | undefined {
     if (xs.length === 0) return undefined;
     const sum = xs.reduce((a, b) => a + b, 0);
     return Math.round(sum / xs.length);
@@ -2162,9 +2362,12 @@ export async function postPortfolioImpactSummary(
     projectCount: number;
     actualCount: number;
 }> {
-    const projectsRaw = await ctx.GET('projects');
-    const approved = (projectsRaw as any[])
-        .filter(p => p.status === 'approved');
+    const projectRows = await ctx.GET<ProjectEntity[]>(
+        'projects',
+    );
+    const approved = projectRows.filter(
+        p => p.status === 'approved',
+    );
 
     const baselineMeansPerProject: number[] = [];
     const actualMeansPerProject: number[] = [];
@@ -2226,12 +2429,13 @@ export async function postObjectiveAggregates(
     projectsBaselineScored: number;
     projectsActualScored: number;
 }>> {
-    const [activeObjs, projectsRaw] = await Promise.all([
+    const [activeObjs, projectRows] = await Promise.all([
         postActiveObjectivesRetrieval(ctx),
-        ctx.GET('projects'),
+        ctx.GET<ProjectEntity[]>('projects'),
     ]);
-    const approved = (projectsRaw as any[])
-        .filter(p => p.status === 'approved');
+    const approved = projectRows.filter(
+        p => p.status === 'approved',
+    );
 
     const result = [];
     for (const obj of activeObjs) {
@@ -2271,20 +2475,20 @@ export async function postObjectiveAggregates(
 export async function postProjectsScoreColumn(
     ctx: RequestContext,
 ): Promise<Array<{
-    projectId: ProjectId;
+    projectId: Id;
     baselineAvg: number | undefined;
     latestActualAvg: number | undefined;
     baselineCount: number;
     totalActiveObjectives: number;
 }>> {
-    const [activeObjs, projectsRaw] = await Promise.all([
+    const [activeObjs, projectRows] = await Promise.all([
         postActiveObjectivesRetrieval(ctx),
-        ctx.GET('projects'),
+        ctx.GET<ProjectEntity[]>('projects'),
     ]);
     const totalActive = activeObjs.length;
 
     const out = [];
-    for (const p of (projectsRaw as any[])) {
+    for (const p of projectRows) {
         const { baseline, actual } =
             await postProjectScoringRetrieval(ctx, p.id);
         const latestB = latestPerPair(baseline);
@@ -2342,9 +2546,8 @@ test('postProjectBaselineScoring appends event rows',
             { objectiveId: 'o1', score: 50 },
             { objectiveId: 'o2', score: -30 },
         ]);
-        const rows = await db.getAll(
-            'project_objective_baseline_scores',
-        );
+        const rows =
+            await db.projectObjectiveBaselineScores.getAll();
         assert.equal(rows.length, 2);
     });
 
@@ -2355,11 +2558,10 @@ test('postProjectActualMeasurement appends actual rows',
         await postProjectActualMeasurement(ctx, 'p1', [
             { objectiveId: 'o1', score: 33 },
         ]);
-        const rows = await db.getAll(
-            'project_objective_actual_scores',
-        );
+        const rows =
+            await db.projectObjectiveActualScores.getAll();
         assert.equal(rows.length, 1);
-        assert.equal(rows[0].score, 33);
+        assert.equal(rows[0]!.score, 33);
     });
 ```
 
@@ -2372,22 +2574,29 @@ Expected: FAIL — write operations don't exist.
 
 - [ ] **Step 3: Add the write operations**
 
+Each write calls `ctx.commit({ ops })` then
+`notifyProjectScoreChange()` (the local helper added in
+Task 2.5). Match the post-commit notify voice of
+`adapters/flow-mutations.ts:69-103`:
+
 ```ts
+import { nowUtc } from '../../../api/types.ts';
+
 export async function postProjectBaselineScoring(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
     scores: Array<{
         objectiveId: ObjectiveId;
         score: number;
     }>,
 ): Promise<void> {
-    const scoredAt = new Date().toISOString();
+    const scoredAt = nowUtc();
     const ops = scores.map(s => ({
         method: 'put' as const,
         resource:
-            'project_objective_baseline_scores/'
-            + projectId + ':' + s.objectiveId
-            + ':' + scoredAt,
+            `project_objective_baseline_scores/`
+            + `${projectId}:${s.objectiveId}`
+            + `:${scoredAt}`,
         body: {
             project_id: projectId,
             objective_id: s.objectiveId,
@@ -2395,27 +2604,25 @@ export async function postProjectBaselineScoring(
             scored_at: scoredAt,
         },
     }));
-    await ctx.commit({
-        ops,
-        notifyChannels: ['scoreChanges'],
-    });
+    await ctx.commit({ ops });
+    notifyProjectScoreChange();
 }
 
 export async function postProjectActualMeasurement(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
     scores: Array<{
         objectiveId: ObjectiveId;
         score: number;
     }>,
 ): Promise<void> {
-    const scoredAt = new Date().toISOString();
+    const scoredAt = nowUtc();
     const ops = scores.map(s => ({
         method: 'put' as const,
         resource:
-            'project_objective_actual_scores/'
-            + projectId + ':' + s.objectiveId
-            + ':' + scoredAt,
+            `project_objective_actual_scores/`
+            + `${projectId}:${s.objectiveId}`
+            + `:${scoredAt}`,
         body: {
             project_id: projectId,
             objective_id: s.objectiveId,
@@ -2423,10 +2630,8 @@ export async function postProjectActualMeasurement(
             scored_at: scoredAt,
         },
     }));
-    await ctx.commit({
-        ops,
-        notifyChannels: ['scoreChanges'],
-    });
+    await ctx.commit({ ops });
+    notifyProjectScoreChange();
 }
 ```
 
@@ -2466,16 +2671,19 @@ import {
     postProjectCompletion,
 } from '../web-app/app/adapters/project-publish.ts';
 
-const SAMPLE_PROJECT = {
-    id: 'p1', status: 'under-review', title: 't',
+const SAMPLE_PROJECT_BODY = {
+    title: 't',
     description: 'd', progress: 0,
     start_date: '2026-05-14T00:00:00.000Z',
     target_end_date: '2026-05-14T00:00:00.000Z',
     estimated_duration: 0, actual_duration: 0,
     estimated_cost: 0, actual_cost: 0,
-    position: 0, business_context: {},
+    position: 0, business_context: '{}',
     timeline_label: 'q1',
+    status: 'under-review' as const,
 };
+
+const SAMPLE_PROJECT = { id: 'p1', ...SAMPLE_PROJECT_BODY };
 
 test('validator: not ready when objectives unscored',
     () => {
@@ -2511,39 +2719,35 @@ test('completion validator: not ready when actuals missing',
             [],
         );
         assert.equal(r.ready, false);
-        assert.equal(r.problems[0].kind, 'actual_unscored');
+        assert.equal(r.problems[0]!.kind, 'actual_unscored');
     });
 
 test('postProjectApproval flips status', async () => {
     const db = new MemoryDbAdapter();
-    await db.put('projects', 'p1',
-        { ...SAMPLE_PROJECT });
-    await db.put('objectives', 'o1',
-        { id: 'o1', position: 0 });
-    await db.put(
-        'project_objective_baseline_scores',
+    await db.projects.put('p1', SAMPLE_PROJECT_BODY);
+    await db.objectives.put('o1', { position: 0 });
+    await db.projectObjectiveBaselineScores.put(
         'p1:o1:t1',
         { project_id: 'p1', objective_id: 'o1', score: 50,
           scored_at: '2026-05-14T00:00:00.000Z' },
     );
     const ctx = createRequestContext(db);
     await postProjectApproval(ctx, 'p1');
-    const p = await db.get('projects', 'p1');
+    const p = await db.projects.getById('p1');
     assert.equal(p.status, 'approved');
 });
 
-test('postProjectApproval throws when not ready', async () => {
-    const db = new MemoryDbAdapter();
-    await db.put('projects', 'p1',
-        { ...SAMPLE_PROJECT });
-    await db.put('objectives', 'o1',
-        { id: 'o1', position: 0 });
-    const ctx = createRequestContext(db);
-    await assert.rejects(
-        () => postProjectApproval(ctx, 'p1'),
-        /not ready|unscored/i,
-    );
-});
+test('postProjectApproval throws when not ready',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.projects.put('p1', SAMPLE_PROJECT_BODY);
+        await db.objectives.put('o1', { position: 0 });
+        const ctx = createRequestContext(db);
+        await assert.rejects(
+            () => postProjectApproval(ctx, 'p1'),
+            /not ready|unscored/i,
+        );
+    });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -2560,7 +2764,7 @@ Expected: FAIL — module does not exist.
 
 import type {
     ProjectEntity,
-    ProjectId,
+    Id,
     Objective,
     ObjectiveId,
     ProjectObjectiveBaselineScore,
@@ -2572,6 +2776,7 @@ import { postActiveObjectivesRetrieval } from
     './objectives.ts';
 import { postProjectScoringRetrieval } from
     './project-scoring.ts';
+import { notifyProjectChange } from './projects.ts';
 
 export type ProjectProblem =
     | { kind: 'baseline_unscored';
@@ -2608,7 +2813,10 @@ export function validateProjectForApproval(
             });
         }
     }
-    return { ready: problems.length === 0, problems };
+    return {
+        ready: problems.length === 0,
+        problems,
+    };
 }
 
 export function validateProjectForCompletion(
@@ -2616,7 +2824,8 @@ export function validateProjectForCompletion(
     baselineScores: ProjectObjectiveBaselineScore[],
     actualScores: ProjectObjectiveActualScore[],
 ): ValidationResult<ProjectProblem> {
-    const baselined = latestPerObjective(baselineScores);
+    const baselined =
+        latestPerObjective(baselineScores);
     const actualed = latestPerObjective(actualScores);
     const problems: ProjectProblem[] = [];
     for (const objId of baselined) {
@@ -2627,7 +2836,10 @@ export function validateProjectForCompletion(
             });
         }
     }
-    return { ready: problems.length === 0, problems };
+    return {
+        ready: problems.length === 0,
+        problems,
+    };
 }
 
 export class ProjectNotReadyError extends Error {
@@ -2641,12 +2853,11 @@ export class ProjectNotReadyError extends Error {
 
 export async function postProjectApproval(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
 ): Promise<void> {
-    const projectRaw = await ctx.GET(
-        'projects/' + projectId,
+    const project = await ctx.GET<ProjectEntity>(
+        `projects/${projectId}`,
     );
-    const project = projectRaw as ProjectEntity;
     const [active, scoring] = await Promise.all([
         postActiveObjectivesRetrieval(ctx),
         postProjectScoringRetrieval(ctx, projectId),
@@ -2654,40 +2865,45 @@ export async function postProjectApproval(
     const v = validateProjectForApproval(
         project, active, scoring.baseline,
     );
-    if (!v.ready) throw new ProjectNotReadyError(v.problems);
+    if (!v.ready) {
+        throw new ProjectNotReadyError(v.problems);
+    }
+    const { id: _id, ...body } = project;
     await ctx.commit({
         ops: [{
             method: 'put',
-            resource: 'projects/' + projectId,
-            body: { ...project, status: 'approved' },
+            resource: `projects/${projectId}`,
+            body: { ...body, status: 'approved' },
         }],
-        notifyChannels: ['projectChanges'],
     });
+    notifyProjectChange();
 }
 
 export async function postProjectCompletion(
     ctx: RequestContext,
-    projectId: ProjectId,
+    projectId: Id,
 ): Promise<void> {
-    const projectRaw = await ctx.GET(
-        'projects/' + projectId,
+    const project = await ctx.GET<ProjectEntity>(
+        `projects/${projectId}`,
     );
-    const project = projectRaw as ProjectEntity;
     const scoring = await postProjectScoringRetrieval(
         ctx, projectId,
     );
     const v = validateProjectForCompletion(
         project, scoring.baseline, scoring.actual,
     );
-    if (!v.ready) throw new ProjectNotReadyError(v.problems);
+    if (!v.ready) {
+        throw new ProjectNotReadyError(v.problems);
+    }
+    const { id: _id, ...body } = project;
     await ctx.commit({
         ops: [{
             method: 'put',
-            resource: 'projects/' + projectId,
-            body: { ...project, status: 'completed' },
+            resource: `projects/${projectId}`,
+            body: { ...body, status: 'completed' },
         }],
-        notifyChannels: ['projectChanges'],
     });
+    notifyProjectChange();
 }
 ```
 
@@ -2705,144 +2921,99 @@ git add web-app/app/adapters/project-publish.ts tests/adapters-project-publish.t
 git commit -m "add project approval and completion gates"
 ```
 
-### Task 2.10: Add notification channels
+> **Note:** A "shared changes.ts" task was originally
+> planned here and removed during plan revision. The
+> codebase uses per-adapter `createSubscriptionChannel`
+> (see `adapters/projects.ts:14-28` for the pattern); each
+> adapter task below (2.2, 2.5) creates its own channel
+> inline.
 
-**Files:**
-- Modify: the existing notifications/channels module (search
-  for `projectChanges` to find it — likely
-  `web-app/app/state.ts` or `web-app/app/changes.ts` or
-  similar)
+### Task 2.11: Add per-objective derived methods to `ProjectView`
 
-- [ ] **Step 1: Locate the existing channels file**
+The `Project` class no longer owns `estimatedImpactScore()`
+or `actualImpactScore()` — those were removed in commit
+`d44eae1`. The derived shape belongs on `ProjectView`
+(`adapters/projects.ts:54-153`), which already exposes
+view-helper methods like `impactBaseline()` (line 144) and
+`impactCurrent()` (line 149) — both currently delegating to
+the deleted `Project` methods, so they will need to be
+replaced too. `ProjectView` is the adapter-side view-helper
+seam; the domain entity stays free of presentation
+concerns.
 
-Run:
-`grep -r "export const projectChanges" web-app/`
-
-Note the file path — call it `<CHANNELS_FILE>`.
-
-- [ ] **Step 2: Write the failing test**
-
-Create `tests/channels-new.test.ts`:
-
-```ts
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import {
-    objectiveChanges,
-    scoreChanges,
-} from '<CHANNELS_FILE>';
-
-test('objectiveChanges is a pub-sub channel', () => {
-    let fired = false;
-    const unsub = objectiveChanges.subscribe(() => {
-        fired = true;
-    });
-    objectiveChanges.notify();
-    assert.equal(fired, true);
-    unsub();
-});
-
-test('scoreChanges is a pub-sub channel', () => {
-    let fired = false;
-    const unsub = scoreChanges.subscribe(() => {
-        fired = true;
-    });
-    scoreChanges.notify();
-    assert.equal(fired, true);
-    unsub();
-});
-```
-
-(Replace `<CHANNELS_FILE>` with the actual path.)
-
-- [ ] **Step 3: Run test to verify it fails**
-
-Run: `node --test --strip-types tests/channels-new.test.ts`
-
-Expected: FAIL — imports don't resolve.
-
-- [ ] **Step 4: Add the channels**
-
-Look at the existing `projectChanges` export and add two
-new ones using the same shape. Example:
-
-```ts
-export const objectiveChanges = createChannel();
-export const scoreChanges = createChannel();
-```
-
-(Adapt to whatever pattern the existing channels use —
-constructor call, factory function, plain object, etc.)
-
-- [ ] **Step 5: Run test to verify it passes**
-
-Run: `node --test --strip-types tests/channels-new.test.ts`
-
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add <CHANNELS_FILE> tests/channels-new.test.ts
-git commit -m "add objectiveChanges and scoreChanges notification channels"
-```
-
-### Task 2.11: Project domain class — derived score methods
+The new methods take a `ProjectScoringSummary` shape from
+`postProjectScoringRetrieval` (Task 2.6). Each method is a
+tell-don't-ask — no nullable returns, throws on missing
+preconditions.
 
 **Files:**
 - Modify: `web-app/app/adapters/projects.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `tests/project-domain.test.ts`:
+Create `tests/project-view-derived.test.ts`:
 
 ```ts
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { Project } from '../web-app/app/adapters/projects.ts';
+import {
+    Project,
+    ProjectView,
+} from '../web-app/app/adapters/projects.ts';
+import type {
+    Objective,
+    ProjectObjectiveBaselineScore,
+    ProjectObjectiveActualScore,
+} from '../api/types.ts';
 
-function makeProject(overrides = {}) {
-    return new Project({
+function makeView(): ProjectView {
+    return new ProjectView(new Project({
         id: 'p1', status: 'approved', title: 't',
         description: 'd', progress: 0,
         start_date: '2026-05-14T00:00:00.000Z',
         target_end_date: '2026-05-14T00:00:00.000Z',
         estimated_duration: 0, actual_duration: 0,
         estimated_cost: 0, actual_cost: 0,
-        position: 0, business_context: {},
+        position: 0, business_context: '{}',
         timeline_label: 'q1',
-        ...overrides,
-    });
+    }));
 }
 
 const T1 = '2026-05-14T00:00:00.000Z';
 const T2 = '2026-05-15T00:00:00.000Z';
 
+const activeOne: Objective[] = [
+    { id: 'o1', position: 0 },
+];
+const activeTwo: Objective[] = [
+    { id: 'o1', position: 0 },
+    { id: 'o2', position: 1 },
+];
+const baselineO1: ProjectObjectiveBaselineScore[] = [
+    { project_id: 'p1', objective_id: 'o1',
+      score: 50, scored_at: T1 },
+];
+
 test('isBaselineScored true when every active obj has row',
     () => {
-        const p = makeProject();
-        const ok = p.isBaselineScored(
-            [{ id: 'o1', position: 0 }],
-            [{ project_id: 'p1', objective_id: 'o1',
-               score: 50, scored_at: T1 }],
+        const v = makeView();
+        assert.equal(
+            v.isBaselineScored(activeOne, baselineO1),
+            true,
         );
-        assert.equal(ok, true);
     });
 
 test('isBaselineScored false when missing one', () => {
-    const p = makeProject();
-    const ok = p.isBaselineScored(
-        [{ id: 'o1', position: 0 },
-         { id: 'o2', position: 1 }],
-        [{ project_id: 'p1', objective_id: 'o1',
-           score: 50, scored_at: T1 }],
+    const v = makeView();
+    assert.equal(
+        v.isBaselineScored(activeTwo, baselineO1),
+        false,
     );
-    assert.equal(ok, false);
 });
 
-test('estimatedImpactScore averages latest baselines', () => {
-    const p = makeProject();
-    const score = p.estimatedImpactScore([
+test('baselineTotal averages latest per pair', () => {
+    const v = makeView();
+    const score = v.baselineTotal([
         { project_id: 'p1', objective_id: 'o1',
           score: 50, scored_at: T1 },
         { project_id: 'p1', objective_id: 'o1',
@@ -2853,126 +3024,191 @@ test('estimatedImpactScore averages latest baselines', () => {
     assert.equal(score, 20); // (60 + -20) / 2
 });
 
-test('estimatedImpactScore throws when no rows', () => {
-    const p = makeProject();
-    assert.throws(() => p.estimatedImpactScore([]));
+test('baselineTotal throws when no rows', () => {
+    const v = makeView();
+    assert.throws(() => v.baselineTotal([]));
 });
+
+test('actualTotal throws when not fully actual-scored',
+    () => {
+        const v = makeView();
+        assert.throws(
+            () => v.actualTotal(baselineO1, []),
+        );
+    });
+
+test('actualTotal averages over baselined objectives',
+    () => {
+        const v = makeView();
+        const score = v.actualTotal(
+            baselineO1,
+            [{
+                project_id: 'p1', objective_id: 'o1',
+                score: 40, scored_at: T2,
+            }],
+        );
+        assert.equal(score, 40);
+    });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run:
-`node --test --strip-types tests/project-domain.test.ts`
+`node --test --strip-types tests/project-view-derived.test.ts`
 
-Expected: FAIL — methods don't exist (or `Project` may not
-be exported in this exact shape).
+Expected: FAIL — the methods don't exist on `ProjectView`,
+and `impactBaseline` / `impactCurrent` still delegate to
+deleted `Project` methods so the existing file fails to
+compile under `--strip-types` when those calls are
+exercised.
 
-- [ ] **Step 3: Add derived methods to the `Project` class**
+- [ ] **Step 3: Update `ProjectView`**
 
-In `web-app/app/adapters/projects.ts`, locate or define
-the `Project` domain class. ADD these methods (and the
-imports for the types from `api/types.ts`):
+In `web-app/app/adapters/projects.ts`:
+
+1. Import the new row types at the top:
 
 ```ts
-function latestPerPair(rows) {
-    const map = new Map();
-    for (const r of rows) {
-        const key = r.project_id + ':' + r.objective_id;
-        const prev = map.get(key);
-        if (!prev || r.scored_at > prev.scored_at) {
-            map.set(key, r);
-        }
-    }
-    return Array.from(map.values());
-}
+import type {
+    Objective,
+    ProjectObjectiveBaselineScore,
+    ProjectObjectiveActualScore,
+} from '../../../api/types.ts';
+```
 
-// inside class Project { ... }
+2. Delete `impactBaseline()` and `impactCurrent()` (lines
+   144-152) — the old delegators are gone; nothing else in
+   the codebase calls them once Phase 3 / Task 3.9 strips
+   them out of the presenters.
+
+3. Add the four per-objective derived methods. The local
+   `#latestPerPair` is private to this class because it
+   operates on this project's score rows specifically; the
+   shared portfolio-level `latestPerPair` lives in
+   `scoring-format.ts` (Task 2.13).
+
+```ts
+// inside class ProjectView { ... }
 
 isBaselineScored(
     activeObjectives: Objective[],
-    latestBaselines: ProjectObjectiveBaselineScore[],
+    baselineScores: ProjectObjectiveBaselineScore[],
 ): boolean {
-    const scored = new Set(
-        latestPerPair(latestBaselines)
-            .map(r => r.objective_id),
+    const scored = this.#objectiveSet(baselineScores);
+    return activeObjectives.every(
+        o => scored.has(o.id),
     );
-    return activeObjectives.every(o => scored.has(o.id));
 }
 
-isFullyActualScored(
-    latestBaselines: ProjectObjectiveBaselineScore[],
-    latestActuals: ProjectObjectiveActualScore[],
+isActualScored(
+    baselineScores: ProjectObjectiveBaselineScore[],
+    actualScores: ProjectObjectiveActualScore[],
 ): boolean {
-    const baselined = new Set(
-        latestPerPair(latestBaselines)
-            .map(r => r.objective_id),
-    );
-    const actualed = new Set(
-        latestPerPair(latestActuals)
-            .map(r => r.objective_id),
-    );
+    const baselined =
+        this.#objectiveSet(baselineScores);
+    const actualed =
+        this.#objectiveSet(actualScores);
     for (const id of baselined) {
         if (!actualed.has(id)) return false;
     }
     return true;
 }
 
-estimatedImpactScore(
-    latestBaselines: ProjectObjectiveBaselineScore[],
+baselineTotal(
+    baselineScores: ProjectObjectiveBaselineScore[],
 ): number {
-    const latest = latestPerPair(latestBaselines);
+    const latest = this.#latestPerObjective(
+        baselineScores,
+    );
     if (latest.length === 0) {
         throw new Error(
-            'project ' + this.id
+            'project '
+            + this.#project.idForLink()
             + ' has no baseline scores',
         );
     }
     const sum = latest.reduce(
-        (a, b) => a + b.score, 0,
+        (acc, r) => acc + r.score, 0,
     );
     return Math.round(sum / latest.length);
 }
 
-currentActualImpactScore(
-    latestBaselines: ProjectObjectiveBaselineScore[],
-    latestActuals: ProjectObjectiveActualScore[],
+actualTotal(
+    baselineScores: ProjectObjectiveBaselineScore[],
+    actualScores: ProjectObjectiveActualScore[],
 ): number {
-    if (!this.isFullyActualScored(
-        latestBaselines, latestActuals,
-    )) {
+    if (
+        !this.isActualScored(
+            baselineScores, actualScores,
+        )
+    ) {
         throw new Error(
-            'project ' + this.id
+            'project '
+            + this.#project.idForLink()
             + ' not fully actual-scored',
         );
     }
-    const baselined = latestPerPair(latestBaselines);
+    const baselined = this.#latestPerObjective(
+        baselineScores,
+    );
     const actualMap = new Map(
-        latestPerPair(latestActuals)
+        this.#latestPerObjective(actualScores)
             .map(r => [r.objective_id, r.score]),
     );
-    const xs = baselined.map(
-        b => actualMap.get(b.objective_id),
-    ).filter((x): x is number => typeof x === 'number');
+    const xs = baselined
+        .map(b => actualMap.get(b.objective_id))
+        .filter(
+            (x): x is number => typeof x === 'number',
+        );
     const sum = xs.reduce((a, b) => a + b, 0);
     return Math.round(sum / xs.length);
 }
+
+#latestPerObjective<T extends {
+    objective_id: string;
+    scored_at: string;
+}>(rows: T[]): T[] {
+    const map = new Map<string, T>();
+    for (const r of rows) {
+        const prev = map.get(r.objective_id);
+        if (!prev || r.scored_at > prev.scored_at) {
+            map.set(r.objective_id, r);
+        }
+    }
+    return Array.from(map.values());
+}
+
+#objectiveSet(
+    rows: Array<{ objective_id: string }>,
+): Set<string> {
+    return new Set(
+        this.#latestPerObjective(
+            rows as { objective_id: string;
+                scored_at: string }[],
+        ).map(r => r.objective_id),
+    );
+}
 ```
 
-Also REMOVE the old methods `impactBaseline()` and
-`impactCurrent()` if they exist on this class.
+(The `#latestPerObjective` private helper exists because
+`ProjectView` operates on this project's rows; the
+portfolio-wide `latestPerPair` lives in `scoring-format.ts`
+per Task 2.13. Two scopes, two helpers — Uniformity within
+each, no false unification.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run:
-`node --test --strip-types tests/project-domain.test.ts`
+`node --test --strip-types tests/project-view-derived.test.ts`
 
-Expected: PASS.
+Expected: PASS — all six test cases pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add web-app/app/adapters/projects.ts tests/project-domain.test.ts
-git commit -m "add derived score methods to Project domain class"
+git add web-app/app/adapters/projects.ts \
+    tests/project-view-derived.test.ts
+git commit -m "add per-objective derived methods to ProjectView"
 ```
 
 ### Task 2.12: Remove old Impact gauge from dashboard adapter
@@ -3042,6 +3278,156 @@ Expected: PASS.
 git add web-app/app/adapters/dashboard.ts tests/adapter-dashboard.test.ts
 git commit -m "remove old impact gauge from dashboard adapter"
 ```
+
+### Task 2.13: Extract shared scoring-format helpers
+
+The pure helpers `latestPerPair`, `formatSigned`, and
+`toneForScore` appear inline in 5-7 presenter/adapter
+sites (verified by audit). Commandment IX threshold:
+three is pattern; below three duplicate without shame;
+at three the abstraction begins to speak. Extract before
+Phase 3, so each presenter imports one shared helper
+rather than copy-pasting an inline definition.
+
+**Files:**
+- Create: `web-app/app/scoring-format.ts`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `tests/scoring-format.test.ts`:
+
+```ts
+import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import {
+    latestPerPair,
+    formatSigned,
+    toneForScore,
+} from '../web-app/app/scoring-format.ts';
+
+test('latestPerPair keeps the latest by scored_at',
+    () => {
+        const rows = [
+            { project_id: 'p1', objective_id: 'o1',
+              score: 50,
+              scored_at: '2026-05-14T00:00:00.000Z' },
+            { project_id: 'p1', objective_id: 'o1',
+              score: 60,
+              scored_at: '2026-05-15T00:00:00.000Z' },
+            { project_id: 'p1', objective_id: 'o2',
+              score: -20,
+              scored_at: '2026-05-14T00:00:00.000Z' },
+            { project_id: 'p2', objective_id: 'o1',
+              score: 10,
+              scored_at: '2026-05-14T00:00:00.000Z' },
+        ];
+        const latest = latestPerPair(rows);
+        assert.equal(latest.length, 3);
+        const byKey = new Map(
+            latest.map(r =>
+                [r.project_id + ':'
+                    + r.objective_id, r.score]),
+        );
+        assert.equal(byKey.get('p1:o1'), 60);
+        assert.equal(byKey.get('p1:o2'), -20);
+        assert.equal(byKey.get('p2:o1'), 10);
+    });
+
+test('formatSigned emits + for positive', () => {
+    assert.equal(formatSigned(42), '+42');
+});
+
+test('formatSigned emits − for negative (U+2212)', () => {
+    assert.equal(formatSigned(-10), '−10');
+});
+
+test('formatSigned emits 0 for zero', () => {
+    assert.equal(formatSigned(0), '0');
+});
+
+test('toneForScore positive/negative/neutral', () => {
+    assert.equal(toneForScore(1), 'positive');
+    assert.equal(toneForScore(-1), 'negative');
+    assert.equal(toneForScore(0), 'neutral');
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `node --test --strip-types tests/scoring-format.test.ts`
+
+Expected: FAIL — module does not exist.
+
+- [ ] **Step 3: Create `web-app/app/scoring-format.ts`**
+
+```ts
+// Shared, pure helpers used by adapters and presenters
+// that need to dedupe score-event rows or format scores.
+
+export type Tone = 'positive' | 'negative' | 'neutral';
+
+export function latestPerPair<T extends {
+    project_id: string;
+    objective_id: string;
+    scored_at: string;
+}>(rows: readonly T[]): T[] {
+    const map = new Map<string, T>();
+    for (const r of rows) {
+        const key =
+            `${r.project_id}:${r.objective_id}`;
+        const prev = map.get(key);
+        if (!prev || r.scored_at > prev.scored_at) {
+            map.set(key, r);
+        }
+    }
+    return Array.from(map.values());
+}
+
+// U+2212 (true minus) for negative values; '+' for
+// positive; '0' for zero. Avoids the ASCII hyphen so
+// the rendered score reads as a typographic numeral,
+// not an inline subtraction.
+export function formatSigned(score: number): string {
+    if (score > 0) return `+${score}`;
+    if (score < 0) return `−${Math.abs(score)}`;
+    return '0';
+}
+
+export function toneForScore(score: number): Tone {
+    if (score > 0) return 'positive';
+    if (score < 0) return 'negative';
+    return 'neutral';
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `node --test --strip-types tests/scoring-format.test.ts`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add web-app/app/scoring-format.ts \
+    tests/scoring-format.test.ts
+git commit -m "extract shared scoring-format helpers"
+```
+
+Subsequent Phase 3 tasks (3.4, 3.5, 3.7, 3.8) and the
+Phase 2 aggregate task (2.7) import these three helpers
+instead of redefining them inline. Each task's "Step 3:
+Create the presenter" code block uses:
+
+```ts
+import {
+    latestPerPair,
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
+```
+
+(or `'../../scoring-format.ts'` from `adapters/`).
 
 ---
 
@@ -3214,8 +3600,11 @@ export class OrganizationObjectivesPresenter {
 
     #row(o: Objective, isDeprecated: boolean): SafeHtml {
         const def = this.defs.get(o.id);
-        const name = def ? def.name : '(unknown)';
-        const desc = def ? def.description : '';
+        if (!def) {
+            throw new Error(
+                `objective definition missing for ${o.id}`,
+            );
+        }
         const date = this.deprecatedAt.get(o.id);
         return html`
             <li class="objective-list-item"
@@ -3224,9 +3613,9 @@ export class OrganizationObjectivesPresenter {
                 <span class="drag-handle"
                     aria-label="Drag to reorder">⋮⋮</span>
                 <div class="objective-text">
-                    <strong>${name}</strong>
+                    <strong>${def.name}</strong>
                     <span class="objective-desc">
-                        ${desc}
+                        ${def.description}
                     </span>
                     ${isDeprecated && date
                         ? html`<span class="meta">
@@ -3301,13 +3690,37 @@ const baseProject = {
     timeline_label: 'q1',
 };
 
-test('under-review with no scores: Score enabled, ' +
-    'Approve disabled', () => {
+Presenters take fully-shaped data and emit `SafeHtml` —
+they never compute via adapter calls. The page module
+(Task 5.2) runs `validateProjectForApproval` /
+`validateProjectForCompletion` and passes the
+`{ ready, problems }` results to the constructor.
+
+```ts
+const approvalCheck = validateProjectForApproval(
+    project, active, scoring.baseline,
+);
+const completionCheck = validateProjectForCompletion(
+    project, scoring.baseline, scoring.actual,
+);
+const bar = new ProjectActionBarPresenter(
+    project, approvalCheck, completionCheck,
+);
+```
+
+```ts
+test('under-review with no scores: Approve disabled',
+    () => {
         const p = new ProjectActionBarPresenter(
             baseProject,
-            [{ id: 'o1', position: 0 }],
-            [],
-            [],
+            {
+                ready: false,
+                problems: [
+                    { kind: 'baseline_unscored',
+                      objectiveId: 'o1' },
+                ],
+            },
+            { ready: true, problems: [] },
         );
         const html = p.buildBar().toString();
         assert.ok(html.includes('data-action="score"'));
@@ -3322,11 +3735,8 @@ test('under-review with full scoring: Approve enabled',
     () => {
         const p = new ProjectActionBarPresenter(
             baseProject,
-            [{ id: 'o1', position: 0 }],
-            [{ project_id: 'p1', objective_id: 'o1',
-               score: 50,
-               scored_at: '2026-05-14T00:00:00.000Z' }],
-            [],
+            { ready: true, problems: [] },
+            { ready: true, problems: [] },
         );
         const html = p.buildBar().toString();
         const approveDisabled = html.includes(
@@ -3335,15 +3745,18 @@ test('under-review with full scoring: Approve enabled',
         assert.equal(approveDisabled, false);
     });
 
-test('approved project: Log measurement and Complete shown',
+test('approved project: Log measurement + Complete shown',
     () => {
         const p = new ProjectActionBarPresenter(
             { ...baseProject, status: 'approved' },
-            [{ id: 'o1', position: 0 }],
-            [{ project_id: 'p1', objective_id: 'o1',
-               score: 50,
-               scored_at: '2026-05-14T00:00:00.000Z' }],
-            [],
+            { ready: true, problems: [] },
+            {
+                ready: false,
+                problems: [
+                    { kind: 'actual_unscored',
+                      objectiveId: 'o1' },
+                ],
+            },
         );
         const html = p.buildBar().toString();
         assert.ok(html.includes(
@@ -3354,23 +3767,19 @@ test('approved project: Log measurement and Complete shown',
         ));
     });
 
-test('approved with full actuals: Complete enabled', () => {
-    const p = new ProjectActionBarPresenter(
-        { ...baseProject, status: 'approved' },
-        [{ id: 'o1', position: 0 }],
-        [{ project_id: 'p1', objective_id: 'o1',
-           score: 50,
-           scored_at: '2026-05-14T00:00:00.000Z' }],
-        [{ project_id: 'p1', objective_id: 'o1',
-           score: 40,
-           scored_at: '2026-05-15T00:00:00.000Z' }],
-    );
-    const html = p.buildBar().toString();
-    const completeDisabled = html.includes(
-        'data-action="complete" disabled',
-    );
-    assert.equal(completeDisabled, false);
-});
+test('approved with full actuals: Complete enabled',
+    () => {
+        const p = new ProjectActionBarPresenter(
+            { ...baseProject, status: 'approved' },
+            { ready: true, problems: [] },
+            { ready: true, problems: [] },
+        );
+        const html = p.buildBar().toString();
+        const completeDisabled = html.includes(
+            'data-action="complete" disabled',
+        );
+        assert.equal(completeDisabled, false);
+    });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -3388,23 +3797,21 @@ Expected: FAIL.
 import { html, SafeHtml } from '../safe-html.ts';
 import type {
     ProjectEntity,
-    Objective,
-    ProjectObjectiveBaselineScore,
-    ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
-import {
-    validateProjectForApproval,
-    validateProjectForCompletion,
+import type {
+    ProjectProblem,
 } from '../adapters/project-publish.ts';
+import type {
+    ValidationResult,
+} from '../adapters/validation.ts';
+
+type Check = ValidationResult<ProjectProblem>;
 
 export class ProjectActionBarPresenter {
     constructor(
         private readonly project: ProjectEntity,
-        private readonly activeObjectives: Objective[],
-        private readonly latestBaselines:
-            ProjectObjectiveBaselineScore[],
-        private readonly latestActuals:
-            ProjectObjectiveActualScore[],
+        private readonly approvalCheck: Check,
+        private readonly completionCheck: Check,
     ) {}
 
     buildBar(): SafeHtml {
@@ -3412,25 +3819,15 @@ export class ProjectActionBarPresenter {
         const isReview = status === 'submitted'
             || status === 'under-review'
             || status === 'sent-back';
-        const approvalCheck = validateProjectForApproval(
-            this.project,
-            this.activeObjectives,
-            this.latestBaselines,
-        );
-        const completionCheck = validateProjectForCompletion(
-            this.project,
-            this.latestBaselines,
-            this.latestActuals,
-        );
 
         return html`
             <div class="action-bar"
                 data-project-id="${this.project.id}">
                 ${isReview
-                    ? this.#reviewActions(approvalCheck)
+                    ? this.#reviewActions()
                     : html``}
                 ${status === 'approved'
-                    ? this.#approvedActions(completionCheck)
+                    ? this.#approvedActions()
                     : html``}
                 ${status === 'approved'
                     || status === 'completed'
@@ -3443,10 +3840,12 @@ export class ProjectActionBarPresenter {
         `;
     }
 
-    #reviewActions(check): SafeHtml {
+    #reviewActions(): SafeHtml {
+        const check = this.approvalCheck;
         const tooltip = check.ready
             ? ''
-            : check.problems.length + ' objectives unscored';
+            : `${check.problems.length}`
+                + ' objectives unscored';
         return html`
             <button data-action="score">
                 Score
@@ -3461,10 +3860,11 @@ export class ProjectActionBarPresenter {
         `;
     }
 
-    #approvedActions(check): SafeHtml {
+    #approvedActions(): SafeHtml {
+        const check = this.completionCheck;
         const tooltip = check.ready
             ? ''
-            : check.problems.length
+            : `${check.problems.length}`
                 + ' objectives lack actual measurements';
         return html`
             <button data-action="log-measurement">
@@ -3650,8 +4050,11 @@ export class ScoreModalPresenter {
         preFill: number | undefined,
     ): SafeHtml {
         const def = this.defs.get(obj.id);
-        const name = def ? def.name : '(unknown)';
-        const desc = def ? def.description : '';
+        if (!def) {
+            throw new Error(
+                `objective definition missing for ${obj.id}`,
+            );
+        }
         const isUnset = preFill === undefined;
         const value = preFill ?? 0;
         return html`
@@ -3660,9 +4063,9 @@ export class ScoreModalPresenter {
                 data-unset="${isUnset}"
                 data-initial-value="${value}">
                 <label class="score-slider-label">
-                    <strong>${name}</strong>
+                    <strong>${def.name}</strong>
                     <span class="score-slider-desc">
-                        ${desc}
+                        ${def.description}
                     </span>
                 </label>
                 <input type="range" min="-100" max="100"
@@ -3857,14 +4260,22 @@ export class MeasurementModalPresenter {
         for (const [objId, b] of latestBaselineMap) {
             const a = latestActualMap.get(objId);
             const def = this.defs.get(objId);
+            if (!def) {
+                throw new Error(
+                    `objective definition missing for ${objId}`,
+                );
+            }
             rows.push({
                 objectiveId: objId,
-                name: def ? def.name : '(unknown)',
-                description: def ? def.description : '',
+                name: def.name,
+                description: def.description,
                 baselineScore: b.score,
-                latestActualScore: a ? a.score : undefined,
-                latestActualAt: a ? a.scored_at : undefined,
-                preFillValue: a ? a.score : b.score,
+                latestActualScore:
+                    a ? a.score : undefined,
+                latestActualAt:
+                    a ? a.scored_at : undefined,
+                preFillValue:
+                    a ? a.score : b.score,
             });
         }
         return rows;
@@ -4041,36 +4452,27 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
+import {
+    latestPerPair,
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
 
 interface Definition {
     name: string;
     description: string;
 }
 
-function formatSigned(n: number): string {
-    if (n > 0) return '+' + n;
-    if (n < 0) return '−' + Math.abs(n);
-    return '0';
-}
-
-function latestPerPair<T extends {
+function indexByObjective<T extends {
     objective_id: ObjectiveId;
+    project_id: string;
     scored_at: string;
-}>(rows: T[]): Map<ObjectiveId, T> {
+}>(rows: readonly T[]): Map<ObjectiveId, T> {
     const map = new Map<ObjectiveId, T>();
-    for (const r of rows) {
-        const prev = map.get(r.objective_id);
-        if (!prev || r.scored_at > prev.scored_at) {
-            map.set(r.objective_id, r);
-        }
+    for (const r of latestPerPair(rows)) {
+        map.set(r.objective_id, r);
     }
     return map;
-}
-
-function toneForScore(n: number): string {
-    if (n > 0) return 'positive';
-    if (n < 0) return 'negative';
-    return 'neutral';
 }
 
 export class ProjectObjectivesPresenter {
@@ -4084,8 +4486,8 @@ export class ProjectObjectivesPresenter {
     ) {}
 
     buildSection(): SafeHtml {
-        const baseMap = latestPerPair(this.latestBaselines);
-        const actualMap = latestPerPair(this.latestActuals);
+        const baseMap = indexByObjective(this.latestBaselines);
+        const actualMap = indexByObjective(this.latestActuals);
 
         if (baseMap.size === 0) {
             return html`
@@ -4128,17 +4530,29 @@ export class ProjectObjectivesPresenter {
         actual: ProjectObjectiveActualScore | undefined,
     ): SafeHtml {
         const def = this.defs.get(obj.id);
-        const name = def ? def.name : '(unknown)';
+        if (!def) {
+            throw new Error(
+                `objective definition missing for ${obj.id}`,
+            );
+        }
+        // CSS custom properties carry numeric data only.
+        // When --actual is absent, omit the property and
+        // let CSS's [data-has-actual='false'] selector
+        // handle the missing-value case — never inject
+        // 'none' (an English word) into a numeric var.
+        const hasActual = actual !== undefined;
+        const barStyle = hasActual
+            ? `--baseline:${baselineScore};`
+                + `--actual:${actual.score}`
+            : `--baseline:${baselineScore}`;
         return html`
             <li class="score-row"
                 data-objective-id="${obj.id}">
-                <span class="score-row-label">${name}</span>
+                <span class="score-row-label">${def.name}</span>
                 <span class="bipolar-bar"
                     data-tone="${toneForScore(baselineScore)}"
-                    style="--baseline:${baselineScore};
-                           --actual:${actual
-                               ? actual.score
-                               : 'none'}">
+                    data-has-actual="${hasActual}"
+                    style="${barStyle}">
                 </span>
                 <strong class="score-row-baseline"
                     data-tone="${toneForScore(baselineScore)}">
@@ -4277,6 +4691,8 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
+import { formatSigned } from '../scoring-format.ts';
+import { formatDateTime } from '../core.ts';
 
 export type DefinitionResolver = (
     objectiveId: ObjectiveId,
@@ -4292,12 +4708,6 @@ type Event =
         objectiveId: ObjectiveId; name: string }
     | { kind: 'deprecation'; at: string;
         objectiveId: ObjectiveId };
-
-function formatSigned(n: number): string {
-    if (n > 0) return '+' + n;
-    if (n < 0) return '−' + Math.abs(n);
-    return '0';
-}
 
 export class ProjectScoreHistoryPresenter {
     constructor(
@@ -4371,8 +4781,14 @@ export class ProjectScoreHistoryPresenter {
 
     #row(e: Event): SafeHtml {
         const def = this.resolver(e.objectiveId, e.at);
-        const name = def ? def.name : '(unknown)';
-        const dateLabel = e.at.slice(0, 16).replace('T', ' ');
+        if (!def) {
+            throw new Error(
+                `objective definition missing for `
+                + `${e.objectiveId} at ${e.at}`,
+            );
+        }
+        const name = def.name;
+        const dateLabel = formatDateTime(e.at);
         switch (e.kind) {
             case 'baseline':
                 return html`<tr>
@@ -4444,7 +4860,7 @@ test('renders both arc segments when both means present',
             projectCount: 5,
             actualCount: 3,
         });
-        const html = p.render().toString();
+        const html = p.buildCard().toString();
         assert.ok(html.includes('+19'));
         assert.ok(html.includes('+12'));
         assert.ok(html.includes('portfolio-impact-arc-outer'));
@@ -4459,7 +4875,7 @@ test('renders no value arcs when both means undefined',
             projectCount: 0,
             actualCount: 0,
         });
-        const html = p.render().toString();
+        const html = p.buildCard().toString();
         assert.ok(!html.includes(
             'class="portfolio-impact-arc-outer"',
         ));
@@ -4471,7 +4887,7 @@ test('positive baseline → data-tone="positive"', () => {
         baselineMean: 30, actualMean: 20,
         projectCount: 1, actualCount: 1,
     });
-    const html = p.render().toString();
+    const html = p.buildCard().toString();
     assert.ok(html.includes('data-tone="positive"'));
 });
 
@@ -4480,7 +4896,7 @@ test('negative baseline → data-tone="negative"', () => {
         baselineMean: -30, actualMean: -20,
         projectCount: 1, actualCount: 1,
     });
-    const html = p.render().toString();
+    const html = p.buildCard().toString();
     assert.ok(html.includes('data-tone="negative"'));
 });
 ```
@@ -4503,6 +4919,11 @@ with sweep-flag 1; negative sweeps left with sweep-flag 0.
 
 import { html, SafeHtml } from '../safe-html.ts';
 import { iconZap } from '../icons.ts';
+import {
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
 
 interface Summary {
     baselineMean: number | undefined;
@@ -4532,25 +4953,26 @@ function arcEndpoint(
     };
 }
 
-function toneForValue(v: number | undefined): string {
-    if (v === undefined) return 'neutral';
-    if (v > 0) return 'positive';
-    if (v < 0) return 'negative';
-    return 'neutral';
+// Tone + display for the summary's possibly-undefined
+// fields — the shared helpers take definite numbers, so
+// the presenter handles the undefined case at the seam.
+function toneFor(v: number | undefined): string {
+    return v === undefined
+        ? 'neutral'
+        : toneForScore(v);
 }
 
-function formatSigned(v: number | undefined): string {
-    if (v === undefined) return '—';
-    if (v > 0) return '+' + v;
-    if (v < 0) return '−' + Math.abs(v);
-    return '0';
+function displaySigned(v: number | undefined): string {
+    return v === undefined
+        ? DISPLAY_ABSENT
+        : formatSigned(v);
 }
 
 export class PortfolioImpactPresenter {
     constructor(private readonly s: Summary) {}
 
-    render(): SafeHtml {
-        const tone = toneForValue(this.s.baselineMean);
+    buildCard(): SafeHtml {
+        const tone = toneFor(this.s.baselineMean);
         return html`
             <section class="portfolio-impact-card"
                 data-tone="${tone}">
@@ -4583,8 +5005,8 @@ export class PortfolioImpactPresenter {
                 tdcX, innerTdcY,
             )
             : '';
-        const baselineTone = toneForValue(this.s.baselineMean);
-        const actualTone = toneForValue(this.s.actualMean);
+        const baselineTone = toneFor(this.s.baselineMean);
+        const actualTone = toneFor(this.s.actualMean);
 
         return html`
             <svg viewBox="0 0 180 95" width="180" height="95"
@@ -4634,21 +5056,21 @@ export class PortfolioImpactPresenter {
             <div class="portfolio-impact-legend">
                 <div class="legend-cell">
                     <div class="legend-dot"
-                        data-tone="${toneForValue(
+                        data-tone="${toneFor(
                             this.s.actualMean,
                         )}"></div>
                     <span>Actual</span>
-                    <strong>${formatSigned(
+                    <strong>${displaySigned(
                         this.s.actualMean,
                     )}</strong>
                 </div>
                 <div class="legend-cell">
                     <div class="legend-dot"
-                        data-tone="${toneForValue(
+                        data-tone="${toneFor(
                             this.s.baselineMean,
                         )}"></div>
                     <span>Baseline</span>
-                    <strong>${formatSigned(
+                    <strong>${displaySigned(
                         this.s.baselineMean,
                     )}</strong>
                 </div>
@@ -4708,7 +5130,7 @@ test('renders one row per active objective', () => {
     const p = new DashboardObjectiveAggregatesPresenter(
         activeObjs, defs, aggregates,
     );
-    const html = p.render().toString();
+    const html = p.buildCard().toString();
     assert.ok(html.includes('Revenue Growth'));
     assert.ok(html.includes('Cost Reduction'));
 });
@@ -4717,7 +5139,7 @@ test('row with contributors shows means and counts', () => {
     const p = new DashboardObjectiveAggregatesPresenter(
         activeObjs, defs, aggregates,
     );
-    const html = p.render().toString();
+    const html = p.buildCard().toString();
     assert.ok(html.includes('+32'));
     assert.ok(html.includes('+25'));
     assert.ok(html.includes('12 projects'));
@@ -4727,7 +5149,7 @@ test('zero-contributor row renders dimmed', () => {
     const p = new DashboardObjectiveAggregatesPresenter(
         activeObjs, defs, aggregates,
     );
-    const html = p.render().toString();
+    const html = p.buildCard().toString();
     assert.ok(html.includes('0 projects'));
     assert.ok(html.includes('data-empty="true"'));
 });
@@ -4750,6 +5172,11 @@ import type {
     Objective,
     ObjectiveId,
 } from '../../../api/types.ts';
+import {
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
 
 interface Definition {
     name: string;
@@ -4764,18 +5191,18 @@ interface Aggregate {
     projectsActualScored: number;
 }
 
-function toneForValue(v: number | undefined): string {
-    if (v === undefined) return 'neutral';
-    if (v > 0) return 'positive';
-    if (v < 0) return 'negative';
-    return 'neutral';
+// Wrap the shared definite-number helpers to handle the
+// possibly-undefined aggregate fields at this seam.
+function toneFor(v: number | undefined): string {
+    return v === undefined
+        ? 'neutral'
+        : toneForScore(v);
 }
 
-function formatSigned(v: number | undefined): string {
-    if (v === undefined) return '—';
-    if (v > 0) return '+' + v;
-    if (v < 0) return '−' + Math.abs(v);
-    return '0';
+function displaySigned(v: number | undefined): string {
+    return v === undefined
+        ? DISPLAY_ABSENT
+        : formatSigned(v);
 }
 
 export class DashboardObjectiveAggregatesPresenter {
@@ -4785,7 +5212,7 @@ export class DashboardObjectiveAggregatesPresenter {
         private readonly aggregates: Aggregate[],
     ) {}
 
-    render(): SafeHtml {
+    buildCard(): SafeHtml {
         const aggMap = new Map(
             this.aggregates.map(a => [a.objectiveId, a]),
         );
@@ -4805,30 +5232,49 @@ export class DashboardObjectiveAggregatesPresenter {
 
     #row(o: Objective, agg: Aggregate | undefined): SafeHtml {
         const def = this.defs.get(o.id);
-        const name = def ? def.name : '(unknown)';
+        if (!def) {
+            throw new Error(
+                `objective definition missing for ${o.id}`,
+            );
+        }
         const empty = !agg
             || agg.projectsBaselineScored === 0;
         const baseline = agg
             ? agg.baselineMean : undefined;
         const actual = agg
             ? agg.latestActualMean : undefined;
+        // CSS custom properties hold numeric data only;
+        // omit them when the value is undefined and let
+        // [data-has-baseline] / [data-has-actual] drive
+        // the missing-value rendering in CSS.
+        const hasBaseline = baseline !== undefined;
+        const hasActual = actual !== undefined;
+        const styleParts: string[] = [];
+        if (hasBaseline) {
+            styleParts.push(`--baseline:${baseline}`);
+        }
+        if (hasActual) {
+            styleParts.push(`--actual:${actual}`);
+        }
+        const barStyle = styleParts.join(';');
         return html`
             <li class="score-row"
                 data-objective-id="${o.id}"
                 data-empty="${empty}">
-                <span class="score-row-label">${name}</span>
+                <span class="score-row-label">${def.name}</span>
                 <span class="bipolar-bar"
-                    data-tone="${toneForValue(baseline)}"
-                    style="--baseline:${baseline ?? 'none'};
-                           --actual:${actual ?? 'none'}">
+                    data-tone="${toneFor(baseline)}"
+                    data-has-baseline="${hasBaseline}"
+                    data-has-actual="${hasActual}"
+                    style="${barStyle}">
                 </span>
                 <strong class="score-row-baseline"
-                    data-tone="${toneForValue(baseline)}">
-                    ${formatSigned(baseline)}
+                    data-tone="${toneFor(baseline)}">
+                    ${displaySigned(baseline)}
                 </strong>
                 <strong class="score-row-actual"
-                    data-tone="${toneForValue(actual)}">
-                    ${formatSigned(actual)}
+                    data-tone="${toneFor(actual)}">
+                    ${displaySigned(actual)}
                 </strong>
                 <span class="score-row-count">
                     ${agg
@@ -5081,8 +5527,11 @@ Call it `<ANCHOR>`.
     display: none;
 }
 
-/* Actual tick (when --actual is a number) */
-.bipolar-bar[style*='--actual:']:not([style*='--actual:none'])
+/* Actual tick — only rendered when the presenter sets
+   data-has-actual="true" (CSS custom property --actual
+   carries a numeric value; missing-value rows omit both
+   the data attribute and the CSS var). */
+.bipolar-bar[data-has-actual='true']
     > .bipolar-actual-tick {
     /* the tick is rendered as a child element */
 }
@@ -5164,10 +5613,13 @@ Call it `<ANCHOR>`.
 }
 ```
 
-(If `var(--success)` / `var(--destructive)` aren't the
-codebase's existing token names, substitute the correct
-ones — grep for tokens in `web-app/app/styles/tokens.css`
-or equivalent.)
+The `--success`, `--destructive`, `--warning` tokens (and
+their `-foreground`, `-soft`, `-border`, `-text`, `-hover`
+variants) already exist in
+`web-app/app/styles/light-mode.css` (lines 41-62) and
+`dark-mode.css` (lines 36-53). No new token introduction
+needed. The CSS uses `abs()` — supported in all evergreen
+browsers as of 2024, consistent with the ES2024 target.
 
 - [ ] **Step 3: Manual verification**
 
@@ -5465,6 +5917,24 @@ overview/usage/admin card placeholders):
             class="btn-primary">Save</button>
     </div>
 </div>
+
+<!-- Confirm-deprecate dialog (replaces native confirm()) -->
+<div id="confirm-deprecate-backdrop"
+    class="dialog-backdrop hidden"></div>
+<div id="confirm-deprecate-dialog"
+    class="dialog hidden" aria-hidden="true">
+    <h3>Deprecate objective?</h3>
+    <input id="confirm-deprecate-id" type="hidden">
+    <p>The objective stops appearing in active rosters
+        but its historical scores remain visible.</p>
+    <div class="dialog-actions">
+        <button data-action="cancel-confirm-deprecate">
+            Cancel
+        </button>
+        <button data-action="confirm-deprecate"
+            class="btn-primary">Deprecate</button>
+    </div>
+</div>
 ```
 
 - [ ] **Step 2: Update `organization/index.ts`**
@@ -5482,13 +5952,22 @@ import {
     postObjectiveDeprecation,
     postObjectiveReactivation,
     postObjectiveReordering,
+    subscribeObjectiveChanges,
 } from '../app/adapters/objectives.ts';
 import { OrganizationObjectivesPresenter }
     from '../app/presenters';
-import { objectiveChanges } from '../app/changes.ts';
-import { openDialog, closeDialog } from '../app/core';
+import {
+    openDialog, closeDialog,
+} from '../app/core';
 import { $, setHtml } from '../app/dom';
+import {
+    generateCryptoSafeBase62,
+} from '../app/adapters/crypto-safe-base62.ts';
 ```
+
+Note: the `subscribeObjectiveChanges` helper added in Task
+2.2 is the per-adapter subscribe channel — there is no
+shared `changes.ts` module.
 
 Add to `init()`:
 
@@ -5517,7 +5996,7 @@ async function renderObjectives(): Promise<void> {
     setHtml($('#objectives-box'), presenter.buildBox());
 }
 
-objectiveChanges.subscribe(renderObjectives);
+subscribeObjectiveChanges(renderObjectives);
 await renderObjectives();
 
 // Click delegation for dialog opens, edit, deprecate, etc.
@@ -5543,10 +6022,11 @@ $('#objectives-box').addEventListener('click', async (e) => {
             as HTMLTextAreaElement).value = def.description;
         openDialog('edit-objective');
     } else if (action === 'deprecate' && objectiveId) {
-        if (confirm('Deprecate this objective?')) {
-            await postObjectiveDeprecation(
-                ctx, objectiveId);
-        }
+        // Open the confirm-deprecate dialog and stash the
+        // target id; confirmation handler reads it back.
+        ($('#confirm-deprecate-id') as HTMLInputElement)
+            .value = objectiveId;
+        openDialog('confirm-deprecate');
     } else if (action === 'reactivate' && objectiveId) {
         await postObjectiveReactivation(ctx, objectiveId);
     }
@@ -5564,7 +6044,7 @@ $('[data-action="confirm-add-objective"]')
             as HTMLTextAreaElement).value;
         const ctx = createRequestContext();
         const objs = await getObjectives(ctx);
-        const newId = crypto.randomUUID();
+        const newId = generateCryptoSafeBase62();
         await postObjectiveCreation(
             ctx, newId, name, desc, objs.length);
         closeDialog('add-objective');
@@ -5585,6 +6065,19 @@ $('[data-action="confirm-edit-objective"]')
         const ctx = createRequestContext();
         await postObjectiveRevision(ctx, id, name, desc);
         closeDialog('edit-objective');
+    });
+
+// Confirm-deprecate dialog wiring
+$('[data-action="cancel-confirm-deprecate"]')
+    .addEventListener('click',
+        () => closeDialog('confirm-deprecate'));
+$('[data-action="confirm-deprecate"]')
+    .addEventListener('click', async () => {
+        const id = ($('#confirm-deprecate-id')
+            as HTMLInputElement).value;
+        const ctx = createRequestContext();
+        await postObjectiveDeprecation(ctx, id);
+        closeDialog('confirm-deprecate');
     });
 ```
 
@@ -5690,10 +6183,13 @@ import {
     postProjectScoringRetrieval,
     postProjectBaselineScoring,
     postProjectActualMeasurement,
+    subscribeProjectScoreChanges,
 } from '../app/adapters/project-scoring.ts';
 import {
     postProjectApproval,
     postProjectCompletion,
+    validateProjectForApproval,
+    validateProjectForCompletion,
 } from '../app/adapters/project-publish.ts';
 import {
     postActiveObjectivesRetrieval,
@@ -5701,7 +6197,11 @@ import {
     getDeprecatedObjectiveIds,
     getObjectives,
     getObjectiveRevisions,
+    subscribeObjectiveChanges,
 } from '../app/adapters/objectives.ts';
+import {
+    subscribeProjectChanges,
+} from '../app/adapters/projects.ts';
 import {
     ProjectActionBarPresenter,
     ProjectObjectivesPresenter,
@@ -5709,11 +6209,8 @@ import {
     MeasurementModalPresenter,
     ProjectScoreHistoryPresenter,
 } from '../app/presenters';
-import {
-    objectiveChanges,
-    scoreChanges,
-    projectChanges,
-} from '../app/changes.ts';
+import { latestPerPair } from '../app/scoring-format.ts';
+import { showToast } from '../app/toast.ts';
 ```
 
 Add the orchestration function and click delegation. Code
@@ -5724,7 +6221,7 @@ async function renderActionBarAndObjectives(): Promise<void> {
     const ctx = createRequestContext();
     const projectId = getProjectIdFromUrl();
     const [project, active, scoring] = await Promise.all([
-        ctx.GET('projects/' + projectId),
+        ctx.GET<ProjectEntity>(`projects/${projectId}`),
         postActiveObjectivesRetrieval(ctx),
         postProjectScoringRetrieval(ctx, projectId),
     ]);
@@ -5736,19 +6233,28 @@ async function renderActionBarAndObjectives(): Promise<void> {
     const latestBaselines = latestPerPair(scoring.baseline);
     const latestActuals = latestPerPair(scoring.actual);
 
+    const approvalCheck = validateProjectForApproval(
+        project, active, latestBaselines,
+    );
+    const completionCheck = validateProjectForCompletion(
+        project, latestBaselines, latestActuals,
+    );
+
     const actionBar = new ProjectActionBarPresenter(
-        project, active, latestBaselines, latestActuals);
+        project, approvalCheck, completionCheck,
+    );
     setHtml($('#project-action-bar'), actionBar.buildBar());
 
     const objSection = new ProjectObjectivesPresenter(
-        active, defs, latestBaselines, latestActuals);
+        active, defs, latestBaselines, latestActuals,
+    );
     setHtml($('#project-objectives-section'),
         objSection.buildSection());
 }
 
-scoreChanges.subscribe(renderActionBarAndObjectives);
-objectiveChanges.subscribe(renderActionBarAndObjectives);
-projectChanges.subscribe(renderActionBarAndObjectives);
+subscribeProjectScoreChanges(renderActionBarAndObjectives);
+subscribeObjectiveChanges(renderActionBarAndObjectives);
+subscribeProjectChanges(renderActionBarAndObjectives);
 
 await renderActionBarAndObjectives();
 
@@ -5776,18 +6282,44 @@ $('#project-action-bar').addEventListener('click',
 async function openScoreModal(
     ctx: RequestContext, projectId: string,
 ): Promise<void> {
-    const project = await ctx.GET('projects/' + projectId);
+    const project = await ctx.GET<ProjectEntity>(
+        `projects/${projectId}`,
+    );
     const active = await postActiveObjectivesRetrieval(ctx);
     const scoring = await postProjectScoringRetrieval(
-        ctx, projectId);
+        ctx, projectId,
+    );
     const defs = new Map();
     for (const o of active) {
         defs.set(o.id,
             await postCurrentObjectiveDefinition(ctx, o.id));
     }
     const presenter = new ScoreModalPresenter(
-        project, active, defs, scoring.baseline);
+        project, active, defs, scoring.baseline,
+    );
     setHtml($('#score-modal-body'), presenter.buildBody());
+
+    // Scope the touched-tracker to the dialog element so
+    // the listener is torn down with the dialog and never
+    // leaks across page lifetimes.
+    const dialog = $('#score-dialog');
+    const onInput = (e: Event) => {
+        const t = e.target as HTMLElement;
+        if (t.matches('input[type="range"]')) {
+            (t as HTMLElement & { dataset: DOMStringMap })
+                .dataset.touched = 'true';
+        }
+    };
+    dialog.addEventListener('input', onInput);
+
+    // Remove the listener when the dialog closes — the
+    // body is re-rendered on each open, so retaining the
+    // listener across opens leaks the closure.
+    const cleanupOnClose = () =>
+        dialog.removeEventListener('input', onInput);
+    dialog.addEventListener('close', cleanupOnClose,
+        { once: true });
+
     openDialog('score');
 }
 
@@ -5815,8 +6347,9 @@ $('#score-dialog').addEventListener('click', async (e) => {
             const slider = row.querySelector(
                 'input[type="range"]') as HTMLInputElement;
             const value = Number(slider.value);
-            const touched = (slider as any)
-                .dataset.touched === 'true';
+            const touched = (slider as HTMLElement & {
+                dataset: DOMStringMap
+            }).dataset.touched === 'true';
             if (value !== initial || (unset && touched)) {
                 moved.push({ objectiveId, score: value });
             }
@@ -5829,34 +6362,33 @@ $('#score-dialog').addEventListener('click', async (e) => {
     }
 });
 
-// Mark slider touched on input
-document.addEventListener('input', (e) => {
-    const t = e.target as HTMLElement;
-    if (t.matches(
-        '#score-modal-body input[type="range"]')) {
-        (t as any).dataset.touched = 'true';
-    }
-});
-
 // Measurement modal — opens with sliders pre-filled from
 // latest actual (or baseline if none).
 async function openMeasurementModal(
     ctx: RequestContext, projectId: string,
 ): Promise<void> {
-    const project = await ctx.GET('projects/' + projectId);
+    const project = await ctx.GET<ProjectEntity>(
+        `projects/${projectId}`,
+    );
     const scoring = await postProjectScoringRetrieval(
-        ctx, projectId);
+        ctx, projectId,
+    );
     const defs = new Map();
     const baselineObjIds = new Set(
         latestPerPair(scoring.baseline)
-            .map(b => b.objective_id));
+            .map(b => b.objective_id),
+    );
     for (const objId of baselineObjIds) {
-        defs.set(objId,
+        defs.set(
+            objId,
             await postCurrentObjectiveDefinition(
-                ctx, objId));
+                ctx, objId,
+            ),
+        );
     }
     const presenter = new MeasurementModalPresenter(
-        project, defs, scoring.baseline, scoring.actual);
+        project, defs, scoring.baseline, scoring.actual,
+    );
     setHtml($('#measurement-modal-body'),
         presenter.buildBody());
     openDialog('measurement');
@@ -5923,9 +6455,16 @@ $('#approve-dialog').addEventListener('click', async (e) => {
             await postProjectApproval(ctx, projectId);
             closeDialog('approve');
         } catch (err) {
-            // Validator threw — show problems
-            console.error(err);
+            // Validator threw — surface the message via
+            // toast so the user can see why approval was
+            // blocked. Re-throw so the global error
+            // handler still records it.
+            const message = err instanceof Error
+                ? err.message
+                : String(err);
+            showToast(message);
             closeDialog('approve');
+            throw err;
         }
     }
 });
@@ -5951,11 +6490,16 @@ $('#complete-dialog').addEventListener('click',
             const projectId = getProjectIdFromUrl();
             try {
                 await postProjectCompletion(
-                    ctx, projectId);
+                    ctx, projectId,
+                );
                 closeDialog('complete');
             } catch (err) {
-                console.error(err);
+                const message = err instanceof Error
+                    ? err.message
+                    : String(err);
+                showToast(message);
                 closeDialog('complete');
+                throw err;
             }
         }
     });
@@ -6086,7 +6630,34 @@ test('projected impact column renders for each project',
             projects, scoreMap);
         const html = p.render().toString();
         assert.ok(html.includes('+47'));
-        assert.ok(html.includes('data-sort-key="47"'));
+        assert.ok(html.includes(
+            'data-score-present="true"',
+        ));
+        assert.ok(html.includes(
+            'data-score-value="47"',
+        ));
+    });
+
+test('missing score renders absent and sorts last',
+    () => {
+        const projects = [
+            { id: 'p1', status: 'under-review', title: 't' },
+        ];
+        const scoreMap = new Map([
+            ['p1', {
+                baselineAvg: undefined,
+                latestActualAvg: undefined,
+                baselineCount: 0,
+                totalActiveObjectives: 3,
+            }],
+        ]);
+        const p = new ProjectsListPresenter(
+            projects, scoreMap,
+        );
+        const html = p.render().toString();
+        assert.ok(html.includes(
+            'data-score-present="false"',
+        ));
     });
 ```
 
@@ -6101,29 +6672,34 @@ scoreMap yet.
 - [ ] **Step 4: Add the column to the list presenter**
 
 In `<LIST_PRESENTER>`, accept a second constructor arg —
-the score map. In the row markup, add a cell:
+the score map. The cell carries two data attributes so
+the sort logic doesn't need a magic-value sentinel
+(`-9999` collides with real scores). Sort by presence
+first, value second.
 
 ```ts
-function formatSigned(v: number | undefined): string {
-    if (v === undefined) return '—';
-    if (v > 0) return '+' + v;
-    if (v < 0) return '−' + Math.abs(v);
-    return '0';
-}
+import {
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
 
 // In the row markup:
 const score = scoreMap.get(project.id);
 const projected = score?.baselineAvg;
-const tone = projected === undefined
-    ? 'neutral'
-    : projected > 0 ? 'positive'
-    : projected < 0 ? 'negative' : 'neutral';
-const sortKey = projected ?? -9999;
+const hasScore = projected !== undefined;
+const tone = hasScore
+    ? toneForScore(projected)
+    : 'neutral';
+const display = hasScore
+    ? formatSigned(projected)
+    : DISPLAY_ABSENT;
 const cell = html`
     <td class="projected-impact-cell"
-        data-sort-key="${sortKey}">
+        data-score-present="${hasScore}"
+        data-score-value="${hasScore ? projected : ''}">
         <strong data-tone="${tone}">
-            ${formatSigned(projected)}
+            ${display}
         </strong>
         ${score
             ? html`<span class="meta">${
@@ -6134,31 +6710,42 @@ const cell = html`
 `;
 ```
 
+The sort layer reads `data-score-present` first
+(present rows ahead of absent), then `data-score-value`
+as a numeric secondary key.
+
 - [ ] **Step 5: Update `web-app/projects/index.ts`**
 
 ```ts
-import { postProjectsScoreColumn } from
-    '../app/adapters/project-scoring.ts';
-import { scoreChanges, objectiveChanges } from
-    '../app/changes.ts';
+import {
+    postProjectsScoreColumn,
+    subscribeProjectScoreChanges,
+} from '../app/adapters/project-scoring.ts';
+import {
+    subscribeObjectiveChanges,
+} from '../app/adapters/objectives.ts';
+import {
+    subscribeProjectChanges,
+} from '../app/adapters/projects.ts';
 
 async function renderList(): Promise<void> {
     const ctx = createRequestContext();
     const [projects, scoreColumn] = await Promise.all([
-        ctx.GET('projects'),
+        ctx.GET<ProjectEntity[]>('projects'),
         postProjectsScoreColumn(ctx),
     ]);
     const scoreMap = new Map(
         scoreColumn.map(s => [s.projectId, s]),
     );
     const presenter = new ProjectsListPresenter(
-        projects, scoreMap);
+        projects, scoreMap,
+    );
     setHtml($('#project-list'), presenter.render());
 }
 
-scoreChanges.subscribe(renderList);
-objectiveChanges.subscribe(renderList);
-projectChanges.subscribe(renderList);
+subscribeProjectScoreChanges(renderList);
+subscribeObjectiveChanges(renderList);
+subscribeProjectChanges(renderList);
 
 await renderList();
 ```
@@ -6198,28 +6785,29 @@ Add to `dashboard/index.html`:
 import {
     postPortfolioImpactSummary,
     postObjectiveAggregates,
+    subscribeProjectScoreChanges,
 } from '../app/adapters/project-scoring.ts';
 import {
     postActiveObjectivesRetrieval,
     postCurrentObjectiveDefinition,
+    subscribeObjectiveChanges,
 } from '../app/adapters/objectives.ts';
+import {
+    subscribeProjectChanges,
+} from '../app/adapters/projects.ts';
 import {
     PortfolioImpactPresenter,
     DashboardObjectiveAggregatesPresenter,
 } from '../app/presenters';
-import {
-    scoreChanges,
-    objectiveChanges,
-    projectChanges,
-} from '../app/changes.ts';
 
 async function renderImpactSurfaces(): Promise<void> {
     const ctx = createRequestContext();
-    const [summary, active, aggregates] = await Promise.all([
-        postPortfolioImpactSummary(ctx),
-        postActiveObjectivesRetrieval(ctx),
-        postObjectiveAggregates(ctx),
-    ]);
+    const [summary, active, aggregates] =
+        await Promise.all([
+            postPortfolioImpactSummary(ctx),
+            postActiveObjectivesRetrieval(ctx),
+            postObjectiveAggregates(ctx),
+        ]);
     const defs = new Map();
     for (const o of active) {
         defs.set(o.id,
@@ -6227,15 +6815,16 @@ async function renderImpactSurfaces(): Promise<void> {
     }
 
     setHtml($('#portfolio-impact-card'),
-        new PortfolioImpactPresenter(summary).render());
+        new PortfolioImpactPresenter(summary).buildCard());
     setHtml($('#objective-aggregates-card'),
         new DashboardObjectiveAggregatesPresenter(
-            active, defs, aggregates).render());
+            active, defs, aggregates,
+        ).buildCard());
 }
 
-scoreChanges.subscribe(renderImpactSurfaces);
-objectiveChanges.subscribe(renderImpactSurfaces);
-projectChanges.subscribe(renderImpactSurfaces);
+subscribeProjectScoreChanges(renderImpactSurfaces);
+subscribeObjectiveChanges(renderImpactSurfaces);
+subscribeProjectChanges(renderImpactSurfaces);
 
 await renderImpactSurfaces();
 ```
@@ -6318,10 +6907,13 @@ new position persists across a page reload.
 in K30). PASS if events that predate a K3 edit display the
 OLD name, not the new one (temporal name resolution).
 
-**K8.** Empty state: in a separate tab, wipe via Snapshots
-page; reload Organization page **before** mock data loads.
-PASS if "No objectives yet. Add one to get started." renders.
-(Restore via mock data afterward.)
+**K8.** Empty state: wipe localStorage via DevTools
+(Application > Local Storage > Clear All), then navigate
+to the Organization page. PASS if the empty-state copy
+"No objectives yet. Add one to get started." renders
+(or the bootstrap redirects to the snapshots page per the
+existing missing-schema rule). Restore via mock data
+afterward.
 
 ### K9–K18 — Project detail action bar + Score + Approve (Agent-E)
 
@@ -6513,20 +7105,20 @@ and confirm there's at least one task that implements it.
 
 | Spec section | Plan task(s) |
 |---|---|
-| Schema — 5 new tables | 1.3 |
+| Schema — 5 new tables (typed EntityStore) | 1.3 |
 | Schema — row types | 1.1 |
 | Schema — ProjectEntity changes | 1.2 |
-| Schema — derived Project methods | 2.11 |
-| Validators — entity validators | 1.4 |
-| Validators — assertProject delta | 1.5 |
+| ProjectView — per-objective derived methods | 2.11 |
+| Validators — entity validators (`validate*Entity`) | 1.4 |
+| Validators — `validateProjectEntity` delta | 1.5 |
 | Validators — ValidationResult<P> | 2.1 |
-| Validators — three sibling validators | 2.9 |
-| Adapter — objectives.ts | 2.2, 2.3, 2.4 |
-| Adapter — project-scoring.ts | 2.5–2.8 |
+| Validators — approval/completion validators | 2.9 |
+| Adapter — objectives.ts (+ subscribe channel) | 2.2, 2.3, 2.4 |
+| Adapter — project-scoring.ts (+ subscribe channel) | 2.5–2.8 |
 | Adapter — project-publish.ts | 2.9 |
-| Adapter — projects.ts updates | 2.11 |
+| Adapter — projects.ts ProjectView | 2.11 |
 | Adapter — dashboard.ts updates | 2.12 |
-| Adapter — notification channels | 2.10 |
+| Shared scoring-format helpers | 2.13 |
 | Presenters — 8 new | 3.1–3.8 |
 | Presenters — existing updates | 3.9 |
 | Presenters — barrel | 3.10 |
@@ -6537,9 +7129,16 @@ and confirm there's at least one task that implements it.
 | Page — projects/index list column | 5.3 |
 | Page — dashboard | 5.4 |
 | Mock data | 1.7, 1.8 |
-| Migration — SCHEMA_VERSION + bootstrap | 1.6 |
 | TEST-PLAN.md additions | 6.1 |
 | Verification | 7.1 |
+
+Two original tasks were dropped during plan revision:
+- **1.6** (SCHEMA_VERSION + bootstrap wipe) — Premature
+  Generalization + Internal Defense. Schema migration
+  belongs with Postgres, not the first localStorage change.
+- **2.10** (shared `changes.ts`) — invented module; the
+  codebase uses per-adapter `createSubscriptionChannel`
+  (see `adapters/projects.ts:14-28`).
 
 If any spec requirement has no task, ADD the task before
 declaring done.
@@ -6556,21 +7155,28 @@ name renders identically across the tasks where it appears:
 - `postProjectScoringRetrieval` (Tasks 2.6, 2.9, 5.2)
 - `postProjectBaselineScoring` (Tasks 2.8, 5.2)
 - `postProjectActualMeasurement` (Tasks 2.8, 5.2)
-- `validateProjectForApproval` (Tasks 2.9, 3.2)
-- `validateProjectForCompletion` (Tasks 2.9, 3.2)
+- `validateProjectForApproval` (Tasks 2.9, 3.2, 5.2)
+- `validateProjectForCompletion` (Tasks 2.9, 3.2, 5.2)
 - `postActiveObjectivesRetrieval` (Tasks 2.3, 2.9, 5.1,
   5.2, 5.4)
 - `postCurrentObjectiveDefinition` (Tasks 2.3, 5.1, 5.2,
   5.4)
 - `postObjectiveDefinitionAtTime` (Task 2.3 + used by
   history modal in 5.2)
-- `objectiveChanges` / `scoreChanges` / `projectChanges`
-  (subscribed in Tasks 5.1–5.4)
-- `Project.estimatedImpactScore` etc. (defined 2.11,
-  consumed by presenters in 3.x — but presenters take
-  pre-fetched score arrays, so the consumption pattern is
-  the static helpers `latestPerPair` + `formatSigned`
-  defined inside each presenter for locality)
+- `subscribeObjectiveChanges` (Tasks 2.2, 5.1, 5.2, 5.3,
+  5.4)
+- `subscribeProjectScoreChanges` (Tasks 2.5, 5.2, 5.3,
+  5.4)
+- `subscribeProjectChanges` (Tasks 5.2, 5.3, 5.4; exists
+  in `adapters/projects.ts:20`)
+- `ProjectView.baselineTotal` / `actualTotal` /
+  `isBaselineScored` / `isActualScored` (defined 2.11;
+  presenters consume score arrays directly via the
+  shared `latestPerPair` from `scoring-format.ts` —
+  Task 2.13)
+- `latestPerPair` / `formatSigned` / `toneForScore` —
+  shared module added in Task 2.13, imported by Tasks
+  2.7, 3.4, 3.5, 3.7, 3.8, 5.2, 5.3
 
 No name drift detected.
 
