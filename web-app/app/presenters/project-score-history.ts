@@ -6,7 +6,10 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
-import { formatSigned } from '../scoring-format.ts';
+import {
+    formatSigned,
+    toneForScore,
+} from '../scoring-format.ts';
 import { formatDateTime } from '../core.ts';
 
 export type DefinitionResolver = (
@@ -125,7 +128,9 @@ export class ProjectScoreHistoryPresenter {
                     ${dateCell}
                     <td>Baseline scored</td>
                     <td>${def.name}</td>
-                    <td>${formatSigned(e.score)}</td>
+                    <td data-tone="${toneForScore(e.score)}">${
+                        formatSigned(e.score)
+                    }</td>
                 </tr>`;
             }
             case 'actual': {
@@ -143,7 +148,9 @@ export class ProjectScoreHistoryPresenter {
                     ${dateCell}
                     <td>Actual measured</td>
                     <td>${def.name}</td>
-                    <td>${formatSigned(e.score)}</td>
+                    <td data-tone="${toneForScore(e.score)}">${
+                        formatSigned(e.score)
+                    }</td>
                 </tr>`;
             }
             case 'revision':

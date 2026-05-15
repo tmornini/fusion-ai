@@ -2551,6 +2551,16 @@ svg.flow-stats-canvas
   border-bottom: 1px solid hsl(var(--border));
 }
 
+.score-history-table td[data-tone="negative"] {
+  color: hsl(var(--destructive));
+}
+
+.score-history-table td[data-tone="positive"] {
+  color: hsl(var(--success));
+}
+
+/* data-tone="neutral" inherits default text color */
+
 /* Below 768px the card becomes a bottom sheet with a */
 /* drag-handle affordance (pure decoration, ::before).  */
 @media (max-width: 767px) {
