@@ -372,6 +372,24 @@ const routes: Route[] = [
                 ),
             ),
     }),
+    route('objectives', {
+        get: (db) => db.objectives.getAll(),
+    }),
+    route('objectives/:id', {
+        get: (db, p) =>
+            db.objectives.getById(
+                param(p, 0),
+            ),
+    }),
+    route('objective_revisions', {
+        get: (db) =>
+            db.objectiveRevisions.getAll(),
+    }),
+    route('deprecated_objectives', {
+        get: (db) =>
+            db.deprecatedObjectives.getAll(),
+    }),
+
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())
