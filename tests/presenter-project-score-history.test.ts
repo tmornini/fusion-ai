@@ -103,3 +103,38 @@ test('resolves historical objective name at each event',
         assert.ok(driveGrowthPos > aprilOnePos,
             'April score should render under "Drive Growth"');
     });
+
+test('positive score TD carries data-tone="positive"', () => {
+    const p = new ProjectScoreHistoryPresenter(
+        [{ id: 'b1', project_id: 'p1', objective_id: 'o1',
+            score: 40,
+            scored_at: '2026-03-05T09:10:00.000Z' }],
+        [], revisions, deprecations, resolver,
+    );
+    const html = p.buildBody().toString();
+    assert.match(html,
+        /<td data-tone="positive">\+40<\/td>/);
+});
+
+test('negative score TD carries data-tone="negative"', () => {
+    const p = new ProjectScoreHistoryPresenter(
+        [], [{ id: 'a1', project_id: 'p1',
+            objective_id: 'o1', score: -50,
+            scored_at: '2026-04-01T16:45:00.000Z' }],
+        revisions, deprecations, resolver,
+    );
+    const html = p.buildBody().toString();
+    assert.match(html,
+        /<td data-tone="negative">−50<\/td>/);
+});
+
+test('zero score TD carries data-tone="neutral"', () => {
+    const p = new ProjectScoreHistoryPresenter(
+        [{ id: 'b1', project_id: 'p1', objective_id: 'o1',
+            score: 0,
+            scored_at: '2026-03-05T09:10:00.000Z' }],
+        [], revisions, deprecations, resolver,
+    );
+    const html = p.buildBody().toString();
+    assert.match(html, /<td data-tone="neutral">0<\/td>/);
+});
