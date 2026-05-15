@@ -6274,6 +6274,111 @@ export async function populateMockData(
             },
         );
     }
+
+    const allProjects = await adapter.projects.getAll();
+
+    function deterministicScore(
+        seed: string,
+        min: number,
+        max: number,
+    ): number {
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+        }
+        const range = max - min + 1;
+        const wrapped = ((hash % range) + range) % range;
+        return min + wrapped;
+    }
+
+    for (const p of allProjects) {
+        if (
+            p.status === 'submitted'
+            || p.status === 'declined'
+            || p.status === 'deleted'
+        ) {
+            continue;
+        }
+
+        const baselineCoverage =
+            p.status === 'approved'
+            || p.status === 'completed'
+                ? OBJECTIVE_SEEDS.length
+                : deterministicScore(
+                    p.id + ':coverage',
+                    0,
+                    OBJECTIVE_SEEDS.length - 1,
+                );
+
+        const baselineStart =
+            new Date(p.start_date).getTime();
+        for (let i = 0; i < baselineCoverage; i++) {
+            const obj = OBJECTIVE_SEEDS[i]!;
+            const score = deterministicScore(
+                `${p.id}:${obj.id}:baseline`,
+                -100,
+                100,
+            );
+            const scoredAt = new Date(
+                baselineStart + i * 1000,
+            ).toISOString();
+            await adapter
+                .projectObjectiveBaselineScores
+                .put(
+                    `${p.id}:${obj.id}:${scoredAt}`,
+                    {
+                        project_id: p.id,
+                        objective_id: obj.id,
+                        score,
+                        scored_at: scoredAt,
+                    },
+                );
+        }
+
+        if (
+            p.status === 'approved'
+            || p.status === 'completed'
+        ) {
+            const minActuals =
+                p.status === 'completed' ? 1 : 0;
+            const baseActualTime =
+                baselineStart + 86400000;
+            for (
+                let i = 0; i < OBJECTIVE_SEEDS.length; i++
+            ) {
+                const obj = OBJECTIVE_SEEDS[i]!;
+                const nActuals =
+                    minActuals
+                    + deterministicScore(
+                        `${p.id}:${obj.id}:nactual`,
+                        0,
+                        2,
+                    );
+                for (let k = 0; k < nActuals; k++) {
+                    const score = deterministicScore(
+                        `${p.id}:${obj.id}:actual:${k}`,
+                        -100,
+                        100,
+                    );
+                    const scoredAt = new Date(
+                        baseActualTime
+                            + (i * 10 + k) * 1000,
+                    ).toISOString();
+                    await adapter
+                        .projectObjectiveActualScores
+                        .put(
+                            `${p.id}:${obj.id}:${scoredAt}`,
+                            {
+                                project_id: p.id,
+                                objective_id: obj.id,
+                                score,
+                                scored_at: scoredAt,
+                            },
+                        );
+                }
+            }
+        }
+    }
 }
 
 export async function populateBootstrapData(
