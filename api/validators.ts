@@ -822,8 +822,7 @@ const PROJECT_BODY_KEYS: readonly string[] = [
     'progress', 'start_date',
     'target_end_date', 'estimated_duration',
     'actual_duration', 'estimated_cost',
-    'actual_cost', 'estimated_impact',
-    'actual_impact', 'position',
+    'actual_cost', 'position',
     'business_context', 'timeline_label',
 ];
 
@@ -865,12 +864,6 @@ export function validateProjectEntity(
         ),
         actual_cost: pickNumber(
             body, 'actual_cost',
-        ),
-        estimated_impact: pickNumber(
-            body, 'estimated_impact',
-        ),
-        actual_impact: pickNumber(
-            body, 'actual_impact',
         ),
         position: pickNumber(
             body, 'position',

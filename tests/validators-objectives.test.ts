@@ -6,6 +6,7 @@ import {
     validateDeprecatedObjectiveEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
+    validateProjectEntity,
 } from '../api/validators.ts';
 
 test('validateObjectiveEntity accepts valid', () => {
@@ -140,5 +141,33 @@ test('validateActualScoreEntity rejects out-of-range',
                 scored_at: '2026-05-14T00:00:00.000Z',
             }),
             /\[-100, \+100\]/,
+        );
+    });
+
+test('validateProjectEntity ignores legacy impact fields',
+    () => {
+        const baseValid = {
+            title: 't',
+            description: 'd',
+            status: 'submitted',
+            progress: 0,
+            start_date: '2026-05-14T00:00:00.000Z',
+            target_end_date: '2026-05-14T00:00:00.000Z',
+            estimated_duration: 0,
+            actual_duration: 0,
+            estimated_cost: 0,
+            actual_cost: 0,
+            position: 0,
+            business_context: '{}',
+            timeline_label: 'q1',
+        };
+        const v = validateProjectEntity(baseValid);
+        assert.equal(
+            'estimated_impact' in (v as object),
+            false,
+        );
+        assert.equal(
+            'actual_impact' in (v as object),
+            false,
         );
     });
