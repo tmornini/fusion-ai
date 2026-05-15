@@ -17,6 +17,7 @@ test('validateObjectiveEntity rejects non-integer position',
     () => {
         assert.throws(
             () => validateObjectiveEntity({ position: 1.5 }),
+            /non-negative integer for Objective\.position/,
         );
     });
 
@@ -24,6 +25,7 @@ test('validateObjectiveEntity rejects negative position',
     () => {
         assert.throws(
             () => validateObjectiveEntity({ position: -1 }),
+            /non-negative integer for Objective\.position/,
         );
     });
 
@@ -46,6 +48,7 @@ test('validateObjectiveRevisionEntity rejects empty name',
                 description: 'd',
                 revised_at: '2026-05-14T00:00:00.000Z',
             }),
+            /ObjectiveRevision\.name must be non-empty/,
         );
     });
 
@@ -89,38 +92,53 @@ test('validateBaselineScoreEntity accepts -100 and +100',
 
 test('validateBaselineScoreEntity rejects out-of-range',
     () => {
-        assert.throws(() => validateBaselineScoreEntity({
-            project_id: 'p1', objective_id: 'o1',
-            score: 101,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }));
-        assert.throws(() => validateBaselineScoreEntity({
-            project_id: 'p1', objective_id: 'o1',
-            score: -101,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }));
+        assert.throws(
+            () => validateBaselineScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: 101,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }),
+            /\[-100, \+100\]/,
+        );
+        assert.throws(
+            () => validateBaselineScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: -101,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }),
+            /\[-100, \+100\]/,
+        );
     });
 
 test('validateBaselineScoreEntity rejects non-integer',
     () => {
-        assert.throws(() => validateBaselineScoreEntity({
-            project_id: 'p1', objective_id: 'o1',
-            score: 12.5,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }));
+        assert.throws(
+            () => validateBaselineScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: 12.5,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }),
+            /\[-100, \+100\]/,
+        );
     });
 
-test('validateActualScoreEntity has same rules as baseline',
+test('validateActualScoreEntity accepts -50', () => {
+    const v = validateActualScoreEntity({
+        project_id: 'p1', objective_id: 'o1',
+        score: -50,
+        scored_at: '2026-05-14T00:00:00.000Z',
+    });
+    assert.equal(v.score, -50);
+});
+
+test('validateActualScoreEntity rejects out-of-range',
     () => {
-        const v = validateActualScoreEntity({
-            project_id: 'p1', objective_id: 'o1',
-            score: -50,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        });
-        assert.equal(v.score, -50);
-        assert.throws(() => validateActualScoreEntity({
-            project_id: 'p1', objective_id: 'o1',
-            score: 200,
-            scored_at: '2026-05-14T00:00:00.000Z',
-        }));
+        assert.throws(
+            () => validateActualScoreEntity({
+                project_id: 'p1', objective_id: 'o1',
+                score: 200,
+                scored_at: '2026-05-14T00:00:00.000Z',
+            }),
+            /\[-100, \+100\]/,
+        );
     });

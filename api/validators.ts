@@ -154,24 +154,10 @@ export function asScore(
             'expected integer in [-100, +100] for '
                 + label
                 + ', got '
-                + JSON.stringify(value),
+                + typeName(value),
         );
     }
     return value;
-}
-
-export function asNonNegativeInteger(
-    value: unknown,
-    label: string,
-): number {
-    const n = asNumber(value, label);
-    if (!Number.isInteger(n) || n < 0) {
-        throw new Error(
-            'expected non-negative integer for '
-                + label + ', got ' + String(n),
-        );
-    }
-    return n;
 }
 
 export function asBoolean(
@@ -1339,11 +1325,20 @@ export function validateObjectiveEntity(
     assertOnlyKeys(
         body, OBJECTIVE_BODY_KEYS, 'Objective',
     );
-    return {
-        position: asNonNegativeInteger(
-            body.position, 'Objective.position',
-        ),
-    };
+    const position = asNumber(
+        body.position, 'Objective.position',
+    );
+    if (
+        !Number.isInteger(position)
+        || position < 0
+    ) {
+        throw new Error(
+            'expected non-negative integer for '
+                + 'Objective.position, got '
+                + String(position),
+        );
+    }
+    return { position };
 }
 
 const OBJECTIVE_REVISION_BODY_KEYS:
