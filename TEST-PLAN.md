@@ -196,6 +196,21 @@ count checks are non-zero + consistency, not numeric equality.
   up at session end. Workaround: the user terminates manually
   after the run via `lsof -ti tcp:8080 | xargs kill -9`
   outside the sandbox.
+- **Phase 5 build-dir cleanup (J2)**: deferred while the
+  server remains alive. Deleting `/tmp/claude/fusion-serve.*`
+  while the python `http.server` holds open file descriptors
+  leaves the server in an unrecoverable state. After the
+  user kills the server outside the sandbox
+  (`lsof -ti tcp:8080 | xargs kill -9`), they should run
+  `rm -rf /tmp/claude/fusion-serve.*` to reclaim the build
+  artifacts. J2 is marked DEFERRED whenever J1 is BLOCKED.
+- **Chrome MCP tab-group volatility**: the MCP tab group can
+  dissolve between calls when no tabs in the group are
+  actively held. If `tabs_create_mcp` returns "No tab
+  available", recover via
+  `tabs_context_mcp({ createIfEmpty: true })` to allocate a
+  fresh group, then proceed. Pre-existing tab IDs from
+  before the dissolution are invalidated.
 
 #### Serial single-tester mode
 
@@ -393,7 +408,7 @@ on. Run these in order.
   green border) and "Archive" (end, bottom-right
   with red 3-px border) connected by no edges.
   Toolbar shows Undo, Redo, Delete (trash icon),
-  Auto Layout, Zoom −/Show All/+,
+  Auto Layout, Zoom −/+,
   Copy Mermaid, Export. Changes auto-save
   (no explicit Save button).
 - [ ] **AA27** Drag the port circle on the start
@@ -543,7 +558,7 @@ on. Run these in order.
 
 - [ ] **B1** Page renders with marketing hero content, feature sections, and call-to-action buttons, then auto-redirects to `dashboard/index.html` after ~2 seconds. PASS: layout renders briefly, redirect occurs.
 - [ ] **B2** "Start Free Trial" (hero CTA) and "Get Started" (navbar CTA) are present and navigate to `auth/index.html` if clicked before the auto-redirect. PASS: buttons exist with correct target.
-- [ ] **B3** "Sign In" link is present and navigates to `auth/index.html` if clicked before the auto-redirect. PASS: link exists with correct target.
+- [ ] **B3** "Sign In" button is present and navigates to `auth/index.html` if clicked before the auto-redirect. PASS: button exists with correct target.
 
 ### Auth Page (`auth/`)
 
