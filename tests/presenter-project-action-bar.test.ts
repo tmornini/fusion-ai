@@ -85,3 +85,49 @@ test('approved with full actuals: Complete enabled',
         );
         assert.equal(completeDisabled, false);
     });
+
+test('submitted project: Score button hidden, other review actions shown',
+    () => {
+        const p = new ProjectActionBarPresenter(
+            { ...baseProject, status: 'submitted' },
+            { ready: true, problems: [] },
+            { ready: true, problems: [] },
+        );
+        const html = p.buildBar().toString();
+        assert.equal(
+            html.includes('data-action="score"'),
+            false,
+            'Score button must NOT render on submitted',
+        );
+        assert.ok(
+            html.includes('data-action="approve"'),
+            'Approve button must render on submitted',
+        );
+        assert.ok(
+            html.includes('data-action="decline"'),
+            'Decline button must render on submitted',
+        );
+        assert.ok(
+            html.includes('data-action="send-back"'),
+            'Send-back button must render on submitted',
+        );
+    });
+
+test('sent-back project: Score button hidden, other review actions shown',
+    () => {
+        const p = new ProjectActionBarPresenter(
+            { ...baseProject, status: 'sent-back' },
+            { ready: true, problems: [] },
+            { ready: true, problems: [] },
+        );
+        const html = p.buildBar().toString();
+        assert.equal(
+            html.includes('data-action="score"'),
+            false,
+            'Score button must NOT render on sent-back',
+        );
+        assert.ok(
+            html.includes('data-action="approve"'),
+            'Approve button must render on sent-back',
+        );
+    });

@@ -52,14 +52,17 @@ export class ProjectActionBarPresenter {
 
     #reviewActions(): SafeHtml {
         const check = this.#approvalCheck;
+        const status = this.#project.status;
         const tooltip = check.ready
             ? ''
             : `${check.problems.length}`
                 + ' objectives unscored';
         return html`
-            <button data-action="score">
-                Score
-            </button>
+            ${status === 'under-review'
+                ? html`<button data-action="score">
+                    Score
+                  </button>`
+                : html``}
             <button data-action="approve" ${
                 check.ready ? '' : 'disabled'
             } title="${tooltip}">
