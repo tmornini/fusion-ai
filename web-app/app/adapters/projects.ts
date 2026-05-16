@@ -14,11 +14,16 @@ import {
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
+    buildStateEventOp,
+} from './state-events.ts';
+import {
     createSubscriptionChannel,
 } from '../channels.ts';
 
 const projectChanges =
-    createSubscriptionChannel(['projects']);
+    createSubscriptionChannel(
+        ['projects', 'states'],
+    );
 
 export function subscribeProjectChanges(
     fn: () => void,
@@ -262,6 +267,36 @@ export async function putProject(
     entity: Omit<ProjectEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`projects/${id}`, entity);
+    projectChanges.notify();
+}
+
+// Project-row write paired with a states-log event
+// in one ctx.commit batch. Use at every site that
+// creates a project or moves its status. putProject
+// remains for writes (pure edits, position reorders)
+// that do not change status. The state value IS the
+// status string — projects have no composite
+// dimension, no transform.
+export async function postProjectStateChange(
+    ctx: RequestContext,
+    id: string,
+    entity: Omit<ProjectEntity, 'id'>,
+    state: ProjectStatus,
+): Promise<void> {
+    const projectBody =
+        entity as unknown as Record<string, unknown>;
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `projects/${id}`,
+                body: projectBody,
+            },
+            await buildStateEventOp(
+                ctx, id, state,
+            ),
+        ],
+    });
     projectChanges.notify();
 }
 

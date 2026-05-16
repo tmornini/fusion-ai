@@ -10,7 +10,9 @@ import type { RequestContext } from './shared.ts';
 import type { ValidationResult } from './validation.ts';
 import { getActiveObjectives } from './objectives.ts';
 import { getProjectScoring } from './project-scoring.ts';
-import { putProject } from './projects.ts';
+import {
+    postProjectStateChange,
+} from './projects.ts';
 
 export type ProjectProblem =
     | { kind: 'baseline_unscored';
@@ -105,10 +107,11 @@ export async function postProjectApproval(
         throw new ProjectNotReadyError(v.problems);
     }
     const { id: _id, ...body } = project;
-    await putProject(ctx, projectId, {
-        ...body,
-        status: 'approved',
-    });
+    await postProjectStateChange(
+        ctx, projectId,
+        { ...body, status: 'approved' },
+        'approved',
+    );
 }
 
 export async function postProjectCompletion(
@@ -128,8 +131,9 @@ export async function postProjectCompletion(
         throw new ProjectNotReadyError(v.problems);
     }
     const { id: _id, ...body } = project;
-    await putProject(ctx, projectId, {
-        ...body,
-        status: 'completed',
-    });
+    await postProjectStateChange(
+        ctx, projectId,
+        { ...body, status: 'completed' },
+        'completed',
+    );
 }

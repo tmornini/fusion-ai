@@ -260,3 +260,22 @@ export async function getIdeaStates(
     }
     return out;
 }
+
+// Read the latest state for one project from the
+// states log. Returns null when no event has yet
+// been recorded (a project whose creation pre-dates
+// dual-write). Stage 9b switches production readers
+// to consume this; today only the parity test does.
+// The state value is the project's status string —
+// projects have no composite dimension, so the log
+// and the column share one vocabulary.
+export async function getCurrentProjectStateFromStates(
+    ctx: RequestContext,
+    projectId: Id,
+): Promise<string | null> {
+    const events = await ctx.GET<StateEntity[]>(
+        `entity-states/${projectId}/history`,
+    );
+    const latest = latestByAt(events);
+    return latest === null ? null : latest.state;
+}

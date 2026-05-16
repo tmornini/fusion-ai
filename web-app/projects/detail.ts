@@ -18,6 +18,7 @@ import {
     Project,
     ProjectView,
     putProject,
+    postProjectStateChange,
     getFlowsByProject,
     postFlowCreation,
     subscribeProjectChanges,
@@ -690,13 +691,20 @@ async function handleSave(): Promise<void> {
         ),
     );
     const ctx = createRequestContext();
+    const next = { ...entity, ...patch };
+    const statusChanged =
+        patch.status !== entity.status;
     try {
-        await putProject(ctx, projectId, {
-            ...entity, ...patch,
-        });
+        if (statusChanged) {
+            await postProjectStateChange(
+                ctx, projectId, next, patch.status,
+            );
+        } else {
+            await putProject(ctx, projectId, next);
+        }
     } catch (err) {
         log.error(
-            'putProject failed',
+            'project save failed',
             'projects', err,
         );
         showToast(

@@ -227,11 +227,12 @@ export async function putIdeaSubmission(
 // Inlined writes (rather than delegating to the
 // putProject / putIdea helpers) so the project and
 // idea writes commit together as one logical
-// operation. The state event lands in the same batch
-// so the idea's state moves to 'promoted' atomically
-// with the row update. The helpers stay — they have
-// other callers whose writes are genuinely
-// independent.
+// operation. Two state events land in the same
+// batch: the idea moves to 'promoted' and the new
+// project enters at its initial status — both
+// atomic with the row updates. The helpers stay —
+// they have other callers whose writes are
+// genuinely independent.
 export async function postIdeaConversion(
     ctx: RequestContext,
     ideaId: string,
@@ -259,6 +260,9 @@ export async function postIdeaConversion(
             },
             await buildStateEventOp(
                 ctx, ideaId, 'promoted',
+            ),
+            await buildStateEventOp(
+                ctx, projectId, project.status,
             ),
         ],
     });

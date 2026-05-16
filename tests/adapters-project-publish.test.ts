@@ -10,6 +10,23 @@ import {
     postProjectCompletion,
 } from '../web-app/app/adapters/project-publish.ts';
 
+async function seedCurrentWorker(
+    db: MemoryDbAdapter,
+): Promise<void> {
+    await db.workers.put('current', {
+        first_name: 'Demo',
+        last_name: 'User',
+        email: 'demo@example.com',
+        phone: '',
+        title: 'Admin',
+        status: 'active',
+        strengths: '[]' as never,
+        team_dimensions: '{}' as never,
+        bio: '',
+        department: 'Product',
+    });
+}
+
 const SAMPLE_PROJECT_BODY = {
     title: 't',
     description: 'd', progress: 0,
@@ -67,6 +84,7 @@ test('completion validator: not ready when actuals missing',
 
 test('postProjectApproval flips status', async () => {
     const db = new MemoryDbAdapter();
+    await seedCurrentWorker(db);
     await db.projects.put('p1', SAMPLE_PROJECT_BODY);
     await db.objectives.put('o1', { position: 0 });
     await db.projectObjectiveBaselineScores.put(
@@ -84,6 +102,7 @@ test('postProjectApproval flips status', async () => {
 test('postProjectApproval throws when not ready',
     async () => {
         const db = new MemoryDbAdapter();
+        await seedCurrentWorker(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
         await db.objectives.put('o1', { position: 0 });
         const ctx = createRequestContext(db);
