@@ -535,15 +535,24 @@ test(
     + 'claim row with correct fields',
     async () => {
         const { db, ctx } = await setupDb();
-        const before =
-            await db.workOrderClaims
-                .getAll();
-        assert.equal(before.length, 0);
+        await db.flows.put(
+            'f1', buildFlow(buildLinearGraph()),
+        );
+        const woId =
+            await createWorkOrder(ctx, 'f1');
+        // Release the creation-time claim so this
+        // test exercises pure claim-creation without
+        // the expiration-notice branch.
+        const initialClaims =
+            await db.workOrderClaims.getAll();
+        for (const c of initialClaims) {
+            await db.workOrderClaims.delete(c.id);
+        }
 
         const claimId =
             generateCryptoSafeBase62();
         await postWorkOrderClaim(
-            ctx, claimId, 'w1',
+            ctx, claimId, woId,
         );
 
         const after =
@@ -553,7 +562,7 @@ test(
         const claim = after[0]!;
         assert.equal(claim.id, claimId);
         assert.equal(
-            claim.work_order_id, 'w1',
+            claim.work_order_id, woId,
         );
         assert.equal(
             claim.worker_id, 'current',
@@ -575,15 +584,28 @@ test(
     + 'existing claim id.',
     async () => {
         const { db, ctx } = await setupDb();
+        await db.flows.put(
+            'f1', buildFlow(buildLinearGraph()),
+        );
+        const woId =
+            await createWorkOrder(ctx, 'f1');
+        // Release the creation-time claim so the
+        // two explicit claim calls below are the
+        // only contributors to the count.
+        const initialClaims =
+            await db.workOrderClaims.getAll();
+        for (const c of initialClaims) {
+            await db.workOrderClaims.delete(c.id);
+        }
         await postWorkOrderClaim(
             ctx,
             generateCryptoSafeBase62(),
-            'w1',
+            woId,
         );
         await postWorkOrderClaim(
             ctx,
             generateCryptoSafeBase62(),
-            'w1',
+            woId,
         );
         const claims =
             await db.workOrderClaims

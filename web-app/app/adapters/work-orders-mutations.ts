@@ -28,6 +28,15 @@ import {
     validateFlowForCreation,
     formatFlowProblem,
 } from './flow-publish.ts';
+import {
+    buildStateEventOp,
+} from './state-events.ts';
+import {
+    isExpiredClaim,
+} from './work-orders-queries.ts';
+import {
+    generateCryptoSafeBase62,
+} from './crypto-safe-base62.ts';
 
 const workOrderChanges =
     createSubscriptionChannel(
@@ -201,6 +210,11 @@ export async function postWorkOrderCreation(
                     transitioned_at: now,
                 },
             },
+            await buildStateEventOp(
+                ctx,
+                input.workOrderId,
+                startNode.id,
+            ),
             {
                 method: 'put',
                 resource:
@@ -217,6 +231,11 @@ export async function postWorkOrderCreation(
                     transitioned_at: now,
                 },
             },
+            await buildStateEventOp(
+                ctx,
+                input.workOrderId,
+                postStartNodeId,
+            ),
             {
                 method: 'put',
                 resource:
@@ -229,6 +248,11 @@ export async function postWorkOrderCreation(
                     claimed_at: now,
                 },
             },
+            await buildStateEventOp(
+                ctx,
+                input.workOrderId,
+                'claimed',
+            ),
         ],
     });
 
@@ -315,6 +339,15 @@ export async function postWorkOrderTransition(
                 `work-order-claims/${claim.id}`,
         }]
         : [];
+    const claimReleasedEvent: WriteOp[] = claim
+        ? [
+            await buildStateEventOp(
+                ctx,
+                workOrderId,
+                'claim_released',
+            ),
+        ]
+        : [];
 
     await ctx.commit({
         ops: [
@@ -331,8 +364,14 @@ export async function postWorkOrderTransition(
                     transitioned_at: now,
                 },
             },
+            await buildStateEventOp(
+                ctx,
+                workOrderId,
+                edge.toNodeId,
+            ),
             ...fieldValueOps,
             ...claimDelete,
+            ...claimReleasedEvent,
         ],
     });
 
@@ -368,14 +407,63 @@ export async function postWorkOrderClaim(
     const worker = await getCurrentHumanWorker(ctx);
     const now = nowUtc();
 
-    await ctx.PUT<void>(
-        `work-order-claims/${claimId}`,
-        {
-            work_order_id: workOrderId,
-            worker_id: worker.id,
-            claimed_at: now,
-        },
+    // Notice any prior claim that has already aged
+    // past the flow's lockTimeout — the new claim is
+    // superseding it. The 'claim_expired' event names
+    // the previous claimant (Codd: the event records
+    // who held the claim that aged out), and lands in
+    // the same atomic batch as the new claim row and
+    // its 'claimed' event.
+    const wo = await ctx.GET<WorkOrderEntity>(
+        `work-orders/${workOrderId}`,
     );
+    const fg = validateWorkOrderFlowGraph(
+        wo.flow_graph,
+    );
+    const claims =
+        await ctx.GET<WorkOrderClaimEntity[]>(
+            'work-order-claims',
+        );
+    const priorClaim = claims.find(
+        c =>
+            c.work_order_id === workOrderId
+            && isExpiredClaim(c, fg.lockTimeout),
+    );
+    const expiredOps: WriteOp[] = priorClaim
+        ? [{
+            method: 'put',
+            resource:
+                `states/`
+                + `${generateCryptoSafeBase62()}`,
+            body: {
+                entity_id: workOrderId,
+                state: 'claim_expired',
+                worker_id: priorClaim.worker_id,
+                at: now,
+            },
+        }]
+        : [];
+
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource:
+                    `work-order-claims/${claimId}`,
+                body: {
+                    work_order_id: workOrderId,
+                    worker_id: worker.id,
+                    claimed_at: now,
+                },
+            },
+            ...expiredOps,
+            await buildStateEventOp(
+                ctx,
+                workOrderId,
+                'claimed',
+            ),
+        ],
+    });
 
     workOrderChanges.notify();
 }

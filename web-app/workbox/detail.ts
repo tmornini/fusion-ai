@@ -202,12 +202,13 @@ function initUnclaimButton(
     const claim = detail.claimStatus();
     if (claim.kind !== 'claimed') return;
     const claimId = claim.claimId;
+    const workOrderId = detail.idValue();
     btn.addEventListener(
         'click',
         async () => {
             try {
                 await deleteWorkOrderClaim(
-                    ctx, claimId,
+                    ctx, claimId, workOrderId,
                 );
             } catch (err) {
                 log.error(
