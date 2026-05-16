@@ -30,6 +30,7 @@ import {
     getHumanWorker,
     getHumanWorkerRow,
     putHumanWorker,
+    postHumanWorkerStateChange,
     subscribeHumanWorkerChanges,
     getAIWorker,
     getAIWorkerRow,
@@ -443,14 +444,22 @@ async function saveHumanWorker(
         humanWorkerPatchFromDraft(s.draft),
     );
     const { id: _id, ...rest } = row;
+    const next = { ...rest, ...patch };
+    const statusChanged =
+        patch.status !== rest.status;
     try {
-        await putHumanWorker(
-            ctx, workerId,
-            { ...rest, ...patch },
-        );
+        if (statusChanged) {
+            await postHumanWorkerStateChange(
+                ctx, workerId, next, patch.status,
+            );
+        } else {
+            await putHumanWorker(
+                ctx, workerId, next,
+            );
+        }
     } catch (err) {
         log.error(
-            'putHumanWorker failed',
+            'human worker save failed',
             'workers', err,
         );
         showToast(

@@ -311,3 +311,23 @@ export async function getProjectStates(
     }
     return out;
 }
+
+// Read the latest state for one worker from the
+// states log. Returns null when no event has yet
+// been recorded (a worker whose creation pre-dates
+// dual-write). Stage 10b switches production
+// readers to consume this; today only the parity
+// test does. The worker id is unique across the
+// human and AI tables — both produce base62 ids
+// from the same generator — so this reader serves
+// both kinds without discrimination.
+export async function getCurrentWorkerStateFromStates(
+    ctx: RequestContext,
+    workerId: Id,
+): Promise<string | null> {
+    const events = await ctx.GET<StateEntity[]>(
+        `entity-states/${workerId}/history`,
+    );
+    const latest = latestByAt(events);
+    return latest === null ? null : latest.state;
+}

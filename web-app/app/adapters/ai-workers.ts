@@ -84,6 +84,34 @@ export async function putAIWorker(
     aiWorkerChanges.notify();
 }
 
+// AI-worker row write paired with a states-log
+// event in one ctx.commit batch. Use at every site
+// that creates an AI worker. The AI worker has no
+// status column today — its lifecycle on the log
+// begins at 'active' and terminates at 'deleted'
+// (the latter emitted by deleteAIWorker). putAIWorker
+// remains for pure edits (name, provider, auth_token)
+// that do not change the lifecycle stage.
+export async function postAIWorkerCreate(
+    ctx: RequestContext,
+    id: WorkerId,
+    entity: Omit<AIWorkerEntity, 'id'>,
+): Promise<void> {
+    const workerBody =
+        entity as unknown as Record<string, unknown>;
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `ai-workers/${id}`,
+                body: workerBody,
+            },
+            await buildStateEventOp(ctx, id, 'active'),
+        ],
+    });
+    aiWorkerChanges.notify();
+}
+
 export async function deleteAIWorker(
     ctx: RequestContext,
     id: WorkerId,

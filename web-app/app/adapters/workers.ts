@@ -6,6 +6,9 @@ import type {
 import { HumanWorker } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
+    buildStateEventOp,
+} from './state-events.ts';
+import {
     createSubscriptionChannel,
 } from '../channels.ts';
 export {
@@ -20,7 +23,7 @@ export type {
 } from '../../../api/types.ts';
 
 const humanWorkerChanges =
-    createSubscriptionChannel(['workers']);
+    createSubscriptionChannel(['workers', 'states']);
 
 export function subscribeHumanWorkerChanges(
     fn: () => void,
@@ -105,23 +108,31 @@ export async function putHumanWorker(
     humanWorkerChanges.notify();
 }
 
-export async function putHumanWorkerStatus(
+// Human-worker row write paired with a states-log
+// event in one ctx.commit batch. Use at every site
+// that creates a worker or moves its status.
+// putHumanWorker remains for pure edits (phone,
+// bio, title) that do not change status. The state
+// value IS the status string — the worker lifecycle
+// alphabet (active / pending / deactivated) shares
+// one vocabulary with the log.
+export async function postHumanWorkerStateChange(
     ctx: RequestContext,
     id: string,
-    next: WorkerStatus,
+    entity: Omit<HumanWorkerEntity, 'id'>,
+    state: WorkerStatus,
 ): Promise<void> {
-    const rows = await getHumanWorkerRows(ctx);
-    const row = rows.find(r => r.id === id);
-    if (!row) {
-        throw new Error(
-            `putHumanWorkerStatus: unknown`
-            + ` worker ${id}`,
-        );
-    }
-    const { id: _id, ...rest } = row;
-    await ctx.PUT(`workers/${id}`, {
-        ...rest,
-        status: next,
+    const workerBody =
+        entity as unknown as Record<string, unknown>;
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `workers/${id}`,
+                body: workerBody,
+            },
+            await buildStateEventOp(ctx, id, state),
+        ],
     });
     humanWorkerChanges.notify();
 }
