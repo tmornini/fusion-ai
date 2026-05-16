@@ -20,6 +20,7 @@ import type {
     ObjectiveRevision,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    StateEntity,
 } from './types.ts';
 
 export class EntityNotFound {
@@ -76,6 +77,25 @@ export interface TombstoneStore {
     allRows(): Promise<
         ({ id: Id } & Record<string, string>)[]
     >;
+}
+
+export interface StateStore {
+    getAll(): Promise<StateEntity[]>;
+    getById(id: Id): Promise<StateEntity>;
+    put(
+        id: Id,
+        fields: Omit<StateEntity, 'id'>,
+    ): Promise<StateEntity>;
+    record(
+        id: Id,
+        entityId: Id,
+        state: string,
+        workerId: Id,
+    ): Promise<void>;
+    currentFor(
+        entityId: Id,
+    ): Promise<StateEntity | null>;
+    allFor(entityId: Id): Promise<StateEntity[]>;
 }
 
 // The byte-level seam. Store classes compose a backend
@@ -169,6 +189,7 @@ export interface DbAdapter {
         >;
     deleted: TombstoneStore;
     deprecated: TombstoneStore;
+    states: StateStore;
 }
 
 export const TABLE_NAMES = [
@@ -194,4 +215,5 @@ export const TABLE_NAMES = [
     'project_objective_actual_scores',
     'deleted',
     'deprecated',
+    'states',
 ];

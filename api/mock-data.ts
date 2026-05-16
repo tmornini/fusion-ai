@@ -27,6 +27,7 @@ import {
     SECONDS_PER_HOUR,
     MS_PER_SECOND,
     MS_PER_DAY,
+    SYSTEM_WORKER_ID,
 } from './types.ts';
 
 const now = new Date();
@@ -441,6 +442,20 @@ export async function populateMockData(
     adapter: DbAdapter,
 ): Promise<void> {
     const workers: SeedHumanWorker[] = [
+        {
+            id: SYSTEM_WORKER_ID,
+            first_name: 'System',
+            last_name: 'Worker',
+            email: 'system@fusion.local',
+            title: 'System',
+            department: 'System',
+            status: 'active',
+            strengths: [],
+            team_dimensions: {},
+            phone: '',
+            bio: 'Synthetic worker that owns'
+                + ' system-authored state events.',
+        },
         {
             id: 'LhfaUUf4IumVsCSGB4xjdK',
             first_name: 'Sarah',
@@ -6355,6 +6370,19 @@ export async function populateBootstrapData(
     adapter: DbAdapter,
 ): Promise<void> {
     await Promise.all([
+        adapter.workers.put(SYSTEM_WORKER_ID, {
+            first_name: 'System',
+            last_name: 'Worker',
+            email: 'system@fusion.local',
+            title: 'System',
+            department: 'System',
+            status: 'active' as WorkerStatus,
+            strengths: jsonArrayField([]),
+            team_dimensions: jsonObjectField({}),
+            phone: '',
+            bio: 'Synthetic worker that owns'
+                + ' system-authored state events.',
+        }),
         adapter.workers.put('current', {
             first_name: 'Tony',
             last_name: 'Stark',

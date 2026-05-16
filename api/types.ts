@@ -342,6 +342,16 @@ export interface DeprecatedTombstone {
     deprecated_at: string;
 }
 
+export interface StateEntity {
+    id: Id;
+    entity_id: Id;
+    state: string;
+    worker_id: Id;
+    at: string;
+}
+
+export const SYSTEM_WORKER_ID: Id = 'system';
+
 export interface HumanWorkerEntity {
     id: WorkerId;
     first_name: string;

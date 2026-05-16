@@ -24,6 +24,7 @@ import {
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
+    validateStateEntity,
 } from './validators.ts';
 
 export class ApiError {
@@ -443,6 +444,28 @@ const routes: Route[] = [
                     withoutId(body),
                 ),
             ),
+    }),
+    route('states', {
+        get: (db) => db.states.getAll(),
+    }),
+    route('states/:id', {
+        get: (db, p) =>
+            db.states.getById(param(p, 0)),
+        put: (db, p, body) =>
+            db.states.put(
+                param(p, 0),
+                validateStateEntity(
+                    withoutId(body),
+                ),
+            ),
+    }),
+    route('entity-states/:id', {
+        get: (db, p) =>
+            db.states.currentFor(param(p, 0)),
+    }),
+    route('entity-states/:id/history', {
+        get: (db, p) =>
+            db.states.allFor(param(p, 0)),
     }),
 
     route('snapshots/schema', {

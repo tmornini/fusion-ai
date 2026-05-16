@@ -4,6 +4,7 @@ import type {
     TombstoneStore as ITombstoneStore,
     SingletonStore as ISingletonStore,
     EntityStore as IEntityStore,
+    StateStore as IStateStore,
 } from './db.ts';
 import type {
     HumanWorkerEntity,
@@ -34,6 +35,7 @@ import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
 import { TombstoneStore } from './store-tombstone.ts';
+import { StateStore } from './store-state.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
     readonly #backend: MemoryStorageBackend;
@@ -72,6 +74,7 @@ export class MemoryDbAdapter implements DbAdapter {
         IEntityStore<ProjectObjectiveActualScore>;
     readonly deleted: ITombstoneStore;
     readonly deprecated: ITombstoneStore;
+    readonly states: IStateStore;
 
     constructor() {
         this.#backend = new MemoryStorageBackend();
@@ -148,6 +151,7 @@ export class MemoryDbAdapter implements DbAdapter {
                 'project_objective_actual_scores',
                 b,
             );
+        this.states = new StateStore(b, 'states');
     }
 
     async initialize(): Promise<void> {}

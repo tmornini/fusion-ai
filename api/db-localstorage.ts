@@ -7,6 +7,7 @@ import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
 import { TombstoneStore } from './store-tombstone.ts';
+import { StateStore } from './store-state.ts';
 import type {
     HumanWorkerEntity,
     AIWorkerEntity,
@@ -51,6 +52,7 @@ import {
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
+    validateStateEntity,
 } from './validators.ts';
 
 const SIMULATE_LATENCY_PARAM = 'simulate-latency';
@@ -147,6 +149,9 @@ function validateSnapshotRow(
                     row['deprecated_at'],
                     label + '.deprecated_at',
                 );
+                break;
+            case 'states':
+                validateStateEntity(body);
                 break;
         }
     } catch (err) {
@@ -377,6 +382,7 @@ export async function createLocalStorageAdapter(
             ),
         deleted: deletedStore,
         deprecated: deprecatedStore,
+        states: new StateStore(backend, 'states'),
     };
 
     return simulateLatencyRequested()

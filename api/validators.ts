@@ -38,6 +38,7 @@ import type {
     ObjectiveRevision,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    StateEntity,
 } from './types.ts';
 
 export interface Risk {
@@ -1424,6 +1425,28 @@ export function validateActualScoreEntity(
         scored_at: pickString(
             body, 'scored_at',
         ),
+    };
+}
+
+const STATE_BODY_KEYS: readonly string[] = [
+    'entity_id', 'state', 'worker_id', 'at',
+];
+
+export function validateStateEntity(
+    body: Record<string, unknown>,
+): Omit<StateEntity, 'id'> {
+    assertOnlyKeys(
+        body, STATE_BODY_KEYS, 'StateEntity',
+    );
+    return {
+        entity_id: pickString(
+            body, 'entity_id',
+        ),
+        state: pickString(body, 'state'),
+        worker_id: pickString(
+            body, 'worker_id',
+        ),
+        at: pickString(body, 'at'),
     };
 }
 
