@@ -17,7 +17,7 @@ import {
 
 function buildIdea(
     id: string, title: string,
-    status: 'submitted' | 'approved' = 'submitted',
+    status: 'active' | 'approved' = 'active',
 ): Idea {
     return new Idea({
         id,

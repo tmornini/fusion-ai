@@ -993,7 +993,10 @@ export class Idea {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#position = entity.position;
-        this.#status = entity.status;
+        this.#status = assertIdeaStatus(
+            entity.status as unknown as string,
+            'IdeaEntity.status',
+        );
         this.#problemStatement =
             entity.problem_statement;
         this.#targetUsers =
