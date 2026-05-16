@@ -484,18 +484,17 @@ on. Run these in order.
   stats ("Stark Industries · 11 Ideas ·
   6 Projects · 1 Flows"), and theme toggle.
   PASS: elements visible and styled.
-- [ ] **C4** Dashboard renders 5 surfaces in order: Time
-  gauge, Cost gauge, Impact gauge, Portfolio Impact card
-  (new bipolar arc, post-b2c0684), Aggregate Objectives
-  box (new full-width row below, post-b2c0684). PASS: all
-  5 render with baseline and current values; the 3 gauges
-  show concentric arcs; the Portfolio Impact card shows
-  its bipolar arc; the Aggregates box shows per-objective
-  rows.
+- [ ] **C4** Dashboard renders 4 surfaces in order: Time
+  gauge, Cost gauge, Portfolio Impact card (bipolar arc,
+  post-b2c0684), Aggregate Objectives box (full-width row
+  below, post-b2c0684). PASS: all 4 render with baseline
+  and current values; the 2 gauges show concentric arcs;
+  the Portfolio Impact card shows its bipolar arc; the
+  Aggregates box shows per-objective rows.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
-- [ ] **C7** Check that seed data populates all 5 dashboard
-  surfaces (3 gauges + Portfolio Impact card + Aggregate
+- [ ] **C7** Check that seed data populates all 4 dashboard
+  surfaces (2 gauges + Portfolio Impact card + Aggregate
   Objectives box). PASS: no "No data" empty states on
   initial load against the Phase 1 baseline (10 humans,
   4 AIs, 11 ideas, 6 projects, 1 flow, 5 objectives).
@@ -1437,9 +1436,9 @@ the claude-in-chrome MCP.
 
 - [ ] **G24** From `workers/index.html`, click any AI
   worker's row. PASS: navigates to `worker-detail`. Read
-  mode shows the AI Worker identity card (Name, Provider,
-  Description) and a separate Auth Token card showing the
-  masked token (last 4 chars only, e.g. `sk-...XXXX`)
+  mode shows the AI Worker card (Name, Provider,
+  Description) with an inline Auth Token section showing
+  the masked token (last 4 chars only, e.g. `sk-...XXXX`)
   rendered in monospace.
 - [ ] **G24a** Click Edit. PASS: identity fields become
   inputs (Name text, Provider text, Description textarea);
@@ -1470,7 +1469,7 @@ verify the four operation cards, the file-picker affordance, the
 post-operation redirect, and that pages render against the
 restored data.)
 
-- [ ] **G30** Navigate to `snapshots/`. PASS: shows 3 operation cards (Create Pristine Environment, Wipe and Load Mock Data, Download Snapshot) plus an Upload Snapshot affordance rendered as a labeled file-input (`<input type="file" id="upload-input">`), not a fourth button card.
+- [ ] **G30** Navigate to `snapshots/`. PASS: shows 4 operation cards (Create Pristine Environment, Wipe and Load Mock Data, Download Snapshot, Upload Snapshot). The Upload Snapshot card hosts a hidden `<input type="file" id="upload-input">` that the card's button triggers.
 - [ ] **G31** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
 - [ ] **G32** Click "Create Pristine Environment", confirm
   the dialog. PASS: redirects to `dashboard/index.html`.
