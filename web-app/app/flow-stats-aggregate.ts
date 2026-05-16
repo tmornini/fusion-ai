@@ -119,7 +119,7 @@ interface Sojourn {
     readonly nodeId: string;
     readonly enterMs: number;
     readonly exitMs: number;
-    readonly personId: string;
+    readonly workerId: string;
 }
 
 interface WoRun {
@@ -177,7 +177,7 @@ function reconstructRuns(
                 sojourns.push({
                     nodeId: node.id,
                     enterMs, exitMs,
-                    personId: t.person_id,
+                    workerId: t.worker_id,
                 });
             }
             if (node.isArchive) completed = true;
@@ -324,8 +324,8 @@ export function buildFlowStats(
             outByNode.get(t.from_node_id)
             ?? new Map<string, number>();
         inner.set(
-            t.person_id,
-            (inner.get(t.person_id) ?? 0) + 1,
+            t.worker_id,
+            (inner.get(t.worker_id) ?? 0) + 1,
         );
         outByNode.set(t.from_node_id, inner);
     }

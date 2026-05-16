@@ -197,7 +197,7 @@ export async function postWorkOrderCreation(
                         input.workOrderId,
                     from_node_id: '',
                     to_node_id: startNode.id,
-                    person_id: worker.id,
+                    worker_id: worker.id,
                     transitioned_at: now,
                 },
             },
@@ -213,7 +213,7 @@ export async function postWorkOrderCreation(
                         input.workOrderId,
                     from_node_id: startNode.id,
                     to_node_id: postStartNodeId,
-                    person_id: worker.id,
+                    worker_id: worker.id,
                     transitioned_at: now,
                 },
             },
@@ -225,7 +225,7 @@ export async function postWorkOrderCreation(
                 body: {
                     work_order_id:
                         input.workOrderId,
-                    person_id: worker.id,
+                    worker_id: worker.id,
                     claimed_at: now,
                 },
             },
@@ -327,7 +327,7 @@ export async function postWorkOrderTransition(
                     work_order_id: workOrderId,
                     from_node_id: currentNodeId,
                     to_node_id: edge.toNodeId,
-                    person_id: worker.id,
+                    worker_id: worker.id,
                     transitioned_at: now,
                 },
             },
@@ -372,7 +372,7 @@ export async function postWorkOrderClaim(
         `work-order-claims/${claimId}`,
         {
             work_order_id: workOrderId,
-            person_id: worker.id,
+            worker_id: worker.id,
             claimed_at: now,
         },
     );

@@ -199,7 +199,7 @@ export class WorkboxDetailPresenter {
                 kind: 'claimed',
                 claimId: active.id,
                 byCurrentPerson:
-                    active.person_id
+                    active.worker_id
                         === currentPersonId,
             }
             : { kind: 'unclaimed' };
@@ -539,7 +539,7 @@ function buildHistory(
                 nodes, t.to_node_id,
             ),
             workerName: workerName(
-                workerMap, t.person_id,
+                workerMap, t.worker_id,
             ),
             transitionedAt:
                 t.transitioned_at,

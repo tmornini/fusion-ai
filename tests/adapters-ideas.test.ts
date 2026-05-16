@@ -71,7 +71,7 @@ test('getIdeas returns ideas with submitter', async () => {
     ));
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
-        person_id: 'u1',
+        worker_id: 'u1',
         created_at: '2026-04-01T00:00:00Z',
     });
     const result = await getIdeas(ctx);
@@ -111,7 +111,7 @@ test('getIdea finds submission for one idea', async () => {
     ));
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
-        person_id: 'u1',
+        worker_id: 'u1',
         created_at: '2026-04-01T00:00:00Z',
     });
     const result = await getIdea(ctx, 'i1');
@@ -158,7 +158,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
     );
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
-        person_id: 'u1',
+        worker_id: 'u1',
         created_at: '2026-04-01T00:00:00Z',
     });
     await db.ideas.put(
@@ -166,7 +166,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
     );
     await db.ideaSubmissions.put('s2', {
         idea_id: 'i2',
-        person_id: 'u1',
+        worker_id: 'u1',
         created_at: '2026-04-01T00:00:00Z',
     });
     await db.ideas.delete('i2');

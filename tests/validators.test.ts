@@ -457,7 +457,7 @@ const validTransition = {
     work_order_id: 'wo-1',
     from_node_id: 'n-1',
     to_node_id: 'n-2',
-    person_id: 'u-1',
+    worker_id: 'u-1',
     transitioned_at: '2024-01-01T00:00:00Z',
 };
 
@@ -508,7 +508,7 @@ test(
 
 const validClaim = {
     work_order_id: 'wo-1',
-    person_id: 'u-1',
+    worker_id: 'u-1',
     claimed_at: '2024-01-01T00:00:00Z',
 };
 
@@ -518,7 +518,7 @@ test(
     () => {
     const result =
         validateWorkOrderClaimEntity(validClaim);
-    assert.equal(result.person_id, 'u-1');
+    assert.equal(result.worker_id, 'u-1');
 });
 
 test(
@@ -528,7 +528,7 @@ test(
     assert.throws(
         () => validateWorkOrderClaimEntity({
             work_order_id: 'wo-1',
-            person_id: 'u-1',
+            worker_id: 'u-1',
         }),
         /missing required key "claimed_at"/,
     );
@@ -611,7 +611,7 @@ test(
 
 const validIdeaSubmission = {
     idea_id: 'i-1',
-    person_id: 'u-1',
+    worker_id: 'u-1',
     created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -632,7 +632,7 @@ test(
     () => {
     assert.throws(
         () => validateIdeaSubmissionEntity({
-            person_id: 'u-1',
+            worker_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
         /missing required key "idea_id"/,
@@ -643,7 +643,7 @@ test(
 
 const validActivityActor = {
     activity_id: 'act-1',
-    person_id: 'u-1',
+    worker_id: 'u-1',
     created_at: '2024-01-01T00:00:00Z',
 };
 
@@ -664,7 +664,7 @@ test(
     () => {
     assert.throws(
         () => validateActivityActorEntity({
-            person_id: 'u-1',
+            worker_id: 'u-1',
             created_at: '2024-01-01T00:00:00Z',
         }),
         /missing required key "activity_id"/,

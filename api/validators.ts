@@ -1062,7 +1062,7 @@ export function validateFlowWorkOrderEntity(
 const WORK_ORDER_TRANSITION_BODY_KEYS:
     readonly string[] = [
     'work_order_id', 'from_node_id',
-    'to_node_id', 'person_id',
+    'to_node_id', 'worker_id',
     'transitioned_at',
 ];
 
@@ -1085,8 +1085,8 @@ validateWorkOrderTransitionEntity(
         to_node_id: pickString(
             body, 'to_node_id',
         ),
-        person_id: pickString(
-            body, 'person_id',
+        worker_id: pickString(
+            body, 'worker_id',
         ),
         transitioned_at: pickString(
             body, 'transitioned_at',
@@ -1123,7 +1123,7 @@ validateTransitionFieldValueEntity(
 
 const WORK_ORDER_CLAIM_BODY_KEYS:
     readonly string[] = [
-    'work_order_id', 'person_id', 'claimed_at',
+    'work_order_id', 'worker_id', 'claimed_at',
 ];
 
 export function validateWorkOrderClaimEntity(
@@ -1138,8 +1138,8 @@ export function validateWorkOrderClaimEntity(
         work_order_id: pickString(
             body, 'work_order_id',
         ),
-        person_id: pickString(
-            body, 'person_id',
+        worker_id: pickString(
+            body, 'worker_id',
         ),
         claimed_at: pickString(
             body, 'claimed_at',
@@ -1231,7 +1231,7 @@ export function validateOrganizationEntity(
 
 const IDEA_SUBMISSION_BODY_KEYS:
     readonly string[] = [
-    'idea_id', 'person_id', 'created_at',
+    'idea_id', 'worker_id', 'created_at',
 ];
 
 export function validateIdeaSubmissionEntity(
@@ -1246,8 +1246,8 @@ export function validateIdeaSubmissionEntity(
         idea_id: pickString(
             body, 'idea_id',
         ),
-        person_id: pickString(
-            body, 'person_id',
+        worker_id: pickString(
+            body, 'worker_id',
         ),
         created_at: pickString(
             body, 'created_at',
@@ -1257,7 +1257,7 @@ export function validateIdeaSubmissionEntity(
 
 const ACTIVITY_ACTOR_BODY_KEYS:
     readonly string[] = [
-    'activity_id', 'person_id', 'created_at',
+    'activity_id', 'worker_id', 'created_at',
 ];
 
 export function validateActivityActorEntity(
@@ -1272,8 +1272,8 @@ export function validateActivityActorEntity(
         activity_id: pickString(
             body, 'activity_id',
         ),
-        person_id: pickString(
-            body, 'person_id',
+        worker_id: pickString(
+            body, 'worker_id',
         ),
         created_at: pickString(
             body, 'created_at',

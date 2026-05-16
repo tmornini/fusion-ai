@@ -283,7 +283,7 @@ test(
                 work_order_id: woId,
                 from_node_id: 'n-middle',
                 to_node_id: 'n-finish',
-                person_id: 'current',
+                worker_id: 'current',
                 transitioned_at:
                     '2030-01-01T00:00:00.000Z',
             },

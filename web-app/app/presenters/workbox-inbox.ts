@@ -253,7 +253,7 @@ export function buildInboxItems(
             stateName: curNode.name,
             transitionerName: last
                 ? workerName(
-                    workerMap, last.person_id,
+                    workerMap, last.worker_id,
                 )
                 : null,
             lastTransitionedAt: last

@@ -780,7 +780,7 @@ export interface WorkOrderTransitionEntity {
     work_order_id: Id;
     from_node_id: Id;
     to_node_id: Id;
-    person_id: Id;
+    worker_id: Id;
     transitioned_at: string;
 }
 
@@ -798,7 +798,7 @@ export interface TransitionFieldValueEntity {
 export interface WorkOrderClaimEntity {
     id: Id;
     work_order_id: Id;
-    person_id: Id;
+    worker_id: Id;
     claimed_at: string;
 }
 
@@ -828,14 +828,14 @@ export interface OrganizationEntity {
 export interface IdeaSubmissionEntity {
     id: Id;
     idea_id: Id;
-    person_id: Id;
+    worker_id: Id;
     created_at: string;
 }
 
 export interface ActivityActorEntity {
     id: Id;
     activity_id: Id;
-    person_id: Id;
+    worker_id: Id;
     created_at: string;
 }
 

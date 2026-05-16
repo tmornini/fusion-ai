@@ -253,7 +253,7 @@ test(
             woId,
         );
         assert.equal(
-            claims[0]!.person_id, 'current',
+            claims[0]!.worker_id, 'current',
         );
     },
 );
@@ -443,7 +443,7 @@ test(
         );
         assert.ok(last);
         assert.equal(
-            last.person_id, 'current',
+            last.worker_id, 'current',
         );
 
         const claimsAfter =
@@ -556,7 +556,7 @@ test(
             claim.work_order_id, 'w1',
         );
         assert.equal(
-            claim.person_id, 'current',
+            claim.worker_id, 'current',
         );
         assert.ok(claim.claimed_at);
     },
@@ -590,7 +590,7 @@ test(
                 .getAll();
         assert.equal(claims.length, 2);
         // Both rows reference the same
-        // (work_order_id, person_id) pair.
+        // (work_order_id, worker_id) pair.
         const woIds = new Set(
             claims.map(
                 (c: WorkOrderClaimEntity) =>

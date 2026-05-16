@@ -129,7 +129,7 @@ function makeTransition(
         work_order_id: 'wo-1',
         from_node_id: '',
         to_node_id: 'n-1',
-        person_id: 'p-1',
+        worker_id: 'p-1',
         transitioned_at: '2026-04-01T12:00:00.000Z',
         ...overrides,
     };
@@ -516,14 +516,14 @@ test(
                 makeTransition({
                     id: 't-1', from_node_id: '',
                     to_node_id: 'n-1',
-                    person_id: 'p-1',
+                    worker_id: 'p-1',
                     transitioned_at:
                         '2026-04-01T12:00:00.000Z',
                 }),
                 makeTransition({
                     id: 't-2', from_node_id: 'n-1',
                     to_node_id: 'n-2',
-                    person_id: 'p-2',
+                    worker_id: 'p-2',
                     transitioned_at:
                         '2026-04-03T08:00:00.000Z',
                 }),
@@ -551,7 +551,7 @@ test(
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-1',
             work_order_id: 'wo-1',
-            person_id: 'p-1',
+            worker_id: 'p-1',
             claimed_at: new Date().toISOString(),
         }];
         const presenter = makePresenter({
@@ -575,7 +575,7 @@ test(
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-2',
             work_order_id: 'wo-1',
-            person_id: 'p-2',
+            worker_id: 'p-2',
             claimed_at: new Date().toISOString(),
         }];
         const presenter = makePresenter({
@@ -602,7 +602,7 @@ test(
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-3',
             work_order_id: 'wo-1',
-            person_id: 'p-1',
+            worker_id: 'p-1',
             claimed_at: longAgo,
         }];
         const presenter = makePresenter({ claims });
@@ -618,7 +618,7 @@ test(
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-4',
             work_order_id: 'wo-OTHER',
-            person_id: 'p-1',
+            worker_id: 'p-1',
             claimed_at: new Date().toISOString(),
         }];
         const presenter = makePresenter({ claims });

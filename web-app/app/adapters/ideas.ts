@@ -126,7 +126,7 @@ export async function getIdeas(
             entity: row,
             submitterName: workerName(
                 workerMap,
-                submission.person_id,
+                submission.worker_id,
             ),
             submittedAt:
                 submission.created_at,
@@ -149,7 +149,7 @@ export async function getIdea(
         idea: new Idea(row),
         entity: row,
         submitterName: workerName(
-            workerMap, submission.person_id,
+            workerMap, submission.worker_id,
         ),
         submittedAt: submission.created_at,
     };
@@ -175,7 +175,7 @@ export async function putIdeaSubmission(
             + submissionId,
         {
             idea_id: ideaId,
-            person_id: worker.id,
+            worker_id: worker.id,
             created_at: nowUtc(),
         },
     );

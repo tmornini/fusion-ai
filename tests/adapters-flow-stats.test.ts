@@ -155,21 +155,21 @@ test(
             work_order_id: 'wo1',
             from_node_id: '',
             to_node_id: 'c',
-            person_id: 'p1',
+            worker_id: 'p1',
             transitioned_at: daysAgo(40),
         });
         await db.workOrderTransitions.put('t1b', {
             work_order_id: 'wo1',
             from_node_id: 'c',
             to_node_id: 'a',
-            person_id: 'p1',
+            worker_id: 'p1',
             transitioned_at: daysAgo(40),
         });
         await db.workOrderTransitions.put('t1c', {
             work_order_id: 'wo1',
             from_node_id: 'a',
             to_node_id: 'z',
-            person_id: 'p1',
+            worker_id: 'p1',
             transitioned_at: daysAgo(5),
         });
 
@@ -179,7 +179,7 @@ test(
             work_order_id: 'wo2',
             from_node_id: '',
             to_node_id: 'c',
-            person_id: 'p1',
+            worker_id: 'p1',
             transitioned_at: daysAgo(40),
         });
 
@@ -245,7 +245,7 @@ test(
             work_order_id: 'wo1',
             from_node_id: '',
             to_node_id: 'c',
-            person_id: 'p1',
+            worker_id: 'p1',
             transitioned_at: daysAgo(10),
         });
         const ctx = createRequestContext(db);

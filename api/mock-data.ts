@@ -317,7 +317,7 @@ function generateFlowWorkload(args: {
             work_order_id: woId,
             from_node_id: '',
             to_node_id: path.nodeIds[0]!,
-            person_id: creatorPerson,
+            worker_id: creatorPerson,
             transitioned_at:
                 isoFromMs(cursorMs),
         });
@@ -331,7 +331,7 @@ function generateFlowWorkload(args: {
                     path.nodeIds[0]!,
                 to_node_id:
                     path.nodeIds[1]!,
-                person_id: creatorPerson,
+                worker_id: creatorPerson,
                 transitioned_at:
                     isoFromMs(cursorMs),
             });
@@ -352,7 +352,7 @@ function generateFlowWorkload(args: {
                     path.nodeIds[j - 1]!,
                 to_node_id:
                     path.nodeIds[j]!,
-                person_id:
+                worker_id:
                     stepWorker[j - 1]!,
                 transitioned_at:
                     isoFromMs(cursorMs),
@@ -3779,7 +3779,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at:
                 woCreated,
         },
@@ -3788,7 +3788,7 @@ export async function populateMockData(
             work_order_id: woId,
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at:
                 woCreated,
         },
@@ -3798,7 +3798,7 @@ export async function populateMockData(
             from_node_id:
                 woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at:
                 dt(13, 14, 30),
         },
@@ -3809,7 +3809,7 @@ export async function populateMockData(
                 woNodeReview,
             to_node_id:
                 woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at:
                 dt(12, 9, 15),
         },
@@ -3820,7 +3820,7 @@ export async function populateMockData(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(88, 9, 0),
         },
         {
@@ -3829,7 +3829,7 @@ export async function populateMockData(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(88, 9, 5),
         },
         {
@@ -3838,7 +3838,7 @@ export async function populateMockData(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(87, 10, 0),
         },
         {
@@ -3847,7 +3847,7 @@ export async function populateMockData(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(85, 14, 0),
         },
         // happy-path WO03: DC sojourn 2 days
@@ -3857,7 +3857,7 @@ export async function populateMockData(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(82, 10, 0),
         },
         {
@@ -3866,7 +3866,7 @@ export async function populateMockData(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(82, 10, 8),
         },
         {
@@ -3875,7 +3875,7 @@ export async function populateMockData(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(80, 11, 0),
         },
         {
@@ -3884,7 +3884,7 @@ export async function populateMockData(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(79, 9, 0),
         },
         // happy-path WO04: DC sojourn 3 days
@@ -3894,7 +3894,7 @@ export async function populateMockData(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(76, 8, 30),
         },
         {
@@ -3903,7 +3903,7 @@ export async function populateMockData(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(76, 8, 40),
         },
         {
@@ -3912,7 +3912,7 @@ export async function populateMockData(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(73, 10, 0),
         },
         {
@@ -3921,7 +3921,7 @@ export async function populateMockData(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(71, 15, 0),
         },
         // happy-path WO05: DC sojourn 1 day
@@ -3931,7 +3931,7 @@ export async function populateMockData(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(71, 9, 0),
         },
         {
@@ -3940,7 +3940,7 @@ export async function populateMockData(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(71, 9, 10),
         },
         {
@@ -3949,7 +3949,7 @@ export async function populateMockData(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(70, 14, 0),
         },
         {
@@ -3958,7 +3958,7 @@ export async function populateMockData(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(68, 10, 0),
         },
         // happy-path WO06: DC sojourn 5 days
@@ -3968,7 +3968,7 @@ export async function populateMockData(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(66, 11, 0),
         },
         {
@@ -3977,7 +3977,7 @@ export async function populateMockData(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(66, 11, 12),
         },
         {
@@ -3986,7 +3986,7 @@ export async function populateMockData(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(61, 9, 0),
         },
         {
@@ -3995,7 +3995,7 @@ export async function populateMockData(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(59, 14, 0),
         },
         // happy-path WO07: DC sojourn 2 days
@@ -4005,7 +4005,7 @@ export async function populateMockData(
                 '9ooK5olzSsEnpgP8ASzBQi',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(61, 9, 30),
         },
         {
@@ -4014,7 +4014,7 @@ export async function populateMockData(
                 '9ooK5olzSsEnpgP8ASzBQi',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(61, 9, 45),
         },
         {
@@ -4023,7 +4023,7 @@ export async function populateMockData(
                 '9ooK5olzSsEnpgP8ASzBQi',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(59, 11, 0),
         },
         {
@@ -4032,7 +4032,7 @@ export async function populateMockData(
                 '9ooK5olzSsEnpgP8ASzBQi',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(58, 9, 0),
         },
         // happy-path WO08: DC sojourn 4 days
@@ -4042,7 +4042,7 @@ export async function populateMockData(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(57, 8, 0),
         },
         {
@@ -4051,7 +4051,7 @@ export async function populateMockData(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(57, 8, 15),
         },
         {
@@ -4060,7 +4060,7 @@ export async function populateMockData(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(53, 10, 0),
         },
         {
@@ -4069,7 +4069,7 @@ export async function populateMockData(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(51, 14, 0),
         },
         // happy-path WO09: DC sojourn 7 days (fat tail)
@@ -4079,7 +4079,7 @@ export async function populateMockData(
                 'kKw82RQDHRfgg5xQnw1lPk',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(52, 10, 0),
         },
         {
@@ -4088,7 +4088,7 @@ export async function populateMockData(
                 'kKw82RQDHRfgg5xQnw1lPk',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(52, 10, 20),
         },
         {
@@ -4097,7 +4097,7 @@ export async function populateMockData(
                 'kKw82RQDHRfgg5xQnw1lPk',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(45, 9, 0),
         },
         {
@@ -4106,7 +4106,7 @@ export async function populateMockData(
                 'kKw82RQDHRfgg5xQnw1lPk',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(43, 11, 0),
         },
         // happy-path WO10: DC sojourn 3 days
@@ -4116,7 +4116,7 @@ export async function populateMockData(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(48, 9, 0),
         },
         {
@@ -4125,7 +4125,7 @@ export async function populateMockData(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(48, 9, 10),
         },
         {
@@ -4134,7 +4134,7 @@ export async function populateMockData(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(45, 14, 0),
         },
         {
@@ -4143,7 +4143,7 @@ export async function populateMockData(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(43, 10, 0),
         },
         // happy-path WO11: DC sojourn 2 days
@@ -4153,7 +4153,7 @@ export async function populateMockData(
                 'gAjJnjirIrIgcFDMJyNsPa',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(44, 10, 30),
         },
         {
@@ -4162,7 +4162,7 @@ export async function populateMockData(
                 'gAjJnjirIrIgcFDMJyNsPa',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(44, 10, 45),
         },
         {
@@ -4171,7 +4171,7 @@ export async function populateMockData(
                 'gAjJnjirIrIgcFDMJyNsPa',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(42, 11, 0),
         },
         {
@@ -4180,7 +4180,7 @@ export async function populateMockData(
                 'gAjJnjirIrIgcFDMJyNsPa',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(41, 14, 0),
         },
         // happy-path WO12: DC sojourn 6 days (fat tail)
@@ -4190,7 +4190,7 @@ export async function populateMockData(
                 'kyWtMAZPazKqAfIwPzACsL',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(40, 9, 0),
         },
         {
@@ -4199,7 +4199,7 @@ export async function populateMockData(
                 'kyWtMAZPazKqAfIwPzACsL',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(40, 9, 15),
         },
         {
@@ -4208,7 +4208,7 @@ export async function populateMockData(
                 'kyWtMAZPazKqAfIwPzACsL',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(34, 10, 0),
         },
         {
@@ -4217,7 +4217,7 @@ export async function populateMockData(
                 'kyWtMAZPazKqAfIwPzACsL',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(32, 9, 0),
         },
         // happy-path WO13: DC sojourn 1 day
@@ -4227,7 +4227,7 @@ export async function populateMockData(
                 'C41Hni5pMxp8xMQFEGNaib',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(37, 8, 0),
         },
         {
@@ -4236,7 +4236,7 @@ export async function populateMockData(
                 'C41Hni5pMxp8xMQFEGNaib',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(37, 8, 10),
         },
         {
@@ -4245,7 +4245,7 @@ export async function populateMockData(
                 'C41Hni5pMxp8xMQFEGNaib',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(36, 11, 0),
         },
         {
@@ -4254,7 +4254,7 @@ export async function populateMockData(
                 'C41Hni5pMxp8xMQFEGNaib',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(35, 14, 0),
         },
         // happy-path WO14: DC sojourn 9 days (fat tail)
@@ -4264,7 +4264,7 @@ export async function populateMockData(
                 'FGAZYYwoS9To1tNb24DfLc',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(33, 9, 30),
         },
         {
@@ -4273,7 +4273,7 @@ export async function populateMockData(
                 'FGAZYYwoS9To1tNb24DfLc',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(33, 9, 45),
         },
         {
@@ -4282,7 +4282,7 @@ export async function populateMockData(
                 'FGAZYYwoS9To1tNb24DfLc',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(24, 10, 0),
         },
         {
@@ -4291,7 +4291,7 @@ export async function populateMockData(
                 'FGAZYYwoS9To1tNb24DfLc',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(22, 9, 0),
         },
         // happy-path WO15: DC sojourn 2 days
@@ -4301,7 +4301,7 @@ export async function populateMockData(
                 '0zgLwuyPgtreVYjg4TScJR',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(29, 10, 0),
         },
         {
@@ -4310,7 +4310,7 @@ export async function populateMockData(
                 '0zgLwuyPgtreVYjg4TScJR',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(29, 10, 15),
         },
         {
@@ -4319,7 +4319,7 @@ export async function populateMockData(
                 '0zgLwuyPgtreVYjg4TScJR',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(27, 14, 0),
         },
         {
@@ -4328,7 +4328,7 @@ export async function populateMockData(
                 '0zgLwuyPgtreVYjg4TScJR',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(25, 10, 0),
         },
         // happy-path WO16: DC sojourn 3 days
@@ -4338,7 +4338,7 @@ export async function populateMockData(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(26, 9, 0),
         },
         {
@@ -4347,7 +4347,7 @@ export async function populateMockData(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(26, 9, 12),
         },
         {
@@ -4356,7 +4356,7 @@ export async function populateMockData(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(23, 11, 0),
         },
         {
@@ -4365,7 +4365,7 @@ export async function populateMockData(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(21, 14, 0),
         },
         // happy-path WO17: DC sojourn 1 day
@@ -4375,7 +4375,7 @@ export async function populateMockData(
                 'rtuFD9uWn5zguEHyT3fh8s',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(23, 8, 30),
         },
         {
@@ -4384,7 +4384,7 @@ export async function populateMockData(
                 'rtuFD9uWn5zguEHyT3fh8s',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(23, 8, 42),
         },
         {
@@ -4393,7 +4393,7 @@ export async function populateMockData(
                 'rtuFD9uWn5zguEHyT3fh8s',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(22, 10, 0),
         },
         {
@@ -4402,7 +4402,7 @@ export async function populateMockData(
                 'rtuFD9uWn5zguEHyT3fh8s',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(21, 9, 0),
         },
         // happy-path WO18: DC sojourn 4 days
@@ -4412,7 +4412,7 @@ export async function populateMockData(
                 'XrO05MeyqldO8qm0O4VPdq',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(20, 10, 0),
         },
         {
@@ -4421,7 +4421,7 @@ export async function populateMockData(
                 'XrO05MeyqldO8qm0O4VPdq',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(20, 10, 18),
         },
         {
@@ -4430,7 +4430,7 @@ export async function populateMockData(
                 'XrO05MeyqldO8qm0O4VPdq',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(16, 9, 0),
         },
         {
@@ -4439,7 +4439,7 @@ export async function populateMockData(
                 'XrO05MeyqldO8qm0O4VPdq',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(14, 14, 0),
         },
         // happy-path WO19: DC sojourn 8 days (fat tail)
@@ -4449,7 +4449,7 @@ export async function populateMockData(
                 'S74N7CPA2dsMESryJNrFAC',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(17, 9, 0),
         },
         {
@@ -4458,7 +4458,7 @@ export async function populateMockData(
                 'S74N7CPA2dsMESryJNrFAC',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(17, 9, 20),
         },
         {
@@ -4467,7 +4467,7 @@ export async function populateMockData(
                 'S74N7CPA2dsMESryJNrFAC',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(9, 10, 0),
         },
         {
@@ -4476,7 +4476,7 @@ export async function populateMockData(
                 'S74N7CPA2dsMESryJNrFAC',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(7, 14, 0),
         },
         // happy-path WO20: DC sojourn 2 days
@@ -4486,7 +4486,7 @@ export async function populateMockData(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(14, 8, 0),
         },
         {
@@ -4495,7 +4495,7 @@ export async function populateMockData(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(14, 8, 15),
         },
         {
@@ -4504,7 +4504,7 @@ export async function populateMockData(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(12, 11, 0),
         },
         {
@@ -4513,7 +4513,7 @@ export async function populateMockData(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(10, 9, 0),
         },
         // happy-path WO21: DC sojourn 3 days
@@ -4523,7 +4523,7 @@ export async function populateMockData(
                 '4T56gYme7ae4Ya7AMA0hpW',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(11, 10, 30),
         },
         {
@@ -4532,7 +4532,7 @@ export async function populateMockData(
                 '4T56gYme7ae4Ya7AMA0hpW',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(11, 10, 48),
         },
         {
@@ -4541,7 +4541,7 @@ export async function populateMockData(
                 '4T56gYme7ae4Ya7AMA0hpW',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(8, 14, 0),
         },
         {
@@ -4550,7 +4550,7 @@ export async function populateMockData(
                 '4T56gYme7ae4Ya7AMA0hpW',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(6, 10, 0),
         },
         // happy-path WO22: DC sojourn 1 day
@@ -4560,7 +4560,7 @@ export async function populateMockData(
                 'aFCyJrvokoJM5iINwO3WCf',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(9, 9, 0),
         },
         {
@@ -4569,7 +4569,7 @@ export async function populateMockData(
                 'aFCyJrvokoJM5iINwO3WCf',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(9, 9, 10),
         },
         {
@@ -4578,7 +4578,7 @@ export async function populateMockData(
                 'aFCyJrvokoJM5iINwO3WCf',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(8, 10, 0),
         },
         {
@@ -4587,7 +4587,7 @@ export async function populateMockData(
                 'aFCyJrvokoJM5iINwO3WCf',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(7, 9, 0),
         },
         // happy-path WO23: DC sojourn 2 days
@@ -4597,7 +4597,7 @@ export async function populateMockData(
                 'Sr4k75y6vuKODCA9zlSUjk',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(6, 11, 0),
         },
         {
@@ -4606,7 +4606,7 @@ export async function populateMockData(
                 'Sr4k75y6vuKODCA9zlSUjk',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(6, 11, 15),
         },
         {
@@ -4615,7 +4615,7 @@ export async function populateMockData(
                 'Sr4k75y6vuKODCA9zlSUjk',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(4, 9, 0),
         },
         {
@@ -4624,7 +4624,7 @@ export async function populateMockData(
                 'Sr4k75y6vuKODCA9zlSUjk',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(2, 14, 0),
         },
         // needs-revision WO24: double loop DC->Review->DC
@@ -4635,7 +4635,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(77, 9, 0),
         },
         {
@@ -4644,7 +4644,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(77, 9, 10),
         },
         {
@@ -4653,7 +4653,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(75, 11, 0),
         },
         {
@@ -4662,7 +4662,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(74, 14, 0),
         },
         {
@@ -4671,7 +4671,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(73, 10, 0),
         },
         {
@@ -4680,7 +4680,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(72, 14, 0),
         },
         {
@@ -4689,7 +4689,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(71, 10, 0),
         },
         {
@@ -4698,7 +4698,7 @@ export async function populateMockData(
                 'Mm6KUpykGSwjD7YofI6zpb',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(70, 9, 0),
         },
         // needs-revision WO25: loops DC->Review->DC
@@ -4708,7 +4708,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(63, 10, 0),
         },
         {
@@ -4717,7 +4717,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(63, 10, 15),
         },
         {
@@ -4726,7 +4726,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(61, 14, 0),
         },
         {
@@ -4735,7 +4735,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(60, 22, 0),
         },
         {
@@ -4744,7 +4744,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(59, 14, 0),
         },
         {
@@ -4753,7 +4753,7 @@ export async function populateMockData(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(58, 9, 0),
         },
         // needs-revision WO26: loops DC->Review->DC
@@ -4763,7 +4763,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(50, 8, 30),
         },
         {
@@ -4772,7 +4772,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(50, 8, 45),
         },
         {
@@ -4781,7 +4781,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(48, 11, 0),
         },
         {
@@ -4790,7 +4790,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(47, 14, 0),
         },
         {
@@ -4799,7 +4799,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(46, 10, 0),
         },
         {
@@ -4808,7 +4808,7 @@ export async function populateMockData(
                 'NydsTqMmCgEKI7R9xxp36g',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(44, 14, 0),
         },
         // needs-revision WO27: loops DC->Review->DC
@@ -4818,7 +4818,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(38, 9, 0),
         },
         {
@@ -4827,7 +4827,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(38, 9, 18),
         },
         {
@@ -4836,7 +4836,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(36, 14, 0),
         },
         {
@@ -4845,7 +4845,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(35, 22, 0),
         },
         {
@@ -4854,7 +4854,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(34, 14, 0),
         },
         {
@@ -4863,7 +4863,7 @@ export async function populateMockData(
                 'x2uQev3HutthrUWRFkXSkH',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(33, 9, 0),
         },
         // needs-revision WO28: loops DC->Review->DC
@@ -4873,7 +4873,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(25, 10, 0),
         },
         {
@@ -4882,7 +4882,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(25, 10, 20),
         },
         {
@@ -4891,7 +4891,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(23, 14, 0),
         },
         {
@@ -4900,7 +4900,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(22, 14, 0),
         },
         {
@@ -4909,7 +4909,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(21, 10, 0),
         },
         {
@@ -4918,7 +4918,7 @@ export async function populateMockData(
                 'w7XA9UnuYI7e46RTQL1xGW',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(19, 14, 0),
         },
         // needs-revision WO29: loops DC->Review->DC
@@ -4928,7 +4928,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(12, 9, 30),
         },
         {
@@ -4937,7 +4937,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(12, 9, 45),
         },
         {
@@ -4946,7 +4946,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(11, 11, 0),
         },
         {
@@ -4955,7 +4955,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: woNodeReview,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(10, 14, 0),
         },
         {
@@ -4964,7 +4964,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(9, 11, 0),
         },
         {
@@ -4973,7 +4973,7 @@ export async function populateMockData(
                 '3H3XeeNE4rS2wbANs3JvYz',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(8, 9, 0),
         },
         // in-flight WO30: sitting in Data Capture
@@ -4983,7 +4983,7 @@ export async function populateMockData(
                 'i7YYgKN3ZUlrkulQ2aWdIE',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(18, 9, 0),
         },
         {
@@ -4992,7 +4992,7 @@ export async function populateMockData(
                 'i7YYgKN3ZUlrkulQ2aWdIE',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(18, 9, 15),
         },
         // in-flight WO31: sitting in Data Capture
@@ -5002,7 +5002,7 @@ export async function populateMockData(
                 '0brjvcoPEVBwMkUQ3tKHWc',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(10, 10, 0),
         },
         {
@@ -5011,7 +5011,7 @@ export async function populateMockData(
                 '0brjvcoPEVBwMkUQ3tKHWc',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(10, 10, 20),
         },
         // in-flight WO32: sitting in Data Capture
@@ -5021,7 +5021,7 @@ export async function populateMockData(
                 'mTdhglHhl7pM0mKt0M2IjF',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(7, 8, 0),
         },
         {
@@ -5030,7 +5030,7 @@ export async function populateMockData(
                 'mTdhglHhl7pM0mKt0M2IjF',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(7, 8, 12),
         },
         // in-flight WO33: sitting in Review
@@ -5040,7 +5040,7 @@ export async function populateMockData(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(4, 9, 0),
         },
         {
@@ -5049,7 +5049,7 @@ export async function populateMockData(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(4, 9, 18),
         },
         {
@@ -5058,7 +5058,7 @@ export async function populateMockData(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(3, 14, 0),
         },
         // in-flight WO34: sitting in Review
@@ -5068,7 +5068,7 @@ export async function populateMockData(
                 'pLxCFGOINXVaXmrS0VG0vC',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(2, 11, 0),
         },
         {
@@ -5077,7 +5077,7 @@ export async function populateMockData(
                 'pLxCFGOINXVaXmrS0VG0vC',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(2, 11, 20),
         },
         {
@@ -5086,7 +5086,7 @@ export async function populateMockData(
                 'pLxCFGOINXVaXmrS0VG0vC',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(1, 10, 0),
         },
         // out-of-clan WO35: Sarah (not in DC workers)
@@ -5097,7 +5097,7 @@ export async function populateMockData(
                 'IyrpZrIl2hbmmnCtiifEGm',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(35, 9, 0),
         },
         {
@@ -5106,7 +5106,7 @@ export async function populateMockData(
                 'IyrpZrIl2hbmmnCtiifEGm',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(35, 9, 12),
         },
         {
@@ -5115,7 +5115,7 @@ export async function populateMockData(
                 'IyrpZrIl2hbmmnCtiifEGm',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(33, 10, 0),
         },
         {
@@ -5124,7 +5124,7 @@ export async function populateMockData(
                 'IyrpZrIl2hbmmnCtiifEGm',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(31, 14, 0),
         },
         // out-of-clan WO36: Mike (not in DC workers)
@@ -5135,7 +5135,7 @@ export async function populateMockData(
                 'zYnDWBV4VP5guzW5fDWtHN',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(22, 10, 30),
         },
         {
@@ -5144,7 +5144,7 @@ export async function populateMockData(
                 'zYnDWBV4VP5guzW5fDWtHN',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(22, 10, 45),
         },
         {
@@ -5153,7 +5153,7 @@ export async function populateMockData(
                 'zYnDWBV4VP5guzW5fDWtHN',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(20, 11, 0),
         },
         {
@@ -5162,7 +5162,7 @@ export async function populateMockData(
                 'zYnDWBV4VP5guzW5fDWtHN',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(18, 14, 0),
         },
         // old WO37: straddles window edge; Create+DC
@@ -5175,7 +5175,7 @@ export async function populateMockData(
                 '7HX7RPwlYopHWfD7I0QAPs',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(108, 9, 0),
         },
         {
@@ -5184,7 +5184,7 @@ export async function populateMockData(
                 '7HX7RPwlYopHWfD7I0QAPs',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(108, 9, 15),
         },
         {
@@ -5193,7 +5193,7 @@ export async function populateMockData(
                 '7HX7RPwlYopHWfD7I0QAPs',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(8, 10, 0),
         },
         {
@@ -5202,7 +5202,7 @@ export async function populateMockData(
                 '7HX7RPwlYopHWfD7I0QAPs',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(5, 14, 0),
         },
         // old WO38: all transitions ~100-103 days ago,
@@ -5214,7 +5214,7 @@ export async function populateMockData(
                 'EXphSopBU1Is2TH4QZo4nO',
             from_node_id: '',
             to_node_id: woNodeNew,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(103, 10, 0),
         },
         {
@@ -5223,7 +5223,7 @@ export async function populateMockData(
                 'EXphSopBU1Is2TH4QZo4nO',
             from_node_id: woNodeNew,
             to_node_id: woNodeCapture,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(103, 10, 18),
         },
         {
@@ -5232,7 +5232,7 @@ export async function populateMockData(
                 'EXphSopBU1Is2TH4QZo4nO',
             from_node_id: woNodeCapture,
             to_node_id: woNodeReview,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(101, 11, 0),
         },
         {
@@ -5241,7 +5241,7 @@ export async function populateMockData(
                 'EXphSopBU1Is2TH4QZo4nO',
             from_node_id: woNodeReview,
             to_node_id: woNodeComplete,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(100, 9, 0),
         },
         // prc01: happy path, ~3 day draft sojourn
@@ -5251,7 +5251,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(60, 9, 0),
         },
         {
@@ -5260,7 +5260,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(60, 9, 5),
         },
         {
@@ -5269,7 +5269,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(57, 10, 0),
         },
         {
@@ -5278,7 +5278,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(57, 10, 30),
         },
         {
@@ -5287,7 +5287,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(57, 11, 0),
         },
         {
@@ -5296,7 +5296,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(56, 14, 0),
         },
         {
@@ -5305,7 +5305,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeApproved,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(56, 15, 0),
         },
         {
@@ -5314,7 +5314,7 @@ export async function populateMockData(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             from_node_id: prcNodeApproved,
             to_node_id: prcNodeArchive,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(55, 9, 0),
         },
         // prc02: happy path, ~2 day draft sojourn
@@ -5324,7 +5324,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(45, 10, 0),
         },
         {
@@ -5333,7 +5333,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(45, 10, 10),
         },
         {
@@ -5342,7 +5342,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(43, 9, 0),
         },
         {
@@ -5351,7 +5351,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(43, 9, 20),
         },
         {
@@ -5360,7 +5360,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(43, 10, 0),
         },
         {
@@ -5369,7 +5369,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(42, 14, 0),
         },
         {
@@ -5378,7 +5378,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeApproved,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(42, 15, 0),
         },
         {
@@ -5387,7 +5387,7 @@ export async function populateMockData(
                 'L3UhOvrAGluk4kNnN6J8NT',
             from_node_id: prcNodeApproved,
             to_node_id: prcNodeArchive,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(41, 10, 0),
         },
         // prc03: happy path, ~1 day draft sojourn
@@ -5397,7 +5397,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(30, 8, 0),
         },
         {
@@ -5406,7 +5406,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(30, 8, 10),
         },
         {
@@ -5415,7 +5415,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(29, 9, 0),
         },
         {
@@ -5424,7 +5424,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(29, 9, 15),
         },
         {
@@ -5433,7 +5433,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(29, 10, 0),
         },
         {
@@ -5442,7 +5442,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(28, 15, 0),
         },
         {
@@ -5451,7 +5451,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeApproved,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(28, 16, 0),
         },
         {
@@ -5460,7 +5460,7 @@ export async function populateMockData(
                 'oTscblsEOjZDkvkW3vs7rU',
             from_node_id: prcNodeApproved,
             to_node_id: prcNodeArchive,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(27, 9, 0),
         },
         // prc04: happy path, ~4 day draft sojourn
@@ -5470,7 +5470,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(20, 11, 0),
         },
         {
@@ -5479,7 +5479,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(20, 11, 5),
         },
         {
@@ -5488,7 +5488,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(16, 10, 0),
         },
         {
@@ -5497,7 +5497,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(16, 10, 20),
         },
         {
@@ -5506,7 +5506,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(16, 11, 0),
         },
         {
@@ -5515,7 +5515,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(15, 14, 0),
         },
         {
@@ -5524,7 +5524,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeApproved,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(15, 15, 30),
         },
         {
@@ -5533,7 +5533,7 @@ export async function populateMockData(
                 'Xpw9VGpZ6RyevuInSr8yze',
             from_node_id: prcNodeApproved,
             to_node_id: prcNodeArchive,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(14, 9, 0),
         },
         // prc05: revisit -- Decision sends to
@@ -5544,7 +5544,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(15, 9, 0),
         },
         {
@@ -5553,7 +5553,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(15, 9, 10),
         },
         {
@@ -5562,7 +5562,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(14, 10, 0),
         },
         {
@@ -5571,7 +5571,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(14, 10, 15),
         },
         {
@@ -5580,7 +5580,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(14, 11, 0),
         },
         {
@@ -5589,7 +5589,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(13, 14, 0),
         },
         // Decision routes to Revise (revisit)
@@ -5599,7 +5599,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeRevise,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(13, 15, 0),
         },
         // Revise sends back to Draft
@@ -5609,7 +5609,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeRevise,
             to_node_id: prcNodeDraft,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(12, 9, 0),
         },
         {
@@ -5618,7 +5618,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(11, 10, 0),
         },
         {
@@ -5627,7 +5627,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(11, 10, 20),
         },
         {
@@ -5636,7 +5636,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(11, 11, 0),
         },
         {
@@ -5645,7 +5645,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(10, 14, 0),
         },
         {
@@ -5654,7 +5654,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeDecision,
             to_node_id: prcNodeApproved,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(10, 15, 0),
         },
         {
@@ -5663,7 +5663,7 @@ export async function populateMockData(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             from_node_id: prcNodeApproved,
             to_node_id: prcNodeArchive,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(9, 9, 0),
         },
         // prc06: in-flight -- stuck at Decision
@@ -5673,7 +5673,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: '',
             to_node_id: prcNodeStart,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(5, 10, 0),
         },
         {
@@ -5682,7 +5682,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: prcNodeStart,
             to_node_id: prcNodeDraft,
-            person_id: woPersonMike,
+            worker_id: woPersonMike,
             transitioned_at: dt(5, 10, 8),
         },
         {
@@ -5691,7 +5691,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: prcNodeDraft,
             to_node_id: prcNodeSubmit,
-            person_id: woPersonCurrent,
+            worker_id: woPersonCurrent,
             transitioned_at: dt(4, 11, 0),
         },
         {
@@ -5700,7 +5700,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: prcNodeSubmit,
             to_node_id: prcNodeTriage,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(4, 11, 20),
         },
         {
@@ -5709,7 +5709,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: prcNodeTriage,
             to_node_id: prcNodeQuickRev,
-            person_id: woPersonSarah,
+            worker_id: woPersonSarah,
             transitioned_at: dt(4, 12, 0),
         },
         {
@@ -5718,7 +5718,7 @@ export async function populateMockData(
                 'BUrGEVDMF6FeU35WUHUY5E',
             from_node_id: prcNodeQuickRev,
             to_node_id: prcNodeDecision,
-            person_id: woPersonMarcus,
+            worker_id: woPersonMarcus,
             transitioned_at: dt(3, 14, 0),
         },
         // stays at Decision -- no more transitions
@@ -6004,67 +6004,67 @@ export async function populateMockData(
         {
             id: 'k4dY2dPq90mQVwwCkhWIo3',
             idea_id: 'eT5xdKjzLDmuRn3r7XMX4R',
-            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(75, 9, 30),
         },
         {
             id: 'XC7hsfNJueKQ8q0UfCuC7o',
             idea_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
-            person_id: 'bLP3X1hb1mSz8gY9neogU3',
+            worker_id: 'bLP3X1hb1mSz8gY9neogU3',
             created_at: dt(70, 9, 0),
         },
         {
             id: 'YmzT46BbGVFALpiXFDnlVd',
             idea_id: 'wuCMQqo4IkEksx7MYmu8g2',
-            person_id: '53J8h9dr76XFqCjYcNVwIR',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(65, 9, 0),
         },
         {
             id: 'cmoTu4GRGmO8y5QrfPIHSm',
             idea_id: 'ojOEXtdzdtTZtpM81TxVca',
-            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
             created_at: dt(55, 9, 0),
         },
         {
             id: 'kIUtvgTOLPjsSmAEVOhPb1',
             idea_id: 'T2vAafLDcshDONlYxpzPLc',
-            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(50, 9, 0),
         },
         {
             id: 'r04u9qpJKSyNjP9Owxr5Be',
             idea_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
-            person_id: 'zyTbfbjcGEfbpCsNTP0XjX',
+            worker_id: 'zyTbfbjcGEfbpCsNTP0XjX',
             created_at: dt(45, 9, 0),
         },
         {
             id: '2mPJTlujj1RF6gexFwbDqJ',
             idea_id: 'MCxK0hzT9CPjJx1ZV5unfr',
-            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(75, 10, 0),
         },
         {
             id: 'caBSqTgzDnvP8joamAG9OG',
             idea_id: 'SUb4gKXsZ1OsEauzqszg0t',
-            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(35, 9, 0),
         },
         {
             id: 'UfsCp7WYUybhwxD170okb4',
             idea_id: 'gxa84W9KvEgD0wT1F4TOM9',
-            person_id: '53J8h9dr76XFqCjYcNVwIR',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(30, 9, 0),
         },
         {
             id: 'mbTZAQbC5cJSEIzhEEFpyq',
             idea_id: '1Z68gROMrlTAfPEGiyJJAY',
-            person_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
             created_at: dt(25, 9, 0),
         },
         {
             id: '0LjTHFflWNaDZkKDqxmwJi',
             idea_id: 'Q2On2xwMpFdzOklBQJXrni',
-            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(20, 9, 0),
         },
     ];
@@ -6074,61 +6074,61 @@ export async function populateMockData(
         {
             id: 'b46Mr8QWIMo4EDBxxhfkWL',
             activity_id: 'Ng6GWmx7DNmLsGshK3lBfU',
-            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(0, 17, 50),
         },
         {
             id: 'pgyIzpoLgG8Vv6FgYF4DV8',
             activity_id: 'p3H9tGtQwFwQXpUiYyinT6',
-            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(0, 17, 35),
         },
         {
             id: 'SJalTSor6JhpoPincDXLeY',
             activity_id: '5PGE1WlEOTkSaNYjiBXLMA',
-            person_id: '53J8h9dr76XFqCjYcNVwIR',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(0, 17, 0),
         },
         {
             id: 'JvodSYYA6w1ithWEirfNVg',
             activity_id: 'fOqTfg9JPs73xsnC4QUmHs',
-            person_id: '6xBfK5If82JKfThXb1wlzS',
+            worker_id: '6xBfK5If82JKfThXb1wlzS',
             created_at: dt(0, 16, 0),
         },
         {
             id: 'BExIeH5NDiGVGQnrP8phOs',
             activity_id: '3pBQbQp4LPK2udgd21HlTm',
-            person_id: 'I5ntELi16X3N3JYCCnxMjZ',
+            worker_id: 'I5ntELi16X3N3JYCCnxMjZ',
             created_at: dt(0, 15, 0),
         },
         {
             id: 'pC3hoLmzaVyxJSGOHsmV5j',
             activity_id: 'CqXHcyiDNzFVcoUM2M1Tl3',
-            person_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             created_at: dt(0, 14, 0),
         },
         {
             id: 'PsG42X7oevXgC5DRy4irTW',
             activity_id: 'Kj75MtFxnEpFZs4MSK1emd',
-            person_id: 'oU0bIe0eUC33mTbZrxdogC',
+            worker_id: 'oU0bIe0eUC33mTbZrxdogC',
             created_at: dt(0, 13, 0),
         },
         {
             id: 'bPgxi8YCw4yTFctLef62gB',
             activity_id: 'xRmfZFNV8GYDQmq8j09Fsc',
-            person_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
             created_at: dt(0, 12, 0),
         },
         {
             id: '2dp7FPj4gjWYtfR78D3wI2',
             activity_id: 'hP80lUSXqn1PSleymgE3Ks',
-            person_id: '53J8h9dr76XFqCjYcNVwIR',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
             created_at: dt(1, 18, 0),
         },
         {
             id: 'Rf5G2Dh1ejnvzxbpW6hcrm',
             activity_id: 'XMltAG0dpolQLDTfd5GLWj',
-            person_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
             created_at: dt(1, 15, 0),
         },
     ];

@@ -165,7 +165,7 @@ test(
                 work_order_id: 'wo-1',
                 from_node_id: 'n-from',
                 to_node_id: 'n-to',
-                person_id: 'u-1',
+                worker_id: 'u-1',
                 transitioned_at:
                     '2026-01-01T00:00:00.000Z',
             },
