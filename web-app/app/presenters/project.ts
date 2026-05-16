@@ -16,8 +16,8 @@ import {
 } from './list-filter.ts';
 import {
     type Project,
-    type ProjectStatus,
-    PROJECT_STATUS_CONFIG,
+    type ProjectState,
+    PROJECT_STATE_CONFIG,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../adapters/index.ts';
@@ -37,8 +37,8 @@ type ScoreRow = {
     totalActiveObjectives: number;
 };
 
-const STATUS_ICONS: Record<
-    ProjectStatus,
+const STATE_ICONS: Record<
+    ProjectState,
     (
         size: number,
         cssClass: string,
@@ -69,19 +69,19 @@ export class ProjectPresenter {
             .positionSortKey();
     }
 
-    statusGroup(): ProjectStatus {
+    stateGroup(): ProjectState {
         return this.#project
-            .statusValue();
+            .stateValue();
     }
 
-    buildStatusBadge(
+    buildStateBadge(
         isActive: boolean | null,
     ): SafeHtml {
         const s =
-            this.#project.statusValue();
+            this.#project.stateValue();
         const cfg =
-            PROJECT_STATUS_CONFIG[s]!;
-        const icon = STATUS_ICONS[s]!;
+            PROJECT_STATE_CONFIG[s]!;
+        const icon = STATE_ICONS[s]!;
         const dimmed = isActive === false
             ? 'true'
             : 'false';
@@ -90,7 +90,7 @@ export class ProjectPresenter {
             + cfg.className
             + ' text-xs badge-fixed-w'
             + ' cursor-pointer'
-        }" data-status="${s}" data-dimmed="${
+        }" data-state="${s}" data-dimmed="${
             dimmed
         }">${
             icon(14, '')
@@ -102,8 +102,8 @@ export class ProjectPresenter {
         showGrip: boolean,
         score?: ScoreRow,
     ): SafeHtml {
-        const statusIcon = STATUS_ICONS[
-            this.#project.statusValue()
+        const stateIcon = STATE_ICONS[
+            this.#project.stateValue()
         ]!;
         return html`
     <div class="card card-hover p-5"
@@ -133,16 +133,16 @@ export class ProjectPresenter {
                 <span class="${
                     'badge '
                     + this.#project
-                        .statusClassName()
+                        .stateClassName()
                     + ' text-xs'
                     + ' badge-fixed-w mt-1'
                 }">${
-                    statusIcon(
+                    stateIcon(
                         14, '',
                     )
                 } ${
                     this.#project
-                        .statusLabel()
+                        .stateLabel()
                 }</span>
             </div>
             ${this.#buildMetrics()}
@@ -302,7 +302,7 @@ export class ProjectPresenter {
 
 export type ProjectListFilter =
     | { kind: 'all' }
-    | { kind: 'filtered'; status: ProjectStatus };
+    | { kind: 'filtered'; status: ProjectState };
 
 export type ProjectListSort =
     | { kind: 'position' }
@@ -332,14 +332,14 @@ export function applyProjectListUpdate(
 }
 
 export function applyProjectFilterToggle(
-    state: ProjectListState,
-    status: ProjectStatus,
+    listState: ProjectListState,
+    projectState: ProjectState,
 ): ProjectListState {
     const next: ProjectListFilter =
         toggleStatusFilter(
-            state.filter, status,
+            listState.filter, projectState,
         );
-    return { ...state, filter: next };
+    return { ...listState, filter: next };
 }
 
 export function applyProjectSortToggle(
@@ -375,7 +375,7 @@ export class ProjectListPresenter {
     }
 
     activeFilter():
-        ProjectStatus | null {
+        ProjectState | null {
         return this.#filter.kind
             === 'filtered'
             ? this.#filter.status
@@ -412,9 +412,9 @@ export class ProjectListPresenter {
         const active = this.activeFilter();
         const groups = Object.groupBy(
             this.#projects,
-            p => p.statusGroup(),
+            p => p.stateGroup(),
         );
-        const order: ProjectStatus[] = [
+        const order: ProjectState[] = [
             'completed', 'under-review',
             'sent-back', 'approved',
         ];
@@ -430,7 +430,7 @@ export class ProjectListPresenter {
                     && g.items.length > 0,
             )
             .map(g => g.items![0]!
-                .buildStatusBadge(
+                .buildStateBadge(
                     active === null
                         ? null
                         : g.status === active,
@@ -443,7 +443,7 @@ export class ProjectListPresenter {
         const filtered =
             f.kind === 'filtered'
                 ? this.#projects.filter(
-                    p => p.statusGroup()
+                    p => p.stateGroup()
                         === f.status,
                 )
                 : this.#projects;

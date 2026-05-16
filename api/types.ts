@@ -112,14 +112,21 @@ export function isDimensionKey(
         .includes(v);
 }
 
-export type ProjectStatus =
-    | 'submitted'
-    | 'under-review'
-    | 'sent-back'
-    | 'approved'
-    | 'declined'
-    | 'completed'
-    | 'deleted';
+// The state alphabet for projects. Stage 9b+c
+// retires the dual-column representation; the
+// states log IS the truth. Projects have no
+// composite dimension — each state stands alone.
+export const PROJECT_STATES = [
+    'submitted',
+    'under-review',
+    'sent-back',
+    'approved',
+    'declined',
+    'completed',
+    'deleted',
+] as const;
+
+export type ProjectState = typeof PROJECT_STATES[number];
 
 export type StoredBoolean = 0 | 1;
 
@@ -186,30 +193,21 @@ export function isFlowFieldType(
     );
 }
 
-const PROJECT_STATUSES:
-    readonly ProjectStatus[]
-    = [
-        'submitted', 'under-review',
-        'sent-back', 'approved',
-        'declined', 'completed',
-        'deleted',
-    ];
-
-export function isProjectStatus(
+export function isProjectState(
     v: string,
-): v is ProjectStatus {
+): v is ProjectState {
     return includes(
-        PROJECT_STATUSES, v,
+        PROJECT_STATES, v,
     );
 }
 
-export function assertProjectStatus(
+export function assertProjectState(
     v: string,
     label: string,
-): ProjectStatus {
-    if (!includes(PROJECT_STATUSES, v)) {
+): ProjectState {
+    if (!includes(PROJECT_STATES, v)) {
         throw new Error(
-            'expected ProjectStatus for '
+            'expected ProjectState for '
                 + label + ', got ' + v,
         );
     }
@@ -624,7 +622,6 @@ export interface ProjectEntity {
     id: Id;
     title: string;
     description: string;
-    status: ProjectStatus;
     progress: number;
     start_date: string;
     target_end_date: string;
@@ -870,8 +867,8 @@ export const IDEA_STATE_CONFIG: Record<
     },
 };
 
-export const PROJECT_STATUS_CONFIG: Record<
-    ProjectStatus,
+export const PROJECT_STATE_CONFIG: Record<
+    ProjectState,
     StatusDisplay
 > = {
     'submitted': {
@@ -1051,7 +1048,7 @@ export class Project {
     readonly #id: string;
     readonly #title: string;
     readonly #description: string;
-    readonly #status: ProjectStatus;
+    readonly #state: ProjectState;
     readonly #progress: number;
     readonly #startDate: string;
     readonly #targetEndDate: string;
@@ -1063,12 +1060,15 @@ export class Project {
     readonly #businessContext: string;
     readonly #timelineLabel: string;
 
-    constructor(entity: ProjectEntity) {
+    constructor(
+        entity: ProjectEntity,
+        state: ProjectState,
+    ) {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#description =
             entity.description;
-        this.#status = entity.status;
+        this.#state = state;
         this.#progress = entity.progress;
         this.#startDate =
             entity.start_date;
@@ -1090,7 +1090,7 @@ export class Project {
     }
 
     isDeleted(): boolean {
-        return this.#status === 'deleted';
+        return this.#state === 'deleted';
     }
 
     isOverdue(): boolean {
@@ -1111,7 +1111,7 @@ export class Project {
     }
 
     timelineProgress(): number {
-        if (this.#status === 'completed')
+        if (this.#state === 'completed')
             return 100;
         const start =
             new Date(this.#startDate);
@@ -1146,18 +1146,18 @@ export class Project {
         );
     }
 
-    statusLabel(): string {
+    stateLabel(): string {
         return (
-            PROJECT_STATUS_CONFIG[
-                this.#status
+            PROJECT_STATE_CONFIG[
+                this.#state
             ]
         )!.label;
     }
 
-    statusClassName(): string {
+    stateClassName(): string {
         return (
-            PROJECT_STATUS_CONFIG[
-                this.#status
+            PROJECT_STATE_CONFIG[
+                this.#state
             ]
         )!.className;
     }
@@ -1174,8 +1174,8 @@ export class Project {
         return this.#description;
     }
 
-    statusValue(): ProjectStatus {
-        return this.#status;
+    stateValue(): ProjectState {
+        return this.#state;
     }
 
     progressPercent(): number {
@@ -1223,15 +1223,15 @@ export function ideaIsVisible(
         && state !== 'deleted';
 }
 
-export function projectIsNotDeleted(
-    e: ProjectEntity,
+export function projectStateIsNotDeleted(
+    state: ProjectState,
 ): boolean {
-    return e.status !== 'deleted';
+    return state !== 'deleted';
 }
 
-export function projectIsApproved(
-    e: ProjectEntity,
+export function projectStateIsApproved(
+    state: ProjectState,
 ): boolean {
-    return e.status === 'approved';
+    return state === 'approved';
 }
 

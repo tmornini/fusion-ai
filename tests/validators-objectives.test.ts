@@ -140,7 +140,6 @@ test('validateProjectEntity ignores legacy impact fields',
         const baseValid = {
             title: 't',
             description: 'd',
-            status: 'submitted',
             progress: 0,
             start_date: '2026-05-14T00:00:00.000Z',
             target_end_date: '2026-05-14T00:00:00.000Z',

@@ -1,9 +1,11 @@
 import type {
-    Id, IdeaState, StateEntity,
+    Id, IdeaState, ProjectState, StateEntity,
 } from '../../../api/types.ts';
 import {
     assertIdeaState,
+    assertProjectState,
     isIdeaState,
+    isProjectState,
     msSinceUtc,
     MS_PER_SECOND,
     nowUtc,
@@ -261,21 +263,51 @@ export async function getIdeaStates(
     return out;
 }
 
-// Read the latest state for one project from the
-// states log. Returns null when no event has yet
-// been recorded (a project whose creation pre-dates
-// dual-write). Stage 9b switches production readers
-// to consume this; today only the parity test does.
-// The state value is the project's status string —
-// projects have no composite dimension, so the log
-// and the column share one vocabulary.
-export async function getCurrentProjectStateFromStates(
+// Read the current state for one project from the
+// states log. Returns the validated ProjectState.
+// Throws when no event has been recorded — every
+// project created through the supported paths gets
+// an initial 'submitted' event (or whichever the
+// supporting flow specifies), so absence is a bug,
+// not a missing default.
+export async function getProjectState(
     ctx: RequestContext,
     projectId: Id,
-): Promise<string | null> {
+): Promise<ProjectState> {
     const events = await ctx.GET<StateEntity[]>(
         `entity-states/${projectId}/history`,
     );
     const latest = latestByAt(events);
-    return latest === null ? null : latest.state;
+    if (latest === null) {
+        throw new Error(
+            'no state event for project ' + projectId,
+        );
+    }
+    return assertProjectState(
+        latest.state, 'project ' + projectId,
+    );
+}
+
+// Bulk variant for getProjects. One scan over the
+// states log builds the entity_id → ProjectState
+// map, keeping only events whose state lies in the
+// project alphabet. O(N) on events; Postgres uses
+// an entity_id index.
+export async function getProjectStates(
+    ctx: RequestContext,
+): Promise<Map<Id, ProjectState>> {
+    const all = await ctx.GET<StateEntity[]>('states');
+    const latestByEntity = new Map<Id, StateEntity>();
+    for (const ev of all) {
+        if (!isProjectState(ev.state)) continue;
+        const seen = latestByEntity.get(ev.entity_id);
+        if (seen === undefined || ev.at >= seen.at) {
+            latestByEntity.set(ev.entity_id, ev);
+        }
+    }
+    const out = new Map<Id, ProjectState>();
+    for (const [id, ev] of latestByEntity) {
+        out.set(id, ev.state as ProjectState);
+    }
+    return out;
 }

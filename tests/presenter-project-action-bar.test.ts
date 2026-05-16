@@ -3,21 +3,12 @@ import { strict as assert } from 'node:assert';
 import { ProjectActionBarPresenter } from
     '../web-app/app/presenters/project-action-bar.ts';
 
-const baseProject = {
-    id: 'p1', status: 'under-review' as const, title: 't',
-    description: 'd', progress: 0,
-    start_date: '2026-05-14T00:00:00.000Z',
-    target_end_date: '2026-05-14T00:00:00.000Z',
-    estimated_duration: 0, actual_duration: 0,
-    estimated_cost: 0, actual_cost: 0,
-    position: 0, business_context: '{}',
-    timeline_label: 'q1',
-};
+const PROJECT_ID = 'p1';
 
 test('under-review with no scores: Approve disabled',
     () => {
         const p = new ProjectActionBarPresenter(
-            baseProject,
+            PROJECT_ID, 'under-review',
             {
                 ready: false,
                 problems: [
@@ -39,7 +30,7 @@ test('under-review with no scores: Approve disabled',
 test('under-review with full scoring: Approve enabled',
     () => {
         const p = new ProjectActionBarPresenter(
-            baseProject,
+            PROJECT_ID, 'under-review',
             { ready: true, problems: [] },
             { ready: true, problems: [] },
         );
@@ -53,7 +44,7 @@ test('under-review with full scoring: Approve enabled',
 test('approved project: Log measurement + Complete shown',
     () => {
         const p = new ProjectActionBarPresenter(
-            { ...baseProject, status: 'approved' },
+            PROJECT_ID, 'approved',
             { ready: true, problems: [] },
             {
                 ready: false,
@@ -75,7 +66,7 @@ test('approved project: Log measurement + Complete shown',
 test('approved with full actuals: Complete enabled',
     () => {
         const p = new ProjectActionBarPresenter(
-            { ...baseProject, status: 'approved' },
+            PROJECT_ID, 'approved',
             { ready: true, problems: [] },
             { ready: true, problems: [] },
         );
@@ -89,7 +80,7 @@ test('approved with full actuals: Complete enabled',
 test('submitted project: Score button hidden, other review actions shown',
     () => {
         const p = new ProjectActionBarPresenter(
-            { ...baseProject, status: 'submitted' },
+            PROJECT_ID, 'submitted',
             { ready: true, problems: [] },
             { ready: true, problems: [] },
         );
@@ -116,7 +107,7 @@ test('submitted project: Score button hidden, other review actions shown',
 test('sent-back project: Score button hidden, other review actions shown',
     () => {
         const p = new ProjectActionBarPresenter(
-            { ...baseProject, status: 'sent-back' },
+            PROJECT_ID, 'sent-back',
             { ready: true, problems: [] },
             { ready: true, problems: [] },
         );
@@ -139,7 +130,7 @@ test('Approve tooltip enumerates unscored objective names',
             ['o2', 'Customer Satisfaction'],
         ]);
         const p = new ProjectActionBarPresenter(
-            baseProject,
+            PROJECT_ID, 'under-review',
             {
                 ready: false,
                 problems: [
@@ -169,7 +160,7 @@ test('Complete tooltip enumerates objectives lacking actuals',
             ['o1', 'Team Wellbeing'],
         ]);
         const p = new ProjectActionBarPresenter(
-            { ...baseProject, status: 'approved' },
+            PROJECT_ID, 'approved',
             { ready: true, problems: [] },
             {
                 ready: false,

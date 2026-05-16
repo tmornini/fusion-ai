@@ -1188,7 +1188,6 @@ export async function populateMockData(
                 + ' in real time from'
                 + ' behavior, purchase'
                 + ' history, and engagement.',
-            status: 'approved',
             progress: 67,
             start_date: dt(60, 9, 0),
             target_end_date: dt(-30, 9, 0),
@@ -1234,7 +1233,6 @@ export async function populateMockData(
                 + ' multiple sources and'
                 + ' ships formatted reports'
                 + ' on a schedule.',
-            status: 'completed',
             progress: 100,
             start_date: dt(110, 9, 0),
             target_end_date: dt(45, 9, 0),
@@ -1259,7 +1257,6 @@ export async function populateMockData(
                 + ' discovery, qualification,'
                 + ' proposal, negotiation,'
                 + ' close.',
-            status: 'approved',
             progress: 69,
             start_date: dt(55, 9, 0),
             target_end_date: dt(-25, 9, 0),
@@ -1304,7 +1301,6 @@ export async function populateMockData(
                 + ' models that predict'
                 + ' equipment failures'
                 + ' before they occur.',
-            status: 'under-review',
             progress: 17,
             start_date: dt(18, 9, 0),
             target_end_date: dt(-90, 9, 0),
@@ -1327,7 +1323,6 @@ export async function populateMockData(
                 + ' streaming pipelines and'
                 + ' automated anomaly alerts'
                 + ' for leadership.',
-            status: 'completed',
             progress: 100,
             start_date: dt(95, 9, 0),
             target_end_date: dt(40, 9, 0),
@@ -1350,7 +1345,6 @@ export async function populateMockData(
                 + ' automatic reorder'
                 + ' triggers to cut carrying'
                 + ' costs and stockouts.',
-            status: 'sent-back',
             progress: 76,
             start_date: dt(38, 9, 0),
             target_end_date: dt(-12, 9, 0),
@@ -1375,7 +1369,6 @@ export async function populateMockData(
                 + ' paths and answers'
                 + ' procedural questions for'
                 + ' new hires.',
-            status: 'under-review',
             progress: 10,
             start_date: dt(12, 9, 0),
             target_end_date: dt(-110, 9, 0),
@@ -1399,7 +1392,6 @@ export async function populateMockData(
                 + ' across tickets,'
                 + ' runbooks, and product'
                 + ' docs.',
-            status: 'approved',
             progress: 69,
             start_date: dt(48, 9, 0),
             target_end_date: dt(-22, 9, 0),
@@ -1423,7 +1415,6 @@ export async function populateMockData(
                 + ' mappings, and ship the'
                 + ' annual SOC 2 dossier in'
                 + ' hours rather than weeks.',
-            status: 'approved',
             progress: 86,
             start_date: dt(72, 9, 0),
             target_end_date: dt(-12, 9, 0),
@@ -1446,7 +1437,6 @@ export async function populateMockData(
                 + ' across two regions with'
                 + ' five-minute RPO and'
                 + ' fifteen-minute RTO.',
-            status: 'approved',
             progress: 91,
             start_date: dt(82, 9, 0),
             target_end_date: dt(-8, 9, 0),
@@ -1470,7 +1460,6 @@ export async function populateMockData(
                 + ' updates, parts lookup,'
                 + ' and onsite knowledge'
                 + ' access.',
-            status: 'approved',
             progress: 53,
             start_date: dt(40, 9, 0),
             target_end_date: dt(-35, 9, 0),
@@ -1494,7 +1483,6 @@ export async function populateMockData(
                 + ' then surface the live'
                 + ' carbon ledger for ESG'
                 + ' reporting.',
-            status: 'completed',
             progress: 100,
             start_date: dt(120, 9, 0),
             target_end_date: dt(35, 9, 0),
@@ -1517,7 +1505,6 @@ export async function populateMockData(
                 + ' by region and skill,'
                 + ' then surface gaps eight'
                 + ' weeks before they bite.',
-            status: 'under-review',
             progress: 17,
             start_date: dt(22, 9, 0),
             target_end_date: dt(-105, 9, 0),
@@ -1540,7 +1527,6 @@ export async function populateMockData(
                 + ' urgency, and customer'
                 + ' tier without a human'
                 + ' bottleneck.',
-            status: 'approved',
             progress: 78,
             start_date: dt(65, 9, 0),
             target_end_date: dt(-18, 9, 0),
@@ -1564,7 +1550,6 @@ export async function populateMockData(
                 + ' statements, capital-call'
                 + ' workflows, and'
                 + ' audit-ready exports.',
-            status: 'approved',
             progress: 67,
             start_date: dt(58, 9, 0),
             target_end_date: dt(-28, 9, 0),
@@ -5903,6 +5888,121 @@ export async function populateMockData(
         },
     ];
 
+    // One state event per seeded project — the
+    // current state of each project on the states
+    // log. Stage 9b+c retires the dual-column
+    // representation; the log IS the truth. Events
+    // are authored by SYSTEM_WORKER_ID at project
+    // start time. UI surfaces this as the state
+    // badge.
+    const projectStateEvents: StateEntity[] = [
+        {
+            id: 'pSe01Cu5tSegmAi5pEv01',
+            entity_id: 'u6YkHhlGc91oDMkr3x0isa',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(60, 9, 0),
+        },
+        {
+            id: 'pSe02Aut0Rep0rtComp02',
+            entity_id: 'jRE2Tj32NHsFGZIeEADp0p',
+            state: 'completed',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(110, 9, 0),
+        },
+        {
+            id: 'pSe03SalesP1p3App03Z',
+            entity_id: l2cProjectId,
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(55, 9, 0),
+        },
+        {
+            id: 'pSe04PredMa1ntRev04AB',
+            entity_id: 'P04PredMa1ntzyXY010203',
+            state: 'under-review',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(18, 9, 0),
+        },
+        {
+            id: 'pSe05RtAna1ytComp05CD',
+            entity_id: 'P05RtAna1ytcsXY010203Z',
+            state: 'completed',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(95, 9, 0),
+        },
+        {
+            id: 'pSe06SmInvOptSnt06EF',
+            entity_id: 'P06SmInvOptZyXY010203A',
+            state: 'sent-back',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(38, 9, 0),
+        },
+        {
+            id: 'pSe07Empl0yTraRev07GH',
+            entity_id: 'P07Empl0yTrainZyXY00B0',
+            state: 'under-review',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(12, 9, 0),
+        },
+        {
+            id: 'pSe08CustSuppApp08IJ',
+            entity_id: 'P08CustSuppKn0wXY01C0D',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(48, 9, 0),
+        },
+        {
+            id: 'pSe09C0mp1AudApp09KL',
+            entity_id: 'P09C0mp1AudAut0mXY01E0',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(72, 9, 0),
+        },
+        {
+            id: 'pSe10MlRgD1s4App10MN',
+            entity_id: 'P10MlRgD1s4stRc1XY01FG',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(82, 9, 0),
+        },
+        {
+            id: 'pSe11V0iceField11OPQ',
+            entity_id: 'P11V0iceField0psXY01HJ',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(40, 9, 0),
+        },
+        {
+            id: 'pSe12CarbF00tCmp12RS',
+            entity_id: 'P12CarbF00tprXY01K0L0M',
+            state: 'completed',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(120, 9, 0),
+        },
+        {
+            id: 'pSe13W0rk4rcRev13TU',
+            entity_id: 'P13W0rk4rcF0r3castsXY1',
+            state: 'under-review',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(22, 9, 0),
+        },
+        {
+            id: 'pSe14SmartD0cAp14VWX',
+            entity_id: 'P14SmartD0cumtR0utngX1',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(65, 9, 0),
+        },
+        {
+            id: 'pSe15Inv3st0rAp15YZA',
+            entity_id: 'P15Inv3st0rRep0rtP1Y00',
+            state: 'approved',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(58, 9, 0),
+        },
+    ];
+
     const activityActors:
         ActivityActorEntity[] = [
         {
@@ -6054,6 +6154,14 @@ export async function populateMockData(
                 at: r.at,
             }),
         ),
+        ...projectStateEvents.map(r =>
+            adapter.states.put(r.id, {
+                entity_id: r.entity_id,
+                state: r.state,
+                worker_id: r.worker_id,
+                at: r.at,
+            }),
+        ),
         ...mockStateFieldValues.map(r =>
             adapter.stateFieldValues
                 .put(r.id, r),
@@ -6096,6 +6204,11 @@ export async function populateMockData(
     }
 
     const allProjects = await adapter.projects.getAll();
+    const projectStateById = new Map(
+        projectStateEvents.map(
+            ev => [ev.entity_id, ev.state],
+        ),
+    );
 
     function deterministicScore(
         seed: string,
@@ -6112,17 +6225,24 @@ export async function populateMockData(
     }
 
     for (const p of allProjects) {
+        const state = projectStateById.get(p.id);
+        if (state === undefined) {
+            throw new Error(
+                'seeded project has no state event: '
+                + p.id,
+            );
+        }
         if (
-            p.status === 'submitted'
-            || p.status === 'declined'
-            || p.status === 'deleted'
+            state === 'submitted'
+            || state === 'declined'
+            || state === 'deleted'
         ) {
             continue;
         }
 
         const baselineCoverage =
-            p.status === 'approved'
-            || p.status === 'completed'
+            state === 'approved'
+            || state === 'completed'
                 ? OBJECTIVE_SEEDS.length
                 : deterministicScore(
                     p.id + ':coverage',
@@ -6156,11 +6276,11 @@ export async function populateMockData(
         }
 
         if (
-            p.status === 'approved'
-            || p.status === 'completed'
+            state === 'approved'
+            || state === 'completed'
         ) {
             const minActuals =
-                p.status === 'completed' ? 1 : 0;
+                state === 'completed' ? 1 : 0;
             const baseActualTime =
                 baselineStart + MS_PER_DAY;
             for (

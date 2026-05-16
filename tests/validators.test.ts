@@ -240,7 +240,6 @@ test(
 const validProject = {
     title: 'Proj',
     description: 'Desc',
-    status: 'submitted',
     progress: 0,
     start_date: '2024-01-01',
     target_end_date: '2024-12-31',
@@ -257,16 +256,15 @@ test('validateProjectEntity accepts valid payload', () => {
     const result =
         validateProjectEntity(validProject);
     assert.equal(result.title, 'Proj');
-    assert.equal(result.status, 'submitted');
 });
 
-test('validateProjectEntity rejects bad status', () => {
+test('validateProjectEntity rejects unknown key', () => {
     assert.throws(
         () => validateProjectEntity({
             ...validProject,
-            status: 'unknown-status',
+            status: 'submitted',
         }),
-        /expected ProjectStatus for status/,
+        /unexpected key "status"/,
     );
 });
 

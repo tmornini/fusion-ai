@@ -1,6 +1,6 @@
 import { html, type SafeHtml } from '../safe-html.ts';
 import type {
-    ObjectiveId, ProjectEntity,
+    Id, ObjectiveId, ProjectState,
 } from '../../../api/types.ts';
 import type {
     ProjectProblem,
@@ -15,40 +15,43 @@ type ObjectiveNames = ReadonlyMap<
 >;
 
 export class ProjectActionBarPresenter {
-    readonly #project: ProjectEntity;
+    readonly #projectId: Id;
+    readonly #state: ProjectState;
     readonly #approvalCheck: Check;
     readonly #completionCheck: Check;
     readonly #objectiveNames: ObjectiveNames;
 
     constructor(
-        project: ProjectEntity,
+        projectId: Id,
+        state: ProjectState,
         approvalCheck: Check,
         completionCheck: Check,
         objectiveNames: ObjectiveNames = new Map(),
     ) {
-        this.#project = project;
+        this.#projectId = projectId;
+        this.#state = state;
         this.#approvalCheck = approvalCheck;
         this.#completionCheck = completionCheck;
         this.#objectiveNames = objectiveNames;
     }
 
     buildBar(): SafeHtml {
-        const status = this.#project.status;
-        const isReview = status === 'submitted'
-            || status === 'under-review'
-            || status === 'sent-back';
+        const state = this.#state;
+        const isReview = state === 'submitted'
+            || state === 'under-review'
+            || state === 'sent-back';
 
         return html`
             <div class="action-bar"
-                data-project-id="${this.#project.id}">
+                data-project-id="${this.#projectId}">
                 ${isReview
                     ? this.#reviewActions()
                     : html``}
-                ${status === 'approved'
+                ${state === 'approved'
                     ? this.#approvedActions()
                     : html``}
-                ${status === 'approved'
-                    || status === 'completed'
+                ${state === 'approved'
+                    || state === 'completed'
                     ? html`<button
                         data-action="view-history">
                         View history
@@ -70,13 +73,13 @@ export class ProjectActionBarPresenter {
 
     #reviewActions(): SafeHtml {
         const check = this.#approvalCheck;
-        const status = this.#project.status;
+        const state = this.#state;
         const tooltip = check.ready
             ? ''
             : this.#namesFor(check.problems)
                 + ' unscored';
         return html`
-            ${status === 'under-review'
+            ${state === 'under-review'
                 ? html`<button data-action="score">
                     Score
                   </button>`

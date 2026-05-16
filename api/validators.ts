@@ -1,6 +1,5 @@
 import {
     assertWorkerStatus,
-    assertProjectStatus,
 } from './types.ts';
 import type {
     GraphNode,
@@ -11,7 +10,6 @@ import type {
     FlowFieldType,
     WorkerId,
     WorkerStatus,
-    ProjectStatus,
     JsonArrayField,
     JsonObjectField,
     HumanWorkerEntity,
@@ -510,15 +508,6 @@ export function asWorkerStatus(
     );
 }
 
-export function asProjectStatus(
-    value: unknown,
-    label: string,
-): ProjectStatus {
-    return assertProjectStatus(
-        asString(value, label), label,
-    );
-}
-
 // ── Pick-from-body helpers ───────────
 //
 // pick*(body, key) is the no-stutter form
@@ -553,13 +542,6 @@ export function pickWorkerStatus(
     key: string,
 ): WorkerStatus {
     return asWorkerStatus(body[key], key);
-}
-
-export function pickProjectStatus(
-    body: Record<string, unknown>,
-    key: string,
-): ProjectStatus {
-    return asProjectStatus(body[key], key);
 }
 
 export function pickJsonArrayField(
@@ -774,7 +756,7 @@ export function validateIdeaEntity(
 }
 
 const PROJECT_BODY_KEYS: readonly string[] = [
-    'title', 'description', 'status',
+    'title', 'description',
     'progress', 'start_date',
     'target_end_date', 'estimated_duration',
     'actual_duration', 'estimated_cost',
@@ -796,9 +778,6 @@ export function validateProjectEntity(
         ),
         description: pickString(
             body, 'description',
-        ),
-        status: pickProjectStatus(
-            body, 'status',
         ),
         progress: pickNumber(
             body, 'progress',

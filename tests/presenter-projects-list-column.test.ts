@@ -38,7 +38,6 @@ function makeProject(id: string): InstanceType<
         id,
         title: 't',
         description: 'd',
-        status: 'under-review' as const,
         progress: 0,
         start_date: '2026-05-14T00:00:00.000Z',
         target_end_date:
@@ -50,7 +49,7 @@ function makeProject(id: string): InstanceType<
         position: 0,
         business_context: jsonObjectField({}),
         timeline_label: 'q1',
-    });
+    }, 'under-review');
 }
 
 test(

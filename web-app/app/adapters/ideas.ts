@@ -3,6 +3,7 @@ import type {
     IdeaState,
     IdeaSubmissionEntity,
     ProjectEntity,
+    ProjectState,
 } from '../../../api/types.ts';
 import {
     Idea, nowUtc,
@@ -229,7 +230,7 @@ export async function putIdeaSubmission(
 // idea writes commit together as one logical
 // operation. Two state events land in the same
 // batch: the idea moves to 'promoted' and the new
-// project enters at its initial status — both
+// project enters at its initial state — both
 // atomic with the row updates. The helpers stay —
 // they have other callers whose writes are
 // genuinely independent.
@@ -238,6 +239,7 @@ export async function postIdeaConversion(
     ideaId: string,
     projectId: string,
     project: Omit<ProjectEntity, 'id'>,
+    projectState: ProjectState,
     promotedIdea: Omit<IdeaEntity, 'id'>,
 ): Promise<void> {
     type AnyBody = Record<string, unknown>;
@@ -262,7 +264,7 @@ export async function postIdeaConversion(
                 ctx, ideaId, 'promoted',
             ),
             await buildStateEventOp(
-                ctx, projectId, project.status,
+                ctx, projectId, projectState,
             ),
         ],
     });

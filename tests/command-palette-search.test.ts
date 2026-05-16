@@ -43,7 +43,6 @@ function buildProject(
         id,
         title,
         description: 'desc',
-        status: 'approved',
         progress: 42,
         start_date: '2026-01-01T00:00:00Z',
         target_end_date:
@@ -55,7 +54,7 @@ function buildProject(
         position: 1,
         business_context: jsonObjectField({}),
         timeline_label: '',
-    });
+    }, 'approved');
 }
 
 function buildHumanWorker(

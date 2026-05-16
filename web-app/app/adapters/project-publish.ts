@@ -108,9 +108,7 @@ export async function postProjectApproval(
     }
     const { id: _id, ...body } = project;
     await postProjectStateChange(
-        ctx, projectId,
-        { ...body, status: 'approved' },
-        'approved',
+        ctx, projectId, body, 'approved',
     );
 }
 
@@ -132,8 +130,6 @@ export async function postProjectCompletion(
     }
     const { id: _id, ...body } = project;
     await postProjectStateChange(
-        ctx, projectId,
-        { ...body, status: 'completed' },
-        'completed',
+        ctx, projectId, body, 'completed',
     );
 }

@@ -14,7 +14,7 @@ import {
 import type {
     IdeaEntity,
     ProjectEntity,
-    ProjectStatus,
+    ProjectState,
     FlowEntity,
     JsonArrayField,
     JsonObjectField,
@@ -59,13 +59,11 @@ async function seedIdea(
 
 function buildProject(
     id: string,
-    status: ProjectStatus,
     overrides?: Partial<ProjectEntity>,
 ): Omit<ProjectEntity, 'id'> {
     const base: Omit<ProjectEntity, 'id'> = {
         title: 'Project ' + id,
         description: 'd',
-        status,
         progress: 0,
         start_date: '2026-01-01',
         target_end_date: '2026-01-11',
@@ -81,6 +79,20 @@ function buildProject(
         ...base, ...overrides, id,
     } as ProjectEntity;
     return rest;
+}
+
+async function seedProject(
+    db: MemoryDbAdapter,
+    id: string,
+    state: ProjectState,
+    overrides?: Partial<ProjectEntity>,
+): Promise<void> {
+    await db.projects.put(
+        id, buildProject(id, overrides),
+    );
+    await db.states.record(
+        `st-${id}`, id, state, 'system',
+    );
 }
 
 const EMPTY_GRAPH =
@@ -132,9 +144,7 @@ test(
         const { db, ctx } = setupDb();
         await seedIdea(db, 'i1', 'active:ready');
         await seedIdea(db, 'i2', 'in-review');
-        await db.projects.put('p1', buildProject(
-            'p1', 'approved',
-        ));
+        await seedProject(db, 'p1', 'approved');
         await db.flows.put('f1', buildFlow('f1'));
         await db.flows.put('f2', buildFlow('f2'));
         const stats = await getDashboardStats(ctx);
@@ -163,12 +173,8 @@ test(
     'getDashboardStats excludes deleted projects',
     async () => {
         const { db, ctx } = setupDb();
-        await db.projects.put('p1', buildProject(
-            'p1', 'approved',
-        ));
-        await db.projects.put('p2', buildProject(
-            'p2', 'deleted',
-        ));
+        await seedProject(db, 'p1', 'approved');
+        await seedProject(db, 'p2', 'deleted');
         const stats = await getDashboardStats(ctx);
         const projects = stats
             .find(s => s.label === 'Projects');
@@ -180,12 +186,8 @@ test(
     'getDashboardStats counts tombstoned out',
     async () => {
         const { db, ctx } = setupDb();
-        await db.projects.put('p1', buildProject(
-            'p1', 'approved',
-        ));
-        await db.projects.put('p2', buildProject(
-            'p2', 'approved',
-        ));
+        await seedProject(db, 'p1', 'approved');
+        await seedProject(db, 'p2', 'approved');
         await db.projects.delete('p2');
         await db.flows.put('f1', buildFlow('f1'));
         await db.flows.delete('f1');
@@ -231,25 +233,19 @@ test(
     'getDashboardGauges sums approved projects only',
     async () => {
         const { db, ctx } = setupDb();
-        await db.projects.put('p1', buildProject(
-            'p1', 'approved', {
-                estimated_cost: 1000,
-                actual_cost: 400,
-            },
-        ));
-        await db.projects.put('p2', buildProject(
-            'p2', 'approved', {
-                estimated_cost: 2000,
-                actual_cost: 600,
-            },
-        ));
+        await seedProject(db, 'p1', 'approved', {
+            estimated_cost: 1000,
+            actual_cost: 400,
+        });
+        await seedProject(db, 'p2', 'approved', {
+            estimated_cost: 2000,
+            actual_cost: 600,
+        });
         // Not approved: must be ignored.
-        await db.projects.put('p3', buildProject(
-            'p3', 'submitted', {
-                estimated_cost: 9000,
-                actual_cost: 9000,
-            },
-        ));
+        await seedProject(db, 'p3', 'submitted', {
+            estimated_cost: 9000,
+            actual_cost: 9000,
+        });
         const gauges = await getDashboardGauges(ctx);
         const cost = gauges
             .find(g => g.title === 'Cost');
@@ -263,12 +259,10 @@ test(
     'getDashboardGauges Time sums the 10-day span',
     async () => {
         const { db, ctx } = setupDb();
-        await db.projects.put('p1', buildProject(
-            'p1', 'approved', {
-                start_date: '2026-01-01',
-                target_end_date: '2026-01-11',
-            },
-        ));
+        await seedProject(db, 'p1', 'approved', {
+            start_date: '2026-01-01',
+            target_end_date: '2026-01-11',
+        });
         const gauges = await getDashboardGauges(ctx);
         const time = gauges
             .find(g => g.title === 'Time');

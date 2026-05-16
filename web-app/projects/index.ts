@@ -11,11 +11,10 @@ import {
     getProjects,
     getProjectsScoreColumn,
     putProject,
-    isProjectStatus,
+    isProjectState,
     subscribeProjectChanges,
     subscribeProjectScoreChanges,
     subscribeObjectiveChanges,
-    type ProjectStatus,
     type ProjectEntity,
 } from '../app/adapters/index.ts';
 import {
@@ -230,11 +229,11 @@ function onBadgeClick(e: MouseEvent): void {
         !(e.target instanceof HTMLElement)
     ) return;
     const badge = e.target.closest<HTMLElement>(
-        '[data-status]',
+        '[data-state]',
     );
     if (!badge) return;
-    const s = getRequiredAttribute(badge, 'data-status');
-    if (!isProjectStatus(s)) return;
+    const s = getRequiredAttribute(badge, 'data-state');
+    if (!isProjectState(s)) return;
     projectState = applyProjectFilterToggle(
         projectState, s,
     );

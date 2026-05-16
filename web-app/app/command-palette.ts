@@ -200,7 +200,7 @@ export function projectToSearchItem(
         meta: 'Progress: '
             + project.progressPercent()
             + '% · '
-            + project.statusValue()
+            + project.stateValue()
                 .replace(/-/g, ' '),
         category: 'projects',
         icon: iconFolderKanban(
@@ -209,7 +209,7 @@ export function projectToSearchItem(
         href: buildPageUrl('project-detail', {
             projectId: project.idForLink(),
         }),
-        keywords: project.statusValue(),
+        keywords: project.stateValue(),
     };
 }
 
