@@ -278,3 +278,43 @@ test(
         );
     },
 );
+
+test(
+    'read tolerates gz1: payload on normally-uncompressed table',
+    async () => {
+        const map = installShim();
+        const adapter = await createLocalStorageAdapter();
+        await adapter.createSchema();
+        const flowRow = {
+            id: 'flow-aaaaaaaaaaaaaaaaaaaa',
+            name: 'Test',
+            description: '',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: 60,
+            graph: jsonObjectField({
+                nodes: [], edges: [],
+            }),
+            current_version_id: 'fv-1',
+            created_at: '2026-01-01T00:00:00.000Z',
+        };
+        const rawJson = JSON.stringify([flowRow]);
+        const stream = new Blob([rawJson]).stream()
+            .pipeThrough(new CompressionStream('gzip'));
+        const buffer = await new Response(stream)
+            .arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (const b of bytes) {
+            binary += String.fromCharCode(b);
+        }
+        map.set(
+            KEY_PREFIX + 'flows',
+            'gz1:' + btoa(binary),
+        );
+        const result = await adapter.flows.getAll();
+        assert.equal(result.length, 1);
+        assert.equal(result[0]!.name, 'Test');
+    },
+);
