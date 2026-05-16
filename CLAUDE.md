@@ -72,10 +72,17 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
 - **Presentation**: Presenters in `web-app/app/presenters/` emit
   `SafeHtml`.
 - **Database**: localStorage with JSON serialization. Each table
-  is a `fusion-ai:tableName` key. Deletion uses a single
-  `fusion-ai:deleted` tombstone table; entity rows never carry
-  `deleted_at`. History stores hard-delete via splice. When no
-  schema exists, non-entry pages redirect to snapshots.
+  is a `fusion-ai:tableName` key. Deletion and deprecation each
+  use a global tombstone (`fusion-ai:deleted`,
+  `fusion-ai:deprecated`), implemented by a single polymorphic
+  `TombstoneStore` parameterized by table name and timestamp
+  field. The `deleted` instance is consulted by every
+  `EntityStore.getAll`/`getById` and is append-only by
+  convention; the `deprecated` instance is consulted only by
+  objective-active queries and supports `record` + `remove`
+  (reactivation splices). Entity rows never carry `deleted_at`
+  or `deprecated_at`. History stores hard-delete via splice.
+  When no schema exists, non-entry pages redirect to snapshots.
 - **State**: Module-level vars + pub-sub for theme, mobile, auth,
   sidebar.
 - **Durations**: Persisted in seconds; UI displays days via
@@ -631,6 +638,7 @@ tolerance patterns apply only to the parallel run.
 - **Snapshot wipe-on-fail**: With pre-flight quota checks + per-row validation + column-level compression, mid-write failure is rare; when it does happen, `importSnapshot` wipes every `fusion-ai:<table>` key so the next bootstrap detects no schema and routes the user to the snapshots page to re-import. No backup, no sentinel, no rollback — real atomicity arrives with Postgres.
 - **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use relative paths. Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts**: rapid programmatic navigation surfaces `InvalidStateError` lines in console. Browser-internal (no app code calls `startViewTransition`); no app impact.
+- **`TombstoneStore.remove` exists, but `deleted` is append-only by convention**: the polymorphic class supports both `record` and `remove`. The `deprecated` instance uses `remove` for reactivation; the `deleted` instance never should. Calling `db.deleted.remove(id)` is a doctrinal mistake (an entity cannot be un-deleted from a tombstone — deletion is permanent), not a compile error. Subclassing to enforce this at the type level was rejected as ceremony.
 
 ## Worktrees
 
