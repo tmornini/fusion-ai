@@ -234,7 +234,7 @@ function initUnclaimButton(
 
 async function loadPresenter(
     workOrderId: string,
-    currentPersonId: string,
+    currentWorkerId: string,
     ctx: ReturnType<typeof createRequestContext>,
 ): Promise<WorkboxDetailPresenter> {
     const [
@@ -256,7 +256,7 @@ async function loadPresenter(
         fieldValuesByTransition,
         claims,
         workerMap,
-        currentPersonId,
+        currentWorkerId,
     );
 }
 
@@ -277,9 +277,9 @@ export async function init(
     if (!container) return;
 
     const ctx = createRequestContext();
-    const personRow =
+    const workerRow =
         await getCurrentHumanWorker(ctx);
-    const personId = personRow.id;
+    const workerId = workerRow.id;
 
     const detail = await withLoadingState(
         container,
@@ -288,14 +288,14 @@ export async function init(
             let presenter =
                 await loadPresenter(
                     id,
-                    personId,
+                    workerId,
                     ctx,
                 );
             const claim =
                 presenter.claimStatus();
             if (
                 (claim.kind !== 'claimed'
-                    || !claim.byCurrentPerson)
+                    || !claim.byCurrentWorker)
                 && !presenter.isArchive()
             ) {
                 await postWorkOrderClaim(
@@ -306,7 +306,7 @@ export async function init(
                 presenter =
                     await loadPresenter(
                         id,
-                        personId,
+                        workerId,
                         ctx,
                     );
             }

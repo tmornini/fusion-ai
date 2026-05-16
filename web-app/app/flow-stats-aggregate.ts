@@ -310,7 +310,7 @@ export function buildFlowStats(
 
     const weeks = input.windowDays / 7;
 
-    // Count OUT-transitions per (node, person) within
+    // Count OUT-transitions per (node, worker) within
     // the window.  Transitions with from_node_id='' are
     // creation events and carry no producer signal.
     const outByNode =

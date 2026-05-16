@@ -47,7 +47,7 @@ export type ClaimStatus =
     | {
         kind: 'claimed';
         claimId: string;
-        byCurrentPerson: boolean;
+        byCurrentWorker: boolean;
     };
 
 /* ── Helpers ─────────────── */

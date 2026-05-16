@@ -25,8 +25,8 @@ import {
 
 // WorkboxDetailPresenter is pure: the constructor
 // takes the work order, transition rows, per-field
-// values, claims, a personMap, and the current
-// person id; buildPage() returns SafeHtml. We build
+// values, claims, a workerMap, and the current
+// worker id; buildPage() returns SafeHtml. We build
 // those inputs by hand. The work order's flow_graph
 // is a JsonObjectField (a JSON string) that the
 // presenter re-validates, so we stringify a
@@ -177,7 +177,7 @@ function makePresenter(
         fieldValues?:
             Map<Id, TransitionFieldValueEntity[]>;
         claims?: WorkOrderClaimEntity[];
-        currentPersonId?: string;
+        currentWorkerId?: string;
     } = {},
 ): WorkboxDetailPresenter {
     const graph = args.graph ?? makeFlowGraph();
@@ -192,7 +192,7 @@ function makePresenter(
         args.fieldValues ?? new Map(),
         args.claims ?? [],
         WORKER_MAP,
-        args.currentPersonId ?? 'p-1',
+        args.currentWorkerId ?? 'p-1',
     );
 }
 
@@ -545,8 +545,8 @@ test(
 );
 
 test(
-    'an active claim by the current person is'
-    + ' reported as claimed with byCurrentPerson',
+    'an active claim by the current worker is'
+    + ' reported as claimed with byCurrentWorker',
     () => {
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-1',
@@ -555,22 +555,22 @@ test(
             claimed_at: new Date().toISOString(),
         }];
         const presenter = makePresenter({
-            claims, currentPersonId: 'p-1',
+            claims, currentWorkerId: 'p-1',
         });
         const status = presenter.claimStatus();
         assert.equal(status.kind, 'claimed');
         if (status.kind === 'claimed') {
             assert.equal(status.claimId, 'cl-1');
             assert.equal(
-                status.byCurrentPerson, true,
+                status.byCurrentWorker, true,
             );
         }
     },
 );
 
 test(
-    'an active claim by another person is claimed'
-    + ' but not by the current person',
+    'an active claim by another worker is claimed'
+    + ' but not by the current worker',
     () => {
         const claims: WorkOrderClaimEntity[] = [{
             id: 'cl-2',
@@ -579,13 +579,13 @@ test(
             claimed_at: new Date().toISOString(),
         }];
         const presenter = makePresenter({
-            claims, currentPersonId: 'p-1',
+            claims, currentWorkerId: 'p-1',
         });
         const status = presenter.claimStatus();
         assert.equal(status.kind, 'claimed');
         if (status.kind === 'claimed') {
             assert.equal(
-                status.byCurrentPerson, false,
+                status.byCurrentWorker, false,
             );
         }
     },

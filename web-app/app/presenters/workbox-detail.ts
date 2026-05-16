@@ -151,7 +151,7 @@ export class WorkboxDetailPresenter {
         claims:
             readonly WorkOrderClaimEntity[],
         workerMap: Map<Id, Worker>,
-        currentPersonId: string,
+        currentWorkerId: string,
     ) {
         this.#workOrder = workOrder;
         this.#flowGraph =
@@ -198,9 +198,9 @@ export class WorkboxDetailPresenter {
             ? {
                 kind: 'claimed',
                 claimId: active.id,
-                byCurrentPerson:
+                byCurrentWorker:
                     active.worker_id
-                        === currentPersonId,
+                        === currentWorkerId,
             }
             : { kind: 'unclaimed' };
     }
