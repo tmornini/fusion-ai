@@ -71,18 +71,48 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
   in `web-app/app/adapters/` shape rows for pages.
 - **Presentation**: Presenters in `web-app/app/presenters/` emit
   `SafeHtml`.
-- **Database**: localStorage with JSON serialization. Each table
-  is a `fusion-ai:tableName` key. Deletion and deprecation each
-  use a global tombstone (`fusion-ai:deleted`,
-  `fusion-ai:deprecated`), implemented by a single polymorphic
-  `TombstoneStore` parameterized by table name and timestamp
-  field. The `deleted` instance is consulted by every
-  `EntityStore.getAll`/`getById` and is append-only by
-  convention; the `deprecated` instance is consulted only by
-  objective-active queries and supports `record` + `remove`
-  (reactivation splices). Entity rows never carry `deleted_at`
-  or `deprecated_at`. History stores hard-delete via splice.
-  When no schema exists, non-entry pages redirect to snapshots.
+- **Database**: localStorage with JSON serialization. Each
+  entity table is a `fusion-ai:tableName` key. The `states`
+  table is the unified append-only event log: every entity
+  lifecycle change lands as one row `{id, entity_id, state,
+  worker_id, at}`. The latest event by `at` is the entity's
+  current state, with `>=` tiebreak on same-millisecond
+  writes so the deterministic insertion order of the
+  append-only log decides ties. `StateStore` is its own
+  class (not a templated `EntityStore`) with five HTTP
+  routes: `GET/PUT states/:id`, `GET states`, `GET
+  entity-states/:id` (current), `GET entity-states/:id/
+  history` (ordered). Tombstones are retired — the
+  `deprecated` and `deleted` tombstone tables, and the
+  polymorphic `TombstoneStore` class, are gone; `'deleted'`
+  is now a state event value, not a separate table.
+  `EntityStore.getAll`/`getById` consult
+  `StateStore.deletedIds()` / `isDeleted(id)` to filter
+  currently-deleted rows. `EntityStore.delete(id)` is
+  retained for hard splice of relationship rows
+  (`state_field_values`, etc.) — the doctrinal distinction
+  is entity lifecycle = state event; relationship
+  dissolution = splice. Entity rows never carry state
+  columns. History stores hard-delete via splice. When no
+  schema exists, non-entry pages redirect to snapshots.
+
+  Four doctrinal entries follow from this design:
+  *Every state is an event; the latest event is the truth.*
+  *State is not a property of a noun; it is a process that
+  happens to an entity at a time.* (Bohm's rheomode applied
+  to data.)
+  *Read the log; never trust a derived column.* (Derived
+  state columns retired; the log is the source.)
+  *Entity rows are eternal; lifecycle is the event sequence
+  over them.* (Codd: entities and tombstones occupy
+  separate relations — here, the tombstones became state
+  events, but the separation principle holds.)
+
+  The `'system'` worker (`SYSTEM_WORKER_ID = 'system'` in
+  `api/types.ts`) is the well-known actor seeded as a real
+  `HumanWorkerEntity` row by both `populateMockData` and
+  `populateBootstrapData`. State events without a specific
+  user actor reference this worker.
 - **State**: Module-level vars + pub-sub for theme, mobile, auth,
   sidebar.
 - **Durations**: Persisted in seconds; UI displays days via
@@ -92,6 +122,61 @@ Target: **ES2024** · Strict mode with `noUncheckedIndexedAccess`. Config at `we
   share of trailing-90-day flow time, with a hover/click stat card
   and a path stepper). It is a sibling, not an extension, of
   `flow-detail` — see `### Flow Canvas` for the renderer split.
+
+### State Alphabets
+
+The states log carries entity lifecycle events. Each entity
+type uses its own state alphabet — distinct vocabularies for
+distinct lifecycles, all stored in the one log. Defined in
+`api/types.ts` as `IDEA_STATES`, `PROJECT_STATES`,
+`WORKER_STATES`, with `assertIdeaState` / `assertProjectState`
+/ `assertWorkerState` and the matching `is*` guards.
+
+**Ideas** (9 values, composite of former status + readiness):
+- `active:incomplete`, `active:needs-info`, `active:ready`
+- `in-review`, `approved`, `promoted`, `sent-back`,
+  `archived`, `deleted`
+
+**Projects** (7 values, single-dimension):
+- `submitted`, `under-review`, `sent-back`, `approved`,
+  `declined`, `completed`, `deleted`
+
+**Workers** (3 values, shared between humans and AIs):
+- `active`, `pending`, `archived`
+
+The terminal state for both human and AI workers is
+`'archived'`. AI workers retire via `archiveAIWorker`; humans
+via `archiveHumanWorker`. Per Commandment III (Uniformity),
+the kind of worker does not change the vocabulary of its
+lifecycle — the previous dual-vocabulary snowflake
+(humans terminating at `'deactivated'`, AIs at `'deleted'`)
+was a user-caught violation and has been retired.
+
+**Work orders** (open-ended transitions + closed claim
+alphabet):
+- Transition state: any graph node id (a base62 token,
+  recorded when the work order transitions to that node)
+- Claim state: `'claimed'`, `'claim_released'`,
+  `'claim_expired'`
+
+A work order's "current node" is the latest state event
+whose value is NOT in the claim vocabulary. Its "active
+claim" is the latest claim-state event, subject to
+`lockTimeout` arithmetic for implicit expiration — see
+`getWorkOrderActiveClaim` in `adapters/state-events.ts`.
+
+`buildStateEventOp(ctx, entityId, state)` in
+`adapters/state-events.ts` is the canonical helper for
+state-event op construction; every entity-lifecycle adapter
+composes one of these into a `ctx.commit` batch alongside
+its sibling entity-table op.
+
+Domain classes wrap entity + state: `Idea(entity, state)`,
+`Project(entity, state)`, `HumanWorker(entity, state)`,
+`AIWorker(entity, state)` all expose `stateValue()`,
+`stateLabel()`, and `stateClassName()` — the lifecycle
+stage is part of the domain object, not a separate fetch
+the presenter has to reconcile.
 
 ### Flow Canvas
 
@@ -132,7 +217,14 @@ their `name` field directly as "Create" and "Archive" — no
 constants, no render-time override. The flow renderer, the
 stats renderer, the properties panel header, and the mermaid
 generator all read `node.name` and emit it verbatim;
-persistence and presentation share one vocabulary. The
+persistence and presentation share one vocabulary.
+`isCreate` and `isArchive` are properties of the graph node,
+not state values. A work order's state at any node is
+recorded as that node's id (a base62 token), distinct in
+shape from the closed claim alphabet
+(`'claimed'`, `'claim_released'`, `'claim_expired'`) on
+the same `entity_id`. The states log carries both families;
+`adapters/state-events.ts` partitions them by string shape. The
 mermaid parser does not translate either: a legacy `.mmd`
 file that names its special nodes `[Start]` / `[End]`
 imports with those literal names, surfacing the staleness
@@ -188,6 +280,20 @@ to every user; there is no per-user visibility filter.
 the active/archive split, the claimed-and-unfinished
 exclusion, and the sort — nothing more.
 
+A work order's "current node" is the latest state event
+on its `entity_id` whose `state` value is NOT in the claim
+vocabulary; its "active claim" is the latest claim-state
+event, subject to `lockTimeout` arithmetic for implicit
+expiration. `getWorkOrderActiveClaim(ctx, workOrderId,
+lockTimeout)` returns `null` for a `'claimed'` event older
+than `lockTimeout` seconds even when no
+`'claim_expired'`/`'claim_released'` event has yet
+superseded it; `postWorkOrderClaim` materializes that
+implicit expiration as an explicit `'claim_expired'`
+event when a new claim notices a stale prior, so the
+durable record converges on the same condition the
+reader already reports.
+
 The read-only stats variant (`flow-stats`) uses its own renderer
 `flow-stats-graph.ts` and presenter `FlowStatsPresenter`,
 deliberately *not* a parametrization of
@@ -235,26 +341,36 @@ accent-flags the stepper bar — itself an eyebrow-labelled
 widget ("Most-traveled paths") — tying control to canvas. The
 aggregate logic lives in the pure module
 `flow-stats-aggregate.ts` (`buildFlowStats(input) → model`);
-the I/O wrapper is `adapters/flow-stats.ts`'s
-`getFlowStats(ctx, flowId)`.
+it consumes the universal `TransitionEvent[]` shape exported
+from `adapters/state-events.ts` — derived from the states
+log, not from any retired event table. The I/O wrapper is
+`adapters/flow-stats.ts`'s `getFlowStats(ctx, flowId)`.
 
 ### API Layer (`/api`)
 
 `api/types.ts` (row types + shared aliases — `WorkerId`,
 `Worker` discriminated union, `HumanWorker` /
-`AIWorker` classes, `GraphNode.workerIds: WorkerId[]`),
-`api/db.ts` (`DbAdapter` interface + `TABLE_NAMES` array
-listing every storage table — `workers`, `ai_workers`,
-`ideas`, `projects`, `flows`, `flow_versions`, etc.),
-`api/db-localstorage.ts` (production impl), `api/db-memory.ts`
-(test impl), `api/api.ts` (pure HTTP routing —
-`GET/PUT/DELETE/POST` helpers, **no module-level adapter;
-threaded explicitly**), `api/mock-data.ts` (seeds 6 humans
-in `workers` and 4 AIs in `ai_workers`), `api/validators.ts`
-(`validateHumanWorkerEntity` / `validateAIWorkerEntity`,
-where the AI validator rejects empty `auth_token` per the
-no-defaults doctrine). The `DbAdapter` interface is the
-migration seam to Postgres.
+`AIWorker` classes, `GraphNode.workerIds: WorkerId[]`,
+`StateEntity`, the four state alphabets, and
+`SYSTEM_WORKER_ID`), `api/db.ts` (`DbAdapter` interface +
+`TABLE_NAMES` array listing every storage table — `workers`,
+`ai_workers`, `ideas`, `projects`, `flows`, `flow_versions`,
+`states`, `state_field_values`, etc.),
+`api/store-state.ts` (the `StateStore` class — `record`,
+`currentFor`, `allFor`, `deletedIds`, `isDeleted`),
+`api/store-entity.ts` (`EntityStore` — consults `StateStore`
+for delete filtering), `api/db-localstorage.ts` (production
+impl), `api/db-memory.ts` (test impl), `api/api.ts` (pure
+HTTP routing — `GET/PUT/DELETE/POST` helpers, **no
+module-level adapter; threaded explicitly** — plus the four
+state routes: `GET/PUT states/:id`, `GET states`, `GET
+entity-states/:id`, `GET entity-states/:id/history`),
+`api/mock-data.ts` (seeds the `'system'` worker, 6 humans
+in `workers`, and 4 AIs in `ai_workers`), `api/validators.ts`
+(`validateHumanWorkerEntity` / `validateAIWorkerEntity` /
+`validateStateEntity`, where the AI validator rejects empty
+`auth_token` per the no-defaults doctrine). The `DbAdapter`
+interface is the migration seam to Postgres.
 
 `web-app/app/adapters/init.ts` wires the production LocalStorage
 adapter singleton (`initAdapter()` / `getDbAdapter()`).
@@ -370,7 +486,7 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 - **`workerName(workerMap, workerId: WorkerId)`** throws on
   both missing and unknown workerId. Optional worker
   references must branch at the call site
-  (`row.person_id ? workerName(...) : ''`) — never overload
+  (`row.worker_id ? workerName(...) : ''`) — never overload
   `workerName` with a fallback. UI renders `'—'` via
   `DISPLAY_ABSENT` for legitimately absent values. Never use
   magic strings like `'Unknown'`.
@@ -569,7 +685,7 @@ subset of tables:
 | Agent-D | `ideas` |
 | Agent-E | `projects` (plus one flow via the project-detail New Flow path) |
 | Agent-F | `flows`, `flow_versions` |
-| Agent-F2 | `work_orders`, `work_order_transitions`, `work_order_claims`, plus its own private flow in `flows`/`flow_versions` |
+| Agent-F2 | `work_orders`, `flow_work_orders`, `states` (work-order entity_ids), `state_field_values`, plus its own private flow in `flows`/`flow_versions` |
 | Agent-G | `workers`, `ai_workers`, `organization` |
 | Agent-CH | none (read-only) |
 
@@ -638,7 +754,7 @@ tolerance patterns apply only to the parallel run.
 - **Snapshot wipe-on-fail**: With pre-flight quota checks + per-row validation + column-level compression, mid-write failure is rare; when it does happen, `importSnapshot` wipes every `fusion-ai:<table>` key so the next bootstrap detects no schema and routes the user to the snapshots page to re-import. No backup, no sentinel, no rollback — real atomicity arrives with Postgres.
 - **`file:///` protocol**: Navigation detects file protocol and skips link prefetching. Page URLs use relative paths. Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts**: rapid programmatic navigation surfaces `InvalidStateError` lines in console. Browser-internal (no app code calls `startViewTransition`); no app impact.
-- **`TombstoneStore.remove` exists, but `deleted` is append-only by convention**: the polymorphic class supports both `record` and `remove`. The `deprecated` instance uses `remove` for reactivation; the `deleted` instance never should. Calling `db.deleted.remove(id)` is a doctrinal mistake (an entity cannot be un-deleted from a tombstone — deletion is permanent), not a compile error. Subclassing to enforce this at the type level was rejected as ceremony.
+- **The states log is append-only by convention**: `StateStore.record` only appends; the table never deletes. An entity's lifecycle reads as the latest event on its `entity_id`. Reversal is a *new* event with the new state, not an edit of the prior row. The doctrinal split between entity-lifecycle event (state log) and relationship-row splice (`EntityStore.delete` on relationship rows like `state_field_values`) is the seam — read `api/store-entity.ts` and `api/store-state.ts` together to see both halves.
 
 ## Worktrees
 

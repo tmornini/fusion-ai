@@ -176,7 +176,7 @@ on. Run these in order.
 ### AA1. Create Pristine Environment
 
 - [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
-- [ ] **AA2** Open DevTools, verify localStorage has a `fusion-ai:*` key for every table listed in `TABLE_NAMES` (`api/db.ts`) — empty arrays plus bootstrap data, including the `deleted` tombstone table.
+- [ ] **AA2** Open DevTools, verify localStorage has a `fusion-ai:*` key for every table listed in `TABLE_NAMES` (`api/db.ts`) — empty arrays plus bootstrap data, including the `states` event log (with the seeded `'system'`-worker and `'current'`-user 'active' bootstrap events).
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`) on the "Business" plan.
 
 ### AA2. Create Workers
@@ -197,9 +197,9 @@ on. Run these in order.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
   Thompson, Jessica Park, David Martinez, Emily Rodriguez
   (pending), Alex Kim, Marcus Johnson, David Kim, Lisa
-  Wang, James Miller (deactivated). PASS: all 10 appear
+  Wang, James Miller (archived). PASS: all 10 appear
   in the Humans group with correct name, email, title,
-  and status badge (Active / Pending / Deactivated).
+  and status badge (Active / Pending / Archived).
 - [ ] **AA7** Reload the Workers page. PASS: every human
   re-renders in the Humans group with the correct status
   badge.
@@ -1204,12 +1204,14 @@ states, and that the canvas re-renders after each step.)
 - [ ] **WB16** After creating and transitioning
   a work order, check localStorage. PASS:
   `work_orders` table has 1 row with `display_id`
-  and `flow_graph` JSON. `work_order_transitions`
-  has immutable event records with `from_node_id`,
-  `to_node_id`, `person_id`, and
-  `transitioned_at`. Per-field values written by
-  the transition land in `transition_field_values`
-  rows referencing the transition by `transition_id`.
+  and `flow_graph` JSON. The `states` table has
+  one row per transition with `entity_id` =
+  work-order id, `state` = the target node id (a
+  base62 token), `worker_id` = the actor, and
+  `at` = RFC-3339 Zulu. Per-field values written
+  by the transition land in `state_field_values`
+  rows referencing the state event by
+  `state_event_id`.
 - [ ] **WB17** Navigate away from the action
   screen and return. PASS: all data persists
   correctly across page navigation.
@@ -1219,16 +1221,21 @@ states, and that the canvas re-renders after each step.)
 - [ ] **WB18** Open the same unclaimed work order in two browser
   tabs. In tab 1, click the row to claim it. In tab 2, attempt the
   same. PASS: tab 2 either navigates to a read-only/already-claimed
-  view or the claim is rejected — no duplicate row exists in
-  `fusion-ai:work_order_claims` for this work order.
+  view or the claim is rejected — and the `fusion-ai:states` log
+  contains at most one live `'claimed'` event for this work
+  order's `entity_id` (a stale prior claim is superseded by a
+  materialized `'claim_expired'` event, never overwritten in
+  place).
 - [ ] **WB19** After transitioning a work order through at
-  least two states, read `fusion-ai:work_order_transitions`
-  from DevTools. PASS: each row has an immutable shape
-  (`from_node_id`, `to_node_id`, `person_id`,
-  `transitioned_at`) — the field values themselves live in
-  the `transition_field_values` join table per Codd 1NF.
-  Verify no app code path mutates an existing transition
-  row — transitions are append-only.
+  least two states, read `fusion-ai:states` from DevTools and
+  filter to `entity_id` = this work order's id. PASS: each
+  non-claim event has the immutable shape `{id, entity_id,
+  state, worker_id, at}`, with `state` carrying the target
+  node's base62 id — the field values themselves live in the
+  `state_field_values` join table per Codd 1NF, referencing
+  the parent event by `state_event_id`. Verify no app code
+  path mutates an existing event row — the states log is
+  append-only.
 
 ### Workbox — All-See-All Visibility
 
@@ -1506,17 +1513,19 @@ restored data.)
   by `tests/snapshot-import-validation.test.ts` and
   `tests/snapshot-wipe-on-fail.test.ts` — this case verifies the
   error toast/inline-error surfaces in the UI.)
-- [ ] **G36** On `workers/index.html`, status mutation for
-  human workers lives on the detail page rather than as
-  inline row buttons. Click any active or pending human
-  worker's row. PASS: navigates to their detail page. Click
-  Edit, change Status to "Deactivated", click Save. PASS:
-  toast "Worker saved" fires; navigating back to the
-  Workers list shows the row with the "Deactivated" badge
-  and reduced opacity styling, and the human-count subtitle
-  reflects the change. Repeat in reverse to reactivate. The
-  deactivate flow is part of the same edit cycle as every
-  other field — there is no single-click deactivation.
+- [ ] **G36** Worker lifecycle is recorded in the `states`
+  event log via `archiveHumanWorker` / `archiveAIWorker`,
+  which write a terminal `'archived'` state event for the
+  worker's `entity_id`. The unified terminal vocabulary is
+  shared across both worker kinds per Commandment III
+  (Uniformity). Verify by inspecting `fusion-ai:states` in
+  DevTools after the operation: a row appears with
+  `entity_id` = the worker's id, `state` = `'archived'`,
+  `worker_id` = the actor, and the worker row in
+  `workers` / `ai_workers` itself is unchanged — the
+  states log carries the lifecycle stage, not a column on
+  the entity. The Archived badge text ("Archived") and
+  reduced-opacity row styling reflect the state on render.
 
 ### Billing (`billing/`) — STUB
 
