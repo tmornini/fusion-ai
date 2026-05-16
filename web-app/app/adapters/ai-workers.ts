@@ -7,6 +7,9 @@ import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
+import {
+    buildStateEventOp,
+} from './state-events.ts';
 
 export {
     AIWorker,
@@ -85,7 +88,15 @@ export async function deleteAIWorker(
     ctx: RequestContext,
     id: WorkerId,
 ): Promise<void> {
-    await ctx.DELETE(`ai-workers/${id}`);
+    await ctx.commit({
+        ops: [
+            {
+                method: 'delete',
+                resource: `ai-workers/${id}`,
+            },
+            await buildStateEventOp(ctx, id, 'deleted'),
+        ],
+    });
     aiWorkerChanges.notify();
 }
 

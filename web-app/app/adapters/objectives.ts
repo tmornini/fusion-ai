@@ -13,8 +13,8 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
-    getCurrentHumanWorker,
-} from './workers.ts';
+    buildStateEventOp,
+} from './state-events.ts';
 
 const objectiveChanges =
     createSubscriptionChannel([
@@ -225,21 +225,11 @@ export async function postObjectiveDeprecation(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
-    const currentWorker =
-        await getCurrentHumanWorker(ctx);
-    const stateEventId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
-            {
-                method: 'put',
-                resource: `states/${stateEventId}`,
-                body: {
-                    entity_id: id,
-                    state: 'deprecated',
-                    worker_id: currentWorker.id,
-                    at: nowUtc(),
-                },
-            },
+            await buildStateEventOp(
+                ctx, id, 'deprecated',
+            ),
         ],
     });
     notifyObjectiveChange();
@@ -249,21 +239,9 @@ export async function postObjectiveReactivation(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
-    const currentWorker =
-        await getCurrentHumanWorker(ctx);
-    const stateEventId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
-            {
-                method: 'put',
-                resource: `states/${stateEventId}`,
-                body: {
-                    entity_id: id,
-                    state: 'active',
-                    worker_id: currentWorker.id,
-                    at: nowUtc(),
-                },
-            },
+            await buildStateEventOp(ctx, id, 'active'),
         ],
     });
     notifyObjectiveChange();
