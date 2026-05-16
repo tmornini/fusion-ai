@@ -8,6 +8,7 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     createRequestContext,
+    getIdeaRows,
     postActivity,
     putIdea,
     putIdeaSubmission,
@@ -132,6 +133,16 @@ export async function init():
                 const ctx = createRequestContext();
                 const ideaId =
                     generateCryptoSafeBase62();
+                const existing =
+                    await getIdeaRows(ctx);
+                const nextPosition =
+                    existing.length === 0
+                        ? 0
+                        : Math.max(
+                            ...existing.map(
+                                r => r.position,
+                            ),
+                        ) + 1;
                 await putIdea(
                     ctx,
                     ideaId,
@@ -156,7 +167,7 @@ export async function init():
                         status:
                             'active',
                         position:
-                            0,
+                            nextPosition,
                         readiness:
                             'incomplete',
                         risks:
