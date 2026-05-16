@@ -56,12 +56,32 @@ class="font-normal">Good ${
 headerInfo.greeting},</span> ${
 headerInfo.workerName}`,
         );
-        greetingEl.addEventListener(
-            'click',
-            () => navigateTo(
+        greetingEl.setAttribute('role', 'button');
+        greetingEl.setAttribute('tabindex', '0');
+        greetingEl.setAttribute(
+            'aria-label',
+            'Open your worker profile',
+        );
+        greetingEl.classList.add('cursor-pointer');
+        const goToProfile = (): void => {
+            navigateTo(
                 'worker-detail',
                 { workerId: headerInfo.workerId },
-            ),
+            );
+        };
+        greetingEl.addEventListener(
+            'click', goToProfile,
+        );
+        greetingEl.addEventListener(
+            'keydown', (e) => {
+                if (
+                    e.key === 'Enter'
+                    || e.key === ' '
+                ) {
+                    e.preventDefault();
+                    goToProfile();
+                }
+            },
         );
     }
     const statsEl =
