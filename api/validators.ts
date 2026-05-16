@@ -36,7 +36,6 @@ import type {
     ProjectFlowEntity,
     Objective,
     ObjectiveRevision,
-    DeprecatedObjective,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
@@ -1364,29 +1363,6 @@ export function validateObjectiveRevisionEntity(
         ),
         revised_at: pickString(
             body, 'revised_at',
-        ),
-    };
-}
-
-const DEPRECATED_OBJECTIVE_BODY_KEYS:
-    readonly string[] = [
-    'objective_id', 'deprecated_at',
-];
-
-export function validateDeprecatedObjectiveEntity(
-    body: Record<string, unknown>,
-): Omit<DeprecatedObjective, 'id'> {
-    assertOnlyKeys(
-        body,
-        DEPRECATED_OBJECTIVE_BODY_KEYS,
-        'DeprecatedObjective',
-    );
-    return {
-        objective_id: pickString(
-            body, 'objective_id',
-        ),
-        deprecated_at: pickString(
-            body, 'deprecated_at',
         ),
     };
 }

@@ -33,8 +33,8 @@ function installLocalStorageShim(): void {
 
 async function runReactivationScenario(db: DbAdapter): Promise<{
     active: { id: string }[];
-    tombstoneIds: Set<string>;
-    deprecated: { id: string }[];
+    deletedIds: Set<string>;
+    deprecatedIds: Set<string>;
 }> {
     const ctx = createRequestContext(db);
     await postObjectiveCreation(
@@ -44,17 +44,17 @@ async function runReactivationScenario(db: DbAdapter): Promise<{
     await postObjectiveReactivation(ctx, 'o1');
     return {
         active: await getActiveObjectives(ctx),
-        tombstoneIds:
-            await db.deleted.allDeletedIds(),
-        deprecated:
-            await db.deprecatedObjectives.getAll(),
+        deletedIds:
+            await db.deleted.allTombstonedIds(),
+        deprecatedIds:
+            await db.deprecated.allTombstonedIds(),
     };
 }
 
 // The K5 reactivation path executes identically against
 // memory and localStorage adapters because they instantiate
 // the same EntityStore / HistoryEntityStore / SingletonStore
-// / DeletedStore classes over different StorageBackends.
+// / TombstoneStore classes over different StorageBackends.
 // This test makes that structural guarantee observable —
 // any future drift between the adapters fails here.
 test('K5 reactivation parity across memory and localStorage',
@@ -72,13 +72,13 @@ test('K5 reactivation parity across memory and localStorage',
         assert.ok(ls.active.some(o => o.id === 'o1'),
             'localStorage: o1 returns to active list');
 
-        assert.ok(!mem.tombstoneIds.has('o1'),
-            'memory: no global tombstone for o1');
-        assert.ok(!ls.tombstoneIds.has('o1'),
-            'localStorage: no global tombstone for o1');
+        assert.ok(!mem.deletedIds.has('o1'),
+            'memory: no global deleted tombstone for o1');
+        assert.ok(!ls.deletedIds.has('o1'),
+            'localStorage: no global deleted tombstone for o1');
 
-        assert.equal(mem.deprecated.length, 0,
-            'memory: deprecation row spliced');
-        assert.equal(ls.deprecated.length, 0,
-            'localStorage: deprecation row spliced');
+        assert.equal(mem.deprecatedIds.size, 0,
+            'memory: deprecation tombstone spliced');
+        assert.equal(ls.deprecatedIds.size, 0,
+            'localStorage: deprecation tombstone spliced');
     });

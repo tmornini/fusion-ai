@@ -337,6 +337,11 @@ export interface Deleted {
     deleted_at: string;
 }
 
+export interface DeprecatedTombstone {
+    id: Id;
+    deprecated_at: string;
+}
+
 export interface HumanWorkerEntity {
     id: WorkerId;
     first_name: string;
@@ -623,12 +628,6 @@ export interface ObjectiveRevision {
     name: string;
     description: string;
     revised_at: string;
-}
-
-export interface DeprecatedObjective {
-    id: string;
-    objective_id: ObjectiveId;
-    deprecated_at: string;
 }
 
 export interface ProjectObjectiveBaselineScore {

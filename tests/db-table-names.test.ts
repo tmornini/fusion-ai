@@ -3,13 +3,15 @@ import { strict as assert } from 'node:assert';
 import { TABLE_NAMES } from '../api/db.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
-test('TABLE_NAMES includes the five new tables', () => {
+test('TABLE_NAMES includes the objective tables and '
+    + 'both tombstone tables', () => {
     const expected = [
         'objectives',
         'objective_revisions',
-        'deprecated_objectives',
         'project_objective_baseline_scores',
         'project_objective_actual_scores',
+        'deleted',
+        'deprecated',
     ];
     for (const name of expected) {
         assert.ok(
@@ -19,8 +21,8 @@ test('TABLE_NAMES includes the five new tables', () => {
     }
 });
 
-test('MemoryDbAdapter exposes the five new EntityStores',
-    async () => {
+test('MemoryDbAdapter exposes objective stores and '
+    + 'both tombstones', async () => {
         const db = new MemoryDbAdapter();
         await db.objectives.put('o1', { position: 0 });
         const all = await db.objectives.getAll();
@@ -37,13 +39,11 @@ test('MemoryDbAdapter exposes the five new EntityStores',
             await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 1);
 
-        await db.deprecatedObjectives.put('o1', {
-            objective_id: 'o1',
-            deprecated_at: '2026-05-14T00:00:00.000Z',
-        });
+        await db.deprecated.record('o1');
         const deps =
-            await db.deprecatedObjectives.getAll();
-        assert.equal(deps.length, 1);
+            await db.deprecated.allTombstonedIds();
+        assert.equal(deps.size, 1);
+        assert.ok(deps.has('o1'));
 
         await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1', {

@@ -49,7 +49,7 @@ const revisions = [
       description: 'd2',
       revised_at: '2026-03-18T11:02:00.000Z' },
 ];
-const deprecations: { id: string; objective_id: string;
+const deprecations: { id: string;
     deprecated_at: string }[] = [];
 
 function resolver(objId: string, atTime: string) {
@@ -159,4 +159,28 @@ test('zero score TD carries data-tone="neutral"', () => {
     );
     const html = p.buildBody().toString();
     assert.match(html, /<td data-tone="neutral">0<\/td>/);
+});
+
+test('deprecation event row resolves the objective name '
+    + 'from the tombstone id', () => {
+    const dep = [{
+        id: 'o1',
+        deprecated_at: '2026-05-01T08:00:00.000Z',
+    }];
+    const p = new ProjectScoreHistoryPresenter(
+        [], [], revisions, dep, resolver,
+    );
+    const html = p.buildBody().toString();
+    const depPos = html.indexOf('2026-05-01');
+    assert.ok(depPos >= 0,
+        'deprecation row missing for 2026-05-01');
+    const labelPos = html.indexOf(
+        'Objective deprecated', depPos,
+    );
+    assert.ok(labelPos > depPos,
+        'deprecation event label missing');
+    const namePos = html.indexOf('Drive Growth', depPos);
+    assert.ok(namePos > depPos,
+        'resolver should resolve o1 → Drive Growth at '
+            + '2026-05-01 (latest revision applies)');
 });

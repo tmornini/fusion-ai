@@ -18,7 +18,6 @@ import type {
     TransitionFieldValueEntity,
     Objective,
     ObjectiveRevision,
-    DeprecatedObjective,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
@@ -69,10 +68,14 @@ export interface SingletonStore<
     put(fields: Omit<T, 'id'>): Promise<T>;
 }
 
-export interface DeletedStore {
-    isDeleted(id: Id): Promise<boolean>;
+export interface TombstoneStore {
+    isTombstoned(id: Id): Promise<boolean>;
     record(id: Id): Promise<void>;
-    allDeletedIds(): Promise<Set<Id>>;
+    remove(id: Id): Promise<void>;
+    allTombstonedIds(): Promise<Set<Id>>;
+    allRows(): Promise<
+        ({ id: Id } & Record<string, string>)[]
+    >;
 }
 
 // The byte-level seam. Store classes compose a backend
@@ -156,8 +159,6 @@ export interface DbAdapter {
         EntityStore<Objective>;
     objectiveRevisions:
         EntityStore<ObjectiveRevision>;
-    deprecatedObjectives:
-        EntityStore<DeprecatedObjective>;
     projectObjectiveBaselineScores:
         EntityStore<
             ProjectObjectiveBaselineScore
@@ -166,7 +167,8 @@ export interface DbAdapter {
         EntityStore<
             ProjectObjectiveActualScore
         >;
-    deleted: DeletedStore;
+    deleted: TombstoneStore;
+    deprecated: TombstoneStore;
 }
 
 export const TABLE_NAMES = [
@@ -188,8 +190,8 @@ export const TABLE_NAMES = [
     'activity_actors',
     'objectives',
     'objective_revisions',
-    'deprecated_objectives',
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
     'deleted',
+    'deprecated',
 ];

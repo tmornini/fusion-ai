@@ -41,9 +41,9 @@ test('populateMockData seeds zero deprecated objectives',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const rows =
-            await db.deprecatedObjectives.getAll();
-        assert.equal(rows.length, 0);
+        const ids =
+            await db.deprecated.allTombstonedIds();
+        assert.equal(ids.size, 0);
     });
 
 test('approved projects have full baseline coverage',

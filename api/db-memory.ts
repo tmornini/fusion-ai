@@ -1,7 +1,7 @@
 import { TABLE_NAMES } from './db.ts';
 import type {
     DbAdapter,
-    DeletedStore as IDeletedStore,
+    TombstoneStore as ITombstoneStore,
     SingletonStore as ISingletonStore,
     EntityStore as IEntityStore,
 } from './db.ts';
@@ -24,7 +24,6 @@ import type {
     WorkOrderClaimEntity,
     Objective,
     ObjectiveRevision,
-    DeprecatedObjective,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
@@ -34,7 +33,7 @@ import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
-import { DeletedStore } from './store-deleted.ts';
+import { TombstoneStore } from './store-tombstone.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
     readonly #backend: MemoryStorageBackend;
@@ -67,19 +66,23 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly objectives: IEntityStore<Objective>;
     readonly objectiveRevisions:
         IEntityStore<ObjectiveRevision>;
-    readonly deprecatedObjectives:
-        IEntityStore<DeprecatedObjective>;
     readonly projectObjectiveBaselineScores:
         IEntityStore<ProjectObjectiveBaselineScore>;
     readonly projectObjectiveActualScores:
         IEntityStore<ProjectObjectiveActualScore>;
-    readonly deleted: IDeletedStore;
+    readonly deleted: ITombstoneStore;
+    readonly deprecated: ITombstoneStore;
 
     constructor() {
         this.#backend = new MemoryStorageBackend();
         const b = this.#backend;
-        const ds = new DeletedStore(b);
+        const ds = new TombstoneStore(
+            b, 'deleted', 'deleted_at',
+        );
         this.deleted = ds;
+        this.deprecated = new TombstoneStore(
+            b, 'deprecated', 'deprecated_at',
+        );
         this.organization =
             new SingletonStore<OrganizationEntity>(
                 'organization', b,
@@ -134,10 +137,6 @@ export class MemoryDbAdapter implements DbAdapter {
         this.objectiveRevisions =
             new HistoryEntityStore(
                 'objective_revisions', b,
-            );
-        this.deprecatedObjectives =
-            new HistoryEntityStore(
-                'deprecated_objectives', b,
             );
         this.projectObjectiveBaselineScores =
             new HistoryEntityStore(

@@ -6,7 +6,7 @@ import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
-import { DeletedStore } from './store-deleted.ts';
+import { TombstoneStore } from './store-tombstone.ts';
 import type {
     HumanWorkerEntity,
     AIWorkerEntity,
@@ -26,7 +26,6 @@ import type {
     TransitionFieldValueEntity,
     Objective,
     ObjectiveRevision,
-    DeprecatedObjective,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
@@ -142,6 +141,13 @@ function validateSnapshotRow(
                     label + '.deleted_at',
                 );
                 break;
+            case 'deprecated':
+                asString(row['id'], label + '.id');
+                asString(
+                    row['deprecated_at'],
+                    label + '.deprecated_at',
+                );
+                break;
         }
     } catch (err) {
         const msg =
@@ -228,7 +234,12 @@ function parseAndValidateSnapshot(
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {
     const backend = new LocalStorageBackend();
-    const deletedStore = new DeletedStore(backend);
+    const deletedStore = new TombstoneStore(
+        backend, 'deleted', 'deleted_at',
+    );
+    const deprecatedStore = new TombstoneStore(
+        backend, 'deprecated', 'deprecated_at',
+    );
 
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {},
@@ -350,10 +361,6 @@ export async function createLocalStorageAdapter(
             new HistoryEntityStore<ObjectiveRevision>(
                 'objective_revisions', backend,
             ),
-        deprecatedObjectives:
-            new HistoryEntityStore<DeprecatedObjective>(
-                'deprecated_objectives', backend,
-            ),
         projectObjectiveBaselineScores:
             new HistoryEntityStore<
                 ProjectObjectiveBaselineScore
@@ -369,6 +376,7 @@ export async function createLocalStorageAdapter(
                 backend,
             ),
         deleted: deletedStore,
+        deprecated: deprecatedStore,
     };
 
     return simulateLatencyRequested()

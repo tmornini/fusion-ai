@@ -31,7 +31,6 @@ import {
     subscribeProjectScoreChanges,
     getActiveObjectives,
     getCurrentObjectiveDefinition,
-    getDeprecatedObjectiveIds,
     getObjectiveRevisions,
     subscribeObjectiveChanges,
     postProjectApproval,
@@ -44,7 +43,7 @@ import type {
 } from '../app/adapters/index.ts';
 import type {
     ObjectiveRevision,
-    DeprecatedObjective,
+    DeprecatedTombstone,
 } from '../../api/types.ts';
 import { latestPerPair } from '../app/scoring-format.ts';
 import {
@@ -941,21 +940,17 @@ async function openHistoryModal(
         baselineObjIds.add(a.objective_id);
     }
     const revisions: ObjectiveRevision[] = [];
-    const deprecations: DeprecatedObjective[] = [];
-    const deprecatedIds =
-        await getDeprecatedObjectiveIds(ctx);
+    const allDeprecated = await ctx.GET<
+        DeprecatedTombstone[]
+    >('deprecated');
+    const deprecations = allDeprecated.filter(
+        d => baselineObjIds.has(d.id),
+    );
     for (const objId of baselineObjIds) {
         const revs = await getObjectiveRevisions(
             ctx, objId,
         );
         revisions.push(...revs);
-        if (deprecatedIds.has(objId)) {
-            const t =
-                await ctx.GET<DeprecatedObjective>(
-                    `deprecated-objectives/${objId}`,
-                );
-            deprecations.push(t);
-        }
     }
     const revsByObj = new Map<
         string, ObjectiveRevision[]

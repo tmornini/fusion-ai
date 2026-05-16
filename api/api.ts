@@ -22,7 +22,6 @@ import {
     validateActivityActorEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
-    validateDeprecatedObjectiveEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
 } from './validators.ts';
@@ -410,24 +409,15 @@ const routes: Route[] = [
                 ),
             ),
     }),
-    route('deprecated-objectives', {
-        get: (db) =>
-            db.deprecatedObjectives.getAll(),
+    route('deprecated', {
+        get: (db) => db.deprecated.allRows(),
     }),
-    route('deprecated-objectives/:id', {
-        put: (db, p, body) =>
-            db.deprecatedObjectives.put(
-                param(p, 0),
-                validateDeprecatedObjectiveEntity(
-                    withoutId(body),
-                ),
-            ),
+    route('deprecated/:id', {
+        put: (db, p) =>
+            db.deprecated.record(param(p, 0)),
         delete: (db, p) =>
-            db.deprecatedObjectives.delete(
-                param(p, 0),
-            ),
+            db.deprecated.remove(param(p, 0)),
     }),
-
     route('project-objective-baseline-scores', {
         get: (db) =>
             db.projectObjectiveBaselineScores.getAll(),

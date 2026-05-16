@@ -2,7 +2,7 @@ import { html, type SafeHtml } from '../safe-html.ts';
 import type {
     ObjectiveId,
     ObjectiveRevision,
-    DeprecatedObjective,
+    DeprecatedTombstone,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
@@ -31,14 +31,14 @@ export class ProjectScoreHistoryPresenter {
     readonly #baselines: ProjectObjectiveBaselineScore[];
     readonly #actuals: ProjectObjectiveActualScore[];
     readonly #revisions: ObjectiveRevision[];
-    readonly #deprecations: DeprecatedObjective[];
+    readonly #deprecations: DeprecatedTombstone[];
     readonly #resolver: DefinitionResolver;
 
     constructor(
         baselines: ProjectObjectiveBaselineScore[],
         actuals: ProjectObjectiveActualScore[],
         revisions: ObjectiveRevision[],
-        deprecations: DeprecatedObjective[],
+        deprecations: DeprecatedTombstone[],
         resolver: DefinitionResolver,
     ) {
         this.#baselines = baselines;
@@ -100,7 +100,7 @@ export class ProjectScoreHistoryPresenter {
             events.push({
                 kind: 'deprecation',
                 at: d.deprecated_at,
-                objectiveId: d.objective_id,
+                objectiveId: d.id as ObjectiveId,
             });
         }
         events.sort((a, b) => a.at.localeCompare(b.at));

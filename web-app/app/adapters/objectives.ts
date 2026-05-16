@@ -2,7 +2,6 @@ import type {
     Objective,
     ObjectiveId,
     ObjectiveRevision,
-    DeprecatedObjective,
 } from '../../../api/types.ts';
 import { nowUtc } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
@@ -17,7 +16,7 @@ const objectiveChanges =
     createSubscriptionChannel([
         'objectives',
         'objective_revisions',
-        'deprecated_objectives',
+        'deprecated',
     ]);
 
 export function subscribeObjectiveChanges(
@@ -48,10 +47,12 @@ export async function getObjectives(
 export async function getDeprecatedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
-    const rows = await ctx.GET<DeprecatedObjective[]>(
-        'deprecated-objectives',
+    const rows = await ctx.GET<{ id: string }[]>(
+        'deprecated',
     );
-    return new Set(rows.map(r => r.objective_id));
+    return new Set(
+        rows.map(r => r.id as ObjectiveId),
+    );
 }
 
 export async function getObjectiveRevisions(
@@ -186,11 +187,8 @@ export async function postObjectiveDeprecation(
     await ctx.commit({
         ops: [{
             method: 'put',
-            resource: `deprecated-objectives/${id}`,
-            body: {
-                objective_id: id,
-                deprecated_at: nowUtc(),
-            },
+            resource: `deprecated/${id}`,
+            body: {},
         }],
     });
     notifyObjectiveChange();
@@ -203,7 +201,7 @@ export async function postObjectiveReactivation(
     await ctx.commit({
         ops: [{
             method: 'delete',
-            resource: `deprecated-objectives/${id}`,
+            resource: `deprecated/${id}`,
         }],
     });
     notifyObjectiveChange();

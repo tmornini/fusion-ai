@@ -1,6 +1,6 @@
 import {
     EntityNotFound,
-    type DeletedStore,
+    type TombstoneStore,
     type EntityStore as EntityStoreInterface,
     type StorageBackend,
 } from './db.ts';
@@ -11,14 +11,14 @@ export class EntityStore<T extends { id: string }>
 {
     readonly #table: string;
     readonly #backend: StorageBackend;
-    readonly #deleted: DeletedStore;
+    readonly #deleted: TombstoneStore;
     readonly #serialize:
         <R>(fn: () => Promise<R>) => Promise<R>;
 
     constructor(
         table: string,
         backend: StorageBackend,
-        deleted: DeletedStore,
+        deleted: TombstoneStore,
     ) {
         this.#table = table;
         this.#backend = backend;
@@ -31,14 +31,14 @@ export class EntityStore<T extends { id: string }>
             this.#table,
         );
         const deletedIds =
-            await this.#deleted.allDeletedIds();
+            await this.#deleted.allTombstonedIds();
         return rows.filter(
             row => !deletedIds.has(row.id),
         );
     }
 
     async getById(id: string): Promise<T> {
-        if (await this.#deleted.isDeleted(id)) {
+        if (await this.#deleted.isTombstoned(id)) {
             throw new EntityNotFound(
                 this.#table, id,
             );

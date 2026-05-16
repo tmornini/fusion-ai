@@ -42,10 +42,7 @@ test('getObjectives returns all', async () => {
 
 test('getDeprecatedObjectiveIds returns a Set', async () => {
     const db = new MemoryDbAdapter();
-    await db.deprecatedObjectives.put('o1', {
-        objective_id: 'o1',
-        deprecated_at: '2026-05-14T00:00:00.000Z',
-    });
+    await db.deprecated.record('o1');
     const ctx = ctxFor(db);
     const ids = await getDeprecatedObjectiveIds(ctx);
     assert.ok(ids.has('o1'));
@@ -95,10 +92,7 @@ test('getActiveObjectives filters deprecated',
         const db = new MemoryDbAdapter();
         await db.objectives.put('o1', { position: 0 });
         await db.objectives.put('o2', { position: 1 });
-        await db.deprecatedObjectives.put('o2', {
-            objective_id: 'o2',
-            deprecated_at: '2026-05-14T00:00:00.000Z',
-        });
+        await db.deprecated.record('o2');
         const ctx = ctxFor(db);
         const active = await getActiveObjectives(ctx);
         assert.equal(active.length, 1);
@@ -195,9 +189,9 @@ test('postObjectiveDeprecation tombstones an objective',
         );
         await postObjectiveDeprecation(ctx, 'o1');
         const tombstones =
-            await db.deprecatedObjectives.getAll();
-        assert.equal(tombstones.length, 1);
-        assert.equal(tombstones[0]!.objective_id, 'o1');
+            await db.deprecated.allTombstonedIds();
+        assert.equal(tombstones.size, 1);
+        assert.ok(tombstones.has('o1'));
     });
 
 test('postObjectiveReactivation returns objective to active list',
@@ -215,9 +209,9 @@ test('postObjectiveReactivation returns objective to active list',
             'objective must return to active list',
         );
         const deprecated =
-            await db.deprecatedObjectives.getAll();
-        assert.equal(deprecated.length, 0,
-            'deprecation row must be spliced');
+            await db.deprecated.allTombstonedIds();
+        assert.equal(deprecated.size, 0,
+            'deprecation tombstone must be spliced');
     });
 
 test('reactivation does not write to deleted keyspace',
@@ -230,7 +224,7 @@ test('reactivation does not write to deleted keyspace',
         await postObjectiveDeprecation(ctx, 'o1');
         await postObjectiveReactivation(ctx, 'o1');
         const tombstones =
-            await db.deleted.allDeletedIds();
+            await db.deleted.allTombstonedIds();
         assert.ok(!tombstones.has('o1'),
             'history-store delete must splice, not'
             + ' tombstone');
