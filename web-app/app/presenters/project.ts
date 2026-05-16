@@ -304,15 +304,24 @@ export type ProjectListFilter =
     | { kind: 'all' }
     | { kind: 'filtered'; status: ProjectStatus };
 
+export type ProjectListSort =
+    | { kind: 'position' }
+    | { kind: 'projected-impact-desc' };
+
 export type ProjectListState = {
     projects: Project[];
     filter: ProjectListFilter;
+    sort: ProjectListSort;
 };
 
 export function buildInitialProjectListState(
     projects: Project[],
 ): ProjectListState {
-    return { projects, filter: { kind: 'all' } };
+    return {
+        projects,
+        filter: { kind: 'all' },
+        sort: { kind: 'position' },
+    };
 }
 
 export function applyProjectListUpdate(
@@ -333,9 +342,20 @@ export function applyProjectFilterToggle(
     return { ...state, filter: next };
 }
 
+export function applyProjectSortToggle(
+    state: ProjectListState,
+): ProjectListState {
+    const next: ProjectListSort =
+        state.sort.kind === 'position'
+            ? { kind: 'projected-impact-desc' }
+            : { kind: 'position' };
+    return { ...state, sort: next };
+}
+
 export class ProjectListPresenter {
     #projects: ProjectPresenter[];
     #filter: ProjectListFilter;
+    #sort: ProjectListSort;
     readonly #scoreMap: ReadonlyMap<
         string, ScoreRow
     >;
@@ -350,6 +370,7 @@ export class ProjectListPresenter {
             p => new ProjectPresenter(p),
         );
         this.#filter = state.filter;
+        this.#sort = state.sort;
         this.#scoreMap = scoreMap;
     }
 
@@ -361,11 +382,23 @@ export class ProjectListPresenter {
             : null;
     }
 
+    activeSort(): ProjectListSort {
+        return this.#sort;
+    }
+
     renderBadges(
         container: HTMLElement,
     ): void {
         setHtml(
             container, this.#buildBadges(),
+        );
+    }
+
+    renderSortControls(
+        container: HTMLElement,
+    ): void {
+        setHtml(
+            container, this.#buildSortToggle(),
         );
     }
 
@@ -414,14 +447,10 @@ export class ProjectListPresenter {
                         === f.status,
                 )
                 : this.#projects;
-        const sorted =
-            [...filtered].sort(
-                (a, b) =>
-                    a.positionSortKey()
-                    - b.positionSortKey(),
-            );
+        const sorted = this.#sortProjects(filtered);
         const hasGrip =
-            f.kind === 'all';
+            f.kind === 'all'
+            && this.#sort.kind === 'position';
         return html`${sorted.map(
             p => p.buildCard(
                 'position',
@@ -431,5 +460,53 @@ export class ProjectListPresenter {
                 ),
             ),
         )}`;
+    }
+
+    #sortProjects(
+        items: ProjectPresenter[],
+    ): ProjectPresenter[] {
+        if (this.#sort.kind === 'position') {
+            return [...items].sort(
+                (a, b) =>
+                    a.positionSortKey()
+                    - b.positionSortKey(),
+            );
+        }
+        const scoreOf = (
+            p: ProjectPresenter,
+        ): number | undefined =>
+            this.#scoreMap.get(
+                p.idForLink(),
+            )?.baselineAvg;
+        return [...items].sort((a, b) => {
+            const av = scoreOf(a);
+            const bv = scoreOf(b);
+            if (av === undefined && bv === undefined) {
+                return a.positionSortKey()
+                    - b.positionSortKey();
+            }
+            if (av === undefined) return 1;
+            if (bv === undefined) return -1;
+            if (av !== bv) return bv - av;
+            return a.positionSortKey()
+                - b.positionSortKey();
+        });
+    }
+
+    #buildSortToggle(): SafeHtml {
+        const active =
+            this.#sort.kind
+            === 'projected-impact-desc';
+        return html`<button type="button"
+            class="badge badge-default
+                cursor-pointer text-xs
+                badge-fixed-w"
+            data-sort-toggle="projected-impact-desc"
+            aria-pressed="${active}"
+            data-active="${active}">${
+                active
+                    ? 'Most impactful first ↓'
+                    : 'Sort by projected impact'
+            }</button>`;
     }
 }
