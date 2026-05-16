@@ -154,24 +154,23 @@ test(
 );
 
 test(
-    'work_order_transitions write produces gz1: prefix',
+    'states write produces gz1: prefix',
     async () => {
         const map = installShim();
         const adapter = await createLocalStorageAdapter();
         await adapter.createSchema();
-        await adapter.workOrderTransitions.put(
-            'wot-prefix-test',
+        await adapter.states.put(
+            'evt-prefix-test',
             {
-                work_order_id: 'wo-1',
-                from_node_id: 'n-from',
-                to_node_id: 'n-to',
+                entity_id: 'wo-1',
+                state: 'n-to',
                 worker_id: 'u-1',
-                transitioned_at:
+                at:
                     '2026-01-01T00:00:00.000Z',
             },
         );
         const stored = map.get(
-            KEY_PREFIX + 'work_order_transitions',
+            KEY_PREFIX + 'states',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(

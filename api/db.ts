@@ -13,9 +13,7 @@ import type {
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
-    WorkOrderTransitionEntity,
-    WorkOrderClaimEntity,
-    TransitionFieldValueEntity,
+    StateFieldValueEntity,
     Objective,
     ObjectiveRevision,
     ProjectObjectiveBaselineScore,
@@ -145,17 +143,9 @@ export interface DbAdapter {
         EntityStore<
             FlowWorkOrderEntity
         >;
-    workOrderTransitions:
+    stateFieldValues:
         EntityStore<
-            WorkOrderTransitionEntity
-        >;
-    transitionFieldValues:
-        EntityStore<
-            TransitionFieldValueEntity
-        >;
-    workOrderClaims:
-        EntityStore<
-            WorkOrderClaimEntity
+            StateFieldValueEntity
         >;
     organization:
         SingletonStore<OrganizationEntity>;
@@ -193,9 +183,7 @@ export const TABLE_NAMES = [
     'project_flows',
     'work_orders',
     'flow_work_orders',
-    'work_order_transitions',
-    'transition_field_values',
-    'work_order_claims',
+    'state_field_values',
     'organization',
     'idea_submissions',
     'activity_actors',

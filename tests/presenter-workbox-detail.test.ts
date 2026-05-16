@@ -7,9 +7,7 @@ import {
     DEFAULT_LOCK_TIMEOUT,
     type HumanWorkerEntity,
     type WorkOrderEntity,
-    type WorkOrderTransitionEntity,
-    type TransitionFieldValueEntity,
-    type WorkOrderClaimEntity,
+    type StateFieldValueEntity,
     type WorkOrderFlowGraph,
     type GraphNode,
     type GraphEdge,
@@ -17,6 +15,9 @@ import {
     type Id,
     type Worker,
 } from '../api/types.ts';
+import type {
+    TransitionEvent,
+} from '../web-app/app/adapters/state-events.ts';
 import {
     WorkboxDetailPresenter,
     buildFieldInputHtml,
@@ -24,13 +25,13 @@ import {
 '../web-app/app/presenters/workbox-detail.ts';
 
 // WorkboxDetailPresenter is pure: the constructor
-// takes the work order, transition rows, per-field
-// values, claims, a workerMap, and the current
-// worker id; buildPage() returns SafeHtml. We build
-// those inputs by hand. The work order's flow_graph
-// is a JsonObjectField (a JSON string) that the
-// presenter re-validates, so we stringify a
-// WorkOrderFlowGraph shape.
+// takes the work order, transition events, per-event
+// field values, the active claim (or null), a
+// workerMap, and the current worker id; buildPage()
+// returns SafeHtml. We build those inputs by hand.
+// The work order's flow_graph is a JsonObjectField
+// (a JSON string) that the presenter re-validates,
+// so we stringify a WorkOrderFlowGraph shape.
 
 function makeField(
     overrides: Partial<GraphField> = {},
@@ -122,15 +123,15 @@ function makeWorkOrder(
 }
 
 function makeTransition(
-    overrides: Partial<WorkOrderTransitionEntity> = {},
-): WorkOrderTransitionEntity {
+    overrides: Partial<TransitionEvent> = {},
+): TransitionEvent {
     return {
         id: 't-1',
         work_order_id: 'wo-1',
         from_node_id: '',
         to_node_id: 'n-1',
         worker_id: 'p-1',
-        transitioned_at: '2026-04-01T12:00:00.000Z',
+        at: '2026-04-01T12:00:00.000Z',
         ...overrides,
     };
 }
@@ -173,10 +174,11 @@ function makePresenter(
     args: {
         graph?: WorkOrderFlowGraph;
         workOrder?: WorkOrderEntity;
-        transitions?: WorkOrderTransitionEntity[];
+        transitions?: TransitionEvent[];
         fieldValues?:
-            Map<Id, TransitionFieldValueEntity[]>;
-        claims?: WorkOrderClaimEntity[];
+            Map<Id, StateFieldValueEntity[]>;
+        activeClaim?:
+            { workerId: Id; at: string } | null;
         currentWorkerId?: string;
     } = {},
 ): WorkboxDetailPresenter {
@@ -190,7 +192,7 @@ function makePresenter(
         workOrder,
         transitions,
         args.fieldValues ?? new Map(),
-        args.claims ?? [],
+        args.activeClaim ?? null,
         WORKER_MAP,
         args.currentWorkerId ?? 'p-1',
     );
@@ -327,13 +329,13 @@ test(
                 makeTransition({
                     id: 't-1', from_node_id: '',
                     to_node_id: 'n-1',
-                    transitioned_at:
+                    at:
                         '2026-04-01T12:00:00.000Z',
                 }),
                 makeTransition({
                     id: 't-2', from_node_id: 'n-1',
                     to_node_id: 'n-2',
-                    transitioned_at:
+                    at:
                         '2026-04-02T09:00:00.000Z',
                 }),
             ],
@@ -458,18 +460,9 @@ test(
 );
 
 test(
-    'buildPage shows a no-history message when'
-    + ' the only transition is the creation row',
+    'buildPage shows a single Created -> Triage'
+    + ' history row for a freshly created work order',
     () => {
-        // A single created -> n-1 transition is
-        // still rendered as a history entry by the
-        // presenter, so a fresh work order shows one
-        // "Created -> Triage" line, not the empty
-        // state. The empty state needs zero
-        // transitions, which findCurrentNode
-        // rejects; the no-history branch is reached
-        // only via buildHistory returning []. We
-        // assert the populated case here.
         const presenter = makePresenter();
         const out = presenter.buildPage().toString();
         assert.match(out, /History/);
@@ -501,11 +494,11 @@ test(
             ],
         });
         const fieldValues = new Map<
-            Id, TransitionFieldValueEntity[]
+            Id, StateFieldValueEntity[]
         >([
             ['t-2', [{
                 id: 'fv-1',
-                transition_id: 't-2',
+                state_event_id: 't-2',
                 field_id: 'f-amt',
                 value: '1200',
             }]],
@@ -517,14 +510,14 @@ test(
                     id: 't-1', from_node_id: '',
                     to_node_id: 'n-1',
                     worker_id: 'p-1',
-                    transitioned_at:
+                    at:
                         '2026-04-01T12:00:00.000Z',
                 }),
                 makeTransition({
                     id: 't-2', from_node_id: 'n-1',
                     to_node_id: 'n-2',
                     worker_id: 'p-2',
-                    transitioned_at:
+                    at:
                         '2026-04-03T08:00:00.000Z',
                 }),
             ],
@@ -548,19 +541,16 @@ test(
     'an active claim by the current worker is'
     + ' reported as claimed with byCurrentWorker',
     () => {
-        const claims: WorkOrderClaimEntity[] = [{
-            id: 'cl-1',
-            work_order_id: 'wo-1',
-            worker_id: 'p-1',
-            claimed_at: new Date().toISOString(),
-        }];
         const presenter = makePresenter({
-            claims, currentWorkerId: 'p-1',
+            activeClaim: {
+                workerId: 'p-1',
+                at: new Date().toISOString(),
+            },
+            currentWorkerId: 'p-1',
         });
         const status = presenter.claimStatus();
         assert.equal(status.kind, 'claimed');
         if (status.kind === 'claimed') {
-            assert.equal(status.claimId, 'cl-1');
             assert.equal(
                 status.byCurrentWorker, true,
             );
@@ -572,14 +562,12 @@ test(
     'an active claim by another worker is claimed'
     + ' but not by the current worker',
     () => {
-        const claims: WorkOrderClaimEntity[] = [{
-            id: 'cl-2',
-            work_order_id: 'wo-1',
-            worker_id: 'p-2',
-            claimed_at: new Date().toISOString(),
-        }];
         const presenter = makePresenter({
-            claims, currentWorkerId: 'p-1',
+            activeClaim: {
+                workerId: 'p-2',
+                at: new Date().toISOString(),
+            },
+            currentWorkerId: 'p-1',
         });
         const status = presenter.claimStatus();
         assert.equal(status.kind, 'claimed');
@@ -592,36 +580,12 @@ test(
 );
 
 test(
-    'an expired claim leaves the work order'
+    'a null active claim leaves the work order'
     + ' unclaimed',
     () => {
-        const longAgo = new Date(
-            Date.now()
-            - (DEFAULT_LOCK_TIMEOUT + 1) * 1000,
-        ).toISOString();
-        const claims: WorkOrderClaimEntity[] = [{
-            id: 'cl-3',
-            work_order_id: 'wo-1',
-            worker_id: 'p-1',
-            claimed_at: longAgo,
-        }];
-        const presenter = makePresenter({ claims });
-        assert.equal(
-            presenter.claimStatus().kind, 'unclaimed',
-        );
-    },
-);
-
-test(
-    'a claim for a different work order is ignored',
-    () => {
-        const claims: WorkOrderClaimEntity[] = [{
-            id: 'cl-4',
-            work_order_id: 'wo-OTHER',
-            worker_id: 'p-1',
-            claimed_at: new Date().toISOString(),
-        }];
-        const presenter = makePresenter({ claims });
+        const presenter = makePresenter({
+            activeClaim: null,
+        });
         assert.equal(
             presenter.claimStatus().kind, 'unclaimed',
         );

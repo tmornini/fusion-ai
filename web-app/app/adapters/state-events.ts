@@ -1,5 +1,9 @@
 import type { Id, StateEntity } from '../../../api/types.ts';
-import { nowUtc } from '../../../api/types.ts';
+import {
+    msSinceUtc,
+    MS_PER_SECOND,
+    nowUtc,
+} from '../../../api/types.ts';
 import type { RequestContext, WriteOp } from './shared.ts';
 import {
     generateCryptoSafeBase62,
@@ -65,15 +69,28 @@ function latestByAt(
     return latest;
 }
 
-// The state-events parity reader for a work order's
-// current position. Returns the to_node_id of the
-// latest non-claim event for entity_id = workOrderId,
-// or null if no transitions have been recorded. The
-// production reader (over work_order_transitions)
-// continues to drive UI rendering in Stage 7a; this
-// reader runs alongside it in tests until Stage 7b
-// switches the production path.
-export async function getWorkOrderCurrentNodeFromStates(
+// A transition event in the shape flow-stats-aggregate
+// and the workbox detail presenter expect. Derived
+// from the states log: each non-claim event for a
+// work order is a transition into state=to_node_id;
+// from_node_id is the prior event's state, '' for the
+// very first event (matching the creation-transition
+// convention). The id is the underlying state event's
+// id — the foreign-key target for state_field_values.
+export interface TransitionEvent {
+    id: Id;
+    work_order_id: Id;
+    from_node_id: Id;
+    to_node_id: Id;
+    worker_id: Id;
+    at: string;
+}
+
+// Returns the work order's current node id — the
+// state of the latest non-claim event for
+// entity_id = workOrderId, or null if no
+// transitions have been recorded.
+export async function getWorkOrderCurrentNodeId(
     ctx: RequestContext,
     workOrderId: Id,
 ): Promise<Id | null> {
@@ -87,17 +104,20 @@ export async function getWorkOrderCurrentNodeFromStates(
     return latest === null ? null : latest.state;
 }
 
-// The state-events parity reader for a work order's
-// active claim. Returns the worker who currently holds
-// the claim and the moment they took it — or null if
-// the latest claim-vocabulary event is a release or
-// expiration, or if no claim events exist. The
-// production reader (over work_order_claims, with the
-// isExpiredClaim helper) continues to drive UI
-// rendering in Stage 7a.
-export async function getWorkOrderActiveClaimFromStates(
+// Returns the worker holding the active claim and
+// the moment they took it — or null if no claim is
+// live. A 'claimed' event older than lockTimeout is
+// implicitly expired and reads as null even if no
+// 'claim_expired' / 'claim_released' event has yet
+// superseded it. The materialized 'claim_expired'
+// event (written by postWorkOrderClaim when a new
+// claim notices a stale prior) is the durable
+// record of the same condition; the two are
+// consistent.
+export async function getWorkOrderActiveClaim(
     ctx: RequestContext,
     workOrderId: Id,
+    lockTimeout: number,
 ): Promise<{ workerId: Id; at: string } | null> {
     const events = await ctx.GET<StateEntity[]>(
         `entity-states/${workOrderId}/history`,
@@ -109,5 +129,81 @@ export async function getWorkOrderActiveClaimFromStates(
     if (latest === null || latest.state !== 'claimed') {
         return null;
     }
+    const elapsedMs = msSinceUtc(latest.at);
+    if (elapsedMs >= lockTimeout * MS_PER_SECOND) {
+        return null;
+    }
     return { workerId: latest.worker_id, at: latest.at };
+}
+
+// Project the non-claim events for one work order into
+// the TransitionEvent shape consumed by the workbox
+// detail presenter and (via the bulk variant below)
+// flow-stats-aggregate. The first event carries
+// from_node_id='' — the existing convention for
+// creation transitions.
+function projectTransitions(
+    workOrderId: Id,
+    events: readonly StateEntity[],
+): TransitionEvent[] {
+    const transitions = events
+        .filter(ev => !isClaimState(ev.state))
+        .toSorted((a, b) => a.at.localeCompare(b.at));
+    const out: TransitionEvent[] = [];
+    let prior = '';
+    for (const ev of transitions) {
+        out.push({
+            id: ev.id,
+            work_order_id: workOrderId,
+            from_node_id: prior,
+            to_node_id: ev.state,
+            worker_id: ev.worker_id,
+            at: ev.at,
+        });
+        prior = ev.state;
+    }
+    return out;
+}
+
+// Returns the ordered transition history for one work
+// order, in the shape the workbox detail presenter
+// consumes. Read-once per work-order detail page load.
+export async function getWorkOrderTransitionEvents(
+    ctx: RequestContext,
+    workOrderId: Id,
+): Promise<TransitionEvent[]> {
+    const events = await ctx.GET<StateEntity[]>(
+        `entity-states/${workOrderId}/history`,
+    );
+    return projectTransitions(workOrderId, events);
+}
+
+// Bulk variant for flow-stats-aggregate, which needs
+// the transition history for every work order on a
+// flow at once. One GET against /states scans the log,
+// then per-entity grouping + projection happens in JS.
+// O(N) on events; Postgres will use an index on
+// entity_id.
+export async function getTransitionEventsByWorkOrder(
+    ctx: RequestContext,
+): Promise<Map<Id, TransitionEvent[]>> {
+    const all = await ctx.GET<StateEntity[]>('states');
+    const byEntity = new Map<Id, StateEntity[]>();
+    for (const ev of all) {
+        if (isClaimState(ev.state)) continue;
+        const list = byEntity.get(ev.entity_id);
+        if (list) {
+            list.push(ev);
+        } else {
+            byEntity.set(ev.entity_id, [ev]);
+        }
+    }
+    const out = new Map<Id, TransitionEvent[]>();
+    for (const [entityId, events] of byEntity) {
+        out.set(
+            entityId,
+            projectTransitions(entityId, events),
+        );
+    }
+    return out;
 }

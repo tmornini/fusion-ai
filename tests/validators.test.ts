@@ -10,8 +10,7 @@ import {
     validateFlowVersionEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
-    validateWorkOrderTransitionEntity,
-    validateWorkOrderClaimEntity,
+    validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -451,86 +450,35 @@ test(
     );
 });
 
-// --- WorkOrderTransitionEntity ---
+// --- StateFieldValueEntity ---
 
-const validTransition = {
-    work_order_id: 'wo-1',
-    from_node_id: 'n-1',
-    to_node_id: 'n-2',
-    worker_id: 'u-1',
-    transitioned_at: '2024-01-01T00:00:00Z',
+const validStateFieldValue = {
+    state_event_id: 'evt-1',
+    field_id: 'f-1',
+    value: 'Acme Corp',
 };
 
 test(
-    'validateWorkOrderTransitionEntity accepts'
-    + ' valid payload',
-    () => {
-    const result =
-        validateWorkOrderTransitionEntity(
-            validTransition,
-        );
-    assert.equal(result.work_order_id, 'wo-1');
-});
-
-test(
-    'validateWorkOrderTransitionEntity'
-    + ' rejects missing transitioned_at',
-    () => {
-    const body = { ...validTransition };
-    delete (
-        body as Record<string, unknown>
-    )['transitioned_at'];
-    assert.throws(
-        () => validateWorkOrderTransitionEntity(
-            body,
-        ),
-        /missing required key "transitioned_at"/,
-    );
-});
-
-test(
-    'validateWorkOrderTransitionEntity rejects'
-    + ' lingering values key',
-    () => {
-    const body = {
-        ...validTransition,
-        values: '{}',
-    };
-    assert.throws(
-        () => validateWorkOrderTransitionEntity(
-            body,
-        ),
-        /unexpected key "values"/,
-    );
-});
-
-// --- WorkOrderClaimEntity ---
-
-const validClaim = {
-    work_order_id: 'wo-1',
-    worker_id: 'u-1',
-    claimed_at: '2024-01-01T00:00:00Z',
-};
-
-test(
-    'validateWorkOrderClaimEntity accepts valid'
+    'validateStateFieldValueEntity accepts valid'
     + ' payload',
     () => {
     const result =
-        validateWorkOrderClaimEntity(validClaim);
-    assert.equal(result.worker_id, 'u-1');
+        validateStateFieldValueEntity(
+            validStateFieldValue,
+        );
+    assert.equal(result.state_event_id, 'evt-1');
 });
 
 test(
-    'validateWorkOrderClaimEntity rejects missing'
-    + ' claimed_at',
+    'validateStateFieldValueEntity rejects missing'
+    + ' state_event_id',
     () => {
     assert.throws(
-        () => validateWorkOrderClaimEntity({
-            work_order_id: 'wo-1',
-            worker_id: 'u-1',
+        () => validateStateFieldValueEntity({
+            field_id: 'f-1',
+            value: 'x',
         }),
-        /missing required key "claimed_at"/,
+        /missing required key "state_event_id"/,
     );
 });
 

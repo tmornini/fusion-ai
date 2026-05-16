@@ -780,31 +780,16 @@ export interface FlowWorkOrderEntity {
     created_at: string;
 }
 
-export interface WorkOrderTransitionEntity {
+// Per-field values written when a state event
+// records a work-order transition. Each row pins
+// the payload to its parent event by state_event_id
+// (Codd 1NF — a relation belongs in a table, not a
+// column on the event row).
+export interface StateFieldValueEntity {
     id: Id;
-    work_order_id: Id;
-    from_node_id: Id;
-    to_node_id: Id;
-    worker_id: Id;
-    transitioned_at: string;
-}
-
-// Per-field values written when a transition fires.
-// Replaces the former JSON `values` blob on
-// work_order_transitions — a relation belongs in a
-// table, not a column. (Codd 1NF.)
-export interface TransitionFieldValueEntity {
-    id: Id;
-    transition_id: Id;
+    state_event_id: Id;
     field_id: Id;
     value: string;
-}
-
-export interface WorkOrderClaimEntity {
-    id: Id;
-    work_order_id: Id;
-    worker_id: Id;
-    claimed_at: string;
 }
 
 export interface OrganizationEntity {

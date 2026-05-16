@@ -21,9 +21,7 @@ import type {
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
-    WorkOrderTransitionEntity,
-    WorkOrderClaimEntity,
-    TransitionFieldValueEntity,
+    StateFieldValueEntity,
     Objective,
     ObjectiveRevision,
     ProjectObjectiveBaselineScore,
@@ -44,9 +42,7 @@ import {
     validateProjectFlowEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
-    validateWorkOrderTransitionEntity,
-    validateTransitionFieldValueEntity,
-    validateWorkOrderClaimEntity,
+    validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -111,18 +107,10 @@ function validateSnapshotRow(
             case 'flow_work_orders':
                 validateFlowWorkOrderEntity(body);
                 break;
-            case 'work_order_transitions':
-                validateWorkOrderTransitionEntity(
+            case 'state_field_values':
+                validateStateFieldValueEntity(
                     body,
                 );
-                break;
-            case 'transition_field_values':
-                validateTransitionFieldValueEntity(
-                    body,
-                );
-                break;
-            case 'work_order_claims':
-                validateWorkOrderClaimEntity(body);
                 break;
             case 'organization':
                 validateOrganizationEntity(body);
@@ -308,19 +296,9 @@ export async function createLocalStorageAdapter(
                 'flow_work_orders',
                 backend, stateStore,
             ),
-        workOrderTransitions:
-            new EntityStore<WorkOrderTransitionEntity>(
-                'work_order_transitions',
-                backend, stateStore,
-            ),
-        transitionFieldValues:
-            new EntityStore<TransitionFieldValueEntity>(
-                'transition_field_values',
-                backend, stateStore,
-            ),
-        workOrderClaims:
-            new EntityStore<WorkOrderClaimEntity>(
-                'work_order_claims',
+        stateFieldValues:
+            new EntityStore<StateFieldValueEntity>(
+                'state_field_values',
                 backend, stateStore,
             ),
         organization:

@@ -7,7 +7,7 @@ import {
 const KEY_PREFIX = 'fusion-ai:';
 
 const COMPRESSED_TABLES: ReadonlySet<string> = new Set([
-    'work_order_transitions',
+    'states',
     'flow_versions',
 ]);
 

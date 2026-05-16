@@ -27,9 +27,7 @@ import type {
     FlowVersionEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
-    WorkOrderTransitionEntity,
-    TransitionFieldValueEntity,
-    WorkOrderClaimEntity,
+    StateFieldValueEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
     ActivityActorEntity,
@@ -1060,90 +1058,29 @@ export function validateFlowWorkOrderEntity(
     };
 }
 
-const WORK_ORDER_TRANSITION_BODY_KEYS:
+const STATE_FIELD_VALUE_BODY_KEYS:
     readonly string[] = [
-    'work_order_id', 'from_node_id',
-    'to_node_id', 'worker_id',
-    'transitioned_at',
+    'state_event_id', 'field_id', 'value',
 ];
 
 export function
-validateWorkOrderTransitionEntity(
+validateStateFieldValueEntity(
     body: Record<string, unknown>,
-): Omit<WorkOrderTransitionEntity, 'id'> {
+): Omit<StateFieldValueEntity, 'id'> {
     assertOnlyKeys(
         body,
-        WORK_ORDER_TRANSITION_BODY_KEYS,
-        'WorkOrderTransitionEntity',
+        STATE_FIELD_VALUE_BODY_KEYS,
+        'StateFieldValueEntity',
     );
     return {
-        work_order_id: pickString(
-            body, 'work_order_id',
-        ),
-        from_node_id: pickString(
-            body, 'from_node_id',
-        ),
-        to_node_id: pickString(
-            body, 'to_node_id',
-        ),
-        worker_id: pickString(
-            body, 'worker_id',
-        ),
-        transitioned_at: pickString(
-            body, 'transitioned_at',
-        ),
-    };
-}
-
-const TRANSITION_FIELD_VALUE_BODY_KEYS:
-    readonly string[] = [
-    'transition_id', 'field_id', 'value',
-];
-
-export function
-validateTransitionFieldValueEntity(
-    body: Record<string, unknown>,
-): Omit<TransitionFieldValueEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        TRANSITION_FIELD_VALUE_BODY_KEYS,
-        'TransitionFieldValueEntity',
-    );
-    return {
-        transition_id: pickString(
-            body, 'transition_id',
+        state_event_id: pickString(
+            body, 'state_event_id',
         ),
         field_id: pickString(
             body, 'field_id',
         ),
         value: pickString(
             body, 'value',
-        ),
-    };
-}
-
-const WORK_ORDER_CLAIM_BODY_KEYS:
-    readonly string[] = [
-    'work_order_id', 'worker_id', 'claimed_at',
-];
-
-export function validateWorkOrderClaimEntity(
-    body: Record<string, unknown>,
-): Omit<WorkOrderClaimEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        WORK_ORDER_CLAIM_BODY_KEYS,
-        'WorkOrderClaimEntity',
-    );
-    return {
-        work_order_id: pickString(
-            body, 'work_order_id',
-        ),
-        worker_id: pickString(
-            body, 'worker_id',
-        ),
-        claimed_at: pickString(
-            body, 'claimed_at',
         ),
     };
 }

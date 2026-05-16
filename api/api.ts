@@ -14,9 +14,7 @@ import {
     validateProjectFlowEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
-    validateWorkOrderTransitionEntity,
-    validateTransitionFieldValueEntity,
-    validateWorkOrderClaimEntity,
+    validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateActivityActorEntity,
@@ -246,53 +244,21 @@ const routes: Route[] = [
                 ),
             ),
     }),
-    route('work-order-transitions', {
+    route('state-field-values', {
         get: (db) =>
-            db.workOrderTransitions
+            db.stateFieldValues
                 .getAll(),
     }),
-    route('work-order-transitions/:id', {
+    route('state-field-values/:id', {
         put: (db, params, body) =>
-            db.workOrderTransitions.put(
+            db.stateFieldValues.put(
                 param(params, 0),
-                validateWorkOrderTransitionEntity(
-                    withoutId(body),
-                ),
-            ),
-    }),
-    route('transition-field-values', {
-        get: (db) =>
-            db.transitionFieldValues
-                .getAll(),
-    }),
-    route('transition-field-values/:id', {
-        put: (db, params, body) =>
-            db.transitionFieldValues.put(
-                param(params, 0),
-                validateTransitionFieldValueEntity(
+                validateStateFieldValueEntity(
                     withoutId(body),
                 ),
             ),
         delete: (db, params) =>
-            db.transitionFieldValues.delete(
-                param(params, 0),
-            ),
-    }),
-    route('work-order-claims', {
-        get: (db) =>
-            db.workOrderClaims
-                .getAll(),
-    }),
-    route('work-order-claims/:id', {
-        put: (db, params, body) =>
-            db.workOrderClaims.put(
-                param(params, 0),
-                validateWorkOrderClaimEntity(
-                    withoutId(body),
-                ),
-            ),
-        delete: (db, params) =>
-            db.workOrderClaims.delete(
+            db.stateFieldValues.delete(
                 param(params, 0),
             ),
     }),

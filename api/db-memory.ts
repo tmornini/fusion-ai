@@ -19,9 +19,7 @@ import type {
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
-    WorkOrderTransitionEntity,
-    TransitionFieldValueEntity,
-    WorkOrderClaimEntity,
+    StateFieldValueEntity,
     Objective,
     ObjectiveRevision,
     ProjectObjectiveBaselineScore,
@@ -51,12 +49,8 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly workOrders: IEntityStore<WorkOrderEntity>;
     readonly flowWorkOrders:
         IEntityStore<FlowWorkOrderEntity>;
-    readonly workOrderTransitions:
-        IEntityStore<WorkOrderTransitionEntity>;
-    readonly transitionFieldValues:
-        IEntityStore<TransitionFieldValueEntity>;
-    readonly workOrderClaims:
-        IEntityStore<WorkOrderClaimEntity>;
+    readonly stateFieldValues:
+        IEntityStore<StateFieldValueEntity>;
     readonly organization:
         ISingletonStore<OrganizationEntity>;
     readonly ideaSubmissions:
@@ -106,17 +100,9 @@ export class MemoryDbAdapter implements DbAdapter {
             new EntityStore(
                 'flow_work_orders', b, ss,
             );
-        this.workOrderTransitions =
+        this.stateFieldValues =
             new EntityStore(
-                'work_order_transitions', b, ss,
-            );
-        this.transitionFieldValues =
-            new EntityStore(
-                'transition_field_values', b, ss,
-            );
-        this.workOrderClaims =
-            new EntityStore(
-                'work_order_claims', b, ss,
+                'state_field_values', b, ss,
             );
         this.ideaSubmissions =
             new EntityStore(

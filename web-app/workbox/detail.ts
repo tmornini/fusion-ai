@@ -16,9 +16,9 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getWorkOrder,
-    getWorkOrderTransitionRowsByOrder,
-    getTransitionFieldValuesByTransition,
-    getWorkOrderClaimRowsByOrder,
+    getWorkOrderTransitionEvents,
+    getStateFieldValuesByEvent,
+    getWorkOrderActiveClaim,
     getWorkerMap,
     postActivity,
     postWorkOrderTransition,
@@ -27,6 +27,7 @@ import {
     getCurrentHumanWorker,
     createRequestContext,
     generateCryptoSafeBase62,
+    validateWorkOrderFlowGraph,
 } from '../app/adapters/index.ts';
 
 /* ── Helpers ─────────────── */
@@ -120,16 +121,11 @@ function initTransitionButtons(
                     await postWorkOrderTransition(
                         ctx,
                         {
-                            transitionId:
-                                generateCryptoSafeBase62(),
                             workOrderId:
                                 detail.idValue(),
                             edgeId,
                             values,
                             fieldValueIds,
-                            currentNodeId:
-                                detail
-                                    .currentNodeId(),
                         },
                     );
                 } catch (err) {
@@ -201,14 +197,13 @@ function initUnclaimButton(
     if (!btn) return;
     const claim = detail.claimStatus();
     if (claim.kind !== 'claimed') return;
-    const claimId = claim.claimId;
     const workOrderId = detail.idValue();
     btn.addEventListener(
         'click',
         async () => {
             try {
                 await deleteWorkOrderClaim(
-                    ctx, claimId, workOrderId,
+                    ctx, workOrderId,
                 );
             } catch (err) {
                 log.error(
@@ -238,24 +233,31 @@ async function loadPresenter(
     currentWorkerId: string,
     ctx: ReturnType<typeof createRequestContext>,
 ): Promise<WorkboxDetailPresenter> {
+    const workOrder =
+        await getWorkOrder(ctx, workOrderId);
+    const fg = validateWorkOrderFlowGraph(
+        workOrder.flow_graph,
+    );
     const [
-        workOrder, transitions,
-        fieldValuesByTransition,
-        claims, workerMap,
+        transitions,
+        fieldValuesByEvent,
+        activeClaim,
+        workerMap,
     ] = await Promise.all([
-        getWorkOrder(ctx, workOrderId),
-        getWorkOrderTransitionRowsByOrder(
+        getWorkOrderTransitionEvents(
             ctx, workOrderId,
         ),
-        getTransitionFieldValuesByTransition(ctx),
-        getWorkOrderClaimRowsByOrder(ctx, workOrderId),
+        getStateFieldValuesByEvent(ctx),
+        getWorkOrderActiveClaim(
+            ctx, workOrderId, fg.lockTimeout,
+        ),
         getWorkerMap(ctx),
     ]);
     return new WorkboxDetailPresenter(
         workOrder,
         transitions,
-        fieldValuesByTransition,
-        claims,
+        fieldValuesByEvent,
+        activeClaim,
         workerMap,
         currentWorkerId,
     );
@@ -301,7 +303,6 @@ export async function init(
             ) {
                 await postWorkOrderClaim(
                     ctx,
-                    generateCryptoSafeBase62(),
                     id,
                 );
                 presenter =
