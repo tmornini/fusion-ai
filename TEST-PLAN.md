@@ -176,7 +176,7 @@ on. Run these in order.
 ### AA1. Create Pristine Environment
 
 - [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
-- [ ] **AA2** Open DevTools, verify localStorage has `fusion-ai:*` keys for the 17 tables in `TABLE_NAMES` (`api/db.ts`) — empty arrays plus bootstrap data, including the `deleted` tombstone table.
+- [ ] **AA2** Open DevTools, verify localStorage has a `fusion-ai:*` key for every table listed in `TABLE_NAMES` (`api/db.ts`) — empty arrays plus bootstrap data, including the `deleted` tombstone table.
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`) on the "Business" plan.
 
 ### AA2. Create Workers
@@ -1474,10 +1474,10 @@ restored data.)
 - [ ] **G32** Click "Create Pristine Environment", confirm
   the dialog. PASS: redirects to `dashboard/index.html`.
   Dashboard renders with zeroed-out metrics (empty
-  database). 15 of the 17 `fusion-ai:*` keys are present
-  as empty arrays; `fusion-ai:workers` and
-  `fusion-ai:organization` are bootstrap-seeded by
-  `postBootstrap` after the pristine wipe — `workers`
+  database). Every table in `TABLE_NAMES` is present as
+  an empty array EXCEPT `fusion-ai:workers` and
+  `fusion-ai:organization`, which `postBootstrap`
+  bootstrap-seeds after the pristine wipe — `workers`
   holds the current user (Tony Stark), `organization`
   holds Stark Industries. Empty-array tables persisted
   via column-compression appear as a `gz1:H4sI…`
