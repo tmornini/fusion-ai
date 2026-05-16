@@ -1636,7 +1636,7 @@ Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
 domain delta:
 
 - Agent-G adds: `objectives`, `objective_revisions`,
-  `deprecated_objectives`
+  `deprecated`
 - Agent-E adds: `project_objective_baseline_scores`,
   `project_objective_actual_scores`
 - Agent-CH stays read-only
