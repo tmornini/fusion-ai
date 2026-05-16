@@ -6,7 +6,6 @@ import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
-import { TombstoneStore } from './store-tombstone.ts';
 import { StateStore } from './store-state.ts';
 import type {
     HumanWorkerEntity,
@@ -35,7 +34,6 @@ import {
     DEFAULT_LATENCY_CONFIG,
 } from './latency.ts';
 import {
-    asString,
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
     validateIdeaEntity,
@@ -71,8 +69,7 @@ function simulateLatencyRequested(): boolean {
 // Map table name → entity validator. Stored rows
 // carry `id` as their storage key — strip it before
 // passing to each validator, which enforces an exact
-// body-key set. 'deleted' rows have shape
-// {id, deleted_at} — validated inline.
+// body-key set.
 function validateSnapshotRow(
     table: string,
     row: Record<string, unknown>,
@@ -135,13 +132,6 @@ function validateSnapshotRow(
                 break;
             case 'activity_actors':
                 validateActivityActorEntity(body);
-                break;
-            case 'deleted':
-                asString(row['id'], label + '.id');
-                asString(
-                    row['deleted_at'],
-                    label + '.deleted_at',
-                );
                 break;
             case 'states':
                 validateStateEntity(body);
@@ -232,9 +222,7 @@ function parseAndValidateSnapshot(
 export async function createLocalStorageAdapter(
 ): Promise<DbAdapter> {
     const backend = new LocalStorageBackend();
-    const deletedStore = new TombstoneStore(
-        backend, 'deleted', 'deleted_at',
-    );
+    const stateStore = new StateStore(backend, 'states');
 
     const adapter: DbAdapter = {
         async initialize(): Promise<void> {},
@@ -287,22 +275,22 @@ export async function createLocalStorageAdapter(
         },
 
         workers: new EntityStore<HumanWorkerEntity>(
-            'workers', backend, deletedStore,
+            'workers', backend, stateStore,
         ),
         aiWorkers: new EntityStore<AIWorkerEntity>(
-            'ai_workers', backend, deletedStore,
+            'ai_workers', backend, stateStore,
         ),
         ideas: new EntityStore<IdeaEntity>(
-            'ideas', backend, deletedStore,
+            'ideas', backend, stateStore,
         ),
         projects: new EntityStore<ProjectEntity>(
-            'projects', backend, deletedStore,
+            'projects', backend, stateStore,
         ),
         activities: new EntityStore<ActivityEntity>(
-            'activities', backend, deletedStore,
+            'activities', backend, stateStore,
         ),
         flows: new EntityStore<FlowEntity>(
-            'flows', backend, deletedStore,
+            'flows', backend, stateStore,
         ),
         flowVersions:
             new HistoryEntityStore<FlowVersionEntity>(
@@ -310,30 +298,30 @@ export async function createLocalStorageAdapter(
             ),
         projectFlows:
             new EntityStore<ProjectFlowEntity>(
-                'project_flows', backend, deletedStore,
+                'project_flows', backend, stateStore,
             ),
         workOrders: new EntityStore<WorkOrderEntity>(
-            'work_orders', backend, deletedStore,
+            'work_orders', backend, stateStore,
         ),
         flowWorkOrders:
             new EntityStore<FlowWorkOrderEntity>(
                 'flow_work_orders',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         workOrderTransitions:
             new EntityStore<WorkOrderTransitionEntity>(
                 'work_order_transitions',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         transitionFieldValues:
             new EntityStore<TransitionFieldValueEntity>(
                 'transition_field_values',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         workOrderClaims:
             new EntityStore<WorkOrderClaimEntity>(
                 'work_order_claims',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         organization:
             new SingletonStore<OrganizationEntity>(
@@ -342,15 +330,15 @@ export async function createLocalStorageAdapter(
         ideaSubmissions:
             new EntityStore<IdeaSubmissionEntity>(
                 'idea_submissions',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         activityActors:
             new EntityStore<ActivityActorEntity>(
                 'activity_actors',
-                backend, deletedStore,
+                backend, stateStore,
             ),
         objectives: new EntityStore<Objective>(
-            'objectives', backend, deletedStore,
+            'objectives', backend, stateStore,
         ),
         objectiveRevisions:
             new HistoryEntityStore<ObjectiveRevision>(
@@ -370,8 +358,7 @@ export async function createLocalStorageAdapter(
                 'project_objective_actual_scores',
                 backend,
             ),
-        deleted: deletedStore,
-        states: new StateStore(backend, 'states'),
+        states: stateStore,
     };
 
     return simulateLatencyRequested()

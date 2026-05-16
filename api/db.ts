@@ -69,16 +69,6 @@ export interface SingletonStore<
     put(fields: Omit<T, 'id'>): Promise<T>;
 }
 
-export interface TombstoneStore {
-    isTombstoned(id: Id): Promise<boolean>;
-    record(id: Id): Promise<void>;
-    remove(id: Id): Promise<void>;
-    allTombstonedIds(): Promise<Set<Id>>;
-    allRows(): Promise<
-        ({ id: Id } & Record<string, string>)[]
-    >;
-}
-
 export interface StateStore {
     getAll(): Promise<StateEntity[]>;
     getById(id: Id): Promise<StateEntity>;
@@ -96,6 +86,8 @@ export interface StateStore {
         entityId: Id,
     ): Promise<StateEntity | null>;
     allFor(entityId: Id): Promise<StateEntity[]>;
+    deletedIds(): Promise<Set<Id>>;
+    isDeleted(id: Id): Promise<boolean>;
 }
 
 // The byte-level seam. Store classes compose a backend
@@ -187,7 +179,6 @@ export interface DbAdapter {
         EntityStore<
             ProjectObjectiveActualScore
         >;
-    deleted: TombstoneStore;
     states: StateStore;
 }
 
@@ -212,6 +203,5 @@ export const TABLE_NAMES = [
     'objective_revisions',
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
-    'deleted',
     'states',
 ];

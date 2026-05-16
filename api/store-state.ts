@@ -127,4 +127,57 @@ export class StateStore
                         : 0,
             );
     }
+
+    // Answers "which entities are currently in
+    // state=deleted?" by scanning the log and keeping
+    // the latest event per entity_id (>= tiebreak so
+    // same-millisecond writes resolve to insertion
+    // order — the deterministic order the append-only
+    // log already captures). Hot path for getAll on
+    // every EntityStore.
+    async deletedIds(): Promise<Set<Id>> {
+        const rows = await this.#backend.read<
+            StateEntity
+        >(this.#table);
+        const latestByEntity = new Map<Id, StateEntity>();
+        for (const row of rows) {
+            const seen =
+                latestByEntity.get(row.entity_id);
+            if (
+                seen === undefined
+                || row.at >= seen.at
+            ) {
+                latestByEntity.set(row.entity_id, row);
+            }
+        }
+        const deleted = new Set<Id>();
+        for (const [entityId, row] of latestByEntity) {
+            if (row.state === 'deleted') {
+                deleted.add(entityId);
+            }
+        }
+        return deleted;
+    }
+
+    // Single-entity variant for getById's hot path.
+    // Scans the log once, keeps only rows for the
+    // requested entity, returns whether the latest
+    // is 'deleted'. O(events per entity) — small.
+    async isDeleted(id: Id): Promise<boolean> {
+        const rows = await this.#backend.read<
+            StateEntity
+        >(this.#table);
+        let latest: StateEntity | null = null;
+        for (const row of rows) {
+            if (row.entity_id !== id) continue;
+            if (
+                latest === null
+                || row.at >= latest.at
+            ) {
+                latest = row;
+            }
+        }
+        return latest !== null
+            && latest.state === 'deleted';
+    }
 }

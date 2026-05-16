@@ -237,7 +237,7 @@ test('postObjectiveReactivation returns objective to active list',
             + 'latest-by-at query');
     });
 
-test('reactivation does not write to deleted keyspace',
+test('reactivation does not emit a deleted state event',
     async () => {
         const db = new MemoryDbAdapter();
         await seedCurrentWorker(db);
@@ -247,11 +247,10 @@ test('reactivation does not write to deleted keyspace',
         );
         await postObjectiveDeprecation(ctx, 'o1');
         await postObjectiveReactivation(ctx, 'o1');
-        const tombstones =
-            await db.deleted.allTombstonedIds();
-        assert.ok(!tombstones.has('o1'),
-            'history-store delete must splice, not'
-            + ' tombstone');
+        const deleted = await db.states.deletedIds();
+        assert.ok(!deleted.has('o1'),
+            'reactivation must appear in the states'
+            + ' log as active, never as deleted');
     });
 
 test('postObjectiveReordering updates positions',

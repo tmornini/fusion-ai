@@ -136,7 +136,7 @@ test(
 );
 
 test(
-    'DELETE ai-workers/:id tombstones the AI',
+    'DELETE ai-workers/:id splices the row',
     async () => {
         const db = new MemoryDbAdapter();
         await db.aiWorkers.put('ai_1', {

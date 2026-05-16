@@ -3,14 +3,12 @@ import { strict as assert } from 'node:assert';
 import { TABLE_NAMES } from '../api/db.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
-test('TABLE_NAMES includes the objective tables and '
-    + 'the deleted tombstone', () => {
+test('TABLE_NAMES includes the objective tables', () => {
     const expected = [
         'objectives',
         'objective_revisions',
         'project_objective_baseline_scores',
         'project_objective_actual_scores',
-        'deleted',
     ];
     for (const name of expected) {
         assert.ok(

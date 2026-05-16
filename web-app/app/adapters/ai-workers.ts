@@ -19,7 +19,7 @@ export type {
 } from '../../../api/types.ts';
 
 const aiWorkerChanges =
-    createSubscriptionChannel(['ai_workers']);
+    createSubscriptionChannel(['ai_workers', 'states']);
 
 export function subscribeAIWorkerChanges(
     fn: () => void,
@@ -90,10 +90,6 @@ export async function deleteAIWorker(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            {
-                method: 'delete',
-                resource: `ai-workers/${id}`,
-            },
             await buildStateEventOp(ctx, id, 'deleted'),
         ],
     });

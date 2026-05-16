@@ -325,7 +325,7 @@ test(
             'work_order_claims',
             'organization',
             'idea_submissions',
-            'activity_actors', 'deleted',
+            'activity_actors',
         ];
         for (const table of expected) {
             assert.ok(

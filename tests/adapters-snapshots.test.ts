@@ -53,7 +53,7 @@ test('getSnapshot returns a JSON object of tables', async () => {
     const parsed = JSON.parse(json);
     assert.ok(Array.isArray(parsed.workers));
     assert.ok(Array.isArray(parsed.activities));
-    assert.ok(Array.isArray(parsed.deleted));
+    assert.ok(Array.isArray(parsed.states));
 });
 
 test(
