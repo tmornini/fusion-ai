@@ -22,6 +22,23 @@ function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);
 }
 
+async function seedCurrentWorker(
+    db: MemoryDbAdapter,
+): Promise<void> {
+    await db.workers.put('current', {
+        first_name: 'Demo',
+        last_name: 'User',
+        email: 'demo@example.com',
+        phone: '',
+        title: 'Admin',
+        status: 'active',
+        strengths: '[]' as never,
+        team_dimensions: '{}' as never,
+        bio: '',
+        department: 'Product',
+    });
+}
+
 test('getObjective returns a single row', async () => {
     const db = new MemoryDbAdapter();
     await db.objectives.put('o1', { position: 0 });
@@ -183,6 +200,7 @@ test('postObjectiveRevision appends a revision row',
 test('postObjectiveDeprecation tombstones an objective',
     async () => {
         const db = new MemoryDbAdapter();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'Revenue', 'd', 0,
@@ -197,6 +215,7 @@ test('postObjectiveDeprecation tombstones an objective',
 test('postObjectiveReactivation returns objective to active list',
     async () => {
         const db = new MemoryDbAdapter();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'Rev', 'd', 0,
@@ -217,6 +236,7 @@ test('postObjectiveReactivation returns objective to active list',
 test('reactivation does not write to deleted keyspace',
     async () => {
         const db = new MemoryDbAdapter();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'Rev', 'd', 0,

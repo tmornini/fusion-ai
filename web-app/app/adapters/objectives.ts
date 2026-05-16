@@ -2,6 +2,7 @@ import type {
     Objective,
     ObjectiveId,
     ObjectiveRevision,
+    StateEntity,
 } from '../../../api/types.ts';
 import { nowUtc } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
@@ -11,6 +12,9 @@ import {
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
+import {
+    getCurrentHumanWorker,
+} from './workers.ts';
 
 const objectiveChanges =
     createSubscriptionChannel([
@@ -53,6 +57,33 @@ export async function getDeprecatedObjectiveIds(
     return new Set(
         rows.map(r => r.id as ObjectiveId),
     );
+}
+
+// Stage 3 parallel reader. Reads the same truth from
+// the states event log, latest-event-wins by `at`. The
+// production reads remain on getDeprecatedObjectiveIds
+// throughout Stage 3; the parity test asserts the two
+// readers agree after every mutation. Stage 4 retires
+// the tombstone reader and deletes this comment.
+export async function
+    getDeprecatedObjectiveIdsFromStates(
+        ctx: RequestContext,
+    ): Promise<Set<ObjectiveId>> {
+    const rows = await ctx.GET<StateEntity[]>('states');
+    const latestByEntity = new Map<string, StateEntity>();
+    for (const row of rows) {
+        const seen = latestByEntity.get(row.entity_id);
+        if (seen === undefined || row.at > seen.at) {
+            latestByEntity.set(row.entity_id, row);
+        }
+    }
+    const deprecated = new Set<ObjectiveId>();
+    for (const [entityId, row] of latestByEntity) {
+        if (row.state === 'deprecated') {
+            deprecated.add(entityId as ObjectiveId);
+        }
+    }
+    return deprecated;
 }
 
 export async function getObjectiveRevisions(
@@ -184,12 +215,27 @@ export async function postObjectiveDeprecation(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
+    const currentWorker =
+        await getCurrentHumanWorker(ctx);
+    const stateEventId = generateCryptoSafeBase62();
     await ctx.commit({
-        ops: [{
-            method: 'put',
-            resource: `deprecated/${id}`,
-            body: {},
-        }],
+        ops: [
+            {
+                method: 'put',
+                resource: `deprecated/${id}`,
+                body: {},
+            },
+            {
+                method: 'put',
+                resource: `states/${stateEventId}`,
+                body: {
+                    entity_id: id,
+                    state: 'deprecated',
+                    worker_id: currentWorker.id,
+                    at: nowUtc(),
+                },
+            },
+        ],
     });
     notifyObjectiveChange();
 }
@@ -198,11 +244,26 @@ export async function postObjectiveReactivation(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
+    const currentWorker =
+        await getCurrentHumanWorker(ctx);
+    const stateEventId = generateCryptoSafeBase62();
     await ctx.commit({
-        ops: [{
-            method: 'delete',
-            resource: `deprecated/${id}`,
-        }],
+        ops: [
+            {
+                method: 'delete',
+                resource: `deprecated/${id}`,
+            },
+            {
+                method: 'put',
+                resource: `states/${stateEventId}`,
+                body: {
+                    entity_id: id,
+                    state: 'active',
+                    worker_id: currentWorker.id,
+                    at: nowUtc(),
+                },
+            },
+        ],
     });
     notifyObjectiveChange();
 }

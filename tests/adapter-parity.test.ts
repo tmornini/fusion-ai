@@ -36,6 +36,18 @@ async function runReactivationScenario(db: DbAdapter): Promise<{
     deletedIds: Set<string>;
     deprecatedIds: Set<string>;
 }> {
+    await db.workers.put('current', {
+        first_name: 'Demo',
+        last_name: 'User',
+        email: 'demo@example.com',
+        phone: '',
+        title: 'Admin',
+        status: 'active',
+        strengths: '[]' as never,
+        team_dimensions: '{}' as never,
+        bio: '',
+        department: 'Product',
+    });
     const ctx = createRequestContext(db);
     await postObjectiveCreation(
         ctx, 'o1', 'Rev', 'd', 0,
