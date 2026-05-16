@@ -105,7 +105,7 @@ export class WorkboxInboxPresenter {
         const grip = this.#showGrip
             ? html`<div class="${
                 'hidden-mobile text-muted'
-                + ' cursor-grab'
+                + ' drag-handle'
             }">${
                 iconGripVertical(20, '')
             }</div>`

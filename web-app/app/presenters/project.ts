@@ -118,7 +118,7 @@ export class ProjectPresenter {
         }">
             ${showGrip ? html`<div class="${
                 'hidden-mobile text-muted'
-                + ' cursor-grab'
+                + ' drag-handle'
             }">${
                 iconGripVertical(20, '')
             }</div>` : html``}

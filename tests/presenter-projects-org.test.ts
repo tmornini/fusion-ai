@@ -187,12 +187,12 @@ test(
         );
         assert.match(
             p.buildCard('position', true).toString(),
-            /cursor-grab/,
+            /drag-handle/,
         );
         assert.equal(
             p.buildCard('position', false)
                 .toString()
-                .includes('cursor-grab'),
+                .includes('drag-handle'),
             false,
         );
     },

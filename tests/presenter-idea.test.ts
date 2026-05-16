@@ -286,9 +286,9 @@ test(
         const withoutGrip = presenter
             .buildCard('position', false)
             .toString();
-        assert.match(withGrip, /cursor-grab/);
+        assert.match(withGrip, /drag-handle/);
         assert.ok(!withoutGrip.includes(
-            'cursor-grab',
+            'drag-handle',
         ));
     },
 );
@@ -522,7 +522,7 @@ test(
         );
         assert.equal(slot.writes, 1);
         const out = slot.captured;
-        assert.match(out, /cursor-grab/);
+        assert.match(out, /drag-handle/);
         assert.ok(
             out.indexOf('Alpha idea')
             < out.indexOf('Beta idea'),
@@ -568,7 +568,7 @@ test(
         const out = slot.captured;
         assert.match(out, /Review me/);
         assert.ok(!out.includes('Active one'));
-        assert.ok(!out.includes('cursor-grab'));
+        assert.ok(!out.includes('drag-handle'));
     },
 );
 
