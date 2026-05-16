@@ -31,7 +31,6 @@ function buildWorker(id: string, first: string) {
         email: `${first}@example.com`.toLowerCase(),
         phone: '',
         title: 'product_manager',
-        status: 'active',
         strengths: '[]',
         team_dimensions: '{}',
         bio: '',

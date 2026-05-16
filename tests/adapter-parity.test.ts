@@ -43,7 +43,6 @@ async function runReactivationScenario(db: DbAdapter): Promise<{
         email: 'demo@example.com',
         phone: '',
         title: 'Admin',
-        status: 'active',
         strengths: '[]' as never,
         team_dimensions: '{}' as never,
         bio: '',

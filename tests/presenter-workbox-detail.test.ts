@@ -147,7 +147,6 @@ function makeHumanWorkerEntity(
         email: first.toLowerCase() + '@example.com',
         title: 'Reviewer',
         department: 'Finance',
-        status: 'active',
         strengths: jsonArrayField([]),
         team_dimensions: jsonObjectField({}),
         phone: '',
@@ -160,7 +159,7 @@ function makeWorkerMap(
 ): Map<Id, Worker> {
     return new Map(
         entities.map(
-            e => [e.id, new HumanWorker(e)],
+            e => [e.id, new HumanWorker(e, 'active')],
         ),
     );
 }

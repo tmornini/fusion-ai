@@ -51,12 +51,23 @@ function buildHumanWorker(
         email: name.toLowerCase() + '@example.com',
         phone: '',
         title: 'product_manager',
-        status: 'active',
         strengths: '[]' as never,
         team_dimensions: '{}' as never,
         bio: '',
         department: 'Product',
     };
+}
+
+async function seedWorkerState(
+    db: MemoryDbAdapter,
+    workerId: WorkerId,
+): Promise<void> {
+    await db.states.record(
+        `st-${workerId}`,
+        workerId,
+        'active',
+        'system',
+    );
 }
 
 function buildNode(
@@ -181,6 +192,7 @@ async function setupOneWorkOrder(): Promise<{
     await db.workers.put(
         'current', buildHumanWorker('Demo'),
     );
+    await seedWorkerState(db, 'current');
     const ctx = createRequestContext(db);
     await db.flows.put(
         'f1', buildFlow(buildLinearGraph()),
@@ -332,6 +344,7 @@ test(
         await db.workers.put(
             'current', buildHumanWorker('Demo'),
         );
+        await seedWorkerState(db, 'current');
         const ctx = createRequestContext(db);
         await db.flows.put(
             'f1', buildFlow(buildLinearGraph()),

@@ -1,11 +1,14 @@
 import type {
     Id, IdeaState, ProjectState, StateEntity,
+    WorkerState,
 } from '../../../api/types.ts';
 import {
     assertIdeaState,
     assertProjectState,
+    assertWorkerState,
     isIdeaState,
     isProjectState,
+    isWorkerState,
     msSinceUtc,
     MS_PER_SECOND,
     nowUtc,
@@ -312,22 +315,54 @@ export async function getProjectStates(
     return out;
 }
 
-// Read the latest state for one worker from the
-// states log. Returns null when no event has yet
-// been recorded (a worker whose creation pre-dates
-// dual-write). Stage 10b switches production
-// readers to consume this; today only the parity
-// test does. The worker id is unique across the
-// human and AI tables — both produce base62 ids
-// from the same generator — so this reader serves
-// both kinds without discrimination.
-export async function getCurrentWorkerStateFromStates(
+// Read the current state for one worker from the
+// states log. Returns the validated WorkerState.
+// Throws when no event has been recorded — every
+// worker created through the supported paths gets
+// an initial state event, so absence is a bug,
+// not a missing default. The worker id is unique
+// across the human and AI tables — both produce
+// base62 ids from the same generator — so this
+// reader serves both kinds without discrimination.
+export async function getWorkerState(
     ctx: RequestContext,
     workerId: Id,
-): Promise<string | null> {
+): Promise<WorkerState> {
     const events = await ctx.GET<StateEntity[]>(
         `entity-states/${workerId}/history`,
     );
     const latest = latestByAt(events);
-    return latest === null ? null : latest.state;
+    if (latest === null) {
+        throw new Error(
+            'no state event for worker ' + workerId,
+        );
+    }
+    return assertWorkerState(
+        latest.state, 'worker ' + workerId,
+    );
+}
+
+// Bulk variant for getHumanWorkers / getAIWorkers.
+// One scan over the states log builds the
+// entity_id → WorkerState map, keeping only events
+// whose state lies in the worker alphabet (work
+// order claims and transitions share the table).
+// O(N) on events; Postgres uses an entity_id index.
+export async function getWorkerStates(
+    ctx: RequestContext,
+): Promise<Map<Id, WorkerState>> {
+    const all = await ctx.GET<StateEntity[]>('states');
+    const latestByEntity = new Map<Id, StateEntity>();
+    for (const ev of all) {
+        if (!isWorkerState(ev.state)) continue;
+        const seen = latestByEntity.get(ev.entity_id);
+        if (seen === undefined || ev.at >= seen.at) {
+            latestByEntity.set(ev.entity_id, ev);
+        }
+    }
+    const out = new Map<Id, WorkerState>();
+    for (const [id, ev] of latestByEntity) {
+        out.set(id, ev.state as WorkerState);
+    }
+    return out;
 }

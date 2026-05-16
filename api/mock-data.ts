@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type {
     HumanWorkerEntity,
-    WorkerStatus,
+    WorkerState,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -380,6 +380,11 @@ type SeedHumanWorker = Omit<
     team_dimensions: Record<
         string, number
     >;
+    // The initial worker state seeded into the
+    // states log alongside the row. Lives on the
+    // seed (not the entity) because the entity
+    // carries no state column.
+    state: WorkerState;
 };
 
 const MOCK_SEED_TIMESTAMP =
@@ -437,7 +442,7 @@ export async function populateMockData(
             email: 'system@fusion.local',
             title: 'System',
             department: 'System',
-            status: 'active',
+            state: 'active',
             strengths: [],
             team_dimensions: {},
             phone: '',
@@ -451,7 +456,7 @@ export async function populateMockData(
             email: 'sarah.chen@company.com',
             title: 'Project Lead',
             department: 'Operations',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Strategic Planning',
                 'Team Leadership',
@@ -476,7 +481,7 @@ export async function populateMockData(
             email: 'mike.thompson@company.com',
             title: 'ML Engineer',
             department: 'Engineering',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Machine Learning',
                 'Python',
@@ -501,7 +506,7 @@ export async function populateMockData(
             email: 'jessica.park@company.com',
             title: 'Data Scientist',
             department: 'Analytics',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Statistical Analysis',
                 'Visualization',
@@ -526,7 +531,7 @@ export async function populateMockData(
             email: 'david.martinez@company.com',
             title: 'Backend Developer',
             department: 'Engineering',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'API Development',
                 'Database Design',
@@ -551,7 +556,7 @@ export async function populateMockData(
             email: 'emily.rodriguez@company.com',
             title: 'UX Designer',
             department: 'Design',
-            status: 'pending',
+            state: 'pending',
             strengths: [
                 'User Research',
                 'Prototyping',
@@ -576,7 +581,7 @@ export async function populateMockData(
             email: 'alex.kim@company.com',
             title: 'Product Manager',
             department: 'Product',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Roadmap Planning',
                 'Stakeholder Management',
@@ -601,7 +606,7 @@ export async function populateMockData(
             email: 'marcus@acmecorp.com',
             title: 'manager',
             department: 'Product',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Product Strategy',
                 'Team Management',
@@ -625,7 +630,7 @@ export async function populateMockData(
             email: 'david.kim@company.com',
             title: 'member',
             department: 'Engineering',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Frontend Development',
                 'React',
@@ -650,7 +655,7 @@ export async function populateMockData(
             email: 'lisa@acmecorp.com',
             title: 'viewer',
             department: 'Sales',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Sales Strategy',
                 'Client Relations',
@@ -674,7 +679,7 @@ export async function populateMockData(
             email: 'james@acmecorp.com',
             title: 'member',
             department: 'Engineering',
-            status: 'deactivated',
+            state: 'archived',
             strengths: [
                 'Backend Development',
                 'Python',
@@ -698,7 +703,7 @@ export async function populateMockData(
             email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',
-            status: 'active',
+            state: 'active',
             strengths: [
                 'Strategic Planning',
                 'Data Analysis',
@@ -717,17 +722,34 @@ export async function populateMockData(
         },
     ];
 
-    await Promise.all(workers.map(worker =>
-        adapter.workers.put(worker.id, {
-            ...worker,
+    await Promise.all(workers.map(worker => {
+        const {
+            id: _id, state: _state, ...rest
+        } = worker;
+        return adapter.workers.put(worker.id, {
+            ...rest,
             strengths:
                 jsonArrayField(worker.strengths),
             team_dimensions:
                 jsonObjectField(
                     worker.team_dimensions,
                 ),
-        }),
-    ));
+        });
+    }));
+
+    // Initial worker state events. Every seeded
+    // worker — human or AI — gets one event at
+    // creation. The states log is the sole source
+    // of worker state; the row carries no column.
+    const workerStateEvents: StateEntity[] = [
+        ...workers.map(w => ({
+            id: `seed-worker-${w.id}-${w.state}`,
+            entity_id: w.id,
+            state: w.state,
+            worker_id: SYSTEM_WORKER_ID,
+            at: MOCK_SEED_TIMESTAMP,
+        })),
+    ];
 
     const ideas: IdeaEntity[] = [
         {
@@ -6112,6 +6134,18 @@ export async function populateMockData(
         },
     ];
 
+    // AI workers start at 'active' on creation.
+    // Same single-event seeding as humans.
+    for (const ai of aiWorkers) {
+        workerStateEvents.push({
+            id: `seed-worker-${ai.id}-active`,
+            entity_id: ai.id,
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: MOCK_SEED_TIMESTAMP,
+        });
+    }
+
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
@@ -6155,6 +6189,14 @@ export async function populateMockData(
             }),
         ),
         ...projectStateEvents.map(r =>
+            adapter.states.put(r.id, {
+                entity_id: r.entity_id,
+                state: r.state,
+                worker_id: r.worker_id,
+                at: r.at,
+            }),
+        ),
+        ...workerStateEvents.map(r =>
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,
@@ -6331,7 +6373,6 @@ export async function populateBootstrapData(
             email: 'system@fusion.local',
             title: 'System',
             department: 'System',
-            status: 'active' as WorkerStatus,
             strengths: jsonArrayField([]),
             team_dimensions: jsonObjectField({}),
             phone: '',
@@ -6344,7 +6385,6 @@ export async function populateBootstrapData(
             email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',
-            status: 'active' as WorkerStatus,
             strengths: jsonArrayField([
                 'Strategic Planning',
                 'Data Analysis',
@@ -6361,6 +6401,18 @@ export async function populateBootstrapData(
                 + ' products that solve'
                 + ' real problems.',
         }),
+        adapter.states.record(
+            'bootstrap-system-active',
+            SYSTEM_WORKER_ID,
+            'active',
+            SYSTEM_WORKER_ID,
+        ),
+        adapter.states.record(
+            'bootstrap-current-active',
+            'current',
+            'active',
+            SYSTEM_WORKER_ID,
+        ),
         adapter.organization.put({
             name: 'Stark Industries',
             domain: 'acmecorp.com',

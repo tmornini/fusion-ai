@@ -16,25 +16,22 @@ async function getHeaderData(
 ): Promise<HeaderData> {
     const {
         createRequestContext,
-        getCurrentHumanWorker,
+        getHumanWorker,
         getOrganization,
         getDashboardStats,
-        HumanWorker,
     } = await import('./adapters');
     const { getTimeOfDay } =
         await import('./format');
     const ctx = createRequestContext();
-    const [workerRow, org, stats] =
+    const [worker, org, stats] =
         await Promise.all([
-            getCurrentHumanWorker(ctx),
+            getHumanWorker(ctx, 'current'),
             getOrganization(ctx),
             getDashboardStats(ctx),
         ]);
     return {
-        workerId: workerRow.id,
-        workerName:
-            new HumanWorker(workerRow)
-                .fullName(),
+        workerId: worker.idForLink(),
+        workerName: worker.fullName(),
         organization: org.nameText(),
         greeting: getTimeOfDay(),
         stats,

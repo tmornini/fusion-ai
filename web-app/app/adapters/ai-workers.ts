@@ -9,6 +9,8 @@ import {
 } from '../channels.ts';
 import {
     buildStateEventOp,
+    getWorkerState,
+    getWorkerStates,
 } from './state-events.ts';
 
 export {
@@ -40,14 +42,24 @@ export async function getAIWorkerRows(
 export async function getAIWorkerMap(
     ctx: RequestContext,
 ): Promise<Map<WorkerId, AIWorker>> {
-    const rows = await getAIWorkerRows(ctx);
+    const [rows, stateMap] = await Promise.all([
+        getAIWorkerRows(ctx),
+        getWorkerStates(ctx),
+    ]);
     return new Map(
-        rows.map(
-            entity => [
+        rows.map(entity => {
+            const state = stateMap.get(entity.id);
+            if (state === undefined) {
+                throw new Error(
+                    'no state event for AI worker '
+                    + entity.id,
+                );
+            }
+            return [
                 entity.id,
-                new AIWorker(entity),
-            ],
-        ),
+                new AIWorker(entity, state),
+            ];
+        }),
     );
 }
 
@@ -62,8 +74,11 @@ export async function getAIWorker(
     ctx: RequestContext,
     id: WorkerId,
 ): Promise<AIWorker> {
-    const row = await getAIWorkerRow(ctx, id);
-    return new AIWorker(row);
+    const [row, state] = await Promise.all([
+        getAIWorkerRow(ctx, id),
+        getWorkerState(ctx, id),
+    ]);
+    return new AIWorker(row, state);
 }
 
 export async function getAIWorkerRow(
@@ -86,12 +101,13 @@ export async function putAIWorker(
 
 // AI-worker row write paired with a states-log
 // event in one ctx.commit batch. Use at every site
-// that creates an AI worker. The AI worker has no
-// status column today — its lifecycle on the log
-// begins at 'active' and terminates at 'deleted'
-// (the latter emitted by deleteAIWorker). putAIWorker
-// remains for pure edits (name, provider, auth_token)
-// that do not change the lifecycle stage.
+// that creates an AI worker. The AI worker row
+// carries no state column — its lifecycle on the
+// log begins at 'active' here and terminates at
+// 'archived' via archiveAIWorker. putAIWorker
+// remains for pure edits (name, provider,
+// auth_token) that do not change the lifecycle
+// stage.
 export async function postAIWorkerCreate(
     ctx: RequestContext,
     id: WorkerId,
@@ -112,13 +128,21 @@ export async function postAIWorkerCreate(
     aiWorkerChanges.notify();
 }
 
-export async function deleteAIWorker(
+// Archives an AI worker by writing a terminal
+// 'archived' state event. The row persists — only
+// the lifecycle stage advances. Mirrors the
+// terminal state used for humans, per
+// Commandment III (Uniformity): one terminal
+// vocabulary across worker kinds.
+export async function archiveAIWorker(
     ctx: RequestContext,
     id: WorkerId,
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(ctx, id, 'deleted'),
+            await buildStateEventOp(
+                ctx, id, 'archived',
+            ),
         ],
     });
     aiWorkerChanges.notify();

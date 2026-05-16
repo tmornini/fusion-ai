@@ -29,7 +29,6 @@ function buildCurrentWorker() {
         email: 'demo@example.com',
         phone: '',
         title: 'product_manager' as const,
-        status: 'active' as const,
         strengths: '[]' as const,
         team_dimensions: '{}' as const,
         bio: '',

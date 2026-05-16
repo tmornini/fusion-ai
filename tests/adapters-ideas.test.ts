@@ -25,7 +25,6 @@ function buildPerson(id: string, name: string) {
             .toLowerCase(),
         phone: '',
         title: 'product_manager' as const,
-        status: 'active' as const,
         strengths: '[]' as const,
         team_dimensions: '{}' as const,
         bio: '',
@@ -63,6 +62,18 @@ async function seedIdeaState(
     );
 }
 
+async function seedWorkerState(
+    db: MemoryDbAdapter,
+    workerId: string,
+): Promise<void> {
+    await db.states.record(
+        `stw-${workerId}`,
+        workerId,
+        'active',
+        'system',
+    );
+}
+
 function setupDb(): {
     db: MemoryDbAdapter;
     ctx: RequestContext;
@@ -77,6 +88,7 @@ test('getIdeas returns ideas with submitter', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put('i1', buildIdea(
         'i1', 'First idea',
     ));
@@ -107,6 +119,7 @@ test('getIdeas throws when idea has no submission', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put('i1', buildIdea(
         'i1', 'Orphan',
     ));
@@ -123,6 +136,7 @@ test('getIdea finds submission for one idea', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put('i1', buildIdea(
         'i1', 'A',
     ));
@@ -144,6 +158,7 @@ test('getIdea throws on missing submission', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put(
         'i1', buildIdea('i1', 'A'),
     );
@@ -172,6 +187,7 @@ test('archived ideas are filtered from getIdeas', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put(
         'i1', buildIdea('i1', 'Keep'),
     );
@@ -202,6 +218,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
+    await seedWorkerState(db, 'u1');
     await db.ideas.put(
         'i1', buildIdea('i1', 'Keep'),
     );

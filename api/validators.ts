@@ -1,6 +1,3 @@
-import {
-    assertWorkerStatus,
-} from './types.ts';
 import type {
     GraphNode,
     GraphEdge,
@@ -9,7 +6,6 @@ import type {
     WorkOrderFlowGraph,
     FlowFieldType,
     WorkerId,
-    WorkerStatus,
     JsonArrayField,
     JsonObjectField,
     HumanWorkerEntity,
@@ -497,17 +493,6 @@ function asJsonObjectField(
     return raw as JsonObjectField;
 }
 
-// ── Enum validators ─────────────────
-
-export function asWorkerStatus(
-    value: unknown,
-    label: string,
-): WorkerStatus {
-    return assertWorkerStatus(
-        asString(value, label), label,
-    );
-}
-
 // ── Pick-from-body helpers ───────────
 //
 // pick*(body, key) is the no-stutter form
@@ -535,13 +520,6 @@ export function pickBoolean(
     key: string,
 ): boolean {
     return asBoolean(body[key], key);
-}
-
-export function pickWorkerStatus(
-    body: Record<string, unknown>,
-    key: string,
-): WorkerStatus {
-    return asWorkerStatus(body[key], key);
 }
 
 export function pickJsonArrayField(
@@ -614,7 +592,7 @@ export function assertOnlyKeys(
 const HUMAN_WORKER_BODY_KEYS:
     readonly string[] = [
     'first_name', 'last_name', 'email',
-    'title', 'department', 'status',
+    'title', 'department',
     'strengths', 'team_dimensions',
     'phone', 'bio',
 ];
@@ -642,9 +620,6 @@ export function validateHumanWorkerEntity(
         ),
         department: pickString(
             body, 'department',
-        ),
-        status: pickWorkerStatus(
-            body, 'status',
         ),
         strengths: pickJsonArrayField(
             body, 'strengths',

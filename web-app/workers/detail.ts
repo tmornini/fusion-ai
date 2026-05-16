@@ -39,7 +39,7 @@ import {
     HumanWorker,
     AIWorker,
     type Worker,
-    type WorkerStatus,
+    type WorkerState,
 } from '../app/adapters/index.ts';
 
 const pageAbort = new AbortController();
@@ -353,14 +353,14 @@ function onInput(e: Event): void {
     );
     if (state.variant === 'human') {
         if (!isHumanWorkerFieldKey(field)) return;
-        if (field === 'status') {
+        if (field === 'state') {
             state = {
                 ...state,
                 draft: {
                     ...state.draft,
-                    status:
+                    state:
                         target.value as
-                            WorkerStatus,
+                            WorkerState,
                 },
             };
             return;
@@ -445,12 +445,12 @@ async function saveHumanWorker(
     );
     const { id: _id, ...rest } = row;
     const next = { ...rest, ...patch };
-    const statusChanged =
-        patch.status !== rest.status;
+    const stateChanged =
+        s.draft.state !== s.worker.stateValue();
     try {
-        if (statusChanged) {
+        if (stateChanged) {
             await postHumanWorkerStateChange(
-                ctx, workerId, next, patch.status,
+                ctx, workerId, next, s.draft.state,
             );
         } else {
             await putHumanWorker(

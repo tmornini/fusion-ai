@@ -90,7 +90,6 @@ test(
             phone: '',
             title: 'Engineer',
             department: 'Eng',
-            status: 'active',
             strengths: '[]' as never,
             team_dimensions: '{}' as never,
             bio: '',

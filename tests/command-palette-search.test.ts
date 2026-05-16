@@ -71,12 +71,11 @@ function buildHumanWorker(
             + '@example.com',
         title,
         department,
-        status: 'active',
         strengths: jsonArrayField([]),
         team_dimensions: jsonObjectField({}),
         phone: '',
         bio: '',
-    });
+    }, 'active');
 }
 
 const sampleItems: SearchItem[] = [

@@ -675,7 +675,6 @@ async function submitHumanForm(): Promise<void> {
                 email,
                 title,
                 department: dept,
-                status: 'active',
                 strengths:
                     jsonArrayField([]),
                 team_dimensions:

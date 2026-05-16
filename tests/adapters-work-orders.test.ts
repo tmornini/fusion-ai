@@ -69,7 +69,6 @@ function buildHumanWorker(
             + '@example.com',
         phone: '',
         title: 'product_manager',
-        status: 'active',
         strengths: '[]' as never,
         team_dimensions: '{}' as never,
         bio: '',

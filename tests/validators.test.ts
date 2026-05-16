@@ -26,7 +26,6 @@ const validHumanWorker = {
     email: 'ada@example.com',
     title: 'Engineer',
     department: 'R&D',
-    status: 'active',
     strengths: '["analytical"]',
     team_dimensions: '{"driver":0.5}',
     phone: '555-1234',
@@ -40,7 +39,20 @@ test(
             validHumanWorker,
         );
         assert.equal(result.first_name, 'Ada');
-        assert.equal(result.status, 'active');
+    },
+);
+
+test(
+    'validateHumanWorkerEntity rejects status key '
+    + '(retired by Stage 10b+c)',
+    () => {
+        assert.throws(
+            () => validateHumanWorkerEntity({
+                ...validHumanWorker,
+                status: 'active',
+            }),
+            /unexpected key "status"/,
+        );
     },
 );
 

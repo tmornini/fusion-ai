@@ -130,7 +130,6 @@ test(
                 email: id + '@example.com',
                 title: 'member',
                 department: 'eng',
-                status: 'active',
                 strengths: jsonArrayField([]),
                 team_dimensions:
                     jsonObjectField({}),
@@ -193,7 +192,6 @@ test(
             email: 'alice@example.com',
             phone: '',
             title: 'product_manager',
-            status: 'active',
             strengths: jsonArrayField([]),
             team_dimensions: jsonObjectField({}),
             bio: '',

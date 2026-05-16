@@ -31,10 +31,19 @@ export type FlowFieldType =
     | 'radio'
     | 'image';
 
-export type WorkerStatus =
-    | 'active'
-    | 'pending'
-    | 'deactivated';
+// The state alphabet for workers. Three values
+// shared by humans and AIs. Commandment III
+// (Uniformity): one terminal state across both
+// kinds. Stage 10b+c retires the dual-vocabulary
+// snowflake — both humans and AIs now end at
+// 'archived'.
+export const WORKER_STATES = [
+    'active',
+    'pending',
+    'archived',
+] as const;
+
+export type WorkerState = typeof WORKER_STATES[number];
 
 // The composite state alphabet for ideas. Three
 // 'active' sub-states encode the readiness dimension;
@@ -235,24 +244,21 @@ export function assertIdeaState(
     return v;
 }
 
-const WORKER_STATUSES: readonly WorkerStatus[] =
-    ['active', 'pending', 'deactivated'];
-
-export function isWorkerStatus(
+export function isWorkerState(
     v: string,
-): v is WorkerStatus {
+): v is WorkerState {
     return includes(
-        WORKER_STATUSES, v,
+        WORKER_STATES, v,
     );
 }
 
-export function assertWorkerStatus(
+export function assertWorkerState(
     v: string,
     label: string,
-): WorkerStatus {
-    if (!includes(WORKER_STATUSES, v)) {
+): WorkerState {
+    if (!includes(WORKER_STATES, v)) {
         throw new Error(
-            'expected WorkerStatus for '
+            'expected WorkerState for '
                 + label + ', got ' + v,
         );
     }
@@ -323,7 +329,6 @@ export interface HumanWorkerEntity {
     email: string;
     title: string;
     department: string;
-    status: WorkerStatus;
     strengths: JsonArrayField;
     team_dimensions: JsonObjectField;
     phone: string;
@@ -338,7 +343,7 @@ export class HumanWorker {
     readonly #email: string;
     readonly #title: string;
     readonly #department: string;
-    readonly #status: WorkerStatus;
+    readonly #state: WorkerState;
     readonly #strengths: string;
     readonly #teamDimensions: string;
     readonly #phone: string;
@@ -346,6 +351,7 @@ export class HumanWorker {
 
     constructor(
         entity: HumanWorkerEntity,
+        state: WorkerState,
     ) {
         this.#id = entity.id;
         this.#firstName =
@@ -356,7 +362,7 @@ export class HumanWorker {
         this.#title = entity.title;
         this.#department =
             entity.department;
-        this.#status = entity.status;
+        this.#state = state;
         this.#strengths =
             entity.strengths;
         this.#teamDimensions =
@@ -405,34 +411,26 @@ export class HumanWorker {
     }
 
     isActive(): boolean {
-        return this.#status === 'active';
+        return this.#state === 'active';
     }
 
     isPending(): boolean {
-        return (
-            this.#status === 'pending'
-        );
+        return this.#state === 'pending';
     }
 
-    isDeactivated(): boolean {
-        return (
-            this.#status === 'deactivated'
-        );
+    isArchived(): boolean {
+        return this.#state === 'archived';
     }
 
-    statusLabel(): string {
+    stateLabel(): string {
         return (
-            WORKER_STATUS_CONFIG[
-                this.#status
-            ]
+            WORKER_STATE_CONFIG[this.#state]
         )!.label;
     }
 
-    statusClassName(): string {
+    stateClassName(): string {
         return (
-            WORKER_STATUS_CONFIG[
-                this.#status
-            ]
+            WORKER_STATE_CONFIG[this.#state]
         )!.className;
     }
 
@@ -440,8 +438,8 @@ export class HumanWorker {
         return this.#department !== '';
     }
 
-    statusValue(): WorkerStatus {
-        return this.#status;
+    stateValue(): WorkerState {
+        return this.#state;
     }
 
     parsedStrengths(): string[] {
@@ -498,9 +496,11 @@ export class AIWorker {
     readonly #description: string;
     readonly #authToken: string;
     readonly #createdAt: string;
+    readonly #state: WorkerState;
 
     constructor(
         entity: AIWorkerEntity,
+        state: WorkerState,
     ) {
         this.#id = entity.id;
         this.#name = entity.name;
@@ -511,6 +511,7 @@ export class AIWorker {
             entity.auth_token;
         this.#createdAt =
             entity.created_at;
+        this.#state = state;
     }
 
     idForLink(): string {
@@ -541,6 +542,34 @@ export class AIWorker {
             + '…'
             + t.slice(-4)
         );
+    }
+
+    isActive(): boolean {
+        return this.#state === 'active';
+    }
+
+    isPending(): boolean {
+        return this.#state === 'pending';
+    }
+
+    isArchived(): boolean {
+        return this.#state === 'archived';
+    }
+
+    stateLabel(): string {
+        return (
+            WORKER_STATE_CONFIG[this.#state]
+        )!.label;
+    }
+
+    stateClassName(): string {
+        return (
+            WORKER_STATE_CONFIG[this.#state]
+        )!.className;
+    }
+
+    stateValue(): WorkerState {
+        return this.#state;
     }
 
     matchesSearch(term: string): boolean {
@@ -807,8 +836,14 @@ export interface StatusDisplay {
     className: string;
 }
 
-export const WORKER_STATUS_CONFIG: Record<
-    WorkerStatus,
+// Visual identity preserved across the Stage 10b+c
+// rename: the 'archived' badge keeps the
+// 'badge-default' className it inherited from the
+// retired terminal state, so existing CSS
+// continues to color it correctly. The label text
+// updates to match the new vocabulary.
+export const WORKER_STATE_CONFIG: Record<
+    WorkerState,
     StatusDisplay
 > = {
     active: {
@@ -819,8 +854,8 @@ export const WORKER_STATUS_CONFIG: Record<
         label: 'Pending',
         className: 'badge-warning',
     },
-    deactivated: {
-        label: 'Deactivated',
+    archived: {
+        label: 'Archived',
         className: 'badge-default',
     },
 };
