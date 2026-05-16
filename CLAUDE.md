@@ -280,19 +280,15 @@ to every user; there is no per-user visibility filter.
 the active/archive split, the claimed-and-unfinished
 exclusion, and the sort — nothing more.
 
-A work order's "current node" is the latest state event
-on its `entity_id` whose `state` value is NOT in the claim
-vocabulary; its "active claim" is the latest claim-state
-event, subject to `lockTimeout` arithmetic for implicit
-expiration. `getWorkOrderActiveClaim(ctx, workOrderId,
-lockTimeout)` returns `null` for a `'claimed'` event older
-than `lockTimeout` seconds even when no
-`'claim_expired'`/`'claim_released'` event has yet
-superseded it; `postWorkOrderClaim` materializes that
-implicit expiration as an explicit `'claim_expired'`
-event when a new claim notices a stale prior, so the
-durable record converges on the same condition the
-reader already reports.
+Claim-expiration implementation:
+`getWorkOrderActiveClaim(ctx, workOrderId, lockTimeout)`
+returns `null` for a `'claimed'` event older than
+`lockTimeout` seconds even when no `'claim_expired'` /
+`'claim_released'` event has yet superseded it.
+`postWorkOrderClaim` materializes that implicit expiration
+as an explicit `'claim_expired'` event when a new claim
+notices a stale prior, so the durable record converges on
+the reader's view.
 
 The read-only stats variant (`flow-stats`) uses its own renderer
 `flow-stats-graph.ts` and presenter `FlowStatsPresenter`,
@@ -533,13 +529,11 @@ strings are forbidden except:
 1. **Dynamic per-element values** (progress widths, fill
    percentages, heat intensities) — passed via CSS custom
    properties: `style="--progress-fill:${value}%"` consumed
-   by a CSS rule reading `var(--progress-fill, 0%)`, and the
-   flow-stats heat ramp: per-node `style="--heat-t:${0..1}"`
-   on the SVG canvas, with CSS computing the fill via a
-   chained `color-mix(in oklch, ...)` over four
-   `--heat-stop-*` design tokens (blue → green → yellow →
-   red at non-uniform stops 0 / 50 / 75 / 100). The value is
-   **data**; the colors stay in the design system.
+   by a CSS rule reading `var(--progress-fill, 0%)`; the
+   flow-stats heat ramp uses the same pattern with per-node
+   `style="--heat-t:${0..1}"` — see DESIGN-SYSTEM.md §
+   Heat ramp. The value is **data**; the colors stay in
+   the design system.
 2. **Bootstrap fallbacks** in `database-init.ts` — error UI
    before CSS may have loaded, marked with a file-header
    comment.
@@ -567,10 +561,7 @@ See `DESIGN-SYSTEM.md`. Key invariant: never use raw hex colors
 in CSS — always `hsl(var(--token))`. Icons are ~100 inline SVG
 functions in `web-app/app/icons.ts`.
 
-**Heat ramp** — see `DESIGN-SYSTEM.md`. Four `--heat-stop-*`
-tokens (low / mid / high / peak) define the flow-stats
-fixed-scale heat ramp; the per-node `--heat-t` (0..1) drives a
-4-stop chained `color-mix(in oklch, ...)` in `pages.css`.
+**Heat ramp** — see DESIGN-SYSTEM.md § Heat ramp.
 
 ### Mobile Responsiveness
 
@@ -631,116 +622,18 @@ Run via `./validate` (which also type-checks and lints) or
 directly: `node --test --strip-types tests/*.test.ts`.
 
 **Manual browser regression** for UI behavior: a pass against
-`TEST-PLAN.md`, driven either by a single human
-tester serially or by Claude Code agents in parallel via the
+`TEST-PLAN.md`, driven either by a single human tester
+serially or by Claude Code agents in parallel via the
 `claude-in-chrome` MCP. Anything DOM-driven (gestures, layout,
-visual rendering) lives here; where a manual case is the browser
-counterpart of an automated area it carries an inline pointer at
-the test file. Pure transitions, flow-edit logic, adapters,
-presenter output, and API routing live in the automated suite.
-
-### Six-phase parallel protocol
-
-Agents execute the plan in six phases to fit within context and
-time budgets while keeping per-entity mutation domains disjoint:
-
-1. **Phase 0 — Preflight** (main): `./validate`, `./build` to
-   produce the distribution ZIP, `./build --no-zip` for the test
-   server, start HTTP server, open tab 0. Covers A1–A5.
-2. **Phase 1 — Data setup** (one agent, serial): AA1–AA43 in
-   tab 0. Creates pristine environment, workers (humans + AIs),
-   ideas, projects, one flow. Populates the shared database
-   that Phase 2 verifies.
-3. **Phase 2 — Parallel verification** (7 agents concurrent,
-   each in its own tab, no shared tabs):
-   - Agent-B — Entry pages
-   - Agent-CH — Dashboard + Reference (read-only)
-   - Agent-D — Ideas
-   - Agent-E — Projects
-   - Agent-F — Flows (includes hazard severity, flow-publish
-     gate)
-   - Agent-F2 — Workbox (includes Create-Work-Order picker
-     READY / NOT READY split)
-   - Agent-G — Admin (Workers page, Worker detail (human + AI),
-     Organization, Snapshots, Billing). The retired Teams /
-     Roles / Crews / Activity Feed pages have no cases.
-4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
-   Mutates global UI state (theme, sidebar, command palette) —
-   no concurrent agents.
-5. **Phase 4 — Snapshot lifecycle** (one agent, alone):
-   G30–G35. Wipes and reloads the database — strictly last
-   before teardown.
-6. **Phase 5 — Teardown** (main): stop HTTP server, remove
-   build directory, verify distribution ZIP remains, aggregate
-   results.
-
-### Entity mutation domain scoping
-
-Phase 2 agents share one localStorage but each owns a disjoint
-subset of tables:
-
-| Agent | Mutation domain |
-|---|---|
-| Agent-B | creates one human worker via signup |
-| Agent-D | `ideas` |
-| Agent-E | `projects` (plus one flow via the project-detail New Flow path) |
-| Agent-F | `flows`, `flow_versions` |
-| Agent-F2 | `work_orders`, `flow_work_orders`, `states` (work-order entity_ids), `state_field_values`, plus its own private flow in `flows`/`flow_versions` |
-| Agent-G | `workers`, `ai_workers`, `organization` |
-| Agent-CH | none (read-only) |
-
-Agent-F2 owns its source flow because `postWorkOrderCreation`
-freezes `flow_graph` at creation time. If Agent-F edits the
-shared flow concurrently, the captured snapshot reflects
-mid-edit state, not a clean baseline.
-
-Because `StorageEvent` propagation makes sibling changes visible
-to every tab, cross-boundary assertions use `≥ N` or
-"displayed-count matches current localStorage at read time"
-framing rather than frozen expected values. Agent-CH's dashboard
-count checks are non-zero + consistency, not numeric equality.
-
-### Known MCP limitations
-
-- **Flow designer gestures** (port drag, shift-drag to connect,
-  marquee select): synthetic PointerEvents do not reliably
-  drive the `flow-interactions.ts` state machines because they
-  use pointer-capture semantics. Affected tests include
-  AA27–AA34, F15, F19–F23, D36, D37, E11. Work around by
-  validating end-state via direct JSON injection into
-  `fusion-ai:flows`, then reloading and verifying render. When
-  the injection succeeds and the SVG renders the expected end
-  state, the case is **PASS** with the note `verified via JSON
-  injection` — NOT BLOCKED. `BLOCKED` is reserved for cases
-  where neither gesture nor injection produces a verifiable
-  end state.
-- **`resize_window`** does not change the CSS viewport;
-  responsive tests at specific widths (I10) cannot be driven.
-  Inspect `responsive.css` manually to verify media queries.
-- **File downloads** cannot write to disk from the MCP
-  sandbox. Capture Blob content via `javascript_tool`
-  intercepting `URL.createObjectURL` for validation.
-- **File uploads** require constructing a `DataTransfer` in
-  `javascript_tool` and dispatching a synthetic change event.
-- **Keyboard events** (arrows, Cmd+K, Delete, Tab) work
-  normally and bypass the pointer-capture limitation.
-- **`kill` syscall against the background HTTP server**: the
-  Claude Code sandbox rejects `kill -TERM` and `kill -9`
-  against PIDs of long-running background tasks started via
-  the Bash tool's `run_in_background: true` (EPERM). Phase 5
-  teardown's **J1** ("Stop the HTTP server") cannot terminate
-  the process from within the sandbox; mark J1 BLOCKED with
-  the reason "sandbox EPERM on kill". The server is cleaned
-  up at session end. Workaround: the user terminates manually
-  after the run via `lsof -ti tcp:8080 | xargs kill -9`
-  outside the sandbox.
-
-### Serial single-tester mode
-
-The same TEST-PLAN.md runs serially by one human in one browser
-following document order (A → AA → B → C → D → E → F → F2 → FS
-→ G → H → I → J). The agent-scoped mutation domains and
-tolerance patterns apply only to the parallel run.
+visual rendering) lives here; where a manual case is the
+browser counterpart of an automated area it carries an inline
+pointer at the test file. Pure transitions, flow-edit logic,
+adapters, presenter output, and API routing live in the
+automated suite. The six-phase agent protocol, the per-entity
+mutation-domain table, the `StorageEvent` tolerance patterns,
+and the known MCP limitations (flow-designer gesture
+pointer-capture, `resize_window`, file I/O, kill EPERM) live
+in TEST-PLAN.md § Protocol — CLAUDE.md does not duplicate them.
 
 ## Gotchas
 

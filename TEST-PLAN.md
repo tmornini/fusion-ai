@@ -6,9 +6,9 @@
 
 When the user says "run the test plan", the agent:
 
-1. Reads `CLAUDE.md` `## Testing` (six-phase protocol,
-   mutation domains, MCP limitations) — required context,
-   not optional reference.
+1. Reads this document's `### Protocol` section (six-phase
+   protocol, mutation domains, MCP limitations) — required
+   context, not optional reference.
 2. Executes section **AT** as a fail-fast gate; any AT
    failure aborts the run before A1's build.
 3. Executes A1–A5 preflight; on success spawns the
@@ -21,8 +21,8 @@ When the user says "run the test plan", the agent:
    Format`). The summary is the conversational artifact;
    this document is NOT mutated by the run.
 
-This document plus `CLAUDE.md` `## Testing` is the complete
-contract — no other coordination state is read or written.
+This document is the complete regression contract — no other
+coordination state is read or written.
 
 BLOCKED ≠ FAIL. BLOCKED is reserved for known MCP
 environmental limits (pointer-capture gestures,
@@ -100,9 +100,109 @@ one of two modes:
 - **Parallel (Claude Code agents)**:
   `TMPDIR=/tmp/claude ./build --no-zip ~/Desktop/fusion-test/`
   then `cd ~/Desktop/fusion-test/ && python3 -m http.server 8080`.
-  See `CLAUDE.md` section `## Testing` for the six-phase agent
-  protocol, entity mutation domain scoping, and known MCP
-  limitations (flow-designer gestures, `resize_window`, file I/O).
+
+#### Six-phase parallel protocol
+
+Agents execute the plan in six phases to fit within context and
+time budgets while keeping per-entity mutation domains disjoint:
+
+1. **Phase 0 — Preflight** (main): `./validate`, `./build` to
+   produce the distribution ZIP, `./build --no-zip` for the test
+   server, start HTTP server, open tab 0. Covers A1–A5.
+2. **Phase 1 — Data setup** (one agent, serial): AA1–AA43 in
+   tab 0. Creates pristine environment, workers (humans + AIs),
+   ideas, projects, one flow. Populates the shared database
+   that Phase 2 verifies.
+3. **Phase 2 — Parallel verification** (7 agents concurrent,
+   each in its own tab, no shared tabs):
+   - Agent-B — Entry pages
+   - Agent-CH — Dashboard + Reference (read-only)
+   - Agent-D — Ideas
+   - Agent-E — Projects
+   - Agent-F — Flows (includes hazard severity, flow-publish
+     gate)
+   - Agent-F2 — Workbox (includes Create-Work-Order picker
+     READY / NOT READY split)
+   - Agent-G — Admin (Workers page, Worker detail (human + AI),
+     Organization, Snapshots, Billing). The retired Teams /
+     Roles / Crews / Activity Feed pages have no cases.
+4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
+   Mutates global UI state (theme, sidebar, command palette) —
+   no concurrent agents.
+5. **Phase 4 — Snapshot lifecycle** (one agent, alone):
+   G30–G35. Wipes and reloads the database — strictly last
+   before teardown.
+6. **Phase 5 — Teardown** (main): stop HTTP server, remove
+   build directory, verify distribution ZIP remains, aggregate
+   results.
+
+#### Entity mutation domain scoping
+
+Phase 2 agents share one localStorage but each owns a disjoint
+subset of tables:
+
+| Agent | Mutation domain |
+|---|---|
+| Agent-B | creates one human worker via signup |
+| Agent-D | `ideas` |
+| Agent-E | `projects` (plus one flow via the project-detail New Flow path) |
+| Agent-F | `flows`, `flow_versions` |
+| Agent-F2 | `work_orders`, `flow_work_orders`, `states` (work-order entity_ids), `state_field_values`, plus its own private flow in `flows`/`flow_versions` |
+| Agent-G | `workers`, `ai_workers`, `organization` |
+| Agent-CH | none (read-only) |
+
+Agent-F2 owns its source flow because `postWorkOrderCreation`
+freezes `flow_graph` at creation time. If Agent-F edits the
+shared flow concurrently, the captured snapshot reflects
+mid-edit state, not a clean baseline.
+
+Because `StorageEvent` propagation makes sibling changes visible
+to every tab, cross-boundary assertions use `≥ N` or
+"displayed-count matches current localStorage at read time"
+framing rather than frozen expected values. Agent-CH's dashboard
+count checks are non-zero + consistency, not numeric equality.
+
+#### Known MCP limitations
+
+- **Flow designer gestures** (port drag, shift-drag to connect,
+  marquee select): synthetic PointerEvents do not reliably
+  drive the `flow-interactions.ts` state machines because they
+  use pointer-capture semantics. Affected tests include
+  AA27–AA34, F15, F19–F23, D36, D37, E11. Work around by
+  validating end-state via direct JSON injection into
+  `fusion-ai:flows`, then reloading and verifying render. When
+  the injection succeeds and the SVG renders the expected end
+  state, the case is **PASS** with the note `verified via JSON
+  injection` — NOT BLOCKED. `BLOCKED` is reserved for cases
+  where neither gesture nor injection produces a verifiable
+  end state.
+- **`resize_window`** does not change the CSS viewport;
+  responsive tests at specific widths (I10) cannot be driven.
+  Inspect `responsive.css` manually to verify media queries.
+- **File downloads** cannot write to disk from the MCP
+  sandbox. Capture Blob content via `javascript_tool`
+  intercepting `URL.createObjectURL` for validation.
+- **File uploads** require constructing a `DataTransfer` in
+  `javascript_tool` and dispatching a synthetic change event.
+- **Keyboard events** (arrows, Cmd+K, Delete, Tab) work
+  normally and bypass the pointer-capture limitation.
+- **`kill` syscall against the background HTTP server**: the
+  Claude Code sandbox rejects `kill -TERM` and `kill -9`
+  against PIDs of long-running background tasks started via
+  the Bash tool's `run_in_background: true` (EPERM). Phase 5
+  teardown's **J1** ("Stop the HTTP server") cannot terminate
+  the process from within the sandbox; mark J1 BLOCKED with
+  the reason "sandbox EPERM on kill". The server is cleaned
+  up at session end. Workaround: the user terminates manually
+  after the run via `lsof -ti tcp:8080 | xargs kill -9`
+  outside the sandbox.
+
+#### Serial single-tester mode
+
+The same TEST-PLAN.md runs serially by one human in one browser
+following document order (A → AA → B → C → D → E → F → F2 → FS
+→ G → H → I → J). The agent-scoped mutation domains and
+tolerance patterns apply only to the parallel run.
 
 ### Execution Order
 
