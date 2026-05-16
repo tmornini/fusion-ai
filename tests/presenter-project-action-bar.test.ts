@@ -131,3 +131,62 @@ test('sent-back project: Score button hidden, other review actions shown',
             'Approve button must render on sent-back',
         );
     });
+
+test('Approve tooltip enumerates unscored objective names',
+    () => {
+        const names = new Map([
+            ['o1', 'Revenue Growth'],
+            ['o2', 'Customer Satisfaction'],
+        ]);
+        const p = new ProjectActionBarPresenter(
+            baseProject,
+            {
+                ready: false,
+                problems: [
+                    { kind: 'baseline_unscored',
+                      objectiveId: 'o1' },
+                    { kind: 'baseline_unscored',
+                      objectiveId: 'o2' },
+                ],
+            },
+            { ready: true, problems: [] },
+            names,
+        );
+        const html = p.buildBar().toString();
+        assert.ok(
+            html.includes(
+                'title="Revenue Growth, '
+                + 'Customer Satisfaction unscored"',
+            ),
+            'Approve tooltip should enumerate'
+            + ' unscored objective names',
+        );
+    });
+
+test('Complete tooltip enumerates objectives lacking actuals',
+    () => {
+        const names = new Map([
+            ['o1', 'Team Wellbeing'],
+        ]);
+        const p = new ProjectActionBarPresenter(
+            { ...baseProject, status: 'approved' },
+            { ready: true, problems: [] },
+            {
+                ready: false,
+                problems: [
+                    { kind: 'actual_unscored',
+                      objectiveId: 'o1' },
+                ],
+            },
+            names,
+        );
+        const html = p.buildBar().toString();
+        assert.ok(
+            html.includes(
+                'title="Team Wellbeing'
+                + ' lack actual measurements"',
+            ),
+            'Complete tooltip should enumerate'
+            + ' objectives lacking actuals',
+        );
+    });

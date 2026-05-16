@@ -788,8 +788,13 @@ async function renderActionBarAndObjectives(
             project, latestBaselines, latestActuals,
         );
 
+    const objectiveNames = new Map(
+        Array.from(defs.entries())
+            .map(([id, def]) => [id, def.name]),
+    );
     const actionBar = new ProjectActionBarPresenter(
         project, approvalCheck, completionCheck,
+        objectiveNames,
     );
     const actionBarEl =
         $('#project-action-bar', document);
