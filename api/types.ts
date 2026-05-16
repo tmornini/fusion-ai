@@ -929,7 +929,7 @@ export const PROJECT_STATUS_CONFIG: Record<
         className: 'badge-error',
     },
     'completed': {
-        label: 'Active',
+        label: 'Completed',
         className: 'badge-success',
     },
     'deleted': {

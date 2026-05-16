@@ -170,8 +170,7 @@ test(
         const out = p.buildCard('position', false)
             .toString();
         assert.match(out, /Gemini/);
-        // 'completed' status config label is 'Active'
-        assert.match(out, /Active/);
+        assert.match(out, /Completed/);
         // completed projects show 100% timeline
         assert.match(out, /100%/);
         assert.match(
