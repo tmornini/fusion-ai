@@ -1,9 +1,9 @@
 import type {
-    Id, IdeaStatus, ReadinessLevel, StateEntity,
+    Id, IdeaState, StateEntity,
 } from '../../../api/types.ts';
 import {
-    assertIdeaStatus,
-    assertReadinessLevel,
+    assertIdeaState,
+    isIdeaState,
     msSinceUtc,
     MS_PER_SECOND,
     nowUtc,
@@ -212,77 +212,51 @@ export async function getTransitionEventsByWorkOrder(
     return out;
 }
 
-// Collapse the two-dimensional (status, readiness)
-// shape of an idea into a single composite state
-// string. When status is 'active' the readiness
-// completes the picture — three values
-// (active:ready, active:needs-info, active:incomplete).
-// When status is anything else the readiness has no
-// semantic effect, so the composite IS the status.
-// Six non-active values: in-review, approved,
-// promoted, sent-back, archived, deleted. Nine in
-// total. Transitional helper — Stage 8c retires it
-// alongside the readiness column.
-export function compositeStateForIdea(
-    status: IdeaStatus,
-    readiness: ReadinessLevel,
-): string {
-    if (status === 'active') {
-        return `active:${readiness}`;
-    }
-    return status;
-}
-
-// Inverse of compositeStateForIdea — splits the
-// composite back into (status, readiness). When the
-// composite begins with 'active:' the suffix is the
-// readiness; otherwise the composite IS the status
-// and the readiness is null (the dimension collapsed
-// on the way in). Used by parity tests and Stage 8b
-// readers that need both dimensions back.
-export function ideaStateToStatusReadiness(
-    state: string,
-): {
-    status: IdeaStatus;
-    readiness: ReadinessLevel | null;
-} {
-    const ACTIVE_PREFIX = 'active:';
-    if (state.startsWith(ACTIVE_PREFIX)) {
-        const readiness =
-            state.slice(ACTIVE_PREFIX.length);
-        return {
-            status: 'active',
-            readiness: assertReadinessLevel(
-                readiness, 'idea composite state',
-            ),
-        };
-    }
-    const status = assertIdeaStatus(
-        state, 'idea composite state',
-    );
-    if (status === 'active') {
-        throw new Error(
-            'expected non-active IdeaStatus for'
-            + ' idea composite state, got '
-            + state,
-        );
-    }
-    return { status, readiness: null };
-}
-
-// Read the latest composite state for one idea from
-// the states log. Returns null when no state event
-// has yet been recorded (an idea whose creation
-// pre-dates dual-write). Stage 8b switches
-// production readers to consume this; today only
-// the parity test does.
-export async function getCurrentIdeaStateFromStates(
+// Read the current state for one idea from the
+// states log. Returns the validated IdeaState (the
+// composite alphabet). Throws when no event has
+// been recorded — every idea created through the
+// supported paths gets an initial 'active:*' event,
+// so absence is a bug, not a missing default.
+export async function getIdeaState(
     ctx: RequestContext,
     ideaId: Id,
-): Promise<string | null> {
+): Promise<IdeaState> {
     const events = await ctx.GET<StateEntity[]>(
         `entity-states/${ideaId}/history`,
     );
     const latest = latestByAt(events);
-    return latest === null ? null : latest.state;
+    if (latest === null) {
+        throw new Error(
+            'no state event for idea ' + ideaId,
+        );
+    }
+    return assertIdeaState(
+        latest.state, 'idea ' + ideaId,
+    );
+}
+
+// Bulk variant for getIdeas. One scan over the
+// states log builds the entity_id → IdeaState map,
+// keeping only events whose state lies in the idea
+// alphabet (a work order's transition events share
+// the table). O(N) on events; the Postgres tier will
+// use an entity_id index.
+export async function getIdeaStates(
+    ctx: RequestContext,
+): Promise<Map<Id, IdeaState>> {
+    const all = await ctx.GET<StateEntity[]>('states');
+    const latestByEntity = new Map<Id, StateEntity>();
+    for (const ev of all) {
+        if (!isIdeaState(ev.state)) continue;
+        const seen = latestByEntity.get(ev.entity_id);
+        if (seen === undefined || ev.at >= seen.at) {
+            latestByEntity.set(ev.entity_id, ev);
+        }
+    }
+    const out = new Map<Id, IdeaState>();
+    for (const [id, ev] of latestByEntity) {
+        out.set(id, ev.state as IdeaState);
+    }
+    return out;
 }

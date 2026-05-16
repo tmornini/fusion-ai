@@ -170,13 +170,11 @@ test(
 const validIdea = {
     title: 'Idea One',
     position: 1,
-    status: 'active',
     problem_statement: 'A problem',
     target_users: 'Users',
     proposed_solution: 'A solution',
     expected_outcome: 'Better',
     success_metrics: 'Metrics',
-    readiness: 'ready',
     risks: '[]',
     assumptions: '[]',
     alignments: '[]',
@@ -185,17 +183,7 @@ const validIdea = {
 test('validateIdeaEntity accepts valid payload', () => {
     const result = validateIdeaEntity(validIdea);
     assert.equal(result.title, 'Idea One');
-    assert.equal(result.readiness, 'ready');
-});
-
-test('validateIdeaEntity rejects bad status', () => {
-    assert.throws(
-        () => validateIdeaEntity({
-            ...validIdea,
-            status: 'submitted',
-        }),
-        /expected IdeaStatus for status/,
-    );
+    assert.equal(result.position, 1);
 });
 
 test(
@@ -207,6 +195,30 @@ test(
             secret: 'pwned',
         }),
         /unexpected key "secret"/,
+    );
+});
+
+test(
+    'validateIdeaEntity rejects status key (retired)',
+    () => {
+    assert.throws(
+        () => validateIdeaEntity({
+            ...validIdea,
+            status: 'active',
+        }),
+        /unexpected key "status"/,
+    );
+});
+
+test(
+    'validateIdeaEntity rejects readiness key (retired)',
+    () => {
+    assert.throws(
+        () => validateIdeaEntity({
+            ...validIdea,
+            readiness: 'ready',
+        }),
+        /unexpected key "readiness"/,
     );
 });
 

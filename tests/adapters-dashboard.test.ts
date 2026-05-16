@@ -13,7 +13,6 @@ import {
 } from '../web-app/app/adapters/dashboard.ts';
 import type {
     IdeaEntity,
-    IdeaStatus,
     ProjectEntity,
     ProjectStatus,
     FlowEntity,
@@ -32,22 +31,30 @@ function setupDb(): {
 
 function buildIdea(
     id: string,
-    status: IdeaStatus,
 ): Omit<IdeaEntity, 'id'> {
     return {
         title: 'Idea ' + id,
         position: 1,
-        status,
         problem_statement: 'p',
         target_users: 't',
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        readiness: 'ready',
         risks: '[]' as JsonArrayField,
         assumptions: '[]' as JsonArrayField,
         alignments: '[]' as JsonArrayField,
     };
+}
+
+async function seedIdea(
+    db: MemoryDbAdapter,
+    id: string,
+    state: string,
+): Promise<void> {
+    await db.ideas.put(id, buildIdea(id));
+    await db.states.record(
+        `st-${id}`, id, state, 'system',
+    );
 }
 
 function buildProject(
@@ -123,12 +130,8 @@ test(
     'getDashboardStats counts seeded entities',
     async () => {
         const { db, ctx } = setupDb();
-        await db.ideas.put('i1', buildIdea(
-            'i1', 'active',
-        ));
-        await db.ideas.put('i2', buildIdea(
-            'i2', 'in-review',
-        ));
+        await seedIdea(db, 'i1', 'active:ready');
+        await seedIdea(db, 'i2', 'in-review');
         await db.projects.put('p1', buildProject(
             'p1', 'approved',
         ));
@@ -146,15 +149,9 @@ test(
     'getDashboardStats excludes archived ideas',
     async () => {
         const { db, ctx } = setupDb();
-        await db.ideas.put('i1', buildIdea(
-            'i1', 'active',
-        ));
-        await db.ideas.put('i2', buildIdea(
-            'i2', 'archived',
-        ));
-        await db.ideas.put('i3', buildIdea(
-            'i3', 'deleted',
-        ));
+        await seedIdea(db, 'i1', 'active:ready');
+        await seedIdea(db, 'i2', 'archived');
+        await seedIdea(db, 'i3', 'deleted');
         const stats = await getDashboardStats(ctx);
         const ideas = stats
             .find(s => s.label === 'Ideas');

@@ -497,6 +497,6 @@ async function performConversion(
                 jsonObjectField({}),
             timeline_label: '',
         },
-        { ...ideaEntity, status: 'promoted' },
+        ideaEntity,
     );
 }

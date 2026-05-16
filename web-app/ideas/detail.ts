@@ -105,18 +105,17 @@ const TRANSITION_CONFIG:
 
 async function transitionIdea(
     ideaId: string,
-    toStatus: IdeaTransition,
+    toState: IdeaTransition,
     feedback: string,
 ): Promise<void> {
     if (!state) return;
     const ctx = createRequestContext();
-    const cfg = TRANSITION_CONFIG[toStatus]!;
+    const cfg = TRANSITION_CONFIG[toState]!;
     const entity = state.view.entity;
     const title = entity.title;
     try {
         await postIdeaStateChange(
-            ctx, ideaId,
-            { ...entity, status: toStatus },
+            ctx, ideaId, entity, toState,
         );
     } catch (err) {
         log.error(
@@ -130,7 +129,7 @@ async function transitionIdea(
         type: 'status_changed',
         action: cfg.activityAction,
         target: title,
-        status: toStatus,
+        status: toState,
         feedback,
     });
     showToast(

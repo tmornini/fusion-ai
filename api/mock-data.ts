@@ -2,7 +2,6 @@ import type { DbAdapter } from './db.ts';
 import type {
     HumanWorkerEntity,
     WorkerStatus,
-    ReadinessLevel,
     IdeaEntity,
     ProjectEntity,
     ActivityEntity,
@@ -736,8 +735,6 @@ export async function populateMockData(
             title: 'AI-Powered Customer'
                 + ' Segmentation',
             position: 1,
-            status: 'in-review',
-
             problem_statement:
                 'Marketing team spends 20+'
                 + ' hours weekly manually'
@@ -764,8 +761,6 @@ export async function populateMockData(
                 + ' segmentation time, 25%'
                 + ' increase in campaign'
                 + ' conversion rates',
-            readiness: 'ready',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -775,8 +770,6 @@ export async function populateMockData(
             title: 'Automated Report'
                 + ' Generation',
             position: 2,
-            status: 'approved',
-
             problem_statement:
                 'Analysts spend 15+ hours'
                 + ' per week manually'
@@ -805,8 +798,6 @@ export async function populateMockData(
                 '90% reduction in report'
                 + ' preparation time,'
                 + ' 100% on-time delivery',
-            readiness: 'ready',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -816,8 +807,6 @@ export async function populateMockData(
             title: 'Predictive Maintenance'
                 + ' System',
             position: 3,
-            status: 'active',
-
             problem_statement:
                 'Unplanned equipment'
                 + ' downtime costs $50K per'
@@ -840,8 +829,6 @@ export async function populateMockData(
                 + ' 20%, saving $150K'
                 + ' annually.',
             success_metrics: '',
-            readiness: 'needs-info',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -851,8 +838,6 @@ export async function populateMockData(
             title: 'Real-time Analytics'
                 + ' Dashboard',
             position: 4,
-            status: 'in-review',
-
             problem_statement:
                 'Leadership relies on'
                 + ' weekly batch reports'
@@ -881,8 +866,6 @@ export async function populateMockData(
                 + ' under 2 seconds, 95%'
                 + ' daily active usage'
                 + ' by leadership',
-            readiness: 'ready',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -892,8 +875,6 @@ export async function populateMockData(
             title: 'Smart Inventory'
                 + ' Optimization',
             position: 5,
-            status: 'active',
-
             problem_statement:
                 'Excess inventory ties up'
                 + ' $2M in capital while'
@@ -915,8 +896,6 @@ export async function populateMockData(
                 + ' improving customer'
                 + ' satisfaction scores.',
             success_metrics: '',
-            readiness: 'needs-info',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -926,8 +905,6 @@ export async function populateMockData(
             title: 'Employee Training'
                 + ' Assistant',
             position: 6,
-            status: 'sent-back',
-
             problem_statement:
                 'New hire onboarding takes'
                 + ' 6 weeks on average, with'
@@ -953,8 +930,6 @@ export async function populateMockData(
                 '50% faster onboarding,'
                 + ' 40% higher new-hire'
                 + ' productivity scores',
-            readiness: 'incomplete',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -964,8 +939,6 @@ export async function populateMockData(
             title: 'AI-Powered Customer'
                 + ' Support Chatbot',
             position: 8,
-            status: 'in-review',
-
             problem_statement:
                 'Support team handles'
                 + ' 500+ tier-1 tickets'
@@ -992,8 +965,6 @@ export async function populateMockData(
                 + ' rate, CSAT above 4.5,'
                 + ' average response time'
                 + ' under 30 seconds',
-            readiness: 'ready',
-
             risks: jsonArrayField([
                 {
                     title:
@@ -1055,8 +1026,6 @@ export async function populateMockData(
             title: 'Mobile App Push'
                 + ' Notification Revamp',
             position: 10,
-            status: 'in-review',
-
             problem_statement:
                 'Push notification opt-out'
                 + ' rate is 42% due to'
@@ -1079,8 +1048,6 @@ export async function populateMockData(
                 'Opt-out rate below 20%,'
                 + ' 35% higher engagement'
                 + ' on push notifications',
-            readiness: 'needs-info',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -1090,8 +1057,6 @@ export async function populateMockData(
             title: 'Sustainability Dashboard'
                 + ' for Operations',
             position: 9,
-            status: 'in-review',
-
             problem_statement:
                 'No centralized view of'
                 + ' energy, water, and'
@@ -1112,8 +1077,6 @@ export async function populateMockData(
                 '15% energy cost'
                 + ' reduction, ESG report'
                 + ' delivery on schedule',
-            readiness: 'ready',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -1123,8 +1086,6 @@ export async function populateMockData(
             title: 'Employee Wellness'
                 + ' Program Integration',
             position: 11,
-            status: 'in-review',
-
             problem_statement:
                 'Employee burnout rates'
                 + ' are rising with no'
@@ -1148,8 +1109,6 @@ export async function populateMockData(
                 '50% participation'
                 + ' increase, 12% lower'
                 + ' voluntary turnover',
-            readiness: 'incomplete',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -1159,8 +1118,6 @@ export async function populateMockData(
             title: 'Real-time Inventory'
                 + ' Tracking System',
             position: 7,
-            status: 'in-review',
-
             problem_statement:
                 'Inventory counts rely on'
                 + ' manual audits that lag'
@@ -1184,8 +1141,6 @@ export async function populateMockData(
                 '99.5% inventory accuracy,'
                 + ' zero manual'
                 + ' reconciliation needed',
-            readiness: 'ready',
-
             risks: jsonArrayField([]),
             assumptions: jsonArrayField([]),
             alignments: jsonArrayField([]),
@@ -5861,6 +5816,93 @@ export async function populateMockData(
         },
     ];
 
+    // One state event per seeded idea — the
+    // current state of each idea on the states
+    // log. Stage 8b+c retires the dual-column
+    // representation; the log IS the truth. Each
+    // event is authored by the idea's submitter
+    // at submission time. UI surfaces this as the
+    // composite state badge.
+    const ideaStateEvents: StateEntity[] = [
+        {
+            id: 'qJoFXyzUUaq0vEpHL5e34l',
+            entity_id: 'eT5xdKjzLDmuRn3r7XMX4R',
+            state: 'in-review',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            at: dt(75, 9, 30),
+        },
+        {
+            id: 'tIcL6f8KJoyG2YN9NofOMo',
+            entity_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
+            state: 'approved',
+            worker_id: 'bLP3X1hb1mSz8gY9neogU3',
+            at: dt(70, 9, 0),
+        },
+        {
+            id: 'mGfBLqA7lScpEKxc5w0Yt2',
+            entity_id: 'wuCMQqo4IkEksx7MYmu8g2',
+            state: 'active:needs-info',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
+            at: dt(65, 9, 0),
+        },
+        {
+            id: 'BvBRvDQ8b5l5Tg7iZSGyHF',
+            entity_id: 'ojOEXtdzdtTZtpM81TxVca',
+            state: 'in-review',
+            worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            at: dt(55, 9, 0),
+        },
+        {
+            id: 'BMS9TmTKR0DZ41vTUSpvxX',
+            entity_id: 'T2vAafLDcshDONlYxpzPLc',
+            state: 'active:needs-info',
+            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            at: dt(50, 9, 0),
+        },
+        {
+            id: 'XX2EXrIUcQVTnzGo0YO2Iw',
+            entity_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
+            state: 'sent-back',
+            worker_id: 'zyTbfbjcGEfbpCsNTP0XjX',
+            at: dt(45, 9, 0),
+        },
+        {
+            id: 'fxlbcnsAmCWp4j8B2NkDKM',
+            entity_id: 'MCxK0hzT9CPjJx1ZV5unfr',
+            state: 'in-review',
+            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            at: dt(75, 10, 0),
+        },
+        {
+            id: 'JjkkkkrZw4FvOWBpJYE2J7',
+            entity_id: 'SUb4gKXsZ1OsEauzqszg0t',
+            state: 'in-review',
+            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
+            at: dt(35, 9, 0),
+        },
+        {
+            id: '4nzdNB97hgD1GZ7CjA2EwS',
+            entity_id: 'gxa84W9KvEgD0wT1F4TOM9',
+            state: 'in-review',
+            worker_id: '53J8h9dr76XFqCjYcNVwIR',
+            at: dt(30, 9, 0),
+        },
+        {
+            id: 'wmCY9xZdrk0XlydyABZqXY',
+            entity_id: '1Z68gROMrlTAfPEGiyJJAY',
+            state: 'in-review',
+            worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            at: dt(25, 9, 0),
+        },
+        {
+            id: 'OWGsZqEi1bnWUetzS2sURr',
+            entity_id: 'Q2On2xwMpFdzOklBQJXrni',
+            state: 'in-review',
+            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            at: dt(20, 9, 0),
+        },
+    ];
+
     const activityActors:
         ActivityActorEntity[] = [
         {
@@ -5997,6 +6039,14 @@ export async function populateMockData(
             ),
         ),
         ...mockStateEvents.map(r =>
+            adapter.states.put(r.id, {
+                entity_id: r.entity_id,
+                state: r.state,
+                worker_id: r.worker_id,
+                at: r.at,
+            }),
+        ),
+        ...ideaStateEvents.map(r =>
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,

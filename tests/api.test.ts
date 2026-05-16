@@ -36,13 +36,11 @@ test('PUT then GET round-trips an entity', async () => {
         id: 'i1',
         title: 'Test',
         position: 1,
-        status: 'active',
         problem_statement: 'p',
         target_users: 't',
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        readiness: 'ready',
         risks: '[]',
         assumptions: '[]',
         alignments: '[]',
@@ -59,13 +57,11 @@ test('DELETE marks entity tombstoned', async () => {
     const db = new MemoryDbAdapter();
     await db.ideas.put('i1', {
         title: 'Test', position: 1,
-        status: 'submitted',
         problem_statement: '',
         target_users: '',
         proposed_solution: '',
         expected_outcome: '',
         success_metrics: '',
-        readiness: 'developing',
         risks: '[]', assumptions: '[]',
         alignments: '[]',
     });

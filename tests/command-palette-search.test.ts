@@ -13,28 +13,27 @@ import {
     Idea, Project, HumanWorker,
     jsonArrayField,
     jsonObjectField,
+    type IdeaState,
 } from '../api/types.ts';
 
 function buildIdea(
     id: string, title: string,
-    status: 'active' | 'approved' = 'active',
+    state: IdeaState = 'active:incomplete',
 ): Idea {
     return new Idea({
         id,
         title,
         position: 1,
-        status,
         problem_statement: '',
         target_users: '',
         proposed_solution: '',
         expected_outcome: '',
         success_metrics: '',
-        readiness: 'concept',
         risks: '',
         assumptions: '',
         alignments:
             jsonArrayField([]),
-    });
+    }, state);
 }
 
 function buildProject(

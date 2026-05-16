@@ -164,12 +164,8 @@ export async function init():
                         success_metrics:
                             formState
                             .successMetrics,
-                        status:
-                            'active',
                         position:
                             nextPosition,
-                        readiness:
-                            'incomplete',
                         risks:
                             jsonArrayField(
                                 [],
@@ -183,6 +179,7 @@ export async function init():
                                 [],
                             ),
                     },
+                    'active:incomplete',
                 );
                 await putIdeaSubmission(
                     ctx,

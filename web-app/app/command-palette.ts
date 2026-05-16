@@ -177,7 +177,7 @@ export function ideaToSearchItem(
     return {
         id: 'idea-' + tuple.idea.idForLink(),
         title: tuple.idea.titleText(),
-        meta: tuple.idea.statusValue()
+        meta: tuple.idea.stateValue()
             .replace(/-/g, ' '),
         category: 'ideas',
         icon: iconLightbulb(
@@ -187,7 +187,7 @@ export function ideaToSearchItem(
             ideaId: tuple.idea.idForLink(),
         }),
         keywords: tuple.submitterName + ' '
-            + tuple.idea.statusValue(),
+            + tuple.idea.stateValue(),
     };
 }
 

@@ -9,6 +9,7 @@ import {
 } from '../format.ts';
 import type { RequestContext } from './shared.ts';
 import { getIdeaRows } from './ideas.ts';
+import { getIdeaStates } from './state-events.ts';
 import { getProjectRows } from './projects.ts';
 import { getFlowRows } from './flows.ts';
 
@@ -141,9 +142,10 @@ export async function getDashboardStats(
 ): Promise<
     { label: string; value: number }[]
 > {
-    const [ideas, projects, flows] =
+    const [ideas, ideaStates, projects, flows] =
         await Promise.all([
             getIdeaRows(ctx),
+            getIdeaStates(ctx),
             getProjectRows(ctx),
             getFlowRows(ctx),
         ]);
@@ -151,9 +153,11 @@ export async function getDashboardStats(
     return [
         {
             label: 'Ideas',
-            value: ideas
-                .filter(ideaIsVisible)
-                .length,
+            value: ideas.filter(row => {
+                const s = ideaStates.get(row.id);
+                return s !== undefined
+                    && ideaIsVisible(s);
+            }).length,
         },
         {
             label: 'Projects',

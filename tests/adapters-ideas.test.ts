@@ -39,17 +39,28 @@ function buildIdea(
     return {
         title,
         position: 1,
-        status: 'active',
         problem_statement: 'p',
         target_users: 't',
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        readiness: 'ready',
         risks: '[]',
         assumptions: '[]',
         alignments: '[]',
     };
+}
+
+async function seedIdeaState(
+    db: MemoryDbAdapter,
+    ideaId: string,
+    state: string,
+): Promise<void> {
+    await db.states.record(
+        `st-${ideaId}`,
+        ideaId,
+        state,
+        'system',
+    );
 }
 
 function setupDb(): {
@@ -69,6 +80,7 @@ test('getIdeas returns ideas with submitter', async () => {
     await db.ideas.put('i1', buildIdea(
         'i1', 'First idea',
     ));
+    await seedIdeaState(db, 'i1', 'active:ready');
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
         worker_id: 'u1',
@@ -84,6 +96,10 @@ test('getIdeas returns ideas with submitter', async () => {
         result[0]?.submitterName,
         'Alice Test',
     );
+    assert.equal(
+        result[0]?.idea.stateValue(),
+        'active:ready',
+    );
 });
 
 test('getIdeas throws when idea has no submission', async () => {
@@ -94,6 +110,7 @@ test('getIdeas throws when idea has no submission', async () => {
     await db.ideas.put('i1', buildIdea(
         'i1', 'Orphan',
     ));
+    await seedIdeaState(db, 'i1', 'active:ready');
     // No submission for i1
     await assert.rejects(
         () => getIdeas(ctx),
@@ -109,6 +126,7 @@ test('getIdea finds submission for one idea', async () => {
     await db.ideas.put('i1', buildIdea(
         'i1', 'A',
     ));
+    await seedIdeaState(db, 'i1', 'active:ready');
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
         worker_id: 'u1',
@@ -129,6 +147,7 @@ test('getIdea throws on missing submission', async () => {
     await db.ideas.put(
         'i1', buildIdea('i1', 'A'),
     );
+    await seedIdeaState(db, 'i1', 'active:ready');
     await assert.rejects(
         () => getIdea(ctx, 'i1'),
         /submission not found/,
@@ -148,6 +167,36 @@ test('putIdea persists changes', async () => {
     assert.equal(stored.title, 'Updated');
 });
 
+test('archived ideas are filtered from getIdeas', async () => {
+    const { db, ctx } = setupDb();
+    await db.workers.put(
+        'u1', buildPerson('u1', 'Alice'),
+    );
+    await db.ideas.put(
+        'i1', buildIdea('i1', 'Keep'),
+    );
+    await seedIdeaState(db, 'i1', 'active:ready');
+    await db.ideaSubmissions.put('s1', {
+        idea_id: 'i1',
+        worker_id: 'u1',
+        created_at: '2026-04-01T00:00:00Z',
+    });
+    await db.ideas.put(
+        'i2', buildIdea('i2', 'Hide me'),
+    );
+    await seedIdeaState(db, 'i2', 'archived');
+    await db.ideaSubmissions.put('s2', {
+        idea_id: 'i2',
+        worker_id: 'u1',
+        created_at: '2026-04-01T00:00:00Z',
+    });
+    const result = await getIdeas(ctx);
+    assert.equal(result.length, 1);
+    assert.equal(
+        result[0]?.idea.titleText(), 'Keep',
+    );
+});
+
 test('deleted ideas are filtered from getIdeas', async () => {
     const { db, ctx } = setupDb();
     await db.workers.put(
@@ -156,6 +205,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
     await db.ideas.put(
         'i1', buildIdea('i1', 'Keep'),
     );
+    await seedIdeaState(db, 'i1', 'active:ready');
     await db.ideaSubmissions.put('s1', {
         idea_id: 'i1',
         worker_id: 'u1',
@@ -164,6 +214,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
     await db.ideas.put(
         'i2', buildIdea('i2', 'Delete me'),
     );
+    await seedIdeaState(db, 'i2', 'active:ready');
     await db.ideaSubmissions.put('s2', {
         idea_id: 'i2',
         worker_id: 'u1',

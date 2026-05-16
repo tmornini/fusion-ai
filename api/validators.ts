@@ -1,8 +1,6 @@
 import {
     assertWorkerStatus,
-    assertIdeaStatus,
     assertProjectStatus,
-    assertReadinessLevel,
 } from './types.ts';
 import type {
     GraphNode,
@@ -13,9 +11,7 @@ import type {
     FlowFieldType,
     WorkerId,
     WorkerStatus,
-    IdeaStatus,
     ProjectStatus,
-    ReadinessLevel,
     JsonArrayField,
     JsonObjectField,
     HumanWorkerEntity,
@@ -514,29 +510,11 @@ export function asWorkerStatus(
     );
 }
 
-export function asIdeaStatus(
-    value: unknown,
-    label: string,
-): IdeaStatus {
-    return assertIdeaStatus(
-        asString(value, label), label,
-    );
-}
-
 export function asProjectStatus(
     value: unknown,
     label: string,
 ): ProjectStatus {
     return assertProjectStatus(
-        asString(value, label), label,
-    );
-}
-
-export function asReadinessLevel(
-    value: unknown,
-    label: string,
-): ReadinessLevel {
-    return assertReadinessLevel(
         asString(value, label), label,
     );
 }
@@ -577,25 +555,11 @@ export function pickWorkerStatus(
     return asWorkerStatus(body[key], key);
 }
 
-export function pickIdeaStatus(
-    body: Record<string, unknown>,
-    key: string,
-): IdeaStatus {
-    return asIdeaStatus(body[key], key);
-}
-
 export function pickProjectStatus(
     body: Record<string, unknown>,
     key: string,
 ): ProjectStatus {
     return asProjectStatus(body[key], key);
-}
-
-export function pickReadinessLevel(
-    body: Record<string, unknown>,
-    key: string,
-): ReadinessLevel {
-    return asReadinessLevel(body[key], key);
 }
 
 export function pickJsonArrayField(
@@ -762,10 +726,10 @@ export function validateAIWorkerEntity(
 }
 
 const IDEA_BODY_KEYS: readonly string[] = [
-    'title', 'position', 'status',
+    'title', 'position',
     'problem_statement', 'target_users',
     'proposed_solution', 'expected_outcome',
-    'success_metrics', 'readiness',
+    'success_metrics',
     'risks', 'assumptions', 'alignments',
 ];
 
@@ -782,9 +746,6 @@ export function validateIdeaEntity(
         position: pickNumber(
             body, 'position',
         ),
-        status: pickIdeaStatus(
-            body, 'status',
-        ),
         problem_statement: pickString(
             body, 'problem_statement',
         ),
@@ -799,9 +760,6 @@ export function validateIdeaEntity(
         ),
         success_metrics: pickString(
             body, 'success_metrics',
-        ),
-        readiness: pickReadinessLevel(
-            body, 'readiness',
         ),
         risks: pickJsonArrayField(
             body, 'risks',

@@ -36,19 +36,24 @@ export type WorkerStatus =
     | 'pending'
     | 'deactivated';
 
-export type ReadinessLevel =
-    | 'ready'
-    | 'needs-info'
-    | 'incomplete';
+// The composite state alphabet for ideas. Three
+// 'active' sub-states encode the readiness dimension;
+// the remaining six states stand alone. One string,
+// one truth — the dual-column representation that
+// preceded this is retired (Stage 8b+c).
+export const IDEA_STATES = [
+    'active:incomplete',
+    'active:needs-info',
+    'active:ready',
+    'in-review',
+    'approved',
+    'promoted',
+    'sent-back',
+    'archived',
+    'deleted',
+] as const;
 
-export type IdeaStatus =
-    | 'active'
-    | 'in-review'
-    | 'approved'
-    | 'promoted'
-    | 'sent-back'
-    | 'archived'
-    | 'deleted';
+export type IdeaState = typeof IDEA_STATES[number];
 
 export type ActivityType =
     | 'idea_created'
@@ -211,30 +216,21 @@ export function assertProjectStatus(
     return v;
 }
 
-const IDEA_STATUSES:
-    readonly IdeaStatus[]
-    = [
-        'active', 'in-review',
-        'approved', 'promoted',
-        'sent-back', 'archived',
-        'deleted',
-    ];
-
-export function isIdeaStatus(
+export function isIdeaState(
     v: string,
-): v is IdeaStatus {
+): v is IdeaState {
     return includes(
-        IDEA_STATUSES, v,
+        IDEA_STATES, v,
     );
 }
 
-export function assertIdeaStatus(
+export function assertIdeaState(
     v: string,
     label: string,
-): IdeaStatus {
-    if (!includes(IDEA_STATUSES, v)) {
+): IdeaState {
+    if (!includes(IDEA_STATES, v)) {
         throw new Error(
-            'expected IdeaStatus for '
+            'expected IdeaState for '
                 + label + ', got ' + v,
         );
     }
@@ -259,31 +255,6 @@ export function assertWorkerStatus(
     if (!includes(WORKER_STATUSES, v)) {
         throw new Error(
             'expected WorkerStatus for '
-                + label + ', got ' + v,
-        );
-    }
-    return v;
-}
-
-const READINESS_LEVELS:
-    readonly ReadinessLevel[] =
-    ['ready', 'needs-info', 'incomplete'];
-
-export function isReadinessLevel(
-    v: string,
-): v is ReadinessLevel {
-    return includes(
-        READINESS_LEVELS, v,
-    );
-}
-
-export function assertReadinessLevel(
-    v: string,
-    label: string,
-): ReadinessLevel {
-    if (!includes(READINESS_LEVELS, v)) {
-        throw new Error(
-            'expected ReadinessLevel for '
                 + label + ', got ' + v,
         );
     }
@@ -608,13 +579,11 @@ export interface IdeaEntity {
     id: Id;
     title: string;
     position: number;
-    status: IdeaStatus;
     problem_statement: string;
     target_users: string;
     proposed_solution: string;
     expected_outcome: string;
     success_metrics: string;
-    readiness: ReadinessLevel;
     risks: JsonArrayField;
     assumptions: JsonArrayField;
     alignments: JsonArrayField;
@@ -859,12 +828,20 @@ export const WORKER_STATUS_CONFIG: Record<
     },
 };
 
-export const IDEA_STATUS_CONFIG: Record<
-    IdeaStatus,
+export const IDEA_STATE_CONFIG: Record<
+    IdeaState,
     StatusDisplay
 > = {
-    'active': {
-        label: 'Active',
+    'active:incomplete': {
+        label: 'Active · Incomplete',
+        className: 'badge-success',
+    },
+    'active:needs-info': {
+        label: 'Active · Needs Info',
+        className: 'badge-success',
+    },
+    'active:ready': {
+        label: 'Active · Ready',
         className: 'badge-success',
     },
     'in-review': {
@@ -945,47 +922,28 @@ export const CONFIDENCE_CONFIG: Record<
     },
 };
 
-export const READINESS_CONFIG: Record<
-    ReadinessLevel,
-    StatusDisplay
-> = {
-    ready: {
-        label: 'Ready for Review',
-        className: 'text-success',
-    },
-    'needs-info': {
-        label: 'Needs Info',
-        className: 'text-warning',
-    },
-    incomplete: {
-        label: 'Incomplete',
-        className: 'text-error',
-    },
-};
-
 export class Idea {
     readonly #id: string;
     readonly #title: string;
     readonly #position: number;
-    readonly #status: IdeaStatus;
+    readonly #state: IdeaState;
     readonly #problemStatement: string;
     readonly #targetUsers: string;
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
-    readonly #readiness: ReadinessLevel;
     readonly #risks: string;
     readonly #assumptions: string;
     readonly #alignments: string;
 
-    constructor(entity: IdeaEntity) {
+    constructor(
+        entity: IdeaEntity,
+        state: IdeaState,
+    ) {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#position = entity.position;
-        this.#status = assertIdeaStatus(
-            entity.status as unknown as string,
-            'IdeaEntity.status',
-        );
+        this.#state = state;
         this.#problemStatement =
             entity.problem_statement;
         this.#targetUsers =
@@ -996,58 +954,33 @@ export class Idea {
             entity.expected_outcome;
         this.#successMetrics =
             entity.success_metrics;
-        this.#readiness = entity.readiness;
         this.#risks = entity.risks;
         this.#assumptions = entity.assumptions;
         this.#alignments = entity.alignments;
     }
 
-    isDeleted(): boolean {
-        return this.#status === 'deleted';
-    }
-
-    isInReview(): boolean {
-        return this.#status === 'in-review';
-    }
-
     isReviewable(): boolean {
-        return this.#status === 'in-review';
+        return this.#state === 'in-review';
     }
 
     isConvertible(): boolean {
-        return this.#status === 'approved';
+        return this.#state === 'approved';
     }
 
     canBeSubmittedForReview(): boolean {
-        return this.#status === 'active'
-            || this.#status === 'sent-back';
+        return this.#state.startsWith('active:')
+            || this.#state === 'sent-back';
     }
 
-    isReady(): boolean {
-        return this.#readiness === 'ready';
-    }
-
-    statusLabel(): string {
+    stateLabel(): string {
         return (
-            IDEA_STATUS_CONFIG[this.#status]
+            IDEA_STATE_CONFIG[this.#state]
         )!.label;
     }
 
-    statusClassName(): string {
+    stateClassName(): string {
         return (
-            IDEA_STATUS_CONFIG[this.#status]
-        )!.className;
-    }
-
-    readinessLabel(): string {
-        return (
-            READINESS_CONFIG[this.#readiness]
-        )!.label;
-    }
-
-    readinessClassName(): string {
-        return (
-            READINESS_CONFIG[this.#readiness]
+            IDEA_STATE_CONFIG[this.#state]
         )!.className;
     }
 
@@ -1089,8 +1022,8 @@ export class Idea {
         return this.#position;
     }
 
-    statusValue(): IdeaStatus {
-        return this.#status;
+    stateValue(): IdeaState {
+        return this.#state;
     }
 
     problemStatementText(): string {
@@ -1111,10 +1044,6 @@ export class Idea {
 
     successMetricsText(): string {
         return this.#successMetrics;
-    }
-
-    readinessValue(): ReadinessLevel {
-        return this.#readiness;
     }
 }
 
@@ -1288,10 +1217,10 @@ export interface RecentActivityItem {
 }
 
 export function ideaIsVisible(
-    e: IdeaEntity,
+    state: IdeaState,
 ): boolean {
-    return e.status !== 'archived'
-        && e.status !== 'deleted';
+    return state !== 'archived'
+        && state !== 'deleted';
 }
 
 export function projectIsNotDeleted(
