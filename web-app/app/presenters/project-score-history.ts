@@ -157,16 +157,20 @@ export class ProjectScoreHistoryPresenter {
                 return html`<tr>
                     ${dateCell}
                     <td>Objective revised</td>
-                    <td>—</td>
+                    <td>${e.name}</td>
                     <td>renamed/edited</td>
                 </tr>`;
-            case 'deprecation':
+            case 'deprecation': {
+                const def = this.#resolver(
+                    e.objectiveId, e.at,
+                );
                 return html`<tr>
                     ${dateCell}
                     <td>Objective deprecated</td>
-                    <td>—</td>
+                    <td>${def?.name ?? '—'}</td>
                     <td>—</td>
                 </tr>`;
+            }
         }
     }
 }
