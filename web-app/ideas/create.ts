@@ -10,7 +10,7 @@ import {
     createRequestContext,
     getIdeaRows,
     postActivity,
-    putIdea,
+    postIdeaStateChange,
     putIdeaSubmission,
     jsonArrayField,
     generateCryptoSafeBase62,
@@ -143,7 +143,7 @@ export async function init():
                                 r => r.position,
                             ),
                         ) + 1;
-                await putIdea(
+                await postIdeaStateChange(
                     ctx,
                     ideaId,
                     {

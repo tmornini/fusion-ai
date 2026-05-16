@@ -19,12 +19,16 @@ import {
     notifyProjectChange,
 } from './projects.ts';
 import {
+    buildStateEventOp,
+    compositeStateForIdea,
+} from './state-events.ts';
+import {
     createSubscriptionChannel,
 } from '../channels.ts';
 
 const ideaChanges =
     createSubscriptionChannel(
-        ['ideas', 'idea-submissions'],
+        ['ideas', 'idea-submissions', 'states'],
     );
 
 export function subscribeIdeaChanges(
@@ -164,6 +168,40 @@ export async function putIdea(
     ideaChanges.notify();
 }
 
+// Idea-row write paired with a states-log event in
+// one ctx.commit batch. The composite state is
+// computed at the call site from the values being
+// committed — never from a stale prior read. Use this
+// at every site that mutates status or readiness;
+// putIdea remains for writes (edits, position
+// reorders) that do not move the composite.
+export async function postIdeaStateChange(
+    ctx: RequestContext,
+    id: string,
+    entity: Omit<IdeaEntity, 'id'>,
+): Promise<void> {
+    const ideaBody =
+        entity as unknown as Record<string, unknown>;
+    await ctx.commit({
+        ops: [
+            {
+                method: 'put',
+                resource: `ideas/${id}`,
+                body: ideaBody,
+            },
+            await buildStateEventOp(
+                ctx,
+                id,
+                compositeStateForIdea(
+                    entity.status,
+                    entity.readiness,
+                ),
+            ),
+        ],
+    });
+    ideaChanges.notify();
+}
+
 export async function putIdeaSubmission(
     ctx: RequestContext,
     submissionId: string,
@@ -185,8 +223,11 @@ export async function putIdeaSubmission(
 // Inlined writes (rather than delegating to the
 // putProject / putIdea helpers) so the project and
 // idea writes commit together as one logical
-// operation. The helpers stay — they have other
-// callers whose writes are genuinely independent.
+// operation. The state event lands in the same batch
+// so the composite state on the idea moves to
+// 'promoted' atomically with the row update. The
+// helpers stay — they have other callers whose
+// writes are genuinely independent.
 export async function postIdeaConversion(
     ctx: RequestContext,
     ideaId: string,
@@ -212,6 +253,14 @@ export async function postIdeaConversion(
                 resource: `ideas/${ideaId}`,
                 body: ideaBody,
             },
+            await buildStateEventOp(
+                ctx,
+                ideaId,
+                compositeStateForIdea(
+                    promotedIdea.status,
+                    promotedIdea.readiness,
+                ),
+            ),
         ],
     });
     notifyProjectChange();

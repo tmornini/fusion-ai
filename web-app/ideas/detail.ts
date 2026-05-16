@@ -24,6 +24,7 @@ import {
 import {
     getIdea,
     postActivity,
+    postIdeaStateChange,
     putIdea,
     subscribeIdeaChanges,
     createRequestContext,
@@ -113,13 +114,14 @@ async function transitionIdea(
     const entity = state.view.entity;
     const title = entity.title;
     try {
-        await putIdea(
+        await postIdeaStateChange(
             ctx, ideaId,
             { ...entity, status: toStatus },
         );
     } catch (err) {
         log.error(
-            'putIdea failed', 'ideas', err,
+            'postIdeaStateChange failed',
+            'ideas', err,
         );
         showToast(cfg.failureToast, 'error');
         return;

@@ -1,5 +1,9 @@
-import type { Id, StateEntity } from '../../../api/types.ts';
+import type {
+    Id, IdeaStatus, ReadinessLevel, StateEntity,
+} from '../../../api/types.ts';
 import {
+    assertIdeaStatus,
+    assertReadinessLevel,
     msSinceUtc,
     MS_PER_SECOND,
     nowUtc,
@@ -206,4 +210,79 @@ export async function getTransitionEventsByWorkOrder(
         );
     }
     return out;
+}
+
+// Collapse the two-dimensional (status, readiness)
+// shape of an idea into a single composite state
+// string. When status is 'active' the readiness
+// completes the picture — three values
+// (active:ready, active:needs-info, active:incomplete).
+// When status is anything else the readiness has no
+// semantic effect, so the composite IS the status.
+// Six non-active values: in-review, approved,
+// promoted, sent-back, archived, deleted. Nine in
+// total. Transitional helper — Stage 8c retires it
+// alongside the readiness column.
+export function compositeStateForIdea(
+    status: IdeaStatus,
+    readiness: ReadinessLevel,
+): string {
+    if (status === 'active') {
+        return `active:${readiness}`;
+    }
+    return status;
+}
+
+// Inverse of compositeStateForIdea — splits the
+// composite back into (status, readiness). When the
+// composite begins with 'active:' the suffix is the
+// readiness; otherwise the composite IS the status
+// and the readiness is null (the dimension collapsed
+// on the way in). Used by parity tests and Stage 8b
+// readers that need both dimensions back.
+export function ideaStateToStatusReadiness(
+    state: string,
+): {
+    status: IdeaStatus;
+    readiness: ReadinessLevel | null;
+} {
+    const ACTIVE_PREFIX = 'active:';
+    if (state.startsWith(ACTIVE_PREFIX)) {
+        const readiness =
+            state.slice(ACTIVE_PREFIX.length);
+        return {
+            status: 'active',
+            readiness: assertReadinessLevel(
+                readiness, 'idea composite state',
+            ),
+        };
+    }
+    const status = assertIdeaStatus(
+        state, 'idea composite state',
+    );
+    if (status === 'active') {
+        throw new Error(
+            'expected non-active IdeaStatus for'
+            + ' idea composite state, got '
+            + state,
+        );
+    }
+    return { status, readiness: null };
+}
+
+// Read the latest composite state for one idea from
+// the states log. Returns null when no state event
+// has yet been recorded (an idea whose creation
+// pre-dates dual-write). Stage 8b switches
+// production readers to consume this; today only
+// the parity test does.
+export async function getCurrentIdeaStateFromStates(
+    ctx: RequestContext,
+    ideaId: Id,
+): Promise<string | null> {
+    const events = await ctx.GET<StateEntity[]>(
+        `entity-states/${ideaId}/history`,
+    );
+    const latest = latestByAt(events);
+    return latest === null ? null : latest.state;
 }
