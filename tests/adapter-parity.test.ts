@@ -11,6 +11,7 @@ import {
     postObjectiveDeprecation,
     postObjectiveReactivation,
     getActiveObjectives,
+    getDeprecatedObjectiveIds,
 } from '../web-app/app/adapters/objectives.ts';
 import type { DbAdapter } from '../api/db.ts';
 
@@ -59,16 +60,17 @@ async function runReactivationScenario(db: DbAdapter): Promise<{
         deletedIds:
             await db.deleted.allTombstonedIds(),
         deprecatedIds:
-            await db.deprecated.allTombstonedIds(),
+            await getDeprecatedObjectiveIds(ctx),
     };
 }
 
 // The K5 reactivation path executes identically against
-// memory and localStorage adapters because they instantiate
-// the same EntityStore / HistoryEntityStore / SingletonStore
-// / TombstoneStore classes over different StorageBackends.
-// This test makes that structural guarantee observable —
-// any future drift between the adapters fails here.
+// memory and localStorage adapters because they share the
+// same EntityStore / HistoryEntityStore / SingletonStore
+// / TombstoneStore / StateStore classes over different
+// StorageBackends. This test makes that structural
+// guarantee observable — any future drift between the
+// adapters fails here.
 test('K5 reactivation parity across memory and localStorage',
     async () => {
         installLocalStorageShim();
@@ -90,7 +92,8 @@ test('K5 reactivation parity across memory and localStorage',
             'localStorage: no global deleted tombstone for o1');
 
         assert.equal(mem.deprecatedIds.size, 0,
-            'memory: deprecation tombstone spliced');
+            'memory: active event supersedes deprecated');
         assert.equal(ls.deprecatedIds.size, 0,
-            'localStorage: deprecation tombstone spliced');
+            'localStorage: active event supersedes '
+            + 'deprecated');
     });

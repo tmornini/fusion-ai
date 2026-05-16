@@ -143,13 +143,6 @@ function validateSnapshotRow(
                     label + '.deleted_at',
                 );
                 break;
-            case 'deprecated':
-                asString(row['id'], label + '.id');
-                asString(
-                    row['deprecated_at'],
-                    label + '.deprecated_at',
-                );
-                break;
             case 'states':
                 validateStateEntity(body);
                 break;
@@ -241,9 +234,6 @@ export async function createLocalStorageAdapter(
     const backend = new LocalStorageBackend();
     const deletedStore = new TombstoneStore(
         backend, 'deleted', 'deleted_at',
-    );
-    const deprecatedStore = new TombstoneStore(
-        backend, 'deprecated', 'deprecated_at',
     );
 
     const adapter: DbAdapter = {
@@ -381,7 +371,6 @@ export async function createLocalStorageAdapter(
                 backend,
             ),
         deleted: deletedStore,
-        deprecated: deprecatedStore,
         states: new StateStore(backend, 'states'),
     };
 

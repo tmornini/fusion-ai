@@ -4,14 +4,13 @@ import { TABLE_NAMES } from '../api/db.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
 test('TABLE_NAMES includes the objective tables and '
-    + 'both tombstone tables', () => {
+    + 'the deleted tombstone', () => {
     const expected = [
         'objectives',
         'objective_revisions',
         'project_objective_baseline_scores',
         'project_objective_actual_scores',
         'deleted',
-        'deprecated',
     ];
     for (const name of expected) {
         assert.ok(
@@ -21,8 +20,8 @@ test('TABLE_NAMES includes the objective tables and '
     }
 });
 
-test('MemoryDbAdapter exposes objective stores and '
-    + 'both tombstones', async () => {
+test('MemoryDbAdapter exposes objective stores',
+    async () => {
         const db = new MemoryDbAdapter();
         await db.objectives.put('o1', { position: 0 });
         const all = await db.objectives.getAll();
@@ -38,12 +37,6 @@ test('MemoryDbAdapter exposes objective stores and '
         const revs =
             await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 1);
-
-        await db.deprecated.record('o1');
-        const deps =
-            await db.deprecated.allTombstonedIds();
-        assert.equal(deps.size, 1);
-        assert.ok(deps.has('o1'));
 
         await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1', {

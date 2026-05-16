@@ -32,6 +32,7 @@ import {
     getActiveObjectives,
     getCurrentObjectiveDefinition,
     getObjectiveRevisions,
+    getObjectiveDeprecationEvents,
     subscribeObjectiveChanges,
     postProjectApproval,
     postProjectCompletion,
@@ -43,7 +44,6 @@ import type {
 } from '../app/adapters/index.ts';
 import type {
     ObjectiveRevision,
-    DeprecatedTombstone,
 } from '../../api/types.ts';
 import { latestPerPair } from '../app/scoring-format.ts';
 import {
@@ -940,11 +940,10 @@ async function openHistoryModal(
         baselineObjIds.add(a.objective_id);
     }
     const revisions: ObjectiveRevision[] = [];
-    const allDeprecated = await ctx.GET<
-        DeprecatedTombstone[]
-    >('deprecated');
-    const deprecations = allDeprecated.filter(
-        d => baselineObjIds.has(d.id),
+    const allDeprecations =
+        await getObjectiveDeprecationEvents(ctx);
+    const deprecations = allDeprecations.filter(
+        d => baselineObjIds.has(d.objectiveId),
     );
     for (const objId of baselineObjIds) {
         const revs = await getObjectiveRevisions(

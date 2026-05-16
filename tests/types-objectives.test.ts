@@ -3,7 +3,6 @@ import { strict as assert } from 'node:assert';
 import type {
     Objective,
     ObjectiveRevision,
-    DeprecatedTombstone,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
     ProjectEntity,
@@ -23,14 +22,6 @@ test('ObjectiveRevision shape compiles', () => {
         revised_at: '2026-05-14T00:00:00.000Z',
     };
     assert.equal(v.objective_id, 'o1');
-});
-
-test('DeprecatedTombstone shape compiles', () => {
-    const v: DeprecatedTombstone = {
-        id: 'o1',
-        deprecated_at: '2026-05-14T00:00:00.000Z',
-    };
-    assert.equal(v.id, 'o1');
 });
 
 test('ProjectObjectiveBaselineScore shape compiles', () => {

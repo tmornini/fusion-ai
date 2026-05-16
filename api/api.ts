@@ -410,15 +410,6 @@ const routes: Route[] = [
                 ),
             ),
     }),
-    route('deprecated', {
-        get: (db) => db.deprecated.allRows(),
-    }),
-    route('deprecated/:id', {
-        put: (db, p) =>
-            db.deprecated.record(param(p, 0)),
-        delete: (db, p) =>
-            db.deprecated.remove(param(p, 0)),
-    }),
     route('project-objective-baseline-scores', {
         get: (db) =>
             db.projectObjectiveBaselineScores.getAll(),

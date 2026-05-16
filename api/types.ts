@@ -337,11 +337,6 @@ export interface Deleted {
     deleted_at: string;
 }
 
-export interface DeprecatedTombstone {
-    id: Id;
-    deprecated_at: string;
-}
-
 export interface StateEntity {
     id: Id;
     entity_id: Id;

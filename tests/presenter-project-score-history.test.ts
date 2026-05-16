@@ -49,8 +49,8 @@ const revisions = [
       description: 'd2',
       revised_at: '2026-03-18T11:02:00.000Z' },
 ];
-const deprecations: { id: string;
-    deprecated_at: string }[] = [];
+const deprecations: { objectiveId: string;
+    at: string }[] = [];
 
 function resolver(objId: string, atTime: string) {
     const eligible = revisions
@@ -162,10 +162,10 @@ test('zero score TD carries data-tone="neutral"', () => {
 });
 
 test('deprecation event row resolves the objective name '
-    + 'from the tombstone id', () => {
+    + 'from the event objectiveId', () => {
     const dep = [{
-        id: 'o1',
-        deprecated_at: '2026-05-01T08:00:00.000Z',
+        objectiveId: 'o1',
+        at: '2026-05-01T08:00:00.000Z',
     }];
     const p = new ProjectScoreHistoryPresenter(
         [], [], revisions, dep, resolver,

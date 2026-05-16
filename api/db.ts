@@ -188,7 +188,6 @@ export interface DbAdapter {
             ProjectObjectiveActualScore
         >;
     deleted: TombstoneStore;
-    deprecated: TombstoneStore;
     states: StateStore;
 }
 
@@ -214,6 +213,5 @@ export const TABLE_NAMES = [
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
     'deleted',
-    'deprecated',
     'states',
 ];

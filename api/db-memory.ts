@@ -73,7 +73,6 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly projectObjectiveActualScores:
         IEntityStore<ProjectObjectiveActualScore>;
     readonly deleted: ITombstoneStore;
-    readonly deprecated: ITombstoneStore;
     readonly states: IStateStore;
 
     constructor() {
@@ -83,9 +82,6 @@ export class MemoryDbAdapter implements DbAdapter {
             b, 'deleted', 'deleted_at',
         );
         this.deleted = ds;
-        this.deprecated = new TombstoneStore(
-            b, 'deprecated', 'deprecated_at',
-        );
         this.organization =
             new SingletonStore<OrganizationEntity>(
                 'organization', b,

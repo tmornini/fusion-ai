@@ -6,6 +6,11 @@ import {
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
 } from '../api/validators.ts';
+import { createRequestContext }
+    from '../web-app/app/adapters/shared.ts';
+import {
+    getDeprecatedObjectiveIds,
+} from '../web-app/app/adapters/objectives.ts';
 
 test('populateMockData seeds 5 objectives', async () => {
     const db = new MemoryDbAdapter();
@@ -41,8 +46,8 @@ test('populateMockData seeds zero deprecated objectives',
     async () => {
         const db = new MemoryDbAdapter();
         await populateMockData(db);
-        const ids =
-            await db.deprecated.allTombstonedIds();
+        const ctx = createRequestContext(db);
+        const ids = await getDeprecatedObjectiveIds(ctx);
         assert.equal(ids.size, 0);
     });
 

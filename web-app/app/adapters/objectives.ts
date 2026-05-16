@@ -20,7 +20,7 @@ const objectiveChanges =
     createSubscriptionChannel([
         'objectives',
         'objective_revisions',
-        'deprecated',
+        'states',
     ]);
 
 export function subscribeObjectiveChanges(
@@ -51,29 +51,17 @@ export async function getObjectives(
 export async function getDeprecatedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
-    const rows = await ctx.GET<{ id: string }[]>(
-        'deprecated',
-    );
-    return new Set(
-        rows.map(r => r.id as ObjectiveId),
-    );
-}
-
-// Stage 3 parallel reader. Reads the same truth from
-// the states event log, latest-event-wins by `at`. The
-// production reads remain on getDeprecatedObjectiveIds
-// throughout Stage 3; the parity test asserts the two
-// readers agree after every mutation. Stage 4 retires
-// the tombstone reader and deletes this comment.
-export async function
-    getDeprecatedObjectiveIdsFromStates(
-        ctx: RequestContext,
-    ): Promise<Set<ObjectiveId>> {
     const rows = await ctx.GET<StateEntity[]>('states');
+    // Iterate in insertion order; on `at` tie the
+    // later-inserted row wins. `nowUtc()` resolves to
+    // milliseconds so back-to-back mutations on a fast
+    // machine can collide; insertion order is the
+    // deterministic tiebreak the event log already
+    // captures.
     const latestByEntity = new Map<string, StateEntity>();
     for (const row of rows) {
         const seen = latestByEntity.get(row.entity_id);
-        if (seen === undefined || row.at > seen.at) {
+        if (seen === undefined || row.at >= seen.at) {
             latestByEntity.set(row.entity_id, row);
         }
     }
@@ -84,6 +72,28 @@ export async function
         }
     }
     return deprecated;
+}
+
+export interface ObjectiveDeprecationEvent {
+    objectiveId: ObjectiveId;
+    at: string;
+}
+
+// Streams every `state='deprecated'` event from the
+// state log — one event per deprecation, including
+// re-deprecations after reactivation. Consumed by the
+// project score-history presenter which renders each
+// event chronologically alongside scoring rows.
+export async function getObjectiveDeprecationEvents(
+    ctx: RequestContext,
+): Promise<ObjectiveDeprecationEvent[]> {
+    const rows = await ctx.GET<StateEntity[]>('states');
+    return rows
+        .filter(r => r.state === 'deprecated')
+        .map(r => ({
+            objectiveId: r.entity_id as ObjectiveId,
+            at: r.at,
+        }));
 }
 
 export async function getObjectiveRevisions(
@@ -222,11 +232,6 @@ export async function postObjectiveDeprecation(
         ops: [
             {
                 method: 'put',
-                resource: `deprecated/${id}`,
-                body: {},
-            },
-            {
-                method: 'put',
                 resource: `states/${stateEventId}`,
                 body: {
                     entity_id: id,
@@ -249,10 +254,6 @@ export async function postObjectiveReactivation(
     const stateEventId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
-            {
-                method: 'delete',
-                resource: `deprecated/${id}`,
-            },
             {
                 method: 'put',
                 resource: `states/${stateEventId}`,

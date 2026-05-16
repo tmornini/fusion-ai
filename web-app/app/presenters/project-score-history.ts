@@ -2,10 +2,12 @@ import { html, type SafeHtml } from '../safe-html.ts';
 import type {
     ObjectiveId,
     ObjectiveRevision,
-    DeprecatedTombstone,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
+import type {
+    ObjectiveDeprecationEvent,
+} from '../adapters/objectives.ts';
 import {
     formatSigned,
     toneForScore,
@@ -31,14 +33,14 @@ export class ProjectScoreHistoryPresenter {
     readonly #baselines: ProjectObjectiveBaselineScore[];
     readonly #actuals: ProjectObjectiveActualScore[];
     readonly #revisions: ObjectiveRevision[];
-    readonly #deprecations: DeprecatedTombstone[];
+    readonly #deprecations: ObjectiveDeprecationEvent[];
     readonly #resolver: DefinitionResolver;
 
     constructor(
         baselines: ProjectObjectiveBaselineScore[],
         actuals: ProjectObjectiveActualScore[],
         revisions: ObjectiveRevision[],
-        deprecations: DeprecatedTombstone[],
+        deprecations: ObjectiveDeprecationEvent[],
         resolver: DefinitionResolver,
     ) {
         this.#baselines = baselines;
@@ -99,8 +101,8 @@ export class ProjectScoreHistoryPresenter {
         for (const d of this.#deprecations) {
             events.push({
                 kind: 'deprecation',
-                at: d.deprecated_at,
-                objectiveId: d.id as ObjectiveId,
+                at: d.at,
+                objectiveId: d.objectiveId,
             });
         }
         events.sort((a, b) => a.at.localeCompare(b.at));

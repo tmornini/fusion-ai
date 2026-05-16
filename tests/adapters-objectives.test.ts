@@ -59,7 +59,9 @@ test('getObjectives returns all', async () => {
 
 test('getDeprecatedObjectiveIds returns a Set', async () => {
     const db = new MemoryDbAdapter();
-    await db.deprecated.record('o1');
+    await db.states.record(
+        'e1', 'o1', 'deprecated', 'system',
+    );
     const ctx = ctxFor(db);
     const ids = await getDeprecatedObjectiveIds(ctx);
     assert.ok(ids.has('o1'));
@@ -109,7 +111,9 @@ test('getActiveObjectives filters deprecated',
         const db = new MemoryDbAdapter();
         await db.objectives.put('o1', { position: 0 });
         await db.objectives.put('o2', { position: 1 });
-        await db.deprecated.record('o2');
+        await db.states.record(
+            'e1', 'o2', 'deprecated', 'system',
+        );
         const ctx = ctxFor(db);
         const active = await getActiveObjectives(ctx);
         assert.equal(active.length, 1);
@@ -197,7 +201,7 @@ test('postObjectiveRevision appends a revision row',
         assert.equal(revs.length, 2);
     });
 
-test('postObjectiveDeprecation tombstones an objective',
+test('postObjectiveDeprecation deprecates an objective',
     async () => {
         const db = new MemoryDbAdapter();
         await seedCurrentWorker(db);
@@ -206,10 +210,9 @@ test('postObjectiveDeprecation tombstones an objective',
             ctx, 'o1', 'Revenue', 'd', 0,
         );
         await postObjectiveDeprecation(ctx, 'o1');
-        const tombstones =
-            await db.deprecated.allTombstonedIds();
-        assert.equal(tombstones.size, 1);
-        assert.ok(tombstones.has('o1'));
+        const ids = await getDeprecatedObjectiveIds(ctx);
+        assert.equal(ids.size, 1);
+        assert.ok(ids.has('o1'));
     });
 
 test('postObjectiveReactivation returns objective to active list',
@@ -228,9 +231,10 @@ test('postObjectiveReactivation returns objective to active list',
             'objective must return to active list',
         );
         const deprecated =
-            await db.deprecated.allTombstonedIds();
+            await getDeprecatedObjectiveIds(ctx);
         assert.equal(deprecated.size, 0,
-            'deprecation tombstone must be spliced');
+            'reactivation supersedes deprecation in '
+            + 'latest-by-at query');
     });
 
 test('reactivation does not write to deleted keyspace',
