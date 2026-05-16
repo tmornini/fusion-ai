@@ -149,3 +149,22 @@ export async function postHumanWorkerStateChange(
     });
     humanWorkerChanges.notify();
 }
+
+// Archives a human worker by writing a terminal
+// 'archived' state event. The row persists — only
+// the lifecycle stage advances. Mirrors
+// archiveAIWorker per Commandment III (Uniformity):
+// one operation name across worker kinds.
+export async function archiveHumanWorker(
+    ctx: RequestContext,
+    id: WorkerId,
+): Promise<void> {
+    await ctx.commit({
+        ops: [
+            await buildStateEventOp(
+                ctx, id, 'archived',
+            ),
+        ],
+    });
+    humanWorkerChanges.notify();
+}
