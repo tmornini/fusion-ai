@@ -258,6 +258,40 @@ last (they wipe the database). See `CLAUDE.md` section
 | K. Objectives & Scoring | 30 |
 | **Total** | **322** |
 
+### Combined Totals (CLI + Browser)
+
+The per-section table above counts browser-regression cases
+only. Combined with the CLI automated suite:
+
+| Layer                  | Cases    |
+|------------------------|---------:|
+| CLI automated tests    |      781 |
+| Browser regression     |      322 |
+| **Combined TOTAL**     | **1103** |
+
+CLI count = most recent `./validate` (AT2) report; the number
+grows as tests land in `tests/*.test.ts`. Browser count = the
+per-section table above. Update both numbers when either side
+changes.
+
+Outcome categories used by run summaries (see `## Summary
+Format` at the bottom of this file):
+
+| Status   | Meaning                              | Fails? |
+|----------|--------------------------------------|:------:|
+| PASS     | Assertion satisfied                  |   no   |
+| FAIL     | Real regression; investigate         |  YES   |
+| BLOCKED  | Known MCP environmental limit        |   no   |
+| DEFERRED | Skipped — dependency BLOCKED         |   no   |
+| DRIFT    | Passes but doc/UI mismatch surfaced  |   no   |
+| pending  | Default (`- [ ]`); not yet executed  |  n/a   |
+
+A fully green run reports:
+`PASS = 1103, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1103).
+`BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
+regression.
+
 ---
 
 ## AT. Automated Test Suite
