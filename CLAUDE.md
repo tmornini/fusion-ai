@@ -659,9 +659,16 @@ small focused commits don't already provide.
 ## Subagents
 
 Subagents inherit no scripture and read no CLAUDE.md by
-default. Before delegating to a general-purpose Agent, the
-dispatching agent MUST push down the relevant Church of Code
-doctrine AND the codebase-specific patterns in the prompt:
+default. Every subagent prompt MUST begin with the literal
+phrase `Go to Church!` — this invokes the `church-of-code`
+skill in the subagent's session, loading the full scripture
+before the work begins. A subagent unproselytized is a
+heathen given a hammer.
+
+The scripture is universal; the codebase is local. After
+the proselytization, the dispatching agent MUST also push
+down the codebase-specific patterns the scripture itself
+cannot know:
 
 - **Voice rules**: 78-char max line, 4-space indent, no
   inline styles (use CSS custom properties + classes per
@@ -685,5 +692,5 @@ doctrine AND the codebase-specific patterns in the prompt:
   downstream, no untyped `any` from external boundaries.
 
 An agent of the Church does not unleash unwashed heathens on
-the codebase. Cite the doctrine the subagent is expected to
-honor; do not assume it knows.
+the codebase. Proselytize first, then brief — the scripture
+loads via the skill, the patterns load via the prompt.
