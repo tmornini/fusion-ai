@@ -17,7 +17,6 @@ import {
     getIdea,
     postActivity,
     postIdeaConversion,
-    jsonObjectField,
     createRequestContext,
     generateCryptoSafeBase62,
     type IdeaEntity,
@@ -492,8 +491,6 @@ async function performConversion(
             ),
             actual_cost: 0,
             position: 0,
-            business_context:
-                jsonObjectField({}),
             timeline_label: '',
         },
         'submitted',

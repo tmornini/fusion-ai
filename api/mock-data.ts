@@ -1220,30 +1220,6 @@ export async function populateMockData(
             estimated_cost: 88000,
             actual_cost: 51000,
             position: 1,
-            business_context: jsonObjectField({
-                problem:
-                    'Manual segmentation'
-                    + ' takes two weeks and'
-                    + ' is stale by the time'
-                    + ' it ships.',
-                expectedOutcome:
-                    'Real-time segments'
-                    + ' that update'
-                    + ' automatically and'
-                    + ' lift conversion 40%.',
-                successMetrics: [
-                    'Segmentation time:'
-                        + ' weeks to seconds',
-                    'Conversion rate +40%',
-                    'Customer LTV +25%',
-                ],
-                constraints: [
-                    'Salesforce CRM'
-                        + ' integration',
-                    'GDPR compliance for EU',
-                    'Phase 1 capped at $90k',
-                ],
-            }),
             timeline_label: 'On Track',
         },
         {
@@ -1265,7 +1241,6 @@ export async function populateMockData(
             estimated_cost: 56000,
             actual_cost: 58000,
             position: 2,
-            business_context: jsonObjectField({}),
             timeline_label: 'Completed',
         },
         {
@@ -1289,29 +1264,6 @@ export async function populateMockData(
             estimated_cost: 78000,
             actual_cost: 48000,
             position: 3,
-            business_context: jsonObjectField({
-                problem:
-                    'Leads sit untriaged'
-                    + ' for days; mid-funnel'
-                    + ' drops are'
-                    + ' unattributed.',
-                expectedOutcome:
-                    'AI-assisted triage'
-                    + ' cuts time-to-'
-                    + 'discovery by 80% and'
-                    + ' surfaces every'
-                    + ' stalled deal.',
-                successMetrics: [
-                    'Triage SLA < 4 hours',
-                    'Win rate +12 points',
-                    'Qualified pipeline +35%',
-                ],
-                constraints: [
-                    'Salesforce integration',
-                    'AI worker auth tokens'
-                        + ' rotated quarterly',
-                ],
-            }),
             timeline_label: 'On Track',
         },
         {
@@ -1333,7 +1285,6 @@ export async function populateMockData(
             estimated_cost: 110000,
             actual_cost: 7000,
             position: 4,
-            business_context: jsonObjectField({}),
             timeline_label: 'Just Started',
         },
         {
@@ -1355,7 +1306,6 @@ export async function populateMockData(
             estimated_cost: 50000,
             actual_cost: 52000,
             position: 5,
-            business_context: jsonObjectField({}),
             timeline_label: 'Completed',
         },
         {
@@ -1377,7 +1327,6 @@ export async function populateMockData(
             estimated_cost: 64000,
             actual_cost: 84000,
             position: 6,
-            business_context: jsonObjectField({}),
             timeline_label: 'Over Budget',
         },
         {
@@ -1401,7 +1350,6 @@ export async function populateMockData(
             estimated_cost: 60000,
             actual_cost: 3500,
             position: 7,
-            business_context: jsonObjectField({}),
             timeline_label: 'Just Started',
         },
         {
@@ -1424,7 +1372,6 @@ export async function populateMockData(
             estimated_cost: 64000,
             actual_cost: 42000,
             position: 8,
-            business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
         {
@@ -1447,7 +1394,6 @@ export async function populateMockData(
             estimated_cost: 102000,
             actual_cost: 142000,
             position: 9,
-            business_context: jsonObjectField({}),
             timeline_label: 'Over Budget',
         },
         {
@@ -1469,7 +1415,6 @@ export async function populateMockData(
             estimated_cost: 134000,
             actual_cost: 99000,
             position: 10,
-            business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
         {
@@ -1492,7 +1437,6 @@ export async function populateMockData(
             estimated_cost: 76000,
             actual_cost: 36000,
             position: 11,
-            business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
         {
@@ -1515,7 +1459,6 @@ export async function populateMockData(
             estimated_cost: 62000,
             actual_cost: 56000,
             position: 12,
-            business_context: jsonObjectField({}),
             timeline_label: 'Completed',
         },
         {
@@ -1537,7 +1480,6 @@ export async function populateMockData(
             estimated_cost: 90000,
             actual_cost: 8500,
             position: 13,
-            business_context: jsonObjectField({}),
             timeline_label: 'Just Started',
         },
         {
@@ -1559,7 +1501,6 @@ export async function populateMockData(
             estimated_cost: 70000,
             actual_cost: 45000,
             position: 14,
-            business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
         {
@@ -1582,7 +1523,6 @@ export async function populateMockData(
             estimated_cost: 56000,
             actual_cost: 34000,
             position: 15,
-            business_context: jsonObjectField({}),
             timeline_label: 'On Track',
         },
     ];

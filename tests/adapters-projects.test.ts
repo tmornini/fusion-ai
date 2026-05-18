@@ -21,7 +21,6 @@ import {
 import type {
     ProjectEntity,
     ProjectState,
-    JsonObjectField,
 } from '../api/types.ts';
 
 function buildProject(
@@ -40,7 +39,6 @@ function buildProject(
         estimated_cost: 50000,
         actual_cost: 12000,
         position: 1,
-        business_context: '{}' as JsonObjectField,
         timeline_label: 'Q1-Q4',
     };
     const { id: _drop, ...rest } = {

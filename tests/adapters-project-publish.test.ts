@@ -36,7 +36,7 @@ const SAMPLE_PROJECT_BODY = {
     target_end_date: '2026-05-14T00:00:00.000Z',
     estimated_duration: 0, actual_duration: 0,
     estimated_cost: 0, actual_cost: 0,
-    position: 0, business_context: '{}',
+    position: 0,
     timeline_label: 'q1',
 };
 

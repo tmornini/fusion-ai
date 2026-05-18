@@ -655,7 +655,6 @@ export interface ProjectEntity {
     estimated_cost: number;
     actual_cost: number;
     position: number;
-    business_context: JsonObjectField;
     timeline_label: string;
 }
 
@@ -1088,7 +1087,6 @@ export class Project {
     readonly #estimatedCost: number;
     readonly #actualCost: number;
     readonly #position: number;
-    readonly #businessContext: string;
     readonly #timelineLabel: string;
 
     constructor(
@@ -1114,8 +1112,6 @@ export class Project {
         this.#actualCost =
             entity.actual_cost;
         this.#position = entity.position;
-        this.#businessContext =
-            entity.business_context;
         this.#timelineLabel =
             entity.timeline_label;
     }

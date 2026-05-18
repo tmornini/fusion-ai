@@ -96,7 +96,6 @@ async function seedTwoApprovedProjects(
         target_end_date: '2026-05-14T00:00:00.000Z',
         estimated_duration: 0, actual_duration: 0,
         estimated_cost: 0, actual_cost: 0,
-        business_context: '{}',
         timeline_label: 'q1',
     };
     await db.projects.put('p1', {

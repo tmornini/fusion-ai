@@ -546,15 +546,14 @@ export function pickJsonObjectField(
 //
 // Follow-on: extend this same discipline
 // into JSON-encoded fields (graph,
-// flow_graph, business_context, values,
-// strengths, team_dimensions, etc.) — each
+// flow_graph, values, strengths,
+// team_dimensions, etc.) — each
 // JSON column's inner schema needs its own
 // enumerated key list. That is the
 // "recursive check" that closes the
 // remaining edges. Intentionally deferred
 // here because each column's shape must be
-// enumerated case-by-case (e.g.
-// business_context has its own keys; risks
+// enumerated case-by-case (e.g. risks
 // is an array of {title, severity,
 // mitigation} objects — validateRisksJson
 // does deep field validation but not
@@ -737,7 +736,7 @@ const PROJECT_BODY_KEYS: readonly string[] = [
     'target_end_date', 'estimated_duration',
     'actual_duration', 'estimated_cost',
     'actual_cost', 'position',
-    'business_context', 'timeline_label',
+    'timeline_label',
 ];
 
 export function validateProjectEntity(
@@ -778,9 +777,6 @@ export function validateProjectEntity(
         ),
         position: pickNumber(
             body, 'position',
-        ),
-        business_context: pickJsonObjectField(
-            body, 'business_context',
         ),
         timeline_label: pickString(
             body, 'timeline_label',

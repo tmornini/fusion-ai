@@ -21,7 +21,7 @@ globalThis.document = {
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 
-const { Project, jsonObjectField } = await import(
+const { Project } = await import(
     '../api/types.ts'
 );
 const {
@@ -47,7 +47,6 @@ function makeProject(id: string): InstanceType<
         estimated_cost: 0,
         actual_cost: 0,
         position: 0,
-        business_context: jsonObjectField({}),
         timeline_label: 'q1',
     }, 'under-review');
 }

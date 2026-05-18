@@ -52,7 +52,6 @@ function buildProject(
         estimated_cost: 0,
         actual_cost: 0,
         position: 1,
-        business_context: jsonObjectField({}),
         timeline_label: '',
     }, 'approved');
 }

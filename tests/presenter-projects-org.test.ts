@@ -21,7 +21,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 const {
-    Project, jsonObjectField,
+    Project,
 } = await import('../api/types.ts');
 const { DISPLAY_ABSENT } = await import(
     '../web-app/app/format.ts'
@@ -124,7 +124,6 @@ function makeProject(overrides: {
             overrides.estimatedCost ?? 50000,
         actual_cost: 25000,
         position: overrides.position ?? 0,
-        business_context: jsonObjectField({}),
         timeline_label: '',
     }, overrides.state ?? 'approved');
 }
