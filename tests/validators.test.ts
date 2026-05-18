@@ -187,9 +187,6 @@ const validIdea = {
     proposed_solution: 'A solution',
     expected_outcome: 'Better',
     success_metrics: 'Metrics',
-    risks: '[]',
-    assumptions: '[]',
-    alignments: '[]',
 };
 
 test('validateIdeaEntity accepts valid payload', () => {
@@ -240,10 +237,10 @@ test(
     const body = { ...validIdea };
     delete (
         body as Record<string, unknown>
-    )['alignments'];
+    )['expected_outcome'];
     assert.throws(
         () => validateIdeaEntity(body),
-        /missing required key "alignments"/,
+        /missing required key "expected_outcome"/,
     );
 });
 

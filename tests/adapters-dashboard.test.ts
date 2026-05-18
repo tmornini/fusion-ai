@@ -16,7 +16,6 @@ import type {
     ProjectEntity,
     ProjectState,
     FlowEntity,
-    JsonArrayField,
     JsonObjectField,
 } from '../api/types.ts';
 
@@ -40,9 +39,6 @@ function buildIdea(
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        risks: '[]' as JsonArrayField,
-        assumptions: '[]' as JsonArrayField,
-        alignments: '[]' as JsonArrayField,
     };
 }
 

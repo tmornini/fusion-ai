@@ -12,7 +12,6 @@ import {
     postActivity,
     postIdeaStateChange,
     putIdeaSubmission,
-    jsonArrayField,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
 import {
@@ -166,18 +165,6 @@ export async function init():
                             .successMetrics,
                         position:
                             nextPosition,
-                        risks:
-                            jsonArrayField(
-                                [],
-                            ),
-                        assumptions:
-                            jsonArrayField(
-                                [],
-                            ),
-                        alignments:
-                            jsonArrayField(
-                                [],
-                            ),
                     },
                     'active:incomplete',
                 );

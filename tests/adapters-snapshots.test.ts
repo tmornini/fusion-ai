@@ -69,9 +69,6 @@ test(
             proposed_solution: 's',
             expected_outcome: 'o',
             success_metrics: 'm',
-            risks: '[]',
-            assumptions: '[]',
-            alignments: '[]',
         });
         const parsed =
             JSON.parse(await getSnapshot(ctx));

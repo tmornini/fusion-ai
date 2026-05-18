@@ -783,9 +783,6 @@ export async function populateMockData(
                 + ' segmentation time, 25%'
                 + ' increase in campaign'
                 + ' conversion rates',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'cbTuSs0Ex84PeFGSvoAEFZ',
@@ -820,9 +817,6 @@ export async function populateMockData(
                 '90% reduction in report'
                 + ' preparation time,'
                 + ' 100% on-time delivery',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'wuCMQqo4IkEksx7MYmu8g2',
@@ -851,9 +845,6 @@ export async function populateMockData(
                 + ' 20%, saving $150K'
                 + ' annually.',
             success_metrics: '',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'ojOEXtdzdtTZtpM81TxVca',
@@ -888,9 +879,6 @@ export async function populateMockData(
                 + ' under 2 seconds, 95%'
                 + ' daily active usage'
                 + ' by leadership',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'T2vAafLDcshDONlYxpzPLc',
@@ -918,9 +906,6 @@ export async function populateMockData(
                 + ' improving customer'
                 + ' satisfaction scores.',
             success_metrics: '',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'HRYrImq1rBJ5ZRe1T9TAVk',
@@ -952,9 +937,6 @@ export async function populateMockData(
                 '50% faster onboarding,'
                 + ' 40% higher new-hire'
                 + ' productivity scores',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'MCxK0hzT9CPjJx1ZV5unfr',
@@ -987,61 +969,6 @@ export async function populateMockData(
                 + ' rate, CSAT above 4.5,'
                 + ' average response time'
                 + ' under 30 seconds',
-            risks: jsonArrayField([
-                {
-                    title:
-                        'AI response accuracy',
-                    severity: 'high',
-                    mitigation:
-                        'Implement human'
-                        + ' escalation for'
-                        + ' low-confidence'
-                        + ' responses and'
-                        + ' continuous training'
-                        + ' loop',
-                },
-                {
-                    title:
-                        'Integration complexity',
-                    severity: 'medium',
-                    mitigation:
-                        'Phase rollout'
-                        + ' starting with'
-                        + ' FAQ-only queries'
-                        + ' before expanding'
-                        + ' scope',
-                },
-                {
-                    title:
-                        'Customer acceptance',
-                    severity: 'low',
-                    mitigation:
-                        'Clear bot'
-                        + ' identification and'
-                        + ' easy handoff to'
-                        + ' human agents',
-                },
-            ]),
-            assumptions: jsonArrayField([
-                'Current helpdesk API'
-                    + ' supports required'
-                    + ' integrations',
-                'Historical ticket data is'
-                    + ' clean and'
-                    + ' categorizable',
-                'Legal has approved AI'
-                    + ' usage for customer'
-                    + ' interactions',
-            ]),
-            alignments: jsonArrayField([
-                'Q1 OKR: Improve customer'
-                    + ' satisfaction score'
-                    + ' by 15%',
-                'Digital transformation'
-                    + ' initiative',
-                'Cost optimization'
-                    + ' program',
-            ]),
         },
         {
             id: 'SUb4gKXsZ1OsEauzqszg0t',
@@ -1070,9 +997,6 @@ export async function populateMockData(
                 'Opt-out rate below 20%,'
                 + ' 35% higher engagement'
                 + ' on push notifications',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'gxa84W9KvEgD0wT1F4TOM9',
@@ -1099,9 +1023,6 @@ export async function populateMockData(
                 '15% energy cost'
                 + ' reduction, ESG report'
                 + ' delivery on schedule',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: '1Z68gROMrlTAfPEGiyJJAY',
@@ -1131,9 +1052,6 @@ export async function populateMockData(
                 '50% participation'
                 + ' increase, 12% lower'
                 + ' voluntary turnover',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
         {
             id: 'Q2On2xwMpFdzOklBQJXrni',
@@ -1163,9 +1081,6 @@ export async function populateMockData(
                 '99.5% inventory accuracy,'
                 + ' zero manual'
                 + ' reconciliation needed',
-            risks: jsonArrayField([]),
-            assumptions: jsonArrayField([]),
-            alignments: jsonArrayField([]),
         },
     ];
 

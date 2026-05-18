@@ -41,9 +41,6 @@ test('PUT then GET round-trips an entity', async () => {
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        risks: '[]',
-        assumptions: '[]',
-        alignments: '[]',
     };
     await PUT(db, 'ideas/i1', payload);
     const fetched =
@@ -62,8 +59,6 @@ test('DELETE marks entity tombstoned', async () => {
         proposed_solution: '',
         expected_outcome: '',
         success_metrics: '',
-        risks: '[]', assumptions: '[]',
-        alignments: '[]',
     });
     await DELETE(db, 'ideas/i1');
     await assert.rejects(

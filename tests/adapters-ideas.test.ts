@@ -43,9 +43,6 @@ function buildIdea(
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
-        risks: '[]',
-        assumptions: '[]',
-        alignments: '[]',
     };
 }
 

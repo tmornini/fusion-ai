@@ -98,9 +98,6 @@ the `WORKER_STATES` alphabet (`active`, `pending`,
 | proposed_solution | TEXT |
 | expected_outcome | TEXT |
 | success_metrics | TEXT |
-| risks | TEXT (JSON array) |
-| assumptions | TEXT (JSON array) |
-| alignments | TEXT (JSON array) |
 
 Lifecycle state lives in `states` (alphabet
 `IDEA_STATES`): 9 values composite of former status +
@@ -118,13 +115,9 @@ readiness — `active:incomplete`, `active:needs-info`,
 | progress | INTEGER |
 | start_date | TEXT |
 | target_end_date | TEXT |
-| estimated_duration | INTEGER (seconds) |
-| actual_duration | INTEGER (seconds) |
 | estimated_cost | INTEGER |
 | actual_cost | INTEGER |
 | position | REAL |
-| business_context | TEXT (JSON object) |
-| timeline_label | TEXT |
 
 Lifecycle state lives in `states` (alphabet
 `PROJECT_STATES`): `submitted`, `under-review`,

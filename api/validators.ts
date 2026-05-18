@@ -30,12 +30,6 @@ import type {
 } from './types.ts';
 import { assertActivityType } from './types.ts';
 
-export interface Risk {
-    title: string;
-    severity: string;
-    mitigation: string;
-}
-
 const FLOW_FIELD_TYPE_VALUES:
     readonly FlowFieldType[] = [
         'text', 'textarea', 'number',
@@ -217,35 +211,6 @@ validateStringNumberRecordJson(
         );
     }
     return out;
-}
-
-export function validateRisksJson(
-    raw: string,
-): Risk[] {
-    const label = 'risks';
-    const parsed = parseOrThrow(raw, label);
-    const arr = asArray(parsed, label);
-    return arr.map((item, i) => {
-        const itemLabel =
-            label + '[' + i + ']';
-        const obj = asObject(
-            item, itemLabel,
-        );
-        return {
-            title: asString(
-                obj['title'],
-                itemLabel + '.title',
-            ),
-            severity: asString(
-                obj['severity'],
-                itemLabel + '.severity',
-            ),
-            mitigation: asString(
-                obj['mitigation'],
-                itemLabel + '.mitigation',
-            ),
-        };
-    });
 }
 
 function asGraphField(
@@ -553,11 +518,7 @@ export function pickJsonObjectField(
 // "recursive check" that closes the
 // remaining edges. Intentionally deferred
 // here because each column's shape must be
-// enumerated case-by-case (e.g. risks
-// is an array of {title, severity,
-// mitigation} objects — validateRisksJson
-// does deep field validation but not
-// key-count rejection). Bringing those
+// enumerated case-by-case. Bringing those
 // columns under key-count discipline is
 // the next iteration.
 
@@ -687,7 +648,6 @@ const IDEA_BODY_KEYS: readonly string[] = [
     'problem_statement', 'target_users',
     'proposed_solution', 'expected_outcome',
     'success_metrics',
-    'risks', 'assumptions', 'alignments',
 ];
 
 export function validateIdeaEntity(
@@ -717,15 +677,6 @@ export function validateIdeaEntity(
         ),
         success_metrics: pickString(
             body, 'success_metrics',
-        ),
-        risks: pickJsonArrayField(
-            body, 'risks',
-        ),
-        assumptions: pickJsonArrayField(
-            body, 'assumptions',
-        ),
-        alignments: pickJsonArrayField(
-            body, 'alignments',
         ),
     };
 }

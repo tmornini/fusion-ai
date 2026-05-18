@@ -29,10 +29,6 @@ function buildIdea(
         proposed_solution: '',
         expected_outcome: '',
         success_metrics: '',
-        risks: '',
-        assumptions: '',
-        alignments:
-            jsonArrayField([]),
     }, state);
 }
 

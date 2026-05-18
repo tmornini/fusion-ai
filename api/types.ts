@@ -1,11 +1,7 @@
 import {
     validateStringArrayJson,
     validateStringNumberRecordJson,
-    validateRisksJson,
 } from './validators.ts';
-import type { Risk } from './validators.ts';
-
-export type { Risk };
 
 export type Id = string;
 
@@ -601,9 +597,6 @@ export interface IdeaEntity {
     proposed_solution: string;
     expected_outcome: string;
     success_metrics: string;
-    risks: JsonArrayField;
-    assumptions: JsonArrayField;
-    alignments: JsonArrayField;
 }
 
 export type ObjectiveId = Id;
@@ -950,9 +943,6 @@ export class Idea {
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
-    readonly #risks: string;
-    readonly #assumptions: string;
-    readonly #alignments: string;
 
     constructor(
         entity: IdeaEntity,
@@ -972,9 +962,6 @@ export class Idea {
             entity.expected_outcome;
         this.#successMetrics =
             entity.success_metrics;
-        this.#risks = entity.risks;
-        this.#assumptions = entity.assumptions;
-        this.#alignments = entity.alignments;
     }
 
     isReviewable(): boolean {
@@ -1000,26 +987,6 @@ export class Idea {
         return (
             IDEA_STATE_CONFIG[this.#state]
         )!.className;
-    }
-
-    parsedRisks(): Risk[] {
-        return validateRisksJson(
-            this.#risks,
-        );
-    }
-
-    parsedAssumptions(): string[] {
-        return validateStringArrayJson(
-            this.#assumptions,
-            'idea.assumptions',
-        );
-    }
-
-    parsedAlignments(): string[] {
-        return validateStringArrayJson(
-            this.#alignments,
-            'idea.alignments',
-        );
     }
 
     matchesSearch(term: string): boolean {
