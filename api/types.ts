@@ -530,10 +530,6 @@ export class AIWorker {
         return this.#description;
     }
 
-    createdAtIso(): string {
-        return this.#createdAt;
-    }
-
     maskedToken(): string {
         const t = this.#authToken;
         if (t.length <= 4) return t;
