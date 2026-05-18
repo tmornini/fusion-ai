@@ -1600,20 +1600,8 @@ export async function populateMockData(
                 + ' feedback themes.',
         },
         {
-            id: 'fOqTfg9JPs73xsnC4QUmHs',
-            type: 'comment_added',
-            action: 'commented on',
-            target:
-                'Q1 Analytics Dashboard',
-            timestamp: dt(0, 16, 0),
-            status: 'active',
-            feedback:
-                'Great progress on the'
-                + ' charts!',
-        },
-        {
             id: '3pBQbQp4LPK2udgd21HlTm',
-            type: 'user_joined',
+            type: 'person_joined',
             action: 'joined the team',
             target: 'Product Innovation',
             timestamp: dt(0, 15, 0),

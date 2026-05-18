@@ -310,6 +310,16 @@ test(
     );
 });
 
+test(
+    'validateActivityEntity rejects unknown type',
+    () => {
+    const body = { ...validActivity, type: 'bogus' };
+    assert.throws(
+        () => validateActivityEntity(body),
+        /expected ActivityType for ActivityEntity\.type/,
+    );
+});
+
 // --- FlowEntity ---
 
 const validFlow = {

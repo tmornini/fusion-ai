@@ -665,7 +665,7 @@ export interface ProjectEntity {
 
 export interface ActivityEntity {
     id: Id;
-    type: string;
+    type: ActivityType;
     action: string;
     target: string;
     timestamp: string;

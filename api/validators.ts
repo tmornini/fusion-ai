@@ -28,6 +28,7 @@ import type {
     ProjectObjectiveActualScore,
     StateEntity,
 } from './types.ts';
+import { assertActivityType } from './types.ts';
 
 export interface Risk {
     title: string;
@@ -802,8 +803,9 @@ export function validateActivityEntity(
         'ActivityEntity',
     );
     return {
-        type: pickString(
-            body, 'type',
+        type: assertActivityType(
+            pickString(body, 'type'),
+            'ActivityEntity.type',
         ),
         action: pickString(
             body, 'action',
