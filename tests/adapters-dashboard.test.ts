@@ -72,7 +72,6 @@ function buildProject(
         estimated_cost: 1000,
         actual_cost: 500,
         position: 1,
-        timeline_label: '',
     };
     const { id: _drop, ...rest } = {
         ...base, ...overrides, id,

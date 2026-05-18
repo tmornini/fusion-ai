@@ -39,7 +39,6 @@ function buildProject(
         estimated_cost: 50000,
         actual_cost: 12000,
         position: 1,
-        timeline_label: 'Q1-Q4',
     };
     const { id: _drop, ...rest } = {
         ...base, ...overrides, id,
@@ -93,7 +92,6 @@ test(
         assert.equal(row.estimated_cost, 99000);
         assert.equal(row.actual_cost, 12000);
         assert.equal(row.position, 1);
-        assert.equal(row.timeline_label, 'Q1-Q4');
     },
 );
 

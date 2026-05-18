@@ -11,7 +11,6 @@ const project = {
     estimated_duration: 0, actual_duration: 0,
     estimated_cost: 0, actual_cost: 0,
     position: 0,
-    timeline_label: 'q1',
 };
 
 const activeObjs = [

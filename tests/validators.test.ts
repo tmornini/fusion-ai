@@ -260,7 +260,6 @@ const validProject = {
     estimated_cost: 1000,
     actual_cost: 0,
     position: 1,
-    timeline_label: 'Q1',
 };
 
 test('validateProjectEntity accepts valid payload', () => {

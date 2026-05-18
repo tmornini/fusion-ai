@@ -655,7 +655,6 @@ export interface ProjectEntity {
     estimated_cost: number;
     actual_cost: number;
     position: number;
-    timeline_label: string;
 }
 
 export interface ActivityEntity {
@@ -1087,7 +1086,6 @@ export class Project {
     readonly #estimatedCost: number;
     readonly #actualCost: number;
     readonly #position: number;
-    readonly #timelineLabel: string;
 
     constructor(
         entity: ProjectEntity,
@@ -1112,8 +1110,6 @@ export class Project {
         this.#actualCost =
             entity.actual_cost;
         this.#position = entity.position;
-        this.#timelineLabel =
-            entity.timeline_label;
     }
 
     isDeleted(): boolean {

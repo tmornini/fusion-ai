@@ -1220,7 +1220,6 @@ export async function populateMockData(
             estimated_cost: 88000,
             actual_cost: 51000,
             position: 1,
-            timeline_label: 'On Track',
         },
         {
             id: 'jRE2Tj32NHsFGZIeEADp0p',
@@ -1241,7 +1240,6 @@ export async function populateMockData(
             estimated_cost: 56000,
             actual_cost: 58000,
             position: 2,
-            timeline_label: 'Completed',
         },
         {
             id: l2cProjectId,
@@ -1264,7 +1262,6 @@ export async function populateMockData(
             estimated_cost: 78000,
             actual_cost: 48000,
             position: 3,
-            timeline_label: 'On Track',
         },
         {
             id: 'P04PredMa1ntzyXY010203',
@@ -1285,7 +1282,6 @@ export async function populateMockData(
             estimated_cost: 110000,
             actual_cost: 7000,
             position: 4,
-            timeline_label: 'Just Started',
         },
         {
             id: 'P05RtAna1ytcsXY010203Z',
@@ -1306,7 +1302,6 @@ export async function populateMockData(
             estimated_cost: 50000,
             actual_cost: 52000,
             position: 5,
-            timeline_label: 'Completed',
         },
         {
             id: 'P06SmInvOptZyXY010203A',
@@ -1327,7 +1322,6 @@ export async function populateMockData(
             estimated_cost: 64000,
             actual_cost: 84000,
             position: 6,
-            timeline_label: 'Over Budget',
         },
         {
             id: 'P07Empl0yTrainZyXY00B0',
@@ -1350,7 +1344,6 @@ export async function populateMockData(
             estimated_cost: 60000,
             actual_cost: 3500,
             position: 7,
-            timeline_label: 'Just Started',
         },
         {
             id: 'P08CustSuppKn0wXY01C0D',
@@ -1372,7 +1365,6 @@ export async function populateMockData(
             estimated_cost: 64000,
             actual_cost: 42000,
             position: 8,
-            timeline_label: 'On Track',
         },
         {
             id: 'P09C0mp1AudAut0mXY01E0',
@@ -1394,7 +1386,6 @@ export async function populateMockData(
             estimated_cost: 102000,
             actual_cost: 142000,
             position: 9,
-            timeline_label: 'Over Budget',
         },
         {
             id: 'P10MlRgD1s4stRc1XY01FG',
@@ -1415,7 +1406,6 @@ export async function populateMockData(
             estimated_cost: 134000,
             actual_cost: 99000,
             position: 10,
-            timeline_label: 'On Track',
         },
         {
             id: 'P11V0iceField0psXY01HJ',
@@ -1437,7 +1427,6 @@ export async function populateMockData(
             estimated_cost: 76000,
             actual_cost: 36000,
             position: 11,
-            timeline_label: 'On Track',
         },
         {
             id: 'P12CarbF00tprXY01K0L0M',
@@ -1459,7 +1448,6 @@ export async function populateMockData(
             estimated_cost: 62000,
             actual_cost: 56000,
             position: 12,
-            timeline_label: 'Completed',
         },
         {
             id: 'P13W0rk4rcF0r3castsXY1',
@@ -1480,7 +1468,6 @@ export async function populateMockData(
             estimated_cost: 90000,
             actual_cost: 8500,
             position: 13,
-            timeline_label: 'Just Started',
         },
         {
             id: 'P14SmartD0cumtR0utngX1',
@@ -1501,7 +1488,6 @@ export async function populateMockData(
             estimated_cost: 70000,
             actual_cost: 45000,
             position: 14,
-            timeline_label: 'On Track',
         },
         {
             id: 'P15Inv3st0rRep0rtP1Y00',
@@ -1523,7 +1509,6 @@ export async function populateMockData(
             estimated_cost: 56000,
             actual_cost: 34000,
             position: 15,
-            timeline_label: 'On Track',
         },
     ];
 

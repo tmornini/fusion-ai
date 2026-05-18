@@ -491,7 +491,6 @@ async function performConversion(
             ),
             actual_cost: 0,
             position: 0,
-            timeline_label: '',
         },
         'submitted',
         ideaEntity,

@@ -736,7 +736,6 @@ const PROJECT_BODY_KEYS: readonly string[] = [
     'target_end_date', 'estimated_duration',
     'actual_duration', 'estimated_cost',
     'actual_cost', 'position',
-    'timeline_label',
 ];
 
 export function validateProjectEntity(
@@ -777,9 +776,6 @@ export function validateProjectEntity(
         ),
         position: pickNumber(
             body, 'position',
-        ),
-        timeline_label: pickString(
-            body, 'timeline_label',
         ),
     };
 }

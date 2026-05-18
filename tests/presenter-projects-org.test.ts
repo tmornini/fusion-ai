@@ -124,7 +124,6 @@ function makeProject(overrides: {
             overrides.estimatedCost ?? 50000,
         actual_cost: 25000,
         position: overrides.position ?? 0,
-        timeline_label: '',
     }, overrides.state ?? 'approved');
 }
 

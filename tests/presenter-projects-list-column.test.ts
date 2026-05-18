@@ -47,7 +47,6 @@ function makeProject(id: string): InstanceType<
         estimated_cost: 0,
         actual_cost: 0,
         position: 0,
-        timeline_label: 'q1',
     }, 'under-review');
 }
 

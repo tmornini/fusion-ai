@@ -148,7 +148,6 @@ test('validateProjectEntity ignores legacy impact fields',
             estimated_cost: 0,
             actual_cost: 0,
             position: 0,
-            timeline_label: 'q1',
         };
         const v = validateProjectEntity(baseValid);
         assert.equal(
