@@ -118,8 +118,6 @@ function makeProject(overrides: {
         progress: overrides.progress ?? 42,
         start_date: '2026-01-01',
         target_end_date: '2026-06-01',
-        estimated_duration: 0,
-        actual_duration: 0,
         estimated_cost:
             overrides.estimatedCost ?? 50000,
         actual_cost: 25000,

@@ -34,8 +34,6 @@ function buildProject(
         progress: 25,
         start_date: '2026-01-01',
         target_end_date: '2026-12-31',
-        estimated_duration: 86400 * 100,
-        actual_duration: 86400 * 40,
         estimated_cost: 50000,
         actual_cost: 12000,
         position: 1,

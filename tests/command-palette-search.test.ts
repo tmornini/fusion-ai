@@ -47,8 +47,6 @@ function buildProject(
         start_date: '2026-01-01T00:00:00Z',
         target_end_date:
             '2026-06-01T00:00:00Z',
-        estimated_duration: 0,
-        actual_duration: 0,
         estimated_cost: 0,
         actual_cost: 0,
         position: 1,

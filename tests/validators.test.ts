@@ -255,8 +255,6 @@ const validProject = {
     progress: 0,
     start_date: '2024-01-01',
     target_end_date: '2024-12-31',
-    estimated_duration: 86400,
-    actual_duration: 0,
     estimated_cost: 1000,
     actual_cost: 0,
     position: 1,

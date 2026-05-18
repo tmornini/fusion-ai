@@ -20,10 +20,6 @@ deserialized back on read. The in-memory and API-boundary
 shape is always a real boolean; the `0`|`1` form never
 escapes the storage layer.
 
-**Duration convention:** All numeric duration fields are
-persisted in seconds. UI displays days via
-`durationInDays(seconds)` from `format.ts`.
-
 **Timestamp convention:** TEXT columns storing timestamps
 use RFC-3339 Zulu format (e.g.,
 `2024-01-15T09:30:00.000000Z`). Temporal facts belong in

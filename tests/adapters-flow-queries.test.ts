@@ -118,8 +118,6 @@ function putProject(
         progress: 0,
         start_date: '2026-01-01',
         target_end_date: '2026-12-31',
-        estimated_duration: 0,
-        actual_duration: 0,
         estimated_cost: 0,
         actual_cost: 0,
         position: 0,

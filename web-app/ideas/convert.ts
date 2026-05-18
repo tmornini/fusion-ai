@@ -483,8 +483,6 @@ async function performConversion(
                 fields['start-date'],
             target_end_date:
                 fields['target-end-date'],
-            estimated_duration: 0,
-            actual_duration: 0,
             estimated_cost: parseFiniteNumber(
                 'cost',
                 fields['cost'],

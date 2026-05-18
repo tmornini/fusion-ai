@@ -272,12 +272,6 @@ export const MS_PER_DAY =
     SECONDS_PER_DAY * MS_PER_SECOND;
 export const COST_DIVISOR = 1000;
 
-export function durationInDays(
-    seconds: number,
-): number {
-    return Math.ceil(seconds / SECONDS_PER_DAY);
-}
-
 const BILLION = 1_000_000_000;
 const MILLION = 1_000_000;
 const THOUSAND = 1_000;
@@ -650,8 +644,6 @@ export interface ProjectEntity {
     progress: number;
     start_date: string;
     target_end_date: string;
-    estimated_duration: number; // seconds
-    actual_duration: number; // seconds
     estimated_cost: number;
     actual_cost: number;
     position: number;
@@ -1081,8 +1073,6 @@ export class Project {
     readonly #progress: number;
     readonly #startDate: string;
     readonly #targetEndDate: string;
-    readonly #estimatedDuration: number;
-    readonly #actualDuration: number;
     readonly #estimatedCost: number;
     readonly #actualCost: number;
     readonly #position: number;
@@ -1101,10 +1091,6 @@ export class Project {
             entity.start_date;
         this.#targetEndDate =
             entity.target_end_date;
-        this.#estimatedDuration =
-            entity.estimated_duration;
-        this.#actualDuration =
-            entity.actual_duration;
         this.#estimatedCost =
             entity.estimated_cost;
         this.#actualCost =
@@ -1114,23 +1100,6 @@ export class Project {
 
     isDeleted(): boolean {
         return this.#state === 'deleted';
-    }
-
-    isOverdue(): boolean {
-        return this.#actualDuration
-            > this.#estimatedDuration;
-    }
-
-    estimatedDurationDays(): number {
-        return durationInDays(
-            this.#estimatedDuration,
-        );
-    }
-
-    actualDurationDays(): number {
-        return durationInDays(
-            this.#actualDuration,
-        );
     }
 
     timelineProgress(): number {

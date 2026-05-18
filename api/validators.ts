@@ -733,8 +733,7 @@ export function validateIdeaEntity(
 const PROJECT_BODY_KEYS: readonly string[] = [
     'title', 'description',
     'progress', 'start_date',
-    'target_end_date', 'estimated_duration',
-    'actual_duration', 'estimated_cost',
+    'target_end_date', 'estimated_cost',
     'actual_cost', 'position',
 ];
 
@@ -761,12 +760,6 @@ export function validateProjectEntity(
         ),
         target_end_date: pickString(
             body, 'target_end_date',
-        ),
-        estimated_duration: pickNumber(
-            body, 'estimated_duration',
-        ),
-        actual_duration: pickNumber(
-            body, 'actual_duration',
         ),
         estimated_cost: pickNumber(
             body, 'estimated_cost',

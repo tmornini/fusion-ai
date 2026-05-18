@@ -144,8 +144,6 @@ is HTTP-only.
   user actor reference this worker.
 - **State**: Module-level vars + pub-sub for theme, mobile, auth,
   sidebar.
-- **Durations**: Persisted in seconds; UI displays days via
-  `durationInDays(seconds)`.
 - **Read-only siblings of editable pages**: `flow-stats.html` is a
   flat, non-editable rendering of one flow's diagram (heat-tinted by
   share of trailing-90-day flow time, with a hover/click stat card
@@ -480,11 +478,10 @@ import { navigateTo, openDialog, closeDialog } from '../app/core';
 
 `core.ts` re-exports from `format.ts`, `navigation.ts`, and
 `dialog.ts` so page modules can import `navigateTo`,
-`initials`, `durationInDays`, `formatDateTime`,
-`formatCompactCurrency`, `SECONDS_PER_DAY`, `openDialog`,
-`closeDialog`, `initTabs` from `'../app/core'`. The
-`adapters/` directory retains its barrel re-export
-(`adapters/index.ts`).
+`initials`, `formatDateTime`, `formatCompactCurrency`,
+`SECONDS_PER_DAY`, `openDialog`, `closeDialog`, `initTabs`
+from `'../app/core'`. The `adapters/` directory retains
+its barrel re-export (`adapters/index.ts`).
 
 **Page modules never import from `api/api.ts`** — all data
 access (reads and writes) goes through the adapter layer

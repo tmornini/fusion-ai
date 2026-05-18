@@ -1213,10 +1213,6 @@ export async function populateMockData(
             progress: 67,
             start_date: dt(60, 9, 0),
             target_end_date: dt(-30, 9, 0),
-            estimated_duration:
-                160 * SECONDS_PER_HOUR,
-            actual_duration:
-                92 * SECONDS_PER_HOUR,
             estimated_cost: 88000,
             actual_cost: 51000,
             position: 1,
@@ -1233,10 +1229,6 @@ export async function populateMockData(
             progress: 100,
             start_date: dt(110, 9, 0),
             target_end_date: dt(45, 9, 0),
-            estimated_duration:
-                80 * SECONDS_PER_HOUR,
-            actual_duration:
-                75 * SECONDS_PER_HOUR,
             estimated_cost: 56000,
             actual_cost: 58000,
             position: 2,
@@ -1255,10 +1247,6 @@ export async function populateMockData(
             progress: 69,
             start_date: dt(55, 9, 0),
             target_end_date: dt(-25, 9, 0),
-            estimated_duration:
-                144 * SECONDS_PER_HOUR,
-            actual_duration:
-                88 * SECONDS_PER_HOUR,
             estimated_cost: 78000,
             actual_cost: 48000,
             position: 3,
@@ -1275,10 +1263,6 @@ export async function populateMockData(
             progress: 17,
             start_date: dt(18, 9, 0),
             target_end_date: dt(-90, 9, 0),
-            estimated_duration:
-                220 * SECONDS_PER_HOUR,
-            actual_duration:
-                12 * SECONDS_PER_HOUR,
             estimated_cost: 110000,
             actual_cost: 7000,
             position: 4,
@@ -1295,10 +1279,6 @@ export async function populateMockData(
             progress: 100,
             start_date: dt(95, 9, 0),
             target_end_date: dt(40, 9, 0),
-            estimated_duration:
-                64 * SECONDS_PER_HOUR,
-            actual_duration:
-                70 * SECONDS_PER_HOUR,
             estimated_cost: 50000,
             actual_cost: 52000,
             position: 5,
@@ -1315,10 +1295,6 @@ export async function populateMockData(
             progress: 76,
             start_date: dt(38, 9, 0),
             target_end_date: dt(-12, 9, 0),
-            estimated_duration:
-                96 * SECONDS_PER_HOUR,
-            actual_duration:
-                28 * SECONDS_PER_HOUR,
             estimated_cost: 64000,
             actual_cost: 84000,
             position: 6,
@@ -1337,10 +1313,6 @@ export async function populateMockData(
             progress: 10,
             start_date: dt(12, 9, 0),
             target_end_date: dt(-110, 9, 0),
-            estimated_duration:
-                96 * SECONDS_PER_HOUR,
-            actual_duration:
-                6 * SECONDS_PER_HOUR,
             estimated_cost: 60000,
             actual_cost: 3500,
             position: 7,
@@ -1358,10 +1330,6 @@ export async function populateMockData(
             progress: 69,
             start_date: dt(48, 9, 0),
             target_end_date: dt(-22, 9, 0),
-            estimated_duration:
-                110 * SECONDS_PER_HOUR,
-            actual_duration:
-                65 * SECONDS_PER_HOUR,
             estimated_cost: 64000,
             actual_cost: 42000,
             position: 8,
@@ -1379,10 +1347,6 @@ export async function populateMockData(
             progress: 86,
             start_date: dt(72, 9, 0),
             target_end_date: dt(-12, 9, 0),
-            estimated_duration:
-                180 * SECONDS_PER_HOUR,
-            actual_duration:
-                122 * SECONDS_PER_HOUR,
             estimated_cost: 102000,
             actual_cost: 142000,
             position: 9,
@@ -1399,10 +1363,6 @@ export async function populateMockData(
             progress: 91,
             start_date: dt(82, 9, 0),
             target_end_date: dt(-8, 9, 0),
-            estimated_duration:
-                240 * SECONDS_PER_HOUR,
-            actual_duration:
-                168 * SECONDS_PER_HOUR,
             estimated_cost: 134000,
             actual_cost: 99000,
             position: 10,
@@ -1420,10 +1380,6 @@ export async function populateMockData(
             progress: 53,
             start_date: dt(40, 9, 0),
             target_end_date: dt(-35, 9, 0),
-            estimated_duration:
-                132 * SECONDS_PER_HOUR,
-            actual_duration:
-                58 * SECONDS_PER_HOUR,
             estimated_cost: 76000,
             actual_cost: 36000,
             position: 11,
@@ -1441,10 +1397,6 @@ export async function populateMockData(
             progress: 100,
             start_date: dt(120, 9, 0),
             target_end_date: dt(35, 9, 0),
-            estimated_duration:
-                100 * SECONDS_PER_HOUR,
-            actual_duration:
-                90 * SECONDS_PER_HOUR,
             estimated_cost: 62000,
             actual_cost: 56000,
             position: 12,
@@ -1461,10 +1413,6 @@ export async function populateMockData(
             progress: 17,
             start_date: dt(22, 9, 0),
             target_end_date: dt(-105, 9, 0),
-            estimated_duration:
-                160 * SECONDS_PER_HOUR,
-            actual_duration:
-                14 * SECONDS_PER_HOUR,
             estimated_cost: 90000,
             actual_cost: 8500,
             position: 13,
@@ -1481,10 +1429,6 @@ export async function populateMockData(
             progress: 78,
             start_date: dt(65, 9, 0),
             target_end_date: dt(-18, 9, 0),
-            estimated_duration:
-                120 * SECONDS_PER_HOUR,
-            actual_duration:
-                78 * SECONDS_PER_HOUR,
             estimated_cost: 70000,
             actual_cost: 45000,
             position: 14,
@@ -1502,10 +1446,6 @@ export async function populateMockData(
             progress: 67,
             start_date: dt(58, 9, 0),
             target_end_date: dt(-28, 9, 0),
-            estimated_duration:
-                100 * SECONDS_PER_HOUR,
-            actual_duration:
-                60 * SECONDS_PER_HOUR,
             estimated_cost: 56000,
             actual_cost: 34000,
             position: 15,
