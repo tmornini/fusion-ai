@@ -13,6 +13,7 @@ import {
     toneForScore,
 } from '../scoring-format.ts';
 import { formatDateTime } from '../core.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
 
 export type DefinitionResolver = (
     objectiveId: ObjectiveId,
@@ -169,8 +170,8 @@ export class ProjectScoreHistoryPresenter {
                 return html`<tr>
                     ${dateCell}
                     <td>Objective deprecated</td>
-                    <td>${def?.name ?? '—'}</td>
-                    <td>—</td>
+                    <td>${def?.name ?? DISPLAY_ABSENT}</td>
+                    <td>${DISPLAY_ABSENT}</td>
                 </tr>`;
             }
         }

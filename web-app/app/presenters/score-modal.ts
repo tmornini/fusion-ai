@@ -5,6 +5,7 @@ import type {
     ObjectiveId,
     ProjectObjectiveBaselineScore,
 } from '../../../api/types.ts';
+import { DISPLAY_ABSENT } from '../format.ts';
 
 interface Definition {
     name: string;
@@ -106,7 +107,7 @@ export class ScoreModalPresenter {
                         isUnset ? ' unset' : ''
                     }">
                 <span class="score-value">
-                    ${isUnset ? '—' : value}
+                    ${isUnset ? DISPLAY_ABSENT : value}
                 </span>
                 ${isUnset
                     ? html`<span class="score-hint">
