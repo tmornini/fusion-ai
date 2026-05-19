@@ -1095,13 +1095,10 @@ export async function populateMockData(
             seats: 25,
             used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
-            projects_current: 12,
             ideas_limit: TIER_IDEAS_LIMIT,
-            ideas_current: 47,
             health_score: 92,
             health_status: 'excellent',
             last_activity: dt(0, 16, 0),
-            active_people: 14,
         }),
     ]);
 
@@ -6184,13 +6181,10 @@ export async function populateBootstrapData(
             seats: 25,
             used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
-            projects_current: 12,
             ideas_limit: TIER_IDEAS_LIMIT,
-            ideas_current: 47,
             health_score: 92,
             health_status: 'excellent',
             last_activity: dt(0, 16, 0),
-            active_people: 14,
         }),
     ]);
 }

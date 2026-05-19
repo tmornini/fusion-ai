@@ -136,14 +136,19 @@ function makeOrg() {
         seats: 50,
         used_seats: 12,
         projects_limit: 100,
-        projects_current: 8,
         ideas_limit: 200,
-        ideas_current: 30,
         health_score: 92,
         health_status: 'Healthy',
         last_activity: '2026-05-01',
-        active_people: 12,
     });
+}
+
+function makeStats() {
+    return {
+        projectsCurrent: 8,
+        ideasCurrent: 30,
+        activePeopleCount: 12,
+    };
 }
 
 // ---- ProjectPresenter (project.ts) ----
@@ -375,7 +380,7 @@ test(
     + ' action',
     () => {
         const out = new OrganizationPresenter(
-            makeOrg(),
+            makeOrg(), makeStats(),
         ).buildPage().toString();
         assert.match(out, /Acme Innovations/);
         assert.match(out, /acme\.example/);
@@ -394,7 +399,7 @@ test(
     + ' current/limit values',
     () => {
         const out = new OrganizationPresenter(
-            makeOrg(),
+            makeOrg(), makeStats(),
         ).buildPage().toString();
         assert.match(out, /Active People/);
         assert.match(out, /Projects/);
@@ -413,7 +418,9 @@ test(
     () => {
         const org = makeOrg();
         const out = new OrganizationEditPresenter(
-            org, org.toGeneralInfoDraft(),
+            org,
+            makeStats(),
+            org.toGeneralInfoDraft(),
         ).buildPage().toString();
         assert.match(out, /data-org-field="name"/);
         assert.match(

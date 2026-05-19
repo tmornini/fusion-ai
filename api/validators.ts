@@ -940,10 +940,8 @@ const ORGANIZATION_BODY_KEYS:
     'name', 'domain',
     'plan', 'plan_status', 'next_billing',
     'seats', 'used_seats', 'projects_limit',
-    'projects_current', 'ideas_limit',
-    'ideas_current', 'health_score',
+    'ideas_limit', 'health_score',
     'health_status', 'last_activity',
-    'active_people',
 ];
 
 export function validateOrganizationEntity(
@@ -979,14 +977,8 @@ export function validateOrganizationEntity(
         projects_limit: pickNumber(
             body, 'projects_limit',
         ),
-        projects_current: pickNumber(
-            body, 'projects_current',
-        ),
         ideas_limit: pickNumber(
             body, 'ideas_limit',
-        ),
-        ideas_current: pickNumber(
-            body, 'ideas_current',
         ),
         health_score: pickNumber(
             body, 'health_score',
@@ -996,9 +988,6 @@ export function validateOrganizationEntity(
         ),
         last_activity: pickString(
             body, 'last_activity',
-        ),
-        active_people: pickNumber(
-            body, 'active_people',
         ),
     };
 }

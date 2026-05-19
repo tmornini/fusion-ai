@@ -776,13 +776,10 @@ export interface OrganizationEntity {
     seats: number;
     used_seats: number;
     projects_limit: number;
-    projects_current: number;
     ideas_limit: number;
-    ideas_current: number;
     health_score: number;
     health_status: string;
     last_activity: string;
-    active_people: number;
 }
 
 export interface IdeaSubmissionEntity {

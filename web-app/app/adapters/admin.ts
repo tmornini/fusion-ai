@@ -5,6 +5,9 @@ import {
     formatDate,
 } from '../format.ts';
 import type { RequestContext } from './shared.ts';
+import { getProjects } from './projects.ts';
+import { getIdeas } from './ideas.ts';
+import { getHumanWorkers } from './workers.ts';
 
 export type {
     OrganizationEntity,
@@ -80,16 +83,8 @@ export class Organization {
         return this.#entity.seats;
     }
 
-    projectsCurrent(): number {
-        return this.#entity.projects_current;
-    }
-
     projectsLimit(): number {
         return this.#entity.projects_limit;
-    }
-
-    ideasCurrent(): number {
-        return this.#entity.ideas_current;
     }
 
     ideasLimit(): number {
@@ -105,10 +100,6 @@ export class Organization {
     lastActivityText(): string {
         return this.#entity.last_activity;
     }
-
-    activePeopleCount(): number {
-        return this.#entity.active_people;
-    }
 }
 
 export async function getOrganization(
@@ -117,6 +108,43 @@ export async function getOrganization(
     const entity =
         await getOrganizationRow(ctx);
     return new Organization(entity);
+}
+
+export interface OrganizationStats {
+    projectsCurrent: number;
+    ideasCurrent: number;
+    activePeopleCount: number;
+}
+
+// Live counts computed from the source tables. The
+// state-log filters in getProjects / getIdeas /
+// getHumanWorkers already drop deleted rows; we
+// further narrow projects to exclude 'declined',
+// ideas to exclude 'archived', and people to keep
+// only 'active'. The log is the truth — no stale
+// denormalized counter sits between this reader
+// and the entities it counts.
+export async function getOrganizationStats(
+    ctx: RequestContext,
+): Promise<OrganizationStats> {
+    const [projects, ideas, humans] =
+        await Promise.all([
+            getProjects(ctx),
+            getIdeas(ctx),
+            getHumanWorkers(ctx),
+        ]);
+    const projectsCurrent = projects.filter(
+        p => p.stateValue() !== 'declined',
+    ).length;
+    const ideasCurrent = ideas.length;
+    const activePeopleCount = humans.filter(
+        h => h.stateValue() === 'active',
+    ).length;
+    return {
+        projectsCurrent,
+        ideasCurrent,
+        activePeopleCount,
+    };
 }
 
 export interface GeneralInfoDraft {

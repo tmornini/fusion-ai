@@ -248,13 +248,10 @@ Singleton table (single row, `id = '1'`).
 | seats | INTEGER |
 | used_seats | INTEGER |
 | projects_limit | INTEGER |
-| projects_current | INTEGER |
 | ideas_limit | INTEGER |
-| ideas_current | INTEGER |
 | health_score | INTEGER |
 | health_status | TEXT |
 | last_activity | TEXT |
-| active_people | INTEGER |
 
 ## Relationships
 

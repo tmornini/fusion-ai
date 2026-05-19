@@ -518,13 +518,10 @@ const validOrg = {
     seats: 10,
     used_seats: 5,
     projects_limit: 50,
-    projects_current: 3,
     ideas_limit: 200,
-    ideas_current: 10,
     health_score: 85,
     health_status: 'healthy',
     last_activity: '2024-01-01T00:00:00Z',
-    active_people: 5,
 };
 
 test(
@@ -569,10 +566,10 @@ test(
     const body = { ...validOrg };
     delete (
         body as Record<string, unknown>
-    )['active_people'];
+    )['last_activity'];
     assert.throws(
         () => validateOrganizationEntity(body),
-        /missing required key "active_people"/,
+        /missing required key "last_activity"/,
     );
 });
 
