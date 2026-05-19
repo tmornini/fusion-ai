@@ -351,8 +351,6 @@ function generateFlowWorkload(args: {
             display_id: displayId,
             flow_graph: frozenFlowGraph,
             position: 100 + i,
-            created_at:
-                isoFromMs(createdAtMs),
         });
         flowWorkOrders.push({
             id: b62Id(rng, 22),
@@ -2803,7 +2801,6 @@ export async function populateMockData(
                 ).edges,
             }),
             position: 1,
-            created_at: woCreated,
         },
         // ── happy-path runs (WO02-WO23) ──────────
         // Create → Data Capture → Review → Archive.
@@ -2815,154 +2812,132 @@ export async function populateMockData(
             display_id: 'b2d4f6a8',
             flow_graph: woGraph(),
             position: 2,
-            created_at: dt(88, 9, 0),
         },
         {
             id: 'taUp8y0cuMhzf0UOk6Ev8Y',
             display_id: 'c3e5g7b9',
             flow_graph: woGraph(),
             position: 3,
-            created_at: dt(82, 10, 0),
         },
         {
             id: 'KD2WFTEwzJFvxZ6cpCwpvc',
             display_id: 'd4f6h8c0',
             flow_graph: woGraph(),
             position: 4,
-            created_at: dt(76, 8, 30),
         },
         {
             id: 'b6YNHrFyi6V9dJNXyCXu1K',
             display_id: 'e5g7i9d1',
             flow_graph: woGraph(),
             position: 5,
-            created_at: dt(71, 9, 0),
         },
         {
             id: 'V3AXXlSjJwDQAmkNiRA8aP',
             display_id: 'f6h8j0e2',
             flow_graph: woGraph(),
             position: 6,
-            created_at: dt(66, 11, 0),
         },
         {
             id: '9ooK5olzSsEnpgP8ASzBQi',
             display_id: 'g7i9k1f3',
             flow_graph: woGraph(),
             position: 7,
-            created_at: dt(61, 9, 30),
         },
         {
             id: 'cnXN4DZx9dUVIZL4OZnyw0',
             display_id: 'h8j0l2g4',
             flow_graph: woGraph(),
             position: 8,
-            created_at: dt(57, 8, 0),
         },
         {
             id: 'kKw82RQDHRfgg5xQnw1lPk',
             display_id: 'i9k1m3h5',
             flow_graph: woGraph(),
             position: 9,
-            created_at: dt(52, 10, 0),
         },
         {
             id: 'ec0n7Ab6pJYLFDF6H0nyvV',
             display_id: 'j0l2n4i6',
             flow_graph: woGraph(),
             position: 10,
-            created_at: dt(48, 9, 0),
         },
         {
             id: 'gAjJnjirIrIgcFDMJyNsPa',
             display_id: 'k1m3o5j7',
             flow_graph: woGraph(),
             position: 11,
-            created_at: dt(44, 10, 30),
         },
         {
             id: 'kyWtMAZPazKqAfIwPzACsL',
             display_id: 'l2n4p6k8',
             flow_graph: woGraph(),
             position: 12,
-            created_at: dt(40, 9, 0),
         },
         {
             id: 'C41Hni5pMxp8xMQFEGNaib',
             display_id: 'm3o5q7l9',
             flow_graph: woGraph(),
             position: 13,
-            created_at: dt(37, 8, 0),
         },
         {
             id: 'FGAZYYwoS9To1tNb24DfLc',
             display_id: 'n4p6r8m0',
             flow_graph: woGraph(),
             position: 14,
-            created_at: dt(33, 9, 30),
         },
         {
             id: '0zgLwuyPgtreVYjg4TScJR',
             display_id: 'o5q7s9n1',
             flow_graph: woGraph(),
             position: 15,
-            created_at: dt(29, 10, 0),
         },
         {
             id: 'XGJklKFO4aUtjSAEHEE8Zn',
             display_id: 'p6r8t0o2',
             flow_graph: woGraph(),
             position: 16,
-            created_at: dt(26, 9, 0),
         },
         {
             id: 'rtuFD9uWn5zguEHyT3fh8s',
             display_id: 'q7s9u1p3',
             flow_graph: woGraph(),
             position: 17,
-            created_at: dt(23, 8, 30),
         },
         {
             id: 'XrO05MeyqldO8qm0O4VPdq',
             display_id: 'r8t0v2q4',
             flow_graph: woGraph(),
             position: 18,
-            created_at: dt(20, 10, 0),
         },
         {
             id: 'S74N7CPA2dsMESryJNrFAC',
             display_id: 's9u1w3r5',
             flow_graph: woGraph(),
             position: 19,
-            created_at: dt(17, 9, 0),
         },
         {
             id: 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             display_id: 't0v2x4s6',
             flow_graph: woGraph(),
             position: 20,
-            created_at: dt(14, 8, 0),
         },
         {
             id: '4T56gYme7ae4Ya7AMA0hpW',
             display_id: 'u1w3y5t7',
             flow_graph: woGraph(),
             position: 21,
-            created_at: dt(11, 10, 30),
         },
         {
             id: 'aFCyJrvokoJM5iINwO3WCf',
             display_id: 'v2x4z6u8',
             flow_graph: woGraph(),
             position: 22,
-            created_at: dt(9, 9, 0),
         },
         {
             id: 'Sr4k75y6vuKODCA9zlSUjk',
             display_id: 'w3y5a7v9',
             flow_graph: woGraph(),
             position: 23,
-            created_at: dt(6, 11, 0),
         },
         // ── needs-revision loops (WO24-WO29) ─────
         // … → Data Capture → Review → Data Capture
@@ -2973,42 +2948,36 @@ export async function populateMockData(
             display_id: 'x4z6b8w0',
             flow_graph: woGraph(),
             position: 24,
-            created_at: dt(77, 9, 0),
         },
         {
             id: 'BbZ3Z7OZnFmdF5MBgVIYzI',
             display_id: 'y5a7c9x1',
             flow_graph: woGraph(),
             position: 25,
-            created_at: dt(63, 10, 0),
         },
         {
             id: 'NydsTqMmCgEKI7R9xxp36g',
             display_id: 'z6b8d0y2',
             flow_graph: woGraph(),
             position: 26,
-            created_at: dt(50, 8, 30),
         },
         {
             id: 'x2uQev3HutthrUWRFkXSkH',
             display_id: 'a7c9e1z3',
             flow_graph: woGraph(),
             position: 27,
-            created_at: dt(38, 9, 0),
         },
         {
             id: 'w7XA9UnuYI7e46RTQL1xGW',
             display_id: 'b8d0f2a4',
             flow_graph: woGraph(),
             position: 28,
-            created_at: dt(25, 10, 0),
         },
         {
             id: '3H3XeeNE4rS2wbANs3JvYz',
             display_id: 'c9e1g3b5',
             flow_graph: woGraph(),
             position: 29,
-            created_at: dt(12, 9, 30),
         },
         // in-flight runs (WO30-WO34):
         // Last transition lands in Data Capture or
@@ -3019,35 +2988,30 @@ export async function populateMockData(
             display_id: 'd0f2h4c6',
             flow_graph: woGraph(),
             position: 30,
-            created_at: dt(18, 9, 0),
         },
         {
             id: '0brjvcoPEVBwMkUQ3tKHWc',
             display_id: 'e1g3i5d7',
             flow_graph: woGraph(),
             position: 31,
-            created_at: dt(10, 10, 0),
         },
         {
             id: 'mTdhglHhl7pM0mKt0M2IjF',
             display_id: 'f2h4j6e8',
             flow_graph: woGraph(),
             position: 32,
-            created_at: dt(7, 8, 0),
         },
         {
             id: 'GMhfH8lMQJXzE4vkjnSH1u',
             display_id: 'g3i5k7f9',
             flow_graph: woGraph(),
             position: 33,
-            created_at: dt(4, 9, 0),
         },
         {
             id: 'pLxCFGOINXVaXmrS0VG0vC',
             display_id: 'h4j6l8g0',
             flow_graph: woGraph(),
             position: 34,
-            created_at: dt(2, 11, 0),
         },
         // ── out-of-clan runs (WO35-WO36) ─────────
         // OUT-transition from Data Capture is by
@@ -3059,14 +3023,12 @@ export async function populateMockData(
             display_id: 'i5k7m9h1',
             flow_graph: woGraph(),
             position: 35,
-            created_at: dt(35, 9, 0),
         },
         {
             id: 'zYnDWBV4VP5guzW5fDWtHN',
             display_id: 'j6l8n0i2',
             flow_graph: woGraph(),
             position: 36,
-            created_at: dt(22, 10, 30),
         },
         // old runs (WO37-WO38):
         // Created ~105 days ago, outside the
@@ -3077,14 +3039,12 @@ export async function populateMockData(
             display_id: 'k7m9o1j3',
             flow_graph: woGraph(),
             position: 37,
-            created_at: dt(108, 9, 0),
         },
         {
             id: 'EXphSopBU1Is2TH4QZo4nO',
             display_id: 'l8n0p2k4',
             flow_graph: woGraph(),
             position: 38,
-            created_at: dt(103, 10, 0),
         },
         // Proposal Review Cycle (prc01-prc06):
         // second flow demo -- 4 happy-path, 1
@@ -3094,28 +3054,24 @@ export async function populateMockData(
             display_id: '5tb2nOoHyhRpy3UHlyrJKl',
             flow_graph: prcGraph(),
             position: 39,
-            created_at: dt(60, 9, 0),
         },
         {
             id: 'L3UhOvrAGluk4kNnN6J8NT',
             display_id: 'ZifylnGqzY8uXQ30d1DgeP',
             flow_graph: prcGraph(),
             position: 40,
-            created_at: dt(45, 10, 0),
         },
         {
             id: 'oTscblsEOjZDkvkW3vs7rU',
             display_id: 'IoF2qGX8bftkrW4QrLnBwp',
             flow_graph: prcGraph(),
             position: 41,
-            created_at: dt(30, 8, 0),
         },
         {
             id: 'Xpw9VGpZ6RyevuInSr8yze',
             display_id: '3eC66vpxib66qPnv7hdxvJ',
             flow_graph: prcGraph(),
             position: 42,
-            created_at: dt(20, 11, 0),
         },
         // prc05: revisit -- Decision sends back
         // to Revise then Draft before completing.
@@ -3124,7 +3080,6 @@ export async function populateMockData(
             display_id: 'tmj4YM3W8H1qgr4sUIpY35',
             flow_graph: prcGraph(),
             position: 43,
-            created_at: dt(15, 9, 0),
         },
         // prc06: in-flight -- stuck at Decision.
         {
@@ -3132,7 +3087,6 @@ export async function populateMockData(
             display_id: 'Tb52zOWUVGcaSQRFSLDXPV',
             flow_graph: prcGraph(),
             position: 44,
-            created_at: dt(5, 10, 0),
         },
     ];
 

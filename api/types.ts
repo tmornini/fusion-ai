@@ -740,7 +740,6 @@ export interface WorkOrderEntity {
     display_id: string;
     flow_graph: JsonObjectField;
     position: number;
-    created_at: string;
 }
 
 export interface FlowWorkOrderEntity {

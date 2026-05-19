@@ -194,7 +194,6 @@ ai_workers (a unified WorkerId space; see
 | display_id | TEXT | 8-char hex SHA-256 |
 | flow_graph | TEXT | JSON (WorkOrderFlowGraph) |
 | position | REAL | Display order, ascending |
-| created_at | TEXT | RFC-3339 Zulu |
 
 The `flow_graph` column stores a snapshot of the flow
 definition at work order creation time. Same structure as

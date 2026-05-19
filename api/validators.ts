@@ -852,7 +852,7 @@ export function validateFlowVersionEntity(
 const WORK_ORDER_BODY_KEYS:
     readonly string[] = [
     'display_id', 'flow_graph',
-    'position', 'created_at',
+    'position',
 ];
 
 export function validateWorkOrderEntity(
@@ -872,9 +872,6 @@ export function validateWorkOrderEntity(
         ),
         position: pickNumber(
             body, 'position',
-        ),
-        created_at: pickString(
-            body, 'created_at',
         ),
     };
 }

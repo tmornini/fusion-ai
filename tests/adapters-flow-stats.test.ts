@@ -126,14 +126,12 @@ test(
             flow_graph:
                 jsonObjectField({}) as never,
             position: 1,
-            created_at: daysAgo(45),
         });
         await db.workOrders.put('wo2', {
             display_id: 'WO-2',
             flow_graph:
                 jsonObjectField({}) as never,
             position: 2,
-            created_at: daysAgo(45),
         });
 
         // wo1 belongs to f1; wo2 belongs to OTHER
@@ -230,7 +228,6 @@ test(
             display_id: 'WO-1',
             flow_graph: jsonObjectField({}) as never,
             position: 1,
-            created_at: daysAgo(10),
         });
         await db.flowWorkOrders.put('fwo1', {
             flow_id: 'f1',

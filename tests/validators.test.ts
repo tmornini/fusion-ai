@@ -419,7 +419,6 @@ const validWorkOrder = {
     display_id: 'WO-001',
     flow_graph: minimalWoGraph,
     position: 1,
-    created_at: '2024-01-01T00:00:00Z',
 };
 
 test(

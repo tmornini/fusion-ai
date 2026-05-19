@@ -213,7 +213,6 @@ export async function postWorkOrderCreation(
                     display_id: displayId,
                     flow_graph: flowGraphField,
                     position,
-                    created_at: now,
                 },
             },
             {
