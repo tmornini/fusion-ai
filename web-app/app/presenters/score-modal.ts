@@ -65,7 +65,7 @@ export class ScoreModalPresenter {
             ProjectObjectiveBaselineScore>();
         for (const b of this.#latestBaselines) {
             const prev = latest.get(b.objective_id);
-            if (!prev || b.scored_at > prev.scored_at) {
+            if (!prev || b.at > prev.at) {
                 latest.set(b.objective_id, b);
             }
         }

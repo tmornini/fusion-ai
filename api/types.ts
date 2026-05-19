@@ -611,7 +611,7 @@ export interface ObjectiveRevision {
     objective_id: ObjectiveId;
     name: string;
     description: string;
-    revised_at: string;
+    at: string;
 }
 
 export interface ProjectObjectiveBaselineScore {
@@ -619,7 +619,7 @@ export interface ProjectObjectiveBaselineScore {
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
-    scored_at: string;
+    at: string;
 }
 
 export interface ProjectObjectiveActualScore {
@@ -627,7 +627,7 @@ export interface ProjectObjectiveActualScore {
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
-    scored_at: string;
+    at: string;
 }
 
 export interface ProjectEntity {
@@ -727,7 +727,7 @@ export interface FlowVersionEntity {
     is_auto_fit: boolean;
     lock_timeout: number;
     graph: JsonObjectField;
-    created_at: string;
+    at: string;
 }
 
 export interface WorkOrderFlowGraph {
@@ -751,7 +751,7 @@ export interface FlowWorkOrderEntity {
     id: Id;
     flow_id: Id;
     work_order_id: Id;
-    created_at: string;
+    at: string;
 }
 
 // Per-field values written when a state event
@@ -793,7 +793,7 @@ export interface IdeaSubmissionEntity {
     id: Id;
     idea_id: Id;
     worker_id: Id;
-    created_at: string;
+    at: string;
 }
 
 export interface ActivityActorEntity {
@@ -807,7 +807,7 @@ export interface ProjectFlowEntity {
     id: Id;
     project_id: Id;
     flow_id: Id;
-    created_at: string;
+    at: string;
 }
 
 export interface StatusDisplay {

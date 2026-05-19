@@ -22,7 +22,7 @@ test('getBaselineScoresForProject returns project rows',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 50,
-                scored_at: '2026-05-14T00:00:00.000Z',
+                at: '2026-05-14T00:00:00.000Z',
             },
         );
         await db.projectObjectiveBaselineScores.put(
@@ -30,7 +30,7 @@ test('getBaselineScoresForProject returns project rows',
             {
                 project_id: 'p2', objective_id: 'o1',
                 score: -20,
-                scored_at: '2026-05-14T00:00:00.000Z',
+                at: '2026-05-14T00:00:00.000Z',
             },
         );
         const ctx = createRequestContext(db);
@@ -49,7 +49,7 @@ test('getActualScoresForProject returns project rows',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 33,
-                scored_at: '2026-05-14T00:00:00.000Z',
+                at: '2026-05-14T00:00:00.000Z',
             },
         );
         const ctx = createRequestContext(db);
@@ -68,7 +68,7 @@ test('getProjectScoring returns both lists',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 50,
-                scored_at: '2026-05-14T00:00:00.000Z',
+                at: '2026-05-14T00:00:00.000Z',
             },
         );
         await db.projectObjectiveActualScores.put(
@@ -76,7 +76,7 @@ test('getProjectScoring returns both lists',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 33,
-                scored_at: '2026-05-15T00:00:00.000Z',
+                at: '2026-05-15T00:00:00.000Z',
             },
         );
         const ctx = createRequestContext(db);
@@ -113,14 +113,14 @@ async function seedTwoApprovedProjects(
     await db.objectives.put('o1', { position: 0 });
     await db.objectiveRevisions.put('o1:t0', {
         objective_id: 'o1', name: 'O', description: 'd',
-        revised_at: '2026-05-14T00:00:00.000Z',
+        at: '2026-05-14T00:00:00.000Z',
     });
     await db.projectObjectiveBaselineScores.put(
         'p1:o1:t1',
         {
             project_id: 'p1', objective_id: 'o1',
             score: 60,
-            scored_at: '2026-05-14T00:00:00.000Z',
+            at: '2026-05-14T00:00:00.000Z',
         },
     );
     await db.projectObjectiveBaselineScores.put(
@@ -128,7 +128,7 @@ async function seedTwoApprovedProjects(
         {
             project_id: 'p2', objective_id: 'o1',
             score: -20,
-            scored_at: '2026-05-14T00:00:00.000Z',
+            at: '2026-05-14T00:00:00.000Z',
         },
     );
 }

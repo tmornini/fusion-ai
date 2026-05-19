@@ -33,7 +33,7 @@ const activeTwo: Objective[] = [
 ];
 const baselineO1: ProjectObjectiveBaselineScore[] = [
     { id: 'b1', project_id: 'p1', objective_id: 'o1',
-      score: 50, scored_at: T1 },
+      score: 50, at: T1 },
 ];
 
 test('isBaselineScored true when every active obj has row',
@@ -57,11 +57,11 @@ test('baselineTotal averages latest per pair', () => {
     const v = makeView();
     const score = v.baselineTotal([
         { id: 'b1', project_id: 'p1', objective_id: 'o1',
-          score: 50, scored_at: T1 },
+          score: 50, at: T1 },
         { id: 'b2', project_id: 'p1', objective_id: 'o1',
-          score: 60, scored_at: T2 },
+          score: 60, at: T2 },
         { id: 'b3', project_id: 'p1', objective_id: 'o2',
-          score: -20, scored_at: T1 },
+          score: -20, at: T1 },
     ]);
     assert.equal(score, 20); // (60 + -20) / 2
 });
@@ -87,7 +87,7 @@ test('actualTotal averages over baselined objectives',
             [{
                 id: 'a1', project_id: 'p1',
                 objective_id: 'o1',
-                score: 40, scored_at: T2,
+                score: 40, at: T2,
             }],
         );
         assert.equal(score, 40);

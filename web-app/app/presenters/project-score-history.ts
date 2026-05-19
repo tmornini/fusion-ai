@@ -78,7 +78,7 @@ export class ProjectScoreHistoryPresenter {
         for (const b of this.#baselines) {
             events.push({
                 kind: 'baseline',
-                at: b.scored_at,
+                at: b.at,
                 objectiveId: b.objective_id,
                 score: b.score,
             });
@@ -86,7 +86,7 @@ export class ProjectScoreHistoryPresenter {
         for (const a of this.#actuals) {
             events.push({
                 kind: 'actual',
-                at: a.scored_at,
+                at: a.at,
                 objectiveId: a.objective_id,
                 score: a.score,
             });
@@ -94,7 +94,7 @@ export class ProjectScoreHistoryPresenter {
         for (const r of this.#revisions) {
             events.push({
                 kind: 'revision',
-                at: r.revised_at,
+                at: r.at,
                 objectiveId: r.objective_id,
                 name: r.name,
             });

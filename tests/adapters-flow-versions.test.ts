@@ -205,7 +205,7 @@ test(
 
 test(
     'postFlowVersion captures a fresh'
-    + ' created_at timestamp on the version',
+    + ' at timestamp on the version',
     async () => {
         const { db } = setupMemDb();
         await createBaseFlow(
@@ -217,7 +217,7 @@ test(
         );
         const rows = await db.flowVersions
             .getAll();
-        const stamp = rows[0]!.created_at;
+        const stamp = rows[0]!.at;
         assert.equal(typeof stamp, 'string');
         assert.ok(!Number.isNaN(
             Date.parse(stamp),

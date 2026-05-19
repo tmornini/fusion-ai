@@ -810,7 +810,7 @@ const FLOW_VERSION_BODY_KEYS:
     'flow_id', 'name', 'description',
     'is_locked', 'is_auto_layout',
     'is_auto_fit', 'lock_timeout',
-    'graph', 'created_at',
+    'graph', 'at',
 ];
 
 export function validateFlowVersionEntity(
@@ -846,8 +846,8 @@ export function validateFlowVersionEntity(
         graph: pickJsonObjectField(
             body, 'graph',
         ),
-        created_at: pickString(
-            body, 'created_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -884,7 +884,7 @@ export function validateWorkOrderEntity(
 
 const FLOW_WORK_ORDER_BODY_KEYS:
     readonly string[] = [
-    'flow_id', 'work_order_id', 'created_at',
+    'flow_id', 'work_order_id', 'at',
 ];
 
 export function validateFlowWorkOrderEntity(
@@ -902,8 +902,8 @@ export function validateFlowWorkOrderEntity(
         work_order_id: pickString(
             body, 'work_order_id',
         ),
-        created_at: pickString(
-            body, 'created_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -1019,7 +1019,7 @@ export function validateOrganizationEntity(
 
 const IDEA_SUBMISSION_BODY_KEYS:
     readonly string[] = [
-    'idea_id', 'worker_id', 'created_at',
+    'idea_id', 'worker_id', 'at',
 ];
 
 export function validateIdeaSubmissionEntity(
@@ -1037,8 +1037,8 @@ export function validateIdeaSubmissionEntity(
         worker_id: pickString(
             body, 'worker_id',
         ),
-        created_at: pickString(
-            body, 'created_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -1071,7 +1071,7 @@ export function validateActivityActorEntity(
 
 const PROJECT_FLOW_BODY_KEYS:
     readonly string[] = [
-    'project_id', 'flow_id', 'created_at',
+    'project_id', 'flow_id', 'at',
 ];
 
 export function validateProjectFlowEntity(
@@ -1089,8 +1089,8 @@ export function validateProjectFlowEntity(
         flow_id: pickString(
             body, 'flow_id',
         ),
-        created_at: pickString(
-            body, 'created_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -1124,7 +1124,7 @@ export function validateObjectiveEntity(
 const OBJECTIVE_REVISION_BODY_KEYS:
     readonly string[] = [
     'objective_id', 'name',
-    'description', 'revised_at',
+    'description', 'at',
 ];
 
 export function validateObjectiveRevisionEntity(
@@ -1149,8 +1149,8 @@ export function validateObjectiveRevisionEntity(
         description: pickString(
             body, 'description',
         ),
-        revised_at: pickString(
-            body, 'revised_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -1158,7 +1158,7 @@ export function validateObjectiveRevisionEntity(
 const BASELINE_SCORE_BODY_KEYS:
     readonly string[] = [
     'project_id', 'objective_id',
-    'score', 'scored_at',
+    'score', 'at',
 ];
 
 export function validateBaselineScoreEntity(
@@ -1179,8 +1179,8 @@ export function validateBaselineScoreEntity(
         score: asScore(
             body.score, 'BaselineScore.score',
         ),
-        scored_at: pickString(
-            body, 'scored_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }
@@ -1188,7 +1188,7 @@ export function validateBaselineScoreEntity(
 const ACTUAL_SCORE_BODY_KEYS:
     readonly string[] = [
     'project_id', 'objective_id',
-    'score', 'scored_at',
+    'score', 'at',
 ];
 
 export function validateActualScoreEntity(
@@ -1209,8 +1209,8 @@ export function validateActualScoreEntity(
         score: asScore(
             body.score, 'ActualScore.score',
         ),
-        scored_at: pickString(
-            body, 'scored_at',
+        at: pickString(
+            body, 'at',
         ),
     };
 }

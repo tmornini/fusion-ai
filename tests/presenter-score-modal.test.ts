@@ -37,7 +37,7 @@ test('slider pre-fills from latest baseline', () => {
         project, activeObjs, defs,
         [{ id: 'b1', project_id: 'p1', objective_id: 'o1',
            score: 50,
-           scored_at: '2026-05-14T00:00:00.000Z' }],
+           at: '2026-05-14T00:00:00.000Z' }],
     );
     const html = p.buildBody().toString();
     assert.ok(html.includes(

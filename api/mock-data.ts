@@ -360,7 +360,7 @@ function generateFlowWorkload(args: {
             id: b62Id(rng, 22),
             flow_id: flow.flowId,
             work_order_id: woId,
-            created_at:
+            at:
                 isoFromMs(createdAtMs),
         });
     }
@@ -3152,7 +3152,7 @@ export async function populateMockData(
             flow_id:
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id: woId,
-            created_at: woCreated,
+            at: woCreated,
         },
         // happy-path
         {
@@ -3161,7 +3161,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kKtX2W0iVTWFPEoPrJmIHW',
-            created_at: dt(88, 9, 0),
+            at: dt(88, 9, 0),
         },
         {
             id: 'FjjhKDthEYLf50lmPrKkaq',
@@ -3169,7 +3169,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'taUp8y0cuMhzf0UOk6Ev8Y',
-            created_at: dt(82, 10, 0),
+            at: dt(82, 10, 0),
         },
         {
             id: 'vNj3XdrWhDpoFW8qsLsqKg',
@@ -3177,7 +3177,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'KD2WFTEwzJFvxZ6cpCwpvc',
-            created_at: dt(76, 8, 30),
+            at: dt(76, 8, 30),
         },
         {
             id: 'hjPgB0KYD5Sesnjejnohf6',
@@ -3185,7 +3185,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'b6YNHrFyi6V9dJNXyCXu1K',
-            created_at: dt(71, 9, 0),
+            at: dt(71, 9, 0),
         },
         {
             id: 'UhSuMtC66uclQH5irfsqd0',
@@ -3193,7 +3193,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'V3AXXlSjJwDQAmkNiRA8aP',
-            created_at: dt(66, 11, 0),
+            at: dt(66, 11, 0),
         },
         {
             id: 'J0GfRrP7J5tNhBDCXDDOPV',
@@ -3201,7 +3201,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '9ooK5olzSsEnpgP8ASzBQi',
-            created_at: dt(61, 9, 30),
+            at: dt(61, 9, 30),
         },
         {
             id: 'nULvK3MsVfud7QkAlrNGpQ',
@@ -3209,7 +3209,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'cnXN4DZx9dUVIZL4OZnyw0',
-            created_at: dt(57, 8, 0),
+            at: dt(57, 8, 0),
         },
         {
             id: 'NUnAiiPpzpQ9wKx6utsGwn',
@@ -3217,7 +3217,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kKw82RQDHRfgg5xQnw1lPk',
-            created_at: dt(52, 10, 0),
+            at: dt(52, 10, 0),
         },
         {
             id: 'tuqFkKJMD4baNSMgXFWIh3',
@@ -3225,7 +3225,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'ec0n7Ab6pJYLFDF6H0nyvV',
-            created_at: dt(48, 9, 0),
+            at: dt(48, 9, 0),
         },
         {
             id: 'G1IeM0YcxnPVe8ZuYnJ9oJ',
@@ -3233,7 +3233,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'gAjJnjirIrIgcFDMJyNsPa',
-            created_at: dt(44, 10, 30),
+            at: dt(44, 10, 30),
         },
         {
             id: '5Ctl6blp1xESHHiQtp0hUU',
@@ -3241,7 +3241,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kyWtMAZPazKqAfIwPzACsL',
-            created_at: dt(40, 9, 0),
+            at: dt(40, 9, 0),
         },
         {
             id: 'tlNTceD8uVvWlIjXDH0ayW',
@@ -3249,7 +3249,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'C41Hni5pMxp8xMQFEGNaib',
-            created_at: dt(37, 8, 0),
+            at: dt(37, 8, 0),
         },
         {
             id: 'RUF1gVmAhswD070VXbltZj',
@@ -3257,7 +3257,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'FGAZYYwoS9To1tNb24DfLc',
-            created_at: dt(33, 9, 30),
+            at: dt(33, 9, 30),
         },
         {
             id: 's8LTGragbMejtSAdAVF1u3',
@@ -3265,7 +3265,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '0zgLwuyPgtreVYjg4TScJR',
-            created_at: dt(29, 10, 0),
+            at: dt(29, 10, 0),
         },
         {
             id: 'IAEG9nJXxCFzya2R3z9Rzy',
@@ -3273,7 +3273,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'XGJklKFO4aUtjSAEHEE8Zn',
-            created_at: dt(26, 9, 0),
+            at: dt(26, 9, 0),
         },
         {
             id: 'c1BsfY0187lX0bv9IMRin6',
@@ -3281,7 +3281,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'rtuFD9uWn5zguEHyT3fh8s',
-            created_at: dt(23, 8, 30),
+            at: dt(23, 8, 30),
         },
         {
             id: 'HdDAafhVYetmEDZI57F2o9',
@@ -3289,7 +3289,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'XrO05MeyqldO8qm0O4VPdq',
-            created_at: dt(20, 10, 0),
+            at: dt(20, 10, 0),
         },
         {
             id: 'yFhQ6jemy8OUls9GCH9sJq',
@@ -3297,7 +3297,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'S74N7CPA2dsMESryJNrFAC',
-            created_at: dt(17, 9, 0),
+            at: dt(17, 9, 0),
         },
         {
             id: 'C7ASzGoDhS3c9Er43SznuQ',
@@ -3305,7 +3305,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
-            created_at: dt(14, 8, 0),
+            at: dt(14, 8, 0),
         },
         {
             id: 'gj9UFVp6N0LY43tiZO7kEH',
@@ -3313,7 +3313,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '4T56gYme7ae4Ya7AMA0hpW',
-            created_at: dt(11, 10, 30),
+            at: dt(11, 10, 30),
         },
         {
             id: 'QXnnDlwCXKN12k4oUPse4B',
@@ -3321,7 +3321,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'aFCyJrvokoJM5iINwO3WCf',
-            created_at: dt(9, 9, 0),
+            at: dt(9, 9, 0),
         },
         {
             id: 'hyC8PMVNYng3UIO93yexAR',
@@ -3329,7 +3329,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Sr4k75y6vuKODCA9zlSUjk',
-            created_at: dt(6, 11, 0),
+            at: dt(6, 11, 0),
         },
         // needs-revision
         {
@@ -3338,7 +3338,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Mm6KUpykGSwjD7YofI6zpb',
-            created_at: dt(77, 9, 0),
+            at: dt(77, 9, 0),
         },
         {
             id: 'w9t0kM5OR9xNz8Qd8YMvWd',
@@ -3346,7 +3346,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
-            created_at: dt(63, 10, 0),
+            at: dt(63, 10, 0),
         },
         {
             id: 'OynJa34EkAifV6XvROGJHO',
@@ -3354,7 +3354,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'NydsTqMmCgEKI7R9xxp36g',
-            created_at: dt(50, 8, 30),
+            at: dt(50, 8, 30),
         },
         {
             id: 'hFaKVhqcwwCtiDmjHOhglF',
@@ -3362,7 +3362,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'x2uQev3HutthrUWRFkXSkH',
-            created_at: dt(38, 9, 0),
+            at: dt(38, 9, 0),
         },
         {
             id: 'lJalI8qDpdF8zng1mr7dkW',
@@ -3370,7 +3370,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'w7XA9UnuYI7e46RTQL1xGW',
-            created_at: dt(25, 10, 0),
+            at: dt(25, 10, 0),
         },
         {
             id: 'UFSLHfELrPhlOvdaQv8yrC',
@@ -3378,7 +3378,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '3H3XeeNE4rS2wbANs3JvYz',
-            created_at: dt(12, 9, 30),
+            at: dt(12, 9, 30),
         },
         // in-flight
         {
@@ -3387,7 +3387,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'i7YYgKN3ZUlrkulQ2aWdIE',
-            created_at: dt(18, 9, 0),
+            at: dt(18, 9, 0),
         },
         {
             id: 'uhMESfwESpe11vhqKvQ2kB',
@@ -3395,7 +3395,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '0brjvcoPEVBwMkUQ3tKHWc',
-            created_at: dt(10, 10, 0),
+            at: dt(10, 10, 0),
         },
         {
             id: 'ZNrxNuiqHTULou4TqYPtXL',
@@ -3403,7 +3403,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'mTdhglHhl7pM0mKt0M2IjF',
-            created_at: dt(7, 8, 0),
+            at: dt(7, 8, 0),
         },
         {
             id: '5AsLDAhvbkXZ6OUvvoZhND',
@@ -3411,7 +3411,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'GMhfH8lMQJXzE4vkjnSH1u',
-            created_at: dt(4, 9, 0),
+            at: dt(4, 9, 0),
         },
         {
             id: 'avduZh1Hyokc9xiUjDQA0F',
@@ -3419,7 +3419,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'pLxCFGOINXVaXmrS0VG0vC',
-            created_at: dt(2, 11, 0),
+            at: dt(2, 11, 0),
         },
         // out-of-clan
         {
@@ -3428,7 +3428,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'IyrpZrIl2hbmmnCtiifEGm',
-            created_at: dt(35, 9, 0),
+            at: dt(35, 9, 0),
         },
         {
             id: 'jxMN634ymWUYVZQK5on62x',
@@ -3436,7 +3436,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'zYnDWBV4VP5guzW5fDWtHN',
-            created_at: dt(22, 10, 30),
+            at: dt(22, 10, 30),
         },
         // old (outside 90-day window)
         {
@@ -3445,7 +3445,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '7HX7RPwlYopHWfD7I0QAPs',
-            created_at: dt(108, 9, 0),
+            at: dt(108, 9, 0),
         },
         {
             id: 'nycbBiutlHj1MUnI02Pw20',
@@ -3453,7 +3453,7 @@ export async function populateMockData(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'EXphSopBU1Is2TH4QZo4nO',
-            created_at: dt(103, 10, 0),
+            at: dt(103, 10, 0),
         },
         // prc join rows (Proposal Review Cycle)
         {
@@ -3462,7 +3462,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'hRPNkjrYBTQqzzFe1t8FH6',
-            created_at: dt(60, 9, 0),
+            at: dt(60, 9, 0),
         },
         {
             id: 'UXIU5zCYBFkQnMnChd1Q6T',
@@ -3470,7 +3470,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'L3UhOvrAGluk4kNnN6J8NT',
-            created_at: dt(45, 10, 0),
+            at: dt(45, 10, 0),
         },
         {
             id: 'jQUWpOW1y7QcYSS49Cy3dE',
@@ -3478,7 +3478,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'oTscblsEOjZDkvkW3vs7rU',
-            created_at: dt(30, 8, 0),
+            at: dt(30, 8, 0),
         },
         {
             id: 'y9Aba8YosD7VcSMV2Ncwoc',
@@ -3486,7 +3486,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'Xpw9VGpZ6RyevuInSr8yze',
-            created_at: dt(20, 11, 0),
+            at: dt(20, 11, 0),
         },
         {
             id: 'RKSovIx9Jb03ZHsLWpI1EC',
@@ -3494,7 +3494,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'yqPpJb0NoQDgx8DoZ183Nx',
-            created_at: dt(15, 9, 0),
+            at: dt(15, 9, 0),
         },
         {
             id: 'XAQNINxgYd6Ngjv06NztQh',
@@ -3502,7 +3502,7 @@ export async function populateMockData(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'BUrGEVDMF6FeU35WUHUY5E',
-            created_at: dt(5, 10, 0),
+            at: dt(5, 10, 0),
         },
     ];
 
@@ -5298,25 +5298,25 @@ export async function populateMockData(
             id: 'noogjofVfg6jFxYOVbdAnC',
             project_id: 'u6YkHhlGc91oDMkr3x0isa',
             flow_id: 'h5mErVBQhwdMKwi1co30jB',
-            created_at: wfTimestamp,
+            at: wfTimestamp,
         },
         {
             id: '5ddqhtwd3qcdodXLcsDdyt',
             project_id: 'jRE2Tj32NHsFGZIeEADp0p',
             flow_id: 'E2BnBlZyrriqsQYkmS4usb',
-            created_at: wfTimestamp,
+            at: wfTimestamp,
         },
         {
             id: '9YX7ZU4br6zxrHyVcmRjJP',
             project_id: 'u6YkHhlGc91oDMkr3x0isa',
             flow_id: '7COt7Kf4OaOBg6AjaNO04s',
-            created_at: wfTimestamp,
+            at: wfTimestamp,
         },
         {
             id: l2cProjectFlowId,
             project_id: l2cProjectId,
             flow_id: l2cFlowId,
-            created_at: wfTimestamp,
+            at: wfTimestamp,
         },
     ];
 
@@ -5527,67 +5527,67 @@ export async function populateMockData(
             id: 'k4dY2dPq90mQVwwCkhWIo3',
             idea_id: 'eT5xdKjzLDmuRn3r7XMX4R',
             worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            created_at: dt(75, 9, 30),
+            at: dt(75, 9, 30),
         },
         {
             id: 'XC7hsfNJueKQ8q0UfCuC7o',
             idea_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
             worker_id: 'bLP3X1hb1mSz8gY9neogU3',
-            created_at: dt(70, 9, 0),
+            at: dt(70, 9, 0),
         },
         {
             id: 'YmzT46BbGVFALpiXFDnlVd',
             idea_id: 'wuCMQqo4IkEksx7MYmu8g2',
             worker_id: '53J8h9dr76XFqCjYcNVwIR',
-            created_at: dt(65, 9, 0),
+            at: dt(65, 9, 0),
         },
         {
             id: 'cmoTu4GRGmO8y5QrfPIHSm',
             idea_id: 'ojOEXtdzdtTZtpM81TxVca',
             worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            created_at: dt(55, 9, 0),
+            at: dt(55, 9, 0),
         },
         {
             id: 'kIUtvgTOLPjsSmAEVOhPb1',
             idea_id: 'T2vAafLDcshDONlYxpzPLc',
             worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            created_at: dt(50, 9, 0),
+            at: dt(50, 9, 0),
         },
         {
             id: 'r04u9qpJKSyNjP9Owxr5Be',
             idea_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
             worker_id: 'zyTbfbjcGEfbpCsNTP0XjX',
-            created_at: dt(45, 9, 0),
+            at: dt(45, 9, 0),
         },
         {
             id: '2mPJTlujj1RF6gexFwbDqJ',
             idea_id: 'MCxK0hzT9CPjJx1ZV5unfr',
             worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            created_at: dt(75, 10, 0),
+            at: dt(75, 10, 0),
         },
         {
             id: 'caBSqTgzDnvP8joamAG9OG',
             idea_id: 'SUb4gKXsZ1OsEauzqszg0t',
             worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            created_at: dt(35, 9, 0),
+            at: dt(35, 9, 0),
         },
         {
             id: 'UfsCp7WYUybhwxD170okb4',
             idea_id: 'gxa84W9KvEgD0wT1F4TOM9',
             worker_id: '53J8h9dr76XFqCjYcNVwIR',
-            created_at: dt(30, 9, 0),
+            at: dt(30, 9, 0),
         },
         {
             id: 'mbTZAQbC5cJSEIzhEEFpyq',
             idea_id: '1Z68gROMrlTAfPEGiyJJAY',
             worker_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            created_at: dt(25, 9, 0),
+            at: dt(25, 9, 0),
         },
         {
             id: '0LjTHFflWNaDZkKDqxmwJi',
             idea_id: 'Q2On2xwMpFdzOklBQJXrni',
             worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            created_at: dt(20, 9, 0),
+            at: dt(20, 9, 0),
         },
     ];
 
@@ -6008,7 +6008,7 @@ export async function populateMockData(
                 objective_id: seed.id,
                 name: seed.name,
                 description: seed.description,
-                revised_at: MOCK_SEED_TIMESTAMP,
+                at: MOCK_SEED_TIMESTAMP,
             },
         );
     }
@@ -6080,7 +6080,7 @@ export async function populateMockData(
                         project_id: p.id,
                         objective_id: obj.id,
                         score,
-                        scored_at: scoredAt,
+                        at: scoredAt,
                     },
                 );
         }
@@ -6122,7 +6122,7 @@ export async function populateMockData(
                                 project_id: p.id,
                                 objective_id: obj.id,
                                 score,
-                                scored_at: scoredAt,
+                                at: scoredAt,
                             },
                         );
                 }

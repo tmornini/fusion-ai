@@ -140,12 +140,12 @@ test(
         await db.flowWorkOrders.put('fwo1', {
             flow_id: 'f1',
             work_order_id: 'wo1',
-            created_at: daysAgo(45),
+            at: daysAgo(45),
         });
         await db.flowWorkOrders.put('fwo2', {
             flow_id: 'OTHER',
             work_order_id: 'wo2',
-            created_at: daysAgo(45),
+            at: daysAgo(45),
         });
 
         // wo1: '' → c (daysAgo(40)), c → a
@@ -235,7 +235,7 @@ test(
         await db.flowWorkOrders.put('fwo1', {
             flow_id: 'f1',
             work_order_id: 'wo1',
-            created_at: daysAgo(10),
+            at: daysAgo(10),
         });
         await db.states.put('t1', {
             entity_id: 'wo1',

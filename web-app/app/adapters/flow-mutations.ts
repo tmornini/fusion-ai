@@ -94,7 +94,7 @@ export async function postFlowCreation(
                 body: {
                     project_id: input.projectId,
                     flow_id: input.flowId,
-                    created_at: now,
+                    at: now,
                 },
             },
         ],

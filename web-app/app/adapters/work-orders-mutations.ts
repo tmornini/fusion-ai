@@ -225,7 +225,7 @@ export async function postWorkOrderCreation(
                     flow_id: input.flowId,
                     work_order_id:
                         input.workOrderId,
-                    created_at: now,
+                    at: now,
                 },
             },
             await buildStateEventOp(

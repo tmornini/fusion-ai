@@ -598,7 +598,7 @@ test(
             {
                 flow_id: 'flow1',
                 work_order_id: 'wo1',
-                created_at:
+                at:
                     '2024-01-01T00:00:00Z',
             },
         );
@@ -607,7 +607,7 @@ test(
             {
                 flow_id: 'flow2',
                 work_order_id: 'wo2',
-                created_at:
+                at:
                     '2024-01-01T00:00:00Z',
             },
         );

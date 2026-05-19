@@ -602,7 +602,7 @@ export async function postFlowFromBackup(
                 body: {
                     project_id: projectId,
                     flow_id: flowId,
-                    created_at: now,
+                    at: now,
                 },
             },
         ],
@@ -933,7 +933,7 @@ export async function postFlowFromMermaid(
                 body: {
                     project_id: projectId,
                     flow_id: flowId,
-                    created_at: now,
+                    at: now,
                 },
             },
         ],
@@ -1380,7 +1380,7 @@ export async function postFlowFromZip(
                 body: {
                     project_id: projectId,
                     flow_id: flowId,
-                    created_at: now,
+                    at: now,
                 },
             },
         ],

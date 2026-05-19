@@ -269,7 +269,7 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT |
 | idea_id | TEXT (FK → ideas) |
 | worker_id | TEXT (FK → workers / ai_workers) |
-| created_at | TEXT |
+| at | TEXT |
 
 ### activity_actors
 
@@ -287,7 +287,7 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | PRIMARY KEY |
 | project_id | TEXT | References projects |
 | flow_id | TEXT | References flows |
-| created_at | TEXT | RFC-3339 Zulu |
+| at | TEXT | RFC-3339 Zulu |
 
 ### flow_work_orders
 
@@ -296,7 +296,7 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT | PRIMARY KEY |
 | flow_id | TEXT | References flows |
 | work_order_id | TEXT | References work_orders |
-| created_at | TEXT | RFC-3339 Zulu |
+| at | TEXT | RFC-3339 Zulu |
 
 ### flow_versions
 
@@ -316,7 +316,7 @@ persistent undo on the flows/detail page.
 | is_auto_fit | BOOLEAN | Snapshot of flows.is_auto_fit |
 | lock_timeout | INTEGER | Snapshot of flows.lock_timeout |
 | graph | TEXT | Snapshot of flows.graph (JSON) |
-| created_at | TEXT | RFC-3339 Zulu — capture time |
+| at | TEXT | RFC-3339 Zulu — capture time |
 
 ### objectives
 
@@ -337,9 +337,9 @@ identity whose human-facing text evolves over time.
 | objective_id | TEXT | References objectives |
 | name | TEXT | Human-facing name at this revision |
 | description | TEXT | Human-facing description |
-| revised_at | TEXT | RFC-3339 Zulu |
+| at | TEXT | RFC-3339 Zulu |
 
-The latest row per `objective_id` by `revised_at` is the
+The latest row per `objective_id` by `at` is the
 current text.
 
 ### project_objective_baseline_scores
@@ -350,7 +350,7 @@ current text.
 | project_id | TEXT | References projects |
 | objective_id | TEXT | References objectives |
 | score | INTEGER | |
-| scored_at | TEXT | RFC-3339 Zulu |
+| at | TEXT | RFC-3339 Zulu |
 
 ### project_objective_actual_scores
 
@@ -360,7 +360,7 @@ current text.
 | project_id | TEXT | References projects |
 | objective_id | TEXT | References objectives |
 | score | INTEGER | |
-| scored_at | TEXT | RFC-3339 Zulu |
+| at | TEXT | RFC-3339 Zulu |
 
 ## State Event Log
 
