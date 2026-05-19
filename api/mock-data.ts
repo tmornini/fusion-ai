@@ -1843,8 +1843,6 @@ export async function populateMockData(
                     },
                 ],
             }),
-            created_at: wfTimestamp,
-            updated_at: wfTimestamp,
         },
         {
             id: 'E2BnBlZyrriqsQYkmS4usb',
@@ -2232,8 +2230,6 @@ export async function populateMockData(
                     },
                 ],
             }),
-            created_at: wfTimestamp,
-            updated_at: wfTimestamp,
         },
         {
             id: '7COt7Kf4OaOBg6AjaNO04s',
@@ -2647,8 +2643,6 @@ export async function populateMockData(
                     },
                 ],
             }),
-            created_at: wfTimestamp,
-            updated_at: wfTimestamp,
         },
         {
             id: l2cFlowId,
@@ -2664,8 +2658,6 @@ export async function populateMockData(
                 nodes: leadToCloseNodes,
                 edges: leadToCloseEdges,
             }),
-            created_at: wfTimestamp,
-            updated_at: wfTimestamp,
         },
     ];
 
@@ -5738,6 +5730,46 @@ export async function populateMockData(
         },
     ];
 
+    // One state event per seeded flow — the
+    // creation moment of each flow on the states
+    // log. Tier 2.3 retires FlowEntity.created_at
+    // / updated_at; the log IS the truth. Events
+    // are authored by SYSTEM_WORKER_ID at the
+    // shared wfTimestamp moment.
+    const flowStateEvents: StateEntity[] = [
+        {
+            id: 'fSe01CustomerOnboard0aA',
+            entity_id:
+                'h5mErVBQhwdMKwi1co30jB',
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe02FusionFl0w0aActiv',
+            entity_id:
+                'E2BnBlZyrriqsQYkmS4usb',
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe03Lay0utTest0aActiv',
+            entity_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe04L3adt0Cl0se0aActiv',
+            entity_id: l2cFlowId,
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: wfTimestamp,
+        },
+    ];
+
     const activityActors:
         ActivityActorEntity[] = [
         {
@@ -5898,6 +5930,14 @@ export async function populateMockData(
             }),
         ),
         ...projectStateEvents.map(r =>
+            adapter.states.put(r.id, {
+                entity_id: r.entity_id,
+                state: r.state,
+                worker_id: r.worker_id,
+                at: r.at,
+            }),
+        ),
+        ...flowStateEvents.map(r =>
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,

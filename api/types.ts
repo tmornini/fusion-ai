@@ -133,6 +133,22 @@ export const PROJECT_STATES = [
 
 export type ProjectState = typeof PROJECT_STATES[number];
 
+// The state alphabet for flows. Three lifecycle
+// states plus 'updated' for content-change events
+// (graph edits, name/description/lock changes,
+// auto-layout). The states log carries the full
+// audit trail — the retired created_at /
+// updated_at columns are now derived from the
+// head and tail of the entity's event sequence.
+export const FLOW_STATES = [
+    'active',
+    'archived',
+    'deleted',
+    'updated',
+] as const;
+
+export type FlowState = typeof FLOW_STATES[number];
+
 export type StoredBoolean = 0 | 1;
 
 export type JsonArrayField = string & {
@@ -255,6 +271,25 @@ export function assertWorkerState(
     if (!includes(WORKER_STATES, v)) {
         throw new Error(
             'expected WorkerState for '
+                + label + ', got ' + v,
+        );
+    }
+    return v;
+}
+
+export function isFlowState(
+    v: string,
+): v is FlowState {
+    return includes(FLOW_STATES, v);
+}
+
+export function assertFlowState(
+    v: string,
+    label: string,
+): FlowState {
+    if (!includes(FLOW_STATES, v)) {
+        throw new Error(
+            'expected FlowState for '
                 + label + ', got ' + v,
         );
     }
@@ -709,8 +744,6 @@ export interface FlowEntity {
     is_auto_fit: boolean;
     lock_timeout: number;
     graph: JsonObjectField;
-    created_at: string;
-    updated_at: string;
 }
 
 export interface FlowVersionEntity {

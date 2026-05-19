@@ -138,8 +138,15 @@ Lifecycle state lives in `states` (alphabet
 | is_auto_fit | BOOLEAN | Default true |
 | lock_timeout | INTEGER | Seconds (default 28800 = 8h) |
 | graph | TEXT | JSON document (see below) |
-| created_at | TEXT | RFC-3339 Zulu |
-| updated_at | TEXT | RFC-3339 Zulu |
+
+Lifecycle state lives in `states` (alphabet
+`FLOW_STATES`): `active`, `archived`, `deleted`,
+`updated`. The first event records creation; each
+content-change mutation appends an `updated`
+event. Creation and last-update moments are the
+head and tail of the entity's event sequence —
+the retired `created_at` / `updated_at` columns
+are now derived from the log.
 
 The `graph` column stores the entire flow definition as a
 JSON document:

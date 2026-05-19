@@ -101,8 +101,6 @@ function buildFlow(
         is_auto_fit: true,
         lock_timeout: 28800,
         graph: EMPTY_GRAPH,
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
     };
 }
 

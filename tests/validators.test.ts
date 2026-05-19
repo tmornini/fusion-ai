@@ -322,8 +322,6 @@ const validFlow = {
     is_auto_fit: true,
     lock_timeout: 28800,
     graph: '{"nodes":[],"edges":[]}',
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
 };
 
 test('validateFlowEntity accepts valid payload', () => {
@@ -362,10 +360,10 @@ test(
     const body = { ...validFlow };
     delete (
         body as Record<string, unknown>
-    )['updated_at'];
+    )['lock_timeout'];
     assert.throws(
         () => validateFlowEntity(body),
-        /missing required key "updated_at"/,
+        /missing required key "lock_timeout"/,
     );
 });
 

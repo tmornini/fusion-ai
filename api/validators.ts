@@ -762,7 +762,6 @@ const FLOW_BODY_KEYS: readonly string[] = [
     'name', 'description', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
     'lock_timeout', 'graph',
-    'created_at', 'updated_at',
 ];
 
 export function validateFlowEntity(
@@ -792,12 +791,6 @@ export function validateFlowEntity(
         ),
         graph: pickJsonObjectField(
             body, 'graph',
-        ),
-        created_at: pickString(
-            body, 'created_at',
-        ),
-        updated_at: pickString(
-            body, 'updated_at',
         ),
     };
 }

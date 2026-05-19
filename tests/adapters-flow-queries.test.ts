@@ -33,11 +33,22 @@ import {
 import { populateMockData } from '../api/mock-data.ts';
 import { NODE_WIDTH } from '../web-app/app/flow-layout.ts';
 
-function setupMemDb(): {
+async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
-} {
+}> {
     const db = new MemoryDbAdapter();
+    await db.workers.put('current', {
+        first_name: 'Demo',
+        last_name: 'User',
+        email: 'demo@example.com',
+        phone: '',
+        title: 'Admin',
+        strengths: '[]' as never,
+        team_dimensions: '{}' as never,
+        bio: '',
+        department: 'Product',
+    });
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
@@ -103,7 +114,6 @@ async function saveGraph(
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes,
         edges,
-        createdAt: '2026-01-01T00:00:00.000Z',
     });
 }
 
@@ -128,7 +138,7 @@ test(
     'getFlowGraph returns the parsed graph'
     + ' with metadata and counts',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await createBaseFlow(
             createRequestContext(db),
             'flow-1', 'p1',
@@ -164,7 +174,6 @@ test(
         assert.equal(
             g.lockTimeout, DEFAULT_LOCK_TIMEOUT,
         );
-        assert.equal(typeof g.createdAt, 'string');
         assert.equal(g.nodes.length, 3);
         assert.equal(g.edges.length, 2);
         assert.ok(
@@ -180,7 +189,7 @@ test(
     'getFlowGraph reflects flag changes'
     + ' saved on the flow',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await createBaseFlow(
             createRequestContext(db),
             'flow-1', 'p1',
@@ -196,8 +205,6 @@ test(
                 lockTimeout: 900,
                 nodes: [buildNode('a')],
                 edges: [],
-                createdAt:
-                    '2026-01-01T00:00:00.000Z',
             },
         );
         const g = await getFlowGraph(
@@ -215,7 +222,7 @@ test(
     'getFlows summarizes every flow with'
     + ' node and edge counts',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         const c1 = createRequestContext(db);
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p1');
@@ -253,7 +260,7 @@ test(
     'getFlows on a fresh flow reports the'
     + ' default two nodes and no edges',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await createBaseFlow(
             createRequestContext(db),
             'flow-1', 'p1',
@@ -271,7 +278,7 @@ test(
     'getFlowsByProject returns only flows'
     + ' linked to the given project',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         const c1 = createRequestContext(db);
         await putProject(db, 'p1', 'Project One');
         await putProject(db, 'p2', 'Project Two');
@@ -298,7 +305,7 @@ test(
     'getFlowsByProject returns an empty list'
     + ' for a project with no flows',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await putProject(db, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db),
@@ -315,7 +322,7 @@ test(
     'getFlowsByProject carries node and'
     + ' edge counts for each flow',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await putProject(db, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db),
@@ -341,7 +348,7 @@ test(
     'getFlowsWithProjectNames pairs each'
     + ' flow with its project name',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         const c1 = createRequestContext(db);
         await putProject(db, 'p1', 'Project One');
         await putProject(db, 'p2', 'Project Two');
@@ -369,7 +376,7 @@ test(
     'getFlowsWithProjectNames yields undefined'
     + ' when the linked project is gone',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await createBaseFlow(
             createRequestContext(db),
             'flow-1', 'ghost-project',
@@ -389,7 +396,7 @@ test(
     'getFlowsWithProjectNames includes node'
     + ' and edge counts in the summary',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await putProject(db, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db),
@@ -422,7 +429,7 @@ test(
 test(
     'getProjectFlowRows returns the link rows',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         const c1 = createRequestContext(db);
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p2');
@@ -446,7 +453,7 @@ test(
     'getProjectFlowRows is empty when no'
     + ' flows have been created',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         const rows = await getProjectFlowRows(
             createRequestContext(db),
         );
@@ -458,7 +465,7 @@ test(
     'a project-flow link added directly to'
     + ' the table surfaces in getFlowsByProject',
     async () => {
-        const { db } = setupMemDb();
+        const { db } = await setupMemDb();
         await putProject(db, 'p9', 'Project Nine');
         await createBaseFlow(
             createRequestContext(db),
