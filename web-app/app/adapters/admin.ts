@@ -165,8 +165,3 @@ putOrganizationGeneralInfo(
         domain: draft.domain,
     });
 }
-
-export type {
-    ActivityEntity,
-    ActivityActorEntity,
-} from '../../../api/types.ts';

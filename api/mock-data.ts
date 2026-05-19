@@ -4,9 +4,7 @@ import type {
     WorkerState,
     IdeaEntity,
     ProjectEntity,
-    ActivityEntity,
     IdeaSubmissionEntity,
-    ActivityActorEntity,
     FlowEntity,
     ProjectFlowEntity,
     AIWorkerEntity,
@@ -1353,68 +1351,6 @@ export async function populateMockData(
             estimated_cost: 56000,
             actual_cost: 34000,
             position: 15,
-        },
-    ];
-
-    const activities: ActivityEntity[] = [
-        {
-            id: '5PGE1WlEOTkSaNYjiBXLMA',
-            type: 'idea_created',
-            action: 'submitted new idea',
-            target: 'Mobile App Redesign',
-            timestamp: dt(0, 17, 0),
-            status: 'active',
-            feedback:
-                'Addresses top user'
-                + ' feedback themes.',
-        },
-        {
-            id: '3pBQbQp4LPK2udgd21HlTm',
-            type: 'person_joined',
-            action: 'joined the team',
-            target: 'Product Innovation',
-            timestamp: dt(0, 15, 0),
-            status: 'active',
-            feedback:
-                'Excited to contribute'
-                + ' to the team.',
-        },
-        {
-            id: 'CqXHcyiDNzFVcoUM2M1Tl3',
-            type: 'status_changed',
-            action: 'changed status of',
-            target:
-                'Customer Feedback Portal',
-            timestamp: dt(0, 14, 0),
-            status: 'In Progress',
-            feedback:
-                'Development sprint'
-                + ' started this week.',
-        },
-        {
-            id: 'Kj75MtFxnEpFZs4MSK1emd',
-            type: 'idea_converted',
-            action:
-                'converted idea to project',
-            target: 'Automated Testing'
-                + ' Framework',
-            timestamp: dt(0, 13, 0),
-            status: 'completed',
-            feedback:
-                'Approved by engineering'
-                + ' leadership.',
-        },
-        {
-            id: 'xRmfZFNV8GYDQmq8j09Fsc',
-            type: 'project_created',
-            action: 'created new project',
-            target: 'Performance'
-                + ' Optimization Initiative',
-            timestamp: dt(0, 12, 0),
-            status: 'active',
-            feedback:
-                'Targeting 40% latency'
-                + ' reduction.',
         },
     ];
 
@@ -5445,12 +5381,6 @@ export async function populateMockData(
                 project,
             ),
         ),
-        ...activities.map(activity =>
-            adapter.activities.put(
-                activity.id,
-                activity,
-            ),
-        ),
         ...mockFlows.map(flow =>
             adapter.flows.put(
                 flow.id, flow,
@@ -5770,70 +5700,6 @@ export async function populateMockData(
         },
     ];
 
-    const activityActors:
-        ActivityActorEntity[] = [
-        {
-            id: 'b46Mr8QWIMo4EDBxxhfkWL',
-            activity_id: 'Ng6GWmx7DNmLsGshK3lBfU',
-            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            created_at: dt(0, 17, 50),
-        },
-        {
-            id: 'pgyIzpoLgG8Vv6FgYF4DV8',
-            activity_id: 'p3H9tGtQwFwQXpUiYyinT6',
-            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            created_at: dt(0, 17, 35),
-        },
-        {
-            id: 'SJalTSor6JhpoPincDXLeY',
-            activity_id: '5PGE1WlEOTkSaNYjiBXLMA',
-            worker_id: '53J8h9dr76XFqCjYcNVwIR',
-            created_at: dt(0, 17, 0),
-        },
-        {
-            id: 'JvodSYYA6w1ithWEirfNVg',
-            activity_id: 'fOqTfg9JPs73xsnC4QUmHs',
-            worker_id: '6xBfK5If82JKfThXb1wlzS',
-            created_at: dt(0, 16, 0),
-        },
-        {
-            id: 'BExIeH5NDiGVGQnrP8phOs',
-            activity_id: '3pBQbQp4LPK2udgd21HlTm',
-            worker_id: 'I5ntELi16X3N3JYCCnxMjZ',
-            created_at: dt(0, 15, 0),
-        },
-        {
-            id: 'pC3hoLmzaVyxJSGOHsmV5j',
-            activity_id: 'CqXHcyiDNzFVcoUM2M1Tl3',
-            worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            created_at: dt(0, 14, 0),
-        },
-        {
-            id: 'PsG42X7oevXgC5DRy4irTW',
-            activity_id: 'Kj75MtFxnEpFZs4MSK1emd',
-            worker_id: 'oU0bIe0eUC33mTbZrxdogC',
-            created_at: dt(0, 13, 0),
-        },
-        {
-            id: 'bPgxi8YCw4yTFctLef62gB',
-            activity_id: 'xRmfZFNV8GYDQmq8j09Fsc',
-            worker_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            created_at: dt(0, 12, 0),
-        },
-        {
-            id: '2dp7FPj4gjWYtfR78D3wI2',
-            activity_id: 'hP80lUSXqn1PSleymgE3Ks',
-            worker_id: '53J8h9dr76XFqCjYcNVwIR',
-            created_at: dt(1, 18, 0),
-        },
-        {
-            id: 'Rf5G2Dh1ejnvzxbpW6hcrm',
-            activity_id: 'XMltAG0dpolQLDTfd5GLWj',
-            worker_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            created_at: dt(1, 15, 0),
-        },
-    ];
-
     const aiWorkers: AIWorkerEntity[] = [
         {
             id: 'tuJwPxYtBur2KCLquScShB',
@@ -5890,11 +5756,6 @@ export async function populateMockData(
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
-                r.id, r,
-            ),
-        ),
-        ...activityActors.map(r =>
-            adapter.activityActors.put(
                 r.id, r,
             ),
         ),

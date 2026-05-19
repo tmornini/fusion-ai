@@ -5,7 +5,6 @@ import {
     validateAIWorkerEntity,
     validateIdeaEntity,
     validateProjectEntity,
-    validateActivityEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
     validateWorkOrderEntity,
@@ -13,7 +12,6 @@ import {
     validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
-    validateActivityActorEntity,
     validateProjectFlowEntity,
     asStoredGraph,
 } from '../api/validators.ts';
@@ -269,46 +267,6 @@ test('validateProjectEntity rejects unknown key', () => {
             status: 'submitted',
         }),
         /unexpected key "status"/,
-    );
-});
-
-// --- ActivityEntity ---
-
-const validActivity = {
-    type: 'idea_created',
-    action: 'Created an idea',
-    target: 'idea-1',
-    timestamp: '2024-01-01T00:00:00Z',
-    status: 'complete',
-    feedback: '',
-};
-
-test('validateActivityEntity accepts valid payload', () => {
-    const result =
-        validateActivityEntity(validActivity);
-    assert.equal(result.type, 'idea_created');
-});
-
-test(
-    'validateActivityEntity rejects missing timestamp',
-    () => {
-    const body = { ...validActivity };
-    delete (
-        body as Record<string, unknown>
-    )['timestamp'];
-    assert.throws(
-        () => validateActivityEntity(body),
-        /missing required key "timestamp"/,
-    );
-});
-
-test(
-    'validateActivityEntity rejects unknown type',
-    () => {
-    const body = { ...validActivity, type: 'bogus' };
-    assert.throws(
-        () => validateActivityEntity(body),
-        /expected ActivityType for ActivityEntity\.type/,
     );
 });
 
@@ -598,38 +556,6 @@ test(
             at: '2024-01-01T00:00:00Z',
         }),
         /missing required key "idea_id"/,
-    );
-});
-
-// --- ActivityActorEntity ---
-
-const validActivityActor = {
-    activity_id: 'act-1',
-    worker_id: 'u-1',
-    created_at: '2024-01-01T00:00:00Z',
-};
-
-test(
-    'validateActivityActorEntity accepts valid'
-    + ' payload',
-    () => {
-    const result =
-        validateActivityActorEntity(
-            validActivityActor,
-        );
-    assert.equal(result.activity_id, 'act-1');
-});
-
-test(
-    'validateActivityActorEntity rejects missing'
-    + ' activity_id',
-    () => {
-    assert.throws(
-        () => validateActivityActorEntity({
-            worker_id: 'u-1',
-            created_at: '2024-01-01T00:00:00Z',
-        }),
-        /missing required key "activity_id"/,
     );
 });
 

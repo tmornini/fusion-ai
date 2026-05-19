@@ -227,18 +227,6 @@ partitions them.
 
 ## Platform
 
-### activities
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| type | TEXT |
-| action | TEXT |
-| target | TEXT |
-| timestamp | TEXT |
-| status | TEXT |
-| feedback | TEXT |
-
 ### organization
 
 Singleton table (single row, `id = '1'`).
@@ -269,15 +257,6 @@ Singleton table (single row, `id = '1'`).
 | idea_id | TEXT (FK → ideas) |
 | worker_id | TEXT (FK → workers / ai_workers) |
 | at | TEXT |
-
-### activity_actors
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| activity_id | TEXT (FK → activities) |
-| worker_id | TEXT (FK → workers / ai_workers) |
-| created_at | TEXT |
 
 ### project_flows
 

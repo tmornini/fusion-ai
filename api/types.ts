@@ -60,42 +60,6 @@ export const IDEA_STATES = [
 
 export type IdeaState = typeof IDEA_STATES[number];
 
-export type ActivityType =
-    | 'idea_created'
-    | 'project_created'
-    | 'person_joined'
-    | 'status_changed'
-    | 'idea_converted';
-
-const ACTIVITY_TYPES:
-    readonly ActivityType[] = [
-    'idea_created',
-    'project_created',
-    'person_joined',
-    'status_changed',
-    'idea_converted',
-];
-
-export function isActivityType(
-    v: string,
-): v is ActivityType {
-    return (ACTIVITY_TYPES as readonly string[])
-        .includes(v);
-}
-
-export function assertActivityType(
-    v: string,
-    label: string,
-): ActivityType {
-    if (!isActivityType(v)) {
-        throw new Error(
-            'expected ActivityType for '
-                + label + ', got ' + v,
-        );
-    }
-    return v;
-}
-
 export type DimensionKey =
     | 'driver'
     | 'analytical'
@@ -673,16 +637,6 @@ export interface ProjectEntity {
     position: number;
 }
 
-export interface ActivityEntity {
-    id: Id;
-    type: ActivityType;
-    action: string;
-    target: string;
-    timestamp: string;
-    status: string;
-    feedback: string;
-}
-
 export interface GraphField {
     id: string;
     name: string;
@@ -815,13 +769,6 @@ export interface IdeaSubmissionEntity {
     idea_id: Id;
     worker_id: Id;
     at: string;
-}
-
-export interface ActivityActorEntity {
-    id: Id;
-    activity_id: Id;
-    worker_id: Id;
-    created_at: string;
 }
 
 export interface ProjectFlowEntity {
@@ -1188,12 +1135,6 @@ export class Project {
             .toLowerCase()
             .includes(t);
     }
-}
-
-export interface RecentActivityItem {
-    type: string;
-    description: string;
-    time: string;
 }
 
 export function ideaIsVisible(

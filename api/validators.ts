@@ -12,7 +12,6 @@ import type {
     AIWorkerEntity,
     IdeaEntity,
     ProjectEntity,
-    ActivityEntity,
     FlowEntity,
     FlowVersionEntity,
     WorkOrderEntity,
@@ -20,7 +19,6 @@ import type {
     StateFieldValueEntity,
     OrganizationEntity,
     IdeaSubmissionEntity,
-    ActivityActorEntity,
     ProjectFlowEntity,
     Objective,
     ObjectiveRevision,
@@ -28,7 +26,6 @@ import type {
     ProjectObjectiveActualScore,
     StateEntity,
 } from './types.ts';
-import { assertActivityType } from './types.ts';
 
 const FLOW_FIELD_TYPE_VALUES:
     readonly FlowFieldType[] = [
@@ -722,42 +719,6 @@ export function validateProjectEntity(
 }
 
 
-const ACTIVITY_BODY_KEYS: readonly string[] = [
-    'type', 'action', 'target',
-    'timestamp', 'status', 'feedback',
-];
-
-export function validateActivityEntity(
-    body: Record<string, unknown>,
-): Omit<ActivityEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        ACTIVITY_BODY_KEYS,
-        'ActivityEntity',
-    );
-    return {
-        type: assertActivityType(
-            pickString(body, 'type'),
-            'ActivityEntity.type',
-        ),
-        action: pickString(
-            body, 'action',
-        ),
-        target: pickString(
-            body, 'target',
-        ),
-        timestamp: pickString(
-            body, 'timestamp',
-        ),
-        status: pickString(
-            body, 'status',
-        ),
-        feedback: pickString(
-            body, 'feedback',
-        ),
-    };
-}
-
 const FLOW_BODY_KEYS: readonly string[] = [
     'name', 'description', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
@@ -1001,32 +962,6 @@ export function validateIdeaSubmissionEntity(
         ),
         at: pickString(
             body, 'at',
-        ),
-    };
-}
-
-const ACTIVITY_ACTOR_BODY_KEYS:
-    readonly string[] = [
-    'activity_id', 'worker_id', 'created_at',
-];
-
-export function validateActivityActorEntity(
-    body: Record<string, unknown>,
-): Omit<ActivityActorEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        ACTIVITY_ACTOR_BODY_KEYS,
-        'ActivityActorEntity',
-    );
-    return {
-        activity_id: pickString(
-            body, 'activity_id',
-        ),
-        worker_id: pickString(
-            body, 'worker_id',
-        ),
-        created_at: pickString(
-            body, 'created_at',
         ),
     };
 }

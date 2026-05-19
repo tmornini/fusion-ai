@@ -313,7 +313,6 @@ test(
         const expected = [
             'workers', 'ai_workers',
             'ideas', 'projects',
-            'activities',
             'flows', 'flow_versions',
             'project_flows', 'work_orders',
             'flow_work_orders',
@@ -321,7 +320,6 @@ test(
             'states',
             'organization',
             'idea_submissions',
-            'activity_actors',
         ];
         for (const table of expected) {
             assert.ok(

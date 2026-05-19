@@ -21,7 +21,6 @@ export * from './workers.ts';
 export * from './ai-workers.ts';
 export * from './workers-union.ts';
 export * from './admin.ts';
-export * from './activities.ts';
 export * from './snapshots.ts';
 export * from './flow-queries.ts';
 export * from './flow-mutations.ts';
