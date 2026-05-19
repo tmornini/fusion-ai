@@ -600,7 +600,7 @@ export function validateHumanWorkerEntity(
 const AI_WORKER_BODY_KEYS:
     readonly string[] = [
     'name', 'provider', 'description',
-    'auth_token', 'created_at',
+    'auth_token',
 ];
 
 // auth_token must be non-empty —
@@ -637,9 +637,6 @@ export function validateAIWorkerEntity(
             body, 'description',
         ),
         auth_token: authToken,
-        created_at: pickString(
-            body, 'created_at',
-        ),
     };
 }
 

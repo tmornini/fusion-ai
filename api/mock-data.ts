@@ -5858,7 +5858,6 @@ export async function populateMockData(
                 + ' context, deep reasoning.',
             auth_token:
                 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
-            created_at: dt(0, 11, 0),
         },
         {
             id: 'LdoTR1fnyYpS1jPzEs57ek',
@@ -5869,7 +5868,6 @@ export async function populateMockData(
                 + ' and capable.',
             auth_token:
                 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
-            created_at: dt(0, 11, 0),
         },
         {
             id: 'Xv89xOCXR6awwoXcPvEY9Y',
@@ -5879,7 +5877,6 @@ export async function populateMockData(
                 'OpenAI multimodal flagship.',
             auth_token:
                 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
-            created_at: dt(0, 11, 0),
         },
         {
             id: '42vHYDCvtkaO3sTnoqg7aJ',
@@ -5889,7 +5886,6 @@ export async function populateMockData(
                 'xAI heavy-compute model.',
             auth_token:
                 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
-            created_at: dt(0, 11, 0),
         },
     ];
 

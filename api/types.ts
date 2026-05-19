@@ -475,7 +475,6 @@ export interface AIWorkerEntity {
     provider: string;
     description: string;
     auth_token: string;
-    created_at: string;
 }
 
 export class AIWorker {
@@ -485,7 +484,6 @@ export class AIWorker {
     readonly #provider: string;
     readonly #description: string;
     readonly #authToken: string;
-    readonly #createdAt: string;
     readonly #state: WorkerState;
 
     constructor(
@@ -499,8 +497,6 @@ export class AIWorker {
             entity.description;
         this.#authToken =
             entity.auth_token;
-        this.#createdAt =
-            entity.created_at;
         this.#state = state;
     }
 

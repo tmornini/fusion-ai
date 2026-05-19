@@ -20,7 +20,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(awk 'NR==203' /Users/tmornini/code/fusion-ai/CLAUDE.md)",
       "Bash(TMPDIR=/tmp/claude ./serve 8080)",
-      "Skill(superpowers:writing-plans)"
+      "Skill(superpowers:writing-plans)",
+      "Bash(TMPDIR=/tmp/claude ./test)"
     ]
   },
   "outputStyle": "Explanatory",
