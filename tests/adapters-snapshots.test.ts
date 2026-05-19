@@ -21,6 +21,7 @@ import {
     postMockDataLoad,
     deleteSchema,
     SnapshotTooLargeError,
+    SnapshotIncompatibleError,
 } from '../web-app/app/adapters/snapshots.ts';
 
 function buildWorker(id: string, first: string) {
@@ -214,5 +215,66 @@ test(
             rows.length > 0,
             'mock data should seed workers',
         );
+    },
+);
+
+test(
+    'putSnapshot rejects retired activities table',
+    async () => {
+        const { ctx } = setup();
+        const json = JSON.stringify({
+            activities: [
+                { id: 'x', type: 'idea_created' },
+            ],
+        });
+        await assert.rejects(
+            () => putSnapshot(ctx, json),
+            SnapshotIncompatibleError,
+        );
+    },
+);
+
+test(
+    'putSnapshot rejects retired projects fields',
+    async () => {
+        const { ctx } = setup();
+        const json = JSON.stringify({
+            projects: [{
+                id: 'p1',
+                title: 'P',
+                business_context: '{}',
+            }],
+        });
+        await assert.rejects(
+            () => putSnapshot(ctx, json),
+            /projects\.business_context/,
+        );
+    },
+);
+
+test(
+    'putSnapshot rejects retired flows.updated_at',
+    async () => {
+        const { ctx } = setup();
+        const json = JSON.stringify({
+            flows: [{
+                id: 'f1',
+                name: 'F',
+                updated_at: '2024-01-01T00:00:00Z',
+            }],
+        });
+        await assert.rejects(
+            () => putSnapshot(ctx, json),
+            /flows\.updated_at/,
+        );
+    },
+);
+
+test(
+    'putSnapshot accepts current-shape snapshot',
+    async () => {
+        const { ctx } = setup();
+        const json = JSON.stringify({ workers: [] });
+        await putSnapshot(ctx, json);
     },
 );
