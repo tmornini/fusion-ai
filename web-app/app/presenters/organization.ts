@@ -322,16 +322,6 @@ function buildUsageCard(
                     org.ideasCurrent(),
                     org.ideasLimit(),
                 )}
-                ${buildUsageBar(
-                    'AI Credits',
-                    org.aiCreditsCurrent(),
-                    org.aiCreditsLimit(),
-                )}
-                ${buildUsageBar(
-                    'Storage (GB)',
-                    org.storageCurrent(),
-                    org.storageLimit(),
-                )}
             </div>
         </div>`;
 }

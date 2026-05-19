@@ -139,10 +139,6 @@ function makeOrg() {
         projects_current: 8,
         ideas_limit: 200,
         ideas_current: 30,
-        storage_limit: 100,
-        storage_current: 20,
-        ai_credits_limit: 1000,
-        ai_credits_current: 200,
         health_score: 92,
         health_status: 'Healthy',
         last_activity: '2026-05-01',
@@ -404,7 +400,6 @@ test(
         assert.match(out, /Projects/);
         assert.match(out, /Ideas/);
         assert.match(out, /Usage Overview/);
-        assert.match(out, /AI Credits/);
         // a usage bar prints "current / limit"
         assert.match(out, /12 \/ 50/);
         assert.match(out, /Health Score: 92%/);

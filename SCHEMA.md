@@ -251,10 +251,6 @@ Singleton table (single row, `id = '1'`).
 | projects_current | INTEGER |
 | ideas_limit | INTEGER |
 | ideas_current | INTEGER |
-| storage_limit | REAL |
-| storage_current | REAL |
-| ai_credits_limit | INTEGER |
-| ai_credits_current | INTEGER |
 | health_score | INTEGER |
 | health_status | TEXT |
 | last_activity | TEXT |

@@ -941,9 +941,7 @@ const ORGANIZATION_BODY_KEYS:
     'plan', 'plan_status', 'next_billing',
     'seats', 'used_seats', 'projects_limit',
     'projects_current', 'ideas_limit',
-    'ideas_current', 'storage_limit',
-    'storage_current', 'ai_credits_limit',
-    'ai_credits_current', 'health_score',
+    'ideas_current', 'health_score',
     'health_status', 'last_activity',
     'active_people',
 ];
@@ -989,18 +987,6 @@ export function validateOrganizationEntity(
         ),
         ideas_current: pickNumber(
             body, 'ideas_current',
-        ),
-        storage_limit: pickNumber(
-            body, 'storage_limit',
-        ),
-        storage_current: pickNumber(
-            body, 'storage_current',
-        ),
-        ai_credits_limit: pickNumber(
-            body, 'ai_credits_limit',
-        ),
-        ai_credits_current: pickNumber(
-            body, 'ai_credits_current',
         ),
         health_score: pickNumber(
             body, 'health_score',

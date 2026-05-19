@@ -779,10 +779,6 @@ export interface OrganizationEntity {
     projects_current: number;
     ideas_limit: number;
     ideas_current: number;
-    storage_limit: number;
-    storage_current: number;
-    ai_credits_limit: number;
-    ai_credits_current: number;
     health_score: number;
     health_status: string;
     last_activity: string;

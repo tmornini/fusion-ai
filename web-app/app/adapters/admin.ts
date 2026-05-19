@@ -96,24 +96,6 @@ export class Organization {
         return this.#entity.ideas_limit;
     }
 
-    storageCurrent(): number {
-        return this.#entity.storage_current;
-    }
-
-    storageLimit(): number {
-        return this.#entity.storage_limit;
-    }
-
-    aiCreditsCurrent(): number {
-        return (
-            this.#entity.ai_credits_current
-        );
-    }
-
-    aiCreditsLimit(): number {
-        return this.#entity.ai_credits_limit;
-    }
-
     nextBillingDate(): string {
         return formatDate(
             this.#entity.next_billing,
