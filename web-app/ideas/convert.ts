@@ -15,7 +15,6 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getIdea,
-    postActivity,
     postIdeaConversion,
     createRequestContext,
     generateCryptoSafeBase62,
@@ -391,25 +390,6 @@ export async function init(
                     }
                     return;
                 }
-                const projectName =
-                    submitted['project-name'];
-                await postActivity(ctx, {
-                    type: 'idea_converted',
-                    action:
-                        'converted idea to'
-                        + ' project',
-                    target: projectName,
-                    status: '',
-                    feedback: '',
-                });
-                await postActivity(ctx, {
-                    type: 'project_created',
-                    action:
-                        'created new project',
-                    target: projectName,
-                    status: '',
-                    feedback: '',
-                });
                 showToast(
                     'Project created'
                     + ' successfully!',

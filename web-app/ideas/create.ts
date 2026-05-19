@@ -9,7 +9,6 @@ import { navigateTo } from '../app/core.ts';
 import {
     createRequestContext,
     getIdeaRows,
-    postActivity,
     postIdeaStateChange,
     putIdeaSubmission,
     generateCryptoSafeBase62,
@@ -173,14 +172,6 @@ export async function init():
                     generateCryptoSafeBase62(),
                     ideaId,
                 );
-                await postActivity(ctx, {
-                    type: 'idea_created',
-                    action:
-                        'submitted new idea',
-                    target: formState.title,
-                    status: '',
-                    feedback: '',
-                });
                 navigateTo('ideas');
             },
         );

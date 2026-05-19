@@ -24,7 +24,6 @@ import {
     postHumanWorkerStateChange,
     postAIWorkerCreate,
     getCurrentHumanWorker,
-    postActivity,
     jsonArrayField,
     jsonObjectField,
     generateCryptoSafeBase62,
@@ -694,27 +693,6 @@ async function submitHumanForm(): Promise<void> {
     } catch (err) {
         log.error(
             'postHumanWorkerStateChange failed',
-            'workers', err,
-        );
-        showToast(
-            'Failed to add worker', 'error',
-        );
-        return;
-    }
-    try {
-        await postActivity(
-            createRequestContext(),
-            {
-                type: 'person_joined',
-                action: 'joined the team',
-                target: first + ' ' + last,
-                status: '',
-                feedback: '',
-            },
-        );
-    } catch (err) {
-        log.error(
-            'postActivity failed',
             'workers', err,
         );
         showToast(
