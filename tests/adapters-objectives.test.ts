@@ -15,7 +15,7 @@ import {
     postObjectiveRevision,
     postObjectiveDeprecation,
     postObjectiveReactivation,
-    postObjectiveReordering,
+    putObjectivePosition,
 } from '../web-app/app/adapters/objectives.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
@@ -252,27 +252,60 @@ test('reactivation does not emit a deleted state event',
             + ' log as active, never as deleted');
     });
 
-test('postObjectiveReordering updates positions',
+test(
+    'putObjectivePosition writes the fractional'
+    + ' value without renumbering its peers',
     async () => {
         const db = new MemoryDbAdapter();
         const ctx = ctxFor(db);
         await postObjectiveCreation(
-            ctx, 'o1', 'A', 'd', 0,
+            ctx, 'o1', 'A', 'd', 1,
         );
         await postObjectiveCreation(
-            ctx, 'o2', 'B', 'd', 1,
+            ctx, 'o2', 'B', 'd', 2,
         );
         await postObjectiveCreation(
-            ctx, 'o3', 'C', 'd', 2,
+            ctx, 'o3', 'C', 'd', 3,
         );
-        await postObjectiveReordering(
-            ctx, ['o3', 'o1', 'o2'],
-        );
+
+        await putObjectivePosition(ctx, 'o2', 0.5);
+
         const all = await db.objectives.getAll();
         const map = new Map(
             all.map(o => [o.id, o.position]),
         );
-        assert.equal(map.get('o3'), 0);
+        assert.equal(map.get('o2'), 0.5);
         assert.equal(map.get('o1'), 1);
-        assert.equal(map.get('o2'), 2);
-    });
+        assert.equal(map.get('o3'), 3);
+    },
+);
+
+test(
+    'putObjectivePosition preserves adjacent'
+    + ' fractional values across sequential'
+    + ' reorders',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'A', 'd', 1,
+        );
+        await postObjectiveCreation(
+            ctx, 'o2', 'B', 'd', 2,
+        );
+        await postObjectiveCreation(
+            ctx, 'o3', 'C', 'd', 3,
+        );
+
+        await putObjectivePosition(ctx, 'o2', 1.5);
+        await putObjectivePosition(ctx, 'o3', 1.25);
+
+        const all = await db.objectives.getAll();
+        const map = new Map(
+            all.map(o => [o.id, o.position]),
+        );
+        assert.equal(map.get('o1'), 1);
+        assert.equal(map.get('o3'), 1.25);
+        assert.equal(map.get('o2'), 1.5);
+    },
+);

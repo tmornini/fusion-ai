@@ -25,7 +25,7 @@ import {
     postObjectiveRevision,
     postObjectiveDeprecation,
     postObjectiveReactivation,
-    postObjectiveReordering,
+    putObjectivePosition,
     subscribeObjectiveChanges,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
@@ -201,28 +201,8 @@ export async function init(): Promise<void> {
             'data-objective-id',
             async (id, newPosition) => {
                 const ctx = createRequestContext();
-                const active =
-                    await getActiveObjectives(ctx);
-                const moved = active.find(
-                    o => o.id === id,
-                );
-                if (!moved) return;
-                const others = active.filter(
-                    o => o.id !== id,
-                );
-                let insertIdx = others.findIndex(
-                    o => o.position > newPosition,
-                );
-                if (insertIdx === -1) {
-                    insertIdx = others.length;
-                }
-                const newOrder = [
-                    ...others.slice(0, insertIdx),
-                    moved,
-                    ...others.slice(insertIdx),
-                ];
-                await postObjectiveReordering(
-                    ctx, newOrder.map(o => o.id),
+                await putObjectivePosition(
+                    ctx, id, newPosition,
                 );
             },
         );
