@@ -4,6 +4,9 @@ import {
     createLocalStorageAdapter,
 } from '../api/db-localstorage.ts';
 import {
+    TABLE_NAMES,
+} from '../api/db.ts';
+import {
     jsonObjectField,
 } from '../api/types.ts';
 
@@ -347,22 +350,21 @@ test(
         const json =
             await adapter.exportSnapshot();
         const parsed = JSON.parse(json);
-        const expected = [
-            'workers', 'ai_workers',
-            'ideas', 'projects',
-            'flows', 'flow_versions',
-            'project_flows', 'work_orders',
-            'flow_work_orders',
-            'state_field_values',
-            'states',
-            'organization',
-            'idea_submissions',
-        ];
-        for (const table of expected) {
+        for (const table of TABLE_NAMES) {
             assert.ok(
                 Array.isArray(parsed[table]),
                 'missing table in export: ' + table,
             );
         }
+        assert.strictEqual(
+            new Set(TABLE_NAMES).size,
+            TABLE_NAMES.length,
+            'TABLE_NAMES contains duplicates',
+        );
+        assert.strictEqual(
+            Object.keys(parsed).length,
+            TABLE_NAMES.length,
+            'export key count !== TABLE_NAMES length',
+        );
     },
 );
