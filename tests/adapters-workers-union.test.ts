@@ -128,8 +128,8 @@ test(
 );
 
 test(
-    'workerName returns fullName for humans and'
-    + ' nameText for AIs',
+    'workerName returns the display name for'
+    + ' both human and AI kinds',
     async () => {
         const { db } = await setupSeeded();
         const ctx = createRequestContext(db);
