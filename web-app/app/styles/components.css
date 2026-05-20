@@ -1111,30 +1111,3 @@
   color: hsl(var(--primary));
 }
 
-/* ==========================================
-   24. STATUS DOT (positioned overlay)
-   ========================================== */
-
-.status-dot {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 0.875rem;
-  height: 0.875rem;
-  border-radius: var(--radius-full);
-  border: 2px solid hsl(var(--card));
-}
-
-.status-dot[data-tone="success"] {
-  background: hsl(var(--success));
-}
-.status-dot[data-tone="warning"] {
-  background: hsl(var(--warning));
-}
-.status-dot[data-tone="error"] {
-  background: hsl(var(--error));
-}
-.status-dot[data-tone="muted"] {
-  background: hsl(var(--muted-foreground));
-}
-
