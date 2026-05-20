@@ -17,6 +17,9 @@ import {
     postObjectiveReactivation,
     putObjectivePosition,
 } from '../web-app/app/adapters/objectives.ts';
+import {
+    computeNewPosition,
+} from '../web-app/app/drag-reorder-positions.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);
@@ -277,6 +280,45 @@ test(
         assert.equal(map.get('o2'), 0.5);
         assert.equal(map.get('o1'), 1);
         assert.equal(map.get('o3'), 3);
+    },
+);
+
+test(
+    'computeNewPosition + putObjectivePosition'
+    + ' wedge an item into the middle without'
+    + ' renumbering anyone',
+    async () => {
+        const db = new MemoryDbAdapter();
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'A', 'd', 1,
+        );
+        await postObjectiveCreation(
+            ctx, 'o2', 'B', 'd', 2,
+        );
+        await postObjectiveCreation(
+            ctx, 'o3', 'C', 'd', 3,
+        );
+
+        const active = await getActiveObjectives(ctx);
+        const others = active.filter(
+            o => o.id !== 'o3',
+        );
+        const newPos = computeNewPosition(
+            others.map(o => o.position),
+            1,
+        );
+        await putObjectivePosition(
+            ctx, 'o3', newPos,
+        );
+
+        const all = await db.objectives.getAll();
+        const map = new Map(
+            all.map(o => [o.id, o.position]),
+        );
+        assert.equal(map.get('o3'), 1.5);
+        assert.equal(map.get('o1'), 1);
+        assert.equal(map.get('o2'), 2);
     },
 );
 
