@@ -1,1 +1,30 @@
 /* Cards: panels, action cards, icon-box cards, selection ring. */
+/* ==========================================
+   51. ORG OBJECTIVES BOX
+   ========================================== */
+
+.org-objectives-box {
+  padding: 1em;
+}
+
+.org-objectives-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8em;
+}
+
+.objective-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.objective-list-divider {
+  margin: 1em 0 0.4em;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+

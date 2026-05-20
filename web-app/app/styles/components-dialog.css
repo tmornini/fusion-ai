@@ -1,1 +1,107 @@
 /* Dialogs and modals: centered overlay panels, slide-in sheets. */
+/* ==========================================
+   52. PROJECT HISTORY MODAL
+   ========================================== */
+
+.score-history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.score-history-table th,
+.score-history-table td {
+  text-align: left;
+  padding: 0.4em 0.6em;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.score-history-table td[data-tone="error"] {
+  color: hsl(var(--destructive));
+}
+
+.score-history-table td[data-tone="success"] {
+  color: hsl(var(--success));
+}
+
+/* Below 768px the card becomes a bottom sheet with a */
+/* drag-handle affordance (pure decoration, ::before).  */
+@media (max-width: 767px) {
+  .flow-stats-card {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    max-width: none;
+    padding-top: var(--space-3);
+    border-radius:
+      var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .flow-stats-card::before {
+    content: "";
+    display: block;
+    width: 2.5rem;
+    height: var(--space-1);
+    margin: 0 auto var(--space-3);
+    border-radius: var(--radius-full);
+    background: hsl(var(--border-strong));
+  }
+}
+/* ==========================================
+   50. SCORE / MEASUREMENT MODAL
+   ========================================== */
+
+.score-modal-body,
+.measurement-modal-body {
+  padding: var(--space-4);
+  min-width: 480px;
+}
+
+.score-slider-row,
+.measurement-slider-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 60px;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.6em 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.score-slider-row:last-of-type,
+.measurement-slider-row:last-of-type {
+  border-bottom: none;
+}
+
+.score-slider-label strong {
+  display: block;
+}
+
+.score-slider-desc,
+.measurement-caption {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.score-slider {
+  width: 100%;
+}
+
+.score-slider.unset {
+  opacity: 0.4;
+}
+
+.score-hint {
+  grid-column: 1 / -1;
+  font-size: 0.85em;
+  color: hsl(var(--warning));
+  margin-top: 0.2em;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6em;
+  margin-top: 1em;
+}
+
