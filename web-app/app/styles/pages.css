@@ -1302,17 +1302,17 @@ svg.flow-canvas [data-edge-id] {
 }
 
 .gauge-card[data-tone="primary"] {
-  background: hsl(var(--primary) / 0.04);
+  background: hsl(var(--primary-soft));
   border-color: hsl(var(--primary) / 0.15);
 }
 
 .gauge-card[data-tone="success"] {
-  background: hsl(var(--success) / 0.04);
+  background: hsl(var(--success-soft));
   border-color: hsl(var(--success) / 0.15);
 }
 
 .gauge-card[data-tone="warning"] {
-  background: hsl(var(--warning) / 0.04);
+  background: hsl(var(--warning-soft));
   border-color: hsl(var(--warning) / 0.15);
 }
 
@@ -2382,19 +2382,19 @@ svg.flow-stats-canvas
 
 .portfolio-impact-header
     .icon-box[data-tone='success'] {
-  background: hsl(var(--success) / 0.12);
+  background: hsl(var(--success-soft));
   color: hsl(var(--success));
 }
 
 .portfolio-impact-header
     .icon-box[data-tone='error'] {
-  background: hsl(var(--destructive) / 0.12);
+  background: hsl(var(--error-soft));
   color: hsl(var(--destructive));
 }
 
 .portfolio-impact-header
     .icon-box[data-tone='muted'] {
-  background: hsl(var(--muted) / 0.10);
+  background: hsl(var(--muted-soft));
   opacity: 0.6;
 }
 
