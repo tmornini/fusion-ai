@@ -28,3 +28,12 @@
   opacity: 0.6;
 }
 
+/* ==========================================
+   30b. CARD SELECTED RING
+   ========================================== */
+
+.card-selected {
+  box-shadow:
+    0 0 0 2px hsl(var(--primary));
+}
+
