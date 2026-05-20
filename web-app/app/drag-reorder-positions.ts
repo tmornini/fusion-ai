@@ -26,6 +26,17 @@ export function dropIndex(
     return rects.length;
 }
 
+// The position that lies between two existing
+// positions — the room a new item needs to wedge in
+// without disturbing its neighbors. The arithmetic
+// is averaging; the semantic is BETWEENING.
+export function positionBetween(
+    left: number,
+    right: number,
+): number {
+    return (left + right) / 2;
+}
+
 export function computeNewPosition(
     positions: readonly number[],
     idx: number,
@@ -40,7 +51,8 @@ export function computeNewPosition(
         return positions[positions.length - 1]!
             + POSITION_GAP;
     }
-    return (
-        positions[idx - 1]! + positions[idx]!
-    ) / 2;
+    return positionBetween(
+        positions[idx - 1]!,
+        positions[idx]!,
+    );
 }
