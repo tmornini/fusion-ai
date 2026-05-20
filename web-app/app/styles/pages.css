@@ -1414,13 +1414,3 @@ svg.flow-canvas [data-edge-id] {
   color: hsl(var(--muted-foreground));
 }
 
-/* ==========================================
-   42. ONBOARDING
-   ========================================== */
-
-.welcome-icon-box {
-  width: 4rem;
-  height: 4rem;
-  box-shadow: var(--shadow-lg);
-}
-
