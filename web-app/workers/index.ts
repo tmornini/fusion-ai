@@ -742,7 +742,6 @@ async function submitAIForm(): Promise<void> {
                 provider,
                 description,
                 auth_token: authToken,
-                created_at: nowUtc(),
             }),
         );
     } catch (err) {

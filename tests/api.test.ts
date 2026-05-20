@@ -104,7 +104,6 @@ test(
             provider: 'Anthropic',
             description: '',
             auth_token: 'sk-real-token',
-            created_at: '2026-01-01T00:00:00Z',
         });
         const ais =
             await GET<unknown[]>(db, 'ai-workers');
@@ -134,7 +133,6 @@ test(
             provider: 'Anthropic',
             description: '',
             auth_token: 'sk-real-token',
-            created_at: '2026-01-01T00:00:00Z',
         });
         await DELETE(db, 'ai-workers/ai_1');
         await assert.rejects(
