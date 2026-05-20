@@ -100,3 +100,75 @@
   flex-shrink: 0;
 }
 
+/* ==========================================
+   22. ICON BOX
+   ========================================== */
+
+.icon-box {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-box-lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-box[data-tone="primary"],
+.icon-box-lg[data-tone="primary"] {
+  background: linear-gradient(135deg,
+    hsl(var(--primary) / 0.2),
+    hsl(var(--primary) / 0.05));
+  color: hsl(var(--primary));
+}
+
+.icon-box[data-tone="success"],
+.icon-box-lg[data-tone="success"] {
+  background: linear-gradient(135deg,
+    hsl(var(--success) / 0.2),
+    hsl(var(--success) / 0.05));
+  color: hsl(var(--success-text));
+}
+
+.icon-box[data-tone="warning"],
+.icon-box-lg[data-tone="warning"] {
+  background: linear-gradient(135deg,
+    hsl(var(--warning) / 0.2),
+    hsl(var(--warning) / 0.05));
+  color: hsl(var(--warning-text));
+}
+
+.icon-box[data-tone="error"],
+.icon-box-lg[data-tone="error"] {
+  background: linear-gradient(135deg,
+    hsl(var(--error) / 0.2),
+    hsl(var(--error) / 0.05));
+  color: hsl(var(--error-text));
+}
+
+.icon-box[data-tone="info"],
+.icon-box-lg[data-tone="info"] {
+  background: linear-gradient(135deg,
+    hsl(var(--info) / 0.2),
+    hsl(var(--info) / 0.05));
+  color: hsl(var(--info-text));
+}
+
+.icon-box[data-tone="muted"],
+.icon-box-lg[data-tone="muted"] {
+  background: linear-gradient(135deg,
+    hsl(var(--muted) / 0.2),
+    hsl(var(--muted) / 0.05));
+  color: hsl(var(--muted-foreground));
+}
+
