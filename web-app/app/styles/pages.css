@@ -1323,9 +1323,14 @@ svg.flow-canvas [data-edge-id] {
   margin-bottom: var(--space-3);
 }
 
+.gauge-arc-track,
 .gauge-arc-outer,
 .gauge-arc-inner {
   stroke-width: var(--gauge-stroke-width);
+}
+
+.gauge-arc-outer,
+.gauge-arc-inner {
   animation: gauge-draw var(--duration-pulse)
     ease-out;
 }
