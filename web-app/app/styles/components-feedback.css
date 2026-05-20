@@ -1,1 +1,58 @@
 /* Progress, skeletons, bipolar bars: visual loading and progress. */
+/* ==========================================
+   32. BIPOLAR BAR
+   ========================================== */
+
+/* Bipolar bar — zero-centered, used by
+   ProjectObjectives, DashboardObjectiveAggregates,
+   and history previews */
+.bipolar-bar {
+    --bar-width: 240px;
+    --bar-height: 18px;
+    position: relative;
+    width: var(--bar-width);
+    height: var(--bar-height);
+    background: hsl(var(--muted) / 0.10);
+    border-radius: 3px;
+}
+
+.bipolar-bar::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: hsl(var(--foreground) / 0.35);
+    transform: translateX(-0.5px);
+}
+
+.bipolar-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: hsl(var(--tone-current));
+    opacity: 0.55;
+    width: calc(
+        abs(var(--baseline)) / 100 *
+        (var(--bar-width) / 2)
+    );
+}
+
+.bipolar-bar[data-tone='success']::after {
+    --tone-current: var(--success);
+    left: 50%;
+    border-radius: 0 3px 3px 0;
+}
+
+.bipolar-bar[data-tone='error']::after {
+    --tone-current: var(--destructive);
+    right: 50%;
+    border-radius: 3px 0 0 3px;
+}
+
+.bipolar-bar[data-tone='muted']::after {
+    display: none;
+}
+
