@@ -2381,19 +2381,19 @@ svg.flow-stats-canvas
 }
 
 .portfolio-impact-header
-    .icon-box[data-tone='positive'] {
+    .icon-box[data-tone='success'] {
   background: hsl(var(--success) / 0.12);
   color: hsl(var(--success));
 }
 
 .portfolio-impact-header
-    .icon-box[data-tone='negative'] {
+    .icon-box[data-tone='error'] {
   background: hsl(var(--destructive) / 0.12);
   color: hsl(var(--destructive));
 }
 
 .portfolio-impact-header
-    .icon-box[data-tone='neutral'] {
+    .icon-box[data-tone='muted'] {
   background: hsl(var(--muted) / 0.10);
   opacity: 0.6;
 }
@@ -2417,13 +2417,13 @@ svg.flow-stats-canvas
   stroke-width: 14;
 }
 
-.portfolio-impact-arc-outer[data-tone='positive'],
-.portfolio-impact-arc-inner[data-tone='positive'] {
+.portfolio-impact-arc-outer[data-tone='success'],
+.portfolio-impact-arc-inner[data-tone='success'] {
   stroke: hsl(var(--success));
 }
 
-.portfolio-impact-arc-outer[data-tone='negative'],
-.portfolio-impact-arc-inner[data-tone='negative'] {
+.portfolio-impact-arc-outer[data-tone='error'],
+.portfolio-impact-arc-inner[data-tone='error'] {
   stroke: hsl(var(--destructive));
 }
 
@@ -2434,18 +2434,6 @@ svg.flow-stats-canvas
   margin-top: 0.6em;
   text-align: center;
   width: 100%;
-}
-
-.legend-dot[data-tone='positive'] {
-  background: hsl(var(--success));
-}
-
-.legend-dot[data-tone='negative'] {
-  background: hsl(var(--destructive));
-}
-
-.legend-dot[data-tone='neutral'] {
-  background: hsl(var(--muted));
 }
 
 /* ==========================================
@@ -2551,15 +2539,13 @@ svg.flow-stats-canvas
   border-bottom: 1px solid hsl(var(--border));
 }
 
-.score-history-table td[data-tone="negative"] {
+.score-history-table td[data-tone="error"] {
   color: hsl(var(--destructive));
 }
 
-.score-history-table td[data-tone="positive"] {
+.score-history-table td[data-tone="success"] {
   color: hsl(var(--success));
 }
-
-/* data-tone="neutral" inherits default text color */
 
 /* Below 768px the card becomes a bottom sheet with a */
 /* drag-handle affordance (pure decoration, ::before).  */
