@@ -1,7 +1,4 @@
 /* Tabs and view-toggle buttons: segmented navigation. */
-/* ==========================================
-   27. TABS (Page-friendly)
-   ========================================== */
 
 .tabs {
   display: inline-flex;
@@ -37,9 +34,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ==========================================
-   28. VIEW TOGGLE BUTTONS
-   ========================================== */
 
 .view-toggle-btn {
   background: transparent;

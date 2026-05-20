@@ -1,7 +1,4 @@
 /* Auth page: sign-in form layout, approval action footer. */
-/* ==========================================
-   36. AUTH PAGE
-   ========================================== */
 
 .auth-branding {
   width: 50%;
@@ -96,9 +93,6 @@
   cursor: pointer;
 }
 
-/* ==========================================
-   36b. ACTION FOOTER (Approval Detail)
-   ========================================== */
 
 .action-footer {
   position: fixed;

@@ -1,7 +1,4 @@
 /* Landing: navbar, hero, features, how-it-works, CTA, footer. */
-/* ==========================================
-   29. NAVBAR (Landing)
-   ========================================== */
 
 .navbar {
   position: fixed;
@@ -111,9 +108,6 @@
 }
 .navbar-mobile-menu a:hover { color: hsl(var(--foreground)); }
 
-/* ==========================================
-   30. HERO SECTION
-   ========================================== */
 
 .hero {
   position: relative;
@@ -243,9 +237,6 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* ==========================================
-   31. FEATURES SECTION
-   ========================================== */
 
 .features-section {
   padding: 6rem 0;
@@ -314,9 +305,6 @@
   line-height: var(--leading-relaxed);
 }
 
-/* ==========================================
-   32. HOW IT WORKS SECTION
-   ========================================== */
 
 .how-it-works-section {
   padding: 6rem 0;
@@ -415,9 +403,6 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* ==========================================
-   33. CTA SECTION
-   ========================================== */
 
 .cta-section {
   position: relative;
@@ -493,9 +478,6 @@
 
 @media (min-width: 640px) { .cta-buttons { flex-direction: row; } }
 
-/* ==========================================
-   34. FOOTER
-   ========================================== */
 
 .footer {
   padding: var(--space-16) 0;

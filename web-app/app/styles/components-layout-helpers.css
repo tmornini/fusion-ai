@@ -1,7 +1,4 @@
 /* Layout primitives: stack, content-wrap, legend cell, list item. */
-/* ==========================================
-   34. OBJECTIVE LIST ITEM
-   ========================================== */
 
 /* Objective list item — used by Organization
    Objectives box */
@@ -45,9 +42,6 @@
     gap: 0.4em;
 }
 
-/* ==========================================
-   25. LEGEND CELL
-   ========================================== */
 
 .legend-cell {
   text-align: center;
@@ -88,9 +82,6 @@
   background: hsl(var(--muted-foreground));
 }
 
-/* ==========================================
-   26. STACK (column flex with gap)
-   ========================================== */
 
 .stack {
   display: flex;
@@ -108,9 +99,6 @@
   gap: var(--space-6);
 }
 
-/* ==========================================
-   27. CONTENT WRAP (max-width + auto margin)
-   ========================================== */
 
 .content-wrap {
   max-width: 48rem;

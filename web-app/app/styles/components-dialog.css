@@ -1,7 +1,4 @@
 /* Dialogs and modals: centered overlay panels, slide-in sheets. */
-/* ==========================================
-   52. PROJECT HISTORY MODAL
-   ========================================== */
 
 .score-history-table {
   width: 100%;
@@ -47,9 +44,6 @@
     background: hsl(var(--border-strong));
   }
 }
-/* ==========================================
-   50. SCORE / MEASUREMENT MODAL
-   ========================================== */
 
 .score-modal-body,
 .measurement-modal-body {
@@ -105,9 +99,6 @@
   margin-top: 1em;
 }
 
-/* ==========================================
-   12. DIALOG / MODAL
-   ========================================== */
 
 .dialog-backdrop {
   position: fixed;
@@ -151,9 +142,6 @@
   margin-top: var(--space-6);
 }
 
-/* ==========================================
-   13. SHEET (Slide-in Panel)
-   ========================================== */
 
 .sheet-backdrop {
   position: fixed;

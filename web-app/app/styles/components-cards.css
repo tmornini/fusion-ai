@@ -1,7 +1,4 @@
 /* Cards: panels, action cards, icon-box cards, selection ring. */
-/* ==========================================
-   51. ORG OBJECTIVES BOX
-   ========================================== */
 
 .org-objectives-box {
   padding: 1em;
@@ -28,18 +25,12 @@
   opacity: 0.6;
 }
 
-/* ==========================================
-   30b. CARD SELECTED RING
-   ========================================== */
 
 .card-selected {
   box-shadow:
     0 0 0 2px hsl(var(--primary));
 }
 
-/* ==========================================
-   28. ACTION CARD
-   ========================================== */
 
 .action-card {
   display: flex;
@@ -100,9 +91,6 @@
   flex-shrink: 0;
 }
 
-/* ==========================================
-   22. ICON BOX
-   ========================================== */
 
 .icon-box {
   width: 2.5rem;
@@ -172,9 +160,6 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* ==========================================
-   8. CARDS
-   ========================================== */
 
 .card {
   background-color: hsl(var(--card));

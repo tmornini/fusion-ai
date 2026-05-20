@@ -1,7 +1,4 @@
 /* Metric widgets, gauges, score rows: numeric displays. */
-/* ==========================================
-   49. PORTFOLIO IMPACT GAUGE
-   ========================================== */
 
 .portfolio-impact-card {
   display: flex;
@@ -83,9 +80,6 @@
   width: 100%;
 }
 
-/* ==========================================
-   40. DASHBOARD GAUGES
-   ========================================== */
 
 .gauge-card {
   padding: var(--space-4) var(--space-6) var(--space-6);
@@ -138,9 +132,6 @@
   }
 }
 
-/* ==========================================
-   33. SCORE ROW
-   ========================================== */
 
 /* Score row — used by ProjectObjectives and
    DashboardObjectiveAggregates */
@@ -177,9 +168,6 @@
     font-size: 0.85em;
 }
 
-/* ==========================================
-   29. METRIC ICON BOX (small inline)
-   ========================================== */
 
 .metric-icon-box {
   width: 2rem;
@@ -192,9 +180,6 @@
   flex-shrink: 0;
 }
 
-/* ==========================================
-   21. METRIC WIDGET
-   ========================================== */
 
 .metric-widget {
   background-color: hsl(var(--card));

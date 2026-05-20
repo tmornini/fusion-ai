@@ -1,7 +1,4 @@
 /* Buttons: primary, secondary, outline, ghost, destructive, link. */
-/* ==========================================
-   35. ADDITIONAL BUTTON VARIANTS
-   ========================================== */
 
 .btn-accent {
   background: var(--gradient-accent);
@@ -28,9 +25,6 @@
   background-color: hsl(var(--primary-foreground) / 0.2);
 }
 
-/* ==========================================
-   6. BUTTONS
-   ========================================== */
 
 .btn {
   display: inline-flex;

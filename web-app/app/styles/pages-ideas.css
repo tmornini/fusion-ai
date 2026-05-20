@@ -1,7 +1,4 @@
 /* Ideas: detail, create, conversion pages. */
-/* ==========================================
-   46. IDEA CONVERSION
-   ========================================== */
 
 .convert-icon {
   width: 2.25rem;
@@ -99,9 +96,6 @@
   color: hsl(var(--success-foreground));
 }
 
-/* ==========================================
-   43a. IDEA CREATE PAGE
-   ========================================== */
 
 .idea-create-icon {
   width: 2.25rem;
@@ -118,9 +112,6 @@
   border-top: 1px solid hsl(var(--border));
 }
 
-/* ==========================================
-   43. IDEA / IDEA CONVERSION DETAIL
-   ========================================== */
 
 .idea-actions-stack {
   flex-direction: column;

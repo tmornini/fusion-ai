@@ -1,7 +1,4 @@
 /* Dropdown menus and tooltips: floating UI panels. */
-/* ==========================================
-   14. DROPDOWN MENU
-   ========================================== */
 
 .dropdown {
   position: relative;
@@ -67,9 +64,6 @@
 .dropdown-panel { width: 20rem; }
 .dropdown-scroll { max-height: 20rem; overflow-y: auto; }
 
-/* ==========================================
-   15. TOOLTIP
-   ========================================== */
 
 .tooltip {
   position: absolute;

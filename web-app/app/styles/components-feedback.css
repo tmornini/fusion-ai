@@ -1,7 +1,4 @@
 /* Progress, skeletons, bipolar bars: visual loading and progress. */
-/* ==========================================
-   32. BIPOLAR BAR
-   ========================================== */
 
 /* Bipolar bar — zero-centered, used by
    ProjectObjectives, DashboardObjectiveAggregates,
@@ -56,9 +53,6 @@
     display: none;
 }
 
-/* ==========================================
-   31. PROGRESS RING (small SVG)
-   ========================================== */
 
 .progress-ring {
   position: relative;
@@ -80,9 +74,6 @@
   font-weight: var(--font-weight-bold);
 }
 
-/* ==========================================
-   20. SKELETON LOADING
-   ========================================== */
 
 .skeleton {
   background-color: hsl(var(--muted));
@@ -229,9 +220,6 @@
   border-width: 0;
 }
 
-/* ==========================================
-   17. PROGRESS BAR
-   ========================================== */
 
 .progress {
   height: 0.5rem;

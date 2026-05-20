@@ -1,7 +1,4 @@
 /* Form controls: switch toggles, separators. */
-/* ==========================================
-   18. SWITCH
-   ========================================== */
 
 .switch {
   position: relative;
@@ -35,9 +32,6 @@
   transform: translateX(1.25rem);
 }
 
-/* ==========================================
-   19. SEPARATOR
-   ========================================== */
 
 .separator {
   height: 1px;

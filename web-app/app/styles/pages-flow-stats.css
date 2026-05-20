@@ -1,7 +1,4 @@
 /* Flow Stats: read-only heat-mapped diagram, stepper, legend. */
-/* ==========================================
-   48. FLOW STATS
-   ========================================== */
 /*
  * Read-only diagram, data-forward by design: the heat
  * fill, the highlighted path, and the hover card carry

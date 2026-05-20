@@ -1,7 +1,4 @@
 /* Toast notifications: transient feedback overlays. */
-/* ==========================================
-   16. TOAST / NOTIFICATIONS
-   ========================================== */
 
 #toast-container {
   position: fixed;
