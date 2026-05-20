@@ -1,1 +1,10 @@
 /* Badges: pill-shaped status indicators, tone variants. */
+/* ==========================================
+   30. STATUS PILL BADGE (centered fixed)
+   ========================================== */
+
+.badge-fixed-w {
+  min-width: 6rem;
+  justify-content: center;
+}
+
