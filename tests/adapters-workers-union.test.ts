@@ -146,6 +146,20 @@ test(
 );
 
 test(
+    'worker.name() is polymorphic across human'
+    + ' and AI kinds',
+    async () => {
+        const { db } = await setupSeeded();
+        const ctx = createRequestContext(db);
+        const map = await getWorkerMap(ctx);
+        const human = map.get('hw_sarah_chen')!;
+        const ai = map.get('ai_claude_opus')!;
+        assert.equal(human.name(), 'Sarah Test');
+        assert.equal(ai.name(), 'Claude Opus');
+    },
+);
+
+test(
     'workerName throws on missing id (matches'
     + ' personName contract)',
     async () => {
