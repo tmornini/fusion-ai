@@ -110,7 +110,7 @@ echo "Styles created: assets/styles.css ($(wc -c < "$BUILD_DIR/assets/styles.css
 for f in web-app/app/styles/pages-*.css; do
   [ -f "$f" ] || continue
   name=$(basename "$f" .css)
-  npx esbuild --loader=css --minify "$f" > "$BUILD_DIR/assets/$name.css"
+  npx esbuild --minify "$f" --outfile="$BUILD_DIR/assets/$name.css"
   [ -s "$BUILD_DIR/assets/$name.css" ] || { echo "ERROR: $name.css is empty or missing" >&2; exit 1; }
   echo "Styles created: assets/$name.css ($(wc -c < "$BUILD_DIR/assets/$name.css" | xargs) bytes)"
 done
