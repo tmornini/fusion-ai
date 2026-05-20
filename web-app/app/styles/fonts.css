@@ -1,11 +1,4 @@
-/* ============================================
-   FUSION AI DESIGN SYSTEM
-   Version: 2.0.0 — Vanilla CSS (no Tailwind)
-   ============================================ */
-
-/* ==========================================
-   FONT FACES
-   ========================================== */
+/* @font-face declarations: Inter, IBM Plex Sans, IBM Plex Mono. */
 
 @font-face {
   font-family: 'Inter';
