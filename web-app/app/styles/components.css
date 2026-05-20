@@ -1322,12 +1322,3 @@
     0 0 0 2px hsl(var(--primary));
 }
 
-/* ==========================================
-   30c. AVATAR FRAME (relative wrapper)
-   ========================================== */
-
-.avatar-frame {
-  position: relative;
-  flex-shrink: 0;
-}
-

@@ -1,1 +1,10 @@
 /* Avatars: circular images, initials fallback, frame wrappers. */
+/* ==========================================
+   30c. AVATAR FRAME (relative wrapper)
+   ========================================== */
+
+.avatar-frame {
+  position: relative;
+  flex-shrink: 0;
+}
+
