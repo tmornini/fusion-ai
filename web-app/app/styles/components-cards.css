@@ -172,3 +172,34 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* ==========================================
+   8. CARDS
+   ========================================== */
+
+.card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--duration-normal) var(--ease-default),
+              transform var(--duration-normal) var(--ease-default);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+.card-flat {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+  box-shadow: var(--shadow-xs);
+}
+
+.card-header { padding: var(--space-6) var(--space-6) 0; }
+.card-body { padding: var(--space-6); }
+.card-footer { padding: 0 var(--space-6) var(--space-6); }
+
