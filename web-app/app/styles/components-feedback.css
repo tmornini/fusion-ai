@@ -229,3 +229,32 @@
   border-width: 0;
 }
 
+/* ==========================================
+   17. PROGRESS BAR
+   ========================================== */
+
+.progress {
+  height: 0.5rem;
+  width: 100%;
+  background-color: hsl(var(--muted));
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: var(--progress-fill, 0%);
+  background-color: hsl(var(--primary));
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow) var(--ease-default);
+}
+
+.progress-fill {
+  height: 100%;
+  width: var(--progress-fill, 0%);
+  background: hsl(var(--primary));
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow)
+    var(--ease-default);
+}
+
