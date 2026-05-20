@@ -177,3 +177,18 @@
     font-size: 0.85em;
 }
 
+/* ==========================================
+   29. METRIC ICON BOX (small inline)
+   ========================================== */
+
+.metric-icon-box {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius);
+  background: hsl(var(--primary) / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
