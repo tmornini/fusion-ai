@@ -186,6 +186,44 @@ test(
 );
 
 test(
+    'rejects objective row with unknown key',
+    async () => {
+        installShim();
+        const adapter =
+            await createLocalStorageAdapter();
+        const json = JSON.stringify({
+            objectives: [{
+                id: 'o1',
+                position: 1,
+                rogue_field: 'invalid',
+            }],
+        });
+        await assert.rejects(
+            () => adapter.importSnapshot(json),
+            /snapshot\.objectives\[0\]/,
+        );
+    },
+);
+
+test(
+    'accepts valid objective row through the'
+    + ' snapshot-validation gate',
+    async () => {
+        const map = installShim();
+        const adapter =
+            await createLocalStorageAdapter();
+        const json = JSON.stringify({
+            objectives: [{ id: 'o1', position: 1 }],
+        });
+        await adapter.importSnapshot(json);
+        assert.ok(
+            map.get(KEY_PREFIX + 'objectives'),
+            'objective row should persist',
+        );
+    },
+);
+
+test(
     'happy-path import populates target table',
     async () => {
         const map = installShim();
