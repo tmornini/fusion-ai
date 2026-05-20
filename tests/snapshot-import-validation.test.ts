@@ -257,20 +257,22 @@ test(
 );
 
 test(
-    'omitted table keys default to empty arrays',
+    'importSnapshot materializes every known table as empty',
     async () => {
-        const map = installShim();
+        installShim();
         const adapter =
             await createLocalStorageAdapter();
         await adapter.importSnapshot('{}');
-        const usersBlob = map.get(
-            KEY_PREFIX + 'workers',
+        const reExported = JSON.parse(
+            await adapter.exportSnapshot(),
         );
-        assert.equal(
-            usersBlob,
-            '[]',
-            'missing table key materialises as []',
-        );
+        for (const table of TABLE_NAMES) {
+            assert.deepStrictEqual(
+                reExported[table],
+                [],
+                'table missing or non-empty: ' + table,
+            );
+        }
     },
 );
 
