@@ -13,9 +13,9 @@ import type {
     ProjectFlowEntity,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    WorkOrderEntity,
 } from './types.ts';
 import {
-    validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
     validateOrganizationEntity,
@@ -219,9 +219,9 @@ const routes: Route[] = [
         put: (db, params, body) =>
             db.workOrders.put(
                 param(params, 0),
-                validateWorkOrderEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    WorkOrderEntity, 'id'
+                >,
             ),
     }),
     route('flow-work-orders', {

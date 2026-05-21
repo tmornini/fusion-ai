@@ -300,6 +300,7 @@ export async function createLocalStorageAdapter(
             ),
         workOrders: new EntityStore<WorkOrderEntity>(
             'work_orders', backend, stateStore,
+            validateWorkOrderEntity,
         ),
         flowWorkOrders:
             new EntityStore<FlowWorkOrderEntity>(
