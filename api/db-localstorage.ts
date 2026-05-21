@@ -278,6 +278,7 @@ export async function createLocalStorageAdapter(
         ),
         ideas: new EntityStore<IdeaEntity>(
             'ideas', backend, stateStore,
+            validateIdeaEntity,
         ),
         projects: new EntityStore<ProjectEntity>(
             'projects', backend, stateStore,

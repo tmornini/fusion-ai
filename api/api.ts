@@ -6,11 +6,11 @@ import {
 import type {
     AIWorkerEntity,
     HumanWorkerEntity,
+    IdeaEntity,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
 import {
-    validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -287,9 +287,9 @@ const routes: Route[] = [
         put: (db, p, payload) =>
             db.ideas.put(
                 param(p, 0),
-                validateIdeaEntity(
-                    withoutId(payload),
-                ),
+                withoutId(payload) as unknown as Omit<
+                    IdeaEntity, 'id'
+                >,
             ),
         delete: (db, p) =>
             db.ideas.delete(param(p, 0)),

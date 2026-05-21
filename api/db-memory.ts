@@ -35,6 +35,7 @@ import {
     validateActualScoreEntity,
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
+    validateIdeaEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -92,6 +93,7 @@ export class MemoryDbAdapter implements DbAdapter {
         this.ideas =
             new EntityStore(
                 'ideas', backend, stateStore,
+                validateIdeaEntity,
             );
         this.projects =
             new EntityStore(
