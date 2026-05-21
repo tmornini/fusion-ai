@@ -11,6 +11,7 @@ import type {
     HumanWorkerEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
+    Objective,
     ProjectEntity,
     ProjectFlowEntity,
     ProjectObjectiveBaselineScore,
@@ -20,7 +21,6 @@ import type {
 } from './types.ts';
 import {
     validateOrganizationEntity,
-    validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateStateEntity,
 } from './validators.ts';
@@ -329,9 +329,9 @@ const routes: Route[] = [
         put: (db, p, body) =>
             db.objectives.put(
                 param(p, 0),
-                validateObjectiveEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    Objective, 'id'
+                >,
             ),
         delete: (db, p) =>
             db.objectives.delete(

@@ -326,6 +326,7 @@ export async function createLocalStorageAdapter(
             ),
         objectives: new EntityStore<Objective>(
             'objectives', backend, stateStore,
+            validateObjectiveEntity,
         ),
         objectiveRevisions:
             new HistoryEntityStore<ObjectiveRevision>(
