@@ -7,6 +7,7 @@ import type {
     AIWorkerEntity,
     FlowEntity,
     FlowVersionEntity,
+    FlowWorkOrderEntity,
     HumanWorkerEntity,
     IdeaEntity,
     ProjectEntity,
@@ -16,7 +17,6 @@ import type {
     WorkOrderEntity,
 } from './types.ts';
 import {
-    validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
@@ -232,9 +232,9 @@ const routes: Route[] = [
         put: (db, params, body) =>
             db.flowWorkOrders.put(
                 param(params, 0),
-                validateFlowWorkOrderEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    FlowWorkOrderEntity, 'id'
+                >,
             ),
     }),
     route('state-field-values', {

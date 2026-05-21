@@ -306,6 +306,7 @@ export async function createLocalStorageAdapter(
             new EntityStore<FlowWorkOrderEntity>(
                 'flow_work_orders',
                 backend, stateStore,
+                validateFlowWorkOrderEntity,
             ),
         stateFieldValues:
             new EntityStore<StateFieldValueEntity>(
