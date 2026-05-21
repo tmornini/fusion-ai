@@ -6,6 +6,7 @@ import {
 import type {
     AIWorkerEntity,
     FlowEntity,
+    FlowVersionEntity,
     HumanWorkerEntity,
     IdeaEntity,
     ProjectEntity,
@@ -13,7 +14,6 @@ import type {
     ProjectObjectiveActualScore,
 } from './types.ts';
 import {
-    validateFlowVersionEntity,
     validateProjectFlowEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
@@ -180,9 +180,9 @@ const routes: Route[] = [
         put: (db, params, body) =>
             db.flowVersions.put(
                 param(params, 0),
-                validateFlowVersionEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    FlowVersionEntity, 'id'
+                >,
             ),
         delete: (db, params) =>
             db.flowVersions.delete(

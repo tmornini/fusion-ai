@@ -291,6 +291,7 @@ export async function createLocalStorageAdapter(
         flowVersions:
             new HistoryEntityStore<FlowVersionEntity>(
                 'flow_versions', backend,
+                validateFlowVersionEntity,
             ),
         projectFlows:
             new EntityStore<ProjectFlowEntity>(
