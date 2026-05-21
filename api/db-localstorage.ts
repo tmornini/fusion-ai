@@ -270,6 +270,7 @@ export async function createLocalStorageAdapter(
 
         workers: new EntityStore<HumanWorkerEntity>(
             'workers', backend, stateStore,
+            validateHumanWorkerEntity,
         ),
         aiWorkers: new EntityStore<AIWorkerEntity>(
             'ai_workers', backend, stateStore,

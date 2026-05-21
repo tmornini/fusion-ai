@@ -33,6 +33,7 @@ import { StateStore } from './store-state.ts';
 import {
     validateBaselineScoreEntity,
     validateActualScoreEntity,
+    validateHumanWorkerEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -80,6 +81,7 @@ export class MemoryDbAdapter implements DbAdapter {
         this.workers =
             new EntityStore(
                 'workers', backend, stateStore,
+                validateHumanWorkerEntity,
             );
         this.aiWorkers =
             new EntityStore(

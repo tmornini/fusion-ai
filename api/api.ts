@@ -4,11 +4,11 @@ import {
     MissingTableError,
 } from './db.ts';
 import type {
+    HumanWorkerEntity,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
 import {
-    validateHumanWorkerEntity,
     validateAIWorkerEntity,
     validateIdeaEntity,
     validateProjectEntity,
@@ -276,9 +276,9 @@ const routes: Route[] = [
         put: (db, p, payload) =>
             db.workers.put(
                 param(p, 0),
-                validateHumanWorkerEntity(
-                    withoutId(payload),
-                ),
+                withoutId(payload) as unknown as Omit<
+                    HumanWorkerEntity, 'id'
+                >,
             ),
     }),
     route('ideas/:id', {
