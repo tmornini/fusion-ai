@@ -66,9 +66,9 @@ export class EntityStore<T extends { id: string }>
         id: string,
         fields: Omit<T, 'id'>,
     ): Promise<T> {
-        const validated = this.#validate(
-            fields as unknown as Record<string, unknown>,
-        );
+        const { id: _id, ...body } =
+            fields as unknown as Record<string, unknown>;
+        const validated = this.#validate(body);
         return this.#serialize(async () => {
             const rows = await this.#backend.read<T>(
                 this.#table,
