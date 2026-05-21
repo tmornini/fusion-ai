@@ -274,6 +274,7 @@ export async function createLocalStorageAdapter(
         ),
         aiWorkers: new EntityStore<AIWorkerEntity>(
             'ai_workers', backend, stateStore,
+            validateAIWorkerEntity,
         ),
         ideas: new EntityStore<IdeaEntity>(
             'ideas', backend, stateStore,
