@@ -43,6 +43,7 @@ import {
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
+    validateIdeaSubmissionEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -143,6 +144,7 @@ export class MemoryDbAdapter implements DbAdapter {
             new EntityStore(
                 'idea_submissions',
                 backend, stateStore,
+                validateIdeaSubmissionEntity,
             );
         this.objectives =
             new EntityStore(

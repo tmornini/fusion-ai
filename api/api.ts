@@ -10,6 +10,7 @@ import type {
     FlowWorkOrderEntity,
     HumanWorkerEntity,
     IdeaEntity,
+    IdeaSubmissionEntity,
     ProjectEntity,
     ProjectFlowEntity,
     ProjectObjectiveBaselineScore,
@@ -19,7 +20,6 @@ import type {
 } from './types.ts';
 import {
     validateOrganizationEntity,
-    validateIdeaSubmissionEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateStateEntity,
@@ -313,9 +313,9 @@ const routes: Route[] = [
         put: (db, p, payload) =>
             db.ideaSubmissions.put(
                 param(p, 0),
-                validateIdeaSubmissionEntity(
-                    withoutId(payload),
-                ),
+                withoutId(payload) as unknown as Omit<
+                    IdeaSubmissionEntity, 'id'
+                >,
             ),
     }),
     route('objectives', {

@@ -322,6 +322,7 @@ export async function createLocalStorageAdapter(
             new EntityStore<IdeaSubmissionEntity>(
                 'idea_submissions',
                 backend, stateStore,
+                validateIdeaSubmissionEntity,
             ),
         objectives: new EntityStore<Objective>(
             'objectives', backend, stateStore,
