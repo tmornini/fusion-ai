@@ -30,6 +30,10 @@ import { HistoryEntityStore }
     from './store-history-entity.ts';
 import { SingletonStore } from './store-singleton.ts';
 import { StateStore } from './store-state.ts';
+import {
+    validateBaselineScoreEntity,
+    validateActualScoreEntity,
+} from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
     readonly #backend: MemoryStorageBackend;
@@ -132,11 +136,13 @@ export class MemoryDbAdapter implements DbAdapter {
             new HistoryEntityStore(
                 'project_objective_baseline_scores',
                 backend,
+                validateBaselineScoreEntity,
             );
         this.projectObjectiveActualScores =
             new HistoryEntityStore(
                 'project_objective_actual_scores',
                 backend,
+                validateActualScoreEntity,
             );
     }
 

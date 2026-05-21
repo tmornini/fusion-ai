@@ -326,6 +326,7 @@ export async function createLocalStorageAdapter(
             >(
                 'project_objective_baseline_scores',
                 backend,
+                validateBaselineScoreEntity,
             ),
         projectObjectiveActualScores:
             new HistoryEntityStore<
@@ -333,6 +334,7 @@ export async function createLocalStorageAdapter(
             >(
                 'project_objective_actual_scores',
                 backend,
+                validateActualScoreEntity,
             ),
         states: stateStore,
     };
