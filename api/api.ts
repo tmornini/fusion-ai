@@ -12,6 +12,7 @@ import type {
     IdeaEntity,
     IdeaSubmissionEntity,
     Objective,
+    ObjectiveRevision,
     ProjectEntity,
     ProjectFlowEntity,
     ProjectObjectiveBaselineScore,
@@ -21,7 +22,6 @@ import type {
 } from './types.ts';
 import {
     validateOrganizationEntity,
-    validateObjectiveRevisionEntity,
     validateStateEntity,
 } from './validators.ts';
 
@@ -346,9 +346,9 @@ const routes: Route[] = [
         put: (db, p, body) =>
             db.objectiveRevisions.put(
                 param(p, 0),
-                validateObjectiveRevisionEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    ObjectiveRevision, 'id'
+                >,
             ),
     }),
     route('project-objective-baseline-scores', {

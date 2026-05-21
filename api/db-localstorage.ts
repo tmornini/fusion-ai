@@ -331,6 +331,7 @@ export async function createLocalStorageAdapter(
         objectiveRevisions:
             new HistoryEntityStore<ObjectiveRevision>(
                 'objective_revisions', backend,
+                validateObjectiveRevisionEntity,
             ),
         projectObjectiveBaselineScores:
             new HistoryEntityStore<

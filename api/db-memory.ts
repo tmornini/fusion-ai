@@ -45,6 +45,7 @@ import {
     validateStateFieldValueEntity,
     validateIdeaSubmissionEntity,
     validateObjectiveEntity,
+    validateObjectiveRevisionEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -155,6 +156,7 @@ export class MemoryDbAdapter implements DbAdapter {
         this.objectiveRevisions =
             new HistoryEntityStore(
                 'objective_revisions', backend,
+                validateObjectiveRevisionEntity,
             );
         this.projectObjectiveBaselineScores =
             new HistoryEntityStore(
