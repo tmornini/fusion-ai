@@ -296,6 +296,7 @@ export async function createLocalStorageAdapter(
         projectFlows:
             new EntityStore<ProjectFlowEntity>(
                 'project_flows', backend, stateStore,
+                validateProjectFlowEntity,
             ),
         workOrders: new EntityStore<WorkOrderEntity>(
             'work_orders', backend, stateStore,
