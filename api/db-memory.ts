@@ -37,6 +37,7 @@ import {
     validateAIWorkerEntity,
     validateIdeaEntity,
     validateProjectEntity,
+    validateFlowEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -104,6 +105,7 @@ export class MemoryDbAdapter implements DbAdapter {
         this.flows =
             new EntityStore(
                 'flows', backend, stateStore,
+                validateFlowEntity,
             );
         this.flowVersions =
             new HistoryEntityStore(
