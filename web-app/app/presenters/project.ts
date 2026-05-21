@@ -250,9 +250,7 @@ export class ProjectPresenter {
         const impactActual = score?.latestActualAvg;
         const metricLabelClasses = 'text-xs text-muted';
         return html`
-    <div class="${
-        'hidden-mobile project-metric-grid'
-    }">
+    <div class="project-metric-grid">
         <div class="${
             'flex items-center gap-2'
         }">
