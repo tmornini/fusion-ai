@@ -3,6 +3,10 @@ import {
     EntityNotFound,
     MissingTableError,
 } from './db.ts';
+import type {
+    ProjectObjectiveBaselineScore,
+    ProjectObjectiveActualScore,
+} from './types.ts';
 import {
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
@@ -18,8 +22,6 @@ import {
     validateIdeaSubmissionEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
-    validateBaselineScoreEntity,
-    validateActualScoreEntity,
     validateStateEntity,
 } from './validators.ts';
 
@@ -357,9 +359,9 @@ const routes: Route[] = [
         put: (db, p, body) =>
             db.projectObjectiveBaselineScores.put(
                 param(p, 0),
-                validateBaselineScoreEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    ProjectObjectiveBaselineScore, 'id'
+                >,
             ),
     }),
     route('project-objective-actual-scores', {
@@ -370,9 +372,9 @@ const routes: Route[] = [
         put: (db, p, body) =>
             db.projectObjectiveActualScores.put(
                 param(p, 0),
-                validateActualScoreEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    ProjectObjectiveActualScore, 'id'
+                >,
             ),
     }),
     route('states', {
