@@ -14,10 +14,10 @@ import type {
     ProjectFlowEntity,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    StateFieldValueEntity,
     WorkOrderEntity,
 } from './types.ts';
 import {
-    validateStateFieldValueEntity,
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateObjectiveEntity,
@@ -246,9 +246,9 @@ const routes: Route[] = [
         put: (db, params, body) =>
             db.stateFieldValues.put(
                 param(params, 0),
-                validateStateFieldValueEntity(
-                    withoutId(body),
-                ),
+                withoutId(body) as unknown as Omit<
+                    StateFieldValueEntity, 'id'
+                >,
             ),
         delete: (db, params) =>
             db.stateFieldValues.delete(

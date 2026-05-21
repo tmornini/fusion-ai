@@ -312,6 +312,7 @@ export async function createLocalStorageAdapter(
             new EntityStore<StateFieldValueEntity>(
                 'state_field_values',
                 backend, stateStore,
+                validateStateFieldValueEntity,
             ),
         organization:
             new SingletonStore<OrganizationEntity>(
