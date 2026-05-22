@@ -5,7 +5,7 @@
 > no `./generate-schema` script in the codebase; regenerate
 > by hand or via the next tool the maintainer wires in.
 
-19 tables stored in localStorage as JSON arrays, listed in
+17 tables stored in localStorage as JSON arrays, listed in
 `api/db.ts` as `TABLE_NAMES`. Each table is keyed as
 `fusion-ai:tableName`. All rows have a text `id` primary
 key. Column types: TEXT (string), INTEGER (number), REAL

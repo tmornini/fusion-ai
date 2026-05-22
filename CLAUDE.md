@@ -55,7 +55,10 @@ tools can drive the page normally.
 `api/`, `adapters/`, and `presenters/` layers, via `node
 --test --strip-types tests/*.test.ts`), then enforces a
 78-character maximum line length on all `.ts`, `.html`, and
-`.css` files (excluding `compose.ts`) and on `CLAUDE.md`.
+`.css` files (excluding `compose.ts`) and on every `.md`
+file at the repo root except `TEST-PLAN.md` — exempted
+because each test case bullet is meant to scan as one
+self-contained line.
 
 Automated tests cover pure modules, flow-edit logic, all
 data adapters, the workbox inbox aggregation, navigation,
@@ -108,10 +111,11 @@ is HTTP-only.
   current state, with `>=` tiebreak on same-millisecond
   writes so the deterministic insertion order of the
   append-only log decides ties. `StateStore` is its own
-  class (not a templated `EntityStore`) with five HTTP
-  routes: `GET/PUT states/:id`, `GET states`, `GET
-  entity-states/:id` (current), `GET entity-states/:id/
-  history` (ordered). Tombstones are retired — the
+  class (not a templated `EntityStore`) with four route
+  definitions covering five HTTP operations: `GET/PUT
+  states/:id`, `GET states`, `GET entity-states/:id`
+  (current), `GET entity-states/:id/history` (ordered).
+  Tombstones are retired — the
   `deprecated` and `deleted` tombstone tables, and the
   polymorphic `TombstoneStore` class, are gone; `'deleted'`
   is now a state event value, not a separate table.
@@ -399,9 +403,8 @@ log, not from any retired event table. The I/O wrapper is
 for delete filtering), `api/db-localstorage.ts` (production
 impl), `api/db-memory.ts` (test impl), `api/api.ts` (pure
 HTTP routing — `GET/PUT/DELETE/POST` helpers, **no
-module-level adapter; threaded explicitly** — plus the four
-state routes: `GET/PUT states/:id`, `GET states`, `GET
-entity-states/:id`, `GET entity-states/:id/history`),
+module-level adapter; threaded explicitly** — plus the
+state routes for the unified states log),
 `api/mock-data.ts` (seeds the `'system'` worker, 6 humans
 in `workers`, and 4 AIs in `ai_workers`), `api/validators.ts`
 (`validateHumanWorkerEntity` / `validateAIWorkerEntity` /
@@ -808,8 +811,8 @@ cannot know:
 - **Existing codebase patterns to match** — RequestContext
   as the only argument to adapter methods, SafeHtml from
   presenters, snake_case storage / camelCase domain,
-  HTTP-verb adapter naming (`get_noun`/`put_noun`/`delete_noun`/
-  `post_noun_operation`), validators at the gate not
+  HTTP-verb adapter naming (`getNoun`/`putNoun`/`deleteNoun`/
+  `postNounOperation`), validators at the gate not
   downstream, no untyped `any` from external boundaries.
 
 An agent of the Church does not unleash unwashed heathens on

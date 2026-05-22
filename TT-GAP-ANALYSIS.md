@@ -1,5 +1,13 @@
 # Plan: TeamTrack Functional Parity — Gap Analysis
 
+> *Frozen as of 2026-05-22.* This gap analysis was written
+> before the workers/states-log/teams refactors. References
+> to `users`, `activities`, `work_order_transitions`,
+> `work_order_claims`, and team functionality describe a
+> prior schema and are preserved as the snapshot that
+> existed at the time. Current architecture lives in
+> `SCHEMA.md` and `CLAUDE.md`.
+
 ## Context
 
 The user asks: what would it take to add the functionality of the
