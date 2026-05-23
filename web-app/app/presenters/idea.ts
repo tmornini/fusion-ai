@@ -118,11 +118,6 @@ function buildShell(
 <div class="idea-detail-host">
     <div class="idea-detail-wrap">
         <div class="${
-            'flex items-center gap-2'
-            + ' text-sm text-muted mb-4'
-            + ' idea-breadcrumb-slot'
-        }"></div>
-        <div class="${
             'flex items-start'
             + ' justify-between gap-4 mb-6'
         }">
@@ -176,18 +171,6 @@ function updateWrapClass(
         'has-footer-actions',
         isReviewable,
     );
-}
-
-function buildBreadcrumb(
-    titleText: string,
-): SafeHtml {
-    return html`
-        <a href="../ideas/index.html"
-            class="hover-link">
-            Ideas
-        </a>
-        <span>/</span>
-        <span>${titleText}</span>`;
 }
 
 function buildSubmittedByLine(
@@ -746,13 +729,6 @@ export class IdeaPresenter {
         );
         mutateSlot(
             container,
-            '.idea-breadcrumb-slot',
-            buildBreadcrumb(
-                this.#idea.titleText(),
-            ),
-        );
-        mutateSlot(
-            container,
             '.idea-title-slot',
             buildReadonlyTitleSection(
                 this.#idea,
@@ -843,13 +819,6 @@ export class IdeaEditPresenter {
         updateWrapClass(
             container,
             this.#idea.isReviewable(),
-        );
-        mutateSlot(
-            container,
-            '.idea-breadcrumb-slot',
-            buildBreadcrumb(
-                this.#draft.title,
-            ),
         );
         mutateSlot(
             container,
