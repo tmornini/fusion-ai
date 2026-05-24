@@ -486,3 +486,35 @@ When a per-feature implementation plan is later drafted from this
 document, that plan gets its own verification section appropriate
 to running code (tests, manual exercise via `TEST-PLAN.md`
 extensions, observable end-to-end behavior).
+
+---
+
+## Closure log — Records (toy iteration, 2026-05-23)
+
+The Records iteration landed `records`,
+`record_attributes`, and `flow_records` plus the
+property-test gate at work-order transitions. Against this
+document's gap list:
+
+- TT § 3 "Project-defined custom field registry" —
+  **partial**. Records are app-global (no project scoping
+  yet); the registry seam exists and is reusable.
+- TT § 3 "Field-level validation rules beyond required" —
+  **partial**. Three constraint kinds shipped (regex,
+  range_min, range_max); uniqueness deferred.
+- TT § 4 "Field visibility/edit rules per state" —
+  **closed**. The per-node `NodeAttribute` carries a
+  tri-state mode (Hidden by absence / Read-only /
+  Editable) honored by the workbox renderer and the
+  flow-designer panel.
+- TT § 4 "Required-fields-per-transition" — **closed**.
+  Per-node `isRequired` plus `validateRecordTransition`
+  enforce it at the gate; the workbox renders a violations
+  banner.
+
+The retired per-node `GraphField` machinery is gone in one
+voice — no shims, no migration scaffolding. The flow-side
+files shrank rather than grew. The 14-value
+`FlowFieldType` collapsed to the 5-value `ATTRIBUTE_TYPES`
+alphabet at the same time, eliminating the eight legacy
+types nothing in the toy needed.

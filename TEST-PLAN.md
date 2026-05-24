@@ -2009,6 +2009,65 @@ not produce the prerequisite in time".
 
 ---
 
+## R. Records
+
+Sidebar entry plus list/detail pages, attribute editor with
+constraint sub-editor, flow binding, per-node attribute
+panel, and the property-test gate.
+
+- [ ] **R1** Sidebar shows a Records entry; click navigates
+  to `records/`. PASS: list page renders ≥2 seeded Records
+  (Customer Profile, Project Brief).
+- [ ] **R2** Click "+ Add Record" → dialog opens with Name
+  and Description fields. Type values, click Create.
+  PASS: new Record appears at the top of the list and the
+  app navigates to its detail page.
+- [ ] **R3** Open Customer Profile detail. PASS: read mode
+  shows name + description + attribute table sorted by
+  sort_order + Bound flows (Customer Onboarding, Lead-to-
+  Close) + Work orders using this Record list.
+- [ ] **R4** Click Edit. PASS: edit mode renders name input,
+  description textarea, and one editable row per attribute
+  with name input, type picker, options textarea (for
+  select-typed), and constraint editor.
+- [ ] **R5** Add a new attribute via "+ Add Attribute".
+  PASS: blank row appended with default type `text`.
+- [ ] **R6** Change a text attribute to `select`. PASS: the
+  options textarea appears; the constraint picker offers
+  only kinds applicable to `select` (i.e. nothing in the
+  toy).
+- [ ] **R7** Add a `regex` constraint on a text attribute,
+  set the pattern. PASS: constraint row appears with the
+  pattern editable; the picker no longer offers `regex`
+  for that attribute (toy implementation may always offer
+  it — accept).
+- [ ] **R8** Drag-reorder attributes — toy may not yet
+  support; MARK BLOCKED if so.
+- [ ] **R9** Remove an attribute via its trash button.
+  PASS: row removed from the editor; not persisted until
+  Save.
+- [ ] **R10** Click Save. PASS: returns to read mode; the
+  list reflects the new attribute set and constraint
+  summaries.
+- [ ] **R11** Open a flow (Customer Onboarding). PASS: flow
+  header shows `Record: Customer Profile` dropdown
+  selected.
+- [ ] **R12** Open the Data Capture node panel. PASS: each
+  ref row shows attribute name + Editable/Read-only picker
+  + Required checkbox + remove (×) button; picker dropdown
+  lists unreferenced attributes only.
+- [ ] **R13** From workbox, open the gate-violation work
+  order (`#gate0001`). PASS: current node is the Create
+  node; transition to Data Capture is blocked with a
+  violation message naming Company Name and Contact Email
+  as required.
+- [ ] **R14** Fill the required values, transition. PASS:
+  transition succeeds; the work order advances.
+- [ ] **R15** Archive a Record from its detail page (if a
+  control exists in the toy) or via the snapshot wipe.
+  PASS: lifecycle state reads `archived`; the list page
+  excludes the row from active counts.
+
 ## J. Teardown
 
 - [ ] **J1** Stop the HTTP server started in A3. PASS: process terminates.

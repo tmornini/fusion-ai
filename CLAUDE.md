@@ -160,9 +160,10 @@ The states log carries entity lifecycle events. Each entity
 type uses its own state alphabet — distinct vocabularies for
 distinct lifecycles, all stored in the one log. Defined in
 `api/types.ts` as `IDEA_STATES`, `PROJECT_STATES`,
-`WORKER_STATES`, `FLOW_STATES`, with `assertIdeaState` /
-`assertProjectState` / `assertWorkerState` /
-`assertFlowState` and the matching `is*` guards.
+`WORKER_STATES`, `FLOW_STATES`, `RECORD_STATES`, with
+`assertIdeaState` / `assertProjectState` /
+`assertWorkerState` / `assertFlowState` /
+`assertRecordState` and the matching `is*` guards.
 
 **Ideas** (9 values, composite of former status + readiness):
 - `active:incomplete`, `active:needs-info`, `active:ready`
@@ -179,6 +180,9 @@ distinct lifecycles, all stored in the one log. Defined in
 **Flows** (4 values, three lifecycle + one
 content-change marker):
 - `active`, `archived`, `deleted`, `updated`
+
+**Records** (3 values, single-dimension):
+- `active`, `archived`, `deleted`
 
 The flow lifecycle's `'updated'` event records every
 content mutation (graph edits, name/description/lock
@@ -286,6 +290,16 @@ and dispatches the node-property-update action via the
 pure helper `parseWorkerIdsFromPanel(panelEl)` in
 `flows/detail.ts`.
 
+Regular nodes also carry `attributes: NodeAttribute[]`
+(`{ attribute_id, mode, isRequired }`). Hidden is encoded
+by absence from the array. `mode` is `'editable'` or
+`'readonly'`. The per-node panel renders one row per ref
+with a mode picker + Required checkbox + remove button,
+plus a picker `<select>` listing every record_attribute on
+the bound Record not yet referenced. The flow header
+carries a Record-binding `<select>` driven by
+`getRecordForFlow` / `putFlowRecord` / `deleteFlowRecord`.
+
 Hazards are two-tier and shared across the designer +
 stats canvases via the pure predicate
 `shouldShowWorkerHazard(node, allEdges)` in
@@ -387,16 +401,68 @@ from `adapters/state-events.ts` — derived from the states
 log, not from any retired event table. The I/O wrapper is
 `adapters/flow-stats.ts`'s `getFlowStats(ctx, flowId)`.
 
+### Records
+
+A Record is a named data shape: name + description +
+ordered attributes + per-attribute constraints. A flow
+binds to one Record via `flow_records` (UNIQUE flow_id);
+a Record can back many flows. Each per-node attribute
+ref (`NodeAttribute`) points at one `record_attributes.id`
+and carries a `mode` (`'editable'` or `'readonly'`) and an
+`isRequired` flag. Hidden is structural: absence from the
+node's `attributes` array.
+
+Five attribute types: `text`, `number`, `select`, `date`,
+`checkbox`. Three constraint kinds: `regex` (text only),
+`range_min` and `range_max` (number or date only). The
+applicability rule has two enforcement sites:
+`assertConstraintAppliesTo` at the row writer and the
+editor filtering the kind picker.
+
+The property-test gate at work-order transitions:
+`validateRecordTransition(ctx, workOrderId, targetNodeId,
+pendingValues?)` walks work order → flow → Record →
+attributes; gathers stored values from `state_field_values`;
+overlays pending values from the form; runs requiredness
++ `validateAttributeValue`. Returns aggregated
+`ConstraintViolation[]`. `postWorkOrderTransition` throws
+`RecordTransitionViolations` on non-empty results; the
+workbox page module catches the typed error and surfaces
+the violations banner.
+
+The pure constraint runner is `record-constraints.ts`
+(`validateAttributeValue`, `formatViolation`) — three
+callers earn the abstraction: the gate, the editor live
+preview, and a future fuzz runner.
+
+A work order's frozen `flow_graph` references
+`record_attributes.id` directly. If a Record's attribute
+is deleted while a flow that targets it is in flight, the
+gate throws `node X references unknown attribute Y` rather
+than silently coercing — versioned Record snapshots arrive
+in a future iteration.
+
+The user-facing vocabulary is strict: `Record` is the
+definition, `Attribute` is one of its properties,
+`Constraint` is a per-attribute predicate. The storage
+term `entity` never appears in user-facing strings. UI
+copy says "Work orders using this Record" rather than
+"instances."
+
 ### API Layer (`/api`)
 
 `api/types.ts` (row types + shared aliases — `WorkerId`,
 `Worker` discriminated union, `HumanWorker` /
 `AIWorker` classes, `GraphNode.workerIds: WorkerId[]`,
-`StateEntity`, the four state alphabets, and
-`SYSTEM_WORKER_ID`), `api/db.ts` (`DbAdapter` interface +
-`TABLE_NAMES` array listing every storage table — `workers`,
-`ai_workers`, `ideas`, `projects`, `flows`, `flow_versions`,
-`states`, `state_field_values`, etc.),
+`GraphNode.attributes: NodeAttribute[]`, `RecordEntity` /
+`RecordAttributeEntity` / `FlowRecordEntity`, `Constraint`
+discriminated union, `StateEntity`, the five state
+alphabets, and `SYSTEM_WORKER_ID`), `api/db.ts`
+(`DbAdapter` interface + `TABLE_NAMES` array listing every
+storage table — `workers`, `ai_workers`, `ideas`,
+`projects`, `flows`, `flow_versions`, `records`,
+`record_attributes`, `flow_records`, `states`,
+`state_field_values`, etc.),
 `api/store-state.ts` (the `StateStore` class — `record`,
 `currentFor`, `allFor`, `deletedIds`, `isDeleted`),
 `api/store-entity.ts` (`EntityStore` — consults `StateStore`
@@ -571,6 +637,21 @@ layer directly.
   `ideaChanges.notify()`), never through return values —
   callers tell the channel rather than branch on a result.
   The type's silence is intentional.
+- **Records adapters.** `adapters/records.ts` owns Record
+  lifecycle (CRUD + `archiveRecord`).
+  `adapters/record-attributes.ts` is the per-attribute
+  surface with `getRecordAttributesByRecord(ctx, recordId)`
+  returning sort-ordered rows.
+  `adapters/flow-records.ts` is the binding seam with three
+  cross-walkers: `getRecordForFlow`, `getFlowsForRecord`,
+  and `getWorkOrdersForRecord` (records → flows →
+  flow_work_orders → work_orders).
+  `adapters/record-transitions.ts` is the property-test
+  gate's orchestrator; it composes the pure
+  `validateAttributeValue` from `record-constraints.ts` with
+  the work order's stored + pending values.
+  `postWorkOrderTransition` runs the gate and throws
+  `RecordTransitionViolations` on non-empty result.
 
 ### Dark Mode
 
@@ -774,6 +855,10 @@ stop, await fix. This is doctrine, not a question.
   `state_field_values`) is the seam — read
   `api/store-entity.ts` and `api/store-state.ts` together to
   see both halves.
+- **`state_field_values.field_id` references
+  `record_attributes.id`**: the column name predates Records
+  and stays until a second non-Record consumer arrives. The
+  semantic note lives in `SCHEMA.md § state_field_values`.
 
 ## Worktrees
 

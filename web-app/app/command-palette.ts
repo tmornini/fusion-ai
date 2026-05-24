@@ -684,9 +684,6 @@ posIndex === state.activeIndex
             mutateResults(state.input.value);
         }
 
-        // Unit 6a instrumentation: same shape as the
-        // flow-save debouncer so both sites can be
-        // measured together.
         let scheduleCount = 0;
         let burstStart = 0;
         state.input?.addEventListener('input', () => {
