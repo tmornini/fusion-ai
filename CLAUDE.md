@@ -759,9 +759,11 @@ stop, await fix. This is doctrine, not a question.
   and skips link prefetching. Page URLs use relative paths.
   Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts**: rapid programmatic navigation
-  surfaces `InvalidStateError` lines in console.
-  Browser-internal (no app code calls `startViewTransition`);
-  no app impact.
+  surfaces both `AbortError: Transition was skipped` and
+  `InvalidStateError: Transition was aborted...` lines in
+  console — Chromium throws both classes for the same root
+  cause. Browser-internal (no app code calls
+  `startViewTransition`); no app impact.
 - **The states log is append-only by convention**:
   `StateStore.record` only appends; the table never deletes.
   An entity's lifecycle reads as the latest event on its
