@@ -599,7 +599,7 @@ posIndex === state.activeIndex
             class="command-palette-input"
             placeholder="${
                 'Search ideas, projects,'
-                + ' workers, pages...'
+                + ' workers, pages…'
             }"
             type="text"
             role="combobox"
