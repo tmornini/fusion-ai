@@ -129,7 +129,7 @@ function buildShell(
 ): void {
     setHtml(container, html`
 <div class="worker-detail-host">
-    <div class="content-wrap">
+    <div class="entity">
         <div class="${
             'flex items-start'
             + ' justify-between gap-4 mb-6'

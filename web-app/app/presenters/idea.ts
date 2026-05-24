@@ -116,7 +116,7 @@ function buildShell(
 ): void {
     setHtml(container, html`
 <div class="idea-detail-host">
-    <div class="content-wrap">
+    <div class="entity">
         <div class="${
             'flex items-start'
             + ' justify-between gap-4 mb-6'
@@ -165,7 +165,7 @@ function updateWrapClass(
     isReviewable: boolean,
 ): void {
     const wrap = $required(
-        '.content-wrap', container,
+        '.entity', container,
     );
     wrap.classList.toggle(
         'has-footer-actions',

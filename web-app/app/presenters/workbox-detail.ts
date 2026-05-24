@@ -240,7 +240,7 @@ export class WorkboxDetailPresenter {
             </button>`;
 
         return html`<div
-            class="content-wrap">
+            class="entity">
             <div id="work-order-header"
                 class="flex items-center
                     gap-4 mb-6">
