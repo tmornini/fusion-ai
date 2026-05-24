@@ -14,17 +14,15 @@ import {
     postRecordStateChange,
     archiveRecord,
 } from '../web-app/app/adapters/records.ts';
-import { SYSTEM_WORKER_ID } from '../api/types.ts';
-
-async function seedSystemWorker(
+async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put(SYSTEM_WORKER_ID, {
-        first_name: 'System',
-        last_name: '',
-        email: 'system@example.com',
-        title: 'System',
-        department: '',
+    await db.workers.put('current', {
+        first_name: 'Demo',
+        last_name: 'User',
+        email: 'demo@example.com',
+        title: 'Admin',
+        department: 'Product',
         strengths: '[]' as never,
         team_dimensions: '{}' as never,
         phone: '',
@@ -37,7 +35,7 @@ test(
     + ' initial state event',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -61,7 +59,7 @@ test(
     'putRecord overwrites an existing row',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -82,7 +80,7 @@ test(
     + ' state event is deleted',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -108,7 +106,7 @@ test(
     + ' archived',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -128,7 +126,7 @@ test(
     + ' without touching the entity row',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -151,7 +149,7 @@ test(
     'deleteRecord hard-splices the row',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
@@ -183,7 +181,7 @@ test(
     + ' states log',
     async () => {
         const db = new MemoryDbAdapter();
-        await seedSystemWorker(db);
+        await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordCreation(
             ctx, 'rec-1',
