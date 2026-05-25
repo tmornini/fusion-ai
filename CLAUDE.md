@@ -7,8 +7,7 @@ when working with code in this repository.
 
 **Match the codebase's voice, or change the codebase.** A better
 pattern earns its place by replacing every site of the old one —
-never by living beside it. One codebase, one voice. The snowflake
-is a sin against Uniformity (Commandment III).
+never by living beside it. One codebase, one voice.
 
 ## Build & Dev Commands
 
@@ -129,18 +128,6 @@ is HTTP-only.
   columns. History stores hard-delete via splice. When no
   schema exists, non-entry pages redirect to snapshots.
 
-  Four doctrinal entries follow from this design:
-  *Every state is an event; the latest event is the truth.*
-  *State is not a property of a noun; it is a process that
-  happens to an entity at a time.* (Bohm's rheomode applied
-  to data.)
-  *Read the log; never trust a derived column.* (Derived
-  state columns retired; the log is the source.)
-  *Entity rows are eternal; lifecycle is the event sequence
-  over them.* (Codd: entities and tombstones occupy
-  separate relations — here, the tombstones became state
-  events, but the separation principle holds.)
-
   The `'system'` worker (`SYSTEM_WORKER_ID = 'system'` in
   `api/types.ts`) is the well-known actor seeded as a real
   `HumanWorkerEntity` row by both `populateMockData` and
@@ -194,11 +181,7 @@ head and tail of the entity's event sequence.
 
 The terminal state for both human and AI workers is
 `'archived'`. AI workers retire via `archiveAIWorker`; humans
-via `archiveHumanWorker`. Per Commandment III (Uniformity),
-the kind of worker does not change the vocabulary of its
-lifecycle — the previous dual-vocabulary snowflake
-(humans terminating at `'deactivated'`, AIs at `'deleted'`)
-was a user-caught violation and has been retired.
+via `archiveHumanWorker`.
 
 **Work orders** (open-ended transitions + closed claim
 alphabet):
@@ -621,8 +604,7 @@ layer directly.
   fetch entity data through `ctx`. Platform shims
   (`clipboard.ts`, `viewport.ts`, `location.ts`,
   `crypto-safe-base62.ts`, etc.) wrap browser primitives so the
-  app speaks one voice. Tiny shims are not a smell — they are
-  the divorce point.
+  app speaks one voice.
 - **`getFlowStats(ctx, flowId)`** — the stats adapter — resolves
   the work-order set for a flow through the `flow-work-orders`
   join table (relational truth per Codd), **not** through each
@@ -636,7 +618,6 @@ layer directly.
   Change-awareness flows through notification channels (e.g.,
   `ideaChanges.notify()`), never through return values —
   callers tell the channel rather than branch on a result.
-  The type's silence is intentional.
 - **Records adapters.** `adapters/records.ts` owns Record
   lifecycle (CRUD + `archiveRecord`).
   `adapters/record-attributes.ts` is the per-attribute
@@ -799,7 +780,7 @@ type-check, test, or line-length lint ABORTS the run
 automatically. The agent does not ask whether to continue —
 the bundle is built from the same source, so a failing CLI
 suite makes the browser run meaningless. Report the failure,
-stop, await fix. This is doctrine, not a question.
+stop, await fix.
 
 ## Gotchas
 
@@ -885,16 +866,8 @@ cannot know:
   inline styles (use CSS custom properties + classes per
   the styling section above), present-tense imperative
   commit messages, Co-Authored-By trailer.
-- **Commandments touched by the task** — name them. If the
-  work involves naming, cite Uniformity (III). If it
-  introduces an abstraction, cite Generality (IX) and the
-  third-instance threshold. If it crosses a boundary, cite
-  Validation at edges. If it removes something, cite
-  Simplicity (VIII).
+- **Commandments touched by the task** — name them.
 - **Abominations the task specifically risks** — name them.
-  Null, Default Values, Internal Defense, Greedy Catch,
-  Coupling, Magical Values, Cleverness — say which apply,
-  with examples relevant to the file the agent will touch.
 - **Existing codebase patterns to match** — RequestContext
   as the only argument to adapter methods, SafeHtml from
   presenters, snake_case storage / camelCase domain,
@@ -902,6 +875,5 @@ cannot know:
   `postNounOperation`), validators at the gate not
   downstream, no untyped `any` from external boundaries.
 
-An agent of the Church does not unleash unwashed heathens on
-the codebase. Proselytize first, then brief — the scripture
-loads via the skill, the patterns load via the prompt.
+Proselytize first, then brief — the scripture loads via the
+skill, the patterns load via the prompt.
