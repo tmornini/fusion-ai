@@ -841,6 +841,11 @@ stop, await fix.
   and stays until a second non-Record consumer arrives. The
   semantic note lives in `SCHEMA.md § state_field_values`.
 
+## Commits
+
+Commit completed, tested work. Do not ask. The Office of
+the Commit governs — ABC.
+
 ## Worktrees
 
 Do not use git worktrees. Work directly in the main checkout.
