@@ -32,25 +32,32 @@ export class OrganizationObjectivesPresenter {
 
     buildBox(): SafeHtml {
         return html`
-            <section class="org-objectives-box">
+            <div class="card card-hover p-6 mt-6">
                 ${this.#buildHeader()}
                 ${this.#buildActiveList()}
                 ${this.#buildDeprecatedList()}
-            </section>
+            </div>
         `;
     }
 
     #buildHeader(): SafeHtml {
         return html`
-            <header class="org-objectives-header">
-                <h3>Objectives</h3>
+            <div class="${
+                'flex items-center'
+                + ' justify-between mb-4'
+            }">
+                <h3 class="${
+                    'font-display'
+                    + ' font-semibold'
+                    + ' flex items-center gap-2'
+                }">Objectives</h3>
                 <button
                     type="button"
                     data-action="add-objective"
                     class="btn btn-primary">
                     ${iconPlus(16, '')} Add objective
                 </button>
-            </header>
+            </div>
         `;
     }
 
