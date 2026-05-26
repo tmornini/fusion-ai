@@ -140,9 +140,7 @@ export class OrganizationObjectivesPresenter {
                                 'btn btn-ghost'
                                 + ' btn-sm gap-2'
                             }"
-                            data-action="reactivate"
-                            data-objective-id="${
-                                o.id}">
+                            data-action="reactivate">
                             ${iconUndo(14, '')}
                             Reactivate
                           </button>`
@@ -152,9 +150,7 @@ export class OrganizationObjectivesPresenter {
                                     'btn btn-ghost'
                                     + ' btn-sm gap-2'
                                 }"
-                                data-action="edit"
-                                data-objective-id="${
-                                    o.id}">
+                                data-action="edit">
                                 ${iconEdit(14, '')}
                                 Edit
                             </button>
@@ -163,9 +159,7 @@ export class OrganizationObjectivesPresenter {
                                     'btn btn-ghost'
                                     + ' btn-sm gap-2'
                                 }"
-                                data-action="archive"
-                                data-objective-id="${
-                                    o.id}">
+                                data-action="archive">
                                 ${iconArchive(14, '')}
                                 Archive
                             </button>
