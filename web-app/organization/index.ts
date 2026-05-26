@@ -126,10 +126,13 @@ async function renderObjectives(): Promise<void> {
     if (!box) return;
     setHtml(box, presenter.buildBox());
 
+    const activeList = box.querySelector<HTMLElement>(
+        '[data-list="active"]',
+    );
+    if (!activeList) return;
     initDragReorder(
-        box as HTMLElement,
-        '[data-objective-id]'
-        + ':not([data-archived="true"])',
+        activeList,
+        '[data-objective-id]',
         'data-objective-id',
         async (id, newPosition) => {
             const dragCtx = createRequestContext();
@@ -138,57 +141,59 @@ async function renderObjectives(): Promise<void> {
             );
         },
     );
+}
 
-    box.addEventListener('click', async (e) => {
-        const target = e.target as HTMLElement;
-        const action = target
-            .closest('[data-action]')
-            ?.getAttribute('data-action');
-        const objectiveId = target
-            .closest('[data-objective-id]')
-            ?.getAttribute('data-objective-id');
-        const clickCtx = createRequestContext();
-        if (action === 'add-objective') {
-            openDialog('add-objective');
-        } else if (
-            action === 'edit'
-            && objectiveId
-        ) {
-            const def =
-                await getCurrentObjectiveDefinition(
-                    clickCtx, objectiveId,
-                );
-            ($(
-                '#edit-obj-id', document,
-            ) as HTMLInputElement)
-                .value = objectiveId;
-            ($(
-                '#edit-obj-name', document,
-            ) as HTMLInputElement)
-                .value = def.name;
-            ($(
-                '#edit-obj-description', document,
-            ) as HTMLTextAreaElement)
-                .value = def.description;
-            openDialog('edit-objective');
-        } else if (
-            action === 'archive'
-            && objectiveId
-        ) {
-            ($(
-                '#confirm-archive-id', document,
-            ) as HTMLInputElement)
-                .value = objectiveId;
-            openDialog('confirm-archive');
-        } else if (
-            action === 'reactivate'
-            && objectiveId
-        ) {
-            await postObjectiveReactivation(
-                clickCtx, objectiveId,
+async function onObjectiveBoxClick(
+    e: MouseEvent,
+): Promise<void> {
+    const target = e.target as HTMLElement;
+    const action = target
+        .closest('[data-action]')
+        ?.getAttribute('data-action');
+    const objectiveId = target
+        .closest('[data-objective-id]')
+        ?.getAttribute('data-objective-id');
+    const ctx = createRequestContext();
+    if (action === 'add-objective') {
+        openDialog('add-objective');
+    } else if (
+        action === 'edit'
+        && objectiveId
+    ) {
+        const def =
+            await getCurrentObjectiveDefinition(
+                ctx, objectiveId,
             );
-        }
-    }, { signal });
+        ($(
+            '#edit-obj-id', document,
+        ) as HTMLInputElement)
+            .value = objectiveId;
+        ($(
+            '#edit-obj-name', document,
+        ) as HTMLInputElement)
+            .value = def.name;
+        ($(
+            '#edit-obj-description', document,
+        ) as HTMLTextAreaElement)
+            .value = def.description;
+        openDialog('edit-objective');
+    } else if (
+        action === 'archive'
+        && objectiveId
+    ) {
+        ($(
+            '#confirm-archive-id', document,
+        ) as HTMLInputElement)
+            .value = objectiveId;
+        openDialog('confirm-archive');
+    } else if (
+        action === 'reactivate'
+        && objectiveId
+    ) {
+        await postObjectiveReactivation(
+            ctx, objectiveId,
+        );
+    }
 }
 
 export async function init(): Promise<void> {
@@ -237,6 +242,12 @@ export async function init(): Promise<void> {
     state = { kind: 'reading', org, stats };
     subscribeObjectiveChanges(renderObjectives);
     await rerender();
+
+    $('#objectives-box', document)!
+        .addEventListener(
+            'click', onObjectiveBoxClick,
+            { signal },
+        );
 
     // Add-Objective dialog wiring
     $(

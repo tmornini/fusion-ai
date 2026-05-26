@@ -73,7 +73,8 @@ export class OrganizationObjectivesPresenter {
             `;
         }
         return html`
-            <ul class="objective-list">
+            <ul class="objective-list"
+                data-list="active">
                 ${this.#active.map(
                     o => this.#row(o, false),
                 )}
