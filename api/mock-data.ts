@@ -2630,6 +2630,7 @@ export async function populateMockData(
             description:
                 'Company-side facts captured during'
                 + ' onboarding and sales pursuits.',
+            position: 1,
         },
         {
             id: projectBriefRecordId,
@@ -2637,6 +2638,7 @@ export async function populateMockData(
             description:
                 'Lightweight scoping shape used by'
                 + ' the Fusion Flow.',
+            position: 2,
         },
     ];
 
@@ -6119,6 +6121,7 @@ export async function populateMockData(
             adapter.records.put(r.id, {
                 name: r.name,
                 description: r.description,
+                position: r.position,
             }),
         ),
         ...mockRecordAttributes.map(r =>
@@ -6314,6 +6317,7 @@ export async function populateBootstrapData(
                 'Company-side facts captured'
                 + ' during onboarding and sales'
                 + ' pursuits.',
+            position: 1,
         },
         {
             id: projectBriefRecordId,
@@ -6321,6 +6325,7 @@ export async function populateBootstrapData(
             description:
                 'Lightweight scoping shape used'
                 + ' by the Fusion Flow.',
+            position: 2,
         },
     ];
 
@@ -6551,6 +6556,7 @@ export async function populateBootstrapData(
             adapter.records.put(r.id, {
                 name: r.name,
                 description: r.description,
+                position: r.position,
             }),
         ),
         ...bootstrapRecordAttributes.map(r =>

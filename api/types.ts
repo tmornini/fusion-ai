@@ -789,6 +789,7 @@ export interface RecordEntity {
     id: RecordId;
     name: string;
     description: string;
+    position: number;
 }
 
 export interface RecordAttributeEntity {
@@ -1218,6 +1219,72 @@ export class Project {
         return this.#title
             .toLowerCase()
             .includes(lowerTerm);
+    }
+}
+
+export class RecordModel {
+    readonly #id: string;
+    readonly #name: string;
+    readonly #description: string;
+    readonly #position: number;
+    readonly #state: RecordState;
+
+    constructor(
+        entity: RecordEntity,
+        state: RecordState,
+    ) {
+        this.#id = entity.id;
+        this.#name = entity.name;
+        this.#description = entity.description;
+        this.#position = entity.position;
+        this.#state = state;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    stateValue(): RecordState {
+        return this.#state;
+    }
+
+    stateLabel(): string {
+        return (
+            RECORD_STATE_CONFIG[this.#state]
+        )!.label;
+    }
+
+    stateClassName(): string {
+        return (
+            RECORD_STATE_CONFIG[this.#state]
+        )!.className;
+    }
+
+    isActive(): boolean {
+        return this.#state === 'active';
+    }
+
+    isArchived(): boolean {
+        return this.#state === 'archived';
+    }
+
+    positionSortKey(): number {
+        return this.#position;
+    }
+
+    nameText(): string {
+        return this.#name;
+    }
+
+    descriptionText(): string {
+        return this.#description;
+    }
+
+    matchesSearch(term: string): boolean {
+        const lower = term.toLowerCase();
+        return this.#name
+            .toLowerCase()
+            .includes(lower);
     }
 }
 

@@ -137,6 +137,17 @@ export const PAGE_REGISTRY: Record<
         cssBundles: ['pages-records'],
         loader: () => import('../records/index'),
     },
+    'record-create': {
+        title: 'Create Record',
+        layout: 'sidebar',
+        sidebarKey: 'records',
+        sourceDir: 'records',
+        sourceFile: 'create',
+        icon: iconFolderKanban,
+        keywords: 'new record create',
+        cssBundles: ['pages-records'],
+        loader: () => import('../records/create'),
+    },
     'record-detail': {
         title: 'Record',
         layout: 'sidebar',
