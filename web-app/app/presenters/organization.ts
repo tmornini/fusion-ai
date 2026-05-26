@@ -400,6 +400,7 @@ function buildPage(
     <div class="overview">
         ${buildPageHeader(headerActions)}
         ${buildOverviewCard(org, stats, identity)}
+        <div id="objectives-box"></div>
         ${buildUsageCard(org, stats)}
         ${buildAdminCard()}
     </div>`;

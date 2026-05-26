@@ -87,13 +87,14 @@ function buildPresenter():
         );
 }
 
-function rerender(): void {
+async function rerender(): Promise<void> {
     if (!pageContainer) return;
     setHtml(
         pageContainer,
         buildPresenter().buildPage(),
     );
     bindNavButtons();
+    await renderObjectives();
 }
 
 function bindNavButtons(): void {
@@ -141,6 +142,70 @@ async function renderObjectives(): Promise<void> {
     const box = $('#objectives-box', document);
     if (!box) return;
     setHtml(box, presenter.buildBox());
+
+    initDragReorder(
+        box as HTMLElement,
+        '[data-objective-id]'
+        + ':not([data-deprecated="true"])',
+        'data-objective-id',
+        async (id, newPosition) => {
+            const dragCtx = createRequestContext();
+            await putObjectivePosition(
+                dragCtx, id, newPosition,
+            );
+        },
+    );
+
+    box.addEventListener('click', async (e) => {
+        const target = e.target as HTMLElement;
+        const action = target
+            .closest('[data-action]')
+            ?.getAttribute('data-action');
+        const objectiveId = target
+            .closest('[data-objective-id]')
+            ?.getAttribute('data-objective-id');
+        const clickCtx = createRequestContext();
+        if (action === 'add-objective') {
+            openDialog('add-objective');
+        } else if (
+            action === 'edit'
+            && objectiveId
+        ) {
+            const def =
+                await getCurrentObjectiveDefinition(
+                    clickCtx, objectiveId,
+                );
+            ($(
+                '#edit-obj-id', document,
+            ) as HTMLInputElement)
+                .value = objectiveId;
+            ($(
+                '#edit-obj-name', document,
+            ) as HTMLInputElement)
+                .value = def.name;
+            ($(
+                '#edit-obj-description', document,
+            ) as HTMLTextAreaElement)
+                .value = def.description;
+            openDialog('edit-objective');
+        } else if (
+            action === 'deprecate'
+            && objectiveId
+        ) {
+            ($(
+                '#confirm-deprecate-id', document,
+            ) as HTMLInputElement)
+                .value = objectiveId;
+            openDialog('confirm-deprecate');
+        } else if (
+            action === 'reactivate'
+            && objectiveId
+        ) {
+            await postObjectiveReactivation(
+                clickCtx, objectiveId,
+            );
+        }
+    }, { signal });
 }
 
 export async function init(): Promise<void> {
@@ -187,85 +252,8 @@ export async function init(): Promise<void> {
     }
 
     state = { kind: 'reading', org, stats };
-    rerender();
-
     subscribeObjectiveChanges(renderObjectives);
-    await renderObjectives();
-
-    const box = $('#objectives-box', document);
-    if (box) {
-        initDragReorder(
-            box as HTMLElement,
-            '[data-objective-id]'
-            + ':not([data-deprecated="true"])',
-            'data-objective-id',
-            async (id, newPosition) => {
-                const ctx = createRequestContext();
-                await putObjectivePosition(
-                    ctx, id, newPosition,
-                );
-            },
-        );
-    }
-
-    // Click delegation on the objectives box
-    $('#objectives-box', document)!
-        .addEventListener('click',
-            async (e) => {
-                const target =
-                    e.target as HTMLElement;
-                const action = target
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-                const objectiveId = target
-                    .closest('[data-objective-id]')
-                    ?.getAttribute(
-                        'data-objective-id',
-                    );
-                const ctx = createRequestContext();
-                if (action === 'add-objective') {
-                    openDialog('add-objective');
-                } else if (
-                    action === 'edit'
-                    && objectiveId
-                ) {
-                    const def =
-                        await getCurrentObjectiveDefinition(
-                            ctx, objectiveId,
-                        );
-                    ($(
-                        '#edit-obj-id', document,
-                    ) as HTMLInputElement)
-                        .value = objectiveId;
-                    ($(
-                        '#edit-obj-name', document,
-                    ) as HTMLInputElement)
-                        .value = def.name;
-                    ($(
-                        '#edit-obj-description',
-                        document,
-                    ) as HTMLTextAreaElement)
-                        .value = def.description;
-                    openDialog('edit-objective');
-                } else if (
-                    action === 'deprecate'
-                    && objectiveId
-                ) {
-                    ($(
-                        '#confirm-deprecate-id',
-                        document,
-                    ) as HTMLInputElement)
-                        .value = objectiveId;
-                    openDialog('confirm-deprecate');
-                } else if (
-                    action === 'reactivate'
-                    && objectiveId
-                ) {
-                    await postObjectiveReactivation(
-                        ctx, objectiveId,
-                    );
-                }
-            }, { signal });
+    await rerender();
 
     // Add-Objective dialog wiring
     $(
@@ -383,7 +371,7 @@ function onClick(e: MouseEvent): void {
             draft: state.org
                 .toGeneralInfoDraft(),
         };
-        rerender();
+        void rerender();
         return;
     }
     if (action === 'cancel') {
@@ -395,7 +383,7 @@ function onClick(e: MouseEvent): void {
             org: state.org,
             stats: state.stats,
         };
-        rerender();
+        void rerender();
         return;
     }
     if (action === 'save') {
@@ -447,7 +435,7 @@ function onDocumentKeydown(
         org: state.org,
         stats: state.stats,
     };
-    rerender();
+    void rerender();
 }
 
 async function handleSave(): Promise<void> {
@@ -484,5 +472,5 @@ async function handleSave(): Promise<void> {
         org: freshOrg,
         stats: freshStats,
     };
-    rerender();
+    await rerender();
 }
