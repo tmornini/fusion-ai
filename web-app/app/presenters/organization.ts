@@ -2,12 +2,11 @@ import {
     html, SafeHtml,
 } from '../safe-html.ts';
 import {
-    iconCreditCard, iconBuilding,
+    iconBuilding,
     iconCrown, iconCheckCircle2,
     iconActivity, iconPeople,
     iconFolderKanban, iconLightbulb,
     iconCalendar, iconTrendingUp,
-    iconExternalLink,
     iconEdit, iconSave, iconX,
 } from '../icons.ts';
 import type {
@@ -325,71 +324,6 @@ function buildUsageCard(
         </div>`;
 }
 
-function buildAdminCard(): SafeHtml {
-    return html`
-        <div class="card card-hover p-6 mt-6">
-            <h3
-                class="font-display
-                       font-semibold mb-4"
-            >Security & Administration</h3>
-            <div
-                class="grid grid-cols-1
-                       sm:grid-cols-3 gap-4"
-            >
-                <button
-                    class="admin-link-card"
-                    data-nav-to="users"
-                >
-                    <span class="text-muted"
-                    >${iconPeople(20, '')}</span>
-                    <div class="flex-fill"
-                    >
-                        <p class="${
-                            'font-medium text-sm'
-                        }">
-                            People
-                        </p>
-                        <p
-                            class="text-xs
-                                   text-muted
-                                   truncate"
-                        >
-                            ${'Add, edit,'
-                                + ' or remove'
-                                + ' members'}
-                        </p>
-                    </div>
-                    ${iconExternalLink(16, '')}
-                </button>
-                <button
-                    class="admin-link-card"
-                >
-                    <span class="text-muted"
-                    >${iconCreditCard(
-                        20, '',
-                    )}</span>
-                    <div class="flex-fill"
-                    >
-                        <p class="${
-                            'font-medium text-sm'
-                        }">
-                            Billing History
-                        </p>
-                        <p
-                            class="text-xs
-                                   text-muted
-                                   truncate"
-                        >
-                            ${'View invoices'
-                                + ' and payments'}
-                        </p>
-                    </div>
-                    ${iconExternalLink(16, '')}
-                </button>
-            </div>
-        </div>`;
-}
-
 function buildPage(
     org: Organization,
     stats: OrganizationStats,
@@ -402,7 +336,6 @@ function buildPage(
         ${buildOverviewCard(org, stats, identity)}
         <div id="objectives-box"></div>
         ${buildUsageCard(org, stats)}
-        ${buildAdminCard()}
     </div>`;
 }
 

@@ -1,4 +1,4 @@
-import { $, $$, getRequiredAttribute } from '../app/dom.ts';
+import { $ } from '../app/dom.ts';
 import { setHtml } from '../app/safe-html.ts';
 import {
     buildSkeleton, buildErrorState,
@@ -6,7 +6,7 @@ import {
 import { showToast } from '../app/toast.ts';
 import { log } from '../app/logger.ts';
 import {
-    navigateTo, trimStrings,
+    trimStrings,
     openDialog, closeDialog,
 } from '../app/core.ts';
 import {
@@ -93,24 +93,7 @@ async function rerender(): Promise<void> {
         pageContainer,
         buildPresenter().buildPage(),
     );
-    bindNavButtons();
     await renderObjectives();
-}
-
-function bindNavButtons(): void {
-    $$('[data-nav-to]', document).forEach(
-        navButton => {
-            navButton.addEventListener(
-                'click',
-                () => navigateTo(
-                    getRequiredAttribute(
-                        navButton, 'data-nav-to',
-                    ),
-                ),
-                { signal },
-            );
-        },
-    );
 }
 
 async function renderObjectives(): Promise<void> {
