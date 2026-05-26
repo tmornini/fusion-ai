@@ -67,19 +67,6 @@ function buildPageHeader(
         </div>`;
 }
 
-function buildReadField(
-    label: string,
-    value: string,
-): SafeHtml {
-    return html`
-        <div>
-            <label class="${
-                'label mb-2 block'
-            }">${label}</label>
-            <p class="text-sm">${value}</p>
-        </div>`;
-}
-
 function buildEditField(
     field: GeneralInfoFieldKey,
     label: string,
@@ -99,31 +86,48 @@ function buildEditField(
         </div>`;
 }
 
-function buildGeneralInfoCard(
-    body: SafeHtml,
+function buildReadIdentity(
+    org: Organization,
+): SafeHtml {
+    return html`
+        <h2 class="${
+            'text-xl font-display'
+            + ' font-semibold'
+        }">${org.nameText()}
+            <span class="${
+                'text-muted font-normal'
+            }">·</span>
+            <span class="${
+                'text-muted font-normal'
+            }">${org.domainText()}</span>
+        </h2>`;
+}
+
+function buildEditIdentity(
+    draft: GeneralInfoDraft,
 ): SafeHtml {
     return html`
         <div class="${
-            'card card-hover p-6 mb-6'
+            'flex flex-col gap-3'
+            + ' max-w-md'
         }">
-            <h3 class="${
-                'font-display font-semibold'
-                + ' mb-4 flex items-center'
-                + ' gap-2'
-            }">${
-                iconBuilding(20, '')
-            } General Information</h3>
-            <div class="${
-                'grid grid-cols-2 gap-4'
-            }">
-                ${body}
-            </div>
+            ${buildEditField(
+                'name',
+                'Organization Name',
+                draft.name,
+            )}
+            ${buildEditField(
+                'domain',
+                'Domain',
+                draft.domain,
+            )}
         </div>`;
 }
 
 function buildOverviewCard(
     org: Organization,
     stats: OrganizationStats,
+    identity: SafeHtml,
 ): SafeHtml {
     return html`
         <div class="card card-hover p-6 mb-6">
@@ -144,11 +148,7 @@ function buildOverviewCard(
                         data-tone="primary"
                     >${iconBuilding(28, '')}</div>
                     <div>
-                        <h2
-                            class="text-xl
-                                   font-display
-                                   font-semibold"
-                        >${org.nameText()}</h2>
+                        ${identity}
                         <div
                             class="flex
                                    items-center
@@ -394,13 +394,12 @@ function buildPage(
     org: Organization,
     stats: OrganizationStats,
     headerActions: SafeHtml,
-    generalInfoBody: SafeHtml,
+    identity: SafeHtml,
 ): SafeHtml {
     return html`
     <div class="overview">
         ${buildPageHeader(headerActions)}
-        ${buildGeneralInfoCard(generalInfoBody)}
-        ${buildOverviewCard(org, stats)}
+        ${buildOverviewCard(org, stats, identity)}
         ${buildUsageCard(org, stats)}
         ${buildAdminCard()}
     </div>`;
@@ -427,17 +426,9 @@ export class OrganizationPresenter {
                 data-org-action="edit">
                 ${iconEdit(16, '')} Edit
             </button>`;
-        const body = html`
-            ${buildReadField(
-                'Organization Name',
-                org.nameText(),
-            )}
-            ${buildReadField(
-                'Domain',
-                org.domainText(),
-            )}`;
         return buildPage(
-            org, this.#stats, actions, body,
+            org, this.#stats, actions,
+            buildReadIdentity(org),
         );
     }
 }
@@ -473,19 +464,9 @@ export class OrganizationEditPresenter {
                     ${iconSave(16, '')} Save
                 </button>
             </div>`;
-        const body = html`
-            ${buildEditField(
-                'name',
-                'Organization Name',
-                this.#draft.name,
-            )}
-            ${buildEditField(
-                'domain',
-                'Domain',
-                this.#draft.domain,
-            )}`;
         return buildPage(
-            this.#org, this.#stats, actions, body,
+            this.#org, this.#stats, actions,
+            buildEditIdentity(this.#draft),
         );
     }
 }
