@@ -33,8 +33,9 @@ import {
 
 const now = new Date();
 
+const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
-const TIER_IDEAS_LIMIT = 200;
+const TIER_IDEAS_LIMIT = 1000;
 
 function pad(n: number): string {
     return String(n).padStart(2, '0');
@@ -1083,7 +1084,7 @@ export async function populateMockData(
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0, 0),
-            seats: 25,
+            seats: TIER_SEATS_LIMIT,
             used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
@@ -6538,7 +6539,7 @@ export async function populateBootstrapData(
             plan: 'Business',
             plan_status: 'active',
             next_billing: dt(-300, 0, 0),
-            seats: 25,
+            seats: TIER_SEATS_LIMIT,
             used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
