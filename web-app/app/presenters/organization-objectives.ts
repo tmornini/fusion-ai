@@ -3,8 +3,9 @@ import type {
     Objective,
     ObjectiveId,
 } from '../../../api/types.ts';
-import { iconEdit, iconTrash, iconPlus }
-    from '../icons.ts';
+import {
+    iconEdit, iconTrash, iconPlus, iconUndo,
+} from '../icons.ts';
 import { formatDate } from '../format.ts';
 
 interface Definition {
@@ -134,13 +135,22 @@ export class OrganizationObjectivesPresenter {
                 <div class="objective-actions">
                     ${isDeprecated
                         ? html`<button
+                            class="${
+                                'btn btn-ghost'
+                                + ' btn-sm gap-2'
+                            }"
                             data-action="reactivate"
                             data-objective-id="${
                                 o.id}">
+                            ${iconUndo(14, '')}
                             Reactivate
                           </button>`
                         : html`
                             <button
+                                class="${
+                                    'btn btn-ghost'
+                                    + ' btn-sm gap-2'
+                                }"
                                 data-action="edit"
                                 data-objective-id="${
                                     o.id}">
@@ -148,6 +158,10 @@ export class OrganizationObjectivesPresenter {
                                 Edit
                             </button>
                             <button
+                                class="${
+                                    'btn btn-ghost'
+                                    + ' btn-sm gap-2'
+                                }"
                                 data-action="deprecate"
                                 data-objective-id="${
                                     o.id}">
