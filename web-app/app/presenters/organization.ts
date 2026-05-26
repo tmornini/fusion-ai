@@ -296,7 +296,7 @@ function buildUsageCard(
     stats: OrganizationStats,
 ): SafeHtml {
     return html`
-        <div class="card card-hover p-6">
+        <div class="card card-hover p-6 mt-6">
             <h3
                 class="font-display
                        font-semibold mb-4
