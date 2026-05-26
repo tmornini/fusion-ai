@@ -4,7 +4,7 @@ import type {
     ObjectiveId,
 } from '../../../api/types.ts';
 import {
-    iconEdit, iconTrash, iconPlus, iconUndo,
+    iconEdit, iconArchive, iconPlus, iconUndo,
 } from '../icons.ts';
 import { formatDate } from '../format.ts';
 
@@ -15,20 +15,20 @@ interface Definition {
 
 export class OrganizationObjectivesPresenter {
     readonly #active: Objective[];
-    readonly #deprecated: Objective[];
+    readonly #archived: Objective[];
     readonly #defs: Map<ObjectiveId, Definition>;
-    readonly #deprecatedAt: Map<ObjectiveId, string>;
+    readonly #archivedAt: Map<ObjectiveId, string>;
 
     constructor(
         active: Objective[],
-        deprecated: Objective[],
+        archived: Objective[],
         defs: Map<ObjectiveId, Definition>,
-        deprecatedAt: Map<ObjectiveId, string>,
+        archivedAt: Map<ObjectiveId, string>,
     ) {
         this.#active = active;
-        this.#deprecated = deprecated;
+        this.#archived = archived;
         this.#defs = defs;
-        this.#deprecatedAt = deprecatedAt;
+        this.#archivedAt = archivedAt;
     }
 
     buildBox(): SafeHtml {
@@ -36,7 +36,7 @@ export class OrganizationObjectivesPresenter {
             <div class="card card-hover p-6 mt-6">
                 ${this.#buildHeader()}
                 ${this.#buildActiveList()}
-                ${this.#buildDeprecatedList()}
+                ${this.#buildArchivedList()}
             </div>
         `;
     }
@@ -64,7 +64,7 @@ export class OrganizationObjectivesPresenter {
 
     #buildActiveList(): SafeHtml {
         if (this.#active.length === 0
-            && this.#deprecated.length === 0) {
+            && this.#archived.length === 0) {
             return html`
                 <p class="empty-state">
                     No objectives yet. Add one to get
@@ -81,16 +81,16 @@ export class OrganizationObjectivesPresenter {
         `;
     }
 
-    #buildDeprecatedList(): SafeHtml {
-        if (this.#deprecated.length === 0) {
+    #buildArchivedList(): SafeHtml {
+        if (this.#archived.length === 0) {
             return html``;
         }
         return html`
             <h4 class="objective-list-divider">
-                Deprecated
+                Archived
             </h4>
             <ul class="objective-list">
-                ${this.#deprecated.map(
+                ${this.#archived.map(
                     o => this.#row(o, true),
                 )}
             </ul>
@@ -99,7 +99,7 @@ export class OrganizationObjectivesPresenter {
 
     #row(
         o: Objective,
-        isDeprecated: boolean,
+        isArchived: boolean,
     ): SafeHtml {
         const def = this.#defs.get(o.id);
         if (!def) {
@@ -108,13 +108,13 @@ export class OrganizationObjectivesPresenter {
                     o.id}`,
             );
         }
-        const date = this.#deprecatedAt.get(o.id);
+        const date = this.#archivedAt.get(o.id);
         return html`
             <li class="objective-list-item"
                 data-objective-id="${o.id}"
                 data-position="${o.position}"
-                data-deprecated="${isDeprecated}">
-                ${!isDeprecated
+                data-archived="${isArchived}">
+                ${!isArchived
                     ? html`<span class="drag-handle"
                         aria-label="Drag to reorder">
                         &#x22EE;&#x22EE;
@@ -125,15 +125,15 @@ export class OrganizationObjectivesPresenter {
                     <span class="objective-desc">
                         ${def.description}
                     </span>
-                    ${isDeprecated && date
+                    ${isArchived && date
                         ? html`<span class="meta">
-                            Deprecated ${
+                            Archived ${
                                 formatDate(date)}
                           </span>`
                         : html``}
                 </div>
                 <div class="objective-actions">
-                    ${isDeprecated
+                    ${isArchived
                         ? html`<button
                             class="${
                                 'btn btn-ghost'
@@ -162,11 +162,11 @@ export class OrganizationObjectivesPresenter {
                                     'btn btn-ghost'
                                     + ' btn-sm gap-2'
                                 }"
-                                data-action="deprecate"
+                                data-action="archive"
                                 data-objective-id="${
                                     o.id}">
-                                ${iconTrash(14, '')}
-                                Deprecate
+                                ${iconArchive(14, '')}
+                                Archive
                             </button>
                         `}
                 </div>

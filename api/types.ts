@@ -114,6 +114,14 @@ export const RECORD_STATES = [
 
 export type RecordState = typeof RECORD_STATES[number];
 
+export const OBJECTIVE_STATES = [
+    'active',
+    'archived',
+] as const;
+
+export type ObjectiveState =
+    typeof OBJECTIVE_STATES[number];
+
 export type StoredBoolean = 0 | 1;
 
 export type JsonArrayField = string & {
@@ -304,6 +312,25 @@ export function assertRecordState(
     if (!includes(RECORD_STATES, v)) {
         throw new Error(
             'expected RecordState for '
+                + label + ', got ' + v,
+        );
+    }
+    return v;
+}
+
+export function isObjectiveState(
+    v: string,
+): v is ObjectiveState {
+    return includes(OBJECTIVE_STATES, v);
+}
+
+export function assertObjectiveState(
+    v: string,
+    label: string,
+): ObjectiveState {
+    if (!includes(OBJECTIVE_STATES, v)) {
+        throw new Error(
+            'expected ObjectiveState for '
                 + label + ', got ' + v,
         );
     }

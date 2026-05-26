@@ -19,11 +19,11 @@ import {
     type GeneralInfoDraft,
     getActiveObjectives,
     getObjectives,
-    getDeprecatedObjectiveIds,
+    getArchivedObjectiveIds,
     getCurrentObjectiveDefinition,
     postObjectiveCreation,
     postObjectiveRevision,
-    postObjectiveDeprecation,
+    postObjectiveArchival,
     postObjectiveReactivation,
     putObjectivePosition,
     subscribeObjectiveChanges,
@@ -115,18 +115,18 @@ function bindNavButtons(): void {
 
 async function renderObjectives(): Promise<void> {
     const ctx = createRequestContext();
-    const [active, allObjs, deprecatedIds] =
+    const [active, allObjs, archivedIds] =
         await Promise.all([
             getActiveObjectives(ctx),
             getObjectives(ctx),
-            getDeprecatedObjectiveIds(ctx),
+            getArchivedObjectiveIds(ctx),
         ]);
-    const deprecated = allObjs.filter(
-        o => deprecatedIds.has(o.id),
+    const archived = allObjs.filter(
+        o => archivedIds.has(o.id),
     );
     const defs = new Map<string,
         { name: string; description: string }>();
-    for (const o of [...active, ...deprecated]) {
+    for (const o of [...active, ...archived]) {
         defs.set(
             o.id,
             await getCurrentObjectiveDefinition(
@@ -134,10 +134,10 @@ async function renderObjectives(): Promise<void> {
             ),
         );
     }
-    const deprecatedAt = new Map<string, string>();
+    const archivedAt = new Map<string, string>();
     const presenter =
         new OrganizationObjectivesPresenter(
-            active, deprecated, defs, deprecatedAt,
+            active, archived, defs, archivedAt,
         );
     const box = $('#objectives-box', document);
     if (!box) return;
@@ -146,7 +146,7 @@ async function renderObjectives(): Promise<void> {
     initDragReorder(
         box as HTMLElement,
         '[data-objective-id]'
-        + ':not([data-deprecated="true"])',
+        + ':not([data-archived="true"])',
         'data-objective-id',
         async (id, newPosition) => {
             const dragCtx = createRequestContext();
@@ -189,14 +189,14 @@ async function renderObjectives(): Promise<void> {
                 .value = def.description;
             openDialog('edit-objective');
         } else if (
-            action === 'deprecate'
+            action === 'archive'
             && objectiveId
         ) {
             ($(
-                '#confirm-deprecate-id', document,
+                '#confirm-archive-id', document,
             ) as HTMLInputElement)
                 .value = objectiveId;
-            openDialog('confirm-deprecate');
+            openDialog('confirm-archive');
         } else if (
             action === 'reactivate'
             && objectiveId
@@ -311,23 +311,23 @@ export async function init(): Promise<void> {
         closeDialog('edit-objective');
     }, { signal });
 
-    // Confirm-deprecate dialog wiring
+    // Confirm-archive dialog wiring
     $(
-        '[data-action="cancel-confirm-deprecate"]',
+        '[data-action="cancel-confirm-archive"]',
         document,
     )!.addEventListener('click',
-        () => closeDialog('confirm-deprecate'),
+        () => closeDialog('confirm-archive'),
         { signal });
     $(
-        '[data-action="confirm-deprecate"]',
+        '[data-action="confirm-archive"]',
         document,
     )!.addEventListener('click', async () => {
         const id = ($(
-            '#confirm-deprecate-id', document,
+            '#confirm-archive-id', document,
         ) as HTMLInputElement).value;
         const ctx = createRequestContext();
-        await postObjectiveDeprecation(ctx, id);
-        closeDialog('confirm-deprecate');
+        await postObjectiveArchival(ctx, id);
+        closeDialog('confirm-archive');
     }, { signal });
 }
 
