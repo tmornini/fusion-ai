@@ -56,6 +56,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconBuilding,
         keywords:
             'organization billing plan',
+        cssBundles: ['pages-organization'],
         loader: () => import('../organization/index'),
     },
     ideas: {

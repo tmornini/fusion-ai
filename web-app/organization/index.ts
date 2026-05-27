@@ -89,6 +89,10 @@ function buildPresenter():
 
 async function rerender(): Promise<void> {
     if (!pageContainer) return;
+    pageContainer.toggleAttribute(
+        'data-page-editing',
+        state?.kind === 'editing',
+    );
     setHtml(
         pageContainer,
         buildPresenter().buildPage(),
@@ -143,13 +147,14 @@ async function renderObjectives(): Promise<void> {
     );
 }
 
-async function onObjectiveBoxClick(
+async function onObjectiveAction(
     e: MouseEvent,
 ): Promise<void> {
     const target = e.target as HTMLElement;
     const action = target
         .closest('[data-action]')
         ?.getAttribute('data-action');
+    if (!action) return;
     const objectiveId = target
         .closest('[data-objective-id]')
         ?.getAttribute('data-objective-id');
@@ -242,12 +247,6 @@ export async function init(): Promise<void> {
     state = { kind: 'reading', org, stats };
     subscribeObjectiveChanges(renderObjectives);
     await rerender();
-
-    $('#objectives-box', document)!
-        .addEventListener(
-            'click', onObjectiveBoxClick,
-            { signal },
-        );
 
     // Add-Objective dialog wiring
     $(
@@ -351,10 +350,10 @@ function bindStableListeners(
 function onClick(e: MouseEvent): void {
     const target = e.target as Element | null;
     if (!target) return;
-    const action = target
+    const orgAction = target
         .closest('[data-org-action]')
         ?.getAttribute('data-org-action');
-    if (action === 'edit') {
+    if (orgAction === 'edit') {
         if (!state || state.kind !== 'reading') {
             return;
         }
@@ -368,7 +367,7 @@ function onClick(e: MouseEvent): void {
         void rerender();
         return;
     }
-    if (action === 'cancel') {
+    if (orgAction === 'cancel') {
         if (!state || state.kind !== 'editing') {
             return;
         }
@@ -380,9 +379,11 @@ function onClick(e: MouseEvent): void {
         void rerender();
         return;
     }
-    if (action === 'save') {
+    if (orgAction === 'save') {
         void handleSave();
+        return;
     }
+    void onObjectiveAction(e);
 }
 
 function onInput(e: Event): void {
