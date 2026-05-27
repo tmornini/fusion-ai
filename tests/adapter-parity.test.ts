@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    createLocalStorageAdapter,
+    LocalStorageDbAdapter,
 } from '../api/db-localstorage.ts';
 import { createRequestContext }
     from '../web-app/app/adapters/shared.ts';
@@ -73,7 +73,7 @@ test('K5 reactivation parity across memory and localStorage',
         installLocalStorageShim();
         const memDb = new MemoryDbAdapter();
         await memDb.createSchema();
-        const lsDb = await createLocalStorageAdapter();
+        const lsDb = new LocalStorageDbAdapter();
         await lsDb.createSchema();
 
         const mem = await runReactivationScenario(memDb);

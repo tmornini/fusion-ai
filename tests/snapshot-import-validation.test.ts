@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    createLocalStorageAdapter,
+    LocalStorageDbAdapter,
 } from '../api/db-localstorage.ts';
 import {
     TABLE_NAMES,
@@ -39,7 +39,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await assert.rejects(
             () => adapter.importSnapshot(
                 '{not valid',
@@ -54,7 +54,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await assert.rejects(
             () => adapter.importSnapshot(
                 '[]',
@@ -69,7 +69,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await assert.rejects(
             () => adapter.importSnapshot(
                 'null',
@@ -84,7 +84,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await assert.rejects(
             () => adapter.importSnapshot(
                 '"string"',
@@ -99,7 +99,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: { not: 'an array' },
         });
@@ -115,7 +115,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: ['not an object'],
         });
@@ -131,7 +131,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: [null],
         });
@@ -147,7 +147,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: [['not', 'an', 'object']],
         });
@@ -163,7 +163,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: [
                 {
@@ -193,7 +193,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             objectives: [{
                 id: 'o1',
@@ -214,7 +214,7 @@ test(
     async () => {
         const map = installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             objectives: [{ id: 'o1', position: 1 }],
         });
@@ -231,7 +231,7 @@ test(
     async () => {
         const map = installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         const json = JSON.stringify({
             workers: [
                 {
@@ -261,7 +261,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await adapter.importSnapshot('{}');
         const reExported = JSON.parse(
             await adapter.exportSnapshot(),
@@ -281,7 +281,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         assert.equal(
             await adapter.hasSchema(), false,
             'fresh storage has no schema',
@@ -304,7 +304,7 @@ test(
     async () => {
         const map = installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.workers.put('u1', {
             first_name: 'Alice',
@@ -334,7 +334,7 @@ test(
     async () => {
         installShim();
         const adapter =
-            await createLocalStorageAdapter();
+            new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.flowVersions.put('fv1', {
             flow_id: 'flow-aaaa',

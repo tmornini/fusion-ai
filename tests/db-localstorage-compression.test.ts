@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    createLocalStorageAdapter,
+    LocalStorageDbAdapter,
 } from '../api/db-localstorage.ts';
 import {
     jsonArrayField,
@@ -57,7 +57,7 @@ test(
     'flow_versions write produces gz1: prefix in storage',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.flowVersions.put(
             'fv-prefix-test', baseVersion,
@@ -78,7 +78,7 @@ test(
     'flow_versions round-trips through put → getById',
     async () => {
         installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.flowVersions.put(
             'fv-rt', baseVersion,
@@ -96,7 +96,7 @@ test(
     'booleans round-trip as booleans, not 1|0 numbers',
     async () => {
         installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.flowVersions.put(
             'fv-bool', baseVersion,
@@ -117,7 +117,7 @@ test(
     'concurrent puts to same store do not race',
     async () => {
         installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         const ids = Array.from(
             { length: 11 },
@@ -156,7 +156,7 @@ test(
     'states write produces gz1: prefix',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.states.put(
             'evt-prefix-test',
@@ -184,7 +184,7 @@ test(
     'workers table is not compressed (raw JSON in storage)',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.workers.put('u1', {
             first_name: 'Alice',
@@ -211,7 +211,7 @@ test(
     'compression actually shrinks flow_versions storage',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         for (let i = 0; i < 10; i++) {
             await adapter.flowVersions.put(
@@ -235,7 +235,7 @@ test(
     'snapshot export emits parsed objects, not gz1: blob',
     async () => {
         installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.flowVersions.put(
             'fv-export', baseVersion,
@@ -257,7 +257,7 @@ test(
     'snapshot import stores flow_versions compressed',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             flow_versions: [
                 { id: 'fv-imp', ...baseVersion },
@@ -280,7 +280,7 @@ test(
     'read tolerates gz1: payload on normally-uncompressed table',
     async () => {
         const map = installShim();
-        const adapter = await createLocalStorageAdapter();
+        const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         const flowRow = {
             id: 'flow-aaaaaaaaaaaaaaaaaaaa',

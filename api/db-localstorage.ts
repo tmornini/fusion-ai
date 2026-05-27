@@ -1,5 +1,10 @@
 import { TABLE_NAMES } from './db.ts';
-import type { DbAdapter } from './db.ts';
+import type {
+    DbAdapter,
+    SingletonStore as ISingletonStore,
+    EntityStore as IEntityStore,
+    StateStore as IStateStore,
+} from './db.ts';
 import { LocalStorageBackend } from
     './backend-localstorage.ts';
 import { EntityStore } from './store-entity.ts';
@@ -57,166 +62,201 @@ import {
     parseAndValidateSnapshot,
 } from './snapshot-validator.ts';
 
-export async function createLocalStorageAdapter(
-): Promise<DbAdapter> {
-    const backend = new LocalStorageBackend();
-    const stateStore = new StateStore(backend, 'states');
+export class LocalStorageDbAdapter implements DbAdapter {
+    readonly #backend: LocalStorageBackend;
 
-    const adapter: DbAdapter = {
-        async initialize(): Promise<void> {},
-        async close(): Promise<void> {},
-        async flush(): Promise<void> {},
+    readonly workers: IEntityStore<HumanWorkerEntity>;
+    readonly aiWorkers: IEntityStore<AIWorkerEntity>;
+    readonly ideas: IEntityStore<IdeaEntity>;
+    readonly projects: IEntityStore<ProjectEntity>;
+    readonly flows: IEntityStore<FlowEntity>;
+    readonly flowVersions:
+        IEntityStore<FlowVersionEntity>;
+    readonly projectFlows:
+        IEntityStore<ProjectFlowEntity>;
+    readonly workOrders: IEntityStore<WorkOrderEntity>;
+    readonly flowWorkOrders:
+        IEntityStore<FlowWorkOrderEntity>;
+    readonly stateFieldValues:
+        IEntityStore<StateFieldValueEntity>;
+    readonly records:
+        IEntityStore<RecordEntity>;
+    readonly recordAttributes:
+        IEntityStore<RecordAttributeEntity>;
+    readonly flowRecords:
+        IEntityStore<FlowRecordEntity>;
+    readonly organization:
+        ISingletonStore<OrganizationEntity>;
+    readonly ideaSubmissions:
+        IEntityStore<IdeaSubmissionEntity>;
+    readonly objectives: IEntityStore<Objective>;
+    readonly objectiveRevisions:
+        IEntityStore<ObjectiveRevision>;
+    readonly projectObjectiveBaselineScores:
+        IEntityStore<ProjectObjectiveBaselineScore>;
+    readonly projectObjectiveActualScores:
+        IEntityStore<ProjectObjectiveActualScore>;
+    readonly states: IStateStore;
 
-        simulateLatency: () =>
-            simulateNetworkLatency(
-                DEFAULT_LATENCY_CONFIG,
-            ),
-
-        async deleteSchema(): Promise<void> {
-            await backend.clearAll();
-        },
-
-        async hasSchema(): Promise<boolean> {
-            return (await backend.list()).length > 0;
-        },
-
-        async createSchema(): Promise<void> {
-            const existing = new Set(
-                await backend.list(),
+    constructor() {
+        this.#backend = new LocalStorageBackend();
+        const backend = this.#backend;
+        const stateStore = new StateStore(
+            backend, 'states',
+        );
+        this.states = stateStore;
+        this.organization =
+            new SingletonStore<OrganizationEntity>(
+                'organization', backend,
             );
-            for (const table of TABLE_NAMES) {
-                if (!existing.has(table)) {
-                    await backend.write(table, []);
-                }
-            }
-        },
 
-        async exportSnapshot(): Promise<string> {
-            const obj: Record<string, unknown[]> = {};
-            for (const table of TABLE_NAMES) {
-                obj[table] = await backend.read(table);
-            }
-            return JSON.stringify(obj, null, 2);
-        },
-
-        async importSnapshot(
-            json: string,
-        ): Promise<void> {
-            const validated =
-                parseAndValidateSnapshot(json);
-            await backend.clearAll();
-            try {
-                for (const [
-                    table, rows,
-                ] of validated) {
-                    await backend.write(table, rows);
-                }
-            } catch (err) {
-                await backend.clearAll();
-                throw err;
-            }
-        },
-
-        workers: new EntityStore<HumanWorkerEntity>(
-            'workers', backend, stateStore,
-            validateHumanWorkerEntity,
-        ),
-        aiWorkers: new EntityStore<AIWorkerEntity>(
-            'ai_workers', backend, stateStore,
-            validateAIWorkerEntity,
-        ),
-        ideas: new EntityStore<IdeaEntity>(
-            'ideas', backend, stateStore,
-            validateIdeaEntity,
-        ),
-        projects: new EntityStore<ProjectEntity>(
-            'projects', backend, stateStore,
-            validateProjectEntity,
-        ),
-        flows: new EntityStore<FlowEntity>(
-            'flows', backend, stateStore,
-            validateFlowEntity,
-        ),
-        flowVersions:
-            new HistoryEntityStore<FlowVersionEntity>(
+        this.workers =
+            new EntityStore(
+                'workers', backend, stateStore,
+                validateHumanWorkerEntity,
+            );
+        this.aiWorkers =
+            new EntityStore(
+                'ai_workers', backend, stateStore,
+                validateAIWorkerEntity,
+            );
+        this.ideas =
+            new EntityStore(
+                'ideas', backend, stateStore,
+                validateIdeaEntity,
+            );
+        this.projects =
+            new EntityStore(
+                'projects', backend, stateStore,
+                validateProjectEntity,
+            );
+        this.flows =
+            new EntityStore(
+                'flows', backend, stateStore,
+                validateFlowEntity,
+            );
+        this.flowVersions =
+            new HistoryEntityStore(
                 'flow_versions', backend,
                 validateFlowVersionEntity,
-            ),
-        projectFlows:
-            new EntityStore<ProjectFlowEntity>(
+            );
+        this.projectFlows =
+            new EntityStore(
                 'project_flows', backend, stateStore,
                 validateProjectFlowEntity,
-            ),
-        workOrders: new EntityStore<WorkOrderEntity>(
-            'work_orders', backend, stateStore,
-            validateWorkOrderEntity,
-        ),
-        flowWorkOrders:
-            new EntityStore<FlowWorkOrderEntity>(
+            );
+        this.workOrders =
+            new EntityStore(
+                'work_orders', backend, stateStore,
+                validateWorkOrderEntity,
+            );
+        this.flowWorkOrders =
+            new EntityStore(
                 'flow_work_orders',
                 backend, stateStore,
                 validateFlowWorkOrderEntity,
-            ),
-        stateFieldValues:
-            new EntityStore<StateFieldValueEntity>(
+            );
+        this.stateFieldValues =
+            new EntityStore(
                 'state_field_values',
                 backend, stateStore,
                 validateStateFieldValueEntity,
-            ),
-        records:
-            new EntityStore<RecordEntity>(
+            );
+        this.records =
+            new EntityStore(
                 'records', backend, stateStore,
                 validateRecordEntity,
-            ),
-        recordAttributes:
-            new EntityStore<RecordAttributeEntity>(
+            );
+        this.recordAttributes =
+            new EntityStore(
                 'record_attributes',
                 backend, stateStore,
                 validateRecordAttributeEntity,
-            ),
-        flowRecords:
-            new EntityStore<FlowRecordEntity>(
+            );
+        this.flowRecords =
+            new EntityStore(
                 'flow_records',
                 backend, stateStore,
                 validateFlowRecordEntity,
-            ),
-        organization:
-            new SingletonStore<OrganizationEntity>(
-                'organization', backend,
-            ),
-        ideaSubmissions:
-            new EntityStore<IdeaSubmissionEntity>(
+            );
+        this.ideaSubmissions =
+            new EntityStore(
                 'idea_submissions',
                 backend, stateStore,
                 validateIdeaSubmissionEntity,
-            ),
-        objectives: new EntityStore<Objective>(
-            'objectives', backend, stateStore,
-            validateObjectiveEntity,
-        ),
-        objectiveRevisions:
-            new HistoryEntityStore<ObjectiveRevision>(
+            );
+        this.objectives =
+            new EntityStore(
+                'objectives', backend, stateStore,
+                validateObjectiveEntity,
+            );
+        this.objectiveRevisions =
+            new HistoryEntityStore(
                 'objective_revisions', backend,
                 validateObjectiveRevisionEntity,
-            ),
-        projectObjectiveBaselineScores:
-            new HistoryEntityStore<
-                ProjectObjectiveBaselineScore
-            >(
+            );
+        this.projectObjectiveBaselineScores =
+            new HistoryEntityStore(
                 'project_objective_baseline_scores',
                 backend,
                 validateBaselineScoreEntity,
-            ),
-        projectObjectiveActualScores:
-            new HistoryEntityStore<
-                ProjectObjectiveActualScore
-            >(
+            );
+        this.projectObjectiveActualScores =
+            new HistoryEntityStore(
                 'project_objective_actual_scores',
                 backend,
                 validateActualScoreEntity,
-            ),
-        states: stateStore,
-    };
+            );
+    }
 
-    return adapter;
+    async initialize(): Promise<void> {}
+    async close(): Promise<void> {}
+    async flush(): Promise<void> {}
+
+    async simulateLatency(): Promise<void> {
+        await simulateNetworkLatency(
+            DEFAULT_LATENCY_CONFIG,
+        );
+    }
+
+    async hasSchema(): Promise<boolean> {
+        return (await this.#backend.list()).length > 0;
+    }
+
+    async createSchema(): Promise<void> {
+        const existing = new Set(
+            await this.#backend.list(),
+        );
+        for (const table of TABLE_NAMES) {
+            if (!existing.has(table)) {
+                await this.#backend.write(table, []);
+            }
+        }
+    }
+
+    async deleteSchema(): Promise<void> {
+        await this.#backend.clearAll();
+    }
+
+    async exportSnapshot(): Promise<string> {
+        const obj: Record<string, unknown[]> = {};
+        for (const table of TABLE_NAMES) {
+            obj[table] = await this.#backend.read(table);
+        }
+        return JSON.stringify(obj, null, 2);
+    }
+
+    async importSnapshot(json: string): Promise<void> {
+        const validated =
+            parseAndValidateSnapshot(json);
+        await this.#backend.clearAll();
+        try {
+            for (const [table, rows] of validated) {
+                await this.#backend.write(table, rows);
+            }
+        } catch (err) {
+            await this.#backend.clearAll();
+            throw err;
+        }
+    }
 }
