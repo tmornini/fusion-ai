@@ -25,6 +25,7 @@ import type {
 } from './types.ts';
 import {
     validateOrganizationEntity,
+    validateRecordMultiPutBody,
     validateStateEntity,
 } from './validators.ts';
 
@@ -113,6 +114,57 @@ function withoutId(
 ): Record<string, unknown> {
     const { id: _id, ...rest } = body;
     return rest;
+}
+
+async function applyRecordMultiPut(
+    db: DbAdapter,
+    payload: Record<string, unknown>,
+): Promise<void> {
+    const body = validateRecordMultiPutBody(payload);
+    let opIndex = 0;
+    try {
+        await db.records.put(
+            body.id, body.record,
+        );
+        opIndex++;
+        if (body.kind === 'create') {
+            const worker =
+                await db.workers.getById('current');
+            await db.states.record(
+                body.initialStateEventId,
+                body.id,
+                body.initialState,
+                worker.id,
+            );
+            opIndex++;
+        } else {
+            for (
+                const removedId
+                of body.removedAttributeIds
+            ) {
+                await db.recordAttributes.delete(
+                    removedId,
+                );
+                opIndex++;
+            }
+        }
+        for (const attr of body.attributes) {
+            const { id, ...rest } = attr;
+            await db.recordAttributes.put(
+                id, rest,
+            );
+            opIndex++;
+        }
+    } catch (e) {
+        const cause =
+            e instanceof Error
+                ? e.message
+                : String(e);
+        throw new Error(
+            'records-multi-put failed at op['
+            + opIndex + ']: ' + cause,
+        );
+    }
 }
 
 
@@ -307,6 +359,11 @@ const routes: Route[] = [
             db.flowRecords.delete(
                 param(p, 0),
             ),
+    }),
+    route('records-multi-put', {
+        post: async (db, _p, body) => {
+            await applyRecordMultiPut(db, body);
+        },
     }),
 
     route('organization', {

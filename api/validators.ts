@@ -23,6 +23,8 @@ import type {
     ProjectFlowEntity,
     RecordEntity,
     RecordAttributeEntity,
+    RecordId,
+    RecordState,
     FlowRecordEntity,
     Objective,
     ObjectiveRevision,
@@ -33,6 +35,7 @@ import type {
 import {
     assertAttributeType,
     assertConstraintAppliesTo,
+    assertRecordState,
 } from './types.ts';
 
 export function parseOrThrow(
@@ -1261,5 +1264,149 @@ export function validateFlowRecordEntity(
         ),
         at: pickString(body, 'at'),
     };
+}
+
+export interface RecordMultiPutCreateBody {
+    readonly kind: 'create';
+    readonly id: RecordId;
+    readonly record: Omit<RecordEntity, 'id'>;
+    readonly attributes: readonly RecordAttributeEntity[];
+    readonly initialState: RecordState;
+    readonly initialStateEventId: string;
+}
+
+export interface RecordMultiPutEditBody {
+    readonly kind: 'edit';
+    readonly id: RecordId;
+    readonly record: Omit<RecordEntity, 'id'>;
+    readonly attributes: readonly RecordAttributeEntity[];
+    readonly removedAttributeIds: readonly string[];
+}
+
+export type RecordMultiPutBody =
+    | RecordMultiPutCreateBody
+    | RecordMultiPutEditBody;
+
+const RECORD_MULTI_PUT_CREATE_KEYS:
+    readonly string[] = [
+    'kind', 'id', 'record',
+    'attributes', 'initialState',
+    'initialStateEventId',
+];
+
+const RECORD_MULTI_PUT_EDIT_KEYS:
+    readonly string[] = [
+    'kind', 'id', 'record',
+    'attributes', 'removedAttributeIds',
+];
+
+function validateMultiPutAttribute(
+    value: unknown,
+    recordId: string,
+    label: string,
+): RecordAttributeEntity {
+    const obj = asObject(value, label);
+    const id = asString(obj['id'], label + '.id');
+    const { id: _id, ...rest } = obj;
+    const validated =
+        validateRecordAttributeEntity(rest);
+    if (validated.record_id !== recordId) {
+        throw new Error(
+            label + '.record_id must match'
+            + ' top-level id; got '
+            + validated.record_id
+            + ', expected ' + recordId,
+        );
+    }
+    return { id, ...validated };
+}
+
+export function validateRecordMultiPutBody(
+    body: Record<string, unknown>,
+): RecordMultiPutBody {
+    const kind = pickString(body, 'kind');
+    if (kind === 'create') {
+        assertOnlyKeys(
+            body,
+            RECORD_MULTI_PUT_CREATE_KEYS,
+            'RecordMultiPutCreateBody',
+        );
+        const id = pickString(body, 'id');
+        const record = validateRecordEntity(
+            asObject(
+                body['record'],
+                'RecordMultiPutCreateBody.record',
+            ),
+        );
+        const attrsRaw = asArray(
+            body['attributes'],
+            'RecordMultiPutCreateBody.attributes',
+        );
+        const attributes = attrsRaw.map((a, i) =>
+            validateMultiPutAttribute(
+                a, id,
+                'RecordMultiPutCreateBody'
+                + '.attributes[' + i + ']',
+            ),
+        );
+        const initialState = assertRecordState(
+            pickString(body, 'initialState'),
+            'RecordMultiPutCreateBody.initialState',
+        );
+        const initialStateEventId = pickString(
+            body, 'initialStateEventId',
+        );
+        return {
+            kind: 'create',
+            id, record, attributes,
+            initialState, initialStateEventId,
+        };
+    }
+    if (kind === 'edit') {
+        assertOnlyKeys(
+            body,
+            RECORD_MULTI_PUT_EDIT_KEYS,
+            'RecordMultiPutEditBody',
+        );
+        const id = pickString(body, 'id');
+        const record = validateRecordEntity(
+            asObject(
+                body['record'],
+                'RecordMultiPutEditBody.record',
+            ),
+        );
+        const attrsRaw = asArray(
+            body['attributes'],
+            'RecordMultiPutEditBody.attributes',
+        );
+        const attributes = attrsRaw.map((a, i) =>
+            validateMultiPutAttribute(
+                a, id,
+                'RecordMultiPutEditBody'
+                + '.attributes[' + i + ']',
+            ),
+        );
+        const removedRaw = asArray(
+            body['removedAttributeIds'],
+            'RecordMultiPutEditBody'
+            + '.removedAttributeIds',
+        );
+        const removedAttributeIds = removedRaw
+            .map((r, i) => asString(
+                r,
+                'RecordMultiPutEditBody'
+                + '.removedAttributeIds['
+                + i + ']',
+            ));
+        return {
+            kind: 'edit',
+            id, record, attributes,
+            removedAttributeIds,
+        };
+    }
+    throw new Error(
+        "expected RecordMultiPutBody kind"
+        + " 'create' or 'edit', got " + kind,
+    );
 }
 
