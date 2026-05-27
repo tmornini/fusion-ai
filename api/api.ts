@@ -642,10 +642,6 @@ export async function handleRequest(
         }
     }
 
-    // HTTP boundary handler: each case
-    // calls a single route handler; the
-    // catch translates domain exceptions
-    // to HTTP responses.
     try {
         switch (method) {
             case 'GET': {
@@ -803,6 +799,7 @@ export async function GET<T>(
     adapter: DbAdapter,
     resource: string,
 ): Promise<T> {
+    await adapter.simulateLatency();
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -818,6 +815,7 @@ export async function PUT<T>(
     resource: string,
     payload: Record<string, unknown>,
 ): Promise<T> {
+    await adapter.simulateLatency();
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -842,6 +840,7 @@ export async function DELETE(
     adapter: DbAdapter,
     resource: string,
 ): Promise<void> {
+    await adapter.simulateLatency();
     await unwrapResponse(
         await handleRequest(
             adapter,
@@ -858,6 +857,7 @@ export async function POST<T>(
     resource: string,
     payload: Record<string, unknown>,
 ): Promise<T> {
+    await adapter.simulateLatency();
     return unwrapResponse<T>(
         await handleRequest(
             adapter,

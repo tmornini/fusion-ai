@@ -204,6 +204,7 @@ export class MemoryDbAdapter implements DbAdapter {
     async initialize(): Promise<void> {}
     async close(): Promise<void> {}
     async flush(): Promise<void> {}
+    async simulateLatency(): Promise<void> {}
 
     async hasSchema(): Promise<boolean> {
         return true;

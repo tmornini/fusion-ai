@@ -29,7 +29,7 @@ import type {
     ProjectObjectiveActualScore,
 } from './types.ts';
 import {
-    withSimulatedLatency,
+    simulateNetworkLatency,
     DEFAULT_LATENCY_CONFIG,
 } from './latency.ts';
 import {
@@ -54,19 +54,6 @@ import {
     validateBaselineScoreEntity,
     validateActualScoreEntity,
 } from './validators.ts';
-
-const SIMULATE_LATENCY_PARAM = 'simulate-latency';
-
-function simulateLatencyRequested(): boolean {
-    if (typeof window === 'undefined') {
-        return false;
-    }
-    const params = new URLSearchParams(
-        window.location.search,
-    );
-    return params.get(SIMULATE_LATENCY_PARAM)
-        === 'on';
-}
 
 // Map table name → entity validator. Stored rows
 // carry `id` as their storage key — strip it before
@@ -240,6 +227,11 @@ export async function createLocalStorageAdapter(
         async close(): Promise<void> {},
         async flush(): Promise<void> {},
 
+        simulateLatency: () =>
+            simulateNetworkLatency(
+                DEFAULT_LATENCY_CONFIG,
+            ),
+
         async deleteSchema(): Promise<void> {
             await backend.clearAll();
         },
@@ -386,10 +378,5 @@ export async function createLocalStorageAdapter(
         states: stateStore,
     };
 
-    return simulateLatencyRequested()
-        ? withSimulatedLatency(
-            adapter,
-            DEFAULT_LATENCY_CONFIG,
-        )
-        : adapter;
+    return adapter;
 }

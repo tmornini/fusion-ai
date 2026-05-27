@@ -130,6 +130,8 @@ export interface DbAdapter {
         json: string,
     ): Promise<void>;
 
+    simulateLatency(): Promise<void>;
+
     workers:
         EntityStore<HumanWorkerEntity>;
     aiWorkers:
