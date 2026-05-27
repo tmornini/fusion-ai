@@ -518,6 +518,9 @@ export class ProjectListPresenter {
     }
 
     #buildSortToggle(): SafeHtml {
+        if (this.#projects.length === 0) {
+            return html``;
+        }
         const active =
             this.#sort.kind
             === 'projected-impact-desc';
