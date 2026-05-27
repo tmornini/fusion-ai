@@ -60,11 +60,12 @@ async function seedProject(
     );
 }
 
-function setupDb(): {
+async function setupDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
-} {
+}> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
@@ -72,7 +73,7 @@ function setupDb(): {
 test(
     'getProjectRow round-trips all fields',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await db.projects.put('p1', buildProject(
             'p1', 'Alpha', {
                 progress: 73,
@@ -97,7 +98,7 @@ test(
 test(
     'getProjectRow rejects for missing id',
     async () => {
-        const { ctx } = setupDb();
+        const { ctx } = await setupDb();
         await assert.rejects(
             () => getProjectRow(ctx, 'nope'),
             /Not found/,
@@ -108,7 +109,7 @@ test(
 test(
     'getProjectRows returns persisted rows',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await db.projects.put(
             'p1', buildProject('p1', 'Alpha'),
         );
@@ -127,7 +128,7 @@ test(
 test(
     'getProjectRows returns empty on empty db',
     async () => {
-        const { ctx } = setupDb();
+        const { ctx } = await setupDb();
         const rows = await getProjectRows(ctx);
         assert.deepEqual(rows, []);
     },
@@ -136,7 +137,7 @@ test(
 test(
     'getProjects wraps rows in Project objects',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedProject(db, 'p1', 'Alpha');
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
@@ -153,7 +154,7 @@ test(
 test(
     'getProjects excludes deleted-state rows',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedProject(db, 'keep', 'Keep');
         await seedProject(
             db, 'gone', 'Gone', 'deleted',
@@ -169,7 +170,7 @@ test(
 test(
     'getProjects excludes tombstoned rows',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedProject(db, 'keep', 'Keep');
         await seedProject(db, 'gone', 'Gone');
         await db.projects.delete('gone');
@@ -184,7 +185,7 @@ test(
 );
 
 test('putProject persists a new project', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await putProject(
         ctx, 'p1', buildProject('p1', 'Created'),
     );
@@ -193,7 +194,7 @@ test('putProject persists a new project', async () => {
 });
 
 test('putProject updates an existing project', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.projects.put(
         'p1', buildProject('p1', 'Before'),
     );
@@ -210,7 +211,7 @@ test('putProject updates an existing project', async () => {
 test(
     'putProject changes are visible to a fresh ctx',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await putProject(ctx, 'p1', buildProject(
             'p1', 'Persisted',
         ));
@@ -277,7 +278,7 @@ test(
     'postProjectStateChange records a state event'
     + ' without touching the project row',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedCurrentWorker(db);
         await seedProject(
             db, 'p1', 'Original', 'approved',

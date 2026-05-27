@@ -44,6 +44,7 @@ async function setupMemDb(): Promise<{
     ctx: RequestContext;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await seedCurrentWorker(db);
     const ctx = createRequestContext(db);
     return { db, ctx };

@@ -167,6 +167,7 @@ async function setupDb(): Promise<{
     ctx: RequestContext;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await db.workers.put(
         'current', buildHumanWorker('Demo'),
     );
@@ -619,6 +620,7 @@ test(
     + 'flow-work-order rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.flowWorkOrders.put(
             'fwo1',
             {
@@ -661,6 +663,7 @@ test(
     + 'claimed event as implicitly expired',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put(
             'current', buildHumanWorker('Demo'),
         );
@@ -692,6 +695,7 @@ test(
     + 'claim when within the lock window',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put(
             'current', buildHumanWorker('Demo'),
         );

@@ -39,6 +39,7 @@ test(
     + ' attributes in one operation',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await POST(db, 'records-multi-put', {
             kind: 'create',
@@ -86,6 +87,7 @@ test(
     + ' state event',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await POST(db, 'records-multi-put', {
             kind: 'create',
@@ -121,6 +123,7 @@ test(
     + ' record fields without touching state',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await POST(db, 'records-multi-put', {
             kind: 'create',
@@ -168,6 +171,7 @@ test(
     + ' attributes by id and adds new ones',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await POST(db, 'records-multi-put', {
             kind: 'create',
@@ -231,6 +235,7 @@ test(
     + ' existing attribute by upsert',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await POST(db, 'records-multi-put', {
             kind: 'create',
@@ -295,6 +300,7 @@ test(
     + ' attribute name',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
@@ -333,6 +339,7 @@ test(
     + ' match the top-level id',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
@@ -370,6 +377,7 @@ test(
     + ' kind discriminator',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
@@ -391,6 +399,7 @@ test(
     + ' initialState',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
@@ -414,6 +423,7 @@ test(
     + ' an unexpected key',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
@@ -438,6 +448,7 @@ test(
     + ' a missing required key',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await assert.rejects(
             () => POST(db, 'records-multi-put', {

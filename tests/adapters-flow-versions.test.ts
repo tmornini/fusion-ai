@@ -34,6 +34,7 @@ async function setupMemDb(): Promise<{
     ctx: RequestContext;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await db.workers.put('current', {
         first_name: 'Demo',
         last_name: 'User',

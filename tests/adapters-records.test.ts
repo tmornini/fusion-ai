@@ -39,6 +39,7 @@ test(
     + ' the initial state event',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -66,6 +67,7 @@ test(
     + ' alongside the record',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -100,6 +102,7 @@ test(
     'putRecord overwrites an existing row',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -128,6 +131,7 @@ test(
     + ' attributes with new ones',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -181,6 +185,7 @@ test(
     + ' state event is deleted',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -219,6 +224,7 @@ test(
     + ' archived',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -244,6 +250,7 @@ test(
     + ' without touching the entity row',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -272,6 +279,7 @@ test(
     'deleteRecord hard-splices the row',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {
@@ -296,6 +304,7 @@ test(
     + ' exists for the record',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const ctx = createRequestContext(db);
         await assert.rejects(
             () => getRecordState(ctx, 'rec-missing'),
@@ -309,6 +318,7 @@ test(
     + ' states log',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         const ctx = createRequestContext(db);
         await postRecordChange(ctx, 'rec-1', {

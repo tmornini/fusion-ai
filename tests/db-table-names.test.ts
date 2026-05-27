@@ -21,6 +21,7 @@ test('TABLE_NAMES includes the objective tables', () => {
 test('MemoryDbAdapter exposes objective stores',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.objectives.put('o1', { position: 0 });
         const all = await db.objectives.getAll();
         assert.equal(all.length, 1);

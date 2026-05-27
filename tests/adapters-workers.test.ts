@@ -44,11 +44,12 @@ async function seedCurrentWorker(
     );
 }
 
-function setupDb(): {
+async function setupDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
-} {
+}> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
@@ -57,7 +58,7 @@ test(
     'postHumanWorkerCreation persists the row'
     + ' and records the initial state event',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedCurrentWorker(db);
 
         await postHumanWorkerCreation(
@@ -79,7 +80,7 @@ test(
     'postHumanWorkerStateChange records a state'
     + ' event without touching the worker row',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await seedCurrentWorker(db);
         await db.workers.put(
             'w1', buildHumanWorker('Original'),

@@ -18,6 +18,7 @@ import {
 test('getBaselineScoresForProject returns project rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1',
             {
@@ -45,6 +46,7 @@ test('getBaselineScoresForProject returns project rows',
 test('getActualScoresForProject returns project rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.projectObjectiveActualScores.put(
             'p1:o1:t1',
             {
@@ -64,6 +66,7 @@ test('getActualScoresForProject returns project rows',
 test('getProjectScoring returns both lists',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.projectObjectiveBaselineScores.put(
             'p1:o1:t1',
             {
@@ -137,6 +140,7 @@ async function seedTwoApprovedProjects(
 test('getPortfolioImpactSummary averages project averages',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         const ctx = createRequestContext(db);
         const r = await getPortfolioImpactSummary(ctx);
@@ -147,6 +151,7 @@ test('getPortfolioImpactSummary averages project averages',
 test('getObjectiveAggregates returns per-objective rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         const ctx = createRequestContext(db);
         const rows = await getObjectiveAggregates(ctx);
@@ -159,6 +164,7 @@ test('getObjectiveAggregates returns per-objective rows',
 test('getProjectsScoreColumn returns per-project rollup',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         const ctx = createRequestContext(db);
         const rows = await getProjectsScoreColumn(ctx);
@@ -173,6 +179,7 @@ test(
     'getObjectiveTrendlines: baseline + two actuals',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         await db.projectObjectiveActualScores.put(
             'p1:o1:a1',
@@ -207,6 +214,7 @@ test(
     'getObjectiveTrendlines: baseline + one actual',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         await db.projectObjectiveActualScores.put(
             'p1:o1:a1',
@@ -231,6 +239,7 @@ test(
     'getObjectiveTrendlines: same-at batch is one point',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedTwoApprovedProjects(db);
         await db.projectObjectiveActualScores.put(
             'p1:o1:a1',
@@ -263,6 +272,7 @@ test(
     'getObjectiveTrendlines: no baseline returns empty',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.objectives.put('o1', { position: 0 });
         await db.objectiveRevisions.put('o1:t0', {
             objective_id: 'o1',
@@ -280,6 +290,7 @@ test(
 test('postProjectBaselineScoring appends event rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const ctx = createRequestContext(db);
         await postProjectBaselineScoring(ctx, 'p1', [
             { objectiveId: 'o1', score: 50 },
@@ -293,6 +304,7 @@ test('postProjectBaselineScoring appends event rows',
 test('postProjectActualMeasurement appends actual rows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const ctx = createRequestContext(db);
         await postProjectActualMeasurement(ctx, 'p1', [
             { objectiveId: 'o1', score: 33 },

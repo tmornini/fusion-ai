@@ -208,6 +208,7 @@ test(
     + ' notReady flows',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const goodGraph = readyGraph();
         const badGraph: StoredGraph = {
             nodes: [
@@ -251,6 +252,7 @@ test(
     + ' entirely (regardless of readiness)',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const { id: _g, ...lockedReadyBody } =
             buildFlowEntity(
                 'locked-ready', readyGraph(),

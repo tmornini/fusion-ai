@@ -149,6 +149,7 @@ test(
     + ' array for a flow with no record binding',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',
@@ -177,6 +178,7 @@ test(
     + ' required attribute with no stored value',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',
@@ -216,6 +218,7 @@ test(
     + ' stored value',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',
@@ -273,6 +276,7 @@ test(
     + ' required check',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',
@@ -309,6 +313,7 @@ test(
     + ' constraint violation from the runner',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',
@@ -353,6 +358,7 @@ test(
     + ' work order flow graph',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedSystemWorker(db);
         const flowGraph = buildFlowGraph(
             'flow-1',

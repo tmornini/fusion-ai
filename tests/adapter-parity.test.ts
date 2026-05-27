@@ -72,6 +72,7 @@ test('K5 reactivation parity across memory and localStorage',
     async () => {
         installLocalStorageShim();
         const memDb = new MemoryDbAdapter();
+        await memDb.createSchema();
         const lsDb = await createLocalStorageAdapter();
         await lsDb.createSchema();
 

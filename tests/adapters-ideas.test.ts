@@ -73,17 +73,18 @@ async function seedWorkerState(
     );
 }
 
-function setupDb(): {
+async function setupDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
-} {
+}> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
 
 test('getIdeas returns ideas with submitter', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
@@ -114,7 +115,7 @@ test('getIdeas returns ideas with submitter', async () => {
 });
 
 test('getIdeas throws when idea has no submission', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
@@ -131,7 +132,7 @@ test('getIdeas throws when idea has no submission', async () => {
 });
 
 test('getIdea finds submission for one idea', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
@@ -153,7 +154,7 @@ test('getIdea finds submission for one idea', async () => {
 });
 
 test('getIdea throws on missing submission', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
@@ -169,7 +170,7 @@ test('getIdea throws on missing submission', async () => {
 });
 
 test('putIdea persists changes', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.ideas.put(
         'i1', buildIdea('i1', 'Original'),
     );
@@ -182,7 +183,7 @@ test('putIdea persists changes', async () => {
 });
 
 test('archived ideas are filtered from getIdeas', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );
@@ -216,7 +217,7 @@ test(
     'postIdeaCreation persists the row and'
     + ' records the initial state event',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await db.workers.put(
             'current',
             buildPerson('current', 'Demo'),
@@ -247,7 +248,7 @@ test(
     'postIdeaStateChange records a state event'
     + ' without touching the idea row',
     async () => {
-        const { db, ctx } = setupDb();
+        const { db, ctx } = await setupDb();
         await db.workers.put(
             'current',
             buildPerson('current', 'Demo'),
@@ -277,7 +278,7 @@ test(
 );
 
 test('deleted ideas are filtered from getIdeas', async () => {
-    const { db, ctx } = setupDb();
+    const { db, ctx } = await setupDb();
     await db.workers.put(
         'u1', buildPerson('u1', 'Alice'),
     );

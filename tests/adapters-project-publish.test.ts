@@ -84,6 +84,7 @@ test('completion validator: not ready when actuals missing',
 test('postProjectApproval moves state to approved',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
         await db.states.record(
@@ -105,6 +106,7 @@ test('postProjectApproval moves state to approved',
 test('postProjectApproval throws when not ready',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
         await db.objectives.put('o1', { position: 0 });
@@ -118,6 +120,7 @@ test('postProjectApproval throws when not ready',
 test('postProjectCompletion moves state to completed',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await seedCurrentWorker(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
         await db.states.record(

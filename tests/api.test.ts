@@ -10,6 +10,7 @@ import {
 
 test('GET on unknown route throws', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await assert.rejects(
         () => GET(db, 'nonexistent-table'),
         /Route not found|404|not found/i,
@@ -18,6 +19,7 @@ test('GET on unknown route throws', async () => {
 
 test('GET ideas returns array', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const ideas =
         await GET<unknown[]>(db, 'ideas');
     assert.deepEqual(ideas, []);
@@ -25,6 +27,7 @@ test('GET ideas returns array', async () => {
 
 test('GET ideas/:id throws on missing', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await assert.rejects(
         () => GET(db, 'ideas/missing-id'),
         /Not found|404/,
@@ -33,6 +36,7 @@ test('GET ideas/:id throws on missing', async () => {
 
 test('PUT then GET round-trips an entity', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const payload = {
         id: 'i1',
         title: 'Test',
@@ -53,6 +57,7 @@ test('PUT then GET round-trips an entity', async () => {
 
 test('GET ideas/ normalizes to collection', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const result =
         await GET<unknown[]>(db, 'ideas/');
     assert.deepEqual(result, []);
@@ -62,6 +67,7 @@ test(
     'GET workers returns the persisted humans',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put('hw_1', {
             first_name: 'Sarah',
             last_name: 'Chen',
@@ -83,6 +89,7 @@ test(
     'GET ai-workers returns persisted AIs',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.aiWorkers.put('ai_1', {
             name: 'Opus',
             provider: 'Anthropic',
@@ -99,6 +106,7 @@ test(
     'PUT ai-workers/:id validates body',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await assert.rejects(
             () => PUT(db, 'ai-workers/ai_1', {
                 rogue_field: 'extra',
@@ -113,6 +121,7 @@ test(
     + ' tables',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await POST(
             db, 'snapshots/mock-data', {},
         );
@@ -127,6 +136,7 @@ test(
     + ' 405 Method Not Allowed',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await assert.rejects(
             () => POST(db, 'ideas', {}),
             /not allowed/i,
@@ -138,6 +148,7 @@ test(
     'POST on an unknown route is 404',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await assert.rejects(
             () => POST(
                 db, 'no-such-resource', {},
@@ -152,6 +163,7 @@ test(
     + ' matches no route and is 404',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await assert.rejects(
             () => GET(db, 'workers/w-1/extra'),
             /not found|404/i,
@@ -164,6 +176,7 @@ test(
     + ' Request, not 500',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const response = await handleRequest(
             db,
             new Request(
@@ -193,6 +206,7 @@ test(
     + ' Request, not 500',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const response = await handleRequest(
             db,
             new Request(

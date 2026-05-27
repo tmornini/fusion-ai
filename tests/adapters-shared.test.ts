@@ -78,6 +78,7 @@ test(
     'getHumanWorkerMap fetches workers via adapter',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put(
             'u1', buildHumanWorkerRow(
                 'u1', 'Alice', 'Adams',
@@ -100,6 +101,7 @@ test(
 
 test('Fresh ctx re-fetches each call', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await db.workers.put('u1', buildHumanWorkerRow(
         'u1', 'Alice', 'Adams',
     ));
@@ -123,6 +125,7 @@ test(
     'getCurrentHumanWorker returns HumanWorkerEntity',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put('current', {
             ...buildHumanWorkerRow(
                 'current', 'Alice', 'Adams',

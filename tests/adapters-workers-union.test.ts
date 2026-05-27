@@ -72,6 +72,7 @@ async function setupSeeded(): Promise<{
     db: MemoryDbAdapter;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     const sarah = buildHumanWorkerEntity(
         'hw_sarah_chen', 'Sarah',
     );
@@ -176,6 +177,7 @@ test(
     + ' an empty array',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         const ctx = createRequestContext(db);
         const workers = await getWorkers(ctx);
         assert.deepEqual(workers, []);

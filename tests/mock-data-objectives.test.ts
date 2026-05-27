@@ -14,6 +14,7 @@ import {
 
 test('populateMockData seeds 4 objectives', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await populateMockData(db);
     const rows = await db.objectives.getAll();
     assert.equal(rows.length, 4);
@@ -26,6 +27,7 @@ test('populateMockData seeds 4 objectives', async () => {
 test('populateMockData seeds one revision per objective',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await populateMockData(db);
         const revs =
             await db.objectiveRevisions.getAll();
@@ -45,6 +47,7 @@ test('populateMockData seeds one revision per objective',
 test('populateMockData seeds zero archived objectives',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await populateMockData(db);
         const ctx = createRequestContext(db);
         const ids = await getArchivedObjectiveIds(ctx);
@@ -54,6 +57,7 @@ test('populateMockData seeds zero archived objectives',
 test('approved projects have full baseline coverage',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await populateMockData(db);
         const projects = await db.projects.getAll();
         const approved = projects.filter(
@@ -80,6 +84,7 @@ test('approved projects have full baseline coverage',
 test('completed projects have at least one actual per pair',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await populateMockData(db);
         const projects = await db.projects.getAll();
         const completed = projects.filter(
@@ -112,6 +117,7 @@ test('completed projects have at least one actual per pair',
 
 test('submitted projects have zero scores', async () => {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await populateMockData(db);
     const projects = await db.projects.getAll();
     const submitted = projects.filter(

@@ -187,6 +187,7 @@ async function setupOneWorkOrder(): Promise<{
     tables: () => Promise<WoTables>;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await db.workers.put(
         'current', buildHumanWorker('Demo'),
     );
@@ -340,6 +341,7 @@ test(
     + ' values',
     async () => {
         const db = new MemoryDbAdapter();
+        await db.createSchema();
         await db.workers.put(
             'current', buildHumanWorker('Demo'),
         );

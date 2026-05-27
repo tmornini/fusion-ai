@@ -205,8 +205,7 @@ test('deleteSchema clears all table contents', async () => {
         'u1', buildWorker('u1', 'Alice'),
     );
     await deleteSchema(ctx);
-    const rows = await db.workers.getAll();
-    assert.equal(rows.length, 0);
+    assert.equal(await db.hasSchema(), false);
 });
 
 test(

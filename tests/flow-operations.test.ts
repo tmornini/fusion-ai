@@ -200,6 +200,7 @@ async function setupFlow(): Promise<{
     ctx: RequestContext;
 }> {
     const db = new MemoryDbAdapter();
+    await db.createSchema();
     await db.workers.put('current', {
         first_name: 'Demo',
         last_name: 'User',
@@ -225,8 +226,10 @@ async function setupFlow(): Promise<{
 // A db with NO flow row: commitFlowMutation's
 // postFlowVersion does ctx.GET('flows/flow-1')
 // which 404s, driving the catch → failOp(...).
-function setupNoFlow(): MemoryDbAdapter {
-    return new MemoryDbAdapter();
+async function setupNoFlow(): Promise<MemoryDbAdapter> {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    return db;
 }
 
 async function persistedGraph(
@@ -427,7 +430,7 @@ test(
     'performAddEdge: a commit failure yields a'
     + ' fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode('a'), buildNode('b'),
         ]));
@@ -553,7 +556,7 @@ test(
     'performAddNodeAtPosition: a commit failure'
     + ' yields a fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode('a'),
         ]));
@@ -682,7 +685,7 @@ test(
     'performDeleteSelectedNodes: a commit'
     + ' failure yields a fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode('a'),
         ]));
@@ -764,7 +767,7 @@ test(
     'performDeleteSelectedEdge: a commit failure'
     + ' yields a fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const base = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
             [buildEdge('e1', 'a', 'b')],
@@ -868,7 +871,7 @@ test(
     'performAddAttributeRef: a commit failure'
     + ' yields a fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode('a'),
         ]));
@@ -957,7 +960,7 @@ test(
     'performRemoveAttributeRef: a commit failure'
     + ' yields a fail result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
@@ -1310,7 +1313,7 @@ test(
     'performRedo: a commit failure yields a fail'
     + ' result',
     async () => {
-        const db = setupNoFlow();
+        const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
             buildNode('a'),
         ]));

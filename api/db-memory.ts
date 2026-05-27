@@ -28,6 +28,9 @@ import type {
 } from './types.ts';
 import { MemoryStorageBackend }
     from './backend-memory.ts';
+import {
+    parseAndValidateSnapshot,
+} from './snapshot-validator.ts';
 import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
@@ -234,14 +237,16 @@ export class MemoryDbAdapter implements DbAdapter {
     }
 
     async importSnapshot(json: string): Promise<void> {
-        const obj = JSON.parse(json) as
-            Record<string, { id: string }[]>;
+        const validated =
+            parseAndValidateSnapshot(json);
         await this.#backend.clearAll();
-        for (const table of TABLE_NAMES) {
-            const rows = obj[table];
-            if (rows) {
+        try {
+            for (const [table, rows] of validated) {
                 await this.#backend.write(table, rows);
             }
+        } catch (err) {
+            await this.#backend.clearAll();
+            throw err;
         }
     }
 }
