@@ -207,10 +207,18 @@ export class MemoryDbAdapter implements DbAdapter {
     async simulateLatency(): Promise<void> {}
 
     async hasSchema(): Promise<boolean> {
-        return true;
+        return (await this.#backend.list()).length > 0;
     }
 
     async createSchema(): Promise<void> {
+        const existing = new Set(
+            await this.#backend.list(),
+        );
+        for (const table of TABLE_NAMES) {
+            if (!existing.has(table)) {
+                await this.#backend.write(table, []);
+            }
+        }
     }
 
     async deleteSchema(): Promise<void> {
