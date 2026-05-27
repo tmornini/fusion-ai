@@ -46,12 +46,8 @@ export const WORKER_STATES = [
 
 export type WorkerState = typeof WORKER_STATES[number];
 
-// The 'active' sub-states encode the readiness
-// dimension as a single composite string.
 export const IDEA_STATES = [
-    'active:incomplete',
-    'active:needs-info',
-    'active:ready',
+    'active',
     'in-review',
     'approved',
     'promoted',
@@ -61,6 +57,14 @@ export const IDEA_STATES = [
 ] as const;
 
 export type IdeaState = typeof IDEA_STATES[number];
+
+export const IDEA_READINESS = [
+    'incomplete',
+    'ready',
+] as const;
+
+export type IdeaReadiness =
+    typeof IDEA_READINESS[number];
 
 export type DimensionKey =
     | 'driver'
@@ -905,16 +909,8 @@ export const IDEA_STATE_CONFIG: Record<
     IdeaState,
     StatusDisplay
 > = {
-    'active:incomplete': {
-        label: 'Active · Incomplete',
-        className: 'badge-success',
-    },
-    'active:needs-info': {
-        label: 'Active · Needs Info',
-        className: 'badge-success',
-    },
-    'active:ready': {
-        label: 'Active · Ready',
+    'active': {
+        label: 'Active',
         className: 'badge-success',
     },
     'in-review': {
@@ -940,6 +936,20 @@ export const IDEA_STATE_CONFIG: Record<
     'deleted': {
         label: 'Deleted',
         className: 'badge-default',
+    },
+};
+
+export const IDEA_READINESS_CONFIG: Record<
+    IdeaReadiness,
+    StatusDisplay
+> = {
+    'incomplete': {
+        label: 'Incomplete',
+        className: 'badge-warning',
+    },
+    'ready': {
+        label: 'Ready',
+        className: 'badge-success',
     },
 };
 
@@ -1053,8 +1063,36 @@ export class Idea {
     }
 
     canBeSubmittedForReview(): boolean {
-        return this.#state.startsWith('active:')
-            || this.#state === 'sent-back';
+        return (
+            this.#state === 'active'
+            || this.#state === 'sent-back'
+        ) && this.isReady();
+    }
+
+    readinessValue(): IdeaReadiness {
+        return (
+            this.#title !== ''
+            && this.#problemStatement !== ''
+            && this.#proposedSolution !== ''
+            && this.#expectedOutcome !== ''
+        ) ? 'ready'
+          : 'incomplete';
+    }
+
+    readinessLabel(): string {
+        return IDEA_READINESS_CONFIG[
+            this.readinessValue()
+        ].label;
+    }
+
+    readinessClassName(): string {
+        return IDEA_READINESS_CONFIG[
+            this.readinessValue()
+        ].className;
+    }
+
+    isReady(): boolean {
+        return this.readinessValue() === 'ready';
     }
 
     stateLabel(): string {

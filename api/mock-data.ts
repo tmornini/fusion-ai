@@ -889,12 +889,7 @@ export async function populateMockData(
                 + ' triggers based on'
                 + ' seasonality, trends, and'
                 + ' lead times.',
-            expected_outcome:
-                'Reduce carrying costs by'
-                + ' 30% and stockout'
-                + ' incidents by 60%,'
-                + ' improving customer'
-                + ' satisfaction scores.',
+            expected_outcome: '',
             success_metrics: '',
         },
         {
@@ -5769,7 +5764,7 @@ export async function populateMockData(
         {
             id: 'mGfBLqA7lScpEKxc5w0Yt2',
             entity_id: 'wuCMQqo4IkEksx7MYmu8g2',
-            state: 'active:needs-info',
+            state: 'active',
             worker_id: '53J8h9dr76XFqCjYcNVwIR',
             at: dt(65, 9, 0),
         },
@@ -5783,7 +5778,7 @@ export async function populateMockData(
         {
             id: 'BMS9TmTKR0DZ41vTUSpvxX',
             entity_id: 'T2vAafLDcshDONlYxpzPLc',
-            state: 'active:needs-info',
+            state: 'active',
             worker_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
             at: dt(50, 9, 0),
         },
