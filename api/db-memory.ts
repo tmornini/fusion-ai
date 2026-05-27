@@ -233,7 +233,7 @@ export class MemoryDbAdapter implements DbAdapter {
         for (const table of TABLE_NAMES) {
             obj[table] = await this.#backend.read(table);
         }
-        return JSON.stringify(obj);
+        return JSON.stringify(obj, null, 2);
     }
 
     async importSnapshot(json: string): Promise<void> {
