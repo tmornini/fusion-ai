@@ -2,6 +2,9 @@ import {
     MissingTableError,
     type StorageBackend,
 } from './db.ts';
+import {
+    serializeRecord,
+} from './storage-serialize.ts';
 
 export class MemoryStorageBackend
     implements StorageBackend
@@ -27,10 +30,18 @@ export class MemoryStorageBackend
         table: string,
         rows: T[],
     ): Promise<void> {
+        const serialized = rows.map(
+            row => ({
+                ...serializeRecord(
+                    row as Record<string, unknown>,
+                    table,
+                ),
+                id: row.id,
+            }),
+        );
         this.#tables.set(
             table,
-            rows.map(r => ({ ...r })) as
-                { id: string }[],
+            serialized as { id: string }[],
         );
     }
 
