@@ -102,14 +102,14 @@ const {
 type IdeaCreateDraft = typeof EMPTY_IDEA_CREATE_DRAFT;
 const {
     IdeaConversionPresenter,
-    buildInitialConversionFields,
+    buildInitialConversionDraft,
     conversionRequiredCount,
     conversionCompletedCount,
     conversionIsReady,
     conversionFieldIsReady,
 } = conversionMod;
-type ConversionFields = ReturnType<
-    typeof buildInitialConversionFields
+type ConversionDraft = ReturnType<
+    typeof buildInitialConversionDraft
 >;
 
 function makeIdeaEntity(
@@ -821,21 +821,25 @@ test(
 // IdeaConversionPresenter + helpers
 
 test(
-    'buildInitialConversionFields seeds the'
+    'buildInitialConversionDraft seeds the'
     + ' project name from the idea title and'
     + ' leaves the rest blank',
     () => {
-        const fields = buildInitialConversionFields(
+        const draft = buildInitialConversionDraft(
             makeIdea({ title: 'Edge caching' }),
         );
         assert.equal(
-            fields['project-name'], 'Edge caching',
+            draft.fields['project-name'],
+            'Edge caching',
         );
-        assert.equal(fields['time-days'], '');
-        assert.equal(fields['cost'], '');
         assert.equal(
-            fields['success-criteria'], '',
+            draft.fields['time-days'], '',
         );
+        assert.equal(draft.fields['cost'], '');
+        assert.equal(
+            draft.fields['success-criteria'], '',
+        );
+        assert.equal(draft.baselines.size, 0);
     },
 );
 
@@ -843,30 +847,33 @@ test(
     'conversion progress counts every required'
     + ' field including success-criteria',
     () => {
-        assert.equal(conversionRequiredCount(), 4);
-        const fields = buildInitialConversionFields(
+        assert.equal(conversionRequiredCount(0), 4);
+        const draft = buildInitialConversionDraft(
             makeIdea(),
         );
         // project-name is pre-filled from the title.
         assert.equal(
-            conversionCompletedCount(fields), 1,
+            conversionCompletedCount(draft), 1,
         );
-        assert.equal(conversionIsReady(fields), false);
+        assert.equal(
+            conversionIsReady(draft, []), false,
+        );
         assert.equal(
             conversionFieldIsReady(
-                fields, 'project-name',
+                draft, 'project-name',
             ),
             true,
         );
         assert.equal(
             conversionFieldIsReady(
-                fields, 'cost',
+                draft, 'cost',
             ),
             false,
         );
-        fields['success-criteria'] = 'done when X';
+        draft.fields['success-criteria']
+            = 'done when X';
         assert.equal(
-            conversionCompletedCount(fields), 2,
+            conversionCompletedCount(draft), 2,
         );
     },
 );
@@ -875,15 +882,20 @@ test(
     'conversionIsReady becomes true once every'
     + ' required field is set',
     () => {
-        const fields: ConversionFields = {
-            'project-name': 'P',
-            'time-days': '90',
-            'cost': '50000',
-            'success-criteria': 'done when X',
+        const draft: ConversionDraft = {
+            fields: {
+                'project-name': 'P',
+                'time-days': '90',
+                'cost': '50000',
+                'success-criteria': 'done when X',
+            },
+            baselines: new Map(),
         };
-        assert.equal(conversionIsReady(fields), true);
         assert.equal(
-            conversionCompletedCount(fields), 4,
+            conversionIsReady(draft, []), true,
+        );
+        assert.equal(
+            conversionCompletedCount(draft), 4,
         );
     },
 );
@@ -898,11 +910,11 @@ test(
             problem_statement: 'Slow far from origin',
             target_users: 'Global users',
         });
-        const fields = buildInitialConversionFields(
+        const draft = buildInitialConversionDraft(
             idea,
         );
         const out = new IdeaConversionPresenter(
-            idea, fields,
+            idea, draft,
         ).render().toString();
         assert.match(out, /Convert to Project/);
         assert.match(out, /Edge caching/);
@@ -925,14 +937,17 @@ test(
     + ' required fields are present',
     () => {
         const idea = makeIdea();
-        const fields: ConversionFields = {
-            'project-name': 'New project',
-            'time-days': '90',
-            'cost': '50000',
-            'success-criteria': 'done when X',
+        const draft: ConversionDraft = {
+            fields: {
+                'project-name': 'New project',
+                'time-days': '90',
+                'cost': '50000',
+                'success-criteria': 'done when X',
+            },
+            baselines: new Map(),
         };
         const out = new IdeaConversionPresenter(
-            idea, fields,
+            idea, draft,
         ).render().toString();
         assert.match(out, /4\/4 required fields/);
         assert.match(out, /Ready to Create Project/);
@@ -957,7 +972,7 @@ test(
         });
         const out = new IdeaConversionPresenter(
             idea,
-            buildInitialConversionFields(idea),
+            buildInitialConversionDraft(idea),
         ).render().toString();
         assert.ok(out.includes(DISPLAY_ABSENT));
         assert.ok(!out.includes('Unknown'));
@@ -973,7 +988,7 @@ test(
         });
         const out = new IdeaConversionPresenter(
             idea,
-            buildInitialConversionFields(idea),
+            buildInitialConversionDraft(idea),
         ).render().toString();
         assert.ok(!out.includes('<b>boom</b>'));
         assert.match(out, /&lt;b&gt;boom/);

@@ -14,7 +14,7 @@ export {
 } from './idea.ts';
 export {
     IdeaConversionPresenter,
-    buildInitialConversionFields,
+    buildInitialConversionDraft,
     conversionRequiredCount,
     conversionCompletedCount,
     conversionIsReady,
@@ -22,6 +22,7 @@ export {
     ALL_CONVERSION_FIELDS,
     type ConversionField,
     type ConversionFields,
+    type ConversionDraft,
 } from './idea-conversion.ts';
 export {
     IdeaCreatePresenter,

@@ -27,7 +27,7 @@ import {
 } from '../app/drag-reorder-positions.ts';
 import {
     IdeaConversionPresenter,
-    buildInitialConversionFields,
+    buildInitialConversionDraft,
     conversionRequiredCount,
     conversionCompletedCount,
     conversionIsReady,
@@ -35,8 +35,7 @@ import {
     ALL_CONVERSION_FIELDS,
 } from '../app/presenters/index.ts';
 import type {
-    ConversionField,
-    ConversionFields,
+    ConversionDraft,
 } from '../app/presenters/index.ts';
 
 export async function init(
@@ -90,15 +89,15 @@ export async function init(
         IdeaConversionPresenter =
         new IdeaConversionPresenter(
             tuple.idea,
-            buildInitialConversionFields(
+            buildInitialConversionDraft(
                 tuple.idea,
             ),
         );
 
-    function readFieldsFromDom(
-    ): ConversionFields {
+    function readDraftFromDom(
+    ): ConversionDraft {
         const next =
-            buildInitialConversionFields(
+            buildInitialConversionDraft(
                 tuple.idea,
             );
         for (
@@ -109,7 +108,7 @@ export async function init(
                 document,
             );
             if (isFormField(el)) {
-                next[field] =
+                next.fields[field] =
                     el.value.trim();
             }
         }
@@ -130,7 +129,7 @@ export async function init(
     }
 
     function mutateValidation(
-        fields: ConversionFields,
+        draft: ConversionDraft,
     ): void {
         for (
             const field of ALL_CONVERSION_FIELDS
@@ -142,7 +141,7 @@ export async function init(
                 chk.setAttribute(
                     'data-ready',
                     conversionFieldIsReady(
-                        fields, field,
+                        draft, field,
                     )
                         ? 'true'
                         : 'false',
@@ -150,9 +149,9 @@ export async function init(
             }
         }
         const count =
-            conversionCompletedCount(fields);
+            conversionCompletedCount(draft);
         const total =
-            conversionRequiredCount();
+            conversionRequiredCount(0);
         const pct =
             (count / total) * 100;
         const pText = $(
@@ -178,7 +177,7 @@ export async function init(
             );
         }
         const isReady =
-            conversionIsReady(fields);
+            conversionIsReady(draft, []);
         const remaining =
             total - count;
         const section = $(
@@ -299,7 +298,7 @@ export async function init(
             .forEach(el => {
                 const handler = () => {
                     mutateValidation(
-                        readFieldsFromDom(),
+                        readDraftFromDom(),
                     );
                 };
                 el.addEventListener(
@@ -330,10 +329,10 @@ export async function init(
             'click',
             async () => {
                 const submitted =
-                    readFieldsFromDom();
+                    readDraftFromDom();
                 if (
                     !conversionIsReady(
-                        submitted,
+                        submitted, [],
                     )
                 ) return;
                 const btn = $(
@@ -455,9 +454,10 @@ async function performConversion(
     ctx: ReturnType<typeof createRequestContext>,
     ideaId: string,
     projectId: string,
-    fields: ConversionFields,
+    draft: ConversionDraft,
     ideaEntity: IdeaEntity,
 ): Promise<void> {
+    const fields = draft.fields;
     const projects = await getProjectRows(ctx);
     const position = nextPosition(
         projects.map(p => p.position),

@@ -14,6 +14,10 @@ import {
     iconCheckCircle2,
 } from '../icons.ts';
 import { type Idea } from '../adapters/index.ts';
+import type {
+    Objective,
+    ObjectiveId,
+} from '../../../api/types.ts';
 
 export type ConversionField =
     | 'project-name'
@@ -41,43 +45,60 @@ export type ConversionFields = Record<
     ConversionField, string
 >;
 
-export function buildInitialConversionFields(
+export interface ConversionDraft {
+    readonly fields: ConversionFields;
+    readonly baselines:
+        ReadonlyMap<ObjectiveId, number>;
+}
+
+export function buildInitialConversionDraft(
     idea: Idea,
-): ConversionFields {
+): ConversionDraft {
     return {
-        'project-name': idea.titleText(),
-        'time-days': '',
-        'cost': '',
-        'success-criteria': '',
+        fields: {
+            'project-name': idea.titleText(),
+            'time-days': '',
+            'cost': '',
+            'success-criteria': '',
+        },
+        baselines: new Map(),
     };
 }
 
 export function conversionRequiredCount(
+    activeObjectiveCount: number,
 ): number {
-    return REQUIRED_FIELDS.length;
+    return REQUIRED_FIELDS.length
+        + activeObjectiveCount;
 }
 
 export function conversionCompletedCount(
-    fields: ConversionFields,
+    draft: ConversionDraft,
 ): number {
-    return REQUIRED_FIELDS.filter(
-        f => fields[f] !== '',
+    const filledFields = REQUIRED_FIELDS.filter(
+        f => draft.fields[f] !== '',
     ).length;
+    return filledFields + draft.baselines.size;
 }
 
 export function conversionIsReady(
-    fields: ConversionFields,
+    draft: ConversionDraft,
+    activeObjectives: readonly Objective[],
 ): boolean {
-    return REQUIRED_FIELDS.every(
-        f => fields[f] !== '',
+    const allFieldsFilled = REQUIRED_FIELDS.every(
+        f => draft.fields[f] !== '',
+    );
+    if (!allFieldsFilled) return false;
+    return activeObjectives.every(
+        o => draft.baselines.has(o.id),
     );
 }
 
 export function conversionFieldIsReady(
-    fields: ConversionFields,
+    draft: ConversionDraft,
     field: ConversionField,
 ): boolean {
-    return fields[field] !== '';
+    return draft.fields[field] !== '';
 }
 
 export class IdeaConversionPresenter {
@@ -87,11 +108,11 @@ export class IdeaConversionPresenter {
     readonly #proposedSolution: string;
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
-    readonly #fields: ConversionFields;
+    readonly #draft: ConversionDraft;
 
     constructor(
         idea: Idea,
-        fields: ConversionFields,
+        draft: ConversionDraft,
     ) {
         this.#title = idea.titleText();
         this.#problemStatement =
@@ -104,7 +125,7 @@ export class IdeaConversionPresenter {
             idea.expectedOutcomeText();
         this.#successMetrics =
             idea.successMetricsText();
-        this.#fields = fields;
+        this.#draft = draft;
     }
 
     #fieldCheck(
@@ -112,7 +133,7 @@ export class IdeaConversionPresenter {
     ): SafeHtml {
         const isSet =
             conversionFieldIsReady(
-                this.#fields, field,
+                this.#draft, field,
             );
         return html`<span
             id="check-${field}"
@@ -127,10 +148,10 @@ export class IdeaConversionPresenter {
     render(): SafeHtml {
         const completed =
             conversionCompletedCount(
-                this.#fields,
+                this.#draft,
             );
         const required =
-            conversionRequiredCount();
+            conversionRequiredCount(0);
         const percent =
             (completed / required)
             * 100;
@@ -354,7 +375,7 @@ export class IdeaConversionPresenter {
     }
 
     #buildRequired(): SafeHtml {
-        const fields = this.#fields;
+        const fields = this.#draft.fields;
         return html`
             <div class="card p-6">
                 <div class="flex
@@ -540,12 +561,12 @@ export class IdeaConversionPresenter {
 
     #buildConfirm(): SafeHtml {
         const isReady = conversionIsReady(
-            this.#fields,
+            this.#draft, [],
         );
         const remaining =
-            conversionRequiredCount()
+            conversionRequiredCount(0)
             - conversionCompletedCount(
-                this.#fields,
+                this.#draft,
             );
         return html`
             <div class="${
