@@ -614,6 +614,12 @@ async function performConversion(
     );
     const startMs = Date.now();
     const endMs = startMs + days * MS_PER_DAY;
+    const baselines = Array.from(
+        draft.baselines.entries(),
+        ([objectiveId, score]) => ({
+            objectiveId, score,
+        }),
+    );
     await postIdeaConversion(
         ctx,
         ideaId,
@@ -635,5 +641,6 @@ async function performConversion(
         },
         'submitted',
         ideaEntity,
+        baselines,
     );
 }

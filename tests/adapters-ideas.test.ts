@@ -13,9 +13,12 @@ import {
     putIdea,
     postIdeaCreation,
     postIdeaStateChange,
+    postIdeaConversion,
 } from '../web-app/app/adapters/ideas.ts';
 import type {
     IdeaEntity,
+    ProjectEntity,
+    ProjectObjectiveBaselineScore,
 } from '../api/types.ts';
 
 function buildPerson(id: string, name: string) {
@@ -274,6 +277,87 @@ test(
         assert.equal(
             events.at(-1)?.state, 'approved',
         );
+    },
+);
+
+test(
+    'postIdeaConversion commits project, idea,'
+    + ' two state events, and N baseline rows in'
+    + ' one atomic batch',
+    async () => {
+        const { db, ctx } = await setupDb();
+        await db.workers.put(
+            'current',
+            buildPerson('current', 'Demo'),
+        );
+        await seedWorkerState(db, 'current');
+        await db.ideas.put(
+            'i1', buildIdea('i1', 'First'),
+        );
+        await seedIdeaState(db, 'i1', 'approved');
+
+        const projectEntity:
+            Omit<ProjectEntity, 'id'> = {
+            title: 'P1',
+            description: 'done when X',
+            progress: 0,
+            start_date: '2026-04-01',
+            target_end_date: '2026-07-01',
+            estimated_cost: 100,
+            actual_cost: 0,
+            position: 1,
+        };
+        const promotedIdea =
+            buildIdea('i1', 'First');
+
+        await postIdeaConversion(
+            ctx,
+            'i1',
+            'p1',
+            projectEntity,
+            'submitted',
+            promotedIdea,
+            [
+                { objectiveId: 'obj-1', score: 50 },
+                { objectiveId: 'obj-2', score: -25 },
+            ],
+        );
+
+        const project =
+            await db.projects.getById('p1');
+        assert.equal(project.title, 'P1');
+
+        const ideaEvents =
+            await db.states.allFor('i1');
+        assert.equal(
+            ideaEvents.at(-1)?.state, 'promoted',
+        );
+
+        const projectEvents =
+            await db.states.allFor('p1');
+        assert.equal(projectEvents.length, 1);
+        assert.equal(
+            projectEvents[0]?.state, 'submitted',
+        );
+
+        const baselines =
+            await ctx.GET<
+                ProjectObjectiveBaselineScore[]
+            >(
+                'project-objective'
+                + '-baseline-scores',
+            );
+        const mine = baselines.filter(
+            b => b.project_id === 'p1',
+        );
+        assert.equal(mine.length, 2);
+        const byObj = new Map(
+            mine.map(b => [
+                b.objective_id, b.score,
+            ]),
+        );
+        assert.equal(byObj.get('obj-1'), 50);
+        assert.equal(byObj.get('obj-2'), -25);
     },
 );
 
