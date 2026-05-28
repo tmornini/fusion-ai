@@ -841,6 +841,19 @@ meaningless. Report the failure, stop, await fix.
   `state_field_values`) is the seam — read
   `api/store-entity.ts` and `api/store-state.ts` together to
   see both halves.
+- **Cross-tab writes to the states log can lose updates.**
+  Each browser tab builds its own `LocalStorageDbAdapter`, so
+  the per-store serializer (`createSerializer`) only orders
+  writes *within* one tab. Two tabs — or parallel browser
+  agents — writing the shared `fusion-ai:states` key
+  concurrently both read v0; the second `setItem` overwrites
+  the first. Within one tab there is no race (proven by the
+  green `concurrent puts to same store` test in
+  `db-localstorage-compression.test.ts`). An in-memory mutex
+  cannot fix this — the tabs share no heap — so only a
+  browser-mediated lock (Web Locks) or the Postgres tier can.
+  Parallel test agents must treat the states log as a
+  shared-write hazard. Real atomicity arrives with Postgres.
 - **`state_field_values.field_id` references
   `record_attributes.id`.** the column name predates Records
   and stays until a second non-Record consumer arrives. The
