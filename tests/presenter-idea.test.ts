@@ -840,10 +840,10 @@ test(
 );
 
 test(
-    'conversion progress counts only the three'
-    + ' required fields',
+    'conversion progress counts every required'
+    + ' field including success-criteria',
     () => {
-        assert.equal(conversionRequiredCount(), 3);
+        assert.equal(conversionRequiredCount(), 4);
         const fields = buildInitialConversionFields(
             makeIdea(),
         );
@@ -864,11 +864,9 @@ test(
             ),
             false,
         );
-        // success-criteria is optional, so filling
-        // it does not advance the required count.
         fields['success-criteria'] = 'done when X';
         assert.equal(
-            conversionCompletedCount(fields), 1,
+            conversionCompletedCount(fields), 2,
         );
     },
 );
@@ -881,11 +879,11 @@ test(
             'project-name': 'P',
             'time-days': '90',
             'cost': '50000',
-            'success-criteria': '',
+            'success-criteria': 'done when X',
         };
         assert.equal(conversionIsReady(fields), true);
         assert.equal(
-            conversionCompletedCount(fields), 3,
+            conversionCompletedCount(fields), 4,
         );
     },
 );
@@ -910,7 +908,7 @@ test(
         assert.match(out, /Edge caching/);
         assert.match(out, /Slow far from origin/);
         assert.match(out, /Global users/);
-        assert.match(out, /1\/3 required fields/);
+        assert.match(out, /1\/4 required fields/);
         assert.match(out, /Complete Required Fields/);
         assert.match(out, /data-ready="false"/);
         assert.match(out, /disabled/);
@@ -931,12 +929,12 @@ test(
             'project-name': 'New project',
             'time-days': '90',
             'cost': '50000',
-            'success-criteria': '',
+            'success-criteria': 'done when X',
         };
         const out = new IdeaConversionPresenter(
             idea, fields,
         ).render().toString();
-        assert.match(out, /3\/3 required fields/);
+        assert.match(out, /4\/4 required fields/);
         assert.match(out, /Ready to Create Project/);
         assert.match(out, /data-ready="true"/);
         assert.ok(!out.includes('disabled'));

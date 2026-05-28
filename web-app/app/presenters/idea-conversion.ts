@@ -11,7 +11,6 @@ import {
     iconTarget,
     iconRocket,
     iconClock,
-    iconPeople,
     iconCheckCircle2,
 } from '../icons.ts';
 import { type Idea } from '../adapters/index.ts';
@@ -27,6 +26,7 @@ const REQUIRED_FIELDS:
     'project-name',
     'time-days',
     'cost',
+    'success-criteria',
 ];
 
 export const ALL_CONVERSION_FIELDS:
@@ -349,7 +349,6 @@ export class IdeaConversionPresenter {
         return html`
             <div class="stack-lg">
                 ${this.#buildRequired()}
-                ${this.#buildOptional()}
                 ${this.#buildConfirm()}
             </div>`;
     }
@@ -499,42 +498,18 @@ export class IdeaConversionPresenter {
                                 }" />
                         </div>
                     </div>
-                </div>
-            </div>`;
-    }
-
-    #buildOptional(): SafeHtml {
-        const fields = this.#fields;
-        return html`
-            <div class="card p-6">
-                <div class="flex
-                    items-center
-                    gap-2 mb-6">
-                    ${iconPeople(
-                        20,
-                        'text-primary',
-                    )}
-                    <span class="${
-                        'font-medium'
-                    }">
-                        ${'Additional'
-                            + ' Details'}
-                    </span>
-                    <span class="${
-                        'text-xs'
-                        + ' text-muted'
-                    }">
-                        (Optional)
-                    </span>
-                </div>
-                <div class="stack-lg">
                     <div>
                         <label class="${
                             'label mb-2'
                             + ' font-medium'
+                            + ' flex'
+                            + ' items-center'
+                            + ' gap-2'
                         }">
-                            ${'Success'
-                                + ' Criteria'}
+                            Success Criteria
+                            ${this.#fieldCheck(
+                                'success-criteria',
+                            )}
                         </label>
                         <textarea
                             class="${
