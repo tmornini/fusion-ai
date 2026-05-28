@@ -190,8 +190,10 @@ not a content edit. The retired `flows.created_at` /
 head and tail of the entity's event sequence.
 
 The terminal state for both human and AI workers is
-`'archived'`. AI workers retire via `archiveAIWorker`; humans
-via `archiveHumanWorker`.
+`'archived'`. Both kinds change lifecycle through the
+worker-detail State select, which records the chosen
+state via `postHumanWorkerStateChange` /
+`postAIWorkerStateChange` — one voice across kinds.
 
 **Work orders** (open-ended transitions + closed claim
 alphabet):

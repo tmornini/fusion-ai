@@ -162,17 +162,3 @@ export async function postHumanWorkerStateChange(
     });
     humanWorkerChanges.notify();
 }
-
-export async function archiveHumanWorker(
-    ctx: RequestContext,
-    id: WorkerId,
-): Promise<void> {
-    await ctx.commit({
-        ops: [
-            await buildStateEventOp(
-                ctx, id, 'archived',
-            ),
-        ],
-    });
-    humanWorkerChanges.notify();
-}

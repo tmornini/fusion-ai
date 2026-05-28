@@ -1,6 +1,7 @@
 import type {
     WorkerId,
     AIWorkerEntity,
+    WorkerState,
 } from '../../../api/types.ts';
 import { AIWorker } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
@@ -103,11 +104,10 @@ export async function putAIWorker(
 // event in one ctx.commit batch. Use at every site
 // that creates an AI worker. The AI worker row
 // carries no state column — its lifecycle on the
-// log begins at 'active' here and terminates at
-// 'archived' via archiveAIWorker. putAIWorker
-// remains for pure edits (name, provider,
-// auth_token) that do not change the lifecycle
-// stage.
+// log begins at 'active' here and transitions via
+// postAIWorkerStateChange. putAIWorker remains for
+// pure edits (name, provider, auth_token) that do
+// not change the lifecycle stage.
 export async function postAIWorkerCreation(
     ctx: RequestContext,
     id: WorkerId,
@@ -128,15 +128,14 @@ export async function postAIWorkerCreation(
     aiWorkerChanges.notify();
 }
 
-export async function archiveAIWorker(
+export async function postAIWorkerStateChange(
     ctx: RequestContext,
     id: WorkerId,
+    state: WorkerState,
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx, id, 'archived',
-            ),
+            await buildStateEventOp(ctx, id, state),
         ],
     });
     aiWorkerChanges.notify();

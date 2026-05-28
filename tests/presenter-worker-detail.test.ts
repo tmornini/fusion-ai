@@ -33,6 +33,8 @@ const {
 
 const {
     AIWorkerDetailPresenter,
+    AIWorkerDetailEditPresenter,
+    aiWorkerDraftFromWorker,
 } = await import(
     '../web-app/app/presenters/ai-worker-detail.ts'
 );
@@ -166,6 +168,34 @@ test(
         // Name and provider still surface
         assert.match(out, /Claude Opus 4\.7 Max/);
         assert.match(out, /Anthropic/);
+        // The lifecycle state badge surfaces.
+        assert.match(out, /Active/);
+    },
+);
+
+test(
+    'AIWorkerDetailEditPresenter renders a State'
+    + ' select hooked to the worker-field, with the'
+    + ' current state pre-selected',
+    () => {
+        const rec = makeRecordingContainer();
+        const worker = makeAIWorker();
+        new AIWorkerDetailEditPresenter(
+            worker,
+            aiWorkerDraftFromWorker(worker),
+        ).renderShell(rec.container);
+        const out = rec.allHtml();
+        assert.match(out, /id="ai-state"/);
+        assert.match(
+            out, /data-worker-field="state"/,
+        );
+        assert.match(
+            out, /value="active"[\s\S]*?selected/,
+        );
+        // Save affordance present in edit mode.
+        assert.match(
+            out, /data-worker-action="save"/,
+        );
     },
 );
 
