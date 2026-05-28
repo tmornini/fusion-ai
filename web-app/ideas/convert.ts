@@ -21,7 +21,15 @@ import {
     generateCryptoSafeBase62,
     type IdeaEntity,
 } from '../app/adapters/index.ts';
+import {
+    getActiveObjectives,
+    getCurrentObjectiveDefinition,
+} from '../app/adapters/objectives.ts';
 import { MS_PER_DAY } from '../../api/types.ts';
+import type {
+    Objective,
+    ObjectiveId,
+} from '../../api/types.ts';
 import {
     nextPosition,
 } from '../app/drag-reorder-positions.ts';
@@ -36,6 +44,7 @@ import {
 } from '../app/presenters/index.ts';
 import type {
     ConversionDraft,
+    ObjectiveDefinition,
 } from '../app/presenters/index.ts';
 
 export async function init(
@@ -85,6 +94,46 @@ export async function init(
         );
         return;
     }
+    let activeObjectives: readonly Objective[];
+    let defs: ReadonlyMap<
+        ObjectiveId, ObjectiveDefinition
+    >;
+    try {
+        activeObjectives =
+            await getActiveObjectives(ctx);
+        const defEntries = await Promise.all(
+            activeObjectives.map(async (o) => {
+                const def =
+                    await getCurrentObjectiveDefinition(
+                        ctx, o.id,
+                    );
+                return [o.id, def] as const;
+            }),
+        );
+        defs = new Map(defEntries);
+    } catch (err) {
+        log.error(
+            'getActiveObjectives failed',
+            'ideas',
+            err,
+        );
+        setHtml(
+            root,
+            buildErrorState(
+                'Failed to load organization'
+                + ' objectives.',
+                'Try Again',
+            ),
+        );
+        root.querySelector(
+            '[data-retry-btn]',
+        )?.addEventListener(
+            'click',
+            () => init(),
+        );
+        return;
+    }
+
     const presenter:
         IdeaConversionPresenter =
         new IdeaConversionPresenter(
@@ -92,6 +141,8 @@ export async function init(
             buildInitialConversionDraft(
                 tuple.idea,
             ),
+            activeObjectives,
+            defs,
         );
 
     function readDraftFromDom(
@@ -112,7 +163,34 @@ export async function init(
                     el.value.trim();
             }
         }
-        return next;
+        const baselines =
+            new Map<ObjectiveId, number>();
+        document.querySelectorAll<
+            HTMLInputElement
+        >(
+            '#convert-scores-section'
+            + ' .baseline-slider',
+        ).forEach(slider => {
+            const row = slider.closest(
+                '.convert-scores-row',
+            );
+            if (!row) return;
+            const objId =
+                slider.dataset['objectiveId'];
+            if (!objId) return;
+            const touched = row.getAttribute(
+                'data-touched',
+            );
+            if (touched !== 'true') return;
+            const v = Number(slider.value);
+            if (Number.isFinite(v)) {
+                baselines.set(objId, v);
+            }
+        });
+        return {
+            fields: next.fields,
+            baselines,
+        };
     }
 
     function renderPage(): void {
@@ -148,10 +226,26 @@ export async function init(
                 );
             }
         }
+        for (const obj of activeObjectives) {
+            const chk = $(
+                `#check-baseline-${obj.id}`,
+                document,
+            );
+            if (chk) {
+                chk.setAttribute(
+                    'data-ready',
+                    draft.baselines.has(obj.id)
+                        ? 'true'
+                        : 'false',
+                );
+            }
+        }
         const count =
             conversionCompletedCount(draft);
         const total =
-            conversionRequiredCount(0);
+            conversionRequiredCount(
+                activeObjectives.length,
+            );
         const pct =
             (count / total) * 100;
         const pText = $(
@@ -177,7 +271,9 @@ export async function init(
             );
         }
         const isReady =
-            conversionIsReady(draft, []);
+            conversionIsReady(
+                draft, activeObjectives,
+            );
         const remaining =
             total - count;
         const section = $(
@@ -322,6 +418,56 @@ export async function init(
             '#convert-cost', submitSel,
         );
 
+        const scoresSection = $(
+            '#convert-scores-section',
+            document,
+        );
+        if (scoresSection) {
+            scoresSection.addEventListener(
+                'input',
+                (e) => {
+                    const target =
+                        e.target as HTMLElement;
+                    if (!target.matches(
+                        '.baseline-slider',
+                    )) return;
+                    const row = target.closest(
+                        '.convert-scores-row',
+                    );
+                    if (!row) return;
+                    const valueEl =
+                        row.querySelector(
+                            '.slider-value',
+                        );
+                    if (valueEl) {
+                        const v = Number(
+                            (target as
+                                HTMLInputElement)
+                                .value,
+                        );
+                        const sign =
+                            v > 0 ? '+' : '';
+                        valueEl.textContent =
+                            sign + String(v);
+                    }
+                    row.setAttribute(
+                        'data-touched', 'true',
+                    );
+                    mutateValidation(
+                        readDraftFromDom(),
+                    );
+                },
+            );
+        }
+
+        $(
+            '#convert-open-organization',
+            document,
+        )?.addEventListener(
+            'click',
+            () => navigateTo('organization'),
+        );
+
         $(
             '#convert-submit-btn',
             document,
@@ -332,7 +478,8 @@ export async function init(
                     readDraftFromDom();
                 if (
                     !conversionIsReady(
-                        submitted, [],
+                        submitted,
+                        activeObjectives,
                     )
                 ) return;
                 const btn = $(

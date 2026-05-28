@@ -914,7 +914,7 @@ test(
             idea,
         );
         const out = new IdeaConversionPresenter(
-            idea, draft,
+            idea, draft, [], new Map(),
         ).render().toString();
         assert.match(out, /Convert to Project/);
         assert.match(out, /Edge caching/);
@@ -947,7 +947,7 @@ test(
             baselines: new Map(),
         };
         const out = new IdeaConversionPresenter(
-            idea, draft,
+            idea, draft, [], new Map(),
         ).render().toString();
         assert.match(out, /4\/4 required fields/);
         assert.match(out, /Ready to Create Project/);
@@ -973,6 +973,8 @@ test(
         const out = new IdeaConversionPresenter(
             idea,
             buildInitialConversionDraft(idea),
+            [],
+            new Map(),
         ).render().toString();
         assert.ok(out.includes(DISPLAY_ABSENT));
         assert.ok(!out.includes('Unknown'));
@@ -989,8 +991,172 @@ test(
         const out = new IdeaConversionPresenter(
             idea,
             buildInitialConversionDraft(idea),
+            [],
+            new Map(),
         ).render().toString();
         assert.ok(!out.includes('<b>boom</b>'));
         assert.match(out, /&lt;b&gt;boom/);
+    },
+);
+
+// IdeaConversionPresenter Scores box
+
+test(
+    'conversionRequiredCount adds active'
+    + ' objectives to the static field count',
+    () => {
+        assert.equal(conversionRequiredCount(0), 4);
+        assert.equal(conversionRequiredCount(2), 6);
+        assert.equal(conversionRequiredCount(5), 9);
+    },
+);
+
+test(
+    'conversionIsReady requires a baseline for'
+    + ' every active objective',
+    () => {
+        const draft: ConversionDraft = {
+            fields: {
+                'project-name': 'P',
+                'time-days': '90',
+                'cost': '50000',
+                'success-criteria': 'done',
+            },
+            baselines: new Map(),
+        };
+        const objectives = [
+            { id: 'obj-1', position: 0 },
+        ];
+        assert.equal(
+            conversionIsReady(draft, objectives),
+            false,
+        );
+        const ready: ConversionDraft = {
+            fields: draft.fields,
+            baselines: new Map([['obj-1', 30]]),
+        };
+        assert.equal(
+            conversionIsReady(ready, objectives),
+            true,
+        );
+    },
+);
+
+test(
+    'IdeaConversionPresenter renders the Scores'
+    + ' empty banner when no active objectives',
+    () => {
+        const idea = makeIdea();
+        const draft = buildInitialConversionDraft(
+            idea,
+        );
+        const out = new IdeaConversionPresenter(
+            idea, draft, [], new Map(),
+        ).render().toString();
+        assert.match(
+            out, /No active objectives yet/,
+        );
+        assert.match(
+            out,
+            /id="convert-open-organization"/,
+        );
+        assert.ok(
+            !out.includes('baseline-slider'),
+        );
+        assert.match(
+            out, /1\/4 required fields/,
+        );
+    },
+);
+
+test(
+    'IdeaConversionPresenter renders one'
+    + ' baseline row per active objective',
+    () => {
+        const idea = makeIdea();
+        const draft = buildInitialConversionDraft(
+            idea,
+        );
+        const objectives = [
+            { id: 'obj-1', position: 0 },
+            { id: 'obj-2', position: 1 },
+        ];
+        const defs = new Map([
+            ['obj-1', {
+                name: 'Revenue',
+                description: 'd1',
+            }],
+            ['obj-2', {
+                name: 'Quality',
+                description: 'd2',
+            }],
+        ]);
+        const out = new IdeaConversionPresenter(
+            idea, draft, objectives, defs,
+        ).render().toString();
+        assert.match(out, /Revenue/);
+        assert.match(out, /Quality/);
+        assert.match(
+            out,
+            /data-objective-id="obj-1"/,
+        );
+        assert.match(
+            out,
+            /data-objective-id="obj-2"/,
+        );
+        assert.match(
+            out, /class="baseline-slider"/,
+        );
+        assert.match(
+            out,
+            /id="check-baseline-obj-1"/,
+        );
+        assert.match(
+            out, /1\/6 required fields/,
+        );
+    },
+);
+
+test(
+    'IdeaConversionPresenter enables Create'
+    + ' once every field and baseline is set',
+    () => {
+        const idea = makeIdea();
+        const objectives = [
+            { id: 'obj-1', position: 0 },
+            { id: 'obj-2', position: 1 },
+        ];
+        const defs = new Map([
+            ['obj-1', {
+                name: 'Revenue',
+                description: 'd1',
+            }],
+            ['obj-2', {
+                name: 'Quality',
+                description: 'd2',
+            }],
+        ]);
+        const draft: ConversionDraft = {
+            fields: {
+                'project-name': 'P',
+                'time-days': '90',
+                'cost': '50000',
+                'success-criteria': 'done',
+            },
+            baselines: new Map([
+                ['obj-1', 50],
+                ['obj-2', -25],
+            ]),
+        };
+        const out = new IdeaConversionPresenter(
+            idea, draft, objectives, defs,
+        ).render().toString();
+        assert.match(
+            out, /6\/6 required fields/,
+        );
+        assert.match(
+            out, /Ready to Create Project/,
+        );
+        assert.match(out, /data-ready="true"/);
     },
 );

@@ -23,6 +23,7 @@ export {
     type ConversionField,
     type ConversionFields,
     type ConversionDraft,
+    type ObjectiveDefinition,
 } from './idea-conversion.ts';
 export {
     IdeaCreatePresenter,

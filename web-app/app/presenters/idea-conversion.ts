@@ -12,12 +12,21 @@ import {
     iconRocket,
     iconClock,
     iconCheckCircle2,
+    iconTrendingUp,
 } from '../icons.ts';
 import { type Idea } from '../adapters/index.ts';
 import type {
     Objective,
     ObjectiveId,
 } from '../../../api/types.ts';
+import {
+    formatSigned,
+} from '../scoring-format.ts';
+
+export interface ObjectiveDefinition {
+    name: string;
+    description: string;
+}
 
 export type ConversionField =
     | 'project-name'
@@ -109,10 +118,19 @@ export class IdeaConversionPresenter {
     readonly #expectedOutcome: string;
     readonly #successMetrics: string;
     readonly #draft: ConversionDraft;
+    readonly #activeObjectives:
+        readonly Objective[];
+    readonly #defs: ReadonlyMap<
+        ObjectiveId, ObjectiveDefinition
+    >;
 
     constructor(
         idea: Idea,
         draft: ConversionDraft,
+        activeObjectives: readonly Objective[],
+        defs: ReadonlyMap<
+            ObjectiveId, ObjectiveDefinition
+        >,
     ) {
         this.#title = idea.titleText();
         this.#problemStatement =
@@ -126,6 +144,8 @@ export class IdeaConversionPresenter {
         this.#successMetrics =
             idea.successMetricsText();
         this.#draft = draft;
+        this.#activeObjectives = activeObjectives;
+        this.#defs = defs;
     }
 
     #fieldCheck(
@@ -145,13 +165,30 @@ export class IdeaConversionPresenter {
         </span>`;
     }
 
+    #baselineCheck(
+        objectiveId: ObjectiveId,
+    ): SafeHtml {
+        const isSet = this.#draft.baselines
+            .has(objectiveId);
+        return html`<span
+            id="check-baseline-${objectiveId}"
+            class="field-check"
+            data-ready="${
+                isSet ? 'true' : 'false'
+            }">
+            ${iconCheckCircle2(16, '')}
+        </span>`;
+    }
+
     render(): SafeHtml {
         const completed =
             conversionCompletedCount(
                 this.#draft,
             );
         const required =
-            conversionRequiredCount(0);
+            conversionRequiredCount(
+                this.#activeObjectives.length,
+            );
         const percent =
             (completed / required)
             * 100;
@@ -370,6 +407,7 @@ export class IdeaConversionPresenter {
         return html`
             <div class="stack-lg">
                 ${this.#buildRequired()}
+                ${this.#buildScores()}
                 ${this.#buildConfirm()}
             </div>`;
     }
@@ -559,12 +597,129 @@ export class IdeaConversionPresenter {
             </div>`;
     }
 
+    #buildScores(): SafeHtml {
+        if (
+            this.#activeObjectives.length === 0
+        ) {
+            return this.#buildScoresEmpty();
+        }
+        return html`
+            <div class="card p-6"
+                id="convert-scores-section">
+                <div class="flex
+                    items-center
+                    gap-2 mb-6">
+                    ${iconTrendingUp(
+                        20,
+                        'text-primary',
+                    )}
+                    <span class="${
+                        'font-medium'
+                    }">
+                        Scores
+                    </span>
+                </div>
+                ${this.#activeObjectives.map(
+                    o => this.#baselineRow(o),
+                )}
+            </div>`;
+    }
+
+    #buildScoresEmpty(): SafeHtml {
+        return html`
+            <div class="card p-6"
+                id="convert-scores-section">
+                <div class="flex
+                    items-center
+                    gap-2 mb-6">
+                    ${iconTrendingUp(
+                        20,
+                        'text-primary',
+                    )}
+                    <span class="${
+                        'font-medium'
+                    }">
+                        Scores
+                    </span>
+                </div>
+                <div class="empty-banner">
+                    ${'No active objectives yet.'
+                        + ' Convert this idea now'
+                        + ' and it will not be'
+                        + ' baseline-scored;'
+                        + ' add objectives in the'
+                        + ' Organization page and'
+                        + ' reviewers can score'
+                        + ' this project later'
+                        + ' from project detail.'}
+                </div>
+                <div class="flex gap-3 mt-4">
+                    <button
+                        class="${
+                            'btn btn-ghost gap-2'
+                        }"
+                        id="convert-open-organization">
+                        Open Organization
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    #baselineRow(obj: Objective): SafeHtml {
+        const def = this.#defs.get(obj.id);
+        if (!def) {
+            throw new Error(
+                `objective definition missing`
+                + ` for ${obj.id}`,
+            );
+        }
+        const stored = this.#draft.baselines
+            .get(obj.id);
+        const isSet = stored !== undefined;
+        const value = stored ?? 0;
+        const display = isSet
+            ? formatSigned(stored)
+            : '—';
+        return html`
+            <div class="convert-scores-row"
+                data-objective-id="${obj.id}"
+                data-touched="${
+                    isSet ? 'true' : 'false'
+                }">
+                <label class="${
+                    'label'
+                    + ' font-medium'
+                    + ' flex'
+                    + ' items-center'
+                    + ' gap-2'
+                }">
+                    ${def.name}
+                    ${this.#baselineCheck(
+                        obj.id,
+                    )}
+                </label>
+                <input type="range"
+                    min="-100" max="100"
+                    step="1"
+                    value="${value}"
+                    data-initial-value="${value}"
+                    data-objective-id="${obj.id}"
+                    class="baseline-slider">
+                <span class="slider-value">
+                    ${display}
+                </span>
+            </div>`;
+    }
+
     #buildConfirm(): SafeHtml {
         const isReady = conversionIsReady(
-            this.#draft, [],
+            this.#draft,
+            this.#activeObjectives,
         );
         const remaining =
-            conversionRequiredCount(0)
+            conversionRequiredCount(
+                this.#activeObjectives.length,
+            )
             - conversionCompletedCount(
                 this.#draft,
             );
