@@ -322,9 +322,6 @@ export async function init(
         bindEnterToClick(
             '#convert-cost', submitSel,
         );
-        bindEnterToClick(
-            '#convert-impact', submitSel,
-        );
 
         $(
             '#convert-submit-btn',

@@ -833,7 +833,6 @@ test(
         );
         assert.equal(fields['time-days'], '');
         assert.equal(fields['cost'], '');
-        assert.equal(fields['impact'], '');
         assert.equal(
             fields['success-criteria'], '',
         );
@@ -841,10 +840,10 @@ test(
 );
 
 test(
-    'conversion progress counts only the four'
+    'conversion progress counts only the three'
     + ' required fields',
     () => {
-        assert.equal(conversionRequiredCount(), 4);
+        assert.equal(conversionRequiredCount(), 3);
         const fields = buildInitialConversionFields(
             makeIdea(),
         );
@@ -882,12 +881,11 @@ test(
             'project-name': 'P',
             'time-days': '90',
             'cost': '50000',
-            'impact': '80',
             'success-criteria': '',
         };
         assert.equal(conversionIsReady(fields), true);
         assert.equal(
-            conversionCompletedCount(fields), 4,
+            conversionCompletedCount(fields), 3,
         );
     },
 );
@@ -912,7 +910,7 @@ test(
         assert.match(out, /Edge caching/);
         assert.match(out, /Slow far from origin/);
         assert.match(out, /Global users/);
-        assert.match(out, /1\/4 required fields/);
+        assert.match(out, /1\/3 required fields/);
         assert.match(out, /Complete Required Fields/);
         assert.match(out, /data-ready="false"/);
         assert.match(out, /disabled/);
@@ -933,13 +931,12 @@ test(
             'project-name': 'New project',
             'time-days': '90',
             'cost': '50000',
-            'impact': '80',
             'success-criteria': '',
         };
         const out = new IdeaConversionPresenter(
             idea, fields,
         ).render().toString();
-        assert.match(out, /4\/4 required fields/);
+        assert.match(out, /3\/3 required fields/);
         assert.match(out, /Ready to Create Project/);
         assert.match(out, /data-ready="true"/);
         assert.ok(!out.includes('disabled'));

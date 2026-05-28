@@ -380,11 +380,6 @@ html.sidebar-collapsed .action-footer {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-6);
 }
-.impact-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-4);
-}
 .detail-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;

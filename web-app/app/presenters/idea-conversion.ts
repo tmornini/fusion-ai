@@ -12,7 +12,6 @@ import {
     iconRocket,
     iconClock,
     iconPeople,
-    iconTrendingUp,
     iconCheckCircle2,
 } from '../icons.ts';
 import { type Idea } from '../adapters/index.ts';
@@ -21,7 +20,6 @@ export type ConversionField =
     | 'project-name'
     | 'time-days'
     | 'cost'
-    | 'impact'
     | 'success-criteria';
 
 const REQUIRED_FIELDS:
@@ -29,7 +27,6 @@ const REQUIRED_FIELDS:
     'project-name',
     'time-days',
     'cost',
-    'impact',
 ];
 
 export const ALL_CONVERSION_FIELDS:
@@ -37,7 +34,6 @@ export const ALL_CONVERSION_FIELDS:
     'project-name',
     'time-days',
     'cost',
-    'impact',
     'success-criteria',
 ];
 
@@ -52,7 +48,6 @@ export function buildInitialConversionFields(
         'project-name': idea.titleText(),
         'time-days': '',
         'cost': '',
-        'impact': '',
         'success-criteria': '',
     };
 }
@@ -501,53 +496,6 @@ export class IdeaConversionPresenter {
                                 }"
                                 value="${
                                     fields['cost']
-                                }" />
-                        </div>
-                    </div>
-                    <div>
-                        <label class="${
-                            'label mb-2'
-                            + ' font-medium'
-                            + ' flex'
-                            + ' items-center'
-                            + ' gap-2'
-                        }">
-                            ${iconTrendingUp(
-                                16,
-                                'text-muted',
-                            )}
-                            Impact
-                            ${this.#fieldCheck(
-                                'impact',
-                            )}
-                        </label>
-                        <div class="${
-                            'input-prefix-wrap'
-                        }">
-                            <span class="${
-                                'input-suffix-symbol'
-                            }">pts</span>
-                            <input
-                                class="${
-                                    'input'
-                                    + ' input-with'
-                                    + '-suffix'
-                                }"
-                                type="text"
-                                inputmode="${
-                                    'numeric'
-                                }"
-                                id="${
-                                    'convert'
-                                    + '-impact'
-                                }"
-                                placeholder="${
-                                    'Enter'
-                                    + ' impact'
-                                    + ' points'
-                                }"
-                                value="${
-                                    fields['impact']
                                 }" />
                         </div>
                     </div>

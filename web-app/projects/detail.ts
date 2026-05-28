@@ -96,7 +96,6 @@ const SUBMIT_ON_ENTER_IDS:
     new Set([
         'project-edit-title',
         'project-edit-cost-baseline',
-        'project-edit-impact-baseline',
         'new-flow-name',
     ]);
 
