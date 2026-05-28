@@ -280,59 +280,20 @@ export async function init(
             '#convert-confirm-section',
             document,
         );
-        if (
-            section instanceof
-            HTMLElement
-        ) {
-            section.style.border =
-                '2px solid '
-                + (isReady
-                    ? 'hsl(var('
-                        + '--success)'
-                        + ' / 0.3)'
-                    : 'transparent');
-            section.style.background =
-                isReady
-                    ? 'hsl(var('
-                        + '--success)'
-                        + ' / 0.05)'
-                    : '';
+        if (section) {
+            section.setAttribute(
+                'data-ready',
+                isReady ? 'true' : 'false',
+            );
         }
         const icon = $(
             '#convert-confirm-icon',
             document,
         );
-        if (
-            icon instanceof
-            HTMLElement
-        ) {
-            const bg = isReady
-                ? 'background:'
-                    + 'hsl(var('
-                    + '--success));'
-                    + 'color:'
-                    + 'hsl(var('
-                    + '--success-'
-                    + 'foreground))'
-                : 'background:'
-                    + 'hsl(var('
-                    + '--muted));'
-                    + 'color:'
-                    + 'hsl(var('
-                    + '--muted-'
-                    + 'foreground))';
+        if (icon) {
             icon.setAttribute(
-                'style',
-                'width:3rem;'
-                + 'height:3rem;'
-                + 'border-radius:'
-                + '0.75rem;'
-                + 'display:flex;'
-                + 'align-items:'
-                + 'center;'
-                + 'justify-content:'
-                + 'center;'
-                + bg,
+                'data-ready',
+                isReady ? 'true' : 'false',
             );
         }
         const heading = $(
