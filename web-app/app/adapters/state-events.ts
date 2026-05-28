@@ -146,6 +146,50 @@ export async function getWorkOrderActiveClaim(
     return { workerId: latest.worker_id, at: latest.at };
 }
 
+// Bulk variant of getWorkOrderActiveClaim for the
+// workbox inbox, which resolves every work order's
+// active claim at once. One scan over the states log
+// builds the latest-claim-per-entity map; each work
+// order's claim is then read against its own lockTimeout
+// (passed in — the timeout lives in the frozen flow_graph
+// the caller already parses). Replaces an N-per-page
+// re-derivation of the whole ledger with a single read.
+// O(N) on events; Postgres uses an entity_id index.
+export async function getActiveClaimsByWorkOrder(
+    ctx: RequestContext,
+    lockTimeoutByWorkOrder: ReadonlyMap<Id, number>,
+): Promise<Map<Id, { workerId: Id; at: string }>> {
+    const all = await ctx.GET<StateEntity[]>('states');
+    const latestClaim = new Map<Id, StateEntity>();
+    for (const ev of all) {
+        if (!isClaimState(ev.state)) continue;
+        const seen = latestClaim.get(ev.entity_id);
+        if (seen === undefined || ev.at >= seen.at) {
+            latestClaim.set(ev.entity_id, ev);
+        }
+    }
+    const out = new Map<
+        Id, { workerId: Id; at: string }
+    >();
+    for (const [entityId, ev] of latestClaim) {
+        const lockTimeout =
+            lockTimeoutByWorkOrder.get(entityId);
+        if (lockTimeout === undefined) continue;
+        if (ev.state !== 'claimed') continue;
+        if (
+            msSinceUtc(ev.at)
+            >= lockTimeout * MS_PER_SECOND
+        ) {
+            continue;
+        }
+        out.set(entityId, {
+            workerId: ev.worker_id,
+            at: ev.at,
+        });
+    }
+    return out;
+}
+
 // Project the non-claim events for one work order into
 // the TransitionEvent shape consumed by the workbox
 // detail presenter and (via the bulk variant below)
