@@ -274,7 +274,6 @@ test('validateProjectEntity rejects unknown key', () => {
 
 const validFlow = {
     name: 'Flow A',
-    description: 'Desc',
     is_locked: false,
     is_auto_layout: true,
     is_auto_fit: true,
@@ -330,7 +329,6 @@ test(
 const validFlowVersion = {
     flow_id: 'f-1',
     name: 'v1',
-    description: '',
     is_locked: false,
     is_auto_layout: true,
     is_auto_fit: true,
@@ -365,7 +363,6 @@ test(
 const minimalWoGraph = JSON.stringify({
     flowId: 'f-1',
     name: 'WO Flow',
-    description: '',
     lockTimeout: 28800,
     nodes: [],
     edges: [],
@@ -466,15 +463,11 @@ test(
 const validOrg = {
     name: 'Acme Corp',
     domain: 'acme.com',
-    plan: 'pro',
-    plan_status: 'active',
     next_billing: '2025-01-01',
     seats: 10,
     used_seats: 5,
     projects_limit: 50,
     ideas_limit: 200,
-    health_score: 85,
-    health_status: 'healthy',
     last_activity: '2024-01-01T00:00:00Z',
 };
 
@@ -483,7 +476,7 @@ test(
     () => {
     const result =
         validateOrganizationEntity(validOrg);
-    assert.equal(result.plan, 'pro');
+    assert.equal(result.name, 'Acme Corp');
     assert.equal(result.seats, 10);
 });
 
@@ -595,7 +588,6 @@ test(
 const baseNode = {
     id: 'n1',
     name: 'N',
-    description: '',
     positionX: 0,
     positionY: 0,
     isCreate: false,

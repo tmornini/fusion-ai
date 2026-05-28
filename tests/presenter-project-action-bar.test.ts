@@ -19,7 +19,6 @@ test('under-review with no scores: Approve disabled',
             { ready: true, problems: [] },
         );
         const html = p.buildBar().toString();
-        assert.ok(html.includes('data-action="score"'));
         assert.ok(
             html.includes(
                 'data-action="approve" disabled',
@@ -41,7 +40,7 @@ test('under-review with full scoring: Approve enabled',
         assert.equal(approveDisabled, false);
     });
 
-test('approved project: Log measurement + Complete shown',
+test('approved project: Archive shown',
     () => {
         const p = new ProjectActionBarPresenter(
             PROJECT_ID, 'approved',
@@ -56,14 +55,11 @@ test('approved project: Log measurement + Complete shown',
         );
         const html = p.buildBar().toString();
         assert.ok(html.includes(
-            'data-action="log-measurement"',
-        ));
-        assert.ok(html.includes(
-            'data-action="complete"',
+            'data-action="archive"',
         ));
     });
 
-test('approved with full actuals: Complete enabled',
+test('approved with full actuals: Archive enabled',
     () => {
         const p = new ProjectActionBarPresenter(
             PROJECT_ID, 'approved',
@@ -71,10 +67,10 @@ test('approved with full actuals: Complete enabled',
             { ready: true, problems: [] },
         );
         const html = p.buildBar().toString();
-        const completeDisabled = html.includes(
-            'data-action="complete" disabled',
+        const archiveDisabled = html.includes(
+            'data-action="archive" disabled',
         );
-        assert.equal(completeDisabled, false);
+        assert.equal(archiveDisabled, false);
     });
 
 test('submitted project: Score button hidden, other review actions shown',
@@ -154,7 +150,7 @@ test('Approve tooltip enumerates unscored objective names',
         );
     });
 
-test('Complete tooltip enumerates objectives lacking actuals',
+test('Archive tooltip enumerates objectives lacking actuals',
     () => {
         const names = new Map([
             ['o1', 'Improve employee morale'],
@@ -177,7 +173,7 @@ test('Complete tooltip enumerates objectives lacking actuals',
                 'title="Improve employee morale'
                 + ' lack actual measurements"',
             ),
-            'Complete tooltip should enumerate'
+            'Archive tooltip should enumerate'
             + ' objectives lacking actuals',
         );
     });

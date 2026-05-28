@@ -88,7 +88,7 @@ test('completed projects have at least one actual per pair',
         await populateMockData(db);
         const projects = await db.projects.getAll();
         const completed = projects.filter(
-            p => p.status === 'completed',
+            p => p.status === 'archived',
         );
         const allBaselines = await
             db.projectObjectiveBaselineScores.getAll();

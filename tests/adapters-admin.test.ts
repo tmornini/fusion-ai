@@ -118,7 +118,7 @@ test(
             db, 'p2', 'under-review',
         );
         await seedProject(db, 'p3', 'approved');
-        await seedProject(db, 'p4', 'completed');
+        await seedProject(db, 'p4', 'archived');
         await seedProject(db, 'p5', 'declined');
         await seedProject(db, 'p6', 'deleted');
         const stats =

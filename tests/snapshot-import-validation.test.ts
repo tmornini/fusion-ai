@@ -339,7 +339,6 @@ test(
         await adapter.flowVersions.put('fv1', {
             flow_id: 'flow-aaaa',
             name: 'Flow',
-            description: '',
             is_locked: false,
             is_auto_layout: true,
             is_auto_fit: true,

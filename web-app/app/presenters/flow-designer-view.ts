@@ -250,15 +250,6 @@ ${aiCheckboxes}
     id="prop-node-name"
     value="${node.name}"${lockAttr} />
 </div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Description</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-node-desc"
-    value="${node.description}"${
-    lockAttr} />
-</div>
 <fieldset class="flow-attribute-fieldset"
     id="prop-node-attributes">
 <legend class="text-xs text-muted"
@@ -340,15 +331,6 @@ class="flow-props-panel">
     class="input input-sm"
     id="prop-edge-name"
     value="${edge.name}"${lockAttr} />
-</div>
-<div class="mb-2">
-<label class="text-xs text-muted"
-    >Description</label>
-<input type="text"
-    class="input input-sm"
-    id="prop-edge-desc"
-    value="${edge.description}"${
-    lockAttr} />
 </div>
 <div class="mb-2">
 <label class="text-xs text-muted"

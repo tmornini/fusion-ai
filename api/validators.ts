@@ -316,10 +316,6 @@ function asGraphNode(
         name: asString(
             obj['name'], label + '.name',
         ),
-        description: asString(
-            obj['description'],
-            label + '.description',
-        ),
         positionX: asNumber(
             obj['positionX'],
             label + '.positionX',
@@ -358,10 +354,6 @@ function asGraphEdge(
         ),
         name: asString(
             obj['name'], label + '.name',
-        ),
-        description: asString(
-            obj['description'],
-            label + '.description',
         ),
         fromNodeId: asString(
             obj['fromNodeId'],
@@ -435,10 +427,6 @@ validateWorkOrderFlowGraphJson(
         ),
         name: asString(
             obj['name'], label + '.name',
-        ),
-        description: asString(
-            obj['description'],
-            label + '.description',
         ),
         lockTimeout: asNumber(
             obj['lockTimeout'],
@@ -748,7 +736,7 @@ export function validateProjectEntity(
 
 
 const FLOW_BODY_KEYS: readonly string[] = [
-    'name', 'description', 'is_locked',
+    'name', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
     'lock_timeout', 'graph',
 ];
@@ -762,9 +750,6 @@ export function validateFlowEntity(
     return {
         name: pickString(
             body, 'name',
-        ),
-        description: pickString(
-            body, 'description',
         ),
         is_locked: pickBoolean(
             body, 'is_locked',
@@ -786,7 +771,7 @@ export function validateFlowEntity(
 
 const FLOW_VERSION_BODY_KEYS:
     readonly string[] = [
-    'flow_id', 'name', 'description',
+    'flow_id', 'name',
     'is_locked', 'is_auto_layout',
     'is_auto_fit', 'lock_timeout',
     'graph', 'at',
@@ -806,9 +791,6 @@ export function validateFlowVersionEntity(
         ),
         name: pickString(
             body, 'name',
-        ),
-        description: pickString(
-            body, 'description',
         ),
         is_locked: pickBoolean(
             body, 'is_locked',
@@ -913,11 +895,9 @@ validateStateFieldValueEntity(
 
 const ORGANIZATION_BODY_KEYS:
     readonly string[] = [
-    'name', 'domain',
-    'plan', 'plan_status', 'next_billing',
+    'name', 'domain', 'next_billing',
     'seats', 'used_seats', 'projects_limit',
-    'ideas_limit', 'health_score',
-    'health_status', 'last_activity',
+    'ideas_limit', 'last_activity',
 ];
 
 export function validateOrganizationEntity(
@@ -935,12 +915,6 @@ export function validateOrganizationEntity(
         domain: pickString(
             body, 'domain',
         ),
-        plan: pickString(
-            body, 'plan',
-        ),
-        plan_status: pickString(
-            body, 'plan_status',
-        ),
         next_billing: pickString(
             body, 'next_billing',
         ),
@@ -955,12 +929,6 @@ export function validateOrganizationEntity(
         ),
         ideas_limit: pickNumber(
             body, 'ideas_limit',
-        ),
-        health_score: pickNumber(
-            body, 'health_score',
-        ),
-        health_status: pickString(
-            body, 'health_status',
         ),
         last_activity: pickString(
             body, 'last_activity',

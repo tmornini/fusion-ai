@@ -97,7 +97,6 @@ function makeFlowSummary(
     return {
         id: 'flow-1',
         name: 'Onboarding',
-        description: 'Bring new hires up to speed',
         nodeCount: 3,
         edgeCount: 2,
         ...over,
@@ -110,7 +109,6 @@ function makeNode(
     return {
         id: 'n-1',
         name: 'Review',
-        description: 'Manager review step',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -127,7 +125,6 @@ function makeEdge(
     return {
         id: 'e-1',
         name: 'Approve',
-        description: 'On approval',
         fromNodeId: 'n-1',
         toNodeId: 'n-2',
         ...over,
@@ -447,16 +444,13 @@ test(
 // FlowPresenter
 
 test(
-    'FlowPresenter renders the flow name,'
-    + ' description, and a data-flow-card hook',
+    'FlowPresenter renders the flow name'
+    + ' and a data-flow-card hook',
     () => {
         const out = new FlowPresenter(
             makeFlowSummary(), undefined,
         ).render().toString();
         assert.match(out, /Onboarding/);
-        assert.match(
-            out, /Bring new hires up to speed/,
-        );
         assert.match(out, /data-flow-card="flow-1"/);
         noUnknownMagic(out);
     },

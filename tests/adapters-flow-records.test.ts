@@ -29,7 +29,6 @@ async function seedWorkOrder(
     const flowGraph = jsonObjectField({
         flowId,
         name: 'Flow',
-        description: '',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [],
         edges: [],

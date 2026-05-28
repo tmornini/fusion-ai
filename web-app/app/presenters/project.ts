@@ -50,7 +50,7 @@ const STATE_ICONS: Record<
     'sent-back': iconArrowLeft,
     'approved': iconCheckCircle2,
     'declined': iconXCircle,
-    'completed': iconLightbulb,
+    'archived': iconLightbulb,
     'deleted': iconXCircle,
 };
 
@@ -439,7 +439,7 @@ export class ProjectListPresenter {
             p => p.stateGroup(),
         );
         const order: ProjectState[] = [
-            'completed', 'under-review',
+            'archived', 'under-review',
             'sent-back', 'approved',
         ];
         const badges = orderedKeys(

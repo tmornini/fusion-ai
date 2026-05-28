@@ -732,13 +732,6 @@ function buildFlowCard(
                     <p class="${
                         'font-medium text-sm'
                     }">${flow.name}</p>
-                    ${flow.description
-                        ? html`<p class="${
-                            'text-xs text-muted'
-                        }">${
-                            flow.description
-                        }</p>`
-                        : html``}
                 </div>
                 <div class="flex gap-3">
                     <span class="${

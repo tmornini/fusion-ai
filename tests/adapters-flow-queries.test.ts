@@ -61,7 +61,6 @@ function buildNode(
     return {
         id,
         name: id,
-        description: '',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -80,7 +79,6 @@ function buildEdge(
     return {
         id,
         name: 'Transition',
-        description: '',
         fromNodeId,
         toNodeId,
     };
@@ -96,7 +94,6 @@ async function createBaseFlow(
         linkId: flowId + '-link',
         projectId,
         name: 'Flow ' + flowId,
-        description: 'desc ' + flowId,
     });
 }
 
@@ -108,7 +105,6 @@ async function saveGraph(
 ): Promise<void> {
     await putFlow(ctx, flowId, {
         name: 'Flow ' + flowId,
-        description: 'desc ' + flowId,
         isLocked: false,
         isAutoLayout: false,
         isAutoFit: false,
@@ -166,9 +162,6 @@ test(
         );
         assert.equal(g.id, 'flow-1');
         assert.equal(g.name, 'Flow flow-1');
-        assert.equal(
-            g.description, 'desc flow-1',
-        );
         assert.equal(g.isLocked, false);
         assert.equal(g.isAutoLayout, false);
         assert.equal(g.isAutoFit, false);
@@ -199,7 +192,6 @@ test(
             createRequestContext(db), 'flow-1',
             {
                 name: 'Locked Flow',
-                description: 'd',
                 isLocked: true,
                 isAutoLayout: true,
                 isAutoFit: true,

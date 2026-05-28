@@ -169,7 +169,7 @@ not stored in the states log; `Idea.readinessValue()` /
 
 **Projects** (7 values, single-dimension):
 - `submitted`, `under-review`, `sent-back`, `approved`,
-  `declined`, `completed`, `deleted`
+  `declined`, `archived`, `deleted`
 
 **Workers** (3 values, shared between humans and AIs):
 - `active`, `pending`, `archived`
@@ -182,8 +182,8 @@ content-change marker):
 - `active`, `archived`, `deleted`
 
 The flow lifecycle's `'updated'` event records every
-content mutation (graph edits, name/description/lock
-changes, auto-layout). Creation emits `'active'` —
+content mutation (graph edits, name/lock changes,
+auto-layout). Creation emits `'active'` —
 the first event records the initial lifecycle state,
 not a content edit. The retired `flows.created_at` /
 `flows.updated_at` columns are now derived from the
@@ -539,7 +539,7 @@ pure `build*` helpers (`buildShell`, `buildStepperBar`,
 `buildLegend`, `buildCard`) returning `SafeHtml` for testability,
 plus DOM-touching `renderShell` / `renderUpdate` / `renderCard`.
 It is flow-name-agnostic by design — the page module writes the
-flow name and description into the header after `renderShell`,
+flow name into the header after `renderShell`,
 keeping `buildFlowStats` independent of presentation strings.
 
 ### Import Conventions

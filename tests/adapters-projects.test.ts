@@ -287,7 +287,7 @@ test(
             await db.projects.getById('p1');
 
         await postProjectStateChange(
-            ctx, 'p1', 'completed',
+            ctx, 'p1', 'archived',
         );
 
         const after =
@@ -296,7 +296,7 @@ test(
         const events = await db.states.allFor('p1');
         assert.equal(events.length, 2);
         assert.equal(
-            events.at(-1)?.state, 'completed',
+            events.at(-1)?.state, 'archived',
         );
     },
 );

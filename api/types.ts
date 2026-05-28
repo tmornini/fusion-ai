@@ -93,7 +93,7 @@ export const PROJECT_STATES = [
     'sent-back',
     'approved',
     'declined',
-    'completed',
+    'archived',
     'deleted',
 ] as const;
 
@@ -729,7 +729,6 @@ export interface ProjectEntity {
 export interface GraphNode {
     id: string;
     name: string;
-    description: string;
     positionX: number;
     positionY: number;
     isCreate: boolean;
@@ -741,7 +740,6 @@ export interface GraphNode {
 export interface GraphEdge {
     id: string;
     name: string;
-    description: string;
     fromNodeId: string;
     toNodeId: string;
 }
@@ -753,13 +751,6 @@ export interface StoredGraph {
 
 export const DEFAULT_LOCK_TIMEOUT = 28800;
 
-// Named defaults for flow-graph entities.
-// Pass explicitly at call sites: the
-// constant tells the next reader the
-// empty value is deliberate, not
-// coincidental.
-export const DEFAULT_NODE_DESCRIPTION = '';
-export const DEFAULT_EDGE_DESCRIPTION = '';
 export const DEFAULT_NODE_ATTRIBUTES:
     readonly NodeAttribute[] = [];
 export const DEFAULT_NEW_STATE_NAME =
@@ -772,7 +763,6 @@ export const DEFAULT_NODE_WORKER_IDS:
 export interface FlowEntity {
     id: Id;
     name: string;
-    description: string;
     is_locked: boolean;
     is_auto_layout: boolean;
     is_auto_fit: boolean;
@@ -784,7 +774,6 @@ export interface FlowVersionEntity {
     id: Id;
     flow_id: Id;
     name: string;
-    description: string;
     is_locked: boolean;
     is_auto_layout: boolean;
     is_auto_fit: boolean;
@@ -796,7 +785,6 @@ export interface FlowVersionEntity {
 export interface WorkOrderFlowGraph {
     flowId: Id;
     name: string;
-    description: string;
     lockTimeout: number;
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -856,15 +844,11 @@ export interface OrganizationEntity {
     id: Id;
     name: string;
     domain: string;
-    plan: string;
-    plan_status: string;
     next_billing: string;
     seats: number;
     used_seats: number;
     projects_limit: number;
     ideas_limit: number;
-    health_score: number;
-    health_status: string;
     last_activity: string;
 }
 
@@ -995,8 +979,8 @@ export const PROJECT_STATE_CONFIG: Record<
         label: 'Declined',
         className: 'badge-error',
     },
-    'completed': {
-        label: 'Completed',
+    'archived': {
+        label: 'Archived',
         className: 'badge-success',
     },
     'deleted': {
@@ -1188,7 +1172,7 @@ export class Project {
     }
 
     timelineProgress(): number {
-        if (this.#state === 'completed')
+        if (this.#state === 'archived')
             return 100;
         const start =
             new Date(this.#startDate);

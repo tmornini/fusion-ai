@@ -5,9 +5,9 @@ import { createRequestContext } from
     '../web-app/app/adapters/shared.ts';
 import {
     validateProjectForApproval,
-    validateProjectForCompletion,
+    validateProjectForArchival,
     postProjectApproval,
-    postProjectCompletion,
+    postProjectArchival,
 } from '../web-app/app/adapters/project-publish.ts';
 import {
     getProjectState,
@@ -66,9 +66,9 @@ test('validator: ready when all scored', () => {
     assert.equal(r.problems.length, 0);
 });
 
-test('completion validator: not ready when actuals missing',
+test('archival validator: not ready when actuals missing',
     () => {
-        const r = validateProjectForCompletion(
+        const r = validateProjectForArchival(
             SAMPLE_PROJECT,
             [{ id: 'b1', project_id: 'p1',
                objective_id: 'o1', score: 50,
@@ -117,7 +117,7 @@ test('postProjectApproval throws when not ready',
         );
     });
 
-test('postProjectCompletion moves state to completed',
+test('postProjectArchival moves state to archived',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
@@ -140,7 +140,7 @@ test('postProjectCompletion moves state to completed',
               at: '2026-05-15T00:00:00.000Z' },
         );
         const ctx = createRequestContext(db);
-        await postProjectCompletion(ctx, 'p1');
+        await postProjectArchival(ctx, 'p1');
         const s = await getProjectState(ctx, 'p1');
-        assert.equal(s, 'completed');
+        assert.equal(s, 'archived');
     });

@@ -117,12 +117,6 @@ export {
     ProjectActionBarPresenter,
 } from './project-action-bar.ts';
 export {
-    ScoreModalPresenter,
-} from './score-modal.ts';
-export {
-    MeasurementModalPresenter,
-} from './measurement-modal.ts';
-export {
     ProjectObjectivesPresenter,
 } from './project-objectives.ts';
 export {

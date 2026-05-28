@@ -123,7 +123,7 @@ object instantiation, not stored.
 
 Lifecycle state lives in `states` (alphabet
 `PROJECT_STATES`): `submitted`, `under-review`,
-`sent-back`, `approved`, `declined`, `completed`,
+`sent-back`, `approved`, `declined`, `archived`,
 `deleted`.
 
 ## Tools
@@ -134,7 +134,6 @@ Lifecycle state lives in `states` (alphabet
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY |
 | name | TEXT | |
-| description | TEXT | |
 | is_locked | BOOLEAN | Default false |
 | is_auto_layout | BOOLEAN | Default true |
 | is_auto_fit | BOOLEAN | Default true |
@@ -158,7 +157,6 @@ JSON document:
   "nodes": [{
     "id": "...",
     "name": "...",
-    "description": "...",
     "positionX": 0,
     "positionY": 0,
     "isCreate": false,
@@ -173,7 +171,6 @@ JSON document:
   "edges": [{
     "id": "...",
     "name": "...",
-    "description": "...",
     "fromNodeId": "...",
     "toNodeId": "..."
   }]
@@ -261,7 +258,7 @@ back many flows.
 The `flow_graph` column stores a snapshot of the flow
 definition at work order creation time. Same structure as
 `flows.graph` plus flow-level metadata (`flowId`, `name`,
-`description`, `lockTimeout`).
+`lockTimeout`).
 
 Transitions and claims are NOT separate tables — both
 families of events live in the unified `states` log
@@ -292,15 +289,11 @@ Singleton table (single row, `id = '1'`).
 | id | TEXT |
 | name | TEXT |
 | domain | TEXT |
-| plan | TEXT |
-| plan_status | TEXT |
 | next_billing | TEXT |
 | seats | INTEGER |
 | used_seats | INTEGER |
 | projects_limit | INTEGER |
 | ideas_limit | INTEGER |
-| health_score | INTEGER |
-| health_status | TEXT |
 | last_activity | TEXT |
 
 ## Relationships
@@ -344,7 +337,6 @@ persistent undo on the flows/detail page.
 | id | TEXT | PRIMARY KEY (UUID) |
 | flow_id | TEXT | References flows |
 | name | TEXT | Snapshot of flows.name |
-| description | TEXT | Snapshot of flows.description |
 | is_locked | BOOLEAN | Snapshot of flows.is_locked |
 | is_auto_layout | BOOLEAN | Snapshot of flows.is_auto_layout |
 | is_auto_fit | BOOLEAN | Snapshot of flows.is_auto_fit |
@@ -425,7 +417,7 @@ State alphabets by entity kind:
   `sent-back`, `archived`, `deleted`
 - **projects** — `PROJECT_STATES` (7 values):
   `submitted`, `under-review`, `sent-back`, `approved`,
-  `declined`, `completed`, `deleted`
+  `declined`, `archived`, `deleted`
 - **workers** (humans and AIs share one alphabet) —
   `WORKER_STATES` (3 values): `active`, `pending`,
   `archived`

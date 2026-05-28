@@ -813,11 +813,10 @@ on. Run these in order.
 ### Flow List (`flows/`)
 
 - [ ] **F1** Navigate to `flows/`. PASS: page shows
-  flow cards with name, description, project
-  name badge, and state/transition counts.
+  flow cards with name, project name badge, and
+  state/transition counts.
 - [ ] **F2** Type in the search input (if present).
-  PASS: filters flow cards by name or
-  description in real-time.
+  PASS: filters flow cards by name in real-time.
 - [ ] **F3** Click a flow card. PASS: navigates
   to `flows/detail.html?flowId=<id>`.
 
@@ -893,8 +892,8 @@ opens and renders.)
   the right (regular nodes only — Create/Archive
   nodes still show their kind title), then a
   Workers fieldset (HUMANS / AIs checkbox
-  groups), then state name, description, form
-  attributes list, and outgoing transitions.
+  groups), then state name, form attributes
+  list, and outgoing transitions.
   (Properties panel double-click is BLOCKED per the
   MCP pointer-capture limitation; validate end-state
   via direct JSON injection into `fusion-ai:flows`
@@ -1010,9 +1009,8 @@ opens and renders.)
   and required toggles plus a remove control.
 - [ ] **F26** Click an edge to select it (gold glow).
   Double-click to open properties panel. PASS:
-  panel shows transition name, description,
-  from/to state names. Edit the name. PASS: label
-  updates on the canvas.
+  panel shows transition name, from/to state names.
+  Edit the name. PASS: label updates on the canvas.
 - [ ] **F27** Select a non-start/non-complete node,
   click the Delete (trash) button in toolbar.
   PASS: node and all connected edges are removed.
@@ -1210,7 +1208,7 @@ states, and that the canvas re-renders after each step.)
 - [ ] **F67** Tick one checkbox in the Workers fieldset,
   then press Cmd+Z (Mac) / Ctrl+Z (Win/Linux). PASS: the
   checkbox unticks — `workerIds` changes are undoable
-  like name/description changes.
+  like name changes.
 
 ### Attribute Editor (Node Panel)
 

@@ -4,12 +4,15 @@ import type {
     ObjectiveId,
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
+    ProjectState,
 } from '../../../api/types.ts';
 import {
     latestPerPair,
     formatSigned,
-    toneForScore,
 } from '../scoring-format.ts';
+import { iconTrendingUp } from '../icons.ts';
+import { buildBipolarGaugeSvg } from './gauge.ts';
+import { formatDate } from '../format.ts';
 
 interface Definition {
     name: string;
@@ -28,6 +31,16 @@ function indexByObjective<T extends {
     return map;
 }
 
+function baselineEditable(state: ProjectState): boolean {
+    return state === 'submitted'
+        || state === 'under-review'
+        || state === 'sent-back';
+}
+
+function actualEditable(state: ProjectState): boolean {
+    return state === 'approved';
+}
+
 export class ProjectObjectivesPresenter {
     readonly #activeObjectives: Objective[];
     readonly #defs: Map<ObjectiveId, Definition>;
@@ -35,17 +48,20 @@ export class ProjectObjectivesPresenter {
         ProjectObjectiveBaselineScore[];
     readonly #latestActuals:
         ProjectObjectiveActualScore[];
+    readonly #state: ProjectState;
 
     constructor(
         activeObjectives: Objective[],
         defs: Map<ObjectiveId, Definition>,
         latestBaselines: ProjectObjectiveBaselineScore[],
         latestActuals: ProjectObjectiveActualScore[],
+        state: ProjectState,
     ) {
         this.#activeObjectives = activeObjectives;
         this.#defs = defs;
         this.#latestBaselines = latestBaselines;
         this.#latestActuals = latestActuals;
+        this.#state = state;
     }
 
     buildSection(): SafeHtml {
@@ -54,48 +70,65 @@ export class ProjectObjectivesPresenter {
         const actualMap =
             indexByObjective(this.#latestActuals);
 
-        if (baseMap.size === 0) {
-            return html`
-                <section
-                    class="project-objectives-section">
-                    <header>
-                        <h3>Objectives</h3>
-                    </header>
-                    <p class="empty-state">
-                        Project not yet scored.
-                    </p>
-                </section>
-            `;
-        }
+        const baseEditable =
+            baselineEditable(this.#state);
+        const actEditable =
+            actualEditable(this.#state);
+        const anyEditable =
+            baseEditable || actEditable;
 
         return html`
-            <section
-                class="project-objectives-section">
-                <header>
-                    <h3>Objectives</h3>
-                    <button data-action="view-history">
-                        View history
-                    </button>
-                </header>
-                <ul class="project-objectives-list">
-                    ${this.#activeObjectives.map(o => {
-                        const b = baseMap.get(o.id);
-                        if (!b) return html``;
-                        return this.#row(
-                            o, b.score,
+            <div class="${
+                'card gauge-card'
+                + ' project-objectives-card'
+            }">
+                <div class="${
+                    'flex items-center'
+                    + ' gap-3 mb-5'
+                }">
+                    <div class="icon-box">
+                        ${iconTrendingUp(20, '')}
+                    </div>
+                    <h3 class="${
+                        'text-sm font-semibold'
+                    }">Objectives</h3>
+                </div>
+                <ul class="project-objectives-rows">
+                    ${this.#activeObjectives.map(o =>
+                        this.#row(
+                            o,
+                            baseMap.get(o.id),
                             actualMap.get(o.id),
-                        );
-                    })}
+                            baseEditable,
+                            actEditable,
+                        ))}
                 </ul>
-            </section>
+                ${anyEditable
+                    ? html`<div
+                        class="${
+                            'project-objectives'
+                            + '-footer'
+                        }">
+                        <button
+                            data-action="save-objectives"
+                            class="btn btn-primary"
+                            disabled>
+                            Save
+                        </button>
+                      </div>`
+                    : html``}
+            </div>
         `;
     }
 
     #row(
         obj: Objective,
-        baselineScore: number,
+        baseline:
+            ProjectObjectiveBaselineScore | undefined,
         actual:
             ProjectObjectiveActualScore | undefined,
+        baseEditable: boolean,
+        actEditable: boolean,
     ): SafeHtml {
         const def = this.#defs.get(obj.id);
         if (!def) {
@@ -104,36 +137,107 @@ export class ProjectObjectivesPresenter {
                     + `${obj.id}`,
             );
         }
-        const hasActual = actual !== undefined;
-        const barStyle = hasActual
-            ? `--baseline:${baselineScore};`
-                + `--actual:${actual.score}`
-            : `--baseline:${baselineScore}`;
+        const baseValue = baseline?.score ?? 0;
+        const actValue = actual?.score ?? baseValue;
+        const baseDisabled = !baseEditable;
+        const actDisabled = !actEditable
+            || baseline === undefined;
+        const lastActualText =
+            actual !== undefined
+                ? `${formatSigned(actual.score)} `
+                    + `(${formatDate(actual.at)})`
+                : 'none yet';
+        const baselineText =
+            baseline !== undefined
+                ? formatSigned(baseline.score)
+                : 'unset';
+
         return html`
-            <li class="score-row"
+            <li class="project-objective-row"
                 data-objective-id="${obj.id}">
-                <span class="score-row-label">
-                    ${def.name}
-                </span>
-                <span class="bipolar-bar"
-                    data-tone="${
-                        toneForScore(baselineScore)}"
-                    data-has-actual="${hasActual}"
-                    style="${barStyle}">
-                </span>
-                <strong class="score-row-baseline"
-                    data-tone="${
-                        toneForScore(baselineScore)}">
-                    ${formatSigned(baselineScore)}
-                </strong>
-                <strong class="score-row-actual"
-                    data-tone="${actual
-                        ? toneForScore(actual.score)
-                        : 'muted'}">
-                    ${actual
-                        ? formatSigned(actual.score)
-                        : 'no measurements yet'}
-                </strong>
+                <div class="${
+                    'project-objective-header'
+                }">
+                    <span
+                        class="${
+                            'project-objective-name'
+                        }"
+                    >${def.name}</span>
+                </div>
+                <div class="${
+                    'project-objective-gauge'
+                }">
+                    ${buildBipolarGaugeSvg(
+                        {
+                            value: baseline?.score,
+                            label: 'Baseline',
+                            display: baselineText,
+                        },
+                        {
+                            value: actual?.score,
+                            label: 'Actual',
+                            display: lastActualText,
+                        },
+                        'project-objective-'
+                            + obj.id,
+                        'small',
+                    )}
+                </div>
+                <div class="${
+                    'project-objective-slider'
+                }"
+                    data-slider="baseline">
+                    <label class="${
+                        'text-xs text-muted'
+                    }">Baseline</label>
+                    <input type="range"
+                        min="-100" max="100"
+                        step="1"
+                        value="${baseValue}"
+                        data-initial-value="${
+                            baseValue
+                        }"
+                        class="baseline-slider"
+                        ${baseDisabled
+                            ? 'disabled'
+                            : ''}>
+                    <span class="slider-value">
+                        ${baseline !== undefined
+                            ? formatSigned(
+                                baseline.score)
+                            : '—'}
+                    </span>
+                </div>
+                <div class="${
+                    'project-objective-slider'
+                }"
+                    data-slider="actual">
+                    <label class="${
+                        'text-xs text-muted'
+                    }">Actual</label>
+                    <input type="range"
+                        min="-100" max="100"
+                        step="1"
+                        value="${actValue}"
+                        data-initial-value="${
+                            actValue
+                        }"
+                        class="actual-slider"
+                        ${actDisabled
+                            ? 'disabled'
+                            : ''}>
+                    <span class="slider-value">
+                        ${actual !== undefined
+                            ? formatSigned(
+                                actual.score)
+                            : '—'}
+                    </span>
+                </div>
+                <small class="${
+                    'project-objective-caption'
+                }">
+                    Last actual: ${lastActualText}
+                </small>
             </li>
         `;
     }

@@ -38,9 +38,9 @@ import {
     getObjectiveArchivalEvents,
     subscribeObjectiveChanges,
     postProjectApproval,
-    postProjectCompletion,
+    postProjectArchival,
     validateProjectForApproval,
-    validateProjectForCompletion,
+    validateProjectForArchival,
 } from '../app/adapters/index.ts';
 import type {
     FlowListItem,
@@ -58,8 +58,6 @@ import {
     type ProjectDraftFields,
     ProjectActionBarPresenter,
     ProjectObjectivesPresenter,
-    ScoreModalPresenter,
-    MeasurementModalPresenter,
     ProjectScoreHistoryPresenter,
 } from '../app/presenters/index.ts';
 
@@ -243,12 +241,40 @@ export async function init(
         void renderActionBarAndObjectives();
     });
 
-    subscribeProjectScoreChanges(
-        () => void renderActionBarAndObjectives(),
-    );
-    subscribeObjectiveChanges(
-        () => void renderActionBarAndObjectives(),
-    );
+    subscribeProjectScoreChanges(async () => {
+        if (!state || !pageContainer) return;
+        const ctx = createRequestContext();
+        const [upd, updFlows] =
+            await Promise.all([
+                loadProjectView(projectId, ctx),
+                getFlowsByProject(ctx, projectId),
+            ]);
+        state = {
+            kind: 'reading',
+            view: upd.view,
+            entity: upd.entity,
+            flows: updFlows,
+        };
+        rerender();
+        void renderActionBarAndObjectives();
+    });
+    subscribeObjectiveChanges(async () => {
+        if (!state || !pageContainer) return;
+        const ctx = createRequestContext();
+        const [upd, updFlows] =
+            await Promise.all([
+                loadProjectView(projectId, ctx),
+                getFlowsByProject(ctx, projectId),
+            ]);
+        state = {
+            kind: 'reading',
+            view: upd.view,
+            entity: upd.entity,
+            flows: updFlows,
+        };
+        rerender();
+        void renderActionBarAndObjectives();
+    });
 
     await renderActionBarAndObjectives();
 
@@ -261,151 +287,16 @@ export async function init(
                     .closest('[data-action]')
                     ?.getAttribute('data-action');
             const ctx = createRequestContext();
-            if (action === 'score') {
-                await openScoreModal(
-                    ctx, projectId,
-                );
-            } else if (action === 'approve') {
+            if (action === 'approve') {
                 openApproveConfirmation();
-            } else if (
-                action === 'log-measurement'
-            ) {
-                await openMeasurementModal(
-                    ctx, projectId,
-                );
-            } else if (action === 'complete') {
-                openCompleteConfirmation();
+            } else if (action === 'archive') {
+                openArchiveConfirmation();
             } else if (
                 action === 'view-history'
             ) {
                 await openHistoryModal(
                     ctx, projectId,
                 );
-            }
-        },
-        { signal },
-    );
-
-    $('#score-dialog', document)!.addEventListener(
-        'click',
-        async (e) => {
-            const action =
-                (e.target as HTMLElement)
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-            if (action === 'cancel') {
-                closeDialog('score');
-            } else if (
-                action === 'save-baselines'
-            ) {
-                const ctx = createRequestContext();
-                const moved: {
-                    objectiveId: string;
-                    score: number;
-                }[] = [];
-                const rows =
-                    document.querySelectorAll(
-                        '#score-modal-body'
-                        + ' .score-slider-row',
-                    );
-                rows.forEach(row => {
-                    const initial = Number(
-                        row.getAttribute(
-                            'data-initial-value',
-                        ),
-                    );
-                    const unset =
-                        row.getAttribute(
-                            'data-unset',
-                        ) === 'true';
-                    const objectiveId =
-                        row.getAttribute(
-                            'data-objective-id',
-                        )!;
-                    const slider =
-                        row.querySelector(
-                            'input[type="range"]',
-                        ) as HTMLInputElement;
-                    const value =
-                        Number(slider.value);
-                    const touched =
-                        (slider as HTMLElement & {
-                            dataset: DOMStringMap;
-                        }).dataset.touched ===
-                        'true';
-                    if (
-                        value !== initial
-                        || (unset && touched)
-                    ) {
-                        moved.push({
-                            objectiveId,
-                            score: value,
-                        });
-                    }
-                });
-                if (moved.length > 0) {
-                    await postProjectBaselineScoring(
-                        ctx, projectId, moved,
-                    );
-                }
-                closeDialog('score');
-            }
-        },
-        { signal },
-    );
-
-    $('#measurement-dialog', document)!
-        .addEventListener(
-        'click',
-        async (e) => {
-            const action =
-                (e.target as HTMLElement)
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-            if (action === 'cancel') {
-                closeDialog('measurement');
-            } else if (
-                action === 'save-measurement'
-            ) {
-                const ctx = createRequestContext();
-                const moved: {
-                    objectiveId: string;
-                    score: number;
-                }[] = [];
-                const rows =
-                    document.querySelectorAll(
-                        '#measurement-modal-body'
-                        + ' .measurement-slider-row',
-                    );
-                rows.forEach(row => {
-                    const initial = Number(
-                        row.getAttribute(
-                            'data-initial-value',
-                        ),
-                    );
-                    const objectiveId =
-                        row.getAttribute(
-                            'data-objective-id',
-                        )!;
-                    const slider =
-                        row.querySelector(
-                            'input[type="range"]',
-                        ) as HTMLInputElement;
-                    const value =
-                        Number(slider.value);
-                    if (value !== initial) {
-                        moved.push({
-                            objectiveId,
-                            score: value,
-                        });
-                    }
-                });
-                if (moved.length > 0) {
-                    await postProjectActualMeasurement(
-                        ctx, projectId, moved,
-                    );
-                }
-                closeDialog('measurement');
             }
         },
         { signal },
@@ -443,7 +334,7 @@ export async function init(
         { signal },
     );
 
-    $('#complete-dialog', document)!
+    $('#archive-dialog', document)!
         .addEventListener(
         'click',
         async (e) => {
@@ -451,24 +342,24 @@ export async function init(
                 (e.target as HTMLElement)
                     .closest('[data-action]')
                     ?.getAttribute('data-action');
-            if (action === 'cancel-complete') {
-                closeDialog('complete');
+            if (action === 'cancel-archive') {
+                closeDialog('archive');
             } else if (
-                action === 'confirm-complete'
+                action === 'confirm-archive'
             ) {
                 const ctx = createRequestContext();
                 try {
-                    await postProjectCompletion(
+                    await postProjectArchival(
                         ctx, projectId,
                     );
-                    closeDialog('complete');
+                    closeDialog('archive');
                 } catch (err) {
                     const message =
                         err instanceof Error
                             ? err.message
                             : String(err);
                     showToast(message, 'error');
-                    closeDialog('complete');
+                    closeDialog('archive');
                     throw err;
                 }
             }
@@ -480,6 +371,80 @@ export async function init(
         .addEventListener(
         'click',
         () => closeDialog('history'),
+        { signal },
+    );
+
+    $('#project-objectives-section', document)!
+        .addEventListener(
+        'click',
+        async (e) => {
+            const action =
+                (e.target as HTMLElement)
+                    .closest('[data-action]')
+                    ?.getAttribute('data-action');
+            if (action === 'save-objectives') {
+                await handleSaveObjectives(
+                    projectId,
+                );
+            }
+        },
+        { signal },
+    );
+
+    $('#project-objectives-section', document)!
+        .addEventListener(
+        'input',
+        (e) => {
+            const target = e.target as HTMLElement;
+            if (!target.matches(
+                'input[type="range"]',
+            )) return;
+            const row = target.closest(
+                '.project-objective-row',
+            );
+            if (!row) return;
+            const sliderContainer = target.closest(
+                '.project-objective-slider',
+            );
+            const valueEl = sliderContainer
+                ?.querySelector('.slider-value');
+            if (valueEl) {
+                const v = Number(
+                    (target as HTMLInputElement)
+                        .value,
+                );
+                const sign = v > 0 ? '+' : '';
+                valueEl.textContent = sign
+                    + String(v);
+            }
+            const section = $(
+                '#project-objectives-section',
+                document,
+            );
+            if (!section) return;
+            const sliders = section.querySelectorAll(
+                'input[type="range"]',
+            );
+            let dirty = false;
+            sliders.forEach(s => {
+                const inp =
+                    s as HTMLInputElement;
+                if (inp.disabled) return;
+                const initial = Number(
+                    inp.dataset['initialValue'],
+                );
+                const value = Number(inp.value);
+                if (value !== initial) {
+                    dirty = true;
+                }
+            });
+            const saveBtn = section.querySelector(
+                '[data-action="save-objectives"]',
+            ) as HTMLButtonElement | null;
+            if (saveBtn) {
+                saveBtn.disabled = !dirty;
+            }
+        },
         { signal },
     );
 }
@@ -752,7 +717,6 @@ async function handleNewFlowSubmit(
                 linkId,
                 projectId,
                 name,
-                description: '',
             },
         );
     } catch (err) {
@@ -804,8 +768,8 @@ async function renderActionBarAndObjectives(
     const approvalCheck = validateProjectForApproval(
         entity, active, latestBaselines,
     );
-    const completionCheck =
-        validateProjectForCompletion(
+    const archivalCheck =
+        validateProjectForArchival(
             entity, latestBaselines, latestActuals,
         );
 
@@ -815,7 +779,7 @@ async function renderActionBarAndObjectives(
     );
     const actionBar = new ProjectActionBarPresenter(
         pid, project.stateValue(),
-        approvalCheck, completionCheck,
+        approvalCheck, archivalCheck,
         objectiveNames,
     );
     const actionBarEl =
@@ -826,6 +790,7 @@ async function renderActionBarAndObjectives(
 
     const objSection = new ProjectObjectivesPresenter(
         active, defs, latestBaselines, latestActuals,
+        project.stateValue(),
     );
     const objEl =
         $('#project-objectives-section', document);
@@ -834,92 +799,69 @@ async function renderActionBarAndObjectives(
     }
 }
 
-async function openScoreModal(
-    ctx: RequestContext,
+async function handleSaveObjectives(
     projectId: string,
 ): Promise<void> {
-    const [project, state, active, scoring] =
-        await Promise.all([
-            getProjectRow(ctx, projectId),
-            getProjectState(ctx, projectId),
-            getActiveObjectives(ctx),
-            getProjectScoring(ctx, projectId),
-        ]);
-    const defs = new Map<string, {
-        name: string; description: string;
-    }>();
-    for (const o of active) {
-        defs.set(
-            o.id,
-            await getCurrentObjectiveDefinition(
-                ctx, o.id,
-            ),
-        );
-    }
-    const presenter = new ScoreModalPresenter(
-        project, state, active, defs, scoring.baseline,
+    const section = $(
+        '#project-objectives-section', document,
     );
-    const bodyEl = $('#score-modal-body', document);
-    if (bodyEl) {
-        setHtml(bodyEl, presenter.buildBody());
-    }
-
-    const dialog = $('#score-dialog', document)!;
-    const onInput = (e: Event) => {
-        const t = e.target as HTMLElement;
-        if (t.matches('input[type="range"]')) {
-            (t as HTMLElement & {
-                dataset: DOMStringMap;
-            }).dataset.touched = 'true';
+    if (!section) return;
+    const rows = section.querySelectorAll(
+        '.project-objective-row',
+    );
+    const baselineMoves: {
+        objectiveId: string;
+        score: number;
+    }[] = [];
+    const actualMoves: {
+        objectiveId: string;
+        score: number;
+    }[] = [];
+    rows.forEach(row => {
+        const objectiveId = row.getAttribute(
+            'data-objective-id',
+        );
+        if (!objectiveId) return;
+        const baseSlider = row.querySelector(
+            'input.baseline-slider',
+        ) as HTMLInputElement | null;
+        const actSlider = row.querySelector(
+            'input.actual-slider',
+        ) as HTMLInputElement | null;
+        if (baseSlider && !baseSlider.disabled) {
+            const initial = Number(
+                baseSlider.dataset['initialValue'],
+            );
+            const value = Number(baseSlider.value);
+            if (value !== initial) {
+                baselineMoves.push({
+                    objectiveId, score: value,
+                });
+            }
         }
-    };
-    dialog.addEventListener('input', onInput);
-    const cleanupOnClose = () =>
-        dialog.removeEventListener(
-            'input', onInput,
-        );
-    dialog.addEventListener(
-        'close', cleanupOnClose, { once: true },
-    );
-
-    openDialog('score');
-}
-
-async function openMeasurementModal(
-    ctx: RequestContext,
-    projectId: string,
-): Promise<void> {
-    const [project, state, scoring] =
-        await Promise.all([
-            getProjectRow(ctx, projectId),
-            getProjectState(ctx, projectId),
-            getProjectScoring(ctx, projectId),
-        ]);
-    const defs = new Map<string, {
-        name: string; description: string;
-    }>();
-    const baselineObjIds = new Set(
-        latestPerPair(scoring.baseline)
-            .map(b => b.objective_id),
-    );
-    for (const objId of baselineObjIds) {
-        defs.set(
-            objId,
-            await getCurrentObjectiveDefinition(
-                ctx, objId,
-            ),
+        if (actSlider && !actSlider.disabled) {
+            const initial = Number(
+                actSlider.dataset['initialValue'],
+            );
+            const value = Number(actSlider.value);
+            if (value !== initial) {
+                actualMoves.push({
+                    objectiveId, score: value,
+                });
+            }
+        }
+    });
+    const ctx = createRequestContext();
+    if (baselineMoves.length > 0) {
+        await postProjectBaselineScoring(
+            ctx, projectId, baselineMoves,
         );
     }
-    const presenter = new MeasurementModalPresenter(
-        project, state, defs,
-        scoring.baseline, scoring.actual,
-    );
-    const bodyEl =
-        $('#measurement-modal-body', document);
-    if (bodyEl) {
-        setHtml(bodyEl, presenter.buildBody());
+    if (actualMoves.length > 0) {
+        await postProjectActualMeasurement(
+            ctx, projectId, actualMoves,
+        );
     }
-    openDialog('measurement');
 }
 
 function openApproveConfirmation(): void {
@@ -935,17 +877,17 @@ function openApproveConfirmation(): void {
     openDialog('approve');
 }
 
-function openCompleteConfirmation(): void {
+function openArchiveConfirmation(): void {
     const msgEl =
-        $('#complete-message', document);
+        $('#archive-message', document);
     if (msgEl) {
         msgEl.textContent =
-            'Mark this project as completed? '
+            'Archive this project? '
             + 'Every baseline-scored objective '
             + 'must have at least one actual '
             + 'measurement.';
     }
-    openDialog('complete');
+    openDialog('archive');
 }
 
 async function openHistoryModal(

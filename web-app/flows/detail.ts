@@ -342,7 +342,6 @@ async function reportOpFailure(
     commit({
         ...current,
         flowName: g.name,
-        flowDescription: g.description,
         isLocked: g.isLocked,
         lockTimeout: g.lockTimeout,
         nodes: g.nodes,
@@ -1208,36 +1207,12 @@ function bindPanelActions(
                     ),
                 );
             } else if (
-                id === 'prop-node-desc'
-            ) {
-                pageState.saveDebouncer().schedule(
-                    () => commit(
-                        pageState.presenter()
-                            .withNodeDescribed(
-                                value,
-                            ),
-                        { advanceHistory: true },
-                    ),
-                );
-            } else if (
                 id === 'prop-edge-name'
             ) {
                 pageState.saveDebouncer().schedule(
                     () => commit(
                         pageState.presenter()
                             .withEdgeNamed(value),
-                        { advanceHistory: true },
-                    ),
-                );
-            } else if (
-                id === 'prop-edge-desc'
-            ) {
-                pageState.saveDebouncer().schedule(
-                    () => commit(
-                        pageState.presenter()
-                            .withEdgeDescribed(
-                                value,
-                            ),
                         { advanceHistory: true },
                     ),
                 );

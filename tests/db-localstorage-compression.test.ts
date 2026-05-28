@@ -29,7 +29,6 @@ function installShim(): Map<string, string> {
 const baseVersion = {
     flow_id: 'flow-aaaaaaaaaaaaaaaaaaaa',
     name: 'Test Flow',
-    description: 'A test',
     is_locked: false,
     is_auto_layout: true,
     is_auto_fit: true,
@@ -45,7 +44,6 @@ const baseVersion = {
                 attributes: [],
                 positionX: 0,
                 positionY: 0,
-                description: '',
             },
         ],
         edges: [],
@@ -285,7 +283,6 @@ test(
         const flowRow = {
             id: 'flow-aaaaaaaaaaaaaaaaaaaa',
             name: 'Test',
-            description: '',
             is_locked: false,
             is_auto_layout: true,
             is_auto_fit: true,

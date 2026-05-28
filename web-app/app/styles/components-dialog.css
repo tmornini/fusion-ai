@@ -45,53 +45,6 @@
   }
 }
 
-.score-modal-body,
-.measurement-modal-body {
-  padding: var(--space-4);
-  min-width: 480px;
-}
-
-.score-slider-row,
-.measurement-slider-row {
-  display: grid;
-  grid-template-columns: 200px 1fr 60px;
-  align-items: center;
-  gap: 0.6em;
-  padding: 0.6em 0;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.score-slider-row:last-of-type,
-.measurement-slider-row:last-of-type {
-  border-bottom: none;
-}
-
-.score-slider-label strong {
-  display: block;
-}
-
-.score-slider-desc,
-.measurement-caption {
-  display: block;
-  font-size: 0.85em;
-  opacity: 0.7;
-}
-
-.score-slider {
-  width: 100%;
-}
-
-.score-slider.unset {
-  opacity: 0.4;
-}
-
-.score-hint {
-  grid-column: 1 / -1;
-  font-size: 0.85em;
-  color: hsl(var(--warning));
-  margin-top: 0.2em;
-}
-
 .modal-actions {
   display: flex;
   justify-content: flex-end;

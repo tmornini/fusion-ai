@@ -78,7 +78,6 @@ function buildNode(
     return {
         id,
         name,
-        description: '',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -97,7 +96,6 @@ function buildEdge(
     return {
         id,
         name: '',
-        description: '',
         fromNodeId,
         toNodeId,
     };
@@ -108,7 +106,6 @@ function buildFlow(
 ): Omit<FlowEntity, 'id'> {
     return {
         name: 'Test flow',
-        description: 't',
         is_locked: false,
         is_auto_layout: true,
         is_auto_fit: true,

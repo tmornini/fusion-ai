@@ -18,20 +18,20 @@ export class ProjectActionBarPresenter {
     readonly #projectId: Id;
     readonly #state: ProjectState;
     readonly #approvalCheck: Check;
-    readonly #completionCheck: Check;
+    readonly #archivalCheck: Check;
     readonly #objectiveNames: ObjectiveNames;
 
     constructor(
         projectId: Id,
         state: ProjectState,
         approvalCheck: Check,
-        completionCheck: Check,
+        archivalCheck: Check,
         objectiveNames: ObjectiveNames = new Map(),
     ) {
         this.#projectId = projectId;
         this.#state = state;
         this.#approvalCheck = approvalCheck;
-        this.#completionCheck = completionCheck;
+        this.#archivalCheck = archivalCheck;
         this.#objectiveNames = objectiveNames;
     }
 
@@ -51,7 +51,7 @@ export class ProjectActionBarPresenter {
                     ? this.#approvedActions()
                     : html``}
                 ${state === 'approved'
-                    || state === 'completed'
+                    || state === 'archived'
                     ? html`<button
                         data-action="view-history">
                         View history
@@ -73,17 +73,11 @@ export class ProjectActionBarPresenter {
 
     #reviewActions(): SafeHtml {
         const check = this.#approvalCheck;
-        const state = this.#state;
         const tooltip = check.ready
             ? ''
             : this.#namesFor(check.problems)
                 + ' unscored';
         return html`
-            ${state === 'under-review'
-                ? html`<button data-action="score">
-                    Score
-                  </button>`
-                : html``}
             <button data-action="approve" ${
                 check.ready ? '' : 'disabled'
             } title="${tooltip}">
@@ -99,20 +93,26 @@ export class ProjectActionBarPresenter {
     }
 
     #approvedActions(): SafeHtml {
-        const check = this.#completionCheck;
+        const check = this.#archivalCheck;
         const tooltip = check.ready
             ? ''
             : this.#namesFor(check.problems)
                 + ' lack actual measurements';
+        const caption = check.ready
+            ? html``
+            : html`<small
+                class="action-bar-caption"
+                data-tone="muted"
+              >${this.#namesFor(check.problems)
+                  + ' lack actual measurements'
+                  + ' before archival'}</small>`;
         return html`
-            <button data-action="log-measurement">
-                Log measurement
-            </button>
-            <button data-action="complete" ${
+            <button data-action="archive" ${
                 check.ready ? '' : 'disabled'
             } title="${tooltip}">
-                Complete
+                Archive
             </button>
+            ${caption}
         `;
     }
 }

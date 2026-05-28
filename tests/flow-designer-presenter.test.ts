@@ -15,7 +15,6 @@ import type {
 const emptyGraph = {
     id: 'flow-1',
     name: 'Test Flow',
-    description: '',
     isLocked: false,
     isAutoLayout: false,
     isAutoFit: false,
@@ -120,7 +119,6 @@ const node = (
 ) => ({
     id,
     name: id.toUpperCase(),
-    description: '',
     positionX: x,
     positionY: y,
     isCreate: false,

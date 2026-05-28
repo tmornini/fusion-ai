@@ -57,7 +57,6 @@ function buildNode(
     return {
         id,
         name: id,
-        description: '',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -76,7 +75,6 @@ function buildEdge(
     return {
         id,
         name: 'Transition',
-        description: '',
         fromNodeId,
         toNodeId,
     };
@@ -91,7 +89,6 @@ async function createBaseFlow(
         linkId: flowId + '-link',
         projectId: 'project-1',
         name: 'Test Flow',
-        description: 'desc',
     });
 }
 
@@ -150,7 +147,6 @@ test(
         await createBaseFlow(ctx, 'flow-1');
         await putFlow(ctx, 'flow-1', {
             name: 'Edited',
-            description: '',
             isLocked: false,
             isAutoLayout: false,
             isAutoFit: false,
@@ -187,7 +183,6 @@ test(
         );
         await putFlow(ctx, 'flow-1', {
             name: 'Renamed',
-            description: 'New description',
             isLocked: true,
             isAutoLayout: true,
             isAutoFit: true,
@@ -199,9 +194,6 @@ test(
             'flows/flow-1',
         );
         assert.equal(flow.name, 'Renamed');
-        assert.equal(
-            flow.description, 'New description',
-        );
         assert.equal(flow.is_locked, true);
         assert.equal(flow.is_auto_layout, true);
         assert.equal(flow.is_auto_fit, true);
@@ -227,7 +219,6 @@ test(
         const ab = buildEdge('ab', 'a', 'b');
         await putFlow(ctx, 'flow-1', {
             name: 'v1',
-            description: '',
             isLocked: false,
             isAutoLayout: false,
             isAutoFit: false,
@@ -237,7 +228,6 @@ test(
         });
         await putFlow(ctx, 'flow-1', {
             name: 'v2',
-            description: '',
             isLocked: false,
             isAutoLayout: false,
             isAutoFit: false,
@@ -271,7 +261,6 @@ test(
         ];
         await putFlow(ctx, 'flow-1', {
             name: 'caller-A',
-            description: '',
             isLocked: false,
             isAutoLayout: false,
             isAutoFit: false,
@@ -281,7 +270,6 @@ test(
         });
         await putFlow(ctx, 'flow-1', {
             name: 'caller-B',
-            description: '',
             isLocked: false,
             isAutoLayout: false,
             isAutoFit: false,

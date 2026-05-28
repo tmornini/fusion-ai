@@ -96,7 +96,6 @@ function buildFlow(
 ): Omit<FlowEntity, 'id'> {
     return {
         name: 'Flow ' + id,
-        description: '',
         is_locked: false,
         is_auto_layout: true,
         is_auto_fit: true,

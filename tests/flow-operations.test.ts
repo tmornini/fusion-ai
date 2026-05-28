@@ -70,7 +70,6 @@ function buildNode(
     return {
         id,
         name: id,
-        description: '',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -89,7 +88,6 @@ function buildEdge(
     return {
         id,
         name: 'Transition',
-        description: '',
         fromNodeId,
         toNodeId,
     };
@@ -114,7 +112,6 @@ function buildGraph(
     return {
         id: FLOW_ID,
         name: 'Test Flow',
-        description: '',
         isLocked: false,
         isAutoLayout: true,
         isAutoFit: true,
@@ -132,7 +129,6 @@ function buildFlowVersion(
         id: 'ver-1',
         flowId: FLOW_ID,
         name: 'Previous',
-        description: '',
         isLocked: false,
         isAutoLayout: true,
         isAutoFit: true,
@@ -218,7 +214,6 @@ async function setupFlow(): Promise<{
         linkId: FLOW_ID + '-link',
         projectId: 'project-1',
         name: 'Test Flow',
-        description: '',
     });
     return { db, ctx };
 }
@@ -1179,7 +1174,6 @@ test(
                 body: {
                     flow_id: FLOW_ID,
                     name: 'Test Flow',
-                    description: '',
                     is_locked: false,
                     is_auto_layout: true,
                     is_auto_fit: true,
