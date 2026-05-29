@@ -198,6 +198,12 @@ lose updates".
 - **`resize_window`** does not change the CSS viewport;
   responsive tests at specific widths (I10) cannot be driven.
   Inspect `responsive.css` manually to verify media queries.
+- **`prefers-reduced-motion`** cannot be emulated via the MCP;
+  the behavioral tier of the reduced-motion view-transition
+  test (I30) cannot be driven. Verify by source instead:
+  confirm the `::view-transition-*` neutralizing rule in
+  `base.css` / `responsive.css` (PASS = rule present). Observe
+  true suppression manually with OS reduced-motion enabled.
 - **File downloads** cannot write to disk from the MCP
   sandbox. Capture Blob content via `javascript_tool`
   intercepting `URL.createObjectURL` for validation.
@@ -272,10 +278,10 @@ last (they wipe the database). See `CLAUDE.md` section
 | FS. Flow Statistics | 9 |
 | G. Admin Pages | 27 |
 | H. Reference & System | 2 |
-| I. Cross-Cutting Concerns | 28 |
+| I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
-| **Total** | **324** |
+| **Total** | **326** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -285,8 +291,8 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |      984 |
-| Browser regression     |      324 |
-| **Combined TOTAL**     | **1308** |
+| Browser regression     |      326 |
+| **Combined TOTAL**     | **1310** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -306,8 +312,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1308, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1308).
+`PASS = 1310, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1310).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -1859,6 +1865,11 @@ feature is implemented.
   reload (cross-tab sync via StorageEvent on
   `fusion-sidebar-collapsed`).
 
+### Accessibility
+
+- [ ] **I29 — Skip link & `<main>` landmark** From a fresh load of any sidebar-layout page, press `Tab` once. PASS: the first focusable element is a "Skip to content" link (visually hidden until focused via the `.sr-only` pattern in `components-feedback.css`); pressing `Enter` moves focus past the sidebar and top-bar into the page body. Then confirm via `read_page`/`javascript_tool` that the content wrapper is a `<main id="main-content">` landmark (not a bare `<div class="page-content">`) and that the composed shell (`web-app/app/components-layout.html`) contains exactly one `<main>`. `Tab`/keyboard is MCP-driveable (see I15), so this is a PASS/FAIL case — not BLOCKED. Guards WCAG 2.4.1 Bypass Blocks (Level A).
+- [ ] **I30 — Reduced-motion view-transition guard** (behavioral drive BLOCKED — `prefers-reduced-motion` cannot be emulated via the MCP, the same class of limit as `resize_window`/I10). Structural verification is authoritative and PASS-able: read the `@media (prefers-reduced-motion: reduce)` block in `responsive.css` and the `::view-transition-*` rules in `base.css`, and confirm a rule neutralizes the page-content transition under reduced motion (e.g. `::view-transition-group(*)` / `::view-transition-old/new(*)` set `animation: none`) — the universal `*, *::before, *::after` reset does NOT reach view-transition pseudo-elements, which live in a separate tree rooted at `::view-transition`. PASS = the neutralizing rule is present and well-formed. Behavioral tier (BLOCKED): confirming `fade-in-up`'s `translateY` slide (`utilities.css:271`) is actually suppressed on navigation requires a human with OS-level reduced-motion enabled. Guards WCAG 2.3.3 Animation from Interactions (AAA).
+
 ---
 
 ## K. Objectives & Scoring
@@ -2181,7 +2192,7 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs   |   25 |       0 |    0 |
 | Agent-G       | G9–14,19–24,36–40 |    X |       0 |    0 |
-| Phase-3       | I1–I28            |    X |       Y |    Z |
+| Phase-3       | I1–I30            |    X |       Y |    Z |
 | Phase-4       | G30–G35           |    6 |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
 
