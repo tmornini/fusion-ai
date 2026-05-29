@@ -49,6 +49,7 @@ import {
 import type {
     InteractionState,
     FlowGestureContext,
+    FitBox,
 } from '../flow-interactions.ts';
 import {
     canUndoFlowEdits,
@@ -696,11 +697,8 @@ Auto Fit</label>
         );
     }
 
-    withFitReconciled(): FlowSnapshot {
-        if (!this.#snapshot.isAutoFit) {
-            return this.#snapshot;
-        }
-        this.#applyZoomToFit(this.#snapshot);
+    withFitToBox(box: FitBox): FlowSnapshot {
+        this.#applyFitToBox(this.#snapshot, box);
         return this.#snapshot;
     }
 
@@ -955,6 +953,12 @@ Auto Fit</label>
             })),
         );
         if (!box) return;
+        this.#applyFitToBox(snap, box);
+    }
+
+    #applyFitToBox(
+        snap: FlowSnapshot, box: FitBox,
+    ): void {
         const panelOffset = snap.isPanelOpen
             ? PANEL_WIDTH_PX : 0;
         const result = fitBoxToCanvas(
