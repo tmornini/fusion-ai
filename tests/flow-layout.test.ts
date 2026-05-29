@@ -327,7 +327,7 @@ test(
     'computeLayout: a real canvas does not upscale node'
     + ' spacing beyond the natural layout (fan)',
     () => {
-        // The camera (zoomToFit) fills the viewport; the
+        // The camera (fitBoxToCanvas) fills the viewport; the
         // layout must not stretch node spacing to fill.
         const nodes = [
             lin('s', { start: true }),

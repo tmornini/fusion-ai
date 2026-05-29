@@ -43,7 +43,8 @@ import {
     buildInteractionState,
     zoomIn as zoomInState,
     zoomOut as zoomOutState,
-    zoomToFit as zoomToFitState,
+    fitBoxToCanvas,
+    nodeBoundsBox,
 } from '../flow-interactions.ts';
 import type {
     InteractionState,
@@ -947,21 +948,21 @@ Auto Fit</label>
     }
 
     #applyZoomToFit(snap: FlowSnapshot): void {
-        const positions = snap.nodes.map(
-            n => ({
+        const box = nodeBoundsBox(
+            snap.nodes.map(n => ({
                 x: n.positionX,
                 y: n.positionY,
-            }),
+            })),
         );
+        if (!box) return;
         const panelOffset = snap.isPanelOpen
             ? PANEL_WIDTH_PX : 0;
-        const result = zoomToFitState(
-            positions,
+        const result = fitBoxToCanvas(
+            box,
             this.#canvasW,
             this.#canvasH,
             panelOffset,
         );
-        if (!result) return;
         snap.interaction.zoom = result.zoom;
         snap.interaction.viewBox =
             { ...result.viewBox };

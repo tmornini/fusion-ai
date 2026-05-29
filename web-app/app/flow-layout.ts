@@ -1017,10 +1017,10 @@ function fitToCanvas(
     const halfH = NODE_HEIGHT / 2;
 
     // No scaling: the layout keeps its comfortable density and
-    // the camera (zoomToFit) fills the viewport. Scaling node
-    // spacing against a fixed node size would stretch sparse
-    // graphs or overlap dense ones — so fit only rotates,
-    // mirrors, and centers.
+    // the camera (fitBoxToCanvas) fills the viewport. Scaling
+    // node spacing against a fixed node size would stretch
+    // sparse graphs or overlap dense ones — so fit only
+    // rotates, mirrors, and centers.
     const result = new Map<string, Position>();
     for (const [id, p] of positions) {
         const cx_p = p.x - posCx;
