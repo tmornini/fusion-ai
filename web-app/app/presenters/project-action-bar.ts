@@ -61,7 +61,8 @@ export class ProjectActionBarPresenter {
                 ${state === 'approved'
                     ? this.#approvedActions()
                     : html``}
-                <button data-action="view-history">
+                <button data-action="view-history"
+                    class="btn btn-outline">
                     View history
                 </button>
             </div>
@@ -87,13 +88,15 @@ export class ProjectActionBarPresenter {
         return html`
             <button data-action="approve" ${
                 check.ready ? '' : 'disabled'
-            } title="${tooltip}">
+            } class="btn btn-primary" title="${tooltip}">
                 Approve
             </button>
-            <button data-action="decline">
+            <button data-action="decline"
+                class="btn btn-outline">
                 Decline
             </button>
-            <button data-action="send-back">
+            <button data-action="send-back"
+                class="btn btn-outline">
                 Send back
             </button>
         `;
@@ -116,7 +119,7 @@ export class ProjectActionBarPresenter {
         return html`
             <button data-action="archive" ${
                 check.ready ? '' : 'disabled'
-            } title="${tooltip}">
+            } class="btn btn-outline" title="${tooltip}">
                 Archive
             </button>
             ${caption}

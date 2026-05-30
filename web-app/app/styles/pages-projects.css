@@ -11,12 +11,6 @@
   margin-top: var(--space-4);
 }
 
-.action-bar button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
 .action-bar-caption {
   flex-basis: 100%;
   font-size: var(--text-xs);
