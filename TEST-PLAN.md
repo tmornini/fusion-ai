@@ -358,7 +358,7 @@ on. Run these in order.
 - [ ] **AA4** Navigate to Workers (sidebar). Click "+ Add
   Worker". PASS: dialog opens with a Kind toggle (Human /
   AI, Human selected by default), a Human form below
-  showing First Name, Last Name, Email, Title, Department,
+  showing Name, Email, Title, Department,
   Phone, Bio, and an AI form (hidden by default) with
   Name, Provider, Description, and a required Auth Token
   password input plus a yellow security warning beginning
@@ -390,8 +390,8 @@ on. Run these in order.
 - [ ] **AA8** On Workers, click the current user's row.
   PASS: navigates to `worker-detail` for that human. Read
   mode shows avatar, name, status badge, title ·
-  department subtitle, Personal Information card (First
-  Name, Last Name, Email, Phone, Title, Department, Bio),
+  department subtitle, Personal Information card (Name,
+  Email, Phone, Title, Department, Bio),
   Working Styles card, and Strengths card.
 - [ ] **AA8a** From the Workers list, click any AI
   worker's row. PASS: navigates to `worker-detail` for
@@ -691,10 +691,11 @@ on. Run these in order.
 - [ ] **C7** Check that seed data populates all 4 dashboard
   surfaces (three arc-gauge cards + Aggregate Objectives
   box). PASS: no "No data" empty states on a fresh
-  mock-data load against the Phase 1 baseline (12 humans —
-  10 created + Tony Stark + System Worker bootstrap,
-  4 AIs, 11 ideas, 6 projects, 1 flow, 4 objectives; these
-  are the fresh-load seed counts and grow as you create).
+  mock-data load against the Phase 1 baseline (11 humans —
+  10 created + Tony Stark; the System worker authors seed
+  events but is excluded from the roster — 4 AIs, 11
+  ideas, 6 projects, 1 flow, 4 objectives; these are the
+  fresh-load seed counts and grow as you create).
 
 ---
 
@@ -1634,14 +1635,14 @@ the claude-in-chrome MCP.
   worker's row. PASS: navigates to `worker-detail`. Read
   mode shows avatar (initials), name + status badge,
   title · department subtitle, Personal Information card
-  (First Name, Last Name, Email, Phone, Title, Department,
+  (Name, Email, Phone, Title, Department,
   Bio), Working Styles card (4-axis dimensions surfaced
   under presentation labels Mover / Shaker / Prover /
   Maker, backed by data keys `driver` / `analytical` /
   `expressive` / `amiable`), and Strengths card.
 - [ ] **G20** Click Edit. PASS: header swaps Edit for
   Cancel/Save; Personal Information card switches to
-  inputs (First/Last Name text, Email email-input, Phone
+  inputs (Name text, Email email-input, Phone
   text, Title text, Department select, State select with
   HTML id `worker-state` per the `WORKER_STATES`
   alphabet, Bio textarea); Strengths card switches to a
@@ -1702,15 +1703,17 @@ restored data.)
 - [ ] **G32** Click "Create Pristine Environment", confirm
   the dialog. PASS: redirects to `dashboard/index.html`.
   Dashboard renders with zeroed-out metrics (empty
-  database except for bootstrap seed). Every table in
-  `TABLE_NAMES` is present as an empty array EXCEPT
-  `fusion-ai:workers` (holds System Worker + Tony Stark),
-  `fusion-ai:organization` (holds Stark Industries),
-  `fusion-ai:records` (2 seeded shapes: Customer
-  Profile, Project Brief), `fusion-ai:record_attributes`
-  (14 bootstrap attributes across both record shapes),
-  and `fusion-ai:states` (bootstrap state events for the
-  seeded entities). Source of truth:
+  database except for the required bootstrap seed). Every
+  table in `TABLE_NAMES` is present as an empty array
+  EXCEPT `fusion-ai:workers` (parent rows for the System
+  worker, `type` 'system', and Tony Stark, `type`
+  'human'), `fusion-ai:human_workers` (Tony Stark's
+  detail row), `fusion-ai:organization` (Stark
+  Industries), and `fusion-ai:states` (bootstrap state
+  events for those rows). NOTE: pristine seeds NO Records
+  — `fusion-ai:records` and `fusion-ai:record_attributes`
+  are empty like every other non-essential table. Source
+  of truth:
   `populateBootstrapData` in `api/mock-data.ts`. Empty
   `flow_versions` and other tables appear as `gz1:H4sI…`
   sentinels

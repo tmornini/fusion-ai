@@ -44,23 +44,39 @@ relationship dissolution = splice." History tables
 removal.
 
 **The `'system'` worker:** `SYSTEM_WORKER_ID = 'system'`
-in `api/types.ts` is a real `workers` row seeded by both
+in `api/types.ts` is a `workers` parent row with
+`type = 'system'` and no detail row, seeded by both
 `populateMockData` and `populateBootstrapData`. State
-events that have no specific user actor reference this
-worker.
+events with no specific user actor reference it. It is a
+pure event-author: `getWorkerMap` resolves it for
+authorship display, but the `getWorkers` roster — and
+every list, picker, and detail view — omits it.
 
 ## Core
 
 ### workers
 
-The humans table. The terminal lifecycle state is
-`'archived'`, recorded in the `states` log.
+The parent worker table: one row per worker holding the
+shared identity, the `type` discriminant, and the display
+`name`. Kind-specific detail lives in `human_workers` /
+`ai_workers`, keyed by the same id; a `'system'` worker
+is a parent row with no detail row. The terminal
+lifecycle state is `'archived'`, recorded in the `states`
+log.
 
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| first_name | TEXT |
-| last_name | TEXT |
+| type | TEXT (`human` \| `ai` \| `system`) |
+| name | TEXT |
+
+### human_workers
+
+Human detail, keyed by the shared worker id.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
 | email | TEXT |
 | title | TEXT |
 | department | TEXT |
@@ -71,20 +87,17 @@ The humans table. The terminal lifecycle state is
 
 ### ai_workers
 
-The AIs table. The terminal lifecycle state is
-`'archived'`, recorded in the `states` log. Per
-Commandment III (Uniformity), human and AI workers share
-the `WORKER_STATES` alphabet (`active`, `pending`,
-`archived`).
+AI detail, keyed by the shared worker id. Per Commandment
+III (Uniformity), all worker kinds share the
+`WORKER_STATES` alphabet (`active`, `pending`,
+`archived`), recorded in the `states` log.
 
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| name | TEXT |
 | provider | TEXT |
 | description | TEXT |
 | auth_token | TEXT |
-| created_at | TEXT |
 
 ### ideas
 
@@ -183,9 +196,9 @@ the flow. A work order's *state* at a node is recorded as
 that node's id (a base62 token) in the `states` log.
 
 `workerIds` is the set of WorkerId values that may operate
-on the node — zero or more, drawn from either workers or
-ai_workers (a unified WorkerId space; see
-`adapters/workers-union.ts`).
+on the node — zero or more, drawn from the human and AI
+workers (a unified WorkerId space rooted in the `workers`
+parent table; see `adapters/workers-union.ts`).
 
 `attributes` is the per-node attribute reference list. Each
 entry points at a `record_attributes.id`; absence from the
@@ -304,7 +317,7 @@ Singleton table (single row, `id = '1'`).
 |--------|------|
 | id | TEXT |
 | idea_id | TEXT (FK → ideas) |
-| worker_id | TEXT (FK → workers / ai_workers) |
+| worker_id | TEXT (FK → workers) |
 | at | TEXT |
 
 ### project_flows
@@ -400,7 +413,7 @@ lifecycle change in the system. One row, one fact.
 | id | TEXT | PRIMARY KEY (base62 token) |
 | entity_id | TEXT | Id of the entity this event concerns |
 | state | TEXT | A value from the entity's state alphabet |
-| worker_id | TEXT | FK → workers / ai_workers (actor) |
+| worker_id | TEXT | FK → workers (actor) |
 | at | TEXT | RFC-3339 Zulu — moment of the event |
 
 The latest event on `entity_id` by `at` (with `>=`
@@ -418,7 +431,7 @@ State alphabets by entity kind:
 - **projects** — `PROJECT_STATES` (7 values):
   `submitted`, `under-review`, `sent-back`, `approved`,
   `declined`, `archived`, `deleted`
-- **workers** (humans and AIs share one alphabet) —
+- **workers** (all kinds share one alphabet) —
   `WORKER_STATES` (3 values): `active`, `pending`,
   `archived`
 - **records** — `RECORD_STATES` (3 values): `active`,
