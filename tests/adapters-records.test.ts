@@ -17,21 +17,14 @@ import {
 import {
     jsonArrayField,
 } from '../api/types.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        title: 'Admin',
-        department: 'Product',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        phone: '',
-        bio: '',
-    });
+    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 test(

@@ -20,22 +20,9 @@ import type {
     ProjectEntity,
     ProjectObjectiveBaselineScore,
 } from '../api/types.ts';
-
-function buildPerson(id: string, name: string) {
-    return {
-        id,
-        first_name: name,
-        last_name: 'Test',
-        email: `${name}@example.com`
-            .toLowerCase(),
-        phone: '',
-        title: 'product_manager' as const,
-        strengths: '[]' as const,
-        team_dimensions: '{}' as const,
-        bio: '',
-        department: 'Product',
-    };
-}
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 function buildIdea(
     id: string, title: string,
@@ -64,18 +51,6 @@ async function seedIdeaState(
     );
 }
 
-async function seedWorkerState(
-    db: MemoryDbAdapter,
-    workerId: string,
-): Promise<void> {
-    await db.states.record(
-        `stw-${workerId}`,
-        workerId,
-        'active',
-        'system',
-    );
-}
-
 async function setupDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
@@ -88,10 +63,7 @@ async function setupDb(): Promise<{
 
 test('getIdeas returns ideas with submitter', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put('i1', buildIdea(
         'i1', 'First idea',
     ));
@@ -119,10 +91,7 @@ test('getIdeas returns ideas with submitter', async () => {
 
 test('getIdeas throws when idea has no submission', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put('i1', buildIdea(
         'i1', 'Orphan',
     ));
@@ -136,10 +105,7 @@ test('getIdeas throws when idea has no submission', async () => {
 
 test('getIdea finds submission for one idea', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put('i1', buildIdea(
         'i1', 'A',
     ));
@@ -158,10 +124,7 @@ test('getIdea finds submission for one idea', async () => {
 
 test('getIdea throws on missing submission', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put(
         'i1', buildIdea('i1', 'A'),
     );
@@ -187,10 +150,7 @@ test('putIdea persists changes', async () => {
 
 test('archived ideas are filtered from getIdeas', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put(
         'i1', buildIdea('i1', 'Keep'),
     );
@@ -221,11 +181,9 @@ test(
     + ' records the initial state event',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.workers.put(
-            'current',
-            buildPerson('current', 'Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo User',
         );
-        await seedWorkerState(db, 'current');
 
         await postIdeaCreation(
             ctx,
@@ -252,11 +210,9 @@ test(
     + ' without touching the idea row',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.workers.put(
-            'current',
-            buildPerson('current', 'Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo User',
         );
-        await seedWorkerState(db, 'current');
         await db.ideas.put(
             'i1', buildIdea('i1', 'Original'),
         );
@@ -286,11 +242,9 @@ test(
     + ' one atomic batch',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.workers.put(
-            'current',
-            buildPerson('current', 'Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo User',
         );
-        await seedWorkerState(db, 'current');
         await db.ideas.put(
             'i1', buildIdea('i1', 'First'),
         );
@@ -363,10 +317,7 @@ test(
 
 test('deleted ideas are filtered from getIdeas', async () => {
     const { db, ctx } = await setupDb();
-    await db.workers.put(
-        'u1', buildPerson('u1', 'Alice'),
-    );
-    await seedWorkerState(db, 'u1');
+    await seedHumanWorker(db, 'u1', 'Alice Test');
     await db.ideas.put(
         'i1', buildIdea('i1', 'Keep'),
     );

@@ -168,15 +168,8 @@ test(
             workers: [
                 {
                     id: 'u1',
-                    first_name: 'Alice',
-                    last_name: 'Adams',
-                    email: 'a@example.com',
-                    phone: '',
-                    title: 'product_manager',
-                    strengths: '[]',
-                    team_dimensions: '{}',
-                    bio: '',
-                    department: 'Product',
+                    type: 'human',
+                    name: 'Alice Adams',
                     rogue_field: 'invalid',
                 },
             ],
@@ -233,11 +226,9 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify({
-            workers: [
+            human_workers: [
                 {
                     id: 'u1',
-                    first_name: 'Alice',
-                    last_name: 'Adams',
                     email: 'a@example.com',
                     phone: '',
                     title: 'product_manager',
@@ -250,9 +241,9 @@ test(
         });
         await adapter.importSnapshot(json);
         const stored = map.get(
-            KEY_PREFIX + 'workers',
+            KEY_PREFIX + 'human_workers',
         );
-        assert.ok(stored, 'users should persist');
+        assert.ok(stored, 'humans should persist');
     },
 );
 
@@ -307,15 +298,8 @@ test(
             new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.workers.put('u1', {
-            first_name: 'Alice',
-            last_name: 'Adams',
-            email: 'a@example.com',
-            phone: '',
-            title: 'product_manager',
-            strengths: '[]' as never,
-            team_dimensions: '{}' as never,
-            bio: '',
-            department: 'Product',
+            type: 'human',
+            name: 'Alice Adams',
         });
         await adapter.createSchema();
         const workers = await adapter.workers.getAll();

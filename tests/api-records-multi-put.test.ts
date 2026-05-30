@@ -7,28 +7,14 @@ import {
 import {
     jsonArrayField,
 } from '../api/types.ts';
-
-function buildCurrentWorkerRow() {
-    return {
-        id: 'current',
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'product_manager',
-        strengths: '[]' as const,
-        team_dimensions: '{}' as const,
-        bio: '',
-        department: 'Product',
-    };
-}
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put(
-        'current', buildCurrentWorkerRow(),
-    );
+    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 // ── Create variant ──────

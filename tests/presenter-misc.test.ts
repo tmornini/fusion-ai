@@ -26,11 +26,14 @@ import { orderedKeys } from
     '../web-app/app/presenters/ordered-keys.ts';
 import {
     HumanWorker, AIWorker, nowUtc,
-    jsonArrayField, jsonObjectField,
 } from '../api/types.ts';
 import type {
     GraphNode, GraphEdge,
 } from '../api/types.ts';
+import {
+    makeHumanWorker as buildHumanWorker,
+    makeAIWorker as buildAIWorker,
+} from './worker-fixtures.ts';
 
 // helpers
 
@@ -134,26 +137,11 @@ function makeEdge(
 function makeHumanWorker(
     id: string, first: string, last: string,
 ): HumanWorker {
-    return new HumanWorker({
-        id,
-        first_name: first,
-        last_name: last,
-        email: `${first}@example.com`.toLowerCase(),
-        title: 'Engineer',
-        department: 'Eng',
-        strengths: jsonArrayField([]),
-        team_dimensions: jsonObjectField({}),
-        phone: '',
-        bio: '',
-    }, 'active');
+    return buildHumanWorker(id, `${first} ${last}`);
 }
 
 function makeAIWorker(id: string, name: string): AIWorker {
-    return new AIWorker({
-        id, name, provider: 'anthropic',
-        description: '',
-        auth_token: 'sk-test-XXXX',
-    }, 'active');
+    return buildAIWorker(id, name);
 }
 
 function noUnknownMagic(s: string): void {

@@ -12,21 +12,14 @@ import {
 import {
     getProjectState,
 } from '../web-app/app/adapters/state-events.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'Admin',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        bio: '',
-        department: 'Product',
-    });
+    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 const SAMPLE_PROJECT_BODY = {

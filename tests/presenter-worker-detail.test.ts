@@ -91,31 +91,46 @@ function makeRecordingContainer(): {
 }
 
 function makeHumanWorker() {
-    return new HumanWorker({
-        id: 'hw_1',
-        first_name: 'Sarah',
-        last_name: 'Chen',
-        email: 'sarah@example.com',
-        title: 'Engineer',
-        department: 'Engineering',
-        strengths: jsonArrayField(['Leadership']),
-        team_dimensions: jsonObjectField({
-            driver: 60, analytical: 40,
-            expressive: 30, amiable: 50,
-        }),
-        phone: '555-0100',
-        bio: 'Builds things.',
-    }, 'active');
+    return new HumanWorker(
+        {
+            id: 'hw_1',
+            type: 'human',
+            name: 'Sarah Chen',
+        },
+        {
+            id: 'hw_1',
+            email: 'sarah@example.com',
+            title: 'Engineer',
+            department: 'Engineering',
+            strengths: jsonArrayField(['Leadership']),
+            team_dimensions: jsonObjectField({
+                driver: 60, analytical: 40,
+                expressive: 30, amiable: 50,
+            }),
+            phone: '555-0100',
+            bio: 'Builds things.',
+        },
+        'active',
+    );
 }
 
 function makeAIWorker() {
-    return new AIWorker({
-        id: 'ai_1',
-        name: 'Claude Opus 4.7 Max',
-        provider: 'Anthropic',
-        description: 'Long context, deep reasoning.',
-        auth_token: 'sk-PLACEHOLDER-DEMOTOKEN-XYZ4',
-    }, 'active');
+    return new AIWorker(
+        {
+            id: 'ai_1',
+            type: 'ai',
+            name: 'Claude Opus 4.7 Max',
+        },
+        {
+            id: 'ai_1',
+            provider: 'Anthropic',
+            description:
+                'Long context, deep reasoning.',
+            auth_token:
+                'sk-PLACEHOLDER-DEMOTOKEN-XYZ4',
+        },
+        'active',
+    );
 }
 
 test(

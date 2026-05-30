@@ -1,5 +1,6 @@
 import { TABLE_NAMES } from './db.ts';
 import {
+    validateWorkerEntity,
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
     validateIdeaEntity,
@@ -38,6 +39,9 @@ function validateSnapshotRow(
     try {
         switch (table) {
             case 'workers':
+                validateWorkerEntity(body);
+                break;
+            case 'human_workers':
                 validateHumanWorkerEntity(body);
                 break;
             case 'ai_workers':

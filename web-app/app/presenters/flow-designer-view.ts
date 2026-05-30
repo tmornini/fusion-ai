@@ -190,8 +190,8 @@ class="text-xs text-muted"
     const lockAttr =
         trusted(isLocked ? ' disabled' : '');
     const sortedHumans = [...humans].sort(
-        (a, b) => a.fullName().localeCompare(
-            b.fullName(),
+        (a, b) => a.name().localeCompare(
+            b.name(),
         ),
     );
     const sortedAis = [...ais].sort(
@@ -203,7 +203,7 @@ class="text-xs text-muted"
     const humanCheckboxes = sortedHumans.map(
         h => buildWorkerCheckbox(
             h.idForLink(),
-            h.fullName(),
+            h.name(),
             assigned.has(h.idForLink()),
             isLocked,
         ),

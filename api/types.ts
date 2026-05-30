@@ -7,7 +7,7 @@ export type Id = string;
 
 export type WorkerId = Id;
 
-export type WorkerKind = 'human' | 'ai';
+export type WorkerKind = 'human' | 'ai' | 'system';
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
@@ -392,10 +392,21 @@ export interface StateEntity {
 
 export const SYSTEM_WORKER_ID: Id = 'system';
 
+// Parent row: a worker's shared identity. The kind
+// discriminant and display name live here; kind-specific
+// detail lives in human_workers / ai_workers keyed by the
+// same id. A 'system' worker is a parent row with no
+// detail row — absence of a detail row models "no kind-
+// specific attributes".
+export interface WorkerEntity {
+    id: WorkerId;
+    type: WorkerKind;
+    name: string;
+}
+
+// human_workers detail row, keyed by the shared worker id.
 export interface HumanWorkerEntity {
     id: WorkerId;
-    first_name: string;
-    last_name: string;
     email: string;
     title: string;
     department: string;
@@ -408,8 +419,7 @@ export interface HumanWorkerEntity {
 export class HumanWorker {
     readonly kind = 'human' as const;
     readonly #id: WorkerId;
-    readonly #firstName: string;
-    readonly #lastName: string;
+    readonly #name: string;
     readonly #email: string;
     readonly #title: string;
     readonly #department: string;
@@ -420,48 +430,31 @@ export class HumanWorker {
     readonly #bio: string;
 
     constructor(
-        entity: HumanWorkerEntity,
+        parent: WorkerEntity,
+        detail: HumanWorkerEntity,
         state: WorkerState,
     ) {
-        this.#id = entity.id;
-        this.#firstName =
-            entity.first_name;
-        this.#lastName =
-            entity.last_name;
-        this.#email = entity.email;
-        this.#title = entity.title;
+        this.#id = parent.id;
+        this.#name = parent.name;
+        this.#email = detail.email;
+        this.#title = detail.title;
         this.#department =
-            entity.department;
+            detail.department;
         this.#state = state;
         this.#strengths =
-            entity.strengths;
+            detail.strengths;
         this.#teamDimensions =
-            entity.team_dimensions;
-        this.#phone = entity.phone;
-        this.#bio = entity.bio;
+            detail.team_dimensions;
+        this.#phone = detail.phone;
+        this.#bio = detail.bio;
     }
 
     idForLink(): string {
         return this.#id;
     }
 
-    firstNameText(): string {
-        return this.#firstName;
-    }
-
-    lastNameText(): string {
-        return this.#lastName;
-    }
-
-    fullName(): string {
-        return (
-            `${this.#firstName}`
-            + ` ${this.#lastName}`
-        ).trim();
-    }
-
     name(): string {
-        return this.fullName();
+        return this.#name;
     }
 
     titleLabel(): string {
@@ -536,7 +529,7 @@ export class HumanWorker {
     matchesSearch(term: string): boolean {
         const lowerTerm = term.toLowerCase();
         return (
-            this.fullName()
+            this.#name
                 .toLowerCase()
                 .includes(lowerTerm)
             || this.#email
@@ -553,9 +546,9 @@ export class HumanWorker {
 
 }
 
+// ai_workers detail row, keyed by the shared worker id.
 export interface AIWorkerEntity {
     id: WorkerId;
-    name: string;
     provider: string;
     description: string;
     auth_token: string;
@@ -571,16 +564,17 @@ export class AIWorker {
     readonly #state: WorkerState;
 
     constructor(
-        entity: AIWorkerEntity,
+        parent: WorkerEntity,
+        detail: AIWorkerEntity,
         state: WorkerState,
     ) {
-        this.#id = entity.id;
-        this.#name = entity.name;
-        this.#provider = entity.provider;
+        this.#id = parent.id;
+        this.#name = parent.name;
+        this.#provider = detail.provider;
         this.#description =
-            entity.description;
+            detail.description;
         this.#authToken =
-            entity.auth_token;
+            detail.auth_token;
         this.#state = state;
     }
 
@@ -658,7 +652,61 @@ export class AIWorker {
     }
 }
 
-export type Worker = HumanWorker | AIWorker;
+// System worker: a synthetic, read-only actor — the
+// platform itself as the author of seed-time state
+// events. Exactly one exists; it has a parent row
+// (type 'system') and no detail row, and no lifecycle
+// a user manages, so it carries only identity + state.
+export class SystemWorker {
+    readonly kind = 'system' as const;
+    readonly #id: WorkerId;
+    readonly #name: string;
+    readonly #state: WorkerState;
+
+    constructor(
+        parent: WorkerEntity,
+        state: WorkerState,
+    ) {
+        this.#id = parent.id;
+        this.#name = parent.name;
+        this.#state = state;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    name(): string {
+        return this.#name;
+    }
+
+    stateValue(): WorkerState {
+        return this.#state;
+    }
+
+    stateLabel(): string {
+        return (
+            WORKER_STATE_CONFIG[this.#state]
+        )!.label;
+    }
+
+    stateClassName(): string {
+        return (
+            WORKER_STATE_CONFIG[this.#state]
+        )!.className;
+    }
+
+    matchesSearch(term: string): boolean {
+        return this.#name
+            .toLowerCase()
+            .includes(term.toLowerCase());
+    }
+}
+
+export type Worker =
+    | HumanWorker
+    | AIWorker
+    | SystemWorker;
 
 export function isHumanWorker(
     w: Worker,
@@ -670,6 +718,12 @@ export function isAIWorker(
     w: Worker,
 ): w is AIWorker {
     return w.kind === 'ai';
+}
+
+export function isSystemWorker(
+    w: Worker,
+): w is SystemWorker {
+    return w.kind === 'system';
 }
 
 export interface IdeaEntity {

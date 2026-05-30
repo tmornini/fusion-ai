@@ -26,16 +26,13 @@ async function seedSystemWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
     await db.workers.put(SYSTEM_WORKER_ID, {
-        first_name: 'System',
-        last_name: '',
-        email: 'system@example.com',
-        title: 'System',
-        department: '',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        phone: '',
-        bio: '',
+        type: 'system',
+        name: 'System Worker',
     });
+    await db.states.record(
+        'st-system', SYSTEM_WORKER_ID, 'active',
+        'system',
+    );
 }
 
 function buildNode(

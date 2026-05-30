@@ -27,11 +27,13 @@ import {
     SnapshotIncompatibleError,
 } from '../web-app/app/adapters/snapshots.ts';
 
-function buildWorker(id: string, first: string) {
+// A human_workers detail row in the post-normalization
+// shape (no name — that lives on the parent workers row).
+// The snapshot round-trip carries the human_workers table,
+// so these import / export tests exercise it directly.
+function buildHumanDetail(id: string, first: string) {
     return {
         id,
-        first_name: first,
-        last_name: 'User',
         email: `${first}@example.com`.toLowerCase(),
         phone: '',
         title: 'product_manager',
@@ -89,11 +91,15 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify({
-            workers: [buildWorker('u1', 'Alice')],
+            human_workers: [
+                buildHumanDetail('u1', 'Alice'),
+            ],
         }));
-        const rows = await db.workers.getAll();
+        const rows = await db.humanWorkers.getAll();
         assert.equal(rows.length, 1);
-        assert.equal(rows[0]?.first_name, 'Alice');
+        assert.equal(
+            rows[0]?.email, 'alice@example.com',
+        );
     },
 );
 
@@ -102,13 +108,15 @@ test(
     async () => {
         const { ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify({
-            workers: [buildWorker('u1', 'Alice')],
+            human_workers: [
+                buildHumanDetail('u1', 'Alice'),
+            ],
         }));
         const parsed =
             JSON.parse(await getSnapshot(ctx));
-        assert.equal(parsed.workers.length, 1);
+        assert.equal(parsed.human_workers.length, 1);
         assert.equal(
-            parsed.workers[0].id, 'u1',
+            parsed.human_workers[0].id, 'u1',
         );
     },
 );
@@ -119,15 +127,19 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify({
-            workers: [buildWorker('u1', 'Alice')],
+            human_workers: [
+                buildHumanDetail('u1', 'Alice'),
+            ],
         }));
         await putSnapshot(ctx, JSON.stringify({
-            workers: [buildWorker('u2', 'Bob')],
+            human_workers: [
+                buildHumanDetail('u2', 'Bob'),
+            ],
         }));
-        const rows = await db.workers.getAll();
+        const rows = await db.humanWorkers.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u2');
-        assert.equal(rows[0]?.first_name, 'Bob');
+        assert.equal(rows[0]?.email, 'bob@example.com');
     },
 );
 
@@ -138,15 +150,19 @@ test(
         const { db, ctx } = await setup();
         const file = new File(
             [JSON.stringify({
-                workers: [buildWorker('u1', 'Alice')],
+                human_workers: [
+                    buildHumanDetail('u1', 'Alice'),
+                ],
             })],
             'snapshot.json',
             { type: 'application/json' },
         );
         await putSnapshotFromFile(ctx, file);
-        const rows = await db.workers.getAll();
+        const rows = await db.humanWorkers.getAll();
         assert.equal(rows.length, 1);
-        assert.equal(rows[0]?.first_name, 'Alice');
+        assert.equal(
+            rows[0]?.email, 'alice@example.com',
+        );
     },
 );
 
@@ -191,9 +207,9 @@ test(
 
 test('postSchemaCreation keeps existing data', async () => {
     const { db, ctx } = await setup();
-    await db.workers.put(
-        'u1', buildWorker('u1', 'Alice'),
-    );
+    await db.workers.put('u1', {
+        type: 'human', name: 'Alice Adams',
+    });
     await postSchemaCreation(ctx);
     const rows = await db.workers.getAll();
     assert.equal(rows.length, 1);
@@ -201,9 +217,9 @@ test('postSchemaCreation keeps existing data', async () => {
 
 test('deleteSchema clears all table contents', async () => {
     const { db, ctx } = await setup();
-    await db.workers.put(
-        'u1', buildWorker('u1', 'Alice'),
-    );
+    await db.workers.put('u1', {
+        type: 'human', name: 'Alice Adams',
+    });
     await deleteSchema(ctx);
     assert.equal(await db.hasSchema(), false);
 });

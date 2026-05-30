@@ -7,6 +7,10 @@ import {
 import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
+import {
+    seedHumanWorker,
+    seedAIWorker,
+} from './worker-fixtures.ts';
 
 test('GET on unknown route throws', async () => {
     const db = new MemoryDbAdapter();
@@ -68,17 +72,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.workers.put('hw_1', {
-            first_name: 'Sarah',
-            last_name: 'Chen',
-            email: 'sarah@example.com',
-            phone: '',
-            title: 'Engineer',
-            department: 'Eng',
-            strengths: '[]' as never,
-            team_dimensions: '{}' as never,
-            bio: '',
-        });
+        await seedHumanWorker(db, 'hw_1', 'Sarah Chen');
         const workers =
             await GET<unknown[]>(db, 'workers');
         assert.equal(workers.length, 1);
@@ -90,12 +84,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.aiWorkers.put('ai_1', {
-            name: 'Opus',
-            provider: 'Anthropic',
-            description: '',
-            auth_token: 'sk-real-token',
-        });
+        await seedAIWorker(db, 'ai_1', 'Opus');
         const ais =
             await GET<unknown[]>(db, 'ai-workers');
         assert.equal(ais.length, 1);

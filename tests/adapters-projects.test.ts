@@ -23,6 +23,9 @@ import type {
     ProjectEntity,
     ProjectState,
 } from '../api/types.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 function buildProject(
     id: string,
@@ -258,20 +261,7 @@ test(
 async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        title: 'Admin',
-        department: 'Product',
-        strengths: '[]' as const,
-        team_dimensions: '{}' as const,
-        phone: '',
-        bio: '',
-    });
-    await db.states.record(
-        'st-current', 'current', 'active', 'system',
-    );
+    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 test(

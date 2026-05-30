@@ -28,6 +28,9 @@ import type {
 import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -35,17 +38,7 @@ async function setupMemDb(): Promise<{
 }> {
     const db = new MemoryDbAdapter();
     await db.createSchema();
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'Admin',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        bio: '',
-        department: 'Product',
-    });
+    await seedHumanWorker(db, 'current', 'Demo User');
     const ctx = createRequestContext(db);
     return { db, ctx };
 }

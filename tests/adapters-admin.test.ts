@@ -12,9 +12,9 @@ import {
 } from '../web-app/app/adapters/admin.ts';
 import type {
     ProjectEntity, IdeaEntity,
-    HumanWorkerEntity,
-    JsonArrayField, JsonObjectField,
+    WorkerState,
 } from '../api/types.ts';
+import { seedHumanWorker } from './worker-fixtures.ts';
 
 async function setupDb(): Promise<{
     db: MemoryDbAdapter;
@@ -55,23 +55,6 @@ function buildIdea(
     };
 }
 
-function buildWorker(
-    id: string,
-): Omit<HumanWorkerEntity, 'id'> {
-    return {
-        first_name: 'F-' + id,
-        last_name: 'L',
-        email: id + '@x.test',
-        title: 'product_manager',
-        department: 'Product',
-        strengths: '[]' as JsonArrayField,
-        team_dimensions:
-            '{}' as JsonObjectField,
-        phone: '',
-        bio: '',
-    };
-}
-
 async function seedProject(
     db: MemoryDbAdapter,
     id: string, state: string,
@@ -100,11 +83,10 @@ async function seedIdea(
 
 async function seedWorker(
     db: MemoryDbAdapter,
-    id: string, state: string,
+    id: string, state: WorkerState,
 ): Promise<void> {
-    await db.workers.put(id, buildWorker(id));
-    await db.states.record(
-        'sw-' + id, id, state, 'system',
+    await seedHumanWorker(
+        db, id, 'Worker ' + id, state,
     );
 }
 

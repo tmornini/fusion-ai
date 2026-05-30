@@ -6,6 +6,7 @@ import type {
     StateStore as IStateStore,
 } from './db.ts';
 import type {
+    WorkerEntity,
     HumanWorkerEntity,
     AIWorkerEntity,
     IdeaEntity,
@@ -39,6 +40,7 @@ import { StateStore } from './store-state.ts';
 import {
     validateBaselineScoreEntity,
     validateActualScoreEntity,
+    validateWorkerEntity,
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
     validateIdeaEntity,
@@ -60,7 +62,9 @@ import {
 export class MemoryDbAdapter implements DbAdapter {
     readonly #backend: MemoryStorageBackend;
 
-    readonly workers: IEntityStore<HumanWorkerEntity>;
+    readonly workers: IEntityStore<WorkerEntity>;
+    readonly humanWorkers:
+        IEntityStore<HumanWorkerEntity>;
     readonly aiWorkers: IEntityStore<AIWorkerEntity>;
     readonly ideas: IEntityStore<IdeaEntity>;
     readonly projects: IEntityStore<ProjectEntity>;
@@ -108,6 +112,11 @@ export class MemoryDbAdapter implements DbAdapter {
         this.workers =
             new EntityStore(
                 'workers', backend, stateStore,
+                validateWorkerEntity,
+            );
+        this.humanWorkers =
+            new EntityStore(
+                'human_workers', backend, stateStore,
                 validateHumanWorkerEntity,
             );
         this.aiWorkers =

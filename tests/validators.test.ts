@@ -19,8 +19,6 @@ import {
 // --- HumanWorkerEntity ---
 
 const validHumanWorker = {
-    first_name: 'Ada',
-    last_name: 'Lovelace',
     email: 'ada@example.com',
     title: 'Engineer',
     department: 'R&D',
@@ -36,7 +34,7 @@ test(
         const result = validateHumanWorkerEntity(
             validHumanWorker,
         );
-        assert.equal(result.first_name, 'Ada');
+        assert.equal(result.email, 'ada@example.com');
     },
 );
 
@@ -88,10 +86,10 @@ test(
         const body = { ...validHumanWorker };
         delete (
             body as Record<string, unknown>
-        )['last_name'];
+        )['department'];
         assert.throws(
             () => validateHumanWorkerEntity(body),
-            /missing required key "last_name"/,
+            /missing required key "department"/,
         );
     },
 );
@@ -99,7 +97,6 @@ test(
 // --- AIWorkerEntity ---
 
 const validAIWorker = {
-    name: 'Claude Opus 4.7 Max',
     provider: 'Anthropic',
     description: 'Long context, deep reasoning.',
     auth_token: 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
@@ -111,10 +108,11 @@ test(
         const result = validateAIWorkerEntity(
             validAIWorker,
         );
-        assert.equal(
-            result.name, 'Claude Opus 4.7 Max',
-        );
         assert.equal(result.provider, 'Anthropic');
+        assert.equal(
+            result.description,
+            'Long context, deep reasoning.',
+        );
         assert.equal(
             result.auth_token,
             'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
@@ -149,13 +147,13 @@ test(
 );
 
 test(
-    'validateAIWorkerEntity rejects missing name',
+    'validateAIWorkerEntity rejects missing provider',
     () => {
-        const { name: _omit, ...rest } =
+        const { provider: _omit, ...rest } =
             validAIWorker;
         assert.throws(
             () => validateAIWorkerEntity(rest),
-            /missing required key "name"/,
+            /missing required key "provider"/,
         );
     },
 );

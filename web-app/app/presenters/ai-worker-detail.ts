@@ -16,7 +16,7 @@ import {
     AIWorker,
     WORKER_STATE_CONFIG,
     isWorkerState,
-    type AIWorkerEntity,
+    type AIWorkerDraft,
     type WorkerState,
 } from '../adapters/index.ts';
 
@@ -77,12 +77,8 @@ export function aiWorkerDraftFromWorker(
 // an empty token).
 export function aiWorkerPatchFromDraft(
     draft: AIWorkerDraftFields,
-): Partial<
-    Pick<AIWorkerEntity,
-        | 'name' | 'provider'
-        | 'description' | 'auth_token'>
-> {
-    const base: Partial<AIWorkerEntity> = {
+): Partial<AIWorkerDraft> {
+    const base: Partial<AIWorkerDraft> = {
         name: draft.name,
         provider: draft.provider,
         description: draft.description,

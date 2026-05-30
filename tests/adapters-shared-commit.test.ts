@@ -9,11 +9,10 @@ import {
     createChannel,
 } from '../web-app/app/channels.ts';
 
-function buildAIWorkerBody(name: string) {
+function buildAIWorkerBody(description: string) {
     return {
-        name,
         provider: 'Anthropic',
-        description: '',
+        description,
         auth_token: 'sk-test-XXXX',
     };
 }
@@ -153,7 +152,8 @@ test(
         // No rollback: first op landed.
         const all = await db.aiWorkers.getAll();
         assert.equal(all.length, 1);
-        assert.equal(all[0]!.name, 'A');
+        assert.equal(all[0]!.id, 'ai_1');
+        assert.equal(all[0]!.description, 'A');
         // Channel did NOT fire.
         assert.equal(count, 0);
     },

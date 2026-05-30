@@ -20,6 +20,9 @@ import {
 import {
     computeNewPosition,
 } from '../web-app/app/drag-reorder-positions.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);
@@ -28,17 +31,7 @@ function ctxFor(db: MemoryDbAdapter) {
 async function seedCurrentWorker(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'Admin',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        bio: '',
-        department: 'Product',
-    });
+    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 test('getObjective returns a single row', async () => {

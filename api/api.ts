@@ -22,6 +22,7 @@ import type {
     RecordAttributeEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
+    WorkerEntity,
 } from './types.ts';
 import {
     validateOrganizationEntity,
@@ -185,6 +186,22 @@ const routes: Route[] = [
                 param(p, 0),
                 withoutId(payload) as unknown as Omit<
                     AIWorkerEntity, 'id'
+                >,
+            ),
+    }),
+    route('human-workers', {
+        get: (db) => db.humanWorkers.getAll(),
+    }),
+    route('human-workers/:id', {
+        get: (db, p) =>
+            db.humanWorkers.getById(
+                param(p, 0),
+            ),
+        put: (db, p, payload) =>
+            db.humanWorkers.put(
+                param(p, 0),
+                withoutId(payload) as unknown as Omit<
+                    HumanWorkerEntity, 'id'
                 >,
             ),
     }),
@@ -387,7 +404,7 @@ const routes: Route[] = [
             db.workers.put(
                 param(p, 0),
                 withoutId(payload) as unknown as Omit<
-                    HumanWorkerEntity, 'id'
+                    WorkerEntity, 'id'
                 >,
             ),
     }),

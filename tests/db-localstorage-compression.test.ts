@@ -4,7 +4,6 @@ import {
     LocalStorageDbAdapter,
 } from '../api/db-localstorage.ts';
 import {
-    jsonArrayField,
     jsonObjectField,
 } from '../api/types.ts';
 
@@ -123,16 +122,8 @@ test(
         );
         await Promise.all(
             ids.map(id => adapter.workers.put(id, {
-                first_name: 'F' + id,
-                last_name: 'L' + id,
-                email: id + '@example.com',
-                title: 'member',
-                department: 'eng',
-                strengths: jsonArrayField([]),
-                team_dimensions:
-                    jsonObjectField({}),
-                phone: '',
-                bio: '',
+                type: 'human',
+                name: 'Worker ' + id,
             })),
         );
         const all = await adapter.workers.getAll();
@@ -185,15 +176,8 @@ test(
         const adapter = new LocalStorageDbAdapter();
         await adapter.createSchema();
         await adapter.workers.put('u1', {
-            first_name: 'Alice',
-            last_name: 'Adams',
-            email: 'alice@example.com',
-            phone: '',
-            title: 'product_manager',
-            strengths: jsonArrayField([]),
-            team_dimensions: jsonObjectField({}),
-            bio: '',
-            department: 'Product',
+            type: 'human',
+            name: 'Alice Adams',
         });
         const stored = map.get(KEY_PREFIX + 'workers');
         assert.ok(stored, 'expected stored people value');

@@ -9,6 +9,7 @@ import type {
     WorkerId,
     JsonArrayField,
     JsonObjectField,
+    WorkerEntity,
     HumanWorkerEntity,
     AIWorkerEntity,
     IdeaEntity,
@@ -563,9 +564,36 @@ export function assertOnlyKeys(
 
 // ── Entity validators ────────────────
 
+const WORKER_BODY_KEYS: readonly string[] = [
+    'type', 'name',
+];
+
+export function validateWorkerEntity(
+    body: Record<string, unknown>,
+): Omit<WorkerEntity, 'id'> {
+    assertOnlyKeys(
+        body, WORKER_BODY_KEYS, 'WorkerEntity',
+    );
+    const type = pickString(body, 'type');
+    if (
+        type !== 'human'
+        && type !== 'ai'
+        && type !== 'system'
+    ) {
+        throw new Error(
+            'invalid worker type "' + type
+            + '" on WorkerEntity',
+        );
+    }
+    return {
+        type,
+        name: pickString(body, 'name'),
+    };
+}
+
 const HUMAN_WORKER_BODY_KEYS:
     readonly string[] = [
-    'first_name', 'last_name', 'email',
+    'email',
     'title', 'department',
     'strengths', 'team_dimensions',
     'phone', 'bio',
@@ -580,12 +608,6 @@ export function validateHumanWorkerEntity(
         'HumanWorkerEntity',
     );
     return {
-        first_name: pickString(
-            body, 'first_name',
-        ),
-        last_name: pickString(
-            body, 'last_name',
-        ),
         email: pickString(
             body, 'email',
         ),
@@ -612,7 +634,7 @@ export function validateHumanWorkerEntity(
 
 const AI_WORKER_BODY_KEYS:
     readonly string[] = [
-    'name', 'provider', 'description',
+    'provider', 'description',
     'auth_token',
 ];
 
@@ -640,9 +662,6 @@ export function validateAIWorkerEntity(
         );
     }
     return {
-        name: pickString(
-            body, 'name',
-        ),
         provider: pickString(
             body, 'provider',
         ),

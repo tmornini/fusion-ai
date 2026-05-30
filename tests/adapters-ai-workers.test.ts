@@ -9,39 +9,10 @@ import {
 import {
     postAIWorkerStateChange,
 } from '../web-app/app/adapters/ai-workers.ts';
-import type {
-    AIWorkerEntity,
-} from '../api/types.ts';
-
-function buildAIWorker(
-    name: string,
-): Omit<AIWorkerEntity, 'id'> {
-    return {
-        name,
-        provider: 'Anthropic',
-        description: '',
-        auth_token: 'sk-test-PLACEHOLDER',
-    };
-}
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        title: 'Engineer',
-        department: 'Product',
-        strengths: '[]' as const,
-        team_dimensions: '{}' as const,
-        phone: '',
-        bio: '',
-    });
-    await db.states.record(
-        'st-current', 'current', 'active', 'system',
-    );
-}
+import {
+    seedHumanWorker,
+    seedAIWorker,
+} from './worker-fixtures.ts';
 
 test(
     'postAIWorkerStateChange records a state event'
@@ -49,13 +20,8 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await seedCurrentWorker(db);
-        await db.aiWorkers.put(
-            'ai1', buildAIWorker('Claude'),
-        );
-        await db.states.record(
-            'st-ai1', 'ai1', 'active', 'system',
-        );
+        await seedHumanWorker(db, 'current', 'Demo User');
+        await seedAIWorker(db, 'ai1', 'Claude');
         const before =
             await db.aiWorkers.getById('ai1');
         const ctx = createRequestContext(db);

@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    HumanWorker,
     jsonArrayField,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
-    type HumanWorkerEntity,
     type WorkOrderEntity,
     type StateFieldValueEntity,
     type WorkOrderFlowGraph,
@@ -28,6 +26,9 @@ import {
     buildAttributeInputHtml,
 } from
 '../web-app/app/presenters/workbox-detail.ts';
+import {
+    makeHumanWorker,
+} from './worker-fixtures.ts';
 
 // WorkboxDetailPresenter is pure: the constructor
 // takes the work order, transition events, per-event
@@ -154,30 +155,12 @@ function makeTransition(
     };
 }
 
-function makeHumanWorkerEntity(
-    id: string,
-    first: string,
-): HumanWorkerEntity {
-    return {
-        id,
-        first_name: first,
-        last_name: 'Park',
-        email: first.toLowerCase() + '@example.com',
-        title: 'Reviewer',
-        department: 'Finance',
-        strengths: jsonArrayField([]),
-        team_dimensions: jsonObjectField({}),
-        phone: '',
-        bio: '',
-    };
-}
-
 function makeWorkerMap(
-    entities: HumanWorkerEntity[],
+    workers: Worker[],
 ): Map<Id, Worker> {
     return new Map(
-        entities.map(
-            e => [e.id, new HumanWorker(e, 'active')],
+        workers.map(
+            w => [w.idForLink(), w],
         ),
     );
 }
@@ -193,8 +176,8 @@ function makeAttributeMap(
 }
 
 const WORKER_MAP = makeWorkerMap([
-    makeHumanWorkerEntity('p-1', 'Ada'),
-    makeHumanWorkerEntity('p-2', 'Bo'),
+    makeHumanWorker('p-1', 'Ada Park'),
+    makeHumanWorker('p-2', 'Bo Park'),
 ]);
 
 function makePresenter(

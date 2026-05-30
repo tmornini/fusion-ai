@@ -373,6 +373,7 @@ type SeedHumanWorker = Omit<
     HumanWorkerEntity,
     'strengths' | 'team_dimensions'
 > & {
+    name: string;
     strengths: string[];
     team_dimensions: Record<
         string, number
@@ -424,23 +425,8 @@ export async function populateMockData(
 ): Promise<void> {
     const workers: SeedHumanWorker[] = [
         {
-            id: SYSTEM_WORKER_ID,
-            first_name: 'System',
-            last_name: 'Worker',
-            email: 'system@fusion.local',
-            title: 'System',
-            department: 'System',
-            state: 'active',
-            strengths: [],
-            team_dimensions: {},
-            phone: '',
-            bio: 'Synthetic worker that owns'
-                + ' system-authored state events.',
-        },
-        {
             id: 'LhfaUUf4IumVsCSGB4xjdK',
-            first_name: 'Sarah',
-            last_name: 'Chen',
+            name: 'Sarah Chen',
             email: 'sarah.chen@company.com',
             title: 'Project Lead',
             department: 'Operations',
@@ -464,8 +450,7 @@ export async function populateMockData(
         },
         {
             id: 'bLP3X1hb1mSz8gY9neogU3',
-            first_name: 'Mike',
-            last_name: 'Thompson',
+            name: 'Mike Thompson',
             email: 'mike.thompson@company.com',
             title: 'ML Engineer',
             department: 'Engineering',
@@ -489,8 +474,7 @@ export async function populateMockData(
         },
         {
             id: 'zyTbfbjcGEfbpCsNTP0XjX',
-            first_name: 'Jessica',
-            last_name: 'Park',
+            name: 'Jessica Park',
             email: 'jessica.park@company.com',
             title: 'Data Scientist',
             department: 'Analytics',
@@ -514,8 +498,7 @@ export async function populateMockData(
         },
         {
             id: '6xBfK5If82JKfThXb1wlzS',
-            first_name: 'David',
-            last_name: 'Martinez',
+            name: 'David Martinez',
             email: 'david.martinez@company.com',
             title: 'Backend Developer',
             department: 'Engineering',
@@ -539,8 +522,7 @@ export async function populateMockData(
         },
         {
             id: '53J8h9dr76XFqCjYcNVwIR',
-            first_name: 'Emily',
-            last_name: 'Rodriguez',
+            name: 'Emily Rodriguez',
             email: 'emily.rodriguez@company.com',
             title: 'UX Designer',
             department: 'Design',
@@ -564,8 +546,7 @@ export async function populateMockData(
         },
         {
             id: 'I5ntELi16X3N3JYCCnxMjZ',
-            first_name: 'Alex',
-            last_name: 'Kim',
+            name: 'Alex Kim',
             email: 'alex.kim@company.com',
             title: 'Product Manager',
             department: 'Product',
@@ -589,8 +570,7 @@ export async function populateMockData(
         },
         {
             id: 'WxQn4LVWb76YkmqK5B0EPp',
-            first_name: 'Marcus',
-            last_name: 'Johnson',
+            name: 'Marcus Johnson',
             email: 'marcus@acmecorp.com',
             title: 'manager',
             department: 'Product',
@@ -613,8 +593,7 @@ export async function populateMockData(
         },
         {
             id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            first_name: 'David',
-            last_name: 'Kim',
+            name: 'David Kim',
             email: 'david.kim@company.com',
             title: 'member',
             department: 'Engineering',
@@ -638,8 +617,7 @@ export async function populateMockData(
         },
         {
             id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            first_name: 'Lisa',
-            last_name: 'Wang',
+            name: 'Lisa Wang',
             email: 'lisa@acmecorp.com',
             title: 'viewer',
             department: 'Sales',
@@ -662,8 +640,7 @@ export async function populateMockData(
         },
         {
             id: 'oU0bIe0eUC33mTbZrxdogC',
-            first_name: 'James',
-            last_name: 'Miller',
+            name: 'James Miller',
             email: 'james@acmecorp.com',
             title: 'member',
             department: 'Engineering',
@@ -686,8 +663,7 @@ export async function populateMockData(
         },
         {
             id: 'current',
-            first_name: 'Tony',
-            last_name: 'Stark',
+            name: 'Tony Stark',
             email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',
@@ -710,20 +686,34 @@ export async function populateMockData(
         },
     ];
 
-    await Promise.all(workers.map(worker => {
-        const {
-            id: _id, state: _state, ...rest
-        } = worker;
-        return adapter.workers.put(worker.id, {
-            ...rest,
-            strengths:
-                jsonArrayField(worker.strengths),
-            team_dimensions:
-                jsonObjectField(
-                    worker.team_dimensions,
-                ),
-        });
-    }));
+    await Promise.all([
+        ...workers.flatMap(worker => {
+            const {
+                id: _id, state: _state, name,
+                strengths, team_dimensions,
+                ...detail
+            } = worker;
+            return [
+                adapter.workers.put(worker.id, {
+                    type: 'human',
+                    name,
+                }),
+                adapter.humanWorkers.put(worker.id, {
+                    ...detail,
+                    strengths:
+                        jsonArrayField(strengths),
+                    team_dimensions:
+                        jsonObjectField(
+                            team_dimensions,
+                        ),
+                }),
+            ];
+        }),
+        adapter.workers.put(SYSTEM_WORKER_ID, {
+            type: 'system',
+            name: 'System Worker',
+        }),
+    ]);
 
     // Initial worker state events. Every seeded
     // worker — human or AI — gets one event at
@@ -737,6 +727,13 @@ export async function populateMockData(
             worker_id: SYSTEM_WORKER_ID,
             at: MOCK_SEED_TIMESTAMP,
         })),
+        {
+            id: `seed-worker-${SYSTEM_WORKER_ID}-active`,
+            entity_id: SYSTEM_WORKER_ID,
+            state: 'active',
+            worker_id: SYSTEM_WORKER_ID,
+            at: MOCK_SEED_TIMESTAMP,
+        },
     ];
 
     const ideas: IdeaEntity[] = [
@@ -5837,7 +5834,7 @@ export async function populateMockData(
         },
     ];
 
-    const aiWorkers: AIWorkerEntity[] = [
+    const aiWorkers: (AIWorkerEntity & { name: string })[] = [
         {
             id: 'tuJwPxYtBur2KCLquScShB',
             name: 'Claude Opus 4.7 Max',
@@ -5955,9 +5952,16 @@ export async function populateMockData(
             adapter.stateFieldValues
                 .put(r.id, r),
         ),
-        ...aiWorkers.map(m =>
-            adapter.aiWorkers.put(m.id, m),
-        ),
+        ...aiWorkers.flatMap(m => {
+            const { id: _id, name, ...detail } = m;
+            return [
+                adapter.workers.put(m.id, {
+                    type: 'ai',
+                    name,
+                }),
+                adapter.aiWorkers.put(m.id, detail),
+            ];
+        }),
         ...leadToCloseData.workOrders.map(r =>
             adapter.workOrders.put(r.id, r),
         ),
@@ -6164,20 +6168,14 @@ export async function populateBootstrapData(
     // content loaded by populateMockData, not bootstrap.
     await Promise.all([
         adapter.workers.put(SYSTEM_WORKER_ID, {
-            first_name: 'System',
-            last_name: 'Worker',
-            email: 'system@fusion.local',
-            title: 'System',
-            department: 'System',
-            strengths: jsonArrayField([]),
-            team_dimensions: jsonObjectField({}),
-            phone: '',
-            bio: 'Synthetic worker that owns'
-                + ' system-authored state events.',
+            type: 'system',
+            name: 'System Worker',
         }),
         adapter.workers.put('current', {
-            first_name: 'Tony',
-            last_name: 'Stark',
+            type: 'human',
+            name: 'Tony Stark',
+        }),
+        adapter.humanWorkers.put('current', {
             email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',

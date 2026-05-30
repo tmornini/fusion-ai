@@ -29,13 +29,15 @@ import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import type {
-    HumanWorkerEntity,
     FlowEntity,
     GraphNode,
     GraphEdge,
     StoredGraph,
     StateEntity,
 } from '../api/types.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 interface CreateIds {
     workOrderId: string;
@@ -58,23 +60,6 @@ async function createWorkOrder(
         ...ids, flowId,
     });
     return ids.workOrderId;
-}
-
-function buildHumanWorker(
-    name: string,
-): Omit<HumanWorkerEntity, 'id'> {
-    return {
-        first_name: name,
-        last_name: 'Test',
-        email: name.toLowerCase()
-            + '@example.com',
-        phone: '',
-        title: 'product_manager',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        bio: '',
-        department: 'Product',
-    };
 }
 
 function buildNode(
@@ -166,9 +151,7 @@ async function setupDb(): Promise<{
 }> {
     const db = new MemoryDbAdapter();
     await db.createSchema();
-    await db.workers.put(
-        'current', buildHumanWorker('Demo'),
-    );
+    await seedHumanWorker(db, 'current', 'Demo Test');
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
@@ -662,8 +645,8 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.workers.put(
-            'current', buildHumanWorker('Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db);
         const woId = generateCryptoSafeBase62();
@@ -694,8 +677,8 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.workers.put(
-            'current', buildHumanWorker('Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db);
         const woId = generateCryptoSafeBase62();
@@ -725,8 +708,8 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.workers.put(
-            'current', buildHumanWorker('Demo'),
+        await seedHumanWorker(
+            db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db);
         const fresh1 = generateCryptoSafeBase62();

@@ -13,6 +13,7 @@ import { HistoryEntityStore }
 import { SingletonStore } from './store-singleton.ts';
 import { StateStore } from './store-state.ts';
 import type {
+    WorkerEntity,
     HumanWorkerEntity,
     AIWorkerEntity,
     IdeaEntity,
@@ -38,6 +39,7 @@ import {
     DEFAULT_LATENCY_CONFIG,
 } from './latency.ts';
 import {
+    validateWorkerEntity,
     validateHumanWorkerEntity,
     validateAIWorkerEntity,
     validateIdeaEntity,
@@ -65,7 +67,9 @@ import {
 export class LocalStorageDbAdapter implements DbAdapter {
     readonly #backend: LocalStorageBackend;
 
-    readonly workers: IEntityStore<HumanWorkerEntity>;
+    readonly workers: IEntityStore<WorkerEntity>;
+    readonly humanWorkers:
+        IEntityStore<HumanWorkerEntity>;
     readonly aiWorkers: IEntityStore<AIWorkerEntity>;
     readonly ideas: IEntityStore<IdeaEntity>;
     readonly projects: IEntityStore<ProjectEntity>;
@@ -113,6 +117,11 @@ export class LocalStorageDbAdapter implements DbAdapter {
         this.workers =
             new EntityStore(
                 'workers', backend, stateStore,
+                validateWorkerEntity,
+            );
+        this.humanWorkers =
+            new EntityStore(
+                'human_workers', backend, stateStore,
                 validateHumanWorkerEntity,
             );
         this.aiWorkers =

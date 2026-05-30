@@ -39,7 +39,6 @@ import {
     subscribeAIWorkerChanges,
     HumanWorker,
     AIWorker,
-    type Worker,
     type WorkerState,
 } from '../app/adapters/index.ts';
 
@@ -114,7 +113,7 @@ function rerender(): void {
 
 async function loadWorkerByEitherKind(
     workerId: string,
-): Promise<Worker | null> {
+): Promise<HumanWorker | AIWorker | null> {
     const ctx = createRequestContext();
     try {
         return await getHumanWorker(
@@ -189,7 +188,7 @@ export async function init(
 
 export function reduceRefresh(
     current: PageState,
-    fresh: Worker | null,
+    fresh: HumanWorker | AIWorker | null,
 ): PageState {
     if (current.kind === 'editing') return current;
     if (fresh === null) return current;

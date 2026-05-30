@@ -58,6 +58,9 @@ import {
 import type {
     FlowGraph,
 } from '../web-app/app/adapters/flow-queries.ts';
+import {
+    seedHumanWorker,
+} from './worker-fixtures.ts';
 
 const FLOW_ID = 'flow-1';
 
@@ -197,17 +200,7 @@ async function setupFlow(): Promise<{
 }> {
     const db = new MemoryDbAdapter();
     await db.createSchema();
-    await db.workers.put('current', {
-        first_name: 'Demo',
-        last_name: 'User',
-        email: 'demo@example.com',
-        phone: '',
-        title: 'Admin',
-        strengths: '[]' as never,
-        team_dimensions: '{}' as never,
-        bio: '',
-        department: 'Product',
-    });
+    await seedHumanWorker(db, 'current', 'Demo User');
     const ctx = createRequestContext(db);
     await postFlowCreation(ctx, {
         flowId: FLOW_ID,
