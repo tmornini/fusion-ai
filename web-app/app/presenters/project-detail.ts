@@ -123,7 +123,8 @@ function buildShell(
                 </button>
                 <div class="project-title-slot">
                 </div>
-                <div id="project-action-bar" class="self-start"></div>
+                <div id="project-review-actions"
+                    class="self-start"></div>
             </div>
             <div class="${
                 'flex gap-2'

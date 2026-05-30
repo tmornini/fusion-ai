@@ -35,28 +35,35 @@ export class ProjectActionBarPresenter {
         this.#objectiveNames = objectiveNames;
     }
 
-    buildBar(): SafeHtml {
+    buildReviewActions(): SafeHtml {
         const state = this.#state;
         const isReview = state === 'submitted'
             || state === 'under-review'
             || state === 'sent-back';
-
+        if (!isReview) return html``;
         return html`
             <div class="action-bar"
                 data-project-id="${this.#projectId}">
-                ${isReview
-                    ? this.#reviewActions()
-                    : html``}
+                ${this.#reviewActions()}
+            </div>
+        `;
+    }
+
+    buildLifecycleActions(): SafeHtml {
+        const state = this.#state;
+        if (state !== 'approved'
+            && state !== 'archived') {
+            return html``;
+        }
+        return html`
+            <div class="action-bar action-bar-below"
+                data-project-id="${this.#projectId}">
                 ${state === 'approved'
                     ? this.#approvedActions()
                     : html``}
-                ${state === 'approved'
-                    || state === 'archived'
-                    ? html`<button
-                        data-action="view-history">
-                        View history
-                      </button>`
-                    : html``}
+                <button data-action="view-history">
+                    View history
+                </button>
             </div>
         `;
     }

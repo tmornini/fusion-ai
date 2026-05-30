@@ -277,29 +277,34 @@ export async function init(
 
     await renderActionBarAndObjectives();
 
-    $('#project-action-bar', document)!
+    const onActionClick = async (
+        e: Event,
+    ): Promise<void> => {
+        const action =
+            (e.target as HTMLElement)
+                .closest('[data-action]')
+                ?.getAttribute('data-action');
+        const ctx = createRequestContext();
+        if (action === 'approve') {
+            openApproveConfirmation();
+        } else if (action === 'archive') {
+            openArchiveConfirmation();
+        } else if (
+            action === 'view-history'
+        ) {
+            await openHistoryModal(
+                ctx, projectId,
+            );
+        }
+    };
+    $('#project-review-actions', document)!
         .addEventListener(
-        'click',
-        async (e) => {
-            const action =
-                (e.target as HTMLElement)
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-            const ctx = createRequestContext();
-            if (action === 'approve') {
-                openApproveConfirmation();
-            } else if (action === 'archive') {
-                openArchiveConfirmation();
-            } else if (
-                action === 'view-history'
-            ) {
-                await openHistoryModal(
-                    ctx, projectId,
-                );
-            }
-        },
-        { signal },
-    );
+            'click', onActionClick, { signal },
+        );
+    $('#project-lifecycle-actions', document)!
+        .addEventListener(
+            'click', onActionClick, { signal },
+        );
 
     $('#approve-dialog', document)!.addEventListener(
         'click',
@@ -781,10 +786,21 @@ async function renderActionBarAndObjectives(
         approvalCheck, archivalCheck,
         objectiveNames,
     );
-    const actionBarEl =
-        $('#project-action-bar', document);
-    if (actionBarEl) {
-        setHtml(actionBarEl, actionBar.buildBar());
+    const reviewEl =
+        $('#project-review-actions', document);
+    if (reviewEl) {
+        setHtml(
+            reviewEl,
+            actionBar.buildReviewActions(),
+        );
+    }
+    const lifecycleEl =
+        $('#project-lifecycle-actions', document);
+    if (lifecycleEl) {
+        setHtml(
+            lifecycleEl,
+            actionBar.buildLifecycleActions(),
+        );
     }
 
     const objSection = new ProjectObjectivesPresenter(
