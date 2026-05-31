@@ -56,7 +56,7 @@ export class ProjectActionBarPresenter {
             return html``;
         }
         return html`
-            <div class="action-bar action-bar-below"
+            <div class="action-bar"
                 data-project-id="${this.#projectId}">
                 ${state === 'approved'
                     ? this.#approvedActions()
@@ -83,8 +83,9 @@ export class ProjectActionBarPresenter {
         const check = this.#approvalCheck;
         const tooltip = check.ready
             ? ''
-            : this.#namesFor(check.problems)
-                + ' unscored';
+            : 'Set a baseline score before '
+                + 'approving: '
+                + this.#namesFor(check.problems);
         return html`
             <button data-action="approve" ${
                 check.ready ? '' : 'disabled'
@@ -106,23 +107,15 @@ export class ProjectActionBarPresenter {
         const check = this.#archivalCheck;
         const tooltip = check.ready
             ? ''
-            : this.#namesFor(check.problems)
-                + ' lack actual measurements';
-        const caption = check.ready
-            ? html``
-            : html`<small
-                class="action-bar-caption"
-                data-tone="muted"
-              >${this.#namesFor(check.problems)
-                  + ' lack actual measurements'
-                  + ' before archival'}</small>`;
+            : 'Add an actual measurement before '
+                + 'archiving: '
+                + this.#namesFor(check.problems);
         return html`
             <button data-action="archive" ${
                 check.ready ? '' : 'disabled'
             } class="btn btn-outline" title="${tooltip}">
                 Archive
             </button>
-            ${caption}
         `;
     }
 }

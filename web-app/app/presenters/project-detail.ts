@@ -129,6 +129,8 @@ function buildShell(
             }">
                 <div id="project-review-actions">
                 </div>
+                <div id="project-lifecycle-actions">
+                </div>
                 <div class="${
                     'flex gap-2'
                     + ' project-actions-slot'

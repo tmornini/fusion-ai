@@ -7,16 +7,6 @@
   gap: var(--space-2);
 }
 
-.action-bar-below {
-  margin-top: var(--space-4);
-}
-
-.action-bar-caption {
-  flex-basis: 100%;
-  font-size: var(--text-xs);
-  color: hsl(var(--muted-foreground));
-}
-
 /* An empty review-actions slot leaves the header flex row,
  * so it adds no phantom gap before the Edit button. */
 #project-review-actions:empty {

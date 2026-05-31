@@ -144,8 +144,9 @@ test('Approve tooltip enumerates unscored objective names',
         const html = p.buildReviewActions().toString();
         assert.ok(
             html.includes(
-                'title="Increase incomes, '
-                + 'Raise customer NPS unscored"',
+                'title="Set a baseline score before '
+                + 'approving: Increase incomes, '
+                + 'Raise customer NPS"',
             ),
             'Approve tooltip should enumerate'
             + ' unscored objective names',
@@ -173,15 +174,21 @@ test('Archive tooltip enumerates objectives lacking actuals',
             p.buildLifecycleActions().toString();
         assert.ok(
             html.includes(
-                'title="Improve employee morale'
-                + ' lack actual measurements"',
+                'title="Add an actual measurement '
+                + 'before archiving: '
+                + 'Improve employee morale"',
             ),
             'Archive tooltip should enumerate'
             + ' objectives lacking actuals',
         );
+        assert.equal(
+            html.includes('action-bar-caption'),
+            false,
+            'reason lives in the tooltip, not a caption',
+        );
     });
 
-test('review actions empty on approved (they live below)',
+test('review actions empty on approved (lifecycle in header)',
     () => {
         const p = new ProjectActionBarPresenter(
             PROJECT_ID, 'approved',
