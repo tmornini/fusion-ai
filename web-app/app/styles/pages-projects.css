@@ -17,8 +17,14 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* An empty review-actions slot leaves the header flex row,
+ * so it adds no phantom gap before the Edit button. */
+#project-review-actions:empty {
+  display: none;
+}
+
 /* Inline Objectives section on project detail.
- * Card wrapper + per-row gauge + dual sliders. */
+ * Card wrapper + per-row gauge + one phase slider. */
 .project-objectives-card {
   margin-top: var(--space-6);
 }
@@ -35,11 +41,11 @@
 .project-objective-row {
   display: grid;
   grid-template-columns:
-    140px 110px 1fr 1fr;
+    140px 110px 1fr;
   grid-template-rows: auto auto;
   grid-template-areas:
-    "name gauge baseline actual"
-    "caption caption caption caption";
+    "name gauge slider"
+    "caption caption caption";
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-3) 0;
@@ -67,15 +73,8 @@
   justify-content: center;
 }
 
-.project-objective-slider[data-slider="baseline"] {
-  grid-area: baseline;
-}
-
-.project-objective-slider[data-slider="actual"] {
-  grid-area: actual;
-}
-
 .project-objective-slider {
+  grid-area: slider;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -116,8 +115,7 @@
     grid-template-areas:
       "name"
       "gauge"
-      "baseline"
-      "actual"
+      "slider"
       "caption";
   }
 }
