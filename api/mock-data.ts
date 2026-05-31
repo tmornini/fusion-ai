@@ -6115,8 +6115,7 @@ export async function populateMockData(
             state === 'approved'
             || state === 'archived'
         ) {
-            const minActuals =
-                state === 'archived' ? 1 : 0;
+            const minActuals = 1;
             const baseActualTime =
                 baselineStart + MS_PER_DAY;
             for (

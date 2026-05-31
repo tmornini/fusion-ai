@@ -144,6 +144,44 @@ test('completed projects have at least one actual per pair',
         }
     });
 
+test('approved projects have an actual for every pair',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        await populateMockData(db);
+        const ctx = createRequestContext(db);
+        const approved = await projectIdsByState(
+            ctx, db, 'approved',
+        );
+        assert.ok(
+            approved.length > 0,
+            'seed has approved projects',
+        );
+        const allBaselines = await
+            db.projectObjectiveBaselineScores.getAll();
+        const allActuals = await
+            db.projectObjectiveActualScores.getAll();
+        for (const pid of approved) {
+            const pairs = new Set(
+                allBaselines
+                    .filter(b => b.project_id === pid)
+                    .map(b => b.objective_id),
+            );
+            const actualPairs = new Set(
+                allActuals
+                    .filter(a => a.project_id === pid)
+                    .map(a => a.objective_id),
+            );
+            for (const pair of pairs) {
+                assert.ok(
+                    actualPairs.has(pair),
+                    `approved ${pid} missing `
+                        + `actual for ${pair}`,
+                );
+            }
+        }
+    });
+
 test('submitted projects have zero scores', async () => {
     const db = new MemoryDbAdapter();
     await db.createSchema();
