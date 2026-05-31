@@ -5,6 +5,8 @@ import type {
 } from '../../../api/types.ts';
 import { iconTrendingUp } from '../icons.ts';
 import { buildBipolarGaugeSvg } from './gauge.ts';
+import type { TrendPoint } from
+    '../adapters/project-scoring.ts';
 
 interface Definition {
     name: string;
@@ -29,13 +31,13 @@ export class DashboardObjectiveAggregatesPresenter {
     readonly #activeObjectives: Objective[];
     readonly #defs: Map<ObjectiveId, Definition>;
     readonly #aggregates: Aggregate[];
-    readonly #trendlines: Map<ObjectiveId, number[]>;
+    readonly #trendlines: Map<ObjectiveId, TrendPoint[]>;
 
     constructor(
         activeObjectives: Objective[],
         defs: Map<ObjectiveId, Definition>,
         aggregates: Aggregate[],
-        trendlines: Map<ObjectiveId, number[]>,
+        trendlines: Map<ObjectiveId, TrendPoint[]>,
     ) {
         this.#activeObjectives = activeObjectives;
         this.#defs = defs;
@@ -121,7 +123,7 @@ export class DashboardObjectiveAggregatesPresenter {
         `;
     }
 
-    #sparkline(points: number[]): SafeHtml {
+    #sparkline(points: TrendPoint[]): SafeHtml {
         const axis = html`
             <line class="sparkline-axis"
                 x1="0" y1="15"
@@ -137,7 +139,7 @@ export class DashboardObjectiveAggregatesPresenter {
             x: points.length === 1
                 ? 50
                 : (i / (points.length - 1)) * 100,
-            y: 15 - clamp(s, -100, 100) * 0.15,
+            y: 15 - clamp(s.value, -100, 100) * 0.15,
         }));
         const pointsAttr = coords
             .map(c => `${c.x},${c.y}`)

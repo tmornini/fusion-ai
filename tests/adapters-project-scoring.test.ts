@@ -203,7 +203,18 @@ test(
         );
         const points = trendlines.get('o1');
         assert.ok(points, 'o1 trendline must exist');
-        assert.deepEqual(points, [20, 40, 25]);
+        assert.deepEqual(
+            points.map(p => p.value), [20, 40, 25],
+        );
+        assert.equal(
+            points[0]?.at, '2026-05-14T00:00:00.000Z',
+        );
+        assert.equal(
+            points[1]?.at, '2026-05-15T00:00:00.000Z',
+        );
+        assert.equal(
+            points[2]?.at, '2026-05-16T00:00:00.000Z',
+        );
         // baselineMean = (60 + -20) / 2 = 20
         // after t1 (p1=40 only):        40
         // after t2 (p1=40, p2=10):      (40 + 10) / 2 = 25
@@ -228,9 +239,13 @@ test(
         const trendlines = await getObjectiveTrendlines(
             ctx,
         );
+        const points = trendlines.get('o1');
+        assert.ok(points, 'o1 trendline must exist');
         assert.deepEqual(
-            trendlines.get('o1'),
-            [20, 40],
+            points.map(p => p.value), [20, 40],
+        );
+        assert.equal(
+            points[1]?.at, '2026-05-15T00:00:00.000Z',
         );
     },
 );
@@ -261,9 +276,13 @@ test(
         const trendlines = await getObjectiveTrendlines(
             ctx,
         );
+        const points = trendlines.get('o1');
+        assert.ok(points, 'o1 trendline must exist');
         assert.deepEqual(
-            trendlines.get('o1'),
-            [20, 25],
+            points.map(p => p.value), [20, 25],
+        );
+        assert.equal(
+            points[1]?.at, '2026-05-15T00:00:00.000Z',
         );
     },
 );

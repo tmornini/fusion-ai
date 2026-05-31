@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { DashboardObjectiveAggregatesPresenter } from
     '../web-app/app/presenters/dashboard-objective-aggregates.ts';
+import type { TrendPoint } from
+    '../web-app/app/adapters/project-scoring.ts';
 
 const activeObjs = [
     { id: 'o1', position: 0 },
@@ -22,8 +24,12 @@ const aggregates = [
       projectsBaselineScored: 0,
       projectsActualScored: 0 },
 ];
-const trendlines = new Map<string, number[]>([
-    ['o1', [32, 28, 25]],
+const trendlines = new Map<string, TrendPoint[]>([
+    ['o1', [
+        { at: '2026-05-01T00:00:00.000Z', value: 32 },
+        { at: '2026-05-10T00:00:00.000Z', value: 28 },
+        { at: '2026-05-20T00:00:00.000Z', value: 25 },
+    ]],
     ['o2', []],
 ]);
 
