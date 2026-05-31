@@ -222,8 +222,14 @@ export class DashboardObjectiveAggregatesPresenter {
                 + formatSigned(
                     p.value - points[i - 1]!.value,
                 );
+        const directionAttr = i === 0
+            ? html``
+            : html`data-direction="${directionForDelta(
+                p.value - points[i - 1]!.value,
+            )}"`;
         return html`
             <span class="spark-dot" role="img"
+                ${directionAttr}
                 style="${`--x:${xPct}%;--y:${yPct}%`}"
                 tabindex="0"
                 aria-label="${label}">

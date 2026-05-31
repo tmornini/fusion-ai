@@ -272,3 +272,33 @@ test('origin line sits at the baseline value', () => {
         'grey axis tracks the baseline, not the mid',
     );
 });
+
+test('baseline dot is grey; dots match their segment',
+    () => {
+    const p = new DashboardObjectiveAggregatesPresenter(
+        activeObjs, defs, aggregates, trendlines,
+    );
+    const html = p.buildCard().toString();
+    const o1RowStart =
+        html.indexOf('data-objective-id="o1"');
+    const o1Slice = html.slice(o1RowStart);
+    const o1Row = o1Slice.slice(
+        0, o1Slice.indexOf('</li>'),
+    );
+    const dots = o1Row.match(
+        /<span class="spark-dot"[^>]*>/g,
+    ) ?? [];
+    assert.equal(dots.length, 3, 'one dot per point');
+    assert.ok(
+        !dots[0]!.includes('data-direction'),
+        'baseline dot omits direction (grey default)',
+    );
+    assert.ok(
+        dots[1]!.includes('data-direction="up"'),
+        '20 -> 40 dot matches the up segment',
+    );
+    assert.ok(
+        dots[2]!.includes('data-direction="down"'),
+        '40 -> 25 dot matches the down segment',
+    );
+});
