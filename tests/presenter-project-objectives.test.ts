@@ -81,7 +81,7 @@ test(
 });
 
 test(
-    'baseline sliders disabled after approval',
+    'baseline slider hidden after approval',
     () => {
     const p = new ProjectObjectivesPresenter(
         activeObjs, defs,
@@ -94,10 +94,82 @@ test(
     );
     const html = p.buildSection().toString();
     assert.ok(
+        !html.includes('baseline-slider'),
+        'baseline slider hidden once approved',
+    );
+    assert.ok(
+        html.includes('actual-slider'),
+        'actual slider shown once approved',
+    );
+});
+
+test(
+    'actual slider hidden before approval',
+    () => {
+    const p = new ProjectObjectivesPresenter(
+        activeObjs, defs,
+        [{ id: 'b1',
+           project_id: 'p1', objective_id: 'o1',
+           score: 50,
+           at: '2026-05-14T00:00:00.000Z' }],
+        [],
+        'under-review',
+    );
+    const html = p.buildSection().toString();
+    assert.ok(
+        html.includes('baseline-slider'),
+        'baseline slider shown pre-approval',
+    );
+    assert.ok(
+        !html.includes('actual-slider'),
+        'actual slider hidden pre-approval',
+    );
+});
+
+test(
+    'declined shows read-only Baseline slider only',
+    () => {
+    const p = new ProjectObjectivesPresenter(
+        activeObjs, defs,
+        [{ id: 'b1',
+           project_id: 'p1', objective_id: 'o1',
+           score: 50,
+           at: '2026-05-14T00:00:00.000Z' }],
+        [],
+        'declined',
+    );
+    const html = p.buildSection().toString();
+    assert.ok(!html.includes('actual-slider'));
+    assert.ok(
         html.match(
             /class="baseline-slider"[^>]*disabled/,
         ),
-        'baseline sliders should be disabled',
+        'declined baseline is read-only',
+    );
+});
+
+test(
+    'archived shows read-only Baseline slider only',
+    () => {
+    const p = new ProjectObjectivesPresenter(
+        activeObjs, defs,
+        [{ id: 'b1',
+           project_id: 'p1', objective_id: 'o1',
+           score: 50,
+           at: '2026-05-14T00:00:00.000Z' }],
+        [{ id: 'a1',
+           project_id: 'p1', objective_id: 'o1',
+           score: 30,
+           at: '2026-05-15T00:00:00.000Z' }],
+        'archived',
+    );
+    const html = p.buildSection().toString();
+    assert.ok(!html.includes('actual-slider'));
+    assert.ok(
+        html.match(
+            /class="baseline-slider"[^>]*disabled/,
+        ),
+        'archived baseline is read-only',
     );
 });
 

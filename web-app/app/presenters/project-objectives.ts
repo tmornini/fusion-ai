@@ -37,7 +37,10 @@ function baselineEditable(state: ProjectState): boolean {
         || state === 'sent-back';
 }
 
-function actualEditable(state: ProjectState): boolean {
+// The Actual slider supersedes Baseline only once the project
+// is approved and actual measurements can be recorded; before
+// then the two are mutually exclusive on Baseline.
+function actualVisible(state: ProjectState): boolean {
     return state === 'approved';
 }
 
@@ -70,12 +73,11 @@ export class ProjectObjectivesPresenter {
         const actualMap =
             indexByObjective(this.#latestActuals);
 
+        const showActual = actualVisible(this.#state);
         const baseEditable =
             baselineEditable(this.#state);
-        const actEditable =
-            actualEditable(this.#state);
         const anyEditable =
-            baseEditable || actEditable;
+            showActual || baseEditable;
 
         return html`
             <div class="${
@@ -99,8 +101,8 @@ export class ProjectObjectivesPresenter {
                             o,
                             baseMap.get(o.id),
                             actualMap.get(o.id),
+                            showActual,
                             baseEditable,
-                            actEditable,
                         ))}
                 </ul>
                 ${anyEditable
@@ -127,8 +129,8 @@ export class ProjectObjectivesPresenter {
             ProjectObjectiveBaselineScore | undefined,
         actual:
             ProjectObjectiveActualScore | undefined,
+        showActual: boolean,
         baseEditable: boolean,
-        actEditable: boolean,
     ): SafeHtml {
         const def = this.#defs.get(obj.id);
         if (!def) {
@@ -139,9 +141,6 @@ export class ProjectObjectivesPresenter {
         }
         const baseValue = baseline?.score ?? 0;
         const actValue = actual?.score ?? baseValue;
-        const baseDisabled = !baseEditable;
-        const actDisabled = !actEditable
-            || baseline === undefined;
         const lastActualText =
             actual !== undefined
                 ? `${formatSigned(actual.score)} `
@@ -183,56 +182,57 @@ export class ProjectObjectivesPresenter {
                         'small',
                     )}
                 </div>
-                <div class="${
-                    'project-objective-slider'
-                }"
-                    data-slider="baseline">
-                    <label class="${
-                        'text-xs text-muted'
-                    }">Baseline</label>
-                    <input type="range"
-                        min="-100" max="100"
-                        step="1"
-                        value="${baseValue}"
-                        data-initial-value="${
-                            baseValue
-                        }"
-                        class="baseline-slider"
-                        ${baseDisabled
-                            ? 'disabled'
-                            : ''}>
-                    <span class="slider-value">
-                        ${baseline !== undefined
-                            ? formatSigned(
-                                baseline.score)
-                            : '—'}
-                    </span>
-                </div>
-                <div class="${
-                    'project-objective-slider'
-                }"
-                    data-slider="actual">
-                    <label class="${
-                        'text-xs text-muted'
-                    }">Actual</label>
-                    <input type="range"
-                        min="-100" max="100"
-                        step="1"
-                        value="${actValue}"
-                        data-initial-value="${
-                            actValue
-                        }"
-                        class="actual-slider"
-                        ${actDisabled
-                            ? 'disabled'
-                            : ''}>
-                    <span class="slider-value">
-                        ${actual !== undefined
-                            ? formatSigned(
-                                actual.score)
-                            : '—'}
-                    </span>
-                </div>
+                ${showActual
+                    ? html`<div class="${
+                        'project-objective-slider'
+                    }"
+                        data-slider="actual">
+                        <label class="${
+                            'text-xs text-muted'
+                        }">Actual</label>
+                        <input type="range"
+                            min="-100" max="100"
+                            step="1"
+                            value="${actValue}"
+                            data-initial-value="${
+                                actValue
+                            }"
+                            class="actual-slider"
+                            ${baseline === undefined
+                                ? 'disabled'
+                                : ''}>
+                        <span class="slider-value">
+                            ${actual !== undefined
+                                ? formatSigned(
+                                    actual.score)
+                                : '—'}
+                        </span>
+                      </div>`
+                    : html`<div class="${
+                        'project-objective-slider'
+                    }"
+                        data-slider="baseline">
+                        <label class="${
+                            'text-xs text-muted'
+                        }">Baseline</label>
+                        <input type="range"
+                            min="-100" max="100"
+                            step="1"
+                            value="${baseValue}"
+                            data-initial-value="${
+                                baseValue
+                            }"
+                            class="baseline-slider"
+                            ${!baseEditable
+                                ? 'disabled'
+                                : ''}>
+                        <span class="slider-value">
+                            ${baseline !== undefined
+                                ? formatSigned(
+                                    baseline.score)
+                                : '—'}
+                        </span>
+                      </div>`}
                 <small class="${
                     'project-objective-caption'
                 }">
