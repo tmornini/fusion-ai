@@ -45,6 +45,12 @@
     ease-out;
 }
 
+/* Matches the hue the arc gradient carries at its
+ * center — the zero point. */
+.gauge-arc-zero-mark {
+  fill: hsl(var(--warning));
+}
+
 .gauge-arc-inner.overrun {
   animation:
     gauge-draw var(--duration-pulse) ease-out,
