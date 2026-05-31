@@ -4,19 +4,24 @@
   padding: var(--space-4) var(--space-6) var(--space-6);
 }
 
+/* Borders carry 0.4 alpha, not 0.15: at 0.15 the blue
+   "primary" tint sits too close to the dark navy page
+   background, blurring the Cost card's edges so it reads
+   as shorter than its equal-height siblings. A crisper
+   edge defines every card regardless of fill contrast. */
 .gauge-card[data-tone="primary"] {
   background: hsl(var(--primary-soft));
-  border-color: hsl(var(--primary) / 0.15);
+  border-color: hsl(var(--primary) / 0.4);
 }
 
 .gauge-card[data-tone="success"] {
   background: hsl(var(--success-soft));
-  border-color: hsl(var(--success) / 0.15);
+  border-color: hsl(var(--success) / 0.4);
 }
 
 .gauge-card[data-tone="warning"] {
   background: hsl(var(--warning-soft));
-  border-color: hsl(var(--warning) / 0.15);
+  border-color: hsl(var(--warning) / 0.4);
 }
 
 .gauge-arc-container {
