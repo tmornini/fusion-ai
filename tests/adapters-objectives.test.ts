@@ -8,6 +8,7 @@ import {
     getObjectives,
     getArchivedObjectiveIds,
     getObjectiveRevisions,
+    getObjectiveArchivalEvents,
     getActiveObjectives,
     getCurrentObjectiveDefinition,
     getObjectiveDefinitionAt,
@@ -67,6 +68,21 @@ test('getArchivedObjectiveIds returns a Set', async () => {
     assert.equal(ids.size, 1);
 });
 
+test('getObjectiveArchivalEvents surfaces the actor',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        await db.objectives.put('o1', { position: 0 });
+        await db.states.record(
+            'e1', 'o1', 'archived', 'w-sarah',
+        );
+        const ctx = ctxFor(db);
+        const events =
+            await getObjectiveArchivalEvents(ctx);
+        assert.equal(events.length, 1);
+        assert.equal(events[0]!.workerId, 'w-sarah');
+    });
+
 test('getObjectiveRevisions returns all for an objective',
     async () => {
         const db = new MemoryDbAdapter();
@@ -77,6 +93,7 @@ test('getObjectiveRevisions returns all for an objective',
                 objective_id: 'o1',
                 name: 'Income',
                 description: 'd',
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -86,6 +103,7 @@ test('getObjectiveRevisions returns all for an objective',
                 objective_id: 'o1',
                 name: 'Increase incomes',
                 description: 'd2',
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -95,6 +113,7 @@ test('getObjectiveRevisions returns all for an objective',
                 objective_id: 'o2',
                 name: 'Expense',
                 description: 'd',
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -130,6 +149,7 @@ test('getCurrentObjectiveDefinition returns latest revision',
             {
                 objective_id: 'o1', name: 'Old',
                 description: 'd1',
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -138,6 +158,7 @@ test('getCurrentObjectiveDefinition returns latest revision',
             {
                 objective_id: 'o1', name: 'New',
                 description: 'd2',
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -158,6 +179,7 @@ test('getObjectiveDefinitionAt returns historical name',
             {
                 objective_id: 'o1', name: 'Old',
                 description: 'd1',
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -166,6 +188,7 @@ test('getObjectiveDefinitionAt returns historical name',
             {
                 objective_id: 'o1', name: 'New',
                 description: 'd2',
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -180,6 +203,7 @@ test('postObjectiveCreation writes objective + revision',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'Income', 'Top line', 0,
@@ -189,12 +213,14 @@ test('postObjectiveCreation writes objective + revision',
         const revs = await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 1);
         assert.equal(revs[0]!.name, 'Income');
+        assert.equal(revs[0]!.worker_id, 'current');
     });
 
 test('postObjectiveRevision appends a revision row',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'Income', 'd1', 0,
@@ -204,6 +230,9 @@ test('postObjectiveRevision appends a revision row',
         );
         const revs = await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 2);
+        for (const r of revs) {
+            assert.equal(r.worker_id, 'current');
+        }
     });
 
 test('postObjectiveArchival archives an objective',
@@ -267,6 +296,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'A', 'd', 1,
@@ -297,6 +327,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'A', 'd', 1,
@@ -337,6 +368,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedCurrentWorker(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
             ctx, 'o1', 'A', 'd', 1,

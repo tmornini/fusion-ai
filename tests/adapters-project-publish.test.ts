@@ -53,6 +53,7 @@ test('validator: ready when all scored', () => {
         [{ id: 'o1', position: 0 }],
         [{ id: 'b1', project_id: 'p1',
            objective_id: 'o1', score: 50,
+           worker_id: 'w1',
            at: '2026-05-14T00:00:00.000Z' }],
     );
     assert.equal(r.ready, true);
@@ -65,6 +66,7 @@ test('archival validator: not ready when actuals missing',
             SAMPLE_PROJECT,
             [{ id: 'b1', project_id: 'p1',
                objective_id: 'o1', score: 50,
+               worker_id: 'w1',
                at: '2026-05-14T00:00:00.000Z' }],
             [],
         );
@@ -88,6 +90,7 @@ test('postProjectApproval moves state to approved',
             'b1',
             { project_id: 'p1', objective_id: 'o1',
               score: 50,
+              worker_id: 'w1',
               at: '2026-05-14T00:00:00.000Z' },
         );
         const ctx = createRequestContext(db);
@@ -124,12 +127,14 @@ test('postProjectArchival moves state to archived',
             'b1',
             { project_id: 'p1', objective_id: 'o1',
               score: 50,
+              worker_id: 'w1',
               at: '2026-05-14T00:00:00.000Z' },
         );
         await db.projectObjectiveActualScores.put(
             'a1',
             { project_id: 'p1', objective_id: 'o1',
               score: 40,
+              worker_id: 'w1',
               at: '2026-05-15T00:00:00.000Z' },
         );
         const ctx = createRequestContext(db);

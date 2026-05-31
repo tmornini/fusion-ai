@@ -6014,6 +6014,17 @@ export async function populateMockData(
         ),
     ]);
 
+    const humanWorkerIds =
+        (await adapter.workers.getAll())
+            .filter(w => w.type === 'human')
+            .map(w => w.id);
+    const workerFor = (seed: string): string =>
+        humanWorkerIds[
+            deterministicScore(
+                seed, 0, humanWorkerIds.length - 1,
+            )
+        ] ?? SYSTEM_WORKER_ID;
+
     for (const seed of OBJECTIVE_SEEDS) {
         await adapter.objectives.put(seed.id, {
             position: seed.position,
@@ -6024,6 +6035,9 @@ export async function populateMockData(
                 objective_id: seed.id,
                 name: seed.name,
                 description: seed.description,
+                worker_id: workerFor(
+                    `${seed.id}:revision`,
+                ),
                 at: MOCK_SEED_TIMESTAMP,
             },
         );
@@ -6106,6 +6120,9 @@ export async function populateMockData(
                         project_id: p.id,
                         objective_id: obj.id,
                         score,
+                        worker_id: workerFor(
+                            `${p.id}:${obj.id}:baseline`,
+                        ),
                         at: scoredAt,
                     },
                 );
@@ -6147,6 +6164,9 @@ export async function populateMockData(
                                 project_id: p.id,
                                 objective_id: obj.id,
                                 score,
+                                worker_id: workerFor(
+                                    `${p.id}:${obj.id}:actual:${k}`,
+                                ),
                                 at: scoredAt,
                             },
                         );

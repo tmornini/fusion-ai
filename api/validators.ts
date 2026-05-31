@@ -1025,7 +1025,7 @@ export function validateObjectiveEntity(
 const OBJECTIVE_REVISION_BODY_KEYS:
     readonly string[] = [
     'objective_id', 'name',
-    'description', 'at',
+    'description', 'worker_id', 'at',
 ];
 
 export function validateObjectiveRevisionEntity(
@@ -1050,6 +1050,9 @@ export function validateObjectiveRevisionEntity(
         description: pickString(
             body, 'description',
         ),
+        worker_id: pickString(
+            body, 'worker_id',
+        ),
         at: pickString(
             body, 'at',
         ),
@@ -1059,7 +1062,7 @@ export function validateObjectiveRevisionEntity(
 const BASELINE_SCORE_BODY_KEYS:
     readonly string[] = [
     'project_id', 'objective_id',
-    'score', 'at',
+    'score', 'worker_id', 'at',
 ];
 
 export function validateBaselineScoreEntity(
@@ -1080,6 +1083,9 @@ export function validateBaselineScoreEntity(
         score: asScore(
             body.score, 'BaselineScore.score',
         ),
+        worker_id: pickString(
+            body, 'worker_id',
+        ),
         at: pickString(
             body, 'at',
         ),
@@ -1089,7 +1095,7 @@ export function validateBaselineScoreEntity(
 const ACTUAL_SCORE_BODY_KEYS:
     readonly string[] = [
     'project_id', 'objective_id',
-    'score', 'at',
+    'score', 'worker_id', 'at',
 ];
 
 export function validateActualScoreEntity(
@@ -1109,6 +1115,9 @@ export function validateActualScoreEntity(
         ),
         score: asScore(
             body.score, 'ActualScore.score',
+        ),
+        worker_id: pickString(
+            body, 'worker_id',
         ),
         at: pickString(
             body, 'at',

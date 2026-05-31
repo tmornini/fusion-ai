@@ -280,6 +280,7 @@ export async function postIdeaConversion(
     const ideaBody =
         promotedIdea as unknown as AnyBody;
     const at = nowUtc();
+    const worker = await getCurrentHumanWorker(ctx);
     await ctx.commit({
         ops: [
             {
@@ -309,6 +310,7 @@ export async function postIdeaConversion(
                     project_id: projectId,
                     objective_id: b.objectiveId,
                     score: b.score,
+                    worker_id: worker.id,
                     at,
                 },
             })),

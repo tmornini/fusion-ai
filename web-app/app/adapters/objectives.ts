@@ -1,4 +1,5 @@
 import type {
+    Id,
     Objective,
     ObjectiveId,
     ObjectiveRevision,
@@ -15,6 +16,9 @@ import {
 import {
     buildStateEventOp,
 } from './state-events.ts';
+import {
+    getCurrentHumanWorker,
+} from './workers.ts';
 
 const objectiveChanges =
     createSubscriptionChannel([
@@ -84,6 +88,7 @@ export async function getArchivedObjectiveIds(
 
 export interface ObjectiveArchivalEvent {
     objectiveId: ObjectiveId;
+    workerId: Id;
     at: string;
 }
 
@@ -111,6 +116,7 @@ export async function getObjectiveArchivalEvents(
         )
         .map(r => ({
             objectiveId: r.entity_id as ObjectiveId,
+            workerId: r.worker_id,
             at: r.at,
         }));
 }
@@ -192,6 +198,7 @@ export async function postObjectiveCreation(
     position: number,
 ): Promise<void> {
     const at = nowUtc();
+    const worker = await getCurrentHumanWorker(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
@@ -208,6 +215,7 @@ export async function postObjectiveCreation(
                     objective_id: id,
                     name,
                     description,
+                    worker_id: worker.id,
                     at,
                 },
             },
@@ -223,6 +231,7 @@ export async function postObjectiveRevision(
     description: string,
 ): Promise<void> {
     const at = nowUtc();
+    const worker = await getCurrentHumanWorker(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [{
@@ -233,6 +242,7 @@ export async function postObjectiveRevision(
                 objective_id: id,
                 name,
                 description,
+                worker_id: worker.id,
                 at,
             },
         }],

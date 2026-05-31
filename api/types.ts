@@ -749,6 +749,7 @@ export interface ObjectiveRevision {
     objective_id: ObjectiveId;
     name: string;
     description: string;
+    worker_id: Id;
     at: string;
 }
 
@@ -757,6 +758,7 @@ export interface ProjectObjectiveBaselineScore {
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
+    worker_id: Id;
     at: string;
 }
 
@@ -765,6 +767,7 @@ export interface ProjectObjectiveActualScore {
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
+    worker_id: Id;
     at: string;
 }
 

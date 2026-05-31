@@ -14,6 +14,7 @@ import {
     postProjectBaselineScoring,
     postProjectActualMeasurement,
 } from '../web-app/app/adapters/project-scoring.ts';
+import { seedHumanWorker } from './worker-fixtures.ts';
 
 test('getBaselineScoresForProject returns project rows',
     async () => {
@@ -24,6 +25,7 @@ test('getBaselineScoresForProject returns project rows',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 50,
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -32,6 +34,7 @@ test('getBaselineScoresForProject returns project rows',
             {
                 project_id: 'p2', objective_id: 'o1',
                 score: -20,
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -52,6 +55,7 @@ test('getActualScoresForProject returns project rows',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 33,
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -72,6 +76,7 @@ test('getProjectScoring returns both lists',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 50,
+                worker_id: 'w1',
                 at: '2026-05-14T00:00:00.000Z',
             },
         );
@@ -80,6 +85,7 @@ test('getProjectScoring returns both lists',
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 33,
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -117,6 +123,7 @@ async function seedTwoApprovedProjects(
     await db.objectives.put('o1', { position: 0 });
     await db.objectiveRevisions.put('o1:t0', {
         objective_id: 'o1', name: 'O', description: 'd',
+        worker_id: 'w1',
         at: '2026-05-14T00:00:00.000Z',
     });
     await db.projectObjectiveBaselineScores.put(
@@ -124,6 +131,7 @@ async function seedTwoApprovedProjects(
         {
             project_id: 'p1', objective_id: 'o1',
             score: 60,
+            worker_id: 'w1',
             at: '2026-05-14T00:00:00.000Z',
         },
     );
@@ -132,6 +140,7 @@ async function seedTwoApprovedProjects(
         {
             project_id: 'p2', objective_id: 'o1',
             score: -20,
+            worker_id: 'w1',
             at: '2026-05-14T00:00:00.000Z',
         },
     );
@@ -186,6 +195,7 @@ test(
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 40,
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -194,6 +204,7 @@ test(
             {
                 project_id: 'p2', objective_id: 'o1',
                 score: 10,
+                worker_id: 'w1',
                 at: '2026-05-16T00:00:00.000Z',
             },
         );
@@ -232,6 +243,7 @@ test(
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 40,
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -261,6 +273,7 @@ test(
             {
                 project_id: 'p1', objective_id: 'o1',
                 score: 40,
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -269,6 +282,7 @@ test(
             {
                 project_id: 'p2', objective_id: 'o1',
                 score: 10,
+                worker_id: 'w1',
                 at: '2026-05-15T00:00:00.000Z',
             },
         );
@@ -296,6 +310,7 @@ test(
         await db.objectiveRevisions.put('o1:t0', {
             objective_id: 'o1',
             name: 'O', description: 'd',
+            worker_id: 'w1',
             at: '2026-05-14T00:00:00.000Z',
         });
         const ctx = createRequestContext(db);
@@ -310,6 +325,7 @@ test('postProjectBaselineScoring appends event rows',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedHumanWorker(db, 'current', 'Demo User');
         const ctx = createRequestContext(db);
         await postProjectBaselineScoring(ctx, 'p1', [
             { objectiveId: 'o1', score: 50 },
@@ -318,12 +334,16 @@ test('postProjectBaselineScoring appends event rows',
         const rows =
             await db.projectObjectiveBaselineScores.getAll();
         assert.equal(rows.length, 2);
+        for (const r of rows) {
+            assert.equal(r.worker_id, 'current');
+        }
     });
 
 test('postProjectActualMeasurement appends actual rows',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
+        await seedHumanWorker(db, 'current', 'Demo User');
         const ctx = createRequestContext(db);
         await postProjectActualMeasurement(ctx, 'p1', [
             { objectiveId: 'o1', score: 33 },
@@ -332,4 +352,5 @@ test('postProjectActualMeasurement appends actual rows',
             await db.projectObjectiveActualScores.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]!.score, 33);
+        assert.equal(rows[0]!.worker_id, 'current');
     });
