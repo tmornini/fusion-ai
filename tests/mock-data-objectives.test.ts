@@ -11,6 +11,27 @@ import { createRequestContext }
 import {
     getArchivedObjectiveIds,
 } from '../web-app/app/adapters/objectives.ts';
+import { getProjectStates } from
+    '../web-app/app/adapters/state-events.ts';
+import type { Id, ProjectState } from
+    '../api/types.ts';
+import type { RequestContext } from
+    '../web-app/app/adapters/shared.ts';
+
+// getProjectStates keys on the shared state alphabet, so
+// an 'approved' idea would leak in; intersect with the
+// projects table for the real project set.
+async function projectIdsByState(
+    ctx: RequestContext,
+    db: MemoryDbAdapter,
+    wanted: ProjectState,
+): Promise<Id[]> {
+    const states = await getProjectStates(ctx);
+    const rows = await db.projects.getAll();
+    return rows
+        .map(p => p.id)
+        .filter(id => states.get(id) === wanted);
+}
 
 test('populateMockData seeds 4 objectives', async () => {
     const db = new MemoryDbAdapter();
@@ -59,24 +80,28 @@ test('approved projects have full baseline coverage',
         const db = new MemoryDbAdapter();
         await db.createSchema();
         await populateMockData(db);
-        const projects = await db.projects.getAll();
-        const approved = projects.filter(
-            p => p.status === 'approved',
+        const ctx = createRequestContext(db);
+        const approved = await projectIdsByState(
+            ctx, db, 'approved',
+        );
+        assert.ok(
+            approved.length > 0,
+            'seed has approved projects',
         );
         const objCount =
             (await db.objectives.getAll()).length;
         const allBaselines = await
             db.projectObjectiveBaselineScores.getAll();
-        for (const p of approved) {
+        for (const pid of approved) {
             const pairs = new Set(
                 allBaselines
-                    .filter(b => b.project_id === p.id)
+                    .filter(b => b.project_id === pid)
                     .map(b => b.objective_id),
             );
             assert.equal(
                 pairs.size,
                 objCount,
-                `project ${p.id} missing coverage`,
+                `project ${pid} missing coverage`,
             );
         }
     });
@@ -86,29 +111,33 @@ test('completed projects have at least one actual per pair',
         const db = new MemoryDbAdapter();
         await db.createSchema();
         await populateMockData(db);
-        const projects = await db.projects.getAll();
-        const completed = projects.filter(
-            p => p.status === 'archived',
+        const ctx = createRequestContext(db);
+        const completed = await projectIdsByState(
+            ctx, db, 'archived',
+        );
+        assert.ok(
+            completed.length > 0,
+            'seed has archived projects',
         );
         const allBaselines = await
             db.projectObjectiveBaselineScores.getAll();
         const allActuals = await
             db.projectObjectiveActualScores.getAll();
-        for (const p of completed) {
+        for (const pid of completed) {
             const pairs = new Set(
                 allBaselines
-                    .filter(b => b.project_id === p.id)
+                    .filter(b => b.project_id === pid)
                     .map(b => b.objective_id),
             );
             const actualPairs = new Set(
                 allActuals
-                    .filter(a => a.project_id === p.id)
+                    .filter(a => a.project_id === pid)
                     .map(a => a.objective_id),
             );
             for (const pair of pairs) {
                 assert.ok(
                     actualPairs.has(pair),
-                    `project ${p.id} missing `
+                    `project ${pid} missing `
                         + `actual for ${pair}`,
                 );
             }
