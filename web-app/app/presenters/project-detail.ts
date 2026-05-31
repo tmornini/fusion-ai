@@ -123,13 +123,17 @@ function buildShell(
                 </button>
                 <div class="project-title-slot">
                 </div>
-                <div id="project-review-actions"
-                    class="self-start"></div>
             </div>
             <div class="${
-                'flex gap-2'
-                + ' project-actions-slot'
-            }"></div>
+                'flex items-start gap-2'
+            }">
+                <div id="project-review-actions">
+                </div>
+                <div class="${
+                    'flex gap-2'
+                    + ' project-actions-slot'
+                }"></div>
+            </div>
         </div>
 
         <div class="${
@@ -143,6 +147,8 @@ function buildShell(
                 <div class="${
                     'project-metrics-slot'
                 }"></div>
+                <div id="project-objectives-section">
+                </div>
             </div>
             <div class="project-sidebar-slot"></div>
         </div>
@@ -621,7 +627,7 @@ function buildReadonlyMetrics(
                     'text-lg font-display'
                     + ' font-semibold'
                 }">
-                    Metrics
+                    Project Metrics
                 </h2>
                 <span class="${
                     'text-xs text-muted'
@@ -691,7 +697,7 @@ function buildEditableMetrics(
                     'text-lg font-display'
                     + ' font-semibold'
                 }">
-                    Metrics
+                    Project Metrics
                 </h2>
                 <span class="${
                     'text-xs text-muted'
