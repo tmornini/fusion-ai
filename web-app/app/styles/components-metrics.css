@@ -70,28 +70,10 @@
     padding: 0.4em 0;
 }
 
-/* DashboardObjectiveAggregates rows: the left-aligned
-   name and the small bipolar gauge share the top line;
-   the sparkline spans the full card width beneath. */
+/* DashboardObjectiveAggregates rows: name, small
+   bipolar gauge, sparkline trend. */
 .objective-aggregates-card .score-row {
-    grid-template-columns: 1fr auto;
-    column-gap: 0.8em;
-    row-gap: 0.35em;
-}
-
-.objective-aggregates-card .score-row-label {
-    text-align: left;
-}
-
-.objective-aggregates-card .score-row-sparkline {
-    grid-column: 1 / -1;
-}
-
-/* Match one top-row gauge column; rows stack internally
-   so the chart still fits. Full width on mobile via
-   responsive.css. */
-.objective-aggregates-card {
-    width: calc((100% - 2 * var(--space-6)) / 3);
+    grid-template-columns: 140px 110px 1fr;
 }
 
 .gauge-card.objective-aggregates-card {
