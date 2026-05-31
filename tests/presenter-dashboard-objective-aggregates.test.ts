@@ -251,3 +251,24 @@ test('empty trendline renders only the axis line', () => {
         'no dots for empty trendline',
     );
 });
+
+test('origin line sits at the baseline value', () => {
+    const p = new DashboardObjectiveAggregatesPresenter(
+        activeObjs, defs, aggregates, trendlines,
+    );
+    const html = p.buildCard().toString();
+    const o1RowStart =
+        html.indexOf('data-objective-id="o1"');
+    const o1Slice = html.slice(o1RowStart);
+    const o1Row = o1Slice.slice(
+        0, o1Slice.indexOf('</li>'),
+    );
+    // o1 trend [20, 40, 25]: min 20 == baseline, so the
+    // axis sits at the bottom edge (SPARK_HEIGHT -
+    // SPARK_PAD = 26), not the geometric mid (15).
+    assert.match(
+        o1Row,
+        /class="sparkline-axis"[^>]*y1="26"/,
+        'grey axis tracks the baseline, not the mid',
+    );
+});

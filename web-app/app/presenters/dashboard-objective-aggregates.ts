@@ -138,17 +138,13 @@ export class DashboardObjectiveAggregatesPresenter {
     }
 
     #sparkline(points: TrendPoint[]): SafeHtml {
-        const axis = html`
-            <line class="sparkline-axis"
-                x1="0" y1="${SPARK_MID}"
-                x2="100" y2="${SPARK_MID}"/>`;
         if (points.length === 0) {
             return html`
                 <span class="sparkline-wrap">
                     <svg class="sparkline-svg"
                         viewBox="0 0 100 ${SPARK_HEIGHT}"
                         preserveAspectRatio="none">
-                        ${axis}
+                        ${this.#axis(SPARK_MID)}
                     </svg>
                 </span>`;
         }
@@ -172,11 +168,18 @@ export class DashboardObjectiveAggregatesPresenter {
                 <svg class="sparkline-svg"
                     viewBox="0 0 100 ${SPARK_HEIGHT}"
                     preserveAspectRatio="none">
-                    ${axis}
+                    ${this.#axis(coords[0]!.y)}
                     ${segments}
                 </svg>
                 ${dots}
             </span>`;
+    }
+
+    #axis(y: number): SafeHtml {
+        return html`
+            <line class="sparkline-axis"
+                x1="0" y1="${y}"
+                x2="100" y2="${y}"/>`;
     }
 
     #coords(
