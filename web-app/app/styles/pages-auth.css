@@ -46,8 +46,6 @@
 .auth-brand-icon {
   width: 3rem;
   height: 3rem;
-  border-radius: var(--radius-xl);
-  background: hsl(var(--accent));
   display: flex;
   align-items: center;
   justify-content: center;
