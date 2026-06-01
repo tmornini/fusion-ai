@@ -79,3 +79,9 @@ export async function seedAIWorker(
         `st-${id}`, id, state, 'system',
     );
 }
+
+export async function seedCurrentWorker(
+    db: MemoryDbAdapter,
+): Promise<void> {
+    await seedHumanWorker(db, 'current', 'Demo User');
+}

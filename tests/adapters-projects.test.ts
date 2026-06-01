@@ -24,6 +24,7 @@ import type {
     ProjectState,
 } from '../api/types.ts';
 import {
+    seedCurrentWorker,
     seedHumanWorker,
 } from './worker-fixtures.ts';
 
@@ -257,12 +258,6 @@ test(
         );
     },
 );
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await seedHumanWorker(db, 'current', 'Demo User');
-}
 
 test(
     'postProjectStateChange records a state event'

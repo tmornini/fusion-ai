@@ -22,17 +22,12 @@ import {
     computeNewPosition,
 } from '../web-app/app/drag-reorder-positions.ts';
 import {
+    seedCurrentWorker,
     seedHumanWorker,
 } from './worker-fixtures.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);
-}
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 test('getObjective returns a single row', async () => {

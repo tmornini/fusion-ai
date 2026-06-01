@@ -13,14 +13,9 @@ import {
     getProjectState,
 } from '../web-app/app/adapters/state-events.ts';
 import {
+    seedCurrentWorker,
     seedHumanWorker,
 } from './worker-fixtures.ts';
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await seedHumanWorker(db, 'current', 'Demo User');
-}
 
 const SAMPLE_PROJECT_BODY = {
     title: 't',

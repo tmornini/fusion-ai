@@ -13,6 +13,7 @@ import {
     type HumanWorkerDraft,
 } from '../web-app/app/adapters/workers.ts';
 import {
+    seedCurrentWorker,
     seedHumanWorker,
 } from './worker-fixtures.ts';
 
@@ -30,12 +31,6 @@ function buildHumanWorker(
         phone: '',
         bio: '',
     };
-}
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await seedHumanWorker(db, 'current', 'Demo User');
 }
 
 async function setupDb(): Promise<{

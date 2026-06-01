@@ -8,14 +8,9 @@ import {
     jsonArrayField,
 } from '../api/types.ts';
 import {
+    seedCurrentWorker,
     seedHumanWorker,
 } from './worker-fixtures.ts';
-
-async function seedCurrentWorker(
-    db: MemoryDbAdapter,
-): Promise<void> {
-    await seedHumanWorker(db, 'current', 'Demo User');
-}
 
 // ── Create variant ──────
 
