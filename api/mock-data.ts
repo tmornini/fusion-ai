@@ -1334,6 +1334,23 @@ export async function populateMockData(
             actual_cost: 34000,
             position: 15,
         },
+        {
+            id: 'P16MktSent1mentXY01020',
+            title: 'Market Sentiment'
+                + ' Analyzer',
+            description:
+                'NLP pipeline that scores'
+                + ' brand sentiment across'
+                + ' social and news feeds,'
+                + ' freshly submitted for'
+                + ' review.',
+            progress: 0,
+            start_date: dt(5, 9, 0),
+            target_end_date: dt(-120, 9, 0),
+            estimated_cost: 42000,
+            actual_cost: 0,
+            position: 16,
+        },
     ];
 
     const wfTimestamp = dt(60, 9, 0);
@@ -5791,6 +5808,13 @@ export async function populateMockData(
             state: 'approved',
             worker_id: SYSTEM_WORKER_ID,
             at: dt(58, 9, 0),
+        },
+        {
+            id: 'pSe16MktSentSubmt16BC',
+            entity_id: 'P16MktSent1mentXY01020',
+            state: 'submitted',
+            worker_id: SYSTEM_WORKER_ID,
+            at: dt(5, 9, 0),
         },
     ];
 

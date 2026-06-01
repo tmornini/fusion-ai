@@ -181,15 +181,19 @@ test('submitted projects have zero scores', async () => {
     const db = new MemoryDbAdapter();
     await db.createSchema();
     await populateMockData(db);
-    const projects = await db.projects.getAll();
-    const submitted = projects.filter(
-        p => p.status === 'submitted',
+    const ctx = createRequestContext(db);
+    const submitted = await projectIdsByState(
+        ctx, 'submitted',
+    );
+    assert.ok(
+        submitted.length > 0,
+        'seed has submitted projects',
     );
     const allBaselines = await
         db.projectObjectiveBaselineScores.getAll();
-    for (const p of submitted) {
+    for (const pid of submitted) {
         const baselines = allBaselines.filter(
-            b => b.project_id === p.id,
+            b => b.project_id === pid,
         );
         assert.equal(baselines.length, 0);
     }
