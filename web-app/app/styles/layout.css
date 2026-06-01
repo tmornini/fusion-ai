@@ -154,10 +154,6 @@ html.sidebar-collapsed .main-content {
   margin-left: var(--space-16);
 }
 
-html.sidebar-collapsed .action-footer {
-  left: var(--space-16);
-}
-
 /* Header */
 .top-header {
   position: sticky;
@@ -316,7 +312,6 @@ html.sidebar-collapsed .action-footer {
   .main-content .page-content {
     padding: var(--space-4);
   }
-  .action-footer { left: 0; }
 }
 
 /* Sidebar sign-out link */
