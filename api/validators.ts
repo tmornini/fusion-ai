@@ -1228,6 +1228,29 @@ export function validateRecordAttributeEntity(
             + i + ']',
         );
     }
+    const optionsField = pickJsonArrayField(
+        body, 'options',
+    );
+    if (
+        attributeType === 'select'
+        || attributeType === 'radio'
+    ) {
+        const parsedOptions = asArray(
+            parseOrThrow(
+                optionsField,
+                'RecordAttributeEntity.options',
+            ),
+            'RecordAttributeEntity.options',
+        );
+        if (parsedOptions.length === 0) {
+            throw new Error(
+                'RecordAttributeEntity.options'
+                + ' must list at least one option'
+                + " for attribute_type '"
+                + attributeType + "'",
+            );
+        }
+    }
     return {
         record_id: pickString(
             body, 'record_id',
@@ -1237,9 +1260,7 @@ export function validateRecordAttributeEntity(
         sort_order: pickNumber(
             body, 'sort_order',
         ),
-        options: pickJsonArrayField(
-            body, 'options',
-        ),
+        options: optionsField,
         constraints: constraintsField,
     };
 }

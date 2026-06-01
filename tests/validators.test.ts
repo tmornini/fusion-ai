@@ -13,6 +13,7 @@ import {
     validateOrganizationEntity,
     validateIdeaSubmissionEntity,
     validateProjectFlowEntity,
+    validateRecordAttributeEntity,
     asStoredGraph,
 } from '../api/validators.ts';
 import {
@@ -787,3 +788,52 @@ test(
         );
     },
 );
+
+// --- RecordAttributeEntity ---
+
+const validSelectAttribute = {
+    record_id: 'r-1',
+    name: 'Priority',
+    attribute_type: 'select',
+    sort_order: 0,
+    options: '["High","Low"]',
+    constraints: '[]',
+};
+
+test(
+    'validateRecordAttributeEntity rejects a'
+    + ' select with zero options',
+    () => {
+    assert.throws(
+        () => validateRecordAttributeEntity({
+            ...validSelectAttribute,
+            options: '[]',
+        }),
+        /at least one option/,
+    );
+});
+
+test(
+    'validateRecordAttributeEntity accepts a'
+    + ' radio with options',
+    () => {
+    const result = validateRecordAttributeEntity({
+        ...validSelectAttribute,
+        attribute_type: 'radio',
+    });
+    assert.equal(result.attribute_type, 'radio');
+});
+
+test(
+    'validateRecordAttributeEntity rejects a'
+    + ' radio with zero options',
+    () => {
+    assert.throws(
+        () => validateRecordAttributeEntity({
+            ...validSelectAttribute,
+            attribute_type: 'radio',
+            options: '[]',
+        }),
+        /at least one option/,
+    );
+});
