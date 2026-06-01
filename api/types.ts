@@ -7,6 +7,17 @@ export type Id = string;
 
 export type WorkerId = Id;
 
+export type ModelId = Id;
+
+export interface ProviderModel {
+    id: ModelId;
+    provider: string;
+    name: string;
+    // The vendor's real API model id, e.g.
+    // 'claude-opus-4-8' — needed for brokering.
+    api_name: string;
+}
+
 export type WorkerKind = 'human' | 'ai' | 'system';
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
