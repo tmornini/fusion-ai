@@ -305,6 +305,28 @@ test(
 );
 
 test(
+    'buildAttributeInputHtml renders a radio group'
+    + ' with one collectable input per option',
+    () => {
+        const ref = makeAttributeRef();
+        const attribute = makeAttribute({
+            attribute_type: 'radio',
+            options: jsonArrayField(
+                ['Low', 'High'],
+            ),
+        });
+        const out = buildAttributeInputHtml(
+            ref, attribute,
+        ).toString();
+        assert.match(out, /type="radio"/);
+        assert.match(out, /name="a-1"/);
+        assert.match(out, /data-attribute-id="a-1"/);
+        assert.match(out, /value="Low"/);
+        assert.match(out, /value="High"/);
+    },
+);
+
+test(
     'buildAttributeInputHtml renders a bare'
     + ' checkbox input for the checkbox type',
     () => {

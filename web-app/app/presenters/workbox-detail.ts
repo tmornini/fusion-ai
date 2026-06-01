@@ -72,6 +72,25 @@ export function buildAttributeInputHtml(
             )}
         </select>`;
     }
+    if (attribute.attribute_type === 'radio') {
+        const options = JSON.parse(
+            attribute.options,
+        ) as string[];
+        return html`<div class="radio-group">
+            ${options.map(
+                o => html`<label
+                    class="radio-option">
+                    <input type="radio"
+                        name="${id}"
+                        value="${o}"
+                        data-attribute-id="${id}"
+                        ${disabledAttr}
+                        ${requiredAttr} />
+                    <span>${o}</span>
+                </label>`,
+            )}
+        </div>`;
+    }
     const spec = ATTRIBUTE_HTML_TYPE[
         attribute.attribute_type
     ];

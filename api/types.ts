@@ -30,6 +30,7 @@ export const ATTRIBUTE_TYPES = [
     'text',
     'number',
     'select',
+    'radio',
     'date',
     'checkbox',
 ] as const;
