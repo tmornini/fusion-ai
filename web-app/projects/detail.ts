@@ -45,6 +45,10 @@ import {
 import type {
     FlowListItem,
 } from '../app/adapters/index.ts';
+import {
+    getWorkerMap,
+    workerName,
+} from '../app/adapters/workers-union.ts';
 import type {
     ObjectiveRevision,
 } from '../../api/types.ts';
@@ -960,10 +964,12 @@ async function openHistoryModal(
             description: eligible[0]!.description,
         };
     };
+    const workerMap = await getWorkerMap(ctx);
     const presenter =
         new ProjectScoreHistoryPresenter(
             scoring.baseline, scoring.actual,
             revisions, archivations, resolver,
+            workerId => workerName(workerMap, workerId),
         );
     const bodyEl =
         $('#history-modal-body', document);

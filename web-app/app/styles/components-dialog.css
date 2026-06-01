@@ -12,6 +12,12 @@
   border-bottom: 1px solid hsl(var(--border));
 }
 
+/* Keep the date on one line; it was wrapping to three. */
+.score-history-table th:first-child,
+.score-history-table td:first-child {
+  white-space: nowrap;
+}
+
 .score-history-table td[data-tone="error"] {
   color: hsl(var(--destructive));
 }
@@ -79,6 +85,10 @@
 
 .dialog-narrow {
   width: min(90vw, 28rem);
+}
+
+.dialog-xwide {
+  width: min(95vw, 48rem);
 }
 
 .dialog-header { margin-bottom: var(--space-4); }
