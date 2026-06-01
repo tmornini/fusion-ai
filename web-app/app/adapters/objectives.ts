@@ -3,6 +3,7 @@ import type {
     Objective,
     ObjectiveId,
     ObjectiveRevision,
+    ObjectiveState,
     StateEntity,
 } from '../../../api/types.ts';
 import { nowUtc } from '../../../api/types.ts';
@@ -15,6 +16,7 @@ import {
 } from './crypto-safe-base62.ts';
 import {
     buildStateEventOp,
+    latestStatesForIds,
 } from './state-events.ts';
 import {
     getCurrentHumanWorker,
@@ -55,32 +57,17 @@ export async function getObjectives(
 export async function getArchivedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
-    const [rows, objectives] = await Promise.all([
+    const [events, objectives] = await Promise.all([
         ctx.GET<StateEntity[]>('states'),
         getObjectives(ctx),
     ]);
-    const objectiveIds = new Set<string>(
-        objectives.map(o => o.id),
-    );
-    // Iterate in insertion order; on `at` tie the
-    // later-inserted row wins. `nowUtc()` resolves to
-    // milliseconds so back-to-back mutations on a fast
-    // machine can collide; insertion order is the
-    // deterministic tiebreak the event log already
-    // captures. The `'archived'` value is shared across
-    // entity alphabets, so we restrict to objective ids.
-    const latestByEntity = new Map<string, StateEntity>();
-    for (const row of rows) {
-        if (!objectiveIds.has(row.entity_id)) continue;
-        const seen = latestByEntity.get(row.entity_id);
-        if (seen === undefined || row.at >= seen.at) {
-            latestByEntity.set(row.entity_id, row);
-        }
-    }
+    const ids = new Set<Id>(objectives.map(o => o.id));
+    const latest =
+        latestStatesForIds<ObjectiveState>(events, ids);
     const archived = new Set<ObjectiveId>();
-    for (const [entityId, row] of latestByEntity) {
-        if (row.state === 'archived') {
-            archived.add(entityId as ObjectiveId);
+    for (const [id, state] of latest) {
+        if (state === 'archived') {
+            archived.add(id as ObjectiveId);
         }
     }
     return archived;

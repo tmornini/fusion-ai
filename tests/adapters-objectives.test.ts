@@ -68,6 +68,24 @@ test('getArchivedObjectiveIds returns a Set', async () => {
     assert.equal(ids.size, 1);
 });
 
+test('getArchivedObjectiveIds excludes an archived project',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        await db.objectives.put('o1', { position: 0 });
+        await db.states.record(
+            'e-o1', 'o1', 'archived', 'system',
+        );
+        await db.states.record(
+            'e-p1', 'proj-1', 'archived', 'system',
+        );
+        const ctx = ctxFor(db);
+        const ids = await getArchivedObjectiveIds(ctx);
+        assert.ok(ids.has('o1'));
+        assert.ok(!ids.has('proj-1'));
+        assert.equal(ids.size, 1);
+    });
+
 test('getObjectiveArchivalEvents surfaces the actor',
     async () => {
         const db = new MemoryDbAdapter();
