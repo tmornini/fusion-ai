@@ -831,9 +831,6 @@ export class IdeaEditPresenter {
 
     #buildActionButtons(): SafeHtml {
         return html`
-            ${buildSubmitConvertButtons(
-                this.#idea,
-            )}
             <div class="flex gap-2">
                 <button
                     class="${
