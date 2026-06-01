@@ -55,7 +55,7 @@ tools can drive the page normally.
 --test --strip-types tests/*.test.ts`), then enforces a
 78-character maximum line length on all `.ts`, `.html`, and
 `.css` files (excluding `compose.ts`) and on every `.md`
-file at the repo root except `TEST-PLAN.md` — exempted
+file at the repo root except [TEST-PLAN.md](TEST-PLAN.md) — exempted
 because each test case bullet is meant to scan as one
 self-contained line.
 
@@ -123,9 +123,9 @@ All styling lives in `web-app/app/styles/`. Do not use inline
    properties: `style="--progress-fill:${value}%"` consumed
    by a CSS rule reading `var(--progress-fill, 0%)`; the
    flow-stats heat ramp uses the same pattern with per-node
-   `style="--heat-t:${0..1}"` — see DESIGN-SYSTEM.md §
-   Heat ramp. The value is **data**; the colors stay in
-   the design system.
+   `style="--heat-t:${0..1}"` — see
+   [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) § Heat ramp. The
+   value is **data**; the colors stay in the design system.
 2. **Bootstrap fallbacks.** `database-init.ts` uses these
    for error UI before CSS may have loaded; marked with a
    file-header comment.
@@ -139,9 +139,10 @@ When extending CSS: `components-X.css` for patterns used by
 `pages-X.css` for page-scoped patterns (each page declares its
 bundles in `cssBundles` per `page-registry.ts`), `utilities.css`
 for single-property primitives. Do not use raw hex colors;
-use `hsl(var(--token))`. See DESIGN-SYSTEM.md § 12 CSS
-Architecture for the full cascade order, per-page bundle
-mechanism, and decision tree.
+use `hsl(var(--token))`. See
+[DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) § 12 CSS Architecture
+for the full cascade order, per-page bundle mechanism, and
+decision tree.
 
 ### Component Library
 
@@ -163,11 +164,12 @@ attribute, panels use `id="tab-{name}"`.
 
 ### Design System
 
-See `DESIGN-SYSTEM.md`. Key invariant: do not use raw hex
-colors in CSS; use `hsl(var(--token))`. Icons are ~100 inline SVG
-functions in `web-app/app/icons.ts`.
+See [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Key invariant: do
+not use raw hex colors in CSS; use `hsl(var(--token))`.
+Icons are ~100 inline SVG functions in
+`web-app/app/icons.ts`.
 
-**Heat ramp.** See DESIGN-SYSTEM.md § Heat ramp.
+**Heat ramp.** See [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) § Heat ramp.
 
 ### Mobile Responsiveness
 
@@ -234,8 +236,8 @@ directly: `node --test --strip-types tests/*.test.ts`.
 
 ### Manual browser regression
 
-UI behavior runs against `TEST-PLAN.md`, driven either by a
-single human tester
+UI behavior runs against [TEST-PLAN.md](TEST-PLAN.md),
+driven either by a single human tester
 serially or by Claude Code agents in parallel via the
 `claude-in-chrome` MCP. Anything DOM-driven (gestures, layout,
 visual rendering) lives here; where a manual case is the
@@ -246,7 +248,8 @@ automated suite. The six-phase agent protocol, the per-entity
 mutation-domain table, the `StorageEvent` tolerance patterns,
 and the known MCP limitations (flow-designer gesture
 pointer-capture, `resize_window`, file I/O, kill EPERM) live
-in TEST-PLAN.md § Protocol — CLAUDE.md does not duplicate them.
+in [TEST-PLAN.md](TEST-PLAN.md) § Protocol — CLAUDE.md does
+not duplicate them.
 
 ### Orchestration
 
@@ -327,7 +330,8 @@ meaningless. Report the failure, stop, await fix.
 - **`state_field_values.field_id` references
   `record_attributes.id`.** the column name predates Records
   and stays until a second non-Record consumer arrives. The
-  semantic note lives in `SCHEMA.md § state_field_values`.
+  semantic note lives in [SCHEMA.md](SCHEMA.md) §
+  state_field_values.
 
 ## Commits
 
