@@ -3,11 +3,9 @@ import type {
     ProviderModel,
 } from './types.ts';
 
-// Brokered vendor model catalog. Code-resident,
-// not a DB table: the validation gate must verify
-// AI-worker `model` membership, and the catalog is
-// the single source of truth for a model's
-// provider, display name, and vendor API id.
+// Code-resident, not a DB table: the single source
+// of truth the AI-worker validation gate checks
+// `model` membership against.
 const PROVIDER_MODELS: readonly ProviderModel[] = [
     {
         id: 'mnte677fU2G1V2B9vJp9z7',

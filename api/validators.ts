@@ -644,11 +644,10 @@ const AI_WORKER_BODY_KEYS:
     'description', 'model', 'skill_focus',
 ];
 
-// model must be a known catalog id — membership
-// at the gate, not mere non-emptiness, so a stale
-// or forged id cannot enter storage. skill_focus
-// is free text: pickString rejects null/missing,
-// so '' is accepted and the column stays NOT NULL.
+// model must be a known catalog id — membership at
+// the gate, not mere non-emptiness, so a stale or
+// forged id cannot enter storage. skill_focus is
+// free text but never null: the column is NOT NULL.
 export function validateAIWorkerEntity(
     body: Record<string, unknown>,
 ): Omit<AIWorkerEntity, 'id'> {

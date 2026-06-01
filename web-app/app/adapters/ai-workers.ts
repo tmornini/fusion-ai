@@ -111,8 +111,7 @@ export async function getAIWorkerRow(
     return { ...detail, name: parent.name };
 }
 
-// Split an AI-worker edit across the parent (type +
-// name) and detail rows. Creation goes through
+// Edits only; creation goes through
 // postAIWorkerCreation.
 export async function putAIWorker(
     ctx: RequestContext,
@@ -138,11 +137,9 @@ export async function putAIWorker(
     aiWorkerChanges.notify();
 }
 
-// AI-worker creation: parent row + detail row + initial
-// 'active' state event in one ctx.commit batch. Use at
-// every site that creates an AI worker. putAIWorker
-// remains for pure edits (name, model, skill_focus)
-// that do not change the lifecycle stage.
+// Creation also emits the initial 'active' state
+// event, so it cannot reuse putAIWorker (edits only).
+// Use at every site that creates an AI worker.
 export async function postAIWorkerCreation(
     ctx: RequestContext,
     id: WorkerId,

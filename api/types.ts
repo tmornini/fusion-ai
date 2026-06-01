@@ -13,8 +13,7 @@ export interface ProviderModel {
     id: ModelId;
     provider: string;
     name: string;
-    // The vendor's real API model id, e.g.
-    // 'claude-opus-4-8' — needed for brokering.
+    // The vendor's real API model id (for brokering).
     api_name: string;
 }
 
