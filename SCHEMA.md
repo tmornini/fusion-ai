@@ -91,12 +91,17 @@ AI detail, keyed by the shared worker id. All worker
 kinds share the `WORKER_STATES` alphabet (`active`,
 `pending`, `archived`), recorded in the `states` log.
 
+`model` is a foreign key into the code-resident
+provider-model catalog (`api/provider-models.ts`), not a
+DB table; the gate validates membership. `skill_focus`
+is free text, NOT NULL — empty is `''`, never null.
+
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| provider | TEXT |
 | description | TEXT |
-| auth_token | TEXT |
+| skill_focus | TEXT |
+| model | TEXT |
 
 ### ideas
 

@@ -38,6 +38,9 @@ import {
     assertConstraintAppliesTo,
     assertRecordState,
 } from './types.ts';
+import {
+    isProviderModelId,
+} from './provider-models.ts';
 
 export function parseOrThrow(
     raw: string,
@@ -638,16 +641,14 @@ export function validateHumanWorkerEntity(
 
 const AI_WORKER_BODY_KEYS:
     readonly string[] = [
-    'provider', 'description',
-    'auth_token',
+    'description', 'model', 'skill_focus',
 ];
 
-// auth_token must be non-empty —
-// Sin of Null / Default Values fires
-// otherwise (empty would be a sentinel for
-// "not set"). Future feature will add
-// provider-side validation; this gate is
-// the first line of defense today.
+// model must be a known catalog id — membership
+// at the gate, not mere non-emptiness, so a stale
+// or forged id cannot enter storage. skill_focus
+// is free text: pickString rejects null/missing,
+// so '' is accepted and the column stays NOT NULL.
 export function validateAIWorkerEntity(
     body: Record<string, unknown>,
 ): Omit<AIWorkerEntity, 'id'> {
@@ -656,23 +657,21 @@ export function validateAIWorkerEntity(
         AI_WORKER_BODY_KEYS,
         'AIWorkerEntity',
     );
-    const authToken = pickString(
-        body, 'auth_token',
-    );
-    if (authToken === '') {
+    const model = pickString(body, 'model');
+    if (!isProviderModelId(model)) {
         throw new Error(
-            'auth_token must be non-empty'
-            + ' on AIWorkerEntity',
+            'model must be a known provider'
+            + ' model id on AIWorkerEntity',
         );
     }
     return {
-        provider: pickString(
-            body, 'provider',
-        ),
         description: pickString(
             body, 'description',
         ),
-        auth_token: authToken,
+        skill_focus: pickString(
+            body, 'skill_focus',
+        ),
+        model,
     };
 }
 

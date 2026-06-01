@@ -15,6 +15,9 @@ import {
     validateProjectFlowEntity,
     asStoredGraph,
 } from '../api/validators.ts';
+import {
+    getProviderModels,
+} from '../api/provider-models.ts';
 
 // --- HumanWorkerEntity ---
 
@@ -97,9 +100,9 @@ test(
 // --- AIWorkerEntity ---
 
 const validAIWorker = {
-    provider: 'Anthropic',
     description: 'Long context, deep reasoning.',
-    auth_token: 'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
+    skill_focus: 'Deep reasoning over long docs.',
+    model: getProviderModels()[0]!.id,
 };
 
 test(
@@ -108,27 +111,43 @@ test(
         const result = validateAIWorkerEntity(
             validAIWorker,
         );
-        assert.equal(result.provider, 'Anthropic');
         assert.equal(
             result.description,
             'Long context, deep reasoning.',
         );
         assert.equal(
-            result.auth_token,
-            'sk-PLACEHOLDER-DEMOTOKEN-XXXX',
+            result.skill_focus,
+            'Deep reasoning over long docs.',
+        );
+        assert.equal(
+            result.model,
+            getProviderModels()[0]!.id,
         );
     },
 );
 
 test(
-    'validateAIWorkerEntity rejects empty auth_token',
+    'validateAIWorkerEntity accepts empty'
+    + ' skill_focus',
+    () => {
+        const result = validateAIWorkerEntity({
+            ...validAIWorker,
+            skill_focus: '',
+        });
+        assert.equal(result.skill_focus, '');
+    },
+);
+
+test(
+    'validateAIWorkerEntity rejects unknown'
+    + ' model id',
     () => {
         assert.throws(
             () => validateAIWorkerEntity({
                 ...validAIWorker,
-                auth_token: '',
+                model: 'not-a-real-model-id',
             }),
-            /auth_token must be non-empty/,
+            /model must be a known provider/,
         );
     },
 );
@@ -147,27 +166,26 @@ test(
 );
 
 test(
-    'validateAIWorkerEntity rejects missing provider',
+    'validateAIWorkerEntity rejects missing model',
     () => {
-        const { provider: _omit, ...rest } =
+        const { model: _omit, ...rest } =
             validAIWorker;
         assert.throws(
             () => validateAIWorkerEntity(rest),
-            /missing required key "provider"/,
+            /missing required key "model"/,
         );
     },
 );
 
 test(
     'validateAIWorkerEntity rejects missing'
-    + ' auth_token',
+    + ' skill_focus',
     () => {
-        const {
-            auth_token: _omit, ...rest
-        } = validAIWorker;
+        const { skill_focus: _omit, ...rest } =
+            validAIWorker;
         assert.throws(
             () => validateAIWorkerEntity(rest),
-            /missing required key "auth_token"/,
+            /missing required key "skill_focus"/,
         );
     },
 );

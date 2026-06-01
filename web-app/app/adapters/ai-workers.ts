@@ -141,7 +141,7 @@ export async function putAIWorker(
 // AI-worker creation: parent row + detail row + initial
 // 'active' state event in one ctx.commit batch. Use at
 // every site that creates an AI worker. putAIWorker
-// remains for pure edits (name, provider, auth_token)
+// remains for pure edits (name, model, skill_focus)
 // that do not change the lifecycle stage.
 export async function postAIWorkerCreation(
     ctx: RequestContext,
@@ -179,20 +179,4 @@ export async function postAIWorkerStateChange(
         ],
     });
     aiWorkerChanges.notify();
-}
-
-// Token masking: show last 4 characters
-// preceded by an ellipsis. Used by the AI
-// worker detail presenter; the AIWorker
-// class also exposes the same logic via
-// .maskedToken(). Free-standing helper here
-// for callers that hold a raw token string
-// without an AIWorker instance.
-export function maskAuthToken(
-    token: string,
-): string {
-    if (token.length <= 4) return token;
-    return token.slice(0, 3)
-        + '…'
-        + token.slice(-4);
 }

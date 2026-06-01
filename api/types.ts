@@ -560,18 +560,18 @@ export class HumanWorker {
 // ai_workers detail row, keyed by the shared worker id.
 export interface AIWorkerEntity {
     id: WorkerId;
-    provider: string;
     description: string;
-    auth_token: string;
+    skill_focus: string;
+    model: ModelId;
 }
 
 export class AIWorker {
     readonly kind = 'ai' as const;
     readonly #id: WorkerId;
     readonly #name: string;
-    readonly #provider: string;
     readonly #description: string;
-    readonly #authToken: string;
+    readonly #skillFocus: string;
+    readonly #model: ModelId;
     readonly #state: WorkerState;
 
     constructor(
@@ -581,11 +581,11 @@ export class AIWorker {
     ) {
         this.#id = parent.id;
         this.#name = parent.name;
-        this.#provider = detail.provider;
         this.#description =
             detail.description;
-        this.#authToken =
-            detail.auth_token;
+        this.#skillFocus =
+            detail.skill_focus;
+        this.#model = detail.model;
         this.#state = state;
     }
 
@@ -601,22 +601,16 @@ export class AIWorker {
         return this.nameText();
     }
 
-    providerText(): string {
-        return this.#provider;
-    }
-
     descriptionText(): string {
         return this.#description;
     }
 
-    maskedToken(): string {
-        const token = this.#authToken;
-        if (token.length <= 4) return token;
-        return (
-            token.slice(0, 3)
-            + '…'
-            + token.slice(-4)
-        );
+    skillFocusText(): string {
+        return this.#skillFocus;
+    }
+
+    modelId(): ModelId {
+        return this.#model;
     }
 
     isActive(): boolean {
@@ -651,9 +645,6 @@ export class AIWorker {
         const lowerTerm = term.toLowerCase();
         return (
             this.#name
-                .toLowerCase()
-                .includes(lowerTerm)
-            || this.#provider
                 .toLowerCase()
                 .includes(lowerTerm)
             || this.#description
