@@ -18,19 +18,14 @@ import type { Id, ProjectState } from
 import type { RequestContext } from
     '../web-app/app/adapters/shared.ts';
 
-// getProjectStates keys on the shared state alphabet, so
-// an 'approved' idea would leak in; intersect with the
-// projects table for the real project set.
 async function projectIdsByState(
     ctx: RequestContext,
-    db: MemoryDbAdapter,
     wanted: ProjectState,
 ): Promise<Id[]> {
     const states = await getProjectStates(ctx);
-    const rows = await db.projects.getAll();
-    return rows
-        .map(p => p.id)
-        .filter(id => states.get(id) === wanted);
+    return [...states]
+        .filter(([, state]) => state === wanted)
+        .map(([id]) => id);
 }
 
 test('populateMockData seeds 4 objectives', async () => {
@@ -82,7 +77,7 @@ test('approved projects have full baseline coverage',
         await populateMockData(db);
         const ctx = createRequestContext(db);
         const approved = await projectIdsByState(
-            ctx, db, 'approved',
+            ctx, 'approved',
         );
         assert.ok(
             approved.length > 0,
@@ -113,7 +108,7 @@ test('completed projects have at least one actual per pair',
         await populateMockData(db);
         const ctx = createRequestContext(db);
         const completed = await projectIdsByState(
-            ctx, db, 'archived',
+            ctx, 'archived',
         );
         assert.ok(
             completed.length > 0,
@@ -151,7 +146,7 @@ test('approved projects have an actual for every pair',
         await populateMockData(db);
         const ctx = createRequestContext(db);
         const approved = await projectIdsByState(
-            ctx, db, 'approved',
+            ctx, 'approved',
         );
         assert.ok(
             approved.length > 0,
