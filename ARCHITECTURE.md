@@ -120,7 +120,7 @@ worker plus the human and AI rosters), `api/validators.ts`
 (`validateWorkerEntity` /
 `validateHumanWorkerEntity` / `validateAIWorkerEntity` /
 `validateStateEntity`, where the AI validator rejects empty
-`auth_token` per the no-defaults doctrine). The `DbAdapter`
+`auth_token`). The `DbAdapter`
 interface is the migration seam to Postgres.
 
 `web-app/app/adapters/init.ts` wires the production LocalStorage
@@ -229,7 +229,7 @@ layer directly.
 - `toneFor*` / `levelFor*` — return string enums consumed as
   `data-tone` / `data-level` attribute values (replaces older
   `styleFor*` inline-style pattern)
-- `assert*` — Telling-shape validators in `api/types.ts` and
+- `assert*` — validators in `api/types.ts` and
   `api/validators.ts` that take a raw value and return a typed
   value or throw. The `is*` type-guards remain for legitimate
   type-narrowing call sites.
@@ -268,15 +268,14 @@ layer directly.
   Data-access adapters (`ideas.ts`, `flow-queries.ts`, etc.)
   fetch entity data through `ctx`. Platform shims
   (`clipboard.ts`, `viewport.ts`, `location.ts`,
-  `crypto-safe-base62.ts`, etc.) wrap browser primitives so the
-  app speaks one voice.
+  `crypto-safe-base62.ts`, etc.) wrap browser primitives
+  behind adapters the app owns.
 - **`getFlowStats(ctx, flowId)`.** Resolves the work-order
-  set via the `flow-work-orders` join table (relational
-  truth per Codd), not via each work order's frozen
-  `flow_graph.flowId`. Returns `{ model, graph }` so the
-  page derives the canvas viewBox from real laid-out
-  coordinates — `getFlowGraph` runs `computeLayout` for
-  `is_auto_layout` or degenerate flows.
+  set via the `flow-work-orders` join table, not via each
+  work order's frozen `flow_graph.flowId`. Returns
+  `{ model, graph }` so the page derives the canvas viewBox
+  from real laid-out coordinates — `getFlowGraph` runs
+  `computeLayout` for `is_auto_layout` or degenerate flows.
 - **Mutation adapters return `Promise<void>`.**
   Change-awareness flows through notification channels (e.g.,
   `ideaChanges.notify()`), never through return values —

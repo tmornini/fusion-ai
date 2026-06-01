@@ -3,12 +3,6 @@
 This file provides guidance to Claude Code (claude.ai/code)
 when working with code in this repository.
 
-## Alignment
-
-**Match the codebase's voice, or change the codebase.** A better
-pattern earns its place by replacing every site of the old one —
-never by living beside it. One codebase, one voice.
-
 ## Build & Dev Commands
 
 ### Commands
@@ -311,7 +305,7 @@ meaningless. Report the failure, stop, await fix.
   `StateStore.record` only appends; the table never deletes.
   An entity's lifecycle reads as the latest event on its
   `entity_id`. Reversal is a *new* event with the new state,
-  not an edit of the prior row. The doctrinal split between
+  not an edit of the prior row. The split between
   entity-lifecycle event (state log) and relationship-row
   splice (`EntityStore.delete` on relationship rows like
   `state_field_values`) is the seam — read
@@ -337,8 +331,7 @@ meaningless. Report the failure, stop, await fix.
 
 ## Commits
 
-Commit completed, tested work. Do not ask. The Office of
-the Commit governs — ABC.
+Commit completed, tested work. Do not ask.
 
 ## Worktrees
 

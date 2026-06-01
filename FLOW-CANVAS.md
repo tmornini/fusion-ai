@@ -124,7 +124,7 @@ the reader's view.
 The read-only stats variant (`flow-stats`) uses its own renderer
 `flow-stats-graph.ts` and presenter `FlowStatsPresenter`,
 deliberately *not* a parametrization of
-`flow-graph.ts`/`FlowDesignerPresenter` (Commandment IX). It
+`flow-graph.ts`/`FlowDesignerPresenter`. It
 shares only the pure pieces: geometry constants
 (`NODE_WIDTH`/`NODE_HEIGHT` from `flow-layout.ts`,
 `NODE_RADIUS` / `GRID_CELL` exported from `flow-graph.ts`),
@@ -143,7 +143,7 @@ and the designer both start from real coordinates, not
 the persisted (0,0) placeholders. `runFlowLayout` /
 `runLayoutFromInputs` is the one `computeLayout` wrapper,
 shared by `getFlowGraph`, the designer's `applyAutoLayout`,
-and `flow-export`'s mermaid-import path (Commandment IX).
+and `flow-export`'s mermaid-import path.
 Its emitted SVG carries *none* of the editor's
 interactivity tells (no `<animate>`, `role="button"`,
 `tabindex`, connection ports, `data-connect-port`,
