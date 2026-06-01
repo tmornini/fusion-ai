@@ -3,6 +3,7 @@ import {
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
     DEFAULT_NODE_WORKER_IDS,
+    DEFAULT_NODE_TASK_INSTRUCTIONS,
     projectStateIsNotDeleted,
 } from '../../../api/types.ts';
 import {
@@ -504,6 +505,7 @@ export async function postFlowFromBackup(
             isArchive: n.isArchive,
             workerIds: n.workerIds,
             attributes: [],
+            taskInstructions: n.taskInstructions,
         });
     }
 
@@ -832,6 +834,7 @@ export async function postFlowFromMermaid(
                         ...DEFAULT_NODE_WORKER_IDS,
                     ],
                     attributes: [],
+                    taskInstructions: DEFAULT_NODE_TASK_INSTRUCTIONS,
                 };
             },
         );
@@ -1171,6 +1174,7 @@ export async function postFlowFromZip(
                         ...DEFAULT_NODE_WORKER_IDS,
                     ],
                     attributes: [],
+                    taskInstructions: DEFAULT_NODE_TASK_INSTRUCTIONS,
                 };
             },
         );

@@ -591,6 +591,7 @@ const baseNode = {
     isCreate: false,
     isArchive: false,
     attributes: [],
+    taskInstructions: '',
 };
 
 test(
@@ -663,6 +664,102 @@ test(
                         {
                             ...baseNode,
                             workerIds: [123],
+                        },
+                    ],
+                    edges: [],
+                },
+                'graph',
+            ),
+        );
+    },
+);
+
+// --- asStoredGraph (taskInstructions) ---
+
+test(
+    'asStoredGraph throws on missing'
+    + ' taskInstructions',
+    () => {
+        assert.throws(
+            () => asStoredGraph(
+                {
+                    nodes: [
+                        {
+                            id: 'n1',
+                            name: 'N',
+                            positionX: 0,
+                            positionY: 0,
+                            isCreate: false,
+                            isArchive: false,
+                            attributes: [],
+                            workerIds: [],
+                        },
+                    ],
+                    edges: [],
+                },
+                'graph',
+            ),
+        );
+    },
+);
+
+test(
+    'asStoredGraph round-trips an empty'
+    + ' taskInstructions',
+    () => {
+        const result = asStoredGraph(
+            {
+                nodes: [
+                    {
+                        ...baseNode,
+                        workerIds: [],
+                        taskInstructions: '',
+                    },
+                ],
+                edges: [],
+            },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.taskInstructions, '');
+    },
+);
+
+test(
+    'asStoredGraph round-trips multi-line'
+    + ' markdown taskInstructions byte-for-byte',
+    () => {
+        const md = '# Title\n\n- one\n- two\n';
+        const result = asStoredGraph(
+            {
+                nodes: [
+                    {
+                        ...baseNode,
+                        workerIds: [],
+                        taskInstructions: md,
+                    },
+                ],
+                edges: [],
+            },
+            'graph',
+        );
+        const n = result.nodes[0]!;
+        assert.equal(n.taskInstructions, md);
+    },
+);
+
+test(
+    'asStoredGraph rejects non-string'
+    + ' taskInstructions',
+    () => {
+        assert.throws(
+            () => asStoredGraph(
+                {
+                    nodes: [
+                        {
+                            ...baseNode,
+                            workerIds: [],
+                            taskInstructions: 123,
                         },
                     ],
                     edges: [],

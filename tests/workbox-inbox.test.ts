@@ -58,6 +58,7 @@ function buildNode(
         isArchive: false,
         workerIds: [],
         attributes: [],
+        taskInstructions: '',
         ...overrides,
     };
 }

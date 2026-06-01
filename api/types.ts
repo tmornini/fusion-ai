@@ -792,6 +792,7 @@ export interface GraphNode {
     isArchive: boolean;
     workerIds: WorkerId[];
     attributes: NodeAttribute[];
+    taskInstructions: string;
 }
 
 export interface GraphEdge {
@@ -816,6 +817,7 @@ export const DEFAULT_TRANSITION_NAME =
     'Transition';
 export const DEFAULT_NODE_WORKER_IDS:
     readonly WorkerId[] = [];
+export const DEFAULT_NODE_TASK_INSTRUCTIONS = '';
 
 export interface FlowEntity {
     id: Id;

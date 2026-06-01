@@ -341,6 +341,10 @@ function asGraphNode(
                     + i + ']',
             ),
         ),
+        taskInstructions: asString(
+            obj['taskInstructions'],
+            label + '.taskInstructions',
+        ),
     };
 }
 
