@@ -224,6 +224,7 @@ Lifecycle state lives in `states` (alphabet
 | id | TEXT | PRIMARY KEY |
 | name | TEXT | non-empty |
 | description | TEXT | empty string allowed |
+| position | REAL | Display order, ascending |
 
 ### record_attributes
 
@@ -380,6 +381,7 @@ identity whose human-facing text evolves over time.
 | objective_id | TEXT | References objectives |
 | name | TEXT | Human-facing name at this revision |
 | description | TEXT | Human-facing description |
+| worker_id | TEXT | FK → workers (author) |
 | at | TEXT | RFC-3339 Zulu |
 
 The latest row per `objective_id` by `at` is the
@@ -393,6 +395,7 @@ current text.
 | project_id | TEXT | References projects |
 | objective_id | TEXT | References objectives |
 | score | INTEGER | |
+| worker_id | TEXT | FK → workers (scorer) |
 | at | TEXT | RFC-3339 Zulu |
 
 ### project_objective_actual_scores
@@ -403,6 +406,7 @@ current text.
 | project_id | TEXT | References projects |
 | objective_id | TEXT | References objectives |
 | score | INTEGER | |
+| worker_id | TEXT | FK → workers (scorer) |
 | at | TEXT | RFC-3339 Zulu |
 
 ## State Event Log
