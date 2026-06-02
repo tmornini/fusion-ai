@@ -388,11 +388,6 @@ export function msSinceUtc(
         - new Date(iso).getTime();
 }
 
-export interface Deleted {
-    id: Id;
-    deleted_at: string;
-}
-
 export interface StateEntity {
     id: Id;
     entity_id: Id;
