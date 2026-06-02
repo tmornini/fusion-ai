@@ -40,7 +40,7 @@ import type {
 } from '../api/types.ts';
 import {
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 // -- Fixtures ---------------------------------
 

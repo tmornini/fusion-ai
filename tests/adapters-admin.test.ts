@@ -14,7 +14,7 @@ import type {
     ProjectEntity, IdeaEntity,
     WorkerState,
 } from '../api/types.ts';
-import { seedHumanWorker } from './worker-fixtures.ts';
+import { seedHumanWorker } from './member-fixtures.ts';
 
 async function setupDb(): Promise<{
     db: MemoryDbAdapter;

@@ -24,7 +24,7 @@ import {
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db);

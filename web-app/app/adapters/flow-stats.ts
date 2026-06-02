@@ -17,7 +17,7 @@ import {
     getTransitionEventsByWorkOrder,
     type TransitionEvent,
 } from './state-events.ts';
-import { getWorkerMap } from './workers-union.ts';
+import { getWorkerMap } from './members-union.ts';
 
 export async function getFlowStats(
     ctx: RequestContext,

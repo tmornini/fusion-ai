@@ -24,7 +24,7 @@ import {
 } from '../api/types.ts';
 import {
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;

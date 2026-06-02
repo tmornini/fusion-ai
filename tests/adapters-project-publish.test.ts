@@ -15,7 +15,7 @@ import {
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 const SAMPLE_PROJECT_BODY = {
     title: 't',

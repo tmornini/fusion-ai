@@ -13,7 +13,7 @@ import {
 import {
     seedAIWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 import type {
     IdeaEntity, ProjectEntity, RecordEntity,
 } from '../api/types.ts';

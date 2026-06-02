@@ -10,7 +10,7 @@ import {
 import {
     seedHumanWorker,
     seedAIWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 test('GET on unknown route throws', async () => {
     const db = new MemoryDbAdapter();

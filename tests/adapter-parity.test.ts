@@ -14,7 +14,7 @@ import {
     getArchivedObjectiveIds,
 } from '../web-app/app/adapters/objectives.ts';
 import type { DbAdapter } from '../api/db.ts';
-import { seedHumanWorker } from './worker-fixtures.ts';
+import { seedHumanWorker } from './member-fixtures.ts';
 
 function installLocalStorageShim(): void {
     const map = new Map<string, string>();

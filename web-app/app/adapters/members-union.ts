@@ -7,10 +7,10 @@ import { SystemWorker } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
     getHumanWorkers,
-} from './workers.ts';
+} from './members.ts';
 import {
     getAIWorkers,
-} from './ai-workers.ts';
+} from './ai-members.ts';
 import {
     getWorkerStates,
 } from './state-events.ts';

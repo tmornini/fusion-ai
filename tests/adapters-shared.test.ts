@@ -7,10 +7,10 @@ import {
 import {
     getHumanWorkerMap,
     getCurrentHumanWorker,
-} from '../web-app/app/adapters/workers.ts';
+} from '../web-app/app/adapters/members.ts';
 import {
     workerName,
-} from '../web-app/app/adapters/workers-union.ts';
+} from '../web-app/app/adapters/members-union.ts';
 import {
     type Worker,
     type WorkerId,
@@ -18,7 +18,7 @@ import {
 import {
     makeHumanWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 test(
     'workerName returns name for known human id',

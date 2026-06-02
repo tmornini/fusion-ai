@@ -8,7 +8,7 @@ import {
     postProjectActualMeasurement,
 } from
     '../web-app/app/adapters/project-scoring.ts';
-import { seedHumanWorker } from './worker-fixtures.ts';
+import { seedHumanWorker } from './member-fixtures.ts';
 
 const AT = '2026-05-20T00:00:00.000Z';
 const VALID: ReadonlyArray<number> = [-100, 0, 100];

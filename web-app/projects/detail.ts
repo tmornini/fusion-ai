@@ -48,7 +48,7 @@ import type {
 import {
     getWorkerMap,
     workerName,
-} from '../app/adapters/workers-union.ts';
+} from '../app/adapters/members-union.ts';
 import type {
     ObjectiveRevision,
 } from '../../api/types.ts';

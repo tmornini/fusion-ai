@@ -8,11 +8,11 @@ import {
 } from '../web-app/app/adapters/shared.ts';
 import {
     postAIWorkerStateChange,
-} from '../web-app/app/adapters/ai-workers.ts';
+} from '../web-app/app/adapters/ai-members.ts';
 import {
     seedHumanWorker,
     seedAIWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 test(
     'postAIWorkerStateChange records a state event'

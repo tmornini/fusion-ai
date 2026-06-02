@@ -10,7 +10,7 @@ import {
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 // ── Create variant ──────
 

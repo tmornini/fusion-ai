@@ -13,11 +13,11 @@ import {
 import type { RequestContext } from './shared.ts';
 import {
     getCurrentHumanWorker,
-} from './workers.ts';
+} from './members.ts';
 import {
     getWorkerMap,
     workerName,
-} from './workers-union.ts';
+} from './members-union.ts';
 import {
     notifyProjectChange,
 } from './projects.ts';

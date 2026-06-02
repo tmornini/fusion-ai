@@ -16,7 +16,7 @@ import {
 } from './objectives.ts';
 import {
     getCurrentHumanWorker,
-} from './workers.ts';
+} from './members.ts';
 import {
     getProjectStates,
 } from './state-events.ts';

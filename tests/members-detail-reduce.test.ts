@@ -21,11 +21,11 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 const { makeHumanWorker, makeAIWorker } = await import(
-    './worker-fixtures.ts'
+    './member-fixtures.ts'
 );
 
 const { reduceRefresh } = await import(
-    '../web-app/workers/detail.ts'
+    '../web-app/members/detail.ts'
 );
 
 const HUMAN_DRAFT = {

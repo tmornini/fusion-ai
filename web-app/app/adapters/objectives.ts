@@ -20,7 +20,7 @@ import {
 } from './state-events.ts';
 import {
     getCurrentHumanWorker,
-} from './workers.ts';
+} from './members.ts';
 
 const objectiveChanges =
     createSubscriptionChannel([

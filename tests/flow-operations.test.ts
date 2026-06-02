@@ -60,7 +60,7 @@ import type {
 } from '../web-app/app/adapters/flow-queries.ts';
 import {
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 const FLOW_ID = 'flow-1';
 

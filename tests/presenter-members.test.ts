@@ -8,7 +8,7 @@ import {
 import {
     makeHumanWorker,
     makeAIWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 // The worker presenter transitively imports state.ts
 // (via core.ts), which reads from localStorage and
@@ -55,7 +55,7 @@ g['document'] = {
 };
 
 const workerMod = await import(
-    '../web-app/app/presenters/worker.ts'
+    '../web-app/app/presenters/member.ts'
 );
 const {
     ManagedWorkersPresenter,

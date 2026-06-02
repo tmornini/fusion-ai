@@ -22,7 +22,7 @@ import type {
 } from '../api/types.ts';
 import {
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 function buildIdea(
     id: string, title: string,

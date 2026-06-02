@@ -227,7 +227,7 @@ export const PAGE_REGISTRY: Record<
         keywords:
             'workers humans AI manage admin',
         cssBundles: ['pages-workers'],
-        loader: () => import('../workers/index'),
+        loader: () => import('../members/index'),
     },
     'worker-detail': {
         title: 'Worker',
@@ -238,7 +238,7 @@ export const PAGE_REGISTRY: Record<
         icon: iconPerson,
         searchable: false,
         cssBundles: ['pages-workers'],
-        loader: () => import('../workers/detail'),
+        loader: () => import('../members/detail'),
     },
     billing: {
         title: 'Billing',

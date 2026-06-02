@@ -34,7 +34,7 @@ import { populateMockData } from '../api/mock-data.ts';
 import { NODE_WIDTH } from '../web-app/app/flow-layout.ts';
 import {
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;

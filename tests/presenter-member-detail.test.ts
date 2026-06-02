@@ -32,7 +32,7 @@ const {
 const {
     HumanWorkerDetailPresenter,
 } = await import(
-    '../web-app/app/presenters/human-worker-detail.ts'
+    '../web-app/app/presenters/human-member-detail.ts'
 );
 
 const {
@@ -40,7 +40,7 @@ const {
     AIWorkerDetailEditPresenter,
     aiWorkerDraftFromWorker,
 } = await import(
-    '../web-app/app/presenters/ai-worker-detail.ts'
+    '../web-app/app/presenters/ai-member-detail.ts'
 );
 
 // Recording stub: presenters write into a container

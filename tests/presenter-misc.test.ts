@@ -33,7 +33,7 @@ import type {
 import {
     makeHumanWorker as buildHumanWorker,
     makeAIWorker as buildAIWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 // helpers
 

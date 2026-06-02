@@ -14,7 +14,7 @@ import {
 } from './theme-toggle.ts';
 import {
     mutateSidebarWorker,
-} from './sidebar-worker.ts';
+} from './sidebar-member.ts';
 import {
     initMobileDrawer,
 } from './mobile-drawer.ts';

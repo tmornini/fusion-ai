@@ -14,7 +14,7 @@ import {
     postProjectBaselineScoring,
     postProjectActualMeasurement,
 } from '../web-app/app/adapters/project-scoring.ts';
-import { seedHumanWorker } from './worker-fixtures.ts';
+import { seedHumanWorker } from './member-fixtures.ts';
 
 test('getBaselineScoresForProject returns project rows',
     async () => {

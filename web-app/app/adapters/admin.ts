@@ -7,7 +7,7 @@ import {
 import type { RequestContext } from './shared.ts';
 import { getProjects } from './projects.ts';
 import { getIdeas } from './ideas.ts';
-import { getHumanWorkers } from './workers.ts';
+import { getHumanWorkers } from './members.ts';
 
 export type {
     OrganizationEntity,

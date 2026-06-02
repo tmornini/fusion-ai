@@ -54,7 +54,7 @@ export {
     applyManagedWorkersKind,
     type ManagedWorkersState,
     type WorkerKindFilter,
-} from './worker.ts';
+} from './member.ts';
 export {
     FlowPresenter,
 } from './flow.ts';
@@ -80,7 +80,7 @@ export {
     isHumanWorkerFieldKey,
     type HumanWorkerDraftFields,
     type HumanWorkerFieldKey,
-} from './human-worker-detail.ts';
+} from './human-member-detail.ts';
 export {
     AIWorkerDetailPresenter,
     AIWorkerDetailEditPresenter,
@@ -90,7 +90,7 @@ export {
     buildModelOptgroups,
     type AIWorkerDraftFields,
     type AIWorkerFieldKey,
-} from './ai-worker-detail.ts';
+} from './ai-member-detail.ts';
 export {
     FlowDesignerPresenter,
     buildInitialFlowSnapshot,

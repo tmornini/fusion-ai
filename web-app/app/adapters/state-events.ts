@@ -17,7 +17,7 @@ import {
 } from './crypto-safe-base62.ts';
 import {
     getCurrentHumanWorker,
-} from './workers.ts';
+} from './members.ts';
 
 // Constructs a single PUT op against the states table —
 // the atomic seam between an entity-lifecycle adapter and

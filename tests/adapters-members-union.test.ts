@@ -16,7 +16,7 @@ import {
     workerName,
     isHumanWorker,
     isAIWorker,
-} from '../web-app/app/adapters/workers-union.ts';
+} from '../web-app/app/adapters/members-union.ts';
 import type {
     WorkerId,
     Worker,
@@ -24,7 +24,7 @@ import type {
 import {
     seedHumanWorker,
     seedAIWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 async function setupSeeded(): Promise<{
     db: MemoryDbAdapter;

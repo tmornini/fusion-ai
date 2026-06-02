@@ -26,7 +26,7 @@ import type {
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 function buildProject(
     id: string,

@@ -24,7 +24,7 @@ import type {
 } from './shared.ts';
 import {
     getCurrentHumanWorker,
-} from './workers.ts';
+} from './members.ts';
 import {
     validateFlowForCreation,
     formatFlowProblem,

@@ -28,7 +28,7 @@ import {
 '../web-app/app/presenters/workbox-detail.ts';
 import {
     makeHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 // WorkboxDetailPresenter is pure: the constructor
 // takes the work order, transition events, per-event

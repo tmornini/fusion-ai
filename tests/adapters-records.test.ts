@@ -20,7 +20,7 @@ import {
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 test(
     'postRecordChange create writes the row and'

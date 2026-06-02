@@ -11,11 +11,11 @@ import {
     postHumanWorkerCreation,
     postHumanWorkerStateChange,
     type HumanWorkerDraft,
-} from '../web-app/app/adapters/workers.ts';
+} from '../web-app/app/adapters/members.ts';
 import {
     seedCurrentWorker,
     seedHumanWorker,
-} from './worker-fixtures.ts';
+} from './member-fixtures.ts';
 
 function buildHumanWorker(
     name: string,
