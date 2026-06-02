@@ -1232,6 +1232,10 @@ export class Project {
         return this.#state === 'deleted';
     }
 
+    isApproved(): boolean {
+        return this.#state === 'approved';
+    }
+
     timelineProgress(): number {
         if (this.#state === 'archived')
             return 100;
