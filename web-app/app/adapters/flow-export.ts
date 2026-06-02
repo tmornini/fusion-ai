@@ -132,7 +132,7 @@ function buildFlowTxt(
 ): string {
     return 'flowId: ' + flowId + '\n'
         + 'exportedAt: '
-        + minuteUtc(':') + '\n';
+        + nowUtc() + '\n';
 }
 
 /* ── backup format ──────────────── */
@@ -262,7 +262,7 @@ function buildBackupJson(
         flow.graph, 'flow.graph',
     );
     const backup: Backup = {
-        exportedAt: minuteUtc(':'),
+        exportedAt: nowUtc(),
         projectId,
         flow: {
             id: flow.id,
