@@ -809,7 +809,7 @@ export interface StoredGraph {
     edges: GraphEdge[];
 }
 
-export const DEFAULT_LOCK_TIMEOUT = 28800;
+export const DEFAULT_LOCK_TIMEOUT = 8 * SECONDS_PER_HOUR;
 
 export const DEFAULT_NODE_ATTRIBUTES:
     readonly NodeAttribute[] = [];
