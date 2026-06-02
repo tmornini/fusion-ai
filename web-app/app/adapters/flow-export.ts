@@ -116,7 +116,7 @@ function buildSidecar(
     }, null, 2);
 }
 
-function minuteUtc(
+function fileStamp(
     timeSep: string,
 ): string {
     const iso = new Date()
@@ -353,7 +353,7 @@ export async function getFlowZip(
     return {
         data,
         name: safeName
-            + '-' + minuteUtc('-')
+            + '-' + fileStamp('-')
             + '.zip',
     };
 }
