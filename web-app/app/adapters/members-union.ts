@@ -1,94 +1,94 @@
 import type {
-    WorkerId,
-    Worker,
-    WorkerEntity,
+    MemberId,
+    Member,
+    MemberEntity,
 } from '../../../api/types.ts';
-import { SystemWorker } from '../../../api/types.ts';
+import { SystemMember } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
-    getHumanWorkers,
+    getHumanMembers,
 } from './members.ts';
 import {
-    getAIWorkers,
+    getAIMembers,
 } from './ai-members.ts';
 import {
-    getWorkerStates,
+    getMemberStates,
 } from './state-events.ts';
 
 export {
-    SystemWorker,
-    isHumanWorker,
-    isAIWorker,
-    isSystemWorker,
+    SystemMember,
+    isHumanMember,
+    isAIMember,
+    isSystemMember,
 } from '../../../api/types.ts';
 export type {
-    Worker,
+    Member,
 } from '../../../api/types.ts';
 
-// The system worker has no detail row — it is a parent
+// The system member has no detail row — it is a parent
 // row (type 'system') plus its lifecycle state. Read it
-// here so getWorkerMap can resolve a system-authored
-// event's author; getWorkers (the roster) omits it.
-async function getSystemWorkers(
+// here so getMemberMap can resolve a system-authored
+// event's author; getMembers (the roster) omits it.
+async function getSystemMembers(
     ctx: RequestContext,
-): Promise<SystemWorker[]> {
+): Promise<SystemMember[]> {
     const [parents, stateMap] = await Promise.all([
-        ctx.GET<WorkerEntity[]>('workers'),
-        getWorkerStates(ctx),
+        ctx.GET<MemberEntity[]>('members'),
+        getMemberStates(ctx),
     ]);
-    const out: SystemWorker[] = [];
+    const out: SystemMember[] = [];
     for (const parent of parents) {
         if (parent.type !== 'system') continue;
         const state = stateMap.get(parent.id);
         if (state === undefined) {
             throw new Error(
-                'no state event for system worker '
+                'no state event for system member '
                 + parent.id,
             );
         }
-        out.push(new SystemWorker(parent, state));
+        out.push(new SystemMember(parent, state));
     }
     return out;
 }
 
-export async function getWorkers(
+export async function getMembers(
     ctx: RequestContext,
-): Promise<Worker[]> {
+): Promise<Member[]> {
     const [humans, ais] = await Promise.all([
-        getHumanWorkers(ctx),
-        getAIWorkers(ctx),
+        getHumanMembers(ctx),
+        getAIMembers(ctx),
     ]);
     return [...humans, ...ais];
 }
 
-// Resolve every worker by id for name display. Unlike
-// getWorkers (the roster), this includes the system
-// worker so a system-authored event's author resolves
+// Resolve every member by id for name display. Unlike
+// getMembers (the roster), this includes the system
+// member so a system-authored event's author resolves
 // rather than throwing.
-export async function getWorkerMap(
+export async function getMemberMap(
     ctx: RequestContext,
-): Promise<Map<WorkerId, Worker>> {
-    const [workers, system] = await Promise.all([
-        getWorkers(ctx),
-        getSystemWorkers(ctx),
+): Promise<Map<MemberId, Member>> {
+    const [members, system] = await Promise.all([
+        getMembers(ctx),
+        getSystemMembers(ctx),
     ]);
     return new Map(
-        [...workers, ...system].map(
-            worker => [worker.idForLink(), worker],
+        [...members, ...system].map(
+            member => [member.idForLink(), member],
         ),
     );
 }
 
-export function workerName(
-    workerMap: Map<WorkerId, Worker>,
-    workerId: WorkerId,
+export function memberName(
+    memberMap: Map<MemberId, Member>,
+    memberId: MemberId,
 ): string {
-    const worker = workerMap.get(workerId);
-    if (!worker) {
+    const member = memberMap.get(memberId);
+    if (!member) {
         throw new Error(
-            'workerName: unknown worker '
-            + workerId,
+            'memberName: unknown member '
+            + memberId,
         );
     }
-    return worker.name();
+    return member.name();
 }

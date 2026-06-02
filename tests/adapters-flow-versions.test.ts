@@ -29,7 +29,7 @@ import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import {
-    seedHumanWorker,
+    seedHumanMember,
 } from './member-fixtures.ts';
 
 async function setupMemDb(): Promise<{
@@ -38,7 +38,7 @@ async function setupMemDb(): Promise<{
 }> {
     const db = new MemoryDbAdapter();
     await db.createSchema();
-    await seedHumanWorker(db, 'current', 'Demo User');
+    await seedHumanMember(db, 'current', 'Demo User');
     const ctx = createRequestContext(db);
     return { db, ctx };
 }
@@ -54,7 +54,7 @@ function buildNode(
         positionY: 0,
         isCreate: false,
         isArchive: false,
-        workerIds: [],
+        memberIds: [],
         attributes: [],
         taskInstructions: '',
         ...overrides,

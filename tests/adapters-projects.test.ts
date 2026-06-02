@@ -24,8 +24,8 @@ import type {
     ProjectState,
 } from '../api/types.ts';
 import {
-    seedCurrentWorker,
-    seedHumanWorker,
+    seedCurrentMember,
+    seedHumanMember,
 } from './member-fixtures.ts';
 
 function buildProject(
@@ -264,7 +264,7 @@ test(
     + ' without touching the project row',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedCurrentWorker(db);
+        await seedCurrentMember(db);
         await seedProject(
             db, 'p1', 'Original', 'approved',
         );

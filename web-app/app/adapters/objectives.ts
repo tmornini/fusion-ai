@@ -19,7 +19,7 @@ import {
     latestStatesForIds,
 } from './state-events.ts';
 import {
-    getCurrentHumanWorker,
+    getCurrentHumanMember,
 } from './members.ts';
 
 const objectiveChanges =
@@ -75,7 +75,7 @@ export async function getArchivedObjectiveIds(
 
 export interface ObjectiveArchivalEvent {
     objectiveId: ObjectiveId;
-    workerId: Id;
+    memberId: Id;
     at: string;
 }
 
@@ -103,7 +103,7 @@ export async function getObjectiveArchivalEvents(
         )
         .map(r => ({
             objectiveId: r.entity_id as ObjectiveId,
-            workerId: r.worker_id,
+            memberId: r.member_id,
             at: r.at,
         }));
 }
@@ -185,7 +185,7 @@ export async function postObjectiveCreation(
     position: number,
 ): Promise<void> {
     const at = nowUtc();
-    const worker = await getCurrentHumanWorker(ctx);
+    const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [
@@ -202,7 +202,7 @@ export async function postObjectiveCreation(
                     objective_id: id,
                     name,
                     description,
-                    worker_id: worker.id,
+                    member_id: member.id,
                     at,
                 },
             },
@@ -218,7 +218,7 @@ export async function postObjectiveRevision(
     description: string,
 ): Promise<void> {
     const at = nowUtc();
-    const worker = await getCurrentHumanWorker(ctx);
+    const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.commit({
         ops: [{
@@ -229,7 +229,7 @@ export async function postObjectiveRevision(
                 objective_id: id,
                 name,
                 description,
-                worker_id: worker.id,
+                member_id: member.id,
                 at,
             },
         }],

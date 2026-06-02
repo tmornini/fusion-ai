@@ -23,7 +23,7 @@ import type {
     RequestContext, WriteOp,
 } from './shared.ts';
 import {
-    getCurrentHumanWorker,
+    getCurrentHumanMember,
 } from './members.ts';
 import {
     validateFlowForCreation,
@@ -409,7 +409,7 @@ export async function postWorkOrderClaim(
             body: {
                 entity_id: workOrderId,
                 state: 'claim_expired',
-                worker_id: priorClaim!.worker_id,
+                member_id: priorClaim!.member_id,
                 at: nowUtc(),
             },
         }]

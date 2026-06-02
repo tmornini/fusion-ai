@@ -1,199 +1,199 @@
 import type {
-    WorkerId,
-    WorkerEntity,
-    HumanWorkerEntity,
-    WorkerState,
+    MemberId,
+    MemberEntity,
+    HumanMemberEntity,
+    MemberState,
 } from '../../../api/types.ts';
-import { HumanWorker } from '../../../api/types.ts';
+import { HumanMember } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
     buildStateEventOp,
-    getWorkerState,
-    getWorkerStates,
+    getMemberState,
+    getMemberStates,
 } from './state-events.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
 export {
-    HumanWorker,
-    WORKER_STATE_CONFIG,
-    isWorkerState,
+    HumanMember,
+    MEMBER_STATE_CONFIG,
+    isMemberState,
     isDimensionKey,
 } from '../../../api/types.ts';
 export type {
-    WorkerId,
-    HumanWorkerEntity,
-    WorkerState,
+    MemberId,
+    HumanMemberEntity,
+    MemberState,
     DimensionKey,
 } from '../../../api/types.ts';
 
-const humanWorkerChanges =
-    createSubscriptionChannel(['workers', 'states']);
+const humanMemberChanges =
+    createSubscriptionChannel(['members', 'states']);
 
-export function subscribeHumanWorkerChanges(
+export function subscribeHumanMemberChanges(
     fn: () => void,
 ): () => void {
-    return humanWorkerChanges.subscribe(fn);
+    return humanMemberChanges.subscribe(fn);
 }
 
-export function notifyHumanWorkerChange(): void {
-    humanWorkerChanges.notify();
+export function notifyHumanMemberChange(): void {
+    humanMemberChanges.notify();
 }
 
-// A human worker draft: the parent display name plus
-// the detail fields, as the Add Worker dialog and the
+// A human member draft: the parent display name plus
+// the detail fields, as the Add Member dialog and the
 // edit form supply them. Split into the two table rows
 // at the write seam below.
-export type HumanWorkerDraft =
-    Omit<HumanWorkerEntity, 'id'> & { name: string };
+export type HumanMemberDraft =
+    Omit<HumanMemberEntity, 'id'> & { name: string };
 
-// A human worker composed for the editor: parent name
+// A human member composed for the editor: parent name
 // merged onto the detail row. Lifecycle state is read
 // separately from the states log.
-export interface HumanWorkerRow extends HumanWorkerEntity {
+export interface HumanMemberRow extends HumanMemberEntity {
     name: string;
 }
 
-export async function getHumanWorkerMap(
+export async function getHumanMemberMap(
     ctx: RequestContext,
-): Promise<Map<WorkerId, HumanWorker>> {
+): Promise<Map<MemberId, HumanMember>> {
     const [parents, details, stateMap] =
         await Promise.all([
-            ctx.GET<WorkerEntity[]>('workers'),
-            ctx.GET<HumanWorkerEntity[]>(
-                'human-workers',
+            ctx.GET<MemberEntity[]>('members'),
+            ctx.GET<HumanMemberEntity[]>(
+                'human-members',
             ),
-            getWorkerStates(ctx),
+            getMemberStates(ctx),
         ]);
     const detailById = new Map(
         details.map(d => [d.id, d]),
     );
-    const map = new Map<WorkerId, HumanWorker>();
+    const map = new Map<MemberId, HumanMember>();
     for (const parent of parents) {
         if (parent.type !== 'human') continue;
         const detail = detailById.get(parent.id);
         if (detail === undefined) {
             throw new Error(
-                'no human detail for worker '
+                'no human detail for member '
                 + parent.id,
             );
         }
         const state = stateMap.get(parent.id);
         if (state === undefined) {
             throw new Error(
-                'no state event for human worker '
+                'no state event for human member '
                 + parent.id,
             );
         }
         map.set(
             parent.id,
-            new HumanWorker(parent, detail, state),
+            new HumanMember(parent, detail, state),
         );
     }
     return map;
 }
 
-export async function getCurrentHumanWorker(
+export async function getCurrentHumanMember(
     ctx: RequestContext,
-): Promise<WorkerEntity> {
-    return ctx.GET<WorkerEntity>(
-        'current-worker',
+): Promise<MemberEntity> {
+    return ctx.GET<MemberEntity>(
+        'current-member',
     );
 }
 
-const TOP_HUMAN_WORKER_COUNT = 6;
+const TOP_HUMAN_MEMBER_COUNT = 6;
 
-export async function getHumanWorkers(
+export async function getHumanMembers(
     ctx: RequestContext,
-): Promise<HumanWorker[]> {
-    const workerMap = await getHumanWorkerMap(ctx);
-    return Array.from(workerMap.values());
+): Promise<HumanMember[]> {
+    const memberMap = await getHumanMemberMap(ctx);
+    return Array.from(memberMap.values());
 }
 
-export function featuredHumanWorkers(
-    workers: HumanWorker[],
-): HumanWorker[] {
-    return workers
-        .filter(worker => worker.hasDepartment())
-        .slice(0, TOP_HUMAN_WORKER_COUNT);
+export function featuredHumanMembers(
+    members: HumanMember[],
+): HumanMember[] {
+    return members
+        .filter(member => member.hasDepartment())
+        .slice(0, TOP_HUMAN_MEMBER_COUNT);
 }
 
-export async function getHumanWorker(
+export async function getHumanMember(
     ctx: RequestContext,
     id: string,
-): Promise<HumanWorker> {
+): Promise<HumanMember> {
     const [parent, detail, state] =
         await Promise.all([
-            ctx.GET<WorkerEntity>(`workers/${id}`),
-            ctx.GET<HumanWorkerEntity>(
-                `human-workers/${id}`,
+            ctx.GET<MemberEntity>(`members/${id}`),
+            ctx.GET<HumanMemberEntity>(
+                `human-members/${id}`,
             ),
-            getWorkerState(ctx, id),
+            getMemberState(ctx, id),
         ]);
-    return new HumanWorker(parent, detail, state);
+    return new HumanMember(parent, detail, state);
 }
 
-export async function getHumanWorkerRow(
+export async function getHumanMemberRow(
     ctx: RequestContext,
     id: string,
-): Promise<HumanWorkerRow> {
+): Promise<HumanMemberRow> {
     const [parent, detail] = await Promise.all([
-        ctx.GET<WorkerEntity>(`workers/${id}`),
-        ctx.GET<HumanWorkerEntity>(
-            `human-workers/${id}`,
+        ctx.GET<MemberEntity>(`members/${id}`),
+        ctx.GET<HumanMemberEntity>(
+            `human-members/${id}`,
         ),
     ]);
     return { ...detail, name: parent.name };
 }
 
-// Split a human-worker write across the parent (type +
+// Split a human-member write across the parent (type +
 // name) and detail rows. Used by edits; creation goes
-// through postHumanWorkerCreation.
-export async function putHumanWorker(
+// through postHumanMemberCreation.
+export async function putHumanMember(
     ctx: RequestContext,
     id: string,
-    input: HumanWorkerDraft,
+    input: HumanMemberDraft,
 ): Promise<void> {
     const { name, ...detail } = input;
     await ctx.commit({
         ops: [
             {
                 method: 'put',
-                resource: `workers/${id}`,
+                resource: `members/${id}`,
                 body: { type: 'human', name },
             },
             {
                 method: 'put',
-                resource: `human-workers/${id}`,
+                resource: `human-members/${id}`,
                 body: detail as unknown as
                     Record<string, unknown>,
             },
         ],
     });
-    humanWorkerChanges.notify();
+    humanMemberChanges.notify();
 }
 
-// Human-worker creation: parent row + detail row +
+// Human-member creation: parent row + detail row +
 // initial state event in one ctx.commit batch. Use only
-// at the Add Worker call site; transitions of an
-// existing worker go through postHumanWorkerStateChange.
-export async function postHumanWorkerCreation(
+// at the Add Member call site; transitions of an
+// existing member go through postHumanMemberStateChange.
+export async function postHumanMemberCreation(
     ctx: RequestContext,
     id: string,
-    input: HumanWorkerDraft,
-    initialState: WorkerState,
+    input: HumanMemberDraft,
+    initialState: MemberState,
 ): Promise<void> {
     const { name, ...detail } = input;
     await ctx.commit({
         ops: [
             {
                 method: 'put',
-                resource: `workers/${id}`,
+                resource: `members/${id}`,
                 body: { type: 'human', name },
             },
             {
                 method: 'put',
-                resource: `human-workers/${id}`,
+                resource: `human-members/${id}`,
                 body: detail as unknown as
                     Record<string, unknown>,
             },
@@ -202,18 +202,18 @@ export async function postHumanWorkerCreation(
             ),
         ],
     });
-    humanWorkerChanges.notify();
+    humanMemberChanges.notify();
 }
 
-export async function postHumanWorkerStateChange(
+export async function postHumanMemberStateChange(
     ctx: RequestContext,
     id: string,
-    state: WorkerState,
+    state: MemberState,
 ): Promise<void> {
     await ctx.commit({
         ops: [
             await buildStateEventOp(ctx, id, state),
         ],
     });
-    humanWorkerChanges.notify();
+    humanMemberChanges.notify();
 }
