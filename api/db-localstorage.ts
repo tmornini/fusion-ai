@@ -18,6 +18,7 @@ import type {
     AIMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
+    IdentityCredentialEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -46,6 +47,7 @@ import {
     validateAIMemberEntity,
     validateIdentityEntity,
     validateIdentityPiiEntity,
+    validateIdentityCredentialEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
@@ -79,6 +81,8 @@ export class LocalStorageDbAdapter implements DbAdapter {
         IEntityStore<IdentityEntity>;
     readonly identityPii:
         IEntityStore<IdentityPiiEntity>;
+    readonly identityCredentials:
+        IEntityStore<IdentityCredentialEntity>;
     readonly ideas: IEntityStore<IdeaEntity>;
     readonly projects: IEntityStore<ProjectEntity>;
     readonly flows: IEntityStore<FlowEntity>;
@@ -146,6 +150,11 @@ export class LocalStorageDbAdapter implements DbAdapter {
             new EntityStore(
                 'identity_pii', backend, stateStore,
                 validateIdentityPiiEntity,
+            );
+        this.identityCredentials =
+            new HistoryEntityStore(
+                'identity_credentials', backend,
+                validateIdentityCredentialEntity,
             );
         this.ideas =
             new EntityStore(

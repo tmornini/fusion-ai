@@ -428,6 +428,30 @@ export interface IdentityPiiEntity {
     bio: string;
 }
 
+export type IdentityCredentialKind =
+    | 'password'        // person: interactive secret
+    | 'client_secret';  // service: shared secret
+
+export type IdentityCredentialStatus =
+    | 'set' | 'rotated' | 'revoked';
+
+// Append-only credential lifecycle event. One row per
+// event; current validity = the latest event per
+// (identity_id, kind). `secret` is OPAQUE material that
+// never escapes the adapter boundary — never rendered.
+// Revocation is a NEW 'revoked' event, never a splice
+// (contrast identity_pii). Real crypto and the OAuth
+// stores (clients, identity_tokens, identity_providers)
+// are SP-5; this is only the seam.
+export interface IdentityCredentialEntity {
+    id: Id;
+    identity_id: Id;
+    kind: IdentityCredentialKind;
+    status: IdentityCredentialStatus;
+    secret: string;
+    at: string;
+}
+
 // The person-PII display facet as a tagged union, so the
 // ABSENCE of the row (erased PII) is represented without
 // null and DECIDED AT THE CALL SITE. Presenters switch on

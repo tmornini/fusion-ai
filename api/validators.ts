@@ -11,6 +11,7 @@ import type {
     JsonObjectField,
     IdentityEntity,
     IdentityPiiEntity,
+    IdentityCredentialEntity,
     MemberEntity,
     HumanMemberEntity,
     AIMemberEntity,
@@ -632,6 +633,52 @@ export function validateIdentityPiiEntity(
         email: pickString(body, 'email'),
         phone: pickString(body, 'phone'),
         bio: pickString(body, 'bio'),
+    };
+}
+
+const IDENTITY_CREDENTIAL_BODY_KEYS:
+    readonly string[] = [
+    'identity_id', 'kind', 'status',
+    'secret', 'at',
+];
+
+export function validateIdentityCredentialEntity(
+    body: Record<string, unknown>,
+): Omit<IdentityCredentialEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        IDENTITY_CREDENTIAL_BODY_KEYS,
+        'IdentityCredentialEntity',
+    );
+    const kind = pickString(body, 'kind');
+    if (
+        kind !== 'password'
+        && kind !== 'client_secret'
+    ) {
+        throw new Error(
+            'invalid credential kind "' + kind
+            + '" on IdentityCredentialEntity',
+        );
+    }
+    const status = pickString(body, 'status');
+    if (
+        status !== 'set'
+        && status !== 'rotated'
+        && status !== 'revoked'
+    ) {
+        throw new Error(
+            'invalid credential status "' + status
+            + '" on IdentityCredentialEntity',
+        );
+    }
+    return {
+        identity_id: pickString(
+            body, 'identity_id',
+        ),
+        kind,
+        status,
+        secret: pickString(body, 'secret'),
+        at: pickString(body, 'at'),
     };
 }
 
