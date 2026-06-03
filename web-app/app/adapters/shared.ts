@@ -8,7 +8,10 @@ import {
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
-import { getDbAdapter } from './init.ts';
+import {
+    getDbAdapter,
+    getSessionToken,
+} from './init.ts';
 import type { Channel } from '../channels.ts';
 import {
     type Principal,
@@ -137,5 +140,11 @@ export function createRequestContext(
         },
     };
     return ctx;
+}
+
+export function sessionContext(): RequestContext {
+    return createRequestContext(
+        getDbAdapter(), getSessionToken(),
+    );
 }
 
