@@ -863,13 +863,19 @@ async function unwrapResponse<T>(
 export async function GET<T>(
     adapter: DbAdapter,
     resource: string,
+    token?: string,
 ): Promise<T> {
     await adapter.simulateLatency();
+    const headers: Record<string, string> = {};
+    if (token !== undefined) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
             new Request(
                 `${BASE_URL}/${resource}`,
+                { headers },
             ),
         ),
     );
@@ -879,8 +885,15 @@ export async function PUT<T>(
     adapter: DbAdapter,
     resource: string,
     payload: Record<string, unknown>,
+    token?: string,
 ): Promise<T> {
     await adapter.simulateLatency();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    if (token !== undefined) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -888,10 +901,7 @@ export async function PUT<T>(
                 `${BASE_URL}/${resource}`,
                 {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type':
-                            'application/json',
-                    },
+                    headers,
                     body: JSON.stringify(
                         payload,
                     ),
@@ -904,14 +914,19 @@ export async function PUT<T>(
 export async function DELETE(
     adapter: DbAdapter,
     resource: string,
+    token?: string,
 ): Promise<void> {
     await adapter.simulateLatency();
+    const headers: Record<string, string> = {};
+    if (token !== undefined) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
     await unwrapResponse(
         await handleRequest(
             adapter,
             new Request(
                 `${BASE_URL}/${resource}`,
-                { method: 'DELETE' },
+                { method: 'DELETE', headers },
             ),
         ),
     );
@@ -921,8 +936,15 @@ export async function POST<T>(
     adapter: DbAdapter,
     resource: string,
     payload: Record<string, unknown>,
+    token?: string,
 ): Promise<T> {
     await adapter.simulateLatency();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    if (token !== undefined) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -930,10 +952,7 @@ export async function POST<T>(
                 `${BASE_URL}/${resource}`,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type':
-                            'application/json',
-                    },
+                    headers,
                     body: JSON.stringify(
                         payload,
                     ),

@@ -10,6 +10,11 @@ import {
 } from './crypto-safe-base62.ts';
 import { getDbAdapter } from './init.ts';
 import type { Channel } from '../channels.ts';
+import {
+    type Principal,
+    principalFromToken,
+    ANONYMOUS_PRINCIPAL,
+} from '../../../api/access-token.ts';
 
 // A unit of write work executed by ctx.commit().
 // `put` upserts a row by full state; `delete` removes
@@ -59,6 +64,7 @@ export class CommitError extends Error {
 
 export interface RequestContext {
     readonly requestId: string;
+    readonly identity: Principal;
     GET<T>(resource: string): Promise<T>;
     PUT<T>(
         resource: string,
@@ -74,21 +80,26 @@ export interface RequestContext {
 
 export function createRequestContext(
     adapter: DbAdapter = getDbAdapter(),
+    token?: string,
 ): RequestContext {
+    const identity = token === undefined
+        ? ANONYMOUS_PRINCIPAL
+        : principalFromToken(token);
     const ctx: RequestContext = {
         requestId: generateCryptoSafeBase62(),
+        identity,
         GET: <T>(resource: string) =>
-            httpGet<T>(adapter, resource),
+            httpGet<T>(adapter, resource, token),
         PUT: <T>(
             resource: string,
             body: Record<string, unknown>,
-        ) => httpPut<T>(adapter, resource, body),
+        ) => httpPut<T>(adapter, resource, body, token),
         DELETE: (resource: string) =>
-            httpDelete(adapter, resource),
+            httpDelete(adapter, resource, token),
         POST: <T>(
             resource: string,
             body: Record<string, unknown>,
-        ) => httpPost<T>(adapter, resource, body),
+        ) => httpPost<T>(adapter, resource, body, token),
         commit: async (
             tx: Transaction,
         ): Promise<void> => {
