@@ -8,6 +8,7 @@ import {
     revokedBeforeSeconds,
     ANONYMOUS_PRINCIPAL,
 } from '../api/access-token.ts';
+import { base64UrlEncode } from '../api/base64url.ts';
 
 function token(over: Partial<{
     sub: string; iat: number; ttlSeconds: number;
@@ -50,6 +51,21 @@ test('rejects a tampered signature', () => {
     const bad = t.slice(0, t.lastIndexOf('.') + 1) + 'XXXX';
     assert.equal(
         verifyAccessToken(bad, 1_700_000_100).valid, false);
+});
+
+test('rejects a token minted for a different audience', () => {
+    const header = base64UrlEncode(JSON.stringify(
+        { alg: 'HS256', typ: 'JWT', kid: 'dev-co-located' }));
+    const claims = base64UrlEncode(JSON.stringify({
+        sub: 'current', roles: [], name: 'Demo',
+        aud: 'evil-site', iat: 1_700_000_000,
+        nbf: 1_700_000_000, exp: 9_999_999_999,
+        jti: 'x',
+    }));
+    const sig = base64UrlEncode('dev-co-located');
+    const token = header + '.' + claims + '.' + sig;
+    assert.equal(
+        verifyAccessToken(token, 1_700_000_100).valid, false);
 });
 
 test('principalFromToken reads sub/roles/name', () => {

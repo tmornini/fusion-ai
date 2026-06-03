@@ -15,9 +15,11 @@ export interface Principal {
 }
 
 // The JWT claim contract. `aud` names the origin the token is
-// for; `cnf` is the DPoP confirmation (SP-5 binds the key —
-// present in the contract, unenforced now); `jti` is the
-// unique token id (reuse-detection: SP-5).
+// for — verifyAccessToken now ENFORCES the single audience
+// (TOKEN_AUDIENCE); per-client multi-audience validation via
+// the clients registry is SP-5. `cnf` is the DPoP confirmation
+// (SP-5 binds the key — present in the contract, unenforced
+// now); `jti` is the unique token id (reuse-detection: SP-5).
 export interface AccessTokenClaims {
     readonly sub: Id;
     readonly roles: readonly string[];
@@ -114,6 +116,7 @@ function hasClaimShape(
     return typeof c.sub === 'string'
         && Array.isArray(c.roles)
         && typeof c.name === 'string'
+        && typeof c.aud === 'string'
         && typeof c.iat === 'number'
         && typeof c.nbf === 'number'
         && typeof c.exp === 'number'
@@ -178,6 +181,9 @@ export function verifyAccessToken(
         claims = parsed;
     } catch {
         return { valid: false, reason: 'unparseable claims' };
+    }
+    if (claims.aud !== TOKEN_AUDIENCE) {
+        return { valid: false, reason: 'wrong audience' };
     }
     if (nowSeconds < claims.nbf) {
         return { valid: false, reason: 'not yet valid' };
