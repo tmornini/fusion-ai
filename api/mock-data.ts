@@ -393,6 +393,8 @@ type SeedHumanMember = Omit<
 
 const MOCK_SEED_TIMESTAMP =
     '2026-01-01T00:00:00.000Z';
+const SEED_PLACEHOLDER_SECRET =
+    'placeholder-not-a-real-secret';
 
 export const OBJECTIVE_SEEDS: Array<{
     id: string;
@@ -730,6 +732,24 @@ export async function populateMockData(
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
         }),
+        adapter.identityCredentials.put(
+            'seed-cred-current-password', {
+                identity_id: 'current',
+                kind: 'password',
+                status: 'set',
+                secret: SEED_PLACEHOLDER_SECRET,
+                at: MOCK_SEED_TIMESTAMP,
+            },
+        ),
+        adapter.identityCredentials.put(
+            'seed-cred-system-client-secret', {
+                identity_id: SYSTEM_MEMBER_ID,
+                kind: 'client_secret',
+                status: 'set',
+                secret: SEED_PLACEHOLDER_SECRET,
+                at: MOCK_SEED_TIMESTAMP,
+            },
+        ),
     ]);
 
     // Initial member state events. Every seeded
@@ -6336,5 +6356,23 @@ export async function populateBootstrapData(
             ideas_limit: TIER_IDEAS_LIMIT,
             last_activity: dt(0, 16, 0),
         }),
+        adapter.identityCredentials.put(
+            'seed-cred-current-password', {
+                identity_id: 'current',
+                kind: 'password',
+                status: 'set',
+                secret: SEED_PLACEHOLDER_SECRET,
+                at: MOCK_SEED_TIMESTAMP,
+            },
+        ),
+        adapter.identityCredentials.put(
+            'seed-cred-system-client-secret', {
+                identity_id: SYSTEM_MEMBER_ID,
+                kind: 'client_secret',
+                status: 'set',
+                secret: SEED_PLACEHOLDER_SECRET,
+                at: MOCK_SEED_TIMESTAMP,
+            },
+        ),
     ]);
 }
