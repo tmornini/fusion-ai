@@ -5,7 +5,7 @@
 > no `./generate-schema` script in the codebase; regenerate
 > by hand or via the next tool the maintainer wires in.
 
-20 tables stored in localStorage as JSON arrays, listed in
+24 tables stored in localStorage as JSON arrays, listed in
 `api/db.ts` as `TABLE_NAMES`. Each table is keyed as
 `fusion-ai:tableName`. All rows have a text `id` primary
 key. Column types: TEXT (string), INTEGER (number), REAL
@@ -46,7 +46,9 @@ removal.
 **The `'system'` member:** `SYSTEM_MEMBER_ID = 'system'`
 in `api/types.ts` is a `members` parent row with
 `type = 'system'` and no detail row, seeded by both
-`populateMockData` and `populateBootstrapData`. State
+`populateMockData` and `populateBootstrapData`. Its
+corresponding `identity` row carries `kind = 'service'`
+— the platform itself as a non-person principal. State
 events with no specific user actor reference it. It is a
 pure event-author: `getMemberMap` resolves it for
 authorship display, but the `getMembers` roster — and
@@ -105,6 +107,68 @@ is free text, NOT NULL — empty is `''`, never null.
 | description | TEXT |
 | skill_focus | TEXT |
 | model | TEXT |
+
+### identity
+
+One row per principal in the system. The `id` is the
+universal key: `member.id === identity.id`, always —
+no separate join is needed. `kind` is the NATURE of
+the principal: `person` (a human being) or `service`
+(an automated agent, API client, or the platform
+itself). `kind` is NOT a statement about sensitive
+data — both kinds carry it: persons an
+`identity_pii` row, services credentials in
+`identity_credentials`.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| kind | TEXT (`person` \| `service`) |
+
+### identity_pii
+
+Person-PII facet, keyed by the shared identity id.
+Services have no row here; their secrets live in
+`identity_credentials`. All columns are NOT NULL —
+erased PII is the ABSENCE of the row, not a null
+column. Erasure is a hard splice (`EntityStore
+.delete`): the identity row, the member row, and
+every `member_id` reference survive unchanged.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| name | TEXT |
+| email | TEXT |
+| phone | TEXT |
+| bio | TEXT |
+
+### identity_credentials
+
+Append-only credential lifecycle ledger
+(`HistoryEntityStore`). One row per event; current
+validity is the latest event per
+`(identity_id, kind)`. `kind` is `password`
+(person interactive secret) or `client_secret`
+(service shared secret). `status` is `set`,
+`rotated`, or `revoked`. `at` is the RFC-3339 Zulu
+moment of the event.
+
+Revocation is a NEW `'revoked'` event — never a
+splice. This is the OPPOSITE discipline from
+`identity_pii` (which erases by splice). `secret`
+is opaque material stored UNHASHED at this seam;
+hashing, verification, and OAuth infrastructure are
+SP-5. SP-1 enforces non-leakage on read.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| identity_id | TEXT (FK → identities) |
+| kind | TEXT (`password` \| `client_secret`) |
+| status | TEXT (`set` \| `rotated` \| `revoked`) |
+| secret | TEXT |
+| at | TEXT |
 
 ### ideas
 
