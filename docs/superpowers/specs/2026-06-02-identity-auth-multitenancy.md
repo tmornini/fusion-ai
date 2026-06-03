@@ -104,6 +104,37 @@ Six independently-shippable sub-projects. **Critical path
 | 2 | **Tenancy** | org singleton → tenant root; NOT-NULL `organization_id`; org facades + leakage guard |
 | 6 | **Identity surface** | `/identities/:id` CRUD + `/pii` erasure + `/providers` + `/tokens` |
 
+### Execution status
+
+- **SP-1 Identity core — ✅ DONE** (executed 2026-06; commits
+  `3ff30b5..386e7af` on `master`, `./validate` green at every step,
+  1050 tests). Landed: the `identity` store (`{id, kind}`,
+  `member.id === identity.id`), `identity_pii` (splice-erasable person
+  PII modeled to the app as the `MemberPii` tagged union), and a bonus
+  `identity_credentials` append-only ledger (revoke-to-retain). PII
+  (name + contact) moved off `members`/`human_members` into
+  `identity_pii`; `members` is now `{id, type}`; AI name on
+  `ai_members.name`; the system actor's name is a constant. Detailed
+  plan + execution record:
+  `docs/superpowers/plans/2026-06-02-sp1-identity-core.md`.
+  - **Deviations recorded during execution:** (a) `kind` = the
+    principal's NATURE (person|service), NOT a "has-PII" flag — both
+    kinds carry sensitive data; (b) Phase C shipped as **two** atomic
+    green commits, not four — the polymorphic-`name()` / tagged-union
+    migration is indivisible (the type system makes "reshape" and
+    "migrate readers" one act); (c) credential writes use
+    PUT-with-client-id (codebase-native, idempotent per Commandment
+    VII), not POST; (d) credential `secret` hashing + verification
+    deferred to SP-5 / the server tier (bcrypt would break zero-deps;
+    you hash where you verify) — SP-1 enforces non-leakage on read.
+  - **Codebase finding for all later SPs:** `SCHEMA.svg` is generated
+    from `api/db.ts` + `api/types.ts` and gated by `./validate`'s
+    `./generate-schema-svg --check`; any schema change must regenerate
+    + commit it, and the sandbox gate is `TMPDIR=/tmp/claude
+    ./validate`.
+- **SP-3, 4, 5, 2, 6 — not started.** Next on the critical path:
+  **SP-3 (Token gate)**.
+
 ## Sub-project 1 — Identity core (detailed; build first)
 
 **Goal.** Rename `worker`→`member`, introduce the global identity
@@ -305,9 +336,18 @@ migrations arrive with Postgres.
 - `role_grants` ledger as its own table vs. riding the unified `states`
   log — decide in SP-4's spec.
 
-## Next step after approval
+## Next step (SP-1 executed)
 
-Per the brainstorming flow this brainstorm fed: persist this as a spec
-under `docs/superpowers/specs/` and commit, then invoke the
-writing-plans skill to produce the detailed implementation plan for
-**Sub-project 1 (Identity core)** and begin TDD.
+SP-1 is done (see Execution status). The next sub-project on the
+critical path is **SP-3 (Token gate)**. Invoke the writing-plans skill
+to produce its detailed implementation plan from the SP-3 sketch above
+— JWT claim contract (`sub`/`roles`/`name`/`aud`/`cnf` + `iat`/`exp`/
+`nbf`/`jti`), short-lived access tokens; auth middleware at
+`handleRequest` (`api/api.ts`) verifying the token + a per-identity
+`revoked-before` stamp; `RequestContext.identity` populated once (the
+Office of the Context); Bearer required on every request — then execute
+it TDD-first against `TMPDIR=/tmp/claude ./validate`. SP-1's seams to
+build on: the `identity` store, `member.id === identity.id`, and the
+`identity_credentials` ledger (the possessed-secret facet a
+`password` / `client_secret` grant verifies against — and where SP-5's
+real hashing/verification lands).
