@@ -153,6 +153,11 @@ files):
   `identity` + `identity_pii` for every seed member, `id === member.id`
   (including `current` and the `system` worker, `SYSTEM_WORKER_ID`
   ~404 — `system` becomes a canonical `service` identity).
+- `SCHEMA.svg` — regenerate via `./generate-schema-svg`; the ERD is
+  derived from `api/db.ts` + `api/types.ts`, and `./validate` runs
+  `--check` and fails on drift. Commit the regenerated SVG with the
+  schema change. (Found at execution — the seventh step of this
+  ritual; sandbox gate is `TMPDIR=/tmp/claude ./validate`.)
 
 **id-equality invariant.** New persons: identity created first, member
 reuses the id. Seed data: identities created with `id ===` existing
@@ -242,8 +247,10 @@ migrations arrive with Postgres.
 
 ## Verification
 
-- **`./validate` is the gate** (tsc `--noEmit` + `node --test
-  --strip-types tests/*.test.ts` + 78-char lint). A failure ABORTS.
+- **`TMPDIR=/tmp/claude ./validate` is the gate** (tsc `--noEmit` +
+  `node --test --strip-types tests/*.test.ts` + 78-char lint +
+  `./generate-schema-svg --check`). A failure ABORTS. `TMPDIR` is set
+  because the SVG check runs `npx tsx` under the sandbox.
 - **Per sub-project tests** (zero-dependency, via `MemoryDbAdapter`):
   - SP-1: creating an identity yields a worker-compatible id;
     `DELETE /identities/:id/pii` splices `identity_pii` while the

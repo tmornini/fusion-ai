@@ -95,6 +95,40 @@ rename.
   minimal `identity_credentials` append-only ledger, bounded as in
   decision 4.
 
+## Execution findings (codebase) — folded in during the run
+
+Grounding the live codebase before execution surfaced gaps the
+brainstorm could not have known. Recorded here so they do not hide
+(and so SP-2..6 inherit them):
+
+1. **`SCHEMA.svg` is generated, and `./validate` gates it.**
+   `web-app/app/generate-schema-svg.ts` derives the ERD from
+   `api/db.ts` (the `DbAdapter` store map + `TABLE_NAMES`) and
+   `api/types.ts` (entity interfaces). `./validate` runs
+   `./generate-schema-svg --check` and FAILS on drift. So every task
+   that adds a table, changes the `DbAdapter` interface, or reshapes
+   an entity's columns MUST run `./generate-schema-svg` and commit the
+   regenerated `SCHEMA.svg`. Affected: **A2** (identities,
+   identity_pii), **C1**/**C2** (member/human/ai columns), **E1**
+   (identity_credentials). Add `SCHEMA.svg` to those tasks' `git add`.
+
+2. **Every `TABLE_NAMES` entry needs a `DbAdapter` interface store
+   field, typed `EntityStore`/`SingletonStore`.**
+   `generate-schema-svg` throws on a store/table count mismatch and
+   its regex matches only those two generics. So `identity_credentials`
+   — though instantiated as a `HistoryEntityStore` — MUST be DECLARED
+   in the interface as `EntityStore<IdentityCredentialEntity>` (the
+   `flowVersions` precedent), or the generator throws.
+
+3. **The sandbox gate is `TMPDIR=/tmp/claude ./validate`.** The
+   generator runs `npx tsx`; under the Claude Code sandbox its IPC
+   socket must land in `/tmp/claude/tsx-501`. Bare `./validate` fails
+   for sandbox reasons unrelated to the code.
+
+These do not alter the architecture — they complete the parent spec's
+"add an entity store" ritual with its missing step: regenerate the
+derived ERD.
+
 ## Voice rules (push down to every subagent)
 
 78-char max line; 4-space indent; no inline `style=""` (CSS custom
@@ -1236,9 +1270,12 @@ git commit -m "Document identity tables and reframed kind"
 
 ## Verification
 
-- **Gate:** `./validate` after every task (tsc `--noEmit` + `node
-  --test --strip-types tests/*.test.ts` + 78-char lint). A failure
-  ABORTS — fix before proceeding.
+- **Gate:** `TMPDIR=/tmp/claude ./validate` after every task (tsc
+  `--noEmit` + `node --test --strip-types tests/*.test.ts` + 78-char
+  lint + `./generate-schema-svg --check`). A failure ABORTS — fix
+  before proceeding. Tasks that touch the schema (A2, C1, C2, E1) must
+  regenerate and commit `SCHEMA.svg`. `TMPDIR` is required because the
+  SVG check runs `npx tsx`.
 - **New automated coverage:** `tests/api-identities.test.ts`,
   `tests/adapters-identities.test.ts`,
   `tests/adapters-identity-credentials.test.ts`, plus reshaped
