@@ -29,7 +29,6 @@ import {
     postClipboardCopy,
     subscribeResize,
 } from '../app/adapters/index.ts';
-import { getDbAdapter } from '../app/adapters/init.ts';
 import type {
     MemberId,
     RecordAttributeEntity,
@@ -306,7 +305,7 @@ async function handleAddEdge(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performAddEdge(
-        getDbAdapter(), snap, fromId, toId,
+        sessionContext(), snap, fromId, toId,
     );
     if (op.kind === 'fail') {
         await reportOpFailure(
@@ -352,7 +351,7 @@ async function reportOpFailure(
 async function handleUndo(): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performUndo(
-        getDbAdapter(), snap, pageState.history(),
+        sessionContext(), snap, pageState.history(),
     );
     if (op.kind === 'fail') {
         showToast(op.toast, op.toastVariant);
@@ -368,7 +367,7 @@ async function handleUndo(): Promise<void> {
 async function handleRedo(): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performRedo(
-        getDbAdapter(), snap, pageState.history(),
+        sessionContext(), snap, pageState.history(),
     );
     if (op.kind === 'fail') {
         showToast(op.toast, op.toastVariant);
@@ -395,7 +394,7 @@ async function handleDeleteSelectedNodes(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performDeleteSelectedNodes(
-        getDbAdapter(), snap,
+        sessionContext(), snap,
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
@@ -426,7 +425,7 @@ async function handleDeleteSelectedEdge(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performDeleteSelectedEdge(
-        getDbAdapter(), snap,
+        sessionContext(), snap,
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
@@ -459,7 +458,7 @@ async function handleAddAttributeRef(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performAddAttributeRef(
-        getDbAdapter(), snap, attributeId,
+        sessionContext(), snap, attributeId,
         'editable', false,
     );
     if (op.kind === 'noop') return;
@@ -486,7 +485,7 @@ async function handleRemoveAttributeRef(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performRemoveAttributeRef(
-        getDbAdapter(), snap, attributeId,
+        sessionContext(), snap, attributeId,
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
@@ -514,7 +513,7 @@ async function handleUpdateAttributeMode(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performUpdateAttributeMode(
-        getDbAdapter(), snap, attributeId, mode,
+        sessionContext(), snap, attributeId, mode,
     );
     if (op.kind === 'noop') return;
     if (op.kind === 'fail') {
@@ -542,7 +541,7 @@ async function handleUpdateAttributeRequired(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performUpdateAttributeRequired(
-        getDbAdapter(), snap, attributeId,
+        sessionContext(), snap, attributeId,
         isRequired,
     );
     if (op.kind === 'noop') return;
@@ -572,7 +571,7 @@ async function handleAddNodeAtPosition(
 ): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performAddNodeAtPosition(
-        getDbAdapter(), snap, fromId, x, y,
+        sessionContext(), snap, fromId, x, y,
     );
     if (op.kind === 'fail') {
         await reportOpFailure(
