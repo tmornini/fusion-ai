@@ -90,7 +90,7 @@ test(
         const row = await getCurrentHumanMember(
             createRequestContext(db),
         );
-        assert.equal(row.name, 'Alice Adams');
+        assert.equal(row.id, 'current');
         assert.equal(row.type, 'human');
     },
 );

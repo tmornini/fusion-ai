@@ -204,7 +204,7 @@ test(
 test('postSchemaCreation keeps existing data', async () => {
     const { db, ctx } = await setup();
     await db.members.put('u1', {
-        type: 'human', name: 'Alice Adams',
+        type: 'human',
     });
     await postSchemaCreation(ctx);
     const rows = await db.members.getAll();
@@ -214,7 +214,7 @@ test('postSchemaCreation keeps existing data', async () => {
 test('deleteSchema clears all table contents', async () => {
     const { db, ctx } = await setup();
     await db.members.put('u1', {
-        type: 'human', name: 'Alice Adams',
+        type: 'human',
     });
     await deleteSchema(ctx);
     assert.equal(await db.hasSchema(), false);

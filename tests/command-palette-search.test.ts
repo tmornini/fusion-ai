@@ -56,7 +56,7 @@ function buildHumanMember(
     department = 'Eng',
 ): HumanMember {
     return new HumanMember(
-        { id, type: 'human', name: first + ' ' + last },
+        { id, type: 'human' },
         {
             id,
             title,

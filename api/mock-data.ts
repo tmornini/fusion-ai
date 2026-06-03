@@ -703,7 +703,6 @@ export async function populateMockData(
             return [
                 adapter.members.put(member.id, {
                     type: 'human',
-                    name,
                 }),
                 adapter.humanMembers.put(member.id, {
                     ...detail,
@@ -727,7 +726,6 @@ export async function populateMockData(
         }),
         adapter.members.put(SYSTEM_MEMBER_ID, {
             type: 'system',
-            name: 'System Member',
         }),
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
@@ -5923,7 +5921,7 @@ export async function populateMockData(
         },
     ];
 
-    const aiMembers: (AIMemberEntity & { name: string })[] = [
+    const aiMembers: AIMemberEntity[] = [
         {
             id: 'tuJwPxYtBur2KCLquScShB',
             name: 'Claude Opus 4.8',
@@ -6046,11 +6044,10 @@ export async function populateMockData(
                 .put(r.id, r),
         ),
         ...aiMembers.flatMap(m => {
-            const { id: _id, name, ...detail } = m;
+            const { id: _id, ...detail } = m;
             return [
                 adapter.members.put(m.id, {
                     type: 'ai',
-                    name,
                 }),
                 adapter.aiMembers.put(m.id, detail),
                 adapter.identities.put(m.id, {
@@ -6284,14 +6281,12 @@ export async function populateBootstrapData(
     await Promise.all([
         adapter.members.put(SYSTEM_MEMBER_ID, {
             type: 'system',
-            name: 'System Member',
         }),
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
         }),
         adapter.members.put('current', {
             type: 'human',
-            name: 'Tony Stark',
         }),
         adapter.identities.put('current', {
             kind: 'person',

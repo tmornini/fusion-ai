@@ -99,7 +99,6 @@ function makeHumanMember() {
         {
             id: 'hw_1',
             type: 'human',
-            name: 'Sarah Chen',
         },
         {
             id: 'hw_1',
@@ -127,10 +126,10 @@ function makeAIMember() {
         {
             id: 'ai_1',
             type: 'ai',
-            name: 'Claude Opus 4.8',
         },
         {
             id: 'ai_1',
+            name: 'Claude Opus 4.8',
             description:
                 'Long context, deep reasoning.',
             skill_focus:

@@ -57,8 +57,10 @@ every list, picker, and detail view — omits it.
 ### members
 
 The parent member table: one row per member holding the
-shared identity, the `type` discriminant, and the display
-`name`. Kind-specific detail lives in `human_members` /
+shared identity and the `type` discriminant only. The
+display name lives with the kind — `ai_members.name`,
+`identity_pii.name` — or as the `SYSTEM_MEMBER_NAME`
+constant. Kind-specific detail lives in `human_members` /
 `ai_members`, keyed by the same id; a `'system'` member
 is a parent row with no detail row. The terminal
 lifecycle state is `'archived'`, recorded in the `states`
@@ -68,7 +70,6 @@ log.
 |--------|------|
 | id | TEXT |
 | type | TEXT (`human` \| `ai` \| `system`) |
-| name | TEXT |
 
 ### human_members
 
@@ -87,7 +88,8 @@ profile.
 
 ### ai_members
 
-AI detail, keyed by the shared member id. All member
+AI detail, keyed by the shared member id. The AI's
+display `name` lives here, not on the parent. All member
 kinds share the `MEMBER_STATES` alphabet (`active`,
 `pending`, `archived`), recorded in the `states` log.
 
@@ -99,6 +101,7 @@ is free text, NOT NULL — empty is `''`, never null.
 | Column | Type |
 |--------|------|
 | id | TEXT |
+| name | TEXT |
 | description | TEXT |
 | skill_focus | TEXT |
 | model | TEXT |

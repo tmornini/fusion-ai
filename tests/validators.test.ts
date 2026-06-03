@@ -98,6 +98,7 @@ test(
 // --- AIMemberEntity ---
 
 const validAIMember = {
+    name: 'Claude Opus 4.8',
     description: 'Long context, deep reasoning.',
     skill_focus: 'Deep reasoning over long docs.',
     model: getProviderModels()[0]!.id,

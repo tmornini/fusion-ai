@@ -468,16 +468,15 @@ export class Identity {
     }
 }
 
-// Parent row: a member's shared identity. The kind
-// discriminant and display name live here; kind-specific
-// detail lives in human_members / ai_members keyed by the
-// same id. A 'system' member is a parent row with no
-// detail row — absence of a detail row models "no kind-
-// specific attributes".
+// Parent row: a member's shared identity. Only the kind
+// discriminant lives here; the display name lives with the
+// kind (ai_members.name, identity_pii.name) or as the
+// SYSTEM_MEMBER_NAME constant. Kind-specific detail lives in
+// human_members / ai_members keyed by the same id. A
+// 'system' member is a parent row with no detail row.
 export interface MemberEntity {
     id: MemberId;
     type: MemberKind;
-    name: string;
 }
 
 // human_members detail row, keyed by the shared member id.
@@ -607,6 +606,7 @@ export class HumanMember {
 // ai_members detail row, keyed by the shared member id.
 export interface AIMemberEntity {
     id: MemberId;
+    name: string;
     description: string;
     skill_focus: string;
     model: ModelId;
@@ -627,7 +627,7 @@ export class AIMember {
         state: MemberState,
     ) {
         this.#id = parent.id;
-        this.#name = parent.name;
+        this.#name = detail.name;
         this.#description =
             detail.description;
         this.#skillFocus =
@@ -717,7 +717,7 @@ export class SystemMember {
         state: MemberState,
     ) {
         this.#id = parent.id;
-        this.#name = parent.name;
+        this.#name = SYSTEM_MEMBER_NAME;
         this.#state = state;
     }
 

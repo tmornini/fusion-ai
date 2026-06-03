@@ -9,9 +9,10 @@ import {
 } from '../api/provider-models.ts';
 
 // Build/seed members in the post-normalization shape: a
-// parent row (type + name) plus a kind-specific detail
-// row, sharing one id. Fixtures use these so the two-
-// table member shape lives in exactly one place.
+// parent row (type only) plus a kind-specific detail row,
+// sharing one id. The display name lives with the kind —
+// ai_members.name, identity_pii.name. Fixtures use these
+// so the two-table member shape lives in exactly one place.
 
 function humanDetail() {
     return {
@@ -36,7 +37,7 @@ export function makeHumanMember(
     state: MemberState = 'active',
 ): HumanMember {
     return new HumanMember(
-        { id, type: 'human', name },
+        { id, type: 'human' },
         { id, ...humanDetail() },
         {
             erased: false,
@@ -55,8 +56,8 @@ export function makeAIMember(
     state: MemberState = 'active',
 ): AIMember {
     return new AIMember(
-        { id, type: 'ai', name },
-        { id, ...aiDetail() },
+        { id, type: 'ai' },
+        { id, name, ...aiDetail() },
         state,
     );
 }
@@ -67,7 +68,7 @@ export async function seedHumanMember(
     name: string,
     state: MemberState = 'active',
 ): Promise<void> {
-    await db.members.put(id, { type: 'human', name });
+    await db.members.put(id, { type: 'human' });
     await db.humanMembers.put(id, humanDetail());
     await db.identities.put(id, { kind: 'person' });
     await db.identityPii.put(id, {
@@ -87,8 +88,8 @@ export async function seedAIMember(
     name: string,
     state: MemberState = 'active',
 ): Promise<void> {
-    await db.members.put(id, { type: 'ai', name });
-    await db.aiMembers.put(id, aiDetail());
+    await db.members.put(id, { type: 'ai' });
+    await db.aiMembers.put(id, { name, ...aiDetail() });
     await db.states.record(
         `st-${id}`, id, state, 'system',
     );

@@ -58,13 +58,6 @@ export type HumanMemberDraft =
         bio: string;
     };
 
-// A human member composed for the editor: parent name
-// merged onto the detail row. Lifecycle state is read
-// separately from the states log.
-export interface HumanMemberRow extends HumanMemberEntity {
-    name: string;
-}
-
 // Convert an identity_pii row to the display union. A
 // missing row (erased PII) yields the erased variant; the
 // CALLER decides what to render. Duplicated from
@@ -179,20 +172,15 @@ export async function getHumanMember(
 export async function getHumanMemberRow(
     ctx: RequestContext,
     id: string,
-): Promise<HumanMemberRow> {
-    const [parent, detail] = await Promise.all([
-        ctx.GET<MemberEntity>(`members/${id}`),
-        ctx.GET<HumanMemberEntity>(
-            `human-members/${id}`,
-        ),
-    ]);
-    return { ...detail, name: parent.name };
+): Promise<HumanMemberEntity> {
+    return ctx.GET<HumanMemberEntity>(
+        `human-members/${id}`,
+    );
 }
 
-// Split a human-member write across the parent (type +
-// name), the identity, the PII row, and the detail row.
-// Used by edits; creation goes through
-// postHumanMemberCreation.
+// Split a human-member write across the parent (type), the
+// identity, the PII row, and the detail row. Used by edits;
+// creation goes through postHumanMemberCreation.
 export async function putHumanMember(
     ctx: RequestContext,
     id: string,
@@ -205,7 +193,7 @@ export async function putHumanMember(
             {
                 method: 'put',
                 resource: `members/${id}`,
-                body: { type: 'human', name },
+                body: { type: 'human' },
             },
             {
                 method: 'put',
@@ -246,7 +234,7 @@ export async function postHumanMemberCreation(
             {
                 method: 'put',
                 resource: `members/${id}`,
-                body: { type: 'human', name },
+                body: { type: 'human' },
             },
             {
                 method: 'put',

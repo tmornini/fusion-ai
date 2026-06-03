@@ -574,7 +574,7 @@ export function assertOnlyKeys(
 // ── Entity validators ────────────────
 
 const MEMBER_BODY_KEYS: readonly string[] = [
-    'type', 'name',
+    'type',
 ];
 
 export function validateMemberEntity(
@@ -596,7 +596,6 @@ export function validateMemberEntity(
     }
     return {
         type,
-        name: pickString(body, 'name'),
     };
 }
 
@@ -668,7 +667,7 @@ export function validateHumanMemberEntity(
 
 const AI_MEMBER_BODY_KEYS:
     readonly string[] = [
-    'description', 'model', 'skill_focus',
+    'name', 'description', 'model', 'skill_focus',
 ];
 
 // model must be a known catalog id — membership at
@@ -691,6 +690,7 @@ export function validateAIMemberEntity(
         );
     }
     return {
+        name: pickString(body, 'name'),
         description: pickString(
             body, 'description',
         ),

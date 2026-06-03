@@ -22,6 +22,9 @@ import type {
     Member,
 } from '../api/types.ts';
 import {
+    SYSTEM_MEMBER_NAME,
+} from '../api/types.ts';
+import {
     seedHumanMember,
     seedAIMember,
 } from './member-fixtures.ts';
@@ -51,7 +54,6 @@ test(
         );
         await db.members.put('system', {
             type: 'system',
-            name: 'System Member',
         });
         await db.states.record(
             'st-system', 'system',
@@ -68,7 +70,7 @@ test(
         const map = await getMemberMap(ctx);
         assert.equal(
             memberName(map, 'system'),
-            'System Member',
+            SYSTEM_MEMBER_NAME,
         );
     },
 );
@@ -181,7 +183,6 @@ test(
         await db.createSchema();
         await db.members.put('hw_erased', {
             type: 'human',
-            name: 'Erased Person',
         });
         await db.humanMembers.put('hw_erased', {
             title: 'product_manager',
