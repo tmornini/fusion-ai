@@ -80,3 +80,17 @@ async () => {
     const id = await GET<{ id: string }>(db, 'identities/abc');
     assert.equal(id.id, 'abc');
 });
+
+test('bootstrap seeds an identity per member, id-equal',
+async () => {
+    const db = await freshDb();
+    const { populateBootstrapData } =
+        await import('../api/mock-data.ts');
+    await populateBootstrapData(db);
+    const sys = await GET<{ kind: string }>(
+        db, 'identities/system');
+    assert.equal(sys.kind, 'service');
+    const cur = await GET<{ kind: string }>(
+        db, 'identities/current');
+    assert.equal(cur.kind, 'person');
+});

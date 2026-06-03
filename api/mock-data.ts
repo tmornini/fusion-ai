@@ -707,11 +707,23 @@ export async function populateMockData(
                             team_dimensions,
                         ),
                 }),
+                adapter.identities.put(member.id, {
+                    kind: 'person',
+                }),
+                adapter.identityPii.put(member.id, {
+                    name,
+                    email: detail.email,
+                    phone: detail.phone,
+                    bio: detail.bio,
+                }),
             ];
         }),
         adapter.members.put(SYSTEM_MEMBER_ID, {
             type: 'system',
             name: 'System Member',
+        }),
+        adapter.identities.put(SYSTEM_MEMBER_ID, {
+            kind: 'service',
         }),
     ]);
 
@@ -6034,6 +6046,9 @@ export async function populateMockData(
                     name,
                 }),
                 adapter.aiMembers.put(m.id, detail),
+                adapter.identities.put(m.id, {
+                    kind: 'service',
+                }),
             ];
         }),
         ...leadToCloseData.workOrders.map(r =>
@@ -6264,9 +6279,23 @@ export async function populateBootstrapData(
             type: 'system',
             name: 'System Member',
         }),
+        adapter.identities.put(SYSTEM_MEMBER_ID, {
+            kind: 'service',
+        }),
         adapter.members.put('current', {
             type: 'human',
             name: 'Tony Stark',
+        }),
+        adapter.identities.put('current', {
+            kind: 'person',
+        }),
+        adapter.identityPii.put('current', {
+            name: 'Tony Stark',
+            email: 'demo@example.com',
+            phone: '+1 (555) 123-4567',
+            bio: 'Passionate about building'
+                + ' products that solve'
+                + ' real problems.',
         }),
         adapter.humanMembers.put('current', {
             email: 'demo@example.com',

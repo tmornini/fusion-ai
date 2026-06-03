@@ -398,6 +398,8 @@ export interface StateEntity {
 
 export const SYSTEM_MEMBER_ID: Id = 'system';
 
+export const SYSTEM_MEMBER_NAME = 'System';
+
 // A principal that spans the whole platform. `kind` is the
 // NATURE of the principal — a person (a human being) or a
 // service (an automated agent / API client / the platform
