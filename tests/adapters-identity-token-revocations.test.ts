@@ -7,6 +7,7 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
+import { devToken } from './token-fixtures.ts';
 import {
     postIdentityLogoutEverywhere,
     getRevokedBefore,
@@ -36,7 +37,7 @@ test('rejects an extra key', () => {
 async function setup() {
     const db = new MemoryDbAdapter();
     await db.createSchema();
-    return { db, ctx: createRequestContext(db) };
+    return { db, ctx: createRequestContext(db, devToken()) };
 }
 
 test('logout-everywhere appends; reduce is latest-wins',
