@@ -4,6 +4,8 @@ import {
     mintAccessToken,
     verifyAccessToken,
     principalFromToken,
+    latestRevocationAt,
+    revokedBeforeSeconds,
     ANONYMOUS_PRINCIPAL,
 } from '../api/access-token.ts';
 
@@ -58,4 +60,35 @@ test('principalFromToken reads sub/roles/name', () => {
 
 test('exposes a named anonymous principal', () => {
     assert.equal(ANONYMOUS_PRINCIPAL.id, 'anonymous');
+});
+
+test('latestRevocationAt returns the most recent stamp', () => {
+    const rows = [
+        { identity_id: 'a', at: '2021-01-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2022-01-01T00:00:00.000Z' },
+    ];
+    assert.equal(
+        latestRevocationAt(rows, 'a'),
+        '2023-06-01T00:00:00.000Z',
+    );
+});
+
+test('latestRevocationAt isolates identities; null when none', () => {
+    const rows = [
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
+    ];
+    assert.equal(latestRevocationAt(rows, 'b'), null);
+});
+
+test('revokedBeforeSeconds converts the latest stamp', () => {
+    const rows = [
+        { identity_id: 'a', at: '2021-01-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
+    ];
+    assert.equal(
+        revokedBeforeSeconds(rows, 'a'),
+        Math.floor(
+            Date.parse('2023-06-01T00:00:00.000Z') / 1000),
+    );
 });
