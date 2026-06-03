@@ -12,7 +12,7 @@ import {
     navigateTo,
 } from '../app/core.ts';
 import {
-    createRequestContext,
+    sessionContext,
     getFlowGraph,
     getFlowMermaid,
     getFlowZip,
@@ -336,7 +336,7 @@ async function reportOpFailure(
 ): Promise<void> {
     showToast(toast, toastVariant);
     const g = await getFlowGraph(
-        createRequestContext(), flowId,
+        sessionContext(), flowId,
     );
     const current = pageState.presenter().snapshot();
     commit({
@@ -994,7 +994,7 @@ async function handleCopyMermaid(
     try {
         text =
             await getFlowMermaid(
-                createRequestContext(), flowId,
+                sessionContext(), flowId,
             );
     } catch (err) {
         log.error(
@@ -1038,7 +1038,7 @@ async function handleExportZip(
     try {
         result =
             await getFlowZip(
-                createRequestContext(), flowId,
+                sessionContext(), flowId,
             );
     } catch (err) {
         log.error(
@@ -1327,7 +1327,7 @@ async function handleBindRecord(
     flowId: string,
     recordId: RecordId | null,
 ): Promise<void> {
-    const ctx = createRequestContext();
+    const ctx = sessionContext();
     try {
         const existing = await
             getRecordForFlow(ctx, flowId);
@@ -1378,7 +1378,7 @@ async function handleBindRecord(
 async function deleteExistingFlowRecord(
     flowId: string,
 ): Promise<void> {
-    const ctx = createRequestContext();
+    const ctx = sessionContext();
     const all = await ctx.GET<
         Array<{ id: string; flow_id: string }>
     >('flow-records');
@@ -1413,7 +1413,7 @@ export async function init(
         container,
         buildSkeleton('detail', 1),
         async () => {
-            const ctx = createRequestContext();
+            const ctx = sessionContext();
             const [
                 graph, versions,
                 humanMembers, aiMembers,

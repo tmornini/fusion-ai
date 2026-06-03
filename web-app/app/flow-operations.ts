@@ -22,6 +22,7 @@ import {
     generateCryptoSafeBase62,
     nowUtc,
 } from './adapters/index.ts';
+import { getSessionToken } from './adapters/init.ts';
 import type {
     FlowSaveShape,
 } from './adapters/flow-mutations.ts';
@@ -88,7 +89,7 @@ async function commitFlowMutation(
     nodes: GraphNode[],
     edges: GraphEdge[],
 ): Promise<void> {
-    const ctx = createRequestContext(db);
+    const ctx = createRequestContext(db, getSessionToken());
     await postFlowVersion(
         ctx,
         generateCryptoSafeBase62(),
@@ -648,7 +649,7 @@ export async function performUndo(
         return failOp('Flow is locked');
     }
     try {
-        const ctx = createRequestContext(db);
+        const ctx = createRequestContext(db, getSessionToken());
         const versions = await getFlowVersions(
             ctx, snap.flowId,
         );
@@ -728,7 +729,7 @@ export async function performRedo(
         };
     }
     try {
-        const ctx = createRequestContext(db);
+        const ctx = createRequestContext(db, getSessionToken());
         await postFlowVersion(
             ctx,
             generateCryptoSafeBase62(),
