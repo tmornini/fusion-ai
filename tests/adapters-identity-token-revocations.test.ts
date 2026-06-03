@@ -34,6 +34,13 @@ test('rejects an extra key', () => {
         }));
 });
 
+test('rejects an unparseable timestamp', () => {
+    assert.throws(() =>
+        validateIdentityTokenRevocationEntity({
+            identity_id: 'a', at: 'not-a-date',
+        }));
+});
+
 async function setup() {
     const db = new MemoryDbAdapter();
     await db.createSchema();
