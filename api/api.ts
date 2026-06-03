@@ -12,6 +12,7 @@ import type {
     HumanMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
+    IdentityCredentialEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
     Objective,
@@ -214,6 +215,23 @@ const routes: Route[] = [
             ),
         delete: (db, p) =>
             db.identityPii.delete(param(p, 0)),
+    }),
+    route('identity-credentials', {
+        get: (db) => db.identityCredentials.getAll(),
+    }),
+    route('identity-credentials/:id', {
+        get: (db, p) =>
+            db.identityCredentials.getById(
+                param(p, 0),
+            ),
+        put: (db, p, payload) =>
+            db.identityCredentials.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<
+                        IdentityCredentialEntity, 'id'
+                    >,
+            ),
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),
