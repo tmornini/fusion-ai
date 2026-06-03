@@ -25,6 +25,8 @@ async () => {
     const res = await handleRequest(
         db, new Request(`${BASE}/members`));
     assert.equal(res.status, 401);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /missing bearer token/);
 });
 
 test('protected route accepts a valid token', async () => {
@@ -36,13 +38,15 @@ test('protected route accepts a valid token', async () => {
 test('rejects an expired token', async () => {
     const db = await freshDb();
     await assert.rejects(
-        () => GET(db, 'members', expiredToken()));
+        () => GET(db, 'members', expiredToken()),
+        /expired/);
 });
 
 test('rejects a not-yet-valid token', async () => {
     const db = await freshDb();
     await assert.rejects(
-        () => GET(db, 'members', notYetValidToken()));
+        () => GET(db, 'members', notYetValidToken()),
+        /not yet valid/);
 });
 
 test('rejects the anonymous principal on a protected route',
@@ -53,7 +57,8 @@ async () => {
         iat: 1_700_000_000, ttlSeconds: 10_000_000_000,
         jti: 'anon',
     });
-    await assert.rejects(() => GET(db, 'members', anon));
+    await assert.rejects(
+        () => GET(db, 'members', anon), /anonymous/);
 });
 
 // Public routes are exempt: even an anonymous token (which a
@@ -90,5 +95,6 @@ test('a logout-everywhere revokes earlier tokens', async () => {
         },
         devToken(),
     );
-    await assert.rejects(() => GET(db, 'members', stale));
+    await assert.rejects(
+        () => GET(db, 'members', stale), /revoked/);
 });
