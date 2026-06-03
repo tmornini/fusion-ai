@@ -129,6 +129,31 @@ These do not alter the architecture — they complete the parent spec's
 "add an entity store" ritual with its missing step: regenerate the
 derived ERD.
 
+4. **Phase C cannot be four green commits — the tagged-union
+   migration is atomic.** `HumanMember.name()` is POLYMORPHIC on the
+   `Member` union (called on union-typed values in
+   `flow-designer-view`, `flow-stats`, and `memberName` itself), and
+   `emailAddress`/`phoneNumber`/`bioText` have direct callers in
+   `command-palette`, `human-member-detail`, and the `member`
+   presenter. Removing them (plan C1) breaks ~10 call sites that plan
+   C3/C4 only fix later — an intermediate NON-COMPILING commit,
+   forbidden by the Office of the Commit AND by this plan's own
+   per-task `./validate` gate. The type system makes "reshape the
+   type" and "migrate the readers" the SAME atomic act; a tagged-union
+   migration cannot be half-applied. Plan C4's caller list was also
+   incomplete — it missed `flow-stats.ts:60` (`w.name()`),
+   `tests/adapters-shared.test.ts`, and
+   `tests/adapters-members-union.test.ts`. **Resequenced
+   (user-approved) into two green commits, identical end state and
+   doctrine:**
+   - **C-A "Move human PII to identity_pii"** = plan C1 + C3 + C4:
+     storage reshape + `HumanMember.pii()` + the adapter read/write
+     split + `memberName()`'s `ERASED_MEMBER_NAME` + EVERY human
+     name/email/phone/bio reader (all display sites, `flow-stats`, and
+     the reshaped tests) + `SCHEMA.svg` regen. One green commit.
+   - **C-B "Move display name off members parent"** = plan C2 +
+     `SCHEMA.svg` regen. One green commit.
+
 ## Voice rules (push down to every subagent)
 
 78-char max line; 4-space indent; no inline `style=""` (CSS custom
