@@ -1,9 +1,11 @@
 # Database Schema
 
-> **Note on `SCHEMA.svg`:** the SVG was generated from an
-> earlier revision of this schema and is now stale. There is
-> no `./generate-schema` script in the codebase; regenerate
-> by hand or via the next tool the maintainer wires in.
+> **Note on `SCHEMA.svg`:** the ERD is generated from the
+> schema of record (`api/db.ts` + `api/types.ts`) by
+> `./generate-schema-svg`; `./validate` runs it with
+> `--check` and fails on drift, so it never goes stale.
+> Regenerate with `./generate-schema-svg` after a schema
+> change.
 
 24 tables stored in localStorage as JSON arrays, listed in
 `api/db.ts` as `TABLE_NAMES`. Each table is keyed as
