@@ -1332,6 +1332,14 @@ git commit -m "Document identity tables and reframed kind"
   verification. The SP-1 `identity_credentials` seam is the
   possessed-secret facet they build on — NOT the token ledger.
   Asymmetric/JWKS material and `public_key` credential kinds are SP-5.
+  **Secret hashing + verification is SP-5/server-tier too:** the SP-1
+  `secret` column stores opaque material UNHASHED (client-side mock,
+  no verification path; seeds are obvious placeholders). Hashing is
+  co-located with verification on the server — not half-applied at
+  this seam, and bcrypt would break the zero-dependency rule. SP-1
+  still enforces non-leakage: `getIdentityCredentialState` returns
+  only active kinds, never the secret. (Raised by automated security
+  review of the E1 commit; deferred per scope, recorded here.)
 - **`RequestContext.identity`** (the resolved principal) is added by
   **SP-3** (token gate), not here.
 - **Per-org profile divergence**, **in-place migration tier**, and the

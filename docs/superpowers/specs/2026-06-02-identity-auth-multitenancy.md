@@ -272,6 +272,17 @@ migrations arrive with Postgres.
 
 - Real cryptographic ceremony (passkey assertion, DPoP verify,
   PAR/JAR/RAR) — server-fulfilled; seam designed now.
+- Credential **secret hashing + verification** — the SP-1
+  `identity_credentials.secret` column stores opaque material
+  UNHASHED at the seam (client-side localStorage, mock auth, no
+  verification path yet; seeds are obvious placeholders). Hashing
+  (argon2/bcrypt/scrypt) belongs WHERE verification lives — the SP-5
+  server tier — co-located, never half-applied here (and bcrypt would
+  violate the zero-runtime-dependency rule). SP-1 DOES enforce
+  non-leakage now: `getIdentityCredentialState` returns only the
+  active kinds, never the secret. Flagged by automated security
+  review of the E1 commit; deferred per this scope, recorded so the
+  gap cannot hide.
 - Token revocation *propagation* across independently-deployed
   resource servers, and atomic `identity_tokens` writes (the cross-tab
   shared-write hazard) — server-fulfilled. The model now: short access
