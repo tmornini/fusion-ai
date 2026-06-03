@@ -16,7 +16,6 @@ import type { Channel } from '../channels.ts';
 import {
     type Principal,
     principalFromToken,
-    ANONYMOUS_PRINCIPAL,
 } from '../../../api/access-token.ts';
 
 // A unit of write work executed by ctx.commit().
@@ -82,12 +81,10 @@ export interface RequestContext {
 }
 
 export function createRequestContext(
-    adapter: DbAdapter = getDbAdapter(),
-    token?: string,
+    adapter: DbAdapter,
+    token: string,
 ): RequestContext {
-    const identity = token === undefined
-        ? ANONYMOUS_PRINCIPAL
-        : principalFromToken(token);
+    const identity = principalFromToken(token);
     const ctx: RequestContext = {
         requestId: generateCryptoSafeBase62(),
         identity,

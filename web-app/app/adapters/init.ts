@@ -20,6 +20,7 @@ export async function initAdapter(
     const schema =
         await GET<string | null>(
             adapter, 'snapshots/schema',
+            getSessionToken(),
         );
     return schema !== null;
 }

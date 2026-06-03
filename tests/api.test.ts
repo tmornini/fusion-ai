@@ -177,6 +177,8 @@ test(
                     headers: {
                         'Content-Type':
                             'application/json',
+                        'Authorization':
+                            'Bearer ' + devToken(),
                     },
                     body: '{not valid json',
                 },

@@ -42,13 +42,19 @@ async function setup() {
 
 test('logout-everywhere appends; reduce is latest-wins',
 async () => {
+    // Revoke a subject OTHER than the writer's ('current',
+    // via devToken) so the second append's own Bearer is not
+    // self-revoked by the first — the gate correctly revokes
+    // the actor's stale token when it logs ITSELF out
+    // everywhere; this test exercises append + latest-wins,
+    // not that self-revocation.
     const { db, ctx } = await setup();
-    await postIdentityLogoutEverywhere(ctx, 'current');
-    await postIdentityLogoutEverywhere(ctx, 'current');
+    await postIdentityLogoutEverywhere(ctx, 'target');
+    await postIdentityLogoutEverywhere(ctx, 'target');
     const rows =
         await db.identityTokenRevocations.getAll();
     assert.equal(rows.length, 2);            // retained
-    const stamp = await getRevokedBefore(ctx, 'current');
+    const stamp = await getRevokedBefore(ctx, 'target');
     assert.equal(typeof stamp, 'string');
     assert.equal(
         await getRevokedBefore(ctx, 'other'), null);
