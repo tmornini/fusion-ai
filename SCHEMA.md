@@ -72,18 +72,18 @@ log.
 
 ### human_members
 
-Human detail, keyed by the shared member id.
+Human org-profile detail, keyed by the shared member id.
+Contact PII (name, email, phone, bio) lives in
+`identity_pii`, not here; this row carries only the org
+profile.
 
 | Column | Type |
 |--------|------|
 | id | TEXT |
-| email | TEXT |
 | title | TEXT |
 | department | TEXT |
 | strengths | TEXT (JSON array) |
 | team_dimensions | TEXT (JSON object) |
-| phone | TEXT |
-| bio | TEXT |
 
 ### ai_members
 

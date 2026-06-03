@@ -481,38 +481,34 @@ export interface MemberEntity {
 }
 
 // human_members detail row, keyed by the shared member id.
+// Contact PII (name/email/phone/bio) lives in identity_pii;
+// this row carries only the org profile.
 export interface HumanMemberEntity {
     id: MemberId;
-    email: string;
     title: string;
     department: string;
     strengths: JsonArrayField;
     team_dimensions: JsonObjectField;
-    phone: string;
-    bio: string;
 }
 
 export class HumanMember {
     readonly kind = 'human' as const;
     readonly #id: MemberId;
-    readonly #name: string;
-    readonly #email: string;
+    readonly #pii: MemberPii;
     readonly #title: string;
     readonly #department: string;
     readonly #state: MemberState;
     readonly #strengths: string;
     readonly #teamDimensions: string;
-    readonly #phone: string;
-    readonly #bio: string;
 
     constructor(
         parent: MemberEntity,
         detail: HumanMemberEntity,
+        pii: MemberPii,
         state: MemberState,
     ) {
         this.#id = parent.id;
-        this.#name = parent.name;
-        this.#email = detail.email;
+        this.#pii = pii;
         this.#title = detail.title;
         this.#department =
             detail.department;
@@ -521,16 +517,14 @@ export class HumanMember {
             detail.strengths;
         this.#teamDimensions =
             detail.team_dimensions;
-        this.#phone = detail.phone;
-        this.#bio = detail.bio;
     }
 
     idForLink(): string {
         return this.#id;
     }
 
-    name(): string {
-        return this.#name;
+    pii(): MemberPii {
+        return this.#pii;
     }
 
     titleLabel(): string {
@@ -539,18 +533,6 @@ export class HumanMember {
 
     departmentLabel(): string {
         return this.#department;
-    }
-
-    emailAddress(): string {
-        return this.#email;
-    }
-
-    phoneNumber(): string {
-        return this.#phone;
-    }
-
-    bioText(): string {
-        return this.#bio;
     }
 
     isActive(): boolean {
@@ -603,23 +585,23 @@ export class HumanMember {
     }
 
     matchesSearch(term: string): boolean {
-        const lowerTerm = term.toLowerCase();
-        return (
-            this.#name
-                .toLowerCase()
-                .includes(lowerTerm)
-            || this.#email
-                .toLowerCase()
-                .includes(lowerTerm)
-            || this.#title
-                .toLowerCase()
-                .includes(lowerTerm)
+        const t = term.toLowerCase();
+        if (
+            this.#title
+                .toLowerCase().includes(t)
             || this.#department
-                .toLowerCase()
-                .includes(lowerTerm)
+                .toLowerCase().includes(t)
+        ) {
+            return true;
+        }
+        if (this.#pii.erased) return false;
+        return (
+            this.#pii.name
+                .toLowerCase().includes(t)
+            || this.#pii.email
+                .toLowerCase().includes(t)
         );
     }
-
 }
 
 // ai_members detail row, keyed by the shared member id.

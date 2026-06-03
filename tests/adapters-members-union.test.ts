@@ -132,16 +132,20 @@ test(
 );
 
 test(
-    'member.name() is polymorphic across human'
+    'memberName is polymorphic across human'
     + ' and AI kinds',
     async () => {
         const { db } = await setupSeeded();
         const ctx = createRequestContext(db);
         const map = await getMemberMap(ctx);
-        const human = map.get('hw_sarah_chen')!;
-        const ai = map.get('ai_claude_opus')!;
-        assert.equal(human.name(), 'Sarah Test');
-        assert.equal(ai.name(), 'Claude Opus');
+        assert.equal(
+            memberName(map, 'hw_sarah_chen'),
+            'Sarah Test',
+        );
+        assert.equal(
+            memberName(map, 'ai_claude_opus'),
+            'Claude Opus',
+        );
     },
 );
 
@@ -166,5 +170,37 @@ test(
         const ctx = createRequestContext(db);
         const members = await getMembers(ctx);
         assert.deepEqual(members, []);
+    },
+);
+
+test(
+    'memberName degrades visibly when a human'
+    + ' has no identity_pii row (erased)',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        await db.members.put('hw_erased', {
+            type: 'human',
+            name: 'Erased Person',
+        });
+        await db.humanMembers.put('hw_erased', {
+            title: 'product_manager',
+            department: 'Product',
+            strengths: '[]' as never,
+            team_dimensions: '{}' as never,
+        });
+        await db.identities.put('hw_erased', {
+            kind: 'person',
+        });
+        await db.states.record(
+            'st-hw_erased', 'hw_erased',
+            'active', 'system',
+        );
+        const ctx = createRequestContext(db);
+        const map = await getMemberMap(ctx);
+        assert.equal(
+            memberName(map, 'hw_erased'),
+            'Unknown member',
+        );
     },
 );

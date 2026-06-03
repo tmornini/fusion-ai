@@ -59,12 +59,16 @@ function buildHumanMember(
         { id, type: 'human', name: first + ' ' + last },
         {
             id,
-            email: first.toLowerCase()
-                + '@example.com',
             title,
             department,
             strengths: jsonArrayField([]),
             team_dimensions: jsonObjectField({}),
+        },
+        {
+            erased: false,
+            name: first + ' ' + last,
+            email: first.toLowerCase()
+                + '@example.com',
             phone: '',
             bio: '',
         },

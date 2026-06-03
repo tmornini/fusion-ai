@@ -638,10 +638,8 @@ export function validateIdentityPiiEntity(
 
 const HUMAN_MEMBER_BODY_KEYS:
     readonly string[] = [
-    'email',
     'title', 'department',
     'strengths', 'team_dimensions',
-    'phone', 'bio',
 ];
 
 export function validateHumanMemberEntity(
@@ -653,9 +651,6 @@ export function validateHumanMemberEntity(
         'HumanMemberEntity',
     );
     return {
-        email: pickString(
-            body, 'email',
-        ),
         title: pickString(
             body, 'title',
         ),
@@ -667,12 +662,6 @@ export function validateHumanMemberEntity(
         ),
         team_dimensions: pickJsonObjectField(
             body, 'team_dimensions',
-        ),
-        phone: pickString(
-            body, 'phone',
-        ),
-        bio: pickString(
-            body, 'bio',
         ),
     };
 }

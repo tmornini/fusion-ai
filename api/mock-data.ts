@@ -373,7 +373,13 @@ type SeedHumanMember = Omit<
     HumanMemberEntity,
     'strengths' | 'team_dimensions'
 > & {
+    // Contact PII lives in identity_pii, not the
+    // human_members detail row. The seed carries it
+    // here and the writer routes it into the PII row.
     name: string;
+    email: string;
+    phone: string;
+    bio: string;
     strengths: string[];
     team_dimensions: Record<
         string, number
@@ -690,6 +696,7 @@ export async function populateMockData(
         ...members.flatMap(member => {
             const {
                 id: _id, state: _state, name,
+                email, phone, bio,
                 strengths, team_dimensions,
                 ...detail
             } = member;
@@ -712,9 +719,9 @@ export async function populateMockData(
                 }),
                 adapter.identityPii.put(member.id, {
                     name,
-                    email: detail.email,
-                    phone: detail.phone,
-                    bio: detail.bio,
+                    email,
+                    phone,
+                    bio,
                 }),
             ];
         }),
@@ -6298,7 +6305,6 @@ export async function populateBootstrapData(
                 + ' real problems.',
         }),
         adapter.humanMembers.put('current', {
-            email: 'demo@example.com',
             title: 'Admin',
             department: 'Product',
             strengths: jsonArrayField([
@@ -6312,10 +6318,6 @@ export async function populateBootstrapData(
                 expressive: 80,
                 amiable: 80,
             }),
-            phone: '+1 (555) 123-4567',
-            bio: 'Passionate about building'
-                + ' products that solve'
-                + ' real problems.',
         }),
         adapter.states.record(
             'bootstrap-system-active',

@@ -53,8 +53,11 @@ test(
         const ctx = createRequestContext(db);
         const map = await getHumanMemberMap(ctx);
         assert.equal(map.size, 1);
+        const pii = map.get('u1')?.pii();
         assert.equal(
-            map.get('u1')?.name(),
+            pii !== undefined && !pii.erased
+                ? pii.name
+                : undefined,
             'Alice Adams',
         );
     },

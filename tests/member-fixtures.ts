@@ -13,15 +13,12 @@ import {
 // row, sharing one id. Fixtures use these so the two-
 // table member shape lives in exactly one place.
 
-function humanDetail(id: string) {
+function humanDetail() {
     return {
-        email: `${id}@example.com`.toLowerCase(),
-        phone: '',
         title: 'product_manager',
         department: 'Product',
         strengths: '[]',
         team_dimensions: '{}',
-        bio: '',
     };
 }
 
@@ -40,7 +37,14 @@ export function makeHumanMember(
 ): HumanMember {
     return new HumanMember(
         { id, type: 'human', name },
-        { id, ...humanDetail(id) },
+        { id, ...humanDetail() },
+        {
+            erased: false,
+            name,
+            email: `${id}@example.com`.toLowerCase(),
+            phone: '',
+            bio: '',
+        },
         state,
     );
 }
@@ -64,7 +68,14 @@ export async function seedHumanMember(
     state: MemberState = 'active',
 ): Promise<void> {
     await db.members.put(id, { type: 'human', name });
-    await db.humanMembers.put(id, humanDetail(id));
+    await db.humanMembers.put(id, humanDetail());
+    await db.identities.put(id, { kind: 'person' });
+    await db.identityPii.put(id, {
+        name,
+        email: `${id}@example.com`.toLowerCase(),
+        phone: '',
+        bio: '',
+    });
     await db.states.record(
         `st-${id}`, id, state, 'system',
     );

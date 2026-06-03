@@ -229,12 +229,9 @@ test(
             human_members: [
                 {
                     id: 'u1',
-                    email: 'a@example.com',
-                    phone: '',
                     title: 'product_manager',
                     strengths: '[]',
                     team_dimensions: '{}',
-                    bio: '',
                     department: 'Product',
                 },
             ],

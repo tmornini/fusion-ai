@@ -20,7 +20,7 @@
     </style>
   </defs>
   <rect x="0" y="0" width="1504" height="998" fill="hsl(217 30% 97%)" />
-  <path class="edge" d="M 648 727 C 590.4 727, 305.6 700, 248 700" />
+  <path class="edge" d="M 648 700 C 590.4 700, 305.6 700, 248 700" />
   <path class="edge" d="M 648 89 C 590.4 89, 305.6 700, 248 700" />
   <path class="edge" d="M 648 390 C 590.4 390, 305.6 116, 248 116" />
   <path class="edge" d="M 952 253 C 894.4 253, 609.6 352, 552 352" />
@@ -32,8 +32,8 @@
   <path class="edge" d="M 952 736 C 894.4 736, 609.6 525, 552 525" />
   <path class="edge" d="M 648 217 C 590.4 217, 305.6 116, 248 116" />
   <path class="edge" d="M 648 217 C 590.4 217, 609.6 525, 552 525" />
-  <path class="edge" d="M 648 891 C 590.4 891, 305.6 307, 248 307" />
-  <path class="edge" d="M 648 891 C 590.4 891, 305.6 700, 248 700" />
+  <path class="edge" d="M 648 837 C 590.4 837, 305.6 307, 248 307" />
+  <path class="edge" d="M 648 837 C 590.4 837, 305.6 700, 248 700" />
   <path class="edge" d="M 952 107 C 894.4 107, 305.6 801, 248 801" />
   <path class="edge" d="M 952 107 C 894.4 107, 305.6 700, 248 700" />
   <path class="edge" d="M 952 563 C 894.4 563, 609.6 352, 552 352" />
@@ -55,25 +55,19 @@
     <text class="type" x="238" y="735">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="642" width="208" height="170" rx="6" />
+    <rect class="box" x="648" y="642" width="208" height="116" rx="6" />
     <rect class="head" x="648" y="642" width="208" height="26" rx="6" />
     <text class="thead" x="658" y="660">human_members</text>
     <text class="pk" x="658" y="681">id</text>
     <text class="type" x="846" y="681">id</text>
-    <text class="col" x="658" y="699">email</text>
+    <text class="col" x="658" y="699">title</text>
     <text class="type" x="846" y="699">text</text>
-    <text class="col" x="658" y="717">title</text>
+    <text class="col" x="658" y="717">department</text>
     <text class="type" x="846" y="717">text</text>
-    <text class="col" x="658" y="735">department</text>
-    <text class="type" x="846" y="735">text</text>
-    <text class="col" x="658" y="753">strengths</text>
+    <text class="col" x="658" y="735">strengths</text>
+    <text class="type" x="846" y="735">json</text>
+    <text class="col" x="658" y="753">team_dimensions</text>
     <text class="type" x="846" y="753">json</text>
-    <text class="col" x="658" y="771">team_dimensions</text>
-    <text class="type" x="846" y="771">json</text>
-    <text class="col" x="658" y="789">phone</text>
-    <text class="type" x="846" y="789">text</text>
-    <text class="col" x="658" y="807">bio</text>
-    <text class="type" x="846" y="807">text</text>
   </g>
   <g class="table">
     <rect class="box" x="648" y="40" width="208" height="98" rx="6" />
@@ -319,17 +313,17 @@
     <text class="type" x="542" y="223">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="842" width="208" height="98" rx="6" />
-    <rect class="head" x="648" y="842" width="208" height="26" rx="6" />
-    <text class="thead" x="658" y="860">idea_submissions</text>
-    <text class="pk" x="658" y="881">id</text>
-    <text class="type" x="846" y="881">id</text>
-    <text class="fk" x="658" y="899">idea_id</text>
-    <text class="type" x="846" y="899">id</text>
-    <text class="fk" x="658" y="917">member_id</text>
-    <text class="type" x="846" y="917">id</text>
-    <text class="col" x="658" y="935">at</text>
-    <text class="type" x="846" y="935">text</text>
+    <rect class="box" x="648" y="788" width="208" height="98" rx="6" />
+    <rect class="head" x="648" y="788" width="208" height="26" rx="6" />
+    <text class="thead" x="658" y="806">idea_submissions</text>
+    <text class="pk" x="658" y="827">id</text>
+    <text class="type" x="846" y="827">id</text>
+    <text class="fk" x="658" y="845">idea_id</text>
+    <text class="type" x="846" y="845">id</text>
+    <text class="fk" x="658" y="863">member_id</text>
+    <text class="type" x="846" y="863">id</text>
+    <text class="col" x="658" y="881">at</text>
+    <text class="type" x="846" y="881">text</text>
   </g>
   <g class="table">
     <rect class="box" x="40" y="770" width="208" height="62" rx="6" />
