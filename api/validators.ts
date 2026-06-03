@@ -9,6 +9,8 @@ import type {
     MemberId,
     JsonArrayField,
     JsonObjectField,
+    IdentityEntity,
+    IdentityPiiEntity,
     MemberEntity,
     HumanMemberEntity,
     AIMemberEntity,
@@ -595,6 +597,42 @@ export function validateMemberEntity(
     return {
         type,
         name: pickString(body, 'name'),
+    };
+}
+
+const IDENTITY_BODY_KEYS: readonly string[] = ['kind'];
+
+export function validateIdentityEntity(
+    body: Record<string, unknown>,
+): Omit<IdentityEntity, 'id'> {
+    assertOnlyKeys(
+        body, IDENTITY_BODY_KEYS, 'IdentityEntity',
+    );
+    const kind = pickString(body, 'kind');
+    if (kind !== 'person' && kind !== 'service') {
+        throw new Error(
+            'invalid identity kind "' + kind
+            + '" on IdentityEntity',
+        );
+    }
+    return { kind };
+}
+
+const IDENTITY_PII_BODY_KEYS: readonly string[] = [
+    'name', 'email', 'phone', 'bio',
+];
+
+export function validateIdentityPiiEntity(
+    body: Record<string, unknown>,
+): Omit<IdentityPiiEntity, 'id'> {
+    assertOnlyKeys(
+        body, IDENTITY_PII_BODY_KEYS, 'IdentityPiiEntity',
+    );
+    return {
+        name: pickString(body, 'name'),
+        email: pickString(body, 'email'),
+        phone: pickString(body, 'phone'),
+        bio: pickString(body, 'bio'),
     };
 }
 

@@ -398,6 +398,74 @@ export interface StateEntity {
 
 export const SYSTEM_MEMBER_ID: Id = 'system';
 
+// A principal that spans the whole platform. `kind` is the
+// NATURE of the principal — a person (a human being) or a
+// service (an automated agent / API client / the platform
+// itself) — NOT a statement about whether it has sensitive
+// data. Both kinds carry sensitive facets: persons an
+// identity_pii row, services credentials (SP-5). The id is
+// the universal key: member.id === identity.id, always.
+export type IdentityKind = 'person' | 'service';
+
+export interface IdentityEntity {
+    id: Id;
+    kind: IdentityKind;
+}
+
+// The person-PII facet, keyed by the shared identity id. A
+// separately-erasable row: erasing PII splices THIS row;
+// the identity, the member, and every member_id reference
+// survive. Services have no row here (their secrets live in
+// identity_credentials). All fields NOT NULL — absence of
+// the row, not a null column, models erased PII.
+export interface IdentityPiiEntity {
+    id: Id;
+    name: string;
+    email: string;
+    phone: string;
+    bio: string;
+}
+
+// The person-PII display facet as a tagged union, so the
+// ABSENCE of the row (erased PII) is represented without
+// null and DECIDED AT THE CALL SITE. Presenters switch on
+// `erased` and supply their own fallback constant.
+export type MemberPii =
+    | {
+        readonly erased: false;
+        readonly name: string;
+        readonly email: string;
+        readonly phone: string;
+        readonly bio: string;
+    }
+    | { readonly erased: true };
+
+export class Identity {
+    readonly #id: Id;
+    readonly #kind: IdentityKind;
+
+    constructor(entity: IdentityEntity) {
+        this.#id = entity.id;
+        this.#kind = entity.kind;
+    }
+
+    idForLink(): string {
+        return this.#id;
+    }
+
+    kindValue(): IdentityKind {
+        return this.#kind;
+    }
+
+    isPerson(): boolean {
+        return this.#kind === 'person';
+    }
+
+    isService(): boolean {
+        return this.#kind === 'service';
+    }
+}
+
 // Parent row: a member's shared identity. The kind
 // discriminant and display name live here; kind-specific
 // detail lives in human_members / ai_members keyed by the
