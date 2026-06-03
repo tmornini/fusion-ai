@@ -10,6 +10,8 @@ import type {
     FlowWorkOrderEntity,
     FlowRecordEntity,
     HumanMemberEntity,
+    IdentityEntity,
+    IdentityPiiEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
     Objective,
@@ -184,6 +186,34 @@ const routes: Route[] = [
                     HumanMemberEntity, 'id'
                 >,
             ),
+    }),
+    route('identities', {
+        get: (db) => db.identities.getAll(),
+    }),
+    route('identities/:id', {
+        get: (db, p) =>
+            db.identities.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.identities.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<IdentityEntity, 'id'>,
+            ),
+    }),
+    route('identity-pii', {
+        get: (db) => db.identityPii.getAll(),
+    }),
+    route('identity-pii/:id', {
+        get: (db, p) =>
+            db.identityPii.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.identityPii.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<IdentityPiiEntity, 'id'>,
+            ),
+        delete: (db, p) =>
+            db.identityPii.delete(param(p, 0)),
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),

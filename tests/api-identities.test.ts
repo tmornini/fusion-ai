@@ -4,6 +4,8 @@ import {
     validateIdentityEntity,
     validateIdentityPiiEntity,
 } from '../api/validators.ts';
+import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { PUT, GET, DELETE } from '../api/api.ts';
 
 test('validateIdentityEntity accepts person/service', () => {
     assert.deepEqual(
@@ -48,4 +50,33 @@ test('validateIdentityPiiEntity rejects missing field', () => {
         validateIdentityPiiEntity({
             name: 'x', email: 'y', phone: 'z',
         }));
+});
+
+async function freshDb() {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    return db;
+}
+
+test('PUT then GET an identity round-trips', async () => {
+    const db = await freshDb();
+    await PUT(db, 'identities/abc', { kind: 'person' });
+    const got = await GET<{ id: string; kind: string }>(
+        db, 'identities/abc',
+    );
+    assert.deepEqual(got, { id: 'abc', kind: 'person' });
+});
+
+test('DELETE identity-pii splices only the pii row',
+async () => {
+    const db = await freshDb();
+    await PUT(db, 'identities/abc', { kind: 'person' });
+    await PUT(db, 'identity-pii/abc', {
+        name: 'A', email: 'a@x.io', phone: 'p', bio: 'b',
+    });
+    await DELETE(db, 'identity-pii/abc');
+    await assert.rejects(
+        () => GET(db, 'identity-pii/abc'));
+    const id = await GET<{ id: string }>(db, 'identities/abc');
+    assert.equal(id.id, 'abc');
 });
