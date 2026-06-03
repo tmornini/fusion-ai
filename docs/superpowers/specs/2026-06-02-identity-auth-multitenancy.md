@@ -153,7 +153,15 @@ Six independently-shippable sub-projects. **Critical path
     seam (`verifyTokenSignature` accepts a placeholder) — real HS256/DPoP
     verification is SP-5, exactly as SP-1 deferred credential hashing; the
     gate's real teeth are structure + `aud` + `exp`/`nbf` +
-    revoked-before + anonymous-rejection; (c) STRICT deny-by-default
+    revoked-before + anonymous-rejection. **Deployment constraint**
+    (automated security review flagged this CRITICAL): the signing key is
+    a client-shipped constant, so a token is trivially forgeable — the
+    gate MUST NOT be enabled in a networked / multi-user / untrusted-
+    client-reachable context until SP-5 supplies a real server-side
+    signature. Safe today ONLY because the whole store is client-side
+    localStorage (no trust boundary; the page-runner already owns their
+    data). The gate and real signing are inseparable — they arrive
+    together with the server tier; (c) STRICT deny-by-default
     (user-ratified): the token param is required, no fallback token; the
     logged-out state is a named `ANONYMOUS_PRINCIPAL` the gate rejects on
     protected routes (authentication teeth, distinct from SP-4 role
