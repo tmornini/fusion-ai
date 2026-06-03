@@ -188,15 +188,14 @@ export function verifyAccessToken(
     return { valid: true, claims };
 }
 
-// Derive the revoked-before stamp from the ledger rows for one
-// identity: the LATEST event wins (RFC-3339 zulu sorts
-// lexically = chronologically). Returns epoch seconds or null
-// (no revocation). Shared by the gate (server) and any client
-// reducer so the derivation has ONE home.
-export function revokedBeforeSeconds(
+// The single home of the latest-`at`-wins revocation reduce.
+// RFC-3339 zulu sorts lexically = chronologically, so the
+// lexically-greatest `at` is the most recent. Returns the
+// stamp string or null (no revocation for this identity).
+export function latestRevocationAt(
     rows: readonly { identity_id: Id; at: string }[],
     identityId: Id,
-): number | null {
+): string | null {
     let latest: string | null = null;
     for (const row of rows) {
         if (row.identity_id !== identityId) continue;
@@ -204,7 +203,17 @@ export function revokedBeforeSeconds(
             latest = row.at;
         }
     }
-    return latest === null
-        ? null
-        : Math.floor(Date.parse(latest) / 1000);
+    return latest;
+}
+
+// Convert the shared latest-wins reduce to epoch seconds for
+// the gate's `iat < revokedBefore` comparison. Returns null
+// when the identity has no revocation. The reduce itself lives
+// in latestRevocationAt — this only does the epoch conversion.
+export function revokedBeforeSeconds(
+    rows: readonly { identity_id: Id; at: string }[],
+    identityId: Id,
+): number | null {
+    const at = latestRevocationAt(rows, identityId);
+    return at === null ? null : Math.floor(Date.parse(at) / 1000);
 }
