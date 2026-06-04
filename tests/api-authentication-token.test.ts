@@ -182,3 +182,51 @@ test('token-exchange without tokens is a 400', async () => {
     }));
     assert.equal(res.status, 400);
 });
+
+const activeClient = {
+    grant_types: 'client_credentials',
+    redirect_uris: '', jwks: '{"keys":[]}',
+    aud: 'fusion-ai-web', status: 'active',
+};
+
+test('client_credentials issues a gate-valid token', async () => {
+    const db = await freshDb();
+    // the service principal (client id) holds an admin role
+    await db.roleGrants.put('rg-svc', {
+        identity_id: 'svc-client', role: 'admin',
+        action: 'granted', by_member_id: 'system',
+        at: '2020-01-01T00:00:00.000Z',
+    });
+    await db.clients.put('svc-client', activeClient);
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: 'aaa.bbb.ccc',
+    }));
+    assert.equal(res.status, 200);
+    const body = await res.json() as { access_token: string };
+    assert.ok(Array.isArray(
+        await GET(db, 'members', body.access_token)));
+});
+
+test('client_credentials with a malformed assertion is 401',
+async () => {
+    const db = await freshDb();
+    await db.clients.put('svc-client', activeClient);
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: 'not-a-jwt',
+    }));
+    assert.equal(res.status, 401);
+});
+
+test('client_credentials for an unknown client is 401',
+async () => {
+    const db = await freshDb();
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'ghost', client_assertion: 'a.b.c',
+    }));
+    assert.equal(res.status, 401);
+});

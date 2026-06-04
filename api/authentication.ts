@@ -11,6 +11,7 @@ import {
     nowUtc,
     type Id,
     type IdentityTokenEntity,
+    type ClientEntity,
 } from './types.ts';
 import { codeState } from './authorization-codes.ts';
 import { planRotation } from './identity-tokens.ts';
@@ -193,6 +194,48 @@ async function grantTokenExchange(
     };
 }
 
+// client_credentials via private_key_jwt: a headless client
+// authenticates as itself. SEAM — the client_assertion is only
+// structurally required (a three-segment JWT); real JWS
+// signature verification against the client's JWKS is deferred
+// to the server tier (spec lines 418-419). The token's sub is
+// the client id (a service principal).
+async function grantClientCredentials(
+    adapter: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<TokenResult> {
+    const clientId = typeof body.client_id === 'string'
+        ? body.client_id
+        : '';
+    const assertion =
+        typeof body.client_assertion === 'string'
+            ? body.client_assertion
+            : '';
+    let client: ClientEntity;
+    try {
+        client = await adapter.clients.getById(clientId);
+    } catch {
+        return failure(401, 'unknown client');
+    }
+    if (client.status !== 'active') {
+        return failure(401, 'client is disabled');
+    }
+    if (!client.grant_types.split(' ')
+        .includes('client_credentials')) {
+        return failure(
+            400, 'client may not use client_credentials',
+        );
+    }
+    if (assertion.split('.').length !== 3) {
+        return failure(401, 'malformed client_assertion');
+    }
+    const name = await nameFor(adapter, clientId);
+    return {
+        ok: true,
+        response: await issueTokenPair(adapter, clientId, name),
+    };
+}
+
 // authorization_code grant: consume an ISSUED code, then issue a
 // token pair. A consumed (replay) or unknown code is a clean 401
 // that mints nothing and appends nothing (grant-first).
@@ -244,6 +287,8 @@ export async function postToken(
             return grantRefresh(adapter, body);
         case 'token-exchange':
             return grantTokenExchange(adapter, body);
+        case 'client_credentials':
+            return grantClientCredentials(adapter, body);
         default:
             return failure(
                 400, 'unsupported grant_type: ' + grantType,
