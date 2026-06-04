@@ -1041,6 +1041,7 @@ export interface WorkOrderFlowGraph {
 
 export interface WorkOrderEntity {
     id: Id;
+    organization_id: Id;
     display_id: string;
     flow_graph: JsonObjectField;
     position: number;
@@ -1055,6 +1056,7 @@ export interface FlowWorkOrderEntity {
 
 export interface RecordEntity {
     id: RecordId;
+    organization_id: Id;
     name: string;
     description: string;
     position: number;
@@ -1062,6 +1064,7 @@ export interface RecordEntity {
 
 export interface RecordAttributeEntity {
     id: RecordAttributeId;
+    organization_id: Id;
     record_id: RecordId;
     name: string;
     attribute_type: AttributeType;

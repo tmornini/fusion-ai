@@ -126,12 +126,14 @@ test(
         // flow-work-orders and flow transitions,
         // not from work-order.flow_graph)
         await db.workOrders.put('wo1', {
+            organization_id: DEFAULT_ORG,
             display_id: 'WO-1',
             flow_graph:
                 jsonObjectField({}) as never,
             position: 1,
         });
         await db.workOrders.put('wo2', {
+            organization_id: DEFAULT_ORG,
             display_id: 'WO-2',
             flow_graph:
                 jsonObjectField({}) as never,
@@ -233,6 +235,7 @@ test(
             buildFlow('AutoLayout', buildTestGraph()),
         );
         await db.workOrders.put('wo1', {
+            organization_id: DEFAULT_ORG,
             display_id: 'WO-1',
             flow_graph: jsonObjectField({}) as never,
             position: 1,

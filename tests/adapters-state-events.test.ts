@@ -53,7 +53,12 @@ function projectBody(
 function recordBody(
     name: string,
 ): Omit<RecordEntity, 'id'> {
-    return { name, description: 'd', position: 1 };
+    return {
+        organization_id: DEFAULT_ORG,
+        name,
+        description: 'd',
+        position: 1,
+    };
 }
 
 // The states log is shared across entity types and the

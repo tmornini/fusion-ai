@@ -354,6 +354,7 @@ function generateFlowWorkload(args: {
 
         workOrders.push({
             id: woId,
+            organization_id: DEFAULT_ORG,
             display_id: displayId,
             flow_graph: frozenFlowGraph,
             position: i + 1,
@@ -2639,7 +2640,8 @@ export async function populateMockData(
     const projectBriefRecordId =
         'rec02Pr0jBriefRec0rd02';
 
-    const mockRecords: RecordEntity[] = [
+    const mockRecords:
+        Omit<RecordEntity, 'organization_id'>[] = [
         {
             id: customerProfileRecordId,
             name: 'Customer Profile',
@@ -2679,7 +2681,7 @@ export async function populateMockData(
     }];
 
     const mockRecordAttributes:
-        RecordAttributeEntity[] = [
+        Omit<RecordAttributeEntity, 'organization_id'>[] = [
         {
             id: '5JZ0LeKdPCa4QMtg1RsF1M',
             record_id: customerProfileRecordId,
@@ -2973,7 +2975,7 @@ export async function populateMockData(
         'AdQlKf43JV6yrhQbyskDkR';
 
     const mockWorkOrders:
-        WorkOrderEntity[] = [
+        Omit<WorkOrderEntity, 'organization_id'>[] = [
         {
             id: woId,
             display_id: 'a7c3e1f9',
@@ -6054,9 +6056,9 @@ export async function populateMockData(
             ),
         ),
         ...mockWorkOrders.map(r =>
-            adapter.workOrders.put(
-                r.id, r,
-            ),
+            adapter.workOrders.put(r.id, {
+                ...r, organization_id: DEFAULT_ORG,
+            }),
         ),
         ...mockFlowWorkOrders.map(r =>
             adapter.flowWorkOrders.put(
@@ -6138,6 +6140,7 @@ export async function populateMockData(
         ),
         ...mockRecords.map(r =>
             adapter.records.put(r.id, {
+                organization_id: DEFAULT_ORG,
                 name: r.name,
                 description: r.description,
                 position: r.position,
@@ -6145,6 +6148,7 @@ export async function populateMockData(
         ),
         ...mockRecordAttributes.map(r =>
             adapter.recordAttributes.put(r.id, {
+                organization_id: DEFAULT_ORG,
                 record_id: r.record_id,
                 name: r.name,
                 attribute_type:

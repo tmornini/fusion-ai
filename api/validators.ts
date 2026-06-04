@@ -1110,7 +1110,7 @@ export function validateFlowVersionEntity(
 
 const WORK_ORDER_BODY_KEYS:
     readonly string[] = [
-    'display_id', 'flow_graph',
+    'organization_id', 'display_id', 'flow_graph',
     'position',
 ];
 
@@ -1123,6 +1123,7 @@ export function validateWorkOrderEntity(
         'WorkOrderEntity',
     );
     return {
+        organization_id: pickString(body, 'organization_id'),
         display_id: pickString(
             body, 'display_id',
         ),
@@ -1424,7 +1425,7 @@ export function validateStateEntity(
 }
 
 const RECORD_BODY_KEYS: readonly string[] = [
-    'name', 'description', 'position',
+    'organization_id', 'name', 'description', 'position',
 ];
 
 export function validateRecordEntity(
@@ -1441,6 +1442,7 @@ export function validateRecordEntity(
         );
     }
     return {
+        organization_id: pickString(body, 'organization_id'),
         name,
         description: pickString(
             body, 'description',
@@ -1453,8 +1455,9 @@ export function validateRecordEntity(
 
 const RECORD_ATTRIBUTE_BODY_KEYS:
     readonly string[] = [
-    'record_id', 'name', 'attribute_type',
-    'sort_order', 'options', 'constraints',
+    'organization_id', 'record_id', 'name',
+    'attribute_type', 'sort_order',
+    'options', 'constraints',
 ];
 
 export function validateRecordAttributeEntity(
@@ -1525,6 +1528,7 @@ export function validateRecordAttributeEntity(
         }
     }
     return {
+        organization_id: pickString(body, 'organization_id'),
         record_id: pickString(
             body, 'record_id',
         ),

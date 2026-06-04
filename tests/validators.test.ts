@@ -388,6 +388,7 @@ const minimalWoGraph = JSON.stringify({
 });
 
 const validWorkOrder = {
+    organization_id: DEFAULT_ORG,
     display_id: 'WO-001',
     flow_graph: minimalWoGraph,
     position: 1,
@@ -794,6 +795,7 @@ test(
 // --- RecordAttributeEntity ---
 
 const validSelectAttribute = {
+    organization_id: DEFAULT_ORG,
     record_id: 'r-1',
     name: 'Priority',
     attribute_type: 'select',
