@@ -11,6 +11,7 @@ import type {
     IdentityTokenEntity,
     ClientEntity,
     IdentityProviderEntity,
+    AuthorizationCodeEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -174,6 +175,8 @@ export interface DbAdapter {
         EntityStore<ClientEntity>;
     identityProviders:
         EntityStore<IdentityProviderEntity>;
+    authorizationCodes:
+        EntityStore<AuthorizationCodeEntity>;
     ideas:
         EntityStore<IdeaEntity>;
     projects:
@@ -237,6 +240,7 @@ export const TABLE_NAMES = [
     'identity_tokens',
     'clients',
     'identity_providers',
+    'authorization_codes',
     'ideas',
     'projects',
     'flows',

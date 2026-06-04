@@ -17,6 +17,7 @@ import type {
     IdentityTokenEntity,
     ClientEntity,
     IdentityProviderEntity,
+    AuthorizationCodeEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -59,6 +60,7 @@ import {
     validateIdentityTokenEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
+    validateAuthorizationCodeEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
@@ -96,6 +98,8 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly clients: IEntityStore<ClientEntity>;
     readonly identityProviders:
         IEntityStore<IdentityProviderEntity>;
+    readonly authorizationCodes:
+        IEntityStore<AuthorizationCodeEntity>;
     readonly ideas: IEntityStore<IdeaEntity>;
     readonly projects: IEntityStore<ProjectEntity>;
     readonly flows: IEntityStore<FlowEntity>;
@@ -193,6 +197,11 @@ export class MemoryDbAdapter implements DbAdapter {
             new HistoryEntityStore(
                 'identity_providers', backend,
                 validateIdentityProviderEntity,
+            );
+        this.authorizationCodes =
+            new HistoryEntityStore(
+                'authorization_codes', backend,
+                validateAuthorizationCodeEntity,
             );
         this.ideas =
             new EntityStore(

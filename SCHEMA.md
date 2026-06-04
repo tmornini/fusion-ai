@@ -291,6 +291,27 @@ storage gate.
 | action | TEXT (`linked` \| `unlinked`) |
 | at | TEXT |
 
+### authorization_codes
+
+Append-only ledger of authorization-code lifecycle
+(`HistoryEntityStore`). One row per issue/consume; a
+code's current status = the latest event for its
+`code`. The row `id` is a generated event id; `code` is
+the opaque single-use value bound to (identity, client).
+A consume is a NEW `consumed` row; re-presenting a code
+whose latest status is `consumed` (or unknown) is
+replay. `at` is the RFC-3339 zulu moment, validated at
+the storage gate.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| code | TEXT |
+| identity_id | TEXT (FK → identities) |
+| client_id | TEXT (FK → clients) |
+| status | TEXT (`issued` \| `consumed`) |
+| at | TEXT |
+
 ### ideas
 
 | Column | Type |

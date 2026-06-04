@@ -541,6 +541,23 @@ export interface IdentityProviderEntity {
     at: string;
 }
 
+export type AuthorizationCodeStatus = 'issued' | 'consumed';
+
+// Append-only ledger of authorization-code lifecycle. One row
+// per issue/consume; a code's current status = the latest event
+// for its `code`. The row `id` is a generated event id; `code`
+// is the opaque single-use value bound to (identity, client). A
+// consume is a NEW 'consumed' row — re-presenting a code whose
+// latest status is already 'consumed' (or unknown) is replay.
+export interface AuthorizationCodeEntity {
+    id: Id;
+    code: string;
+    identity_id: Id;
+    client_id: Id;
+    status: AuthorizationCodeStatus;
+    at: string;
+}
+
 // The person-PII display facet as a tagged union, so the
 // ABSENCE of the row (erased PII) is represented without
 // null and DECIDED AT THE CALL SITE. Presenters switch on

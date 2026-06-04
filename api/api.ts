@@ -28,6 +28,7 @@ import type {
     IdentityTokenEntity,
     ClientEntity,
     IdentityProviderEntity,
+    AuthorizationCodeEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
@@ -344,6 +345,19 @@ const routes: Route[] = [
                 param(p, 0),
                 withoutId(payload) as unknown as
                     Omit<IdentityProviderEntity, 'id'>,
+            ),
+    }),
+    route('authorization-codes', {
+        get: (db) => db.authorizationCodes.getAll(),
+    }),
+    route('authorization-codes/:id', {
+        get: (db, p) =>
+            db.authorizationCodes.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.authorizationCodes.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<AuthorizationCodeEntity, 'id'>,
             ),
     }),
     route('ideas', {
