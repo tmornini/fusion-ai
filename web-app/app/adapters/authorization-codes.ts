@@ -7,6 +7,10 @@ import {
     type AuthorizationCodeStatus,
     type AuthorizationCodeEntity,
 } from '../../../api/types.ts';
+import {
+    codeState,
+    type CodeState,
+} from '../../../api/authorization-codes.ts';
 import type { RequestContext } from './shared.ts';
 
 async function appendCodeEvent(
@@ -52,16 +56,10 @@ export async function postCodeConsumption(
     );
 }
 
-export interface CodeState {
-    readonly status: AuthorizationCodeStatus;
-    readonly identityId: Id;
-    readonly clientId: Id;
-}
+export type { CodeState };
 
-// The current state of an authorization code (null if unknown):
-// the latest status for the code, plus the (identity, client)
-// it was issued to. RFC-3339 zulu `at` orders the events; a
-// same-instant tie keeps the later-appended row (>=).
+// The current state of an authorization code (null if unknown).
+// The reduce lives in api/ so the token endpoint shares it.
 export async function getCodeState(
     ctx: RequestContext,
     code: string,
@@ -69,16 +67,5 @@ export async function getCodeState(
     const all = await ctx.GET<AuthorizationCodeEntity[]>(
         'authorization-codes',
     );
-    const forCode = all.filter(r => r.code === code);
-    const first = forCode[0];
-    if (first === undefined) return null;
-    let latest = first;
-    for (const r of forCode) {
-        if (r.at >= latest.at) latest = r;
-    }
-    return {
-        status: latest.status,
-        identityId: first.identity_id,
-        clientId: first.client_id,
-    };
+    return codeState(all, code);
 }
