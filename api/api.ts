@@ -50,6 +50,7 @@ import {
     isPermitted,
 } from './authorization.ts';
 import { isTokenRevoked } from './identity-tokens.ts';
+import { postToken } from './authentication.ts';
 
 export class ApiError {
     readonly message: string;
@@ -89,6 +90,7 @@ const BEARER_EXEMPT_ROUTES: ReadonlySet<string> =
         'snapshots/mock-data',
         'snapshots/bootstrap',
         'snapshots/import',
+        'authentication/token',
     ]);
 
 type GetHandler = (
@@ -359,6 +361,17 @@ const routes: Route[] = [
                 withoutId(payload) as unknown as
                     Omit<AuthorizationCodeEntity, 'id'>,
             ),
+    }),
+    route('authentication/token', {
+        post: async (db, _p, body) => {
+            const result = await postToken(db, body);
+            if (!result.ok) {
+                throw new ApiError(
+                    result.error, result.status,
+                );
+            }
+            return result.response;
+        },
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),
