@@ -24,6 +24,7 @@ import type {
     ProjectObjectiveActualScore,
     RecordEntity,
     RecordAttributeEntity,
+    RoleGrantEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
@@ -278,6 +279,19 @@ const routes: Route[] = [
                         IdentityTokenRevocationEntity,
                         'id'
                     >,
+            ),
+    }),
+    route('role-grants', {
+        get: (db) => db.roleGrants.getAll(),
+    }),
+    route('role-grants/:id', {
+        get: (db, p) =>
+            db.roleGrants.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.roleGrants.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<RoleGrantEntity, 'id'>,
             ),
     }),
     route('ideas', {

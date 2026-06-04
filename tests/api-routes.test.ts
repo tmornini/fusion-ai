@@ -14,6 +14,7 @@ import { devToken } from './token-fixtures.ts';
 const COLLECTION_ROUTES: readonly string[] = [
     'members',
     'ai-members',
+    'role-grants',
     'ideas',
     'projects',
     'flows',
