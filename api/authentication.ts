@@ -11,9 +11,12 @@ import {
     type Id,
     type IdentityTokenEntity,
     type ClientEntity,
+    type IdentityCredentialEntity,
+    type IdentityPiiEntity,
 } from './types.ts';
 import { codeState } from './authorization-codes.ts';
 import { planRotation } from './identity-tokens.ts';
+import { verifyPassword } from './password-hash.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -296,5 +299,121 @@ export async function postToken(
             return failure(
                 400, 'unsupported grant_type: ' + grantType,
             );
+    }
+}
+
+export interface AuthorizeResponse {
+    readonly code: string;
+}
+
+export type AuthorizeResult =
+    | {
+        readonly ok: true;
+        readonly response: AuthorizeResponse;
+    }
+    | {
+        readonly ok: false;
+        readonly status: number;
+        readonly error: string;
+    };
+
+// The identity that owns an email login (null if none).
+function identityByEmail(
+    rows: readonly IdentityPiiEntity[],
+    email: string,
+): Id | null {
+    const pii = rows.find(p => p.email === email);
+    if (pii === undefined) return null;
+    return pii.id;
+}
+
+// The current (non-revoked) password PHC for an identity, or
+// null if none — the latest password-kind credential event.
+function currentPasswordSecret(
+    rows: readonly IdentityCredentialEntity[],
+    identityId: Id,
+): string | null {
+    let latest: IdentityCredentialEntity | null = null;
+    for (const row of rows) {
+        if (row.identity_id !== identityId) continue;
+        if (row.kind !== 'password') continue;
+        if (latest === null || row.at >= latest.at) {
+            latest = row;
+        }
+    }
+    if (latest === null || latest.status === 'revoked') {
+        return null;
+    }
+    return latest.secret;
+}
+
+// The password loop: verify username + password, and on success
+// issue an authorization code bound to (identity, client). Every
+// failure returns the SAME 401 (no user enumeration) and appends
+// nothing — grant-first, no-op on failure.
+async function authorizePassword(
+    adapter: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<AuthorizeResult> {
+    const username = typeof body.username === 'string'
+        ? body.username
+        : '';
+    const password = typeof body.password === 'string'
+        ? body.password
+        : '';
+    const clientId = typeof body.client_id === 'string'
+        ? body.client_id
+        : '';
+    const denied: AuthorizeResult = {
+        ok: false, status: 401, error: 'invalid credentials',
+    };
+    const piiRows = await adapter.identityPii.getAll();
+    const identityId = identityByEmail(piiRows, username);
+    if (identityId === null) return denied;
+    const credRows =
+        await adapter.identityCredentials.getAll();
+    const secret =
+        currentPasswordSecret(credRows, identityId);
+    if (secret === null) return denied;
+    if (!(await verifyPassword(password, secret))) {
+        return denied;
+    }
+    const code = generateCryptoSafeBase62();
+    await adapter.authorizationCodes.put(
+        generateCryptoSafeBase62(), {
+            code,
+            identity_id: identityId,
+            client_id: clientId,
+            status: 'issued',
+            at: nowUtc(),
+        });
+    return { ok: true, response: { code } };
+}
+
+// Interactive front door. The password loop is real; passkey,
+// provider-IdP, and corporate-OIDC are documented 501 SEAMS —
+// the real ceremony lands with the server tier.
+export async function postAuthorize(
+    adapter: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<AuthorizeResult> {
+    const method = typeof body.method === 'string'
+        ? body.method
+        : '';
+    switch (method) {
+        case 'password':
+            return authorizePassword(adapter, body);
+        case 'passkey':
+        case 'provider':
+        case 'oidc':
+            return {
+                ok: false, status: 501,
+                error: method + ' auth is a server-tier seam',
+            };
+        default:
+            return {
+                ok: false, status: 400,
+                error: 'unsupported method: ' + method,
+            };
     }
 }
