@@ -15,6 +15,7 @@ import type {
     IdentityTokenRevocationEntity,
     RoleGrantEntity,
     IdentityTokenEntity,
+    ClientEntity,
     IdeaEntity,
     ProjectEntity,
     FlowEntity,
@@ -55,6 +56,7 @@ import {
     validateIdentityTokenRevocationEntity,
     validateRoleGrantEntity,
     validateIdentityTokenEntity,
+    validateClientEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
@@ -89,6 +91,7 @@ export class MemoryDbAdapter implements DbAdapter {
     readonly roleGrants: IEntityStore<RoleGrantEntity>;
     readonly identityTokens:
         IEntityStore<IdentityTokenEntity>;
+    readonly clients: IEntityStore<ClientEntity>;
     readonly ideas: IEntityStore<IdeaEntity>;
     readonly projects: IEntityStore<ProjectEntity>;
     readonly flows: IEntityStore<FlowEntity>;
@@ -176,6 +179,11 @@ export class MemoryDbAdapter implements DbAdapter {
             new HistoryEntityStore(
                 'identity_tokens', backend,
                 validateIdentityTokenEntity,
+            );
+        this.clients =
+            new EntityStore(
+                'clients', backend, stateStore,
+                validateClientEntity,
             );
         this.ideas =
             new EntityStore(

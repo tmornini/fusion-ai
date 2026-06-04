@@ -26,6 +26,7 @@ import type {
     RecordAttributeEntity,
     RoleGrantEntity,
     IdentityTokenEntity,
+    ClientEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
@@ -315,6 +316,21 @@ const routes: Route[] = [
                 withoutId(payload) as unknown as
                     Omit<IdentityTokenEntity, 'id'>,
             ),
+    }),
+    route('clients', {
+        get: (db) => db.clients.getAll(),
+    }),
+    route('clients/:id', {
+        get: (db, p) =>
+            db.clients.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.clients.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<ClientEntity, 'id'>,
+            ),
+        delete: (db, p) =>
+            db.clients.delete(param(p, 0)),
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),

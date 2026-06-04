@@ -250,6 +250,27 @@ zulu moment, validated at the storage gate.
 | parent_jti | TEXT |
 | at | TEXT |
 
+### clients
+
+OAuth client registry (`EntityStore`) — the websites
+built by us and others. Mutable config of record:
+redirect URIs change, JWKS rotate, a client is
+disabled. `grant_types` and `redirect_uris` are
+space-delimited (OAuth convention); `jwks` is the
+client's JSON Web Key Set as a JSON string, used to
+verify `private_key_jwt` assertions (real JWS verify
+is a server-tier seam); `aud` is the origin a token
+is minted for.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| grant_types | TEXT |
+| redirect_uris | TEXT |
+| jwks | TEXT |
+| aud | TEXT |
+| status | TEXT (`active` \| `disabled`) |
+
 ### ideas
 
 | Column | Type |

@@ -14,6 +14,7 @@ import type {
     IdentityCredentialEntity,
     IdentityTokenRevocationEntity,
     IdentityTokenEntity,
+    ClientEntity,
     RoleGrantEntity,
     MemberEntity,
     HumanMemberEntity,
@@ -777,6 +778,30 @@ export function validateIdentityTokenEntity(
         chain_id: pickString(body, 'chain_id'),
         parent_jti: pickString(body, 'parent_jti'),
         at,
+    };
+}
+
+const CLIENT_BODY_KEYS: readonly string[] = [
+    'grant_types', 'redirect_uris', 'jwks', 'aud', 'status',
+];
+
+export function validateClientEntity(
+    body: Record<string, unknown>,
+): Omit<ClientEntity, 'id'> {
+    assertOnlyKeys(body, CLIENT_BODY_KEYS, 'ClientEntity');
+    const status = pickString(body, 'status');
+    if (status !== 'active' && status !== 'disabled') {
+        throw new Error(
+            'invalid client status "' + status
+            + '" on ClientEntity',
+        );
+    }
+    return {
+        grant_types: pickString(body, 'grant_types'),
+        redirect_uris: pickString(body, 'redirect_uris'),
+        jwks: pickString(body, 'jwks'),
+        aud: pickString(body, 'aud'),
+        status,
     };
 }
 

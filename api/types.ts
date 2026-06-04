@@ -507,6 +507,24 @@ export interface IdentityTokenEntity {
     at: string;
 }
 
+export type ClientStatus = 'active' | 'disabled';
+
+// An OAuth client registry row — the "websites built by us and
+// others". Mutable config of record (EntityStore): redirect URIs
+// change, JWKS rotate, a client is disabled. `grant_types` and
+// `redirect_uris` are space-delimited (OAuth convention); `jwks`
+// is the client's JSON Web Key Set as a JSON string (used to
+// verify private_key_jwt assertions — real JWS verify is a
+// server-tier seam); `aud` is the origin a token is minted for.
+export interface ClientEntity {
+    id: Id;
+    grant_types: string;
+    redirect_uris: string;
+    jwks: string;
+    aud: string;
+    status: ClientStatus;
+}
+
 // The person-PII display facet as a tagged union, so the
 // ABSENCE of the row (erased PII) is represented without
 // null and DECIDED AT THE CALL SITE. Presenters switch on
