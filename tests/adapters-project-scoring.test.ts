@@ -127,7 +127,10 @@ async function seedTwoApprovedProjects(
     await db.states.record(
         'st-p2', 'p2', 'approved', 'system',
     );
-    await db.objectives.put('o1', { position: 0 });
+    await db.objectives.put('o1', {
+        organization_id: DEFAULT_ORG,
+        position: 0,
+    });
     await db.objectiveRevisions.put('o1:t0', {
         objective_id: 'o1', name: 'O', description: 'd',
         member_id: 'w1',
@@ -320,7 +323,10 @@ test(
         const db = new MemoryDbAdapter();
         await db.createSchema();
         await seedRootAdmin(db);
-        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o1', {
+            organization_id: DEFAULT_ORG,
+            position: 0,
+        });
         await db.objectiveRevisions.put('o1:t0', {
             objective_id: 'o1',
             name: 'O', description: 'd',

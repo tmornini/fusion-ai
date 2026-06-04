@@ -10,19 +10,25 @@ import {
 import { DEFAULT_ORG } from '../api/types.ts';
 
 test('validateObjectiveEntity accepts valid', () => {
-    const v = validateObjectiveEntity({ position: 0 });
+    const v = validateObjectiveEntity({
+        organization_id: DEFAULT_ORG, position: 0,
+    });
     assert.equal(v.position, 0);
 });
 
 test('validateObjectiveEntity accepts fractional position',
     () => {
-        const v = validateObjectiveEntity({ position: 1.5 });
+        const v = validateObjectiveEntity({
+            organization_id: DEFAULT_ORG, position: 1.5,
+        });
         assert.equal(v.position, 1.5);
     });
 
 test('validateObjectiveEntity accepts negative position',
     () => {
-        const v = validateObjectiveEntity({ position: -1 });
+        const v = validateObjectiveEntity({
+            organization_id: DEFAULT_ORG, position: -1,
+        });
         assert.equal(v.position, -1);
     });
 

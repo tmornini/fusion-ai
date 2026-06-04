@@ -87,7 +87,9 @@ test('postProjectApproval moves state to approved',
         await db.states.record(
             'st-init', 'p1', 'under-review', 'current',
         );
-        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o1', {
+            organization_id: DEFAULT_ORG, position: 0,
+        });
         await db.projectObjectiveBaselineScores.put(
             'b1',
             { project_id: 'p1', objective_id: 'o1',
@@ -108,7 +110,9 @@ test('postProjectApproval throws when not ready',
         await seedRootAdmin(db);
         await seedCurrentMember(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
-        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o1', {
+            organization_id: DEFAULT_ORG, position: 0,
+        });
         const ctx = createRequestContext(db, await devToken());
         await assert.rejects(
             () => postProjectApproval(ctx, 'p1'),
@@ -126,7 +130,9 @@ test('postProjectArchival moves state to archived',
         await db.states.record(
             'st-init', 'p1', 'approved', 'current',
         );
-        await db.objectives.put('o1', { position: 0 });
+        await db.objectives.put('o1', {
+            organization_id: DEFAULT_ORG, position: 0,
+        });
         await db.projectObjectiveBaselineScores.put(
             'b1',
             { project_id: 'p1', objective_id: 'o1',

@@ -929,6 +929,7 @@ export type ObjectiveId = Id;
 
 export interface Objective {
     id: ObjectiveId;
+    organization_id: Id;
     position: number;
 }
 

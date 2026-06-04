@@ -6188,6 +6188,7 @@ export async function populateMockData(
 
     for (const seed of OBJECTIVE_SEEDS) {
         await adapter.objectives.put(seed.id, {
+            organization_id: DEFAULT_ORG,
             position: seed.position,
         });
         await adapter.objectiveRevisions.put(

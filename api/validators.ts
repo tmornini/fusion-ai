@@ -1285,7 +1285,7 @@ export function validateProjectFlowEntity(
 }
 
 const OBJECTIVE_BODY_KEYS: readonly string[] = [
-    'position',
+    'organization_id', 'position',
 ];
 
 export function validateObjectiveEntity(
@@ -1295,6 +1295,7 @@ export function validateObjectiveEntity(
         body, OBJECTIVE_BODY_KEYS, 'Objective',
     );
     return {
+        organization_id: pickString(body, 'organization_id'),
         position: pickNumber(body, 'position'),
     };
 }
