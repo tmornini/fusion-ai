@@ -22,6 +22,7 @@ import type {
     FlowEntity,
     FlowVersionEntity,
     OrganizationEntity,
+    MembershipEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
@@ -74,6 +75,7 @@ import {
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateOrganizationEntity,
+    validateMembershipEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -119,6 +121,8 @@ export class MemoryDbAdapter implements DbAdapter {
         IEntityStore<FlowRecordEntity>;
     readonly organizations:
         IEntityStore<OrganizationEntity>;
+    readonly memberships:
+        IEntityStore<MembershipEntity>;
     readonly ideaSubmissions:
         IEntityStore<IdeaSubmissionEntity>;
     readonly objectives: IEntityStore<Objective>;
@@ -141,6 +145,11 @@ export class MemoryDbAdapter implements DbAdapter {
             new EntityStore(
                 'organizations', backend, stateStore,
                 validateOrganizationEntity,
+            );
+        this.memberships =
+            new EntityStore(
+                'memberships', backend, stateStore,
+                validateMembershipEntity,
             );
 
         this.members =

@@ -1105,6 +1105,19 @@ export interface OrganizationEntity {
     last_activity: string;
 }
 
+// The covenant binding an identity to an organization, with
+// the moment of union. The source of "which orgs can this
+// identity reach" — enumerated globally for a subject, scoped
+// per-tenant through the org guard. A person in N orgs has N
+// membership rows; member.id === identity.id stays global
+// (one profile, many memberships).
+export interface MembershipEntity {
+    id: Id;
+    organization_id: Id;
+    identity_id: Id;
+    at: string;
+}
+
 export interface IdeaSubmissionEntity {
     id: Id;
     idea_id: Id;

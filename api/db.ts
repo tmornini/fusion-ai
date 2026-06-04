@@ -17,6 +17,7 @@ import type {
     FlowEntity,
     FlowVersionEntity,
     OrganizationEntity,
+    MembershipEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
@@ -202,6 +203,8 @@ export interface DbAdapter {
         EntityStore<FlowRecordEntity>;
     organizations:
         EntityStore<OrganizationEntity>;
+    memberships:
+        EntityStore<MembershipEntity>;
     ideaSubmissions:
         EntityStore<
             IdeaSubmissionEntity
@@ -246,6 +249,7 @@ export const TABLE_NAMES = [
     'record_attributes',
     'flow_records',
     'organizations',
+    'memberships',
     'idea_submissions',
     'objectives',
     'objective_revisions',

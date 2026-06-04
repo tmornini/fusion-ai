@@ -16,6 +16,7 @@ import {
 // to end.
 const COLLECTION_ROUTES: readonly string[] = [
     'organizations',
+    'memberships',
     'members',
     'ai-members',
     'role-grants',

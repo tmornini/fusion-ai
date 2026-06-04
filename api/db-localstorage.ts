@@ -28,6 +28,7 @@ import type {
     FlowEntity,
     FlowVersionEntity,
     OrganizationEntity,
+    MembershipEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
@@ -70,6 +71,7 @@ import {
     validateRecordAttributeEntity,
     validateFlowRecordEntity,
     validateOrganizationEntity,
+    validateMembershipEntity,
     validateIdeaSubmissionEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
@@ -123,6 +125,8 @@ export class LocalStorageDbAdapter implements DbAdapter {
         IEntityStore<FlowRecordEntity>;
     readonly organizations:
         IEntityStore<OrganizationEntity>;
+    readonly memberships:
+        IEntityStore<MembershipEntity>;
     readonly ideaSubmissions:
         IEntityStore<IdeaSubmissionEntity>;
     readonly objectives: IEntityStore<Objective>;
@@ -145,6 +149,11 @@ export class LocalStorageDbAdapter implements DbAdapter {
             new EntityStore(
                 'organizations', backend, stateStore,
                 validateOrganizationEntity,
+            );
+        this.memberships =
+            new EntityStore(
+                'memberships', backend, stateStore,
+                validateMembershipEntity,
             );
 
         this.members =

@@ -29,6 +29,7 @@ import type {
     FlowWorkOrderEntity,
     StateFieldValueEntity,
     OrganizationEntity,
+    MembershipEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     RecordEntity,
@@ -1229,6 +1230,32 @@ export function validateOrganizationEntity(
         last_activity: pickString(
             body, 'last_activity',
         ),
+    };
+}
+
+const MEMBERSHIP_BODY_KEYS: readonly string[] = [
+    'organization_id', 'identity_id', 'at',
+];
+
+export function validateMembershipEntity(
+    body: Record<string, unknown>,
+): Omit<MembershipEntity, 'id'> {
+    assertOnlyKeys(
+        body, MEMBERSHIP_BODY_KEYS, 'MembershipEntity',
+    );
+    const at = pickString(body, 'at');
+    if (Number.isNaN(Date.parse(at))) {
+        throw new Error(
+            'invalid timestamp "' + at + '" on '
+            + 'MembershipEntity',
+        );
+    }
+    return {
+        organization_id: pickString(
+            body, 'organization_id',
+        ),
+        identity_id: pickString(body, 'identity_id'),
+        at,
     };
 }
 

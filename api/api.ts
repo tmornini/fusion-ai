@@ -25,6 +25,7 @@ import type {
     RecordEntity,
     RecordAttributeEntity,
     RoleGrantEntity,
+    MembershipEntity,
     IdentityTokenEntity,
     ClientEntity,
     IdentityProviderEntity,
@@ -579,6 +580,21 @@ const routes: Route[] = [
                     withoutId(payload),
                 ),
             ),
+    }),
+    route('memberships', {
+        get: (db) => db.memberships.getAll(),
+    }),
+    route('memberships/:id', {
+        get: (db, p) =>
+            db.memberships.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.memberships.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<MembershipEntity, 'id'>,
+            ),
+        delete: (db, p) =>
+            db.memberships.delete(param(p, 0)),
     }),
     route('current-member', {
         get: (db) =>
