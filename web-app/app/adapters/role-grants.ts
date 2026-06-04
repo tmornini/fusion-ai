@@ -3,6 +3,7 @@ import {
 } from '../../../api/crypto-safe-base62.ts';
 import {
     nowUtc,
+    DEFAULT_ORG,
     type Id,
     type RoleGrantAction,
     type RoleGrantEntity,
@@ -20,6 +21,9 @@ async function appendRoleEvent(
 ): Promise<void> {
     const id = generateCryptoSafeBase62();
     await ctx.PUT(`role-grants/${id}`, {
+        // Single-org interim: the facade decorator will stamp
+        // org once this write moves to an /organizations route.
+        organization_id: DEFAULT_ORG,
         identity_id: identityId,
         role,
         action,

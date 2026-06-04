@@ -5,6 +5,7 @@ import { GET, handleRequest } from '../api/api.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { devToken } from './token-fixtures.ts';
 import { decodeAccessToken } from '../api/access-token.ts';
+import { DEFAULT_ORG } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 
@@ -199,6 +200,7 @@ test('client_credentials issues a gate-valid token', async () => {
     const db = await freshDb();
     // the service principal (client id) holds an admin role
     await db.roleGrants.put('rg-svc', {
+        organization_id: DEFAULT_ORG,
         identity_id: 'svc-client', role: 'admin',
         action: 'granted', by_member_id: 'system',
         at: '2020-01-01T00:00:00.000Z',

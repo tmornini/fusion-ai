@@ -714,7 +714,8 @@ validateIdentityTokenRevocationEntity(
 }
 
 const ROLE_GRANT_BODY_KEYS: readonly string[] = [
-    'identity_id', 'role', 'action', 'by_member_id', 'at',
+    'organization_id', 'identity_id', 'role', 'action',
+    'by_member_id', 'at',
 ];
 
 export function validateRoleGrantEntity(
@@ -738,6 +739,7 @@ export function validateRoleGrantEntity(
         );
     }
     return {
+        organization_id: pickString(body, 'organization_id'),
         identity_id: pickString(body, 'identity_id'),
         role: pickString(body, 'role'),
         action,

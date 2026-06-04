@@ -9,6 +9,11 @@ export type MemberId = Id;
 
 export type ModelId = Id;
 
+// The single tenant every pre-multitenancy entity belongs
+// to. Backfill stamps it on re-seed; a real per-tenant value
+// arrives when a second organization is created.
+export const DEFAULT_ORG: Id = '1';
+
 export interface ProviderModel {
     id: ModelId;
     provider: string;
@@ -478,6 +483,7 @@ export type RoleGrantAction = 'granted' | 'revoked';
 // fresh at the gate — never from a token claim.
 export interface RoleGrantEntity {
     id: Id;
+    organization_id: Id;
     identity_id: Id;
     role: string;
     action: RoleGrantAction;

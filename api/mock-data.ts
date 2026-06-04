@@ -29,6 +29,7 @@ import {
     MS_PER_SECOND,
     MS_PER_DAY,
     SYSTEM_MEMBER_ID,
+    DEFAULT_ORG,
 } from './types.ts';
 import {
     generateCryptoSafeBase62,
@@ -783,6 +784,7 @@ export async function populateMockData(
         }),
         adapter.roleGrants.put(
             'seed-role-current-admin', {
+                organization_id: DEFAULT_ORG,
                 identity_id: 'current',
                 role: 'admin',
                 action: 'granted',
@@ -6400,6 +6402,7 @@ export async function populateBootstrapData(
         }),
         adapter.roleGrants.put(
             'bootstrap-role-current-admin', {
+                organization_id: DEFAULT_ORG,
                 identity_id: 'current',
                 role: 'admin',
                 action: 'granted',
