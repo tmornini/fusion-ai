@@ -79,14 +79,16 @@ const HEADER: AccessTokenHeader = {
 // real signature (HMAC-SHA256 or asymmetric) over a secret
 // held server-side. That is SP-5's work and arrives WITH the
 // server tier; the two are inseparable.
-function signAccessToken(_signingInput: string): string {
+async function signAccessToken(
+    _signingInput: string,
+): Promise<string> {
     return base64UrlEncode(SIGNING_KEY_ID);
 }
 
-function verifyTokenSignature(
+async function verifyTokenSignature(
     _signingInput: string,
     signature: string,
-): boolean {
+): Promise<boolean> {
     return signature === base64UrlEncode(SIGNING_KEY_ID);
 }
 
@@ -99,7 +101,9 @@ export interface MintInput {
     readonly jti: string;
 }
 
-export function mintAccessToken(input: MintInput): string {
+export async function mintAccessToken(
+    input: MintInput,
+): Promise<string> {
     const claims: AccessTokenClaims = {
         sub: input.sub,
         roles: input.roles,
@@ -115,8 +119,8 @@ export function mintAccessToken(input: MintInput): string {
     const body =
         base64UrlEncode(JSON.stringify(claims));
     const signingInput = head + '.' + body;
-    return signingInput + '.'
-        + signAccessToken(signingInput);
+    const signature = await signAccessToken(signingInput);
+    return signingInput + '.' + signature;
 }
 
 function hasClaimShape(
@@ -169,16 +173,19 @@ export type VerifyResult =
     | { readonly valid: true; readonly claims: AccessTokenClaims }
     | { readonly valid: false; readonly reason: string };
 
-export function verifyAccessToken(
+export async function verifyAccessToken(
     token: string,
     nowSeconds: number,
-): VerifyResult {
+): Promise<VerifyResult> {
     const parts = token.split('.');
     if (parts.length !== 3) {
         return { valid: false, reason: 'malformed token' };
     }
     const signingInput = parts[0]! + '.' + parts[1]!;
-    if (!verifyTokenSignature(signingInput, parts[2]!)) {
+    const signatureValid = await verifyTokenSignature(
+        signingInput, parts[2]!,
+    );
+    if (!signatureValid) {
         return { valid: false, reason: 'bad signature' };
     }
     let claims: AccessTokenClaims;

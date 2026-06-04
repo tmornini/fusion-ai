@@ -719,7 +719,7 @@ async function authenticateRequest(
     }
     const token = header.slice('Bearer '.length);
     const now = Math.floor(Date.now() / 1000);
-    const result = verifyAccessToken(token, now);
+    const result = await verifyAccessToken(token, now);
     if (!result.valid) {
         return result.reason;
     }

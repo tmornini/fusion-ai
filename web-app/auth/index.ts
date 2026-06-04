@@ -507,8 +507,8 @@ export async function init(): Promise<void> {
             '',
         );
 
-        setTimeout(() => {
-            establishSession('current', 'Demo User');
+        setTimeout(async () => {
+            await establishSession('current', 'Demo User');
             if (isLogin) {
                 navigateTo('dashboard');
             } else {

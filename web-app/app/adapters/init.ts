@@ -15,6 +15,7 @@ let adapter: DbAdapter | undefined;
 
 export async function initAdapter(
 ): Promise<boolean> {
+    await ensureSessionToken();
     adapter = new LocalStorageDbAdapter();
     await adapter.initialize();
     const schema =
@@ -42,10 +43,10 @@ function nowSeconds(): number {
     return Math.floor(Date.now() / 1000);
 }
 
-function mintSessionToken(
+async function mintSessionToken(
     sub: string,
     name: string,
-): string {
+): Promise<string> {
     return mintAccessToken({
         sub,
         roles: [],
@@ -64,20 +65,38 @@ export function clearSessionToken(): void {
     sessionToken = undefined;
 }
 
+// Pre-seed the per-tab holder with the anonymous default.
+// Minting is async (real HMAC signing), so a sync getter
+// cannot mint lazily; the boot path awaits this before any
+// getSessionToken() call. Idempotent: a holder already set
+// (anonymous or an established subject) is left untouched.
+export async function ensureSessionToken(): Promise<void> {
+    if (sessionToken === undefined) {
+        sessionToken = await mintSessionToken(
+            ANONYMOUS_ID, 'Anonymous',
+        );
+    }
+}
+
+// Returns the already-minted per-tab token. ensureSessionToken
+// (boot) or establishSession (login) must have seeded it; an
+// unseeded holder is a boot-order bug, not a state to mask —
+// crash with a clear message rather than return a wrong token.
 export function getSessionToken(): string {
     if (sessionToken === undefined) {
-        sessionToken = mintSessionToken(
-            ANONYMOUS_ID, 'Anonymous',
+        throw new Error(
+            'session token uninitialized;'
+            + ' await ensureSessionToken() first',
         );
     }
     return sessionToken;
 }
 
 // Mint and install a real (signature-deferred) session token
-// for an authenticated subject. Login and app-boot call this.
-export function establishSession(
+// for an authenticated subject. Login and app-boot await this.
+export async function establishSession(
     sub: string,
     name: string,
-): void {
-    setSessionToken(mintSessionToken(sub, name));
+): Promise<void> {
+    setSessionToken(await mintSessionToken(sub, name));
 }
