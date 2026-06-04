@@ -1,4 +1,5 @@
 import type {
+    Id,
     IdentityTokenAction,
     IdentityTokenEntity,
 } from './types.ts';
@@ -61,4 +62,99 @@ export function isTokenRevoked(
     jti: string,
 ): boolean {
     return latestActionForJti(rows, jti) === 'revoked';
+}
+
+// The identity that owns a jti (null if unknown). A chain
+// belongs to one identity, so any row for the jti answers.
+export function identityForJti(
+    rows: readonly IdentityTokenEntity[],
+    jti: string,
+): Id | null {
+    for (const row of rows) {
+        if (row.jti === jti) return row.identity_id;
+    }
+    return null;
+}
+
+// The derived state of a chain: its current live jti (the one
+// whose latest action is 'issued', or null if none) and whether
+// any jti in it has been revoked.
+export interface TokenChainState {
+    readonly chainId: string;
+    readonly liveJti: string | null;
+    readonly revoked: boolean;
+}
+
+export function chainState(
+    rows: readonly IdentityTokenEntity[],
+    chainId: string,
+): TokenChainState | null {
+    const jtis = jtisInChain(rows, chainId);
+    if (jtis.length === 0) return null;
+    let liveJti: string | null = null;
+    let revoked = false;
+    for (const jti of jtis) {
+        const action = latestActionForJti(rows, jti);
+        if (action === 'issued') liveJti = jti;
+        if (action === 'revoked') revoked = true;
+    }
+    return { chainId, liveJti, revoked };
+}
+
+// The lifecycle rows a refresh produces, decided purely. A LIVE
+// jti rotates (retire it, issue a successor in the chain); a
+// known but non-live jti is REPLAY (revoke every jti in the
+// chain); an unknown jti was never issued by us. The caller
+// supplies the new jti + timestamp and applies the appends.
+export type RotationPlan =
+    | {
+        readonly kind: 'rotate';
+        readonly newJti: string;
+        readonly appends:
+            readonly Omit<IdentityTokenEntity, 'id'>[];
+    }
+    | {
+        readonly kind: 'replay';
+        readonly appends:
+            readonly Omit<IdentityTokenEntity, 'id'>[];
+    }
+    | { readonly kind: 'unknown' };
+
+export function planRotation(
+    rows: readonly IdentityTokenEntity[],
+    presentedJti: string,
+    newJti: string,
+    at: string,
+): RotationPlan {
+    const chainId = chainIdForJti(rows, presentedJti);
+    const identityId = identityForJti(rows, presentedJti);
+    if (chainId === null || identityId === null) {
+        return { kind: 'unknown' };
+    }
+    if (latestActionForJti(rows, presentedJti) === 'issued') {
+        return {
+            kind: 'rotate',
+            newJti,
+            appends: [
+                {
+                    jti: presentedJti, identity_id: identityId,
+                    action: 'rotated', chain_id: chainId,
+                    parent_jti: '', at,
+                },
+                {
+                    jti: newJti, identity_id: identityId,
+                    action: 'issued', chain_id: chainId,
+                    parent_jti: presentedJti, at,
+                },
+            ],
+        };
+    }
+    return {
+        kind: 'replay',
+        appends: jtisInChain(rows, chainId).map(jti => ({
+            jti, identity_id: identityId,
+            action: 'revoked' as const, chain_id: chainId,
+            parent_jti: '', at,
+        })),
+    };
 }

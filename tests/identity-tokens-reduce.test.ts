@@ -5,6 +5,9 @@ import {
     chainIdForJti,
     jtisInChain,
     isTokenRevoked,
+    identityForJti,
+    chainState,
+    planRotation,
 } from '../api/identity-tokens.ts';
 
 const ev = (
@@ -54,4 +57,49 @@ test('isTokenRevoked denies only a revoked jti', () => {
     assert.equal(isTokenRevoked(rows, 'a'), false);   // live
     assert.equal(isTokenRevoked(rows, 'b'), true);    // revoked
     assert.equal(isTokenRevoked(rows, 'unknown'), false);
+});
+
+test('identityForJti finds the owner', () => {
+    const rows = [ev('a', 'issued', 'c1', '', T1)];
+    assert.equal(identityForJti(rows, 'a'), 'current');
+    assert.equal(identityForJti(rows, 'z'), null);
+});
+
+test('chainState reports the live jti and revoked flag', () => {
+    const rows = [
+        ev('a', 'issued', 'c1', '', T1),
+        ev('a', 'rotated', 'c1', '', T2),
+        ev('b', 'issued', 'c1', 'a', T2),
+    ];
+    assert.deepEqual(chainState(rows, 'c1'), {
+        chainId: 'c1', liveJti: 'b', revoked: false,
+    });
+    assert.equal(chainState(rows, 'nope'), null);
+});
+
+test('planRotation rotates a live jti', () => {
+    const plan = planRotation(
+        [ev('a', 'issued', 'c1', '', T1)], 'a', 'b', T2);
+    assert.equal(plan.kind, 'rotate');
+    assert.equal(plan.kind === 'rotate' && plan.newJti, 'b');
+    assert.equal(
+        plan.kind === 'rotate' && plan.appends.length, 2);
+});
+
+test('planRotation flags replay of a rotated-away jti', () => {
+    const rows = [
+        ev('a', 'issued', 'c1', '', T1),
+        ev('a', 'rotated', 'c1', '', T2),
+        ev('b', 'issued', 'c1', 'a', T2),
+    ];
+    const plan = planRotation(rows, 'a', 'x', T2);
+    assert.equal(plan.kind, 'replay');
+    // revokes every jti in the chain (a and b)
+    assert.equal(
+        plan.kind === 'replay' && plan.appends.length, 2);
+});
+
+test('planRotation reports an unknown jti', () => {
+    assert.equal(
+        planRotation([], 'ghost', 'x', T1).kind, 'unknown');
 });
