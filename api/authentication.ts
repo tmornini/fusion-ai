@@ -1,13 +1,18 @@
 import type { DbAdapter } from './db.ts';
-import { mintAccessToken } from './access-token.ts';
+import {
+    mintAccessToken,
+    verifyAccessToken,
+} from './access-token.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
     nowUtc,
     type Id,
+    type IdentityTokenEntity,
 } from './types.ts';
 import { codeState } from './authorization-codes.ts';
+import { planRotation } from './identity-tokens.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -51,26 +56,15 @@ async function nameFor(
     return pii?.name ?? identityId;
 }
 
-// Issue an access + refresh pair for `identityId`, recording the
-// refresh jti as a new chain root in identity_tokens. The access
-// token is short-lived; the refresh token's jti IS the rotation
-// chain the refresh grant walks.
-async function issueTokenPair(
-    adapter: DbAdapter,
+// Mint an access + refresh JWT pair. The access token gets a
+// fresh short-lived jti; the refresh token carries `refreshJti`
+// (its lifecycle is tracked separately in identity_tokens).
+async function mintPair(
     identityId: Id,
     name: string,
+    refreshJti: string,
 ): Promise<TokenResponse> {
     const iat = Math.floor(Date.now() / 1000);
-    const refreshJti = generateCryptoSafeBase62();
-    await adapter.identityTokens.put(
-        generateCryptoSafeBase62(), {
-            jti: refreshJti,
-            identity_id: identityId,
-            action: 'issued',
-            chain_id: generateCryptoSafeBase62(),
-            parent_jti: '',
-            at: nowUtc(),
-        });
     const accessToken = await mintAccessToken({
         sub: identityId, roles: [], name, iat,
         ttlSeconds: ACCESS_TTL_SECONDS,
@@ -86,6 +80,76 @@ async function issueTokenPair(
         token_type: 'Bearer',
         expires_in: ACCESS_TTL_SECONDS,
     };
+}
+
+// Issue a pair on a NEW chain — the refresh jti is recorded as a
+// fresh chain root. Used by grants that start a session.
+async function issueTokenPair(
+    adapter: DbAdapter,
+    identityId: Id,
+    name: string,
+): Promise<TokenResponse> {
+    const refreshJti = generateCryptoSafeBase62();
+    await adapter.identityTokens.put(
+        generateCryptoSafeBase62(), {
+            jti: refreshJti,
+            identity_id: identityId,
+            action: 'issued',
+            chain_id: generateCryptoSafeBase62(),
+            parent_jti: '',
+            at: nowUtc(),
+        });
+    return mintPair(identityId, name, refreshJti);
+}
+
+async function appendEvents(
+    adapter: DbAdapter,
+    events: readonly Omit<IdentityTokenEntity, 'id'>[],
+): Promise<void> {
+    for (const event of events) {
+        await adapter.identityTokens.put(
+            generateCryptoSafeBase62(), event,
+        );
+    }
+}
+
+// refresh grant: rotate a live refresh jti (retire it, issue a
+// successor in the same chain) and mint a new pair. A non-live
+// jti is reuse — the whole chain is revoked, then 401. An
+// invalid/unknown token mints nothing and appends nothing.
+async function grantRefresh(
+    adapter: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<TokenResult> {
+    const token = typeof body.refresh_token === 'string'
+        ? body.refresh_token
+        : '';
+    const now = Math.floor(Date.now() / 1000);
+    const verified = await verifyAccessToken(token, now);
+    if (!verified.valid) {
+        return failure(
+            401, 'invalid refresh token: ' + verified.reason,
+        );
+    }
+    const rows = await adapter.identityTokens.getAll();
+    const plan = planRotation(
+        rows, verified.claims.jti,
+        generateCryptoSafeBase62(), nowUtc(),
+    );
+    if (plan.kind === 'rotate') {
+        await appendEvents(adapter, plan.appends);
+        const name = await nameFor(adapter, verified.claims.sub);
+        return {
+            ok: true,
+            response: await mintPair(
+                verified.claims.sub, name, plan.newJti,
+            ),
+        };
+    }
+    if (plan.kind === 'replay') {
+        await appendEvents(adapter, plan.appends);
+    }
+    return failure(401, 'refresh token reuse or unknown');
 }
 
 // authorization_code grant: consume an ISSUED code, then issue a
@@ -135,6 +199,8 @@ export async function postToken(
     switch (grantType) {
         case 'authorization_code':
             return grantAuthorizationCode(adapter, body);
+        case 'refresh':
+            return grantRefresh(adapter, body);
         default:
             return failure(
                 400, 'unsupported grant_type: ' + grantType,

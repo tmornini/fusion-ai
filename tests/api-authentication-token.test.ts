@@ -92,3 +92,64 @@ test('an unknown code is a 401', async () => {
     }));
     assert.equal(res.status, 401);
 });
+
+async function initialPair(
+    db: MemoryDbAdapter,
+): Promise<{ access_token: string; refresh_token: string }> {
+    await db.authorizationCodes.put('ev1', issuedCode);
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code', code: 'the-code',
+    }));
+    return res.json();
+}
+
+test('refresh rotates to a new pair', async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const pair1 = await initialPair(db);
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'refresh',
+        refresh_token: pair1.refresh_token,
+    }));
+    assert.equal(res.status, 200);
+    const pair2 = await res.json() as {
+        access_token: string; refresh_token: string;
+    };
+    assert.notEqual(
+        pair2.refresh_token, pair1.refresh_token);
+    assert.ok(Array.isArray(
+        await GET(db, 'members', pair2.access_token)));
+});
+
+test('replaying a rotated refresh token revokes the chain',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const pair1 = await initialPair(db);
+    const pair2 = await (await handleRequest(db, tokenRequest({
+        grant_type: 'refresh',
+        refresh_token: pair1.refresh_token,
+    }))).json() as { refresh_token: string };
+    // replay the now-rotated pair1 token → reuse detected
+    const replay = await handleRequest(db, tokenRequest({
+        grant_type: 'refresh',
+        refresh_token: pair1.refresh_token,
+    }));
+    assert.equal(replay.status, 401);
+    // the whole chain is dead — even the new refresh fails
+    const after = await handleRequest(db, tokenRequest({
+        grant_type: 'refresh',
+        refresh_token: pair2.refresh_token,
+    }));
+    assert.equal(after.status, 401);
+});
+
+test('an invalid refresh token is a 401 no-op', async () => {
+    const db = await freshDb();
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'refresh', refresh_token: 'not.a.jwt',
+    }));
+    assert.equal(res.status, 401);
+    assert.equal(
+        (await db.identityTokens.getAll()).length, 0);
+});
