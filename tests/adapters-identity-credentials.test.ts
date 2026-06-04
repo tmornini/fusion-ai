@@ -6,6 +6,7 @@ import {
 } from '../web-app/app/adapters/shared.ts';
 import { devToken } from './token-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
+import { verifyPassword } from '../api/password-hash.ts';
 import {
     postIdentityCredentialSet,
     postIdentityCredentialRotation,
@@ -65,4 +66,20 @@ async () => {
             .includes('super-secret'),
         false,
     );
+});
+
+test('the stored secret is a hashed PHC, not plaintext',
+async () => {
+    const { db, ctx } = await setup();
+    await postIdentityCredentialSet(
+        ctx, 'p1', 'password', 'super-secret',
+    );
+    const row = (await db.identityCredentials.getAll())
+        .find(r => r.identity_id === 'p1');
+    assert.ok(row, 'credential row exists');
+    assert.match(row.secret, /^\$pbkdf2-sha256\$/);
+    assert.notEqual(row.secret, 'super-secret');
+    assert.equal(
+        await verifyPassword('super-secret', row.secret),
+        true);
 });
