@@ -13,6 +13,7 @@ import type {
     IdentityPiiEntity,
     IdentityCredentialEntity,
     IdentityTokenRevocationEntity,
+    IdentityTokenEntity,
     RoleGrantEntity,
     MemberEntity,
     HumanMemberEntity,
@@ -738,6 +739,43 @@ export function validateRoleGrantEntity(
         role: pickString(body, 'role'),
         action,
         by_member_id: pickString(body, 'by_member_id'),
+        at,
+    };
+}
+
+const IDENTITY_TOKEN_BODY_KEYS: readonly string[] = [
+    'jti', 'identity_id', 'action', 'chain_id',
+    'parent_jti', 'at',
+];
+
+export function validateIdentityTokenEntity(
+    body: Record<string, unknown>,
+): Omit<IdentityTokenEntity, 'id'> {
+    assertOnlyKeys(
+        body, IDENTITY_TOKEN_BODY_KEYS,
+        'IdentityTokenEntity',
+    );
+    const action = pickString(body, 'action');
+    if (action !== 'issued' && action !== 'rotated'
+        && action !== 'revoked') {
+        throw new Error(
+            'invalid token action "' + action
+            + '" on IdentityTokenEntity',
+        );
+    }
+    const at = pickString(body, 'at');
+    if (Number.isNaN(Date.parse(at))) {
+        throw new Error(
+            'invalid timestamp "' + at + '" on '
+            + 'IdentityTokenEntity',
+        );
+    }
+    return {
+        jti: pickString(body, 'jti'),
+        identity_id: pickString(body, 'identity_id'),
+        action,
+        chain_id: pickString(body, 'chain_id'),
+        parent_jti: pickString(body, 'parent_jti'),
         at,
     };
 }

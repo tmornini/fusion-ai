@@ -485,6 +485,28 @@ export interface RoleGrantEntity {
     at: string;
 }
 
+export type IdentityTokenAction =
+    'issued' | 'rotated' | 'revoked';
+
+// Append-only token-lifecycle ledger. One row per jti event; a
+// token's current validity = the latest action for its jti.
+// `chain_id` groups a refresh-rotation lineage: an issue creates
+// a root (parent_jti = '' — a self-disclosing empty, never
+// null); each rotation appends 'rotated' for the old jti and
+// 'issued' for the new, sharing the chain_id. Presenting a
+// rotated-away (or revoked) jti is replay → the whole chain is
+// revoked. Distinct from identity_token_revocations (coarse
+// per-identity log-out-everywhere); this is per-jti / per-chain.
+export interface IdentityTokenEntity {
+    id: Id;
+    jti: string;
+    identity_id: Id;
+    action: IdentityTokenAction;
+    chain_id: string;
+    parent_jti: string;
+    at: string;
+}
+
 // The person-PII display facet as a tagged union, so the
 // ABSENCE of the row (erased PII) is represented without
 // null and DECIDED AT THE CALL SITE. Presenters switch on
