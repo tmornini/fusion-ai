@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
+import { devToken } from './token-fixtures.ts';
+import { decodeAccessToken } from '../api/access-token.ts';
 
 const BASE = 'http://localhost';
 
@@ -152,4 +154,31 @@ test('an invalid refresh token is a 401 no-op', async () => {
     assert.equal(res.status, 401);
     assert.equal(
         (await db.identityTokens.getAll()).length, 0);
+});
+
+test('token-exchange shapes sub=subject and act=actor',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'token-exchange',
+        subject_token: await devToken('current'),
+        actor_token: await devToken('agent-7'),
+    }));
+    assert.equal(res.status, 200);
+    const body = await res.json() as { access_token: string };
+    const claims = decodeAccessToken(body.access_token);
+    assert.equal(claims.sub, 'current');
+    assert.equal(claims.act?.sub, 'agent-7');
+    // the delegated token passes the gate (current = admin)
+    assert.ok(Array.isArray(
+        await GET(db, 'members', body.access_token)));
+});
+
+test('token-exchange without tokens is a 400', async () => {
+    const db = await freshDb();
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'token-exchange',
+    }));
+    assert.equal(res.status, 400);
 });

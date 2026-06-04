@@ -2,6 +2,7 @@ import type { DbAdapter } from './db.ts';
 import {
     mintAccessToken,
     verifyAccessToken,
+    decodeAccessToken,
 } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
@@ -63,12 +64,14 @@ async function mintPair(
     identityId: Id,
     name: string,
     refreshJti: string,
+    act?: { sub: Id },
 ): Promise<TokenResponse> {
     const iat = Math.floor(Date.now() / 1000);
     const accessToken = await mintAccessToken({
         sub: identityId, roles: [], name, iat,
         ttlSeconds: ACCESS_TTL_SECONDS,
         jti: generateCryptoSafeBase62(),
+        ...(act ? { act } : {}),
     });
     const refreshToken = await mintAccessToken({
         sub: identityId, roles: [], name, iat,
@@ -88,6 +91,7 @@ async function issueTokenPair(
     adapter: DbAdapter,
     identityId: Id,
     name: string,
+    act?: { sub: Id },
 ): Promise<TokenResponse> {
     const refreshJti = generateCryptoSafeBase62();
     await adapter.identityTokens.put(
@@ -99,7 +103,7 @@ async function issueTokenPair(
             parent_jti: '',
             at: nowUtc(),
         });
-    return mintPair(identityId, name, refreshJti);
+    return mintPair(identityId, name, refreshJti, act);
 }
 
 async function appendEvents(
@@ -152,6 +156,43 @@ async function grantRefresh(
     return failure(401, 'refresh token reuse or unknown');
 }
 
+// token-exchange (RFC 8693): mint a delegated token where sub =
+// the subject and act = the acting party. subject_token and
+// actor_token are DECODED to read their subjects but NOT
+// verified — real assertion verification + the delegation policy
+// are a server-tier SEAM. The claim shape (sub, act.sub) is
+// frozen now.
+async function grantTokenExchange(
+    adapter: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<TokenResult> {
+    const subjectToken =
+        typeof body.subject_token === 'string'
+            ? body.subject_token
+            : '';
+    const actorToken =
+        typeof body.actor_token === 'string'
+            ? body.actor_token
+            : '';
+    let subject: Id;
+    let actor: Id;
+    try {
+        subject = decodeAccessToken(subjectToken).sub;
+        actor = decodeAccessToken(actorToken).sub;
+    } catch {
+        return failure(
+            400, 'token-exchange needs subject/actor tokens',
+        );
+    }
+    const name = await nameFor(adapter, subject);
+    return {
+        ok: true,
+        response: await issueTokenPair(
+            adapter, subject, name, { sub: actor },
+        ),
+    };
+}
+
 // authorization_code grant: consume an ISSUED code, then issue a
 // token pair. A consumed (replay) or unknown code is a clean 401
 // that mints nothing and appends nothing (grant-first).
@@ -201,6 +242,8 @@ export async function postToken(
             return grantAuthorizationCode(adapter, body);
         case 'refresh':
             return grantRefresh(adapter, body);
+        case 'token-exchange':
+            return grantTokenExchange(adapter, body);
         default:
             return failure(
                 400, 'unsupported grant_type: ' + grantType,

@@ -21,13 +21,16 @@ export interface Principal {
 // (TOKEN_AUDIENCE); per-client multi-audience validation via
 // the clients registry is SP-5. `cnf` is the DPoP confirmation
 // (SP-5 binds the key — present in the contract, unenforced
-// now); `jti` is the unique token id (reuse-detection: SP-5).
+// now); `jti` is the unique token id (reuse-detection: SP-5);
+// `act` is the RFC 8693 delegation actor (token-exchange shapes
+// sub = the subject and act.sub = the acting party).
 export interface AccessTokenClaims {
     readonly sub: Id;
     readonly roles: readonly string[];
     readonly name: string;
     readonly aud: string;
     readonly cnf?: { readonly jkt: string };
+    readonly act?: { readonly sub: Id };
     readonly iat: number;
     readonly nbf: number;
     readonly exp: number;
@@ -140,6 +143,7 @@ export interface MintInput {
     readonly iat: number;
     readonly ttlSeconds: number;
     readonly jti: string;
+    readonly act?: { readonly sub: Id };
 }
 
 export async function mintAccessToken(
@@ -154,6 +158,7 @@ export async function mintAccessToken(
         nbf: input.iat,
         exp: input.iat + input.ttlSeconds,
         jti: input.jti,
+        ...(input.act ? { act: input.act } : {}),
     };
     const head =
         base64UrlEncode(JSON.stringify(HEADER));
@@ -171,6 +176,15 @@ function hasClaimShape(
         return false;
     }
     const c = value as Record<string, unknown>;
+    if (c.act !== undefined) {
+        if (typeof c.act !== 'object' || c.act === null) {
+            return false;
+        }
+        if (typeof (c.act as { sub?: unknown }).sub
+            !== 'string') {
+            return false;
+        }
+    }
     return typeof c.sub === 'string'
         && Array.isArray(c.roles)
         && typeof c.name === 'string'
