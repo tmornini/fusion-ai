@@ -1,6 +1,8 @@
 import {
     base64UrlEncode,
     base64UrlDecode,
+    bytesToBase64Url,
+    base64UrlToBytes,
 } from './base64url.ts';
 import type { Id } from './types.ts';
 
@@ -47,6 +49,11 @@ export const ANONYMOUS_PRINCIPAL: Principal = {
 const TOKEN_AUDIENCE = 'fusion-ai-web';
 const SIGNING_KEY_ID = 'dev-co-located';
 
+// The HMAC secret. CLIENT-SHIPPED CONSTANT — the one thing the
+// server tier relocates (see the seam note below).
+const SIGNING_KEY_MATERIAL =
+    'dev-co-located-hmac-secret-frozen-wire-format';
+
 interface AccessTokenHeader {
     readonly alg: 'HS256';
     readonly typ: 'JWT';
@@ -59,37 +66,71 @@ const HEADER: AccessTokenHeader = {
     kid: SIGNING_KEY_ID,
 };
 
-// SEAM (SP-5 divorce point): real HS256/DPoP signing and
-// verification land in the server tier with a non-co-located
-// key. The placeholder freezes the three-segment wire shape
-// without claiming cryptographic integrity — exactly as SP-1
-// stored the credential secret unhashed and deferred
-// verification to where it lives. The gate's REAL teeth are
-// structure + exp/nbf + revoked-before + anonymous-rejection.
+// SEAM (SP-5 divorce point): the signature is now REAL
+// HMAC-SHA256 over the head.body signing input, via the
+// WebCrypto subtle primitive. The alg (HS256) and the
+// three-segment wire shape are FROZEN; subtle.verify performs
+// the constant-time compare — we never hand-roll one.
 //
-// !!! DEPLOYMENT CONSTRAINT — token forgery is TRIVIAL until
-// this seam is real crypto: the signing key is a constant
-// shipped in client JS, so any party can mint a valid token.
-// This is safe ONLY because the entire store is client-side
-// localStorage today — there is no trust boundary to cross
-// (the page-runner already owns their own data, so a forged
-// token grants nothing). DO NOT enable this gate in a
-// networked / multi-user / untrusted-client-reachable context
-// until signAccessToken/verifyTokenSignature are backed by a
-// real signature (HMAC-SHA256 or asymmetric) over a secret
-// held server-side. That is SP-5's work and arrives WITH the
-// server tier; the two are inseparable.
+// !!! DEPLOYMENT CONSTRAINT — REDUCED, NOT RESOLVED. The key is
+// still a constant shipped in client JS, so any party with the
+// bundle can mint a valid token: forgery stays trivial. What
+// changed is the future server tier's BLAST RADIUS — it
+// relocates ONLY the key (client constant -> server secret/KMS)
+// and who-mints (browser -> /authentication/token); the wire
+// format, the alg, and every caller signature stay put. Safe
+// today ONLY because the whole store is client-side localStorage
+// (no trust boundary — the page-runner owns their own data). DO
+// NOT enable this gate in a networked / multi-user /
+// untrusted-client-reachable context until the key lives
+// server-side. That move arrives WITH the server tier; the gate
+// and a server-held key are inseparable.
+
+// The imported key handle, memoized as a one-time Promise so
+// repeated sign/verify share one non-extractable CryptoKey
+// (extractable:false — the handle cannot re-export the bytes).
+let signingKeyHandle: Promise<CryptoKey> | undefined;
+
+function signingKey(): Promise<CryptoKey> {
+    if (signingKeyHandle === undefined) {
+        signingKeyHandle = crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(SIGNING_KEY_MATERIAL),
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign', 'verify'],
+        );
+    }
+    return signingKeyHandle;
+}
+
 async function signAccessToken(
-    _signingInput: string,
+    signingInput: string,
 ): Promise<string> {
-    return base64UrlEncode(SIGNING_KEY_ID);
+    const mac = await crypto.subtle.sign(
+        'HMAC',
+        await signingKey(),
+        new TextEncoder().encode(signingInput),
+    );
+    return bytesToBase64Url(new Uint8Array(mac));
 }
 
 async function verifyTokenSignature(
-    _signingInput: string,
+    signingInput: string,
     signature: string,
 ): Promise<boolean> {
-    return signature === base64UrlEncode(SIGNING_KEY_ID);
+    let signatureBytes: Uint8Array<ArrayBuffer>;
+    try {
+        signatureBytes = base64UrlToBytes(signature);
+    } catch {
+        return false;   // a non-decodable signature is invalid
+    }
+    return crypto.subtle.verify(
+        'HMAC',
+        await signingKey(),
+        signatureBytes,
+        new TextEncoder().encode(signingInput),
+    );
 }
 
 export interface MintInput {

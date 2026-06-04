@@ -17,7 +17,9 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
         .replace(/=+$/, '');
 }
 
-export function base64UrlToBytes(encoded: string): Uint8Array {
+export function base64UrlToBytes(
+    encoded: string,
+): Uint8Array<ArrayBuffer> {
     const restored = encoded
         .replace(/-/g, '+')
         .replace(/_/g, '/');
