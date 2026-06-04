@@ -627,7 +627,7 @@ const routes: Route[] = [
         post: async (db) => {
             const { populateMockData } =
                 await import('./mock-data.ts');
-            await populateMockData(db);
+            return populateMockData(db);
         },
     }),
     route('snapshots/bootstrap', {
@@ -635,7 +635,7 @@ const routes: Route[] = [
             const {
                 populateBootstrapData,
             } = await import('./mock-data.ts');
-            await populateBootstrapData(db);
+            return populateBootstrapData(db);
         },
     }),
     route('snapshots/import', {
