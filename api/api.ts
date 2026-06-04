@@ -46,6 +46,7 @@ import {
     currentRolesFor,
     isPermitted,
 } from './authorization.ts';
+import { isTokenRevoked } from './identity-tokens.ts';
 
 export class ApiError {
     readonly message: string;
@@ -748,6 +749,11 @@ async function authenticateRequest(
     if (revokedBefore !== null
         && result.claims.iat < revokedBefore) {
         return 'token revoked';
+    }
+    const tokenLedger =
+        await adapter.identityTokens.getAll();
+    if (isTokenRevoked(tokenLedger, result.claims.jti)) {
+        return 'token chain revoked';
     }
     return principalFromToken(token);
 }

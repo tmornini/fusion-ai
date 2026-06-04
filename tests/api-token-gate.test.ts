@@ -102,3 +102,23 @@ test('a logout-everywhere revokes earlier tokens', async () => {
     await assert.rejects(
         () => GET(db, 'members', stale), /revoked/);
 });
+
+test('a token whose jti is revoked in the ledger is denied',
+async () => {
+    const db = await freshDb();
+    // the access token (devToken jti = dev-current) is issued
+    // then its chain is revoked in the identity_tokens ledger
+    await db.identityTokens.put('e1', {
+        jti: 'dev-current', identity_id: 'current',
+        action: 'issued', chain_id: 'c1',
+        parent_jti: '', at: '2026-01-01T00:00:00.000Z',
+    });
+    await db.identityTokens.put('e2', {
+        jti: 'dev-current', identity_id: 'current',
+        action: 'revoked', chain_id: 'c1',
+        parent_jti: '', at: '2026-02-01T00:00:00.000Z',
+    });
+    await assert.rejects(
+        async () => GET(db, 'members', await devToken()),
+        /chain revoked/);
+});
