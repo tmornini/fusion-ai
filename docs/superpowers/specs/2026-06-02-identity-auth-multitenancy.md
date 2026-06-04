@@ -236,7 +236,11 @@ Six independently-shippable sub-projects. **Critical path
     switching the seeded admin password from the fixed placeholder to a
     crypto-grade UUID — both land with SP-5's real password
     verification (a random seed password is non-deterministic and
-    unknowable until a surfacing path displays it).
+    unknowable until a surfacing path displays it);
+    (g) **same-instant ledger ordering relies on append order** —
+    correct now (single-writer; `getAll()` returns insertion order)
+    but implicit; explicit `ORDER BY (at, monotonic-key)` deferred to
+    the Postgres tier — see the Deferred/open section.
   - **Deployment constraint:** the HS256 signature is a placeholder
     shipped in client JS (inherited from SP-3), so the gate MUST NOT be
     enabled in any networked / multi-user context until SP-5 supplies
@@ -446,6 +450,25 @@ migrations arrive with Postgres.
 - ~~`role_grants` ledger as its own table vs. riding the unified
   `states` log — decide in SP-4's spec.~~ **RESOLVED (SP-4):** own
   `HistoryEntityStore` table — see SP-4 execution entry, deviation (b).
+- **Same-instant ledger ordering relies on append order (implicit;
+  fragile at Postgres).** `currentRolesFor` (`api/authorization.ts`)
+  and `latestRevocationAt` (`api/access-token.ts`) break a same-`at`
+  tie by iteration order of `getAll()`. `nowUtc()` is
+  millisecond-resolution, so two events can share an `at`; the later-
+  appended row wins because `getAll()` returns insertion order on the
+  single-writer memory/localStorage tier. This is correct today and
+  pinned by the "same-instant" tie-break tests in
+  `tests/authorization.test.ts` — but the ordering is implicit: a
+  multi-writer Postgres tier whose `getAll()` has no guaranteed row
+  order could break the tie wrongly, leaving a revoked role held (a
+  security risk). The robust fix is an explicit
+  `ORDER BY (at, <monotonic-key>)` on every ledger read, where the
+  secondary key is a sortable sequence or ULID — NOT a content-hash
+  ETag (a content ETag orders deterministically but not chronologically,
+  so a revoke could lose to a grant). Apply ledger-wide
+  (`role_grants`, `identity_credentials`,
+  `identity_token_revocations`) for one consistent voice. Lands with
+  the Postgres tier.
 
 ## Next step (SP-4 executed)
 
