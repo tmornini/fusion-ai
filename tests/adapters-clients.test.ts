@@ -4,6 +4,21 @@ import {
     validateClientEntity,
 } from '../api/validators.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import {
+    createRequestContext,
+} from '../web-app/app/adapters/shared.ts';
+import { devToken } from './token-fixtures.ts';
+import { seedRootAdmin } from './root-admin-fixture.ts';
+import {
+    getClient, putClient, deleteClient,
+} from '../web-app/app/adapters/clients.ts';
+
+async function adminCtx() {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    await seedRootAdmin(db);
+    return createRequestContext(db, await devToken());
+}
 
 const goodClient = {
     grant_types: 'authorization_code refresh',
@@ -44,4 +59,27 @@ test('clients store upserts and hard-deletes', async () => {
     await db.clients.delete('c1');
     const all = await db.clients.getAll();
     assert.equal(all.find(c => c.id === 'c1'), undefined);
+});
+
+test('put then get a client through the gate', async () => {
+    const ctx = await adminCtx();
+    await putClient(ctx, 'web', goodClient);
+    const got = await getClient(ctx, 'web');
+    assert.equal(got.aud, 'fusion-ai-web');
+    assert.equal(got.status, 'active');
+});
+
+test('delete removes a client through the gate', async () => {
+    const ctx = await adminCtx();
+    await putClient(ctx, 'web', goodClient);
+    await deleteClient(ctx, 'web');
+    await assert.rejects(() => getClient(ctx, 'web'));
+});
+
+test('an anonymous principal cannot read clients', async () => {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    const anon = createRequestContext(
+        db, await devToken('anonymous'));
+    await assert.rejects(() => getClient(anon, 'web'));
 });
