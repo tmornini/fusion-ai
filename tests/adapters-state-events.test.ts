@@ -19,9 +19,11 @@ import { seedRootAdmin } from './root-admin-fixture.ts';
 import type {
     IdeaEntity, ProjectEntity, RecordEntity,
 } from '../api/types.ts';
+import { DEFAULT_ORG } from '../api/types.ts';
 
 function ideaBody(title: string): Omit<IdeaEntity, 'id'> {
     return {
+        organization_id: DEFAULT_ORG,
         title,
         position: 1,
         problem_statement: 'p',
@@ -36,6 +38,7 @@ function projectBody(
     title: string,
 ): Omit<ProjectEntity, 'id'> {
     return {
+        organization_id: DEFAULT_ORG,
         title,
         description: 'd',
         progress: 0,

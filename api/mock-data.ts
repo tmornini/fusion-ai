@@ -815,7 +815,7 @@ export async function populateMockData(
         },
     ];
 
-    const ideas: IdeaEntity[] = [
+    const ideas: Omit<IdeaEntity, 'organization_id'>[] = [
         {
             id: 'eT5xdKjzLDmuRn3r7XMX4R',
             title: 'AI-Powered Customer'
@@ -1145,7 +1145,9 @@ export async function populateMockData(
 
     await Promise.all([
         ...ideas.map(idea =>
-            adapter.ideas.put(idea.id, idea),
+            adapter.ideas.put(idea.id, {
+                ...idea, organization_id: DEFAULT_ORG,
+            }),
         ),
         adapter.organization.put({
             name: 'Stark Industries',
@@ -1162,7 +1164,8 @@ export async function populateMockData(
     const l2cProjectId =
         'L2cP01SalesPip3l1n3L01';
 
-    const projects: ProjectEntity[] = [
+    const projects:
+        Omit<ProjectEntity, 'organization_id'>[] = [
         {
             id: 'u6YkHhlGc91oDMkr3x0isa',
             title: 'AI-Powered Customer'
@@ -1625,7 +1628,7 @@ export async function populateMockData(
     ];
 
     const mockFlows:
-        FlowEntity[] = [
+        Omit<FlowEntity, 'organization_id'>[] = [
         {
             id: 'h5mErVBQhwdMKwi1co30jB',
             name: 'Customer Onboarding',
@@ -5666,15 +5669,14 @@ export async function populateMockData(
 
     await Promise.all([
         ...projects.map(project =>
-            adapter.projects.put(
-                project.id,
-                project,
-            ),
+            adapter.projects.put(project.id, {
+                ...project, organization_id: DEFAULT_ORG,
+            }),
         ),
         ...mockFlows.map(flow =>
-            adapter.flows.put(
-                flow.id, flow,
-            ),
+            adapter.flows.put(flow.id, {
+                ...flow, organization_id: DEFAULT_ORG,
+            }),
         ),
     ]);
 

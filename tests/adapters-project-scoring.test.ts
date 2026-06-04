@@ -17,6 +17,7 @@ import {
 } from '../web-app/app/adapters/project-scoring.ts';
 import { seedHumanMember } from './member-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
+import { DEFAULT_ORG } from '../api/types.ts';
 
 test('getBaselineScoresForProject returns project rows',
     async () => {
@@ -106,6 +107,7 @@ async function seedTwoApprovedProjects(
     db: MemoryDbAdapter,
 ): Promise<void> {
     const projectBody = {
+        organization_id: DEFAULT_ORG,
         description: 'd', progress: 0,
         start_date: '2026-05-14T00:00:00.000Z',
         target_end_date: '2026-05-14T00:00:00.000Z',

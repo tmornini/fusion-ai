@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2112 998" width="2112" height="998">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2112 1034" width="2112" height="1034">
   <defs>
     <style>
       text { font-family: ui-sans-serif, system-ui,
@@ -19,28 +19,28 @@
         stroke-width: 1.5; }
     </style>
   </defs>
-  <rect x="0" y="0" width="2112" height="998" fill="hsl(217 30% 97%)" />
+  <rect x="0" y="0" width="2112" height="1034" fill="hsl(217 30% 97%)" />
   <path class="edge" d="M 952 882 C 894.4 882, 609.6 527, 552 527" />
   <path class="edge" d="M 952 98 C 894.4 98, 609.6 527, 552 527" />
   <path class="edge" d="M 952 253 C 894.4 253, 305.6 107, 248 107" />
-  <path class="edge" d="M 952 572 C 894.4 572, 305.6 280, 248 280" />
-  <path class="edge" d="M 1256 381 C 1198.4 381, 913.6 134, 856 134" />
-  <path class="edge" d="M 1256 381 C 1198.4 381, 305.6 280, 248 280" />
-  <path class="edge" d="M 952 745 C 894.4 745, 305.6 280, 248 280" />
-  <path class="edge" d="M 952 745 C 894.4 745, 913.6 617, 856 617" />
+  <path class="edge" d="M 952 572 C 894.4 572, 305.6 289, 248 289" />
+  <path class="edge" d="M 1256 381 C 1198.4 381, 913.6 143, 856 143" />
+  <path class="edge" d="M 1256 381 C 1198.4 381, 305.6 289, 248 289" />
+  <path class="edge" d="M 952 745 C 894.4 745, 305.6 289, 248 289" />
+  <path class="edge" d="M 952 745 C 894.4 745, 913.6 635, 856 635" />
   <path class="edge" d="M 1864 89 C 1806.4 89, 1825.6 98, 1768 98" />
   <path class="edge" d="M 1864 89 C 1806.4 89, 1521.6 864, 1464 864" />
-  <path class="edge" d="M 1256 864 C 1198.4 864, 913.6 307, 856 307" />
-  <path class="edge" d="M 952 399 C 894.4 399, 305.6 280, 248 280" />
-  <path class="edge" d="M 952 399 C 894.4 399, 913.6 307, 856 307" />
-  <path class="edge" d="M 1256 89 C 1198.4 89, 305.6 471, 248 471" />
+  <path class="edge" d="M 1256 864 C 1198.4 864, 913.6 325, 856 325" />
+  <path class="edge" d="M 952 399 C 894.4 399, 305.6 289, 248 289" />
+  <path class="edge" d="M 952 399 C 894.4 399, 913.6 325, 856 325" />
+  <path class="edge" d="M 1256 89 C 1198.4 89, 305.6 498, 248 498" />
   <path class="edge" d="M 1256 89 C 1198.4 89, 609.6 527, 552 527" />
   <path class="edge" d="M 1256 235 C 1198.4 235, 609.6 619, 552 619" />
   <path class="edge" d="M 1256 235 C 1198.4 235, 609.6 527, 552 527" />
-  <path class="edge" d="M 1256 691 C 1198.4 691, 913.6 134, 856 134" />
+  <path class="edge" d="M 1256 691 C 1198.4 691, 913.6 143, 856 143" />
   <path class="edge" d="M 1256 691 C 1198.4 691, 609.6 619, 552 619" />
   <path class="edge" d="M 1256 691 C 1198.4 691, 609.6 527, 552 527" />
-  <path class="edge" d="M 1256 527 C 1198.4 527, 913.6 134, 856 134" />
+  <path class="edge" d="M 1256 527 C 1198.4 527, 913.6 143, 856 143" />
   <path class="edge" d="M 1256 527 C 1198.4 527, 609.6 619, 552 619" />
   <path class="edge" d="M 1256 527 C 1198.4 527, 609.6 527, 552 527" />
   <path class="edge" d="M 1560 98 C 1502.4 98, 609.6 527, 552 527" />
@@ -84,45 +84,45 @@
     <text class="type" x="1150" y="151">id</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="586" width="208" height="62" rx="6" />
-    <rect class="head" x="40" y="586" width="208" height="26" rx="6" />
-    <text class="thead" x="50" y="604">identities</text>
-    <text class="pk" x="50" y="625">id</text>
-    <text class="type" x="238" y="625">id</text>
-    <text class="col" x="50" y="643">kind</text>
-    <text class="type" x="238" y="643">IdentityKind</text>
+    <rect class="box" x="40" y="622" width="208" height="62" rx="6" />
+    <rect class="head" x="40" y="622" width="208" height="26" rx="6" />
+    <text class="thead" x="50" y="640">identities</text>
+    <text class="pk" x="50" y="661">id</text>
+    <text class="type" x="238" y="661">id</text>
+    <text class="col" x="50" y="679">kind</text>
+    <text class="type" x="238" y="679">IdentityKind</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="842" width="208" height="116" rx="6" />
-    <rect class="head" x="40" y="842" width="208" height="26" rx="6" />
-    <text class="thead" x="50" y="860">identity_pii</text>
-    <text class="pk" x="50" y="881">id</text>
-    <text class="type" x="238" y="881">id</text>
-    <text class="col" x="50" y="899">name</text>
-    <text class="type" x="238" y="899">text</text>
-    <text class="col" x="50" y="917">email</text>
-    <text class="type" x="238" y="917">text</text>
-    <text class="col" x="50" y="935">phone</text>
+    <rect class="box" x="40" y="878" width="208" height="116" rx="6" />
+    <rect class="head" x="40" y="878" width="208" height="26" rx="6" />
+    <text class="thead" x="50" y="896">identity_pii</text>
+    <text class="pk" x="50" y="917">id</text>
+    <text class="type" x="238" y="917">id</text>
+    <text class="col" x="50" y="935">name</text>
     <text class="type" x="238" y="935">text</text>
-    <text class="col" x="50" y="953">bio</text>
+    <text class="col" x="50" y="953">email</text>
     <text class="type" x="238" y="953">text</text>
+    <text class="col" x="50" y="971">phone</text>
+    <text class="type" x="238" y="971">text</text>
+    <text class="col" x="50" y="989">bio</text>
+    <text class="type" x="238" y="989">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="678" width="208" height="134" rx="6" />
-    <rect class="head" x="40" y="678" width="208" height="26" rx="6" />
-    <text class="thead" x="50" y="696">identity_credentials</text>
-    <text class="pk" x="50" y="717">id</text>
-    <text class="type" x="238" y="717">id</text>
-    <text class="col" x="50" y="735">identity_id</text>
-    <text class="type" x="238" y="735">id</text>
-    <text class="col" x="50" y="753">kind</text>
-    <text class="type" x="238" y="753">IdentityCredentialKind</text>
-    <text class="col" x="50" y="771">status</text>
-    <text class="type" x="238" y="771">IdentityCredentialStatus</text>
-    <text class="col" x="50" y="789">secret</text>
-    <text class="type" x="238" y="789">text</text>
-    <text class="col" x="50" y="807">at</text>
-    <text class="type" x="238" y="807">text</text>
+    <rect class="box" x="40" y="714" width="208" height="134" rx="6" />
+    <rect class="head" x="40" y="714" width="208" height="26" rx="6" />
+    <text class="thead" x="50" y="732">identity_credentials</text>
+    <text class="pk" x="50" y="753">id</text>
+    <text class="type" x="238" y="753">id</text>
+    <text class="col" x="50" y="771">identity_id</text>
+    <text class="type" x="238" y="771">id</text>
+    <text class="col" x="50" y="789">kind</text>
+    <text class="type" x="238" y="789">IdentityCredentialKind</text>
+    <text class="col" x="50" y="807">status</text>
+    <text class="type" x="238" y="807">IdentityCredentialStatus</text>
+    <text class="col" x="50" y="825">secret</text>
+    <text class="type" x="238" y="825">text</text>
+    <text class="col" x="50" y="843">at</text>
+    <text class="type" x="238" y="843">text</text>
   </g>
   <g class="table">
     <rect class="box" x="344" y="204" width="208" height="80" rx="6" />
@@ -136,23 +136,23 @@
     <text class="type" x="542" y="279">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="386" width="208" height="152" rx="6" />
-    <rect class="head" x="648" y="386" width="208" height="26" rx="6" />
-    <text class="thead" x="658" y="404">role_grants</text>
-    <text class="pk" x="658" y="425">id</text>
-    <text class="type" x="846" y="425">id</text>
-    <text class="col" x="658" y="443">organization_id</text>
+    <rect class="box" x="648" y="404" width="208" height="152" rx="6" />
+    <rect class="head" x="648" y="404" width="208" height="26" rx="6" />
+    <text class="thead" x="658" y="422">role_grants</text>
+    <text class="pk" x="658" y="443">id</text>
     <text class="type" x="846" y="443">id</text>
-    <text class="col" x="658" y="461">identity_id</text>
+    <text class="col" x="658" y="461">organization_id</text>
     <text class="type" x="846" y="461">id</text>
-    <text class="col" x="658" y="479">role</text>
-    <text class="type" x="846" y="479">text</text>
-    <text class="col" x="658" y="497">action</text>
-    <text class="type" x="846" y="497">RoleGrantAction</text>
-    <text class="col" x="658" y="515">by_member_id</text>
-    <text class="type" x="846" y="515">id</text>
-    <text class="col" x="658" y="533">at</text>
-    <text class="type" x="846" y="533">text</text>
+    <text class="col" x="658" y="479">identity_id</text>
+    <text class="type" x="846" y="479">id</text>
+    <text class="col" x="658" y="497">role</text>
+    <text class="type" x="846" y="497">text</text>
+    <text class="col" x="658" y="515">action</text>
+    <text class="type" x="846" y="515">RoleGrantAction</text>
+    <text class="col" x="658" y="533">by_member_id</text>
+    <text class="type" x="846" y="533">id</text>
+    <text class="col" x="658" y="551">at</text>
+    <text class="type" x="846" y="551">text</text>
   </g>
   <g class="table">
     <rect class="box" x="344" y="314" width="208" height="152" rx="6" />
@@ -225,67 +225,73 @@
     <text class="type" x="1150" y="315">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="386" width="208" height="170" rx="6" />
-    <rect class="head" x="40" y="386" width="208" height="26" rx="6" />
-    <text class="thead" x="50" y="404">ideas</text>
-    <text class="pk" x="50" y="425">id</text>
-    <text class="type" x="238" y="425">id</text>
-    <text class="col" x="50" y="443">title</text>
-    <text class="type" x="238" y="443">text</text>
-    <text class="col" x="50" y="461">position</text>
-    <text class="type" x="238" y="461">num</text>
-    <text class="col" x="50" y="479">problem_statement</text>
+    <rect class="box" x="40" y="404" width="208" height="188" rx="6" />
+    <rect class="head" x="40" y="404" width="208" height="26" rx="6" />
+    <text class="thead" x="50" y="422">ideas</text>
+    <text class="pk" x="50" y="443">id</text>
+    <text class="type" x="238" y="443">id</text>
+    <text class="col" x="50" y="461">organization_id</text>
+    <text class="type" x="238" y="461">id</text>
+    <text class="col" x="50" y="479">title</text>
     <text class="type" x="238" y="479">text</text>
-    <text class="col" x="50" y="497">target_users</text>
-    <text class="type" x="238" y="497">text</text>
-    <text class="col" x="50" y="515">proposed_solution</text>
+    <text class="col" x="50" y="497">position</text>
+    <text class="type" x="238" y="497">num</text>
+    <text class="col" x="50" y="515">problem_statement</text>
     <text class="type" x="238" y="515">text</text>
-    <text class="col" x="50" y="533">expected_outcome</text>
+    <text class="col" x="50" y="533">target_users</text>
     <text class="type" x="238" y="533">text</text>
-    <text class="col" x="50" y="551">success_metrics</text>
+    <text class="col" x="50" y="551">proposed_solution</text>
     <text class="type" x="238" y="551">text</text>
+    <text class="col" x="50" y="569">expected_outcome</text>
+    <text class="type" x="238" y="569">text</text>
+    <text class="col" x="50" y="587">success_metrics</text>
+    <text class="type" x="238" y="587">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="40" width="208" height="188" rx="6" />
+    <rect class="box" x="648" y="40" width="208" height="206" rx="6" />
     <rect class="head" x="648" y="40" width="208" height="26" rx="6" />
     <text class="thead" x="658" y="58">projects</text>
     <text class="pk" x="658" y="79">id</text>
     <text class="type" x="846" y="79">id</text>
-    <text class="col" x="658" y="97">title</text>
-    <text class="type" x="846" y="97">text</text>
-    <text class="col" x="658" y="115">description</text>
+    <text class="col" x="658" y="97">organization_id</text>
+    <text class="type" x="846" y="97">id</text>
+    <text class="col" x="658" y="115">title</text>
     <text class="type" x="846" y="115">text</text>
-    <text class="col" x="658" y="133">progress</text>
-    <text class="type" x="846" y="133">num</text>
-    <text class="col" x="658" y="151">start_date</text>
-    <text class="type" x="846" y="151">text</text>
-    <text class="col" x="658" y="169">target_end_date</text>
+    <text class="col" x="658" y="133">description</text>
+    <text class="type" x="846" y="133">text</text>
+    <text class="col" x="658" y="151">progress</text>
+    <text class="type" x="846" y="151">num</text>
+    <text class="col" x="658" y="169">start_date</text>
     <text class="type" x="846" y="169">text</text>
-    <text class="col" x="658" y="187">estimated_cost</text>
-    <text class="type" x="846" y="187">num</text>
-    <text class="col" x="658" y="205">actual_cost</text>
+    <text class="col" x="658" y="187">target_end_date</text>
+    <text class="type" x="846" y="187">text</text>
+    <text class="col" x="658" y="205">estimated_cost</text>
     <text class="type" x="846" y="205">num</text>
-    <text class="col" x="658" y="223">position</text>
+    <text class="col" x="658" y="223">actual_cost</text>
     <text class="type" x="846" y="223">num</text>
+    <text class="col" x="658" y="241">position</text>
+    <text class="type" x="846" y="241">num</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="204" width="208" height="152" rx="6" />
+    <rect class="box" x="40" y="204" width="208" height="170" rx="6" />
     <rect class="head" x="40" y="204" width="208" height="26" rx="6" />
     <text class="thead" x="50" y="222">flows</text>
     <text class="pk" x="50" y="243">id</text>
     <text class="type" x="238" y="243">id</text>
-    <text class="col" x="50" y="261">name</text>
-    <text class="type" x="238" y="261">text</text>
-    <text class="col" x="50" y="279">is_locked</text>
-    <text class="type" x="238" y="279">bool</text>
-    <text class="col" x="50" y="297">is_auto_layout</text>
+    <text class="col" x="50" y="261">organization_id</text>
+    <text class="type" x="238" y="261">id</text>
+    <text class="col" x="50" y="279">name</text>
+    <text class="type" x="238" y="279">text</text>
+    <text class="col" x="50" y="297">is_locked</text>
     <text class="type" x="238" y="297">bool</text>
-    <text class="col" x="50" y="315">is_auto_fit</text>
+    <text class="col" x="50" y="315">is_auto_layout</text>
     <text class="type" x="238" y="315">bool</text>
-    <text class="col" x="50" y="333">lock_timeout</text>
-    <text class="type" x="238" y="333">num</text>
-    <text class="col" x="50" y="351">graph</text>
-    <text class="type" x="238" y="351">json</text>
+    <text class="col" x="50" y="333">is_auto_fit</text>
+    <text class="type" x="238" y="333">bool</text>
+    <text class="col" x="50" y="351">lock_timeout</text>
+    <text class="type" x="238" y="351">num</text>
+    <text class="col" x="50" y="369">graph</text>
+    <text class="type" x="238" y="369">json</text>
   </g>
   <g class="table">
     <rect class="box" x="952" y="478" width="208" height="188" rx="6" />
@@ -324,17 +330,17 @@
     <text class="type" x="1454" y="425">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="568" width="208" height="98" rx="6" />
-    <rect class="head" x="648" y="568" width="208" height="26" rx="6" />
-    <text class="thead" x="658" y="586">work_orders</text>
-    <text class="pk" x="658" y="607">id</text>
-    <text class="type" x="846" y="607">id</text>
-    <text class="col" x="658" y="625">display_id</text>
-    <text class="type" x="846" y="625">text</text>
-    <text class="col" x="658" y="643">flow_graph</text>
-    <text class="type" x="846" y="643">json</text>
-    <text class="col" x="658" y="661">position</text>
-    <text class="type" x="846" y="661">num</text>
+    <rect class="box" x="648" y="586" width="208" height="98" rx="6" />
+    <rect class="head" x="648" y="586" width="208" height="26" rx="6" />
+    <text class="thead" x="658" y="604">work_orders</text>
+    <text class="pk" x="658" y="625">id</text>
+    <text class="type" x="846" y="625">id</text>
+    <text class="col" x="658" y="643">display_id</text>
+    <text class="type" x="846" y="643">text</text>
+    <text class="col" x="658" y="661">flow_graph</text>
+    <text class="type" x="846" y="661">json</text>
+    <text class="col" x="658" y="679">position</text>
+    <text class="type" x="846" y="679">num</text>
   </g>
   <g class="table">
     <rect class="box" x="952" y="696" width="208" height="98" rx="6" />
@@ -363,17 +369,17 @@
     <text class="type" x="2062" y="133">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="258" width="208" height="98" rx="6" />
-    <rect class="head" x="648" y="258" width="208" height="26" rx="6" />
-    <text class="thead" x="658" y="276">records</text>
-    <text class="pk" x="658" y="297">id</text>
-    <text class="type" x="846" y="297">id</text>
-    <text class="col" x="658" y="315">name</text>
-    <text class="type" x="846" y="315">text</text>
-    <text class="col" x="658" y="333">description</text>
+    <rect class="box" x="648" y="276" width="208" height="98" rx="6" />
+    <rect class="head" x="648" y="276" width="208" height="26" rx="6" />
+    <text class="thead" x="658" y="294">records</text>
+    <text class="pk" x="658" y="315">id</text>
+    <text class="type" x="846" y="315">id</text>
+    <text class="col" x="658" y="333">name</text>
     <text class="type" x="846" y="333">text</text>
-    <text class="col" x="658" y="351">position</text>
-    <text class="type" x="846" y="351">num</text>
+    <text class="col" x="658" y="351">description</text>
+    <text class="type" x="846" y="351">text</text>
+    <text class="col" x="658" y="369">position</text>
+    <text class="type" x="846" y="369">num</text>
   </g>
   <g class="table">
     <rect class="box" x="1256" y="788" width="208" height="152" rx="6" />

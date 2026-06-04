@@ -21,8 +21,6 @@ async function appendRoleEvent(
 ): Promise<void> {
     const id = generateCryptoSafeBase62();
     await ctx.PUT(`role-grants/${id}`, {
-        // Single-org interim: the facade decorator will stamp
-        // org once this write moves to an /organizations route.
         organization_id: DEFAULT_ORG,
         identity_id: identityId,
         role,

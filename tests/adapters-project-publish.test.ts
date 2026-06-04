@@ -20,8 +20,10 @@ import {
 import {
     seedRootAdmin,
 } from './root-admin-fixture.ts';
+import { DEFAULT_ORG } from '../api/types.ts';
 
 const SAMPLE_PROJECT_BODY = {
+    organization_id: DEFAULT_ORG,
     title: 't',
     description: 'd', progress: 0,
     start_date: '2026-05-14T00:00:00.000Z',

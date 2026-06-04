@@ -13,6 +13,7 @@ import {
 import {
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
+    DEFAULT_ORG,
 } from '../api/types.ts';
 import type {
     FlowEntity,
@@ -63,6 +64,7 @@ function buildFlow(
     graph: StoredGraph,
 ): Omit<FlowEntity, 'id'> {
     return {
+        organization_id: DEFAULT_ORG,
         name,
         is_locked: false,
         is_auto_layout: true,

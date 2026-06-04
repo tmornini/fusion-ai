@@ -7,6 +7,7 @@ import {
     validateActualScoreEntity,
     validateProjectEntity,
 } from '../api/validators.ts';
+import { DEFAULT_ORG } from '../api/types.ts';
 
 test('validateObjectiveEntity accepts valid', () => {
     const v = validateObjectiveEntity({ position: 0 });
@@ -144,6 +145,7 @@ test('validateActualScoreEntity rejects out-of-range',
 test('validateProjectEntity ignores legacy impact fields',
     () => {
         const baseValid = {
+            organization_id: DEFAULT_ORG,
             title: 't',
             description: 'd',
             progress: 0,

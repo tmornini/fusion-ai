@@ -946,7 +946,7 @@ export function validateAIMemberEntity(
 }
 
 const IDEA_BODY_KEYS: readonly string[] = [
-    'title', 'position',
+    'organization_id', 'title', 'position',
     'problem_statement', 'target_users',
     'proposed_solution', 'expected_outcome',
     'success_metrics',
@@ -959,6 +959,7 @@ export function validateIdeaEntity(
         body, IDEA_BODY_KEYS, 'IdeaEntity',
     );
     return {
+        organization_id: pickString(body, 'organization_id'),
         title: pickString(
             body, 'title',
         ),
@@ -984,7 +985,7 @@ export function validateIdeaEntity(
 }
 
 const PROJECT_BODY_KEYS: readonly string[] = [
-    'title', 'description',
+    'organization_id', 'title', 'description',
     'progress', 'start_date',
     'target_end_date', 'estimated_cost',
     'actual_cost', 'position',
@@ -999,6 +1000,7 @@ export function validateProjectEntity(
         'ProjectEntity',
     );
     return {
+        organization_id: pickString(body, 'organization_id'),
         title: pickString(
             body, 'title',
         ),
@@ -1028,7 +1030,7 @@ export function validateProjectEntity(
 
 
 const FLOW_BODY_KEYS: readonly string[] = [
-    'name', 'is_locked',
+    'organization_id', 'name', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
     'lock_timeout', 'graph',
 ];
@@ -1040,6 +1042,7 @@ export function validateFlowEntity(
         body, FLOW_BODY_KEYS, 'FlowEntity',
     );
     return {
+        organization_id: pickString(body, 'organization_id'),
         name: pickString(
             body, 'name',
         ),

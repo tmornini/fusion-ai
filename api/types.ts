@@ -10,8 +10,10 @@ export type MemberId = Id;
 export type ModelId = Id;
 
 // The single tenant every pre-multitenancy entity belongs
-// to. Backfill stamps it on re-seed; a real per-tenant value
-// arrives when a second organization is created.
+// to. Seeds and the single-org web-app writers stamp it
+// explicitly; once a writer moves to an /organizations
+// facade route, the org-guard decorator stamps instead. A
+// real per-tenant value arrives with a second organization.
 export const DEFAULT_ORG: Id = '1';
 
 export interface ProviderModel {
@@ -913,6 +915,7 @@ export function isSystemMember(
 
 export interface IdeaEntity {
     id: Id;
+    organization_id: Id;
     title: string;
     position: number;
     problem_statement: string;
@@ -958,6 +961,7 @@ export interface ProjectObjectiveActualScore {
 
 export interface ProjectEntity {
     id: Id;
+    organization_id: Id;
     title: string;
     description: string;
     progress: number;
@@ -1006,6 +1010,7 @@ export const DEFAULT_NODE_TASK_INSTRUCTIONS = '';
 
 export interface FlowEntity {
     id: Id;
+    organization_id: Id;
     name: string;
     is_locked: boolean;
     is_auto_layout: boolean;
