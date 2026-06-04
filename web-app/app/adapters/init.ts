@@ -92,8 +92,12 @@ export function getSessionToken(): string {
     return sessionToken;
 }
 
-// Mint and install a real (signature-deferred) session token
-// for an authenticated subject. Login and app-boot await this.
+// Mint and install a session token DIRECTLY for `sub` — the
+// mock-auth convenience for app-boot and demo sign-up. The REAL
+// password flow (verify a credential through the OAuth front
+// doors) is loginViaPassword in adapters/authentication.ts; boot
+// keeps this direct mint because the seed admin password is
+// random and surfaced once, so none is available at boot time.
 export async function establishSession(
     sub: string,
     name: string,
