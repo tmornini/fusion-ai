@@ -175,12 +175,18 @@ async () => {
         await GET(db, 'members', body.access_token)));
 });
 
-test('token-exchange without tokens is a 400', async () => {
+test('token-exchange rejects unverifiable tokens with 401',
+async () => {
     const db = await freshDb();
-    const res = await handleRequest(db, tokenRequest({
+    // missing tokens, and a structurally-present but unsigned
+    // token, both fail verification (signature/exp/aud)
+    assert.equal((await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
-    }));
-    assert.equal(res.status, 400);
+    }))).status, 401);
+    assert.equal((await handleRequest(db, tokenRequest({
+        grant_type: 'token-exchange',
+        subject_token: 'a.b.c', actor_token: 'a.b.c',
+    }))).status, 401);
 });
 
 const activeClient = {

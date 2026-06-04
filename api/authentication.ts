@@ -2,7 +2,6 @@ import type { DbAdapter } from './db.ts';
 import {
     mintAccessToken,
     verifyAccessToken,
-    decodeAccessToken,
 } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
@@ -158,11 +157,13 @@ async function grantRefresh(
 }
 
 // token-exchange (RFC 8693): mint a delegated token where sub =
-// the subject and act = the acting party. subject_token and
-// actor_token are DECODED to read their subjects but NOT
-// verified — real assertion verification + the delegation policy
-// are a server-tier SEAM. The claim shape (sub, act.sub) is
-// frozen now.
+// the subject and act = the acting party. Both subject_token and
+// actor_token are VERIFIED (signature/exp/nbf/aud) — the same
+// frozen HMAC the refresh grant checks, so this is not weaker
+// than the rest of the gate. The remaining SEAM is the
+// DELEGATION POLICY: whether `actor` may act-as `subject` is NOT
+// yet enforced — that authorization lands with the server tier.
+// The claim shape (sub, act.sub) is frozen now.
 async function grantTokenExchange(
     adapter: DbAdapter,
     body: Record<string, unknown>,
@@ -175,16 +176,18 @@ async function grantTokenExchange(
         typeof body.actor_token === 'string'
             ? body.actor_token
             : '';
-    let subject: Id;
-    let actor: Id;
-    try {
-        subject = decodeAccessToken(subjectToken).sub;
-        actor = decodeAccessToken(actorToken).sub;
-    } catch {
+    const now = Math.floor(Date.now() / 1000);
+    const subjectV =
+        await verifyAccessToken(subjectToken, now);
+    const actorV = await verifyAccessToken(actorToken, now);
+    if (!subjectV.valid || !actorV.valid) {
         return failure(
-            400, 'token-exchange needs subject/actor tokens',
+            401,
+            'token-exchange needs valid subject/actor tokens',
         );
     }
+    const subject = subjectV.claims.sub;
+    const actor = actorV.claims.sub;
     const name = await nameFor(adapter, subject);
     return {
         ok: true,
