@@ -4,6 +4,25 @@ import {
     validateIdentityProviderEntity,
 } from '../api/validators.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import {
+    createRequestContext,
+} from '../web-app/app/adapters/shared.ts';
+import { devToken } from './token-fixtures.ts';
+import { seedRootAdmin } from './root-admin-fixture.ts';
+import {
+    postProviderLink,
+    postProviderUnlink,
+    getProvidersFor,
+} from '../web-app/app/adapters/identity-providers.ts';
+
+async function adminCtx() {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    await seedRootAdmin(db);
+    return {
+        db, ctx: createRequestContext(db, await devToken()),
+    };
+}
 
 const goodRow = {
     identity_id: 'current',
@@ -42,4 +61,29 @@ test('identity_providers store retains events', async () => {
     });
     assert.equal(
         (await db.identityProviders.getAll()).length, 2);
+});
+
+test('link then read reflects the provider', async () => {
+    const { ctx } = await adminCtx();
+    await postProviderLink(ctx, 'p2', 'google', 'g-1');
+    assert.deepEqual(
+        await getProvidersFor(ctx, 'p2'), ['google']);
+});
+
+test('unlink removes it; ledger retains all', async () => {
+    const { db, ctx } = await adminCtx();
+    await postProviderLink(ctx, 'p2', 'google', 'g-1');
+    await postProviderUnlink(ctx, 'p2', 'google', 'g-1');
+    assert.equal(
+        (await db.identityProviders.getAll()).length, 2);
+    assert.deepEqual(await getProvidersFor(ctx, 'p2'), []);
+});
+
+test('an anonymous principal cannot read providers',
+async () => {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    const anon = createRequestContext(
+        db, await devToken('anonymous'));
+    await assert.rejects(() => getProvidersFor(anon, 'p2'));
 });
