@@ -525,6 +525,22 @@ export interface ClientEntity {
     status: ClientStatus;
 }
 
+export type IdentityProviderAction = 'linked' | 'unlinked';
+
+// Append-only ledger of external-IdP links for an identity. One
+// row per link/unlink; a link is current = its latest action is
+// 'linked'. `provider` names the IdP (e.g. 'google'),
+// `provider_subject` is the identity's id AT that provider. An
+// unlink is a NEW 'unlinked' row, never a splice.
+export interface IdentityProviderEntity {
+    id: Id;
+    identity_id: Id;
+    provider: string;
+    provider_subject: string;
+    action: IdentityProviderAction;
+    at: string;
+}
+
 // The person-PII display facet as a tagged union, so the
 // ABSENCE of the row (erased PII) is represented without
 // null and DECIDED AT THE CALL SITE. Presenters switch on

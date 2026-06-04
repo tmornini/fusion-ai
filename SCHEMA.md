@@ -271,6 +271,26 @@ is minted for.
 | aud | TEXT |
 | status | TEXT (`active` \| `disabled`) |
 
+### identity_providers
+
+Append-only ledger of external-IdP links
+(`HistoryEntityStore`). One row per link/unlink; a link
+is current = its latest action per
+`(identity_id, provider)` is `linked`. `provider` names
+the IdP; `provider_subject` is the identity's id at that
+IdP. An unlink is a NEW `unlinked` row, never a splice.
+`at` is the RFC-3339 zulu moment, validated at the
+storage gate.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| identity_id | TEXT (FK → identities) |
+| provider | TEXT |
+| provider_subject | TEXT |
+| action | TEXT (`linked` \| `unlinked`) |
+| at | TEXT |
+
 ### ideas
 
 | Column | Type |

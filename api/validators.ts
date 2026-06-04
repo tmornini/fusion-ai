@@ -15,6 +15,7 @@ import type {
     IdentityTokenRevocationEntity,
     IdentityTokenEntity,
     ClientEntity,
+    IdentityProviderEntity,
     RoleGrantEntity,
     MemberEntity,
     HumanMemberEntity,
@@ -802,6 +803,42 @@ export function validateClientEntity(
         jwks: pickString(body, 'jwks'),
         aud: pickString(body, 'aud'),
         status,
+    };
+}
+
+const IDENTITY_PROVIDER_BODY_KEYS: readonly string[] = [
+    'identity_id', 'provider', 'provider_subject',
+    'action', 'at',
+];
+
+export function validateIdentityProviderEntity(
+    body: Record<string, unknown>,
+): Omit<IdentityProviderEntity, 'id'> {
+    assertOnlyKeys(
+        body, IDENTITY_PROVIDER_BODY_KEYS,
+        'IdentityProviderEntity',
+    );
+    const action = pickString(body, 'action');
+    if (action !== 'linked' && action !== 'unlinked') {
+        throw new Error(
+            'invalid provider action "' + action
+            + '" on IdentityProviderEntity',
+        );
+    }
+    const at = pickString(body, 'at');
+    if (Number.isNaN(Date.parse(at))) {
+        throw new Error(
+            'invalid timestamp "' + at + '" on '
+            + 'IdentityProviderEntity',
+        );
+    }
+    return {
+        identity_id: pickString(body, 'identity_id'),
+        provider: pickString(body, 'provider'),
+        provider_subject:
+            pickString(body, 'provider_subject'),
+        action,
+        at,
     };
 }
 
