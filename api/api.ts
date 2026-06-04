@@ -25,6 +25,7 @@ import type {
     RecordEntity,
     RecordAttributeEntity,
     RoleGrantEntity,
+    IdentityTokenEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
@@ -299,6 +300,19 @@ const routes: Route[] = [
                 param(p, 0),
                 withoutId(payload) as unknown as
                     Omit<RoleGrantEntity, 'id'>,
+            ),
+    }),
+    route('identity-tokens', {
+        get: (db) => db.identityTokens.getAll(),
+    }),
+    route('identity-tokens/:id', {
+        get: (db, p) =>
+            db.identityTokens.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.identityTokens.put(
+                param(p, 0),
+                withoutId(payload) as unknown as
+                    Omit<IdentityTokenEntity, 'id'>,
             ),
     }),
     route('ideas', {

@@ -224,6 +224,32 @@ validated at the storage gate.
 | by_member_id | TEXT (FK → members) |
 | at | TEXT |
 
+### identity_tokens
+
+Append-only token-lifecycle ledger
+(`HistoryEntityStore`). One row per jti event; a
+token's current validity = the latest action for its
+`jti`. `chain_id` groups a refresh-rotation lineage:
+an issue creates a root (`parent_jti` = `''`, a
+self-disclosing empty); each rotation appends
+`rotated` for the old jti and `issued` for the new,
+sharing the `chain_id`. Presenting a rotated-away or
+`revoked` jti is replay → the whole chain is revoked.
+Distinct from `identity_token_revocations` (coarse
+per-identity log-out-everywhere); this is per-jti and
+per-chain, checked at the gate. `at` is the RFC-3339
+zulu moment, validated at the storage gate.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| jti | TEXT |
+| identity_id | TEXT (FK → identities) |
+| action | TEXT (`issued` \| `rotated` \| `revoked`) |
+| chain_id | TEXT |
+| parent_jti | TEXT |
+| at | TEXT |
+
 ### ideas
 
 | Column | Type |

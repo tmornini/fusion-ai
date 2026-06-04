@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
     validateIdentityTokenEntity,
 } from '../api/validators.ts';
+import { MemoryDbAdapter } from '../api/db-memory.ts';
 
 const goodRow = {
     jti: 'jti-1',
@@ -45,4 +46,22 @@ test('rejects an unparseable timestamp', () => {
         validateIdentityTokenEntity({
             ...goodRow, at: 'not-a-date',
         }));
+});
+
+test('identity_tokens store retains appended events',
+async () => {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    await db.identityTokens.put('t1', {
+        jti: 'jti-1', identity_id: 'current',
+        action: 'issued', chain_id: 'c1',
+        parent_jti: '', at: '2026-01-01T00:00:00.000Z',
+    });
+    await db.identityTokens.put('t2', {
+        jti: 'jti-1', identity_id: 'current',
+        action: 'rotated', chain_id: 'c1',
+        parent_jti: '', at: '2026-02-01T00:00:00.000Z',
+    });
+    const rows = await db.identityTokens.getAll();
+    assert.equal(rows.length, 2);   // append-only retained
 });
