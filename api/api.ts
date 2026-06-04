@@ -566,10 +566,15 @@ const routes: Route[] = [
         },
     }),
 
-    route('organization', {
-        get: (db) => db.organization.get(),
-        put: (db, _, payload) =>
-            db.organization.put(
+    route('organizations', {
+        get: (db) => db.organizations.getAll(),
+    }),
+    route('organizations/:id', {
+        get: (db, p) =>
+            db.organizations.getById(param(p, 0)),
+        put: (db, p, payload) =>
+            db.organizations.put(
+                param(p, 0),
                 validateOrganizationEntity(
                     withoutId(payload),
                 ),

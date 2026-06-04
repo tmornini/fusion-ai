@@ -94,13 +94,6 @@ export type EntityValidator<
     body: Record<string, unknown>,
 ) => Omit<T, 'id'>;
 
-export interface SingletonStore<
-    T extends { id: string },
-> {
-    get(): Promise<T>;
-    put(fields: Omit<T, 'id'>): Promise<T>;
-}
-
 export interface StateStore {
     getAll(): Promise<StateEntity[]>;
     getById(id: Id): Promise<StateEntity>;
@@ -207,8 +200,8 @@ export interface DbAdapter {
         EntityStore<RecordAttributeEntity>;
     flowRecords:
         EntityStore<FlowRecordEntity>;
-    organization:
-        SingletonStore<OrganizationEntity>;
+    organizations:
+        EntityStore<OrganizationEntity>;
     ideaSubmissions:
         EntityStore<
             IdeaSubmissionEntity
@@ -252,7 +245,7 @@ export const TABLE_NAMES = [
     'records',
     'record_attributes',
     'flow_records',
-    'organization',
+    'organizations',
     'idea_submissions',
     'objectives',
     'objective_revisions',

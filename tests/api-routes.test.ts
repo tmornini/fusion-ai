@@ -15,6 +15,7 @@ import {
 // store to exist too — the GET round-trips end
 // to end.
 const COLLECTION_ROUTES: readonly string[] = [
+    'organizations',
     'members',
     'ai-members',
     'role-grants',

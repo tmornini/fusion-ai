@@ -1,7 +1,6 @@
 import { TABLE_NAMES } from './db.ts';
 import type {
     DbAdapter,
-    SingletonStore as ISingletonStore,
     EntityStore as IEntityStore,
     StateStore as IStateStore,
 } from './db.ts';
@@ -44,7 +43,6 @@ import {
 import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
-import { SingletonStore } from './store-singleton.ts';
 import { StateStore } from './store-state.ts';
 import {
     validateBaselineScoreEntity,
@@ -75,6 +73,7 @@ import {
     validateIdeaSubmissionEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
+    validateOrganizationEntity,
 } from './validators.ts';
 
 export class MemoryDbAdapter implements DbAdapter {
@@ -118,8 +117,8 @@ export class MemoryDbAdapter implements DbAdapter {
         IEntityStore<RecordAttributeEntity>;
     readonly flowRecords:
         IEntityStore<FlowRecordEntity>;
-    readonly organization:
-        ISingletonStore<OrganizationEntity>;
+    readonly organizations:
+        IEntityStore<OrganizationEntity>;
     readonly ideaSubmissions:
         IEntityStore<IdeaSubmissionEntity>;
     readonly objectives: IEntityStore<Objective>;
@@ -138,9 +137,10 @@ export class MemoryDbAdapter implements DbAdapter {
             backend, 'states',
         );
         this.states = stateStore;
-        this.organization =
-            new SingletonStore<OrganizationEntity>(
-                'organization', backend,
+        this.organizations =
+            new EntityStore(
+                'organizations', backend, stateStore,
+                validateOrganizationEntity,
             );
 
         this.members =

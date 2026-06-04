@@ -1150,7 +1150,7 @@ export async function populateMockData(
                 ...idea, organization_id: DEFAULT_ORG,
             }),
         ),
-        adapter.organization.put({
+        adapter.organizations.put(DEFAULT_ORG, {
             name: 'Stark Industries',
             domain: 'acmecorp.com',
             next_billing: dt(-300, 0, 0),
@@ -6397,7 +6397,7 @@ export async function populateBootstrapData(
             'active',
             SYSTEM_MEMBER_ID,
         ),
-        adapter.organization.put({
+        adapter.organizations.put(DEFAULT_ORG, {
             name: 'Stark Industries',
             domain: 'acmecorp.com',
             next_billing: dt(-300, 0, 0),

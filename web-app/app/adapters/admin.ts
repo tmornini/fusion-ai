@@ -1,6 +1,7 @@
 import type {
     OrganizationEntity,
 } from '../../../api/types.ts';
+import { DEFAULT_ORG } from '../../../api/types.ts';
 import {
     formatDate,
 } from '../format.ts';
@@ -17,7 +18,7 @@ async function getOrganizationRow(
     ctx: RequestContext,
 ): Promise<OrganizationEntity> {
     return ctx.GET<OrganizationEntity>(
-        'organization',
+        'organizations/' + DEFAULT_ORG,
     );
 }
 
@@ -143,7 +144,7 @@ putOrganizationGeneralInfo(
 ): Promise<void> {
     const current = await getOrganizationRow(ctx);
     const { id: _id, ...rest } = current;
-    await ctx.PUT('organization', {
+    await ctx.PUT('organizations/' + DEFAULT_ORG, {
         ...rest,
         name: draft.name,
         domain: draft.domain,
