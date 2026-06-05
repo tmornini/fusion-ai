@@ -9,6 +9,8 @@ import {
     isRowShaped,
     serializeRecord,
 } from './storage-serialize.ts';
+import { bufferTx } from './backend-buffer-tx.ts';
+import { createSerializer } from './store-serializer.ts';
 
 const KEY_PREFIX = 'fusion-ai:';
 
@@ -56,30 +58,100 @@ async function decompressJson(
 export class LocalStorageBackend
     implements StorageBackend
 {
-    // Transitional stubs (A1). Real simulated transaction
-    // lands in A3; no caller exists until the stores route
-    // through it.
+    // Orders whole transactions within this backend
+    // instance — global ordering, stronger than the
+    // per-store mutex it replaces (A3). Cross-tab ordering
+    // is out of reach until the IndexedDB tier (Phase B):
+    // two tabs hold separate heaps, so this orders only the
+    // writes originating in this one.
+    readonly #serialize:
+        <R>(fn: () => Promise<R>) => Promise<R>;
+
+    constructor() {
+        this.#serialize = createSerializer();
+    }
+
+    // Simulated transaction: preload the declared tables
+    // (decompress + parse), serve every row op from the
+    // buffer, re-encode and flush the dirty tables only
+    // when `fn` resolves. A throw skips the flush, so the
+    // multi-key write is all-or-nothing within this tab.
+    // The flush itself is still not OS-atomic across keys —
+    // no platform primitive exists here, which is exactly
+    // why Phase B moves to IndexedDB.
     async transaction<R>(
-        _tables: readonly string[],
-        _mode: TxMode,
-        _fn: (tx: Tx) => Promise<R>,
+        tables: readonly string[],
+        mode: TxMode,
+        fn: (tx: Tx) => Promise<R>,
     ): Promise<R> {
-        throw new Error(
-            'transaction not yet implemented',
-        );
+        return this.#serialize(async () => {
+            const buffer =
+                new Map<string, { id: string }[]>();
+            for (const table of tables) {
+                buffer.set(table, await this.#load(table));
+            }
+            const dirty = new Set<string>();
+            const tx = bufferTx(buffer, mode, dirty);
+            const result = await fn(tx);
+            for (const table of dirty) {
+                await this.#store(
+                    table, buffer.get(table)!,
+                );
+            }
+            return result;
+        });
     }
 
     async ensureTables(
-        _tables: readonly string[],
+        tables: readonly string[],
     ): Promise<void> {
-        throw new Error(
-            'ensureTables not yet implemented',
-        );
+        for (const table of tables) {
+            if (
+                localStorage.getItem(
+                    KEY_PREFIX + table,
+                ) === null
+            ) {
+                localStorage.setItem(
+                    KEY_PREFIX + table, '[]',
+                );
+            }
+        }
     }
 
     async read<T extends { id: string }>(
         table: string,
     ): Promise<T[]> {
+        return await this.#load(table) as T[];
+    }
+
+    async write<T extends { id: string }>(
+        table: string,
+        rows: T[],
+    ): Promise<void> {
+        const serialized = rows.map(
+            row => ({
+                ...serializeRecord(
+                    row as Record<string, unknown>,
+                    table,
+                ),
+                id: row.id,
+            }),
+        );
+        await this.#store(table, serialized);
+    }
+
+    async remove(table: string): Promise<void> {
+        localStorage.removeItem(KEY_PREFIX + table);
+    }
+
+    // Preload one table into a transaction buffer: read the
+    // key, decompress a gz1 payload if present, parse, and
+    // reject a malformed table loudly. A never-created table
+    // throws MissingTableError so the caller routes the user
+    // to re-import a snapshot.
+    async #load(
+        table: string,
+    ): Promise<{ id: string }[]> {
         const raw = localStorage.getItem(
             KEY_PREFIX + table,
         );
@@ -126,23 +198,18 @@ export class LocalStorageBackend
                 + ' a valid snapshot.',
             );
         }
-        return parsed as T[];
+        return parsed as { id: string }[];
     }
 
-    async write<T extends { id: string }>(
+    // Flush one table from a transaction buffer: re-gzip the
+    // compressed tables, then setItem. Rows arrive already
+    // serialized (the buffer ran the NOT-NULL gate at put
+    // time), so this only encodes and stores.
+    async #store(
         table: string,
-        rows: T[],
+        rows: { id: string }[],
     ): Promise<void> {
-        const serialized = rows.map(
-            row => ({
-                ...serializeRecord(
-                    row as Record<string, unknown>,
-                    table,
-                ),
-                id: row.id,
-            }),
-        );
-        const json = JSON.stringify(serialized);
+        const json = JSON.stringify(rows);
         const payload = COMPRESSED_TABLES.has(table)
             ? await compressJson(json)
             : json;
@@ -166,10 +233,6 @@ export class LocalStorageBackend
             }
             throw e;
         }
-    }
-
-    async remove(table: string): Promise<void> {
-        localStorage.removeItem(KEY_PREFIX + table);
     }
 
     async clearAll(): Promise<void> {
