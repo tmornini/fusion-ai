@@ -68,7 +68,7 @@ async function nameFor(
 // derived fresh from the membership ledger (never cached). The
 // source of the token's `orgs` claim and the exchange's
 // member-check.
-async function subjectOrgs(
+export async function subjectOrgs(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<Id[]> {

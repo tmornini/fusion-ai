@@ -34,7 +34,10 @@ import type {
     WorkOrderEntity,
     MemberEntity,
 } from './types.ts';
-import { DEFAULT_ORG } from './types.ts';
+import { DEFAULT_ORG, nowUtc } from './types.ts';
+import {
+    generateCryptoSafeBase62,
+} from './crypto-safe-base62.ts';
 import {
     validateOrganizationEntity,
     validateRecordMultiPutBody,
@@ -49,6 +52,7 @@ import {
 import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
     currentRolesForInOrg,
+    currentDefaultOrgFor,
     isPermitted,
 } from './authorization.ts';
 import {
@@ -56,6 +60,7 @@ import {
     postAuthorize,
     exchangeBearerForOrg,
     tokenRevocationReason,
+    subjectOrgs,
 } from './authentication.ts';
 
 export class ApiError {
@@ -957,6 +962,88 @@ async function enumerateMyOrgs(
     );
 }
 
+// PUT/GET /identities/:id/default-org — the read/write face of
+// the identity_default_orgs ledger. Authorized by tree ownership
+// (caller === :id), not the admin role policy: an identity owns
+// its own subtree. PUT appends a NEW event only when the org
+// changes (an idempotent repeat writes nothing), and only if the
+// org is one of the identity's memberships (no dangling default).
+async function identityDefaultOrgRequest(
+    adapter: DbAdapter,
+    request: Request,
+    segments: readonly string[],
+): Promise<Response> {
+    const authResult =
+        await authenticateRequest(adapter, request);
+    if (typeof authResult === 'string') {
+        return Response.json(
+            { error: authResult },
+            { status: HTTP_UNAUTHORIZED },
+        );
+    }
+    const identityId = segments[1]!;
+    if (authResult.id !== identityId) {
+        return Response.json(
+            {
+                error: 'forbidden: an identity may act only'
+                    + ' within its own tree',
+            },
+            { status: HTTP_FORBIDDEN },
+        );
+    }
+    const rows = await adapter.identityDefaultOrgs.getAll();
+    if (request.method === 'GET') {
+        return Response.json({
+            organization_id:
+                currentDefaultOrgFor(rows, identityId),
+        });
+    }
+    if (request.method === 'PUT') {
+        let body: Record<string, unknown>;
+        try {
+            body = (await request.json()) as Record<
+                string, unknown
+            >;
+        } catch {
+            return Response.json(
+                { error: 'Invalid JSON body' },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
+        const org = typeof body.organization_id === 'string'
+            ? body.organization_id
+            : '';
+        const memberOrgs =
+            await subjectOrgs(adapter, identityId);
+        if (!memberOrgs.includes(org)) {
+            return Response.json(
+                {
+                    error: 'forbidden: org is not one of the'
+                        + " identity's memberships",
+                },
+                { status: HTTP_FORBIDDEN },
+            );
+        }
+        if (currentDefaultOrgFor(rows, identityId) === org) {
+            return new Response(null, { status: 204 });
+        }
+        await adapter.identityDefaultOrgs.put(
+            generateCryptoSafeBase62(), {
+                identity_id: identityId,
+                organization_id: org,
+                at: nowUtc(),
+            });
+        return new Response(null, { status: 204 });
+    }
+    return Response.json(
+        {
+            error: 'Method ' + request.method
+                + ' not allowed',
+        },
+        { status: 405 },
+    );
+}
+
 export async function handleRequest(
     adapter: DbAdapter,
     request: Request,
@@ -973,6 +1060,13 @@ export async function handleRequest(
     if (pathSegments[0] === 'organizations'
         && pathSegments.length >= 3) {
         return facadeRequest(adapter, request, pathSegments);
+    }
+    if (pathSegments[0] === 'identities'
+        && pathSegments.length === 3
+        && pathSegments[2] === 'default-org') {
+        return identityDefaultOrgRequest(
+            adapter, request, pathSegments,
+        );
     }
     const match = matchRoute(pathSegments);
 
