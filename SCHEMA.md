@@ -537,8 +537,8 @@ partitions them.
 
 Tenant-root table — one row per organization. The empty
 bootstrap (`populateBootstrapData`) seeds only the default
-org (`id = '1'`, Stark Industries, the `DEFAULT_ORG`
-constant); the demo mock-data seed (`populateMockData`)
+org (`id = '1'`, Stark Industries); the demo mock-data
+seed (`populateMockData`)
 plants TWO orgs — `'1'` Stark Industries and `'2'` Wayne
 Enterprises. Every org-owned entity carries a NOT-NULL
 `organization_id` FK to this table; pure join tables derive
