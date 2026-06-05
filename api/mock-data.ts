@@ -800,6 +800,12 @@ export async function populateMockData(
                             identity_id: member.id,
                             at: MOCK_SEED_TIMESTAMP,
                         })),
+                adapter.identityDefaultOrgs.put(
+                    'seed-default-org-' + member.id, {
+                        identity_id: member.id,
+                        organization_id: orgs[0]!,
+                        at: MOCK_SEED_TIMESTAMP,
+                    }),
                 adapter.humanMembers.put(member.id, {
                     ...detail,
                     strengths:
@@ -6495,6 +6501,12 @@ export async function populateBootstrapData(
             'bootstrap-membership-current', {
                 organization_id: DEFAULT_ORG,
                 identity_id: 'current',
+                at: MOCK_SEED_TIMESTAMP,
+            }),
+        adapter.identityDefaultOrgs.put(
+            'bootstrap-default-org-current', {
+                identity_id: 'current',
+                organization_id: DEFAULT_ORG,
                 at: MOCK_SEED_TIMESTAMP,
             }),
         adapter.identities.put('current', {
