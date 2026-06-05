@@ -4,6 +4,7 @@ import {
     ACTIVE_ORG_KEY,
 } from './adapters/org-session.ts';
 import { writePreference } from './adapters/preferences.ts';
+import { showToast } from './toast.ts';
 
 interface OrgOption {
     readonly id: string;
@@ -26,9 +27,18 @@ export function orgSwitcherHtml(
 
 // Persist the chosen org and re-scope via a FULL reload: boot
 // re-exchanges a scoped token from the persisted id, so no
-// mixed-org view can survive the switch.
+// mixed-org view can survive the switch. Reload only on a
+// confirmed persist — a false return means the id never
+// landed, so a reload would silently keep the prior org.
 function switchToOrg(org: string): void {
-    writePreference(ACTIVE_ORG_KEY, org);
+    if (!writePreference(ACTIVE_ORG_KEY, org)) {
+        showToast(
+            'Could not switch organization —'
+            + ' please try again.',
+            'error',
+        );
+        return;
+    }
     location.reload();
 }
 

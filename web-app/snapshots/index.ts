@@ -167,10 +167,24 @@ export async function init(
             </button>`);
         $button(
             '#credential-copy-all-btn', document,
-        )?.addEventListener('click', () => {
-            void postClipboardCopy(
-                credentialsCopyText(creds),
-            );
+        )?.addEventListener('click', async () => {
+            try {
+                await postClipboardCopy(
+                    credentialsCopyText(creds),
+                );
+            } catch (err) {
+                log.error(
+                    'clipboard copy failed',
+                    'snapshots',
+                    err,
+                );
+                showToast(
+                    'Copy failed — select and copy'
+                    + ' the credentials manually',
+                    'error',
+                );
+                return;
+            }
             showToast('Credentials copied', 'success');
         });
         $button(
