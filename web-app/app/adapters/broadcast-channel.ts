@@ -17,6 +17,14 @@ function getChannel(): BroadcastChannel | undefined {
     if (typeof window === 'undefined') return undefined;
     if (channel === undefined) {
         channel = new BroadcastChannel(CHANNEL_NAME);
+        // A test that shims `window` could reach here under
+        // node --test, where BroadcastChannel is a ref'd
+        // handle that would keep the runner from exiting.
+        // Node's channel exposes unref(); the browser's does
+        // not, so this is a no-op in a real tab.
+        (channel as unknown as {
+            unref?: () => void;
+        }).unref?.();
     }
     return channel;
 }
