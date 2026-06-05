@@ -471,6 +471,18 @@ export interface IdentityTokenRevocationEntity {
     at: string;
 }
 
+// An identity's chosen default org. Append-only: a change is
+// a NEW row; the current default is the LATEST `at` per
+// identity, and no row means unset (never a nullable column —
+// an identity is born org-less). The chosen org must be one
+// of the identity's memberships, fenced at the write.
+export interface IdentityDefaultOrgEntity {
+    id: Id;
+    identity_id: Id;
+    organization_id: Id;
+    at: string;
+}
+
 export type RoleGrantAction = 'granted' | 'revoked';
 
 // Append-only role-assignment ledger event. One row per
