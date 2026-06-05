@@ -21,7 +21,12 @@ export type {
 async function getOrganizationRow(
     ctx: RequestContext,
 ): Promise<OrganizationEntity> {
-    return fetchOrganization(ctx, DEFAULT_ORG);
+    // The active org — the tenant the session is scoped to —
+    // so the org page reflects an org switch. DEFAULT_ORG is
+    // the explicit bridge for a flat (un-exchanged) token.
+    return fetchOrganization(
+        ctx, ctx.identity.organization ?? DEFAULT_ORG,
+    );
 }
 
 export class Organization {
@@ -146,9 +151,10 @@ putOrganizationGeneralInfo(
 ): Promise<void> {
     const current = await getOrganizationRow(ctx);
     const { id: _id, ...rest } = current;
-    await putOrganization(ctx, DEFAULT_ORG, {
-        ...rest,
-        name: draft.name,
-        domain: draft.domain,
-    });
+    await putOrganization(
+        ctx, ctx.identity.organization ?? DEFAULT_ORG, {
+            ...rest,
+            name: draft.name,
+            domain: draft.domain,
+        });
 }
