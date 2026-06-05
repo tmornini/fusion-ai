@@ -12,6 +12,7 @@ import {
     getHasAnyHumanMembers,
     nowUtc,
     getUrlParam,
+    postClipboardCopy,
 } from '../app/adapters/index.ts';
 import {
     $, $input, $button, createElement,
@@ -33,6 +34,7 @@ import {
 } from '../app/core.ts';
 import {
     credentialRevealPanel,
+    credentialsCopyText,
 } from '../app/presenters/credential-reveal.ts';
 import type {
     SeededCredentials,
@@ -120,9 +122,9 @@ export async function init(
         // error toast names this
         // explicitly so the half-state
         // isn't a silent surprise.
-        let admin: SeededCredentials;
+        let creds: SeededCredentials;
         try {
-            admin = await action();
+            creds = await action();
         } catch (err) {
             log.error(
                 label
@@ -146,23 +148,31 @@ export async function init(
                 originalText;
             return;
         }
-        revealThenNavigate(admin);
+        revealThenNavigate(creds);
     }
 
-    // After wipe-and-load the seeded admin password exists only
-    // in this response — surface it once, then navigate only
-    // when the user acknowledges they have saved it.
+    // After wipe-and-load the seeded demo passwords exist only
+    // in this response — surface them once, then navigate only
+    // when the user acknowledges they have saved them.
     function revealThenNavigate(
-        admin: SeededCredentials,
+        creds: SeededCredentials,
     ): void {
         const panel = $('#snapshots-content', document);
         if (!panel) return;
         setHtml(panel, html`
-            ${credentialRevealPanel(admin)}
+            ${credentialRevealPanel(creds)}
             <button class="btn btn-primary"
                 id="credential-continue-btn">
                 I have saved it — continue
             </button>`);
+        $button(
+            '#credential-copy-all-btn', document,
+        )?.addEventListener('click', () => {
+            void postClipboardCopy(
+                credentialsCopyText(creds),
+            );
+            showToast('Credentials copied', 'success');
+        });
         $button(
             '#credential-continue-btn', document,
         )?.addEventListener(

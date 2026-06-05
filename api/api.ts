@@ -752,6 +752,10 @@ const routes: Route[] = [
         delete: (db) => db.deleteSchema(),
         post: (db) => db.createSchema(),
     }),
+    // DEMO-ONLY: these seed routes return SeededCredentials —
+    // freshly-minted plaintext sign-ins surfaced in-band, once.
+    // Only PBKDF2 hashes are stored; the in-band plaintext
+    // return is deleted at the server tier.
     route('snapshots/mock-data', {
         post: async (db) => {
             const { populateMockData } =
