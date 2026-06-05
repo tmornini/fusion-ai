@@ -9,13 +9,6 @@ export type MemberId = Id;
 
 export type ModelId = Id;
 
-// The single tenant every pre-multitenancy entity belongs
-// to. Seeds and the single-org web-app writers stamp it
-// explicitly; once a writer moves to an /organizations
-// facade route, the org-guard decorator stamps instead. A
-// real per-tenant value arrives with a second organization.
-export const DEFAULT_ORG: Id = '1';
-
 export interface ProviderModel {
     id: ModelId;
     provider: string;

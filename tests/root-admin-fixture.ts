@@ -1,5 +1,4 @@
 import type { DbAdapter } from '../api/db.ts';
-import { DEFAULT_ORG } from '../api/types.ts';
 
 // Seed the demo `current` identity as a root admin directly at
 // the storage layer (below the gate): the admin role grant AND
@@ -12,7 +11,7 @@ export async function seedRootAdmin(
     db: DbAdapter,
 ): Promise<void> {
     await db.roleGrants.put('test-role-current-admin', {
-        organization_id: DEFAULT_ORG,
+        organization_id: '1',
         identity_id: 'current',
         role: 'admin',
         action: 'granted',
@@ -20,7 +19,7 @@ export async function seedRootAdmin(
         at: '2020-01-01T00:00:00.000Z',
     });
     await db.memberships.put('test-membership-current', {
-        organization_id: DEFAULT_ORG,
+        organization_id: '1',
         identity_id: 'current',
         at: '2020-01-01T00:00:00.000Z',
     });

@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { DEFAULT_ORG } from '../api/types.ts';
 import { devToken } from './token-fixtures.ts';
 
 const BASE = 'http://localhost';
@@ -63,11 +62,11 @@ async () => {
     const db = new MemoryDbAdapter();
     await db.createSchema();
     await db.memberships.put('m', {
-        organization_id: DEFAULT_ORG, identity_id: 'current',
+        organization_id: '1', identity_id: 'current',
         at: '2026-06-04T00:00:00.000Z',
     });
     await db.roleGrants.put('g', {
-        organization_id: DEFAULT_ORG, identity_id: 'current',
+        organization_id: '1', identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system',
         at: '2026-06-04T00:00:00.000Z',
