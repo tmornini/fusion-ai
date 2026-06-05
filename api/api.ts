@@ -44,7 +44,6 @@ import {
     verifyAccessToken,
     principalFromToken,
     ANONYMOUS_ID,
-    revokedBeforeSeconds,
     type Principal,
 } from './access-token.ts';
 import { orgScopedAdapter } from './db-org-scoped.ts';
@@ -52,11 +51,11 @@ import {
     currentRolesForInOrg,
     isPermitted,
 } from './authorization.ts';
-import { isTokenRevoked } from './identity-tokens.ts';
 import {
     postToken,
     postAuthorize,
     exchangeBearerForOrg,
+    tokenRevocationReason,
 } from './authentication.ts';
 
 export class ApiError {
@@ -859,19 +858,12 @@ async function authenticateRequest(
     if (result.claims.sub === ANONYMOUS_ID) {
         return 'anonymous principal not authenticated';
     }
-    const rows =
-        await adapter.identityTokenRevocations.getAll();
-    const revokedBefore = revokedBeforeSeconds(
-        rows, result.claims.sub,
+    const revoked = await tokenRevocationReason(
+        adapter, result.claims.sub,
+        result.claims.iat, result.claims.jti,
     );
-    if (revokedBefore !== null
-        && result.claims.iat < revokedBefore) {
-        return 'token revoked';
-    }
-    const tokenLedger =
-        await adapter.identityTokens.getAll();
-    if (isTokenRevoked(tokenLedger, result.claims.jti)) {
-        return 'token chain revoked';
+    if (revoked !== null) {
+        return revoked;
     }
     return principalFromToken(token);
 }
