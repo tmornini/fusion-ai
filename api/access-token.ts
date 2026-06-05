@@ -17,6 +17,10 @@ export interface Principal {
     // SP-2 tenant scope: set once from the token's `org`
     // claim; absent for an unscoped single-org principal.
     readonly organization?: Id;
+    // The reachable set, from the token's `orgs` claim — every
+    // org this identity is a member of (enumerate without a
+    // round-trip). The active `organization` is one of these.
+    readonly organizations?: readonly Id[];
 }
 
 // The JWT claim contract. `aud` names the origin the token is
@@ -28,7 +32,9 @@ export interface Principal {
 // `act` is the RFC 8693 delegation actor (token-exchange shapes
 // sub = the subject and act.sub = the acting party). `org` is
 // the SP-2 tenant scope, present only on an org-exchanged token;
-// its absence is an unscoped single-org caller.
+// its absence is an unscoped single-org caller. `orgs` is the
+// reachable set — every org the subject is a member of, from
+// the membership ledger at mint time.
 export interface AccessTokenClaims {
     readonly sub: Id;
     readonly roles: readonly string[];
@@ -37,6 +43,7 @@ export interface AccessTokenClaims {
     readonly cnf?: { readonly jkt: string };
     readonly act?: { readonly sub: Id };
     readonly org?: Id;
+    readonly orgs?: readonly Id[];
     readonly iat: number;
     readonly nbf: number;
     readonly exp: number;
@@ -151,6 +158,7 @@ export interface MintInput {
     readonly jti: string;
     readonly act?: { readonly sub: Id };
     readonly org?: Id;
+    readonly orgs?: readonly Id[];
 }
 
 export async function mintAccessToken(
@@ -167,6 +175,7 @@ export async function mintAccessToken(
         jti: input.jti,
         ...(input.act ? { act: input.act } : {}),
         ...(input.org ? { org: input.org } : {}),
+        ...(input.orgs ? { orgs: input.orgs } : {}),
     };
     const head =
         base64UrlEncode(JSON.stringify(HEADER));
@@ -195,6 +204,12 @@ function hasClaimShape(
     }
     if (c.org !== undefined && typeof c.org !== 'string') {
         return false;
+    }
+    if (c.orgs !== undefined) {
+        if (!Array.isArray(c.orgs)
+            || c.orgs.some(o => typeof o !== 'string')) {
+            return false;
+        }
     }
     return typeof c.sub === 'string'
         && Array.isArray(c.roles)
@@ -233,6 +248,8 @@ export function principalFromToken(
         roles: claims.roles,
         name: claims.name,
         ...(claims.org ? { organization: claims.org } : {}),
+        ...(claims.orgs
+            ? { organizations: claims.orgs } : {}),
     };
 }
 
