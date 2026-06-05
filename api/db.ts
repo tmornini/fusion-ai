@@ -287,6 +287,14 @@ export interface DbAdapter extends DbStores {
     exportSnapshot(): Promise<string>;
     importSnapshot(json: string): Promise<void>;
     simulateLatency(): Promise<void>;
+    // Run `fn` inside one transaction. The view it receives
+    // exposes the same stores bound to the open tx, so every
+    // op joins it — GET-modify-PUT and multi-PUT commit
+    // atomically. A nested view.transaction throws.
+    transaction<R>(
+        tables: readonly string[],
+        fn: (view: DbAdapter) => Promise<R>,
+    ): Promise<R>;
 }
 
 export const TABLE_NAMES = [

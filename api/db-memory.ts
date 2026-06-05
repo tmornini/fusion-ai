@@ -1,9 +1,14 @@
-import { TABLE_NAMES, backendRunner } from './db.ts';
+import {
+    TABLE_NAMES,
+    backendRunner,
+    ambientRunner,
+} from './db.ts';
 import type {
     DbAdapter,
     DbStores,
     EntityStore as IEntityStore,
     StateStore as IStateStore,
+    Tx,
     TxRunner,
 } from './db.ts';
 import type {
@@ -285,6 +290,41 @@ export class MemoryDbAdapter implements DbAdapter {
                     run,
                     validateActualScoreEntity,
                 ),
+        };
+    }
+
+    async transaction<R>(
+        tables: readonly string[],
+        fn: (view: DbAdapter) => Promise<R>,
+    ): Promise<R> {
+        return this.#backend.transaction(
+            tables, 'readwrite',
+            (tx) => fn(this.#viewForTx(tx)),
+        );
+    }
+
+    // A DbAdapter whose 32 stores are bound to the open tx
+    // (ambientRunner joins it), so every op runs in one
+    // transaction. Lifecycle methods delegate to the parent;
+    // a nested transaction throws.
+    #viewForTx(tx: Tx): DbAdapter {
+        return {
+            ...this.#buildStores(ambientRunner(tx)),
+            initialize: () => this.initialize(),
+            close: () => this.close(),
+            flush: () => this.flush(),
+            deleteSchema: () => this.deleteSchema(),
+            hasSchema: () => this.hasSchema(),
+            createSchema: () => this.createSchema(),
+            exportSnapshot: () => this.exportSnapshot(),
+            importSnapshot: (json) =>
+                this.importSnapshot(json),
+            simulateLatency: () => this.simulateLatency(),
+            transaction: () => {
+                throw new Error(
+                    'Nested transaction is not supported.',
+                );
+            },
         };
     }
 

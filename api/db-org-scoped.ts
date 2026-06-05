@@ -42,6 +42,14 @@ export function orgScopedAdapter(
         importSnapshot: (json) =>
             base.importSnapshot(json),
         simulateLatency: () => base.simulateLatency(),
+        // Transitional stub (A9). A10 re-scopes the open
+        // view to `org` so the fence rides inside the tx.
+        transaction: () => {
+            throw new Error(
+                'org-scoped transaction is not yet'
+                + ' implemented.',
+            );
+        },
 
         // Global identity/auth spine — untouched.
         members: base.members,
