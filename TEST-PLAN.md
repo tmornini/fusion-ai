@@ -2182,6 +2182,19 @@ panel, and the property-test gate.
   PASS: lifecycle state reads `archived`; the list page
   excludes the row from active counts.
 
+## K. IndexedDB Persistence Tier
+
+Backend: `api/backend-indexeddb.ts`. No Node test (no fake-IDB, zero devDeps) — verified in-browser via the Chrome MCP. Serve: `TMPDIR=/tmp/claude ./serve 8080`.
+
+- [ ] **K1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 33 object stores (32 tables + `__schema__`).
+- [ ] **K2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
+- [ ] **K3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and table rows persist; the dashboard renders the seeded org.
+- [ ] **K4** Persistence across reload. Reload the dashboard. PASS: it renders the seeded data without re-routing to Snapshots.
+- [ ] **K5** Cross-tab append survives (lost-update fix). From two connections (two tabs), append distinct `states` rows concurrently. PASS: both rows survive (count grows by 2) — the old localStorage clobber is gone.
+- [ ] **K6** Cross-tab refresh. Commit a write in one of two open tabs. PASS: a `BroadcastChannel('fusion-ai:data')` message with the touched tables reaches the other tab; the poster is not echoed (no self-refresh).
+- [ ] **K7** Atomic import. The clear+put import runs in one `IDBTransaction`. PASS: a rejected import leaves prior data intact (no corruption).
+- [ ] **K8** Quota pre-flight. PASS: an oversize snapshot rejects with `SnapshotTooLargeError` before any write (also `tests/snapshot-quota.test.ts`).
+
 ## J. Teardown
 
 - [ ] **J1** Stop the HTTP server started in A3. PASS: process terminates.

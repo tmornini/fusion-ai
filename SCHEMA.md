@@ -7,12 +7,13 @@
 > Regenerate with `./generate-schema-svg` after a schema
 > change.
 
-The tables stored in localStorage as JSON arrays are listed
-in `api/db.ts` as `TABLE_NAMES` (the authoritative count).
-Each table is keyed as
-`fusion-ai:tableName`. All rows have a text `id` primary
-key. Column types: TEXT (string), INTEGER (number), REAL
-(float), BOOLEAN (see below). JSON columns store stringified
+The tables are listed in `api/db.ts` as `TABLE_NAMES` (the
+authoritative count). Each table is an IndexedDB object store
+(`keyPath: 'id'`) in the `fusion-ai` database; the simulated
+backends key the same tables as `fusion-ai:tableName`. All
+rows have a text `id` primary key. Column types: TEXT
+(string), INTEGER (number), REAL (float), BOOLEAN (see
+below). JSON columns store stringified
 arrays or objects. All columns are NOT NULL — entity
 validation on creation ensures every field is present.
 
