@@ -168,16 +168,6 @@ export interface StorageBackend {
     ): Promise<void>;
     clearAll(): Promise<void>;
     list(): Promise<string[]>;
-    // Transitional whole-table ops, removed in A8 once
-    // every store routes through `transaction`.
-    read<T extends { id: string }>(
-        table: string,
-    ): Promise<T[]>;
-    write<T extends { id: string }>(
-        table: string,
-        rows: T[],
-    ): Promise<void>;
-    remove(table: string): Promise<void>;
 }
 
 // How a store reaches storage. Standalone, a store opens a

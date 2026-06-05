@@ -7,7 +7,6 @@ import {
 } from './db.ts';
 import {
     isRowShaped,
-    serializeRecord,
 } from './storage-serialize.ts';
 import { bufferTx } from './backend-buffer-tx.ts';
 import { createSerializer } from './store-serializer.ts';
@@ -116,32 +115,6 @@ export class LocalStorageBackend
                 );
             }
         }
-    }
-
-    async read<T extends { id: string }>(
-        table: string,
-    ): Promise<T[]> {
-        return await this.#load(table) as T[];
-    }
-
-    async write<T extends { id: string }>(
-        table: string,
-        rows: T[],
-    ): Promise<void> {
-        const serialized = rows.map(
-            row => ({
-                ...serializeRecord(
-                    row as Record<string, unknown>,
-                    table,
-                ),
-                id: row.id,
-            }),
-        );
-        await this.#store(table, serialized);
-    }
-
-    async remove(table: string): Promise<void> {
-        localStorage.removeItem(KEY_PREFIX + table);
     }
 
     // Preload one table into a transaction buffer: read the
