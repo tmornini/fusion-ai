@@ -757,6 +757,12 @@ export async function populateMockData(
                 adapter.members.put(member.id, {
                     type: 'human',
                 }),
+                adapter.memberships.put(
+                    'seed-membership-' + member.id, {
+                        organization_id: DEFAULT_ORG,
+                        identity_id: member.id,
+                        at: MOCK_SEED_TIMESTAMP,
+                    }),
                 adapter.humanMembers.put(member.id, {
                     ...detail,
                     strengths:
@@ -6115,6 +6121,12 @@ export async function populateMockData(
                 adapter.members.put(m.id, {
                     type: 'ai',
                 }),
+                adapter.memberships.put(
+                    'seed-membership-' + m.id, {
+                        organization_id: DEFAULT_ORG,
+                        identity_id: m.id,
+                        at: MOCK_SEED_TIMESTAMP,
+                    }),
                 adapter.aiMembers.put(m.id, detail),
                 adapter.identities.put(m.id, {
                     kind: 'service',
@@ -6359,6 +6371,12 @@ export async function populateBootstrapData(
         adapter.members.put('current', {
             type: 'human',
         }),
+        adapter.memberships.put(
+            'bootstrap-membership-current', {
+                organization_id: DEFAULT_ORG,
+                identity_id: 'current',
+                at: MOCK_SEED_TIMESTAMP,
+            }),
         adapter.identities.put('current', {
             kind: 'person',
         }),
