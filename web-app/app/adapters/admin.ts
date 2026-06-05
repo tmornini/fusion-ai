@@ -3,6 +3,10 @@ import type {
 } from '../../../api/types.ts';
 import { DEFAULT_ORG } from '../../../api/types.ts';
 import {
+    getOrganization as fetchOrganization,
+    putOrganization,
+} from './organizations.ts';
+import {
     formatDate,
 } from '../format.ts';
 import type { RequestContext } from './shared.ts';
@@ -17,9 +21,7 @@ export type {
 async function getOrganizationRow(
     ctx: RequestContext,
 ): Promise<OrganizationEntity> {
-    return ctx.GET<OrganizationEntity>(
-        'organizations/' + DEFAULT_ORG,
-    );
+    return fetchOrganization(ctx, DEFAULT_ORG);
 }
 
 export class Organization {
@@ -144,7 +146,7 @@ putOrganizationGeneralInfo(
 ): Promise<void> {
     const current = await getOrganizationRow(ctx);
     const { id: _id, ...rest } = current;
-    await ctx.PUT('organizations/' + DEFAULT_ORG, {
+    await putOrganization(ctx, DEFAULT_ORG, {
         ...rest,
         name: draft.name,
         domain: draft.domain,
