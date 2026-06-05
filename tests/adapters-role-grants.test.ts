@@ -8,7 +8,7 @@ import {
 import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken } from './token-fixtures.ts';
+import { orgToken } from './token-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import {
     postRoleGrant,
@@ -90,7 +90,7 @@ async function adminCtx() {
     const db = new MemoryDbAdapter();
     await db.createSchema();
     await seedRootAdmin(db);   // current may write grants
-    return { db, ctx: createRequestContext(db, await devToken()) };
+    return { db, ctx: createRequestContext(db, await orgToken()) };
 }
 
 test('grant then read reflects the role', async () => {

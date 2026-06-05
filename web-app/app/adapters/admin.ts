@@ -1,7 +1,6 @@
 import type {
     OrganizationEntity,
 } from '../../../api/types.ts';
-import { DEFAULT_ORG } from '../../../api/types.ts';
 import {
     getOrganization as fetchOrganization,
     putOrganization,
@@ -9,7 +8,10 @@ import {
 import {
     formatDate,
 } from '../format.ts';
-import type { RequestContext } from './shared.ts';
+import {
+    activeOrg,
+    type RequestContext,
+} from './shared.ts';
 import { getProjects } from './projects.ts';
 import { getIdeas } from './ideas.ts';
 import { getHumanMembers } from './members.ts';
@@ -22,11 +24,9 @@ async function getOrganizationRow(
     ctx: RequestContext,
 ): Promise<OrganizationEntity> {
     // The active org — the tenant the session is scoped to —
-    // so the org page reflects an org switch. DEFAULT_ORG is
-    // the explicit bridge for a flat (un-exchanged) token.
-    return fetchOrganization(
-        ctx, ctx.identity.organization ?? DEFAULT_ORG,
-    );
+    // so the org page reflects an org switch. The session token
+    // always carries it post-boot (activeOrg crashes otherwise).
+    return fetchOrganization(ctx, activeOrg(ctx));
 }
 
 export class Organization {
@@ -152,7 +152,7 @@ putOrganizationGeneralInfo(
     const current = await getOrganizationRow(ctx);
     const { id: _id, ...rest } = current;
     await putOrganization(
-        ctx, ctx.identity.organization ?? DEFAULT_ORG, {
+        ctx, activeOrg(ctx), {
             ...rest,
             name: draft.name,
             domain: draft.domain,
