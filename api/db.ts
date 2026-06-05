@@ -170,6 +170,29 @@ export interface StorageBackend {
     remove(table: string): Promise<void>;
 }
 
+// How a store reaches storage. Standalone, a store opens a
+// fresh single-op transaction via `backendRunner`; joined
+// to an open view, it returns the open `tx` via
+// `ambientRunner` — no AsyncLocalStorage, no ambient global,
+// just the runner the store was handed at construction.
+export type TxRunner = <R>(
+    tables: readonly string[],
+    mode: TxMode,
+    fn: (tx: Tx) => Promise<R>,
+) => Promise<R>;
+
+export const backendRunner = (
+    backend: StorageBackend,
+): TxRunner =>
+    (tables, mode, fn) =>
+        backend.transaction(tables, mode, fn);
+
+// Join the open tx: the declared tables/mode are the open
+// transaction's already, so this ignores them and runs `fn`
+// against the same handle.
+export const ambientRunner = (tx: Tx): TxRunner =>
+    (_tables, _mode, fn) => fn(tx);
+
 export interface DbAdapter {
     initialize(): Promise<void>;
     close(): Promise<void>;
