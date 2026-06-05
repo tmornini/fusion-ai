@@ -115,6 +115,25 @@ async () => {
     }
 });
 
+test('every flow_records row joins same-org flow and'
+    + ' record', async () => {
+    const { db } = await seed();
+    const flowOrg = new Map(
+        (await db.flows.getAll())
+            .map(f => [f.id, f.organization_id]));
+    const recordOrg = new Map(
+        (await db.records.getAll())
+            .map(r => [r.id, r.organization_id]));
+    const bindings = await db.flowRecords.getAll();
+    assert.ok(bindings.length > 0, 'bindings exist');
+    for (const b of bindings) {
+        assert.equal(
+            flowOrg.get(b.flow_id),
+            recordOrg.get(b.record_id),
+            `binding ${b.id} crosses orgs`);
+    }
+});
+
 test('every seeded human gets a verifiable password',
 async () => {
     const { db, creds } = await seed();

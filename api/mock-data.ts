@@ -2890,11 +2890,12 @@ export async function populateMockData(
         },
     ];
 
-    // Flow ↔ Record bindings. Customer Profile is
-    // bound to two flows (Customer Onboarding and
-    // Lead-to-Close); Project Brief is bound to
-    // Fusion Flow. The Layout Test flow is left
-    // unbound — it exists to exercise Auto Layout.
+    // Flow ↔ Record bindings. Customer Profile (org '1')
+    // is bound to two flows (Customer Onboarding and
+    // Lead-to-Close); Project Brief (org '2') is bound to
+    // the org-'2' flow so every binding stays within one
+    // org. The Layout Test flow is left unbound — it
+    // exists to exercise Auto Layout.
     const mockFlowRecords: FlowRecordEntity[] = [
         {
             id: 'frb01CustOnbCustProfA1',
@@ -2910,9 +2911,12 @@ export async function populateMockData(
             at: wfTimestamp,
         },
         {
+            // Project Brief lives in org '2'
+            // (assignOrg(index 1)), so it binds to the
+            // org-'2' flow — flowOrg === recordOrg keeps
+            // the binding visible behind the org fence.
             id: 'frb03Fus10nPr0jBri3f03',
-            flow_id:
-                'E2BnBlZyrriqsQYkmS4usb',
+            flow_id: 'seed-flow-org2',
             record_id: projectBriefRecordId,
             at: wfTimestamp,
         },
