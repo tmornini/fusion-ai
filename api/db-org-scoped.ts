@@ -42,14 +42,16 @@ export function orgScopedAdapter(
         importSnapshot: (json) =>
             base.importSnapshot(json),
         simulateLatency: () => base.simulateLatency(),
-        // Transitional stub (A9). A10 re-scopes the open
-        // view to `org` so the fence rides inside the tx.
-        transaction: () => {
-            throw new Error(
-                'org-scoped transaction is not yet'
-                + ' implemented.',
-            );
-        },
+        // Re-scope the open view to `org` so the fence rides
+        // INSIDE the tx: OrgScopedEntityStore's
+        // #assertWritable read and its inner put now run in
+        // one transaction, closing the TOCTOU for free — no
+        // OrgScopedEntityStore change needed.
+        transaction: (tables, fn) =>
+            base.transaction(
+                tables,
+                (view) => fn(orgScopedAdapter(view, org)),
+            ),
 
         // Global identity/auth spine — untouched.
         members: base.members,
