@@ -6,6 +6,7 @@ import { HistoryEntityStore }
 import { MemoryStorageBackend }
     from '../api/backend-memory.ts';
 import { StateStore } from '../api/store-state.ts';
+import { backendRunner } from '../api/db.ts';
 
 interface Thing { id: string; n: number }
 
@@ -29,7 +30,7 @@ class CountingBackend extends MemoryStorageBackend {
 
 test('EntityStore.put invokes the validator', async () => {
     const backend = await primedBackend();
-    const stateStore = new StateStore(backend, 'states');
+    const stateStore = new StateStore(backendRunner(backend), 'states');
     let seen: Record<string, unknown> | null = null;
     const store = new EntityStore<Thing>(
         'things', backend, stateStore,
@@ -46,7 +47,7 @@ test('EntityStore.put rethrows validator errors',
     async () => {
         const backend = await primedBackend();
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
             () => { throw new Error('nope'); },
@@ -61,7 +62,7 @@ test('EntityStore.put writes the validator output',
     async () => {
         const backend = await primedBackend();
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
             (b) => ({
@@ -78,7 +79,7 @@ test('EntityStore.put without validator passes through',
     async () => {
         const backend = await primedBackend();
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
         );
@@ -147,7 +148,7 @@ test(
         await backend.write('things', []);
         await backend.write('states', []);
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
         );
@@ -173,7 +174,7 @@ test(
     async () => {
         const backend = await primedBackend();
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
         );
@@ -199,7 +200,7 @@ test(
         await backend.write('things', []);
         await backend.write('states', []);
         const stateStore =
-            new StateStore(backend, 'states');
+            new StateStore(backendRunner(backend), 'states');
         const store = new EntityStore<Thing>(
             'things', backend, stateStore,
             (b) => {

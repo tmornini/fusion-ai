@@ -115,6 +115,16 @@ export interface StateStore {
     allFor(entityId: Id): Promise<StateEntity[]>;
     deletedIds(): Promise<Set<Id>>;
     isDeleted(id: Id): Promise<boolean>;
+    // The *In twins read the log within an already-open tx,
+    // so a joined reader scans states in the same
+    // transaction that reads the entity row.
+    currentForIn(
+        tx: Tx,
+        entityId: Id,
+    ): Promise<StateEntity | null>;
+    allForIn(tx: Tx, entityId: Id): Promise<StateEntity[]>;
+    deletedIdsIn(tx: Tx): Promise<Set<Id>>;
+    isDeletedIn(tx: Tx, id: Id): Promise<boolean>;
 }
 
 export type TxMode = 'readonly' | 'readwrite';

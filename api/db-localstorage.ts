@@ -1,4 +1,4 @@
-import { TABLE_NAMES } from './db.ts';
+import { TABLE_NAMES, backendRunner } from './db.ts';
 import type {
     DbAdapter,
     EntityStore as IEntityStore,
@@ -146,7 +146,7 @@ export class LocalStorageDbAdapter implements DbAdapter {
         this.#backend = new LocalStorageBackend();
         const backend = this.#backend;
         const stateStore = new StateStore(
-            backend, 'states',
+            backendRunner(backend), 'states',
         );
         this.states = stateStore;
         this.organizations =

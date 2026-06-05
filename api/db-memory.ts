@@ -1,4 +1,4 @@
-import { TABLE_NAMES } from './db.ts';
+import { TABLE_NAMES, backendRunner } from './db.ts';
 import type {
     DbAdapter,
     EntityStore as IEntityStore,
@@ -142,7 +142,7 @@ export class MemoryDbAdapter implements DbAdapter {
         this.#backend = new MemoryStorageBackend();
         const backend = this.#backend;
         const stateStore = new StateStore(
-            backend, 'states',
+            backendRunner(backend), 'states',
         );
         this.states = stateStore;
         this.organizations =
