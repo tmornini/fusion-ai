@@ -93,9 +93,21 @@ test('PUT the same org twice appends one event', async () => {
     assert.equal(rows.length, 1);
 });
 
-test('GET default-org is null when unset', async () => {
+test('GET resolves to the primary membership when unset',
+async () => {
     const db = await freshDb();
     await seedMembership(db, 'current', '1');
+    const token = await devToken();
+    const got = await handleRequest(
+        db, getDefaultOrg(token, 'current'));
+    assert.equal(got.status, 200);
+    const body = await got.json() as
+        { organization_id: string | null };
+    assert.equal(body.organization_id, '1');
+});
+
+test('GET is null for an org-less identity', async () => {
+    const db = await freshDb();
     const token = await devToken();
     const got = await handleRequest(
         db, getDefaultOrg(token, 'current'));

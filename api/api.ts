@@ -989,11 +989,10 @@ async function identityDefaultOrgRequest(
             { status: HTTP_FORBIDDEN },
         );
     }
-    const rows = await adapter.identityDefaultOrgs.getAll();
     if (request.method === 'GET') {
         return Response.json({
             organization_id:
-                currentDefaultOrgFor(rows, identityId),
+                await identityDefaultOrg(adapter, identityId),
         });
     }
     if (request.method === 'PUT') {
@@ -1022,6 +1021,8 @@ async function identityDefaultOrgRequest(
                 { status: HTTP_FORBIDDEN },
             );
         }
+        const rows =
+            await adapter.identityDefaultOrgs.getAll();
         if (currentDefaultOrgFor(rows, identityId) === org) {
             return new Response(null, { status: 204 });
         }
