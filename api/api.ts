@@ -55,6 +55,7 @@ import { isTokenRevoked } from './identity-tokens.ts';
 import {
     postToken,
     postAuthorize,
+    exchangeBearerForOrg,
 } from './authentication.ts';
 
 export class ApiError {
@@ -867,6 +868,71 @@ async function authorizeRequest(
         + ' requires a role this principal lacks';
 }
 
+// Facade rewrite: exchange the caller's bearer for a token
+// scoped to segments[1], then re-enter the gate against the
+// flat resource path (segments[2:]). A non-member's exchange
+// is a 403 — the tenant fence — and mints nothing.
+async function facadeRequest(
+    adapter: DbAdapter,
+    request: Request,
+    segments: readonly string[],
+): Promise<Response> {
+    const header = request.headers.get('authorization');
+    if (header === null
+        || !header.startsWith('Bearer ')) {
+        return Response.json(
+            { error: 'facade requires a bearer token' },
+            { status: HTTP_UNAUTHORIZED },
+        );
+    }
+    const bearer = header.slice('Bearer '.length);
+    const exchanged = await exchangeBearerForOrg(
+        adapter, bearer, segments[1]!,
+    );
+    if (!exchanged.ok) {
+        return Response.json(
+            { error: exchanged.error },
+            { status: exchanged.status },
+        );
+    }
+    const flatUrl = new URL(request.url);
+    flatUrl.pathname = '/' + segments.slice(2).join('/');
+    const headers = new Headers(request.headers);
+    headers.set(
+        'authorization',
+        'Bearer ' + exchanged.response.access_token,
+    );
+    const hasBody = request.method === 'PUT'
+        || request.method === 'POST';
+    const flatRequest = new Request(flatUrl.toString(), {
+        method: request.method,
+        headers,
+        ...(hasBody
+            ? { body: await request.text() } : {}),
+    });
+    return handleRequest(adapter, flatRequest);
+}
+
+// GET /organizations — the caller's reachable orgs, derived
+// fresh from the membership ledger (never the token claim, so
+// it cannot be stale). The authoritative source the embedded
+// `orgs` claim is a snapshot of.
+async function enumerateMyOrgs(
+    adapter: DbAdapter,
+    principal: Principal,
+): Promise<Response> {
+    const memberships = await adapter.memberships.getAll();
+    const mine = new Set(
+        memberships
+            .filter(m => m.identity_id === principal.id)
+            .map(m => m.organization_id),
+    );
+    const orgs = await adapter.organizations.getAll();
+    return Response.json(
+        orgs.filter(o => mine.has(o.id)),
+    );
+}
+
 export async function handleRequest(
     adapter: DbAdapter,
     request: Request,
@@ -875,6 +941,15 @@ export async function handleRequest(
     const pathSegments = pathname
         .split('/')
         .filter(Boolean);
+    // Facade: /organizations/:org/:entity[/:id] — exchange the
+    // caller's bearer for an org-scoped token and re-enter the
+    // gate against the flat resource path, so the existing
+    // handler is fenced automatically. Org rides the one
+    // verified token, never the path.
+    if (pathSegments[0] === 'organizations'
+        && pathSegments.length >= 3) {
+        return facadeRequest(adapter, request, pathSegments);
+    }
     const match = matchRoute(pathSegments);
 
     if (!match) {
@@ -915,6 +990,10 @@ export async function handleRequest(
                 { error: authzFailure },
                 { status: HTTP_FORBIDDEN },
             );
+        }
+        if (method === 'GET'
+            && routePattern === 'organizations') {
+            return enumerateMyOrgs(adapter, authResult);
         }
         if (authResult.organization !== undefined) {
             effective = orgScopedAdapter(

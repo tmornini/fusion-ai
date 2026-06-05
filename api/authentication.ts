@@ -244,6 +244,22 @@ async function grantTokenExchange(
     };
 }
 
+// The facade's self-delegation: a caller exchanges its own
+// bearer for a token scoped to `org` (subject == actor == the
+// caller). Returns 403, minting nothing, when the caller is
+// not a member — the gate's tenant fence.
+export async function exchangeBearerForOrg(
+    adapter: DbAdapter,
+    bearer: string,
+    org: Id,
+): Promise<TokenResult> {
+    return grantTokenExchange(adapter, {
+        subject_token: bearer,
+        actor_token: bearer,
+        organization: org,
+    });
+}
+
 // client_credentials via private_key_jwt: a headless client
 // authenticates as itself. SEAM — the client_assertion is only
 // structurally required (a three-segment JWT); real JWS
