@@ -35,7 +35,7 @@ import {
     credentialRevealPanel,
 } from '../app/presenters/credential-reveal.ts';
 import type {
-    SeededAdmin,
+    SeededCredentials,
 } from '../../api/mock-data.ts';
 import {
     iconTrash,
@@ -66,7 +66,7 @@ type PendingState =
     | { kind: 'idle' }
     | {
         kind: 'pending';
-        action: () => Promise<SeededAdmin>;
+        action: () => Promise<SeededCredentials>;
         button: HTMLButtonElement;
         label: string;
     };
@@ -120,7 +120,7 @@ export async function init(
         // error toast names this
         // explicitly so the half-state
         // isn't a silent surprise.
-        let admin: SeededAdmin;
+        let admin: SeededCredentials;
         try {
             admin = await action();
         } catch (err) {
@@ -153,7 +153,7 @@ export async function init(
     // in this response — surface it once, then navigate only
     // when the user acknowledges they have saved it.
     function revealThenNavigate(
-        admin: SeededAdmin,
+        admin: SeededCredentials,
     ): void {
         const panel = $('#snapshots-content', document);
         if (!panel) return;
@@ -174,7 +174,7 @@ export async function init(
     function confirmAction(
         button: HTMLButtonElement,
         label: string,
-        action: () => Promise<SeededAdmin>,
+        action: () => Promise<SeededCredentials>,
         message?: string,
     ): void {
         pending = {

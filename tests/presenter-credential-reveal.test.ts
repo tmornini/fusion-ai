@@ -4,20 +4,36 @@ import {
     credentialRevealPanel,
 } from '../web-app/app/presenters/credential-reveal.ts';
 
-test('renders the username and the password once', () => {
+test('renders every seeded identity username and password',
+() => {
     const out = credentialRevealPanel({
-        adminUsername: 'demo@example.com',
-        adminPassword: 'aB3xY7zQ9w',
+        identities: [
+            {
+                identityId: 'current',
+                username: 'demo@example.com',
+                password: 'aB3xY7zQ9w',
+            },
+            {
+                identityId: 'u2',
+                username: 'sarah@example.com',
+                password: 'kP9mN2rT4x',
+            },
+        ],
     }).toString();
     assert.match(out, /demo@example\.com/);
     assert.match(out, /aB3xY7zQ9w/);
+    assert.match(out, /sarah@example\.com/);
+    assert.match(out, /kP9mN2rT4x/);
     assert.match(out, /class="credential-reveal"/);
 });
 
 test('HTML-escapes a hostile password', () => {
     const out = credentialRevealPanel({
-        adminUsername: 'admin',
-        adminPassword: '<img src=x onerror="alert(1)">',
+        identities: [{
+            identityId: 'x',
+            username: 'admin',
+            password: '<img src=x onerror="alert(1)">',
+        }],
     }).toString();
     // the raw injection must not survive; its escaped form must
     assert.equal(out.includes('<img src=x'), false);
