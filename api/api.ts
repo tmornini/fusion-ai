@@ -46,6 +46,7 @@ import {
     revokedBeforeSeconds,
     type Principal,
 } from './access-token.ts';
+import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
     currentRolesFor,
     isPermitted,
@@ -890,6 +891,13 @@ export async function handleRequest(
     const method = request.method;
 
     const routePattern = matched.segments.join('/');
+    // The org guard rides the verified Principal: a flat token
+    // has no org → `effective` stays the base adapter (inert —
+    // every legacy caller byte-identical); an org-exchanged
+    // token fences every store dispatch to its tenant. Authz
+    // keeps reading the base adapter: identity and roles are
+    // global concerns.
+    let effective: DbAdapter = adapter;
     if (!BEARER_EXEMPT_ROUTES.has(routePattern)) {
         const authResult =
             await authenticateRequest(adapter, request);
@@ -906,6 +914,11 @@ export async function handleRequest(
             return Response.json(
                 { error: authzFailure },
                 { status: HTTP_FORBIDDEN },
+            );
+        }
+        if (authResult.organization !== undefined) {
+            effective = orgScopedAdapter(
+                adapter, authResult.organization,
             );
         }
     }
@@ -951,7 +964,7 @@ export async function handleRequest(
                 }
                 return Response.json(
                     await matched.get(
-                        adapter,
+                        effective,
                         params,
                     ),
                 );
@@ -970,7 +983,7 @@ export async function handleRequest(
                 }
                 const result =
                     await matched.put(
-                        adapter,
+                        effective,
                         params,
                         body!,
                     );
@@ -995,7 +1008,7 @@ export async function handleRequest(
                     );
                 }
                 await matched.delete(
-                    adapter,
+                    effective,
                     params,
                 );
                 return new Response(null, {
@@ -1017,7 +1030,7 @@ export async function handleRequest(
                 }
                 const result =
                     await matched.post(
-                        adapter,
+                        effective,
                         params,
                         body!,
                     );
