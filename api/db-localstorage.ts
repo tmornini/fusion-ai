@@ -145,8 +145,9 @@ export class LocalStorageDbAdapter implements DbAdapter {
     constructor() {
         this.#backend = new LocalStorageBackend();
         const backend = this.#backend;
+        const run = backendRunner(backend);
         const stateStore = new StateStore(
-            backendRunner(backend), 'states',
+            run, 'states',
         );
         this.states = stateStore;
         this.organizations =
@@ -187,27 +188,27 @@ export class LocalStorageDbAdapter implements DbAdapter {
             );
         this.identityCredentials =
             new HistoryEntityStore(
-                'identity_credentials', backend,
+                'identity_credentials', run,
                 validateIdentityCredentialEntity,
             );
         this.identityTokenRevocations =
             new HistoryEntityStore(
-                'identity_token_revocations', backend,
+                'identity_token_revocations', run,
                 validateIdentityTokenRevocationEntity,
             );
         this.identityDefaultOrgs =
             new HistoryEntityStore(
-                'identity_default_orgs', backend,
+                'identity_default_orgs', run,
                 validateIdentityDefaultOrgEntity,
             );
         this.roleGrants =
             new HistoryEntityStore(
-                'role_grants', backend,
+                'role_grants', run,
                 validateRoleGrantEntity,
             );
         this.identityTokens =
             new HistoryEntityStore(
-                'identity_tokens', backend,
+                'identity_tokens', run,
                 validateIdentityTokenEntity,
             );
         this.clients =
@@ -217,12 +218,12 @@ export class LocalStorageDbAdapter implements DbAdapter {
             );
         this.identityProviders =
             new HistoryEntityStore(
-                'identity_providers', backend,
+                'identity_providers', run,
                 validateIdentityProviderEntity,
             );
         this.authorizationCodes =
             new HistoryEntityStore(
-                'authorization_codes', backend,
+                'authorization_codes', run,
                 validateAuthorizationCodeEntity,
             );
         this.ideas =
@@ -242,7 +243,7 @@ export class LocalStorageDbAdapter implements DbAdapter {
             );
         this.flowVersions =
             new HistoryEntityStore(
-                'flow_versions', backend,
+                'flow_versions', run,
                 validateFlowVersionEntity,
             );
         this.projectFlows =
@@ -297,19 +298,19 @@ export class LocalStorageDbAdapter implements DbAdapter {
             );
         this.objectiveRevisions =
             new HistoryEntityStore(
-                'objective_revisions', backend,
+                'objective_revisions', run,
                 validateObjectiveRevisionEntity,
             );
         this.projectObjectiveBaselineScores =
             new HistoryEntityStore(
                 'project_objective_baseline_scores',
-                backend,
+                run,
                 validateBaselineScoreEntity,
             );
         this.projectObjectiveActualScores =
             new HistoryEntityStore(
                 'project_objective_actual_scores',
-                backend,
+                run,
                 validateActualScoreEntity,
             );
     }

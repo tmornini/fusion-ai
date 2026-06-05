@@ -92,7 +92,7 @@ test('HistoryEntityStore.put invokes the validator',
         const backend = await primedBackend();
         let seen: Record<string, unknown> | null = null;
         const store = new HistoryEntityStore<Thing>(
-            'things', backend,
+            'things', backendRunner(backend),
             (b) => {
                 seen = b;
                 return b as unknown as Omit<Thing, 'id'>;
@@ -106,7 +106,7 @@ test('HistoryEntityStore.put rethrows validator errors',
     async () => {
         const backend = await primedBackend();
         const store = new HistoryEntityStore<Thing>(
-            'things', backend,
+            'things', backendRunner(backend),
             () => { throw new Error('nope'); },
         );
         await assert.rejects(
@@ -119,7 +119,7 @@ test('HistoryEntityStore.put writes the validator output',
     async () => {
         const backend = await primedBackend();
         const store = new HistoryEntityStore<Thing>(
-            'things', backend,
+            'things', backendRunner(backend),
             (b) => ({
                 n: (b['n'] as number) + 1,
             }),
@@ -134,7 +134,7 @@ test('HistoryEntityStore.put without validator passes',
     async () => {
         const backend = await primedBackend();
         const store = new HistoryEntityStore<Thing>(
-            'things', backend,
+            'things', backendRunner(backend),
         );
         const written = await store.put('a', { n: 7 });
         assert.equal(written.n, 7);
@@ -233,7 +233,7 @@ test(
     async () => {
         const backend = await primedBackend();
         const store = new HistoryEntityStore<Thing>(
-            'things', backend,
+            'things', backendRunner(backend),
         );
         await store.putMany(
             [
