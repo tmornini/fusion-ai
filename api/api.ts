@@ -205,7 +205,25 @@ async function applyRecordMultiPut(
 
 const routes: Route[] = [
     route('members', {
-        get: (db) => db.members.getAll(),
+        // Members are derived from the membership ledger off
+        // `effective`: the org-scoped memberships name the
+        // org's members; the members directory itself is
+        // global (no org column). The join IS the org fence —
+        // it re-scopes on an org switch with no denormalized
+        // column to keep in sync. The system member rides
+        // along unconditionally — it has no membership but
+        // authors events in every org, so author resolution
+        // (getMemberMap) must still find it; the human/ai
+        // roster filters it out by type.
+        get: async (db) => {
+            const memberships =
+                await db.memberships.getAll();
+            const ids = new Set(
+                memberships.map(m => m.identity_id));
+            const all = await db.members.getAll();
+            return all.filter(
+                m => ids.has(m.id) || m.type === 'system');
+        },
     }),
     route('ai-members', {
         get: (db) => db.aiMembers.getAll(),
@@ -976,14 +994,15 @@ export async function handleRequest(
     const method = request.method;
 
     const routePattern = matched.segments.join('/');
-    // The org guard rides the verified Principal: a flat token
-    // has no org → `effective` stays the base adapter (inert —
-    // every legacy caller byte-identical); an org-exchanged
-    // token fences every store dispatch to its tenant. Authz
-    // reads the global role_grants ledger from the base
-    // adapter but filters it to the principal's verified org
-    // (see authorizeRequest): identity is global, roles are
-    // per-org.
+    // Every authenticated request runs org-scoped: the verified
+    // org claim names the tenant; a flat (un-exchanged) token
+    // falls back to DEFAULT_ORG — an EXPLICIT named bridge, so
+    // there is no honest "unscoped default" and a write always
+    // lands in a real org. Org-owned stores fence to that org
+    // server-side; the global identity/auth spine passes
+    // through. Authz reads the global role_grants ledger but
+    // filters it to the same org (see authorizeRequest):
+    // identity is global, roles and org data are per-org.
     let effective: DbAdapter = adapter;
     if (!BEARER_EXEMPT_ROUTES.has(routePattern)) {
         const authResult =
@@ -1007,11 +1026,10 @@ export async function handleRequest(
             && routePattern === 'organizations') {
             return enumerateMyOrgs(adapter, authResult);
         }
-        if (authResult.organization !== undefined) {
-            effective = orgScopedAdapter(
-                adapter, authResult.organization,
-            );
-        }
+        effective = orgScopedAdapter(
+            adapter,
+            authResult.organization ?? DEFAULT_ORG,
+        );
     }
 
     // Parse the request body when the method
