@@ -1,6 +1,8 @@
 import {
     MissingTableError,
     type StorageBackend,
+    type Tx,
+    type TxMode,
 } from './db.ts';
 import {
     serializeRecord,
@@ -14,6 +16,27 @@ export class MemoryStorageBackend
 
     constructor() {
         this.#tables = new Map();
+    }
+
+    // Transitional stubs (A1). Real simulated transaction
+    // lands in A2; no caller exists until the stores route
+    // through it.
+    async transaction<R>(
+        _tables: readonly string[],
+        _mode: TxMode,
+        _fn: (tx: Tx) => Promise<R>,
+    ): Promise<R> {
+        throw new Error(
+            'transaction not yet implemented',
+        );
+    }
+
+    async ensureTables(
+        _tables: readonly string[],
+    ): Promise<void> {
+        throw new Error(
+            'ensureTables not yet implemented',
+        );
     }
 
     async read<T extends { id: string }>(

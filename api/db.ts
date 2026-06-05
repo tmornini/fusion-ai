@@ -117,10 +117,49 @@ export interface StateStore {
     isDeleted(id: Id): Promise<boolean>;
 }
 
+export type TxMode = 'readonly' | 'readwrite';
+
+// A row-granular handle over one transaction. `get`
+// returns null for an absent row — absence is modeled at
+// the call site, never via a sentinel. The handle is the
+// real primitive Phase B fulfills with a native
+// IndexedDB transaction; memory + localStorage simulate
+// it transitionally (buffer touched tables, flush on
+// success, discard on throw).
+export interface Tx {
+    get<T extends { id: string }>(
+        table: string,
+        id: string,
+    ): Promise<T | null>;
+    getAll<T extends { id: string }>(
+        table: string,
+    ): Promise<T[]>;
+    put<T extends { id: string }>(
+        table: string,
+        row: T,
+    ): Promise<void>;
+    delete(table: string, id: string): Promise<void>;
+    clear(table: string): Promise<void>;
+}
+
 // The byte-level seam. Store classes compose a backend
 // to obtain rows; backends own persistence + encoding,
 // stores own semantics (tombstones, splices, singletons).
+// `transaction` is the primitive every row op crosses;
+// `ensureTables` is schema lifecycle, never a row op.
 export interface StorageBackend {
+    transaction<R>(
+        tables: readonly string[],
+        mode: TxMode,
+        fn: (tx: Tx) => Promise<R>,
+    ): Promise<R>;
+    ensureTables(
+        tables: readonly string[],
+    ): Promise<void>;
+    clearAll(): Promise<void>;
+    list(): Promise<string[]>;
+    // Transitional whole-table ops, removed in A8 once
+    // every store routes through `transaction`.
     read<T extends { id: string }>(
         table: string,
     ): Promise<T[]>;
@@ -129,8 +168,6 @@ export interface StorageBackend {
         rows: T[],
     ): Promise<void>;
     remove(table: string): Promise<void>;
-    clearAll(): Promise<void>;
-    list(): Promise<string[]>;
 }
 
 export interface DbAdapter {
