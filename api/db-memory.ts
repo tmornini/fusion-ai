@@ -298,14 +298,7 @@ export class MemoryDbAdapter implements DbAdapter {
     }
 
     async createSchema(): Promise<void> {
-        const existing = new Set(
-            await this.#backend.list(),
-        );
-        for (const table of TABLE_NAMES) {
-            if (!existing.has(table)) {
-                await this.#backend.write(table, []);
-            }
-        }
+        await this.#backend.ensureTables(TABLE_NAMES);
     }
 
     async deleteSchema(): Promise<void> {
@@ -313,24 +306,39 @@ export class MemoryDbAdapter implements DbAdapter {
     }
 
     async exportSnapshot(): Promise<string> {
-        const obj: Record<string, unknown[]> = {};
-        for (const table of TABLE_NAMES) {
-            obj[table] = await this.#backend.read(table);
-        }
+        const obj = await this.#backend.transaction(
+            TABLE_NAMES, 'readonly',
+            async (tx) => {
+                const out: Record<string, unknown[]> = {};
+                for (const table of TABLE_NAMES) {
+                    out[table] = await tx.getAll(table);
+                }
+                return out;
+            },
+        );
         return JSON.stringify(obj, null, 2);
     }
 
     async importSnapshot(json: string): Promise<void> {
-        const validated =
-            parseAndValidateSnapshot(json);
-        await this.#backend.clearAll();
-        try {
-            for (const [table, rows] of validated) {
-                await this.#backend.write(table, rows);
-            }
-        } catch (err) {
-            await this.#backend.clearAll();
-            throw err;
-        }
+        // Validators run at the gate, before any storage
+        // touch — a bad snapshot throws here, leaving prior
+        // data intact. The clear+put then runs in one
+        // transaction; a logic error discards the buffer
+        // (rollback). The multi-key localStorage flush is
+        // still not OS-atomic on a mid-write quota error —
+        // the gap the IndexedDB tier (Phase B) closes.
+        const validated = parseAndValidateSnapshot(json);
+        await this.#backend.ensureTables(TABLE_NAMES);
+        await this.#backend.transaction(
+            TABLE_NAMES, 'readwrite',
+            async (tx) => {
+                for (const [table, rows] of validated) {
+                    await tx.clear(table);
+                    for (const row of rows) {
+                        await tx.put(table, row);
+                    }
+                }
+            },
+        );
     }
 }
