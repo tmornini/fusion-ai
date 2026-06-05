@@ -80,3 +80,17 @@ async () => {
         .filter(r => r.id === 'i1');
     assert.equal(dupes.length, 1);
 });
+
+test('two service creations for the same id leave'
+    + ' exactly one client_secret row', async () => {
+    const { db, ctx } = await setup();
+    const spec = {
+        kind: 'service' as const, secret: 'top-secret',
+    };
+    await postIdentityCreation(ctx, 's1', spec);
+    await postIdentityCreation(ctx, 's1', spec);
+    const creds = (await db.identityCredentials.getAll())
+        .filter(r => r.identity_id === 's1'
+            && r.kind === 'client_secret');
+    assert.equal(creds.length, 1);
+});

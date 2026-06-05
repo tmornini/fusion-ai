@@ -7,9 +7,6 @@ import {
     type IdentityPiiEntity,
     type MemberPii,
 } from '../../../api/types.ts';
-import {
-    generateCryptoSafeBase62,
-} from '../../../api/crypto-safe-base62.ts';
 import { hashPassword } from '../../../api/password-hash.ts';
 import type { RequestContext, WriteOp } from './shared.ts';
 
@@ -165,7 +162,11 @@ export async function postIdentityCreation(
             body: { ...spec.pii },
         });
     } else {
-        const credId = generateCryptoSafeBase62();
+        // Deterministic credential id off the identity id
+        // so a retry overwrites the same row — no INSERT on
+        // re-put (Commandment VII), matching the person
+        // branch and the contract above.
+        const credId = `${id}-client-secret`;
         ops.push({
             method: 'put',
             resource: `identity-credentials/${credId}`,

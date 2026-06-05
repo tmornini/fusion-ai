@@ -200,12 +200,15 @@ async function submitPersonForm(): Promise<void> {
 }
 
 async function submitServiceForm(): Promise<void> {
-    const entered = $input(
+    const secret = $input(
         '#svc-secret', document,
     )!.value.trim();
-    const secret = entered === ''
-        ? generateCryptoSafeBase62()
-        : entered;
+    if (secret === '') {
+        showToast(
+            'A client secret is required', 'error',
+        );
+        return;
+    }
     const id = generateCryptoSafeBase62();
     try {
         await postIdentityCreation(
