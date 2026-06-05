@@ -20,7 +20,10 @@ import {
     planRotation,
     isTokenRevoked,
 } from './identity-tokens.ts';
-import { verifyPassword } from './password-hash.ts';
+import {
+    hashPassword,
+    verifyPassword,
+} from './password-hash.ts';
 import {
     currentDefaultOrgFor,
 } from './authorization.ts';
@@ -488,6 +491,23 @@ function currentPasswordSecret(
     return latest.secret;
 }
 
+// A real PHC over a throwaway secret, hashed ONCE then cached.
+// The unknown-user and missing-secret paths verify the
+// presented password against THIS before the identical 401, so
+// a failed login costs the same PBKDF2 work whether or not the
+// user exists — closing the timing channel a uniform 401 body
+// cannot. Lazy-init of a derived constant, not a measured cache.
+let timingEqualizerPhc: string | null = null;
+async function equalizeFailureTiming(
+    password: string,
+): Promise<void> {
+    if (timingEqualizerPhc === null) {
+        timingEqualizerPhc =
+            await hashPassword('timing-equalizer');
+    }
+    await verifyPassword(password, timingEqualizerPhc);
+}
+
 // The password loop: verify username + password, and on success
 // issue an authorization code bound to (identity, client). Every
 // failure returns the SAME 401 (no user enumeration) and appends
@@ -510,12 +530,18 @@ async function authorizePassword(
     };
     const piiRows = await adapter.identityPii.getAll();
     const identityId = identityByEmail(piiRows, username);
-    if (identityId === null) return denied;
+    if (identityId === null) {
+        await equalizeFailureTiming(password);
+        return denied;
+    }
     const credRows =
         await adapter.identityCredentials.getAll();
     const secret =
         currentPasswordSecret(credRows, identityId);
-    if (secret === null) return denied;
+    if (secret === null) {
+        await equalizeFailureTiming(password);
+        return denied;
+    }
     if (!(await verifyPassword(password, secret))) {
         return denied;
     }
