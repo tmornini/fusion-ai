@@ -9,7 +9,7 @@ import {
     type RoleGrantEntity,
 } from '../../../api/types.ts';
 import {
-    currentRolesFor,
+    currentRolesForInOrg,
 } from '../../../api/authorization.ts';
 import type { RequestContext } from './shared.ts';
 
@@ -53,5 +53,8 @@ export async function getRolesFor(
     const all = await ctx.GET<RoleGrantEntity[]>(
         'role-grants',
     );
-    return currentRolesFor(all, identityId);
+    return currentRolesForInOrg(
+        all, identityId,
+        ctx.identity.organization ?? DEFAULT_ORG,
+    );
 }

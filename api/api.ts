@@ -34,6 +34,7 @@ import type {
     WorkOrderEntity,
     MemberEntity,
 } from './types.ts';
+import { DEFAULT_ORG } from './types.ts';
 import {
     validateOrganizationEntity,
     validateRecordMultiPutBody,
@@ -48,7 +49,7 @@ import {
 } from './access-token.ts';
 import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
-    currentRolesFor,
+    currentRolesForInOrg,
     isPermitted,
 } from './authorization.ts';
 import { isTokenRevoked } from './identity-tokens.ts';
@@ -860,7 +861,16 @@ async function authorizeRequest(
     pathname: string,
 ): Promise<string | null> {
     const rows = await adapter.roleGrants.getAll();
-    const roles = currentRolesFor(rows, principal.id);
+    // Roles are per-org. The verified token claim — never the
+    // path — names the org; a flat (un-exchanged) token has
+    // none and falls back to DEFAULT_ORG, an EXPLICIT named
+    // bridge for the legacy un-scoped caller, not a silent
+    // helper default. After the facade migration every session
+    // token carries an org and this bridge goes unused.
+    const org = principal.organization ?? DEFAULT_ORG;
+    const roles = currentRolesForInOrg(
+        rows, principal.id, org,
+    );
     if (isPermitted(method, pathname, roles)) {
         return null;
     }
@@ -970,8 +980,10 @@ export async function handleRequest(
     // has no org → `effective` stays the base adapter (inert —
     // every legacy caller byte-identical); an org-exchanged
     // token fences every store dispatch to its tenant. Authz
-    // keeps reading the base adapter: identity and roles are
-    // global concerns.
+    // reads the global role_grants ledger from the base
+    // adapter but filters it to the principal's verified org
+    // (see authorizeRequest): identity is global, roles are
+    // per-org.
     let effective: DbAdapter = adapter;
     if (!BEARER_EXEMPT_ROUTES.has(routePattern)) {
         const authResult =

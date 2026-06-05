@@ -43,12 +43,19 @@ function editBody(org: string) {
     };
 }
 
-// `current` is a global admin (seedRootAdmin) and a member
-// of org A only.
+// `current` holds admin in org A (the administered org) and
+// is a member of org A only. Roles are per-org since Phase 3,
+// so the org-A grant authorizes the facade write.
 async function oneOrg(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.createSchema();
     await seedRootAdmin(db);
+    await db.roleGrants.put('role-current-admin-a', {
+        organization_id: 'A', identity_id: 'current',
+        role: 'admin', action: 'granted',
+        by_member_id: 'system',
+        at: '2020-01-01T00:00:00.000Z',
+    });
     await db.memberships.put('m-a', {
         organization_id: 'A', identity_id: 'current',
         at: '2026-06-04T00:00:00.000Z',
