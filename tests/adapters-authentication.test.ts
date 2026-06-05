@@ -21,6 +21,11 @@ async function passwordUserCtx() {
         action: 'granted', by_member_id: 'system',
         at: '2020-01-01T00:00:00.000Z',
     });
+    await db.memberships.put('m', {
+        organization_id: DEFAULT_ORG,
+        identity_id: 'current',
+        at: '2020-01-01T00:00:00.000Z',
+    });
     await db.identityPii.put('current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',

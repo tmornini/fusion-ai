@@ -269,6 +269,11 @@ test('client_credentials issues a gate-valid token', async () => {
         action: 'granted', by_member_id: 'system',
         at: '2020-01-01T00:00:00.000Z',
     });
+    await db.memberships.put('m-svc', {
+        organization_id: DEFAULT_ORG,
+        identity_id: 'svc-client',
+        at: '2020-01-01T00:00:00.000Z',
+    });
     await db.clients.put('svc-client', activeClient);
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'client_credentials',

@@ -58,10 +58,14 @@ async () => {
     assert.equal(res.status, 200);
 });
 
-test('a flat token authorizes via the default-org bridge',
+test('a flat token authorizes via its resolved membership',
 async () => {
     const db = new MemoryDbAdapter();
     await db.createSchema();
+    await db.memberships.put('m', {
+        organization_id: DEFAULT_ORG, identity_id: 'current',
+        at: '2026-06-04T00:00:00.000Z',
+    });
     await db.roleGrants.put('g', {
         organization_id: DEFAULT_ORG, identity_id: 'current',
         role: 'admin', action: 'granted',
