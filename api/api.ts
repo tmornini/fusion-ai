@@ -189,22 +189,34 @@ async function applyRecordMultiPut(
         body.kind === 'edit'
             ? body.removedAttributeIds
             : [];
-    await db.records.put(body.id, body.record);
-    if (body.kind === 'create') {
-        const member =
-            await db.members.getById('current');
-        await db.states.record(
-            body.initialStateEventId,
-            body.id,
-            body.initialState,
-            member.id,
-        );
-    }
-    if (entries.length > 0 || removedIds.length > 0) {
-        await db.recordAttributes.putMany(
-            entries, removedIds,
-        );
-    }
+    // The record, its initial state event, and its
+    // attributes commit as one transaction — a mid-write
+    // failure (e.g. a missing current member) rolls the
+    // whole thing back rather than orphaning the record.
+    await db.transaction(
+        ['records', 'record_attributes', 'states', 'members'],
+        async (view) => {
+            await view.records.put(body.id, body.record);
+            if (body.kind === 'create') {
+                const member =
+                    await view.members.getById('current');
+                await view.states.record(
+                    body.initialStateEventId,
+                    body.id,
+                    body.initialState,
+                    member.id,
+                );
+            }
+            if (
+                entries.length > 0
+                || removedIds.length > 0
+            ) {
+                await view.recordAttributes.putMany(
+                    entries, removedIds,
+                );
+            }
+        },
+    );
 }
 
 
