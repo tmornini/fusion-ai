@@ -3,6 +3,7 @@ import {
     nowUtc,
     type Id,
     type IdentityEntity,
+    type IdentityKind,
     type IdentityPiiEntity,
     type MemberPii,
 } from '../../../api/types.ts';
@@ -12,6 +13,17 @@ import {
 import { hashPassword } from '../../../api/password-hash.ts';
 import type { RequestContext, WriteOp } from './shared.ts';
 
+// Surface the domain class and PII shapes through the
+// adapter barrel so presenters speak one tongue (mirrors
+// members.ts re-exporting HumanMember).
+export { Identity };
+export type {
+    Id,
+    IdentityKind,
+    IdentityPiiEntity,
+    MemberPii,
+};
+
 export async function getIdentity(
     ctx: RequestContext,
     id: Id,
@@ -20,6 +32,63 @@ export async function getIdentity(
         `identities/${id}`,
     );
     return new Identity(entity);
+}
+
+// The whole identity collection (global spine — no org
+// fence). Each row is wrapped so the caller speaks the
+// domain, not the storage shape.
+export async function getIdentities(
+    ctx: RequestContext,
+): Promise<Identity[]> {
+    const rows = await ctx.GET<IdentityEntity[]>(
+        'identities',
+    );
+    return rows.map(row => new Identity(row));
+}
+
+// One roster row: the identity discriminant plus its PII
+// facet as the tagged union. A missing pii row — a service
+// identity, or an erased person — is reported as erased.
+// The CALLER decides display; this adapter bakes no
+// 'Unknown' fallback (the erased branch carries no name).
+export interface IdentityRosterRow {
+    readonly id: Id;
+    readonly kind: IdentityKind;
+    readonly pii: MemberPii;
+}
+
+// Single-pass join of identities + identity-pii: read both
+// collections in parallel, index the PII by id, then map
+// each identity to its row. A present pii row → fields; an
+// absent one → { erased: true }.
+export async function getIdentityRoster(
+    ctx: RequestContext,
+): Promise<IdentityRosterRow[]> {
+    const [identities, piiRows] = await Promise.all([
+        ctx.GET<IdentityEntity[]>('identities'),
+        ctx.GET<IdentityPiiEntity[]>('identity-pii'),
+    ]);
+    const piiById = new Map<Id, IdentityPiiEntity>();
+    for (const row of piiRows) {
+        piiById.set(row.id, row);
+    }
+    return identities.map(identity => {
+        const row = piiById.get(identity.id);
+        const pii: MemberPii = row
+            ? {
+                erased: false,
+                name: row.name,
+                email: row.email,
+                phone: row.phone,
+                bio: row.bio,
+            }
+            : { erased: true };
+        return {
+            id: identity.id,
+            kind: identity.kind,
+            pii,
+        };
+    });
 }
 
 // Returns the tagged union. A missing pii row (erased, or a
