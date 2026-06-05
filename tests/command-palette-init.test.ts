@@ -112,9 +112,7 @@ function createFakeStorage(): FakeStorage {
 
 interface SavedGlobals {
     document: unknown;
-    localStorage: unknown;
     hadDocument: boolean;
-    hadLocalStorage: boolean;
 }
 
 let saved: SavedGlobals | null = null;
@@ -127,9 +125,7 @@ function installGlobals(
     >;
     saved = {
         document: g.document,
-        localStorage: g.localStorage,
         hadDocument: 'document' in g,
-        hadLocalStorage: 'localStorage' in g,
     };
     // Minimal document stub. initCommandPalette uses
     // only addEventListener (global keydown bind) and
@@ -157,10 +153,6 @@ function uninstallGlobals(): void {
     } else {
         delete g.document;
     }
-    if (saved.hadLocalStorage) {
-        g.localStorage = saved.localStorage;
-    } else {
-        delete g.localStorage;
-    }
+    delete g.localStorage;
     saved = null;
 }
