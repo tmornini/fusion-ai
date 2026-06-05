@@ -565,6 +565,19 @@ migrations arrive with Postgres.
 
 ## Deferred / open (named so they don't hide)
 
+- **Settable per-identity default org** (replaces the global
+  `DEFAULT_ORG` fallback — deferred to the END of the master plan,
+  per direction). The shared global `DEFAULT_ORG` ('1') that a flat
+  (un-exchanged) token bridges to is the smell: a privileged default
+  every identity shares. Replace it with a default each identity can
+  SET — an append-only `identity_default_orgs` ledger (latest-wins;
+  the chosen org must be one of the identity's memberships). The gate
+  and boot resolve a flat token's org to that set default → else the
+  identity's primary (earliest) membership → else deny. On UI login
+  the user is taken to their chosen default org. Removes the
+  `DEFAULT_ORG` constant and every `?? DEFAULT_ORG` fallback (~12
+  production sites; the ~180 test/seed literals become a local
+  org-id name); the org-switcher gains a "set as default" control.
 - Real cryptographic ceremony (passkey assertion, DPoP verify,
   PAR/JAR/RAR) — server-fulfilled; seam designed now.
 - Credential **secret hashing + verification** — the SP-1
