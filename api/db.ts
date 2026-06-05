@@ -166,8 +166,13 @@ export interface StorageBackend {
     ensureTables(
         tables: readonly string[],
     ): Promise<void>;
-    clearAll(): Promise<void>;
-    list(): Promise<string[]>;
+    // Schema lifecycle — storage-level because each tier
+    // signals "schema exists" differently: the simulated
+    // backends by table existence, IndexedDB by a marker
+    // store (its object stores always exist post-upgrade).
+    hasSchema(): Promise<boolean>;
+    createSchema(): Promise<void>;
+    deleteSchema(): Promise<void>;
 }
 
 // How a store reaches storage. Standalone, a store opens a

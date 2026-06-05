@@ -1,5 +1,6 @@
 import {
     MissingTableError,
+    TABLE_NAMES,
     type StorageBackend,
     type Tx,
     type TxMode,
@@ -66,11 +67,15 @@ export class MemoryStorageBackend
         }
     }
 
-    async clearAll(): Promise<void> {
-        this.#tables.clear();
+    async hasSchema(): Promise<boolean> {
+        return this.#tables.size > 0;
     }
 
-    async list(): Promise<string[]> {
-        return Array.from(this.#tables.keys());
+    async createSchema(): Promise<void> {
+        await this.ensureTables(TABLE_NAMES);
+    }
+
+    async deleteSchema(): Promise<void> {
+        this.#tables.clear();
     }
 }

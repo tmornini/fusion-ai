@@ -208,19 +208,23 @@ export class LocalStorageBackend
         }
     }
 
-    async clearAll(): Promise<void> {
+    async hasSchema(): Promise<boolean> {
+        return TABLE_NAMES.some(
+            t => localStorage.getItem(
+                KEY_PREFIX + t,
+            ) !== null,
+        );
+    }
+
+    async createSchema(): Promise<void> {
+        await this.ensureTables(TABLE_NAMES);
+    }
+
+    async deleteSchema(): Promise<void> {
         for (const table of TABLE_NAMES) {
             localStorage.removeItem(
                 KEY_PREFIX + table,
             );
         }
-    }
-
-    async list(): Promise<string[]> {
-        return TABLE_NAMES.filter(
-            t => localStorage.getItem(
-                KEY_PREFIX + t,
-            ) !== null,
-        );
     }
 }
