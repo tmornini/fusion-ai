@@ -1,8 +1,10 @@
 import { TABLE_NAMES, backendRunner } from './db.ts';
 import type {
     DbAdapter,
+    DbStores,
     EntityStore as IEntityStore,
     StateStore as IStateStore,
+    TxRunner,
 } from './db.ts';
 import { LocalStorageBackend } from
     './backend-localstorage.ts';
@@ -87,232 +89,207 @@ import {
 export class LocalStorageDbAdapter implements DbAdapter {
     readonly #backend: LocalStorageBackend;
 
-    readonly members: IEntityStore<MemberEntity>;
-    readonly humanMembers:
+    readonly members!: IEntityStore<MemberEntity>;
+    readonly humanMembers!:
         IEntityStore<HumanMemberEntity>;
-    readonly aiMembers: IEntityStore<AIMemberEntity>;
-    readonly identities:
+    readonly aiMembers!: IEntityStore<AIMemberEntity>;
+    readonly identities!:
         IEntityStore<IdentityEntity>;
-    readonly identityPii:
+    readonly identityPii!:
         IEntityStore<IdentityPiiEntity>;
-    readonly identityCredentials:
+    readonly identityCredentials!:
         IEntityStore<IdentityCredentialEntity>;
-    readonly identityTokenRevocations:
+    readonly identityTokenRevocations!:
         IEntityStore<IdentityTokenRevocationEntity>;
-    readonly identityDefaultOrgs:
+    readonly identityDefaultOrgs!:
         IEntityStore<IdentityDefaultOrgEntity>;
-    readonly roleGrants: IEntityStore<RoleGrantEntity>;
-    readonly identityTokens:
+    readonly roleGrants!: IEntityStore<RoleGrantEntity>;
+    readonly identityTokens!:
         IEntityStore<IdentityTokenEntity>;
-    readonly clients: IEntityStore<ClientEntity>;
-    readonly identityProviders:
+    readonly clients!: IEntityStore<ClientEntity>;
+    readonly identityProviders!:
         IEntityStore<IdentityProviderEntity>;
-    readonly authorizationCodes:
+    readonly authorizationCodes!:
         IEntityStore<AuthorizationCodeEntity>;
-    readonly ideas: IEntityStore<IdeaEntity>;
-    readonly projects: IEntityStore<ProjectEntity>;
-    readonly flows: IEntityStore<FlowEntity>;
-    readonly flowVersions:
+    readonly ideas!: IEntityStore<IdeaEntity>;
+    readonly projects!: IEntityStore<ProjectEntity>;
+    readonly flows!: IEntityStore<FlowEntity>;
+    readonly flowVersions!:
         IEntityStore<FlowVersionEntity>;
-    readonly projectFlows:
+    readonly projectFlows!:
         IEntityStore<ProjectFlowEntity>;
-    readonly workOrders: IEntityStore<WorkOrderEntity>;
-    readonly flowWorkOrders:
+    readonly workOrders!: IEntityStore<WorkOrderEntity>;
+    readonly flowWorkOrders!:
         IEntityStore<FlowWorkOrderEntity>;
-    readonly stateFieldValues:
+    readonly stateFieldValues!:
         IEntityStore<StateFieldValueEntity>;
-    readonly records:
+    readonly records!:
         IEntityStore<RecordEntity>;
-    readonly recordAttributes:
+    readonly recordAttributes!:
         IEntityStore<RecordAttributeEntity>;
-    readonly flowRecords:
+    readonly flowRecords!:
         IEntityStore<FlowRecordEntity>;
-    readonly organizations:
+    readonly organizations!:
         IEntityStore<OrganizationEntity>;
-    readonly memberships:
+    readonly memberships!:
         IEntityStore<MembershipEntity>;
-    readonly ideaSubmissions:
+    readonly ideaSubmissions!:
         IEntityStore<IdeaSubmissionEntity>;
-    readonly objectives: IEntityStore<Objective>;
-    readonly objectiveRevisions:
+    readonly objectives!: IEntityStore<Objective>;
+    readonly objectiveRevisions!:
         IEntityStore<ObjectiveRevision>;
-    readonly projectObjectiveBaselineScores:
+    readonly projectObjectiveBaselineScores!:
         IEntityStore<ProjectObjectiveBaselineScore>;
-    readonly projectObjectiveActualScores:
+    readonly projectObjectiveActualScores!:
         IEntityStore<ProjectObjectiveActualScore>;
-    readonly states: IStateStore;
+    readonly states!: IStateStore;
 
     constructor() {
         this.#backend = new LocalStorageBackend();
-        const backend = this.#backend;
-        const run = backendRunner(backend);
-        const stateStore = new StateStore(
-            run, 'states',
+        Object.assign(
+            this,
+            this.#buildStores(
+                backendRunner(this.#backend),
+            ),
         );
-        this.states = stateStore;
-        this.organizations =
-            new EntityStore(
-                'organizations', backend, stateStore,
-                validateOrganizationEntity,
-            );
-        this.memberships =
-            new EntityStore(
-                'memberships', backend, stateStore,
-                validateMembershipEntity,
-            );
+    }
 
-        this.members =
-            new EntityStore(
-                'members', backend, stateStore,
+    // The 32-store wiring lives here once. The constructor
+    // binds it to the backend; A9's transaction view rebinds
+    // the same wiring to an open tx via ambientRunner.
+    #buildStores(run: TxRunner): DbStores {
+        const stateStore = new StateStore(run, 'states');
+        return {
+            states: stateStore,
+            organizations: new EntityStore(
+                'organizations', run, stateStore,
+                validateOrganizationEntity,
+            ),
+            memberships: new EntityStore(
+                'memberships', run, stateStore,
+                validateMembershipEntity,
+            ),
+            members: new EntityStore(
+                'members', run, stateStore,
                 validateMemberEntity,
-            );
-        this.humanMembers =
-            new EntityStore(
-                'human_members', backend, stateStore,
+            ),
+            humanMembers: new EntityStore(
+                'human_members', run, stateStore,
                 validateHumanMemberEntity,
-            );
-        this.aiMembers =
-            new EntityStore(
-                'ai_members', backend, stateStore,
+            ),
+            aiMembers: new EntityStore(
+                'ai_members', run, stateStore,
                 validateAIMemberEntity,
-            );
-        this.identities =
-            new EntityStore(
-                'identities', backend, stateStore,
+            ),
+            identities: new EntityStore(
+                'identities', run, stateStore,
                 validateIdentityEntity,
-            );
-        this.identityPii =
-            new EntityStore(
-                'identity_pii', backend, stateStore,
+            ),
+            identityPii: new EntityStore(
+                'identity_pii', run, stateStore,
                 validateIdentityPiiEntity,
-            );
-        this.identityCredentials =
-            new HistoryEntityStore(
+            ),
+            identityCredentials: new HistoryEntityStore(
                 'identity_credentials', run,
                 validateIdentityCredentialEntity,
-            );
-        this.identityTokenRevocations =
-            new HistoryEntityStore(
+            ),
+            identityTokenRevocations: new HistoryEntityStore(
                 'identity_token_revocations', run,
                 validateIdentityTokenRevocationEntity,
-            );
-        this.identityDefaultOrgs =
-            new HistoryEntityStore(
+            ),
+            identityDefaultOrgs: new HistoryEntityStore(
                 'identity_default_orgs', run,
                 validateIdentityDefaultOrgEntity,
-            );
-        this.roleGrants =
-            new HistoryEntityStore(
+            ),
+            roleGrants: new HistoryEntityStore(
                 'role_grants', run,
                 validateRoleGrantEntity,
-            );
-        this.identityTokens =
-            new HistoryEntityStore(
+            ),
+            identityTokens: new HistoryEntityStore(
                 'identity_tokens', run,
                 validateIdentityTokenEntity,
-            );
-        this.clients =
-            new EntityStore(
-                'clients', backend, stateStore,
+            ),
+            clients: new EntityStore(
+                'clients', run, stateStore,
                 validateClientEntity,
-            );
-        this.identityProviders =
-            new HistoryEntityStore(
+            ),
+            identityProviders: new HistoryEntityStore(
                 'identity_providers', run,
                 validateIdentityProviderEntity,
-            );
-        this.authorizationCodes =
-            new HistoryEntityStore(
+            ),
+            authorizationCodes: new HistoryEntityStore(
                 'authorization_codes', run,
                 validateAuthorizationCodeEntity,
-            );
-        this.ideas =
-            new EntityStore(
-                'ideas', backend, stateStore,
+            ),
+            ideas: new EntityStore(
+                'ideas', run, stateStore,
                 validateIdeaEntity,
-            );
-        this.projects =
-            new EntityStore(
-                'projects', backend, stateStore,
+            ),
+            projects: new EntityStore(
+                'projects', run, stateStore,
                 validateProjectEntity,
-            );
-        this.flows =
-            new EntityStore(
-                'flows', backend, stateStore,
+            ),
+            flows: new EntityStore(
+                'flows', run, stateStore,
                 validateFlowEntity,
-            );
-        this.flowVersions =
-            new HistoryEntityStore(
+            ),
+            flowVersions: new HistoryEntityStore(
                 'flow_versions', run,
                 validateFlowVersionEntity,
-            );
-        this.projectFlows =
-            new EntityStore(
-                'project_flows', backend, stateStore,
+            ),
+            projectFlows: new EntityStore(
+                'project_flows', run, stateStore,
                 validateProjectFlowEntity,
-            );
-        this.workOrders =
-            new EntityStore(
-                'work_orders', backend, stateStore,
+            ),
+            workOrders: new EntityStore(
+                'work_orders', run, stateStore,
                 validateWorkOrderEntity,
-            );
-        this.flowWorkOrders =
-            new EntityStore(
-                'flow_work_orders',
-                backend, stateStore,
+            ),
+            flowWorkOrders: new EntityStore(
+                'flow_work_orders', run, stateStore,
                 validateFlowWorkOrderEntity,
-            );
-        this.stateFieldValues =
-            new EntityStore(
-                'state_field_values',
-                backend, stateStore,
+            ),
+            stateFieldValues: new EntityStore(
+                'state_field_values', run, stateStore,
                 validateStateFieldValueEntity,
-            );
-        this.records =
-            new EntityStore(
-                'records', backend, stateStore,
+            ),
+            records: new EntityStore(
+                'records', run, stateStore,
                 validateRecordEntity,
-            );
-        this.recordAttributes =
-            new EntityStore(
-                'record_attributes',
-                backend, stateStore,
+            ),
+            recordAttributes: new EntityStore(
+                'record_attributes', run, stateStore,
                 validateRecordAttributeEntity,
-            );
-        this.flowRecords =
-            new EntityStore(
-                'flow_records',
-                backend, stateStore,
+            ),
+            flowRecords: new EntityStore(
+                'flow_records', run, stateStore,
                 validateFlowRecordEntity,
-            );
-        this.ideaSubmissions =
-            new EntityStore(
-                'idea_submissions',
-                backend, stateStore,
+            ),
+            ideaSubmissions: new EntityStore(
+                'idea_submissions', run, stateStore,
                 validateIdeaSubmissionEntity,
-            );
-        this.objectives =
-            new EntityStore(
-                'objectives', backend, stateStore,
+            ),
+            objectives: new EntityStore(
+                'objectives', run, stateStore,
                 validateObjectiveEntity,
-            );
-        this.objectiveRevisions =
-            new HistoryEntityStore(
+            ),
+            objectiveRevisions: new HistoryEntityStore(
                 'objective_revisions', run,
                 validateObjectiveRevisionEntity,
-            );
-        this.projectObjectiveBaselineScores =
-            new HistoryEntityStore(
-                'project_objective_baseline_scores',
-                run,
-                validateBaselineScoreEntity,
-            );
-        this.projectObjectiveActualScores =
-            new HistoryEntityStore(
-                'project_objective_actual_scores',
-                run,
-                validateActualScoreEntity,
-            );
+            ),
+            projectObjectiveBaselineScores:
+                new HistoryEntityStore(
+                    'project_objective_baseline_scores',
+                    run,
+                    validateBaselineScoreEntity,
+                ),
+            projectObjectiveActualScores:
+                new HistoryEntityStore(
+                    'project_objective_actual_scores',
+                    run,
+                    validateActualScoreEntity,
+                ),
+        };
     }
 
     async initialize(): Promise<void> {}

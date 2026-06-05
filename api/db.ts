@@ -203,21 +203,11 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-export interface DbAdapter {
-    initialize(): Promise<void>;
-    close(): Promise<void>;
-    flush(): Promise<void>;
-    deleteSchema(): Promise<void>;
-    hasSchema(): Promise<boolean>;
-    createSchema(): Promise<void>;
-    exportSnapshot():
-        Promise<string>;
-    importSnapshot(
-        json: string,
-    ): Promise<void>;
-
-    simulateLatency(): Promise<void>;
-
+// The 32 stores an adapter exposes, factored out of
+// DbAdapter so an adapter can build the whole bundle in one
+// place (`#buildStores`) and a transaction can rebuild it
+// bound to an open tx (A9).
+export interface DbStores {
     members:
         EntityStore<MemberEntity>;
     humanMembers:
@@ -295,6 +285,18 @@ export interface DbAdapter {
             ProjectObjectiveActualScore
         >;
     states: StateStore;
+}
+
+export interface DbAdapter extends DbStores {
+    initialize(): Promise<void>;
+    close(): Promise<void>;
+    flush(): Promise<void>;
+    deleteSchema(): Promise<void>;
+    hasSchema(): Promise<boolean>;
+    createSchema(): Promise<void>;
+    exportSnapshot(): Promise<string>;
+    importSnapshot(json: string): Promise<void>;
+    simulateLatency(): Promise<void>;
 }
 
 export const TABLE_NAMES = [
