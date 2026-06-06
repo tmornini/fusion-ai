@@ -1080,6 +1080,21 @@ export interface RecordAttributeEntity {
     constraints: JsonArrayField;
 }
 
+// The parsed domain twin of RecordAttributeEntity: the
+// adapter is the divorce point, so above the storage seam
+// `options` and `constraints` are real arrays, never the
+// JsonArrayField strings the datastore persists.
+export interface RecordAttribute {
+    id: RecordAttributeId;
+    organization_id: Id;
+    record_id: RecordId;
+    name: string;
+    attribute_type: AttributeType;
+    sort_order: number;
+    options: string[];
+    constraints: Constraint[];
+}
+
 export interface FlowRecordEntity {
     id: FlowRecordId;
     flow_id: Id;
