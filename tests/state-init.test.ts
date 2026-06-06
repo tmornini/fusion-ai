@@ -7,6 +7,7 @@ import {
 import {
     initState,
     computeTheme,
+    isValidTheme,
 } from '../web-app/app/state.ts';
 
 // The static import above is itself the purity assertion:
@@ -43,3 +44,55 @@ test(
         }
     },
 );
+
+test('initState throws on a corrupt stored theme', () => {
+    const g =
+        globalThis as Record<string, unknown>;
+    g.localStorage = {
+        getItem: (k: string) =>
+            k === STORAGE_KEY_THEME ? 'purple' : null,
+    };
+    g.window = {
+        matchMedia: () => ({ matches: false }),
+    };
+    try {
+        assert.throws(
+            () => initState(),
+            /corrupt stored theme/,
+        );
+    } finally {
+        delete g.localStorage;
+        delete g.window;
+    }
+});
+
+test('initState throws on a corrupt stored sidebar', () => {
+    const g =
+        globalThis as Record<string, unknown>;
+    g.localStorage = {
+        getItem: (k: string) =>
+            k === STORAGE_KEY_THEME ? 'dark'
+                : k === STORAGE_KEY_SIDEBAR ? 'maybe'
+                    : null,
+    };
+    g.window = {
+        matchMedia: () => ({ matches: false }),
+    };
+    try {
+        assert.throws(
+            () => initState(),
+            /corrupt stored sidebar/,
+        );
+    } finally {
+        delete g.localStorage;
+        delete g.window;
+    }
+});
+
+test('isValidTheme accepts the three themes only', () => {
+    assert.equal(isValidTheme('light'), true);
+    assert.equal(isValidTheme('dark'), true);
+    assert.equal(isValidTheme('system'), true);
+    assert.equal(isValidTheme('purple'), false);
+    assert.equal(isValidTheme(null), false);
+});
