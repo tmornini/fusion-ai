@@ -644,17 +644,10 @@ export function validateMemberEntity(
     assertOnlyKeys(
         body, MEMBER_BODY_KEYS, 'MemberEntity',
     );
-    const type = pickString(body, 'type');
-    if (
-        type !== 'human'
-        && type !== 'ai'
-        && type !== 'system'
-    ) {
-        throw new Error(
-            'invalid member type "' + type
-            + '" on MemberEntity',
-        );
-    }
+    const type = validateEnumField(
+        body, 'type', ['human', 'ai', 'system'],
+        'member type', 'MemberEntity',
+    );
     return {
         type,
     };
@@ -668,13 +661,10 @@ export function validateIdentityEntity(
     assertOnlyKeys(
         body, IDENTITY_BODY_KEYS, 'IdentityEntity',
     );
-    const kind = pickString(body, 'kind');
-    if (kind !== 'person' && kind !== 'service') {
-        throw new Error(
-            'invalid identity kind "' + kind
-            + '" on IdentityEntity',
-        );
-    }
+    const kind = validateEnumField(
+        body, 'kind', ['person', 'service'],
+        'identity kind', 'IdentityEntity',
+    );
     return { kind };
 }
 
@@ -710,27 +700,14 @@ export function validateIdentityCredentialEntity(
         IDENTITY_CREDENTIAL_BODY_KEYS,
         'IdentityCredentialEntity',
     );
-    const kind = pickString(body, 'kind');
-    if (
-        kind !== 'password'
-        && kind !== 'client_secret'
-    ) {
-        throw new Error(
-            'invalid credential kind "' + kind
-            + '" on IdentityCredentialEntity',
-        );
-    }
-    const status = pickString(body, 'status');
-    if (
-        status !== 'set'
-        && status !== 'rotated'
-        && status !== 'revoked'
-    ) {
-        throw new Error(
-            'invalid credential status "' + status
-            + '" on IdentityCredentialEntity',
-        );
-    }
+    const kind = validateEnumField(
+        body, 'kind', ['password', 'client_secret'],
+        'credential kind', 'IdentityCredentialEntity',
+    );
+    const status = validateEnumField(
+        body, 'status', ['set', 'rotated', 'revoked'],
+        'credential status', 'IdentityCredentialEntity',
+    );
     return {
         identity_id: pickString(
             body, 'identity_id',
@@ -754,13 +731,9 @@ validateIdentityTokenRevocationEntity(
         IDENTITY_TOKEN_REVOCATION_BODY_KEYS,
         'IdentityTokenRevocationEntity',
     );
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'IdentityTokenRevocationEntity',
-        );
-    }
+    const at = validateTimestampField(
+        body, 'at', 'IdentityTokenRevocationEntity',
+    );
     return {
         identity_id: pickString(body, 'identity_id'),
         at,
@@ -780,13 +753,9 @@ export function validateIdentityDefaultOrgEntity(
         IDENTITY_DEFAULT_ORG_BODY_KEYS,
         'IdentityDefaultOrgEntity',
     );
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'IdentityDefaultOrgEntity',
-        );
-    }
+    const at = validateTimestampField(
+        body, 'at', 'IdentityDefaultOrgEntity',
+    );
     return {
         identity_id: pickString(body, 'identity_id'),
         organization_id: pickString(
@@ -807,20 +776,13 @@ export function validateRoleGrantEntity(
     assertOnlyKeys(
         body, ROLE_GRANT_BODY_KEYS, 'RoleGrantEntity',
     );
-    const action = pickString(body, 'action');
-    if (action !== 'granted' && action !== 'revoked') {
-        throw new Error(
-            'invalid role action "' + action
-            + '" on RoleGrantEntity',
-        );
-    }
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'RoleGrantEntity',
-        );
-    }
+    const action = validateEnumField(
+        body, 'action', ['granted', 'revoked'],
+        'role action', 'RoleGrantEntity',
+    );
+    const at = validateTimestampField(
+        body, 'at', 'RoleGrantEntity',
+    );
     return {
         organization_id: pickString(body, 'organization_id'),
         identity_id: pickString(body, 'identity_id'),
@@ -843,21 +805,13 @@ export function validateIdentityTokenEntity(
         body, IDENTITY_TOKEN_BODY_KEYS,
         'IdentityTokenEntity',
     );
-    const action = pickString(body, 'action');
-    if (action !== 'issued' && action !== 'rotated'
-        && action !== 'revoked') {
-        throw new Error(
-            'invalid token action "' + action
-            + '" on IdentityTokenEntity',
-        );
-    }
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'IdentityTokenEntity',
-        );
-    }
+    const action = validateEnumField(
+        body, 'action', ['issued', 'rotated', 'revoked'],
+        'token action', 'IdentityTokenEntity',
+    );
+    const at = validateTimestampField(
+        body, 'at', 'IdentityTokenEntity',
+    );
     return {
         jti: pickString(body, 'jti'),
         identity_id: pickString(body, 'identity_id'),
@@ -876,13 +830,10 @@ export function validateClientEntity(
     body: Record<string, unknown>,
 ): Omit<ClientEntity, 'id'> {
     assertOnlyKeys(body, CLIENT_BODY_KEYS, 'ClientEntity');
-    const status = pickString(body, 'status');
-    if (status !== 'active' && status !== 'disabled') {
-        throw new Error(
-            'invalid client status "' + status
-            + '" on ClientEntity',
-        );
-    }
+    const status = validateEnumField(
+        body, 'status', ['active', 'disabled'],
+        'client status', 'ClientEntity',
+    );
     return {
         grant_types: pickString(body, 'grant_types'),
         redirect_uris: pickString(body, 'redirect_uris'),
@@ -904,20 +855,13 @@ export function validateIdentityProviderEntity(
         body, IDENTITY_PROVIDER_BODY_KEYS,
         'IdentityProviderEntity',
     );
-    const action = pickString(body, 'action');
-    if (action !== 'linked' && action !== 'unlinked') {
-        throw new Error(
-            'invalid provider action "' + action
-            + '" on IdentityProviderEntity',
-        );
-    }
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'IdentityProviderEntity',
-        );
-    }
+    const action = validateEnumField(
+        body, 'action', ['linked', 'unlinked'],
+        'provider action', 'IdentityProviderEntity',
+    );
+    const at = validateTimestampField(
+        body, 'at', 'IdentityProviderEntity',
+    );
     return {
         identity_id: pickString(body, 'identity_id'),
         provider: pickString(body, 'provider'),
@@ -939,20 +883,13 @@ export function validateAuthorizationCodeEntity(
         body, AUTHORIZATION_CODE_BODY_KEYS,
         'AuthorizationCodeEntity',
     );
-    const status = pickString(body, 'status');
-    if (status !== 'issued' && status !== 'consumed') {
-        throw new Error(
-            'invalid code status "' + status
-            + '" on AuthorizationCodeEntity',
-        );
-    }
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'AuthorizationCodeEntity',
-        );
-    }
+    const status = validateEnumField(
+        body, 'status', ['issued', 'consumed'],
+        'code status', 'AuthorizationCodeEntity',
+    );
+    const at = validateTimestampField(
+        body, 'at', 'AuthorizationCodeEntity',
+    );
     return {
         code: pickString(body, 'code'),
         identity_id: pickString(body, 'identity_id'),
@@ -1325,13 +1262,9 @@ export function validateMembershipEntity(
     assertOnlyKeys(
         body, MEMBERSHIP_BODY_KEYS, 'MembershipEntity',
     );
-    const at = pickString(body, 'at');
-    if (Number.isNaN(Date.parse(at))) {
-        throw new Error(
-            'invalid timestamp "' + at + '" on '
-            + 'MembershipEntity',
-        );
-    }
+    const at = validateTimestampField(
+        body, 'at', 'MembershipEntity',
+    );
     return {
         organization_id: pickString(
             body, 'organization_id',
