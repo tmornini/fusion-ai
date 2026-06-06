@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { devToken, orgToken } from './token-fixtures.ts';
-import { seedRootAdmin } from './root-admin-fixture.ts';
+import { seedAdminSchema } from './test-fixtures.ts';
 import { jsonObjectField } from '../api/types.ts';
 
 const BASE = 'http://localhost';
@@ -51,8 +51,7 @@ function req(
 // test authorized.
 async function twoOrgs(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
-    await seedRootAdmin(db);
+    await seedAdminSchema(db);
     await db.roleGrants.put('role-current-admin-a', {
         organization_id: 'A', identity_id: 'current',
         role: 'admin', action: 'granted',

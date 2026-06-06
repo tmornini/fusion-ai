@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { devToken } from './token-fixtures.ts';
-import { seedRootAdmin } from './root-admin-fixture.ts';
+import { seedAdminSchema } from './test-fixtures.ts';
 import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
@@ -24,8 +24,7 @@ function orgRow(name: string) {
 
 async function ctxFor() {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
-    await seedRootAdmin(db);
+    await seedAdminSchema(db);
     const ctx = createRequestContext(db, await devToken());
     return { db, ctx };
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { GET } from '../api/api.ts';
 import { mintAccessToken } from '../api/access-token.ts';
-import { seedRootAdmin } from './root-admin-fixture.ts';
+import { seedAdminSchema } from './test-fixtures.ts';
 
 function ideaBody(org: string, title: string) {
     return {
@@ -28,8 +28,7 @@ async function orgToken(org: string): Promise<string> {
 
 async function twoOrgIdeas(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
-    await seedRootAdmin(db);   // current = admin (global)
+    await seedAdminSchema(db);   // current = admin (global)
     await db.ideas.put('a1', ideaBody('1', 'mine'));
     await db.ideas.put('b1', ideaBody('7', 'theirs'));
     return db;

@@ -30,15 +30,14 @@ import {
     seedAIMember,
 } from './member-fixtures.ts';
 import {
-    seedRootAdmin,
-} from './root-admin-fixture.ts';
+    seedAdminSchema,
+} from './test-fixtures.ts';
 
 async function setupSeeded(): Promise<{
     db: MemoryDbAdapter;
 }> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
-    await seedRootAdmin(db);
+    await seedAdminSchema(db);
     await seedHumanMember(
         db, 'hw_sarah_chen', 'Sarah Test',
     );
@@ -53,8 +52,7 @@ test(
     + ' resolves it as an author',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
-        await seedRootAdmin(db);
+        await seedAdminSchema(db);
         await seedHumanMember(
             db, 'hw_sarah', 'Sarah Chen',
         );
@@ -174,8 +172,7 @@ test(
     + ' an empty array',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
-        await seedRootAdmin(db);
+        await seedAdminSchema(db);
         const ctx = createRequestContext(db, await devToken());
         const members = await getMembers(ctx);
         assert.deepEqual(members, []);
@@ -187,8 +184,7 @@ test(
     + ' has no identity_pii row (erased)',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
-        await seedRootAdmin(db);
+        await seedAdminSchema(db);
         await db.members.put('hw_erased', {
             type: 'human',
         });
