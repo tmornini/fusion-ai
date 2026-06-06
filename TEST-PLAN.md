@@ -122,7 +122,7 @@ time budgets while keeping per-entity mutation domains disjoint:
    - Agent-F — Flows (includes hazard severity, flow-publish
      gate)
    - Agent-F2 — Workbox (includes Create-Work-Order picker
-     READY / NOT READY split)
+     READY / NOT READY split) + Records (section R)
    - Agent-G — Admin (Members page, Member detail (human + AI),
      Identities (list + detail + providers + tokens),
      Organization, Snapshots, Billing). The retired Teams /
@@ -130,9 +130,10 @@ time budgets while keeping per-entity mutation domains disjoint:
 4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
    Mutates global UI state (theme, sidebar, command palette) —
    no concurrent agents.
-5. **Phase 4 — Snapshot lifecycle** (one agent, alone):
-   G30–G35. Wipes and reloads the database — strictly last
-   before teardown.
+5. **Phase 4 — Snapshot lifecycle + persistence tier** (one
+   agent, alone): G30–G35 and L1–L8 (IndexedDB persistence).
+   Wipes and reloads the database — strictly last before
+   teardown.
 6. **Phase 5 — Teardown** (main): stop HTTP server, remove
    build directory, verify distribution ZIP remains, aggregate
    results.
@@ -280,7 +281,9 @@ last (they wipe the database). See `CLAUDE.md` section
 | I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
-| **Total** | **326** |
+| R. Records | 19 |
+| L. IndexedDB Persistence Tier | 8 |
+| **Total** | **353** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -289,9 +292,9 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |      984 |
-| Browser regression     |      326 |
-| **Combined TOTAL**     | **1310** |
+| CLI automated tests    |     1382 |
+| Browser regression     |      353 |
+| **Combined TOTAL**     | **1735** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -311,8 +314,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1310, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1310).
+`PASS = 1735, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1735).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -2113,6 +2116,12 @@ Sidebar entry plus list/detail pages, attribute editor with
 constraint sub-editor, flow binding, per-node attribute
 panel, and the property-test gate.
 
+Owner agent: Agent-F2 (Phase 2). The property-test gate
+(R13–R14a) rides Agent-F2's own work orders, and the record
+CRUD adds `records`, `record_attributes`, `flow_records` to
+its mutation domain — disjoint from every other agent, so no
+write-domain collision.
+
 - [ ] **R1** Sidebar shows a Records entry; click navigates
   to `records/`. PASS: list page renders ≥2 seeded Records
   (Customer Profile, Project Brief).
@@ -2179,6 +2188,8 @@ panel, and the property-test gate.
 
 Backend: `api/backend-indexeddb.ts`. No Node test (no fake-IDB, zero devDeps) — verified in-browser via the Chrome MCP. Serve: `TMPDIR=/tmp/claude ./serve 8080`.
 
+Owner: Phase 4 (alone, after Phase 2). L1–L8 reopen, wipe, and reseed the `fusion-ai` database, so they need exclusive DB access alongside G30–G35 — never concurrently with the seven Phase 2 agents.
+
 - [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 33 object stores (32 tables + `__schema__`).
 - [ ] **L2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
 - [ ] **L3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and table rows persist; the dashboard renders the seeded org.
@@ -2225,10 +2236,10 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-D       | D1–D37            |    X |       Y |    Z |
 | Agent-E       | E1–E11            |   11 |       0 |    0 |
 | Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
-| Agent-F2      | WB1–WB22 + subs   |   25 |       0 |    0 |
+| Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
 | Agent-G       | G9–14,19–24,36–40 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
-| Phase-4       | G30–G35           |    6 |       0 |    0 |
+| Phase-4       | G30–G35 + L1–L8   |    X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
 
 ## BLOCKED detail (known MCP limitations — NOT failures)
