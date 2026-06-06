@@ -299,6 +299,10 @@ whether to continue — the bundle is built from the same
 source, so a failing CLI suite makes the browser run
 meaningless. Report the failure, stop, await fix.
 
+The full evidence-based audit this gate opens — eight
+dimensions from doctrine to security — is the runbook in
+[AUDIT.md](AUDIT.md); `./validate` is its Phase 0.
+
 ## Gotchas
 
 - **`noUncheckedIndexedAccess`.** tsconfig enables this —

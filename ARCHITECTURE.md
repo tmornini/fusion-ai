@@ -196,6 +196,9 @@ boundary to cross. Each becomes a live exposure the moment the
 backend is physically split out and the browser becomes an
 untrusted client. None is coded around yet — no server exists —
 so this is the disclosure checklist that gates that split.
+An audit re-confirms each is still KNOWN (seam flag present,
+unwidened) and separates any NEW exposure — see
+[AUDIT.md](AUDIT.md) § Security: KNOWN vs NEW.
 
 - **Client-shipped HMAC key.** `SIGNING_KEY_MATERIAL`
   (`api/access-token.ts:70`) is a constant in client JS, so any
