@@ -44,6 +44,18 @@ import {
     writePreference,
 } from './preferences.ts';
 
+// Rows whose `field` equals `value` — the single-field
+// equality filter the adapters repeat. Type-safe: `field`
+// must be a key of T and `value` its type. Callers keep
+// their own map/sort.
+export function filterByField<T, K extends keyof T>(
+    rows: readonly T[],
+    field: K,
+    value: T[K],
+): T[] {
+    return rows.filter(row => row[field] === value);
+}
+
 // A unit of write work executed by ctx.commit().
 // `put` upserts a row by full state; `delete` removes
 // a row by its resource path. The whole batch posts as
