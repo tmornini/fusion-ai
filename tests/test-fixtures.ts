@@ -1,5 +1,8 @@
 import type { DbAdapter } from '../api/db.ts';
-import type { OrganizationEntity } from '../api/types.ts';
+import type {
+    IdeaEntity,
+    OrganizationEntity,
+} from '../api/types.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 
 // createSchema + seedRootAdmin — the setup nearly every adapter
@@ -26,5 +29,25 @@ export function orgRow(
         projects_limit: 10,
         ideas_limit: 10,
         last_activity: '2026-01-01T00:00:00.000Z',
+    };
+}
+
+// A minimal idea body (minus id) for the org-scope fence
+// tests: empty content, position 0, written raw below the
+// gate. The validated-path and id-bearing idea builders differ
+// in their defaults and stay local to their own suites.
+export function ideaBody(
+    org: string,
+    title: string,
+): Omit<IdeaEntity, 'id'> {
+    return {
+        organization_id: org,
+        title,
+        position: 0,
+        problem_statement: '',
+        target_users: '',
+        proposed_solution: '',
+        expected_outcome: '',
+        success_metrics: '',
     };
 }

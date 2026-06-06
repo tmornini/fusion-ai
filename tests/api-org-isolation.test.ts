@@ -3,19 +3,14 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { devToken, orgToken } from './token-fixtures.ts';
-import { orgRow, seedAdminSchema } from './test-fixtures.ts';
+import {
+    ideaBody,
+    orgRow,
+    seedAdminSchema,
+} from './test-fixtures.ts';
 import { jsonObjectField } from '../api/types.ts';
 
 const BASE = 'http://localhost';
-
-function ideaBody(org: string, title: string) {
-    return {
-        organization_id: org, title,
-        position: 0, problem_statement: '',
-        target_users: '', proposed_solution: '',
-        expected_outcome: '', success_metrics: '',
-    };
-}
 
 function req(
     method: string,
