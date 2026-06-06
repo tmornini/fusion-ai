@@ -3,28 +3,21 @@ import type {
     IdentityTokenAction,
     IdentityTokenEntity,
 } from './types.ts';
+import { latestByKey } from './ledger-reduction.ts';
 
 // Pure reductions over the append-only identity_tokens ledger.
 // The store is a dumb log; current validity is derived here.
 
 // The latest lifecycle action for a jti, or null if it has no
-// events. RFC-3339 zulu `at` sorts lexically = chronologically;
-// a same-instant tie keeps the LATER-APPENDED event (>=) — the
-// secure direction, so a revoke beats a co-timestamped issue.
+// events. latestByKey's default >= tiebreak keeps the later-
+// appended event on a same-`at` tie — the secure direction, so
+// a revoke beats a co-timestamped issue.
 export function latestActionForJti(
     rows: readonly IdentityTokenEntity[],
     jti: string,
 ): IdentityTokenAction | null {
-    let latest:
-        { action: IdentityTokenAction; at: string } | null
-        = null;
-    for (const row of rows) {
-        if (row.jti !== jti) continue;
-        if (latest === null || row.at >= latest.at) {
-            latest = { action: row.action, at: row.at };
-        }
-    }
-    return latest === null ? null : latest.action;
+    const latest = latestByKey(rows, row => row.jti).get(jti);
+    return latest === undefined ? null : latest.action;
 }
 
 // The chain_id a jti belongs to (null if unknown). Every event
