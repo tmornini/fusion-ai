@@ -81,6 +81,21 @@ export class ApiError {
     }
 }
 
+// A 401 from the Bearer gate, raised as a distinct type so the
+// web layer can tell "credentials are dead — try to refresh"
+// apart from every other failure. Extends Error (unlike
+// ApiError) so catch sites matching `instanceof Error` still
+// see it; `reason` carries the gate's message verbatim.
+export class UnauthorizedError extends Error {
+    readonly reason: string;
+
+    constructor(reason: string) {
+        super(reason);
+        this.name = 'UnauthorizedError';
+        this.reason = reason;
+    }
+}
+
 const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_ERROR = 500;
@@ -1563,6 +1578,9 @@ async function unwrapResponse<T>(
         (await response.json()) as {
             error: string;
         };
+    if (response.status === HTTP_UNAUTHORIZED) {
+        throw new UnauthorizedError(error);
+    }
     throw new Error(
         `${error} (${response.url})`,
     );
