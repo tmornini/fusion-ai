@@ -13,10 +13,12 @@ import {
 import { navigateTo } from '../app/core.ts';
 import { getViewportWidth } from '../app/adapters/index.ts';
 import {
+    getDbAdapter,
+    getSessionToken,
     setSessionToken,
 } from '../app/adapters/init.ts';
 import {
-    sessionContext,
+    createRequestContext,
 } from '../app/adapters/shared.ts';
 import {
     loginViaPassword,
@@ -524,8 +526,13 @@ export async function init(): Promise<void> {
 
         setTimeout(async () => {
             if (isLogin) {
+                // A recovery-free context: login establishes a
+                // NEW session and must not refresh-recover the
+                // OLD one on a 401 (a wrong password).
                 const creds = await loginViaPassword(
-                    sessionContext(), email, password,
+                    createRequestContext(
+                        getDbAdapter(), getSessionToken()),
+                    email, password,
                 );
                 if (creds === null) {
                     setHtml(submitBtn, trusted(savedBtn));
