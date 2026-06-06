@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { devToken, orgToken } from './token-fixtures.ts';
-import { seedAdminSchema } from './test-fixtures.ts';
+import { orgRow, seedAdminSchema } from './test-fixtures.ts';
 import { jsonObjectField } from '../api/types.ts';
 
 const BASE = 'http://localhost';
@@ -14,16 +14,6 @@ function ideaBody(org: string, title: string) {
         position: 0, problem_statement: '',
         target_users: '', proposed_solution: '',
         expected_outcome: '', success_metrics: '',
-    };
-}
-
-function orgRow(name: string) {
-    return {
-        name, domain: 'x.com',
-        next_billing: '2026-01-01T00:00:00.000Z',
-        seats: 10, used_seats: 1,
-        projects_limit: 10, ideas_limit: 10,
-        last_activity: '2026-01-01T00:00:00.000Z',
     };
 }
 
