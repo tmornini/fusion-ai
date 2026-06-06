@@ -1,4 +1,5 @@
 import { TABLE_NAMES } from './db.ts';
+import { extractErrorMessage } from './error-helpers.ts';
 import {
     validateMemberEntity,
     validateHumanMemberEntity,
@@ -151,10 +152,7 @@ function validateSnapshotRow(
                 break;
         }
     } catch (err) {
-        const msg =
-            err instanceof Error
-                ? err.message
-                : String(err);
+        const msg = extractErrorMessage(err);
         throw new Error(
             'Invalid snapshot row in '
             + label + ': ' + msg,

@@ -52,6 +52,7 @@ import {
 import {
     isProviderModelId,
 } from './provider-models.ts';
+import { extractErrorMessage } from './error-helpers.ts';
 
 export function parseOrThrow(
     raw: string,
@@ -60,9 +61,7 @@ export function parseOrThrow(
     try {
         return JSON.parse(raw);
     } catch (e) {
-        const msg = e instanceof Error
-            ? e.message
-            : String(e);
+        const msg = extractErrorMessage(e);
         throw new Error(
             'invalid JSON for '
                 + label + ': ' + msg,

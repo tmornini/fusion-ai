@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db.ts';
+import { extractErrorMessage } from './error-helpers.ts';
 import {
     EntityNotFound,
     MissingTableError,
@@ -1555,12 +1556,7 @@ export async function handleRequest(
             );
         }
         return Response.json(
-            {
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : String(error),
-            },
+            { error: extractErrorMessage(error) },
             { status: HTTP_INTERNAL_ERROR },
         );
     }
