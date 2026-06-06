@@ -548,6 +548,44 @@ export function pickJsonObjectField(
     return asJsonObjectField(body[key], key);
 }
 
+// A string field that must parse as a timestamp; returns it.
+// The entity label names the offender — same message every
+// ledger row's `at` validation emitted inline before.
+export function validateTimestampField(
+    body: Record<string, unknown>,
+    field: string,
+    entityLabel: string,
+): string {
+    const at = pickString(body, field);
+    if (Number.isNaN(Date.parse(at))) {
+        throw new Error(
+            'invalid timestamp "' + at + '" on ' + entityLabel,
+        );
+    }
+    return at;
+}
+
+// A string field that must be one of `allowed`; returns the
+// matched option (narrowed to E, no cast). `descriptor` names
+// the field in the message ("member type", "credential status")
+// so the wording matches the inline checks it replaces.
+export function validateEnumField<E extends string>(
+    body: Record<string, unknown>,
+    field: string,
+    allowed: readonly E[],
+    descriptor: string,
+    entityLabel: string,
+): E {
+    const value = pickString(body, field);
+    for (const option of allowed) {
+        if (value === option) return option;
+    }
+    throw new Error(
+        'invalid ' + descriptor + ' "' + value
+        + '" on ' + entityLabel,
+    );
+}
+
 // ── Key-set enforcement ──────────────
 //
 // assertOnlyKeys checks exact key-set
