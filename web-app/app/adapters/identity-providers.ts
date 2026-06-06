@@ -8,6 +8,9 @@ import {
     type IdentityProviderEntity,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
+import {
+    latestByKey,
+} from '../../../api/ledger-reduction.ts';
 
 async function appendProviderEvent(
     ctx: RequestContext,
@@ -89,22 +92,12 @@ export async function getProvidersFor(
     const all = await ctx.GET<IdentityProviderEntity[]>(
         'identity-providers',
     );
-    const latest = new Map<
-        string,
-        { action: IdentityProviderAction; at: string }
-    >();
-    for (const ev of all) {
-        if (ev.identity_id !== identityId) continue;
-        // Latest by `at`, not array order — same secure
-        // `>=` tie-break the sibling ledgers reduce by.
-        const prev = latest.get(ev.provider);
-        if (prev === undefined || ev.at >= prev.at) {
-            latest.set(
-                ev.provider,
-                { action: ev.action, at: ev.at },
-            );
-        }
-    }
+    const forIdentity = all.filter(
+        ev => ev.identity_id === identityId,
+    );
+    // Latest by `at`, not array order — latestByKey's default
+    // >= tiebreak is the secure direction the siblings share.
+    const latest = latestByKey(forIdentity, ev => ev.provider);
     const linked: string[] = [];
     for (const [provider, last] of latest) {
         if (last.action === 'linked') linked.push(provider);
