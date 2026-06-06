@@ -276,14 +276,14 @@ last (they wipe the database). See `CLAUDE.md` section
 | F. Tools | 74 |
 | F2. Workbox | 26 |
 | FS. Flow Statistics | 9 |
-| G. Admin Pages | 27 |
+| G. Admin Pages | 31 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
 | L. IndexedDB Persistence Tier | 8 |
-| **Total** | **353** |
+| **Total** | **357** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -293,8 +293,8 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |     1382 |
-| Browser regression     |      353 |
-| **Combined TOTAL**     | **1735** |
+| Browser regression     |      357 |
+| **Combined TOTAL**     | **1739** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -314,8 +314,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1735, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1735).
+`PASS = 1739, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1739).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -1687,6 +1687,13 @@ the claude-in-chrome MCP.
   saved"; on reopen the read view shows the new model as
   "{name} — {provider}".
 
+### Identities (list & detail) (`identities/`, `identity-detail/`)
+
+- [ ] **G43** Navigate to `identities/index.html` (or click "Identities" in the sidebar). PASS: the header reads "Identities" with an "Add Identity" button (`#add-identity-btn`); `#identity-list` renders one `.card[data-identity-id]` per identity — a person row shows an initials avatar + name + email sub-line + a "Person" badge; a service row shows a shield avatar + the id (as both name and sub) + a "Service" badge. With mock data seeded, ≥11 person rows (Emily Rodriguez, David Martinez, Sarah Chen, …) and ≥5 service rows appear, including the system service identity. An empty roster renders "No identities yet." Source: `web-app/identities/index.ts`, `web-app/app/presenters/identity-list.ts` (`IdentityRosterPresenter`).
+- [ ] **G44** Click "Add Identity". PASS: the `add-identity` dialog opens with a Kind toggle (Person checked by default / Service). With Person selected, the person form (`#add-identity-person-form`) shows Name/Email/Phone/Bio inputs; fill Name + Email, click "Create" (`#add-identity-submit`) → an "Identity added" toast, the dialog closes, and the new person appears in the roster (name + email). Re-open the dialog and click the "Service" radio → the person form hides and the service form (`#svc-secret`, "Client Secret") shows; enter a secret, Create → a "Service identity added" toast, the dialog closes, and a new "Service"-badged row appears. Submitting Person with an empty Name or Email shows "Name and email are required" and keeps the dialog open. Source: `web-app/identities/index.ts` (`handleAddIdentitySubmit` / `submitPersonForm` / `submitServiceForm`).
+- [ ] **G45** From the roster, click a person row (`.card[data-identity-id]`). PASS: navigates to `identities/detail.html?identityId=<id>`, which renders the back button (`#identity-back-btn`), the name + a kind badge + the id, a "Personal Information" card (Name/Email/Phone/Bio — each empty field rendered as "—" via `DISPLAY_ABSENT`), a "Connections" card (Identity Providers / Tokens buttons), and — for a person — an "Erase PII" button (`#identity-erase-btn`). A service identity instead shows a "Credentials" card and NO erase button (only persons carry erasable PII). Source: `web-app/identities/index.ts` (`onListClick`), `web-app/identities/detail.ts`, `web-app/app/presenters/identity-detail.ts`.
+- [ ] **G46** On a person's detail page, click "Erase PII" (`#identity-erase-btn`) and accept the `window.confirm` ("Erase this identity's personal information? The identity itself survives."). PASS: `deleteIdentityPii` runs, a "Personal information erased" toast appears, and the view re-renders in place — the name becomes "Unknown member" (`ERASED_MEMBER_NAME`) and Email/Phone/Bio all read "—" (`DISPLAY_ABSENT`); the identity row still exists in the roster (erasure splices `identity_pii` only, leaving the identity and every `member_id` reference intact). Declining the confirm leaves the PII unchanged. Source: `web-app/identities/detail.ts` (`handleErase` → `deleteIdentityPii`). MCP note: stub `window.confirm` to return true before the click — a native modal blocks the extension.
+
 ### Identity tokens & providers (`identity-tokens/`, `identity-providers/`)
 
 - [ ] **G25** Navigate to `identity-tokens/index.html?identityId=current` (or open an identity from `identities/` and click its "Tokens" link). PASS: the "Tokens — Refresh-token chains for this identity" page renders one card per chain, each showing the chain id, the event jti, `parent: —` for a root event (or the parent jti for a rotated one), an `issued`/`rotated`/`revoked` badge, and a LOCAL-time stamp; an identity with no tokens shows "No tokens." The presenter consumes the adapter's camelCase `TokenEvent` domain shape (`jti`, `parentJti`, `action`, `at`) — a snake_case storage leak would render `parent: undefined` instead of `parent: —`. Source: `web-app/app/adapters/identity-tokens.ts` (`TokenEvent`), `web-app/app/presenters/identity-tokens.ts`.
@@ -2237,7 +2244,7 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-E       | E1–E11            |   11 |       0 |    0 |
 | Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
-| Agent-G       | G9–14,19–24,36–42 |    X |       0 |    0 |
+| Agent-G       | G9–14,19–24,36–46 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
 | Phase-4       | G30–G35 + L1–L8   |    X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
