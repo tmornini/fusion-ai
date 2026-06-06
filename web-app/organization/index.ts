@@ -1,4 +1,7 @@
 import { $ } from '../app/dom.ts';
+import {
+    makeFieldKeyValidator,
+} from '../app/field-key-validator.ts';
 import { setHtml } from '../app/safe-html.ts';
 import {
     buildSkeleton, buildErrorState,
@@ -62,12 +65,7 @@ let pageContainer: HTMLElement | null = null;
 const FIELDS: ReadonlySet<GeneralInfoFieldKey> =
     new Set(['name', 'domain']);
 
-function isFieldKey(
-    s: string | null,
-): s is GeneralInfoFieldKey {
-    return s !== null
-        && FIELDS.has(s as GeneralInfoFieldKey);
-}
+const isFieldKey = makeFieldKeyValidator(FIELDS);
 
 function buildPresenter():
     | OrganizationPresenter

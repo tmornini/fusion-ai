@@ -4,6 +4,9 @@ import {
 import { showToast } from '../app/toast.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
+    makeFieldKeyValidator,
+} from '../app/field-key-validator.ts';
+import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states.ts';
 import { setHtml } from '../app/safe-html.ts';
@@ -104,12 +107,7 @@ const SUBMIT_ON_ENTER_IDS:
         'new-flow-name',
     ]);
 
-function isFieldKey(
-    s: string | null,
-): s is ProjectFieldKey {
-    return s !== null
-        && FIELDS.has(s as ProjectFieldKey);
-}
+const isFieldKey = makeFieldKeyValidator(FIELDS);
 
 async function loadProjectView(
     projectId: string,

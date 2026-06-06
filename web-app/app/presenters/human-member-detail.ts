@@ -2,6 +2,9 @@ import {
     html, setHtml, SafeHtml, trusted,
 } from '../safe-html.ts';
 import { $required } from '../dom.ts';
+import {
+    makeFieldKeyValidator,
+} from '../field-key-validator.ts';
 import { initials } from '../core.ts';
 import { displayText } from '../format.ts';
 import {
@@ -78,14 +81,8 @@ const FIELD_KEYS:
         'state', 'bio',
     ]);
 
-export function isHumanMemberFieldKey(
-    s: string | null,
-): s is HumanMemberFieldKey {
-    return s !== null
-        && FIELD_KEYS.has(
-            s as HumanMemberFieldKey,
-        );
-}
+export const isHumanMemberFieldKey =
+    makeFieldKeyValidator(FIELD_KEYS);
 
 export function humanMemberDraftFromMember(
     member: HumanMember,
