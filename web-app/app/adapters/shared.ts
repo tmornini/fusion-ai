@@ -228,7 +228,23 @@ async function recoverSession(
     }
     putSessionCredentials(refreshed);
     setSessionToken(refreshed.accessToken);
-    await rescopeToActiveOrg(adapter, refreshed.accessToken);
+    try {
+        await rescopeToActiveOrg(
+            adapter, refreshed.accessToken);
+    } catch (err) {
+        // The refreshed token died (revoked mid-flight) before
+        // the org re-scope completed — terminal, same as a dead
+        // refresh: scrub and bounce. A non-401 is a real bug and
+        // surfaces. This keeps recoverSession's contract whole:
+        // it returns a token or null (having redirected), and
+        // never throws a 401 past withAuthRecovery's catch.
+        if (err instanceof UnauthorizedError) {
+            deleteSessionCredentials();
+            redirectToLogin();
+            return null;
+        }
+        throw err;
+    }
     return getSessionToken();
 }
 

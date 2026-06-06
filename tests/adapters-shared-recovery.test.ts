@@ -19,15 +19,25 @@ globalThis.localStorage = (() => {
     };
 })();
 
+// Minimal DOM stubs so redirectToLogin (getPageName reads
+// data-page; navigateTo sets window.location.href) runs in Node.
+// @ts-expect-error - Node global stub
+globalThis.window = { location: { href: '', search: '' } };
+// @ts-expect-error - Node global stub
+globalThis.document = {
+    documentElement: { getAttribute: () => 'dashboard' },
+};
+
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { handleRequest } from '../api/api.ts';
+import { handleRequest, UnauthorizedError } from '../api/api.ts';
 import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { setSessionToken } from '../web-app/app/adapters/init.ts';
 import {
+    getSessionCredentials,
     putSessionCredentials,
 } from '../web-app/app/adapters/session-credentials.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
@@ -81,4 +91,27 @@ async () => {
     // the 401 triggers refresh + org re-scope + one retry
     const members = await ctx.GET('members');
     assert.ok(Array.isArray(members));
+});
+
+test('recovery with both tokens dead scrubs and bounces',
+async () => {
+    localStorage.clear();
+    window.location.href = '';
+    const db = await freshDb();
+    // both tokens dead → the resolver says login, not refresh
+    const dead = await expiredToken();
+    putSessionCredentials({
+        accessToken: dead, refreshToken: dead,
+    });
+    setSessionToken(dead);
+    const ctx = createRequestContext(
+        db, dead, { recover: true });
+    // the 401 is unrecoverable: the original error propagates
+    await assert.rejects(
+        () => ctx.GET('members'), UnauthorizedError);
+    // the dead credential was scrubbed...
+    assert.equal(getSessionCredentials(), null);
+    // ...and the tab was redirected to the login page
+    assert.match(
+        window.location.href, /auth.*return=dashboard/);
 });
