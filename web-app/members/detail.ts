@@ -16,6 +16,7 @@ import {
     type AIMemberDraftFields,
 } from '../app/presenters/index.ts';
 import { showToast } from '../app/toast.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import { log } from '../app/logger.ts';
 import {
     buildSkeleton,
@@ -476,9 +477,7 @@ async function saveHumanMember(
             );
         }
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'human member save failed',
             'members', err,

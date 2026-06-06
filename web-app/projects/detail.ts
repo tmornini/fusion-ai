@@ -2,6 +2,7 @@ import {
     $, $inputRequired, isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     buildSkeleton, buildErrorState,
 } from '../app/loading-states.ts';
@@ -341,10 +342,7 @@ export async function init(
                     );
                     closeDialog('approve');
                 } catch (err) {
-                    const message =
-                        err instanceof Error
-                            ? err.message
-                            : String(err);
+                    const message = extractErrorMessage(err);
                     showToast(message, 'error');
                     closeDialog('approve');
                     throw err;
@@ -374,10 +372,7 @@ export async function init(
                     );
                     closeDialog('archive');
                 } catch (err) {
-                    const message =
-                        err instanceof Error
-                            ? err.message
-                            : String(err);
+                    const message = extractErrorMessage(err);
                     showToast(message, 'error');
                     closeDialog('archive');
                     throw err;
@@ -702,9 +697,7 @@ async function handleSave(): Promise<void> {
             );
         }
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'project save failed',
             'projects', err,

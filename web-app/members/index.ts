@@ -6,6 +6,7 @@ import {
     html, setHtml,
 } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states.ts';
@@ -320,9 +321,7 @@ async function submitHumanForm(): Promise<void> {
             'active',
         );
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'postHumanMemberCreation failed',
             'members', err,

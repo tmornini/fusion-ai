@@ -3,6 +3,7 @@ import {
     populateIcons,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states.ts';
@@ -181,9 +182,7 @@ async function submitPersonForm(): Promise<void> {
             },
         );
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'postIdentityCreation person failed',
             'identities', err,
@@ -217,9 +216,7 @@ async function submitServiceForm(): Promise<void> {
             { kind: 'service', secret },
         );
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'postIdentityCreation service failed',
             'identities', err,

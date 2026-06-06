@@ -10,6 +10,7 @@ import {
     type IdeaDraftFields,
 } from '../app/presenters/index.ts';
 import { showToast } from '../app/toast.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import { log } from '../app/logger.ts';
 import {
     buildSkeleton,
@@ -106,9 +107,7 @@ async function transitionIdea(
             ctx, ideaId, toState,
         );
     } catch (err) {
-        const detail = err instanceof Error
-            ? err.message
-            : String(err);
+        const detail = extractErrorMessage(err);
         log.error(
             'postIdeaStateChange failed',
             'ideas', err,
