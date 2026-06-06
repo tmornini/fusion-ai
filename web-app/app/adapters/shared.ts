@@ -13,7 +13,6 @@ import {
     getDbAdapter,
     getSessionToken,
 } from './init.ts';
-import type { Channel } from '../channels.ts';
 import {
     type Principal,
     principalFromToken,
@@ -26,9 +25,7 @@ import {
 // applies entirely or not at all. On failure, commit()
 // throws CommitError(0, [], cause); `applied` is always
 // empty because real rollback leaves nothing partially
-// applied. notifyChannels fire only after the batch
-// succeeds — one batched event per channel per logical
-// operation.
+// applied.
 export type WriteOp =
     | {
         method: 'put';
@@ -42,7 +39,6 @@ export type WriteOp =
 
 export interface Transaction {
     readonly ops: readonly WriteOp[];
-    readonly notifyChannels?: readonly Channel<void>[];
 }
 
 export class CommitError extends Error {
@@ -113,13 +109,6 @@ export function createRequestContext(
                 // Atomic batch: a failure applied nothing,
                 // so `applied` is always empty.
                 throw new CommitError(0, [], e as Error);
-            }
-            if (tx.notifyChannels) {
-                for (
-                    const ch of tx.notifyChannels
-                ) {
-                    ch.send();
-                }
             }
         },
     };
