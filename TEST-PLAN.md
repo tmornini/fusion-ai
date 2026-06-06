@@ -1761,7 +1761,7 @@ restored data.)
   `tests/snapshot-wipe-on-fail.test.ts` (now atomic-rollback) —
   this case verifies the error toast/inline-error surfaces in the
   UI.)
-- [ ] **G36** Member lifecycle is recorded in the `states`
+- [ ] **G41** Member lifecycle is recorded in the `states`
   event log. On a member detail page (human OR AI), click
   Edit, change the State select (active / pending /
   archived), and Save. PASS: the chosen state is written
@@ -1786,7 +1786,7 @@ verify the page loads and the sidebar nav link works
 — functional billing tests will be added when the
 feature is implemented.
 
-- [ ] **G37** Click "Billing" in the sidebar. PASS:
+- [ ] **G42** Click "Billing" in the sidebar. PASS:
   browser navigates to `billing/index.html`. The page
   renders without console errors. Sidebar highlights
   the Billing link as active. No runtime JS errors
@@ -2237,7 +2237,7 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-E       | E1–E11            |   11 |       0 |    0 |
 | Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
-| Agent-G       | G9–14,19–24,36–40 |    X |       0 |    0 |
+| Agent-G       | G9–14,19–24,36–42 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
 | Phase-4       | G30–G35 + L1–L8   |    X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
