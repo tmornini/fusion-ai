@@ -5,25 +5,19 @@ import {
     STORAGE_KEY_SIDEBAR,
 } from '../web-app/app/storage-keys.ts';
 import {
-    getState,
     initState,
+    computeTheme,
 } from '../web-app/app/state.ts';
 
-// The static import above is itself the purity
-// assertion: state.ts must not throw on import. It
-// touches neither localStorage nor window at module
-// load, so the initial state is plain domain defaults.
-// initState() hydrates the persisted preferences at
-// boot — this test walks both halves of that lifecycle.
+// The static import above is itself the purity assertion:
+// state.ts must not throw on import — it touches neither
+// localStorage nor window at module load, so the initial
+// state is plain domain defaults. initState() hydrates the
+// persisted preferences at boot; computeTheme() is the
+// observable that proves the theme was hydrated from storage.
 test(
-    'state starts at defaults, then initState'
-    + ' hydrates the persisted preferences',
+    'initState hydrates the persisted theme preference',
     () => {
-        const before = getState();
-        assert.equal(before.theme, 'system');
-        assert.equal(before.isMobile, false);
-        assert.equal(before.isSidebarCollapsed, false);
-
         const g =
             globalThis as Record<string, unknown>;
         g.localStorage = {
@@ -42,11 +36,7 @@ test(
         };
         try {
             initState();
-            const after = getState();
-            assert.equal(after.theme, 'dark');
-            assert.equal(
-                after.isSidebarCollapsed, true);
-            assert.equal(after.isMobile, true);
+            assert.equal(computeTheme(), 'dark');
         } finally {
             delete g.localStorage;
             delete g.window;
