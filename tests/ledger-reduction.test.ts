@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { latestByKey } from '../api/ledger-reduction.ts';
+import {
+    latestByKey,
+    findFirstByKey,
+} from '../api/ledger-reduction.ts';
 
 const row = (key: string, at: string, val: string) => ({
     key, at, val,
@@ -51,4 +54,31 @@ test('a strict `>` compare keeps the first-appended row', () => {
 test('latestByKey returns an empty map for no rows', () => {
     const rows: { key: string; at: string }[] = [];
     assert.equal(latestByKey(rows, r => r.key).size, 0);
+});
+
+test('findFirstByKey extracts a field from the first match', () => {
+    const rows = [
+        { id: 'a', name: 'Ann' },
+        { id: 'b', name: 'Bob' },
+    ];
+    assert.equal(
+        findFirstByKey(rows, r => r.id === 'b', r => r.name),
+        'Bob');
+});
+
+test('findFirstByKey returns null when nothing matches', () => {
+    const rows = [{ id: 'a', name: 'Ann' }];
+    assert.equal(
+        findFirstByKey(rows, r => r.id === 'z', r => r.name),
+        null);
+});
+
+test('findFirstByKey returns the first of several matches', () => {
+    const rows = [
+        { id: 'a', name: 'first' },
+        { id: 'a', name: 'second' },
+    ];
+    assert.equal(
+        findFirstByKey(rows, r => r.id === 'a', r => r.name),
+        'first');
 });

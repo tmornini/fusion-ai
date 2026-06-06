@@ -25,3 +25,17 @@ export function latestByKey<T extends { at: string }, K>(
     }
     return latest;
 }
+
+// The field extracted from the FIRST row matching `match`, or
+// null if none matches. Composes the find-then-extract idiom the
+// lookups repeat: predicate and extractor injected, the caller
+// keeps its own field choice. The absence is modelled as null
+// here; a caller wanting a fallback supplies it (`?? fallback`).
+export function findFirstByKey<T, V>(
+    rows: readonly T[],
+    match: (row: T) => boolean,
+    extract: (row: T) => V,
+): V | null {
+    const row = rows.find(match);
+    return row === undefined ? null : extract(row);
+}

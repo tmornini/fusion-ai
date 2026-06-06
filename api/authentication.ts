@@ -27,7 +27,10 @@ import {
 import {
     currentDefaultOrgFor,
 } from './authorization.ts';
-import { latestByKey } from './ledger-reduction.ts';
+import {
+    latestByKey,
+    findFirstByKey,
+} from './ledger-reduction.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -67,8 +70,9 @@ async function nameFor(
     identityId: Id,
 ): Promise<string> {
     const all = await adapter.identityPii.getAll();
-    const pii = all.find(p => p.id === identityId);
-    return pii?.name ?? identityId;
+    return findFirstByKey(
+        all, p => p.id === identityId, p => p.name,
+    ) ?? identityId;
 }
 
 // The subject's reachable orgs — every org it is a member of,
@@ -524,9 +528,9 @@ function identityByEmail(
     rows: readonly IdentityPiiEntity[],
     email: string,
 ): Id | null {
-    const pii = rows.find(p => p.email === email);
-    if (pii === undefined) return null;
-    return pii.id;
+    return findFirstByKey(
+        rows, p => p.email === email, p => p.id,
+    );
 }
 
 // The current (non-revoked) password PHC for an identity, or
