@@ -5,6 +5,7 @@ import {
     PUT as httpPut,
     DELETE as httpDelete,
     POST as httpPost,
+    UnauthorizedError,
 } from '../../../api/api.ts';
 import {
     generateCryptoSafeBase62,
@@ -12,11 +13,36 @@ import {
 import {
     getDbAdapter,
     getSessionToken,
+    setSessionToken,
 } from './init.ts';
 import {
     type Principal,
     principalFromToken,
 } from '../../../api/access-token.ts';
+import {
+    resolveCredentialDecision,
+} from '../credential-resolution.ts';
+import {
+    type SessionCredentials,
+    getSessionCredentials,
+    putSessionCredentials,
+    deleteSessionCredentials,
+} from './session-credentials.ts';
+import { postSessionRefresh } from './session-refresh.ts';
+import { redirectToLogin } from '../auth-redirect.ts';
+import { getOrganizations } from './organizations.ts';
+import {
+    getIdentityDefaultOrg,
+} from './identity-default-org.ts';
+import {
+    ACTIVE_ORG_KEY,
+    resolveActiveOrg,
+    postOrgSessionExchange,
+} from './org-session.ts';
+import {
+    getPreference,
+    writePreference,
+} from './preferences.ts';
 
 // A unit of write work executed by ctx.commit().
 // `put` upserts a row by full state; `delete` removes
@@ -81,23 +107,41 @@ export interface RequestContext {
 export function createRequestContext(
     adapter: DbAdapter,
     token: string,
+    options: { recover?: boolean } = {},
 ): RequestContext {
+    const recover = options.recover === true;
     const identity = principalFromToken(token);
+
+    // A recovery-free context runs each verb directly on its
+    // captured token; a recovery-enabled one (sessionContext)
+    // routes through withAuthRecovery, which on a 401 refreshes
+    // the session and retries against the live token once.
+    function run<T>(
+        make: (tok: string) => Promise<T>,
+    ): Promise<T> {
+        return recover
+            ? withAuthRecovery(adapter, make)
+            : make(token);
+    }
+
     const ctx: RequestContext = {
         requestId: generateCryptoSafeBase62(),
         identity,
         GET: <T>(resource: string) =>
-            httpGet<T>(adapter, resource, token),
+            run<T>(tok => httpGet<T>(adapter, resource, tok)),
         PUT: <T>(
             resource: string,
             body: Record<string, unknown>,
-        ) => httpPut<T>(adapter, resource, body, token),
+        ) => run<T>(
+            tok => httpPut<T>(adapter, resource, body, tok)),
         DELETE: (resource: string) =>
-            httpDelete(adapter, resource, token),
+            run<void>(
+                tok => httpDelete(adapter, resource, tok)),
         POST: <T>(
             resource: string,
             body: Record<string, unknown>,
-        ) => httpPost<T>(adapter, resource, body, token),
+        ) => run<T>(
+            tok => httpPost<T>(adapter, resource, body, tok)),
         commit: async (
             tx: Transaction,
         ): Promise<void> => {
@@ -117,8 +161,119 @@ export function createRequestContext(
 
 export function sessionContext(): RequestContext {
     return createRequestContext(
-        getDbAdapter(), getSessionToken(),
+        getDbAdapter(), getSessionToken(), { recover: true },
     );
+}
+
+// Wrap one verb call with single-shot 401 recovery. The first
+// attempt runs on the live session token. A non-401 fault
+// surfaces untouched. A 401 drives one refresh + re-scope; the
+// call is retried exactly once against the recovered token. A
+// second 401 (or no refreshable credential) clears the session
+// and bounces to login — there is no third attempt.
+async function withAuthRecovery<T>(
+    adapter: DbAdapter,
+    make: (tok: string) => Promise<T>,
+): Promise<T> {
+    try {
+        return await make(getSessionToken());
+    } catch (err) {
+        if (!(err instanceof UnauthorizedError)) {
+            throw err;
+        }
+        const recovered = await recoverSession(adapter);
+        if (recovered === null) {
+            throw err;   // unrefreshable — already redirected
+        }
+        try {
+            return await make(recovered);
+        } catch (retryErr) {
+            if (retryErr instanceof UnauthorizedError) {
+                deleteSessionCredentials();
+                redirectToLogin();
+            }
+            throw retryErr;
+        }
+    }
+}
+
+// Refresh the session from the stored credential, returning the
+// new fully-scoped token, or null when there is nothing to
+// refresh (then login has already been triggered). H14: a bare
+// 401 with no refreshable credential never makes a pointless
+// refresh round-trip.
+async function recoverSession(
+    adapter: DbAdapter,
+): Promise<string | null> {
+    let creds: SessionCredentials | null;
+    try {
+        creds = getSessionCredentials();
+    } catch {
+        // a corrupt blob is unrecoverable — scrub and bounce
+        deleteSessionCredentials();
+        redirectToLogin();
+        return null;
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const decision = resolveCredentialDecision(creds, now);
+    if (decision.kind !== 'refresh') {
+        deleteSessionCredentials();
+        redirectToLogin();
+        return null;
+    }
+    const refreshed = await refreshCredentials(
+        adapter, decision.refreshToken);
+    if (refreshed === null) {
+        return null;
+    }
+    putSessionCredentials(refreshed);
+    setSessionToken(refreshed.accessToken);
+    await rescopeToActiveOrg(adapter, refreshed.accessToken);
+    return getSessionToken();
+}
+
+// Run the refresh grant on a recovery-FREE context: a refresh
+// that itself 401s (reuse/expiry) is terminal and must not
+// recurse. A dead refresh scrubs the session and bounces.
+async function refreshCredentials(
+    adapter: DbAdapter,
+    refreshToken: string,
+): Promise<SessionCredentials | null> {
+    const free = createRequestContext(adapter, getSessionToken());
+    try {
+        return await postSessionRefresh(free, refreshToken);
+    } catch (err) {
+        if (err instanceof UnauthorizedError) {
+            deleteSessionCredentials();
+            redirectToLogin();
+            return null;
+        }
+        throw err;
+    }
+}
+
+// Re-scope the freshly refreshed (org-agnostic) token to the
+// active org, exactly as boot does — resolving the target from
+// the REACHABLE set first, so the exchange never targets a
+// non-member org (H13). Mirrors scopeBootToActiveOrg.
+async function rescopeToActiveOrg(
+    adapter: DbAdapter,
+    flatToken: string,
+): Promise<void> {
+    const ctx = createRequestContext(adapter, flatToken);
+    const reachable =
+        (await getOrganizations(ctx)).map(o => o.id);
+    if (reachable.length === 0) {
+        return;
+    }
+    const active = resolveActiveOrg(
+        reachable,
+        getPreference(ACTIVE_ORG_KEY),
+        await getIdentityDefaultOrg(ctx),
+    );
+    setSessionToken(
+        await postOrgSessionExchange(ctx, flatToken, active));
+    writePreference(ACTIVE_ORG_KEY, active);
 }
 
 // The active org the session is scoped to. Post-boot the
