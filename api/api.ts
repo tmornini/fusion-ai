@@ -52,6 +52,9 @@ import {
 } from './access-token.ts';
 import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
+    ownerOrgOfEntity,
+} from './store-parent-scoped.ts';
+import {
     currentRolesForInOrg,
     currentDefaultOrgFor,
     isPermitted,
@@ -174,6 +177,17 @@ function withoutId(
     body: Record<string, unknown>,
 ): Record<string, unknown> {
     const { id: _id, ...rest } = body;
+    return rest;
+}
+
+// Project the opaque `secret` out of a credential before it
+// crosses the API boundary — reads expose existence and
+// lifecycle, never the hash. Makes true the non-leakage
+// covenant in types.ts and SCHEMA.md SP-1.
+function withoutSecret(
+    cred: IdentityCredentialEntity,
+): Omit<IdentityCredentialEntity, 'secret'> {
+    const { secret: _secret, ...rest } = cred;
     return rest;
 }
 
@@ -482,13 +496,15 @@ const routes: Route[] = [
             db.identityPii.delete(param(p, 0)),
     }),
     route('identity-credentials', {
-        get: (db) => db.identityCredentials.getAll(),
+        get: async (db) =>
+            (await db.identityCredentials.getAll())
+                .map(withoutSecret),
     }),
     route('identity-credentials/:id', {
-        get: (db, p) =>
-            db.identityCredentials.getById(
-                param(p, 0),
-            ),
+        get: async (db, p) =>
+            withoutSecret(
+                await db.identityCredentials.getById(
+                    param(p, 0))),
         put: (db, p, payload) =>
             db.identityCredentials.put(
                 param(p, 0),
@@ -1144,15 +1160,26 @@ async function enumerateMyOrgs(
     adapter: DbAdapter,
     principal: Principal,
 ): Promise<Response> {
-    const memberships = await adapter.memberships.getAll();
-    const mine = new Set(
-        memberships
-            .filter(m => m.identity_id === principal.id)
-            .map(m => m.organization_id),
-    );
+    const mine = await callerOrgIds(adapter, principal);
     const orgs = await adapter.organizations.getAll();
     return Response.json(
         orgs.filter(o => mine.has(o.id)),
+    );
+}
+
+// The orgs a caller can reach, derived FRESH from the
+// membership ledger (never the token claim, so it cannot be
+// stale). Shared by GET /organizations (above) and the
+// organizations/:id read fence in handleRequest.
+async function callerOrgIds(
+    adapter: DbAdapter,
+    principal: Principal,
+): Promise<Set<Id>> {
+    const memberships = await adapter.memberships.getAll();
+    return new Set(
+        memberships
+            .filter(m => m.identity_id === principal.id)
+            .map(m => m.organization_id),
     );
 }
 
@@ -1322,6 +1349,43 @@ export async function handleRequest(
         if (method === 'GET'
             && routePattern === 'organizations') {
             return enumerateMyOrgs(adapter, authResult);
+        }
+        // organizations/:id is global passthrough; fence READS
+        // to the caller's memberships so a non-member id 404s
+        // like any foreign row. PUT is not gated here — a new
+        // org is created before its first membership exists.
+        if (method === 'GET'
+            && routePattern === 'organizations/:id'
+            && !(await callerOrgIds(adapter, authResult))
+                .has(param(params, 0))) {
+            return Response.json(
+                { error: 'Not found: ' + pathname },
+                { status: HTTP_NOT_FOUND },
+            );
+        }
+        // entity-states/:id[/history] read StateStore methods
+        // the store fence cannot cover; gate on PARENT
+        // ownership — a DIFFERENT org's entity 404s, an orphan
+        // or own entity passes. The history-leak bug gated on
+        // entity_id alone.
+        if (method === 'GET'
+            && (routePattern === 'entity-states/:id'
+                || routePattern
+                    === 'entity-states/:id/history')) {
+            const owner = await ownerOrgOfEntity(
+                [
+                    adapter.ideas, adapter.projects,
+                    adapter.flows, adapter.records,
+                    adapter.objectives, adapter.workOrders,
+                ],
+                adapter.memberships, org, param(params, 0),
+            );
+            if (owner !== null && owner !== org) {
+                return Response.json(
+                    { error: 'Not found: ' + pathname },
+                    { status: HTTP_NOT_FOUND },
+                );
+            }
         }
         effective = orgScopedAdapter(adapter, org);
     }

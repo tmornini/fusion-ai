@@ -437,8 +437,9 @@ export type IdentityCredentialStatus =
 
 // Append-only credential lifecycle event. One row per
 // event; current validity = the latest event per
-// (identity_id, kind). `secret` is OPAQUE material that
-// never escapes the adapter boundary — never rendered.
+// (identity_id, kind). `secret` is OPAQUE material
+// projected out at every read route (api.ts `withoutSecret`),
+// so it never crosses the API boundary — never rendered.
 // Revocation is a NEW 'revoked' event, never a splice
 // (contrast identity_pii). Real crypto and the OAuth
 // stores (clients, identity_tokens, identity_providers)
