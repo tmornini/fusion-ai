@@ -36,10 +36,17 @@ function canShowPort(
         && (!isSpecial || !hasConnections);
 }
 
-export const BLUE = '#4B6CA1';
-const WARN = '#d97706';
-const GREEN = '#16a34a';
-const RED = '#b91c1c';
+// Flow-canvas palette, centralized so one edit reskins the
+// whole SVG. hsl(var(--token)) resolves inside SVG exactly as
+// in CSS — theme-reactive, no raw hex. BLUE stays exported for
+// the designer presenter.
+export const BLUE = 'hsl(var(--primary))';
+const WARN = 'hsl(var(--warning))';
+const GREEN = 'hsl(var(--success))';
+const RED = 'hsl(var(--error))';
+const SURFACE = 'hsl(var(--background))';
+const FOREGROUND = 'hsl(var(--foreground))';
+const MUTED = 'hsl(var(--muted-foreground))';
 
 export const GRID_CELL = 24;
 const GRID_DOT_RADIUS = 0.7;
@@ -321,9 +328,7 @@ function buildDefs(): string {
         + `<circle cx="${gridCenter}"`
         + ` cy="${gridCenter}"`
         + ` r="${GRID_DOT_RADIUS}"`
-        + ' fill="var('
-        + '--color-muted-foreground,'
-        + ' #5a6480)"/>'
+        + ` fill="${MUTED}"/>`
         + '</pattern>'
         + '<marker id="flow-arrow"'
         + markerAttrs
@@ -383,8 +388,7 @@ function buildGrid(
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
         + ` height="${vbH}"`
-        + ' fill="var('
-        + '--color-surface, #1a1f2e)"/>'
+        + ` fill="${SURFACE}"/>`
         + '<rect'
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
@@ -498,8 +502,7 @@ function buildNode(
         + ' text-anchor="middle"'
         + ` font-size="${NODE_LABEL_FONT}"`
         + ' font-weight="600"'
-        + ' fill="var('
-        + '--color-foreground, #e0e4ef)">'
+        + ` fill="${FOREGROUND}">`
         + nameEsc + '</text>';
 
     if (!isSpecial) {
@@ -515,9 +518,7 @@ function buildNode(
             + ` y="${NODE_META_Y}"`
             + ' text-anchor="middle"'
             + ` font-size="${NODE_META_FONT}"`
-            + ' fill="var('
-            + '--color-muted-foreground,'
-            + ' #5a6480)">'
+            + ` fill="${MUTED}">`
             + escapeForHtml(meta)
             + '</text>';
     }
@@ -831,9 +832,7 @@ function buildEdge(
         }"`
         + ' text-anchor="middle"'
         + ` font-size="${LABEL_FONT}"`
-        + ' fill="var('
-        + '--color-foreground,'
-        + ' #e0e4ef)">'
+        + ` fill="${FOREGROUND}">`
         + labelEsc
         + '</text>';
 
