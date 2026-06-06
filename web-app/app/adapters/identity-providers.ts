@@ -7,7 +7,10 @@ import {
     type IdentityProviderAction,
     type IdentityProviderEntity,
 } from '../../../api/types.ts';
-import type { RequestContext } from './shared.ts';
+import {
+    filterByField,
+    type RequestContext,
+} from './shared.ts';
 import {
     latestByKey,
 } from '../../../api/ledger-reduction.ts';
@@ -72,8 +75,7 @@ export async function getProviderEvents(
     const all = await ctx.GET<IdentityProviderEntity[]>(
         'identity-providers',
     );
-    return all
-        .filter(ev => ev.identity_id === identityId)
+    return filterByField(all, 'identity_id', identityId)
         .map(ev => ({
             provider: ev.provider,
             providerSubject: ev.provider_subject,
@@ -92,8 +94,8 @@ export async function getProvidersFor(
     const all = await ctx.GET<IdentityProviderEntity[]>(
         'identity-providers',
     );
-    const forIdentity = all.filter(
-        ev => ev.identity_id === identityId,
+    const forIdentity = filterByField(
+        all, 'identity_id', identityId,
     );
     // Latest by `at`, not array order — latestByKey's default
     // >= tiebreak is the secure direction the siblings share.

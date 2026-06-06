@@ -12,6 +12,7 @@ import { hashPassword } from '../../../api/password-hash.ts';
 import {
     latestByKey,
 } from '../../../api/ledger-reduction.ts';
+import { filterByField } from './shared.ts';
 import type { RequestContext } from './shared.ts';
 
 // Surface the credential-kind union so the identity detail
@@ -86,8 +87,8 @@ export async function getIdentityCredentialState(
     const all = await ctx.GET<
         IdentityCredentialEntity[]
     >('identity-credentials');
-    const forIdentity = all.filter(
-        ev => ev.identity_id === identityId,
+    const forIdentity = filterByField(
+        all, 'identity_id', identityId,
     );
     // Latest by `at`, not array order — a snapshot reimport
     // or concurrent write can reorder rows. latestByKey's
