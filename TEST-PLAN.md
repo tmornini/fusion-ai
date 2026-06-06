@@ -637,6 +637,8 @@ on. Run these in order.
 
 ### Auth Page (`auth/`)
 
+> Note: the demo auto-login is RETIRED. Gated pages now require a signed-in session — after seeding (Create Pristine Environment / Load Mock Data), sign in with the surfaced admin credentials before exercising gated pages. Cases below that "navigate to `dashboard`" assume a valid sign-in.
+
 - [ ] **B4** Page loads in **Sign In** mode by default. PASS: title is "Welcome back", submit button reads "Sign in" with an SVG arrow icon (matching the Sign Up button's "Create account" affordance per B10).
 - [ ] **B5** On desktop (≥1024px), left panel shows branded marketing stats (10K+ Active Users, 98% Satisfaction, 50+ Integrations). PASS: two-column layout visible.
 - [ ] **B6** Submit with empty fields. PASS: "Email is required" error appears below email input; input gets error styling.
@@ -644,13 +646,31 @@ on. Run these in order.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter `test@example.com`, password `password123`, click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`.
 - [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
-- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Welcome to Fusion AI! Your account has been created." appears, then navigates to `dashboard/index.html` after a brief delay (the dedicated onboarding page has been retired — sign-up routes straight to the dashboard).
+- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
 
 ### Auth Validation Edge Cases
 
 - [ ] **B12** In Sign In mode, enter valid email, valid password, then clear email and submit. PASS: email error reappears.
 - [ ] **B13** Toggle between Sign In and Sign Up modes multiple times. PASS: form resets cleanly each time, no layout glitches.
 - [ ] **B14** Footer shows "By continuing, you agree to our Terms of Service and Privacy Policy." PASS: text is visible.
+
+### Auth Session & Redirect
+
+- [ ] **B15** With no stored credential (sign out, or delete the `localStorage` key `fusion.session-credentials`), open `dashboard/index.html` directly. PASS: bounced to `auth/index.html?return=dashboard` (the Sign In page), not the dashboard.
+- [ ] **B16** From the B15 bounce, sign in with the seeded admin credentials. PASS: lands on `dashboard/index.html` — the `?return=` target, not a generic default.
+- [ ] **B17** With no credential, open `flows/detail.html?flowId=<id>` directly. PASS: bounced to `auth` with the flow preserved in `?return=`; after signing in, lands back on that exact flow with `flowId` intact.
+- [ ] **B18** After signing in on the dashboard, reload (Cmd-R). PASS: stays authenticated on the dashboard — no bounce to `auth` (the credential persisted across the hard-reload).
+- [ ] **B19** With no credential, open each exempt page in turn — `landing/`, `auth/`, `not-found/`, `design-system/`, `snapshots/`. PASS: each renders normally with NO redirect to `auth` (public surface + bootstrap plane are gate-exempt).
+- [ ] **B20** After signing in, close the tab, then reopen `dashboard/index.html` in a new tab. PASS: still authenticated — no bounce (the credential lives in `localStorage`, not tab memory).
+- [ ] **B21** Silent refresh: after signing in, in DevTools replace the stored `access_token` with an expired JWT (keep the live `refresh_token`), then navigate to `members/`. PASS: the page loads with no bounce and no error card — the dead access token was refreshed transparently.
+- [ ] **B22** Both tokens dead: replace BOTH `access_token` and `refresh_token` with expired JWTs, then open `dashboard/`. PASS: bounced once to `auth?return=dashboard` — no retry loop, no console error storm.
+
+> Note: `snapshots/` is intentionally an UNAUTHENTICATED plane — its import/bootstrap routes are BEARER-exempt and can wipe the store. It stays gate-exempt by design so a wiped-DB user can reach recovery; acceptable only because the store is single-user and client-side (B19 covers it).
+
+### Sidebar Sign-out
+
+- [ ] **B23** On any gated page (e.g. dashboard), click "Sign out" in the sidebar. PASS: `fusion.session-credentials` is removed from `localStorage`, a revocation row is recorded, and the page navigates to `auth`; pressing Back to the protected page bounces again to `auth`.
+- [ ] **B24** Open the app in two tabs (both signed in). Click "Sign out" in tab A, then trigger a fetch in tab B (navigate within it). PASS: tab B's next request 401s against the shared revocation ledger and bounces to `auth` — eventual cross-tab convergence, no corruption.
 
 ---
 
