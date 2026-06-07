@@ -102,6 +102,50 @@ test('the facade requires a bearer token', async () => {
     assert.equal(res.status, 401);
 });
 
+// ---- A roleless member (membership, no role grant) ----
+// The non-admin invitee. GET /organizations self-fences to
+// the caller's own memberships, so it gates on authentication,
+// not a role; org-owned reads and writes stay admin-gated.
+
+async function rolelessMemberDb(): Promise<MemoryDbAdapter> {
+    const db = new MemoryDbAdapter();
+    await db.createSchema();
+    await db.organizations.put('A', orgRow('Acme'));
+    await db.organizations.put('B', orgRow('Beta'));
+    await db.memberships.put('m-sarah-a', {
+        organization_id: 'A', identity_id: 'sarah',
+        at: '2026-06-04T00:00:00.000Z',
+    });
+    return db;
+}
+
+test('a roleless member enumerates only their member orgs',
+async () => {
+    const db = await rolelessMemberDb();
+    const res = await handleRequest(db, req(
+        'GET', '/organizations', await devToken('sarah')));
+    assert.equal(res.status, 200);
+    const rows = await res.json() as { id: string }[];
+    assert.deepEqual(rows.map(r => r.id), ['A']);
+});
+
+test('a roleless member is still denied org-owned reads',
+async () => {
+    const db = await rolelessMemberDb();
+    const res = await handleRequest(db, req(
+        'GET', '/members', await devToken('sarah')));
+    assert.equal(res.status, 403);
+});
+
+test('a roleless member is still denied org-owned writes',
+async () => {
+    const db = await rolelessMemberDb();
+    const res = await handleRequest(db, req(
+        'PUT', '/ideas/new-idea', await devToken('sarah'),
+        { id: 'new-idea', ...ideaBody('A', 'sneak') }));
+    assert.equal(res.status, 403);
+});
+
 // ---- T8: the parent-derived READ fence (server-side join) ----
 
 const T8_AT = '2026-06-04T00:00:00.000Z';

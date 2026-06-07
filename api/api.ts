@@ -1193,6 +1193,23 @@ async function currentInvitationState(
 // admin role in the relevant org; accept/decline/read require
 // the caller to BE the invitee. These never touch the
 // admin-only ROUTE_POLICY, so a non-admin invitee can accept.
+// GET /organizations enumerates the caller's OWN membership
+// orgs — identity-scoped like /invitations, so it gates on
+// authentication, not a role. enumerateMyOrgs self-fences to
+// the caller's memberships, so a roleless member sees only
+// their own orgs and can boot the shell.
+async function organizationsEnumerationRequest(
+    adapter: DbAdapter,
+    request: Request,
+): Promise<Response> {
+    const authResult =
+        await authenticateRequest(adapter, request);
+    if (typeof authResult === 'string') {
+        return errorJson(authResult, HTTP_UNAUTHORIZED);
+    }
+    return enumerateMyOrgs(adapter, authResult);
+}
+
 async function invitationsRequest(
     adapter: DbAdapter,
     request: Request,
@@ -1615,6 +1632,15 @@ export async function handleRequest(
             adapter, request, pathSegments,
         );
     }
+    // Enumerating one's own orgs is identity-scoped, not
+    // org-owned: it runs above the admin gate so a roleless
+    // member can boot. Only the bare GET — PUT (create) and
+    // /organizations/:id keep the org-scoped route handling.
+    if (pathSegments[0] === 'organizations'
+        && pathSegments.length === 1
+        && request.method === 'GET') {
+        return organizationsEnumerationRequest(adapter, request);
+    }
     const match = matchRoute(pathSegments);
 
     if (!match) {
@@ -1670,10 +1696,6 @@ export async function handleRequest(
                 { error: authzFailure },
                 { status: HTTP_FORBIDDEN },
             );
-        }
-        if (method === 'GET'
-            && routePattern === 'organizations') {
-            return enumerateMyOrgs(adapter, authResult);
         }
         // organizations/:id is global passthrough; fence READS
         // to the caller's memberships so a non-member id 404s
