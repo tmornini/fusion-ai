@@ -21,7 +21,7 @@ import {
     type IdentityDetailView,
 } from '../app/presenters/index.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let pageContainer: HTMLElement | null = null;
 let currentId: string | null = null;

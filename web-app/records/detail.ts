@@ -40,7 +40,7 @@ import type {
     Constraint,
 } from '../../api/types.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 type PageState =
     | { kind: 'reading' }

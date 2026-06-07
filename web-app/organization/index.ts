@@ -47,7 +47,7 @@ import {
     OrganizationObjectivesPresenter,
 } from '../app/presenters/index.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 type PageState =
     | {

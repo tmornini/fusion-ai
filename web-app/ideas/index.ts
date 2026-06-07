@@ -27,7 +27,7 @@ import {
     initDragReorder,
 } from '../app/drag-reorder.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let ideaState: IdeaListState | null = null;
 let listEl: HTMLElement | null = null;

@@ -35,7 +35,7 @@ import {
     type IdeaWithSubmitter,
 } from '../app/adapters/index.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 type PageState =
     | {

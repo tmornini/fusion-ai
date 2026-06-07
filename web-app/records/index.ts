@@ -29,7 +29,7 @@ import {
     initDragReorder,
 } from '../app/drag-reorder.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let recordState: RecordListState | null = null;
 let listEl: HTMLElement | null = null;

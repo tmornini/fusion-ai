@@ -27,7 +27,7 @@ import {
     IdentityRosterPresenter,
 } from '../app/presenters/index.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let identityListEl: HTMLElement | null = null;
 

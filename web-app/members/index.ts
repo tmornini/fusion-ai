@@ -44,7 +44,7 @@ import {
 
 const DEFAULT_DIM = 50;
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let membersState:
     ManagedMembersState | null = null;

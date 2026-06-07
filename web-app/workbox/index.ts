@@ -48,7 +48,7 @@ import {
     initDragReorder,
 } from '../app/drag-reorder.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 let activePresenter:
     WorkboxInboxPresenter | null = null;

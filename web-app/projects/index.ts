@@ -31,7 +31,7 @@ import {
     initDragReorder,
 } from '../app/drag-reorder.ts';
 
-const { pageAbort, signal } = createPageAbort();
+const { signal } = createPageAbort();
 
 type ScoreRow = Awaited<
     ReturnType<typeof getProjectsScoreColumn>
