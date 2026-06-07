@@ -115,7 +115,9 @@ time budgets while keeping per-entity mutation domains disjoint:
    that Phase 2 verifies.
 3. **Phase 2 — Parallel verification** (7 agents concurrent,
    each in its own tab, no shared tabs):
-   - Agent-B — Entry pages
+   - Agent-B — Entry pages (EXCLUDING Sidebar Sign-out, which
+     is identity-wide — deferred per "Parallel session &
+     connection isolation")
    - Agent-CH — Dashboard + Reference (read-only)
    - Agent-D — Ideas
    - Agent-E — Projects
@@ -176,6 +178,76 @@ appends from sibling tabs both survive — the lost-update hazard
 the localStorage tier could not close is gone (CLAUDE.md §
 Gotchas — "Cross-tab writes are safe"). Re-read tolerantly
 (`≥ N`) for timing rather than asserting exact event counts.
+
+#### Parallel session & connection isolation
+
+Write-table partitioning (above) keeps *data* writes
+disjoint, but three resources are shared per **origin**, not
+per tab, and the mutation-domain table does not fence them.
+A Phase-2 run that ignores them collapses:
+
+- **`fusion.session-credentials`** is one localStorage key
+  per origin. Every agent that logs in as the same identity
+  in the same origin overwrites the prior agent's credential
+  blob (last write wins); a sibling tab's silent refresh
+  then reads a stranger's tokens
+  (`web-app/app/adapters/session-credentials.ts`).
+- **`fusion.active-org`** is likewise one per-origin key, so
+  concurrent org switches race the same slot.
+- **Sign-out is identity-wide.** `postSessionLogout` calls
+  `postIdentityLogoutEverywhere` — a coarse server-side
+  revoke of EVERY token for the identity. One agent's
+  sign-out revokes every other agent that shares that
+  identity (`web-app/app/adapters/session-logout.ts`).
+- **IndexedDB connection concurrency.** ~9 concurrent
+  connections to the single `fusion-ai` database wedge it: a
+  schema-mutating open (wipe / mock-data seed / snapshot
+  import — all call `deleteSchema`) blocks behind the other
+  open connections, and the blocked `indexedDB.open` never
+  resolves until every origin tab closes.
+
+**Primary strategy — one origin per agent (distinct ports).**
+Serve the same build on one port per Phase-2 agent (8080,
+8081, …); each agent drives its own port. An origin is
+scheme+host+**port**, so each agent gets a private
+localStorage (credentials, active-org) AND a private
+`fusion-ai` database — including its own revocation ledger,
+so a sign-out in one origin cannot revoke another's tokens,
+and connection counts stay at 1–2 per database. Phase 1
+seeds :8080 and **exports a snapshot**; each Phase-2 agent
+**imports that snapshot** into its own origin before logging
+in, so every agent verifies byte-identical data. The shared
+HMAC signing key (a client constant) makes the imported
+credentials' logins valid in every origin.
+
+**Fallback strategy — serial for session-bound sections.**
+When per-origin serving is impractical, run the
+member/session-dependent sections (D, E, F2, G, the command
+palette, Phase 3, Phase 4) in ONE tab serially after Phase 1,
+keeping parallelism only for genuinely independent or
+read-only work. Simpler, slower, equally correct.
+
+**Hard invariants (either mode).**
+
+1. **No concurrent sign-out.** The Sidebar Sign-out case
+   (Agent-B's domain) revokes the shared identity. Move it
+   out of the parallel window — run it last, alone, in its
+   own origin/tab — never while a sibling shares the
+   identity.
+2. **One credential writer per origin at a time.** Only one
+   login (or refresh) may write `fusion.session-credentials`
+   per origin; per-origin isolation makes this automatic.
+3. **Schema mutations need exclusive origin access.** Any
+   wipe / seed / snapshot import (`deleteSchema`) runs with
+   no other tab open on that origin. Phase 4 already honors
+   this by running alone; extend the rule to any in-run
+   snapshot import (Agent-G's Snapshots cases).
+
+Recovery no longer scrubs a live credential on an unscoped
+401 — `recoverSession` re-installs and re-scopes instead —
+which softens the clobber blast radius but does not remove
+the shared-key races; the isolation rules above remain
+required.
 
 #### Known MCP limitations
 
