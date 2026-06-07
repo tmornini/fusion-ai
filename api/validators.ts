@@ -31,6 +31,7 @@ import type {
     StateFieldValueEntity,
     OrganizationEntity,
     MembershipEntity,
+    InvitationEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     RecordEntity,
@@ -1263,6 +1264,28 @@ export function validateMembershipEntity(
     );
     const at = validateTimestampField(
         body, 'at', 'MembershipEntity',
+    );
+    return {
+        organization_id: pickString(
+            body, 'organization_id',
+        ),
+        identity_id: pickString(body, 'identity_id'),
+        at,
+    };
+}
+
+const INVITATION_BODY_KEYS: readonly string[] = [
+    'organization_id', 'identity_id', 'at',
+];
+
+export function validateInvitationEntity(
+    body: Record<string, unknown>,
+): Omit<InvitationEntity, 'id'> {
+    assertOnlyKeys(
+        body, INVITATION_BODY_KEYS, 'InvitationEntity',
+    );
+    const at = validateTimestampField(
+        body, 'at', 'InvitationEntity',
     );
     return {
         organization_id: pickString(

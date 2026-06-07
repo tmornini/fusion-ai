@@ -27,6 +27,7 @@ import {
     validateFlowRecordEntity,
     validateOrganizationEntity,
     validateMembershipEntity,
+    validateInvitationEntity,
     validateIdeaSubmissionEntity,
     validateStateEntity,
     validateObjectiveEntity,
@@ -131,6 +132,9 @@ function validateSnapshotRow(
                 break;
             case 'memberships':
                 validateMembershipEntity(body);
+                break;
+            case 'invitations':
+                validateInvitationEntity(body);
                 break;
             case 'idea_submissions':
                 validateIdeaSubmissionEntity(body);

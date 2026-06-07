@@ -19,6 +19,7 @@ import type {
     FlowVersionEntity,
     OrganizationEntity,
     MembershipEntity,
+    InvitationEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
@@ -292,6 +293,8 @@ export interface DbStores {
         EntityStore<OrganizationEntity>;
     memberships:
         EntityStore<MembershipEntity>;
+    invitations:
+        EntityStore<InvitationEntity>;
     ideaSubmissions:
         EntityStore<
             IdeaSubmissionEntity
@@ -358,6 +361,7 @@ export const TABLE_NAMES = [
     'flow_records',
     'organizations',
     'memberships',
+    'invitations',
     'idea_submissions',
     'objectives',
     'objective_revisions',
@@ -396,6 +400,7 @@ export const TABLE_INDEXES:
     record_attributes: ['organization_id', 'record_id'],
     flow_records: ['flow_id', 'record_id'],
     memberships: ['organization_id', 'identity_id'],
+    invitations: ['organization_id', 'identity_id'],
     idea_submissions: ['idea_id'],
     objectives: ['organization_id'],
     objective_revisions: ['objective_id'],
