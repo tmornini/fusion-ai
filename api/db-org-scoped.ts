@@ -1,5 +1,9 @@
 import { EntityNotFound } from './db.ts';
-import type { DbAdapter, EntityStore } from './db.ts';
+import type {
+    DbAdapter,
+    EntityStore,
+    KeyedCollectionReader,
+} from './db.ts';
 import type {
     Id,
     FlowVersionEntity,
@@ -56,7 +60,16 @@ export function orgScopedAdapter(
         inner: EntityStore<T>,
         table: string,
     ): OrgScopedEntityStore<T> =>
-        new OrgScopedEntityStore(inner, org, table);
+        // The org-owned stores are the concrete EntityStore,
+        // which reads a tenant's slice through the
+        // organization_id index; the DbStores contract only
+        // surfaces the EntityStore interface, so we name here
+        // the keyed-read capability the concrete store has.
+        new OrgScopedEntityStore(
+            inner as EntityStore<T>
+                & KeyedCollectionReader<T>,
+            org, table,
+        );
 
     const parentScope = <T extends { id: string }>(
         inner: EntityStore<T>,
