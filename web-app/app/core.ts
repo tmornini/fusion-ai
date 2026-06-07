@@ -80,6 +80,7 @@ export {
     closeDialog,
     initDialog,
     initTabs,
+    parseDialogClick,
 } from './dialog.ts';
 export { initDropdown } from './theme-toggle.ts';
 

@@ -20,6 +20,7 @@ import {
     trimStrings,
     openDialog,
     closeDialog,
+    parseDialogClick,
 } from '../app/core.ts';
 import {
     getProject,
@@ -487,46 +488,19 @@ function onClick(
     const target = e.target as Element | null;
     if (!target) return;
 
-    if (handleDialogClicks(target)) return;
+    const dialogIntent = parseDialogClick(target);
+    if (dialogIntent) {
+        if (dialogIntent.kind === 'open') {
+            openDialog(dialogIntent.id);
+        } else {
+            closeDialog(dialogIntent.id);
+        }
+        return;
+    }
     if (handleFlowCardClick(e, target)) {
         return;
     }
     handleProjectActions(target);
-}
-
-function handleDialogClicks(
-    target: Element,
-): boolean {
-    if (target.classList.contains(
-        'dialog-backdrop',
-    )) {
-        const id = target.getAttribute(
-            'data-dialog-id',
-        );
-        if (id) closeDialog(id);
-        return true;
-    }
-    const openEl = target.closest(
-        '[data-dialog-open]',
-    );
-    if (openEl) {
-        const id = openEl.getAttribute(
-            'data-dialog-open',
-        );
-        if (id) openDialog(id);
-        return true;
-    }
-    const cancelEl = target.closest(
-        '[data-dialog-cancel]',
-    );
-    if (cancelEl) {
-        const id = cancelEl.getAttribute(
-            'data-dialog-cancel',
-        );
-        if (id) closeDialog(id);
-        return true;
-    }
-    return false;
 }
 
 function handleFlowCardClick(
