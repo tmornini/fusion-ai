@@ -329,16 +329,19 @@ export class IndexedDbBackend implements StorageBackend {
         });
     }
 
+    // Reset by delete + reopen, not clear: re-firing
+    // onupgradeneeded is how the rebuilt stores adopt the
+    // indexes. Both snapshots-page resets ("pristine" and
+    // "mock data") flow through here. Close our own
+    // connection first — it would block the delete — then
+    // reopen, leaving a healthy connection for the
+    // createSchema + populate that follows.
     async deleteSchema(): Promise<void> {
-        const db = await this.#connection();
-        const stores = [...TABLE_NAMES, SCHEMA_STORE];
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(stores, 'readwrite');
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-            for (const name of stores) {
-                tx.objectStore(name).clear();
-            }
-        });
+        if (this.#db !== null) {
+            this.#db.close();
+            this.#db = null;
+        }
+        await this.#deleteConnection();
+        this.#install(await this.#openConnection());
     }
 }
