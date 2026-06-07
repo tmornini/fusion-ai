@@ -144,14 +144,16 @@ export interface Tx {
     getAll<T extends { id: string }>(
         table: string,
     ): Promise<T[]>;
-    // The rows whose `indexName` column equals `key`: the
-    // indexed answer to `WHERE col = key`, so a keyed
-    // question is served without scanning the table. The
-    // matches keep each tier's own row order, so a reducer
-    // folds them exactly as it folds a full read.
-    getAllBy<T extends { id: string }>(
+    // The rows where `column` equals `key` — the indexed
+    // answer to `WHERE column = key`, served without
+    // scanning the table. `column` must carry a secondary
+    // index (TABLE_INDEXES); the native factory resolves it
+    // to `store.index(column)`. The matches keep each tier's
+    // own row order, so a reducer folds them exactly as
+    // it folds a full read.
+    getWhere<T extends { id: string }>(
         table: string,
-        indexName: string,
+        column: string,
         key: string,
     ): Promise<T[]>;
     put<T extends { id: string }>(
@@ -350,7 +352,7 @@ export const TABLE_NAMES = [
 // The secondary indexes each store carries: every FK and
 // read-discriminator column, declared beside TABLE_NAMES as
 // the schema of record both backends read. A keyed read
-// (`Tx.getAllBy`) names one of these. Index ONLY NOT-NULL
+// (`Tx.getWhere`) names one of these. Index ONLY NOT-NULL
 // columns — IndexedDB omits a row missing the keyPath from
 // `index.getAll`, and the NOT-NULL covenant guarantees
 // declared FKs are present. Tables absent here have no

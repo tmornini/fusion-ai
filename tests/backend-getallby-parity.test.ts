@@ -6,7 +6,7 @@ import { LocalStorageBackend }
     from '../api/backend-localstorage.ts';
 import type { StorageBackend } from '../api/db.ts';
 
-// `getAllBy` is the keyed-read seam. On the simulated tiers
+// `getWhere` is the keyed-read seam. On the simulated tiers
 // it must be byte-identical to `getAll(table).filter` on the
 // indexed column — same matches, same per-tier order. These
 // tests pin that equivalence on BOTH bufferTx tiers (memory
@@ -74,7 +74,7 @@ function byIndex(
 ): Promise<Row[]> {
     return backend.transaction(
         ['t'], 'readonly',
-        tx => tx.getAllBy<Row>('t', 'fk', key),
+        tx => tx.getWhere<Row>('t', 'fk', key),
     );
 }
 
@@ -93,7 +93,7 @@ function byScan(
 
 for (const { name, make } of BACKENDS) {
     test(
-        `${name}: getAllBy equals getAll filter for one`,
+        `${name}: getWhere equals getAll filter for one`,
         async () => {
             const backend = make();
             await seed(backend, SAMPLE);
@@ -104,7 +104,7 @@ for (const { name, make } of BACKENDS) {
     );
 
     test(
-        `${name}: getAllBy keeps order across N matches`,
+        `${name}: getWhere keeps order across N matches`,
         async () => {
             const backend = make();
             await seed(backend, SAMPLE);
@@ -115,7 +115,7 @@ for (const { name, make } of BACKENDS) {
     );
 
     test(
-        `${name}: getAllBy is empty for an absent key`,
+        `${name}: getWhere is empty for an absent key`,
         async () => {
             const backend = make();
             await seed(backend, SAMPLE);
@@ -126,7 +126,7 @@ for (const { name, make } of BACKENDS) {
     );
 
     test(
-        `${name}: getAllBy is empty on an empty table`,
+        `${name}: getWhere is empty on an empty table`,
         async () => {
             const backend = make();
             await seed(backend, []);
