@@ -14,7 +14,7 @@ import {
 import { log } from '../app/logger.ts';
 import {
     iconPersonPlus, iconSearch,
-    iconSend,
+    iconSend, iconMail,
 } from '../app/icons.ts';
 import {
     initDialog, closeDialog,
@@ -26,6 +26,7 @@ import {
     postHumanMemberCreation,
     postAIMemberCreation,
     getCurrentHumanMember,
+    postInvitationGrant,
     jsonArrayField,
     jsonObjectField,
     generateCryptoSafeBase62,
@@ -59,9 +60,13 @@ export async function init(): Promise<void> {
         ['#member-search-icon', iconSearch(16, '')],
         ['#add-member-dialog-icon', iconPersonPlus(20, '')],
         ['#add-member-submit-icon', iconSend(16, '')],
+        ['#invite-member-btn-icon', iconMail(16, '')],
+        ['#invite-member-dialog-icon', iconMail(20, '')],
+        ['#invite-member-submit-icon', iconSend(16, '')],
     ]);
     initMemberListFilters();
     bindAddMemberDialog();
+    bindInviteMemberDialog();
     const modelSelect = $select('#ai-model', document);
     if (modelSelect) {
         setHtml(
@@ -217,6 +222,43 @@ function bindAddMemberDialog(): void {
             'keydown', onDialogKeydown,
             { signal },
         );
+}
+
+function bindInviteMemberDialog(): void {
+    initDialog(
+        'invite-member',
+        'invite-member-btn',
+        handleInviteSubmit,
+    );
+}
+
+async function handleInviteSubmit(): Promise<void> {
+    const email = $input(
+        '#invite-email', document,
+    )!.value.trim();
+    if (!email) {
+        showToast('Email is required', 'error');
+        return;
+    }
+    try {
+        await postInvitationGrant(
+            sessionContext(), email,
+        );
+    } catch (err) {
+        const detail = extractErrorMessage(err);
+        log.error(
+            'postInvitationGrant failed',
+            'members', err,
+        );
+        showToast(
+            `Failed to invite: ${detail}`, 'error',
+        );
+        return;
+    }
+    showToast('Invitation sent', 'success');
+    const input = $input('#invite-email', document);
+    if (input) input.value = '';
+    closeDialog('invite-member');
 }
 
 function onKindRadioChange(e: Event): void {

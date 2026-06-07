@@ -12,6 +12,7 @@ import {
 } from '../app/loading-states.ts';
 import { showToast } from '../app/toast.ts';
 import { log } from '../app/logger.ts';
+import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     trimStrings,
     openDialog, closeDialog,
@@ -34,6 +35,9 @@ import {
     postObjectiveReactivation,
     putObjectivePosition,
     subscribeObjectiveChanges,
+    getSentInvitations,
+    postInvitationRevocation,
+    subscribeInvitationChanges,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
 import { initDragReorder } from '../app/drag-reorder.ts';
@@ -45,6 +49,7 @@ import {
     OrganizationEditPresenter,
     type GeneralInfoFieldKey,
     OrganizationObjectivesPresenter,
+    SentInvitationsPresenter,
 } from '../app/presenters/index.ts';
 
 const { signal } = createPageAbort();
@@ -247,7 +252,16 @@ export async function init(): Promise<void> {
 
     state = { kind: 'reading', org, stats };
     subscribeObjectiveChanges(renderObjectives);
+    subscribeInvitationChanges(
+        () => void renderSentInvitations());
     await rerender();
+    await renderSentInvitations();
+    $('#sent-invitations-list', document)
+        ?.addEventListener(
+            'click',
+            e => void onSentInvitationClick(e),
+            { signal },
+        );
 
     // Add-Objective dialog wiring
     $(
@@ -323,6 +337,58 @@ export async function init(): Promise<void> {
         await postObjectiveArchival(ctx, id);
         closeDialog('confirm-archive');
     }, { signal });
+}
+
+// The org's outstanding (pending) invitations, with a Revoke
+// per row. Admin-only — the org page already requires admin, so
+// a denial here is unexpected; we hide the section and log it
+// rather than surface a raw error on the page.
+async function renderSentInvitations(): Promise<void> {
+    const box = $('#sent-invitations-box', document);
+    const list = $('#sent-invitations-list', document);
+    if (!box || !list) return;
+    try {
+        const sent = await getSentInvitations(
+            sessionContext());
+        new SentInvitationsPresenter(sent).render(list);
+        box.classList.remove('hidden');
+    } catch (err) {
+        log.warn(
+            'getSentInvitations failed',
+            'organization', err,
+        );
+        box.classList.add('hidden');
+    }
+}
+
+async function onSentInvitationClick(
+    e: MouseEvent,
+): Promise<void> {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    const btn = target.closest(
+        '[data-invitation-action="revoke"]');
+    if (!btn) return;
+    const id = target
+        .closest('[data-invitation-id]')
+        ?.getAttribute('data-invitation-id');
+    if (!id) return;
+    try {
+        await postInvitationRevocation(
+            sessionContext(), id);
+        showToast('Invitation revoked', 'success');
+    } catch (err) {
+        log.error(
+            'postInvitationRevocation failed',
+            'organization', err,
+        );
+        showToast(
+            'Failed to revoke: '
+            + extractErrorMessage(err), 'error',
+        );
+        return;
+    }
+    await renderSentInvitations();
 }
 
 function bindStableListeners(
