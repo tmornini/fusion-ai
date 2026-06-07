@@ -8,6 +8,7 @@ import {
 import {
     toggleStatusFilter,
 } from './list-filter.ts';
+import { stateBadge } from './state-badge.ts';
 import {
     displayText, formatDateTime,
 } from '../core.ts';
@@ -592,25 +593,11 @@ export class IdeaPresenter {
     buildStateBadge(
         isActive: boolean | null,
     ): SafeHtml {
-        const cfg = IDEA_STATE_CONFIG[
-            this.#idea.stateValue()
-        ]!;
-        const icon = STATE_ICONS[
-            this.#idea.stateValue()
-        ]!;
-        const dimmed = isActive === false
-            ? 'true'
-            : 'false';
-        return html`<span class="${
-            'badge '
-            + cfg.className
-            + ' text-xs badge-fixed-w'
-            + ' cursor-pointer'
-        }" data-state="${
-            this.#idea.stateValue()
-        }" data-dimmed="${dimmed}">${
-            icon(14, '')
-        } ${cfg.label}</span>`;
+        const s = this.#idea.stateValue();
+        return stateBadge(
+            s, IDEA_STATE_CONFIG[s]!,
+            STATE_ICONS[s]!, isActive,
+        );
     }
 
     buildCard(

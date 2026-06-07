@@ -15,6 +15,7 @@ import {
 import {
     toggleStatusFilter,
 } from './list-filter.ts';
+import { stateBadge } from './state-badge.ts';
 import {
     type Project,
     type ProjectState,
@@ -78,24 +79,11 @@ export class ProjectPresenter {
     buildStateBadge(
         isActive: boolean | null,
     ): SafeHtml {
-        const s =
-            this.#project.stateValue();
-        const cfg =
-            PROJECT_STATE_CONFIG[s]!;
-        const icon = STATE_ICONS[s]!;
-        const dimmed = isActive === false
-            ? 'true'
-            : 'false';
-        return html`<span class="${
-            'badge '
-            + cfg.className
-            + ' text-xs badge-fixed-w'
-            + ' cursor-pointer'
-        }" data-state="${s}" data-dimmed="${
-            dimmed
-        }">${
-            icon(14, '')
-        } ${cfg.label}</span>`;
+        const s = this.#project.stateValue();
+        return stateBadge(
+            s, PROJECT_STATE_CONFIG[s]!,
+            STATE_ICONS[s]!, isActive,
+        );
     }
 
     buildCard(

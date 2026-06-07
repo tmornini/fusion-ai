@@ -5,6 +5,7 @@ import {
 import {
     toggleStatusFilter,
 } from './list-filter.ts';
+import { stateBadge } from './state-badge.ts';
 import {
     iconGripVertical,
     iconCheckCircle2,
@@ -101,25 +102,11 @@ export class RecordPresenter {
     buildStateBadge(
         isActive: boolean | null,
     ): SafeHtml {
-        const cfg = RECORD_STATE_CONFIG[
-            this.#record.stateValue()
-        ]!;
-        const icon = STATE_ICONS[
-            this.#record.stateValue()
-        ]!;
-        const dimmed = isActive === false
-            ? 'true'
-            : 'false';
-        return html`<span class="${
-            'badge '
-            + cfg.className
-            + ' text-xs badge-fixed-w'
-            + ' cursor-pointer'
-        }" data-state="${
-            this.#record.stateValue()
-        }" data-dimmed="${dimmed}">${
-            icon(14, '')
-        } ${cfg.label}</span>`;
+        const s = this.#record.stateValue();
+        return stateBadge(
+            s, RECORD_STATE_CONFIG[s]!,
+            STATE_ICONS[s]!, isActive,
+        );
     }
 
     buildCard(showGrip: boolean): SafeHtml {
