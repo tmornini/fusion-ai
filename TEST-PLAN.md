@@ -354,8 +354,8 @@ last (they wipe the database). See `CLAUDE.md` section
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
-| L. IndexedDB Persistence Tier | 8 |
-| **Total** | **357** |
+| L. IndexedDB Persistence Tier | 9 |
+| **Total** | **358** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -365,8 +365,8 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |     1416 |
-| Browser regression     |      357 |
-| **Combined TOTAL**     | **1773** |
+| Browser regression     |      358 |
+| **Combined TOTAL**     | **1774** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -2297,6 +2297,7 @@ Owner: Phase 4 (alone, after Phase 2). L1–L8 reopen, wipe, and reseed the `fus
 - [ ] **L6** Cross-tab refresh. Commit a write in one of two open tabs. PASS: a `BroadcastChannel('fusion-ai:data')` message with the touched tables reaches the other tab; the poster is not echoed (no self-refresh).
 - [ ] **L7** Atomic import. The clear+put import runs in one `IDBTransaction`. PASS: a rejected import leaves prior data intact (no corruption).
 - [ ] **L8** Quota pre-flight. PASS: an oversize snapshot rejects with `SnapshotTooLargeError` before any write (also `tests/snapshot-quota.test.ts`).
+- [ ] **L9** Bare-DB self-heal. On a 404 path (no app connection), run `indexedDB.deleteDatabase('fusion-ai')` then `indexedDB.open('fusion-ai', 1)` with NO `onupgradeneeded` handler — forging a v1 DB with 0 object stores and no `__schema__` — then load a real page. PASS: `open()` (`api/backend-indexeddb.ts`) sees the missing `__schema__` store, deletes and reopens so the upgrade rebuilds all 33 stores, and the app boots to the graceful empty-state (Snapshots route + working "Wipe and Load Mock Data"), NOT a "Failed to initialize database" dead-end.
 
 ## J. Teardown
 

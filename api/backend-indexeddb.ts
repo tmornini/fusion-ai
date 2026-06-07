@@ -119,12 +119,12 @@ export class IndexedDbBackend implements StorageBackend {
         this.#post = post;
     }
 
-    // The open hook the adapter runs in initialize(): create
-    // the object stores (one per table + the schema marker)
-    // on first open, and close on a version change so a newer
-    // tab's upgrade is never blocked.
-    open(): Promise<void> {
-        if (this.#db !== null) return Promise.resolve();
+    // Open the connection, creating every object store (one
+    // per table + the schema marker) in onupgradeneeded —
+    // which fires only when the DB is absent or below
+    // DB_VERSION. Resolves with the opened connection; the
+    // caller decides whether to adopt or heal it.
+    #openConnection(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(
                 DB_NAME, DB_VERSION,
@@ -150,12 +150,8 @@ export class IndexedDbBackend implements StorageBackend {
                     );
                 }
             };
-            request.onsuccess = () => {
-                const db = request.result;
-                db.onversionchange = () => db.close();
-                this.#db = db;
-                resolve();
-            };
+            request.onsuccess = () =>
+                resolve(request.result);
             request.onerror = () => reject(request.error);
             request.onblocked = () => reject(
                 new Error(
@@ -164,6 +160,56 @@ export class IndexedDbBackend implements StorageBackend {
                 ),
             );
         });
+    }
+
+    // Delete the database so the next open re-runs the
+    // upgrade and rebuilds every store. Mirrors
+    // #openConnection's onblocked rejection so a rare
+    // multi-tab-during-recovery edge surfaces visibly rather
+    // than corrupting silently.
+    #deleteConnection(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const request =
+                indexedDB.deleteDatabase(DB_NAME);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+            request.onblocked = () => reject(
+                new Error(
+                    'IndexedDB delete blocked by another'
+                    + ' connection.',
+                ),
+            );
+        });
+    }
+
+    // Adopt an opened connection: close it on a version
+    // change so a newer tab's upgrade is never blocked.
+    #install(db: IDBDatabase): void {
+        db.onversionchange = () => db.close();
+        this.#db = db;
+    }
+
+    // The open hook the adapter runs in initialize(). On
+    // first open, onupgradeneeded builds every store. But a
+    // pre-existing v1 DB holding NONE of our stores never ran
+    // our upgrade (a bare connection some other code left
+    // behind); it holds no rows, so we delete and reopen,
+    // letting onupgradeneeded rebuild every store. The schema
+    // marker store is the canonical "did our upgrade run"
+    // signal — the same check onupgradeneeded makes per store
+    // — so its absence means heal here, never an internal
+    // guard on hasSchema downstream (which would distrust our
+    // own gate).
+    async open(): Promise<void> {
+        if (this.#db !== null) return;
+        const db = await this.#openConnection();
+        if (db.objectStoreNames.contains(SCHEMA_STORE)) {
+            this.#install(db);
+            return;
+        }
+        db.close();
+        await this.#deleteConnection();
+        this.#install(await this.#openConnection());
     }
 
     async #connection(): Promise<IDBDatabase> {
