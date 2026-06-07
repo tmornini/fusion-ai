@@ -84,6 +84,23 @@ export interface EntityStore<
     delete(id: string): Promise<void>;
 }
 
+// A keyed sub-collection read: the rows of one table whose
+// indexed `column` equals `key`, tombstones already removed.
+// The concrete EntityStore implements it over `Tx.getWhere`,
+// so the org fence narrows a collection to its tenant through
+// the organization_id index instead of scanning the whole
+// table and filtering in JS. Kept OFF the EntityStore
+// contract — the decorators and the history store would only
+// carry a read they never serve (Interface Segregation).
+export interface KeyedCollectionReader<
+    T extends { id: string },
+> {
+    getAllWhere(
+        column: string,
+        key: string,
+    ): Promise<T[]>;
+}
+
 // The storage-edge validator. Stores accept one at
 // construction and re-verify every `put` body through
 // it — the same telling-shape function used by the
