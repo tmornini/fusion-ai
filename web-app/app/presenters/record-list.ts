@@ -1,11 +1,12 @@
 import { html, setHtml, SafeHtml } from '../safe-html.ts';
 import {
-    orderedKeys,
-} from './ordered-keys.ts';
-import {
     toggleStatusFilter,
 } from './list-filter.ts';
 import { stateBadge } from './state-badge.ts';
+import {
+    buildStateFilterBadges,
+    filteredSortedList,
+} from './list-choreography.ts';
 import {
     iconGripVertical,
     iconCheckCircle2,
@@ -231,53 +232,28 @@ export class RecordListPresenter {
     }
 
     #buildBadges(): SafeHtml {
-        const active = this.activeFilter();
-        const groups = Object.groupBy(
+        return buildStateFilterBadges(
             this.#records,
             r => r.stateGroup(),
+            ['active', 'archived'],
+            this.activeFilter(),
+            (item, isActive) =>
+                item.buildStateBadge(isActive),
         );
-        const order: RecordState[] = [
-            'active',
-            'archived',
-        ];
-        const badges = orderedKeys(
-            groups, order,
-        )
-            .map(s => ({
-                state: s,
-                items: groups[s],
-            }))
-            .filter(
-                g => g.items
-                    && g.items.length > 0,
-            )
-            .map(g => g.items![0]!
-                .buildStateBadge(
-                    active === null
-                        ? null
-                        : g.state === active,
-                ));
-        return html`${badges}`;
     }
 
     #buildList(): SafeHtml {
-        const f = this.#filter;
-        const filtered =
-            f.kind === 'filtered'
-                ? this.#records.filter(
-                    r => r.matchesState(
-                        f.status,
-                    ),
-                )
-                : this.#records;
-        const sorted = filtered.toSorted(
-            (a, b) =>
-                a.positionSortKey()
-                - b.positionSortKey(),
-        );
-        const hasGrip = f.kind === 'all';
-        return html`${sorted.map(
+        const hasGrip = this.#filter.kind === 'all';
+        return filteredSortedList(
+            this.#records,
+            this.#filter,
+            (r, status) => r.matchesState(status),
+            items => items.toSorted(
+                (a, b) =>
+                    a.positionSortKey()
+                    - b.positionSortKey(),
+            ),
             r => r.buildCard(hasGrip),
-        )}`;
+        );
     }
 }

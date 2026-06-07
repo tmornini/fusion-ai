@@ -17,15 +17,16 @@ import {
 } from './list-filter.ts';
 import { stateBadge } from './state-badge.ts';
 import {
+    buildStateFilterBadges,
+    filteredSortedList,
+} from './list-choreography.ts';
+import {
     type Project,
     type ProjectState,
     PROJECT_STATE_CONFIG,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../adapters/index.ts';
-import {
-    orderedKeys,
-} from './ordered-keys.ts';
 import {
     formatSigned, toneForScore,
 } from '../scoring-format.ts';
@@ -421,57 +422,30 @@ export class ProjectListPresenter {
     }
 
     #buildBadges(): SafeHtml {
-        const active = this.activeFilter();
-        const groups = Object.groupBy(
+        return buildStateFilterBadges(
             this.#projects,
             p => p.stateGroup(),
+            ['archived', 'under-review', 'sent-back', 'approved'],
+            this.activeFilter(),
+            (item, isActive) =>
+                item.buildStateBadge(isActive),
         );
-        const order: ProjectState[] = [
-            'archived', 'under-review',
-            'sent-back', 'approved',
-        ];
-        const badges = orderedKeys(
-            groups, order,
-        )
-            .map(s => ({
-                status: s,
-                items: groups[s],
-            }))
-            .filter(
-                g => g.items
-                    && g.items.length > 0,
-            )
-            .map(g => g.items![0]!
-                .buildStateBadge(
-                    active === null
-                        ? null
-                        : g.status === active,
-                ));
-        return html`${badges}`;
     }
 
     #buildList(): SafeHtml {
-        const f = this.#filter;
-        const filtered =
-            f.kind === 'filtered'
-                ? this.#projects.filter(
-                    p => p.stateGroup()
-                        === f.status,
-                )
-                : this.#projects;
-        const sorted = this.#sortProjects(filtered);
-        const hasGrip =
-            f.kind === 'all'
+        const hasGrip = this.#filter.kind === 'all'
             && this.#sort.kind === 'position';
-        return html`${sorted.map(
+        return filteredSortedList(
+            this.#projects,
+            this.#filter,
+            (p, status) => p.stateGroup() === status,
+            items => this.#sortProjects([...items]),
             p => p.buildCard(
                 'position',
                 hasGrip,
-                this.#scoreMap.get(
-                    p.idForLink(),
-                ),
+                this.#scoreMap.get(p.idForLink()),
             ),
-        )}`;
+        );
     }
 
     #sortProjects(
