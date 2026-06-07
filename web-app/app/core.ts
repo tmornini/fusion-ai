@@ -135,6 +135,34 @@ async function scopeBootToActiveOrg(): Promise<void> {
     writePreference(ACTIVE_ORG_KEY, active);
 }
 
+// Best-effort scoping for an auth-EXEMPT page that still renders the
+// shared sidebar (snapshots, design-system). A logged-in visitor
+// (live access token) gets an org-scoped session so the sidebar
+// shows their real member and org; everyone else keeps the anonymous
+// seed and the sidebar renders without a member chip — the org-bound
+// reads gate on sessionIsOrgScoped(). Never bounces (the page is
+// reachable without auth) and a failed exchange degrades to the
+// unscoped state rather than aborting boot.
+async function scopeBootIfCredentialed(): Promise<void> {
+    let creds: SessionCredentials | null;
+    try {
+        creds = getSessionCredentials();
+    } catch {
+        return;   // a corrupt blob here just stays anonymous
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const decision = resolveCredentialDecision(creds, now);
+    if (decision.kind !== 'install') {
+        return;   // logged out or needs refresh — keep the seed
+    }
+    setSessionToken(decision.accessToken);
+    try {
+        await scopeBootToActiveOrg();
+    } catch (err) {
+        log.warn('opportunistic org scope failed', 'core', err);
+    }
+}
+
 // Resolve the boot session from the persisted credential: install
 // a live access token, silently refresh a dead one, or bounce to
 // login when there is nothing usable. Returns false once it has
@@ -224,15 +252,18 @@ document.addEventListener(
             return;
         }
 
-        if (
-            hasSchema
-            && PAGE_REGISTRY[pageName]?.requiresAuth
-                !== false
-        ) {
-            if (!(await bootAuthGate())) {
-                return;   // bounced to login
+        if (hasSchema) {
+            if (
+                PAGE_REGISTRY[pageName]?.requiresAuth
+                    !== false
+            ) {
+                if (!(await bootAuthGate())) {
+                    return;   // bounced to login
+                }
+                await scopeBootToActiveOrg();
+            } else {
+                await scopeBootIfCredentialed();
             }
-            await scopeBootToActiveOrg();
         }
 
         if (
