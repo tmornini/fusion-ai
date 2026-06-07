@@ -1,4 +1,8 @@
-import type { DbAdapter } from './db.ts';
+import type {
+    DbAdapter,
+    EntityStore,
+    EntityValidator,
+} from './db.ts';
 import { extractErrorMessage } from './error-helpers.ts';
 import {
     EntityNotFound,
@@ -35,6 +39,7 @@ import type {
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
+    OrganizationEntity,
 } from './types.ts';
 import { nowUtc, type Id } from './types.ts';
 import {
@@ -205,6 +210,55 @@ function withoutSecret(
 ): Omit<IdentityCredentialEntity, 'secret'> {
     const { secret: _secret, ...rest } = cred;
     return rest;
+}
+
+// The `/noun/:id` resource over a standard EntityStore. The
+// verbs a resource exposes are data; each maps to its one fixed
+// store op (get→getById, put→put∘withoutId, delete→delete). The
+// optional putValidate / getTransform are wired ONCE here at
+// instantiation — Dependency Inversion, not a per-request branch
+// — so the returned Route's handlers are fixed closures reused
+// for the life of the process. The states log keeps its own
+// explicit routes (StateStore, append-only, custom readers).
+interface IdRouteConfig<T extends { id: string }> {
+    noun: string;
+    store: (db: DbAdapter) => EntityStore<T>;
+    verbs: ReadonlyArray<'get' | 'put' | 'delete'>;
+    putValidate?: EntityValidator<T>;
+    getTransform?: (row: T) => unknown;
+}
+
+function makeIdRoute<T extends { id: string }>(
+    config: IdRouteConfig<T>,
+): Route {
+    const { store, putValidate, getTransform } = config;
+    const handlers: {
+        get?: GetHandler;
+        put?: PutHandler;
+        delete?: DeleteHandler;
+    } = {};
+    if (config.verbs.includes('get')) {
+        handlers.get = getTransform === undefined
+            ? (db, p) => store(db).getById(param(p, 0))
+            : async (db, p) =>
+                getTransform(
+                    await store(db).getById(param(p, 0)),
+                );
+    }
+    if (config.verbs.includes('put')) {
+        handlers.put = (db, p, body) =>
+            store(db).put(
+                param(p, 0),
+                putValidate === undefined
+                    ? withoutId(body) as unknown as Omit<T, 'id'>
+                    : putValidate(withoutId(body)),
+            );
+    }
+    if (config.verbs.includes('delete')) {
+        handlers.delete = (db, p) =>
+            store(db).delete(param(p, 0));
+    }
+    return route(`${config.noun}/:id`, handlers);
 }
 
 async function applyRecordMultiPut(
@@ -454,167 +508,94 @@ const routes: Route[] = [
     route('ai-members', {
         get: (db) => db.aiMembers.getAll(),
     }),
-    route('ai-members/:id', {
-        get: (db, p) =>
-            db.aiMembers.getById(
-                param(p, 0),
-            ),
-        put: (db, p, payload) =>
-            db.aiMembers.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    AIMemberEntity, 'id'
-                >,
-            ),
+    makeIdRoute<AIMemberEntity>({
+        noun: 'ai-members',
+        store: db => db.aiMembers,
+        verbs: ['get', 'put'],
     }),
     route('human-members', {
         get: (db) => db.humanMembers.getAll(),
     }),
-    route('human-members/:id', {
-        get: (db, p) =>
-            db.humanMembers.getById(
-                param(p, 0),
-            ),
-        put: (db, p, payload) =>
-            db.humanMembers.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    HumanMemberEntity, 'id'
-                >,
-            ),
+    makeIdRoute<HumanMemberEntity>({
+        noun: 'human-members',
+        store: db => db.humanMembers,
+        verbs: ['get', 'put'],
     }),
     route('identities', {
         get: (db) => db.identities.getAll(),
     }),
-    route('identities/:id', {
-        get: (db, p) =>
-            db.identities.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.identities.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<IdentityEntity, 'id'>,
-            ),
+    makeIdRoute<IdentityEntity>({
+        noun: 'identities',
+        store: db => db.identities,
+        verbs: ['get', 'put'],
     }),
     route('identity-pii', {
         get: (db) => db.identityPii.getAll(),
     }),
-    route('identity-pii/:id', {
-        get: (db, p) =>
-            db.identityPii.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.identityPii.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<IdentityPiiEntity, 'id'>,
-            ),
-        delete: (db, p) =>
-            db.identityPii.delete(param(p, 0)),
+    makeIdRoute<IdentityPiiEntity>({
+        noun: 'identity-pii',
+        store: db => db.identityPii,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('identity-credentials', {
         get: async (db) =>
             (await db.identityCredentials.getAll())
                 .map(withoutSecret),
     }),
-    route('identity-credentials/:id', {
-        get: async (db, p) =>
-            withoutSecret(
-                await db.identityCredentials.getById(
-                    param(p, 0))),
-        put: (db, p, payload) =>
-            db.identityCredentials.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<
-                        IdentityCredentialEntity, 'id'
-                    >,
-            ),
+    makeIdRoute<IdentityCredentialEntity>({
+        noun: 'identity-credentials',
+        store: db => db.identityCredentials,
+        verbs: ['get', 'put'],
+        getTransform: withoutSecret,
     }),
     route('identity-token-revocations', {
         get: (db) =>
             db.identityTokenRevocations.getAll(),
     }),
-    route('identity-token-revocations/:id', {
-        get: (db, p) =>
-            db.identityTokenRevocations.getById(
-                param(p, 0),
-            ),
-        put: (db, p, payload) =>
-            db.identityTokenRevocations.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<
-                        IdentityTokenRevocationEntity,
-                        'id'
-                    >,
-            ),
+    makeIdRoute<IdentityTokenRevocationEntity>({
+        noun: 'identity-token-revocations',
+        store: db => db.identityTokenRevocations,
+        verbs: ['get', 'put'],
     }),
     route('role-grants', {
         get: (db) => db.roleGrants.getAll(),
     }),
-    route('role-grants/:id', {
-        get: (db, p) =>
-            db.roleGrants.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.roleGrants.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<RoleGrantEntity, 'id'>,
-            ),
+    makeIdRoute<RoleGrantEntity>({
+        noun: 'role-grants',
+        store: db => db.roleGrants,
+        verbs: ['get', 'put'],
     }),
     route('identity-tokens', {
         get: (db) => db.identityTokens.getAll(),
     }),
-    route('identity-tokens/:id', {
-        get: (db, p) =>
-            db.identityTokens.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.identityTokens.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<IdentityTokenEntity, 'id'>,
-            ),
+    makeIdRoute<IdentityTokenEntity>({
+        noun: 'identity-tokens',
+        store: db => db.identityTokens,
+        verbs: ['get', 'put'],
     }),
     route('clients', {
         get: (db) => db.clients.getAll(),
     }),
-    route('clients/:id', {
-        get: (db, p) =>
-            db.clients.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.clients.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<ClientEntity, 'id'>,
-            ),
-        delete: (db, p) =>
-            db.clients.delete(param(p, 0)),
+    makeIdRoute<ClientEntity>({
+        noun: 'clients',
+        store: db => db.clients,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('identity-providers', {
         get: (db) => db.identityProviders.getAll(),
     }),
-    route('identity-providers/:id', {
-        get: (db, p) =>
-            db.identityProviders.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.identityProviders.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<IdentityProviderEntity, 'id'>,
-            ),
+    makeIdRoute<IdentityProviderEntity>({
+        noun: 'identity-providers',
+        store: db => db.identityProviders,
+        verbs: ['get', 'put'],
     }),
     route('authorization-codes', {
         get: (db) => db.authorizationCodes.getAll(),
     }),
-    route('authorization-codes/:id', {
-        get: (db, p) =>
-            db.authorizationCodes.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.authorizationCodes.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<AuthorizationCodeEntity, 'id'>,
-            ),
+    makeIdRoute<AuthorizationCodeEntity>({
+        noun: 'authorization-codes',
+        store: db => db.authorizationCodes,
+        verbs: ['get', 'put'],
     }),
     route('authentication/token', {
         post: async (db, _p, body) => {
@@ -652,163 +633,83 @@ const routes: Route[] = [
         get: (db) =>
             db.flows.getAll(),
     }),
-    route('flows/:id', {
-        get: (db, params) =>
-            db.flows.getById(
-                param(params, 0),
-            ),
-        put: (db, params, body) =>
-            db.flows.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    FlowEntity, 'id'
-                >,
-            ),
+    makeIdRoute<FlowEntity>({
+        noun: 'flows',
+        store: db => db.flows,
+        verbs: ['get', 'put'],
     }),
     route('flow-versions', {
         get: (db) =>
             db.flowVersions.getAll(),
     }),
-    route('flow-versions/:id', {
-        get: (db, params) =>
-            db.flowVersions.getById(
-                param(params, 0),
-            ),
-        put: (db, params, body) =>
-            db.flowVersions.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    FlowVersionEntity, 'id'
-                >,
-            ),
-        delete: (db, params) =>
-            db.flowVersions.delete(
-                param(params, 0),
-            ),
+    makeIdRoute<FlowVersionEntity>({
+        noun: 'flow-versions',
+        store: db => db.flowVersions,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('project-flows', {
         get: (db) =>
             db.projectFlows
                 .getAll(),
     }),
-    route('project-flows/:id', {
-        put: (db, params, body) =>
-            db.projectFlows.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    ProjectFlowEntity, 'id'
-                >,
-            ),
-        delete: (db, params) =>
-            db.projectFlows.delete(
-                param(params, 0),
-            ),
+    makeIdRoute<ProjectFlowEntity>({
+        noun: 'project-flows',
+        store: db => db.projectFlows,
+        verbs: ['put', 'delete'],
     }),
     route('work-orders', {
         get: (db) =>
             db.workOrders.getAll(),
     }),
-    route('work-orders/:id', {
-        get: (db, params) =>
-            db.workOrders.getById(
-                param(params, 0),
-            ),
-        put: (db, params, body) =>
-            db.workOrders.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    WorkOrderEntity, 'id'
-                >,
-            ),
+    makeIdRoute<WorkOrderEntity>({
+        noun: 'work-orders',
+        store: db => db.workOrders,
+        verbs: ['get', 'put'],
     }),
     route('flow-work-orders', {
         get: (db) =>
             db.flowWorkOrders.getAll(),
     }),
-    route('flow-work-orders/:id', {
-        put: (db, params, body) =>
-            db.flowWorkOrders.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    FlowWorkOrderEntity, 'id'
-                >,
-            ),
+    makeIdRoute<FlowWorkOrderEntity>({
+        noun: 'flow-work-orders',
+        store: db => db.flowWorkOrders,
+        verbs: ['put'],
     }),
     route('state-field-values', {
         get: (db) =>
             db.stateFieldValues
                 .getAll(),
     }),
-    route('state-field-values/:id', {
-        put: (db, params, body) =>
-            db.stateFieldValues.put(
-                param(params, 0),
-                withoutId(body) as unknown as Omit<
-                    StateFieldValueEntity, 'id'
-                >,
-            ),
-        delete: (db, params) =>
-            db.stateFieldValues.delete(
-                param(params, 0),
-            ),
+    makeIdRoute<StateFieldValueEntity>({
+        noun: 'state-field-values',
+        store: db => db.stateFieldValues,
+        verbs: ['put', 'delete'],
     }),
     route('records', {
         get: (db) => db.records.getAll(),
     }),
-    route('records/:id', {
-        get: (db, p) =>
-            db.records.getById(param(p, 0)),
-        put: (db, p, body) =>
-            db.records.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    RecordEntity, 'id'
-                >,
-            ),
-        delete: (db, p) =>
-            db.records.delete(param(p, 0)),
+    makeIdRoute<RecordEntity>({
+        noun: 'records',
+        store: db => db.records,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('record-attributes', {
         get: (db) =>
             db.recordAttributes.getAll(),
     }),
-    route('record-attributes/:id', {
-        get: (db, p) =>
-            db.recordAttributes.getById(
-                param(p, 0),
-            ),
-        put: (db, p, body) =>
-            db.recordAttributes.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    RecordAttributeEntity, 'id'
-                >,
-            ),
-        delete: (db, p) =>
-            db.recordAttributes.delete(
-                param(p, 0),
-            ),
+    makeIdRoute<RecordAttributeEntity>({
+        noun: 'record-attributes',
+        store: db => db.recordAttributes,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('flow-records', {
         get: (db) =>
             db.flowRecords.getAll(),
     }),
-    route('flow-records/:id', {
-        get: (db, p) =>
-            db.flowRecords.getById(
-                param(p, 0),
-            ),
-        put: (db, p, body) =>
-            db.flowRecords.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    FlowRecordEntity, 'id'
-                >,
-            ),
-        delete: (db, p) =>
-            db.flowRecords.delete(
-                param(p, 0),
-            ),
+    makeIdRoute<FlowRecordEntity>({
+        noun: 'flow-records',
+        store: db => db.flowRecords,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('records-multi-put', {
         post: async (db, _p, body) => {
@@ -824,135 +725,79 @@ const routes: Route[] = [
     route('organizations', {
         get: (db) => db.organizations.getAll(),
     }),
-    route('organizations/:id', {
-        get: (db, p) =>
-            db.organizations.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.organizations.put(
-                param(p, 0),
-                validateOrganizationEntity(
-                    withoutId(payload),
-                ),
-            ),
+    makeIdRoute<OrganizationEntity>({
+        noun: 'organizations',
+        store: db => db.organizations,
+        verbs: ['get', 'put'],
+        putValidate: validateOrganizationEntity,
     }),
     route('memberships', {
         get: (db) => db.memberships.getAll(),
     }),
-    route('memberships/:id', {
-        get: (db, p) =>
-            db.memberships.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.memberships.put(
-                param(p, 0),
-                withoutId(payload) as unknown as
-                    Omit<MembershipEntity, 'id'>,
-            ),
-        delete: (db, p) =>
-            db.memberships.delete(param(p, 0)),
+    makeIdRoute<MembershipEntity>({
+        noun: 'memberships',
+        store: db => db.memberships,
+        verbs: ['get', 'put', 'delete'],
     }),
     route('current-member', {
         get: (db) =>
             db.members.getById('current'),
     }),
 
-    route('members/:id', {
-        get: (db, p) =>
-            db.members.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.members.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    MemberEntity, 'id'
-                >,
-            ),
+    makeIdRoute<MemberEntity>({
+        noun: 'members',
+        store: db => db.members,
+        verbs: ['get', 'put'],
     }),
-    route('ideas/:id', {
-        get: (db, p) =>
-            db.ideas.getById(param(p, 0)),
-        put: (db, p, payload) =>
-            db.ideas.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    IdeaEntity, 'id'
-                >,
-            ),
+    makeIdRoute<IdeaEntity>({
+        noun: 'ideas',
+        store: db => db.ideas,
+        verbs: ['get', 'put'],
     }),
-    route('projects/:id', {
-        get: (db, p) =>
-            db.projects.getById(
-                param(p, 0),
-            ),
-        put: (db, p, payload) =>
-            db.projects.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    ProjectEntity, 'id'
-                >,
-            ),
+    makeIdRoute<ProjectEntity>({
+        noun: 'projects',
+        store: db => db.projects,
+        verbs: ['get', 'put'],
     }),
-    route('idea-submissions/:id', {
-        put: (db, p, payload) =>
-            db.ideaSubmissions.put(
-                param(p, 0),
-                withoutId(payload) as unknown as Omit<
-                    IdeaSubmissionEntity, 'id'
-                >,
-            ),
+    makeIdRoute<IdeaSubmissionEntity>({
+        noun: 'idea-submissions',
+        store: db => db.ideaSubmissions,
+        verbs: ['put'],
     }),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
     }),
-    route('objectives/:id', {
-        get: (db, p) =>
-            db.objectives.getById(
-                param(p, 0),
-            ),
-        put: (db, p, body) =>
-            db.objectives.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    Objective, 'id'
-                >,
-            ),
+    makeIdRoute<Objective>({
+        noun: 'objectives',
+        store: db => db.objectives,
+        verbs: ['get', 'put'],
     }),
     route('objective-revisions', {
         get: (db) =>
             db.objectiveRevisions.getAll(),
     }),
-    route('objective-revisions/:id', {
-        put: (db, p, body) =>
-            db.objectiveRevisions.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    ObjectiveRevision, 'id'
-                >,
-            ),
+    makeIdRoute<ObjectiveRevision>({
+        noun: 'objective-revisions',
+        store: db => db.objectiveRevisions,
+        verbs: ['put'],
     }),
     route('project-objective-baseline-scores', {
         get: (db) =>
             db.projectObjectiveBaselineScores.getAll(),
     }),
-    route('project-objective-baseline-scores/:id', {
-        put: (db, p, body) =>
-            db.projectObjectiveBaselineScores.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    ProjectObjectiveBaselineScore, 'id'
-                >,
-            ),
+    makeIdRoute<ProjectObjectiveBaselineScore>({
+        noun: 'project-objective-baseline-scores',
+        store: db => db.projectObjectiveBaselineScores,
+        verbs: ['put'],
     }),
     route('project-objective-actual-scores', {
         get: (db) =>
             db.projectObjectiveActualScores.getAll(),
     }),
-    route('project-objective-actual-scores/:id', {
-        put: (db, p, body) =>
-            db.projectObjectiveActualScores.put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<
-                    ProjectObjectiveActualScore, 'id'
-                >,
-            ),
+    makeIdRoute<ProjectObjectiveActualScore>({
+        noun: 'project-objective-actual-scores',
+        store: db => db.projectObjectiveActualScores,
+        verbs: ['put'],
     }),
     route('states', {
         get: (db) => db.states.getAll(),
