@@ -10,6 +10,7 @@ import {
     type IdeaDraftFields,
 } from '../app/presenters/index.ts';
 import { showToast } from '../app/toast.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import { log } from '../app/logger.ts';
 import {
@@ -31,8 +32,7 @@ import {
     type IdeaWithSubmitter,
 } from '../app/adapters/index.ts';
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 type PageState =
     | {

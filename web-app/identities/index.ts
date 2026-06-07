@@ -3,6 +3,7 @@ import {
     populateIcons,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
@@ -26,8 +27,7 @@ import {
     IdentityRosterPresenter,
 } from '../app/presenters/index.ts';
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 let identityListEl: HTMLElement | null = null;
 

@@ -1,4 +1,5 @@
 import { $ } from '../app/dom.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import {
     makeFieldKeyValidator,
 } from '../app/field-key-validator.ts';
@@ -43,8 +44,7 @@ import {
     OrganizationObjectivesPresenter,
 } from '../app/presenters/index.ts';
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 type PageState =
     | {

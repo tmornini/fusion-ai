@@ -1,4 +1,5 @@
 import { $ } from '../app/dom.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import { showToast } from '../app/toast.ts';
 import { log } from '../app/logger.ts';
 import {
@@ -20,8 +21,7 @@ import {
     type IdentityDetailView,
 } from '../app/presenters/index.ts';
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 let pageContainer: HTMLElement | null = null;
 let currentId: string | null = null;

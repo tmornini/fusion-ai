@@ -2,6 +2,7 @@ import {
     $, $inputRequired, isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     makeFieldKeyValidator,
@@ -69,8 +70,7 @@ import {
     ProjectScoreHistoryPresenter,
 } from '../app/presenters/index.ts';
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 type PageState =
     | {

@@ -6,6 +6,7 @@ import {
     html, setHtml,
 } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
+import { createPageAbort } from '../app/page-lifecycle.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
@@ -43,8 +44,7 @@ import {
 
 const DEFAULT_DIM = 50;
 
-const pageAbort = new AbortController();
-const signal = pageAbort.signal;
+const { pageAbort, signal } = createPageAbort();
 
 let membersState:
     ManagedMembersState | null = null;
