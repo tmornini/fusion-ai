@@ -24,6 +24,9 @@ import {
 import { navigateTo } from './navigation.ts';
 import { sessionContext } from './adapters/shared.ts';
 import {
+    sessionIsOrgScoped,
+} from './adapters/init.ts';
+import {
     postSessionLogout,
 } from './adapters/session-logout.ts';
 
@@ -89,7 +92,12 @@ async function initSidebarLayout(
     initThemeAndDropdowns();
     initMobileDrawer();
     mutateThemeToggleIcon();
-    if (hasSchema) {
+    // The member chip and header read members/current and the active
+    // org — org-bound reads that require a scoped session. On an
+    // auth-exempt sidebar page with no logged-in visitor the holder
+    // is the anonymous seed, so we skip them rather than fire reads
+    // that 401 'anonymous principal' and throw 'no active org'.
+    if (hasSchema && sessionIsOrgScoped()) {
         await Promise.all([
             mutateSidebarMember(),
             mutateHeaderInfo(),

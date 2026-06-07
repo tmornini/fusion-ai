@@ -32,6 +32,7 @@ import {
 // intentionally outside the adapter barrel.
 import {
     getDbAdapter,
+    sessionIsOrgScoped,
 } from './adapters/init.ts';
 import {
     PAGE_REGISTRY,
@@ -301,6 +302,11 @@ export function initCommandPalette(
     async function getSearchIndex(
     ): Promise<void> {
         if (state.isDataLoaded) return;
+        // The index reads ideas, projects, and members — org-bound.
+        // On an unscoped session (the anonymous seed on an auth-exempt
+        // sidebar page) skip the build rather than 401; a later scoped
+        // load reseeds it.
+        if (!sessionIsOrgScoped()) return;
 
         const ctx = sessionContext();
         const [ideas, projects, humans] =
