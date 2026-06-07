@@ -348,14 +348,14 @@ last (they wipe the database). See `CLAUDE.md` section
 | F. Tools | 74 |
 | F2. Workbox | 26 |
 | FS. Flow Statistics | 9 |
-| G. Admin Pages | 31 |
+| G. Admin Pages | 40 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
 | L. IndexedDB Persistence Tier | 9 |
-| **Total** | **358** |
+| **Total** | **367** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -365,8 +365,8 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |     1416 |
-| Browser regression     |      358 |
-| **Combined TOTAL**     | **1774** |
+| Browser regression     |      367 |
+| **Combined TOTAL**     | **1783** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -386,8 +386,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1773, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1773).
+`PASS = 1783, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1783).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -441,13 +441,26 @@ on. Run these in order.
   "Sarah Chen" (Title: Engineering Manager, Department:
   Engineering). Click Create. PASS: toast confirms
   creation, the new member appears in the Humans group
-  on the list.
+  on the list. NOTE (deferred auto-membership): Add
+  Member creates an IDENTITY + member detail row but no
+  membership/org binding — that binding now arrives only
+  via the invitation flow (V1/V4). So a freshly Added
+  human is NOT yet in the org roster derived from
+  `memberships`; the Members-list grouping you see here
+  is the page's own member listing, not the membership
+  roster. New-identity auto-membership on creation is
+  DEFERRED, so this gap is EXPECTED, not a failure.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
   Thompson, Jessica Park, David Martinez, Emily Rodriguez
   (pending), Alex Kim, Marcus Johnson, David Kim, Lisa
   Wang, James Miller (archived). PASS: all 10 appear
   in the Humans group with correct name, email, title,
-  and status badge (Active / Pending / Archived).
+  and status badge (Active / Pending / Archived). NOTE
+  (deferred auto-membership): as in AA5, Add Member binds
+  no org membership — the org-binding now comes via
+  invitation (V1/V4). Each freshly Added human is NOT yet
+  in the `memberships`-derived roster until invited and
+  accepted; that DEFERRED path is expected.
 - [ ] **AA7** Reload the Members page. PASS: every human
   re-renders in the Humans group with the correct status
   badge.
@@ -761,18 +774,22 @@ on. Run these in order.
   (Teams, People, Roles, Crews, Company,
   Activity Feed, and Profile sidebar entries
   have been retired — the current user's
-  detail is reachable via the sidebar account
-  chip and the header greeting; humans and AIs
+  detail is reachable via the sidebar account/
+  member chip (the old header greeting that also
+  linked to it has been removed); humans and AIs
   both live on the Members page.)
-- [ ] **C3** Header shows search bar, greeting
-  ("Good {morning/afternoon/evening}, Tony
-  Stark" — varies by time of day), company
+- [ ] **C3** Header shows search bar, company
   stats ("Stark Industries · N Ideas ·
   M Projects · K Flows" — the counts track the
   current working data and change as you create
   or convert, so don't assert exact numbers),
   and theme toggle. PASS: elements visible and
-  styled.
+  styled. The old "Good {morning/afternoon/
+  evening}, {name}" greeting and the top-bar org
+  `<select>` have both been REMOVED; the top bar
+  shows neither. (The org switcher moved to the
+  sidebar footer — see G36; the pending-invitations
+  bell may appear at the top bar — see V3.)
 - [ ] **C4** Dashboard renders 4 surfaces in order: three
   visually-equivalent arc-gauge cards (Time, Cost, Portfolio
   Impact — each a bipolar arc; not "2 gauges + a distinct
@@ -965,8 +982,9 @@ opens and renders.)
 - [ ] **F7** Navigate to a flow designer page.
   PASS: page wears the standard sidebar + top-bar
   layout (formerly standalone) — left sidebar with
-  the global nav, top bar with search/greeting/
-  organization stats/theme toggle, and the flow
+  the global nav, top bar with search/
+  organization stats/theme toggle (no greeting —
+  it has been removed), and the flow
   designer occupying the remaining content area.
   Toolbar runs vertically along the left edge of
   the canvas (inside the content area, not the
@@ -1687,6 +1705,34 @@ the claude-in-chrome MCP.
   prefilled with the current Organization Name and Domain.
   (There is no health score — the retired 92/"excellent"
   badge has been removed.)
+- [ ] **V8 — Organization "Sent invitations" section + Revoke
+  (admin)** As an org admin with ≥1 outstanding invitation
+  granted (V1), on `organization/index.html` confirm a "Sent
+  invitations" section (`#sent-invitations-box`, h2 "Sent
+  invitations") appears below the cards, listing one row per
+  PENDING org invitation (`#sent-invitations-list`) — each row
+  shows the invitee EMAIL, an "Invited {date}" sub-line, a
+  state badge, and a Revoke button. PASS: the section is
+  VISIBLE only when the admin read succeeds (it boots hidden
+  and reveals on success). Click Revoke on a row. PASS: an
+  "Invitation revoked" toast fires and the row leaves the
+  pending list (a 'revoked' event supersedes the pending; the
+  invitation row persists as audit, and the invitee's pending
+  list — V3/V4 — no longer shows it). With no outstanding
+  invitations, the list shows "No outstanding invitations."
+  Revoke is idempotent (re-revoke → 204). Source:
+  `web-app/organization/index.ts` (`renderSentInvitations` /
+  `onSentInvitationClick`), `SentInvitationsPresenter`,
+  `revokeInvitation`.
+- [ ] **V9 — Sent-invitations section is admin-only** Sign in
+  as a NON-admin member and open `organization/index.html`.
+  PASS: the admin Sent-invitations read fails (403 "forbidden:
+  listing sent invitations requires an admin role") and the
+  section stays HIDDEN — the page logs at warn and surfaces no
+  raw error, and no Revoke affordance is offered to a non-
+  admin. (Pairs with V7's grant/revoke 403s.) Source:
+  `sentInvitations` admin guard in `api/api.ts`,
+  `renderSentInvitations` catch.
 
 ### Members list (`members/index.html`)
 
@@ -1703,12 +1749,13 @@ the claude-in-chrome MCP.
   group showing avatar/name, title (humans) or the
   model name (AIs), department (humans only), and a
   status badge (humans only).
-- [ ] **G12** Click the sidebar account chip (lower-left).
-  PASS: navigates to the current human member's
-  `member-detail` page (`?memberId=<id>`). Click the
-  header greeting ("Good {time-of-day}, {name}"). PASS:
-  also navigates to the current human's `member-detail`
-  page.
+- [ ] **G12** Click the sidebar member chip (lower-left:
+  name/avatar in the sidebar footer). PASS: navigates to
+  the current human member's `member-detail` page
+  (`?memberId=<id>`). (The old header greeting that also
+  linked to the profile has been removed — the sidebar
+  member chip is now the only "click → profile"
+  affordance. Source: `web-app/app/sidebar-member.ts`.)
 - [ ] **G13** Type in the search input. PASS: filters the
   list by name (and description) in real-time; AI
   members no longer match on provider/model (accepted
@@ -1720,13 +1767,133 @@ the claude-in-chrome MCP.
   visible, and the AI form hidden. Switch the toggle to
   AI. PASS: the Human form hides, the AI form appears
   with a Model pulldown and a Skill Focus textarea; no
-  Auth Token field or security warning.
+  Auth Token field or security warning. NOTE (deferred
+  auto-membership): Add Member creates an identity (and
+  member detail row) but NO org membership — the org-
+  binding now comes via the "Invite member" flow (V1) and
+  the invitee accepting (V4). A freshly Added member is
+  therefore not yet in the membership-derived org roster;
+  that DEFERRED path is expected, not a regression.
+  "Invite member" (V1) is the separate button that grants
+  the binding.
 - [ ] **G14a** With Kind=AI selected, leave the Model
   pulldown on its placeholder and click Create. PASS: a
   toast "Model is required" fires and no POST happens.
   Pick a Model, fill the other AI fields, click Create.
   PASS: toast confirms; the new AI appears in the AIs
   group.
+
+### Membership invitations (V) — Members "Invite member"
+
+> The invitation flow is the org-binding path that "Add
+> Member" no longer performs (see the deferred-auto-membership
+> note on AA5/AA6/G14). An admin invites an EXISTING identity
+> by email → a pending invitation; the invitee reads it on
+> `invitations/` (reached via the top-bar bell) and Accepts
+> (writes a real membership in the invitation's org) or
+> Declines; an admin can Revoke an outstanding one from the
+> Organization page. DEFERRED (not built): new-identity auto-
+> membership on creation, and email delivery. Sources:
+> `web-app/members/index.ts` (`handleInviteSubmit`),
+> `web-app/app/adapters/invitations.ts`, `api/api.ts`
+> (`grantInvitation` / `acceptInvitation` / `declineInvitation`
+> / `revokeInvitation`), `web-app/invitations/`,
+> `web-app/app/invitations-indicator.ts`.
+
+- [ ] **V1 — Invite by email grants a pending invitation** On
+  `members/index.html` as an org admin (Tony Stark on Stark
+  Industries after G33), click `+ Invite member` (`#invite-
+  member-btn`, mail icon). PASS: the `invite-member` dialog
+  opens with a single Email input (`#invite-email`), helper
+  text "Invite an existing person to this organization", a
+  Cancel and a "Send invitation" submit (`#invite-member-
+  submit`). Enter the email of an EXISTING identity who is NOT
+  yet a Stark member (e.g. a Wayne-only seeded human's email).
+  Click "Send invitation". PASS: an "Invitation sent" toast
+  fires, the dialog closes, and the email field is cleared.
+  The grant is idempotent — sending the same email again while
+  still pending returns the same pending invitation (no
+  duplicate, no error). Source: `handleInviteSubmit`,
+  `postInvitationGrant`, `grantInvitation`.
+- [ ] **V2 — Invite rejects empty / unknown / already-member**
+  Open the Invite dialog. Submit with the Email blank → an
+  "Email is required" toast and no POST. Submit an email that
+  matches NO identity → a "Failed to invite: …" toast carrying
+  the server's "no identity with that email" (404 — the server
+  resolves email→identity; unknown is rejected). Submit the
+  email of someone ALREADY a member of the active org → a
+  "Failed to invite: …" toast carrying "that identity is
+  already a member of this organization" (409). In all three
+  the dialog stays usable and no pending invitation is created.
+  Source: `grantInvitation` guards in `api/api.ts`.
+- [ ] **V3 — Top-bar pending-invitations bell → invitations
+  page** As an identity with ≥1 pending invitation (the V1
+  invitee, signed in), confirm the top bar shows a bell
+  (`#invitations-bell`) with a count badge (`#invitations-
+  badge`) equal to the number of pending invitations. PASS:
+  the bell is VISIBLE only when pending ≥ 1 — an identity with
+  zero pending invitations shows NO bell (the host carries
+  `hidden`; it is never an empty bell). Click the bell. PASS:
+  navigates to `invitations/index.html`. The read is identity-
+  scoped (the invitation facade fences by the verified caller),
+  so the bell works even for a member with no admin role.
+  Source: `web-app/app/invitations-indicator.ts`
+  (`mutateInvitationsBell`), `component-top-bar.html`.
+- [ ] **V4 — Accept writes a membership; invitee becomes
+  multi-org** On `invitations/index.html` (page header
+  "Invitations", subtitle "Organizations inviting you to
+  join"), confirm `#invitations-list` shows one card per
+  PENDING invitation — org name, an "Invited by {name} ·
+  {date}" sub-line, a state badge, and Accept / Decline
+  buttons. Click Accept on the V1 invitation. PASS: an
+  "Invitation accepted" toast fires and the row leaves the
+  pending list. A REAL membership is now written in the
+  INVITATION's org (Stark), so the invitee becomes multi-org:
+  reload any sidebar-layout page and the sidebar footer now
+  shows the org `<select>` (G36) listing both their original
+  org and Stark. Accept is idempotent — a re-accept is a 204
+  no-op, no duplicate membership. Source:
+  `postInvitationAcceptance`, `acceptInvitation` (atomic
+  `memberships.put` + `states.record('accepted')`).
+- [ ] **V5 — Decline appends declined, writes no membership**
+  As an invitee with a fresh pending invitation, on
+  `invitations/` click Decline. PASS: an "Invitation declined"
+  toast fires, the row leaves the pending list, and NO
+  membership is written (the declined org does NOT appear in
+  the sidebar switcher and its rows stay unreachable). With no
+  pending invitations remaining, the list shows the empty
+  state "No invitations." and the top-bar bell disappears
+  (V3). Decline is idempotent (re-decline → 204). Source:
+  `postInvitationDecline`, `declineInvitation`.
+- [ ] **V6 — Org fence: a pending invite is invisible until
+  accepted** While the V1 invitation is still PENDING (before
+  V4), confirm the org fence holds: the invitee is NOT in the
+  inviting org's Members roster (the roster derives from
+  `memberships`, and no membership exists yet), and the
+  inviting org is NOT reachable by the invitee — it does not
+  appear in their sidebar org `<select>` and boot will not
+  scope a token to it (a pending invitation grants no
+  membership). Only after Accept (V4) does the membership
+  appear and the org become reachable. PASS: pending ⇒ not in
+  roster, not reachable; accepted ⇒ both. Source: the org
+  fence (`db-org-scoped`/`store-org-scoped`), `acceptInvitation`.
+- [ ] **V7 — Authz: non-admin grant/revoke rejected; invitee
+  may still read & accept** Sign in as a NON-admin member of
+  an org (a seeded human with no admin role). PASS: any
+  attempt to grant — POST `invitations` (the path behind the
+  Invite dialog) — is rejected with "forbidden: granting an
+  invitation requires an admin role" (403), and the
+  Organization page's Sent-invitations admin read fails and
+  the section stays hidden (V8), so no Revoke is offered; a
+  forced revoke POST is rejected with "forbidden: revoking an
+  invitation requires an admin role" (403). YET the SAME role-
+  less identity, when it is the INVITEE, CAN read its own
+  invitations (the bell + `invitations/` work — the read is
+  identity-scoped, not admin-gated) and CAN Accept/Decline its
+  own invitation (V4/V5). PASS: grant/revoke require admin;
+  read/accept/decline require only being the invitee. Source:
+  the explicit guards in `grantInvitation` / `revokeInvitation`
+  vs. the un-admin-gated invitee read/accept/decline paths.
 
 ### Member detail — Human (`members/detail.html?memberId=<hw_*>`)
 
@@ -1841,7 +2008,7 @@ restored data.)
   object stores outside that list (plus `__schema__`) appear.
 - [ ] **G33** Click "Wipe and Load Mock Data", then Confirm the dialog. PASS: a confirm dialog (`#confirm-wipe-dialog`, titled "Confirm Action") appears first warning the wipe cannot be undone — Cancel aborts with no change; on Confirm the page renders the one-time demo-credentials reveal panel (`.credential-reveal`, titled "Save your demo sign-ins") listing EVERY login-capable seeded identity's email + fresh password in the monospace `.credential-reveal-box`, one credential per line, with a "Copy all" button. (Mock data seeds two orgs — `'1'` Stark Industries and `'2'` Wayne Enterprises — so the list spans both orgs' seeded humans; Tony Stark / `current` is the multi-org admin.) The page does NOT navigate until "I have saved it — continue" is clicked; clicking it redirects to `dashboard/index.html`. Navigate to `ideas/` — 11 ideas are back.
 - [ ] **G34** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
-- [ ] **G36 — Header org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the header greeting shows an org `<select>` (`.org-switcher`) next to the name — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion.active-org` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO org `<select>` in the header. Source of truth: `web-app/app/org-switcher.ts`, `web-app/app/adapters/org-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrg`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
+- [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion.active-org` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/org-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/org-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrg`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
 
 ### Snapshot & User Lifecycle — Error/Edge Cases
 

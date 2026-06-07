@@ -12,7 +12,9 @@ and execution.
 - **Projects** — track approved ideas through execution
 - **Identities** — people and service identities, their external
   provider links, and access tokens
-- **Account** — organization settings, users, and billing
+- **Account** — organization settings, users, and billing;
+  members join by email invitation (accept creates the
+  membership; an admin may revoke a pending invite)
 - **DB Admin** — database management
   (wipe, reload, upload/download snapshots)
 
