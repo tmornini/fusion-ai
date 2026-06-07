@@ -346,3 +346,43 @@ export const TABLE_NAMES = [
     'project_objective_actual_scores',
     'states',
 ];
+
+// The secondary indexes each store carries: every FK and
+// read-discriminator column, declared beside TABLE_NAMES as
+// the schema of record both backends read. A keyed read
+// (`Tx.getAllBy`) names one of these. Index ONLY NOT-NULL
+// columns — IndexedDB omits a row missing the keyPath from
+// `index.getAll`, and the NOT-NULL covenant guarantees
+// declared FKs are present. Tables absent here have no
+// narrowing discriminator: the collection IS its rows.
+export const TABLE_INDEXES:
+    Record<string, readonly string[]> = {
+    identity_pii: ['email'],
+    identity_credentials: ['identity_id'],
+    identity_token_revocations: ['identity_id'],
+    identity_default_orgs: ['identity_id'],
+    role_grants: ['organization_id', 'identity_id'],
+    identity_tokens: ['jti', 'chain_id', 'identity_id'],
+    identity_providers: ['identity_id'],
+    authorization_codes: ['code', 'identity_id'],
+    ideas: ['organization_id'],
+    projects: ['organization_id'],
+    flows: ['organization_id'],
+    flow_versions: ['flow_id'],
+    project_flows: ['project_id', 'flow_id'],
+    work_orders: ['organization_id'],
+    flow_work_orders: ['flow_id', 'work_order_id'],
+    state_field_values: ['state_event_id', 'field_id'],
+    records: ['organization_id'],
+    record_attributes: ['organization_id', 'record_id'],
+    flow_records: ['flow_id', 'record_id'],
+    memberships: ['organization_id', 'identity_id'],
+    idea_submissions: ['idea_id'],
+    objectives: ['organization_id'],
+    objective_revisions: ['objective_id'],
+    project_objective_baseline_scores:
+        ['project_id', 'objective_id'],
+    project_objective_actual_scores:
+        ['project_id', 'objective_id'],
+    states: ['entity_id', 'member_id'],
+};

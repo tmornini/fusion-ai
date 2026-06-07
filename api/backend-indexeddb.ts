@@ -1,5 +1,6 @@
 import {
     MissingTableError,
+    TABLE_INDEXES,
     TABLE_NAMES,
     type StorageBackend,
     type Tx,
@@ -145,9 +146,15 @@ export class IndexedDbBackend implements StorageBackend {
                     if (
                         !db.objectStoreNames.contains(table)
                     ) {
-                        db.createObjectStore(
+                        const store = db.createObjectStore(
                             table, { keyPath: 'id' },
                         );
+                        for (
+                            const col of
+                            TABLE_INDEXES[table] ?? []
+                        ) {
+                            store.createIndex(col, col);
+                        }
                     }
                 }
                 if (
