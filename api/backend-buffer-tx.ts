@@ -50,6 +50,17 @@ export function bufferTx(
         ): Promise<T[]> {
             return [...scoped(table)] as T[];
         },
+        async getAllBy<T extends { id: string }>(
+            table: string,
+            indexName: string,
+            key: string,
+        ): Promise<T[]> {
+            return scoped(table).filter(
+                row => (
+                    row as Record<string, unknown>
+                )[indexName] === key,
+            ) as T[];
+        },
         async put<T extends { id: string }>(
             table: string,
             row: T,

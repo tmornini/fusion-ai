@@ -144,6 +144,16 @@ export interface Tx {
     getAll<T extends { id: string }>(
         table: string,
     ): Promise<T[]>;
+    // The rows whose `indexName` column equals `key`: the
+    // indexed answer to `WHERE col = key`, so a keyed
+    // question is served without scanning the table. The
+    // matches keep each tier's own row order, so a reducer
+    // folds them exactly as it folds a full read.
+    getAllBy<T extends { id: string }>(
+        table: string,
+        indexName: string,
+        key: string,
+    ): Promise<T[]>;
     put<T extends { id: string }>(
         table: string,
         row: T,

@@ -79,6 +79,16 @@ function indexedDbTx(
                 store(table).getAll(),
             ) as T[];
         },
+        async getAllBy<T extends { id: string }>(
+            table: string,
+            indexName: string,
+            key: string,
+        ): Promise<T[]> {
+            return await requestPromise(
+                store(table).index(indexName)
+                    .getAll(IDBKeyRange.only(key)),
+            ) as T[];
+        },
         async put<T extends { id: string }>(
             table: string,
             row: T,
