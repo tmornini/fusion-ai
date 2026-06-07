@@ -80,7 +80,7 @@ async function onListClick(e: MouseEvent): Promise<void> {
             'invitation action failed', 'invitations', err);
         showToast(
             'Failed: ' + extractErrorMessage(err), 'error');
-        return;
     }
-    await refresh();
+    // The list re-renders via the change subscription the post*
+    // adapters notify — no explicit refresh, no double read.
 }

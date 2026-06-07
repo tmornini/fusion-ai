@@ -237,6 +237,51 @@ test('a non-admin cannot revoke', async () => {
         postInvitationRevocation(sarah, inv.id));
 });
 
+test('accept after revoke is rejected, no membership', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    await postInvitationRevocation(tony, inv.id);
+    const sarah = await ctxOn(db, 'sarah', '1');
+    await assert.rejects(
+        postInvitationAcceptance(sarah, inv.id));
+    const wayne = (await db.memberships.getAll())
+        .filter(m => m.identity_id === 'sarah'
+            && m.organization_id === '2');
+    assert.equal(wayne.length, 0);
+});
+
+test('accept after decline is rejected', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    const sarah = await ctxOn(db, 'sarah', '1');
+    await postInvitationDecline(sarah, inv.id);
+    await assert.rejects(
+        postInvitationAcceptance(sarah, inv.id));
+});
+
+test('decline after accept is rejected', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    const sarah = await ctxOn(db, 'sarah', '1');
+    await postInvitationAcceptance(sarah, inv.id);
+    await assert.rejects(
+        postInvitationDecline(sarah, inv.id));
+});
+
+test('granting the same email twice is idempotent', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    assert.equal((await db.invitations.getAll()).length, 1);
+});
+
 test('sent invitations list the active org pending only',
 async () => {
     const { db } = await ctxFor('current', '2');

@@ -1162,11 +1162,15 @@ async function callerIsOrgAdmin(
 }
 
 // An invitation's current state: the latest event on its id,
-// resolved with the SECURE tiebreak (later-appended wins on an
-// equal `at`), the same derivation every entity's state uses —
-// NOT states.currentFor, whose strict-> tiebreak keeps the
-// FIRST event and would freeze a same-millisecond lifecycle at
-// 'pending'. Null when no event has been recorded.
+// resolved via latestByKey (the same derivation every entity's
+// state uses) rather than states.currentFor, whose strict-`>`
+// tiebreak keeps the FIRST event and would freeze a co-timestamped
+// lifecycle at 'pending'. On a same-millisecond `at` tie the
+// winner is backend-dependent (the memory tier preserves insertion
+// order; IndexedDB's index.getAll returns primary-key order) — not
+// an issue here, since each lifecycle transition is a distinct HTTP
+// request milliseconds-to-seconds apart, so `at` ties do not occur
+// in practice. Null when no event has been recorded.
 async function currentInvitationState(
     adapter: DbAdapter,
     id: Id,
@@ -1255,16 +1259,20 @@ async function invitationsForInvitee(
         const latest = latestByKey(events, ev => ev.entity_id)
             .get(inv.id);
         if (latest === undefined) continue;
-        // The earliest event is the grant; its actor invited.
-        const first = events[0]!;
+        // The inviter is the actor of the grant ('pending') event —
+        // found by state, not position, so a same-`at` tie cannot
+        // misattribute it. An absent name (erased PII) stays empty;
+        // the presenter then omits the "Invited by" line.
+        const grant = events.find(ev => ev.state === 'pending');
         out.push({
             id: inv.id,
             organization_id: inv.organization_id,
             organization_name:
                 orgName.get(inv.organization_id) ?? '',
             identity_id: inv.identity_id,
-            invited_by_name:
-                personName.get(first.member_id) ?? '',
+            invited_by_name: grant
+                ? personName.get(grant.member_id) ?? ''
+                : '',
             at: inv.at,
             state: assertInvitationState(
                 latest.state, 'invitation ' + inv.id),
@@ -1347,6 +1355,13 @@ async function grantInvitation(
         return errorJson(
             'an "email" is required', HTTP_BAD_REQUEST);
     }
+    // DEMO-TIER POSTURE: a missing email 404s and an already-member
+    // 409s, so an org admin can tell whether an email maps to an
+    // existing identity (even one in another org). This is a conscious
+    // tradeoff — the admin needs to know the invite landed, and the
+    // plan defers new-identity creation — of the same demo grade as the
+    // client-shipped HMAC key. A server tier would resolve emails
+    // without reflecting existence through the status code.
     const match = (await adapter.identityPii.getAll())
         .find(p => p.email === email);
     if (match === undefined) {
@@ -1354,30 +1369,28 @@ async function grantInvitation(
             'no identity with that email', HTTP_NOT_FOUND);
     }
     const identityId = match.id;
-    const memberships = await adapter.memberships.getAll();
-    const alreadyMember = memberships.some(
-        m => m.identity_id === identityId
-            && m.organization_id === org);
-    if (alreadyMember) {
-        return errorJson(
-            'that identity is already a member of this'
-            + ' organization', HTTP_CONFLICT);
-    }
-    const pending = await pendingInvitationFor(
-        adapter, org, identityId);
-    if (pending !== null) {
-        return Response.json({
-            id: pending.id, organization_id: org,
-            identity_id: identityId, at: pending.at,
-            state: 'pending',
-        });
-    }
     const id = generateCryptoSafeBase62();
     const eventId = generateCryptoSafeBase62();
     const at = nowUtc();
-    await adapter.transaction(
-        ['invitations', 'states'],
-        async (view) => {
+    // The member/pending checks and the write run in ONE transaction so
+    // two concurrent grants cannot both pass the check and each append a
+    // pending invitation (Commandment VII). The tx RETURNS its outcome
+    // (a closure-mutated outer var would not narrow), mapped below.
+    const result = await adapter.transaction(
+        ['invitations', 'states', 'memberships'],
+        async (view): Promise<GrantOutcome> => {
+            const member = (await view.memberships.getAll())
+                .some(m => m.identity_id === identityId
+                    && m.organization_id === org);
+            if (member) return { kind: 'member' };
+            const existing = await pendingInvitationFor(
+                view, org, identityId);
+            if (existing !== null) {
+                return {
+                    kind: 'existing',
+                    id: existing.id, at: existing.at,
+                };
+            }
             await view.invitations.put(id, {
                 organization_id: org,
                 identity_id: identityId,
@@ -1385,13 +1398,31 @@ async function grantInvitation(
             });
             await view.states.record(
                 eventId, id, 'pending', principal.id);
+            return { kind: 'created' };
         },
     );
+    if (result.kind === 'member') {
+        return errorJson(
+            'that identity is already a member of this'
+            + ' organization', HTTP_CONFLICT);
+    }
+    if (result.kind === 'existing') {
+        return Response.json({
+            id: result.id, organization_id: org,
+            identity_id: identityId, at: result.at,
+            state: 'pending',
+        });
+    }
     return Response.json({
         id, organization_id: org, identity_id: identityId,
         at, state: 'pending',
     });
 }
+
+type GrantOutcome =
+    | { kind: 'member' }
+    | { kind: 'existing'; id: Id; at: string }
+    | { kind: 'created' };
 
 // The org's outstanding pending invitation for an identity, or
 // null. The grant idempotency check.
@@ -1432,20 +1463,20 @@ async function acceptInvitation(
             'forbidden: only the invitee may accept',
             HTTP_FORBIDDEN);
     }
-    const state = await currentInvitationState(adapter, id);
-    if (state === 'accepted') {
-        return new Response(null, { status: 204 });
-    }
-    if (state !== 'pending') {
-        return errorJson(
-            'invitation is not pending', HTTP_CONFLICT);
-    }
     const membershipId = generateCryptoSafeBase62();
     const eventId = generateCryptoSafeBase62();
     const at = nowUtc();
+    // The pending check rides INSIDE the write transaction so a
+    // concurrent revoke/decline cannot slip between the check and the
+    // membership write — a revoke must actually stop access (Commandment
+    // X / II). Mirrors grantAuthorizationCode's in-tx state gate.
+    let conflict = false;
     await adapter.transaction(
         ['memberships', 'states'],
         async (view) => {
+            const state = await currentInvitationState(view, id);
+            if (state === 'accepted') return;   // idempotent no-op
+            if (state !== 'pending') { conflict = true; return; }
             const already = (await view.memberships.getAll())
                 .some(m => m.identity_id === principal.id
                     && m.organization_id
@@ -1461,6 +1492,10 @@ async function acceptInvitation(
                 eventId, id, 'accepted', principal.id);
         },
     );
+    if (conflict) {
+        return errorJson(
+            'invitation is not pending', HTTP_CONFLICT);
+    }
     return new Response(null, { status: 204 });
 }
 
@@ -1481,17 +1516,19 @@ async function declineInvitation(
             'forbidden: only the invitee may decline',
             HTTP_FORBIDDEN);
     }
-    const state = await currentInvitationState(adapter, id);
-    if (state === 'declined') {
-        return new Response(null, { status: 204 });
-    }
-    if (state !== 'pending') {
+    const eventId = generateCryptoSafeBase62();
+    let conflict = false;
+    await adapter.transaction(['states'], async (view) => {
+        const state = await currentInvitationState(view, id);
+        if (state === 'declined') return;   // idempotent no-op
+        if (state !== 'pending') { conflict = true; return; }
+        await view.states.record(
+            eventId, id, 'declined', principal.id);
+    });
+    if (conflict) {
         return errorJson(
             'invitation is not pending', HTTP_CONFLICT);
     }
-    await adapter.states.record(
-        generateCryptoSafeBase62(), id, 'declined',
-        principal.id);
     return new Response(null, { status: 204 });
 }
 
@@ -1515,17 +1552,19 @@ async function revokeInvitation(
             'forbidden: revoking an invitation requires an'
             + ' admin role', HTTP_FORBIDDEN);
     }
-    const state = await currentInvitationState(adapter, id);
-    if (state === 'revoked') {
-        return new Response(null, { status: 204 });
-    }
-    if (state !== 'pending') {
+    const eventId = generateCryptoSafeBase62();
+    let conflict = false;
+    await adapter.transaction(['states'], async (view) => {
+        const state = await currentInvitationState(view, id);
+        if (state === 'revoked') return;   // idempotent no-op
+        if (state !== 'pending') { conflict = true; return; }
+        await view.states.record(
+            eventId, id, 'revoked', principal.id);
+    });
+    if (conflict) {
         return errorJson(
             'invitation is not pending', HTTP_CONFLICT);
     }
-    await adapter.states.record(
-        generateCryptoSafeBase62(), id, 'revoked',
-        principal.id);
     return new Response(null, { status: 204 });
 }
 
