@@ -1,5 +1,8 @@
 import { $ } from '../app/dom.ts';
-import { createPageAbort } from '../app/page-lifecycle.ts';
+import {
+    createPageAbort,
+    bindPageListeners,
+} from '../app/page-lifecycle.ts';
 import {
     makeFieldKeyValidator,
 } from '../app/field-key-validator.ts';
@@ -325,19 +328,11 @@ export async function init(): Promise<void> {
 function bindStableListeners(
     container: HTMLElement,
 ): void {
-    container.addEventListener(
-        'click', e => onClick(e),
-        { signal },
-    );
-    container.addEventListener(
-        'input', e => onInput(e),
-        { signal },
-    );
-    container.addEventListener(
-        'keydown',
-        e => onContainerKeydown(e),
-        { signal },
-    );
+    bindPageListeners(container, {
+        click: e => onClick(e),
+        input: e => onInput(e),
+        keydown: e => onContainerKeydown(e),
+    }, signal);
     document.addEventListener(
         'keydown',
         e => onDocumentKeydown(e),

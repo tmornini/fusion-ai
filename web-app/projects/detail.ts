@@ -2,7 +2,10 @@ import {
     $, $inputRequired, isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
-import { createPageAbort } from '../app/page-lifecycle.ts';
+import {
+    createPageAbort,
+    bindPageListeners,
+} from '../app/page-lifecycle.ts';
 import { extractErrorMessage } from '../app/error-helpers.ts';
 import {
     makeFieldKeyValidator,
@@ -465,23 +468,12 @@ export async function init(
 function bindStableListeners(
     container: HTMLElement,
 ): void {
-    container.addEventListener(
-        'click', e => onClick(e),
-        { signal },
-    );
-    container.addEventListener(
-        'input', e => onInput(e),
-        { signal },
-    );
-    container.addEventListener(
-        'change', e => onInput(e),
-        { signal },
-    );
-    container.addEventListener(
-        'keydown',
-        e => onContainerKeydown(e),
-        { signal },
-    );
+    bindPageListeners(container, {
+        click: e => onClick(e),
+        input: e => onInput(e),
+        change: e => onInput(e),
+        keydown: e => onContainerKeydown(e),
+    }, signal);
     document.addEventListener(
         'keydown',
         e => onDocumentKeydown(e),
