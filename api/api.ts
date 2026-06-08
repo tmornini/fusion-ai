@@ -2,6 +2,7 @@ import type {
     DbAdapter,
     EntityStore,
     EntityValidator,
+    KeyedCollectionReader,
 } from './db.ts';
 import { extractErrorMessage } from './error-helpers.ts';
 import {
@@ -1719,6 +1720,12 @@ export async function handleRequest(
             && (routePattern === 'entity-states/:id'
                 || routePattern
                     === 'entity-states/:id/history')) {
+            // Reach the keyed membership read kept off the
+            // EntityStore contract, so the owner resolves
+            // through the identity_id index, not a scan.
+            const memberships = adapter.memberships as
+                EntityStore<MembershipEntity>
+                    & KeyedCollectionReader<MembershipEntity>;
             const owner = await ownerOrgOfEntity(
                 [
                     adapter.ideas, adapter.projects,
@@ -1726,7 +1733,7 @@ export async function handleRequest(
                     adapter.objectives, adapter.workOrders,
                     adapter.invitations,
                 ],
-                adapter.memberships, org, param(params, 0),
+                memberships, org, param(params, 0),
             );
             if (owner !== null && owner !== org) {
                 return Response.json(

@@ -6,6 +6,7 @@ import type {
 } from './db.ts';
 import type {
     Id,
+    MembershipEntity,
     FlowVersionEntity,
     ProjectFlowEntity,
     FlowWorkOrderEntity,
@@ -78,6 +79,15 @@ export function orgScopedAdapter(
     ): ParentScopedEntityStore<T> =>
         new ParentScopedEntityStore(inner, org, table, resolver);
 
+    // The membership ledger is read for parent-derived
+    // ownership (PII, credentials, state events). Its keyed
+    // read is kept off the EntityStore contract, so name it
+    // here once: resolve an identity's memberships through the
+    // identity_id index, never a per-row whole-ledger scan.
+    const memberships =
+        base.memberships as EntityStore<MembershipEntity>
+            & KeyedCollectionReader<MembershipEntity>;
+
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
     // resolved through the UNFENCED stores so a foreign owner
@@ -93,7 +103,7 @@ export function orgScopedAdapter(
     const states = new ParentScopedStateStore(
         base.states, org, 'states',
         (row) => ownerOrgOfEntity(
-            orgOwned, base.memberships, org, row.entity_id,
+            orgOwned, memberships, org, row.entity_id,
         ),
     );
 
@@ -111,7 +121,7 @@ export function orgScopedAdapter(
                 throw e;
             }
             return ownerOrgOfEntity(
-                orgOwned, base.memberships, org, ev.entity_id,
+                orgOwned, memberships, org, ev.entity_id,
             );
         },
     );
@@ -168,13 +178,13 @@ export function orgScopedAdapter(
         identityPii: parentScope(
             base.identityPii, 'identity_pii',
             viaMembership(
-                base.memberships,
+                memberships,
                 (r: IdentityPiiEntity) => r.id, org),
         ),
         identityCredentials: parentScope(
             base.identityCredentials, 'identity_credentials',
             viaMembership(
-                base.memberships,
+                memberships,
                 (r: IdentityCredentialEntity) =>
                     r.identity_id, org),
         ),
