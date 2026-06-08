@@ -116,8 +116,8 @@ export async function getMemberMap(
 
 // The display name for a member whose PII is absent — erased,
 // or never recorded. Member-domain vocabulary; the identity
-// surfaces use ERASED_IDENTITY_NAME instead.
-export const ERASED_MEMBER_NAME = 'Member without PII';
+// surfaces use IDENTITY_WITHOUT_PII_NAME instead.
+export const MEMBER_WITHOUT_PII_NAME = 'Member without PII';
 
 export function memberName(
     memberMap: Map<MemberId, Member>,
@@ -133,7 +133,7 @@ export function memberName(
     if (member.kind === 'human') {
         const pii = member.pii();
         return pii.erased
-            ? ERASED_MEMBER_NAME
+            ? MEMBER_WITHOUT_PII_NAME
             : pii.name;
     }
     return member.name();

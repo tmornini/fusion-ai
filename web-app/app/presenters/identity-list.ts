@@ -5,7 +5,7 @@ import { initials } from '../core.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
 import { iconShield } from '../icons.ts';
 import {
-    ERASED_IDENTITY_NAME,
+    IDENTITY_WITHOUT_PII_NAME,
     UNNAMED_SERVICE_NAME,
     type IdentityRosterRow,
 } from '../adapters/index.ts';
@@ -35,7 +35,7 @@ function buildRow(row: IdentityRosterRow): SafeHtml {
     const isPerson = row.kind === 'person';
     const name = row.kind === 'person'
         ? (row.pii.erased
-            ? ERASED_IDENTITY_NAME
+            ? IDENTITY_WITHOUT_PII_NAME
             : row.pii.name)
         : (row.service.named
             ? row.service.name

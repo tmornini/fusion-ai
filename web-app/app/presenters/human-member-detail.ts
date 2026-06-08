@@ -25,7 +25,7 @@ import {
     type HumanMemberDraft,
     isMemberState,
     jsonArrayField,
-    ERASED_MEMBER_NAME,
+    MEMBER_WITHOUT_PII_NAME,
 } from '../adapters/index.ts';
 import {
     WorkingStylesPresenter,
@@ -178,7 +178,7 @@ function buildReadonlyTitleSection(
 ): SafeHtml {
     const pii = member.pii();
     const name = pii.erased
-        ? ERASED_MEMBER_NAME
+        ? MEMBER_WITHOUT_PII_NAME
         : pii.name;
     return html`
         <div class="${
@@ -213,7 +213,7 @@ function buildEditableTitleSection(
 ): SafeHtml {
     const pii = member.pii();
     const name = pii.erased
-        ? ERASED_MEMBER_NAME
+        ? MEMBER_WITHOUT_PII_NAME
         : pii.name;
     return html`
         <div class="${
@@ -389,7 +389,7 @@ function buildReadonlyPersonalInfoBody(
 ): SafeHtml {
     const pii = member.pii();
     const name = pii.erased
-        ? ERASED_MEMBER_NAME
+        ? MEMBER_WITHOUT_PII_NAME
         : pii.name;
     const email = pii.erased ? '' : pii.email;
     const phone = pii.erased ? '' : pii.phone;
@@ -444,7 +444,7 @@ function buildEditablePersonalInfoBody(
 ): SafeHtml {
     const pii = member.pii();
     const name = pii.erased
-        ? ERASED_MEMBER_NAME
+        ? MEMBER_WITHOUT_PII_NAME
         : pii.name;
     return html`
         <div class="${

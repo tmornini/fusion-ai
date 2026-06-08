@@ -17,7 +17,7 @@ import {
     memberName,
     isHumanMember,
     isAIMember,
-    ERASED_MEMBER_NAME,
+    MEMBER_WITHOUT_PII_NAME,
 } from '../web-app/app/adapters/members-union.ts';
 import type {
     MemberId,
@@ -213,7 +213,7 @@ test(
         const map = await getMemberMap(ctx);
         assert.equal(
             memberName(map, 'member_without_pii'),
-            ERASED_MEMBER_NAME,
+            MEMBER_WITHOUT_PII_NAME,
         );
     },
 );

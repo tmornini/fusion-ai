@@ -22,7 +22,7 @@ import { strict as assert } from 'node:assert';
 
 const { Identity } = await import('../api/types.ts');
 const {
-    ERASED_IDENTITY_NAME,
+    IDENTITY_WITHOUT_PII_NAME,
     UNNAMED_SERVICE_NAME,
 } = await import(
     '../web-app/app/adapters/identities.ts'
@@ -122,7 +122,7 @@ test(
 );
 
 test(
-    'erased person shows ERASED_IDENTITY_NAME and the'
+    'erased person shows IDENTITY_WITHOUT_PII_NAME and the'
     + ' absent marker for the blanked fields',
     () => {
         const rec = makeRecordingContainer();
@@ -137,7 +137,7 @@ test(
         const out = rec.allHtml();
         // The call site supplies the named-constant
         // fallback (no bare literal in the presenter).
-        assert.match(out, new RegExp(ERASED_IDENTITY_NAME));
+        assert.match(out, new RegExp(IDENTITY_WITHOUT_PII_NAME));
         assert.match(out, /—/);
     },
 );
@@ -171,7 +171,7 @@ test(
         );
         // It is not redacted as an unknown member.
         assert.equal(
-            out.includes(ERASED_IDENTITY_NAME), false,
+            out.includes(IDENTITY_WITHOUT_PII_NAME), false,
         );
     },
 );

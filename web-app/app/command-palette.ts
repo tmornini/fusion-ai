@@ -26,7 +26,7 @@ import {
     type IdeaWithSubmitter,
     Project,
     HumanMember,
-    ERASED_MEMBER_NAME,
+    MEMBER_WITHOUT_PII_NAME,
 } from './adapters/index.ts';
 // init.ts is the composition root —
 // intentionally outside the adapter barrel.
@@ -220,7 +220,7 @@ export function humanMemberToSearchItem(
 ): SearchItem {
     const pii = member.pii();
     const title = pii.erased
-        ? ERASED_MEMBER_NAME
+        ? MEMBER_WITHOUT_PII_NAME
         : pii.name;
     const emailKeyword = pii.erased
         ? ''

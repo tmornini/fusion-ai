@@ -46,13 +46,13 @@ export async function getIdentities(
 
 // The display name for a person identity whose PII is absent —
 // erased, or never recorded. An identity is NOT a member, so
-// this is distinct from the member-domain ERASED_MEMBER_NAME:
+// this is distinct from the member-domain MEMBER_WITHOUT_PII_NAME:
 // each domain names the absence in its own vocabulary.
-export const ERASED_IDENTITY_NAME = 'Identity without PII';
+export const IDENTITY_WITHOUT_PII_NAME = 'Identity without PII';
 
 // The display name for a service identity with no name visible
 // to the caller — a bare credentialed service, or one owned by
-// another org. The service analog of ERASED_IDENTITY_NAME.
+// another org. The service analog of IDENTITY_WITHOUT_PII_NAME.
 export const UNNAMED_SERVICE_NAME = 'Service account';
 
 // A service identity's display facet — named (its ai_members

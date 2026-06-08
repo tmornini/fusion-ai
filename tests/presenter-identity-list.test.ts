@@ -102,7 +102,7 @@ async () => {
 
 test('erased person falls back to the named constant',
 async () => {
-    const { ERASED_IDENTITY_NAME } = await import(
+    const { IDENTITY_WITHOUT_PII_NAME } = await import(
         '../web-app/app/adapters/identities.ts'
     );
     const rec = record();
@@ -113,7 +113,7 @@ async () => {
         },
     ]).render(rec.container);
     assert.match(
-        rec.html(), new RegExp(ERASED_IDENTITY_NAME),
+        rec.html(), new RegExp(IDENTITY_WITHOUT_PII_NAME),
     );
 });
 

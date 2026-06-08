@@ -36,7 +36,7 @@ async function getSidebarMember(
     const {
         sessionContext,
         getHumanMember,
-        ERASED_MEMBER_NAME,
+        MEMBER_WITHOUT_PII_NAME,
     } = await import('./adapters');
     const { getOrganizations } =
         await import('./adapters/organizations.ts');
@@ -54,7 +54,7 @@ async function getSidebarMember(
     return {
         id: member.idForLink(),
         name: pii.erased
-            ? ERASED_MEMBER_NAME
+            ? MEMBER_WITHOUT_PII_NAME
             : pii.name,
         organization: active ? active.name : '',
         orgs: orgs.map(o => ({ id: o.id, name: o.name })),
