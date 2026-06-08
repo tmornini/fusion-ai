@@ -3,8 +3,6 @@ import type {
     ProjectState,
     Objective,
     ObjectiveId,
-    ProjectObjectiveBaselineScore,
-    ProjectObjectiveActualScore,
 } from '../../../api/types.ts';
 import {
     Project,
@@ -26,6 +24,9 @@ import {
     latestPerPair,
     weightedMeanByPosition,
 } from '../scoring-format.ts';
+import type {
+    ObjectiveScore,
+} from './project-scoring.ts';
 
 const projectChanges =
     createSubscriptionChannel(
@@ -99,10 +100,8 @@ export class ProjectView {
     constructor(
         project: Project,
         objectives: readonly Objective[],
-        baselineScores:
-            readonly ProjectObjectiveBaselineScore[],
-        actualScores:
-            readonly ProjectObjectiveActualScore[],
+        baselineScores: readonly ObjectiveScore[],
+        actualScores: readonly ObjectiveScore[],
     ) {
         this.#project = project;
         const posByObj =
@@ -115,11 +114,11 @@ export class ProjectView {
         this.#impactBaselineMean =
             weightedMeanByPosition(latestB, posByObj);
         const baselinedIds = new Set(
-            latestB.map(b => b.objective_id),
+            latestB.map(b => b.objectiveId),
         );
         const latestA = latestPerPair(actualScores);
         const actualedIds = new Set(
-            latestA.map(a => a.objective_id),
+            latestA.map(a => a.objectiveId),
         );
         const fullyActualScored =
             latestB.length > 0
@@ -130,7 +129,7 @@ export class ProjectView {
             ? weightedMeanByPosition(
                 latestA.filter(
                     a => baselinedIds.has(
-                        a.objective_id,
+                        a.objectiveId,
                     ),
                 ),
                 posByObj,
