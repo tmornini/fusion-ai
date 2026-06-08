@@ -137,12 +137,14 @@ async function scopeBootToActiveOrg(): Promise<void> {
 
 // Best-effort scoping for an auth-EXEMPT page that still renders the
 // shared sidebar (snapshots, design-system). A logged-in visitor
-// (live access token) gets an org-scoped session so the sidebar
-// shows their real member and org; everyone else keeps the anonymous
-// seed and the sidebar renders without a member chip — the org-bound
-// reads gate on sessionIsOrgScoped(). Never bounces (the page is
-// reachable without auth) and a failed exchange degrades to the
-// unscoped state rather than aborting boot.
+// gets an org-scoped session so the sidebar shows their real member
+// and org — installing a live access token OR silently refreshing a
+// dead one, exactly as the auth gate does, so an expired access token
+// no longer renders these pages anonymously. Everyone else keeps the
+// anonymous seed and the sidebar renders without a member chip — the
+// org-bound reads gate on sessionIsOrgScoped(). Never bounces and
+// never scrubs (the page is reachable without auth); a dead or failed
+// refresh degrades to the unscoped state rather than aborting boot.
 async function scopeBootIfCredentialed(): Promise<void> {
     let creds: SessionCredentials | null;
     try {
@@ -152,11 +154,17 @@ async function scopeBootIfCredentialed(): Promise<void> {
     }
     const now = Math.floor(Date.now() / 1000);
     const decision = resolveCredentialDecision(creds, now);
-    if (decision.kind !== 'install') {
-        return;   // logged out or needs refresh — keep the seed
+    if (decision.kind === 'login') {
+        return;   // nothing usable — keep the anonymous seed
     }
-    setSessionToken(decision.accessToken);
     try {
+        if (decision.kind === 'install') {
+            setSessionToken(decision.accessToken);
+        } else if (
+            !(await refreshAndInstall(decision.refreshToken))
+        ) {
+            return;   // dead refresh — stay anonymous, no scrub
+        }
         await scopeBootToActiveOrg();
     } catch (err) {
         log.warn('opportunistic org scope failed', 'core', err);
@@ -191,11 +199,13 @@ async function bootAuthGate(): Promise<boolean> {
     return false;
 }
 
-// Refresh a dead-access / live-refresh session at boot on a
-// recovery-FREE context (a refresh that 401s is terminal). The
-// flat token is installed; scopeBootToActiveOrg then re-scopes
-// its org. A dead refresh scrubs and bounces.
-async function installRefreshedSession(
+// Refresh a dead-access / live-refresh session and install the new
+// token. Returns true on success, false when the refresh itself is
+// unauthorized (401 — terminal). NEVER scrubs or redirects: the
+// CALLER decides what a failed refresh means — the auth gate bounces,
+// an auth-exempt page degrades to anonymous. One refresh voice for
+// both callers (Generality). A non-401 fault rethrows.
+async function refreshAndInstall(
     refreshToken: string,
 ): Promise<boolean> {
     const ctx = createRequestContext(
@@ -208,12 +218,24 @@ async function installRefreshedSession(
         return true;
     } catch (err) {
         if (err instanceof UnauthorizedError) {
-            deleteSessionCredentials();
-            redirectToLogin();
             return false;
         }
         throw err;
     }
+}
+
+// The auth gate's refresh: install the new session, or — on a dead
+// refresh (recovery-FREE context, a 401 is terminal) — scrub and
+// bounce to login. scopeBootToActiveOrg then re-scopes the org.
+async function installRefreshedSession(
+    refreshToken: string,
+): Promise<boolean> {
+    if (await refreshAndInstall(refreshToken)) {
+        return true;
+    }
+    deleteSessionCredentials();
+    redirectToLogin();
+    return false;
 }
 
 document.addEventListener(
