@@ -618,14 +618,15 @@ async function authorizePassword(
     const denied: AuthorizeResult = {
         ok: false, status: 401, error: 'invalid credentials',
     };
-    const piiRows = await adapter.identityPii.getAll();
+    const piiRows = await keyed(adapter.identityPii)
+        .getAllWhere('email', username);
     const identityId = identityByEmail(piiRows, username);
     if (identityId === null) {
         await equalizeFailureTiming(password);
         return denied;
     }
-    const credRows =
-        await adapter.identityCredentials.getAll();
+    const credRows = await keyed(adapter.identityCredentials)
+        .getAllWhere('identity_id', identityId);
     const secret =
         currentPasswordSecret(credRows, identityId);
     if (secret === null) {
