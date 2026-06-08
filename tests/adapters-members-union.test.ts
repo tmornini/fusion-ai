@@ -186,33 +186,33 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
-        await db.members.put('hw_erased', {
+        await db.members.put('member_without_pii', {
             type: 'human',
         });
-        await db.humanMembers.put('hw_erased', {
+        await db.humanMembers.put('member_without_pii', {
             title: 'product_manager',
             department: 'Product',
             strengths: '[]' as never,
             team_dimensions: '{}' as never,
         });
-        await db.identities.put('hw_erased', {
+        await db.identities.put('member_without_pii', {
             kind: 'person',
         });
         // Erasure removes PII, not the membership — the member
         // still belongs to the org, so the join still finds it.
-        await db.memberships.put('mb-hw_erased', {
+        await db.memberships.put('mb-member_without_pii', {
             organization_id: '1',
-            identity_id: 'hw_erased',
+            identity_id: 'member_without_pii',
             at: '2020-01-01T00:00:00.000Z',
         });
         await db.states.record(
-            'st-hw_erased', 'hw_erased',
+            'st-member_without_pii', 'member_without_pii',
             'active', 'system',
         );
         const ctx = createRequestContext(db, await devToken());
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'hw_erased'),
+            memberName(map, 'member_without_pii'),
             ERASED_MEMBER_NAME,
         );
     },
