@@ -308,6 +308,30 @@ required.
   `tabs_context_mcp({ createIfEmpty: true })` to allocate a
   fresh group, then proceed. Pre-existing tab IDs from
   before the dissolution are invalidated.
+- **`javascript_tool` async/await blocked by CSP**: the app
+  ships `script-src 'self'` with no `unsafe-eval`, so the
+  tool's async/IIFE wrapper throws `await is not defined`.
+  Read IndexedDB with a callback-built `Promise` (no `await`
+  keyword) and call `db.close()` before resolving — a
+  dangling read connection blocks the snapshot reset's
+  `deleteSchema` (delete+reopen) and wedges the renderer
+  (the documented IndexedDB connection-concurrency hazard).
+- **`getBoundingClientRect` ≠ click coordinates**: a ~1.19×
+  CSS-px ↔ screenshot-px scale exists on the driven tab.
+  Click by the coordinates seen in a screenshot, never by
+  `getBoundingClientRect` (its larger CSS-px values miss).
+- **List pages populate slowly (5–14s)**: org-scoped list
+  reads re-derive each entity's lifecycle from the full
+  `states` log, so cards can take 5–14s to paint (Flows is
+  slowest). Wait ≥14s and assert the container's
+  `childCount` / `data-*-card` count — never an early
+  screenshot, which shows a skeleton or blank mid-render and
+  reads as a false "empty list".
+- **First post-reload mouse click often only focuses**: a
+  page's `init()` wires button handlers asynchronously, so a
+  click landing before init merely focuses the control with
+  no dialog. Use the element's `.click()` or re-click once
+  init has settled.
 
 #### Serial single-tester mode
 
@@ -364,9 +388,9 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     1416 |
+| CLI automated tests    |     1540 |
 | Browser regression     |      367 |
-| **Combined TOTAL**     | **1783** |
+| **Combined TOTAL**     | **1907** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -386,8 +410,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1783, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1783).
+`PASS = 1907, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1907).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -408,7 +432,7 @@ run before A1's build. The single canonical invocation is
 ## A. Build & Setup
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
-- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 17 page directories (`auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `snapshots`, `workbox`) with 28 HTML page files (including `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, and `identity-tokens/index.html`), plus root `index.html`.
+- [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `snapshots`, `workbox`) with 29 HTML page files (including `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`.
 - [ ] **A3** Start an HTTP server from the build directory (`cd /tmp/fusion-test/ && python3 -m http.server 8080`). PASS: server starts without errors.
 - [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
@@ -423,7 +447,7 @@ on. Run these in order.
 
 ### AA1. Create Pristine Environment
 
-- [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: redirects to dashboard. Dashboard shows empty/minimal state.
+- [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: any pre-existing data is wiped and the minimal bootstrap is seeded (verify via AA2/AA3), then the page surfaces a one-time "Save your demo sign-ins" panel (the seeded admin credential, shown once and never stored) gated by an "I have saved it — continue" button. The demo auto-login is retired, so creation no longer redirects straight to the dashboard — sign in with the surfaced credential to reach it.
 - [ ] **AA2** Open DevTools → Application → IndexedDB → `fusion-ai`, verify an object store for every table listed in `TABLE_NAMES` (`api/db.ts`) plus the `__schema__` marker — empty stores plus bootstrap data, including the `states` event log (with the seeded `'system'`-member and `'current'`-user 'active' bootstrap events).
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`) on the "Business" plan.
 
@@ -803,11 +827,18 @@ on. Run these in order.
 - [ ] **C7** Check that seed data populates all 4 dashboard
   surfaces (three arc-gauge cards + Aggregate Objectives
   box). PASS: no "No data" empty states on a fresh
-  mock-data load against the Phase 1 baseline (11 humans —
-  10 created + Tony Stark; the System member authors seed
-  events but is excluded from the roster — 4 AIs, 11
-  ideas, 6 projects, 1 flow, 4 objectives; these are the
-  fresh-load seed counts and grow as you create).
+  mock-data load against the Phase 1 baseline. NOTE: the
+  mock seed now spans TWO orgs (Stark Industries + Wayne
+  Enterprises; the demo admin belongs to both) and the
+  dashboard is scoped to the ACTIVE org, so its header and
+  gauges show that org's slice — not global totals. Counts
+  are tolerant lower bounds, not equalities (the seed
+  grows): for active-org Stark expect ~6 ideas, ~16
+  projects, ~4 flows, 4 objectives, plus the roster (11
+  humans — 10 seeded + Tony Stark; the System member authors
+  seed events but is excluded from the roster — and 4 AIs).
+  Global raw mock totals are larger (~11 ideas, ~17
+  projects, ~5 flows across both orgs).
 
 ---
 
@@ -815,7 +846,7 @@ on. Run these in order.
 
 ### Ideas List (`ideas/`)
 
-- [ ] **D1** Navigate to `ideas/`. PASS: list shows 11 ideas as cards, each with a drag-handle grip, title, status badge, and (for approved ideas) a Convert button. Ideas represent the problem-and-proposed-solution shape and do not carry time/cost/impact estimates; those fields live on projects created by conversion.
+- [ ] **D1** Navigate to `ideas/`. PASS: list shows the active org's ideas as cards (≈6 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the global 11; note the org-scoped reads can take 5–8s to paint, so wait for the cards before asserting empty), each with a drag-handle grip, title, status badge, and (for approved ideas) a Convert button. Ideas represent the problem-and-proposed-solution shape and do not carry time/cost/impact estimates; those fields live on projects created by conversion.
 - [ ] **D2** Each idea row shows a lifecycle status badge (Active, In Review, Approved, Promoted, Sent Back, or Archived) AND a separate readiness pill (Ready or Incomplete) derived from required-field presence. PASS: both render with distinct colors.
 - [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
 - [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `ideas/create.html`.
@@ -904,7 +935,7 @@ on. Run these in order.
 
 ### Projects List (`projects/`)
 
-- [ ] **E1** Navigate to `projects/`. PASS: table/list shows 6 seeded projects with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value." When the current is missing but the baseline is present, the half-em-dash form (e.g. `— / 46 pts`) renders the absent current side only — distinct from full em-dash (both absent) and from `0d / 213d` (zero current over present baseline).
+- [ ] **E1** Navigate to `projects/`. PASS: list shows the active org's projects (≈16 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the old fixed 6; org-scoped reads can take ~4–5s to paint, so wait for the cards before asserting empty) with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value." When the current is missing but the baseline is present, the half-em-dash form (e.g. `— / 46 pts`) renders the absent current side only — distinct from full em-dash (both absent) and from `0d / 213d` (zero current over present baseline).
 - [ ] **E2** Click a status filter badge (e.g. "Active"). PASS: project list filters to show only projects with that status. Click the same badge again or "All". PASS: full list returns.
 - [ ] **E3** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
 
