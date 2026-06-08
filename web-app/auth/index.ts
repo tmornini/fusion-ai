@@ -11,6 +11,7 @@ import {
     iconLoader,
 } from '../app/icons.ts';
 import { navigateTo } from '../app/core.ts';
+import { log } from '../app/logger.ts';
 import { getViewportWidth } from '../app/adapters/index.ts';
 import {
     getDbAdapter,
@@ -25,6 +26,9 @@ import {
 } from '../app/adapters/authentication.ts';
 import {
     putSessionCredentials,
+} from '../app/adapters/session-credentials.ts';
+import type {
+    SessionCredentials,
 } from '../app/adapters/session-credentials.ts';
 import { decodeReturnTarget } from '../app/auth-redirect.ts';
 import { getUrlParam } from '../app/adapters/url-params.ts';
@@ -529,11 +533,28 @@ export async function init(): Promise<void> {
                 // A recovery-free context: login establishes a
                 // NEW session and must not refresh-recover the
                 // OLD one on a 401 (a wrong password).
-                const creds = await loginViaPassword(
-                    createRequestContext(
-                        getDbAdapter(), getSessionToken()),
-                    email, password,
-                );
+                let creds: SessionCredentials | null;
+                try {
+                    creds = await loginViaPassword(
+                        createRequestContext(
+                            getDbAdapter(), getSessionToken()),
+                        email, password,
+                    );
+                } catch (err) {
+                    // A THROWN login is a fault (DB/crypto), not
+                    // a wrong password — which returns null. Do
+                    // not leave the button spinning: restore it
+                    // and surface the failure visibly.
+                    log.error('login failed', 'auth', err);
+                    setHtml(submitBtn, trusted(savedBtn));
+                    submitBtn.removeAttribute('disabled');
+                    showToast(
+                        'Something went wrong signing in.'
+                        + ' Please try again.',
+                        'error',
+                    );
+                    return;
+                }
                 if (creds === null) {
                     setHtml(submitBtn, trusted(savedBtn));
                     submitBtn.removeAttribute('disabled');
