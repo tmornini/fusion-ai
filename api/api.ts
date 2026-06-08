@@ -962,10 +962,12 @@ async function authorizeRequest(
     method: string,
     pathname: string,
 ): Promise<string | null> {
-    const rows = await adapter.roleGrants.getAll();
-    // Roles are per-org. The caller resolves the org once and
-    // passes it here; authz filters the global role_grants
-    // ledger to it — identity is global, roles are per-org.
+    // Roles are per-org, but a grant is keyed by identity:
+    // read this principal's grants through the identity_id
+    // index, then currentRolesForInOrg filters to the org —
+    // identity is global, roles are per-org.
+    const rows = await keyed(adapter.roleGrants)
+        .getAllWhere('identity_id', principal.id);
     const roles = currentRolesForInOrg(
         rows, principal.id, org,
     );
@@ -1157,7 +1159,8 @@ async function callerIsOrgAdmin(
     identityId: Id,
     org: Id,
 ): Promise<boolean> {
-    const rows = await adapter.roleGrants.getAll();
+    const rows = await keyed(adapter.roleGrants)
+        .getAllWhere('identity_id', identityId);
     return currentRolesForInOrg(rows, identityId, org)
         .includes('admin');
 }
