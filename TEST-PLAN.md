@@ -103,6 +103,14 @@ one of two modes:
 
 #### Six-phase parallel protocol
 
+> SUPERSEDED (2026-06) by the per-origin recipe below — see
+> "Per-origin parallel run — validated operational recipe." The
+> shared-one-IndexedDB model in this subsection is what caused
+> the documented connection-concurrency lockups; the validated
+> run gives each agent its OWN origin (distinct port), so the
+> entity mutation-domain partitioning here is no longer needed.
+> Kept for historical context only.
+
 Agents execute the plan in six phases to fit within context and
 time budgets while keeping per-entity mutation domains disjoint:
 
@@ -248,6 +256,61 @@ Recovery no longer scrubs a live credential on an unscoped
 which softens the clobber blast radius but does not remove
 the shared-key races; the isolation rules above remain
 required.
+
+#### Per-origin parallel run — validated operational recipe
+
+This is THE default protocol. It ran the full plan as concurrent
+agents (2026-06) with per-port isolation and ZERO shared-DB
+lockups — seven sections fanned out at once, none wedged.
+
+1. **Build once, serve many.** `TMPDIR=/tmp/claude ./build
+   --no-zip /tmp/claude/fusion-test/` ONCE, then one static
+   server per agent, each on its own port, all serving that ONE
+   dir: `python3 -m http.server <port> --directory
+   /tmp/claude/fusion-test` (8080, 8081, …). Servers serve
+   static files only; the API + IndexedDB run in-browser and are
+   partitioned by origin — so one build feeds every port and
+   isolation comes from the port, not from separate file trees
+   or rebuilds. (Do NOT use `./serve` per agent — it rebuilds
+   each call and runs in the foreground.)
+2. **Grant host permission FIRST — hard prerequisite.** The
+   Claude-in-Chrome extension gates navigation per ORIGIN. An
+   unattended subagent CANNOT approve the side-panel prompt, so
+   a never-visited port returns "Permission denied by user" and
+   the agent blocks before it can load anything. Before
+   dispatching, a human grants the extension access to
+   `http://localhost` (chrome://extensions → the extension →
+   Details → Site access → On all sites), or approves each
+   port's prompt once. This is the single most common cause of a
+   stalled parallel run.
+3. **One origin per agent, tab-scoped tools only.** Each agent
+   calls `tabs_context_mcp({createIfEmpty:true})`, creates ONE
+   tab via `tabs_create_mcp`, and confines all work to it. Use
+   only tab-scoped tools (navigate, find, javascript_tool,
+   get_page_text, read_page, form_input, browser_batch, and
+   `computer` with a `ref`). NEVER coordinate-based clicks or
+   screenshots — those are display-global and collide across
+   concurrent agents.
+4. **Each agent self-seeds its origin.** snapshots → "Wipe and
+   Load Mock Data" → Confirm → capture the revealed credentials
+   → "I have saved it — continue". This clears any stale
+   per-origin storage from prior sessions AND guarantees a known
+   IndexedDB seed. There is NO auto-seed — a fresh/empty origin
+   redirects to snapshots by design (an empty active IndexedDB,
+   regardless of any leftover `fusion-ai:*` localStorage from an
+   old LocalStorage-backend run).
+5. **Sign in as the ADMIN, not the first credential.** The
+   first revealed sign-in (emily.rodriguez@company.com) is the
+   seeded ROLELESS/pending member — she correctly 403s on every
+   org-scoped API (deny-by-default authz). For any section that
+   reads org-scoped data, sign in as `demo@example.com` (Tony
+   Stark, admin in both orgs). The reveal lists its password.
+6. **No orphan tab on a port you intend to wipe.** A lingering
+   tab holding an IndexedDB connection blocks the next wipe's
+   `deleteSchema` (the connection-concurrency hazard). Give each
+   wave fresh ports, or close prior tabs first. The MCP tab
+   group also rotates between turns — re-fetch IDs with
+   `tabs_context_mcp` rather than reusing stale ones.
 
 #### Known MCP limitations
 
@@ -2497,7 +2560,7 @@ Backend: `api/backend-indexeddb.ts`. No Node test (no fake-IDB, zero devDeps) �
 
 Owner: Phase 4 (alone, after Phase 2). L1–L8 reopen, wipe, and reseed the `fusion-ai` database, so they need exclusive DB access alongside G30–G35 — never concurrently with the seven Phase 2 agents.
 
-- [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 33 object stores (32 tables + `__schema__`).
+- [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 34 object stores (33 tables + `__schema__`).
 - [ ] **L2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
 - [ ] **L3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and table rows persist; the dashboard renders the seeded org.
 - [ ] **L4** Persistence across reload. Reload the dashboard. PASS: it renders the seeded data without re-routing to Snapshots.
@@ -2505,7 +2568,7 @@ Owner: Phase 4 (alone, after Phase 2). L1–L8 reopen, wipe, and reseed the `fus
 - [ ] **L6** Cross-tab refresh. Commit a write in one of two open tabs. PASS: a `BroadcastChannel('fusion-ai:data')` message with the touched tables reaches the other tab; the poster is not echoed (no self-refresh).
 - [ ] **L7** Atomic import. The clear+put import runs in one `IDBTransaction`. PASS: a rejected import leaves prior data intact (no corruption).
 - [ ] **L8** Quota pre-flight. PASS: an oversize snapshot rejects with `SnapshotTooLargeError` before any write (also `tests/snapshot-quota.test.ts`).
-- [ ] **L9** Bare-DB self-heal. On a 404 path (no app connection), run `indexedDB.deleteDatabase('fusion-ai')` then `indexedDB.open('fusion-ai', 1)` with NO `onupgradeneeded` handler — forging a v1 DB with 0 object stores and no `__schema__` — then load a real page. PASS: `open()` (`api/backend-indexeddb.ts`) sees the missing `__schema__` store, deletes and reopens so the upgrade rebuilds all 33 stores, and the app boots to the graceful empty-state (Snapshots route + working "Wipe and Load Mock Data"), NOT a "Failed to initialize database" dead-end.
+- [ ] **L9** Bare-DB self-heal. On a 404 path (no app connection), run `indexedDB.deleteDatabase('fusion-ai')` then `indexedDB.open('fusion-ai', 1)` with NO `onupgradeneeded` handler — forging a v1 DB with 0 object stores and no `__schema__` — then load a real page. PASS: `open()` (`api/backend-indexeddb.ts`) sees the missing `__schema__` store, deletes and reopens so the upgrade rebuilds all 34 stores, and the app boots to the graceful empty-state (Snapshots route + working "Wipe and Load Mock Data"), NOT a "Failed to initialize database" dead-end.
 
 ## J. Teardown
 
