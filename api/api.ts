@@ -2,13 +2,13 @@ import type {
     DbAdapter,
     EntityStore,
     EntityValidator,
-    KeyedCollectionReader,
 } from './db.ts';
 import { extractErrorMessage } from './error-helpers.ts';
 import {
     EntityNotFound,
     MissingTableError,
     TABLE_NAMES,
+    keyed,
 } from './db.ts';
 import type {
     AIMemberEntity,
@@ -1723,9 +1723,7 @@ export async function handleRequest(
             // Reach the keyed membership read kept off the
             // EntityStore contract, so the owner resolves
             // through the identity_id index, not a scan.
-            const memberships = adapter.memberships as
-                EntityStore<MembershipEntity>
-                    & KeyedCollectionReader<MembershipEntity>;
+            const memberships = keyed(adapter.memberships);
             const owner = await ownerOrgOfEntity(
                 [
                     adapter.ideas, adapter.projects,
