@@ -72,22 +72,6 @@ test('PUT then GET an identity round-trips', async () => {
     assert.deepEqual(got, { id: 'abc', kind: 'person' });
 });
 
-test('DELETE identity-pii splices only the pii row',
-async () => {
-    const db = await freshDb();
-    await PUT(
-        db, 'identities/abc', { kind: 'person' }, DEV_TOKEN);
-    await PUT(db, 'identity-pii/abc', {
-        name: 'A', email: 'a@x.io', phone: 'p', bio: 'b',
-    }, DEV_TOKEN);
-    await DELETE(db, 'identity-pii/abc', DEV_TOKEN);
-    await assert.rejects(
-        () => GET(db, 'identity-pii/abc', DEV_TOKEN));
-    const id = await GET<{ id: string }>(
-        db, 'identities/abc', DEV_TOKEN);
-    assert.equal(id.id, 'abc');
-});
-
 test('bootstrap seeds an identity per member, id-equal',
 async () => {
     const db = await freshDb();

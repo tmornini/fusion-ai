@@ -572,11 +572,6 @@ const routes: Route[] = [
     route('identity-pii', {
         get: (db) => db.identityPii.getAll(),
     }),
-    makeIdRoute<IdentityPiiEntity>({
-        noun: 'identity-pii',
-        store: db => db.identityPii,
-        verbs: ['get', 'put', 'delete'],
-    }),
     route('identity-credentials', {
         get: async (db) =>
             (await db.identityCredentials.getAll())
