@@ -1,3 +1,4 @@
+import { EntityNotFound, keyed } from './db.ts';
 import type { DbAdapter } from './db.ts';
 import {
     mintAccessToken,
@@ -69,10 +70,18 @@ async function nameFor(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<string> {
-    const all = await adapter.identityPii.getAll();
-    return findFirstByKey(
-        all, p => p.id === identityId, p => p.name,
-    ) ?? identityId;
+    // The id IS the PII keyPath, so a point read replaces the
+    // scan. An absent row (a service identity has no PII) 404s,
+    // which falls back to the id — the same value the scan's
+    // miss returned.
+    try {
+        return (
+            await adapter.identityPii.getById(identityId)
+        ).name;
+    } catch (e) {
+        if (e instanceof EntityNotFound) return identityId;
+        throw e;
+    }
 }
 
 // The subject's reachable orgs — every org it is a member of,
@@ -83,10 +92,9 @@ export async function subjectOrgs(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<Id[]> {
-    const rows = await adapter.memberships.getAll();
-    return rows
-        .filter(m => m.identity_id === identityId)
-        .map(m => m.organization_id);
+    const rows = await keyed(adapter.memberships)
+        .getAllWhere('identity_id', identityId);
+    return rows.map(m => m.organization_id);
 }
 
 // The org a flat (un-exchanged) token resolves to, server-side:
@@ -97,7 +105,8 @@ export async function identityDefaultOrg(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<Id | null> {
-    const events = await adapter.identityDefaultOrgs.getAll();
+    const events = await keyed(adapter.identityDefaultOrgs)
+        .getAllWhere('identity_id', identityId);
     const chosen = currentDefaultOrgFor(events, identityId);
     if (chosen !== null) return chosen;
     return await primaryMembershipOrg(adapter, identityId);
@@ -110,10 +119,12 @@ async function primaryMembershipOrg(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<Id | null> {
-    const rows = await adapter.memberships.getAll();
+    // The index already narrows to this identity's rows, so no
+    // per-row identity guard after (trust the gate).
+    const rows = await keyed(adapter.memberships)
+        .getAllWhere('identity_id', identityId);
     let best: { org: Id; at: string } | null = null;
     for (const row of rows) {
-        if (row.identity_id !== identityId) continue;
         if (best === null
             || row.at < best.at
             || (row.at === best.at
