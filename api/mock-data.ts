@@ -6341,16 +6341,32 @@ async function populateMockDataIn(
         ),
     ]);
 
-    const humanMemberIds =
+    const humanIds = new Set(
         (await adapter.members.getAll())
             .filter(w => w.type === 'human')
-            .map(w => w.id);
-    const memberFor = (seed: string): string =>
-        humanMemberIds[
-            deterministicScore(
-                seed, 0, humanMemberIds.length - 1,
-            )
+            .map(w => w.id),
+    );
+    // A score or revision author is always a member of the
+    // scored entity's org. Seed authors from that org ONLY:
+    // picking across orgs produced authors outside the
+    // org-scoped roster, and memberName (strict by design)
+    // then threw when the project-history modal resolved them.
+    const humansByOrg = new Map<string, string[]>();
+    for (const m of await adapter.memberships.getAll()) {
+        if (!humanIds.has(m.identity_id)) continue;
+        const pool =
+            humansByOrg.get(m.organization_id) ?? [];
+        pool.push(m.identity_id);
+        humansByOrg.set(m.organization_id, pool);
+    }
+    const memberFor = (
+        org: string, seed: string,
+    ): string => {
+        const pool = humansByOrg.get(org) ?? [];
+        return pool[
+            deterministicScore(seed, 0, pool.length - 1)
         ] ?? SYSTEM_MEMBER_ID;
+    };
 
     for (const seed of OBJECTIVE_SEEDS) {
         await adapter.objectives.put(seed.id, {
@@ -6364,6 +6380,7 @@ async function populateMockDataIn(
                 name: seed.name,
                 description: seed.description,
                 member_id: memberFor(
+                    STARK_ORG,
                     `${seed.id}:revision`,
                 ),
                 at: MOCK_SEED_TIMESTAMP,
@@ -6464,6 +6481,7 @@ async function populateMockDataIn(
                         objective_id: obj.id,
                         score,
                         member_id: memberFor(
+                            p.organization_id,
                             `${p.id}:${obj.id}:baseline`,
                         ),
                         at: scoredAt,
@@ -6508,6 +6526,7 @@ async function populateMockDataIn(
                                 objective_id: obj.id,
                                 score,
                                 member_id: memberFor(
+                                    p.organization_id,
                                     `${p.id}:${obj.id}:actual:${k}`,
                                 ),
                                 at: scoredAt,
