@@ -331,9 +331,10 @@ async function grantRefresh(
 
 // token-exchange (RFC 8693): mint a delegated token where sub =
 // the subject and act = the acting party. Both subject_token and
-// actor_token are VERIFIED (signature/exp/nbf/aud) — the same
-// frozen HMAC the refresh grant checks, so this is not weaker
-// than the rest of the gate. The remaining SEAM is the
+// actor_token are VERIFIED (signature/exp/nbf/aud) AND
+// revocation-checked — the same frozen HMAC the refresh grant
+// checks, so this is not weaker than the rest of the gate.
+// The remaining SEAM is the
 // DELEGATION POLICY: whether `actor` may act-as `subject` is NOT
 // yet enforced — that authorization lands with the server tier.
 // The claim shape (sub, act.sub) is frozen now.
@@ -365,6 +366,13 @@ async function grantTokenExchange(
     );
     if (subjectRev !== null) {
         return failure(401, subjectRev);
+    }
+    const actorRev = await tokenRevocationReason(
+        adapter, actorV.claims.sub,
+        actorV.claims.iat, actorV.claims.jti,
+    );
+    if (actorRev !== null) {
+        return failure(401, actorRev);
     }
     const subject = subjectV.claims.sub;
     const actor = actorV.claims.sub;
