@@ -233,14 +233,18 @@ export async function tokenRevocationReason(
     iat: number,
     jti: string,
 ): Promise<string | null> {
-    const revs =
-        await adapter.identityTokenRevocations.getAll();
+    const revs = await keyed(adapter.identityTokenRevocations)
+        .getAllWhere('identity_id', sub);
     const revokedBefore = revokedBeforeSeconds(revs, sub);
     if (revokedBefore !== null && iat < revokedBefore) {
         return 'token revoked';
     }
-    const ledger = await adapter.identityTokens.getAll();
-    if (isTokenRevoked(ledger, jti)) {
+    // The gate check needs only THIS jti's events: a chain-wide
+    // revoke writes a 'revoked' event per jti, so the latest
+    // action for the presented jti already reflects it.
+    const events = await keyed(adapter.identityTokens)
+        .getAllWhere('jti', jti);
+    if (isTokenRevoked(events, jti)) {
         return 'token chain revoked';
     }
     return null;
