@@ -417,17 +417,21 @@ const COMMIT_RESOURCE_TABLE: Record<string, string> = {
 };
 
 function tableForCommitResource(resource: string): string {
-    const first =
-        resource.split('/').filter(Boolean)[0];
+    const segments = resource.split('/').filter(Boolean);
+    const first = segments[0];
     if (first === undefined) {
         throw new ApiError(
             'commit op resource is empty.',
             HTTP_BAD_REQUEST,
         );
     }
+    // identities/:id/pii is the PII facet of an identity's
+    // subtree — it lands in identity_pii, not identities.
     const table =
-        COMMIT_RESOURCE_TABLE[first]
-        ?? first.replace(/-/g, '_');
+        first === 'identities' && segments[2] === 'pii'
+            ? 'identity_pii'
+            : COMMIT_RESOURCE_TABLE[first]
+                ?? first.replace(/-/g, '_');
     if (!COMMIT_TABLES.has(table)) {
         throw new ApiError(
             'commit op resource "' + resource
@@ -551,6 +555,19 @@ const routes: Route[] = [
         noun: 'identities',
         store: db => db.identities,
         verbs: ['get', 'put'],
+    }),
+    // PII is a facet of the identity's own subtree: GET is
+    // self-only, PUT/DELETE self-or-admin (enforced in the
+    // request gate, mirroring /identities/:id/default-org). The
+    // identity-pii COLLECTION below (admin roster) is separate.
+    route('identities/:id/pii', {
+        get: (db, p) => db.identityPii.getById(param(p, 0)),
+        put: (db, p, body) => db.identityPii.put(
+            param(p, 0),
+            withoutId(body) as unknown as
+                Omit<IdentityPiiEntity, 'id'>,
+        ),
+        delete: (db, p) => db.identityPii.delete(param(p, 0)),
     }),
     route('identity-pii', {
         get: (db) => db.identityPii.getAll(),
@@ -991,6 +1008,31 @@ async function authorizeRequest(
     }
     return 'forbidden: ' + method + ' ' + pathname
         + ' requires a role this principal lacks';
+}
+
+// The PII facet of an identity's subtree. A member reads ONLY
+// its own (GET self); writes are its own OR an admin's (member
+// management). Mirrors the tree-ownership check of
+// /identities/:id/default-org, widened to admin for writes.
+async function authorizeIdentityPii(
+    adapter: DbAdapter,
+    principal: Principal,
+    org: Id,
+    method: string,
+    targetId: string,
+): Promise<string | null> {
+    if (principal.id === targetId) {
+        return null;
+    }
+    if (method === 'GET') {
+        return 'forbidden: an identity may read only its'
+            + ' own pii';
+    }
+    if (await callerIsOrgAdmin(adapter, principal.id, org)) {
+        return null;
+    }
+    return "forbidden: writing another identity's pii"
+        + ' requires an admin role';
 }
 
 // Facade rewrite: exchange the caller's bearer for a token
@@ -1707,9 +1749,14 @@ export async function handleRequest(
                 { status: HTTP_FORBIDDEN },
             );
         }
-        const authzFailure = await authorizeRequest(
-            adapter, authResult, org, method, pathname,
-        );
+        const authzFailure =
+            routePattern === 'identities/:id/pii'
+                ? await authorizeIdentityPii(
+                    adapter, authResult, org,
+                    method, param(params, 0))
+                : await authorizeRequest(
+                    adapter, authResult, org,
+                    method, pathname);
         if (authzFailure !== null) {
             return Response.json(
                 { error: authzFailure },
