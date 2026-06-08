@@ -17,6 +17,7 @@ import {
     getDbAdapter,
     getSessionToken,
     setSessionToken,
+    sessionHasReachableOrg,
 } from '../app/adapters/init.ts';
 import {
     createRequestContext,
@@ -574,6 +575,14 @@ export async function init(): Promise<void> {
                 // establish the session at boot.
                 putSessionCredentials(creds);
                 setSessionToken(creds.accessToken);
+                // A zero-membership identity reaches no org and
+                // would 403 every org-scoped route; land it on
+                // its pending invitations instead of the return
+                // target's dead end.
+                if (!sessionHasReachableOrg()) {
+                    navigateTo('invitations');
+                    return;
+                }
                 const dest = decodeReturnTarget(
                     getUrlParam('return'),
                 );
