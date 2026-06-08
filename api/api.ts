@@ -109,6 +109,21 @@ export class UnauthorizedError extends Error {
     }
 }
 
+// Any non-401 non-ok response, raised with its HTTP status so the
+// web layer can branch on the status (e.g. 404 -> a clean "not
+// found" message) instead of string-matching server prose.
+// Extends Error (like UnauthorizedError) so catch sites matching
+// `instanceof Error` still see it; `status` carries the HTTP code.
+export class RequestError extends Error {
+    readonly status: number;
+
+    constructor(message: string, status: number) {
+        super(message);
+        this.name = 'RequestError';
+        this.status = status;
+    }
+}
+
 const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_ERROR = 500;
@@ -1917,8 +1932,9 @@ async function unwrapResponse<T>(
     if (response.status === HTTP_UNAUTHORIZED) {
         throw new UnauthorizedError(error);
     }
-    throw new Error(
+    throw new RequestError(
         `${error} (${response.url})`,
+        response.status,
     );
 }
 
