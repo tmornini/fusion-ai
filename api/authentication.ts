@@ -20,6 +20,7 @@ import { codeState } from './authorization-codes.ts';
 import {
     planRotation,
     isTokenRevoked,
+    chainIdForJti,
 } from './identity-tokens.ts';
 import {
     hashPassword,
@@ -281,8 +282,20 @@ async function grantRefresh(
     const outcome = await adapter.transaction(
         ['identity_tokens'],
         async (view) => {
-            const rows =
-                await view.identityTokens.getAll();
+            // Two-step narrow: find the presented jti's chain,
+            // then read the WHOLE chain — planRotation's replay
+            // path revokes every jti in it, so a jti-only read
+            // would under-revoke. Both reads are index hits in
+            // the open tx (no interleaved non-IDB await).
+            const tokens = keyed(view.identityTokens);
+            const byJti = await tokens.getAllWhere(
+                'jti', verified.claims.jti);
+            const chainId = chainIdForJti(
+                byJti, verified.claims.jti);
+            const rows = chainId === null
+                ? byJti
+                : await tokens.getAllWhere(
+                    'chain_id', chainId);
             const plan = planRotation(
                 rows, verified.claims.jti,
                 generateCryptoSafeBase62(), nowUtc(),
