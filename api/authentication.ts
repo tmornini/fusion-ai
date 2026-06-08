@@ -466,8 +466,8 @@ async function grantAuthorizationCode(
     const issued = await adapter.transaction(
         ['authorization_codes', 'identity_tokens'],
         async (view) => {
-            const rows =
-                await view.authorizationCodes.getAll();
+            const rows = await keyed(view.authorizationCodes)
+                .getAllWhere('code', code);
             const state = codeState(rows, code);
             if (
                 state === null
