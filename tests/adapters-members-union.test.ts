@@ -17,6 +17,7 @@ import {
     memberName,
     isHumanMember,
     isAIMember,
+    ERASED_MEMBER_NAME,
 } from '../web-app/app/adapters/members-union.ts';
 import type {
     MemberId,
@@ -212,7 +213,7 @@ test(
         const map = await getMemberMap(ctx);
         assert.equal(
             memberName(map, 'hw_erased'),
-            'Unknown member',
+            ERASED_MEMBER_NAME,
         );
     },
 );

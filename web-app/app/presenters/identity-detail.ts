@@ -13,7 +13,7 @@ import {
 } from '../icons.ts';
 import {
     Identity,
-    ERASED_MEMBER_NAME,
+    ERASED_IDENTITY_NAME,
     UNNAMED_SERVICE_NAME,
     type MemberPii,
     type ServiceFacet,
@@ -92,7 +92,7 @@ function buildTitleSection(
     const kind = view.identity.kindValue();
     const name = view.identity.isPerson()
         ? (view.pii.erased
-            ? ERASED_MEMBER_NAME
+            ? ERASED_IDENTITY_NAME
             : view.pii.name)
         : (view.service.named
             ? view.service.name
@@ -147,7 +147,7 @@ function buildPersonalInfoCard(
     view: IdentityDetailView,
 ): SafeHtml {
     const name = view.pii.erased
-        ? ERASED_MEMBER_NAME
+        ? ERASED_IDENTITY_NAME
         : view.pii.name;
     const email = view.pii.erased ? '' : view.pii.email;
     const phone = view.pii.erased ? '' : view.pii.phone;

@@ -83,7 +83,7 @@ test('named service shows its name and detail, not the id',
 test('unnamed service redacts to a label, not the id',
 async () => {
     const { UNNAMED_SERVICE_NAME } = await import(
-        '../web-app/app/adapters/members-union.ts'
+        '../web-app/app/adapters/identities.ts'
     );
     const rec = record();
     new IdentityRosterPresenter([
@@ -102,8 +102,8 @@ async () => {
 
 test('erased person falls back to the named constant',
 async () => {
-    const { ERASED_MEMBER_NAME } = await import(
-        '../web-app/app/adapters/members-union.ts'
+    const { ERASED_IDENTITY_NAME } = await import(
+        '../web-app/app/adapters/identities.ts'
     );
     const rec = record();
     new IdentityRosterPresenter([
@@ -113,7 +113,7 @@ async () => {
         },
     ]).render(rec.container);
     assert.match(
-        rec.html(), new RegExp(ERASED_MEMBER_NAME),
+        rec.html(), new RegExp(ERASED_IDENTITY_NAME),
     );
 });
 

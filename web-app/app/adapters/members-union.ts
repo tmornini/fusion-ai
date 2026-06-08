@@ -114,14 +114,10 @@ export async function getMemberMap(
     );
 }
 
-export const ERASED_MEMBER_NAME = 'Unknown member';
-
-// A service identity with no name visible to the caller —
-// the service analog of ERASED_MEMBER_NAME. A name lives in
-// the ai_members row; when that row is absent (a bare
-// credentialed service, or one owned by another org) the
-// roster redacts to this label rather than leaking the id.
-export const UNNAMED_SERVICE_NAME = 'Service account';
+// The display name for a member whose PII is absent — erased,
+// or never recorded. Member-domain vocabulary; the identity
+// surfaces use ERASED_IDENTITY_NAME instead.
+export const ERASED_MEMBER_NAME = 'Member without PII';
 
 export function memberName(
     memberMap: Map<MemberId, Member>,
