@@ -21,7 +21,10 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 
 const { Identity } = await import('../api/types.ts');
-const { ERASED_MEMBER_NAME } = await import(
+const {
+    ERASED_MEMBER_NAME,
+    UNNAMED_SERVICE_NAME,
+} = await import(
     '../web-app/app/adapters/members-union.ts'
 );
 
@@ -89,6 +92,7 @@ function personPresenter() {
             phone: '555-0100',
             bio: 'First programmer.',
         },
+        service: { named: false },
         activeCredentialKinds: [],
     });
 }
@@ -127,6 +131,7 @@ test(
                 id: 'p2', kind: 'person',
             }),
             pii: { erased: true },
+            service: { named: false },
             activeCredentialKinds: [],
         }).renderShell(rec.container);
         const out = rec.allHtml();
@@ -138,8 +143,8 @@ test(
 );
 
 test(
-    'service detail renders Service badge and the'
-    + ' active credential summary, never the secret',
+    'named service detail shows its name and Service'
+    + ' badge, never the secret',
     () => {
         const rec = makeRecordingContainer();
         new IdentityDetailPresenter({
@@ -147,9 +152,14 @@ test(
                 id: 's1', kind: 'service',
             }),
             pii: { erased: true },
+            service: {
+                named: true, name: 'Grok 4.3',
+                detail: 'Fast reasoning model',
+            },
             activeCredentialKinds: ['client_secret'],
         }).renderShell(rec.container);
         const out = rec.allHtml();
+        assert.match(out, /Grok 4\.3/);
         assert.match(out, /Service/);
         assert.match(out, /Credentials/);
         assert.match(out, /client_secret/);
@@ -158,6 +168,33 @@ test(
         // No personal-info card for a service.
         assert.equal(
             out.includes('Personal Information'), false,
+        );
+        // It is not redacted as an unknown member.
+        assert.equal(
+            out.includes(ERASED_MEMBER_NAME), false,
+        );
+    },
+);
+
+test(
+    'nameless service detail redacts to the service'
+    + ' label, never the id as the title',
+    () => {
+        const rec = makeRecordingContainer();
+        new IdentityDetailPresenter({
+            identity: new Identity({
+                id: '42vHYDCvtkaO3sTnoqg7aJ',
+                kind: 'service',
+            }),
+            pii: { erased: true },
+            service: { named: false },
+            activeCredentialKinds: ['client_secret'],
+        }).renderShell(rec.container);
+        const out = rec.allHtml();
+        assert.match(out, new RegExp(UNNAMED_SERVICE_NAME));
+        // The id is the subtitle, never the heading.
+        assert.doesNotMatch(
+            out, /<h1[^>]*>\s*42vHYDCvtkaO3sTnoqg7aJ/,
         );
     },
 );

@@ -61,18 +61,43 @@ test('person row shows name, email, and Person badge',
     assert.match(out, /Person/);
 });
 
-test('service row shows the id and a Service badge', () => {
+test('named service shows its name and detail, not the id',
+() => {
     const rec = record();
     new IdentityRosterPresenter([
         {
             id: 's1', kind: 'service',
-            pii: { erased: true },
+            service: {
+                named: true, name: 'Grok 4.3',
+                detail: 'Fast reasoning model',
+            },
         },
     ]).render(rec.container);
     const out = rec.html();
     assert.match(out, /data-identity-id="s1"/);
     assert.match(out, /Service/);
-    assert.match(out, /s1/);
+    assert.match(out, /Grok 4\.3/);
+    assert.match(out, /Fast reasoning model/);
+});
+
+test('unnamed service redacts to a label, not the id',
+async () => {
+    const { UNNAMED_SERVICE_NAME } = await import(
+        '../web-app/app/adapters/members-union.ts'
+    );
+    const rec = record();
+    new IdentityRosterPresenter([
+        {
+            id: '42vHYDCvtkaO3sTnoqg7aJ',
+            kind: 'service',
+            service: { named: false },
+        },
+    ]).render(rec.container);
+    const out = rec.html();
+    assert.match(out, new RegExp(UNNAMED_SERVICE_NAME));
+    assert.doesNotMatch(
+        out, />\s*42vHYDCvtkaO3sTnoqg7aJ\s*</,
+    );
 });
 
 test('erased person falls back to the named constant',

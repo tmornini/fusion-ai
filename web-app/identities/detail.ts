@@ -10,10 +10,12 @@ import {
     sessionContext,
     getIdentity,
     getMemberPii,
+    getServiceFacet,
     deleteIdentityPii,
     getIdentityCredentialState,
     Identity,
     type MemberPii,
+    type ServiceFacet,
     type IdentityCredentialKind,
 } from '../app/adapters/index.ts';
 import {
@@ -29,6 +31,7 @@ let currentId: string | null = null;
 interface LoadedIdentity {
     identity: Identity;
     pii: MemberPii;
+    service: ServiceFacet;
     activeCredentialKinds:
         readonly IdentityCredentialKind[];
 }
@@ -48,12 +51,17 @@ async function loadIdentity(
         return null;
     }
     const pii = await getMemberPii(ctx, identityId);
+    const service: ServiceFacet = identity.isService()
+        ? await getServiceFacet(ctx, identityId)
+        : { named: false };
     const activeCredentialKinds = identity.isService()
         ? (await getIdentityCredentialState(
             ctx, identityId,
         )).active
         : [];
-    return { identity, pii, activeCredentialKinds };
+    return {
+        identity, pii, service, activeCredentialKinds,
+    };
 }
 
 function buildView(
@@ -62,6 +70,7 @@ function buildView(
     return {
         identity: loaded.identity,
         pii: loaded.pii,
+        service: loaded.service,
         activeCredentialKinds:
             loaded.activeCredentialKinds,
     };
