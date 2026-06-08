@@ -365,7 +365,7 @@ last (they wipe the database). See `CLAUDE.md` section
 | AT. Automated Test Suite | 3 |
 | A. Build & Setup | 5 |
 | AA. Data Entry Workflow | 48 |
-| B. Entry Pages | 14 |
+| B. Entry Pages | 19 |
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 37 |
 | E. Core: Projects | 11 |
@@ -379,7 +379,7 @@ last (they wipe the database). See `CLAUDE.md` section
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
 | L. IndexedDB Persistence Tier | 9 |
-| **Total** | **367** |
+| **Total** | **372** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -388,9 +388,9 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     1540 |
-| Browser regression     |      367 |
-| **Combined TOTAL**     | **1907** |
+| CLI automated tests    |     1559 |
+| Browser regression     |      372 |
+| **Combined TOTAL**     | **1931** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -410,8 +410,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 1907, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (1907).
+`PASS = 1931, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (1931).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -780,6 +780,16 @@ on. Run these in order.
 
 - [ ] **B23** On any gated page (e.g. dashboard), click "Sign out" in the sidebar. PASS: `fusion.session-credentials` is removed from `localStorage`, a revocation row is recorded, and the page navigates to `auth`; pressing Back to the protected page bounces again to `auth`.
 - [ ] **B24** Open the app in two tabs (both signed in). Click "Sign out" in tab A, then trigger a fetch in tab B (navigate within it). PASS: tab B's next request 401s against the shared revocation ledger and bounces to `auth` — eventual cross-tab convergence, no corruption.
+
+### Zero-membership landing (org gate)
+
+> Setup for B25–B29: these exercise the boot/login org gate that lands a ZERO-membership identity on its pending invitations (accepting one grants the first membership and unblocks every org-scoped route). The seed gives every login-capable identity a membership, so create the zero-membership state via DevTools (the B21 precedent): sign in as a single-org seeded member, open Application → IndexedDB → `memberships`, delete every row whose `identity_id` is that member (also clear their `identity_default_orgs` rows). `getOrganizations` is fenced to the `memberships` ledger, so the identity now reaches no org. Their login credential is untouched.
+
+- [ ] **B25** From the zero-membership state, sign out, then sign in again with that member's credentials. PASS: lands directly on `invitations/index.html` — NOT the `?return=` target and NOT the dashboard "Something went wrong" card; no flash of the dashboard shell (the auth-page short-circuit decides before the first navigation). Sidebar renders the member chip from token claims with NO org switcher.
+- [ ] **B26** From the zero-membership state while signed in, open `dashboard/index.html` (or any org-gated page) directly and reload (Cmd-R). PASS: redirected to `invitations/index.html` by the boot org gate — no dashboard error card, no retry loop (the returning-user path, not just fresh login).
+- [ ] **B27** As the zero-membership identity, land on `invitations/index.html`. PASS: the page renders and STAYS — no redirect loop (the gate's self-guard exempts the invitations page); it shows pending invitations, or the "No invitations." empty state when none exist.
+- [ ] **B28** Restore the deleted membership row (or repeat with an untouched seeded member), then sign in. PASS: lands on the `?return=` target / dashboard as before — the org gate does not fire for an identity that reaches an org (B16/B18 unaffected by the new gate).
+- [ ] **B29** As the zero-membership identity, open an auth-EXEMPT page (`snapshots/`, `design-system/`). PASS: renders normally with NO redirect to invitations — the org gate guards only auth-gated pages; exempt pages degrade to the unscoped sidebar (B19 unaffected).
 
 ---
 
