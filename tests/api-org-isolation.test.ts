@@ -446,3 +446,59 @@ test('organizations/:id 404s a non-member org', async () => {
         await orgToken('current', 'A')));
     assert.equal(foreign.status, 404);
 });
+
+// ---- Orphan visibility (null owner → visible to all orgs) ----
+// isVisible keeps a row whose owner resolves to null: an
+// identity that belongs to NO org, or a state event whose
+// entity matches nothing, is an orphan — visible to every
+// tenant so an incomplete-but-harmless row is not mistaken for
+// another tenant's data. The covenant above pins the
+// co-member-visible and foreign-hidden branches; these pin the
+// THIRD branch the membership resolvers pass through, so a
+// keyed-read rewrite that silently drops the orphan would fail
+// here.
+
+test('identity-pii shows an orphan with no membership',
+async () => {
+    const db = await deepDb();
+    await db.identityPii.put('orphan', {
+        name: 'orphan', email: 'orphan@x.com',
+        phone: '', bio: '',
+    });
+    const res = await facadeGet(db, '/identity-pii');
+    assert.equal(res.status, 200);
+    const ids = new Set(
+        (await res.json() as { id: string }[]).map(r => r.id));
+    assert.ok(ids.has('orphan'));  // no membership → visible
+    assert.ok(!ids.has('pb'));     // B-only → still hidden
+});
+
+test('identity-credentials show an orphan with no membership',
+async () => {
+    const db = await deepDb();
+    await db.identityCredentials.put('cred-orphan', {
+        identity_id: 'orphan', kind: 'password',
+        status: 'set', secret: 'HASH-orphan', at: T8_AT,
+    });
+    const res = await facadeGet(db, '/identity-credentials');
+    assert.equal(res.status, 200);
+    const ids = new Set((await res.json() as Array<{
+        identity_id: string;
+    }>).map(r => r.identity_id));
+    assert.ok(ids.has('orphan'));  // no membership → visible
+    assert.ok(!ids.has('pb'));     // B-only → still hidden
+});
+
+test('states show an orphan event with no owner', async () => {
+    const db = await deepDb();
+    await db.states.put('seGhost', {
+        entity_id: 'ghost', state: 'active',
+        member_id: 'system', at: T8_AT,
+    });
+    const res = await facadeGet(db, '/states');
+    assert.equal(res.status, 200);
+    const ids = new Set(
+        (await res.json() as { id: string }[]).map(r => r.id));
+    assert.ok(ids.has('seGhost'));  // unowned → visible orphan
+    assert.ok(!ids.has('seB'));     // B's event → still hidden
+});
