@@ -202,7 +202,7 @@ export class ProjectView {
         ));
     }
 
-    timeCurrentDays(): number {
+    timeActualDays(): number {
         const elapsed = msSinceUtc(
             this.#project
                 .startDateValue(),
@@ -219,7 +219,7 @@ export class ProjectView {
             / COST_DIVISOR;
     }
 
-    costCurrentK(): number {
+    costActualK(): number {
         return this.#project
             .actualCostAmount()
             / COST_DIVISOR;
