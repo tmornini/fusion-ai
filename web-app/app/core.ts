@@ -66,6 +66,7 @@ export {
     DISPLAY_ABSENT,
     displayText,
     formatDate,
+    formatCalendarDate,
     formatDateTime,
     getTimeOfDay,
     initials,

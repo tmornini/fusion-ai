@@ -15,7 +15,7 @@ import {
     iconTrendingUp,
 } from '../icons.ts';
 import {
-    formatDate,
+    formatCalendarDate,
     toDateInputValue,
     DISPLAY_ABSENT,
 } from '../core.ts';
@@ -294,7 +294,7 @@ function buildReadonlyDateCell(
                 }">${label}</p>
                 <p class="${
                     'text-sm font-medium'
-                }">${formatDate(savedDate)}</p>
+                }">${formatCalendarDate(savedDate)}</p>
             </div>
         </div>`;
 }
