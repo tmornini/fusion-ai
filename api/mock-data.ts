@@ -398,7 +398,7 @@ type SeedHumanMember = Omit<
 };
 
 const MOCK_SEED_TIMESTAMP =
-    '2026-01-01T00:00:00.000Z';
+    '2026-01-01T00:00:00.000000Z';
 const ADMIN_USERNAME = 'demo@example.com';
 
 // The demo's second organization. org '2' is a new ROW, not
@@ -6469,9 +6469,9 @@ async function populateMockDataIn(
                 baselineMin,
                 100,
             );
-            const scoredAt = new Date(
+            const scoredAt = isoFromMs(
                 baselineStart + i * 1000,
-            ).toISOString();
+            );
             await adapter
                 .projectObjectiveBaselineScores
                 .put(
@@ -6513,10 +6513,10 @@ async function populateMockDataIn(
                         -100,
                         100,
                     );
-                    const scoredAt = new Date(
+                    const scoredAt = isoFromMs(
                         baseActualTime
                             + (i * 10 + k) * 1000,
-                    ).toISOString();
+                    );
                     await adapter
                         .projectObjectiveActualScores
                         .put(
