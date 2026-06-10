@@ -69,12 +69,22 @@ export function currentDefaultOrgFor(
 }
 
 // A policy entry: the roles permitted to use `verb` on any
-// path that BEGINS WITH `pathPrefix`. Prefixes are chosen on
-// segment boundaries so startsWith never half-matches.
+// path that begins with `pathPrefix` ON A SEGMENT BOUNDARY —
+// matching enforces the boundary, so '/members' can never
+// half-match '/memberships'.
 export interface PolicyEntry {
     readonly verb: string;
     readonly pathPrefix: string;
     readonly roles: readonly string[];
+}
+
+function matchesOnSegmentBoundary(
+    pathname: string,
+    prefix: string,
+): boolean {
+    if (prefix === '/') return true;
+    return pathname === prefix
+        || pathname.startsWith(prefix + '/');
 }
 
 // Deny-by-default policy. `admin` is allowed on every verb at
@@ -89,8 +99,8 @@ export const ROUTE_POLICY: readonly PolicyEntry[] = [
 ];
 
 // Permitted iff SOME matching entry (same verb; pathname
-// begins with prefix) lists a role the principal holds.
-// No match → false (deny-by-default).
+// begins with prefix on a segment boundary) lists a role the
+// principal holds. No match → false (deny-by-default).
 export function isPermitted(
     method: string,
     pathname: string,
@@ -98,7 +108,9 @@ export function isPermitted(
 ): boolean {
     for (const entry of ROUTE_POLICY) {
         if (entry.verb !== method) continue;
-        if (!pathname.startsWith(entry.pathPrefix)) continue;
+        if (!matchesOnSegmentBoundary(
+            pathname, entry.pathPrefix,
+        )) continue;
         for (const role of entry.roles) {
             if (heldRoles.includes(role)) return true;
         }
