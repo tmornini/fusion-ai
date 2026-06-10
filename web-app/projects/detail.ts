@@ -644,16 +644,18 @@ async function handleSave(): Promise<void> {
         organization_id: _org,
         ...entity
     } = state.entity;
-    const patch = projectPatchFromDraft(
-        state.view,
-        state.draft,
-    );
-    const patchEntity = trimStrings(patch.entity);
     const ctx = sessionContext();
-    const next = { ...entity, ...patchEntity };
-    const stateChanged =
-        patch.state !== state.view.stateValue();
     try {
+        // Inside the try: a draft with an empty/invalid
+        // cost throws here and surfaces as the toast.
+        const patch = projectPatchFromDraft(
+            state.view,
+            state.draft,
+        );
+        const patchEntity = trimStrings(patch.entity);
+        const next = { ...entity, ...patchEntity };
+        const stateChanged =
+            patch.state !== state.view.stateValue();
         await putProject(ctx, projectId, next);
         if (stateChanged) {
             await postProjectStateChange(
