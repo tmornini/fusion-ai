@@ -139,11 +139,11 @@ export class StateStore
         const rows = await tx.getWhere<StateEntity>(
             this.#table, 'entity_id', entityId,
         );
-        // Strict `>` keeps the FIRST-appended row on a
-        // same-`at` tie — deliberately unlike deletedIdsIn.
+        // The default (at, id) total order — ONE truth with
+        // deletedIdsIn/isDeletedIn, so list filtering and
+        // lifecycle reads can never contradict each other.
         return latestByKey(
             rows, row => row.entity_id,
-            (a, b) => a.at > b.at,
         ).get(entityId) ?? null;
     }
 
@@ -163,10 +163,9 @@ export class StateStore
 
     // Answers "which entities are currently in
     // state=deleted?" by scanning the log and keeping the
-    // latest event per entity_id (>= tiebreak so
-    // same-millisecond writes resolve to insertion order —
-    // the deterministic order the append-only log already
-    // captures). Hot path for getAll on every EntityStore.
+    // latest event per entity_id under the (at, id) total
+    // order — identical on every backend and every row
+    // permutation. Hot path for getAll on every EntityStore.
     async deletedIdsIn(tx: Tx): Promise<Set<Id>> {
         const rows = await tx.getAll<StateEntity>(
             this.#table,

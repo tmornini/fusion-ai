@@ -1244,24 +1244,16 @@ async function callerIsOrgAdmin(
         .includes('admin');
 }
 
-// An invitation's current state: the latest event on its id,
-// resolved via latestByKey (the same derivation every entity's
-// state uses) rather than states.currentFor, whose strict-`>`
-// tiebreak keeps the FIRST event and would freeze a co-timestamped
-// lifecycle at 'pending'. On a same-millisecond `at` tie the
-// winner is backend-dependent (the memory tier preserves insertion
-// order; IndexedDB's index.getAll returns primary-key order) — not
-// an issue here, since each lifecycle transition is a distinct HTTP
-// request milliseconds-to-seconds apart, so `at` ties do not occur
-// in practice. Null when no event has been recorded.
+// An invitation's current state: the latest event on its id —
+// states.currentFor, the same (at, id) derivation every
+// entity's lifecycle uses. Null when no event has been
+// recorded.
 async function currentInvitationState(
     adapter: DbAdapter,
     id: Id,
 ): Promise<InvitationState | null> {
-    const events = await adapter.states.allFor(id);
-    const latest = latestByKey(events, ev => ev.entity_id)
-        .get(id);
-    return latest === undefined
+    const latest = await adapter.states.currentFor(id);
+    return latest === null
         ? null
         : assertInvitationState(latest.state, 'invitation ' + id);
 }

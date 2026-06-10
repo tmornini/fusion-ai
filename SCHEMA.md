@@ -34,9 +34,9 @@ event.
 state columns (`status`, `readiness`, `deleted_at`,
 `deprecated_at`, etc. are all retired). Every entity
 lifecycle change is recorded as one row in the unified
-`states` event log. The latest event by `at` (with `>=`
-tiebreak on same-millisecond writes) is the entity's
-current state. `'deleted'` is a state event value, not a
+`states` event log. The latest event by `at` (a same-`at`
+tie falls to the larger row id — one total order on every
+backend) is the entity's current state. `'deleted'` is a state event value, not a
 separate table. `EntityStore.getAll`/`getById` consult
 `StateStore.deletedIds()` / `isDeleted(id)` to filter
 currently-deleted rows; `EntityStore.delete(id)` is
@@ -615,8 +615,8 @@ organization, awaiting the holder's answer. Immutable like a
 `memberships` row — all columns NOT NULL — but its lifecycle
 lives in the `states` log (alphabet `INVITATION_STATES`), not
 a `status` column. The current state is the latest event on
-the invitation `id` (the same `>=` same-millisecond tiebreak
-as every entity), derived, never mutated.
+the invitation `id` (the same `(at, id)` tiebreak as every
+entity), derived, never mutated.
 
 Global-spine (pass-through), NOT org-fenced: the invitee must
 read an invitation to an org they are not yet a member of, so
@@ -753,9 +753,9 @@ lifecycle change in the system. One row, one fact.
 | member_id | TEXT | FK → members (actor) |
 | at | TEXT | RFC-3339 Zulu — moment of the event |
 
-The latest event on `entity_id` by `at` (with `>=`
-tiebreak on same-millisecond writes — the deterministic
-order the append-only log captures) is the entity's
+The latest event on `entity_id` by `at` (a same-`at` tie
+falls to the larger row id — a total order identical on
+every backend and row permutation) is the entity's
 current state. Reversal is a *new* event, not an edit of
 the prior row.
 
