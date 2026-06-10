@@ -153,8 +153,8 @@ const T8_AT = '2026-06-04T00:00:00.000000Z';
 function projectBody(org: string) {
     return {
         organization_id: org, title: 't', description: 'd',
-        progress: 0, start_date: T8_AT,
-        target_end_date: T8_AT, estimated_cost: 0,
+        progress: 0, start_date: '2026-06-04',
+        target_end_date: '2026-06-04', estimated_cost: 0,
         actual_cost: 0, position: 0,
     };
 }

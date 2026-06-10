@@ -315,6 +315,31 @@ test('validateProjectEntity rejects unknown key', () => {
     );
 });
 
+test(
+    'validateProjectEntity rejects a timestamp where a'
+    + ' calendar date belongs',
+    () => {
+    assert.throws(
+        () => validateProjectEntity({
+            ...validProject,
+            start_date: '2024-01-01T00:00:00.000000Z',
+        }),
+        /calendar date YYYY-MM-DD for ProjectEntity/,
+    );
+});
+
+test(
+    'validateProjectEntity rejects an impossible day',
+    () => {
+    assert.throws(
+        () => validateProjectEntity({
+            ...validProject,
+            target_end_date: '2024-02-30',
+        }),
+        /calendar date YYYY-MM-DD for ProjectEntity/,
+    );
+});
+
 // --- FlowEntity ---
 
 const validFlow = {

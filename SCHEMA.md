@@ -395,6 +395,13 @@ stamped on write and filtered on read by the gate.
 | actual_cost | INTEGER |
 | position | REAL |
 
+`start_date` / `target_end_date` are calendar DATES
+(`YYYY-MM-DD`, gated by `validateCalendarDateField`) —
+zone-neutral day markers, not instants, and the one
+deliberate exception to the RFC-3339-zulu rule: a
+project "starts on June 4" in every timezone; an
+instant would shift the rendered day across zones.
+
 Lifecycle state lives in `states` (alphabet
 `PROJECT_STATES`): `submitted`, `under-review`,
 `sent-back`, `approved`, `declined`, `archived`,

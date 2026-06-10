@@ -25,8 +25,8 @@ const SAMPLE_PROJECT_BODY = {
     organization_id: '1',
     title: 't',
     description: 'd', progress: 0,
-    start_date: '2026-05-14T00:00:00.000000Z',
-    target_end_date: '2026-05-14T00:00:00.000000Z',
+    start_date: '2026-05-14',
+    target_end_date: '2026-05-14',
     estimated_cost: 0, actual_cost: 0,
     position: 0,
 };

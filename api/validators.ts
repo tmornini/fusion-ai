@@ -604,6 +604,38 @@ export function validateTimestampField(
     return at;
 }
 
+// A calendar DATE, exactly YYYY-MM-DD — the OTHER temporal
+// grammar: a zone-neutral day marker, not an instant. Project
+// start/target dates carry no time of day; admitting a full
+// timestamp here would store two grammars in one column and
+// shift the rendered day across zones. Date.parse ROLLS OVER
+// an impossible day (2026-02-30 parses as March 1), so the
+// parsed instant is rendered back and must reproduce the
+// input day exactly.
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function validateCalendarDateField(
+    body: Record<string, unknown>,
+    field: string,
+    entityLabel: string,
+): string {
+    const day = pickString(body, field);
+    const parsedMs = Date.parse(day);
+    if (
+        !CALENDAR_DATE.test(day)
+        || Number.isNaN(parsedMs)
+        || !new Date(parsedMs).toISOString()
+            .startsWith(day)
+    ) {
+        throw new ValidationError(
+            'expected calendar date YYYY-MM-DD for '
+            + entityLabel + '.' + field
+            + ', got "' + day + '"',
+        );
+    }
+    return day;
+}
+
 // A string field that must be one of `allowed`; returns the
 // matched option (narrowed to E, no cast). `descriptor` names
 // the field in the message ("member type", "credential status")
@@ -1084,11 +1116,11 @@ export function validateProjectEntity(
         progress: pickNumber(
             body, 'progress',
         ),
-        start_date: pickString(
-            body, 'start_date',
+        start_date: validateCalendarDateField(
+            body, 'start_date', 'ProjectEntity',
         ),
-        target_end_date: pickString(
-            body, 'target_end_date',
+        target_end_date: validateCalendarDateField(
+            body, 'target_end_date', 'ProjectEntity',
         ),
         estimated_cost: pickNumber(
             body, 'estimated_cost',
