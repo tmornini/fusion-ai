@@ -229,7 +229,7 @@ export async function init(): Promise<void> {
         ]);
     } catch (err) {
         log.error(
-            'getOrganization failed',
+            'organization page load failed',
             'organization',
             err,
         );

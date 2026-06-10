@@ -212,7 +212,7 @@ export async function init(
         ]);
     } catch (err) {
         log.error(
-            'getProject failed',
+            'project detail load failed',
             'projects', err,
         );
         setHtml(

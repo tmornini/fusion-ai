@@ -114,7 +114,7 @@ export async function init(
         defs = new Map(defEntries);
     } catch (err) {
         log.error(
-            'getActiveObjectives failed',
+            'objectives load failed',
             'ideas',
             err,
         );
