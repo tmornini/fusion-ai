@@ -82,7 +82,8 @@ function buildFlow(
 function daysAgo(d: number): string {
     return new Date(
         Date.now() - d * 24 * 3600 * 1000,
-    ).toISOString();
+    ).toISOString()
+        .replace('Z', '000Z');
 }
 
 // c→a→z graph: c isCreate, z isArchive, a regular

@@ -18,8 +18,8 @@ const ev = (
     action, chain_id: chain, parent_jti: parent, at,
 });
 
-const T1 = '2026-01-01T00:00:00.000Z';
-const T2 = '2026-02-01T00:00:00.000Z';
+const T1 = '2026-01-01T00:00:00.000000Z';
+const T2 = '2026-02-01T00:00:00.000000Z';
 
 test('latestActionForJti returns the latest per jti', () => {
     const rows = [

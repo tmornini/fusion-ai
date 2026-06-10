@@ -16,7 +16,7 @@ const grant = (
 test('a granted role with no later revoke is held', () => {
     const rows = [
         grant('1', 'current', 'admin', 'granted',
-            '2026-01-01T00:00:00.000Z', 'A'),
+            '2026-01-01T00:00:00.000000Z', 'A'),
     ];
     assert.deepEqual(
         currentRolesForInOrg(rows, 'current', 'A'),
@@ -26,9 +26,9 @@ test('a granted role with no later revoke is held', () => {
 test('latest action per (identity, role) wins', () => {
     const rows = [
         grant('1', 'current', 'admin', 'granted',
-            '2026-01-01T00:00:00.000Z', 'A'),
+            '2026-01-01T00:00:00.000000Z', 'A'),
         grant('2', 'current', 'admin', 'revoked',
-            '2026-02-01T00:00:00.000Z', 'A'),
+            '2026-02-01T00:00:00.000000Z', 'A'),
     ];
     assert.deepEqual(
         currentRolesForInOrg(rows, 'current', 'A'), []);
@@ -37,7 +37,7 @@ test('latest action per (identity, role) wins', () => {
 test('roles are isolated per identity', () => {
     const rows = [
         grant('1', 'current', 'admin', 'granted',
-            '2026-01-01T00:00:00.000Z', 'A'),
+            '2026-01-01T00:00:00.000000Z', 'A'),
     ];
     assert.deepEqual(
         currentRolesForInOrg(rows, 'other', 'A'), []);
@@ -46,7 +46,7 @@ test('roles are isolated per identity', () => {
 test('roles are isolated per org', () => {
     const rows = [
         grant('1', 'current', 'admin', 'granted',
-            '2026-01-01T00:00:00.000Z', 'A'),
+            '2026-01-01T00:00:00.000000Z', 'A'),
     ];
     assert.deepEqual(
         currentRolesForInOrg(rows, 'current', 'A'),
@@ -60,7 +60,7 @@ test('a same-instant revoke beats the grant, either order',
     // FAIL CLOSED: a co-timestamped revoke wins regardless of
     // insertion order — same-instant pairs only arise across
     // realms (two tabs), where append order proves nothing.
-    const at = '2026-03-01T00:00:00.000Z';
+    const at = '2026-03-01T00:00:00.000000Z';
     assert.deepEqual(
         currentRolesForInOrg([
             grant('1', 'current', 'admin', 'granted',

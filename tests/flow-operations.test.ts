@@ -124,7 +124,7 @@ function buildGraph(
         isAutoLayout: true,
         isAutoFit: true,
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
-        createdAt: '2026-01-01T00:00:00.000Z',
+        createdAt: '2026-01-01T00:00:00.000000Z',
         nodes,
         edges,
     };
@@ -143,7 +143,7 @@ function buildFlowVersion(
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [buildNode('a'), buildNode('b')],
         edges: [],
-        createdAt: '2026-01-01T00:00:00.000Z',
+        createdAt: '2026-01-01T00:00:00.000000Z',
         ...overrides,
     };
 }
@@ -1202,7 +1202,7 @@ test(
                         edges: [],
                     }),
                     at:
-                        '2026-01-01T00:00:00.000Z',
+                        '2026-01-01T00:00:00.000000Z',
                 },
             }],
         });

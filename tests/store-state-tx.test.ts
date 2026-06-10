@@ -32,7 +32,7 @@ test(
                     entity_id: 'e1',
                     state: 'deleted',
                     member_id: 'm1',
-                    at: '2026-01-01T00:00:00.000Z',
+                    at: '2026-01-01T00:00:00.000000Z',
                 });
                 return states.deletedIdsIn(tx);
             },
@@ -53,14 +53,14 @@ test(
                     entity_id: 'e1',
                     state: 'active',
                     member_id: 'm1',
-                    at: '2026-01-01T00:00:00.000Z',
+                    at: '2026-01-01T00:00:00.000000Z',
                 });
                 await tx.put('states', {
                     id: 's2',
                     entity_id: 'e1',
                     state: 'deleted',
                     member_id: 'm1',
-                    at: '2026-01-02T00:00:00.000Z',
+                    at: '2026-01-02T00:00:00.000000Z',
                 });
                 return states.isDeletedIn(tx, 'e1');
             },
@@ -77,13 +77,13 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'b',
             member_id: 'm1',
-            at: '2026-01-03T00:00:00.000Z',
+            at: '2026-01-03T00:00:00.000000Z',
         });
         const current = await backend.transaction(
             ['states'], 'readonly',
@@ -102,19 +102,19 @@ test(
             entity_id: 'e1',
             state: 'b',
             member_id: 'm1',
-            at: '2026-01-02T00:00:00.000Z',
+            at: '2026-01-02T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e2',
             state: 'x',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s3', {
             entity_id: 'e1',
             state: 'a',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const events = await backend.transaction(
             ['states'], 'readonly',
@@ -140,13 +140,13 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'b',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const current = await backend.transaction(
             ['states'], 'readonly',
@@ -164,19 +164,19 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s9', {
             entity_id: 'e2',
             state: 'x',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s3', {
             entity_id: 'e1',
             state: 'b',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const current = await backend.transaction(
             ['states'], 'readonly',
@@ -194,13 +194,13 @@ test(
             entity_id: 'e1',
             state: 'deleted',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'active',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const [current, deleted] =
             await backend.transaction(
@@ -224,7 +224,7 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const current = await backend.transaction(
             ['states'], 'readonly',
@@ -242,13 +242,13 @@ test(
             entity_id: 'e1',
             state: 'active',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'deleted',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const deleted = await backend.transaction(
             ['states'], 'readonly',
@@ -266,13 +266,13 @@ test(
             entity_id: 'e1',
             state: 'deleted',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'active',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const deleted = await backend.transaction(
             ['states'], 'readonly',
@@ -290,13 +290,13 @@ test(
             entity_id: 'e1',
             state: 'deleted',
             member_id: 'm1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await states.put('s2', {
             entity_id: 'e1',
             state: 'active',
             member_id: 'm1',
-            at: '2026-01-02T00:00:00.000Z',
+            at: '2026-01-02T00:00:00.000000Z',
         });
         const deleted = await backend.transaction(
             ['states'], 'readonly',

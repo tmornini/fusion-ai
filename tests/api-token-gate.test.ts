@@ -94,7 +94,7 @@ test('a logout-everywhere revokes earlier tokens', async () => {
         db, 'identity-token-revocations/r1',
         {
             identity_id: 'current',
-            at: '2021-01-01T00:00:00.000Z',
+            at: '2021-01-01T00:00:00.000000Z',
         },
         await devToken(),
     );
@@ -108,7 +108,7 @@ async () => {
     // The revocation is stamped at T.900; the token's iat is
     // the same whole second. Shared seconds fail closed — the
     // sub-second remainder must not let the token survive.
-    const revokedAt = '2021-01-01T00:00:00.900Z';
+    const revokedAt = '2021-01-01T00:00:00.900000Z';
     const sameSecond = await mintAccessToken({
         sub: 'current', roles: [], name: 'Demo',
         iat: Math.floor(Date.parse(revokedAt) / 1000),
@@ -132,12 +132,12 @@ async () => {
     await db.identityTokens.put('e1', {
         jti: 'dev-current', identity_id: 'current',
         action: 'issued', chain_id: 'c1',
-        parent_jti: '', at: '2026-01-01T00:00:00.000Z',
+        parent_jti: '', at: '2026-01-01T00:00:00.000000Z',
     });
     await db.identityTokens.put('e2', {
         jti: 'dev-current', identity_id: 'current',
         action: 'revoked', chain_id: 'c1',
-        parent_jti: '', at: '2026-02-01T00:00:00.000Z',
+        parent_jti: '', at: '2026-02-01T00:00:00.000000Z',
     });
     await assert.rejects(
         async () => GET(db, 'members', await devToken()),

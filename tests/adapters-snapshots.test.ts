@@ -287,7 +287,7 @@ test(
             flows: [{
                 id: 'f1',
                 name: 'F',
-                updated_at: '2024-01-01T00:00:00Z',
+                updated_at: '2024-01-01T00:00:00.000000Z',
             }],
         });
         await assert.rejects(
@@ -374,7 +374,7 @@ test(
                         entity_id: 'e1',
                         state: value,
                         member_id: 'w1',
-                        at: '2026-01-01T00:00:00Z',
+                        at: '2026-01-01T00:00:00.000000Z',
                     }],
                 });
                 const expected =

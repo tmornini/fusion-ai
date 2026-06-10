@@ -17,6 +17,16 @@ below). JSON columns store stringified
 arrays or objects. All columns are NOT NULL — entity
 validation on creation ensures every field is present.
 
+**Timestamp width:** every persisted timestamp is RFC-3339
+zulu at EXACTLY six fraction digits (`…T12:00:00.000000Z`)
+— the one width the mints emit and the append-only ledgers
+sort (lexical = chronological holds only within one width).
+The validation gate rejects any other width, so a snapshot
+exported before this pin that carries 3-digit or
+fractionless stamps fails import loudly; the documented
+recovery is re-seeding (Settings → mock data) or
+re-exporting from a current build.
+
 **Boolean storage:** BOOLEAN columns are typed as `boolean`
 in TypeScript (`api/types.ts`) and persist NATIVELY — there
 is no `0`|`1` transform. The one storage-edge transform is

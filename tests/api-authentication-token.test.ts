@@ -11,7 +11,7 @@ const BASE = 'http://localhost';
 const issuedCode = {
     code: 'the-code', identity_id: 'current',
     client_id: 'web', status: 'issued',
-    at: '2026-06-03T00:00:00.000Z',
+    at: '2026-06-03T00:00:00.000000Z',
 };
 
 async function freshDb() {
@@ -222,7 +222,7 @@ async () => {
     await db.memberships.put('m-current', {
         organization_id: '1',
         identity_id: 'current',
-        at: '2026-06-04T00:00:00.000Z',
+        at: '2026-06-04T00:00:00.000000Z',
     });
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
@@ -244,7 +244,7 @@ async () => {
     await db.memberships.put('m-current', {
         organization_id: '1',
         identity_id: 'current',
-        at: '2026-06-04T00:00:00.000Z',
+        at: '2026-06-04T00:00:00.000000Z',
     });
     const before =
         (await db.identityTokens.getAll()).length;
@@ -266,7 +266,7 @@ async () => {
     await db.memberships.put('m-current', {
         organization_id: '1',
         identity_id: 'current',
-        at: '2026-06-04T00:00:00.000Z',
+        at: '2026-06-04T00:00:00.000000Z',
     });
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
@@ -293,12 +293,12 @@ test('client_credentials issues a gate-valid token', async () => {
         organization_id: '1',
         identity_id: 'svc-client', role: 'admin',
         action: 'granted', by_member_id: 'system',
-        at: '2020-01-01T00:00:00.000Z',
+        at: '2020-01-01T00:00:00.000000Z',
     });
     await db.memberships.put('m-svc', {
         organization_id: '1',
         identity_id: 'svc-client',
-        at: '2020-01-01T00:00:00.000Z',
+        at: '2020-01-01T00:00:00.000000Z',
     });
     await db.clients.put('svc-client', activeClient);
     const res = await handleRequest(db, tokenRequest({

@@ -31,6 +31,7 @@ import {
 '../web-app/app/adapters/work-orders-deletions.ts';
 import {
     jsonObjectField,
+    nowUtc,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import type {
@@ -468,7 +469,7 @@ test(
                 entity_id: woId,
                 state: 'claim_released',
                 member_id: 'current',
-                at: new Date().toISOString(),
+                at: nowUtc(),
             },
         );
 
@@ -538,7 +539,7 @@ test(
                 entity_id: woId,
                 state: 'claim_released',
                 member_id: 'current',
-                at: new Date().toISOString(),
+                at: nowUtc(),
             },
         );
         await pause(2);
@@ -576,7 +577,7 @@ test(
                 entity_id: woId,
                 state: 'claim_released',
                 member_id: 'current',
-                at: new Date().toISOString(),
+                at: nowUtc(),
             },
         );
         await pause(2);
@@ -618,7 +619,7 @@ test(
                 flow_id: 'flow1',
                 work_order_id: 'wo1',
                 at:
-                    '2024-01-01T00:00:00Z',
+                    '2024-01-01T00:00:00.000000Z',
             },
         );
         await db.flowWorkOrders.put(
@@ -627,7 +628,7 @@ test(
                 flow_id: 'flow2',
                 work_order_id: 'wo2',
                 at:
-                    '2024-01-01T00:00:00Z',
+                    '2024-01-01T00:00:00.000000Z',
             },
         );
         const ctx = createRequestContext(db, await devToken());
@@ -664,7 +665,8 @@ test(
         // means this is past the live window.
         const longAgo = new Date(
             Date.now() - 10_000,
-        ).toISOString();
+        ).toISOString()
+        .replace('Z', '000Z');
         await db.states.put(
             generateCryptoSafeBase62(),
             {
@@ -698,7 +700,7 @@ test(
                 entity_id: woId,
                 state: 'claimed',
                 member_id: 'current',
-                at: new Date().toISOString(),
+                at: nowUtc(),
             },
         );
         const claim = await getWorkOrderActiveClaim(
@@ -727,10 +729,11 @@ test(
         const stale = generateCryptoSafeBase62();
         const released = generateCryptoSafeBase62();
         const orphan = generateCryptoSafeBase62();
-        const now = new Date().toISOString();
+        const now = nowUtc();
         const longAgo = new Date(
             Date.now() - 10_000,
-        ).toISOString();
+        ).toISOString()
+        .replace('Z', '000Z');
         const claimed = (entityId: string, at: string) =>
             db.states.put(generateCryptoSafeBase62(), {
                 entity_id: entityId,

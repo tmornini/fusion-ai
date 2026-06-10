@@ -12,7 +12,7 @@ test(
             entity_id: 'e1',
             state: 'active',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         assert.equal(written.id, 's1');
         assert.equal(written.entity_id, 'e1');
@@ -43,13 +43,13 @@ test('getAll returns every written row', async () => {
         entity_id: 'e1',
         state: 'a',
         member_id: 'w1',
-        at: '2026-01-01T00:00:00.000Z',
+        at: '2026-01-01T00:00:00.000000Z',
     });
     await db.states.put('s2', {
         entity_id: 'e2',
         state: 'b',
         member_id: 'w1',
-        at: '2026-01-02T00:00:00.000Z',
+        at: '2026-01-02T00:00:00.000000Z',
     });
     const all = await db.states.getAll();
     assert.equal(all.length, 2);
@@ -90,19 +90,19 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await db.states.put('s2', {
             entity_id: 'e1',
             state: 'b',
             member_id: 'w1',
-            at: '2026-01-03T00:00:00.000Z',
+            at: '2026-01-03T00:00:00.000000Z',
         });
         await db.states.put('s3', {
             entity_id: 'e1',
             state: 'c',
             member_id: 'w1',
-            at: '2026-01-02T00:00:00.000Z',
+            at: '2026-01-02T00:00:00.000000Z',
         });
         const current =
             await db.states.currentFor('e1');
@@ -121,7 +121,7 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const current =
             await db.states.currentFor('unknown');
@@ -139,25 +139,25 @@ test(
             entity_id: 'e1',
             state: 'b',
             member_id: 'w1',
-            at: '2026-01-02T00:00:00.000Z',
+            at: '2026-01-02T00:00:00.000000Z',
         });
         await db.states.put('s2', {
             entity_id: 'e2',
             state: 'x',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await db.states.put('s3', {
             entity_id: 'e1',
             state: 'a',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         await db.states.put('s4', {
             entity_id: 'e1',
             state: 'c',
             member_id: 'w1',
-            at: '2026-01-03T00:00:00.000Z',
+            at: '2026-01-03T00:00:00.000000Z',
         });
         const events = await db.states.allFor('e1');
         assert.equal(events.length, 3);
@@ -168,9 +168,9 @@ test(
         assert.deepEqual(
             events.map(e => e.at),
             [
-                '2026-01-01T00:00:00.000Z',
-                '2026-01-02T00:00:00.000Z',
-                '2026-01-03T00:00:00.000Z',
+                '2026-01-01T00:00:00.000000Z',
+                '2026-01-02T00:00:00.000000Z',
+                '2026-01-03T00:00:00.000000Z',
             ],
         );
     },
@@ -185,7 +185,7 @@ test(
             entity_id: 'e1',
             state: 'a',
             member_id: 'w1',
-            at: '2026-01-01T00:00:00.000Z',
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const events =
             await db.states.allFor('unknown');

@@ -16,11 +16,11 @@ export async function seedRootAdmin(
         role: 'admin',
         action: 'granted',
         by_member_id: 'system',
-        at: '2020-01-01T00:00:00.000Z',
+        at: '2020-01-01T00:00:00.000000Z',
     });
     await db.memberships.put('test-membership-current', {
         organization_id: '1',
         identity_id: 'current',
-        at: '2020-01-01T00:00:00.000Z',
+        at: '2020-01-01T00:00:00.000000Z',
     });
 }

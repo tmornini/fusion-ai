@@ -214,31 +214,31 @@ test('exposes a named anonymous principal', () => {
 
 test('latestRevocationAt returns the most recent stamp', () => {
     const rows = [
-        { identity_id: 'a', at: '2021-01-01T00:00:00.000Z' },
-        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
-        { identity_id: 'a', at: '2022-01-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2021-01-01T00:00:00.000000Z' },
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000000Z' },
+        { identity_id: 'a', at: '2022-01-01T00:00:00.000000Z' },
     ];
     assert.equal(
         latestRevocationAt(rows, 'a'),
-        '2023-06-01T00:00:00.000Z',
+        '2023-06-01T00:00:00.000000Z',
     );
 });
 
 test('latestRevocationAt isolates identities; null when none', () => {
     const rows = [
-        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000000Z' },
     ];
     assert.equal(latestRevocationAt(rows, 'b'), null);
 });
 
 test('revokedThroughSeconds converts the latest stamp', () => {
     const rows = [
-        { identity_id: 'a', at: '2021-01-01T00:00:00.000Z' },
-        { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
+        { identity_id: 'a', at: '2021-01-01T00:00:00.000000Z' },
+        { identity_id: 'a', at: '2023-06-01T00:00:00.000000Z' },
     ];
     assert.equal(
         revokedThroughSeconds(rows, 'a'),
         Math.floor(
-            Date.parse('2023-06-01T00:00:00.000Z') / 1000),
+            Date.parse('2023-06-01T00:00:00.000000Z') / 1000),
     );
 });

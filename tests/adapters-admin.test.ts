@@ -83,7 +83,7 @@ async function seedIdea(
     await db.ideaSubmissions.put('sub-' + id, {
         idea_id: id,
         member_id: submitter,
-        at: '2026-04-01T00:00:00Z',
+        at: '2026-04-01T00:00:00.000000Z',
     });
 }
 

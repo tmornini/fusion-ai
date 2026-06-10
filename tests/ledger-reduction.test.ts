@@ -9,8 +9,8 @@ const row = (key: string, at: string, id: string) => ({
     key, at, id,
 });
 
-const T1 = '2026-01-01T00:00:00.000Z';
-const T2 = '2026-02-01T00:00:00.000Z';
+const T1 = '2026-01-01T00:00:00.000000Z';
+const T2 = '2026-02-01T00:00:00.000000Z';
 
 test('latestByKey keeps the latest row per key', () => {
     const rows = [

@@ -10,8 +10,8 @@ const ev = (
     client_id: client, status, at,
 });
 
-const T1 = '2026-01-01T00:00:00.000Z';
-const T2 = '2026-02-01T00:00:00.000Z';
+const T1 = '2026-01-01T00:00:00.000000Z';
+const T2 = '2026-02-01T00:00:00.000000Z';
 
 test('codeState returns the latest status with the'
     + ' issuing identity and client', () => {

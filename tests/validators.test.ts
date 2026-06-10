@@ -352,7 +352,7 @@ const validFlowVersion = {
     is_auto_fit: true,
     lock_timeout: 28800,
     graph: '{"nodes":[],"edges":[]}',
-    at: '2024-01-01T00:00:00Z',
+    at: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -419,7 +419,7 @@ test(
 const validFlowWorkOrder = {
     flow_id: 'f-1',
     work_order_id: 'wo-1',
-    at: '2024-01-01T00:00:00Z',
+    at: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -439,7 +439,7 @@ test(
     assert.throws(
         () => validateFlowWorkOrderEntity({
             flow_id: 'f-1',
-            at: '2024-01-01T00:00:00Z',
+            at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "work_order_id"/,
     );
@@ -487,7 +487,7 @@ const validOrg = {
     used_seats: 5,
     projects_limit: 50,
     ideas_limit: 200,
-    last_activity: '2024-01-01T00:00:00Z',
+    last_activity: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -544,7 +544,7 @@ test(
 const validIdeaSubmission = {
     idea_id: 'i-1',
     member_id: 'u-1',
-    at: '2024-01-01T00:00:00Z',
+    at: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -565,7 +565,7 @@ test(
     assert.throws(
         () => validateIdeaSubmissionEntity({
             member_id: 'u-1',
-            at: '2024-01-01T00:00:00Z',
+            at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "idea_id"/,
     );
@@ -576,7 +576,7 @@ test(
 const validProjectFlow = {
     project_id: 'p-1',
     flow_id: 'f-1',
-    at: '2024-01-01T00:00:00Z',
+    at: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -596,7 +596,7 @@ test(
     assert.throws(
         () => validateProjectFlowEntity({
             project_id: 'p-1',
-            at: '2024-01-01T00:00:00Z',
+            at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "flow_id"/,
     );

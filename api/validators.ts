@@ -549,17 +549,21 @@ export function pickJsonObjectField(
     return asJsonObjectField(body[key], key);
 }
 
-// RFC-3339 zulu, sub-seconds optional. The Office of Time's
-// enemy is AMBIGUITY: a date-only stamp is reinterpreted as
-// midnight-UTC (shifting the day across zones) and a zoned
-// offset is localtime — both rejected here. Sub-second WIDTH is
-// the mint's job (nowUtc/dt/isoFromMs all emit 6); an
-// unambiguous zulu second is valid with or without a fraction.
-// Date.parse alone waves the ambiguous forms through, so the
-// shape is pinned; Date.parse then rejects impossible dates the
-// shape admits (e.g. month 13).
+// RFC-3339 zulu at EXACTLY six fraction digits — the one
+// width the mints emit (nowUtc/dt/isoFromMs) and the ledgers
+// sort. The Office of Time's enemy is AMBIGUITY (a date-only
+// stamp shifts the day across zones; a zoned offset is
+// localtime), and the latest-wins reductions add a second
+// enemy: WIDTH. Lexical compare is chronological only within
+// one width — a fractionless second sorts AFTER every
+// fractional stamp inside it ('Z' > '.'), so an admitted
+// off-width stamp could shadow the true latest event. The
+// gate is the persistence edge for externally-sourced rows
+// (PUT states/:id, the snapshot plane), so width is pinned
+// HERE; Date.parse then rejects impossible dates the shape
+// admits (e.g. month 13).
 const ISO_ZULU =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/;
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 
 // A string field that must be an RFC-3339 zulu timestamp;
 // returns it. The entity label names the offender — same message
