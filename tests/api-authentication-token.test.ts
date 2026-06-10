@@ -333,3 +333,21 @@ async () => {
     }));
     assert.equal(res.status, 401);
 });
+
+test('a clients store fault is a 500, never 401',
+async () => {
+    const db = await freshDb();
+    // Only EntityNotFound means 'unknown client'; any other
+    // fault is a bug and must surface, not wear a 401 mask.
+    (db.clients as unknown as {
+        getById: () => Promise<never>;
+    }).getById = async () => {
+        throw new Error('store exploded');
+    };
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: 'a.b.c',
+    }));
+    assert.equal(res.status, 500);
+});

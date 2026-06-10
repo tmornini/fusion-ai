@@ -437,8 +437,11 @@ async function grantClientCredentials(
     let client: ClientEntity;
     try {
         client = await adapter.clients.getById(clientId);
-    } catch {
-        return failure(401, 'unknown client');
+    } catch (e) {
+        if (e instanceof EntityNotFound) {
+            return failure(401, 'unknown client');
+        }
+        throw e;
     }
     if (client.status !== 'active') {
         return failure(401, 'client is disabled');
