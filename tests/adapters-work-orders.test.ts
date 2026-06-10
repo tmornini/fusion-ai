@@ -555,12 +555,8 @@ test(
 );
 
 test(
-    'postWorkOrderClaim does NOT '
-    + 'enforce uniqueness — race is '
-    + 'unfixable in localStorage; '
-    + 'structural fix is the Postgres '
-    + 'migration (UNIQUE partial '
-    + 'index).',
+    'postWorkOrderClaim is idempotent — a repeat '
+    + 'claim by the holder appends no duplicate',
     async () => {
         const { db, ctx } = await setupDb();
         await db.flows.put(
@@ -590,11 +586,14 @@ test(
             (e: StateEntity) =>
                 e.state === 'claimed',
         );
-        // Initial creation claim plus the two
-        // explicit calls.
-        assert.ok(
-            claimed.length >= 3,
-            'expected at least 3 claimed events,'
+        // Initial creation claim plus exactly ONE
+        // from the two explicit calls: the claim
+        // route reads and appends in one
+        // transaction, so the holder's repeat
+        // claim is a no-op.
+        assert.equal(
+            claimed.length, 2,
+            'expected exactly 2 claimed events,'
             + ' got ' + claimed.length,
         );
     },

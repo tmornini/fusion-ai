@@ -56,7 +56,12 @@ import {
     validateOrganizationEntity,
     validateRecordMultiPutBody,
     validateStateEntity,
+    validateWorkOrderFlowGraphJson,
 } from './validators.ts';
+import {
+    latestClaimEvent,
+    isClaimEventExpired,
+} from './work-order-claims.ts';
 import {
     verifyAccessToken,
     principalFromToken,
@@ -701,6 +706,72 @@ const routes: Route[] = [
         noun: 'work-orders',
         store: db => db.workOrders,
         verbs: ['get', 'put'],
+    }),
+    // Claim a work order. The read of the prior claim and
+    // the append of the new claim events ride ONE
+    // transaction, so two concurrent claims cannot both
+    // observe "no live claim" (the duplicate-claim TOCTOU).
+    // A live claim by another member is a 409; by the
+    // caller, an idempotent no-op. A claim aged past the
+    // flow's lockTimeout is superseded: 'claim_expired'
+    // (naming the prior claimant) and the new 'claimed'
+    // land atomically.
+    route('work-orders/:id/claim', {
+        post: (db, p) =>
+            db.transaction(
+                ['work_orders', 'states', 'members'],
+                async (view) => {
+                    const workOrderId = param(p, 0);
+                    const wo = await view.workOrders
+                        .getById(workOrderId);
+                    const graph =
+                        validateWorkOrderFlowGraphJson(
+                            wo.flow_graph,
+                            'work_orders.flow_graph',
+                        );
+                    const member = await view.members
+                        .getById('current');
+                    const events = await view.states
+                        .allFor(workOrderId);
+                    const prior = latestClaimEvent(
+                        events, workOrderId,
+                    );
+                    const priorLive = prior !== null
+                        && prior.state === 'claimed'
+                        && !isClaimEventExpired(
+                            prior, graph.lockTimeout,
+                        );
+                    if (priorLive) {
+                        if (
+                            prior.member_id === member.id
+                        ) {
+                            return;
+                        }
+                        throw new ApiError(
+                            'work order is already'
+                                + ' claimed',
+                            HTTP_CONFLICT,
+                        );
+                    }
+                    if (
+                        prior !== null
+                        && prior.state === 'claimed'
+                    ) {
+                        await view.states.record(
+                            generateCryptoSafeBase62(),
+                            workOrderId,
+                            'claim_expired',
+                            prior.member_id,
+                        );
+                    }
+                    await view.states.record(
+                        generateCryptoSafeBase62(),
+                        workOrderId,
+                        'claimed',
+                        member.id,
+                    );
+                },
+            ),
     }),
     route('flow-work-orders', {
         get: (db) =>
