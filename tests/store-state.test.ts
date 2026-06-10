@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { EntityNotFound } from '../api/db.ts';
+import {
+    EntityNotFound,
+    LedgerImmutabilityError,
+} from '../api/db.ts';
 
 test(
     'put round-trip writes and reads back the row',
@@ -20,6 +23,51 @@ test(
         assert.equal(written.member_id, 'w1');
         const read = await db.states.getById('s1');
         assert.deepEqual(read, written);
+    },
+);
+
+test(
+    'identical re-put is an idempotent ok',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        const fields = {
+            entity_id: 'e1',
+            state: 'active',
+            member_id: 'w1',
+            at: '2026-01-01T00:00:00.000000Z',
+        };
+        await db.states.put('s1', fields);
+        const again = await db.states.put('s1', fields);
+        assert.equal(again.id, 's1');
+        const all = await db.states.getAll();
+        assert.equal(all.length, 1);
+        assert.deepEqual(all[0], { ...fields, id: 's1' });
+    },
+);
+
+test(
+    'different re-put throws and leaves the event intact',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await db.createSchema();
+        const fields = {
+            entity_id: 'e1',
+            state: 'active',
+            member_id: 'w1',
+            at: '2026-01-01T00:00:00.000000Z',
+        };
+        await db.states.put('s1', fields);
+        await assert.rejects(
+            () => db.states.put('s1', {
+                ...fields,
+                state: 'deleted',
+            }),
+            (err: unknown) =>
+                err instanceof LedgerImmutabilityError,
+        );
+        const read = await db.states.getById('s1');
+        assert.deepEqual(read, { ...fields, id: 's1' });
     },
 );
 

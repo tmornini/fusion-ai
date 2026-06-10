@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
     GET, PUT, POST,
+    RequestError,
     handleRequest,
 } from '../api/api.ts';
 import {
@@ -65,6 +66,30 @@ test('PUT then GET round-trips an entity', async () => {
         );
     assert.equal(fetched.title, 'Test');
 });
+
+test(
+    'PUT states/:id rewrite of an event is 409',
+    async () => {
+        const db = await freshDb();
+        const event = {
+            entity_id: 'e1',
+            state: 'active',
+            member_id: 'w1',
+            at: '2026-01-01T00:00:00.000000Z',
+        };
+        await PUT(db, 'states/s1', event, DEV_TOKEN);
+        await assert.rejects(
+            () => PUT(db, 'states/s1', {
+                ...event,
+                state: 'deleted',
+            }, DEV_TOKEN),
+            (err: unknown) =>
+                err instanceof RequestError
+                && err.status === 409
+                && /append-only/.test(err.message),
+        );
+    },
+);
 
 test('GET ideas/ normalizes to collection', async () => {
     const db = await freshDb();

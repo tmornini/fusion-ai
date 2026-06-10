@@ -5,6 +5,7 @@ import type {
 } from './db.ts';
 import {
     EntityNotFound,
+    LedgerImmutabilityError,
     MissingTableError,
     TABLE_NAMES,
     keyed,
@@ -1963,6 +1964,14 @@ export async function handleRequest(
             return Response.json(
                 { error: error.message },
                 { status: HTTP_NOT_FOUND },
+            );
+        }
+        if (
+            error instanceof LedgerImmutabilityError
+        ) {
+            return Response.json(
+                { error: error.message },
+                { status: HTTP_CONFLICT },
             );
         }
         if (

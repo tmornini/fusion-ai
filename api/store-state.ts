@@ -1,5 +1,6 @@
 import {
     EntityNotFound,
+    LedgerImmutabilityError,
     type StateStore as StateStoreInterface,
     type EntityValidator,
     type Tx,
@@ -16,9 +17,12 @@ import { latestByKey } from './ledger-reduction.ts';
 // state change in the system. One row, one fact. `record`
 // writes a single row with caller-supplied id (Commandment
 // VII — idempotency: retries hit the same row). The table
-// never deletes. Entity-scoped reads narrow through the
-// `entity_id` index; deletedIdsIn alone still reduces the
-// whole log — no key answers "which ids are tombstoned".
+// never deletes, and `put` enforces it: an identical re-put
+// is the idempotent retry; a different payload on an
+// existing id throws LedgerImmutabilityError. Entity-scoped
+// reads narrow through the `entity_id` index; deletedIdsIn
+// alone still reduces the whole log — no key answers "which
+// ids are tombstoned".
 //
 // Every op crosses the runner: standalone, the runner opens
 // a fresh single-op transaction; joined to a view, it runs
@@ -81,9 +85,25 @@ export class StateStore
             ),
             id,
         };
+        // Check + write in ONE readwrite tx so a concurrent
+        // writer cannot slip between the read and the put.
         await this.#run(
             [this.#table], 'readwrite',
-            tx => tx.put(this.#table, written),
+            async (tx) => {
+                const existing =
+                    await tx.get<StateEntity>(
+                        this.#table, id,
+                    );
+                if (existing === null) {
+                    await tx.put(this.#table, written);
+                    return;
+                }
+                if (!sameEvent(existing, written)) {
+                    throw new LedgerImmutabilityError(
+                        this.#table, id,
+                    );
+                }
+            },
         );
         return written;
     }
@@ -197,4 +217,14 @@ export class StateStore
         return latest !== undefined
             && latest.state === 'deleted';
     }
+}
+
+function sameEvent(
+    a: StateEntity,
+    b: StateEntity,
+): boolean {
+    return a.entity_id === b.entity_id
+        && a.state === b.state
+        && a.member_id === b.member_id
+        && a.at === b.at;
 }
