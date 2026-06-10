@@ -342,6 +342,58 @@ test(
     );
 });
 
+test(
+    'validateFlowEntity rejects a shapeless graph',
+    () => {
+    assert.throws(
+        () => validateFlowEntity({
+            ...validFlow,
+            graph: '{}',
+        }),
+        /expected array for FlowEntity.graph.nodes/,
+    );
+});
+
+function graphNode(id: string): Record<string, unknown> {
+    return {
+        id, name: 'n', positionX: 0, positionY: 0,
+        isCreate: false, isArchive: false,
+        memberIds: [], attributes: [],
+        taskInstructions: '',
+    };
+}
+
+test(
+    'validateFlowEntity rejects a node id outside the'
+    + ' id alphabet',
+    () => {
+    // markup-significant characters in a node id are the
+    // stored-XSS vector — the gate kills them at entry
+    assert.throws(
+        () => validateFlowEntity({
+            ...validFlow,
+            graph: JSON.stringify({
+                nodes: [graphNode('"><img src=x>')],
+                edges: [],
+            }),
+        }),
+        /must contain only \[A-Za-z0-9_-\]/,
+    );
+});
+
+test(
+    'validateFlowEntity accepts base62 node ids',
+    () => {
+    const result = validateFlowEntity({
+        ...validFlow,
+        graph: JSON.stringify({
+            nodes: [graphNode('n1')],
+            edges: [],
+        }),
+    });
+    assert.ok(result.graph.includes('n1'));
+});
+
 // --- FlowVersionEntity ---
 
 const validFlowVersion = {
@@ -411,6 +463,22 @@ test(
             position: 'first',
         }),
         /expected finite number for position/,
+    );
+});
+
+test(
+    'validateWorkOrderEntity rejects a graph missing'
+    + ' flowId',
+    () => {
+    assert.throws(
+        () => validateWorkOrderEntity({
+            ...validWorkOrder,
+            flow_graph: JSON.stringify({
+                name: 'WO Flow', lockTimeout: 28800,
+                nodes: [], edges: [],
+            }),
+        }),
+        /WorkOrderEntity.flow_graph.flowId/,
     );
 });
 

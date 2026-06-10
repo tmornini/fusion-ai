@@ -326,6 +326,28 @@ export function asMemberIds(
     );
 }
 
+// Graph node/edge ids flow into DOM ids and SVG markup, so
+// the gate pins them to the id alphabet — markup-significant
+// characters can never enter storage, killing the stored-XSS
+// class here rather than relying on every render site to
+// escape. Every id producer (designer, importers, seeds)
+// mints base62; _ and - are admitted for legacy snapshots.
+const GRAPH_ID_ALPHABET = /^[A-Za-z0-9_-]+$/;
+
+function asGraphId(
+    value: unknown,
+    label: string,
+): string {
+    const id = asString(value, label);
+    if (!GRAPH_ID_ALPHABET.test(id)) {
+        throw new ValidationError(
+            label + ' must contain only'
+            + ' [A-Za-z0-9_-], got ' + id,
+        );
+    }
+    return id;
+}
+
 function asGraphNode(
     value: unknown,
     label: string,
@@ -340,7 +362,7 @@ function asGraphNode(
         label + '.memberIds',
     );
     return {
-        id: asString(
+        id: asGraphId(
             obj['id'], label + '.id',
         ),
         name: asString(
@@ -383,17 +405,17 @@ function asGraphEdge(
 ): GraphEdge {
     const obj = asObject(value, label);
     return {
-        id: asString(
+        id: asGraphId(
             obj['id'], label + '.id',
         ),
         name: asString(
             obj['name'], label + '.name',
         ),
-        fromNodeId: asString(
+        fromNodeId: asGraphId(
             obj['fromNodeId'],
             label + '.fromNodeId',
         ),
-        toNodeId: asString(
+        toNodeId: asGraphId(
             obj['toNodeId'],
             label + '.toNodeId',
         ),
@@ -1080,6 +1102,12 @@ export function validateFlowEntity(
     assertOnlyKeys(
         body, FLOW_BODY_KEYS, 'FlowEntity',
     );
+    // Structural gate: the column stores the raw JSON string,
+    // but its shape (and the node/edge id alphabet) is
+    // enforced at instantiation — read adapters re-parse as
+    // their transform, never as a guard.
+    const graph = pickJsonObjectField(body, 'graph');
+    validateStoredGraphJson(graph, 'FlowEntity.graph');
     return {
         organization_id: pickString(body, 'organization_id'),
         name: pickString(
@@ -1097,9 +1125,7 @@ export function validateFlowEntity(
         lock_timeout: pickNumber(
             body, 'lock_timeout',
         ),
-        graph: pickJsonObjectField(
-            body, 'graph',
-        ),
+        graph,
     };
 }
 
@@ -1118,6 +1144,10 @@ export function validateFlowVersionEntity(
         body,
         FLOW_VERSION_BODY_KEYS,
         'FlowVersionEntity',
+    );
+    const graph = pickJsonObjectField(body, 'graph');
+    validateStoredGraphJson(
+        graph, 'FlowVersionEntity.graph',
     );
     return {
         flow_id: pickString(
@@ -1138,9 +1168,7 @@ export function validateFlowVersionEntity(
         lock_timeout: pickNumber(
             body, 'lock_timeout',
         ),
-        graph: pickJsonObjectField(
-            body, 'graph',
-        ),
+        graph,
         at: validateTimestampField(
             body, 'at', 'FlowVersionEntity',
         ),
@@ -1161,14 +1189,17 @@ export function validateWorkOrderEntity(
         WORK_ORDER_BODY_KEYS,
         'WorkOrderEntity',
     );
+    const flowGraph =
+        pickJsonObjectField(body, 'flow_graph');
+    validateWorkOrderFlowGraphJson(
+        flowGraph, 'WorkOrderEntity.flow_graph',
+    );
     return {
         organization_id: pickString(body, 'organization_id'),
         display_id: pickString(
             body, 'display_id',
         ),
-        flow_graph: pickJsonObjectField(
-            body, 'flow_graph',
-        ),
+        flow_graph: flowGraph,
         position: pickNumber(
             body, 'position',
         ),

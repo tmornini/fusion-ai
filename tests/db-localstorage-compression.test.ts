@@ -43,6 +43,7 @@ const baseVersion = {
                 attributes: [],
                 positionX: 0,
                 positionY: 0,
+                taskInstructions: '',
             },
         ],
         edges: [],

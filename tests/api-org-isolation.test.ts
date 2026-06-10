@@ -163,14 +163,19 @@ function flowBody(org: string) {
     return {
         organization_id: org, name: 'f', is_locked: false,
         is_auto_layout: false, is_auto_fit: false,
-        lock_timeout: 0, graph: jsonObjectField({}),
+        lock_timeout: 0,
+        graph: jsonObjectField({ nodes: [], edges: [] }),
     };
 }
 
 function workOrderBody(org: string) {
     return {
         organization_id: org, display_id: 'WO',
-        flow_graph: jsonObjectField({}), position: 0,
+        flow_graph: jsonObjectField({
+            flowId: 'f', name: 'f', lockTimeout: 0,
+            nodes: [], edges: [],
+        }),
+        position: 0,
     };
 }
 
@@ -191,7 +196,8 @@ async function seedChain(
     await db.flowVersions.put('fv' + s, {
         flow_id: 'f' + s, name: 'v', is_locked: false,
         is_auto_layout: false, is_auto_fit: false,
-        lock_timeout: 0, graph: jsonObjectField({}),
+        lock_timeout: 0,
+        graph: jsonObjectField({ nodes: [], edges: [] }),
         at: T8_AT,
     });
     await db.projectFlows.put('pf' + s, {
