@@ -1,5 +1,5 @@
 import {
-    $, $input, $textarea,
+    $, $input, $required, $textarea,
     bindEnterToClick,
 } from '../app/dom.ts';
 import {
@@ -111,23 +111,23 @@ export async function init():
             navigateTo('ideas');
         };
 
-        $(
+        $required(
             '#idea-create-back-btn',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click', goBack,
         );
-        $(
+        $required(
             '#idea-create-step-back',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click', goBack,
         );
 
-        $(
+        $required(
             '#idea-create-step-next',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click',
             async () => {
                 formState = readFormFromDom();

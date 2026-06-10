@@ -1,5 +1,6 @@
 import {
-    $, $input, $select, $textarea,
+    $, $input, $inputRequired, $required,
+    $select, $textarea,
     populateIcons,
 } from '../app/dom.ts';
 import {
@@ -138,8 +139,8 @@ function rerenderMembers(): void {
 }
 
 function initMemberListFilters(): void {
-    $input('#member-search', document)
-        ?.addEventListener(
+    $inputRequired('#member-search', document)
+        .addEventListener(
             'input', onSearchInput,
             { signal },
         );
@@ -221,8 +222,8 @@ function bindAddMemberDialog(): void {
             { signal },
         );
     });
-    $('#add-member-dialog', document)
-        ?.addEventListener(
+    $required('#add-member-dialog', document)
+        .addEventListener(
             'keydown', onDialogKeydown,
             { signal },
         );
@@ -236,7 +237,8 @@ function bindInviteMemberDialog(): void {
     );
     // Clear a stale field error when the dialog reopens, so a
     // prior rejection does not greet the next invite.
-    $('#invite-member-btn', document)?.addEventListener(
+    $required('#invite-member-btn', document)
+        .addEventListener(
         'click',
         () => {
             const input = $input('#invite-email', document);

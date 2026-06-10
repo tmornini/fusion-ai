@@ -2,7 +2,7 @@ import {
     html, setHtml, trusted,
 } from '../safe-html.ts';
 import type { SafeHtml } from '../safe-html.ts';
-import { $, $required } from '../dom.ts';
+import { $required } from '../dom.ts';
 import { showToast } from '../toast.ts';
 import {
     sessionContext,
@@ -632,13 +632,11 @@ Auto Fit</label>
         const set = (
             id: string, value: boolean,
         ): void => {
-            const el = $(id, container);
-            if (el) {
-                el.setAttribute(
+            $required(id, container)
+                .setAttribute(
                     'aria-checked',
                     String(value),
                 );
-            }
         };
         set(
             '#flow-lock-switch',

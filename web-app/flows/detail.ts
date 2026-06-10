@@ -1,5 +1,6 @@
 import {
-    $, $input, $inputRequired, $select,
+    $, $input, $inputRequired, $required,
+    $select,
 } from '../app/dom.ts';
 import { log } from '../app/logger.ts';
 import { setHtml, html } from '../app/safe-html.ts';
@@ -689,9 +690,9 @@ function bindSwitches(
     container: HTMLElement,
     signal: AbortSignal,
 ): void {
-    $(
+    $required(
         '#flow-lock-switch', container,
-    )?.addEventListener(
+    ).addEventListener(
         'click',
         () => {
             commit(
@@ -701,10 +702,10 @@ function bindSwitches(
         },
         { signal },
     );
-    $(
+    $required(
         '#flow-auto-layout-switch',
         container,
-    )?.addEventListener(
+    ).addEventListener(
         'click',
         () => {
             commit(
@@ -714,10 +715,10 @@ function bindSwitches(
         },
         { signal },
     );
-    $(
+    $required(
         '#flow-auto-fit-switch',
         container,
-    )?.addEventListener(
+    ).addEventListener(
         'click',
         () => {
             commitAndFit(
@@ -733,8 +734,8 @@ function bindBackButton(
     container: HTMLElement,
     signal: AbortSignal,
 ): void {
-    $('#flow-back-btn', container)
-        ?.addEventListener(
+    $required('#flow-back-btn', container)
+        .addEventListener(
             'click',
             () => {
                 const pid =
@@ -760,8 +761,8 @@ function bindStatsButton(
     signal: AbortSignal,
 ): void {
     const pid = pageState.projectId();
-    $('#flow-stats-btn', container)
-        ?.addEventListener(
+    $required('#flow-stats-btn', container)
+        .addEventListener(
             'click',
             () => {
                 navigateTo(

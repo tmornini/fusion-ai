@@ -1,5 +1,6 @@
 import {
-    $, bindEnterToClick, isFormField,
+    $, $required, bindEnterToClick,
+    isFormField,
 } from '../app/dom.ts';
 import {
     html, setHtml,
@@ -87,9 +88,9 @@ export async function init(
                 'Try Again',
             ),
         );
-        root.querySelector(
-            '[data-retry-btn]',
-        )?.addEventListener(
+        $required(
+            '[data-retry-btn]', root,
+        ).addEventListener(
             'click',
             () => init(),
         );
@@ -126,9 +127,9 @@ export async function init(
                 'Try Again',
             ),
         );
-        root.querySelector(
-            '[data-retry-btn]',
-        )?.addEventListener(
+        $required(
+            '[data-retry-btn]', root,
+        ).addEventListener(
             'click',
             () => init(),
         );
@@ -430,10 +431,10 @@ export async function init(
             () => navigateTo('organization'),
         );
 
-        $(
+        $required(
             '#convert-submit-btn',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click',
             async () => {
                 const submitted =
@@ -525,16 +526,16 @@ export async function init(
                 : () => navigateTo(
                     'ideas',
                 );
-        $(
+        $required(
             '#convert-back-to-ideas',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click', goBack,
         );
-        $(
+        $required(
             '#convert-back-to-ideas-2',
             document,
-        )?.addEventListener(
+        ).addEventListener(
             'click', goBack,
         );
     }
