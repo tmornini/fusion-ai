@@ -526,6 +526,33 @@ async function dispatchOpInTx(
     }
 }
 
+// Each batch op stands for the HTTP request it would have
+// been — so it faces the same role policy at the same gate.
+// One denied op fails the whole batch before any dispatch.
+// A malformed ops payload is NOT judged here: the dispatch
+// path's own validation raises the precise 400.
+export function commitOpsAuthzFailure(
+    payload: Record<string, unknown>,
+    roles: readonly string[],
+): string | null {
+    let ops: CommitOp[];
+    try {
+        ops = validateCommitBody(payload);
+    } catch {
+        return null;
+    }
+    for (const op of ops) {
+        const verb =
+            op.method === 'put' ? 'PUT' : 'DELETE';
+        if (!isPermitted(verb, '/' + op.resource, roles)) {
+            return 'forbidden: commit op ' + verb + ' /'
+                + op.resource
+                + ' requires a role this principal lacks';
+        }
+    }
+    return null;
+}
+
 // The batch route's body handler. One authenticated request;
 // `effective` is already org-scoped, and its transaction
 // re-scopes the view — so each op dispatches without re-auth
@@ -1150,22 +1177,26 @@ async function authenticateRequest(
     return principalFromToken(token);
 }
 
-async function authorizeRequest(
+// Roles are per-org, but a grant is keyed by identity: read
+// this principal's grants through the identity_id index, then
+// currentRolesForInOrg filters to the org — identity is
+// global, roles are per-org. Derived ONCE per request at the
+// gate; every authorizer consumes the same derivation.
+async function callerRolesInOrg(
     adapter: DbAdapter,
     principal: Principal,
     org: Id,
-    method: string,
-    pathname: string,
-): Promise<string | null> {
-    // Roles are per-org, but a grant is keyed by identity:
-    // read this principal's grants through the identity_id
-    // index, then currentRolesForInOrg filters to the org —
-    // identity is global, roles are per-org.
+): Promise<string[]> {
     const rows = await keyed(adapter.roleGrants)
         .getAllWhere('identity_id', principal.id);
-    const roles = currentRolesForInOrg(
-        rows, principal.id, org,
-    );
+    return currentRolesForInOrg(rows, principal.id, org);
+}
+
+function authorizeRequest(
+    roles: readonly string[],
+    method: string,
+    pathname: string,
+): string | null {
     if (isPermitted(method, pathname, roles)) {
         return null;
     }
@@ -1177,13 +1208,12 @@ async function authorizeRequest(
 // its own (GET self); writes are its own OR an admin's (member
 // management). Mirrors the tree-ownership check of
 // /identities/:id/default-org, widened to admin for writes.
-async function authorizeIdentityPii(
-    adapter: DbAdapter,
+function authorizeIdentityPii(
     principal: Principal,
-    org: Id,
+    roles: readonly string[],
     method: string,
     targetId: string,
-): Promise<string | null> {
+): string | null {
     if (principal.id === targetId) {
         return null;
     }
@@ -1191,7 +1221,7 @@ async function authorizeIdentityPii(
         return 'forbidden: an identity may read only its'
             + ' own pii';
     }
-    if (await callerIsOrgAdmin(adapter, principal.id, org)) {
+    if (roles.includes('admin')) {
         return null;
     }
     return "forbidden: writing another identity's pii"
@@ -1905,6 +1935,10 @@ export async function handleRequest(
     // stores fence to the org; the global identity/auth spine
     // passes through.
     let effective: DbAdapter = adapter;
+    // The roles of an unauthenticated caller on a bearer-
+    // exempt route are honestly none; every fenced route
+    // overwrites this with the per-org derivation below.
+    let roles: readonly string[] = [];
     if (!BEARER_EXEMPT_ROUTES.has(routePattern)) {
         const authResult =
             await authenticateRequest(adapter, request);
@@ -1943,14 +1977,16 @@ export async function handleRequest(
                 { status: HTTP_FORBIDDEN },
             );
         }
+        roles = await callerRolesInOrg(
+            adapter, authResult, org,
+        );
         const authzFailure =
             routePattern === 'identities/:id/pii'
-                ? await authorizeIdentityPii(
-                    adapter, authResult, org,
+                ? authorizeIdentityPii(
+                    authResult, roles,
                     method, param(params, 0))
-                : await authorizeRequest(
-                    adapter, authResult, org,
-                    method, pathname);
+                : authorizeRequest(
+                    roles, method, pathname);
         if (authzFailure !== null) {
             return Response.json(
                 { error: authzFailure },
@@ -2021,6 +2057,19 @@ export async function handleRequest(
             );
         }
         body = parse.body;
+    }
+
+    // The commit batch dispatches to the same route table —
+    // authorize each op as the request it stands for, with
+    // the roles already derived at the gate above.
+    if (routePattern === 'commit' && body !== undefined) {
+        const denied = commitOpsAuthzFailure(body, roles);
+        if (denied !== null) {
+            return Response.json(
+                { error: denied },
+                { status: HTTP_FORBIDDEN },
+            );
+        }
     }
 
     try {
