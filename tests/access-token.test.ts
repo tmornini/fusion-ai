@@ -195,6 +195,19 @@ test('decodeAccessToken rejects non-string orgs elements',
     );
 });
 
+test('decodeAccessToken rejects non-string roles elements',
+() => {
+    const body = base64UrlEncode(JSON.stringify({
+        sub: 'current', roles: ['admin', 7], name: 'Demo',
+        aud: 'fusion-ai-web', iat: 1_700_000_000,
+        nbf: 1_700_000_000, exp: 9_999_999_999, jti: 'x',
+    }));
+    assert.throws(
+        () => decodeAccessToken('h.' + body + '.s'),
+        /bad claim shape/,
+    );
+});
+
 test('exposes a named anonymous principal', () => {
     assert.equal(ANONYMOUS_PRINCIPAL.id, 'anonymous');
 });

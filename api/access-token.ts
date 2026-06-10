@@ -216,8 +216,11 @@ function hasClaimShape(
             return false;
         }
     }
+    if (!Array.isArray(c.roles)
+        || c.roles.some(r => typeof r !== 'string')) {
+        return false;
+    }
     return typeof c.sub === 'string'
-        && Array.isArray(c.roles)
         && typeof c.name === 'string'
         && typeof c.aud === 'string'
         && typeof c.iat === 'number'
