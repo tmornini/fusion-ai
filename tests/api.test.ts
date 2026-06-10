@@ -220,3 +220,42 @@ test(
         assert.match(error, /POST/);
     },
 );
+
+test(
+    'PUT with valid-JSON non-object bodies is 400'
+    + ' Bad Request, not 500',
+    async () => {
+        const db = await freshDb();
+        for (const raw of [
+            'null', '42', '"text"', '[1,2,3]',
+        ]) {
+            const response = await handleRequest(
+                db,
+                new Request(
+                    'http://localhost/ideas/i1',
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+                            'Authorization':
+                                'Bearer ' + DEV_TOKEN,
+                        },
+                        body: raw,
+                    },
+                ),
+            );
+            assert.equal(
+                response.status, 400,
+                'body ' + raw,
+            );
+            const { error } =
+                (await response.json()) as {
+                    error: string;
+                };
+            assert.match(
+                error, /Invalid JSON body/,
+            );
+        }
+    },
+);

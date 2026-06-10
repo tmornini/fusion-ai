@@ -1106,6 +1106,36 @@ async function callerOrgIds(
     );
 }
 
+// Parse a request body that must be a JSON OBJECT. Valid JSON
+// that is not an object (null, number, string, array) is the
+// same client fault as malformed JSON — both stop at the 400
+// gate, neither reaches the domain boundary.
+type ParsedBody =
+    | { ok: true; body: Record<string, unknown> }
+    | { ok: false };
+
+async function parseObjectBody(
+    request: Request,
+): Promise<ParsedBody> {
+    let parsed: unknown;
+    try {
+        parsed = await request.json();
+    } catch {
+        return { ok: false };
+    }
+    if (
+        typeof parsed !== 'object'
+        || parsed === null
+        || Array.isArray(parsed)
+    ) {
+        return { ok: false };
+    }
+    return {
+        ok: true,
+        body: parsed as Record<string, unknown>,
+    };
+}
+
 // PUT/GET /identities/:id/default-org — the read/write face of
 // the identity_default_orgs ledger. Authorized by tree ownership
 // (caller === :id), not the admin role policy: an identity owns
@@ -1142,17 +1172,14 @@ async function identityDefaultOrgRequest(
         });
     }
     if (request.method === 'PUT') {
-        let body: Record<string, unknown>;
-        try {
-            body = (await request.json()) as Record<
-                string, unknown
-            >;
-        } catch {
+        const parse = await parseObjectBody(request);
+        if (!parse.ok) {
             return Response.json(
                 { error: 'Invalid JSON body' },
                 { status: HTTP_BAD_REQUEST },
             );
         }
+        const body = parse.body;
         const org = typeof body.organization_id === 'string'
             ? body.organization_id
             : '';
@@ -1414,14 +1441,11 @@ async function grantInvitation(
             'forbidden: granting an invitation requires an'
             + ' admin role', HTTP_FORBIDDEN);
     }
-    let body: Record<string, unknown>;
-    try {
-        body = (await request.json()) as Record<
-            string, unknown
-        >;
-    } catch {
+    const parse = await parseObjectBody(request);
+    if (!parse.ok) {
         return errorJson('Invalid JSON body', HTTP_BAD_REQUEST);
     }
+    const body = parse.body;
     const email = typeof body.email === 'string'
         ? body.email : '';
     if (email === '') {
@@ -1804,18 +1828,14 @@ export async function handleRequest(
     }
 
     // Parse the request body when the method
-    // has one. Malformed JSON is a client
-    // error (400), not a server fault — it
-    // must not flow into the domain-boundary
-    // try below.
+    // has one. A malformed or non-object JSON
+    // body is a client error (400), not a
+    // server fault — it must not flow into the
+    // domain-boundary try below.
     let body: Record<string, unknown> | undefined;
     if (method === 'PUT' || method === 'POST') {
-        try {
-            body = (await request.json()) as Record<
-                string,
-                unknown
-            >;
-        } catch {
+        const parse = await parseObjectBody(request);
+        if (!parse.ok) {
             return Response.json(
                 {
                     error:
@@ -1826,6 +1846,7 @@ export async function handleRequest(
                 { status: HTTP_BAD_REQUEST },
             );
         }
+        body = parse.body;
     }
 
     try {
