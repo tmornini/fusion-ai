@@ -4,11 +4,10 @@ import {
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
-import { extractErrorMessage } from '../app/error-helpers.ts';
+import { reportFault } from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states.ts';
-import { log } from '../app/logger.ts';
 import {
     iconPersonPlus, iconSend,
 } from '../app/icons.ts';
@@ -170,9 +169,10 @@ async function submitPersonForm(): Promise<void> {
     const phone = $input('#id-phone', document)!.value;
     const bio = $textarea('#id-bio', document)!.value;
     const id = generateCryptoSafeBase62();
+    const ctx = sessionContext();
     try {
         await postIdentityCreation(
-            sessionContext(),
+            ctx,
             id,
             {
                 kind: 'person',
@@ -182,14 +182,8 @@ async function submitPersonForm(): Promise<void> {
             },
         );
     } catch (err) {
-        const detail = extractErrorMessage(err);
-        log.error(
-            'postIdentityCreation person failed',
-            'identities', err,
-        );
-        showToast(
-            `Failed to add identity: ${detail}`,
-            'error',
+        reportFault(
+            ctx, 'Failed to add identity', err,
         );
         return;
     }
@@ -209,21 +203,16 @@ async function submitServiceForm(): Promise<void> {
         return;
     }
     const id = generateCryptoSafeBase62();
+    const ctx = sessionContext();
     try {
         await postIdentityCreation(
-            sessionContext(),
+            ctx,
             id,
             { kind: 'service', secret },
         );
     } catch (err) {
-        const detail = extractErrorMessage(err);
-        log.error(
-            'postIdentityCreation service failed',
-            'identities', err,
-        );
-        showToast(
-            `Failed to add identity: ${detail}`,
-            'error',
+        reportFault(
+            ctx, 'Failed to add identity', err,
         );
         return;
     }

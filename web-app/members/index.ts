@@ -7,7 +7,10 @@ import {
 } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
-import { extractErrorMessage } from '../app/error-helpers.ts';
+import {
+    extractErrorMessage,
+    reportFault,
+} from '../app/error-helpers.ts';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states.ts';
@@ -386,9 +389,10 @@ async function submitHumanForm(): Promise<void> {
         '#hw-bio', document,
     )!.value;
     const id = generateCryptoSafeBase62();
+    const ctx = sessionContext();
     try {
         await postHumanMemberCreation(
-            sessionContext(),
+            ctx,
             id,
             trimStrings({
                 name,
@@ -412,14 +416,8 @@ async function submitHumanForm(): Promise<void> {
             'active',
         );
     } catch (err) {
-        const detail = extractErrorMessage(err);
-        log.error(
-            'postHumanMemberCreation failed',
-            'members', err,
-        );
-        showToast(
-            `Failed to add member: ${detail}`,
-            'error',
+        reportFault(
+            ctx, 'Failed to add member', err,
         );
         return;
     }
@@ -456,9 +454,10 @@ async function submitAIForm(): Promise<void> {
         return;
     }
     const id = generateCryptoSafeBase62();
+    const ctx = sessionContext();
     try {
         await postAIMemberCreation(
-            sessionContext(),
+            ctx,
             id,
             trimStrings({
                 name,
@@ -468,13 +467,8 @@ async function submitAIForm(): Promise<void> {
             }),
         );
     } catch (err) {
-        log.error(
-            'postAIMemberCreation failed',
-            'members', err,
-        );
-        showToast(
-            'Failed to add AI member',
-            'error',
+        reportFault(
+            ctx, 'Failed to add AI member', err,
         );
         return;
     }

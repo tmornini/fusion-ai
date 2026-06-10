@@ -6,7 +6,10 @@ import {
     createPageAbort,
     bindPageListeners,
 } from '../app/page-lifecycle.ts';
-import { extractErrorMessage } from '../app/error-helpers.ts';
+import {
+    extractErrorMessage,
+    reportFault,
+} from '../app/error-helpers.ts';
 import {
     makeFieldKeyValidator,
 } from '../app/field-key-validator.ts';
@@ -663,14 +666,8 @@ async function handleSave(): Promise<void> {
             );
         }
     } catch (err) {
-        const detail = extractErrorMessage(err);
-        log.error(
-            'project save failed',
-            'projects', err,
-        );
-        showToast(
-            `Failed to save project: ${detail}`,
-            'error',
+        reportFault(
+            ctx, 'Failed to save project', err,
         );
         return;
     }
