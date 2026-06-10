@@ -11,6 +11,7 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { seedOrgMember } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 
@@ -142,4 +143,31 @@ async () => {
     await assert.rejects(
         async () => GET(db, 'members', await devToken()),
         /chain revoked/);
+});
+
+test('the snapshot plane closes once a schema exists',
+async () => {
+    const db = await freshDb();   // schema + root admin
+    // No bearer at all → 401 from the gate.
+    const bare = await handleRequest(db, new Request(
+        `${BASE}/snapshots/schema`));
+    assert.equal(bare.status, 401);
+    // An admin still reaches the plane through the gate.
+    const snap = await GET(
+        db, 'snapshots/schema', await devToken());
+    assert.ok(typeof snap === 'string');
+});
+
+test('a member is denied the closed snapshot plane',
+async () => {
+    const db = await freshDb();
+    await seedOrgMember(db, 'walt');
+    const res = await handleRequest(db, new Request(
+        `${BASE}/snapshots/schema`, {
+            headers: {
+                'Authorization':
+                    'Bearer ' + await devToken('walt'),
+            },
+        }));
+    assert.equal(res.status, 403);
 });

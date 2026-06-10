@@ -152,20 +152,28 @@ const HTTP_CONFLICT = 409;
 // unauthenticated caller never reaches an instance lookup,
 // and resource-instance existence is never disclosed to it.
 // A 401 states only "no valid credentials," never that a
-// resource exists. The snapshot/bootstrap plane is EXEMPT
-// from the Bearer gate because it is infrastructure BELOW
-// the auth tier (it installs the datastore before any
-// identity can exist). Exempt-from-the-gate is NOT the same
-// as unauthenticated — it is a single audited surface; any
+// resource exists. The authentication grant surface is
+// permanently exempt — a caller cannot hold a token before
+// minting one. Exempt-from-the-gate is NOT the same as
+// unauthenticated — it is a single audited surface; any
 // addition here is security-sensitive.
-const BEARER_EXEMPT_ROUTES: ReadonlySet<string> =
+const AUTHENTICATION_ROUTES: ReadonlySet<string> =
+    new Set([
+        'authentication/token',
+        'authentication/authorize',
+    ]);
+
+// The snapshot/bootstrap plane is exempt ONLY while no schema
+// exists — infrastructure BELOW the auth tier (it installs
+// the datastore before any identity can exist). The moment a
+// schema exists, identities can exist, and the plane closes:
+// bearer plus the admin route policy, like any other route.
+const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     new Set([
         'snapshots/schema',
         'snapshots/mock-data',
         'snapshots/bootstrap',
         'snapshots/import',
-        'authentication/token',
-        'authentication/authorize',
     ]);
 
 type GetHandler = (
@@ -1939,7 +1947,11 @@ export async function handleRequest(
     // exempt route are honestly none; every fenced route
     // overwrites this with the per-org derivation below.
     let roles: readonly string[] = [];
-    if (!BEARER_EXEMPT_ROUTES.has(routePattern)) {
+    const bearerExempt =
+        AUTHENTICATION_ROUTES.has(routePattern)
+        || (BOOTSTRAP_ROUTES.has(routePattern)
+            && !(await adapter.hasSchema()));
+    if (!bearerExempt) {
         const authResult =
             await authenticateRequest(adapter, request);
         if (typeof authResult === 'string') {
