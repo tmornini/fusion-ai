@@ -1266,11 +1266,10 @@ async function callerOrgIds(
     adapter: DbAdapter,
     principal: Principal,
 ): Promise<Set<Id>> {
-    const memberships = await adapter.memberships.getAll();
+    const memberships = await keyed(adapter.memberships)
+        .getAllWhere('identity_id', principal.id);
     return new Set(
-        memberships
-            .filter(m => m.identity_id === principal.id)
-            .map(m => m.organization_id),
+        memberships.map(m => m.organization_id),
     );
 }
 
@@ -1928,6 +1927,22 @@ export async function handleRequest(
                 { status: HTTP_FORBIDDEN },
             );
         }
+        // The membership ledger is the live truth; the
+        // token's org claim is a mint-time snapshot of it.
+        // Re-derive membership on EVERY fenced request so a
+        // revoked membership stops access now — not when the
+        // token expires (the 15-minute de-membership window).
+        const memberOrgs =
+            await callerOrgIds(adapter, authResult);
+        if (!memberOrgs.has(org)) {
+            return Response.json(
+                {
+                    error: 'forbidden: no longer a member'
+                        + ' of this organization',
+                },
+                { status: HTTP_FORBIDDEN },
+            );
+        }
         const authzFailure =
             routePattern === 'identities/:id/pii'
                 ? await authorizeIdentityPii(
@@ -1948,8 +1963,7 @@ export async function handleRequest(
         // org is created before its first membership exists.
         if (method === 'GET'
             && routePattern === 'organizations/:id'
-            && !(await callerOrgIds(adapter, authResult))
-                .has(param(params, 0))) {
+            && !memberOrgs.has(param(params, 0))) {
             return Response.json(
                 { error: 'Not found: ' + pathname },
                 { status: HTTP_NOT_FOUND },
