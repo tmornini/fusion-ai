@@ -418,11 +418,38 @@ export function formatCompactCurrency(
     return `$${value}`;
 }
 
+// The mint's monotonicity state: the last millisecond stamped
+// and the same-ms sequence counter that fills the final three
+// fraction digits. Owned by nowUtc alone.
+let lastMintMs = 0;
+let sameMsSequence = 0;
+
 export function nowUtc(): string {
-    // JS Date resolves only to milliseconds; SCHEMA.md documents
-    // the 6-digit microsecond zulu width. Pad the 3-digit
-    // fraction so every mint is one width with the seed helpers.
-    return new Date().toISOString().replace('Z', '000Z');
+    // JS Date resolves only to milliseconds; SCHEMA.md
+    // documents the 6-digit microsecond zulu width. The final
+    // three fraction digits are a same-ms sequence counter, so
+    // within a realm every mint is STRICTLY later than the one
+    // before — the ledger reductions' latest-wins total order
+    // starts at the mint. A clock that stalls or steps back
+    // rides the counter; on counter overflow the mint
+    // busy-advances to the next millisecond.
+    const ms = Date.now();
+    if (ms > lastMintMs) {
+        lastMintMs = ms;
+        sameMsSequence = 0;
+    } else {
+        sameMsSequence += 1;
+        if (sameMsSequence > 999) {
+            let next = Date.now();
+            while (next <= lastMintMs) next = Date.now();
+            lastMintMs = next;
+            sameMsSequence = 0;
+        }
+    }
+    return new Date(lastMintMs).toISOString().replace(
+        'Z',
+        String(sameMsSequence).padStart(3, '0') + 'Z',
+    );
 }
 
 export function msSinceUtc(
