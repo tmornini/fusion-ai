@@ -24,6 +24,16 @@ org-switcher for the multi-org user, and surfaces one-time
 demo sign-in credentials on the Snapshots page after a
 wipe-and-load.
 
+**Demo-grade security.** The whole stack — OAuth spine
+included — runs in the browser, and the JWT HMAC signing key
+ships inside the bundle (`api/access-token.ts`), so any party
+holding the bundle can mint a valid token. No client-side
+mitigation exists or is possible; the auth tier demonstrates
+the real wire format and gate logic without providing real
+isolation until a server tier holds the key. The full seam
+checklist is in [ARCHITECTURE.md](ARCHITECTURE.md)
+§ Server-tier deploy blockers.
+
 ## Getting Started
 
 ```sh
