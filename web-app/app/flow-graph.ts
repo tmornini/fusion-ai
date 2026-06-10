@@ -572,12 +572,13 @@ function buildNode(
             + '</g>';
     }
 
+    const idEsc = escapeForHtml(node.id);
     const labelEsc = escapeForHtml(displayName);
     const ariaCurrent = isSelected
         ? ' aria-current="true"' : '';
     return trusted(
         '<g'
-        + ` data-node-id="${node.id}"`
+        + ` data-node-id="${idEsc}"`
         + ' class="flow-node"'
         + ` role="${NODE_ROLE}"`
         + ` tabindex="${FOCUSABLE_TABINDEX}"`
@@ -848,6 +849,7 @@ function buildEdge(
         : '';
     const ariaCurrent = isSelected
         ? ' aria-current="true"' : '';
+    const idEsc = escapeForHtml(edge.id);
     const ariaLabel =
         escapeForHtml(fromNode.name)
         + ' to '
@@ -856,7 +858,7 @@ function buildEdge(
         + escapeForHtml(edge.name);
     return trusted(
         '<g'
-        + ` data-edge-id="${edge.id}"`
+        + ` data-edge-id="${idEsc}"`
         + ' class="flow-edge"'
         + ` role="${EDGE_ROLE}"`
         + ` tabindex="${FOCUSABLE_TABINDEX}"`
