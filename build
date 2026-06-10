@@ -54,7 +54,7 @@ else
   trap 'rm -rf "$BUILD_DIR"' EXIT
 fi
 
-npx tsx web-app/app/compose.ts "$BUILD_DIR"
+node --strip-types web-app/app/compose.ts "$BUILD_DIR"
 
 
 mkdir -p "$BUILD_DIR/assets"
