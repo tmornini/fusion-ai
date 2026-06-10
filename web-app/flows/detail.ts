@@ -1408,6 +1408,7 @@ export async function init(
     bindKeyboardShortcuts(
         container, panelStateRef, signal,
     );
+    bindFlushOnLeave(signal);
     const initialWrap = container.querySelector(
         '.flow-canvas-wrap',
     );
@@ -1446,6 +1447,32 @@ export async function init(
             reconcileFitFromDom();
         }
     });
+}
+
+// Every page leave is a full <a href> navigation, so a
+// debounced property edit still inside its SAVE_DELAY_MS
+// window would silently die with the document. Flush the
+// pending save the moment the page hides.
+function bindFlushOnLeave(
+    signal: AbortSignal,
+): void {
+    window.addEventListener(
+        'pagehide',
+        () => pageState.saveDebouncer().flush(),
+        { signal },
+    );
+    document.addEventListener(
+        'visibilitychange',
+        () => {
+            if (
+                document.visibilityState
+                    === 'hidden'
+            ) {
+                pageState.saveDebouncer().flush();
+            }
+        },
+        { signal },
+    );
 }
 
 function bindKeyboardShortcuts(
