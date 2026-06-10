@@ -340,25 +340,18 @@ export async function init(): Promise<void> {
 }
 
 // The org's outstanding (pending) invitations, with a Revoke
-// per row. Admin-only — the org page already requires admin, so
-// a denial here is unexpected; we hide the section and log it
-// rather than surface a raw error on the page.
+// per row. Admin-only — the org page already requires admin,
+// so a failure here is unexpected and surfaces loudly: the
+// boot path renders the page error state, refresh paths toast
+// through the global spine.
 async function renderSentInvitations(): Promise<void> {
     const box = $('#sent-invitations-box', document);
     const list = $('#sent-invitations-list', document);
     if (!box || !list) return;
-    try {
-        const sent = await getSentInvitations(
-            sessionContext());
-        new SentInvitationsPresenter(sent).render(list);
-        box.classList.remove('hidden');
-    } catch (err) {
-        log.warn(
-            'getSentInvitations failed',
-            'organization', err,
-        );
-        box.classList.add('hidden');
-    }
+    const sent = await getSentInvitations(
+        sessionContext());
+    new SentInvitationsPresenter(sent).render(list);
+    box.classList.remove('hidden');
 }
 
 async function onSentInvitationClick(
