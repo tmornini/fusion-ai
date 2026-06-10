@@ -2,6 +2,7 @@ import { $ } from '../app/dom.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
 import { setHtml } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
+import { reportFault } from '../app/error-helpers.ts';
 import {
     buildSkeleton,
     withLoadingState,
@@ -625,9 +626,8 @@ async function handleSave(
             );
         }
     } catch (err) {
-        showToast(
-            'Failed to save Record',
-            'error',
+        reportFault(
+            ctx, 'Failed to save Record', err,
         );
         return;
     } finally {
