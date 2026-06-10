@@ -3,7 +3,6 @@ import type {
     EntityStore,
     EntityValidator,
 } from './db.ts';
-import { extractErrorMessage } from './error-helpers.ts';
 import {
     EntityNotFound,
     MissingTableError,
@@ -45,6 +44,7 @@ import type {
 import {
     nowUtc,
     assertInvitationState,
+    ValidationError,
     type Id,
     type InvitationState,
 } from './types.ts';
@@ -1973,8 +1973,19 @@ export async function handleRequest(
                 { status: HTTP_NOT_FOUND },
             );
         }
+        if (
+            error instanceof ValidationError
+        ) {
+            return Response.json(
+                { error: error.message },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
+        // The fault is server-side detail; the wire gets a
+        // fixed body, the console gets the evidence.
+        console.error(error);
         return Response.json(
-            { error: extractErrorMessage(error) },
+            { error: 'internal error' },
             { status: HTTP_INTERNAL_ERROR },
         );
     }

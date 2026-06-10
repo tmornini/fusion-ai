@@ -222,6 +222,33 @@ test(
 );
 
 test(
+    'the 500 fallback body never carries fault detail',
+    async () => {
+        const db = await freshDb();
+        (db.ideas as unknown as {
+            getAllWhere: () => Promise<never>;
+        }).getAllWhere = async () => {
+            throw new Error('secret fault detail');
+        };
+        const response = await handleRequest(
+            db,
+            new Request('http://localhost/ideas', {
+                headers: {
+                    'Authorization':
+                        'Bearer ' + DEV_TOKEN,
+                },
+            }),
+        );
+        assert.equal(response.status, 500);
+        const { error } =
+            (await response.json()) as {
+                error: string;
+            };
+        assert.equal(error, 'internal error');
+    },
+);
+
+test(
     'PUT with valid-JSON non-object bodies is 400'
     + ' Bad Request, not 500',
     async () => {

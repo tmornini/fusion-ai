@@ -54,6 +54,7 @@ import {
     isProviderModelId,
 } from './provider-models.ts';
 import { extractErrorMessage } from './error-helpers.ts';
+import { ValidationError } from './types.ts';
 
 export function parseOrThrow(
     raw: string,
@@ -63,7 +64,7 @@ export function parseOrThrow(
         return JSON.parse(raw);
     } catch (e) {
         const msg = extractErrorMessage(e);
-        throw new Error(
+        throw new ValidationError(
             'invalid JSON for '
                 + label + ': ' + msg,
         );
@@ -75,7 +76,7 @@ export function asArray(
     label: string,
 ): unknown[] {
     if (!Array.isArray(value)) {
-        throw new Error(
+        throw new ValidationError(
             'expected array for '
                 + label
                 + ', got '
@@ -94,7 +95,7 @@ export function asObject(
         || value === null
         || Array.isArray(value)
     ) {
-        throw new Error(
+        throw new ValidationError(
             'expected object for '
                 + label
                 + ', got '
@@ -109,7 +110,7 @@ export function asString(
     label: string,
 ): string {
     if (typeof value !== 'string') {
-        throw new Error(
+        throw new ValidationError(
             'expected string for '
                 + label
                 + ', got '
@@ -127,7 +128,7 @@ export function asNumber(
         typeof value !== 'number'
         || !Number.isFinite(value)
     ) {
-        throw new Error(
+        throw new ValidationError(
             'expected finite number for '
                 + label
                 + ', got '
@@ -147,7 +148,7 @@ export function asScore(
         || value < -100
         || value > 100
     ) {
-        throw new Error(
+        throw new ValidationError(
             'expected integer in [-100, +100] for '
                 + label
                 + ', got '
@@ -162,7 +163,7 @@ export function asBoolean(
     label: string,
 ): boolean {
     if (typeof value !== 'boolean') {
-        throw new Error(
+        throw new ValidationError(
             'expected boolean for '
                 + label
                 + ', got '
@@ -250,7 +251,7 @@ function asNodeAttribute(
         !(NODE_ATTRIBUTE_MODES as
             readonly string[]).includes(mode)
     ) {
-        throw new Error(
+        throw new ValidationError(
             "expected 'editable' or 'readonly'"
             + ' for ' + label + '.mode, got '
             + mode,
@@ -305,7 +306,7 @@ export function asConstraint(
             ),
         };
     }
-    throw new Error(
+    throw new ValidationError(
         "expected Constraint kind 'regex',"
         + " 'range_min', or 'range_max' for "
         + label + '.kind, got ' + kind,
@@ -570,7 +571,7 @@ export function validateTimestampField(
 ): string {
     const at = pickString(body, field);
     if (!ISO_ZULU.test(at) || Number.isNaN(Date.parse(at))) {
-        throw new Error(
+        throw new ValidationError(
             'invalid timestamp "' + at + '" on ' + entityLabel,
         );
     }
@@ -592,7 +593,7 @@ export function validateEnumField<E extends string>(
     for (const option of allowed) {
         if (value === option) return option;
     }
-    throw new Error(
+    throw new ValidationError(
         'invalid ' + descriptor + ' "' + value
         + '" on ' + entityLabel,
     );
@@ -626,7 +627,7 @@ export function assertOnlyKeys(
     const expectedSet = new Set(expected);
     for (const key of Object.keys(body)) {
         if (!expectedSet.has(key)) {
-            throw new Error(
+            throw new ValidationError(
                 'unexpected key "'
                     + key + '"'
                     + ' for ' + label,
@@ -635,7 +636,7 @@ export function assertOnlyKeys(
     }
     for (const key of expected) {
         if (!(key in body)) {
-            throw new Error(
+            throw new ValidationError(
                 'missing required key "'
                     + key + '"'
                     + ' for ' + label,
@@ -962,7 +963,7 @@ export function validateAIMemberEntity(
     );
     const model = pickString(body, 'model');
     if (!isProviderModelId(model)) {
-        throw new Error(
+        throw new ValidationError(
             'model must be a known provider'
             + ' model id on AIMemberEntity',
         );
@@ -1394,7 +1395,7 @@ export function validateObjectiveRevisionEntity(
     );
     const name = pickString(body, 'name');
     if (name === '') {
-        throw new Error(
+        throw new ValidationError(
             'ObjectiveRevision.name must be non-empty',
         );
     }
@@ -1517,7 +1518,7 @@ export function validateRecordEntity(
     );
     const name = pickString(body, 'name');
     if (name === '') {
-        throw new Error(
+        throw new ValidationError(
             'RecordEntity.name must be'
             + ' non-empty',
         );
@@ -1551,7 +1552,7 @@ export function validateRecordAttributeEntity(
     );
     const name = pickString(body, 'name');
     if (name === '') {
-        throw new Error(
+        throw new ValidationError(
             'RecordAttributeEntity.name'
             + ' must be non-empty',
         );
@@ -1600,7 +1601,7 @@ export function validateRecordAttributeEntity(
             'RecordAttributeEntity.options',
         );
         if (parsedOptions.length === 0) {
-            throw new Error(
+            throw new ValidationError(
                 'RecordAttributeEntity.options'
                 + ' must list at least one option'
                 + " for attribute_type '"
@@ -1691,7 +1692,7 @@ function validateMultiPutAttribute(
     const validated =
         validateRecordAttributeEntity(rest);
     if (validated.record_id !== recordId) {
-        throw new Error(
+        throw new ValidationError(
             label + '.record_id must match'
             + ' top-level id; got '
             + validated.record_id
@@ -1784,7 +1785,7 @@ export function validateRecordMultiPutBody(
             removedAttributeIds,
         };
     }
-    throw new Error(
+    throw new ValidationError(
         "expected RecordMultiPutBody kind"
         + " 'create' or 'edit', got " + kind,
     );
