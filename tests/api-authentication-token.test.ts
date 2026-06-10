@@ -190,16 +190,35 @@ async () => {
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
         subject_token: await devToken('current'),
-        actor_token: await devToken('agent-7'),
+        actor_token: await devToken('current'),
     }));
     assert.equal(res.status, 200);
     const body = await res.json() as { access_token: string };
     const claims = decodeAccessToken(body.access_token);
     assert.equal(claims.sub, 'current');
-    assert.equal(claims.act?.sub, 'agent-7');
+    assert.equal(claims.act?.sub, 'current');
     // the delegated token passes the gate (current = admin)
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));
+});
+
+test('token-exchange denies cross-party delegation',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const before =
+        (await db.identityTokens.getAll()).length;
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'token-exchange',
+        subject_token: await devToken('current'),
+        actor_token: await devToken('agent-7'),
+    }));
+    assert.equal(res.status, 403);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /self-delegation/);
+    // grant-first: a denied exchange mints nothing
+    assert.equal(
+        (await db.identityTokens.getAll()).length, before);
 });
 
 test('token-exchange rejects unverifiable tokens with 401',

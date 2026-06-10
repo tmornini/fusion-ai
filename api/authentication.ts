@@ -383,9 +383,10 @@ async function grantRefresh(
 // actor_token are VERIFIED (signature/exp/nbf/aud) AND
 // revocation-checked — the same frozen HMAC the refresh grant
 // checks, so this is not weaker than the rest of the gate.
-// The remaining SEAM is the
-// DELEGATION POLICY: whether `actor` may act-as `subject` is NOT
-// yet enforced — that authorization lands with the server tier.
+// DELEGATION POLICY: self-delegation ONLY (subject === actor).
+// A cross-party exchange has no delegation ledger to authorize
+// act-as, so it fails closed — 403, minting nothing — until
+// that ledger lands with the server tier.
 // The claim shape (sub, act.sub) is frozen now.
 async function grantTokenExchange(
     adapter: DbAdapter,
@@ -425,6 +426,13 @@ async function grantTokenExchange(
     }
     const subject = subjectV.claims.sub;
     const actor = actorV.claims.sub;
+    if (subject !== actor) {
+        return failure(
+            403,
+            'token-exchange is limited to self-delegation'
+                + ' (subject must equal actor)',
+        );
+    }
     const organization =
         typeof body.organization === 'string'
             ? body.organization
