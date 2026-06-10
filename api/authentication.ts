@@ -3,7 +3,7 @@ import type { DbAdapter } from './db.ts';
 import {
     mintAccessToken,
     verifyAccessToken,
-    revokedBeforeSeconds,
+    revokedThroughSeconds,
 } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
@@ -224,10 +224,11 @@ async function appendEvents(
 
 // Both revocation controls the gate enforces, in ONE place so
 // every token-accepting path honors them: the coarse
-// logout-everywhere stamp (a token whose iat predates the
-// revocation is dead) and the per-jti chain. A mint path that
-// skips these would launder a revoked-but-unexpired token into
-// a fresh valid pair the gate then accepts.
+// logout-everywhere stamp (a token whose iat does not postdate
+// the revocation second is dead — shared seconds fail closed)
+// and the per-jti chain. A mint path that skips these would
+// launder a revoked-but-unexpired token into a fresh valid
+// pair the gate then accepts.
 export async function tokenRevocationReason(
     adapter: DbAdapter,
     sub: string,
@@ -236,8 +237,8 @@ export async function tokenRevocationReason(
 ): Promise<string | null> {
     const revs = await keyed(adapter.identityTokenRevocations)
         .getAllWhere('identity_id', sub);
-    const revokedBefore = revokedBeforeSeconds(revs, sub);
-    if (revokedBefore !== null && iat < revokedBefore) {
+    const revokedThrough = revokedThroughSeconds(revs, sub);
+    if (revokedThrough !== null && iat <= revokedThrough) {
         return 'token revoked';
     }
     // The gate check needs only THIS jti's events: a chain-wide

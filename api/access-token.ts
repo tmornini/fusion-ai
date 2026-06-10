@@ -319,10 +319,13 @@ export function latestRevocationAt(
 }
 
 // Convert the shared latest-wins reduce to epoch seconds for
-// the gate's `iat < revokedBefore` comparison. Returns null
-// when the identity has no revocation. The reduce itself lives
-// in latestRevocationAt — this only does the epoch conversion.
-export function revokedBeforeSeconds(
+// the gate's `iat <= revokedThrough` comparison. The floor
+// makes the stamp's whole second inclusive — hence "through":
+// a token minted within the revocation second is dead (shared
+// seconds fail closed). Returns null when the identity has no
+// revocation. The reduce itself lives in latestRevocationAt —
+// this only does the epoch conversion.
+export function revokedThroughSeconds(
     rows: readonly { identity_id: Id; at: string }[],
     identityId: Id,
 ): number | null {

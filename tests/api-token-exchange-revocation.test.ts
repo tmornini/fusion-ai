@@ -83,7 +83,7 @@ test('refresh on a logged-out but live jti is the'
     const db = await revokedDb();
     // A LIVE issued jti in the ledger: without the
     // logout-everywhere stamp this would rotate cleanly, so
-    // the ONLY thing that can reject it is the iat<revokedBefore
+    // the ONLY thing that can reject it is the revoked-through
     // branch — pinning that branch, not the reuse path.
     await db.identityTokens.put('t-live', {
         jti: 'live-jti', identity_id: 'u1',

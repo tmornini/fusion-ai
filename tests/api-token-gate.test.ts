@@ -102,6 +102,28 @@ test('a logout-everywhere revokes earlier tokens', async () => {
         () => GET(db, 'members', stale), /revoked/);
 });
 
+test('a token minted within the revocation second is dead',
+async () => {
+    const db = await freshDb();
+    // The revocation is stamped at T.900; the token's iat is
+    // the same whole second. Shared seconds fail closed — the
+    // sub-second remainder must not let the token survive.
+    const revokedAt = '2021-01-01T00:00:00.900Z';
+    const sameSecond = await mintAccessToken({
+        sub: 'current', roles: [], name: 'Demo',
+        iat: Math.floor(Date.parse(revokedAt) / 1000),
+        ttlSeconds: 10_000_000_000,
+        jti: 'same-second',
+    });
+    await PUT(
+        db, 'identity-token-revocations/r1',
+        { identity_id: 'current', at: revokedAt },
+        await devToken(),
+    );
+    await assert.rejects(
+        () => GET(db, 'members', sameSecond), /revoked/);
+});
+
 test('a token whose jti is revoked in the ledger is denied',
 async () => {
     const db = await freshDb();

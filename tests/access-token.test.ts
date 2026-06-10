@@ -6,7 +6,7 @@ import {
     principalFromToken,
     decodeAccessToken,
     latestRevocationAt,
-    revokedBeforeSeconds,
+    revokedThroughSeconds,
     ANONYMOUS_PRINCIPAL,
 } from '../api/access-token.ts';
 import { base64UrlEncode } from '../api/base64url.ts';
@@ -218,13 +218,13 @@ test('latestRevocationAt isolates identities; null when none', () => {
     assert.equal(latestRevocationAt(rows, 'b'), null);
 });
 
-test('revokedBeforeSeconds converts the latest stamp', () => {
+test('revokedThroughSeconds converts the latest stamp', () => {
     const rows = [
         { identity_id: 'a', at: '2021-01-01T00:00:00.000Z' },
         { identity_id: 'a', at: '2023-06-01T00:00:00.000Z' },
     ];
     assert.equal(
-        revokedBeforeSeconds(rows, 'a'),
+        revokedThroughSeconds(rows, 'a'),
         Math.floor(
             Date.parse('2023-06-01T00:00:00.000Z') / 1000),
     );
