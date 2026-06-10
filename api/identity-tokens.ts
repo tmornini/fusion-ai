@@ -118,6 +118,23 @@ export function chainState(
     return { chainId, liveJti, revoked };
 }
 
+// The chain-wide revocation rows: one 'revoked' event per jti
+// ever seen in the chain, all at one instant. Shared by the
+// replay path of planRotation and the explicit revocation
+// operation — one truth for what "revoke the chain" appends.
+export function revocationAppends(
+    rows: readonly IdentityTokenEntity[],
+    chainId: string,
+    identityId: Id,
+    at: string,
+): Omit<IdentityTokenEntity, 'id'>[] {
+    return jtisInChain(rows, chainId).map(jti => ({
+        jti, identity_id: identityId,
+        action: 'revoked' as const, chain_id: chainId,
+        parent_jti: '', at,
+    }));
+}
+
 // The lifecycle rows a refresh produces, decided purely. A LIVE
 // jti rotates (retire it, issue a successor in the chain); a
 // known but non-live jti is REPLAY (revoke every jti in the
@@ -168,10 +185,8 @@ export function planRotation(
     }
     return {
         kind: 'replay',
-        appends: jtisInChain(rows, chainId).map(jti => ({
-            jti, identity_id: identityId,
-            action: 'revoked' as const, chain_id: chainId,
-            parent_jti: '', at,
-        })),
+        appends: revocationAppends(
+            rows, chainId, identityId, at,
+        ),
     };
 }

@@ -85,6 +85,8 @@ import {
     tokenRevocationReason,
     subjectOrgs,
     identityDefaultOrg,
+    rotateRefreshJti,
+    revokeTokenChain,
 } from './authentication.ts';
 
 export class ApiError {
@@ -613,6 +615,38 @@ const routes: Route[] = [
         noun: 'identity-tokens',
         store: db => db.identityTokens,
         verbs: ['get', 'put'],
+    }),
+    // Rotate a refresh jti. The ledger read, the rotation
+    // plan, and its appends ride ONE transaction
+    // (rotateRefreshJti — the same body the refresh grant
+    // runs), so two concurrent rotations of one chain
+    // cannot both observe the live jti (the lost-rotation
+    // TOCTOU). A live jti returns its successor; a
+    // known-but-not-live jti is reuse — the whole chain's
+    // revocation has already landed atomically — then 409.
+    route('identity-tokens/:jti/rotation', {
+        post: async (db, p) => {
+            const presented = param(p, 0);
+            const outcome = await rotateRefreshJti(
+                db, presented,
+            );
+            if (outcome.kind === 'rotate') {
+                return { jti: outcome.newJti };
+            }
+            throw new ApiError(
+                'refresh token is not live (reuse): '
+                    + presented,
+                HTTP_CONFLICT,
+            );
+        },
+    }),
+    // Revoke the whole chain a jti belongs to (log out one
+    // session). Read and appends ride one transaction; an
+    // unknown jti is an idempotent no-op.
+    route('identity-tokens/:jti/revocation', {
+        post: async (db, p) => {
+            await revokeTokenChain(db, param(p, 0));
+        },
     }),
     route('clients', {
         get: (db) => db.clients.getAll(),

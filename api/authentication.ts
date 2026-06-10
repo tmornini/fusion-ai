@@ -21,6 +21,8 @@ import {
     planRotation,
     isTokenRevoked,
     chainIdForJti,
+    identityForJti,
+    revocationAppends,
 } from './identity-tokens.ts';
 import {
     hashPassword,
@@ -252,6 +254,86 @@ export async function tokenRevocationReason(
     return null;
 }
 
+// The outcome of an atomic rotation attempt. 'rotate' carries
+// the successor jti; 'fail' covers reuse and unknown — on
+// reuse the whole chain's revocation has already landed in
+// the same transaction.
+export type RotationOutcome =
+    | { readonly kind: 'rotate'; readonly newJti: string }
+    | { readonly kind: 'fail' };
+
+// Read the token ledger, plan the rotation, and append its
+// events in ONE transaction — a concurrent reuse of the same
+// jti can not double-rotate. Shared by the refresh grant and
+// the POST identity-tokens/:jti/rotation route: one truth for
+// the atomic rotate.
+export function rotateRefreshJti(
+    adapter: DbAdapter,
+    presentedJti: string,
+): Promise<RotationOutcome> {
+    return adapter.transaction(
+        ['identity_tokens'],
+        async (view) => {
+            // Two-step narrow: find the presented jti's chain,
+            // then read the WHOLE chain — planRotation's replay
+            // path revokes every jti in it, so a jti-only read
+            // would under-revoke. Both reads are index hits in
+            // the open tx (no interleaved non-IDB await).
+            const tokens = keyed(view.identityTokens);
+            const byJti = await tokens.getAllWhere(
+                'jti', presentedJti);
+            const chainId = chainIdForJti(
+                byJti, presentedJti);
+            const rows = chainId === null
+                ? byJti
+                : await tokens.getAllWhere(
+                    'chain_id', chainId);
+            const plan = planRotation(
+                rows, presentedJti,
+                generateCryptoSafeBase62(), nowUtc(),
+            );
+            if (plan.kind === 'rotate') {
+                await appendEvents(view, plan.appends);
+                return {
+                    kind: 'rotate' as const,
+                    newJti: plan.newJti,
+                };
+            }
+            if (plan.kind === 'replay') {
+                await appendEvents(view, plan.appends);
+            }
+            return { kind: 'fail' as const };
+        },
+    );
+}
+
+// Revoke every jti in the chain `jti` belongs to (logging out
+// one session). Read and appends ride the same transaction, so
+// a concurrent rotation cannot slip a fresh successor past the
+// revoke. A no-op for an unknown jti.
+export function revokeTokenChain(
+    adapter: DbAdapter,
+    jti: string,
+): Promise<void> {
+    return adapter.transaction(
+        ['identity_tokens'],
+        async (view) => {
+            const tokens = keyed(view.identityTokens);
+            const byJti = await tokens.getAllWhere('jti', jti);
+            const chainId = chainIdForJti(byJti, jti);
+            const identityId = identityForJti(byJti, jti);
+            if (chainId === null || identityId === null) {
+                return;
+            }
+            const rows = await tokens.getAllWhere(
+                'chain_id', chainId);
+            await appendEvents(view, revocationAppends(
+                rows, chainId, identityId, nowUtc(),
+            ));
+        },
+    );
+}
+
 // refresh grant: rotate a live refresh jti (retire it, issue a
 // successor in the same chain) and mint a new pair. A non-live
 // jti is reuse — the whole chain is revoked, then 401. An
@@ -277,42 +359,8 @@ async function grantRefresh(
     if (refreshRev !== null) {
         return failure(401, refreshRev);
     }
-    // Read the token ledger, plan the rotation, and append its
-    // events in ONE transaction — a concurrent reuse of the same
-    // jti can not double-rotate.
-    const outcome = await adapter.transaction(
-        ['identity_tokens'],
-        async (view) => {
-            // Two-step narrow: find the presented jti's chain,
-            // then read the WHOLE chain — planRotation's replay
-            // path revokes every jti in it, so a jti-only read
-            // would under-revoke. Both reads are index hits in
-            // the open tx (no interleaved non-IDB await).
-            const tokens = keyed(view.identityTokens);
-            const byJti = await tokens.getAllWhere(
-                'jti', verified.claims.jti);
-            const chainId = chainIdForJti(
-                byJti, verified.claims.jti);
-            const rows = chainId === null
-                ? byJti
-                : await tokens.getAllWhere(
-                    'chain_id', chainId);
-            const plan = planRotation(
-                rows, verified.claims.jti,
-                generateCryptoSafeBase62(), nowUtc(),
-            );
-            if (plan.kind === 'rotate') {
-                await appendEvents(view, plan.appends);
-                return {
-                    kind: 'rotate' as const,
-                    newJti: plan.newJti,
-                };
-            }
-            if (plan.kind === 'replay') {
-                await appendEvents(view, plan.appends);
-            }
-            return { kind: 'fail' as const };
-        },
+    const outcome = await rotateRefreshJti(
+        adapter, verified.claims.jti,
     );
     if (outcome.kind === 'rotate') {
         const name =
