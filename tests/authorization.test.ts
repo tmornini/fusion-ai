@@ -94,3 +94,64 @@ test('deny-by-default: no held role is forbidden', () => {
     assert.equal(
         isPermitted('GET', '/members', ['viewer']), false);
 });
+
+test('member tier: content surfaces are permitted', () => {
+    assert.equal(
+        isPermitted('GET', '/ideas', ['member']), true);
+    assert.equal(
+        isPermitted('PUT', '/ideas/i1', ['member']), true);
+    assert.equal(
+        isPermitted('POST', '/commit', ['member']), true);
+    assert.equal(
+        isPermitted(
+            'POST', '/work-orders/w1/claim', ['member']),
+        true);
+    assert.equal(
+        isPermitted(
+            'POST', '/identity-tokens/j1/rotation',
+            ['member']),
+        true);
+    assert.equal(
+        isPermitted('GET', '/organizations/1', ['member']),
+        true);
+});
+
+test('member tier: admin surfaces stay denied', () => {
+    assert.equal(
+        isPermitted('PUT', '/role-grants/r1', ['member']),
+        false);
+    assert.equal(
+        isPermitted('GET', '/memberships', ['member']),
+        false);
+    assert.equal(
+        isPermitted('GET', '/identities', ['member']),
+        false);
+    assert.equal(
+        isPermitted('GET', '/snapshots/schema', ['member']),
+        false);
+    assert.equal(
+        isPermitted('PUT', '/organizations/1', ['member']),
+        false);
+    assert.equal(
+        isPermitted('PUT', '/members/m1', ['member']),
+        false);
+    assert.equal(
+        isPermitted('GET', '/identity-tokens', ['member']),
+        false);
+});
+
+test('prefixes match on segment boundaries only', () => {
+    // '/members' grants the member read tier; it must never
+    // half-match '/memberships' — a different, admin-only
+    // surface that merely shares the leading characters.
+    assert.equal(
+        isPermitted('GET', '/members', ['member']), true);
+    assert.equal(
+        isPermitted('GET', '/members/m1', ['member']), true);
+    assert.equal(
+        isPermitted('GET', '/memberships', ['member']),
+        false);
+    assert.equal(
+        isPermitted('GET', '/memberships/m1', ['member']),
+        false);
+});

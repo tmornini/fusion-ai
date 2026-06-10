@@ -87,15 +87,63 @@ function matchesOnSegmentBoundary(
         || pathname.startsWith(prefix + '/');
 }
 
+// The verbs the `member` role may use, per content prefix.
+// Admin surfaces — identities, credentials, clients,
+// providers, role-grants, memberships, organization and
+// member WRITES, snapshots — are absent: deny-by-default
+// keeps them at the root admin entries. members/ai-members/
+// human-members appear read-only here for author and roster
+// display; their writes stay admin (member management).
+// identity-tokens POST covers only its rotation/revocation
+// sub-routes — session management any member performs.
+const MEMBER_VERBS: Readonly<
+    Record<string, readonly string[]>
+> = {
+    '/ideas': ['GET', 'PUT'],
+    '/idea-submissions': ['GET', 'PUT'],
+    '/projects': ['GET', 'PUT'],
+    '/project-flows': ['GET', 'PUT', 'DELETE'],
+    '/project-objective-baseline-scores': ['GET', 'PUT'],
+    '/project-objective-actual-scores': ['GET', 'PUT'],
+    '/objectives': ['GET', 'PUT'],
+    '/objective-revisions': ['GET', 'PUT'],
+    '/flows': ['GET', 'PUT'],
+    '/flow-versions': ['GET', 'PUT', 'DELETE'],
+    '/flow-work-orders': ['GET', 'PUT'],
+    '/flow-records': ['GET', 'PUT', 'DELETE'],
+    '/records': ['GET', 'PUT', 'DELETE'],
+    '/record-attributes': ['GET', 'PUT', 'DELETE'],
+    '/records-multi-put': ['POST'],
+    '/state-field-values': ['GET', 'PUT', 'DELETE'],
+    '/work-orders': ['GET', 'PUT', 'POST'],
+    '/states': ['GET', 'PUT'],
+    '/entity-states': ['GET'],
+    '/commit': ['POST'],
+    '/members': ['GET'],
+    '/ai-members': ['GET'],
+    '/human-members': ['GET'],
+    '/current-member': ['GET'],
+    '/organizations': ['GET'],
+    '/identity-tokens': ['POST'],
+};
+
+const MEMBER_TIER: readonly PolicyEntry[] =
+    Object.entries(MEMBER_VERBS).flatMap(
+        ([pathPrefix, verbs]) => verbs.map(verb => ({
+            verb, pathPrefix, roles: ['member'],
+        })),
+    );
+
 // Deny-by-default policy. `admin` is allowed on every verb at
 // the root prefix `/` — "admin everywhere" in four honest
-// lines, no implicit-superuser special case. Narrower
-// (verb, prefix) entries widen access to other roles later.
+// lines, no implicit-superuser special case. The member tier
+// widens the content surfaces to the `member` role.
 export const ROUTE_POLICY: readonly PolicyEntry[] = [
     { verb: 'GET', pathPrefix: '/', roles: ['admin'] },
     { verb: 'PUT', pathPrefix: '/', roles: ['admin'] },
     { verb: 'POST', pathPrefix: '/', roles: ['admin'] },
     { verb: 'DELETE', pathPrefix: '/', roles: ['admin'] },
+    ...MEMBER_TIER,
 ];
 
 // Permitted iff SOME matching entry (same verb; pathname

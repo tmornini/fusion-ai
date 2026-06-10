@@ -909,6 +909,23 @@ async function populateMockDataIn(
                 at: MOCK_SEED_TIMESTAMP,
             },
         ),
+        // Every non-admin human gets the member role in its
+        // membership org (same assignOrg(index) partition as
+        // the membership seed above), so each seeded sign-in
+        // lands on a working content tier — not a 403 wall.
+        ...members.flatMap((member, index) =>
+            member.id === 'current'
+                ? []
+                : [adapter.roleGrants.put(
+                    'seed-role-' + member.id + '-member', {
+                        organization_id: assignOrg(index),
+                        identity_id: member.id,
+                        role: 'member',
+                        action: 'granted',
+                        by_member_id: SYSTEM_MEMBER_ID,
+                        at: MOCK_SEED_TIMESTAMP,
+                    },
+                )]),
     ]);
 
     // Initial member state events. Every seeded
