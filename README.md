@@ -39,7 +39,13 @@ checklist is in [ARCHITECTURE.md](ARCHITECTURE.md)
 ```sh
 git clone <repo-url>
 cd fusion-ai
+npm ci
 ```
+
+`npm ci` installs the build toolchain (tsc, esbuild) at the
+exact versions pinned in `package-lock.json`. The toolchain
+is dev-only: the shipped bundle keeps zero runtime
+dependencies.
 
 Everything operational — build, test, conventions — lives
 in [CLAUDE.md](CLAUDE.md); the manual browser regression plan
