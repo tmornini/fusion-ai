@@ -95,6 +95,34 @@ test(
     },
 );
 
+test(
+    'validateHumanMemberEntity rejects non-string'
+    + ' strengths elements',
+    () => {
+        assert.throws(
+            () => validateHumanMemberEntity({
+                ...validHumanMember,
+                strengths: '[1, 2]',
+            }),
+            /HumanMemberEntity.strengths\[0\]/,
+        );
+    },
+);
+
+test(
+    'validateHumanMemberEntity rejects non-number'
+    + ' team dimension values',
+    () => {
+        assert.throws(
+            () => validateHumanMemberEntity({
+                ...validHumanMember,
+                team_dimensions: '{"driver":"high"}',
+            }),
+            /HumanMemberEntity.team_dimensions/,
+        );
+    },
+);
+
 // --- AIMemberEntity ---
 
 const validAIMember = {
@@ -906,5 +934,19 @@ test(
             options: '[]',
         }),
         /at least one option/,
+    );
+});
+
+test(
+    'validateRecordAttributeEntity rejects non-string'
+    + ' option elements on any type',
+    () => {
+    assert.throws(
+        () => validateRecordAttributeEntity({
+            ...validSelectAttribute,
+            attribute_type: 'text',
+            options: '[3]',
+        }),
+        /RecordAttributeEntity.options\[0\]/,
     );
 });

@@ -954,6 +954,23 @@ export function validateHumanMemberEntity(
         HUMAN_MEMBER_BODY_KEYS,
         'HumanMemberEntity',
     );
+    // Structural gate: the columns store raw JSON strings,
+    // but their shapes are enforced at instantiation — the
+    // same validators the domain accessors run downstream
+    // as their transform.
+    const strengths = pickJsonArrayField(
+        body, 'strengths',
+    );
+    validateStringArrayJson(
+        strengths, 'HumanMemberEntity.strengths',
+    );
+    const teamDimensions = pickJsonObjectField(
+        body, 'team_dimensions',
+    );
+    validateStringNumberRecordJson(
+        teamDimensions,
+        'HumanMemberEntity.team_dimensions',
+    );
     return {
         title: pickString(
             body, 'title',
@@ -961,12 +978,8 @@ export function validateHumanMemberEntity(
         department: pickString(
             body, 'department',
         ),
-        strengths: pickJsonArrayField(
-            body, 'strengths',
-        ),
-        team_dimensions: pickJsonObjectField(
-            body, 'team_dimensions',
-        ),
+        strengths,
+        team_dimensions: teamDimensions,
     };
 }
 
@@ -1624,25 +1637,23 @@ export function validateRecordAttributeEntity(
     const optionsField = pickJsonArrayField(
         body, 'options',
     );
+    // Options are a string array for EVERY attribute type —
+    // the same shape the read adapter derives downstream.
+    const parsedOptions = validateStringArrayJson(
+        optionsField,
+        'RecordAttributeEntity.options',
+    );
     if (
-        attributeType === 'select'
-        || attributeType === 'radio'
+        (attributeType === 'select'
+            || attributeType === 'radio')
+        && parsedOptions.length === 0
     ) {
-        const parsedOptions = asArray(
-            parseOrThrow(
-                optionsField,
-                'RecordAttributeEntity.options',
-            ),
-            'RecordAttributeEntity.options',
+        throw new ValidationError(
+            'RecordAttributeEntity.options'
+            + ' must list at least one option'
+            + " for attribute_type '"
+            + attributeType + "'",
         );
-        if (parsedOptions.length === 0) {
-            throw new ValidationError(
-                'RecordAttributeEntity.options'
-                + ' must list at least one option'
-                + " for attribute_type '"
-                + attributeType + "'",
-            );
-        }
     }
     return {
         organization_id: pickString(body, 'organization_id'),
