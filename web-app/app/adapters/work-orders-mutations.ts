@@ -46,10 +46,10 @@ import {
 const workOrderChanges =
     createSubscriptionChannel(
         [
-            'work-orders',
+            'work_orders',
             'states',
-            'state-field-values',
-            'flow-work-orders',
+            'state_field_values',
+            'flow_work_orders',
         ],
     );
 

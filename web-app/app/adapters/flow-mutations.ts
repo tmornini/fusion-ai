@@ -24,8 +24,8 @@ const flowChanges =
     createSubscriptionChannel(
         [
             'flows',
-            'flow-versions',
-            'project-flows',
+            'flow_versions',
+            'project_flows',
         ],
     );
 
