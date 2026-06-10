@@ -4,6 +4,9 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { devToken } from './token-fixtures.ts';
+import {
+    makeAssertionSigner,
+} from './client-assertion-fixtures.ts';
 import { decodeAccessToken } from '../api/access-token.ts';
 
 const BASE = 'http://localhost';
@@ -305,6 +308,22 @@ const activeClient = {
     aud: 'fusion-ai-web', status: 'active',
 };
 
+// A really-signed assertion: fresh in-test key pair, public
+// JWKS registered on the client row, RFC 7523 claims.
+async function signedClientSetup() {
+    const signer = await makeAssertionSigner('ES256');
+    const now = Math.floor(Date.now() / 1000);
+    const assertion = await signer.sign({
+        iss: 'svc-client', sub: 'svc-client',
+        aud: 'fusion-ai-web',
+        exp: now + 300, iat: now, jti: 'assert-1',
+    });
+    return {
+        client: { ...activeClient, jwks: signer.jwks },
+        assertion,
+    };
+}
+
 test('client_credentials issues a gate-valid token', async () => {
     const db = await freshDb();
     // the service principal (client id) holds an admin role
@@ -319,16 +338,42 @@ test('client_credentials issues a gate-valid token', async () => {
         identity_id: 'svc-client',
         at: '2020-01-01T00:00:00.000000Z',
     });
-    await db.clients.put('svc-client', activeClient);
+    const { client, assertion } =
+        await signedClientSetup();
+    await db.clients.put('svc-client', client);
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'client_credentials',
         client_id: 'svc-client',
-        client_assertion: 'aaa.bbb.ccc',
+        client_assertion: assertion,
     }));
     assert.equal(res.status, 200);
     const body = await res.json() as { access_token: string };
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));
+});
+
+test('client_credentials refuses an unsigned assertion',
+async () => {
+    const db = await freshDb();
+    const { client } = await signedClientSetup();
+    await db.clients.put('svc-client', client);
+    // Well-formed JWT shape, right claims, NO valid
+    // signature from the registered key.
+    const impostor = await makeAssertionSigner('ES256');
+    const now = Math.floor(Date.now() / 1000);
+    const forged = await impostor.sign({
+        iss: 'svc-client', sub: 'svc-client',
+        aud: 'fusion-ai-web',
+        exp: now + 300, iat: now, jti: 'assert-2',
+    });
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: forged,
+    }));
+    assert.equal(res.status, 401);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /invalid client_assertion/);
 });
 
 test('client_credentials with a malformed assertion is 401',

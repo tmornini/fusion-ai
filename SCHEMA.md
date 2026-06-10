@@ -296,10 +296,12 @@ built by us and others. Mutable config of record:
 redirect URIs change, JWKS rotate, a client is
 disabled. `grant_types` and `redirect_uris` are
 space-delimited (OAuth convention); `jwks` is the
-client's JSON Web Key Set as a JSON string, used to
-verify `private_key_jwt` assertions (real JWS verify
-is a server-tier seam); `aud` is the origin a token
-is minted for.
+client's JSON Web Key Set as a JSON string — JWS
+verification of `private_key_jwt` assertions runs for
+real against it (RS256/ES256, `api/client-assertion.ts`;
+jti replay tracking is the remaining server-tier seam);
+`aud` is the audience the client's assertions must
+claim and the origin a token is minted for.
 
 | Column | Type |
 |--------|------|

@@ -1,6 +1,9 @@
 import { EntityNotFound, keyed } from './db.ts';
 import type { DbAdapter } from './db.ts';
 import {
+    verifyClientAssertion,
+} from './client-assertion.ts';
+import {
     mintAccessToken,
     verifyAccessToken,
     revokedThroughSeconds,
@@ -474,11 +477,12 @@ export async function exchangeBearerForOrg(
 }
 
 // client_credentials via private_key_jwt: a headless client
-// authenticates as itself. SEAM — the client_assertion is only
-// structurally required (a three-segment JWT); real JWS
-// signature verification against the client's JWKS is deferred
-// to the server tier (spec lines 418-419). The token's sub is
-// the client id (a service principal).
+// authenticates as itself. The client_assertion is REALLY
+// verified — JWS signature against the client's registered
+// JWKS (RS256/ES256, WebCrypto) plus the RFC 7523 claim
+// checks, in api/client-assertion.ts. The remaining seam is
+// jti replay tracking (server tier). The token's sub is the
+// client id (a service principal).
 async function grantClientCredentials(
     adapter: DbAdapter,
     body: Record<string, unknown>,
@@ -508,8 +512,15 @@ async function grantClientCredentials(
             400, 'client may not use client_credentials',
         );
     }
-    if (assertion.split('.').length !== 3) {
-        return failure(401, 'malformed client_assertion');
+    const verdict = await verifyClientAssertion(
+        assertion, client,
+        Math.floor(Date.now() / 1000),
+    );
+    if (!verdict.valid) {
+        return failure(
+            401,
+            'invalid client_assertion: ' + verdict.reason,
+        );
     }
     const name = await nameFor(adapter, clientId);
     return {
