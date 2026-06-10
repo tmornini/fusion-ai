@@ -63,6 +63,12 @@ import {
     isClaimEventExpired,
 } from './work-order-claims.ts';
 import {
+    ATTRIBUTE_RESTRICT_TABLES,
+    collectAttributeReferrers,
+    hasReferrers,
+    describeReferrers,
+} from './record-attribute-refs.ts';
+import {
     verifyAccessToken,
     principalFromToken,
     ANONYMOUS_ID,
@@ -309,8 +315,14 @@ async function applyRecordMultiPut(
     // attributes commit as one transaction — a mid-write
     // failure (e.g. a missing current member) rolls the
     // whole thing back rather than orphaning the record.
+    // Removed attributes are RESTRICTED inside the same tx:
+    // a referenced attribute 409s and the whole batch rolls
+    // back (api/record-attribute-refs.ts).
     await db.transaction(
-        ['records', 'record_attributes', 'states', 'members'],
+        [...new Set([
+            'records', 'record_attributes', 'states',
+            'members', ...ATTRIBUTE_RESTRICT_TABLES,
+        ])],
         async (view) => {
             await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
@@ -322,6 +334,20 @@ async function applyRecordMultiPut(
                     body.initialState,
                     member.id,
                 );
+            }
+            if (removedIds.length > 0) {
+                const referrers =
+                    await collectAttributeReferrers(
+                        view, removedIds,
+                    );
+                for (const [id, refs] of referrers) {
+                    if (hasReferrers(refs)) {
+                        throw new ApiError(
+                            describeReferrers(id, refs),
+                            HTTP_CONFLICT,
+                        );
+                    }
+                }
             }
             if (
                 entries.length > 0
@@ -838,10 +864,46 @@ const routes: Route[] = [
         get: (db) =>
             db.recordAttributes.getAll(),
     }),
-    makeIdRoute<RecordAttributeEntity>({
-        noun: 'record-attributes',
-        store: db => db.recordAttributes,
-        verbs: ['get', 'put', 'delete'],
+    route('record-attributes/:id', {
+        get: (db, p) =>
+            db.recordAttributes.getById(param(p, 0)),
+        put: (db, p, body) =>
+            db.recordAttributes.put(
+                param(p, 0),
+                withoutId(body) as unknown as
+                    Omit<RecordAttributeEntity, 'id'>,
+            ),
+        // DELETE is RESTRICT, not cascade: an attribute
+        // still named by state_field_values rows or bound
+        // in a flow / work-order graph refuses to die (409
+        // naming the referrers) — destroying it would
+        // orphan immutable event payloads. The referrer
+        // check and the splice ride ONE transaction, so no
+        // writer can slip a new reference between them.
+        delete: (db, p) => {
+            const id = param(p, 0);
+            return db.transaction(
+                [...new Set([
+                    'record_attributes',
+                    ...ATTRIBUTE_RESTRICT_TABLES,
+                ])],
+                async (view) => {
+                    const referrers =
+                        await collectAttributeReferrers(
+                            view, [id],
+                        );
+                    const refs = referrers.get(id)!;
+                    if (hasReferrers(refs)) {
+                        throw new ApiError(
+                            describeReferrers(id, refs),
+                            HTTP_CONFLICT,
+                        );
+                    }
+                    await view.recordAttributes
+                        .delete(id);
+                },
+            );
+        },
     }),
     route('flow-records', {
         get: (db) =>
