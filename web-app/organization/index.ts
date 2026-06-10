@@ -508,11 +508,10 @@ async function handleSave(): Promise<void> {
         return;
     }
     showToast('Organization saved', 'success');
-    const freshCtx = sessionContext();
     const [freshOrg, freshStats] =
         await Promise.all([
-            getOrganization(freshCtx),
-            getOrganizationStats(freshCtx),
+            getOrganization(ctx),
+            getOrganizationStats(ctx),
         ]);
     state = {
         kind: 'reading',

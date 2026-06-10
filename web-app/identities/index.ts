@@ -21,6 +21,7 @@ import {
     postIdentityCreation,
     generateCryptoSafeBase62,
     type IdentityRosterRow,
+    type RequestContext,
 } from '../app/adapters/index.ts';
 import {
     IdentityRosterPresenter,
@@ -66,11 +67,11 @@ function renderRoster(
         .render(identityListEl);
 }
 
-async function refresh(): Promise<void> {
+async function refresh(
+    ctx: RequestContext,
+): Promise<void> {
     if (!identityListEl) return;
-    const roster = await getIdentityRoster(
-        sessionContext(),
-    );
+    const roster = await getIdentityRoster(ctx);
     renderRoster(roster);
 }
 
@@ -189,7 +190,7 @@ async function submitPersonForm(): Promise<void> {
     }
     showToast('Identity added', 'success');
     closeDialog('add-identity');
-    void refresh();
+    void refresh(ctx);
 }
 
 async function submitServiceForm(): Promise<void> {
@@ -218,5 +219,5 @@ async function submitServiceForm(): Promise<void> {
     }
     showToast('Service identity added', 'success');
     closeDialog('add-identity');
-    void refresh();
+    void refresh(ctx);
 }
