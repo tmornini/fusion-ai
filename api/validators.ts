@@ -1307,8 +1307,7 @@ validateStateFieldValueEntity(
 const ORGANIZATION_BODY_KEYS:
     readonly string[] = [
     'name', 'domain', 'next_billing',
-    'seats', 'used_seats', 'projects_limit',
-    'ideas_limit', 'last_activity',
+    'seats', 'projects_limit', 'ideas_limit',
 ];
 
 export function validateOrganizationEntity(
@@ -1332,17 +1331,11 @@ export function validateOrganizationEntity(
         seats: pickNumber(
             body, 'seats',
         ),
-        used_seats: pickNumber(
-            body, 'used_seats',
-        ),
         projects_limit: pickNumber(
             body, 'projects_limit',
         ),
         ideas_limit: pickNumber(
             body, 'ideas_limit',
-        ),
-        last_activity: pickString(
-            body, 'last_activity',
         ),
     };
 }

@@ -593,10 +593,13 @@ global.
 | domain | TEXT |
 | next_billing | TEXT |
 | seats | INTEGER |
-| used_seats | INTEGER |
 | projects_limit | INTEGER |
 | ideas_limit | INTEGER |
-| last_activity | TEXT |
+
+Seat usage and last activity are NOT columns: both are
+derived from their ledgers at read time (distinct
+identities in `memberships`; max `states.at`) — a stored
+aggregate would be a second truth kept in sync by nothing.
 
 ### memberships
 

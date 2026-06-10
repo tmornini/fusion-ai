@@ -1271,20 +1271,16 @@ async function populateMockDataIn(
             domain: 'acmecorp.com',
             next_billing: dt(-300, 0, 0),
             seats: TIER_SEATS_LIMIT,
-            used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
-            last_activity: dt(0, 16, 0),
         }),
         adapter.organizations.put(ORG_TWO, {
             name: 'Wayne Enterprises',
             domain: 'wayne.example.com',
             next_billing: dt(-200, 0, 0),
             seats: TIER_SEATS_LIMIT,
-            used_seats: 5,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
-            last_activity: dt(0, 12, 0),
         }),
     ]);
 
@@ -6639,10 +6635,8 @@ async function populateBootstrapDataIn(
             domain: 'acmecorp.com',
             next_billing: dt(-300, 0, 0),
             seats: TIER_SEATS_LIMIT,
-            used_seats: 18,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
-            last_activity: dt(0, 16, 0),
         }),
         adapter.roleGrants.put(
             'bootstrap-role-current-admin', {

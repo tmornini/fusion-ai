@@ -605,10 +605,8 @@ const validOrg = {
     domain: 'acme.com',
     next_billing: '2025-01-01',
     seats: 10,
-    used_seats: 5,
     projects_limit: 50,
     ideas_limit: 200,
-    last_activity: '2024-01-01T00:00:00.000000Z',
 };
 
 test(
@@ -653,10 +651,26 @@ test(
     const body = { ...validOrg };
     delete (
         body as Record<string, unknown>
-    )['last_activity'];
+    )['seats'];
     assert.throws(
         () => validateOrganizationEntity(body),
-        /missing required key "last_activity"/,
+        /missing required key "seats"/,
+    );
+});
+
+test(
+    'validateOrganizationEntity rejects the retired'
+    + ' stored aggregates',
+    () => {
+    // used_seats / last_activity are DERIVED from the
+    // memberships ledger and the states log — a stored
+    // copy is a second truth kept in sync by nothing
+    assert.throws(
+        () => validateOrganizationEntity({
+            ...validOrg,
+            used_seats: 5,
+        }),
+        /unexpected key "used_seats"/,
     );
 });
 

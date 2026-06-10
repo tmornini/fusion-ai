@@ -1185,16 +1185,18 @@ export interface StateFieldValueEntity {
     value: string;
 }
 
+// Seat usage and last activity are NOT columns: both are
+// derived from their ledgers at read time (memberships count;
+// max states.at) — a stored aggregate would be a second truth
+// kept in sync by nothing.
 export interface OrganizationEntity {
     id: Id;
     name: string;
     domain: string;
     next_billing: string;
     seats: number;
-    used_seats: number;
     projects_limit: number;
     ideas_limit: number;
-    last_activity: string;
 }
 
 // The covenant binding an identity to an organization, with
