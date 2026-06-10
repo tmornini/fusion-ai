@@ -1327,10 +1327,9 @@ export async function init(
         navigateTo('flows');
         return;
     }
-    const container = $(
+    const container = $required(
         '#flow-designer', document,
     );
-    if (!container) return;
     pageState.setContainer(container);
 
     const loaded = await withLoadingState(

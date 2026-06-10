@@ -1,5 +1,5 @@
 import {
-    $, isFormField,
+    $required, isFormField,
 } from '../app/dom.ts';
 import {
     IdeaPresenter,
@@ -158,10 +158,9 @@ export async function init(
         return;
     }
 
-    const container = $(
+    const container = $required(
         '#idea-detail-content', document,
     );
-    if (!container) return;
     pageContainer = container;
 
     const ctx = sessionContext();

@@ -57,8 +57,9 @@ let membersState:
 let memberListEl: HTMLElement | null = null;
 
 export async function init(): Promise<void> {
-    const memberList = $('#member-list', document);
-    if (!memberList) return;
+    const memberList = $required(
+        '#member-list', document,
+    );
 
     populateIcons([
         ['#add-member-btn-icon', iconPersonPlus(16, '')],

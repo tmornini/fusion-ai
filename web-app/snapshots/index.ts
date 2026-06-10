@@ -76,10 +76,9 @@ type PendingState =
 
 export async function init(
 ): Promise<void> {
-    const root = $(
+    const root = $required(
         '#snapshots-content', document,
     );
-    if (!root) return;
 
     const ctx = sessionContext();
     let pending: PendingState =
@@ -158,8 +157,9 @@ export async function init(
     function revealThenNavigate(
         creds: SeededCredentials,
     ): void {
-        const panel = $('#snapshots-content', document);
-        if (!panel) return;
+        const panel = $required(
+            '#snapshots-content', document,
+        );
         setHtml(panel, html`
             <div class="credential-reveal-wrap">
                 ${credentialRevealPanel(creds)}

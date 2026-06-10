@@ -59,10 +59,9 @@ export async function init(
     }
     const ideaId: string = rawId;
 
-    const root = $(
+    const root = $required(
         '#convert-content', document,
     );
-    if (!root) return;
     setHtml(
         root,
         buildSkeleton('detail', 4),

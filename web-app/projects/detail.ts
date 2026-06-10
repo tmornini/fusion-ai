@@ -1,5 +1,6 @@
 import {
-    $, $inputRequired, isFormField,
+    $, $inputRequired, $required,
+    isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
 import {
@@ -189,10 +190,9 @@ export async function init(
     }
     currentProjectId = projectId;
 
-    const container = $(
+    const container = $required(
         '#project-detail-content', document,
     );
-    if (!container) return;
     pageContainer = container;
     bindStableListeners(container);
     setHtml(

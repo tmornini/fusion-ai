@@ -1,4 +1,6 @@
-import { $, getRequiredAttribute } from '../app/dom.ts';
+import {
+    $, $required, getRequiredAttribute,
+} from '../app/dom.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
 import {
     buildSkeleton,
@@ -69,10 +71,9 @@ async function loadProjectMaps(
 }
 
 export async function init(): Promise<void> {
-    const listEl = $(
+    const listEl = $required(
         '#projects-list', document,
     );
-    if (!listEl) return;
 
     const ctx = sessionContext();
     const projects = await withLoadingState(

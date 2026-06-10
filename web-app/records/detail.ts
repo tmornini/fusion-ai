@@ -1,4 +1,4 @@
-import { $ } from '../app/dom.ts';
+import { $required } from '../app/dom.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
 import { setHtml } from '../app/safe-html.ts';
 import { showToast } from '../app/toast.ts';
@@ -67,8 +67,9 @@ export async function init(
         return;
     }
     recordId = id;
-    const root = $('#page-root', document);
-    if (!root) return;
+    const root = $required(
+        '#page-root', document,
+    );
 
     await load(root);
     subscribeRecordChanges(() => {

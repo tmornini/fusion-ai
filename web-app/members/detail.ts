@@ -1,5 +1,5 @@
 import {
-    $, isFormField,
+    $required, isFormField,
 } from '../app/dom.ts';
 import {
     HumanMemberDetailPresenter,
@@ -149,10 +149,9 @@ export async function init(
         return;
     }
 
-    const container = $(
+    const container = $required(
         '#member-detail-content', document,
     );
-    if (!container) return;
     pageContainer = container;
 
     const member = await withLoadingState(

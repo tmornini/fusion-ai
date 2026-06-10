@@ -32,9 +32,9 @@ export async function init():
     };
 
     function renderPage(): void {
-        const root =
-            $('#create-content', document);
-        if (!root) return;
+        const root = $required(
+            '#create-content', document,
+        );
         setHtml(
             root,
             new IdeaCreatePresenter(formState)

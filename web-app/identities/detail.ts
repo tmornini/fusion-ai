@@ -1,4 +1,4 @@
-import { $ } from '../app/dom.ts';
+import { $required } from '../app/dom.ts';
 import { createPageAbort } from '../app/page-lifecycle.ts';
 import { showToast } from '../app/toast.ts';
 import { log } from '../app/logger.ts';
@@ -78,10 +78,9 @@ export async function init(
     }
     currentId = identityId;
 
-    const container = $(
+    const container = $required(
         '#identity-detail-content', document,
     );
-    if (!container) return;
     pageContainer = container;
 
     const loaded = await withLoadingState(

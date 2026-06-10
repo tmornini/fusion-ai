@@ -1,5 +1,5 @@
 import {
-    $, $input, $textarea,
+    $, $input, $required, $textarea,
     populateIcons,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
@@ -32,8 +32,9 @@ const { signal } = createPageAbort();
 let identityListEl: HTMLElement | null = null;
 
 export async function init(): Promise<void> {
-    const list = $('#identity-list', document);
-    if (!list) return;
+    const list = $required(
+        '#identity-list', document,
+    );
 
     populateIcons([
         ['#add-identity-btn-icon', iconPersonPlus(16, '')],
