@@ -307,16 +307,18 @@ export async function verifyAccessToken(
 }
 
 // The single home of the latest-`at`-wins revocation reduce.
-// RFC-3339 zulu sorts lexically = chronologically. Passes an
-// explicit strict `>` compare to preserve the original reduce
-// exactly; since it extracts the `at` stamp, a same-`at` tie is
-// value-identical either way. Returns the stamp string or null.
+// RFC-3339 zulu sorts lexically = chronologically. The default
+// (at, id) total order decides; since this extracts the `at`
+// stamp, a same-`at` tie is value-identical either way.
+// Returns the stamp string or null.
 export function latestRevocationAt(
-    rows: readonly { identity_id: Id; at: string }[],
+    rows: readonly {
+        id: Id; identity_id: Id; at: string;
+    }[],
     identityId: Id,
 ): string | null {
     const latest = latestByKey(
-        rows, row => row.identity_id, (a, b) => a.at > b.at,
+        rows, row => row.identity_id,
     ).get(identityId);
     return latest === undefined ? null : latest.at;
 }
@@ -329,7 +331,9 @@ export function latestRevocationAt(
 // revocation. The reduce itself lives in latestRevocationAt —
 // this only does the epoch conversion.
 export function revokedThroughSeconds(
-    rows: readonly { identity_id: Id; at: string }[],
+    rows: readonly {
+        id: Id; identity_id: Id; at: string;
+    }[],
     identityId: Id,
 ): number | null {
     const at = latestRevocationAt(rows, identityId);

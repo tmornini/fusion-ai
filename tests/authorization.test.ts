@@ -55,7 +55,11 @@ test('roles are isolated per org', () => {
         currentRolesForInOrg(rows, 'current', 'B'), []);
 });
 
-test('a same-instant revoke beats the grant', () => {
+test('a same-instant revoke beats the grant, either order',
+() => {
+    // FAIL CLOSED: a co-timestamped revoke wins regardless of
+    // insertion order — same-instant pairs only arise across
+    // realms (two tabs), where append order proves nothing.
     const at = '2026-03-01T00:00:00.000Z';
     assert.deepEqual(
         currentRolesForInOrg([
@@ -65,10 +69,6 @@ test('a same-instant revoke beats the grant', () => {
                 at, 'A'),
         ], 'current', 'A'),
         []);
-});
-
-test('a same-instant re-grant beats the revoke', () => {
-    const at = '2026-03-01T00:00:00.000Z';
     assert.deepEqual(
         currentRolesForInOrg([
             grant('1', 'current', 'admin', 'revoked',
@@ -76,7 +76,7 @@ test('a same-instant re-grant beats the revoke', () => {
             grant('2', 'current', 'admin', 'granted',
                 at, 'A'),
         ], 'current', 'A'),
-        ['admin']);
+        []);
 });
 
 test('admin is permitted on every verb at root', () => {

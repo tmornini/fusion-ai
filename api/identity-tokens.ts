@@ -11,15 +11,38 @@ import {
 // Pure reductions over the append-only identity_tokens ledger.
 // The store is a dumb log; current validity is derived here.
 
+// On an equal-`at` tie the FAIL-CLOSED action wins regardless
+// of row order — a revoke beats a co-timestamped rotate or
+// issue on every backend. Equal actions fall to the id tail
+// for determinism.
+const ACTION_RANK: Record<IdentityTokenAction, number> = {
+    revoked: 2,
+    rotated: 1,
+    issued: 0,
+};
+
+function failClosed(
+    candidate: IdentityTokenEntity,
+    incumbent: IdentityTokenEntity,
+): boolean {
+    if (candidate.at !== incumbent.at) {
+        return candidate.at > incumbent.at;
+    }
+    const c = ACTION_RANK[candidate.action];
+    const i = ACTION_RANK[incumbent.action];
+    if (c !== i) return c > i;
+    return candidate.id > incumbent.id;
+}
+
 // The latest lifecycle action for a jti, or null if it has no
-// events. latestByKey's default >= tiebreak keeps the later-
-// appended event on a same-`at` tie — the secure direction, so
-// a revoke beats a co-timestamped issue.
+// events. A same-`at` tie falls to the fail-closed rank above.
 export function latestActionForJti(
     rows: readonly IdentityTokenEntity[],
     jti: string,
 ): IdentityTokenAction | null {
-    const latest = latestByKey(rows, row => row.jti).get(jti);
+    const latest = latestByKey(
+        rows, row => row.jti, failClosed,
+    ).get(jti);
     return latest === undefined ? null : latest.action;
 }
 

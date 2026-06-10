@@ -1,9 +1,32 @@
 import type {
     Id,
+    RoleGrantAction,
     RoleGrantEntity,
     IdentityDefaultOrgEntity,
 } from './types.ts';
 import { latestByKey } from './ledger-reduction.ts';
+
+// On an equal-`at` tie the FAIL-CLOSED action wins regardless
+// of row order — a revoke beats a co-timestamped grant on
+// every backend. Equal actions fall to the id tail for
+// determinism.
+const ACTION_RANK: Record<RoleGrantAction, number> = {
+    revoked: 1,
+    granted: 0,
+};
+
+function failClosed(
+    candidate: RoleGrantEntity,
+    incumbent: RoleGrantEntity,
+): boolean {
+    if (candidate.at !== incumbent.at) {
+        return candidate.at > incumbent.at;
+    }
+    const c = ACTION_RANK[candidate.action];
+    const i = ACTION_RANK[incumbent.action];
+    if (c !== i) return c > i;
+    return candidate.id > incumbent.id;
+}
 
 // Roles an identity currently holds IN A GIVEN ORG: the latest
 // action per role within that org — a 'granted' with no later
@@ -11,10 +34,8 @@ import { latestByKey } from './ledger-reduction.ts';
 // filter, so a grant in another org is invisible here: this is
 // the per-tenant fence at the role layer, the half of
 // `role_grants.organization_id` the gate had been writing but
-// never reading. latestByKey's default >= tiebreak resolves a
-// same-`at` tie to the later-appended row — for this single-
-// writer append-only ledger that is the later action, the
-// secure tie-break (revoke beats grant).
+// never reading. A same-`at` tie falls to the fail-closed rank
+// above.
 export function currentRolesForInOrg(
     rows: readonly RoleGrantEntity[],
     identityId: Id,
@@ -24,7 +45,9 @@ export function currentRolesForInOrg(
         row => row.identity_id === identityId
             && row.organization_id === org,
     );
-    const latest = latestByKey(inOrg, row => row.role);
+    const latest = latestByKey(
+        inOrg, row => row.role, failClosed,
+    );
     const held: string[] = [];
     for (const [role, last] of latest) {
         if (last.action === 'granted') held.push(role);
@@ -34,8 +57,8 @@ export function currentRolesForInOrg(
 
 // The org an identity has CURRENTLY chosen as its default: the
 // latest event in its append-only default-org ledger, null when
-// it has none. latestByKey's default >= tiebreak resolves a
-// same-`at` tie to the later-appended row.
+// it has none. The default (at, id) total order decides a
+// same-`at` tie deterministically on every backend.
 export function currentDefaultOrgFor(
     rows: readonly IdentityDefaultOrgEntity[],
     identityId: Id,

@@ -29,12 +29,16 @@ test('codeState is null for an unknown code', () => {
     assert.equal(codeState(rows, 'ghost'), null);
 });
 
-test('a same-instant consume beats an issue', () => {
-    const rows = [
-        ev('abc', 'issued', 'u1', 'cli', T1),
-        ev('abc', 'consumed', 'u1', 'cli', T1), // appended later
-    ];
-    assert.equal(codeState(rows, 'abc')?.status, 'consumed');
+test('a same-instant consume beats an issue, either order',
+() => {
+    const issued = ev('abc', 'issued', 'u1', 'cli', T1);
+    const consumed = ev('abc', 'consumed', 'u1', 'cli', T1);
+    assert.equal(
+        codeState([issued, consumed], 'abc')?.status,
+        'consumed');
+    assert.equal(
+        codeState([consumed, issued], 'abc')?.status,
+        'consumed');
 });
 
 test('identity and client come from the first event', () => {
