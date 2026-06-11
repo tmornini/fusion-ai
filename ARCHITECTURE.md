@@ -501,8 +501,10 @@ layer directly.
   `ctx.GET/PUT/DELETE/POST/commit`. The standalone
   `GET/PUT/...` exports in `api/api.ts` are the transport
   `ctx` delegates to — adapters never import them directly.
-  Multi-table reads share one ctx so every adapter call in a
-  request sees the same snapshot.
+  Each verb dispatches its own request with its own per-op
+  transactions: two awaited reads on one ctx are NOT a
+  snapshot — a write (same tab or cross-tab) can land
+  between them.
 - **Platform-shim vs data-access adapters share `adapters/`.**
   Data-access adapters (`ideas.ts`, `flow-queries.ts`, etc.)
   fetch entity data through `ctx`. Platform shims
