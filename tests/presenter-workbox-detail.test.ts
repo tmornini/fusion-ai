@@ -3,7 +3,6 @@ import { strict as assert } from 'node:assert';
 import {
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
-    type StateFieldValueEntity,
     type WorkOrderFlowGraph,
     type GraphNode,
     type GraphEdge,
@@ -21,6 +20,7 @@ import type {
     RecordAttribute,
 } from '../web-app/app/adapters/record-attributes.ts';
 import type {
+    StateFieldValue,
     WorkOrder,
 } from
 '../web-app/app/adapters/work-orders-queries.ts';
@@ -205,7 +205,7 @@ function makePresenter(
         workOrder?: WorkOrder;
         transitions?: TransitionEvent[];
         fieldValues?:
-            Map<Id, StateFieldValueEntity[]>;
+            Map<Id, StateFieldValue[]>;
         activeClaim?:
             { memberId: Id; at: string } | null;
         currentMemberId?: string;
@@ -602,12 +602,10 @@ test(
             ],
         });
         const fieldValues = new Map<
-            Id, StateFieldValueEntity[]
+            Id, StateFieldValue[]
         >([
             ['t-2', [{
-                id: 'fv-1',
-                state_event_id: 't-2',
-                field_id: 'a-amt',
+                fieldId: 'a-amt',
                 value: '1200',
             }]],
         ]);

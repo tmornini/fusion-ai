@@ -6,7 +6,7 @@ import {
     memberName,
     type WorkOrder,
     type TransitionEvent,
-    type StateFieldValueEntity,
+    type StateFieldValue,
     type WorkOrderFlowGraph,
     type GraphNode,
     type GraphEdge,
@@ -133,7 +133,7 @@ export class WorkboxDetailPresenter {
         fieldValuesByEvent:
             ReadonlyMap<
                 Id,
-                readonly StateFieldValueEntity[]
+                readonly StateFieldValue[]
             >,
         activeClaim:
             { memberId: Id; at: string } | null,
@@ -566,7 +566,7 @@ function buildHistory(
     fieldValuesByEvent:
         ReadonlyMap<
             Id,
-            readonly StateFieldValueEntity[]
+            readonly StateFieldValue[]
         >,
     nodes: readonly GraphNode[],
     memberMap: Map<Id, Member>,
@@ -581,12 +581,12 @@ function buildHistory(
             HistoryFieldValue[] = [];
         for (const row of rows) {
             const attribute = attributeMap.get(
-                row.field_id,
+                row.fieldId,
             );
             if (!attribute) {
                 throw new Error(
                     'Attribute not found: '
-                        + row.field_id,
+                        + row.fieldId,
                 );
             }
             fieldValues.push({

@@ -91,6 +91,16 @@ function toWorkOrder(
 
 /* ── state_field_values ─── */
 
+// The camelCase domain shape of one field value
+// written with a transition. The parent event id is
+// the grouping key, so the pair below is all a
+// consumer needs; fieldId references the record
+// attribute that named the field.
+export interface StateFieldValue {
+    readonly fieldId: Id;
+    readonly value: string;
+}
+
 // Group all state_field_values rows by their parent
 // state_event_id. Callers iterate the work order's
 // transition events and look up its field/values from
@@ -99,22 +109,26 @@ function toWorkOrder(
 // call site treats as "no field values").
 export async function getStateFieldValuesByEvent(
     ctx: RequestContext,
-): Promise<Map<Id, StateFieldValueEntity[]>> {
+): Promise<Map<Id, StateFieldValue[]>> {
     const all = await ctx.GET<
         StateFieldValueEntity[]
     >('state-field-values');
     const byEvent = new Map<
         Id,
-        StateFieldValueEntity[]
+        StateFieldValue[]
     >();
     for (const row of all) {
+        const value = {
+            fieldId: row.field_id,
+            value: row.value,
+        };
         const list =
             byEvent.get(row.state_event_id);
         if (list) {
-            list.push(row);
+            list.push(value);
         } else {
             byEvent.set(
-                row.state_event_id, [row],
+                row.state_event_id, [value],
             );
         }
     }
