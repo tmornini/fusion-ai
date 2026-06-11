@@ -1,5 +1,5 @@
 import {
-    $, $input, $inputRequired, $required,
+    $, $$, $input, $inputRequired, $required,
     $select,
 } from '../app/dom.ts';
 import { log } from '../app/logger.ts';
@@ -991,8 +991,9 @@ async function handleExportZip(
 function parseMemberIdsFromPanel(
     panelEl: HTMLElement,
 ): MemberId[] {
-    const inputs = panelEl.querySelectorAll(
+    const inputs = $$(
         'input[type="checkbox"][data-member-id]',
+        panelEl,
     );
     const ids: MemberId[] = [];
     for (const input of inputs) {
@@ -1425,8 +1426,8 @@ export async function init(
         panelStateRef, signal,
     );
     bindFlushOnLeave(signal);
-    const initialWrap = container.querySelector(
-        '.flow-canvas-wrap',
+    const initialWrap = $(
+        '.flow-canvas-wrap', container,
     );
     if (initialWrap instanceof HTMLElement) {
         const w = initialWrap.clientWidth;
@@ -1444,8 +1445,8 @@ export async function init(
         }
     }
     subscribeResize(container, () => {
-        const liveWrap = container.querySelector(
-            '.flow-canvas-wrap',
+        const liveWrap = $(
+            '.flow-canvas-wrap', container,
         );
         if (!(liveWrap instanceof HTMLElement)) {
             return;

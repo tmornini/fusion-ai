@@ -1,5 +1,5 @@
 import {
-    $required, getRequiredAttribute,
+    $, $required, getRequiredAttribute,
 } from '../app/dom.ts';
 import { navigateTo } from '../app/core.ts';
 import {
@@ -68,12 +68,10 @@ function anchorCardTo(
     host: HTMLElement,
     g: Element,
 ): void {
-    const area = host.querySelector(
-        '.flow-stats-canvas-area',
+    const area = $(
+        '.flow-stats-canvas-area', host,
     );
-    const card = host.querySelector(
-        '#flow-stats-card',
-    );
+    const card = $('#flow-stats-card', host);
     if (
         !(area instanceof HTMLElement)
         || !(card instanceof HTMLElement)
@@ -125,8 +123,8 @@ export async function init(
             // Presenter is deliberately name-agnostic;
             // page module writes the graph's own values
             // so the header reflects the live flow name.
-            const nameEl = host.querySelector(
-                '.flow-stats-flow-name',
+            const nameEl = $(
+                '.flow-stats-flow-name', host,
             );
             if (nameEl) {
                 nameEl.textContent = graph.name;
