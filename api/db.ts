@@ -92,6 +92,16 @@ export interface EntityStore<
     T extends { id: string },
 > {
     getAll(): Promise<T[]>;
+    // The keyed sub-collection read: the rows whose indexed
+    // `column` equals `key`, tombstones already removed. The
+    // concrete stores serve it over `Tx.getWhere`; the fences
+    // serve it by matching through the inner index and then
+    // filtering to their slice. Every store face honors the
+    // same read, so no caller re-acquires it by assertion.
+    getAllWhere(
+        column: string,
+        key: string,
+    ): Promise<T[]>;
     getById(id: string): Promise<T>;
     put(
         id: string,
@@ -102,35 +112,6 @@ export interface EntityStore<
         deleteIds: readonly string[],
     ): Promise<void>;
     delete(id: string): Promise<void>;
-}
-
-// A keyed sub-collection read: the rows of one table whose
-// indexed `column` equals `key`, tombstones already removed.
-// The concrete EntityStore implements it over `Tx.getWhere`,
-// so the org fence narrows a collection to its tenant through
-// the organization_id index instead of scanning the whole
-// table and filtering in JS. Kept OFF the EntityStore
-// contract — the decorators and the history store would only
-// carry a read they never serve (Interface Segregation).
-export interface KeyedCollectionReader<
-    T extends { id: string },
-> {
-    getAllWhere(
-        column: string,
-        key: string,
-    ): Promise<T[]>;
-}
-
-// Reach a store's keyed sub-collection read, kept off the
-// EntityStore contract by Interface Segregation. Both concrete
-// leaf stores (EntityStore + HistoryEntityStore) implement it,
-// so the cast is sound for every fenced or cold-spine store
-// that narrows a collection through a secondary index — the one
-// documented home for the assertion the DbStores types erase.
-export function keyed<T extends { id: string }>(
-    store: EntityStore<T>,
-): KeyedCollectionReader<T> {
-    return store as EntityStore<T> & KeyedCollectionReader<T>;
 }
 
 // The write-side fence capability: peek + decide + write in
@@ -173,8 +154,8 @@ export interface GuardedEntityWriter<
 // Reach a store's guarded write capability, kept off the
 // EntityStore contract by Interface Segregation — only the
 // org fence needs it. Both concrete leaf stores implement
-// it, so the cast is sound for every fenced store — the same
-// documented assertion home as keyed().
+// it, so the cast is sound for every fenced store — the one
+// documented home for the assertion the DbStores types erase.
 export function guarded<T extends { id: string }>(
     store: EntityStore<T>,
 ): GuardedEntityWriter<T> {

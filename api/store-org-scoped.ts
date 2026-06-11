@@ -2,7 +2,6 @@ import { EntityNotFoundError, guarded } from './db.ts';
 import type {
     EntityStore,
     EntityPut,
-    KeyedCollectionReader,
 } from './db.ts';
 import type { Id } from './types.ts';
 
@@ -32,13 +31,12 @@ export interface OrgScoped {
 export class OrgScopedEntityStore<T extends OrgScoped>
     implements EntityStore<T>
 {
-    readonly #inner:
-        EntityStore<T> & KeyedCollectionReader<T>;
+    readonly #inner: EntityStore<T>;
     readonly #org: Id;
     readonly #table: string;
 
     constructor(
-        inner: EntityStore<T> & KeyedCollectionReader<T>,
+        inner: EntityStore<T>,
         org: Id,
         table: string,
     ) {
@@ -54,6 +52,21 @@ export class OrgScopedEntityStore<T extends OrgScoped>
         // defense). The inner deleted filter rides the same tx.
         return this.#inner.getAllWhere(
             'organization_id', this.#org,
+        );
+    }
+
+    // The keyed read, fenced: match through the inner index,
+    // keep only this org's rows. Here the filter IS the fence
+    // — the matched slice spans tenants until it is applied.
+    async getAllWhere(
+        column: string,
+        key: string,
+    ): Promise<T[]> {
+        const rows = await this.#inner.getAllWhere(
+            column, key,
+        );
+        return rows.filter(
+            row => row.organization_id === this.#org,
         );
     }
 

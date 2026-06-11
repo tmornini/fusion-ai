@@ -1,5 +1,4 @@
 import type { DbAdapter } from './db.ts';
-import { keyed } from './db.ts';
 import {
     nowEpochSeconds,
     type Id,
@@ -99,7 +98,7 @@ async function callerRolesInOrg(
     principal: Principal,
     org: Id,
 ): Promise<string[]> {
-    const rows = await keyed(adapter.roleGrants)
+    const rows = await adapter.roleGrants
         .getAllWhere('identity_id', principal.id);
     return currentRolesForInOrg(rows, principal.id, org);
 }
@@ -199,7 +198,7 @@ export async function callerOrgIds(
     adapter: DbAdapter,
     principal: Principal,
 ): Promise<Set<Id>> {
-    const memberships = await keyed(adapter.memberships)
+    const memberships = await adapter.memberships
         .getAllWhere('identity_id', principal.id);
     return new Set(
         memberships.map(m => m.organization_id),

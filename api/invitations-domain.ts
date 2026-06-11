@@ -1,7 +1,6 @@
 import type { DbAdapter } from './db.ts';
 import {
     EntityNotFoundError,
-    keyed,
 } from './db.ts';
 import {
     nowUtc,
@@ -50,7 +49,7 @@ async function callerIsOrgAdmin(
     ctx: AuthenticatedContext,
     org: Id,
 ): Promise<boolean> {
-    const rows = await keyed(ctx.base.roleGrants)
+    const rows = await ctx.base.roleGrants
         .getAllWhere('identity_id', ctx.principal.id);
     return currentRolesForInOrg(
         rows, ctx.principal.id, org,

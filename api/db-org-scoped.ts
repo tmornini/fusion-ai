@@ -1,8 +1,7 @@
-import { EntityNotFoundError, keyed } from './db.ts';
+import { EntityNotFoundError } from './db.ts';
 import type {
     DbAdapter,
     EntityStore,
-    KeyedCollectionReader,
 } from './db.ts';
 import type {
     Id,
@@ -61,16 +60,7 @@ export function orgScopedAdapter(
         inner: EntityStore<T>,
         table: string,
     ): OrgScopedEntityStore<T> =>
-        // The org-owned stores are the concrete EntityStore,
-        // which reads a tenant's slice through the
-        // organization_id index; the DbStores contract only
-        // surfaces the EntityStore interface, so we name here
-        // the keyed-read capability the concrete store has.
-        new OrgScopedEntityStore(
-            inner as EntityStore<T>
-                & KeyedCollectionReader<T>,
-            org, table,
-        );
+        new OrgScopedEntityStore(inner, org, table);
 
     const parentScope = <T extends { id: string }>(
         inner: EntityStore<T>,
@@ -80,11 +70,10 @@ export function orgScopedAdapter(
         new ParentScopedEntityStore(inner, org, table, resolver);
 
     // The membership ledger is read for parent-derived
-    // ownership (PII, credentials, state events). Its keyed
-    // read is kept off the EntityStore contract, so name it
-    // here once: resolve an identity's memberships through the
-    // identity_id index, never a per-row whole-ledger scan.
-    const memberships = keyed(base.memberships);
+    // ownership (PII, credentials, state events): an identity's
+    // memberships resolve through the identity_id index, never
+    // a per-row whole-ledger scan.
+    const memberships = base.memberships;
 
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —

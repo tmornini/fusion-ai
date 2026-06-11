@@ -3,7 +3,6 @@ import {
     EntityNotFoundError,
     LedgerImmutabilityError,
     MissingTableError,
-    keyed,
 } from './db.ts';
 import type { LatencySimulation } from './latency.ts';
 import {
@@ -248,13 +247,11 @@ export async function handleRequest(
             && (routePattern === 'entity-states/:id'
                 || routePattern
                     === 'entity-states/:id/history')) {
-            // Reach the keyed membership read kept off the
-            // EntityStore contract, so the owner resolves
-            // through the identity_id index, not a scan.
-            const memberships = keyed(adapter.memberships);
+            // The owner resolves through the memberships
+            // identity_id index, never a whole-ledger scan.
             const owner = await ownerOrgOfEntity(
                 orgOwnedProbes(adapter),
-                memberships, fenced.organization,
+                adapter.memberships, fenced.organization,
                 param(params, 0),
             );
             if (owner !== null
