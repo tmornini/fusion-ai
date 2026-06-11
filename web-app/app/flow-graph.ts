@@ -5,9 +5,11 @@ import type {
 } from './adapters/flows.ts';
 import type {
     Selection,
+    ConnectMode,
 } from './flow-interactions.ts';
 import {
     NODE_WIDTH, NODE_HEIGHT,
+    wouldBeCycle,
 } from './flow-layout.ts';
 import { pluralize } from './format.ts';
 import { findCycleEdgeIds } from './flow-cycle-edges.ts';
@@ -1021,6 +1023,157 @@ export function buildEdgePreviewPath(
         + ' pointer-events="none"/>';
 }
 
+// The in-flight connection gesture's ghost markup: a
+// would-be edge to a hovered target (Shift), a dangling
+// line (Shift, no target), or a ghost "New State" node at
+// the pointer. One string build serves the full canvas
+// rebuild and the narrow in-gesture mutator, which
+// re-renders only this layer per frame.
+export function buildConnectPreview(
+    connect: ConnectMode,
+    nodes: readonly GraphNode[],
+    edges: readonly GraphEdge[],
+): string {
+    if (connect.kind !== 'connecting') {
+        return '';
+    }
+    const fromNode = nodes.find(
+        n => n.id === connect.fromNodeId,
+    );
+    if (!fromNode) return '';
+    const src = perimeterPoint(
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+        connect.toX, connect.toY,
+    );
+    if (connect.isShift) {
+        if (
+            connect.target.kind === 'node'
+        ) {
+            const targetId =
+                connect.target.id;
+            const toNode = nodes.find(
+                n => n.id === targetId,
+            );
+            if (toNode) {
+                const isCycle =
+                    wouldBeCycle(
+                        connect.fromNodeId,
+                        targetId,
+                        edges.map(e => ({
+                            fromId:
+                                e.fromNodeId,
+                            toId:
+                                e.toNodeId,
+                        })),
+                    );
+                return buildEdgePreviewPath(
+                    fromNode,
+                    toNode,
+                    isCycle,
+                );
+            }
+        }
+        return '<line'
+            + ` x1="${src.x}"`
+            + ` y1="${src.y}"`
+            + ` x2="${connect.toX}"`
+            + ` y2="${connect.toY}"`
+            + ' stroke='
+            + '"var('
+            + '--color-muted-foreground,'
+            + ' #5a6480)"'
+            + ' stroke-width="2"'
+            + ' opacity="0.5"'
+            + ' pointer-events="none"/>';
+    }
+    const gx =
+        connect.toX - NODE_WIDTH / 2;
+    const gy =
+        connect.toY - NODE_HEIGHT / 2;
+    const halfW = NODE_WIDTH / 2;
+    const fromCx =
+        fromNode.positionX + halfW;
+    const fromCy =
+        fromNode.positionY
+        + NODE_HEIGHT / 2;
+    const endPt = perimeterPoint(
+        gx, gy,
+        NODE_WIDTH, NODE_HEIGHT,
+        fromCx, fromCy,
+    );
+    const dist = Math.hypot(
+        endPt.x - src.x,
+        endPt.y - src.y,
+    );
+    const se = whichEdge(
+        src.x, src.y,
+        fromNode.positionX,
+        fromNode.positionY,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const ee = whichEdge(
+        endPt.x, endPt.y,
+        gx, gy,
+        NODE_WIDTH, NODE_HEIGHT,
+    );
+    const cp1 = controlOffset(
+        se, dist,
+    );
+    const cp2 = controlOffset(
+        ee, dist,
+    );
+    const pathD = 'M '
+        + String(src.x) + ' '
+        + String(src.y)
+        + ' C '
+        + String(src.x + cp1.dx)
+        + ' '
+        + String(src.y + cp1.dy)
+        + ', '
+        + String(endPt.x + cp2.dx)
+        + ' '
+        + String(endPt.y + cp2.dy)
+        + ', '
+        + String(endPt.x) + ' '
+        + String(endPt.y);
+    return '<path'
+        + ' d="' + pathD + '"'
+        + ' fill="none"'
+        + ` stroke="${BLUE}"`
+        + ' stroke-width="2"'
+        + ' opacity="0.3"'
+        + ' marker-end='
+        + '"url(#flow-arrow)"'
+        + ' pointer-events='
+        + '"none"/>'
+        + '<g transform="translate('
+        + String(gx) + ', '
+        + String(gy) + ')"'
+        + ' opacity="0.3"'
+        + ' pointer-events="none">'
+        + '<rect'
+        + ` width="${NODE_WIDTH}"`
+        + ` height="${NODE_HEIGHT}"`
+        + ' rx="10"'
+        + ' fill="var('
+        + '--color-card-bg)"'
+        + ` stroke="${BLUE}"`
+        + ' stroke-width="2"/>'
+        + '<text'
+        + ` x="${halfW}"`
+        + ' y="22"'
+        + ' text-anchor="middle"'
+        + ' font-size="14"'
+        + ' font-weight="600"'
+        + ' fill="var('
+        + '--color-foreground,'
+        + ' #e0e4ef)">'
+        + 'New State</text>'
+        + '</g>';
+}
+
 // The point at fraction `t` of a polyline's arc length. A
 // waypoint edge renders as a Q/T quadratic chain through these
 // points; bezierAt (cubic) would misread its control numbers
@@ -1112,6 +1265,7 @@ export function buildGraphSvg(
         string,
         readonly { x: number; y: number }[]
     >,
+    connectPreview: string,
 ): SafeHtml {
     const nodeMap = new Map(
         nodes.map(n => [n.id, n]),
@@ -1236,6 +1390,10 @@ export function buildGraphSvg(
         + nodeMarkup
         + '</g>'
         + marqueeMarkup
+        + '<g class="flow-connect-preview"'
+        + ' pointer-events="none">'
+        + connectPreview
+        + '</g>'
         + '</svg>',
     );
 }

@@ -55,6 +55,7 @@ function render(
         { kind: 'none' },
         false, false, null,
         new Map(),
+        '',
     ).toString();
 }
 
