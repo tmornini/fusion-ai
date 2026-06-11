@@ -40,6 +40,10 @@ import { getUrlParam } from '../app/adapters/url-params.ts';
 // Responsiveness) — the one TypeScript viewport check.
 const LG_BREAKPOINT_PX = 1024;
 
+// Spinner dwell before the submit continuation runs, so
+// the loading state is perceivable rather than a flicker.
+const SUBMIT_DWELL_MS = 800;
+
 function validateEmail(
     email: string,
 ): string | null {
@@ -609,6 +613,6 @@ export async function init(): Promise<void> {
             );
             isLogin = true;
             updateMode();
-        }, 800);
+        }, SUBMIT_DWELL_MS);
     });
 }
