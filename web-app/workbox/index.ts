@@ -33,7 +33,7 @@ import {
     generateCryptoSafeBase62,
     subscribeWorkOrderChanges,
     validateWorkOrderFlowGraph,
-    type FlowPickerEntry,
+    type NotReadyFlowEntry,
     type RequestContext,
     type WorkOrderEntity,
 } from '../app/adapters/index.ts';
@@ -380,11 +380,10 @@ async function initCreateDropdown(
     );
 }
 
-function buildNotReadyRow(f: FlowPickerEntry) {
-    const count = f.problemCount ?? 0;
-    const subtitle = count === 1
+function buildNotReadyRow(f: NotReadyFlowEntry) {
+    const subtitle = f.problemCount === 1
         ? '1 node needs attention'
-        : `${count} nodes need attention`;
+        : `${f.problemCount} nodes need attention`;
     return html`<div
         class="dropdown-item-disabled"
         aria-disabled="true"
