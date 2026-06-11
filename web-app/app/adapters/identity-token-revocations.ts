@@ -17,4 +17,3 @@ export async function postIdentityLogoutEverywhere(
         { identity_id: identityId, at: nowUtc() },
     );
 }
-

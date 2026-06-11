@@ -1861,4 +1861,3 @@ export function validateRecordMultiPutBody(
         + " 'create' or 'edit', got " + kind,
     );
 }
-

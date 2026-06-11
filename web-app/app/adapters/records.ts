@@ -240,4 +240,3 @@ export async function postRecordStateChange(
     });
     recordChanges.notify();
 }
-

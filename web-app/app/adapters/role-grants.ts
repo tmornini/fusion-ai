@@ -33,4 +33,3 @@ export async function postRoleRevocation(
 ): Promise<void> {
     await appendRoleEvent(ctx, identityId, role, 'revoked');
 }
-

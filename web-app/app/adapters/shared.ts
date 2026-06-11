@@ -345,4 +345,3 @@ export function activeOrg(ctx: RequestContext): Id {
     }
     return org;
 }
-

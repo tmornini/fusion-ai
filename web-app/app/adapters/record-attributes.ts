@@ -58,4 +58,3 @@ export async function getRecordAttributesByRecord(
                 a.sort_order - b.sort_order,
         );
 }
-

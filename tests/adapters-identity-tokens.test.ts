@@ -81,4 +81,3 @@ async () => {
     const rows = await db.identityTokens.getAll();
     assert.equal(rows.length, 2);   // append-only retained
 });
-

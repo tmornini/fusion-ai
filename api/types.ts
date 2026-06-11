@@ -1686,4 +1686,3 @@ export function projectStateIsApproved(
 ): boolean {
     return state === 'approved';
 }
-

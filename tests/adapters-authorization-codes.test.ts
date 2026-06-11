@@ -43,4 +43,3 @@ test('authorization_codes store retains events', async () => {
     assert.equal(
         (await db.authorizationCodes.getAll()).length, 2);
 });
-
