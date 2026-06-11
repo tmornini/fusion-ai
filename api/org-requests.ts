@@ -1,11 +1,7 @@
-import type { DbAdapter } from './db.ts';
 import { nowUtc } from './types.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
-import {
-    type Principal,
-} from './access-token.ts';
 import {
     currentDefaultOrgFor,
 } from './authorization.ts';
@@ -26,6 +22,7 @@ import {
 } from './request-auth.ts';
 import {
     type IncomingContext,
+    type AuthenticatedContext,
 } from './request-context.ts';
 
 // GET /organizations — the caller's reachable orgs, derived
@@ -33,11 +30,11 @@ import {
 // it cannot be stale). The authoritative source the embedded
 // `orgs` claim is a snapshot of.
 async function enumerateMyOrgs(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
 ): Promise<Response> {
-    const mine = await callerOrgIds(adapter, principal);
-    const orgs = await adapter.organizations.getAll();
+    const mine =
+        await callerOrgIds(ctx.base, ctx.principal);
+    const orgs = await ctx.base.organizations.getAll();
     return Response.json(
         orgs.filter(o => mine.has(o.id)),
     );
@@ -54,7 +51,6 @@ export async function identityDefaultOrgRequest(
     request: Request,
     segments: readonly string[],
 ): Promise<Response> {
-    const adapter = ctx.base;
     const authed =
         await authenticateRequest(ctx, request);
     if (typeof authed === 'string') {
@@ -73,13 +69,15 @@ export async function identityDefaultOrgRequest(
             { status: HTTP_FORBIDDEN },
         );
     }
-    if (request.method === 'GET') {
+    if (ctx.method === 'GET') {
         return Response.json({
             organization_id:
-                await identityDefaultOrg(adapter, identityId),
+                await identityDefaultOrg(
+                    ctx.base, identityId,
+                ),
         });
     }
-    if (request.method === 'PUT') {
+    if (ctx.method === 'PUT') {
         const parse = await parseObjectBody(request);
         if (!parse.ok) {
             return Response.json(
@@ -96,7 +94,7 @@ export async function identityDefaultOrgRequest(
             );
         }
         const memberOrgs =
-            await subjectOrgs(adapter, identityId);
+            await subjectOrgs(ctx.base, identityId);
         if (!memberOrgs.includes(org)) {
             return Response.json(
                 {
@@ -107,11 +105,11 @@ export async function identityDefaultOrgRequest(
             );
         }
         const rows =
-            await adapter.identityDefaultOrgs.getAll();
+            await ctx.base.identityDefaultOrgs.getAll();
         if (currentDefaultOrgFor(rows, identityId) === org) {
             return new Response(null, { status: 204 });
         }
-        await adapter.identityDefaultOrgs.put(
+        await ctx.base.identityDefaultOrgs.put(
             generateCryptoSafeBase62(), {
                 identity_id: identityId,
                 organization_id: org,
@@ -121,7 +119,7 @@ export async function identityDefaultOrgRequest(
     }
     return Response.json(
         {
-            error: 'Method ' + request.method
+            error: 'Method ' + ctx.method
                 + ' not allowed',
         },
         { status: 405 },
@@ -142,5 +140,5 @@ export async function organizationsEnumerationRequest(
     if (typeof authed === 'string') {
         return errorJson(authed, HTTP_UNAUTHORIZED);
     }
-    return enumerateMyOrgs(ctx.base, authed.principal);
+    return enumerateMyOrgs(authed);
 }
