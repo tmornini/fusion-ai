@@ -352,8 +352,7 @@ apply to it (RED is the audit's first finding).
   localStorage tier rolls back logic errors the same way, but
   its multi-key flush is still not OS-atomic on a mid-write
   quota error — the one gap IndexedDB closes.
-- **`file:///` protocol.** Navigation detects file protocol
-  and skips link prefetching. Page URLs use relative paths.
+- **`file:///` protocol.** Page URLs use relative paths.
   Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts.** rapid programmatic navigation
   surfaces both `AbortError: Transition was skipped` and
