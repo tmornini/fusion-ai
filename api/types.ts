@@ -362,6 +362,10 @@ export function formatCompactCurrency(
     return `$${value}`;
 }
 
+export function nowEpochSeconds(): number {
+    return Math.floor(Date.now() / MS_PER_SECOND);
+}
+
 // The mint's monotonicity state: the last millisecond stamped
 // and the same-ms sequence counter that fills the final three
 // fraction digits. Owned by nowUtc alone.

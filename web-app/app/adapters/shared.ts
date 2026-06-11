@@ -1,5 +1,8 @@
 import type { DbAdapter } from '../../../api/db.ts';
-import type { Id } from '../../../api/types.ts';
+import {
+    nowEpochSeconds,
+    type Id,
+} from '../../../api/types.ts';
 import {
     GET as httpGet,
     PUT as httpPut,
@@ -249,7 +252,7 @@ async function recoverSession(
         redirectToLogin();
         return null;
     }
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     // A live access token ('install') that still drew a 401 did not
     // expire — the holder was the unscoped anonymous seed (a read

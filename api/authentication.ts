@@ -14,6 +14,7 @@ import {
 } from './crypto-safe-base62.ts';
 import {
     nowUtc,
+    nowEpochSeconds,
     type Id,
     type IdentityTokenEntity,
     type ClientEntity,
@@ -155,7 +156,7 @@ async function mintPair(
     act?: { sub: Id },
     scope?: { org?: Id; orgs?: readonly Id[] },
 ): Promise<TokenResponse> {
-    const iat = Math.floor(Date.now() / 1000);
+    const iat = nowEpochSeconds();
     const accessToken = await mintAccessToken({
         aud: TOKEN_AUDIENCE,
         sub: identityId, roles: [], name, iat,
@@ -351,7 +352,7 @@ async function grantRefresh(
     const token = typeof body.refresh_token === 'string'
         ? body.refresh_token
         : '';
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const verified = await verifyAccessToken(token, now);
     if (!verified.valid) {
         return failure(
@@ -406,7 +407,7 @@ async function grantTokenExchange(
         typeof body.actor_token === 'string'
             ? body.actor_token
             : '';
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const subjectV =
         await verifyAccessToken(subjectToken, now);
     const actorV = await verifyAccessToken(actorToken, now);
@@ -517,7 +518,7 @@ async function grantClientCredentials(
     }
     const verdict = await verifyClientAssertion(
         assertion, client,
-        Math.floor(Date.now() / 1000),
+        nowEpochSeconds(),
     );
     if (!verdict.valid) {
         return failure(

@@ -14,6 +14,9 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
+import {
+    nowEpochSeconds,
+} from '../../../api/types.ts';
 
 let adapter: DbAdapter | undefined;
 
@@ -53,10 +56,6 @@ const SESSION_TTL_SECONDS = 15 * 60;
 
 let sessionToken: string | undefined;
 
-function nowSeconds(): number {
-    return Math.floor(Date.now() / 1000);
-}
-
 async function mintSessionToken(
     sub: string,
     name: string,
@@ -66,7 +65,7 @@ async function mintSessionToken(
         sub,
         roles: [],
         name,
-        iat: nowSeconds(),
+        iat: nowEpochSeconds(),
         ttlSeconds: SESSION_TTL_SECONDS,
         jti: generateCryptoSafeBase62(),
     });

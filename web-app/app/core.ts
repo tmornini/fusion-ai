@@ -42,6 +42,9 @@ import {
     getIdentityDefaultOrg,
 } from './adapters/identity-default-org.ts';
 import {
+    nowEpochSeconds,
+} from '../../api/types.ts';
+import {
     getPreference,
     writePreference,
 } from './adapters/preferences.ts';
@@ -172,7 +175,7 @@ async function scopeBootIfCredentialed(): Promise<void> {
     } catch {
         return;   // a corrupt blob here just stays anonymous
     }
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     if (decision.kind === 'login') {
         return;   // nothing usable — keep the anonymous seed
@@ -194,8 +197,7 @@ async function scopeBootIfCredentialed(): Promise<void> {
 // Resolve the boot session from the persisted credential: install
 // a live access token, silently refresh a dead one, or bounce to
 // login when there is nothing usable. Returns false once it has
-// redirected — the caller must stop booting. `now` is computed
-// inline; the private nowSeconds stays private to init.
+// redirected — the caller must stop booting.
 async function bootAuthGate(): Promise<boolean> {
     let creds: SessionCredentials | null;
     try {
@@ -206,7 +208,7 @@ async function bootAuthGate(): Promise<boolean> {
         redirectToLogin();
         return false;
     }
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     if (decision.kind === 'install') {
         setSessionToken(decision.accessToken);

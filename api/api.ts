@@ -43,6 +43,7 @@ import type {
 } from './types.ts';
 import {
     nowUtc,
+    nowEpochSeconds,
     assertInvitationState,
     ValidationError,
     type Id,
@@ -1163,7 +1164,7 @@ async function authenticateRequest(
         return 'missing bearer token';
     }
     const token = header.slice('Bearer '.length);
-    const now = Math.floor(Date.now() / 1000);
+    const now = nowEpochSeconds();
     const result = await verifyAccessToken(token, now);
     if (!result.valid) {
         return result.reason;
