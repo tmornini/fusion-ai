@@ -13,12 +13,18 @@ import {
 import type {
     IncomingContext,
     AuthenticatedContext,
+    RequestContext,
 } from './request-context.ts';
+import { orgScopedAdapter } from './db-org-scoped.ts';
+import { HTTP_FORBIDDEN } from './http-errors.ts';
 import {
     currentRolesForInOrg,
     isPermitted,
 } from './authorization.ts';
-import { tokenRevocationReason } from './authentication.ts';
+import {
+    tokenRevocationReason,
+    identityDefaultOrg,
+} from './authentication.ts';
 
 // Authenticate in-tree requests at the one chokepoint. The
 // gate runs AFTER matchRoute (which already 404'd anything
@@ -88,7 +94,7 @@ export async function authenticateRequest(
 // currentRolesForInOrg filters to the org — identity is
 // global, roles are per-org. Derived ONCE per request at the
 // gate; every authorizer consumes the same derivation.
-export async function callerRolesInOrg(
+async function callerRolesInOrg(
     adapter: DbAdapter,
     principal: Principal,
     org: Id,
@@ -98,15 +104,68 @@ export async function callerRolesInOrg(
     return currentRolesForInOrg(rows, principal.id, org);
 }
 
+type FenceResult =
+    | { ok: true; ctx: RequestContext }
+    | { ok: false; error: string; status: number };
+
+// The fence step: every authenticated request runs
+// org-scoped. The org is resolved ONCE here — the verified
+// token claim, else the identity's default (its set choice,
+// else primary membership) — and rides the vessel, shared by
+// authz and the scoped adapter. A flat token whose identity
+// resolves to no org is DENIED: there is no global default
+// to fall back on. The membership ledger is the live truth;
+// the token's org claim is a mint-time snapshot of it.
+// Membership is re-derived on EVERY fenced request so a
+// revoked membership stops access now — not when the token
+// expires (the 15-minute de-membership window).
+export async function fenceRequest(
+    ctx: AuthenticatedContext,
+): Promise<FenceResult> {
+    const organization = ctx.principal.organization
+        ?? await identityDefaultOrg(
+            ctx.base, ctx.principal.id,
+        );
+    if (organization === null) {
+        return {
+            ok: false,
+            error: 'forbidden: identity has no'
+                + ' organization',
+            status: HTTP_FORBIDDEN,
+        };
+    }
+    const memberOrgs =
+        await callerOrgIds(ctx.base, ctx.principal);
+    if (!memberOrgs.has(organization)) {
+        return {
+            ok: false,
+            error: 'forbidden: no longer a member'
+                + ' of this organization',
+            status: HTTP_FORBIDDEN,
+        };
+    }
+    const roles = await callerRolesInOrg(
+        ctx.base, ctx.principal, organization,
+    );
+    return {
+        ok: true,
+        ctx: {
+            ...ctx,
+            organization,
+            memberOrgs,
+            roles,
+            scoped: orgScopedAdapter(ctx.base, organization),
+        },
+    };
+}
+
 export function authorizeRequest(
-    roles: readonly string[],
-    method: string,
-    pathname: string,
+    ctx: RequestContext,
 ): string | null {
-    if (isPermitted(method, pathname, roles)) {
+    if (isPermitted(ctx.method, ctx.pathname, ctx.roles)) {
         return null;
     }
-    return 'forbidden: ' + method + ' ' + pathname
+    return 'forbidden: ' + ctx.method + ' ' + ctx.pathname
         + ' requires a role this principal lacks';
 }
 
@@ -115,19 +174,17 @@ export function authorizeRequest(
 // management). Mirrors the tree-ownership check of
 // /identities/:id/default-org, widened to admin for writes.
 export function authorizeIdentityPii(
-    principal: Principal,
-    roles: readonly string[],
-    method: string,
+    ctx: RequestContext,
     targetId: string,
 ): string | null {
-    if (principal.id === targetId) {
+    if (ctx.principal.id === targetId) {
         return null;
     }
-    if (method === 'GET') {
+    if (ctx.method === 'GET') {
         return 'forbidden: an identity may read only its'
             + ' own pii';
     }
-    if (roles.includes('admin')) {
+    if (ctx.roles.includes('admin')) {
         return null;
     }
     return "forbidden: writing another identity's pii"

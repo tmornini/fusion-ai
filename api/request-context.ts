@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db.ts';
+import type { Id } from './types.ts';
 import type { Principal } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
@@ -33,6 +34,19 @@ export interface IncomingContext {
 // the one place the principal is resolved.
 export interface AuthenticatedContext extends IncomingContext {
     readonly principal: Principal;
+}
+
+// Completed by the fence step (request-auth.ts) — the one
+// place the org, the live memberships, the roles, and the
+// org-scoped adapter are resolved.
+export interface RequestContext extends AuthenticatedContext {
+    readonly organization: Id;
+    // The caller's live membership orgs, derived from the
+    // ledger at the fence — the one truth the liveness check
+    // and the organizations/:id read fence both consume.
+    readonly memberOrgs: ReadonlySet<Id>;
+    readonly roles: readonly string[];
+    readonly scoped: DbAdapter;
 }
 
 export function incomingContext(

@@ -8,14 +8,12 @@ import {
 import {
     ValidationError,
 } from './types.ts';
-import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
     ownerOrgOfEntity,
     orgOwnedProbes,
 } from './store-parent-scoped.ts';
 import {
     exchangeBearerForOrg,
-    identityDefaultOrg,
 } from './authentication.ts';
 import {
     ApiError,
@@ -32,10 +30,9 @@ import {
     AUTHENTICATION_ROUTES,
     BOOTSTRAP_ROUTES,
     authenticateRequest,
-    callerRolesInOrg,
+    fenceRequest,
     authorizeRequest,
     authorizeIdentityPii,
-    callerOrgIds,
     parseObjectBody,
 } from './request-auth.ts';
 import {
@@ -187,14 +184,11 @@ export async function handleRequest(
     const { route: matched, params } = match;
 
     const routePattern = matched.segments.join('/');
-    // Every authenticated request runs org-scoped. The org is
-    // resolved ONCE here — the verified token claim, else the
-    // identity's default (its set choice, else primary
-    // membership) — and shared by authz and the scoped adapter.
-    // A flat token whose identity resolves to no org is DENIED:
-    // there is no global default to fall back on. Org-owned
-    // stores fence to the org; the global identity/auth spine
-    // passes through.
+    // Every authenticated request runs org-scoped — see
+    // fenceRequest, which completes the vessel: the org, the
+    // live memberships, the roles, and the scoped adapter.
+    // Org-owned stores fence to the org; the global
+    // identity/auth spine passes through.
     let effective: DbAdapter = adapter;
     // The roles of an unauthenticated caller on a bearer-
     // exempt route are honestly none; every fenced route
@@ -213,46 +207,19 @@ export async function handleRequest(
                 { status: HTTP_UNAUTHORIZED },
             );
         }
-        const { principal } = authed;
-        const org = principal.organization
-            ?? await identityDefaultOrg(
-                adapter, principal.id,
-            );
-        if (org === null) {
+        const fence = await fenceRequest(authed);
+        if (!fence.ok) {
             return Response.json(
-                {
-                    error: 'forbidden: identity has no'
-                        + ' organization',
-                },
-                { status: HTTP_FORBIDDEN },
+                { error: fence.error },
+                { status: fence.status },
             );
         }
-        // The membership ledger is the live truth; the
-        // token's org claim is a mint-time snapshot of it.
-        // Re-derive membership on EVERY fenced request so a
-        // revoked membership stops access now — not when the
-        // token expires (the 15-minute de-membership window).
-        const memberOrgs =
-            await callerOrgIds(adapter, principal);
-        if (!memberOrgs.has(org)) {
-            return Response.json(
-                {
-                    error: 'forbidden: no longer a member'
-                        + ' of this organization',
-                },
-                { status: HTTP_FORBIDDEN },
-            );
-        }
-        roles = await callerRolesInOrg(
-            adapter, principal, org,
-        );
+        const fenced = fence.ctx;
         const authzFailure =
             routePattern === 'identities/:id/pii'
                 ? authorizeIdentityPii(
-                    principal, roles,
-                    method, param(params, 0))
-                : authorizeRequest(
-                    roles, method, pathname);
+                    fenced, param(params, 0))
+                : authorizeRequest(fenced);
         if (authzFailure !== null) {
             return Response.json(
                 { error: authzFailure },
@@ -265,7 +232,7 @@ export async function handleRequest(
         // org is created before its first membership exists.
         if (method === 'GET'
             && routePattern === 'organizations/:id'
-            && !memberOrgs.has(param(params, 0))) {
+            && !fenced.memberOrgs.has(param(params, 0))) {
             return Response.json(
                 { error: 'Not found: ' + pathname },
                 { status: HTTP_NOT_FOUND },
@@ -286,16 +253,19 @@ export async function handleRequest(
             const memberships = keyed(adapter.memberships);
             const owner = await ownerOrgOfEntity(
                 orgOwnedProbes(adapter),
-                memberships, org, param(params, 0),
+                memberships, fenced.organization,
+                param(params, 0),
             );
-            if (owner !== null && owner !== org) {
+            if (owner !== null
+                && owner !== fenced.organization) {
                 return Response.json(
                     { error: 'Not found: ' + pathname },
                     { status: HTTP_NOT_FOUND },
                 );
             }
         }
-        effective = orgScopedAdapter(adapter, org);
+        effective = fenced.scoped;
+        roles = fenced.roles;
     }
 
     // Parse the request body when the method
