@@ -962,7 +962,7 @@ export interface Objective {
 }
 
 export interface ObjectiveRevision {
-    id: string;
+    id: Id;
     objective_id: ObjectiveId;
     name: string;
     description: string;
@@ -971,7 +971,7 @@ export interface ObjectiveRevision {
 }
 
 export interface ProjectObjectiveBaselineScore {
-    id: string;
+    id: Id;
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
@@ -980,7 +980,7 @@ export interface ProjectObjectiveBaselineScore {
 }
 
 export interface ProjectObjectiveActualScore {
-    id: string;
+    id: Id;
     project_id: Id;
     objective_id: ObjectiveId;
     score: number;
@@ -1002,7 +1002,7 @@ export interface ProjectEntity {
 }
 
 export interface GraphNode {
-    id: string;
+    id: Id;
     name: string;
     positionX: number;
     positionY: number;
@@ -1014,10 +1014,10 @@ export interface GraphNode {
 }
 
 export interface GraphEdge {
-    id: string;
+    id: Id;
     name: string;
-    fromNodeId: string;
-    toNodeId: string;
+    fromNodeId: Id;
+    toNodeId: Id;
 }
 
 export interface StoredGraph {
