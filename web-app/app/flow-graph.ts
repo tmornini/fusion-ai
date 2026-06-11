@@ -393,6 +393,7 @@ function buildGrid(
         + ` height="${vbH}"`
         + ` fill="${SURFACE}"/>`
         + '<rect'
+        + ' class="flow-grid-dots"'
         + ` x="${vbX}" y="${vbY}"`
         + ` width="${vbW}"`
         + ` height="${vbH}"`
@@ -849,9 +850,17 @@ function buildEdge(
 
     const strokeWidth = EDGE_STROKE;
 
+    // data-edge-ref marks BOTH edge group variants for the
+    // narrow in-gesture mutator. The interaction layer keys
+    // on data-edge-id alone, so the Create-node edge stays
+    // non-interactive.
+    const idEsc = escapeForHtml(edge.id);
+
     if (fromNode.isCreate) {
         return trusted(
-            '<g aria-hidden="true">'
+            '<g'
+            + ` data-edge-ref="${idEsc}"`
+            + ' aria-hidden="true">'
             + '<path'
             + ` d="${pathD}"`
             + ' fill="none"'
@@ -918,7 +927,6 @@ function buildEdge(
         : '';
     const ariaCurrent = isSelected
         ? ' aria-current="true"' : '';
-    const idEsc = escapeForHtml(edge.id);
     const ariaLabel =
         escapeForHtml(fromNode.name)
         + ' to '
@@ -928,6 +936,7 @@ function buildEdge(
     return trusted(
         '<g'
         + ` data-edge-id="${idEsc}"`
+        + ` data-edge-ref="${idEsc}"`
         + ' class="flow-edge"'
         + ` role="${EDGE_ROLE}"`
         + ` tabindex="${FOCUSABLE_TABINDEX}"`
