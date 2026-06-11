@@ -1,9 +1,13 @@
 const MAX_TOASTS = 5;
 const TOAST_DURATION_MS = 6000;
-// Matches the `.toast--closing` fade in components-toast.css
-// (var(--duration-slow)); the class owns the visual, this owns
-// the removal-after-fade timing.
-const TOAST_TRANSITION_MS = 300;
+// Removal is event-driven — the fade itself rings the
+// bell — so no duration is duplicated here. This bound
+// exists ONLY for a fade that can never finish (e.g. an
+// undisplayed container, or CSS not yet loaded); it sits
+// far above any fade duration so it never clips one.
+// Under prefers-reduced-motion the universal reset clamps
+// the transition to 0.01ms and transitionend still fires.
+const TOAST_REMOVAL_FALLBACK_MS = 2000;
 const TOAST_CONTAINER_ID = 'toast-container';
 
 function closeActiveToast(
@@ -13,9 +17,16 @@ function closeActiveToast(
         return;
     }
     toast.classList.add('toast--closing');
+    const removeOnce = (): void => toast.remove();
+    toast.addEventListener(
+        'transitionend', removeOnce, { once: true },
+    );
+    toast.addEventListener(
+        'transitioncancel', removeOnce, { once: true },
+    );
     setTimeout(
-        () => toast.remove(),
-        TOAST_TRANSITION_MS,
+        removeOnce,
+        TOAST_REMOVAL_FALLBACK_MS,
     );
 }
 
