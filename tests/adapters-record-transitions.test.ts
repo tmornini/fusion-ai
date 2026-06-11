@@ -121,6 +121,20 @@ async function seedBinding(
     });
 }
 
+async function seedFlowLink(
+    db: MemoryDbAdapter,
+    flowId: string,
+    workOrderId: string,
+): Promise<void> {
+    await db.flowWorkOrders.put(
+        'fwo-' + workOrderId, {
+            flow_id: flowId,
+            work_order_id: workOrderId,
+            at: AT_CREATED,
+        },
+    );
+}
+
 async function seedAttribute(
     db: MemoryDbAdapter,
     id: string,
@@ -201,6 +215,7 @@ test(
             db, 'wo-1', flowGraph, 'n-create',
         );
         await seedBinding(db, 'flow-1', 'rec-1');
+        await seedFlowLink(db, 'flow-1', 'wo-1');
         await seedAttribute(db, 'a-1', 'rec-1', {
             name: 'Email',
         });
@@ -262,6 +277,7 @@ test(
             value: 'me@example.com',
         });
         await seedBinding(db, 'flow-1', 'rec-1');
+        await seedFlowLink(db, 'flow-1', 'wo-1');
         await seedAttribute(db, 'a-1', 'rec-1', {
             name: 'Email',
         });
@@ -299,6 +315,7 @@ test(
             db, 'wo-1', flowGraph, 'n-create',
         );
         await seedBinding(db, 'flow-1', 'rec-1');
+        await seedFlowLink(db, 'flow-1', 'wo-1');
         await seedAttribute(db, 'a-1', 'rec-1', {
             name: 'Code',
         });
@@ -336,6 +353,7 @@ test(
             db, 'wo-1', flowGraph, 'n-create',
         );
         await seedBinding(db, 'flow-1', 'rec-1');
+        await seedFlowLink(db, 'flow-1', 'wo-1');
         await seedAttribute(db, 'a-1', 'rec-1', {
             name: 'Email',
             attribute_type: 'text',

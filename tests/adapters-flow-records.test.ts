@@ -6,6 +6,7 @@ import {
     putFlowRecord,
     deleteFlowRecord,
     getRecordForFlow,
+    getRecordForWorkOrder,
     getFlowsForRecord,
     getWorkOrdersForRecord,
 } from '../web-app/app/adapters/flow-records.ts';
@@ -79,6 +80,64 @@ test(
         assert.equal(
             await getRecordForFlow(
                 ctx, 'flow-unbound',
+            ),
+            null,
+        );
+    },
+);
+
+test(
+    'getRecordForWorkOrder resolves the record'
+    + ' via flow_work_orders then flow_records',
+    async () => {
+        const { db, ctx } = await adminContext();
+        await seedWorkOrder(
+            db, 'wo-1', 'A001', 'flow-1', 1,
+        );
+        await putFlowRecord(ctx, 'fr-1', {
+            flow_id: 'flow-1',
+            record_id: 'rec-1',
+            at: AT,
+        });
+        assert.equal(
+            await getRecordForWorkOrder(
+                ctx, 'wo-1',
+            ),
+            'rec-1',
+        );
+    },
+);
+
+test(
+    'getRecordForWorkOrder returns null for a'
+    + ' work order with no flow link',
+    async () => {
+        const { ctx } = await adminContext();
+        await putFlowRecord(ctx, 'fr-1', {
+            flow_id: 'flow-1',
+            record_id: 'rec-1',
+            at: AT,
+        });
+        assert.equal(
+            await getRecordForWorkOrder(
+                ctx, 'wo-unlinked',
+            ),
+            null,
+        );
+    },
+);
+
+test(
+    'getRecordForWorkOrder returns null when the'
+    + ' linked flow has no record binding',
+    async () => {
+        const { db, ctx } = await adminContext();
+        await seedWorkOrder(
+            db, 'wo-1', 'A001', 'flow-1', 1,
+        );
+        assert.equal(
+            await getRecordForWorkOrder(
+                ctx, 'wo-1',
             ),
             null,
         );

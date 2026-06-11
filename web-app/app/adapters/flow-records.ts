@@ -59,6 +59,28 @@ export async function getRecordForFlow(
     return found ? found.record_id : null;
 }
 
+export async function getRecordForWorkOrder(
+    ctx: RequestContext,
+    workOrderId: Id,
+): Promise<RecordId | null> {
+    const [links, bindings] = await Promise.all([
+        ctx.GET<FlowWorkOrderEntity[]>(
+            'flow-work-orders',
+        ),
+        getFlowRecordRows(ctx),
+    ]);
+    const link = links.find(
+        l => l.work_order_id === workOrderId,
+    );
+    if (!link) {
+        return null;
+    }
+    const found = bindings.find(
+        b => b.flow_id === link.flow_id,
+    );
+    return found ? found.record_id : null;
+}
+
 export async function getFlowsForRecord(
     ctx: RequestContext,
     recordId: RecordId,
