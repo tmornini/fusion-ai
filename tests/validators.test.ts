@@ -17,6 +17,9 @@ import {
     asStoredGraph,
 } from '../api/validators.ts';
 import {
+    DEFAULT_LOCK_TIMEOUT,
+} from '../api/types.ts';
+import {
     firstProviderModel,
 } from './member-fixtures.ts';
 
@@ -348,7 +351,7 @@ const validFlow = {
     is_locked: false,
     is_auto_layout: true,
     is_auto_fit: true,
-    lock_timeout: 28800,
+    lock_timeout: DEFAULT_LOCK_TIMEOUT,
     graph: '{"nodes":[],"edges":[]}',
 };
 
@@ -455,7 +458,7 @@ const validFlowVersion = {
     is_locked: false,
     is_auto_layout: true,
     is_auto_fit: true,
-    lock_timeout: 28800,
+    lock_timeout: DEFAULT_LOCK_TIMEOUT,
     graph: '{"nodes":[],"edges":[]}',
     at: '2024-01-01T00:00:00.000000Z',
 };
@@ -486,7 +489,7 @@ test(
 const minimalWoGraph = JSON.stringify({
     flowId: 'f-1',
     name: 'WO Flow',
-    lockTimeout: 28800,
+    lockTimeout: DEFAULT_LOCK_TIMEOUT,
     nodes: [],
     edges: [],
 });
@@ -527,7 +530,8 @@ test(
         () => validateWorkOrderEntity({
             ...validWorkOrder,
             flow_graph: JSON.stringify({
-                name: 'WO Flow', lockTimeout: 28800,
+                name: 'WO Flow',
+                lockTimeout: DEFAULT_LOCK_TIMEOUT,
                 nodes: [], edges: [],
             }),
         }),

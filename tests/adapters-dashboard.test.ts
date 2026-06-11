@@ -19,6 +19,7 @@ import {
     type ProjectState,
     type FlowEntity,
     type JsonObjectField,
+    DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 
 async function setupDb(): Promise<{
@@ -104,7 +105,7 @@ function buildFlow(
         is_locked: false,
         is_auto_layout: true,
         is_auto_fit: true,
-        lock_timeout: 28800,
+        lock_timeout: DEFAULT_LOCK_TIMEOUT,
         graph: EMPTY_GRAPH,
     };
 }
