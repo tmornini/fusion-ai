@@ -1,6 +1,9 @@
 import type {
-    RecordAttribute,
+    AttributeType,
+    Constraint,
+    Id,
     RecordAttributeEntity,
+    RecordAttributeId,
     RecordId,
 } from '../../../api/types.ts';
 import {
@@ -13,9 +16,23 @@ import {
 } from './shared.ts';
 
 export type {
-    RecordAttribute,
     RecordAttributeId,
 } from '../../../api/types.ts';
+
+// The parsed domain twin of RecordAttributeEntity: the
+// adapter is the divorce point, so above the storage seam
+// `options` and `constraints` are real arrays, never the
+// JsonArrayField strings the datastore persists.
+export interface RecordAttribute {
+    id: RecordAttributeId;
+    organization_id: Id;
+    record_id: RecordId;
+    name: string;
+    attribute_type: AttributeType;
+    sort_order: number;
+    options: string[];
+    constraints: Constraint[];
+}
 
 function toRecordAttribute(
     entity: RecordAttributeEntity,

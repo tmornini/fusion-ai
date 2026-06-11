@@ -36,10 +36,12 @@ import {
 import type {
     FlowEntity,
     RecordEntity,
-    RecordAttribute,
     RecordAttributeEntity,
     Constraint,
 } from '../../api/types.ts';
+import type {
+    RecordAttribute,
+} from '../app/adapters/index.ts';
 
 const { signal } = createPageAbort();
 

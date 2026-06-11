@@ -10,7 +10,6 @@ import {
     type GraphNode,
     type GraphEdge,
     type NodeAttribute,
-    type RecordAttribute,
     type AttributeType,
     type Id,
     type Member,
@@ -20,6 +19,9 @@ import type {
     StepTransition,
     TransitionEvent,
 } from '../web-app/app/adapters/state-events.ts';
+import type {
+    RecordAttribute,
+} from '../web-app/app/adapters/record-attributes.ts';
 import type {
     ConstraintViolation,
 } from '../web-app/app/record-constraints.ts';

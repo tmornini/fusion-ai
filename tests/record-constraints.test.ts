@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import type {
-    RecordAttribute,
     AttributeType,
     Constraint,
 } from '../api/types.ts';
+import type {
+    RecordAttribute,
+} from '../web-app/app/adapters/record-attributes.ts';
 import {
     validateAttributeValue,
     formatViolation,

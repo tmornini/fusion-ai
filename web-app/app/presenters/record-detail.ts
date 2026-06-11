@@ -10,12 +10,14 @@ import {
 } from '../icons.ts';
 import type {
     RecordEntity,
-    RecordAttribute,
     RecordState,
     WorkOrderEntity,
     AttributeType,
     Constraint,
 } from '../../../api/types.ts';
+import type {
+    RecordAttribute,
+} from '../adapters/index.ts';
 import {
     ATTRIBUTE_TYPES,
 } from '../../../api/types.ts';

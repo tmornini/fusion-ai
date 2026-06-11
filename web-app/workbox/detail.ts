@@ -35,8 +35,10 @@ import {
 } from '../app/adapters/index.ts';
 import type {
     NodeAttribute,
-    RecordAttribute,
 } from '../../api/types.ts';
+import type {
+    RecordAttribute,
+} from '../app/adapters/index.ts';
 
 /* ── Helpers ─────────────── */
 
