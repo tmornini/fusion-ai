@@ -5,9 +5,9 @@ import {
 } from '../api/db-memory.ts';
 import {
     createRequestContext,
-    type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { devToken } from './token-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import {
     getProjectRows,
     getProjects,
@@ -28,7 +28,6 @@ import {
     seedCurrentMember,
     seedHumanMember,
 } from './member-fixtures.ts';
-import { seedAdminSchema } from './test-fixtures.ts';
 
 function buildProject(
     id: string,
@@ -67,20 +66,10 @@ async function seedProject(
     );
 }
 
-async function setupDb(): Promise<{
-    db: MemoryDbAdapter;
-    ctx: RequestContext;
-}> {
-    const db = new MemoryDbAdapter();
-    await seedAdminSchema(db);
-    const ctx = createRequestContext(db, await devToken());
-    return { db, ctx };
-}
-
 test(
     'getProjectRow round-trips all fields',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await db.projects.put('p1', buildProject(
             'p1', 'Alpha', {
                 progress: 73,
@@ -105,7 +94,7 @@ test(
 test(
     'getProjectRow rejects for missing id',
     async () => {
-        const { ctx } = await setupDb();
+        const { ctx } = await adminContext();
         await assert.rejects(
             () => getProjectRow(ctx, 'nope'),
             /Not found/,
@@ -116,7 +105,7 @@ test(
 test(
     'getProjectRows returns persisted rows',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await db.projects.put(
             'p1', buildProject('p1', 'Alpha'),
         );
@@ -135,7 +124,7 @@ test(
 test(
     'getProjectRows returns empty on empty db',
     async () => {
-        const { ctx } = await setupDb();
+        const { ctx } = await adminContext();
         const rows = await getProjectRows(ctx);
         assert.deepEqual(rows, []);
     },
@@ -144,7 +133,7 @@ test(
 test(
     'getProjects wraps rows in Project objects',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedProject(db, 'p1', 'Alpha');
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
@@ -161,7 +150,7 @@ test(
 test(
     'getProjects excludes deleted-state rows',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedProject(db, 'keep', 'Keep');
         await seedProject(
             db, 'gone', 'Gone', 'deleted',
@@ -177,7 +166,7 @@ test(
 test(
     'getProjects excludes tombstoned rows',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedProject(db, 'keep', 'Keep');
         await seedProject(db, 'gone', 'Gone');
         await db.projects.delete('gone');
@@ -192,7 +181,7 @@ test(
 );
 
 test('putProject persists a new project', async () => {
-    const { db, ctx } = await setupDb();
+    const { db, ctx } = await adminContext();
     await putProject(
         ctx, 'p1', buildProject('p1', 'Created'),
     );
@@ -201,7 +190,7 @@ test('putProject persists a new project', async () => {
 });
 
 test('putProject updates an existing project', async () => {
-    const { db, ctx } = await setupDb();
+    const { db, ctx } = await adminContext();
     await db.projects.put(
         'p1', buildProject('p1', 'Before'),
     );
@@ -218,7 +207,7 @@ test('putProject updates an existing project', async () => {
 test(
     'putProject changes are visible to a fresh ctx',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await putProject(ctx, 'p1', buildProject(
             'p1', 'Persisted',
         ));
@@ -266,7 +255,7 @@ test(
     'postProjectStateChange records a state event'
     + ' without touching the project row',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedCurrentMember(db);
         await seedProject(
             db, 'p1', 'Original', 'approved',

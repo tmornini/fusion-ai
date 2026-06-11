@@ -11,6 +11,7 @@ import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { devToken } from './token-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import {
     getMembers,
     getMemberMap,
@@ -172,9 +173,7 @@ test(
     'getMembers on an empty database returns'
     + ' an empty array',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { ctx } = await adminContext();
         const members = await getMembers(ctx);
         assert.deepEqual(members, []);
     },

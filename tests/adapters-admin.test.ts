@@ -5,9 +5,9 @@ import {
 } from '../api/db-memory.ts';
 import {
     createRequestContext,
-    type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken, orgToken } from './token-fixtures.ts';
+import { orgToken } from './token-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import {
     getOrganization,
     getOrganizationStats,
@@ -21,16 +21,6 @@ import {
     seedAdminSchema,
     orgRow,
 } from './test-fixtures.ts';
-
-async function setupDb(): Promise<{
-    db: MemoryDbAdapter;
-    ctx: RequestContext;
-}> {
-    const db = new MemoryDbAdapter();
-    await seedAdminSchema(db);
-    const ctx = createRequestContext(db, await devToken());
-    return { db, ctx };
-}
 
 function buildProject(
     id: string,
@@ -102,7 +92,7 @@ test(
     'getOrganizationStats counts projects that'
     + ' are not deleted or declined',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedProject(db, 'p1', 'submitted');
         await seedProject(
             db, 'p2', 'under-review',
@@ -121,7 +111,7 @@ test(
     'getOrganizationStats counts ideas that are'
     + ' not archived or deleted',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedMember(db, 'u1', 'active');
         await seedIdea(
             db, 'i1', 'active', 'u1',
@@ -143,7 +133,7 @@ test(
     'getOrganizationStats counts only active'
     + ' human members',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedMember(db, 'u1', 'active');
         await seedMember(db, 'u2', 'active');
         await seedMember(db, 'u3', 'pending');
@@ -158,7 +148,7 @@ test(
     'getOrganizationStats reflects latest state'
     + ' event when entities transition',
     async () => {
-        const { db, ctx } = await setupDb();
+        const { db, ctx } = await adminContext();
         await seedMember(db, 'u1', 'active');
         await seedProject(db, 'p1', 'approved');
         await seedIdea(

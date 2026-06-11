@@ -7,6 +7,7 @@ import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { devToken } from './token-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import {
     getFlowStats,
 } from '../web-app/app/adapters/flow-stats.ts';
@@ -214,9 +215,7 @@ test(
     'getFlowStats unknown flowId propagates'
     + ' the underlying error',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { ctx } = await adminContext();
         await assert.rejects(
             () => getFlowStats(ctx, 'nope'),
         );

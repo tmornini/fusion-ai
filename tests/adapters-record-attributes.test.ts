@@ -1,13 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { MemoryDbAdapter } from '../api/db-memory.ts';
-import {
-    createRequestContext,
-} from '../web-app/app/adapters/shared.ts';
-import { devToken } from './token-fixtures.ts';
-import {
-    seedAdminSchema,
-} from './test-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import { jsonArrayField } from '../api/types.ts';
 import {
     getRecordAttributesByRecord,
@@ -34,9 +27,7 @@ test(
     'getRecordAttributesByRecord returns only the'
     + ' attributes for the given record_id',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { db, ctx } = await adminContext();
         await db.recordAttributes.put(
             'a-1', attributeRow('rec-1', 'A1', 1));
         await db.recordAttributes.put(
@@ -56,9 +47,7 @@ test(
     'getRecordAttributesByRecord returns rows in'
     + ' sort_order ascending',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { db, ctx } = await adminContext();
         await db.recordAttributes.put(
             'a-mid', attributeRow('rec-1', 'middle', 5));
         await db.recordAttributes.put(

@@ -1,14 +1,9 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    createRequestContext,
     CommitError,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken } from './token-fixtures.ts';
-import {
-    seedAdminSchema,
-} from './test-fixtures.ts';
+import { adminContext } from './context-fixtures.ts';
 import {
     firstProviderModel,
 } from './member-fixtures.ts';
@@ -25,9 +20,7 @@ function buildAIMemberBody(description: string) {
 test(
     'ctx.commit runs all ops in supplied order',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { db, ctx } = await adminContext();
         await ctx.commit({
             ops: [
                 {
@@ -67,9 +60,7 @@ test(
     'ctx.commit throws CommitError and rolls back'
     + ' the whole batch',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { db, ctx } = await adminContext();
         const goodA = {
             method: 'put' as const,
             resource: 'ai-members/ai_1',
@@ -106,9 +97,7 @@ test(
     'ctx.commit rolls back every op when the'
     + ' final op fails',
     async () => {
-        const db = new MemoryDbAdapter();
-        await seedAdminSchema(db);
-        const ctx = createRequestContext(db, await devToken());
+        const { db, ctx } = await adminContext();
         const goodA = {
             method: 'put' as const,
             resource: 'ai-members/ai_1',
