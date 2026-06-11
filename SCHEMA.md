@@ -42,7 +42,11 @@ event.
 
 **State and deletion:** Entity rows themselves never carry
 state columns (`status`, `readiness`, `deleted_at`,
-`deprecated_at`, etc. are all retired). Every entity
+`deprecated_at`, etc. are retired) — with one named
+deviation: `clients.status` is a mutable lifecycle column
+on the client registry row (see § clients). Ledger tables'
+`status` columns are event labels on immutable rows, not
+entity state. Every entity
 lifecycle change is recorded as one row in the unified
 `states` event log. The latest event by `at` (a same-`at`
 tie falls to the larger row id — one total order on every
@@ -294,7 +298,11 @@ zulu moment, validated at the storage gate.
 OAuth client registry (`EntityStore`) — the websites
 built by us and others. Mutable config of record:
 redirect URIs change, JWKS rotate, a client is
-disabled. `grant_types` and `redirect_uris` are
+disabled. `status` (`active` | `disabled`) is the
+schema's one mutable lifecycle column on an entity
+row — a named deviation from the states-ledger
+discipline (§ State and deletion).
+`grant_types` and `redirect_uris` are
 space-delimited (OAuth convention); `jwks` is the
 client's JSON Web Key Set as a JSON string — JWS
 verification of `private_key_jwt` assertions runs for

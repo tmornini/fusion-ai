@@ -596,11 +596,14 @@ export type ClientStatus = 'active' | 'disabled';
 
 // An OAuth client registry row — the "websites built by us and
 // others". Mutable config of record (EntityStore): redirect URIs
-// change, JWKS rotate, a client is disabled. `grant_types` and
-// `redirect_uris` are space-delimited (OAuth convention); `jwks`
-// is the client's JSON Web Key Set as a JSON string (used to
-// verify private_key_jwt assertions — real JWS verify is a
-// server-tier seam); `aud` is the origin a token is minted for.
+// change, JWKS rotate, a client is disabled. `status` is the
+// schema's one mutable lifecycle column on an entity row — a
+// named deviation from the states ledger (SCHEMA.md § clients).
+// `grant_types` and `redirect_uris` are space-delimited (OAuth
+// convention); `jwks` is the client's JSON Web Key Set as a JSON
+// string — private_key_jwt assertions are verified against it
+// for real (api/client-assertion.ts); `aud` is the origin a
+// token is minted for.
 export interface ClientEntity {
     id: Id;
     grant_types: string;
