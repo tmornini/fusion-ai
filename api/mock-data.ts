@@ -278,38 +278,35 @@ function generateFlowWorkload(args: {
             nowMs - createdAtDaysAgo * MS_PER_DAY;
         let cursorMs = createdAtMs;
 
-        const stepMember: (Id | null)[] = [];
+        // One record per WORKING step of the path
+        // (nodeIds[1..N-2]): who works it and for how
+        // long, complete at construction. The creator
+        // and archive gateways take no member and no
+        // dwell, so they have no record at all — the
+        // absence of a row, not a null slot. A path
+        // index j maps to workingSteps[j - 1] (the
+        // creator precedes the working run).
+        const workingSteps: {
+            member: Id;
+            sojournMs: number;
+        }[] = [];
         for (const nid of path.nodeIds) {
             if (
                 nid === creatorId
                 || nid === archiveId
             ) {
-                stepMember.push(null);
                 continue;
             }
             const node = nodeById.get(nid)!;
-            stepMember.push(pickWeighted(
+            const member = pickWeighted(
                 rng, node.memberIds, () => 1,
-            ));
-        }
-
-        const stepSojournMs: number[] = [];
-        for (let j = 0; j < N; j++) {
-            const nid = path.nodeIds[j]!;
-            if (
-                nid === creatorId
-                || nid === archiveId
-            ) {
-                stepSojournMs.push(0);
-                continue;
-            }
+            );
             const mean =
                 sojourn.meanHoursByNodeId
                     .get(nid)!;
             const sigma =
                 sojourn.sigmaByNodeId
                     .get(nid)!;
-            const member = stepMember[j]!;
             const sk = skill.byMemberAndNode
                 .get(member)!.get(nid)!;
             const jit = sampleUniform(
@@ -320,16 +317,18 @@ function generateFlowWorkload(args: {
             const hours = sampleLogNormal(
                 rng, mean, sigma,
             ) * sk * jit;
-            stepSojournMs.push(
-                hours * MS_PER_HOUR,
-            );
+            workingSteps.push({
+                member,
+                sojournMs: hours * MS_PER_HOUR,
+            });
         }
 
         // The member who takes the WO into the
         // first working node also stamps the
         // Create-entry and Create-exit state
         // events.
-        const creatorPerson = stepMember[1]!;
+        const creatorPerson =
+            workingSteps[0]!.member;
 
         stateEvents.push({
             id: b62Id(rng, 22),
@@ -351,7 +350,8 @@ function generateFlowWorkload(args: {
         }
 
         for (let j = 2; j < N; j++) {
-            cursorMs += stepSojournMs[j - 1]!;
+            const prior = workingSteps[j - 2]!;
+            cursorMs += prior.sojournMs;
             // Clamp long-tail sojourns that
             // would overrun today, so no
             // event is future-dated.
@@ -362,7 +362,7 @@ function generateFlowWorkload(args: {
                 id: b62Id(rng, 22),
                 entity_id: woId,
                 state: path.nodeIds[j]!,
-                member_id: stepMember[j - 1]!,
+                member_id: prior.member,
                 at: isoFromMs(cursorMs),
             });
         }
