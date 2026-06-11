@@ -2,7 +2,6 @@ import type {
     GraphEdge,
     GraphNode,
     Id,
-    WorkOrderEntity,
 } from '../../api/types.ts';
 import {
     MS_PER_DAY,
@@ -16,8 +15,6 @@ import type { MemberHazardLevel } from './flow-graph.ts';
 export interface FlowStatsInput {
     readonly nodes: readonly GraphNode[];
     readonly edges: readonly GraphEdge[];
-    readonly workOrders:
-        readonly WorkOrderEntity[];
     readonly transitions:
         readonly TransitionEvent[];
     readonly nowMs: number;

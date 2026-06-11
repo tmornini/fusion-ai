@@ -9,8 +9,6 @@ import {
     type FlowPath,
 } from '../web-app/app/flow-stats-aggregate.ts';
 import type {
-    JsonObjectField,
-    WorkOrderEntity,
 } from '../api/types.ts';
 import type {
     TransitionEvent,
@@ -50,7 +48,6 @@ export function makeFixture(): FlowStatsInput {
             { id: 'e4', name: 'revise',
               fromNodeId: 'b', toNodeId: 'a' },
         ],
-        workOrders: [],
         transitions: [],
         nowMs: Date.parse(
             '2026-05-10T00:00:00.000000Z',
@@ -115,14 +112,6 @@ function tBefore(
     return new Date(input.nowMs - ms).toISOString();
 }
 
-function emptyWO(id: string) {
-    return {
-        id, display_id: id,
-        flow_graph: '{}' as JsonObjectField,
-        position: 0,
-    };
-}
-
 test(
     'attributes sojourns and computes'
     + ' heatPct + heatT',
@@ -134,7 +123,6 @@ test(
             tBefore(f, 1 * 3600 * 1000);
         const tEnterZ = tBefore(f, 0);
         const input: FlowStatsInput = { ...f,
-            workOrders: [emptyWO('w1')],
             transitions: [
                 { id: 't0', workOrderId: 'w1',
                   kind: 'creation',
@@ -195,7 +183,6 @@ test(
         const f = makeFixture();
         const tCreated = tBefore(f, 60_000);
         const input: FlowStatsInput = { ...f,
-            workOrders: [emptyWO('w1')],
             transitions: [
                 { id: 't0', workOrderId: 'w1',
                   kind: 'creation',
@@ -227,7 +214,6 @@ test(
         const t100d = tBefore(f, 100 * D);
         const t10d  = tBefore(f, 10  * D);
         const input: FlowStatsInput = { ...f,
-            workOrders: [emptyWO('w1')],
             transitions: [
                 { id: 't0', workOrderId: 'w1',
                   kind: 'creation',
@@ -263,7 +249,6 @@ test(
         const f = makeFixture();
         const t = tBefore(f, 60_000);
         const input: FlowStatsInput = { ...f,
-            workOrders: [emptyWO('w1')],
             transitions: [
                 { id: 't0', workOrderId: 'w1',
                   kind: 'creation',
@@ -298,11 +283,6 @@ test(
         // w2: c→a(4h)→b→a(1h)→b→z  (a revisited)
         // w3: c→a  (still in-flight at a)
         const input: FlowStatsInput = { ...f,
-            workOrders: [
-                emptyWO('w1'),
-                emptyWO('w2'),
-                emptyWO('w3'),
-            ],
             transitions: [
                 { id: '1a', workOrderId: 'w1',
                   kind: 'creation',
@@ -405,7 +385,6 @@ test(
         // 4 OUT-transitions from a: p1×3, p2×1.
         // p3 in clan but inactive.
         const input: FlowStatsInput = { ...f, nodes,
-            workOrders: [emptyWO('w')],
             transitions: [
                 { id: 'in0', workOrderId: 'w',
                   kind: 'creation',
@@ -490,7 +469,6 @@ test(
         const t = (msAgo: number) => tBefore(f, msAgo);
         const H = 3600 * 1000;
         const input: FlowStatsInput = { ...f, nodes,
-            workOrders: [emptyWO('w')],
             transitions: [
                 { id: '1', workOrderId: 'w',
                   kind: 'creation',
@@ -594,10 +572,6 @@ test(
               at:t(7*H) },
         ];
         const input: FlowStatsInput = { ...f,
-            workOrders: Array.from(
-                {length:8}, (_, i) =>
-                    emptyWO('w' + i),
-            ),
             transitions: [...enters, ...outs],
         };
         const m = buildFlowStats(input);
@@ -768,12 +742,6 @@ test(
               at:t(6*H) },
         ];
         const input: FlowStatsInput = { ...f,
-            workOrders: [
-                emptyWO('w1'),
-                emptyWO('w2'),
-                emptyWO('w3'),
-                emptyWO('wl'),
-            ],
             transitions: [
                 ...happyTrans('w1', 10 * H),
                 ...happyTrans('w2',  9 * H),
@@ -808,11 +776,9 @@ test('collapses long tail into a rest bucket', () => {
     const f = makeFixture();
     const t = (msAgo: number) => tBefore(f, msAgo);
     const H = 3600 * 1000;
-    const workOrders: WorkOrderEntity[] = [];
     const transitions: TransitionEvent[] = [];
     for (let i = 0; i < 10; i++) {
         const woId = 'w' + i;
-        workOrders.push(emptyWO(woId));
         let step = 0;
         let nowAgoH = 50;
         const push = (
@@ -842,7 +808,7 @@ test('collapses long tail into a rest bucket', () => {
         push('a', 'b');
         push('b', 'z');
     }
-    const m = buildFlowStats({ ...f, workOrders, transitions });
+    const m = buildFlowStats({ ...f, transitions });
     assert.equal(m.pathEntries.length, 9);
     assert.equal(m.pathEntries[8]!.kind, 'rest');
     const rest = m.pathEntries[8]! as

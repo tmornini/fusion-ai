@@ -123,7 +123,7 @@ export async function getStateFieldValuesByEvent(
 
 /* ── Reads ───────────────── */
 
-export async function getWorkOrderEntities(
+async function getWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<WorkOrderEntity[]> {
     return ctx.GET<WorkOrderEntity[]>(
