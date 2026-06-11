@@ -154,7 +154,7 @@ test(
             );
 
         // Compute current node from the state log.
-        const events = await db.states.allFor(woId);
+        const events = await db.states.getAllFor(woId);
         const transitions = events.filter(
             e => e.state !== 'claimed'
                 && e.state !== 'claim_released'

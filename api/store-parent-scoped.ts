@@ -212,12 +212,12 @@ export async function ownerOrgOfEntity(
 }
 
 // The READ fence for the unified states log. StateStore is not
-// an EntityStore (it has record/currentFor/allFor, no
+// an EntityStore (it has postEvent/getCurrentFor/getAllFor, no
 // putMany/delete), so it needs its own decorator. getAll and
 // getById — the row-level read endpoints (routes `states` and
 // `states/:id`) — fence by the same visible/hidden rule;
-// currentFor / allFor delegate and are gated at the
-// entity-states routes; the *In twins and deletedIds are
+// getCurrentFor / getAllFor delegate and are gated at the
+// entity-states routes; the *In twins and getDeletedIds are
 // internal delete-filter mechanics the org fence already covers
 // at the entity layer.
 export class ParentScopedStateStore implements StateStore {
@@ -264,46 +264,46 @@ export class ParentScopedStateStore implements StateStore {
         return this.#inner.put(id, fields);
     }
 
-    record(
+    postEvent(
         id: Id,
         entityId: Id,
         state: string,
         memberId: Id,
     ): Promise<void> {
-        return this.#inner.record(
+        return this.#inner.postEvent(
             id, entityId, state, memberId,
         );
     }
 
-    currentFor(entityId: Id): Promise<StateEntity | null> {
-        return this.#inner.currentFor(entityId);
+    getCurrentFor(entityId: Id): Promise<StateEntity | null> {
+        return this.#inner.getCurrentFor(entityId);
     }
 
-    allFor(entityId: Id): Promise<StateEntity[]> {
-        return this.#inner.allFor(entityId);
+    getAllFor(entityId: Id): Promise<StateEntity[]> {
+        return this.#inner.getAllFor(entityId);
     }
 
-    deletedIds(): Promise<Set<Id>> {
-        return this.#inner.deletedIds();
+    getDeletedIds(): Promise<Set<Id>> {
+        return this.#inner.getDeletedIds();
     }
 
     isDeleted(id: Id): Promise<boolean> {
         return this.#inner.isDeleted(id);
     }
 
-    currentForIn(
+    getCurrentForIn(
         tx: Tx,
         entityId: Id,
     ): Promise<StateEntity | null> {
-        return this.#inner.currentForIn(tx, entityId);
+        return this.#inner.getCurrentForIn(tx, entityId);
     }
 
-    allForIn(tx: Tx, entityId: Id): Promise<StateEntity[]> {
-        return this.#inner.allForIn(tx, entityId);
+    getAllForIn(tx: Tx, entityId: Id): Promise<StateEntity[]> {
+        return this.#inner.getAllForIn(tx, entityId);
     }
 
-    deletedIdsIn(tx: Tx): Promise<Set<Id>> {
-        return this.#inner.deletedIdsIn(tx);
+    getDeletedIdsIn(tx: Tx): Promise<Set<Id>> {
+        return this.#inner.getDeletedIdsIn(tx);
     }
 
     isDeletedIn(tx: Tx, id: Id): Promise<boolean> {

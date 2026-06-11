@@ -58,7 +58,7 @@ async function seedProject(
     id: string, state: string,
 ): Promise<void> {
     await db.projects.put(id, buildProject(id));
-    await db.states.record(
+    await db.states.postEvent(
         'sp-' + id, id, state, 'system',
     );
 }
@@ -69,7 +69,7 @@ async function seedIdea(
     submitter: string,
 ): Promise<void> {
     await db.ideas.put(id, buildIdea(id));
-    await db.states.record(
+    await db.states.postEvent(
         'si-' + id, id, state, 'system',
     );
     await db.ideaSubmissions.put('sub-' + id, {
@@ -162,15 +162,15 @@ test(
 
         // Transitions through later state events
         // (latest by 'at' wins).
-        await db.states.record(
+        await db.states.postEvent(
             'sp1-next', 'p1', 'declined',
             'system',
         );
-        await db.states.record(
+        await db.states.postEvent(
             'si1-next', 'i1', 'archived',
             'system',
         );
-        await db.states.record(
+        await db.states.postEvent(
             'sw1-next', 'u1', 'archived',
             'system',
         );
@@ -231,7 +231,7 @@ test(
         const before = await getOrganization(ctx);
         assert.equal(before.lastActivityText(), '—');
 
-        await db.states.record(
+        await db.states.postEvent(
             'ev1', 'p1', 'approved', 'current',
         );
         const after = await getOrganization(ctx);

@@ -274,7 +274,7 @@ test(
         await postRecordStateChange(
             ctx, 'rec-1', 'archived',
         );
-        const events = await db.states.allFor(
+        const events = await db.states.getAllFor(
             'rec-1',
         );
         const values = events

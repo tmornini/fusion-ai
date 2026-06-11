@@ -83,7 +83,7 @@ export async function seedHumanMember(
         phone: '',
         bio: '',
     });
-    await db.states.record(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
     );
     // A member belongs to an org via the ledger — the member
@@ -103,7 +103,7 @@ export async function seedAIMember(
 ): Promise<void> {
     await db.members.put(id, { type: 'ai' });
     await db.aiMembers.put(id, { name, ...aiDetail() });
-    await db.states.record(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
     );
     await db.memberships.put(`mb-${id}`, {

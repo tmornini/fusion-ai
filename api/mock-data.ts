@@ -6625,13 +6625,13 @@ async function populateBootstrapDataIn(
                 amiable: 80,
             }),
         }),
-        adapter.states.record(
+        adapter.states.postEvent(
             'bootstrap-system-active',
             SYSTEM_MEMBER_ID,
             'active',
             SYSTEM_MEMBER_ID,
         ),
-        adapter.states.record(
+        adapter.states.postEvent(
             'bootstrap-current-active',
             'current',
             'active',

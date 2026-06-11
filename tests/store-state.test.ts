@@ -110,14 +110,14 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
-        await db.states.record('s1', 'e1', 'a', 'w1');
+        await db.states.postEvent('s1', 'e1', 'a', 'w1');
         // RFC-3339 timestamps from Date.now() share
         // millisecond resolution; pause to guarantee
         // ordering on fast machines.
         await new Promise(resolve =>
             setTimeout(resolve, 2),
         );
-        await db.states.record('s2', 'e1', 'b', 'w1');
+        await db.states.postEvent('s2', 'e1', 'b', 'w1');
         const first = await db.states.getById('s1');
         const second = await db.states.getById('s2');
         assert.ok(second.at > first.at);
@@ -153,7 +153,7 @@ test(
             at: '2026-01-02T00:00:00.000000Z',
         });
         const current =
-            await db.states.currentFor('e1');
+            await db.states.getCurrentFor('e1');
         assert.ok(current !== null);
         assert.equal(current.id, 's2');
         assert.equal(current.state, 'b');
@@ -172,7 +172,7 @@ test(
             at: '2026-01-01T00:00:00.000000Z',
         });
         const current =
-            await db.states.currentFor('unknown');
+            await db.states.getCurrentFor('unknown');
         assert.equal(current, null);
     },
 );
@@ -207,7 +207,7 @@ test(
             member_id: 'w1',
             at: '2026-01-03T00:00:00.000000Z',
         });
-        const events = await db.states.allFor('e1');
+        const events = await db.states.getAllFor('e1');
         assert.equal(events.length, 3);
         assert.deepEqual(
             events.map(e => e.state),
@@ -236,7 +236,7 @@ test(
             at: '2026-01-01T00:00:00.000000Z',
         });
         const events =
-            await db.states.allFor('unknown');
+            await db.states.getAllFor('unknown');
         assert.deepEqual(events, []);
     },
 );

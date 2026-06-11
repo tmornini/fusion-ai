@@ -43,7 +43,7 @@ export class EntityStore<T extends { id: string }>
                     this.#table,
                 );
                 const deletedIds =
-                    await this.#stateStore.deletedIdsIn(
+                    await this.#stateStore.getDeletedIdsIn(
                         tx,
                     );
                 return rows.filter(
@@ -69,7 +69,7 @@ export class EntityStore<T extends { id: string }>
                     this.#table, column, key,
                 );
                 const deletedIds =
-                    await this.#stateStore.deletedIdsIn(
+                    await this.#stateStore.getDeletedIdsIn(
                         tx,
                     );
                 return rows.filter(

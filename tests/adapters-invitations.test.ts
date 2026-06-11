@@ -123,7 +123,7 @@ test('grant by email appends a pending invitation', async () => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.organization_id, '2');
     assert.equal(rows[0]!.identity_id, 'sarah');
-    const state = await db.states.currentFor(rows[0]!.id);
+    const state = await db.states.getCurrentFor(rows[0]!.id);
     assert.equal(state?.state, 'pending');
 });
 
@@ -188,7 +188,7 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    await db.states.record('ev-org-gone', '2', 'deleted',
+    await db.states.postEvent('ev-org-gone', '2', 'deleted',
         'system');
     const sarah = await ctxOn(db, 'sarah', '1');
     const mine = await getInvitations(sarah);

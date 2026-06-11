@@ -361,7 +361,7 @@ apply to it (RED is the audit's first finding).
   cause. Browser-internal (no app code calls
   `startViewTransition`); no app impact.
 - **The states log is append-only by convention.**
-  `StateStore.record` only appends; the table never deletes.
+  `StateStore.postEvent` only appends; the table never deletes.
   An entity's lifecycle reads as the latest event on its
   `entity_id`. Reversal is a *new* event with the new state,
   not an edit of the prior row. The split between

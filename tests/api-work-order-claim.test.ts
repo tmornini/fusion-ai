@@ -42,7 +42,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 function claimEventsFor(
     db: MemoryDbAdapter,
 ): Promise<{ state: string; member_id: string }[]> {
-    return db.states.allFor('wo1');
+    return db.states.getAllFor('wo1');
 }
 
 test('a fresh claim appends one claimed event', async () => {

@@ -214,7 +214,7 @@ test(
         );
 
         const events =
-            await db.states.allFor(woId);
+            await db.states.getAllFor(woId);
         // start node, post-start, claimed
         assert.equal(events.length, 3);
         const nonClaim = events.filter(
@@ -582,7 +582,7 @@ test(
         await pause(2);
         await postWorkOrderClaim(ctx, woId);
         const events =
-            await db.states.allFor(woId);
+            await db.states.getAllFor(woId);
         const claimed = events.filter(
             (e: StateEntity) =>
                 e.state === 'claimed',
@@ -786,7 +786,7 @@ async () => {
     await seedHumanMember(db, 'current', 'Demo Test');
     const ctx = createRequestContext(db, await devToken());
     await deleteWorkOrderClaim(ctx, 'wo-release-1');
-    const events = await db.states.allFor('wo-release-1');
+    const events = await db.states.getAllFor('wo-release-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'claim_released');
 });

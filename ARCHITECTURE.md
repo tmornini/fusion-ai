@@ -309,8 +309,8 @@ spine (`identities`, `identity_pii`, `identity_credentials`,
 `authorization_codes`, `role_grants`, …) and the tenancy
 stores (`organizations`, `memberships`); [SCHEMA.md](SCHEMA.md)
 is the authoritative list and per-column reference),
-`api/store-state.ts` (the `StateStore` class — `record`,
-`currentFor`, `allFor`, `deletedIds`, `isDeleted`),
+`api/store-state.ts` (the `StateStore` class — `postEvent`,
+`getCurrentFor`, `getAllFor`, `getDeletedIds`, `isDeleted`),
 `api/store-entity.ts` (`EntityStore` — consults `StateStore`
 for delete filtering), `api/db-indexeddb.ts` (production
 persistence tier), `api/db-localstorage.ts` (demo tier),
@@ -341,7 +341,8 @@ session token. Tests pass `createRequestContext` a
 five HTTP operations — `GET/PUT states/:id`, `GET states`,
 `GET entity-states/:id` (current), and
 `GET entity-states/:id/history` (ordered) — each dispatching
-to a `StateStore` method (`record`, `currentFor`, `allFor`).
+to a `StateStore` method (`postEvent`, `getCurrentFor`,
+`getAllFor`).
 When no schema exists, non-entry pages redirect to snapshots.
 
 ## Storage tiers

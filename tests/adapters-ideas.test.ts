@@ -46,7 +46,7 @@ async function seedIdeaState(
     ideaId: string,
     state: string,
 ): Promise<void> {
-    await db.states.record(
+    await db.states.postEvent(
         `st-${ideaId}`,
         ideaId,
         state,
@@ -189,7 +189,7 @@ test(
             await db.ideas.getById('i1');
         assert.equal(row.title, 'Fresh');
         const events =
-            await db.states.allFor('i1');
+            await db.states.getAllFor('i1');
         assert.equal(events.length, 1);
         assert.equal(
             events[0]?.state,
@@ -221,7 +221,7 @@ test(
             await db.ideas.getById('i1');
         assert.deepEqual(after, before);
         const events =
-            await db.states.allFor('i1');
+            await db.states.getAllFor('i1');
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'approved',
@@ -277,13 +277,13 @@ test(
         assert.equal(project.title, 'P1');
 
         const ideaEvents =
-            await db.states.allFor('i1');
+            await db.states.getAllFor('i1');
         assert.equal(
             ideaEvents.at(-1)?.state, 'promoted',
         );
 
         const projectEvents =
-            await db.states.allFor('p1');
+            await db.states.getAllFor('p1');
         assert.equal(projectEvents.length, 1);
         assert.equal(
             projectEvents[0]?.state, 'submitted',

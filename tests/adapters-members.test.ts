@@ -50,7 +50,7 @@ test(
         const pii =
             await db.identityPii.getById('w1');
         assert.equal(pii.name, 'Alice');
-        const events = await db.states.allFor('w1');
+        const events = await db.states.getAllFor('w1');
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },
@@ -71,7 +71,7 @@ test(
 
         const after = await db.members.getById('w1');
         assert.deepEqual(after, before);
-        const events = await db.states.allFor('w1');
+        const events = await db.states.getAllFor('w1');
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'archived',

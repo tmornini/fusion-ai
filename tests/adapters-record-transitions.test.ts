@@ -32,7 +32,7 @@ async function seedSystemMember(
     await db.members.put(SYSTEM_MEMBER_ID, {
         type: 'system',
     });
-    await db.states.record(
+    await db.states.postEvent(
         'st-system', SYSTEM_MEMBER_ID, 'active',
         'system',
     );

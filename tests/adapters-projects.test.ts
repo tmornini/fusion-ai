@@ -61,7 +61,7 @@ async function seedProject(
     await db.projects.put(
         id, buildProject(id, title, overrides),
     );
-    await db.states.record(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
     );
 }
@@ -270,7 +270,7 @@ test(
         const after =
             await db.projects.getById('p1');
         assert.deepEqual(after, before);
-        const events = await db.states.allFor('p1');
+        const events = await db.states.getAllFor('p1');
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'archived',

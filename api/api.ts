@@ -334,7 +334,7 @@ async function applyRecordMultiPut(
             if (body.kind === 'create') {
                 const member =
                     await view.members.getById('current');
-                await view.states.record(
+                await view.states.postEvent(
                     body.initialStateEventId,
                     body.id,
                     body.initialState,
@@ -825,7 +825,7 @@ const routes: Route[] = [
                     const member = await view.members
                         .getById('current');
                     const events = await view.states
-                        .allFor(workOrderId);
+                        .getAllFor(workOrderId);
                     const prior = latestClaimEvent(
                         events, workOrderId,
                     );
@@ -850,14 +850,14 @@ const routes: Route[] = [
                         prior !== null
                         && prior.state === 'claimed'
                     ) {
-                        await view.states.record(
+                        await view.states.postEvent(
                             generateCryptoSafeBase62(),
                             workOrderId,
                             'claim_expired',
                             prior.member_id,
                         );
                     }
-                    await view.states.record(
+                    await view.states.postEvent(
                         generateCryptoSafeBase62(),
                         workOrderId,
                         'claimed',
@@ -1050,11 +1050,11 @@ const routes: Route[] = [
     }),
     route('entity-states/:id', {
         get: (db, p) =>
-            db.states.currentFor(param(p, 0)),
+            db.states.getCurrentFor(param(p, 0)),
     }),
     route('entity-states/:id/history', {
         get: (db, p) =>
-            db.states.allFor(param(p, 0)),
+            db.states.getAllFor(param(p, 0)),
     }),
 
     route('snapshots/schema', {
@@ -1451,14 +1451,14 @@ async function callerIsOrgAdmin(
 }
 
 // An invitation's current state: the latest event on its id —
-// states.currentFor, the same (at, id) derivation every
+// states.getCurrentFor, the same (at, id) derivation every
 // entity's lifecycle uses. Null when no event has been
 // recorded.
 async function currentInvitationState(
     adapter: DbAdapter,
     id: Id,
 ): Promise<InvitationState | null> {
-    const latest = await adapter.states.currentFor(id);
+    const latest = await adapter.states.getCurrentFor(id);
     return latest === null
         ? null
         : assertInvitationState(latest.state, 'invitation ' + id);
@@ -1553,7 +1553,7 @@ async function invitationsForInvitee(
         (await adapter.identityPii.getAll())
             .map(p => [p.id, p.name]));
     // One states read serves every row — a per-invitation
-    // allFor opened one transaction per invitation for the
+    // getAllFor opened one transaction per invitation for the
     // same log.
     const events = await adapter.states.getAll();
     const latest = latestByKey(events, ev => ev.entity_id);
@@ -1615,7 +1615,7 @@ async function sentInvitations(
     const email = new Map(
         (await adapter.identityPii.getAll())
             .map(p => [p.id, p.email]));
-    // One states read serves every row — currentFor per
+    // One states read serves every row — getCurrentFor per
     // invitation opened one transaction each for the same log.
     const latest = latestByKey(
         await adapter.states.getAll(), ev => ev.entity_id);
@@ -1715,7 +1715,7 @@ async function grantInvitation(
                 identity_id: identityId,
                 at,
             });
-            await view.states.record(
+            await view.states.postEvent(
                 eventId, id, 'pending', principal.id);
             return { kind: 'created' };
         },
@@ -1814,7 +1814,7 @@ async function acceptInvitation(
                     at,
                 });
             }
-            await view.states.record(
+            await view.states.postEvent(
                 eventId, id, 'accepted', principal.id);
         },
     );
@@ -1848,7 +1848,7 @@ async function declineInvitation(
         const state = await currentInvitationState(view, id);
         if (state === 'declined') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
-        await view.states.record(
+        await view.states.postEvent(
             eventId, id, 'declined', principal.id);
     });
     if (conflict) {
@@ -1884,7 +1884,7 @@ async function revokeInvitation(
         const state = await currentInvitationState(view, id);
         if (state === 'revoked') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
-        await view.states.record(
+        await view.states.postEvent(
             eventId, id, 'revoked', principal.id);
     });
     if (conflict) {

@@ -38,7 +38,7 @@ async function seedIdea(
     state: string,
 ): Promise<void> {
     await db.ideas.put(id, buildIdea(id));
-    await db.states.record(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
     );
 }
@@ -73,7 +73,7 @@ async function seedProject(
     await db.projects.put(
         id, buildProject(id, overrides),
     );
-    await db.states.record(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
     );
 }
