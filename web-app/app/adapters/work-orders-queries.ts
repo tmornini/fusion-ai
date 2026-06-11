@@ -62,6 +62,33 @@ export function validateWorkOrderFlowGraph(
     );
 }
 
+// The parsed domain twin of WorkOrderEntity: the
+// adapter is the divorce point, so above the storage
+// seam the flow graph is a real WorkOrderFlowGraph,
+// never the JsonObjectField string the datastore
+// persists, and the fields speak camelCase.
+export interface WorkOrder {
+    id: Id;
+    organizationId: Id;
+    displayId: string;
+    flowGraph: WorkOrderFlowGraph;
+    position: number;
+}
+
+function toWorkOrder(
+    entity: WorkOrderEntity,
+): WorkOrder {
+    return {
+        id: entity.id,
+        organizationId: entity.organization_id,
+        displayId: entity.display_id,
+        flowGraph: validateWorkOrderFlowGraph(
+            entity.flow_graph,
+        ),
+        position: entity.position,
+    };
+}
+
 /* ── state_field_values ─── */
 
 // Group all state_field_values rows by their parent
@@ -104,6 +131,13 @@ export async function getWorkOrderEntities(
     );
 }
 
+export async function getWorkOrders(
+    ctx: RequestContext,
+): Promise<WorkOrder[]> {
+    const rows = await getWorkOrderEntities(ctx);
+    return rows.map(toWorkOrder);
+}
+
 export async function getFlowWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<FlowWorkOrderEntity[]> {
@@ -115,8 +149,9 @@ export async function getFlowWorkOrderEntities(
 export async function getWorkOrder(
     ctx: RequestContext,
     id: string,
-): Promise<WorkOrderEntity> {
-    return ctx.GET<WorkOrderEntity>(
+): Promise<WorkOrder> {
+    const row = await ctx.GET<WorkOrderEntity>(
         `work-orders/${id}`,
     );
+    return toWorkOrder(row);
 }

@@ -17,6 +17,7 @@ import {
 } from '../../../api/work-order-claims.ts';
 import {
     validateWorkOrderFlowGraph,
+    type WorkOrder,
 } from './work-orders-queries.ts';
 import {
     createSubscriptionChannel,
@@ -314,10 +315,15 @@ export async function postWorkOrderTransition(
 export async function putWorkOrder(
     ctx: RequestContext,
     id: string,
-    entity: Omit<WorkOrderEntity, 'id' | 'organization_id'>,
+    workOrder: Omit<WorkOrder, 'id' | 'organizationId'>,
 ): Promise<void> {
+    const graph = workOrder.flowGraph as unknown;
     await ctx.PUT(`work-orders/${id}`, {
-        ...entity,
+        display_id: workOrder.displayId,
+        flow_graph: jsonObjectField(
+            graph as Record<string, unknown>,
+        ),
+        position: workOrder.position,
     });
     workOrderChanges.notify();
 }

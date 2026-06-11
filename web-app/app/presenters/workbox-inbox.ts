@@ -7,8 +7,7 @@ import { DISPLAY_ABSENT } from '../format.ts';
 import { buildPageUrl } from '../navigation.ts';
 import {
     memberName,
-    validateWorkOrderFlowGraph,
-    type WorkOrderEntity,
+    type WorkOrder,
     type TransitionEvent,
 } from '../adapters/index.ts';
 import type { Member } from '../adapters/index.ts';
@@ -184,7 +183,7 @@ export class WorkboxInboxPresenter {
 
 export function buildInboxItems(
     workOrders:
-        readonly WorkOrderEntity[],
+        readonly WorkOrder[],
     transitionsByWo:
         ReadonlyMap<Id, readonly TransitionEvent[]>,
     activeClaimsByWo:
@@ -194,10 +193,7 @@ export function buildInboxItems(
 ): InboxItem[] {
     const items: InboxItem[] = [];
     for (const wo of workOrders) {
-        const fg =
-            validateWorkOrderFlowGraph(
-                wo.flow_graph,
-            );
+        const fg = wo.flowGraph;
         const woTransitions =
             transitionsByWo.get(wo.id);
         if (!woTransitions
@@ -239,7 +235,7 @@ export function buildInboxItems(
 
         items.push({
             id: wo.id,
-            displayId: wo.display_id,
+            displayId: wo.displayId,
             flowName: fg.name,
             stateName: curNode.name,
             transitionerName: memberName(

@@ -4,8 +4,7 @@ import {
 import type { SafeHtml } from '../safe-html.ts';
 import {
     memberName,
-    validateWorkOrderFlowGraph,
-    type WorkOrderEntity,
+    type WorkOrder,
     type TransitionEvent,
     type StateFieldValueEntity,
     type WorkOrderFlowGraph,
@@ -115,7 +114,7 @@ export function buildAttributeInputHtml(
 }
 
 export class WorkboxDetailPresenter {
-    readonly #workOrder: WorkOrderEntity;
+    readonly #workOrder: WorkOrder;
     readonly #flowGraph: WorkOrderFlowGraph;
     readonly #currentNode: GraphNode;
     readonly #outgoingEdges:
@@ -128,7 +127,7 @@ export class WorkboxDetailPresenter {
     >;
 
     constructor(
-        workOrder: WorkOrderEntity,
+        workOrder: WorkOrder,
         transitions:
             readonly TransitionEvent[],
         fieldValuesByEvent:
@@ -145,10 +144,7 @@ export class WorkboxDetailPresenter {
         >,
     ) {
         this.#workOrder = workOrder;
-        this.#flowGraph =
-            validateWorkOrderFlowGraph(
-                workOrder.flow_graph,
-            );
+        this.#flowGraph = workOrder.flowGraph;
         this.#attributeMap = attributeMap;
 
         const sorted = [...transitions]
@@ -195,7 +191,7 @@ export class WorkboxDetailPresenter {
     }
 
     displayIdText(): string {
-        return this.#workOrder.display_id;
+        return this.#workOrder.displayId;
     }
 
     isArchive(): boolean {

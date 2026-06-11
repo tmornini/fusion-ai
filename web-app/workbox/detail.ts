@@ -28,7 +28,6 @@ import {
     createRequestContext,
     sessionContext,
     generateCryptoSafeBase62,
-    validateWorkOrderFlowGraph,
     getRecordForWorkOrder,
     getRecordAttributesByRecord,
     RecordTransitionViolations,
@@ -238,9 +237,6 @@ async function loadPresenter(
 ): Promise<WorkboxDetailPresenter> {
     const workOrder =
         await getWorkOrder(ctx, workOrderId);
-    const fg = validateWorkOrderFlowGraph(
-        workOrder.flow_graph,
-    );
     const [
         transitions,
         fieldValuesByEvent,
@@ -253,7 +249,8 @@ async function loadPresenter(
         ),
         getStateFieldValuesByEvent(ctx),
         getWorkOrderActiveClaim(
-            ctx, workOrderId, fg.lockTimeout,
+            ctx, workOrderId,
+            workOrder.flowGraph.lockTimeout,
         ),
         getMemberMap(ctx),
         getRecordForWorkOrder(ctx, workOrderId),

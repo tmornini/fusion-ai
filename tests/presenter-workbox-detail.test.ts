@@ -1,10 +1,8 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
-    jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
-    type WorkOrderEntity,
     type StateFieldValueEntity,
     type WorkOrderFlowGraph,
     type GraphNode,
@@ -23,6 +21,10 @@ import type {
     RecordAttribute,
 } from '../web-app/app/adapters/record-attributes.ts';
 import type {
+    WorkOrder,
+} from
+'../web-app/app/adapters/work-orders-queries.ts';
+import type {
     ConstraintViolation,
 } from '../web-app/app/record-constraints.ts';
 import {
@@ -39,9 +41,8 @@ import {
 // field values, the active claim (or null), a
 // memberMap, the current member id, and the
 // attribute map; buildPage() returns SafeHtml.
-// The work order's flow_graph is a JsonObjectField
-// (a JSON string) that the presenter re-validates,
-// so we stringify a WorkOrderFlowGraph shape.
+// The work order arrives as the parsed domain model
+// — the adapter already validated the flow graph.
 
 function makeAttributeRef(
     overrides: Partial<NodeAttribute> = {},
@@ -132,16 +133,13 @@ function makeFlowGraph(
 
 function makeWorkOrder(
     graph: WorkOrderFlowGraph,
-    overrides: Partial<WorkOrderEntity> = {},
-): WorkOrderEntity {
+    overrides: Partial<WorkOrder> = {},
+): WorkOrder {
     return {
         id: 'wo-1',
-        display_id: 'WO-42',
-        flow_graph: jsonObjectField(
-            graph as unknown as Record<
-                string, unknown
-            >,
-        ),
+        organizationId: '1',
+        displayId: 'WO-42',
+        flowGraph: graph,
         position: 0,
         ...overrides,
     };
@@ -204,7 +202,7 @@ const MEMBER_MAP = makeMemberMap([
 function makePresenter(
     args: {
         graph?: WorkOrderFlowGraph;
-        workOrder?: WorkOrderEntity;
+        workOrder?: WorkOrder;
         transitions?: TransitionEvent[];
         fieldValues?:
             Map<Id, StateFieldValueEntity[]>;
