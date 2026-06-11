@@ -457,7 +457,7 @@ function buildCTA(): SafeHtml {
                     + ' amplify their human'
                     + ' intelligence. Start'
                     + ' your free trial'
-                    + ' today \u2014 no credit'
+                    + ' today — no credit'
                     + ' card required.'
                 }</p>
                 <div class="cta-buttons">

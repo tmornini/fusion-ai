@@ -400,7 +400,7 @@ function truncateLabel(
 ): string {
     return text.length > maxChars
         ? text.slice(0, maxChars - 1)
-            + '\u2026'
+            + '…'
         : text;
 }
 

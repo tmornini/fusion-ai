@@ -648,8 +648,8 @@ posIndex === state.activeIndex
                 + ' class="flex'
                 + ' items-center'
                 + ' gap-1">'
-                + '<kbd>\u2191</kbd>'
-                + '<kbd>\u2193</kbd>'
+                + '<kbd>↑</kbd>'
+                + '<kbd>↓</kbd>'
                 + ' Navigate</span>',
             )}
             ${trusted(
@@ -657,7 +657,7 @@ posIndex === state.activeIndex
                 + ' class="flex'
                 + ' items-center'
                 + ' gap-1">'
-                + '<kbd>\u21B5</kbd>'
+                + '<kbd>↵</kbd>'
                 + ' Open</span>',
             )}
             ${trusted(

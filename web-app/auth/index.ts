@@ -251,10 +251,10 @@ export async function init(): Promise<void> {
                                 name="password"
                                 type="password"
                                 placeholder="${
-                                    '\u2022\u2022'
-                                    + '\u2022\u2022'
-                                    + '\u2022\u2022'
-                                    + '\u2022\u2022'
+                                    '••'
+                                    + '••'
+                                    + '••'
+                                    + '••'
                                 }"
                                 autocomplete="${
                                     'current-'
