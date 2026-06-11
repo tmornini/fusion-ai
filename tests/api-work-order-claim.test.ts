@@ -19,7 +19,6 @@ const LOCK_TIMEOUT_SECONDS = 300;
 
 function graphJson(): string {
     return JSON.stringify({
-        flowId: 'f1',
         name: 'Flow One',
         lockTimeout: LOCK_TIMEOUT_SECONDS,
         nodes: [],

@@ -25,7 +25,6 @@ async function seedWorkOrder(
     position: number,
 ): Promise<void> {
     const flowGraph = jsonObjectField({
-        flowId,
         name: 'Flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [],

@@ -71,14 +71,11 @@ function buildEdge(
 }
 
 function buildFlowGraph(
-    flowId: string,
     nodes: GraphNode[],
     edges: GraphEdge[],
 ): WorkOrderFlowGraph {
     return {
-        flowId,
         name: 'Flow',
-        description: '',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes,
         edges,
@@ -169,7 +166,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,
@@ -198,7 +194,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,
@@ -239,7 +234,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,
@@ -298,7 +292,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,
@@ -336,7 +329,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,
@@ -382,7 +374,6 @@ test(
         await seedAdminSchema(db);
         await seedSystemMember(db);
         const flowGraph = buildFlowGraph(
-            'flow-1',
             [
                 buildNode('n-create', [], {
                     isCreate: true,

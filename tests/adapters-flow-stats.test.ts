@@ -129,7 +129,7 @@ test(
             organization_id: '1',
             display_id: 'WO-1',
             flow_graph: jsonObjectField({
-                flowId: 'f1', name: 'Onboarding',
+                name: 'Onboarding',
                 lockTimeout: 0, nodes: [], edges: [],
             }),
             position: 1,
@@ -138,7 +138,7 @@ test(
             organization_id: '1',
             display_id: 'WO-2',
             flow_graph: jsonObjectField({
-                flowId: 'f1', name: 'Onboarding',
+                name: 'Onboarding',
                 lockTimeout: 0, nodes: [], edges: [],
             }),
             position: 2,
@@ -238,7 +238,7 @@ test(
             organization_id: '1',
             display_id: 'WO-1',
             flow_graph: jsonObjectField({
-                flowId: 'f1', name: 'AutoLayout',
+                name: 'AutoLayout',
                 lockTimeout: 0, nodes: [], edges: [],
             }),
             position: 1,
