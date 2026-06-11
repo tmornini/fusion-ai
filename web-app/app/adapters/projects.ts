@@ -175,16 +175,6 @@ export class ProjectView {
             .targetEndDateValue();
     }
 
-    stateLabel(): string {
-        return this.#project
-            .stateLabel();
-    }
-
-    stateClassName(): string {
-        return this.#project
-            .stateClassName();
-    }
-
     timeBaselineDays(): number {
         const start = new Date(
             this.#project

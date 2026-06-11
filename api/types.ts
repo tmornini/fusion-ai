@@ -712,18 +712,6 @@ export class HumanMember {
         return this.#state === 'archived';
     }
 
-    stateLabel(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.className;
-    }
-
     hasDepartment(): boolean {
         return this.#department !== '';
     }
@@ -838,18 +826,6 @@ export class AIMember {
         return this.#state === 'archived';
     }
 
-    stateLabel(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.className;
-    }
-
     stateValue(): MemberState {
         return this.#state;
     }
@@ -897,18 +873,6 @@ export class SystemMember {
 
     stateValue(): MemberState {
         return this.#state;
-    }
-
-    stateLabel(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            MEMBER_STATE_CONFIG[this.#state]
-        )!.className;
     }
 
     matchesSearch(term: string): boolean {
@@ -1393,32 +1357,8 @@ export class Idea {
           : 'incomplete';
     }
 
-    readinessLabel(): string {
-        return IDEA_READINESS_CONFIG[
-            this.readinessValue()
-        ].label;
-    }
-
-    readinessClassName(): string {
-        return IDEA_READINESS_CONFIG[
-            this.readinessValue()
-        ].className;
-    }
-
     isReady(): boolean {
         return this.readinessValue() === 'ready';
-    }
-
-    stateLabel(): string {
-        return (
-            IDEA_STATE_CONFIG[this.#state]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            IDEA_STATE_CONFIG[this.#state]
-        )!.className;
     }
 
     matchesSearch(term: string): boolean {
@@ -1541,22 +1481,6 @@ export class Project {
         );
     }
 
-    stateLabel(): string {
-        return (
-            PROJECT_STATE_CONFIG[
-                this.#state
-            ]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            PROJECT_STATE_CONFIG[
-                this.#state
-            ]
-        )!.className;
-    }
-
     idForLink(): string {
         return this.#id;
     }
@@ -1629,18 +1553,6 @@ export class RecordModel {
 
     stateValue(): RecordState {
         return this.#state;
-    }
-
-    stateLabel(): string {
-        return (
-            RECORD_STATE_CONFIG[this.#state]
-        )!.label;
-    }
-
-    stateClassName(): string {
-        return (
-            RECORD_STATE_CONFIG[this.#state]
-        )!.className;
     }
 
     isActive(): boolean {

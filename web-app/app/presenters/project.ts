@@ -95,6 +95,9 @@ export class ProjectPresenter {
         const stateIcon = STATE_ICONS[
             this.#project.stateValue()
         ]!;
+        const cfg = PROJECT_STATE_CONFIG[
+            this.#project.stateValue()
+        ];
         return html`
     <div class="card card-hover p-5"
         data-project-card="${
@@ -137,18 +140,14 @@ export class ProjectPresenter {
                 }</a></h3>
                 <span class="${
                     'badge '
-                    + this.#project
-                        .stateClassName()
+                    + cfg.className
                     + ' text-xs'
                     + ' badge-fixed-w mt-1'
                 }">${
                     stateIcon(
                         14, '',
                     )
-                } ${
-                    this.#project
-                        .stateLabel()
-                }</span>
+                } ${cfg.label}</span>
             </div>
             ${this.#buildMetrics(score)}
             ${this.#buildScoreCell(score)}

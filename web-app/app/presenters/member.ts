@@ -15,6 +15,7 @@ import {
     type MemberState,
     isHumanMember,
     isAIMember,
+    MEMBER_STATE_CONFIG,
     MEMBER_WITHOUT_PII_NAME,
 } from '../adapters/index.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
@@ -130,16 +131,19 @@ export class HumanMemberRowPresenter {
     }
 
     #buildStatusBadge(): SafeHtml {
+        const cfg = MEMBER_STATE_CONFIG[
+            this.#member.stateValue()
+        ];
         return html`<span
             class="${
                 'badge '
-                + this.#member.stateClassName()
+                + cfg.className
                 + ' text-xs'
             }">${
             STATE_ICONS[
                 this.#member.stateValue()
             ]!(14, '')
-        } ${this.#member.stateLabel()}</span>`;
+        } ${cfg.label}</span>`;
     }
 
     #buildTitleBadge(): SafeHtml {
