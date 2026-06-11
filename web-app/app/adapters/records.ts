@@ -94,6 +94,21 @@ export async function getRecordState(
     );
 }
 
+// The record detail page's read: one domain facet
+// carrying identity, content, and lifecycle state —
+// the raw row and its separate state never cross the
+// seam.
+export async function getRecordModel(
+    ctx: RequestContext,
+    id: RecordId,
+): Promise<RecordModel> {
+    const [row, state] = await Promise.all([
+        getRecord(ctx, id),
+        getRecordState(ctx, id),
+    ]);
+    return new RecordModel(row, state);
+}
+
 export async function getRecords(
     ctx: RequestContext,
 ): Promise<RecordWithCounts[]> {

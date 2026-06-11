@@ -12,8 +12,7 @@ import {
 } from '../app/core.ts';
 import {
     sessionContext,
-    getRecord,
-    getRecordState,
+    getRecordModel,
     getRecordAttributesByRecord,
     getFlowSummariesForRecord,
     getWorkOrdersForRecord,
@@ -89,11 +88,10 @@ async function load(
         skeleton: buildSkeleton('detail', 1),
         fetch: async () => {
             const ctx = sessionContext();
-            const [record, state,
+            const [record,
                 attributes, flows,
                 workOrders] = await Promise.all([
-                getRecord(ctx, id),
-                getRecordState(ctx, id),
+                getRecordModel(ctx, id),
                 getRecordAttributesByRecord(
                     ctx, id,
                 ),
@@ -103,7 +101,7 @@ async function load(
                 getWorkOrdersForRecord(ctx, id),
             ]);
             return {
-                record, state,
+                record,
                 attributes, flows, workOrders,
             };
         },
@@ -111,7 +109,6 @@ async function load(
         onData: loaded => {
             currentView = {
                 record: loaded.record,
-                state: loaded.state,
                 attributes: loaded.attributes,
                 boundFlows: loaded.flows,
                 workOrders: loaded.workOrders,
@@ -560,7 +557,8 @@ async function handleSave(
     > = {
         name: draft.name.trim(),
         description: draft.description,
-        position: originalRecord.position,
+        position:
+            originalRecord.positionSortKey(),
     };
     const draftEntities = draftToEntities(
         draft, recordId,
@@ -578,8 +576,9 @@ async function handleSave(
             draftEntities, originalAttrs,
         );
     const recordChanged =
-        originalRecord.name !== recordFields.name
-        || originalRecord.description
+        originalRecord.nameText()
+            !== recordFields.name
+        || originalRecord.descriptionText()
             !== recordFields.description;
     if (!attributesChanged && !recordChanged) {
         pageState = { kind: 'reading' };

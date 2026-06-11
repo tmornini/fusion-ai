@@ -5,7 +5,6 @@ import type {
     Id,
     RecordId,
     FlowWorkOrderEntity,
-    WorkOrderEntity,
 } from '../../../api/types.ts';
 import {
     filterByField,
@@ -14,6 +13,10 @@ import {
 import {
     notifyRecordChange,
 } from './records.ts';
+import {
+    getWorkOrders,
+    type WorkOrder,
+} from './work-orders-queries.ts';
 
 export type {
     FlowRecordEntity,
@@ -111,16 +114,14 @@ export async function getFlowSummariesForRecord(
 export async function getWorkOrdersForRecord(
     ctx: RequestContext,
     recordId: RecordId,
-): Promise<WorkOrderEntity[]> {
+): Promise<WorkOrder[]> {
     const [bindings, flowWorkOrders, workOrders]
         = await Promise.all([
             getFlowRecordEntities(ctx),
             ctx.GET<FlowWorkOrderEntity[]>(
                 'flow-work-orders',
             ),
-            ctx.GET<WorkOrderEntity[]>(
-                'work-orders',
-            ),
+            getWorkOrders(ctx),
         ]);
     const flowIds = new Set(
         filterByField(bindings, 'record_id', recordId)

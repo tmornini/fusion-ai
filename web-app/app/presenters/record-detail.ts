@@ -9,14 +9,13 @@ import {
     iconTrash,
 } from '../icons.ts';
 import type {
-    RecordEntity,
-    RecordState,
-    WorkOrderEntity,
     AttributeType,
     Constraint,
 } from '../../../api/types.ts';
 import type {
     RecordAttribute,
+    RecordModel,
+    WorkOrder,
 } from '../adapters/index.ts';
 import {
     ATTRIBUTE_TYPES,
@@ -26,8 +25,7 @@ import {
 } from './state-display.ts';
 
 export interface RecordDetailView {
-    readonly record: RecordEntity;
-    readonly state: RecordState;
+    readonly record: RecordModel;
     readonly attributes:
         readonly RecordAttribute[];
     readonly boundFlows: readonly {
@@ -35,7 +33,7 @@ export interface RecordDetailView {
         name: string;
     }[];
     readonly workOrders:
-        readonly WorkOrderEntity[];
+        readonly WorkOrder[];
 }
 
 export class RecordDetailPresenter {
@@ -46,7 +44,8 @@ export class RecordDetailPresenter {
     }
 
     buildPage(): SafeHtml {
-        const state = this.#view.state;
+        const state =
+            this.#view.record.stateValue();
         const cfg = RECORD_STATE_CONFIG[state];
         return html`<div class="entity">
             <div class="${
@@ -70,7 +69,8 @@ export class RecordDetailPresenter {
                             + ' font-display'
                             + ' font-bold'
                         }">${
-                            this.#view.record.name
+                            this.#view.record
+                                .nameText()
                         }</h1>
                         <span class="${
                             'badge '
@@ -88,7 +88,8 @@ export class RecordDetailPresenter {
             </div>
             <p class="text-muted mb-6"
                 >${
-                    this.#view.record.description
+                    this.#view.record
+                        .descriptionText()
                 }</p>
             ${this.#buildAttributesCard()}
             ${this.#buildBoundFlowsCard()}
@@ -179,7 +180,7 @@ export class RecordDetailPresenter {
                         data-work-order-id="${
                             w.id
                         }"
-                            >#${w.display_id}</button>
+                            >#${w.displayId}</button>
                     </li>`,
                 )}
                 </ul>`}
@@ -204,14 +205,15 @@ export interface AttributeDraft {
 
 export function recordDraftFromView(
     view: {
-        record: RecordEntity;
+        record: RecordModel;
         attributes:
             readonly RecordAttribute[];
     },
 ): RecordDetailDraft {
     return {
-        name: view.record.name,
-        description: view.record.description,
+        name: view.record.nameText(),
+        description:
+            view.record.descriptionText(),
         attributes: view.attributes
             .toSorted(
                 (a, b) =>
