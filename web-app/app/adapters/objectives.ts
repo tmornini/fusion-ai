@@ -10,7 +10,6 @@ import {
     nowUtc,
 } from '../../../api/types.ts';
 import {
-    filterByField,
     type RequestContext,
 } from './shared.ts';
 import {
@@ -104,19 +103,8 @@ export async function getObjectiveArchivalEvents(
         }));
 }
 
-export async function getObjectiveRevisions(
-    ctx: RequestContext,
-    id: ObjectiveId,
-): Promise<ObjectiveRevisionEntity[]> {
-    const all = await ctx.GET<ObjectiveRevisionEntity[]>(
-        'objective-revisions',
-    );
-    return filterByField(all, 'objective_id', id);
-}
-
 // Every objective's revisions in ONE table read, grouped.
-// The per-objective form above re-reads the whole table
-// per id; callers walking an objective LIST batch here.
+// Callers walking an objective LIST batch here.
 export async function getObjectiveRevisionsByObjective(
     ctx: RequestContext,
 ): Promise<Map<ObjectiveId, ObjectiveRevisionEntity[]>> {
