@@ -6,7 +6,7 @@ import {
 } from './types.ts';
 import {
     verifyAccessToken,
-    principalFromToken,
+    principalFromClaims,
     ANONYMOUS_ID,
     type Principal,
 } from './access-token.ts';
@@ -73,7 +73,7 @@ export async function authenticateRequest(
     if (revoked !== null) {
         return revoked;
     }
-    return principalFromToken(token);
+    return principalFromClaims(result.claims);
 }
 
 // Roles are per-org, but a grant is keyed by identity: read
