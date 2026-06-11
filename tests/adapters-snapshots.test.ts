@@ -328,9 +328,17 @@ test(
 test(
     'putSnapshot accepts current-shape snapshot',
     async () => {
-        const { ctx } = await setup();
+        const { db, ctx } = await setup();
         const json = JSON.stringify({ members: [] });
         await putSnapshot(ctx, json);
+        // import REPLACES: the seeded admin rows are
+        // gone, proving the snapshot actually landed
+        assert.deepEqual(
+            await db.members.getAll(), [],
+        );
+        assert.deepEqual(
+            await db.memberships.getAll(), [],
+        );
     },
 );
 
