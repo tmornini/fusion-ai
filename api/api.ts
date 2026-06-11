@@ -1,7 +1,6 @@
 import type {
     DbAdapter,
     EntityStore,
-    EntityValidator,
 } from './db.ts';
 import {
     EntityNotFound,
@@ -53,7 +52,6 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
-    validateOrganizationEntity,
     validateRecordMultiPutBody,
     validateStateEntity,
     validateWorkOrderFlowGraphJson,
@@ -260,23 +258,24 @@ function withoutSecret(
 // The `/noun/:id` resource over a standard EntityStore. The
 // verbs a resource exposes are data; each maps to its one fixed
 // store op (get→getById, put→put∘withoutId, delete→delete). The
-// optional putValidate / getTransform are wired ONCE here at
-// instantiation — Dependency Inversion, not a per-request branch
-// — so the returned Route's handlers are fixed closures reused
-// for the life of the process. The states log keeps its own
-// explicit routes (StateStore, append-only, custom readers).
+// optional getTransform is wired ONCE here at instantiation —
+// Dependency Inversion, not a per-request branch — so the
+// returned Route's handlers are fixed closures reused for the
+// life of the process. Validation runs in the store, which is
+// constructed with its entity validator — the route trusts it.
+// The states log keeps its own explicit routes (StateStore,
+// append-only, custom readers).
 interface IdRouteConfig<T extends { id: string }> {
     noun: string;
     store: (db: DbAdapter) => EntityStore<T>;
     verbs: ReadonlyArray<'get' | 'put' | 'delete'>;
-    putValidate?: EntityValidator<T>;
     getTransform?: (row: T) => unknown;
 }
 
 function makeIdRoute<T extends { id: string }>(
     config: IdRouteConfig<T>,
 ): Route {
-    const { store, putValidate, getTransform } = config;
+    const { store, getTransform } = config;
     const handlers: {
         get?: GetHandler;
         put?: PutHandler;
@@ -294,9 +293,7 @@ function makeIdRoute<T extends { id: string }>(
         handlers.put = (db, p, body) =>
             store(db).put(
                 param(p, 0),
-                putValidate === undefined
-                    ? withoutId(body) as unknown as Omit<T, 'id'>
-                    : putValidate(withoutId(body)),
+                withoutId(body) as unknown as Omit<T, 'id'>,
             );
     }
     if (config.verbs.includes('delete')) {
@@ -967,7 +964,6 @@ const routes: Route[] = [
         noun: 'organizations',
         store: db => db.organizations,
         verbs: ['get', 'put'],
-        putValidate: validateOrganizationEntity,
     }),
     route('memberships', {
         get: (db) => db.memberships.getAll(),
@@ -1385,9 +1381,13 @@ async function identityDefaultOrgRequest(
             );
         }
         const body = parse.body;
-        const org = typeof body.organization_id === 'string'
-            ? body.organization_id
-            : '';
+        const org = body.organization_id;
+        if (typeof org !== 'string') {
+            return Response.json(
+                { error: 'organization_id is required' },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
         const memberOrgs =
             await subjectOrgs(adapter, identityId);
         if (!memberOrgs.includes(org)) {
