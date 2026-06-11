@@ -233,6 +233,9 @@ export async function init(): Promise<void> {
                                 }"
                                 autocomplete="${
                                     'username'
+                                }"
+                                aria-describedby="${
+                                    'email-error'
                                 }" />
                             <p class="${
                                 'text-sm '
@@ -240,7 +243,7 @@ export async function init(): Promise<void> {
                                 + 'mt-1 hidden'
                             }" id="${
                                 'email-error'
-                            }"></p>
+                            }" role="alert"></p>
                         </div>
 
                         <div>
@@ -263,6 +266,9 @@ export async function init(): Promise<void> {
                                 autocomplete="${
                                     'current-'
                                     + 'password'
+                                }"
+                                aria-describedby="${
+                                    'password-error'
                                 }" />
                             <p class="${
                                 'text-sm '
@@ -270,7 +276,7 @@ export async function init(): Promise<void> {
                                 + 'mt-1 hidden'
                             }" id="${
                                 'password-error'
-                            }"></p>
+                            }" role="alert"></p>
                         </div>
 
                         <div id="${
@@ -465,6 +471,12 @@ export async function init(): Promise<void> {
             passwordInput.classList.remove(
                 'error',
             );
+            emailInput.removeAttribute(
+                'aria-invalid',
+            );
+            passwordInput.removeAttribute(
+                'aria-invalid',
+            );
             emailError.classList.add(
                 'hidden',
             );
@@ -500,9 +512,15 @@ export async function init(): Promise<void> {
             emailInput.classList.add(
                 'input-error',
             );
+            emailInput.setAttribute(
+                'aria-invalid', 'true',
+            );
         } else {
             emailInput.classList.remove(
                 'input-error',
+            );
+            emailInput.removeAttribute(
+                'aria-invalid',
             );
         }
 
@@ -515,9 +533,15 @@ export async function init(): Promise<void> {
             passwordInput.classList.add(
                 'input-error',
             );
+            passwordInput.setAttribute(
+                'aria-invalid', 'true',
+            );
         } else {
             passwordInput.classList.remove(
                 'input-error',
+            );
+            passwordInput.removeAttribute(
+                'aria-invalid',
             );
         }
 
@@ -572,6 +596,9 @@ export async function init(): Promise<void> {
                 );
                 passwordInput.classList.add(
                     'input-error',
+                );
+                passwordInput.setAttribute(
+                    'aria-invalid', 'true',
                 );
                 return;
             }
