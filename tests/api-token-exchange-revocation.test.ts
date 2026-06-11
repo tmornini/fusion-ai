@@ -25,7 +25,7 @@ async function tokenFor(sub: string): Promise<string> {
 
 async function revokedDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.memberships.put('m', {
         organization_id: 'A', identity_id: 'u1',
         at: '2020-01-01T00:00:00.000000Z',

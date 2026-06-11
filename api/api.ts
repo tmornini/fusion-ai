@@ -1060,10 +1060,10 @@ const routes: Route[] = [
     route('snapshots/schema', {
         get: async (db) =>
             (await db.hasSchema())
-                ? db.exportSnapshot()
+                ? db.getSnapshot()
                 : null,
         delete: (db) => db.deleteSchema(),
-        post: (db) => db.createSchema(),
+        post: (db) => db.postSchemaCreation(),
     }),
     // DEMO-ONLY: these seed routes return SeededCredentials —
     // freshly-minted plaintext sign-ins surfaced in-band, once.
@@ -1097,7 +1097,7 @@ const routes: Route[] = [
                     HTTP_BAD_REQUEST,
                 );
             }
-            return db.importSnapshot(
+            return db.putSnapshot(
                 payload.json,
             );
         },

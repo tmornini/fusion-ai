@@ -12,7 +12,7 @@ const ORG_TWO = '2';
 
 async function seed() {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     const creds = await populateMockData(db);
     return { db, creds };
 }

@@ -55,8 +55,8 @@ class CountingBackend implements StorageBackend {
         return this.#inner.hasSchema();
     }
 
-    createSchema(): Promise<void> {
-        return this.#inner.createSchema();
+    postSchemaCreation(): Promise<void> {
+        return this.#inner.postSchemaCreation();
     }
 
     deleteSchema(): Promise<void> {

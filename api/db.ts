@@ -280,7 +280,7 @@ export interface StorageBackend {
     // backends by table existence, IndexedDB by a marker
     // store (its object stores always exist post-upgrade).
     hasSchema(): Promise<boolean>;
-    createSchema(): Promise<void>;
+    postSchemaCreation(): Promise<void>;
     deleteSchema(): Promise<void>;
 }
 
@@ -399,9 +399,9 @@ export interface DbAdapter extends DbStores {
     flush(): Promise<void>;
     deleteSchema(): Promise<void>;
     hasSchema(): Promise<boolean>;
-    createSchema(): Promise<void>;
-    exportSnapshot(): Promise<string>;
-    importSnapshot(json: string): Promise<void>;
+    postSchemaCreation(): Promise<void>;
+    getSnapshot(): Promise<string>;
+    putSnapshot(json: string): Promise<void>;
     simulateLatency(): Promise<void>;
     // Run `fn` inside one transaction. The view it receives
     // exposes the same stores bound to the open tx, so every

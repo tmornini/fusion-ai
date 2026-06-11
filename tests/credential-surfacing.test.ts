@@ -24,7 +24,7 @@ async function adminCredential(db: MemoryDbAdapter) {
 test('bootstrap surfaces an admin password that verifies',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     const reveal = currentReveal(
         await populateBootstrapData(db));
     assert.ok(reveal, 'current credential surfaced');
@@ -44,7 +44,7 @@ async () => {
 test('mock data surfaces a verifying admin password',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     const reveal = currentReveal(
         await populateMockData(db));
     assert.ok(reveal, 'current credential surfaced');
@@ -58,9 +58,9 @@ async () => {
 test('each seed run yields a distinct admin password',
 async () => {
     const db1 = new MemoryDbAdapter();
-    await db1.createSchema();
+    await db1.postSchemaCreation();
     const db2 = new MemoryDbAdapter();
-    await db2.createSchema();
+    await db2.postSchemaCreation();
     const a = currentReveal(
         await populateBootstrapData(db1));
     const b = currentReveal(

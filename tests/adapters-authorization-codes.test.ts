@@ -34,7 +34,7 @@ test('rejects an extra key', () => {
 
 test('authorization_codes store retains events', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.authorizationCodes.put('a1', goodRow);
     await db.authorizationCodes.put('a2', {
         ...goodRow, status: 'consumed',

@@ -32,7 +32,7 @@ type Validator = (b: Record<string, unknown>) => unknown;
 
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateMockData(db);
     return db;
 }

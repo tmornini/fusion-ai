@@ -69,7 +69,7 @@ async () => {
 
 // Public routes are exempt: even an anonymous token (which a
 // protected route rejects) reaches the snapshot plane. A bare
-// adapter (no createSchema) leaves hasSchema false, so the
+// adapter (no postSchemaCreation) leaves hasSchema false, so the
 // handler returns null — proving the route was reached, not
 // gated.
 test('public snapshot routes admit any token', async () => {

@@ -66,7 +66,7 @@ test('rejects an unparseable timestamp', () => {
 
 test('role_grants store retains appended events', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.roleGrants.put('g1', {
         organization_id: '1',
         identity_id: 'current', role: 'admin',

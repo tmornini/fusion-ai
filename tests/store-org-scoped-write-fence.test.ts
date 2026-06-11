@@ -21,7 +21,7 @@ function ideaBody(org: string) {
 test('an org-scoped put cannot overwrite a foreign-org row',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('b1', ideaBody('B'));
     const scopedA = orgScopedAdapter(db, 'A');
     await assert.rejects(
@@ -37,7 +37,7 @@ async () => {
 test('an org-scoped putMany cannot overwrite a foreign row',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('b1', ideaBody('B'));
     const scopedA = orgScopedAdapter(db, 'A');
     await assert.rejects(
@@ -51,7 +51,7 @@ async () => {
 test('an org-scoped put still creates a brand-new row',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     const scopedA = orgScopedAdapter(db, 'A');
     await scopedA.ideas.put('a1', ideaBody('ignored'));
     const stored = await db.ideas.getById('a1');
@@ -61,7 +61,7 @@ async () => {
 test('an org-scoped put updates a row it already owns',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('a1', ideaBody('A'));
     const scopedA = orgScopedAdapter(db, 'A');
     await scopedA.ideas.put(
@@ -74,7 +74,7 @@ async () => {
 test('a put cannot re-stamp a TOMBSTONED foreign-org row',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('b1', ideaBody('B'));
     // Tombstone it: lifecycle reads now say "absent", but
     // the row still exists — the fence must see the row,
@@ -87,7 +87,7 @@ async () => {
     // The stored row keeps org B — read it raw via export
     // (lifecycle reads hide the tombstoned row).
     const snapshot = JSON.parse(
-        await db.exportSnapshot(),
+        await db.getSnapshot(),
     ) as { ideas: { id: string;
         organization_id: string }[] };
     const row = snapshot.ideas.find(r => r.id === 'b1');
@@ -97,7 +97,7 @@ async () => {
 test('a replayed DELETE is an idempotent no-op end to end',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('a1', ideaBody('A'));
     const scopedA = orgScopedAdapter(db, 'A');
     await scopedA.ideas.delete('a1');
@@ -110,7 +110,7 @@ async () => {
 test('a DELETE of a foreign-org id no-ops, splices nothing',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.ideas.put('b1', ideaBody('B'));
     const scopedA = orgScopedAdapter(db, 'A');
     await scopedA.ideas.delete('b1');

@@ -349,9 +349,10 @@ When no schema exists, non-entry pages redirect to snapshots.
 
 `StorageBackend` (`api/db.ts`) is the byte-level seam:
 `transaction(tables, mode, fn)` is the primitive every row op
-crosses, and `ensureTables` / `hasSchema` / `createSchema` /
-`deleteSchema` are schema lifecycle. Stores own semantics
-(tombstones, splices, singletons); backends own persistence
+crosses, and `ensureTables` / `hasSchema` /
+`postSchemaCreation` / `deleteSchema` are schema lifecycle.
+Stores own semantics (tombstones, splices, singletons);
+backends own persistence
 and encoding. `BackedDbAdapter` (`api/db-backed.ts`) composes
 one backend into the full `DbStores` bundle.
 

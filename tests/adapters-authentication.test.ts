@@ -17,7 +17,7 @@ const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 async function passwordUserCtx() {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.roleGrants.put('rg', {
         organization_id: '1',
         identity_id: 'current', role: 'admin',

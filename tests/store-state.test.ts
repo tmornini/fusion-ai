@@ -10,7 +10,7 @@ test(
     'put round-trip writes and reads back the row',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         const written = await db.states.put('s1', {
             entity_id: 'e1',
             state: 'active',
@@ -30,7 +30,7 @@ test(
     'identical re-put is an idempotent ok',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         const fields = {
             entity_id: 'e1',
             state: 'active',
@@ -50,7 +50,7 @@ test(
     'different re-put throws and leaves the event intact',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         const fields = {
             entity_id: 'e1',
             state: 'active',
@@ -75,7 +75,7 @@ test(
     'getById throws EntityNotFoundError for unknown id',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await assert.rejects(
             () => db.states.getById('missing'),
             (err: unknown) =>
@@ -86,7 +86,7 @@ test(
 
 test('getAll returns every written row', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.states.put('s1', {
         entity_id: 'e1',
         state: 'a',
@@ -109,7 +109,7 @@ test(
     'record writes nowUtc; later record has later at',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await db.states.postEvent('s1', 'e1', 'a', 'w1');
         // RFC-3339 timestamps from Date.now() share
         // millisecond resolution; pause to guarantee
@@ -133,7 +133,7 @@ test(
     'currentFor returns the latest of three events',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await db.states.put('s1', {
             entity_id: 'e1',
             state: 'a',
@@ -164,7 +164,7 @@ test(
     'currentFor returns null for unknown entity_id',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await db.states.put('s1', {
             entity_id: 'e1',
             state: 'a',
@@ -182,7 +182,7 @@ test(
         + 'ascending by at',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await db.states.put('s1', {
             entity_id: 'e1',
             state: 'b',
@@ -228,7 +228,7 @@ test(
     'allFor returns empty array for unknown entity_id',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await db.states.put('s1', {
             entity_id: 'e1',
             state: 'a',

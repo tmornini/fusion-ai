@@ -129,10 +129,10 @@ export function orgScopedAdapter(
         flush: () => base.flush(),
         deleteSchema: () => base.deleteSchema(),
         hasSchema: () => base.hasSchema(),
-        createSchema: () => base.createSchema(),
-        exportSnapshot: () => base.exportSnapshot(),
-        importSnapshot: (json) =>
-            base.importSnapshot(json),
+        postSchemaCreation: () => base.postSchemaCreation(),
+        getSnapshot: () => base.getSnapshot(),
+        putSnapshot: (json) =>
+            base.putSnapshot(json),
         simulateLatency: () => base.simulateLatency(),
         // Re-scope the open view to `org` so the fence rides
         // INSIDE the tx: a guard's read and its inner write now

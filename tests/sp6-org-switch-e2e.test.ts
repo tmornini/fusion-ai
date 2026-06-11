@@ -22,7 +22,7 @@ import { devToken } from './token-fixtures.ts';
 
 async function seeded(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateMockData(db);
     return db;
 }

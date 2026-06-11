@@ -14,7 +14,7 @@ import {
 
 async function bootstrappedDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateBootstrapData(db);
     return db;
 }

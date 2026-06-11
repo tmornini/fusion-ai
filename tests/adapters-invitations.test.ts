@@ -26,7 +26,7 @@ const AT = '2026-01-01T00:00:00.000000Z';
 // identity with no membership anywhere (a fresh invitee).
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.organizations.put('1', orgRow('Stark'));
     await db.organizations.put('2', orgRow('Wayne'));
     for (const org of ['1', '2']) {
@@ -106,7 +106,7 @@ test('validateInvitationEntity rejects a bad timestamp', () => {
 
 test('the invitations store round-trips a row', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.invitations.put('inv1', {
         organization_id: '2', identity_id: 'sarah', at: AT,
     });

@@ -50,7 +50,7 @@ test('rejects an extra key', () => {
 
 test('identity_providers store retains events', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.identityProviders.put('p1', goodRow);
     await db.identityProviders.put('p2', {
         ...goodRow, action: 'unlinked',
@@ -63,7 +63,7 @@ test('identity_providers store retains events', async () => {
 test('an anonymous principal cannot read providers',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     const anon = createRequestContext(
         db, await devToken('anonymous'));
     await assert.rejects(() => getProvidersFor(anon, 'p2'));

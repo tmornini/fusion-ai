@@ -9,7 +9,7 @@ import { identityDefaultOrg } from '../api/authentication.ts';
 
 async function mockSeeded() {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateMockData(db);
     return db;
 }
@@ -44,7 +44,7 @@ async () => {
 test("bootstrap seeds 'current' a default-org event for org 1",
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateBootstrapData(db);
     const defaults = await db.identityDefaultOrgs.getAll();
     assert.ok(

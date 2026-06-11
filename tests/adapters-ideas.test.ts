@@ -388,7 +388,7 @@ test('deleted ideas are filtered from getIdeas', async () => {
 test('getIdeas resolves every seeded submitter in'
     + ' both orgs', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateMockData(db);
     for (const org of ['1', '2']) {
         const ctx = createRequestContext(

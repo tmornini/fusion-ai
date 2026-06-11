@@ -28,7 +28,7 @@ test(
     + ' member name',
     async () => {
         const db = new MemoryDbAdapter();
-        await db.createSchema();
+        await db.postSchemaCreation();
         await populateMockData(db);
         const ctx = createRequestContext(
             db, await devToken(),

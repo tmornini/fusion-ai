@@ -11,7 +11,7 @@ import {
 
 test('bootstrap seeds current as admin', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateBootstrapData(db);
     const rows = await db.roleGrants.getAll();
     assert.ok(
@@ -21,7 +21,7 @@ test('bootstrap seeds current as admin', async () => {
 
 test('mock data seeds current as admin', async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await populateMockData(db);
     const rows = await db.roleGrants.getAll();
     assert.ok(

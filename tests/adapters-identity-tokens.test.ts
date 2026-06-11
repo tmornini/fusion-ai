@@ -67,7 +67,7 @@ test('rejects an unparseable timestamp', () => {
 test('identity_tokens store retains appended events',
 async () => {
     const db = new MemoryDbAdapter();
-    await db.createSchema();
+    await db.postSchemaCreation();
     await db.identityTokens.put('t1', {
         jti: 'jti-1', identity_id: 'current',
         action: 'issued', chain_id: 'c1',
