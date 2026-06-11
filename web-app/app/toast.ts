@@ -38,7 +38,7 @@ export function showToast(
         | 'success'
         | 'error'
         | 'warning'
-        | 'info' = 'info',
+        | 'info',
 ): void {
     const container = ensureContainer();
 

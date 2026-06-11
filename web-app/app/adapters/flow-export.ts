@@ -48,6 +48,7 @@ import type {
     ParsedEdge,
 } from '../mermaid-parse.ts';
 import {
+    DEFAULT_ZIP_LIMITS,
     buildZip, getZipEntries,
 } from '../zip.ts';
 import {
@@ -421,7 +422,9 @@ function validateBackupJson(
 export async function getBackupFromZip(
     data: Uint8Array,
 ): Promise<Backup> {
-    const entries = await getZipEntries(data);
+    const entries = await getZipEntries(
+        data, DEFAULT_ZIP_LIMITS,
+    );
     const jsonEntry = entries.find(
         e => e.name === 'flow.json'
             || e.name.endsWith(
@@ -1012,7 +1015,9 @@ export async function postFlowFromZip(
     warnings: string[];
 }> {
     const dec = new TextDecoder();
-    const entries = await getZipEntries(data);
+    const entries = await getZipEntries(
+        data, DEFAULT_ZIP_LIMITS,
+    );
 
     const mmdEntry = entries.find(
         e => e.name === 'flow.mmd'

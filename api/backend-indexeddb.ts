@@ -165,8 +165,7 @@ export class IndexedDbBackend implements StorageBackend {
     readonly #post: (tables: readonly string[]) => void;
 
     constructor(
-        post: (tables: readonly string[]) => void =
-            () => {},
+        post: (tables: readonly string[]) => void,
     ) {
         this.#db = null;
         this.#post = post;

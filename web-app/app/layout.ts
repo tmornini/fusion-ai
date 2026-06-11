@@ -87,7 +87,7 @@ function initSignOut(): void {
 }
 
 async function initSidebarLayout(
-    hasSchema = true,
+    hasSchema: boolean,
 ): Promise<void> {
     initActiveNavItem();
     initSidebar();

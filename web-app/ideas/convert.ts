@@ -371,13 +371,15 @@ export async function init(
             '#convert-submit-btn';
         bindEnterToClick(
             '#convert-project-name',
-            submitSel,
+            submitSel, document,
         );
         bindEnterToClick(
             '#convert-time-days', submitSel,
+            document,
         );
         bindEnterToClick(
             '#convert-cost', submitSel,
+            document,
         );
 
         const scoresSection = $(

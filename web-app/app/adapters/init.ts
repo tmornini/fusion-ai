@@ -18,16 +18,15 @@ let adapter: DbAdapter | undefined;
 
 // The persistence tier: a real IndexedDB transaction per op,
 // O(1) appends, and cross-tab refresh via the posted table
-// names. The connection opens in initialize().
-function defaultAdapter(): DbAdapter {
+// names. The connection opens in initialize(). Production
+// boot passes this; boot-path tests substitute an in-memory
+// tier — IndexedDB has no Node stub, and we add no fake.
+export function defaultAdapter(): DbAdapter {
     return new IndexedDbDbAdapter(postTablesChanged);
 }
 
-// `makeAdapter` is injectable so boot-path tests can
-// substitute an in-memory tier — IndexedDB has no Node stub,
-// and we add no fake. Production passes nothing.
 export async function initAdapter(
-    makeAdapter: () => DbAdapter = defaultAdapter,
+    makeAdapter: () => DbAdapter,
 ): Promise<boolean> {
     await ensureSessionToken();
     adapter = makeAdapter();

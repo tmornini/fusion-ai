@@ -122,7 +122,7 @@ export const FOCUSABLE_SELECTOR =
 export function bindEnterToClick(
     inputSel: string,
     btnSel: string,
-    root: ParentNode = document,
+    root: ParentNode,
 ): void {
     $input(inputSel, root)
         ?.addEventListener(

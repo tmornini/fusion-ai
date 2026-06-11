@@ -376,7 +376,7 @@ export class ProjectListPresenter {
         state: ProjectListState,
         scoreMap: ReadonlyMap<
             string, ScoreRow
-        > = new Map(),
+        >,
     ) {
         this.#projects = state.projects.map(
             p => new ProjectPresenter(p),

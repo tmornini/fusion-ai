@@ -169,7 +169,7 @@ test(
         );
         const ctx = createRequestContext(db, await devToken());
         const out = await validateRecordTransition(
-            ctx, 'wo-1', 'n-target',
+            ctx, 'wo-1', 'n-target', new Map(),
         );
         assert.deepEqual(out, []);
     },
@@ -206,7 +206,7 @@ test(
         });
         const ctx = createRequestContext(db, await devToken());
         const out = await validateRecordTransition(
-            ctx, 'wo-1', 'n-target',
+            ctx, 'wo-1', 'n-target', new Map(),
         );
         assert.equal(out.length, 1);
         assert.equal(out[0]!.kind, 'required');
@@ -267,7 +267,7 @@ test(
         });
         const ctx = createRequestContext(db, await devToken());
         const out = await validateRecordTransition(
-            ctx, 'wo-1', 'n-target',
+            ctx, 'wo-1', 'n-target', new Map(),
         );
         assert.deepEqual(out, []);
     },
@@ -380,6 +380,7 @@ test(
         await assert.rejects(
             () => validateRecordTransition(
                 ctx, 'wo-1', 'n-ghost',
+                new Map(),
             ),
             /target node not found/,
         );

@@ -201,6 +201,7 @@ export async function init():
         bindEnterToClick(
             '#idea-create-field-title',
             nextSel,
+            document,
         );
     }
 

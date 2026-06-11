@@ -29,6 +29,7 @@ export async function init(): Promise<void> {
     bindEnterToClick(
         '#record-create-name',
         '#record-create-submit',
+        document,
     );
 }
 

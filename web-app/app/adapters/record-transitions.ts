@@ -49,8 +49,7 @@ export async function validateRecordTransition(
     workOrderId: Id,
     targetNodeId: Id,
     pendingValues:
-        ReadonlyMap<RecordAttributeId, string>
-        = new Map(),
+        ReadonlyMap<RecordAttributeId, string>,
 ): Promise<ConstraintViolation[]> {
     const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
