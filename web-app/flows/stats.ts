@@ -174,7 +174,7 @@ export async function init(
                     if (!g) return;
                     ui.hoveredNodeId = null;
                     presenter.renderCard(
-                        host, ui.pinnedNodeId ?? null,
+                        host, ui.pinnedNodeId,
                     );
                 },
                 { signal },
@@ -252,8 +252,7 @@ export async function init(
                         presenter.renderCard(
                             host,
                             ui.pinnedNodeId
-                                ?? ui.hoveredNodeId
-                                ?? null,
+                                ?? ui.hoveredNodeId,
                         );
                         return;
                     }

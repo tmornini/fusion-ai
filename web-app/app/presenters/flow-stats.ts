@@ -46,10 +46,12 @@ interface ViewBox {
     h: number;
 }
 
+// One absence encoding: null means no pin / no hover. The
+// fields are required, so no undefined shadow-absence exists.
 export interface FlowStatsUi {
     selectedPathIndex: number;
-    pinnedNodeId?: string | null;
-    hoveredNodeId?: string | null;
+    pinnedNodeId: string | null;
+    hoveredNodeId: string | null;
 }
 
 export class FlowStatsPresenter {
@@ -266,7 +268,7 @@ ${this.buildLegend()}${footnote}</div>`;
             );
         }
         this.renderCard(container, ui.pinnedNodeId
-            ?? ui.hoveredNodeId ?? null);
+            ?? ui.hoveredNodeId);
     }
 
     buildCard(s: NodeStat): SafeHtml {
