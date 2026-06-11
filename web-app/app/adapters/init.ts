@@ -1,5 +1,5 @@
 import {
-    IndexedDbDbAdapter,
+    indexedDbAdapter,
 } from '../../../api/db-indexeddb.ts';
 import {
     postTablesChanged,
@@ -28,7 +28,7 @@ let adapter: ClientFacadeAdapter | undefined;
 // boot passes this; boot-path tests substitute an in-memory
 // tier — IndexedDB has no Node stub, and we add no fake.
 export function defaultAdapter(): ClientFacadeAdapter {
-    return new IndexedDbDbAdapter(postTablesChanged);
+    return indexedDbAdapter(postTablesChanged);
 }
 
 export async function initAdapter(
