@@ -1544,23 +1544,29 @@ async function invitationsForInvitee(
 ): Promise<Response> {
     const mine = (await adapter.invitations.getAll())
         .filter(inv => inv.identity_id === principal.id);
+    if (mine.length === 0) return Response.json([]);
     const orgName = new Map(
         (await adapter.organizations.getAll())
             .map(o => [o.id, o.name]));
     const personName = new Map(
         (await adapter.identityPii.getAll())
             .map(p => [p.id, p.name]));
+    // One states read serves every row — a per-invitation
+    // allFor opened one transaction per invitation for the
+    // same log.
+    const events = await adapter.states.getAll();
+    const latest = latestByKey(events, ev => ev.entity_id);
+    const eventsFor = Map.groupBy(events, ev => ev.entity_id);
     const out = [];
     for (const inv of mine) {
-        const events = await adapter.states.allFor(inv.id);
-        const latest = latestByKey(events, ev => ev.entity_id)
-            .get(inv.id);
-        if (latest === undefined) continue;
+        const current = latest.get(inv.id);
+        if (current === undefined) continue;
         // The inviter is the actor of the grant ('pending') event —
         // found by state, not position, so a same-`at` tie cannot
         // misattribute it. An absent name (erased PII) stays empty;
         // the presenter then omits the "Invited by" line.
-        const grant = events.find(ev => ev.state === 'pending');
+        const grant = eventsFor.get(inv.id)!
+            .find(ev => ev.state === 'pending');
         out.push({
             id: inv.id,
             organization_id: inv.organization_id,
@@ -1572,7 +1578,7 @@ async function invitationsForInvitee(
                 : '',
             at: inv.at,
             state: assertInvitationState(
-                latest.state, 'invitation ' + inv.id),
+                current.state, 'invitation ' + inv.id),
         });
     }
     return Response.json(out);
@@ -1598,13 +1604,20 @@ async function sentInvitations(
     }
     const orgInvites = (await adapter.invitations.getAll())
         .filter(inv => inv.organization_id === org);
+    if (orgInvites.length === 0) return Response.json([]);
     const email = new Map(
         (await adapter.identityPii.getAll())
             .map(p => [p.id, p.email]));
+    // One states read serves every row — currentFor per
+    // invitation opened one transaction each for the same log.
+    const latest = latestByKey(
+        await adapter.states.getAll(), ev => ev.entity_id);
     const out = [];
     for (const inv of orgInvites) {
-        const state = await currentInvitationState(
-            adapter, inv.id);
+        const current = latest.get(inv.id);
+        if (current === undefined) continue;
+        const state = assertInvitationState(
+            current.state, 'invitation ' + inv.id);
         if (state !== 'pending') continue;
         out.push({
             id: inv.id,
@@ -1728,9 +1741,16 @@ async function pendingInvitationFor(
     const candidates = (await adapter.invitations.getAll())
         .filter(inv => inv.organization_id === org
             && inv.identity_id === identityId);
+    if (candidates.length === 0) return null;
+    // One states read answers every candidate; on the grant
+    // path this joins the already-open transaction.
+    const latest = latestByKey(
+        await adapter.states.getAll(), ev => ev.entity_id);
     for (const inv of candidates) {
-        const state = await currentInvitationState(
-            adapter, inv.id);
+        const current = latest.get(inv.id);
+        if (current === undefined) continue;
+        const state = assertInvitationState(
+            current.state, 'invitation ' + inv.id);
         if (state === 'pending') {
             return { id: inv.id, at: inv.at };
         }
