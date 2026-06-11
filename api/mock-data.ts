@@ -416,13 +416,13 @@ const MOCK_SEED_TIMESTAMP =
     '2026-01-01T00:00:00.000000Z';
 const ADMIN_USERNAME = 'demo@example.com';
 
-// The demo's second organization. org '2' is a new ROW, not
-// a new table — generate-schema-svg derives FK targets from
-// *_id pluralization, so a new table would shift the schema.
 // The seed's root org id (Stark Industries). Local to the
 // seed — there is no global default org any more.
 const STARK_ORG = '1';
 
+// The demo's second organization. org '2' is a new ROW, not
+// a new table — generate-schema-svg derives FK targets from
+// *_id pluralization, so a new table would shift the schema.
 const ORG_TWO = '2';
 
 // Deterministic org partition for non-admin seeds: even
@@ -457,9 +457,7 @@ export interface SeededCredentials {
 // one-time reveal. A placeholder string would not verify
 // through the real /authentication/authorize loop. The system
 // identity signs with a client_secret — generated, hashed, and
-// discarded, never revealed. Both seed paths call this.
-// Seed login credentials for every login-capable person (one
-// with a PII email) plus the system client secret. Runs AFTER
+// discarded, never revealed. Both seed paths call this AFTER
 // the entity seed commits, NEVER inside it: PBKDF2 hashing is
 // async crypto, and awaiting a non-IDB promise inside a
 // transaction body auto-commits the IndexedDB transaction
