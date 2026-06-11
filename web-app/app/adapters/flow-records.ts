@@ -17,6 +17,10 @@ import {
     getWorkOrders,
     type WorkOrder,
 } from './work-orders-queries.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../../../api/crypto-safe-base62.ts';
+import { nowUtc } from '../../../api/types.ts';
 
 export type {
     FlowRecordEntity,
@@ -50,6 +54,39 @@ export async function deleteFlowRecord(
         `flow-records/${id}`,
     );
     notifyRecordChange();
+}
+
+// Bind a flow to a record: a fresh covenant row with
+// the moment of union. POST-shaped — each call mints
+// a new binding id.
+export async function postFlowRecordBinding(
+    ctx: RequestContext,
+    flowId: Id,
+    recordId: RecordId,
+): Promise<void> {
+    await putFlowRecord(
+        ctx,
+        generateCryptoSafeBase62(),
+        {
+            flow_id: flowId,
+            record_id: recordId,
+            at: nowUtc(),
+        },
+    );
+}
+
+// Unbind a flow from its record. No-op when the flow
+// has no binding — the absence IS the unbound state.
+export async function deleteFlowRecordForFlow(
+    ctx: RequestContext,
+    flowId: Id,
+): Promise<void> {
+    const rows = await getFlowRecordEntities(ctx);
+    const existing = rows.find(
+        r => r.flow_id === flowId,
+    );
+    if (!existing) return;
+    await deleteFlowRecord(ctx, existing.id);
 }
 
 export async function getRecordForFlow(
