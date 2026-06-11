@@ -395,8 +395,6 @@ export interface DbStores {
 
 export interface DbAdapter extends DbStores {
     initialize(): Promise<void>;
-    close(): Promise<void>;
-    flush(): Promise<void>;
     deleteSchema(): Promise<void>;
     hasSchema(): Promise<boolean>;
     postSchemaCreation(): Promise<void>;

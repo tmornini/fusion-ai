@@ -177,9 +177,6 @@ export class BackedDbAdapter implements DbAdapter {
         await this.#open();
     }
 
-    async close(): Promise<void> {}
-    async flush(): Promise<void> {}
-
     simulateLatency(): Promise<void> {
         return this.#latency();
     }
@@ -251,8 +248,6 @@ export class BackedDbAdapter implements DbAdapter {
         return {
             ...this.#buildStores(ambientRunner(tx)),
             initialize: () => this.initialize(),
-            close: () => this.close(),
-            flush: () => this.flush(),
             deleteSchema: () => this.deleteSchema(),
             hasSchema: () => this.hasSchema(),
             postSchemaCreation: () => this.postSchemaCreation(),

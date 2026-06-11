@@ -119,8 +119,6 @@ export function orgScopedAdapter(
 
     return {
         initialize: () => base.initialize(),
-        close: () => base.close(),
-        flush: () => base.flush(),
         deleteSchema: () => base.deleteSchema(),
         hasSchema: () => base.hasSchema(),
         postSchemaCreation: () => base.postSchemaCreation(),
