@@ -46,15 +46,15 @@ function pad(n: number): string {
     return String(n).padStart(2, '0');
 }
 
-function dt(
-    daysAgo: number,
+function daysFromNow(
+    days: number,
     hour: number,
     minute: number,
 ): string {
     const d = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
-        now.getUTCDate() - daysAgo,
+        now.getUTCDate() + days,
         hour,
         minute,
     ));
@@ -69,12 +69,13 @@ function dt(
 
 // A calendar DATE (YYYY-MM-DD, no instant) — the grammar
 // validateCalendarDateField gates for project start/target
-// dates. Negative daysAgo reaches into the future, as dt.
-function dateOnly(daysAgo: number): string {
+// dates. `days` counts forward from today (negative =
+// past), the same convention as daysFromNow.
+function dateOnly(days: number): string {
     const d = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
-        now.getUTCDate() - daysAgo,
+        now.getUTCDate() + days,
     ));
     return d.getUTCFullYear() + '-'
         + pad(d.getUTCMonth() + 1) + '-'
@@ -1286,7 +1287,7 @@ async function populateMockDataIn(
         adapter.organizations.put(STARK_ORG, {
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-            next_billing: dt(-300, 0, 0),
+            next_billing: daysFromNow(300, 0, 0),
             seats: TIER_SEATS_LIMIT,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
@@ -1294,7 +1295,7 @@ async function populateMockDataIn(
         adapter.organizations.put(ORG_TWO, {
             name: 'Wayne Enterprises',
             domain: 'wayne.example.com',
-            next_billing: dt(-200, 0, 0),
+            next_billing: daysFromNow(200, 0, 0),
             seats: TIER_SEATS_LIMIT,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
@@ -1317,8 +1318,8 @@ async function populateMockDataIn(
                 + ' behavior, purchase'
                 + ' history, and engagement.',
             progress: 67,
-            start_date: dateOnly(60),
-            target_end_date: dateOnly(-30),
+            start_date: dateOnly(-60),
+            target_end_date: dateOnly(30),
             estimated_cost: 88000,
             actual_cost: 51000,
             position: 1,
@@ -1333,8 +1334,8 @@ async function populateMockDataIn(
                 + ' ships formatted reports'
                 + ' on a schedule.',
             progress: 100,
-            start_date: dateOnly(110),
-            target_end_date: dateOnly(45),
+            start_date: dateOnly(-110),
+            target_end_date: dateOnly(-45),
             estimated_cost: 56000,
             actual_cost: 58000,
             position: 2,
@@ -1351,8 +1352,8 @@ async function populateMockDataIn(
                 + ' proposal, negotiation,'
                 + ' close.',
             progress: 69,
-            start_date: dateOnly(55),
-            target_end_date: dateOnly(-25),
+            start_date: dateOnly(-55),
+            target_end_date: dateOnly(25),
             estimated_cost: 78000,
             actual_cost: 48000,
             position: 3,
@@ -1367,8 +1368,8 @@ async function populateMockDataIn(
                 + ' equipment failures'
                 + ' before they occur.',
             progress: 17,
-            start_date: dateOnly(18),
-            target_end_date: dateOnly(-90),
+            start_date: dateOnly(-18),
+            target_end_date: dateOnly(90),
             estimated_cost: 110000,
             actual_cost: 7000,
             position: 4,
@@ -1383,8 +1384,8 @@ async function populateMockDataIn(
                 + ' automated anomaly alerts'
                 + ' for leadership.',
             progress: 100,
-            start_date: dateOnly(95),
-            target_end_date: dateOnly(40),
+            start_date: dateOnly(-95),
+            target_end_date: dateOnly(-40),
             estimated_cost: 50000,
             actual_cost: 52000,
             position: 5,
@@ -1399,8 +1400,8 @@ async function populateMockDataIn(
                 + ' triggers to cut carrying'
                 + ' costs and stockouts.',
             progress: 76,
-            start_date: dateOnly(38),
-            target_end_date: dateOnly(-12),
+            start_date: dateOnly(-38),
+            target_end_date: dateOnly(12),
             estimated_cost: 64000,
             actual_cost: 84000,
             position: 6,
@@ -1417,8 +1418,8 @@ async function populateMockDataIn(
                 + ' procedural questions for'
                 + ' new hires.',
             progress: 10,
-            start_date: dateOnly(12),
-            target_end_date: dateOnly(-110),
+            start_date: dateOnly(-12),
+            target_end_date: dateOnly(110),
             estimated_cost: 60000,
             actual_cost: 3500,
             position: 7,
@@ -1434,8 +1435,8 @@ async function populateMockDataIn(
                 + ' runbooks, and product'
                 + ' docs.',
             progress: 69,
-            start_date: dateOnly(48),
-            target_end_date: dateOnly(-22),
+            start_date: dateOnly(-48),
+            target_end_date: dateOnly(22),
             estimated_cost: 64000,
             actual_cost: 42000,
             position: 8,
@@ -1451,8 +1452,8 @@ async function populateMockDataIn(
                 + ' annual SOC 2 dossier in'
                 + ' hours rather than weeks.',
             progress: 86,
-            start_date: dateOnly(72),
-            target_end_date: dateOnly(-12),
+            start_date: dateOnly(-72),
+            target_end_date: dateOnly(12),
             estimated_cost: 102000,
             actual_cost: 142000,
             position: 9,
@@ -1467,8 +1468,8 @@ async function populateMockDataIn(
                 + ' five-minute RPO and'
                 + ' fifteen-minute RTO.',
             progress: 91,
-            start_date: dateOnly(82),
-            target_end_date: dateOnly(-8),
+            start_date: dateOnly(-82),
+            target_end_date: dateOnly(8),
             estimated_cost: 134000,
             actual_cost: 99000,
             position: 10,
@@ -1484,8 +1485,8 @@ async function populateMockDataIn(
                 + ' and onsite knowledge'
                 + ' access.',
             progress: 53,
-            start_date: dateOnly(40),
-            target_end_date: dateOnly(-35),
+            start_date: dateOnly(-40),
+            target_end_date: dateOnly(35),
             estimated_cost: 76000,
             actual_cost: 36000,
             position: 11,
@@ -1501,8 +1502,8 @@ async function populateMockDataIn(
                 + ' carbon ledger for ESG'
                 + ' reporting.',
             progress: 100,
-            start_date: dateOnly(120),
-            target_end_date: dateOnly(35),
+            start_date: dateOnly(-120),
+            target_end_date: dateOnly(-35),
             estimated_cost: 62000,
             actual_cost: 56000,
             position: 12,
@@ -1517,8 +1518,8 @@ async function populateMockDataIn(
                 + ' then surface gaps eight'
                 + ' weeks before they bite.',
             progress: 17,
-            start_date: dateOnly(22),
-            target_end_date: dateOnly(-105),
+            start_date: dateOnly(-22),
+            target_end_date: dateOnly(105),
             estimated_cost: 90000,
             actual_cost: 8500,
             position: 13,
@@ -1533,8 +1534,8 @@ async function populateMockDataIn(
                 + ' tier without a human'
                 + ' bottleneck.',
             progress: 78,
-            start_date: dateOnly(65),
-            target_end_date: dateOnly(-18),
+            start_date: dateOnly(-65),
+            target_end_date: dateOnly(18),
             estimated_cost: 70000,
             actual_cost: 45000,
             position: 14,
@@ -1550,8 +1551,8 @@ async function populateMockDataIn(
                 + ' workflows, and'
                 + ' audit-ready exports.',
             progress: 67,
-            start_date: dateOnly(58),
-            target_end_date: dateOnly(-28),
+            start_date: dateOnly(-58),
+            target_end_date: dateOnly(28),
             estimated_cost: 56000,
             actual_cost: 34000,
             position: 15,
@@ -1567,15 +1568,15 @@ async function populateMockDataIn(
                 + ' freshly submitted for'
                 + ' review.',
             progress: 0,
-            start_date: dateOnly(5),
-            target_end_date: dateOnly(-120),
+            start_date: dateOnly(-5),
+            target_end_date: dateOnly(120),
             estimated_cost: 42000,
             actual_cost: 0,
             position: 16,
         },
     ];
 
-    const wfTimestamp = dt(60, 9, 0);
+    const wfTimestamp = daysFromNow(-60, 9, 0);
 
     const l2cFlowId = 'L2cfL3adt0Cl0s3FzMxR02';
     const l2cProjectFlowId =
@@ -3024,7 +3025,7 @@ async function populateMockDataIn(
         'wg25b0R2gwy5kYPIhQB6cS';
     const woFlowGraph =
         mockFlows[0]!.graph;
-    const woCreated = dt(14, 10, 0);
+    const woCreated = daysFromNow(-14, 10, 0);
     const woNodeNew =
         'lzkYvFNCEHARBQmZ4YHAn4';
     const woNodeCapture =
@@ -3454,7 +3455,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kKtX2W0iVTWFPEoPrJmIHW',
-            at: dt(88, 9, 0),
+            at: daysFromNow(-88, 9, 0),
         },
         {
             id: 'FjjhKDthEYLf50lmPrKkaq',
@@ -3462,7 +3463,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'taUp8y0cuMhzf0UOk6Ev8Y',
-            at: dt(82, 10, 0),
+            at: daysFromNow(-82, 10, 0),
         },
         {
             id: 'vNj3XdrWhDpoFW8qsLsqKg',
@@ -3470,7 +3471,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'KD2WFTEwzJFvxZ6cpCwpvc',
-            at: dt(76, 8, 30),
+            at: daysFromNow(-76, 8, 30),
         },
         {
             id: 'hjPgB0KYD5Sesnjejnohf6',
@@ -3478,7 +3479,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'b6YNHrFyi6V9dJNXyCXu1K',
-            at: dt(71, 9, 0),
+            at: daysFromNow(-71, 9, 0),
         },
         {
             id: 'UhSuMtC66uclQH5irfsqd0',
@@ -3486,7 +3487,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'V3AXXlSjJwDQAmkNiRA8aP',
-            at: dt(66, 11, 0),
+            at: daysFromNow(-66, 11, 0),
         },
         {
             id: 'J0GfRrP7J5tNhBDCXDDOPV',
@@ -3494,7 +3495,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '9ooK5olzSsEnpgP8ASzBQi',
-            at: dt(61, 9, 30),
+            at: daysFromNow(-61, 9, 30),
         },
         {
             id: 'nULvK3MsVfud7QkAlrNGpQ',
@@ -3502,7 +3503,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'cnXN4DZx9dUVIZL4OZnyw0',
-            at: dt(57, 8, 0),
+            at: daysFromNow(-57, 8, 0),
         },
         {
             id: 'NUnAiiPpzpQ9wKx6utsGwn',
@@ -3510,7 +3511,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kKw82RQDHRfgg5xQnw1lPk',
-            at: dt(52, 10, 0),
+            at: daysFromNow(-52, 10, 0),
         },
         {
             id: 'tuqFkKJMD4baNSMgXFWIh3',
@@ -3518,7 +3519,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'ec0n7Ab6pJYLFDF6H0nyvV',
-            at: dt(48, 9, 0),
+            at: daysFromNow(-48, 9, 0),
         },
         {
             id: 'G1IeM0YcxnPVe8ZuYnJ9oJ',
@@ -3526,7 +3527,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'gAjJnjirIrIgcFDMJyNsPa',
-            at: dt(44, 10, 30),
+            at: daysFromNow(-44, 10, 30),
         },
         {
             id: '5Ctl6blp1xESHHiQtp0hUU',
@@ -3534,7 +3535,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'kyWtMAZPazKqAfIwPzACsL',
-            at: dt(40, 9, 0),
+            at: daysFromNow(-40, 9, 0),
         },
         {
             id: 'tlNTceD8uVvWlIjXDH0ayW',
@@ -3542,7 +3543,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'C41Hni5pMxp8xMQFEGNaib',
-            at: dt(37, 8, 0),
+            at: daysFromNow(-37, 8, 0),
         },
         {
             id: 'RUF1gVmAhswD070VXbltZj',
@@ -3550,7 +3551,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'FGAZYYwoS9To1tNb24DfLc',
-            at: dt(33, 9, 30),
+            at: daysFromNow(-33, 9, 30),
         },
         {
             id: 's8LTGragbMejtSAdAVF1u3',
@@ -3558,7 +3559,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '0zgLwuyPgtreVYjg4TScJR',
-            at: dt(29, 10, 0),
+            at: daysFromNow(-29, 10, 0),
         },
         {
             id: 'IAEG9nJXxCFzya2R3z9Rzy',
@@ -3566,7 +3567,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'XGJklKFO4aUtjSAEHEE8Zn',
-            at: dt(26, 9, 0),
+            at: daysFromNow(-26, 9, 0),
         },
         {
             id: 'c1BsfY0187lX0bv9IMRin6',
@@ -3574,7 +3575,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'rtuFD9uWn5zguEHyT3fh8s',
-            at: dt(23, 8, 30),
+            at: daysFromNow(-23, 8, 30),
         },
         {
             id: 'HdDAafhVYetmEDZI57F2o9',
@@ -3582,7 +3583,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'XrO05MeyqldO8qm0O4VPdq',
-            at: dt(20, 10, 0),
+            at: daysFromNow(-20, 10, 0),
         },
         {
             id: 'yFhQ6jemy8OUls9GCH9sJq',
@@ -3590,7 +3591,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'S74N7CPA2dsMESryJNrFAC',
-            at: dt(17, 9, 0),
+            at: daysFromNow(-17, 9, 0),
         },
         {
             id: 'C7ASzGoDhS3c9Er43SznuQ',
@@ -3598,7 +3599,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
-            at: dt(14, 8, 0),
+            at: daysFromNow(-14, 8, 0),
         },
         {
             id: 'gj9UFVp6N0LY43tiZO7kEH',
@@ -3606,7 +3607,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '4T56gYme7ae4Ya7AMA0hpW',
-            at: dt(11, 10, 30),
+            at: daysFromNow(-11, 10, 30),
         },
         {
             id: 'QXnnDlwCXKN12k4oUPse4B',
@@ -3614,7 +3615,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'aFCyJrvokoJM5iINwO3WCf',
-            at: dt(9, 9, 0),
+            at: daysFromNow(-9, 9, 0),
         },
         {
             id: 'hyC8PMVNYng3UIO93yexAR',
@@ -3622,7 +3623,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Sr4k75y6vuKODCA9zlSUjk',
-            at: dt(6, 11, 0),
+            at: daysFromNow(-6, 11, 0),
         },
         // needs-revision
         {
@@ -3631,7 +3632,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'Mm6KUpykGSwjD7YofI6zpb',
-            at: dt(77, 9, 0),
+            at: daysFromNow(-77, 9, 0),
         },
         {
             id: 'w9t0kM5OR9xNz8Qd8YMvWd',
@@ -3639,7 +3640,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
-            at: dt(63, 10, 0),
+            at: daysFromNow(-63, 10, 0),
         },
         {
             id: 'OynJa34EkAifV6XvROGJHO',
@@ -3647,7 +3648,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'NydsTqMmCgEKI7R9xxp36g',
-            at: dt(50, 8, 30),
+            at: daysFromNow(-50, 8, 30),
         },
         {
             id: 'hFaKVhqcwwCtiDmjHOhglF',
@@ -3655,7 +3656,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'x2uQev3HutthrUWRFkXSkH',
-            at: dt(38, 9, 0),
+            at: daysFromNow(-38, 9, 0),
         },
         {
             id: 'lJalI8qDpdF8zng1mr7dkW',
@@ -3663,7 +3664,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'w7XA9UnuYI7e46RTQL1xGW',
-            at: dt(25, 10, 0),
+            at: daysFromNow(-25, 10, 0),
         },
         {
             id: 'UFSLHfELrPhlOvdaQv8yrC',
@@ -3671,7 +3672,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '3H3XeeNE4rS2wbANs3JvYz',
-            at: dt(12, 9, 30),
+            at: daysFromNow(-12, 9, 30),
         },
         // in-flight
         {
@@ -3680,7 +3681,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'i7YYgKN3ZUlrkulQ2aWdIE',
-            at: dt(18, 9, 0),
+            at: daysFromNow(-18, 9, 0),
         },
         {
             id: 'uhMESfwESpe11vhqKvQ2kB',
@@ -3688,7 +3689,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '0brjvcoPEVBwMkUQ3tKHWc',
-            at: dt(10, 10, 0),
+            at: daysFromNow(-10, 10, 0),
         },
         {
             id: 'ZNrxNuiqHTULou4TqYPtXL',
@@ -3696,7 +3697,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'mTdhglHhl7pM0mKt0M2IjF',
-            at: dt(7, 8, 0),
+            at: daysFromNow(-7, 8, 0),
         },
         {
             id: '5AsLDAhvbkXZ6OUvvoZhND',
@@ -3704,7 +3705,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'GMhfH8lMQJXzE4vkjnSH1u',
-            at: dt(4, 9, 0),
+            at: daysFromNow(-4, 9, 0),
         },
         {
             id: 'avduZh1Hyokc9xiUjDQA0F',
@@ -3712,7 +3713,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'pLxCFGOINXVaXmrS0VG0vC',
-            at: dt(2, 11, 0),
+            at: daysFromNow(-2, 11, 0),
         },
         // out-of-clan
         {
@@ -3721,7 +3722,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'IyrpZrIl2hbmmnCtiifEGm',
-            at: dt(35, 9, 0),
+            at: daysFromNow(-35, 9, 0),
         },
         {
             id: 'jxMN634ymWUYVZQK5on62x',
@@ -3729,7 +3730,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'zYnDWBV4VP5guzW5fDWtHN',
-            at: dt(22, 10, 30),
+            at: daysFromNow(-22, 10, 30),
         },
         // old (outside 90-day window)
         {
@@ -3738,7 +3739,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 '7HX7RPwlYopHWfD7I0QAPs',
-            at: dt(108, 9, 0),
+            at: daysFromNow(-108, 9, 0),
         },
         {
             id: 'nycbBiutlHj1MUnI02Pw20',
@@ -3746,7 +3747,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'EXphSopBU1Is2TH4QZo4nO',
-            at: dt(103, 10, 0),
+            at: daysFromNow(-103, 10, 0),
         },
         // prc join rows (Proposal Review Cycle)
         {
@@ -3755,7 +3756,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'hRPNkjrYBTQqzzFe1t8FH6',
-            at: dt(60, 9, 0),
+            at: daysFromNow(-60, 9, 0),
         },
         {
             id: 'UXIU5zCYBFkQnMnChd1Q6T',
@@ -3763,7 +3764,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'L3UhOvrAGluk4kNnN6J8NT',
-            at: dt(45, 10, 0),
+            at: daysFromNow(-45, 10, 0),
         },
         {
             id: 'jQUWpOW1y7QcYSS49Cy3dE',
@@ -3771,7 +3772,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'oTscblsEOjZDkvkW3vs7rU',
-            at: dt(30, 8, 0),
+            at: daysFromNow(-30, 8, 0),
         },
         {
             id: 'y9Aba8YosD7VcSMV2Ncwoc',
@@ -3779,7 +3780,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'Xpw9VGpZ6RyevuInSr8yze',
-            at: dt(20, 11, 0),
+            at: daysFromNow(-20, 11, 0),
         },
         {
             id: 'RKSovIx9Jb03ZHsLWpI1EC',
@@ -3787,7 +3788,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'yqPpJb0NoQDgx8DoZ183Nx',
-            at: dt(15, 9, 0),
+            at: daysFromNow(-15, 9, 0),
         },
         {
             id: 'XAQNINxgYd6Ngjv06NztQh',
@@ -3795,7 +3796,7 @@ async function populateMockDataIn(
                 '7COt7Kf4OaOBg6AjaNO04s',
             work_order_id:
                 'BUrGEVDMF6FeU35WUHUY5E',
-            at: dt(5, 10, 0),
+            at: daysFromNow(-5, 10, 0),
         },
         {
             id: 'gvFW01gateV101CustOnb1',
@@ -3803,7 +3804,7 @@ async function populateMockDataIn(
                 'h5mErVBQhwdMKwi1co30jB',
             work_order_id:
                 'gateV101W0rkOrd3rXY0a1',
-            at: dt(1, 9, 0),
+            at: daysFromNow(-1, 9, 0),
         },
     ];
 
@@ -3831,7 +3832,7 @@ async function populateMockDataIn(
             state: woNodeReview,
             member_id: woPersonEmily,
             at:
-                dt(13, 14, 30),
+                daysFromNow(-13, 14, 30),
         },
         {
             id: 'C2xb2bbjyHD11WfLayh8Om',
@@ -3840,7 +3841,7 @@ async function populateMockDataIn(
                 woNodeComplete,
             member_id: woPersonSarah,
             at:
-                dt(12, 9, 15),
+                daysFromNow(-12, 9, 15),
         },
         // happy-path WO02: Data Capture sojourn 1 day
         {
@@ -3849,7 +3850,7 @@ async function populateMockDataIn(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(88, 9, 0),
+            at: daysFromNow(-88, 9, 0),
         },
         {
             id: 'MEsinaVfIifb90ByaJBjrp',
@@ -3857,7 +3858,7 @@ async function populateMockDataIn(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(88, 9, 5),
+            at: daysFromNow(-88, 9, 5),
         },
         {
             id: 'xI5NDQXN8Ns5oe0XeEPX2o',
@@ -3865,7 +3866,7 @@ async function populateMockDataIn(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(87, 10, 0),
+            at: daysFromNow(-87, 10, 0),
         },
         {
             id: 'k4yValdb0nLdwsZdgvuwtq',
@@ -3873,7 +3874,7 @@ async function populateMockDataIn(
                 'kKtX2W0iVTWFPEoPrJmIHW',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(85, 14, 0),
+            at: daysFromNow(-85, 14, 0),
         },
         // happy-path WO03: Data Capture sojourn 2 days
         {
@@ -3882,7 +3883,7 @@ async function populateMockDataIn(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(82, 10, 0),
+            at: daysFromNow(-82, 10, 0),
         },
         {
             id: 'VwD21aMsYlSZ91oOeKoQv3',
@@ -3890,7 +3891,7 @@ async function populateMockDataIn(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(82, 10, 8),
+            at: daysFromNow(-82, 10, 8),
         },
         {
             id: 'lntXIDCTtC6uXtkanv5XYm',
@@ -3898,7 +3899,7 @@ async function populateMockDataIn(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(80, 11, 0),
+            at: daysFromNow(-80, 11, 0),
         },
         {
             id: 'oSOuQpIKaTo9TU70OtfU8P',
@@ -3906,7 +3907,7 @@ async function populateMockDataIn(
                 'taUp8y0cuMhzf0UOk6Ev8Y',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(79, 9, 0),
+            at: daysFromNow(-79, 9, 0),
         },
         // happy-path WO04: Data Capture sojourn 3 days
         {
@@ -3915,7 +3916,7 @@ async function populateMockDataIn(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(76, 8, 30),
+            at: daysFromNow(-76, 8, 30),
         },
         {
             id: 'LzLQkGqfrjFNaQIQNVp2yt',
@@ -3923,7 +3924,7 @@ async function populateMockDataIn(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(76, 8, 40),
+            at: daysFromNow(-76, 8, 40),
         },
         {
             id: 'ZpwjIdExxdeZP7m5YDH5Qt',
@@ -3931,7 +3932,7 @@ async function populateMockDataIn(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(73, 10, 0),
+            at: daysFromNow(-73, 10, 0),
         },
         {
             id: 'ZdoF8Ka2fa6xFFdzWi3odO',
@@ -3939,7 +3940,7 @@ async function populateMockDataIn(
                 'KD2WFTEwzJFvxZ6cpCwpvc',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(71, 15, 0),
+            at: daysFromNow(-71, 15, 0),
         },
         // happy-path WO05: Data Capture sojourn 1 day
         {
@@ -3948,7 +3949,7 @@ async function populateMockDataIn(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(71, 9, 0),
+            at: daysFromNow(-71, 9, 0),
         },
         {
             id: 'g4q1KxVqvyS8ZxOIDnu4MG',
@@ -3956,7 +3957,7 @@ async function populateMockDataIn(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(71, 9, 10),
+            at: daysFromNow(-71, 9, 10),
         },
         {
             id: '6kwY7EJsL4khehGbJmS9YV',
@@ -3964,7 +3965,7 @@ async function populateMockDataIn(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(70, 14, 0),
+            at: daysFromNow(-70, 14, 0),
         },
         {
             id: 'zK2ywEqCxPE75HKfGdGtEY',
@@ -3972,7 +3973,7 @@ async function populateMockDataIn(
                 'b6YNHrFyi6V9dJNXyCXu1K',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(68, 10, 0),
+            at: daysFromNow(-68, 10, 0),
         },
         // happy-path WO06: Data Capture sojourn 5 days
         {
@@ -3981,7 +3982,7 @@ async function populateMockDataIn(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(66, 11, 0),
+            at: daysFromNow(-66, 11, 0),
         },
         {
             id: 'Kqw1IND5JwmUemrbWDKSg1',
@@ -3989,7 +3990,7 @@ async function populateMockDataIn(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(66, 11, 12),
+            at: daysFromNow(-66, 11, 12),
         },
         {
             id: '8fuCWUtGDYOCBszoGuYhNZ',
@@ -3997,7 +3998,7 @@ async function populateMockDataIn(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(61, 9, 0),
+            at: daysFromNow(-61, 9, 0),
         },
         {
             id: 'vqxo8lToEgDdEItcJg8GMI',
@@ -4005,7 +4006,7 @@ async function populateMockDataIn(
                 'V3AXXlSjJwDQAmkNiRA8aP',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(59, 14, 0),
+            at: daysFromNow(-59, 14, 0),
         },
         // happy-path WO07: Data Capture sojourn 2 days
         {
@@ -4014,7 +4015,7 @@ async function populateMockDataIn(
                 '9ooK5olzSsEnpgP8ASzBQi',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(61, 9, 30),
+            at: daysFromNow(-61, 9, 30),
         },
         {
             id: 'g7Fnaud4XIGM4bceFOFtim',
@@ -4022,7 +4023,7 @@ async function populateMockDataIn(
                 '9ooK5olzSsEnpgP8ASzBQi',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(61, 9, 45),
+            at: daysFromNow(-61, 9, 45),
         },
         {
             id: 'gdnClJs1LLxrx2fvZ3vQQ4',
@@ -4030,7 +4031,7 @@ async function populateMockDataIn(
                 '9ooK5olzSsEnpgP8ASzBQi',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(59, 11, 0),
+            at: daysFromNow(-59, 11, 0),
         },
         {
             id: 'WT4tD5XUmDdh40hI5Ny17B',
@@ -4038,7 +4039,7 @@ async function populateMockDataIn(
                 '9ooK5olzSsEnpgP8ASzBQi',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(58, 9, 0),
+            at: daysFromNow(-58, 9, 0),
         },
         // happy-path WO08: Data Capture sojourn 4 days
         {
@@ -4047,7 +4048,7 @@ async function populateMockDataIn(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(57, 8, 0),
+            at: daysFromNow(-57, 8, 0),
         },
         {
             id: 'hhTvFksUIDQyQA401xmNXg',
@@ -4055,7 +4056,7 @@ async function populateMockDataIn(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(57, 8, 15),
+            at: daysFromNow(-57, 8, 15),
         },
         {
             id: 'mAOQLPzk3Ud64ndZnbjMPB',
@@ -4063,7 +4064,7 @@ async function populateMockDataIn(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(53, 10, 0),
+            at: daysFromNow(-53, 10, 0),
         },
         {
             id: 'qMAn5oFts3CEnMsqbNYPA8',
@@ -4071,7 +4072,7 @@ async function populateMockDataIn(
                 'cnXN4DZx9dUVIZL4OZnyw0',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(51, 14, 0),
+            at: daysFromNow(-51, 14, 0),
         },
         // happy-path WO09: Data Capture sojourn 7 days (fat tail)
         {
@@ -4080,7 +4081,7 @@ async function populateMockDataIn(
                 'kKw82RQDHRfgg5xQnw1lPk',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(52, 10, 0),
+            at: daysFromNow(-52, 10, 0),
         },
         {
             id: 'HM3YTTlopkJetDhpXglt3l',
@@ -4088,7 +4089,7 @@ async function populateMockDataIn(
                 'kKw82RQDHRfgg5xQnw1lPk',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(52, 10, 20),
+            at: daysFromNow(-52, 10, 20),
         },
         {
             id: 'ZXc0n8qwamt9gjeXFZYPYQ',
@@ -4096,7 +4097,7 @@ async function populateMockDataIn(
                 'kKw82RQDHRfgg5xQnw1lPk',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(45, 9, 0),
+            at: daysFromNow(-45, 9, 0),
         },
         {
             id: 'h4s2ZGnlkiHKTB41nfKXzR',
@@ -4104,7 +4105,7 @@ async function populateMockDataIn(
                 'kKw82RQDHRfgg5xQnw1lPk',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(43, 11, 0),
+            at: daysFromNow(-43, 11, 0),
         },
         // happy-path WO10: Data Capture sojourn 3 days
         {
@@ -4113,7 +4114,7 @@ async function populateMockDataIn(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(48, 9, 0),
+            at: daysFromNow(-48, 9, 0),
         },
         {
             id: 'hSuu3PNyZ6vzzQRse3MT2y',
@@ -4121,7 +4122,7 @@ async function populateMockDataIn(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(48, 9, 10),
+            at: daysFromNow(-48, 9, 10),
         },
         {
             id: 'f78pCgCBuvzSIHNSiksOY3',
@@ -4129,7 +4130,7 @@ async function populateMockDataIn(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(45, 14, 0),
+            at: daysFromNow(-45, 14, 0),
         },
         {
             id: 'FHTXZEVfwmd8eXb3Kc4iyn',
@@ -4137,7 +4138,7 @@ async function populateMockDataIn(
                 'ec0n7Ab6pJYLFDF6H0nyvV',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(43, 10, 0),
+            at: daysFromNow(-43, 10, 0),
         },
         // happy-path WO11: Data Capture sojourn 2 days
         {
@@ -4146,7 +4147,7 @@ async function populateMockDataIn(
                 'gAjJnjirIrIgcFDMJyNsPa',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(44, 10, 30),
+            at: daysFromNow(-44, 10, 30),
         },
         {
             id: 'EuTRGmhwi9ZKpu4bICyIAA',
@@ -4154,7 +4155,7 @@ async function populateMockDataIn(
                 'gAjJnjirIrIgcFDMJyNsPa',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(44, 10, 45),
+            at: daysFromNow(-44, 10, 45),
         },
         {
             id: 'SShq2HjeSjOa2tDzITkJHj',
@@ -4162,7 +4163,7 @@ async function populateMockDataIn(
                 'gAjJnjirIrIgcFDMJyNsPa',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(42, 11, 0),
+            at: daysFromNow(-42, 11, 0),
         },
         {
             id: 'CgSA6m6TcjUwqAgugKt4U2',
@@ -4170,7 +4171,7 @@ async function populateMockDataIn(
                 'gAjJnjirIrIgcFDMJyNsPa',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(41, 14, 0),
+            at: daysFromNow(-41, 14, 0),
         },
         // happy-path WO12: Data Capture sojourn 6 days (fat tail)
         {
@@ -4179,7 +4180,7 @@ async function populateMockDataIn(
                 'kyWtMAZPazKqAfIwPzACsL',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(40, 9, 0),
+            at: daysFromNow(-40, 9, 0),
         },
         {
             id: 'lx7EAKYYTwDEsOA0CTRXbz',
@@ -4187,7 +4188,7 @@ async function populateMockDataIn(
                 'kyWtMAZPazKqAfIwPzACsL',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(40, 9, 15),
+            at: daysFromNow(-40, 9, 15),
         },
         {
             id: '47p7RbBeyj6gq7UoglbTLQ',
@@ -4195,7 +4196,7 @@ async function populateMockDataIn(
                 'kyWtMAZPazKqAfIwPzACsL',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(34, 10, 0),
+            at: daysFromNow(-34, 10, 0),
         },
         {
             id: 'TMBYhhOKzYesHHiHsNXfMH',
@@ -4203,7 +4204,7 @@ async function populateMockDataIn(
                 'kyWtMAZPazKqAfIwPzACsL',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(32, 9, 0),
+            at: daysFromNow(-32, 9, 0),
         },
         // happy-path WO13: Data Capture sojourn 1 day
         {
@@ -4212,7 +4213,7 @@ async function populateMockDataIn(
                 'C41Hni5pMxp8xMQFEGNaib',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(37, 8, 0),
+            at: daysFromNow(-37, 8, 0),
         },
         {
             id: 'Er9sQyVEvd6rSbmH2tC6zc',
@@ -4220,7 +4221,7 @@ async function populateMockDataIn(
                 'C41Hni5pMxp8xMQFEGNaib',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(37, 8, 10),
+            at: daysFromNow(-37, 8, 10),
         },
         {
             id: 'QGs5QdbV9ANQf2reuiemRd',
@@ -4228,7 +4229,7 @@ async function populateMockDataIn(
                 'C41Hni5pMxp8xMQFEGNaib',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(36, 11, 0),
+            at: daysFromNow(-36, 11, 0),
         },
         {
             id: 'nx5ooiuS68Mvj63uuuFpQN',
@@ -4236,7 +4237,7 @@ async function populateMockDataIn(
                 'C41Hni5pMxp8xMQFEGNaib',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(35, 14, 0),
+            at: daysFromNow(-35, 14, 0),
         },
         // happy-path WO14: Data Capture sojourn 9 days (fat tail)
         {
@@ -4245,7 +4246,7 @@ async function populateMockDataIn(
                 'FGAZYYwoS9To1tNb24DfLc',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(33, 9, 30),
+            at: daysFromNow(-33, 9, 30),
         },
         {
             id: 'GIJUAabpi1KGevTrAzXirD',
@@ -4253,7 +4254,7 @@ async function populateMockDataIn(
                 'FGAZYYwoS9To1tNb24DfLc',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(33, 9, 45),
+            at: daysFromNow(-33, 9, 45),
         },
         {
             id: '6r9REsvwOdW8DqriF2g76f',
@@ -4261,7 +4262,7 @@ async function populateMockDataIn(
                 'FGAZYYwoS9To1tNb24DfLc',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(24, 10, 0),
+            at: daysFromNow(-24, 10, 0),
         },
         {
             id: 'Q56P9URSLJfpKaSMBejDla',
@@ -4269,7 +4270,7 @@ async function populateMockDataIn(
                 'FGAZYYwoS9To1tNb24DfLc',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(22, 9, 0),
+            at: daysFromNow(-22, 9, 0),
         },
         // happy-path WO15: Data Capture sojourn 2 days
         {
@@ -4278,7 +4279,7 @@ async function populateMockDataIn(
                 '0zgLwuyPgtreVYjg4TScJR',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(29, 10, 0),
+            at: daysFromNow(-29, 10, 0),
         },
         {
             id: 'TFj780SI0g7CP9d1nO1mjy',
@@ -4286,7 +4287,7 @@ async function populateMockDataIn(
                 '0zgLwuyPgtreVYjg4TScJR',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(29, 10, 15),
+            at: daysFromNow(-29, 10, 15),
         },
         {
             id: 'Ly9CvZo9IA5JS77ETKKtRj',
@@ -4294,7 +4295,7 @@ async function populateMockDataIn(
                 '0zgLwuyPgtreVYjg4TScJR',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(27, 14, 0),
+            at: daysFromNow(-27, 14, 0),
         },
         {
             id: 'aWPQp3IBWqWnaqr45BhMba',
@@ -4302,7 +4303,7 @@ async function populateMockDataIn(
                 '0zgLwuyPgtreVYjg4TScJR',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(25, 10, 0),
+            at: daysFromNow(-25, 10, 0),
         },
         // happy-path WO16: Data Capture sojourn 3 days
         {
@@ -4311,7 +4312,7 @@ async function populateMockDataIn(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(26, 9, 0),
+            at: daysFromNow(-26, 9, 0),
         },
         {
             id: 'eReG7OzD6HyZ2ywVP6K7Ac',
@@ -4319,7 +4320,7 @@ async function populateMockDataIn(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(26, 9, 12),
+            at: daysFromNow(-26, 9, 12),
         },
         {
             id: 'f1bm18FOcYixT5prK2pCcV',
@@ -4327,7 +4328,7 @@ async function populateMockDataIn(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(23, 11, 0),
+            at: daysFromNow(-23, 11, 0),
         },
         {
             id: 'MqxWBCMVJOc0RfEXCEUiEo',
@@ -4335,7 +4336,7 @@ async function populateMockDataIn(
                 'XGJklKFO4aUtjSAEHEE8Zn',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(21, 14, 0),
+            at: daysFromNow(-21, 14, 0),
         },
         // happy-path WO17: Data Capture sojourn 1 day
         {
@@ -4344,7 +4345,7 @@ async function populateMockDataIn(
                 'rtuFD9uWn5zguEHyT3fh8s',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(23, 8, 30),
+            at: daysFromNow(-23, 8, 30),
         },
         {
             id: '6FaR1TmuHJgxw7KW1g8sbf',
@@ -4352,7 +4353,7 @@ async function populateMockDataIn(
                 'rtuFD9uWn5zguEHyT3fh8s',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(23, 8, 42),
+            at: daysFromNow(-23, 8, 42),
         },
         {
             id: 'qsNwh43wdaGqGjeKeaAeh4',
@@ -4360,7 +4361,7 @@ async function populateMockDataIn(
                 'rtuFD9uWn5zguEHyT3fh8s',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(22, 10, 0),
+            at: daysFromNow(-22, 10, 0),
         },
         {
             id: '7j8VyPb3kuq8TNVz0iPP9M',
@@ -4368,7 +4369,7 @@ async function populateMockDataIn(
                 'rtuFD9uWn5zguEHyT3fh8s',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(21, 9, 0),
+            at: daysFromNow(-21, 9, 0),
         },
         // happy-path WO18: Data Capture sojourn 4 days
         {
@@ -4377,7 +4378,7 @@ async function populateMockDataIn(
                 'XrO05MeyqldO8qm0O4VPdq',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(20, 10, 0),
+            at: daysFromNow(-20, 10, 0),
         },
         {
             id: 'ZywDPM0MCJeweinimZA6wH',
@@ -4385,7 +4386,7 @@ async function populateMockDataIn(
                 'XrO05MeyqldO8qm0O4VPdq',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(20, 10, 18),
+            at: daysFromNow(-20, 10, 18),
         },
         {
             id: 'G5LYG1yT8213GM9zfqqKmU',
@@ -4393,7 +4394,7 @@ async function populateMockDataIn(
                 'XrO05MeyqldO8qm0O4VPdq',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(16, 9, 0),
+            at: daysFromNow(-16, 9, 0),
         },
         {
             id: 'GUjeLpcj82NtxqFH0gcjtB',
@@ -4401,7 +4402,7 @@ async function populateMockDataIn(
                 'XrO05MeyqldO8qm0O4VPdq',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(14, 14, 0),
+            at: daysFromNow(-14, 14, 0),
         },
         // happy-path WO19: Data Capture sojourn 8 days (fat tail)
         {
@@ -4410,7 +4411,7 @@ async function populateMockDataIn(
                 'S74N7CPA2dsMESryJNrFAC',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(17, 9, 0),
+            at: daysFromNow(-17, 9, 0),
         },
         {
             id: 'OJ5bx5CPsfeb8A1ieKyeQ7',
@@ -4418,7 +4419,7 @@ async function populateMockDataIn(
                 'S74N7CPA2dsMESryJNrFAC',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(17, 9, 20),
+            at: daysFromNow(-17, 9, 20),
         },
         {
             id: 'uQQcXyLLxrVFiydl7FCGOZ',
@@ -4426,7 +4427,7 @@ async function populateMockDataIn(
                 'S74N7CPA2dsMESryJNrFAC',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(9, 10, 0),
+            at: daysFromNow(-9, 10, 0),
         },
         {
             id: 'L1hWSVRmSjhvzoQUPDDhMc',
@@ -4434,7 +4435,7 @@ async function populateMockDataIn(
                 'S74N7CPA2dsMESryJNrFAC',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(7, 14, 0),
+            at: daysFromNow(-7, 14, 0),
         },
         // happy-path WO20: Data Capture sojourn 2 days
         {
@@ -4443,7 +4444,7 @@ async function populateMockDataIn(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(14, 8, 0),
+            at: daysFromNow(-14, 8, 0),
         },
         {
             id: 'ahjiruKeA9qdnMDO4TZf39',
@@ -4451,7 +4452,7 @@ async function populateMockDataIn(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(14, 8, 15),
+            at: daysFromNow(-14, 8, 15),
         },
         {
             id: '7ZtemWfFZOqf9SuQVzUwp6',
@@ -4459,7 +4460,7 @@ async function populateMockDataIn(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(12, 11, 0),
+            at: daysFromNow(-12, 11, 0),
         },
         {
             id: 'w36jEVysbnbIdaPhjIcvDI',
@@ -4467,7 +4468,7 @@ async function populateMockDataIn(
                 'Cr8KZH5Q2j5n8Q8Yw3qdMw',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(10, 9, 0),
+            at: daysFromNow(-10, 9, 0),
         },
         // happy-path WO21: Data Capture sojourn 3 days
         {
@@ -4476,7 +4477,7 @@ async function populateMockDataIn(
                 '4T56gYme7ae4Ya7AMA0hpW',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(11, 10, 30),
+            at: daysFromNow(-11, 10, 30),
         },
         {
             id: 'mSCE3Z6y5RpTb74TEW62ky',
@@ -4484,7 +4485,7 @@ async function populateMockDataIn(
                 '4T56gYme7ae4Ya7AMA0hpW',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(11, 10, 48),
+            at: daysFromNow(-11, 10, 48),
         },
         {
             id: 'smCeF7cSnQQaysWwJPsiTu',
@@ -4492,7 +4493,7 @@ async function populateMockDataIn(
                 '4T56gYme7ae4Ya7AMA0hpW',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(8, 14, 0),
+            at: daysFromNow(-8, 14, 0),
         },
         {
             id: 'KFrDOkEJ3SiUVB3OR29ntN',
@@ -4500,7 +4501,7 @@ async function populateMockDataIn(
                 '4T56gYme7ae4Ya7AMA0hpW',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(6, 10, 0),
+            at: daysFromNow(-6, 10, 0),
         },
         // happy-path WO22: Data Capture sojourn 1 day
         {
@@ -4509,7 +4510,7 @@ async function populateMockDataIn(
                 'aFCyJrvokoJM5iINwO3WCf',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(9, 9, 0),
+            at: daysFromNow(-9, 9, 0),
         },
         {
             id: 'UlPzcQK7dJWr6sLiV7qvfh',
@@ -4517,7 +4518,7 @@ async function populateMockDataIn(
                 'aFCyJrvokoJM5iINwO3WCf',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(9, 9, 10),
+            at: daysFromNow(-9, 9, 10),
         },
         {
             id: 'aicMwA0QmZUEzeUtlmQOOS',
@@ -4525,7 +4526,7 @@ async function populateMockDataIn(
                 'aFCyJrvokoJM5iINwO3WCf',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(8, 10, 0),
+            at: daysFromNow(-8, 10, 0),
         },
         {
             id: 'ADeYyyUb4p3eknFC5v6nW2',
@@ -4533,7 +4534,7 @@ async function populateMockDataIn(
                 'aFCyJrvokoJM5iINwO3WCf',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(7, 9, 0),
+            at: daysFromNow(-7, 9, 0),
         },
         // happy-path WO23: Data Capture sojourn 2 days
         {
@@ -4542,7 +4543,7 @@ async function populateMockDataIn(
                 'Sr4k75y6vuKODCA9zlSUjk',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(6, 11, 0),
+            at: daysFromNow(-6, 11, 0),
         },
         {
             id: '3EOMPhhyYNW6pY6LnIegUt',
@@ -4550,7 +4551,7 @@ async function populateMockDataIn(
                 'Sr4k75y6vuKODCA9zlSUjk',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(6, 11, 15),
+            at: daysFromNow(-6, 11, 15),
         },
         {
             id: 'CYglhrk5PKScZSwHQX65Ss',
@@ -4558,7 +4559,7 @@ async function populateMockDataIn(
                 'Sr4k75y6vuKODCA9zlSUjk',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(4, 9, 0),
+            at: daysFromNow(-4, 9, 0),
         },
         {
             id: 'hVa7HADjYHSSsW2qxPPzTw',
@@ -4566,7 +4567,7 @@ async function populateMockDataIn(
                 'Sr4k75y6vuKODCA9zlSUjk',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(2, 14, 0),
+            at: daysFromNow(-2, 14, 0),
         },
         // needs-revision WO24: double loop Data Capture->Review->Data Capture
         // twice, creating a 3rd distinct completed path
@@ -4576,7 +4577,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(77, 9, 0),
+            at: daysFromNow(-77, 9, 0),
         },
         {
             id: 'dHUzDlpmED6x7Hv24kR2nB',
@@ -4584,7 +4585,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(77, 9, 10),
+            at: daysFromNow(-77, 9, 10),
         },
         {
             id: '0LxzRUVeucbfu95bWGkq75',
@@ -4592,7 +4593,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(75, 11, 0),
+            at: daysFromNow(-75, 11, 0),
         },
         {
             id: 'CiXBfp5CJ8ZAWNahki1Cu8',
@@ -4600,7 +4601,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(74, 14, 0),
+            at: daysFromNow(-74, 14, 0),
         },
         {
             id: 'wGVP4JjVdAS6FtQrhTGrC7',
@@ -4608,7 +4609,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(73, 10, 0),
+            at: daysFromNow(-73, 10, 0),
         },
         {
             id: 'caS4tLtoEUOaPLr2VUxScZ',
@@ -4616,7 +4617,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(72, 14, 0),
+            at: daysFromNow(-72, 14, 0),
         },
         {
             id: 'bQsLuRYpBTppyQtdZqtR5L',
@@ -4624,7 +4625,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(71, 10, 0),
+            at: daysFromNow(-71, 10, 0),
         },
         {
             id: 'eKFDk2YAO7K93hcrnIveru',
@@ -4632,7 +4633,7 @@ async function populateMockDataIn(
                 'Mm6KUpykGSwjD7YofI6zpb',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(70, 9, 0),
+            at: daysFromNow(-70, 9, 0),
         },
         // needs-revision WO25: loops Data Capture->Review->Data Capture
         {
@@ -4641,7 +4642,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(63, 10, 0),
+            at: daysFromNow(-63, 10, 0),
         },
         {
             id: 'lvvaw4Yx5lJnHZoLB3fQqI',
@@ -4649,7 +4650,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(63, 10, 15),
+            at: daysFromNow(-63, 10, 15),
         },
         {
             id: 'NkrcEkNWD9bu9ntBee8JnO',
@@ -4657,7 +4658,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(61, 14, 0),
+            at: daysFromNow(-61, 14, 0),
         },
         {
             id: 'H7PRtRrjeAoPlty7IxnTTF',
@@ -4665,7 +4666,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(60, 22, 0),
+            at: daysFromNow(-60, 22, 0),
         },
         {
             id: 'Xjy85N6xcsUc0dCe49kC1h',
@@ -4673,7 +4674,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(59, 14, 0),
+            at: daysFromNow(-59, 14, 0),
         },
         {
             id: '3IwmCFVLZn4y18iTwydMpO',
@@ -4681,7 +4682,7 @@ async function populateMockDataIn(
                 'BbZ3Z7OZnFmdF5MBgVIYzI',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(58, 9, 0),
+            at: daysFromNow(-58, 9, 0),
         },
         // needs-revision WO26: loops Data Capture->Review->Data Capture
         {
@@ -4690,7 +4691,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(50, 8, 30),
+            at: daysFromNow(-50, 8, 30),
         },
         {
             id: 'EIo4tqqUH9XBmTxLKQa3wY',
@@ -4698,7 +4699,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(50, 8, 45),
+            at: daysFromNow(-50, 8, 45),
         },
         {
             id: 'Q05vkdZMSIHF8dFhFdu2T9',
@@ -4706,7 +4707,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(48, 11, 0),
+            at: daysFromNow(-48, 11, 0),
         },
         {
             id: 'f4raRzWhac1d0qfMW4bHCo',
@@ -4714,7 +4715,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(47, 14, 0),
+            at: daysFromNow(-47, 14, 0),
         },
         {
             id: '8lTjUXAaJGsmi28M5VvnEs',
@@ -4722,7 +4723,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(46, 10, 0),
+            at: daysFromNow(-46, 10, 0),
         },
         {
             id: 'GNbLd7I9sqHDpu4xKbBdjV',
@@ -4730,7 +4731,7 @@ async function populateMockDataIn(
                 'NydsTqMmCgEKI7R9xxp36g',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(44, 14, 0),
+            at: daysFromNow(-44, 14, 0),
         },
         // needs-revision WO27: loops Data Capture->Review->Data Capture
         {
@@ -4739,7 +4740,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(38, 9, 0),
+            at: daysFromNow(-38, 9, 0),
         },
         {
             id: 't1qnertaXJmzaaELr6IsYU',
@@ -4747,7 +4748,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(38, 9, 18),
+            at: daysFromNow(-38, 9, 18),
         },
         {
             id: 'h59lAwdhgMdefl9RisCCj7',
@@ -4755,7 +4756,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(36, 14, 0),
+            at: daysFromNow(-36, 14, 0),
         },
         {
             id: 'c7ikZyOjtqlGuoz9zODuHy',
@@ -4763,7 +4764,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(35, 22, 0),
+            at: daysFromNow(-35, 22, 0),
         },
         {
             id: 'eKSPOrAHWb6CNNMhRQTYKt',
@@ -4771,7 +4772,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(34, 14, 0),
+            at: daysFromNow(-34, 14, 0),
         },
         {
             id: 'zGJlSHo6fbztITB52k1vuP',
@@ -4779,7 +4780,7 @@ async function populateMockDataIn(
                 'x2uQev3HutthrUWRFkXSkH',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(33, 9, 0),
+            at: daysFromNow(-33, 9, 0),
         },
         // needs-revision WO28: loops Data Capture->Review->Data Capture
         {
@@ -4788,7 +4789,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(25, 10, 0),
+            at: daysFromNow(-25, 10, 0),
         },
         {
             id: '9SqVX67zSGRvJr6LzgLoqA',
@@ -4796,7 +4797,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(25, 10, 20),
+            at: daysFromNow(-25, 10, 20),
         },
         {
             id: 'tgkwKH3qWOdn2BcWaazkdN',
@@ -4804,7 +4805,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(23, 14, 0),
+            at: daysFromNow(-23, 14, 0),
         },
         {
             id: 'IGUf2HrDyAJCpT1OrdBEdb',
@@ -4812,7 +4813,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(22, 14, 0),
+            at: daysFromNow(-22, 14, 0),
         },
         {
             id: 'PxLFPaM23m2rQXIzeJIywN',
@@ -4820,7 +4821,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(21, 10, 0),
+            at: daysFromNow(-21, 10, 0),
         },
         {
             id: '01Xeks1usn4PgpxH0QwyHi',
@@ -4828,7 +4829,7 @@ async function populateMockDataIn(
                 'w7XA9UnuYI7e46RTQL1xGW',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(19, 14, 0),
+            at: daysFromNow(-19, 14, 0),
         },
         // needs-revision WO29: loops Data Capture->Review->Data Capture
         {
@@ -4837,7 +4838,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(12, 9, 30),
+            at: daysFromNow(-12, 9, 30),
         },
         {
             id: 'eRBpgQtP1g4IrauEEkfOCl',
@@ -4845,7 +4846,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(12, 9, 45),
+            at: daysFromNow(-12, 9, 45),
         },
         {
             id: 'vfWjLYPYadU0NFA6mk7yRl',
@@ -4853,7 +4854,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(11, 11, 0),
+            at: daysFromNow(-11, 11, 0),
         },
         {
             id: 'G2eaGEcEP0s7q8ThefRKze',
@@ -4861,7 +4862,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(10, 14, 0),
+            at: daysFromNow(-10, 14, 0),
         },
         {
             id: 'ZstKsrHfLjCwfx2qFso2ZR',
@@ -4869,7 +4870,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(9, 11, 0),
+            at: daysFromNow(-9, 11, 0),
         },
         {
             id: 'BZ2RDP2rbCFKJvqqERE7eE',
@@ -4877,7 +4878,7 @@ async function populateMockDataIn(
                 '3H3XeeNE4rS2wbANs3JvYz',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(8, 9, 0),
+            at: daysFromNow(-8, 9, 0),
         },
         // in-flight WO30: sitting in Data Capture
         {
@@ -4886,7 +4887,7 @@ async function populateMockDataIn(
                 'i7YYgKN3ZUlrkulQ2aWdIE',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(18, 9, 0),
+            at: daysFromNow(-18, 9, 0),
         },
         {
             id: '8IEmMehaWoNrxS2NNocSNE',
@@ -4894,7 +4895,7 @@ async function populateMockDataIn(
                 'i7YYgKN3ZUlrkulQ2aWdIE',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(18, 9, 15),
+            at: daysFromNow(-18, 9, 15),
         },
         // in-flight WO31: sitting in Data Capture
         {
@@ -4903,7 +4904,7 @@ async function populateMockDataIn(
                 '0brjvcoPEVBwMkUQ3tKHWc',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(10, 10, 0),
+            at: daysFromNow(-10, 10, 0),
         },
         {
             id: 'xPBiF7zri62itn9FCXWtUE',
@@ -4911,7 +4912,7 @@ async function populateMockDataIn(
                 '0brjvcoPEVBwMkUQ3tKHWc',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(10, 10, 20),
+            at: daysFromNow(-10, 10, 20),
         },
         // in-flight WO32: sitting in Data Capture
         {
@@ -4920,7 +4921,7 @@ async function populateMockDataIn(
                 'mTdhglHhl7pM0mKt0M2IjF',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(7, 8, 0),
+            at: daysFromNow(-7, 8, 0),
         },
         {
             id: 'du3liNmXeejdDA0OMRfibW',
@@ -4928,7 +4929,7 @@ async function populateMockDataIn(
                 'mTdhglHhl7pM0mKt0M2IjF',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(7, 8, 12),
+            at: daysFromNow(-7, 8, 12),
         },
         // in-flight WO33: sitting in Review
         {
@@ -4937,7 +4938,7 @@ async function populateMockDataIn(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(4, 9, 0),
+            at: daysFromNow(-4, 9, 0),
         },
         {
             id: 'oapOBSYlGiuRXZDQoODFj7',
@@ -4945,7 +4946,7 @@ async function populateMockDataIn(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(4, 9, 18),
+            at: daysFromNow(-4, 9, 18),
         },
         {
             id: '4GQOHCMoSVszRiPyPIEJFj',
@@ -4953,7 +4954,7 @@ async function populateMockDataIn(
                 'GMhfH8lMQJXzE4vkjnSH1u',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(3, 14, 0),
+            at: daysFromNow(-3, 14, 0),
         },
         // in-flight WO34: sitting in Review
         {
@@ -4962,7 +4963,7 @@ async function populateMockDataIn(
                 'pLxCFGOINXVaXmrS0VG0vC',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(2, 11, 0),
+            at: daysFromNow(-2, 11, 0),
         },
         {
             id: 'IUWLLWpuMM5EHbpESuAG13',
@@ -4970,7 +4971,7 @@ async function populateMockDataIn(
                 'pLxCFGOINXVaXmrS0VG0vC',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(2, 11, 20),
+            at: daysFromNow(-2, 11, 20),
         },
         {
             id: 'IvGW6Yw71dy7s5wmMEYxDr',
@@ -4978,7 +4979,7 @@ async function populateMockDataIn(
                 'pLxCFGOINXVaXmrS0VG0vC',
             state: woNodeReview,
             member_id: woPersonCurrent,
-            at: dt(1, 10, 0),
+            at: daysFromNow(-1, 10, 0),
         },
         // out-of-clan WO35: Sarah (not in Data Capture members)
         // transitions Data Capture out
@@ -4988,7 +4989,7 @@ async function populateMockDataIn(
                 'IyrpZrIl2hbmmnCtiifEGm',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(35, 9, 0),
+            at: daysFromNow(-35, 9, 0),
         },
         {
             id: 'cEFDawHdIHfIaZQYGhH5xu',
@@ -4996,7 +4997,7 @@ async function populateMockDataIn(
                 'IyrpZrIl2hbmmnCtiifEGm',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(35, 9, 12),
+            at: daysFromNow(-35, 9, 12),
         },
         {
             id: 'MGhDId9jZaFJZ5fBhnrGem',
@@ -5004,7 +5005,7 @@ async function populateMockDataIn(
                 'IyrpZrIl2hbmmnCtiifEGm',
             state: woNodeReview,
             member_id: woPersonSarah,
-            at: dt(33, 10, 0),
+            at: daysFromNow(-33, 10, 0),
         },
         {
             id: 'Zch8By7ZpKFDwCNMEPI62h',
@@ -5012,7 +5013,7 @@ async function populateMockDataIn(
                 'IyrpZrIl2hbmmnCtiifEGm',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(31, 14, 0),
+            at: daysFromNow(-31, 14, 0),
         },
         // out-of-clan WO36: Mike (not in Data Capture members)
         // transitions Data Capture out
@@ -5022,7 +5023,7 @@ async function populateMockDataIn(
                 'zYnDWBV4VP5guzW5fDWtHN',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(22, 10, 30),
+            at: daysFromNow(-22, 10, 30),
         },
         {
             id: 'yikZQBGGjkiZXksUJM3gkS',
@@ -5030,7 +5031,7 @@ async function populateMockDataIn(
                 'zYnDWBV4VP5guzW5fDWtHN',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(22, 10, 45),
+            at: daysFromNow(-22, 10, 45),
         },
         {
             id: '0J4UMtQY7x8cfN8FNXaToL',
@@ -5038,7 +5039,7 @@ async function populateMockDataIn(
                 'zYnDWBV4VP5guzW5fDWtHN',
             state: woNodeReview,
             member_id: woPersonEmily,
-            at: dt(20, 11, 0),
+            at: daysFromNow(-20, 11, 0),
         },
         {
             id: 'XqSDgqjNZLihLPd2MX8fRR',
@@ -5046,10 +5047,10 @@ async function populateMockDataIn(
                 'zYnDWBV4VP5guzW5fDWtHN',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(18, 14, 0),
+            at: daysFromNow(-18, 14, 0),
         },
         // old WO37: straddles window edge; Create + Data Capture
-        // entry at dt(108) but Data Capture exit at dt(8) so
+        // entry 108 days ago but Data Capture exit 8 days ago so
         // only the in-window ~82 days of Data Capture sojourn
         // count toward heat (exercises window clipping)
         {
@@ -5058,7 +5059,7 @@ async function populateMockDataIn(
                 '7HX7RPwlYopHWfD7I0QAPs',
             state: woNodeNew,
             member_id: woPersonEmily,
-            at: dt(108, 9, 0),
+            at: daysFromNow(-108, 9, 0),
         },
         {
             id: 'pq0sBjRnF8XBooRpIPhsQp',
@@ -5066,7 +5067,7 @@ async function populateMockDataIn(
                 '7HX7RPwlYopHWfD7I0QAPs',
             state: woNodeCapture,
             member_id: woPersonEmily,
-            at: dt(108, 9, 15),
+            at: daysFromNow(-108, 9, 15),
         },
         {
             id: 'BNbXMdM5RReniv5obnnHF8',
@@ -5074,7 +5075,7 @@ async function populateMockDataIn(
                 '7HX7RPwlYopHWfD7I0QAPs',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(8, 10, 0),
+            at: daysFromNow(-8, 10, 0),
         },
         {
             id: 'txMcs1q11W87MhhBuR83vx',
@@ -5082,7 +5083,7 @@ async function populateMockDataIn(
                 '7HX7RPwlYopHWfD7I0QAPs',
             state: woNodeComplete,
             member_id: woPersonSarah,
-            at: dt(5, 14, 0),
+            at: daysFromNow(-5, 14, 0),
         },
         // old WO38: all transitions ~100-103 days ago,
         // entirely outside the 90-day window; contributes
@@ -5093,7 +5094,7 @@ async function populateMockDataIn(
                 'EXphSopBU1Is2TH4QZo4nO',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(103, 10, 0),
+            at: daysFromNow(-103, 10, 0),
         },
         {
             id: 'o97Okl09WcFIc5EHkfBNL0',
@@ -5101,7 +5102,7 @@ async function populateMockDataIn(
                 'EXphSopBU1Is2TH4QZo4nO',
             state: woNodeCapture,
             member_id: woPersonSarah,
-            at: dt(103, 10, 18),
+            at: daysFromNow(-103, 10, 18),
         },
         {
             id: '783y3zl2CZTp98AaqPhggs',
@@ -5109,7 +5110,7 @@ async function populateMockDataIn(
                 'EXphSopBU1Is2TH4QZo4nO',
             state: woNodeReview,
             member_id: woPersonMarcus,
-            at: dt(101, 11, 0),
+            at: daysFromNow(-101, 11, 0),
         },
         {
             id: 'HXbhOvQZXx6DnrRB0T3mve',
@@ -5117,7 +5118,7 @@ async function populateMockDataIn(
                 'EXphSopBU1Is2TH4QZo4nO',
             state: woNodeComplete,
             member_id: woPersonEmily,
-            at: dt(100, 9, 0),
+            at: daysFromNow(-100, 9, 0),
         },
         // prc01: happy path, ~3 day draft sojourn
         {
@@ -5126,7 +5127,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeStart,
             member_id: woPersonSarah,
-            at: dt(60, 9, 0),
+            at: daysFromNow(-60, 9, 0),
         },
         {
             id: '3ksjRuCLxe6hNXR0dNzxWQ',
@@ -5134,7 +5135,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeDraft,
             member_id: woPersonSarah,
-            at: dt(60, 9, 5),
+            at: daysFromNow(-60, 9, 5),
         },
         {
             id: 'uWiv67EN75R9nQ1njZxhuv',
@@ -5142,7 +5143,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeSubmit,
             member_id: woPersonEmily,
-            at: dt(57, 10, 0),
+            at: daysFromNow(-57, 10, 0),
         },
         {
             id: 'odxDZFFHmZwFy1FmpUuxU5',
@@ -5150,7 +5151,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeTriage,
             member_id: woPersonEmily,
-            at: dt(57, 10, 30),
+            at: daysFromNow(-57, 10, 30),
         },
         {
             id: 'AC5WlYdwXBnnE58qHaHmIo',
@@ -5158,7 +5159,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeQuickRev,
             member_id: woPersonMarcus,
-            at: dt(57, 11, 0),
+            at: daysFromNow(-57, 11, 0),
         },
         {
             id: 'RgZgN0b8utwKl61fc4TzZP',
@@ -5166,7 +5167,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeDecision,
             member_id: woPersonMarcus,
-            at: dt(56, 14, 0),
+            at: daysFromNow(-56, 14, 0),
         },
         {
             id: 'z6hNmYbEWvegszxhwcJ61f',
@@ -5174,7 +5175,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeApproved,
             member_id: woPersonSarah,
-            at: dt(56, 15, 0),
+            at: daysFromNow(-56, 15, 0),
         },
         {
             id: 'XdBVq4IIUbuiefP1w0g0yu',
@@ -5182,7 +5183,7 @@ async function populateMockDataIn(
                 'hRPNkjrYBTQqzzFe1t8FH6',
             state: prcNodeArchive,
             member_id: woPersonSarah,
-            at: dt(55, 9, 0),
+            at: daysFromNow(-55, 9, 0),
         },
         // prc02: happy path, ~2 day draft sojourn
         {
@@ -5191,7 +5192,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeStart,
             member_id: woPersonEmily,
-            at: dt(45, 10, 0),
+            at: daysFromNow(-45, 10, 0),
         },
         {
             id: 'm0nfsE2rTHaRbAWuxmum9d',
@@ -5199,7 +5200,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeDraft,
             member_id: woPersonEmily,
-            at: dt(45, 10, 10),
+            at: daysFromNow(-45, 10, 10),
         },
         {
             id: 'yxbLBIMHtHgVjO74NsrNgX',
@@ -5207,7 +5208,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeSubmit,
             member_id: woPersonEmily,
-            at: dt(43, 9, 0),
+            at: daysFromNow(-43, 9, 0),
         },
         {
             id: 'z9NN5xeQ6CMu9DChJ16m1V',
@@ -5215,7 +5216,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeTriage,
             member_id: woPersonMarcus,
-            at: dt(43, 9, 20),
+            at: daysFromNow(-43, 9, 20),
         },
         {
             id: 'UAO4qYna7zIzLSJwM8iIoh',
@@ -5223,7 +5224,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeQuickRev,
             member_id: woPersonMarcus,
-            at: dt(43, 10, 0),
+            at: daysFromNow(-43, 10, 0),
         },
         {
             id: 'UrbW8eFstKcsHbh99uRUds',
@@ -5231,7 +5232,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeDecision,
             member_id: woPersonSarah,
-            at: dt(42, 14, 0),
+            at: daysFromNow(-42, 14, 0),
         },
         {
             id: 'KW7NkVunQCIEUzL9R78DpF',
@@ -5239,7 +5240,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeApproved,
             member_id: woPersonSarah,
-            at: dt(42, 15, 0),
+            at: daysFromNow(-42, 15, 0),
         },
         {
             id: 'wVgv2i4c1o7t11tIrmngjN',
@@ -5247,7 +5248,7 @@ async function populateMockDataIn(
                 'L3UhOvrAGluk4kNnN6J8NT',
             state: prcNodeArchive,
             member_id: woPersonEmily,
-            at: dt(41, 10, 0),
+            at: daysFromNow(-41, 10, 0),
         },
         // prc03: happy path, ~1 day draft sojourn
         {
@@ -5256,7 +5257,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeStart,
             member_id: woPersonSarah,
-            at: dt(30, 8, 0),
+            at: daysFromNow(-30, 8, 0),
         },
         {
             id: '5opUgNKNUIWnlm3MnpGX9F',
@@ -5264,7 +5265,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeDraft,
             member_id: woPersonSarah,
-            at: dt(30, 8, 10),
+            at: daysFromNow(-30, 8, 10),
         },
         {
             id: '0XabGfXLVpJqRrrA8Tmo4S',
@@ -5272,7 +5273,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeSubmit,
             member_id: woPersonCurrent,
-            at: dt(29, 9, 0),
+            at: daysFromNow(-29, 9, 0),
         },
         {
             id: 'sbPLHxmfJUpk3tfXZ7ShRX',
@@ -5280,7 +5281,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeTriage,
             member_id: woPersonCurrent,
-            at: dt(29, 9, 15),
+            at: daysFromNow(-29, 9, 15),
         },
         {
             id: 'CEUHkraKtR9HC4heDL8OaZ',
@@ -5288,7 +5289,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeQuickRev,
             member_id: woPersonMarcus,
-            at: dt(29, 10, 0),
+            at: daysFromNow(-29, 10, 0),
         },
         {
             id: 'EqVBgaYCFKRwp9uIHOyVle',
@@ -5296,7 +5297,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeDecision,
             member_id: woPersonMarcus,
-            at: dt(28, 15, 0),
+            at: daysFromNow(-28, 15, 0),
         },
         {
             id: '1DfCm0yI6ycGmVNPcudsOU',
@@ -5304,7 +5305,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeApproved,
             member_id: woPersonEmily,
-            at: dt(28, 16, 0),
+            at: daysFromNow(-28, 16, 0),
         },
         {
             id: 'lAOOAfrD4ZO0rKWfQFI8Px',
@@ -5312,7 +5313,7 @@ async function populateMockDataIn(
                 'oTscblsEOjZDkvkW3vs7rU',
             state: prcNodeArchive,
             member_id: woPersonEmily,
-            at: dt(27, 9, 0),
+            at: daysFromNow(-27, 9, 0),
         },
         // prc04: happy path, ~4 day draft sojourn
         {
@@ -5321,7 +5322,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeStart,
             member_id: woPersonEmily,
-            at: dt(20, 11, 0),
+            at: daysFromNow(-20, 11, 0),
         },
         {
             id: 'JpSsbb9JNMnGteG4RBWrZB',
@@ -5329,7 +5330,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeDraft,
             member_id: woPersonEmily,
-            at: dt(20, 11, 5),
+            at: daysFromNow(-20, 11, 5),
         },
         {
             id: 'dn32O6s5Ibe5aDOByr87J7',
@@ -5337,7 +5338,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeSubmit,
             member_id: woPersonMarcus,
-            at: dt(16, 10, 0),
+            at: daysFromNow(-16, 10, 0),
         },
         {
             id: 'nFGAxCNAthhvb9m4walDUe',
@@ -5345,7 +5346,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeTriage,
             member_id: woPersonSarah,
-            at: dt(16, 10, 20),
+            at: daysFromNow(-16, 10, 20),
         },
         {
             id: 'fjM70dtNCzEFNoQ6cjJCWO',
@@ -5353,7 +5354,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeQuickRev,
             member_id: woPersonSarah,
-            at: dt(16, 11, 0),
+            at: daysFromNow(-16, 11, 0),
         },
         {
             id: '12eJcjUwJ7G1iqPAU6cSx0',
@@ -5361,7 +5362,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeDecision,
             member_id: woPersonSarah,
-            at: dt(15, 14, 0),
+            at: daysFromNow(-15, 14, 0),
         },
         {
             id: 'eM38EYOkl4REWI8y8IhCzA',
@@ -5369,7 +5370,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeApproved,
             member_id: woPersonEmily,
-            at: dt(15, 15, 30),
+            at: daysFromNow(-15, 15, 30),
         },
         {
             id: 'Vx8TlX4GIyRQPYS6oocHhd',
@@ -5377,7 +5378,7 @@ async function populateMockDataIn(
                 'Xpw9VGpZ6RyevuInSr8yze',
             state: prcNodeArchive,
             member_id: woPersonEmily,
-            at: dt(14, 9, 0),
+            at: daysFromNow(-14, 9, 0),
         },
         // prc05: revisit -- Decision sends to
         // Revise, then Draft again, then completes
@@ -5387,7 +5388,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeStart,
             member_id: woPersonSarah,
-            at: dt(15, 9, 0),
+            at: daysFromNow(-15, 9, 0),
         },
         {
             id: 'WMNTfIbJPW1m39FOKqMZhH',
@@ -5395,7 +5396,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeDraft,
             member_id: woPersonSarah,
-            at: dt(15, 9, 10),
+            at: daysFromNow(-15, 9, 10),
         },
         {
             id: 'tMWEwY6qb3ICXZtz6P28Ut',
@@ -5403,7 +5404,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeSubmit,
             member_id: woPersonEmily,
-            at: dt(14, 10, 0),
+            at: daysFromNow(-14, 10, 0),
         },
         {
             id: 'gOUPiWUJiZa99BUOQTrYjh',
@@ -5411,7 +5412,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeTriage,
             member_id: woPersonEmily,
-            at: dt(14, 10, 15),
+            at: daysFromNow(-14, 10, 15),
         },
         {
             id: 'zQbr7dr0N8gG14HJT8hCop',
@@ -5419,7 +5420,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeQuickRev,
             member_id: woPersonMarcus,
-            at: dt(14, 11, 0),
+            at: daysFromNow(-14, 11, 0),
         },
         {
             id: 'c1O3BtoItm3bp1owvVmVWY',
@@ -5427,7 +5428,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeDecision,
             member_id: woPersonMarcus,
-            at: dt(13, 14, 0),
+            at: daysFromNow(-13, 14, 0),
         },
         // Decision routes to Revise (revisit)
         {
@@ -5436,7 +5437,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeRevise,
             member_id: woPersonCurrent,
-            at: dt(13, 15, 0),
+            at: daysFromNow(-13, 15, 0),
         },
         // Revise sends back to Draft
         {
@@ -5445,7 +5446,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeDraft,
             member_id: woPersonSarah,
-            at: dt(12, 9, 0),
+            at: daysFromNow(-12, 9, 0),
         },
         {
             id: 'T0hms37kIuFsjCmKKnt5Je',
@@ -5453,7 +5454,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeSubmit,
             member_id: woPersonSarah,
-            at: dt(11, 10, 0),
+            at: daysFromNow(-11, 10, 0),
         },
         {
             id: 'GnfjTPti69qF7OyWRdJTQV',
@@ -5461,7 +5462,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeTriage,
             member_id: woPersonEmily,
-            at: dt(11, 10, 20),
+            at: daysFromNow(-11, 10, 20),
         },
         {
             id: 'QnMQPkZbvU0IPt6XODVj2K',
@@ -5469,7 +5470,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeQuickRev,
             member_id: woPersonEmily,
-            at: dt(11, 11, 0),
+            at: daysFromNow(-11, 11, 0),
         },
         {
             id: 'boVwgdzs2FbJ3lV2BK6rFe',
@@ -5477,7 +5478,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeDecision,
             member_id: woPersonMarcus,
-            at: dt(10, 14, 0),
+            at: daysFromNow(-10, 14, 0),
         },
         {
             id: 'JeIgVixuJXQgtsLJ2jVEV6',
@@ -5485,7 +5486,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeApproved,
             member_id: woPersonMarcus,
-            at: dt(10, 15, 0),
+            at: daysFromNow(-10, 15, 0),
         },
         {
             id: 'N09pFEf67fHMeaf5d9Hmud',
@@ -5493,7 +5494,7 @@ async function populateMockDataIn(
                 'yqPpJb0NoQDgx8DoZ183Nx',
             state: prcNodeArchive,
             member_id: woPersonSarah,
-            at: dt(9, 9, 0),
+            at: daysFromNow(-9, 9, 0),
         },
         // prc06: in-flight -- stuck at Decision
         {
@@ -5502,7 +5503,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeStart,
             member_id: woPersonEmily,
-            at: dt(5, 10, 0),
+            at: daysFromNow(-5, 10, 0),
         },
         {
             id: 'sCPs7p4WtQgm0VuR81yMyy',
@@ -5510,7 +5511,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeDraft,
             member_id: woPersonEmily,
-            at: dt(5, 10, 8),
+            at: daysFromNow(-5, 10, 8),
         },
         {
             id: 'bHOxRfjKzqHi2DH8w3I8Xg',
@@ -5518,7 +5519,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeSubmit,
             member_id: woPersonCurrent,
-            at: dt(4, 11, 0),
+            at: daysFromNow(-4, 11, 0),
         },
         {
             id: 'LlXYA4dYJtau7GSAu2549Z',
@@ -5526,7 +5527,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeTriage,
             member_id: woPersonSarah,
-            at: dt(4, 11, 20),
+            at: daysFromNow(-4, 11, 20),
         },
         {
             id: 'pojq7QRvrUQorLUztKWUW5',
@@ -5534,7 +5535,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeQuickRev,
             member_id: woPersonSarah,
-            at: dt(4, 12, 0),
+            at: daysFromNow(-4, 12, 0),
         },
         {
             id: 'C4i8pmiwfwvwRFk19mjOa8',
@@ -5542,7 +5543,7 @@ async function populateMockDataIn(
                 'BUrGEVDMF6FeU35WUHUY5E',
             state: prcNodeDecision,
             member_id: woPersonMarcus,
-            at: dt(3, 14, 0),
+            at: daysFromNow(-3, 14, 0),
         },
         // stays at Decision -- no more transitions
         // Gate-violation work order: only a Create
@@ -5554,7 +5555,7 @@ async function populateMockDataIn(
                 'gateV101W0rkOrd3rXY0a1',
             state: woNodeNew,
             member_id: woPersonSarah,
-            at: dt(1, 9, 0),
+            at: daysFromNow(-1, 9, 0),
         },
     ];
 
@@ -5858,67 +5859,67 @@ async function populateMockDataIn(
             id: 'k4dY2dPq90mQVwwCkhWIo3',
             idea_id: 'eT5xdKjzLDmuRn3r7XMX4R',
             member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: dt(75, 9, 30),
+            at: daysFromNow(-75, 9, 30),
         },
         {
             id: 'XC7hsfNJueKQ8q0UfCuC7o',
             idea_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
             member_id: 'bLP3X1hb1mSz8gY9neogU3',
-            at: dt(70, 9, 0),
+            at: daysFromNow(-70, 9, 0),
         },
         {
             id: 'YmzT46BbGVFALpiXFDnlVd',
             idea_id: 'wuCMQqo4IkEksx7MYmu8g2',
             member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: dt(65, 9, 0),
+            at: daysFromNow(-65, 9, 0),
         },
         {
             id: 'cmoTu4GRGmO8y5QrfPIHSm',
             idea_id: 'ojOEXtdzdtTZtpM81TxVca',
             member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: dt(55, 9, 0),
+            at: daysFromNow(-55, 9, 0),
         },
         {
             id: 'kIUtvgTOLPjsSmAEVOhPb1',
             idea_id: 'T2vAafLDcshDONlYxpzPLc',
             member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: dt(50, 9, 0),
+            at: daysFromNow(-50, 9, 0),
         },
         {
             id: 'r04u9qpJKSyNjP9Owxr5Be',
             idea_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
             member_id: '6xBfK5If82JKfThXb1wlzS',
-            at: dt(45, 9, 0),
+            at: daysFromNow(-45, 9, 0),
         },
         {
             id: '2mPJTlujj1RF6gexFwbDqJ',
             idea_id: 'MCxK0hzT9CPjJx1ZV5unfr',
             member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: dt(75, 10, 0),
+            at: daysFromNow(-75, 10, 0),
         },
         {
             id: 'caBSqTgzDnvP8joamAG9OG',
             idea_id: 'SUb4gKXsZ1OsEauzqszg0t',
             member_id: 'I5ntELi16X3N3JYCCnxMjZ',
-            at: dt(35, 9, 0),
+            at: daysFromNow(-35, 9, 0),
         },
         {
             id: 'UfsCp7WYUybhwxD170okb4',
             idea_id: 'gxa84W9KvEgD0wT1F4TOM9',
             member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: dt(30, 9, 0),
+            at: daysFromNow(-30, 9, 0),
         },
         {
             id: 'mbTZAQbC5cJSEIzhEEFpyq',
             idea_id: '1Z68gROMrlTAfPEGiyJJAY',
             member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: dt(25, 9, 0),
+            at: daysFromNow(-25, 9, 0),
         },
         {
             id: '0LjTHFflWNaDZkKDqxmwJi',
             idea_id: 'Q2On2xwMpFdzOklBQJXrni',
             member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: dt(20, 9, 0),
+            at: daysFromNow(-20, 9, 0),
         },
     ];
 
@@ -5928,77 +5929,77 @@ async function populateMockDataIn(
             entity_id: 'eT5xdKjzLDmuRn3r7XMX4R',
             state: 'in-review',
             member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: dt(75, 9, 30),
+            at: daysFromNow(-75, 9, 30),
         },
         {
             id: 'tIcL6f8KJoyG2YN9NofOMo',
             entity_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
             state: 'approved',
             member_id: 'bLP3X1hb1mSz8gY9neogU3',
-            at: dt(70, 9, 0),
+            at: daysFromNow(-70, 9, 0),
         },
         {
             id: 'mGfBLqA7lScpEKxc5w0Yt2',
             entity_id: 'wuCMQqo4IkEksx7MYmu8g2',
             state: 'active',
             member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: dt(65, 9, 0),
+            at: daysFromNow(-65, 9, 0),
         },
         {
             id: 'BvBRvDQ8b5l5Tg7iZSGyHF',
             entity_id: 'ojOEXtdzdtTZtpM81TxVca',
             state: 'in-review',
             member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: dt(55, 9, 0),
+            at: daysFromNow(-55, 9, 0),
         },
         {
             id: 'BMS9TmTKR0DZ41vTUSpvxX',
             entity_id: 'T2vAafLDcshDONlYxpzPLc',
             state: 'active',
             member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: dt(50, 9, 0),
+            at: daysFromNow(-50, 9, 0),
         },
         {
             id: 'XX2EXrIUcQVTnzGo0YO2Iw',
             entity_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
             state: 'sent-back',
             member_id: 'zyTbfbjcGEfbpCsNTP0XjX',
-            at: dt(45, 9, 0),
+            at: daysFromNow(-45, 9, 0),
         },
         {
             id: 'fxlbcnsAmCWp4j8B2NkDKM',
             entity_id: 'MCxK0hzT9CPjJx1ZV5unfr',
             state: 'in-review',
             member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: dt(75, 10, 0),
+            at: daysFromNow(-75, 10, 0),
         },
         {
             id: 'JjkkkkrZw4FvOWBpJYE2J7',
             entity_id: 'SUb4gKXsZ1OsEauzqszg0t',
             state: 'in-review',
             member_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            at: dt(35, 9, 0),
+            at: daysFromNow(-35, 9, 0),
         },
         {
             id: '4nzdNB97hgD1GZ7CjA2EwS',
             entity_id: 'gxa84W9KvEgD0wT1F4TOM9',
             state: 'in-review',
             member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: dt(30, 9, 0),
+            at: daysFromNow(-30, 9, 0),
         },
         {
             id: 'wmCY9xZdrk0XlydyABZqXY',
             entity_id: '1Z68gROMrlTAfPEGiyJJAY',
             state: 'in-review',
             member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: dt(25, 9, 0),
+            at: daysFromNow(-25, 9, 0),
         },
         {
             id: 'OWGsZqEi1bnWUetzS2sURr',
             entity_id: 'Q2On2xwMpFdzOklBQJXrni',
             state: 'in-review',
             member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: dt(20, 9, 0),
+            at: daysFromNow(-20, 9, 0),
         },
     ];
 
@@ -6018,112 +6019,112 @@ async function populateMockDataIn(
             entity_id: 'u6YkHhlGc91oDMkr3x0isa',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(60, 9, 0),
+            at: daysFromNow(-60, 9, 0),
         },
         {
             id: 'pSe02Aut0Rep0rtComp02',
             entity_id: 'jRE2Tj32NHsFGZIeEADp0p',
             state: 'archived',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(110, 9, 0),
+            at: daysFromNow(-110, 9, 0),
         },
         {
             id: 'pSe03SalesP1p3App03Z',
             entity_id: l2cProjectId,
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(55, 9, 0),
+            at: daysFromNow(-55, 9, 0),
         },
         {
             id: 'pSe04PredMa1ntRev04AB',
             entity_id: 'P04PredMa1ntzyXY010203',
             state: 'under-review',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(18, 9, 0),
+            at: daysFromNow(-18, 9, 0),
         },
         {
             id: 'pSe05RtAna1ytComp05CD',
             entity_id: 'P05RtAna1ytcsXY010203Z',
             state: 'archived',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(95, 9, 0),
+            at: daysFromNow(-95, 9, 0),
         },
         {
             id: 'pSe06SmInvOptSnt06EF',
             entity_id: 'P06SmInvOptZyXY010203A',
             state: 'sent-back',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(38, 9, 0),
+            at: daysFromNow(-38, 9, 0),
         },
         {
             id: 'pSe07Empl0yTraRev07GH',
             entity_id: 'P07Empl0yTrainZyXY00B0',
             state: 'under-review',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(12, 9, 0),
+            at: daysFromNow(-12, 9, 0),
         },
         {
             id: 'pSe08CustSuppApp08IJ',
             entity_id: 'P08CustSuppKn0wXY01C0D',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(48, 9, 0),
+            at: daysFromNow(-48, 9, 0),
         },
         {
             id: 'pSe09C0mp1AudApp09KL',
             entity_id: 'P09C0mp1AudAut0mXY01E0',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(72, 9, 0),
+            at: daysFromNow(-72, 9, 0),
         },
         {
             id: 'pSe10MlRgD1s4App10MN',
             entity_id: 'P10MlRgD1s4stRc1XY01FG',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(82, 9, 0),
+            at: daysFromNow(-82, 9, 0),
         },
         {
             id: 'pSe11V0iceField11OPQ',
             entity_id: 'P11V0iceField0psXY01HJ',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(40, 9, 0),
+            at: daysFromNow(-40, 9, 0),
         },
         {
             id: 'pSe12CarbF00tCmp12RS',
             entity_id: 'P12CarbF00tprXY01K0L0M',
             state: 'archived',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(120, 9, 0),
+            at: daysFromNow(-120, 9, 0),
         },
         {
             id: 'pSe13W0rk4rcRev13TU',
             entity_id: 'P13W0rk4rcF0r3castsXY1',
             state: 'under-review',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(22, 9, 0),
+            at: daysFromNow(-22, 9, 0),
         },
         {
             id: 'pSe14SmartD0cAp14VWX',
             entity_id: 'P14SmartD0cumtR0utngX1',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(65, 9, 0),
+            at: daysFromNow(-65, 9, 0),
         },
         {
             id: 'pSe15Inv3st0rAp15YZA',
             entity_id: 'P15Inv3st0rRep0rtP1Y00',
             state: 'approved',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(58, 9, 0),
+            at: daysFromNow(-58, 9, 0),
         },
         {
             id: 'pSe16MktSentSubmt16BC',
             entity_id: 'P16MktSent1mentXY01020',
             state: 'submitted',
             member_id: SYSTEM_MEMBER_ID,
-            at: dt(5, 9, 0),
+            at: daysFromNow(-5, 9, 0),
         },
     ];
 
@@ -6650,7 +6651,7 @@ async function populateBootstrapDataIn(
         adapter.organizations.put(STARK_ORG, {
             name: 'Stark Industries',
             domain: 'acmecorp.com',
-            next_billing: dt(-300, 0, 0),
+            next_billing: daysFromNow(300, 0, 0),
             seats: TIER_SEATS_LIMIT,
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
