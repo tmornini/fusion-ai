@@ -1,5 +1,5 @@
 import {
-    EntityNotFound,
+    EntityNotFoundError,
     LedgerImmutabilityError,
     type StateStore as StateStoreInterface,
     type EntityValidator,
@@ -62,7 +62,7 @@ export class StateStore
                     this.#table, id,
                 );
                 if (!row) {
-                    throw new EntityNotFound(
+                    throw new EntityNotFoundError(
                         this.#table, id,
                     );
                 }

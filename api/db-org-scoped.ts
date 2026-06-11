@@ -1,4 +1,4 @@
-import { EntityNotFound, keyed } from './db.ts';
+import { EntityNotFoundError, keyed } from './db.ts';
 import type {
     DbAdapter,
     EntityStore,
@@ -114,7 +114,7 @@ export function orgScopedAdapter(
                 ev = await base.states.getById(
                     row.state_event_id);
             } catch (e) {
-                if (e instanceof EntityNotFound) return null;
+                if (e instanceof EntityNotFoundError) return null;
                 throw e;
             }
             return ownerOrgOfEntity(

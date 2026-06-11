@@ -1,4 +1,4 @@
-import { EntityNotFound, keyed } from './db.ts';
+import { EntityNotFoundError, keyed } from './db.ts';
 import type {
     EntityStore,
     EntityPut,
@@ -62,7 +62,7 @@ export class ParentScopedEntityStore<T extends { id: string }>
         const row = await this.#inner.getById(id);
         const owner = await this.#resolveOwningOrg(row);
         if (!isVisible(owner, this.#org)) {
-            throw new EntityNotFound(this.#table, id);
+            throw new EntityNotFoundError(this.#table, id);
         }
         return row;
     }
@@ -134,7 +134,7 @@ export function viaParent<T, P extends OrgScoped>(
             const found = await parent.getById(parentIdOf(row));
             return found.organization_id;
         } catch (e) {
-            if (e instanceof EntityNotFound) return null;
+            if (e instanceof EntityNotFoundError) return null;
             throw e;
         }
     };
@@ -200,7 +200,7 @@ export async function ownerOrgOfEntity(
             return (await store.getById(entityId))
                 .organization_id;
         } catch (e) {
-            if (!(e instanceof EntityNotFound)) throw e;
+            if (!(e instanceof EntityNotFoundError)) throw e;
         }
     }
     const mine = await memberships.getAllWhere(
@@ -252,7 +252,7 @@ export class ParentScopedStateStore implements StateStore {
         const row = await this.#inner.getById(id);
         const owner = await this.#resolveOwningOrg(row);
         if (!isVisible(owner, this.#org)) {
-            throw new EntityNotFound(this.#table, id);
+            throw new EntityNotFoundError(this.#table, id);
         }
         return row;
     }

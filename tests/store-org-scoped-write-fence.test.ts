@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { orgScopedAdapter } from '../api/db-org-scoped.ts';
-import { EntityNotFound } from '../api/db.ts';
+import { EntityNotFoundError } from '../api/db.ts';
 
 // The org guard must fence WRITES the same way it fences reads:
 // a put/putMany targeting an id owned by another tenant must
@@ -26,7 +26,7 @@ async () => {
     const scopedA = orgScopedAdapter(db, 'A');
     await assert.rejects(
         () => scopedA.ideas.put('b1', ideaBody('A')),
-        EntityNotFound);
+        EntityNotFoundError);
     const after = await db.ideas.getById('b1');
     assert.equal(
         after.organization_id, 'B',
@@ -43,7 +43,7 @@ async () => {
     await assert.rejects(
         () => scopedA.ideas.putMany(
             [{ id: 'b1', fields: ideaBody('A') }], []),
-        EntityNotFound);
+        EntityNotFoundError);
     const after = await db.ideas.getById('b1');
     assert.equal(after.organization_id, 'B');
 });
@@ -83,7 +83,7 @@ async () => {
     const scopedA = orgScopedAdapter(db, 'A');
     await assert.rejects(
         () => scopedA.ideas.put('b1', ideaBody('A')),
-        EntityNotFound);
+        EntityNotFoundError);
     // The stored row keeps org B — read it raw via export
     // (lifecycle reads hide the tombstoned row).
     const snapshot = JSON.parse(
@@ -104,7 +104,7 @@ async () => {
     await scopedA.ideas.delete('a1');
     await assert.rejects(
         () => db.ideas.getById('a1'),
-        EntityNotFound);
+        EntityNotFoundError);
 });
 
 test('a DELETE of a foreign-org id no-ops, splices nothing',

@@ -1,4 +1,4 @@
-import { EntityNotFound, keyed } from './db.ts';
+import { EntityNotFoundError, keyed } from './db.ts';
 import type { DbAdapter } from './db.ts';
 import {
     verifyClientAssertion,
@@ -87,7 +87,7 @@ async function nameFor(
             await adapter.identityPii.getById(identityId)
         ).name;
     } catch (e) {
-        if (e instanceof EntityNotFound) return identityId;
+        if (e instanceof EntityNotFoundError) return identityId;
         throw e;
     }
 }
@@ -502,7 +502,7 @@ async function grantClientCredentials(
     try {
         client = await adapter.clients.getById(clientId);
     } catch (e) {
-        if (e instanceof EntityNotFound) {
+        if (e instanceof EntityNotFoundError) {
             return failure(401, 'unknown client');
         }
         throw e;

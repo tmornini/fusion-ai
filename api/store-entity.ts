@@ -1,5 +1,5 @@
 import {
-    EntityNotFound,
+    EntityNotFoundError,
     type StateStore,
     type EntityStore as EntityStoreInterface,
     type EntityPut,
@@ -88,7 +88,7 @@ export class EntityStore<T extends { id: string }>
                         tx, id,
                     )
                 ) {
-                    throw new EntityNotFound(
+                    throw new EntityNotFoundError(
                         this.#table, id,
                     );
                 }
@@ -96,7 +96,7 @@ export class EntityStore<T extends { id: string }>
                     this.#table, id,
                 );
                 if (!row) {
-                    throw new EntityNotFound(
+                    throw new EntityNotFoundError(
                         this.#table, id,
                     );
                 }

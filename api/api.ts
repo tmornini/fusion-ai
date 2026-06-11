@@ -3,7 +3,7 @@ import type {
     EntityStore,
 } from './db.ts';
 import {
-    EntityNotFound,
+    EntityNotFoundError,
     LedgerImmutabilityError,
     MissingTableError,
     TABLE_NAMES,
@@ -1904,7 +1904,7 @@ async function loadInvitation(
     try {
         return await adapter.invitations.getById(id);
     } catch (e) {
-        if (e instanceof EntityNotFound) return null;
+        if (e instanceof EntityNotFoundError) return null;
         throw e;
     }
 }
@@ -2233,7 +2233,7 @@ export async function handleRequest(
             );
         }
         if (
-            error instanceof EntityNotFound
+            error instanceof EntityNotFoundError
         ) {
             return Response.json(
                 { error: error.message },

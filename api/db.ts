@@ -35,7 +35,7 @@ import type {
     StateEntity,
 } from './types.ts';
 
-export class EntityNotFound {
+export class EntityNotFoundError {
     readonly message: string;
     readonly table: string;
     readonly id: string;

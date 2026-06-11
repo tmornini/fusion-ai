@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    EntityNotFound,
+    EntityNotFoundError,
     LedgerImmutabilityError,
 } from '../api/db.ts';
 
@@ -72,14 +72,14 @@ test(
 );
 
 test(
-    'getById throws EntityNotFound for unknown id',
+    'getById throws EntityNotFoundError for unknown id',
     async () => {
         const db = new MemoryDbAdapter();
         await db.createSchema();
         await assert.rejects(
             () => db.states.getById('missing'),
             (err: unknown) =>
-                err instanceof EntityNotFound,
+                err instanceof EntityNotFoundError,
         );
     },
 );
