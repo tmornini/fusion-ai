@@ -3842,7 +3842,7 @@ async function populateMockDataIn(
             at:
                 dt(12, 9, 15),
         },
-        // happy-path WO02: DC sojourn 1 day
+        // happy-path WO02: Data Capture sojourn 1 day
         {
             id: '6eT1jG5MoR9A5PvRvgCUBq',
             entity_id:
@@ -3875,7 +3875,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(85, 14, 0),
         },
-        // happy-path WO03: DC sojourn 2 days
+        // happy-path WO03: Data Capture sojourn 2 days
         {
             id: 'rAnt2MH37Zm1uvaDdJQIU7',
             entity_id:
@@ -3908,7 +3908,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(79, 9, 0),
         },
-        // happy-path WO04: DC sojourn 3 days
+        // happy-path WO04: Data Capture sojourn 3 days
         {
             id: 'ggJA4BZvTpqxEPkgbiNnyt',
             entity_id:
@@ -3941,7 +3941,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(71, 15, 0),
         },
-        // happy-path WO05: DC sojourn 1 day
+        // happy-path WO05: Data Capture sojourn 1 day
         {
             id: 'IJKj026ouhbUQv7w4y7V7o',
             entity_id:
@@ -3974,7 +3974,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(68, 10, 0),
         },
-        // happy-path WO06: DC sojourn 5 days
+        // happy-path WO06: Data Capture sojourn 5 days
         {
             id: '3lD2Yf5csm1zBR9vdGnnh2',
             entity_id:
@@ -4007,7 +4007,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(59, 14, 0),
         },
-        // happy-path WO07: DC sojourn 2 days
+        // happy-path WO07: Data Capture sojourn 2 days
         {
             id: 'DkCRDYtzbHbaGZY45hrIrB',
             entity_id:
@@ -4040,7 +4040,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(58, 9, 0),
         },
-        // happy-path WO08: DC sojourn 4 days
+        // happy-path WO08: Data Capture sojourn 4 days
         {
             id: 'hKpS4YMC7r7PivyHgc2Swa',
             entity_id:
@@ -4073,7 +4073,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(51, 14, 0),
         },
-        // happy-path WO09: DC sojourn 7 days (fat tail)
+        // happy-path WO09: Data Capture sojourn 7 days (fat tail)
         {
             id: 'KcxCc7AQLnNZddDwJ8YMOu',
             entity_id:
@@ -4106,7 +4106,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(43, 11, 0),
         },
-        // happy-path WO10: DC sojourn 3 days
+        // happy-path WO10: Data Capture sojourn 3 days
         {
             id: 'i13zOn0NJF0wZANpm9qtz8',
             entity_id:
@@ -4139,7 +4139,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(43, 10, 0),
         },
-        // happy-path WO11: DC sojourn 2 days
+        // happy-path WO11: Data Capture sojourn 2 days
         {
             id: '4tXtqSAncDHgMSfj292vLB',
             entity_id:
@@ -4172,7 +4172,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(41, 14, 0),
         },
-        // happy-path WO12: DC sojourn 6 days (fat tail)
+        // happy-path WO12: Data Capture sojourn 6 days (fat tail)
         {
             id: 'YIZ38Dgl4BXjhVyOlXnevi',
             entity_id:
@@ -4205,7 +4205,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(32, 9, 0),
         },
-        // happy-path WO13: DC sojourn 1 day
+        // happy-path WO13: Data Capture sojourn 1 day
         {
             id: 'VZsA9htg9Km4qLsfhRGETg',
             entity_id:
@@ -4238,7 +4238,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(35, 14, 0),
         },
-        // happy-path WO14: DC sojourn 9 days (fat tail)
+        // happy-path WO14: Data Capture sojourn 9 days (fat tail)
         {
             id: 'f2v27lmnpRGtYQxQ9omyeZ',
             entity_id:
@@ -4271,7 +4271,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(22, 9, 0),
         },
-        // happy-path WO15: DC sojourn 2 days
+        // happy-path WO15: Data Capture sojourn 2 days
         {
             id: '7Qg7wrpNWmoTHlSPoXJrMm',
             entity_id:
@@ -4304,7 +4304,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(25, 10, 0),
         },
-        // happy-path WO16: DC sojourn 3 days
+        // happy-path WO16: Data Capture sojourn 3 days
         {
             id: 'BKqz7auwaCm7bYitQ1V0yG',
             entity_id:
@@ -4337,7 +4337,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(21, 14, 0),
         },
-        // happy-path WO17: DC sojourn 1 day
+        // happy-path WO17: Data Capture sojourn 1 day
         {
             id: 'G83ZLOMIsgg486X9QDNXvC',
             entity_id:
@@ -4370,7 +4370,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(21, 9, 0),
         },
-        // happy-path WO18: DC sojourn 4 days
+        // happy-path WO18: Data Capture sojourn 4 days
         {
             id: 'cEd2hUuCY4EOandCCx6bQX',
             entity_id:
@@ -4403,7 +4403,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(14, 14, 0),
         },
-        // happy-path WO19: DC sojourn 8 days (fat tail)
+        // happy-path WO19: Data Capture sojourn 8 days (fat tail)
         {
             id: '8woeY7cfbuSKMFI4wMrQZH',
             entity_id:
@@ -4436,7 +4436,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(7, 14, 0),
         },
-        // happy-path WO20: DC sojourn 2 days
+        // happy-path WO20: Data Capture sojourn 2 days
         {
             id: 'ZNE2sS8KyRpIzMAq7lR4uA',
             entity_id:
@@ -4469,7 +4469,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(10, 9, 0),
         },
-        // happy-path WO21: DC sojourn 3 days
+        // happy-path WO21: Data Capture sojourn 3 days
         {
             id: 'SSLVclkfoa6nJhoffBS2Zm',
             entity_id:
@@ -4502,7 +4502,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(6, 10, 0),
         },
-        // happy-path WO22: DC sojourn 1 day
+        // happy-path WO22: Data Capture sojourn 1 day
         {
             id: 'fwVQwEUQ8xG4McvCnNVFIV',
             entity_id:
@@ -4535,7 +4535,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(7, 9, 0),
         },
-        // happy-path WO23: DC sojourn 2 days
+        // happy-path WO23: Data Capture sojourn 2 days
         {
             id: 'DANvBctxus8NEMcTOUy1hi',
             entity_id:
@@ -4568,7 +4568,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(2, 14, 0),
         },
-        // needs-revision WO24: double loop DC->Review->DC
+        // needs-revision WO24: double loop Data Capture->Review->Data Capture
         // twice, creating a 3rd distinct completed path
         {
             id: 'jNY1G5bpJ6aXd9s8hgqRtN',
@@ -4634,7 +4634,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(70, 9, 0),
         },
-        // needs-revision WO25: loops DC->Review->DC
+        // needs-revision WO25: loops Data Capture->Review->Data Capture
         {
             id: '0Zmtiyp7rFFameCdQwawr7',
             entity_id:
@@ -4683,7 +4683,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(58, 9, 0),
         },
-        // needs-revision WO26: loops DC->Review->DC
+        // needs-revision WO26: loops Data Capture->Review->Data Capture
         {
             id: '993Ka1UzsvcerLiBQkW8nn',
             entity_id:
@@ -4732,7 +4732,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(44, 14, 0),
         },
-        // needs-revision WO27: loops DC->Review->DC
+        // needs-revision WO27: loops Data Capture->Review->Data Capture
         {
             id: 'CXA7kHHLRi4K7kuhFrrzpa',
             entity_id:
@@ -4781,7 +4781,7 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(33, 9, 0),
         },
-        // needs-revision WO28: loops DC->Review->DC
+        // needs-revision WO28: loops Data Capture->Review->Data Capture
         {
             id: 'ZHtYaVGAAmYCcJYUbDsEZl',
             entity_id:
@@ -4830,7 +4830,7 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(19, 14, 0),
         },
-        // needs-revision WO29: loops DC->Review->DC
+        // needs-revision WO29: loops Data Capture->Review->Data Capture
         {
             id: 'UsCm8zcTD7V2b5csEp7Mcr',
             entity_id:
@@ -4980,8 +4980,8 @@ async function populateMockDataIn(
             member_id: woPersonCurrent,
             at: dt(1, 10, 0),
         },
-        // out-of-clan WO35: Sarah (not in DC members)
-        // transitions DC out
+        // out-of-clan WO35: Sarah (not in Data Capture members)
+        // transitions Data Capture out
         {
             id: 'uGXz0fPBwWaBQcviQP5ZsV',
             entity_id:
@@ -5014,8 +5014,8 @@ async function populateMockDataIn(
             member_id: woPersonEmily,
             at: dt(31, 14, 0),
         },
-        // out-of-clan WO36: Mike (not in DC members)
-        // transitions DC out
+        // out-of-clan WO36: Mike (not in Data Capture members)
+        // transitions Data Capture out
         {
             id: 'VrxyiUJqWcdd3hBdMyoTBt',
             entity_id:
@@ -5048,9 +5048,9 @@ async function populateMockDataIn(
             member_id: woPersonSarah,
             at: dt(18, 14, 0),
         },
-        // old WO37: straddles window edge; Create+DC
-        // entry at dt(108) but DC exit at dt(8) so
-        // only the in-window ~82 days of DC sojourn
+        // old WO37: straddles window edge; Create + Data Capture
+        // entry at dt(108) but Data Capture exit at dt(8) so
+        // only the in-window ~82 days of Data Capture sojourn
         // count toward heat (exercises window clipping)
         {
             id: 'QsV9mE5GIUpMXGh3SVTCB7',
