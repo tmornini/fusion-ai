@@ -14,7 +14,7 @@ import {
     buildObjectiveAggregates,
     buildObjectiveTrendlines,
     subscribeProjectScoreChanges,
-    getCurrentObjectiveDefinition,
+    getCurrentObjectiveDefinitions,
     subscribeObjectiveChanges,
     subscribeProjectChanges,
 } from '../app/adapters/index.ts';
@@ -33,14 +33,10 @@ async function renderObjectiveAggregates(
         buildObjectiveAggregates(inputs);
     const trendlines =
         buildObjectiveTrendlines(inputs);
-    const defs = new Map<string,
-        { name: string; description: string }>();
-    for (const o of active) {
-        defs.set(o.id,
-            await getCurrentObjectiveDefinition(
-                ctx, o.id,
-            ));
-    }
+    const defs =
+        await getCurrentObjectiveDefinitions(
+            ctx, active.map(o => o.id),
+        );
     setHtml(
         $('#objective-aggregates-card', document)!,
         new DashboardObjectiveAggregatesPresenter(
