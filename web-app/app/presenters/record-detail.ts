@@ -101,7 +101,7 @@ export class RecordDetailPresenter {
             ...this.#view.attributes,
         ].toSorted(
             (a, b) =>
-                a.sort_order - b.sort_order,
+                a.sortOrder - b.sortOrder,
         );
         return html`<div class="card mb-6 p-6">
             <h2 class="${
@@ -125,7 +125,7 @@ export class RecordDetailPresenter {
                 >${a.name}</span>
             <span class="${
                 'badge badge-outline text-xs'
-            }">${a.attribute_type}</span>
+            }">${a.attributeType}</span>
             <span class="text-muted text-sm"
                 >${
                     a.constraints
@@ -215,13 +215,13 @@ export function recordDraftFromView(
         attributes: view.attributes
             .toSorted(
                 (a, b) =>
-                    a.sort_order - b.sort_order,
+                    a.sortOrder - b.sortOrder,
             )
             .map(a => ({
                 id: a.id,
                 name: a.name,
-                attribute_type: a.attribute_type,
-                sort_order: a.sort_order,
+                attribute_type: a.attributeType,
+                sort_order: a.sortOrder,
                 options: [...a.options],
                 constraints: a.constraints.map(
                     c => ({ ...c }),

@@ -58,13 +58,14 @@ function makeAttribute(
     overrides: Partial<RecordAttribute> = {},
 ): RecordAttribute {
     const attributeType: AttributeType =
-        overrides.attribute_type ?? 'text';
+        overrides.attributeType ?? 'text';
     return {
         id: 'a-1',
-        record_id: 'rec-1',
+        organizationId: '1',
+        recordId: 'rec-1',
         name: 'Notes',
-        attribute_type: attributeType,
-        sort_order: 0,
+        attributeType,
+        sortOrder: 0,
         options: [],
         constraints: [],
         ...overrides,
@@ -241,7 +242,7 @@ test(
             attribute_id: 'a-x',
         });
         const attribute = makeAttribute({
-            id: 'a-x', attribute_type: 'text',
+            id: 'a-x', attributeType: 'text',
         });
         const out = buildAttributeInputHtml(
             ref, attribute,
@@ -276,7 +277,7 @@ test(
     () => {
         const ref = makeAttributeRef();
         const attribute = makeAttribute({
-            attribute_type: 'number',
+            attributeType: 'number',
         });
         const out = buildAttributeInputHtml(
             ref, attribute,
@@ -292,7 +293,7 @@ test(
     () => {
         const ref = makeAttributeRef();
         const attribute = makeAttribute({
-            attribute_type: 'date',
+            attributeType: 'date',
         });
         const out = buildAttributeInputHtml(
             ref, attribute,
@@ -308,7 +309,7 @@ test(
     () => {
         const ref = makeAttributeRef();
         const attribute = makeAttribute({
-            attribute_type: 'select',
+            attributeType: 'select',
             options: ['Low', 'High'],
         });
         const out = buildAttributeInputHtml(
@@ -327,7 +328,7 @@ test(
     () => {
         const ref = makeAttributeRef();
         const attribute = makeAttribute({
-            attribute_type: 'radio',
+            attributeType: 'radio',
             options: ['Low', 'High'],
         });
         const out = buildAttributeInputHtml(
@@ -347,7 +348,7 @@ test(
     () => {
         const ref = makeAttributeRef();
         const attribute = makeAttribute({
-            attribute_type: 'checkbox',
+            attributeType: 'checkbox',
         });
         const out = buildAttributeInputHtml(
             ref, attribute,
@@ -380,7 +381,7 @@ test(
             mode: 'readonly',
         });
         const attribute = makeAttribute({
-            attribute_type: 'select',
+            attributeType: 'select',
             options: ['A'],
         });
         const out = buildAttributeInputHtml(
@@ -445,14 +446,14 @@ test(
         const amountAttr = makeAttribute({
             id: 'a-amt',
             name: 'Amount',
-            attribute_type: 'number',
-            sort_order: 0,
+            attributeType: 'number',
+            sortOrder: 0,
         });
         const noteAttr = makeAttribute({
             id: 'a-note',
             name: 'Note',
-            attribute_type: 'text',
-            sort_order: 1,
+            attributeType: 'text',
+            sortOrder: 1,
         });
         const graph = makeFlowGraph({
             nodes: [
@@ -585,7 +586,7 @@ test(
         const amountAttr = makeAttribute({
             id: 'a-amt',
             name: 'Amount',
-            attribute_type: 'number',
+            attributeType: 'number',
         });
         const graph = makeFlowGraph({
             nodes: [
@@ -710,11 +711,11 @@ test(
     () => {
         const amount = makeAttribute({
             id: 'a-amt', name: 'Amount',
-            attribute_type: 'number',
+            attributeType: 'number',
         });
         const due = makeAttribute({
             id: 'a-when', name: 'Due date',
-            attribute_type: 'date',
+            attributeType: 'date',
         });
         const presenter = makePresenter({
             attributes: [amount, due],

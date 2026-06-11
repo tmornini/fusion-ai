@@ -676,8 +676,8 @@ function draftAttributesDifferFromOriginal(
         if (
             o === undefined
             || o.name !== d.name
-            || o.attribute_type !== d.attribute_type
-            || o.sort_order !== d.sort_order
+            || o.attributeType !== d.attribute_type
+            || o.sortOrder !== d.sort_order
             || jsonArrayField(o.options) !== d.options
             || jsonArrayField(o.constraints)
                 !== d.constraints

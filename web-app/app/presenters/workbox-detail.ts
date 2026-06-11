@@ -53,7 +53,7 @@ export function buildAttributeInputHtml(
     const disabledAttr = isReadonly
         ? trusted('disabled')
         : html``;
-    if (attribute.attribute_type === 'select') {
+    if (attribute.attributeType === 'select') {
         const options = attribute.options;
         return html`<select
             class="input"
@@ -71,7 +71,7 @@ export function buildAttributeInputHtml(
             )}
         </select>`;
     }
-    if (attribute.attribute_type === 'radio') {
+    if (attribute.attributeType === 'radio') {
         const options = attribute.options;
         return html`<div class="radio-group">
             ${options.map(
@@ -89,12 +89,12 @@ export function buildAttributeInputHtml(
         </div>`;
     }
     const spec = ATTRIBUTE_HTML_TYPE[
-        attribute.attribute_type
+        attribute.attributeType
     ];
     if (!spec) {
         throw new Error(
-            'unknown attribute_type: '
-            + attribute.attribute_type,
+            'unknown attributeType: '
+            + attribute.attributeType,
         );
     }
     if (spec.type === 'checkbox') {
@@ -350,8 +350,8 @@ export class WorkboxDetailPresenter {
             }))
             .toSorted(
                 (a, b) =>
-                    a.attribute.sort_order
-                    - b.attribute.sort_order,
+                    a.attribute.sortOrder
+                    - b.attribute.sortOrder,
             );
         return html`<div
             id="work-order-fields"
@@ -461,7 +461,7 @@ export class WorkboxDetailPresenter {
         const label = attribute.name
             + (ref.isRequired ? ' *' : '');
         if (
-            attribute.attribute_type === 'radio'
+            attribute.attributeType === 'radio'
         ) {
             return html`<fieldset class="${
                 'attribute-group-fieldset mb-4'

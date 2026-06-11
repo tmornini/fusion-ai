@@ -94,7 +94,7 @@ export function validateAttributeValue(
             if (
                 !compareGte(
                     value, c.min,
-                    attribute.attribute_type,
+                    attribute.attributeType,
                 )
             ) {
                 out.push({
@@ -109,7 +109,7 @@ export function validateAttributeValue(
         if (
             !compareLte(
                 value, c.max,
-                attribute.attribute_type,
+                attribute.attributeType,
             )
         ) {
             out.push({
@@ -136,7 +136,7 @@ export function formatViolation(
             + v.pattern;
     }
     if (v.kind === 'range_min') {
-        if (attribute.attribute_type === 'date') {
+        if (attribute.attributeType === 'date') {
             return v.attributeName
                 + ' must be on or after '
                 + v.min;
@@ -144,7 +144,7 @@ export function formatViolation(
         return v.attributeName
             + ' must be at least ' + v.min;
     }
-    if (attribute.attribute_type === 'date') {
+    if (attribute.attributeType === 'date') {
         return v.attributeName
             + ' must be on or before '
             + v.max;
