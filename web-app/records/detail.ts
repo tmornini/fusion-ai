@@ -333,7 +333,7 @@ function onChange(
         updateAttributeType(
             attrId,
             target.value as AttributeDraft[
-                'attribute_type'
+                'attributeType'
             ],
         );
         render(root);
@@ -431,8 +431,8 @@ function commitPendingAttribute(): void {
     pageState.draft.attributes.push({
         id: generateCryptoSafeBase62(),
         name,
-        attribute_type: 'text',
-        sort_order:
+        attributeType: 'text',
+        sortOrder:
             pageState.draft.attributes.length,
         options: [],
         constraints: [],
@@ -459,13 +459,13 @@ function updateAttributeName(
 
 function updateAttributeType(
     id: string,
-    type: AttributeDraft['attribute_type'],
+    type: AttributeDraft['attributeType'],
 ): void {
     if (pageState.kind !== 'editing') return;
     const attr = pageState.draft.attributes
         .find(a => a.id === id);
     if (!attr) return;
-    attr.attribute_type = type;
+    attr.attributeType = type;
     const allowed = new Set(
         allowedConstraintKinds(type),
     );
@@ -628,7 +628,7 @@ function draftToEntities(
             id: a.id,
             record_id: recordId,
             name: a.name.trim(),
-            attribute_type: a.attribute_type,
+            attribute_type: a.attributeType,
             sort_order: i,
             options: jsonArrayField(a.options),
             constraints: jsonArrayField(

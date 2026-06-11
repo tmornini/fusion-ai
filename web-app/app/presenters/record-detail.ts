@@ -196,8 +196,8 @@ export interface RecordDetailDraft {
 export interface AttributeDraft {
     id: string;
     name: string;
-    attribute_type: AttributeType;
-    sort_order: number;
+    attributeType: AttributeType;
+    sortOrder: number;
     options: string[];
     constraints: Constraint[];
 }
@@ -220,8 +220,8 @@ export function recordDraftFromView(
             .map(a => ({
                 id: a.id,
                 name: a.name,
-                attribute_type: a.attributeType,
-                sort_order: a.sortOrder,
+                attributeType: a.attributeType,
+                sortOrder: a.sortOrder,
                 options: [...a.options],
                 constraints: a.constraints.map(
                     c => ({ ...c }),
@@ -300,8 +300,8 @@ export class RecordDetailEditPresenter {
                 ${this.#draft.attributes
                     .toSorted(
                         (a, b) =>
-                            a.sort_order
-                            - b.sort_order,
+                            a.sortOrder
+                            - b.sortOrder,
                     )
                     .map(
                         a => this
@@ -353,7 +353,7 @@ export class RecordDetailEditPresenter {
                     t => html`<option
                         value="${t}"${
                             trusted(
-                                a.attribute_type
+                                a.attributeType
                                     === t
                                     ? ' selected'
                                     : '',
@@ -375,8 +375,8 @@ export class RecordDetailEditPresenter {
         a: AttributeDraft,
     ): SafeHtml {
         if (
-            a.attribute_type !== 'select'
-            && a.attribute_type !== 'radio'
+            a.attributeType !== 'select'
+            && a.attributeType !== 'radio'
         ) {
             return html``;
         }
@@ -393,7 +393,7 @@ export class RecordDetailEditPresenter {
     ): SafeHtml {
         const allowed =
             allowedConstraintKinds(
-                a.attribute_type,
+                a.attributeType,
             );
         const constraintRows = a.constraints.map(
             (c, i) => this.#buildConstraintRow(
