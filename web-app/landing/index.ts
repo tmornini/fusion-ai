@@ -1,4 +1,4 @@
-import { $, $required } from '../app/dom.ts';
+import { $, $$, $required } from '../app/dom.ts';
 import {
     html,
     setHtml,
@@ -553,10 +553,7 @@ export async function init(): Promise<void> {
         );
     }
 
-    document
-        .querySelectorAll<HTMLElement>(
-            '[data-goto-auth]',
-        )
+    $$('[data-goto-auth]', document)
         .forEach(el => {
             el.addEventListener(
                 'click',

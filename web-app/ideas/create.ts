@@ -1,5 +1,5 @@
 import {
-    $, $input, $required, $textarea,
+    $, $$, $input, $required, $textarea,
     bindEnterToClick,
 } from '../app/dom.ts';
 import {
@@ -180,11 +180,7 @@ export async function init():
             + ' #idea-create'
             + '-step-content'
             + ' textarea';
-        document
-            .querySelectorAll<
-                HTMLInputElement
-                | HTMLTextAreaElement
-            >(selector)
+        $$(selector, document)
             .forEach(field => {
                 field.addEventListener(
                     'input',

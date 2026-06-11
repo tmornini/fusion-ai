@@ -1,5 +1,5 @@
 import {
-    $, $required, bindEnterToClick,
+    $, $$, $required, bindEnterToClick,
     isFormField,
 } from '../app/dom.ts';
 import {
@@ -166,12 +166,15 @@ export async function init(
         }
         const baselines =
             new Map<ObjectiveId, number>();
-        document.querySelectorAll<
-            HTMLInputElement
-        >(
+        $$(
             '#convert-scores-section'
             + ' .baseline-slider',
+            document,
         ).forEach(slider => {
+            if (
+                !(slider instanceof
+                    HTMLInputElement)
+            ) return;
             const row = slider.closest(
                 '.convert-scores-row',
             );
@@ -347,12 +350,12 @@ export async function init(
     }
 
     function bindEvents(): void {
-        document
-            .querySelectorAll<HTMLElement>(
-                '.card input,'
-                + ' .card select,'
-                + ' .card textarea',
-            )
+        $$(
+            '.card input,'
+            + ' .card select,'
+            + ' .card textarea',
+            document,
+        )
             .forEach(el => {
                 const handler = () => {
                     mutateValidation(
@@ -399,10 +402,9 @@ export async function init(
                         '.convert-scores-row',
                     );
                     if (!row) return;
-                    const valueEl =
-                        row.querySelector(
-                            '.slider-value',
-                        );
+                    const valueEl = $(
+                        '.slider-value', row,
+                    );
                     if (valueEl) {
                         const v = Number(
                             (target as
