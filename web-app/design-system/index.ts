@@ -276,17 +276,17 @@ function buildFlowPropPanel(): SafeHtml {
                     readonly/>
             </div>
             <div class="ds-prop-field">
-                <label class="${''
+                <div class="${''
                     }text-xs text-muted">${''
-                    }Type</label>
+                    }Type</div>
                 <span class="${''
                     }badge badge-default">${''
                     }Standard</span>
             </div>
             <div class="ds-prop-field">
-                <label class="${''
+                <div class="${''
                     }text-xs text-muted">${''
-                    }Fields</label>
+                    }Fields</div>
                 <span class="${''
                     }text-sm">8 fields</span>
             </div>

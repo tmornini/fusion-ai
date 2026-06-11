@@ -139,13 +139,13 @@ class="flow-props-panel">
     >${iconX(14, '')}</button>
 </div>
 <div class="mb-2">
-<label class="text-xs text-muted"
-    >Name</label>
+<div class="text-xs text-muted"
+    >Name</div>
 <div class="text-sm">${label}</div>
 </div>
 <div class="mb-3">
-<label class="text-xs text-muted"
-    >Outgoing Transitions</label>
+<div class="text-xs text-muted"
+    >Outgoing Transitions</div>
 ${outgoing.length > 0
     ? outgoing.map(e => html`<div
 class="text-sm text-muted"
@@ -287,8 +287,8 @@ ${pickerAttributes.map(
 </div>
 </fieldset>
 <div class="mb-3">
-<label class="text-xs text-muted"
-    >Outgoing Transitions</label>
+<div class="text-xs text-muted"
+    >Outgoing Transitions</div>
 ${outgoing.length > 0
     ? outgoing.map(e => html`<div
 class="text-sm text-muted"
@@ -350,13 +350,13 @@ class="flow-props-panel">
     value="${edge.name}"${lockAttr} />
 </div>
 <div class="mb-2">
-<label class="text-xs text-muted"
-    >From</label>
+<div class="text-xs text-muted"
+    >From</div>
 <div class="text-sm">${fromName}</div>
 </div>
 <div class="mb-2">
-<label class="text-xs text-muted"
-    >To</label>
+<div class="text-xs text-muted"
+    >To</div>
 <div class="text-sm">${toName}</div>
 </div>
 </div>`;
