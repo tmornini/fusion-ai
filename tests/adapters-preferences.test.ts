@@ -1,4 +1,4 @@
-// @ts-expect-error - Node global stub
+// @ts-expect-error — Node global stub
 globalThis.localStorage = (() => {
     const store = new Map<string, string>();
     return {
@@ -88,7 +88,7 @@ test(
     () => {
         const original = globalThis.localStorage;
         try {
-            // @ts-expect-error - Node global stub
+            // @ts-expect-error — Node global stub
             globalThis.localStorage = {
                 getItem: () => null,
                 setItem: () => {
@@ -111,7 +111,7 @@ test(
     () => {
         const original = globalThis.localStorage;
         try {
-            // @ts-expect-error - Node global stub
+            // @ts-expect-error — Node global stub
             globalThis.localStorage = {
                 getItem: () => null,
                 setItem: () => {
@@ -139,7 +139,7 @@ test(
         try {
             const writes: Array<[string, string]>
                 = [];
-            // @ts-expect-error - Node global stub
+            // @ts-expect-error — Node global stub
             globalThis.localStorage = {
                 getItem: () => null,
                 setItem: (k: string, v: string) => {
