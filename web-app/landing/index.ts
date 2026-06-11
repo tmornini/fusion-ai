@@ -468,11 +468,6 @@ function buildCTA(): SafeHtml {
                             iconArrowRight(20, '')
                         }
                     </button>
-                    <button class="${
-                        'btn '
-                        + 'btn-outline-light '
-                        + 'btn-xl'
-                    }">Talk to Sales</button>
                 </div>
             </div>
         </div>
@@ -503,70 +498,12 @@ function buildFooter(): SafeHtml {
                         + ' not replacing it.'
                     }</p>
                 </div>
-                <div class="footer-col">
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="#">${
-                            'Features'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Integrations'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Pricing'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Changelog'
-                        }</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="#">${
-                            'About Us'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Careers'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Blog'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Contact'
-                        }</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Legal</h4>
-                    <ul>
-                        <li><a href="#">${
-                            'Privacy Policy'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Terms of Service'
-                        }</a></li>
-                        <li><a href="#">${
-                            'Security'
-                        }</a></li>
-                        <li><a href="#">${
-                            'GDPR'
-                        }</a></li>
-                    </ul>
-                </div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; ${year} ${
                     'Fusion AI.'
                     + ' All rights reserved.'
                 }</p>
-                <div class="${
-                    'footer-socials'
-                }">
-                    <a href="#">Twitter</a>
-                    <a href="#">LinkedIn</a>
-                    <a href="#">GitHub</a>
-                </div>
             </div>
         </div>
     </footer>`;
