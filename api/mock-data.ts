@@ -249,7 +249,6 @@ function generateFlowWorkload(args: {
     const archiveId = flow.archive.id;
 
     const frozenFlowGraph = jsonObjectField({
-        flowId: flow.flowId,
         name: flow.name,
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: flow.nodes,
@@ -3048,8 +3047,6 @@ async function populateMockDataIn(
     ) as { nodes: unknown; edges: unknown };
     function woGraph(): JsonObjectField {
         return jsonObjectField({
-            flowId:
-                'h5mErVBQhwdMKwi1co30jB',
             name:
                 'Customer Onboarding',
             lockTimeout:
@@ -3068,8 +3065,6 @@ async function populateMockDataIn(
     ) as { nodes: unknown; edges: unknown };
     function prcGraph(): JsonObjectField {
         return jsonObjectField({
-            flowId:
-                '7COt7Kf4OaOBg6AjaNO04s',
             name:
                 'Layout Test: Proposal'
                 + ' Review Cycle',
@@ -3120,8 +3115,6 @@ async function populateMockDataIn(
             id: woId,
             display_id: 'a7c3e1f9',
             flow_graph: jsonObjectField({
-                flowId:
-                    'h5mErVBQhwdMKwi1co30jB',
                 name:
                     'Customer Onboarding',
                 lockTimeout:
