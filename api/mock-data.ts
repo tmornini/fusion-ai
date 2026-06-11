@@ -549,7 +549,7 @@ export const OBJECTIVE_SEEDS: Array<{
     },
 ];
 
-export async function populateMockData(
+export async function postMockDataLoad(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
     // Seed the whole demo dataset in one transaction, so a
@@ -558,12 +558,12 @@ export async function populateMockData(
     // hashing is async crypto and cannot run inside the tx.
     await adapter.transaction(
         TABLE_NAMES,
-        (view) => populateMockDataIn(view),
+        (view) => postMockDataLoadIn(view),
     );
     return seedHumanCredentials(adapter);
 }
 
-async function populateMockDataIn(
+async function postMockDataLoadIn(
     adapter: DbAdapter,
 ): Promise<void> {
     const members: SeedHumanMember[] = [
@@ -6555,7 +6555,7 @@ async function populateMockDataIn(
     }
 }
 
-export async function populateBootstrapData(
+export async function postBootstrap(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
     // Seed the pristine bootstrap data in one transaction.
@@ -6563,12 +6563,12 @@ export async function populateBootstrapData(
     // async crypto and cannot run inside the tx.
     await adapter.transaction(
         TABLE_NAMES,
-        (view) => populateBootstrapDataIn(view),
+        (view) => postBootstrapIn(view),
     );
     return seedHumanCredentials(adapter);
 }
 
-async function populateBootstrapDataIn(
+async function postBootstrapIn(
     adapter: DbAdapter,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
@@ -6576,7 +6576,7 @@ async function populateBootstrapDataIn(
     // state events, the current user, and the singleton
     // organization. No Records — an empty Records page is
     // the correct pristine state; sample Records are demo
-    // content loaded by populateMockData, not bootstrap.
+    // content loaded by postMockDataLoad, not bootstrap.
     await Promise.all([
         adapter.members.put(SYSTEM_MEMBER_ID, {
             type: 'system',

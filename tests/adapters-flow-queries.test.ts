@@ -30,7 +30,7 @@ import type {
 import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
-import { populateMockData } from '../api/mock-data.ts';
+import { postMockDataLoad } from '../api/mock-data.ts';
 import { NODE_WIDTH } from '../web-app/app/flow-layout.ts';
 import {
     seedHumanMember,
@@ -431,7 +431,7 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
-        await populateMockData(db);
+        await postMockDataLoad(db);
         const g = await getFlowGraph(
             createRequestContext(db, await devToken()),
             LAYOUT_TEST_FLOW_ID,

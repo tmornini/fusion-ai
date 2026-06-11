@@ -1071,17 +1071,17 @@ const routes: Route[] = [
     // return is deleted at the server tier.
     route('snapshots/mock-data', {
         post: async (db) => {
-            const { populateMockData } =
+            const { postMockDataLoad } =
                 await import('./mock-data.ts');
-            return populateMockData(db);
+            return postMockDataLoad(db);
         },
     }),
     route('snapshots/bootstrap', {
         post: async (db) => {
             const {
-                populateBootstrapData,
+                postBootstrap,
             } = await import('./mock-data.ts');
-            return populateBootstrapData(db);
+            return postBootstrap(db);
         },
     }),
     route('snapshots/import', {

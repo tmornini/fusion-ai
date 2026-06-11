@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { populateMockData } from '../api/mock-data.ts';
+import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     validateMemberEntity,
     validateHumanMemberEntity,
@@ -33,7 +33,7 @@ type Validator = (b: Record<string, unknown>) => unknown;
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateMockData(db);
+    await postMockDataLoad(db);
     return db;
 }
 

@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    populateBootstrapData,
-    populateMockData,
+    postBootstrap,
+    postMockDataLoad,
     type SeededCredentials,
 } from '../api/mock-data.ts';
 import { verifyPassword } from '../api/password-hash.ts';
@@ -26,7 +26,7 @@ async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
     const reveal = currentReveal(
-        await populateBootstrapData(db));
+        await postBootstrap(db));
     assert.ok(reveal, 'current credential surfaced');
     assert.equal(reveal.username, 'demo@example.com');
     assert.ok(reveal.password.length >= 16);
@@ -46,7 +46,7 @@ async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
     const reveal = currentReveal(
-        await populateMockData(db));
+        await postMockDataLoad(db));
     assert.ok(reveal, 'current credential surfaced');
     const cred = await adminCredential(db);
     assert.ok(cred, 'admin password credential seeded');
@@ -62,9 +62,9 @@ async () => {
     const db2 = new MemoryDbAdapter();
     await db2.postSchemaCreation();
     const a = currentReveal(
-        await populateBootstrapData(db1));
+        await postBootstrap(db1));
     const b = currentReveal(
-        await populateBootstrapData(db2));
+        await postBootstrap(db2));
     assert.ok(a && b, 'both surfaced');
     assert.notEqual(a.password, b.password);
 });

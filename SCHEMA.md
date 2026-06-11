@@ -65,7 +65,7 @@ removal.
 **The `'system'` member:** `SYSTEM_MEMBER_ID = 'system'`
 in `api/types.ts` is a `members` parent row with
 `type = 'system'` and no detail row, seeded by both
-`populateMockData` and `populateBootstrapData`. Its
+`postMockDataLoad` and `postBootstrap`. Its
 corresponding `identity` row carries `kind = 'service'`
 — the platform itself as a non-person principal. State
 events with no specific user actor reference it. It is a
@@ -589,9 +589,9 @@ partitions them.
 ### organizations
 
 Tenant-root table — one row per organization. The empty
-bootstrap (`populateBootstrapData`) seeds only the default
+bootstrap (`postBootstrap`) seeds only the default
 org (`id = '1'`, Stark Industries); the demo mock-data
-seed (`populateMockData`)
+seed (`postMockDataLoad`)
 plants TWO orgs — `'1'` Stark Industries and `'2'` Wayne
 Enterprises. Every org-owned entity carries a NOT-NULL
 `organization_id` FK to this table; pure join tables derive

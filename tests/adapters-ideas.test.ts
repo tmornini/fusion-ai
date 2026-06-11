@@ -8,7 +8,7 @@ import {
 } from '../web-app/app/adapters/shared.ts';
 import { orgToken } from './token-fixtures.ts';
 import { adminContext } from './context-fixtures.ts';
-import { populateMockData } from '../api/mock-data.ts';
+import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     getIdeas,
     getIdea,
@@ -389,7 +389,7 @@ test('getIdeas resolves every seeded submitter in'
     + ' both orgs', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateMockData(db);
+    await postMockDataLoad(db);
     for (const org of ['1', '2']) {
         const ctx = createRequestContext(
             db, await orgToken('current', org));

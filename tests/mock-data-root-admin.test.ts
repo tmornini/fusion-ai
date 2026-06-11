@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import {
-    populateBootstrapData,
-    populateMockData,
+    postBootstrap,
+    postMockDataLoad,
 } from '../api/mock-data.ts';
 import {
     currentRolesForInOrg,
@@ -12,7 +12,7 @@ import {
 test('bootstrap seeds current as admin', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateBootstrapData(db);
+    await postBootstrap(db);
     const rows = await db.roleGrants.getAll();
     assert.ok(
         currentRolesForInOrg(rows, 'current', '1')
@@ -22,7 +22,7 @@ test('bootstrap seeds current as admin', async () => {
 test('mock data seeds current as admin', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateMockData(db);
+    await postMockDataLoad(db);
     const rows = await db.roleGrants.getAll();
     assert.ok(
         currentRolesForInOrg(rows, 'current', '1')

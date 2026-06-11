@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { populateBootstrapData } from '../api/mock-data.ts';
+import { postBootstrap } from '../api/mock-data.ts';
 import {
     SYSTEM_MEMBER_ID,
 } from '../api/types.ts';
@@ -15,7 +15,7 @@ import {
 async function bootstrappedDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateBootstrapData(db);
+    await postBootstrap(db);
     return db;
 }
 

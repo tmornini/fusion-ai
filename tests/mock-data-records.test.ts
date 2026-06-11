@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { populateMockData } from
+import { postMockDataLoad } from
     '../api/mock-data.ts';
 import {
     asStoredGraph,
@@ -14,12 +14,12 @@ import {
 async function seeded(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await populateMockData(db);
+    await postMockDataLoad(db);
     return db;
 }
 
 test(
-    'populateMockData seeds at least two Records',
+    'postMockDataLoad seeds at least two Records',
     async () => {
         const db = await seeded();
         const records = await db.records.getAll();
