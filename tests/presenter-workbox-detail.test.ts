@@ -48,7 +48,7 @@ function makeAttributeRef(
     overrides: Partial<NodeAttribute> = {},
 ): NodeAttribute {
     return {
-        attribute_id: 'a-1',
+        attributeId: 'a-1',
         mode: 'editable',
         isRequired: false,
         ...overrides,
@@ -237,7 +237,7 @@ test(
     + ' carrying the attribute id',
     () => {
         const ref = makeAttributeRef({
-            attribute_id: 'a-x',
+            attributeId: 'a-x',
         });
         const attribute = makeAttribute({
             id: 'a-x', attributeType: 'text',
@@ -459,11 +459,11 @@ test(
                     id: 'n-1', name: 'Triage',
                     attributes: [
                         makeAttributeRef({
-                            attribute_id: 'a-amt',
+                            attributeId: 'a-amt',
                             isRequired: true,
                         }),
                         makeAttributeRef({
-                            attribute_id: 'a-note',
+                            attributeId: 'a-note',
                             isRequired: false,
                         }),
                     ],
@@ -592,7 +592,7 @@ test(
                     id: 'n-1', name: 'Triage',
                     attributes: [
                         makeAttributeRef({
-                            attribute_id: 'a-amt',
+                            attributeId: 'a-amt',
                         }),
                     ],
                 }),
@@ -763,7 +763,7 @@ test(
                     attributeName: 'Ghost',
                 },
             ]),
-            /unknown attribute_id: ghost/,
+            /unknown attributeId: ghost/,
         );
     },
 );

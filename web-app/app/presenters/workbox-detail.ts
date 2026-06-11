@@ -368,7 +368,7 @@ export class WorkboxDetailPresenter {
         ref: NodeAttribute,
     ): RecordAttribute {
         return this.#requireAttributeById(
-            ref.attribute_id,
+            ref.attributeId,
         );
     }
 
@@ -381,7 +381,7 @@ export class WorkboxDetailPresenter {
         if (!attribute) {
             throw new Error(
                 'attribute reference points to'
-                + ' unknown attribute_id: '
+                + ' unknown attributeId: '
                 + attributeId,
             );
         }

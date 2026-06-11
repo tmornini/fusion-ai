@@ -104,6 +104,18 @@ test(
 );
 
 test(
+    'parsed node attributes speak the domain tongue',
+    () => {
+        const parsed = validateStoredGraphJson(
+            STORED_FLOW_GRAPH, 'graph',
+        );
+        const ref = parsed.nodes[1]!.attributes[0]!;
+        assert.equal(ref.attributeId, 'a-1');
+        assert.equal('attribute_id' in ref, false);
+    },
+);
+
+test(
     'stored work-order graph survives parse then'
     + ' serialize',
     () => {

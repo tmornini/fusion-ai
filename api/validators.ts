@@ -258,7 +258,7 @@ function asNodeAttribute(
         );
     }
     return {
-        attribute_id: asString(
+        attributeId: asString(
             obj['attribute_id'],
             label + '.attribute_id',
         ),

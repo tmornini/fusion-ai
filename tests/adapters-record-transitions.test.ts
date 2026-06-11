@@ -196,7 +196,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-target', [{
-                    attribute_id: 'a-1',
+                    attributeId: 'a-1',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -236,12 +236,12 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attribute_id: 'a-1',
+                    attributeId: 'a-1',
                     mode: 'editable',
                     isRequired: true,
                 }]),
                 buildNode('n-target', [{
-                    attribute_id: 'a-1',
+                    attributeId: 'a-1',
                     mode: 'readonly',
                     isRequired: true,
                 }]),
@@ -294,7 +294,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-target', [{
-                    attribute_id: 'a-1',
+                    attributeId: 'a-1',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -331,7 +331,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-target', [{
-                    attribute_id: 'a-1',
+                    attributeId: 'a-1',
                     mode: 'editable',
                     isRequired: false,
                 }]),

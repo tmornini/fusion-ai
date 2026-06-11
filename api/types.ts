@@ -43,8 +43,10 @@ export type Constraint =
 
 // Hidden is encoded by absence from the array, so
 // hidden + isRequired is structurally impossible.
+// Storage spells the id key attribute_id; the seam maps
+// it (validators.ts asNodeAttribute in, storedGraph out).
 export interface NodeAttribute {
-    attribute_id: RecordAttributeId;
+    attributeId: RecordAttributeId;
     mode: 'editable' | 'readonly';
     isRequired: boolean;
 }
@@ -1041,7 +1043,7 @@ function storedNodeAttribute(
     ref: NodeAttribute,
 ): Record<string, unknown> {
     return {
-        attribute_id: ref.attribute_id,
+        attribute_id: ref.attributeId,
         mode: ref.mode,
         isRequired: ref.isRequired,
     };

@@ -79,7 +79,7 @@ function hasEmptyRequiredAttribute(
     return refs
         .filter(r => r.isRequired)
         .some(r => {
-            const v = values[r.attribute_id];
+            const v = values[r.attributeId];
             return v === undefined || v === '';
         });
 }
