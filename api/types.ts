@@ -925,7 +925,7 @@ export interface Objective {
     position: number;
 }
 
-export interface ObjectiveRevision {
+export interface ObjectiveRevisionEntity {
     id: Id;
     objective_id: ObjectiveId;
     name: string;

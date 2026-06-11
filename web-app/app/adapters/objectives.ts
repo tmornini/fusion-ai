@@ -2,7 +2,7 @@ import type {
     Id,
     Objective,
     ObjectiveId,
-    ObjectiveRevision,
+    ObjectiveRevisionEntity,
     ObjectiveState,
     StateEntity,
 } from '../../../api/types.ts';
@@ -107,8 +107,8 @@ export async function getObjectiveArchivalEvents(
 export async function getObjectiveRevisions(
     ctx: RequestContext,
     id: ObjectiveId,
-): Promise<ObjectiveRevision[]> {
-    const all = await ctx.GET<ObjectiveRevision[]>(
+): Promise<ObjectiveRevisionEntity[]> {
+    const all = await ctx.GET<ObjectiveRevisionEntity[]>(
         'objective-revisions',
     );
     return filterByField(all, 'objective_id', id);
@@ -119,8 +119,8 @@ export async function getObjectiveRevisions(
 // per id; callers walking an objective LIST batch here.
 export async function getObjectiveRevisionsByObjective(
     ctx: RequestContext,
-): Promise<Map<ObjectiveId, ObjectiveRevision[]>> {
-    const all = await ctx.GET<ObjectiveRevision[]>(
+): Promise<Map<ObjectiveId, ObjectiveRevisionEntity[]>> {
+    const all = await ctx.GET<ObjectiveRevisionEntity[]>(
         'objective-revisions',
     );
     return Map.groupBy(all, r => r.objective_id);

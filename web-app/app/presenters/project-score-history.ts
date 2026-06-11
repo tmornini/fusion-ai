@@ -2,7 +2,7 @@ import { html, type SafeHtml } from '../safe-html.ts';
 import type {
     Id,
     ObjectiveId,
-    ObjectiveRevision,
+    ObjectiveRevisionEntity,
 } from '../../../api/types.ts';
 import type {
     ObjectiveArchivalEvent,
@@ -39,7 +39,7 @@ type Event =
 export class ProjectScoreHistoryPresenter {
     readonly #baselines: ObjectiveScore[];
     readonly #actuals: ObjectiveScore[];
-    readonly #revisions: ObjectiveRevision[];
+    readonly #revisions: ObjectiveRevisionEntity[];
     readonly #archivals: ObjectiveArchivalEvent[];
     readonly #resolver: DefinitionResolver;
     readonly #memberName: MemberNameResolver;
@@ -47,7 +47,7 @@ export class ProjectScoreHistoryPresenter {
     constructor(
         baselines: ObjectiveScore[],
         actuals: ObjectiveScore[],
-        revisions: ObjectiveRevision[],
+        revisions: ObjectiveRevisionEntity[],
         archivals: ObjectiveArchivalEvent[],
         resolver: DefinitionResolver,
         memberName: MemberNameResolver,
