@@ -171,6 +171,31 @@ async () => {
     assert.equal(mine[0]!.state, 'pending');
 });
 
+test('the view omits the inviter name when PII is erased',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    await db.identityPii.delete('current');
+    const sarah = await ctxOn(db, 'sarah', '1');
+    const mine = await getInvitations(sarah);
+    assert.equal(mine.length, 1);
+    assert.ok(!('invitedByName' in mine[0]!));
+});
+
+test('the view omits the org name when the org is gone',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    await db.states.record('ev-org-gone', '2', 'deleted',
+        'system');
+    const sarah = await ctxOn(db, 'sarah', '1');
+    const mine = await getInvitations(sarah);
+    assert.equal(mine.length, 1);
+    assert.ok(!('organizationName' in mine[0]!));
+});
+
 test('accept writes a membership in the invitation org',
 async () => {
     // THE security crux: Sarah is scoped to Stark, but accepting
@@ -297,4 +322,15 @@ async () => {
     // Switched to Stark, the Wayne invitation is out of scope.
     const tonyStark = await ctxOn(db, 'current', '1');
     assert.equal((await getSentInvitations(tonyStark)).length, 0);
+});
+
+test('the sent view omits the email when PII is erased',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    await db.identityPii.delete('sarah');
+    const sent = await getSentInvitations(tony);
+    assert.equal(sent.length, 1);
+    assert.ok(!('inviteeEmail' in sent[0]!));
 });

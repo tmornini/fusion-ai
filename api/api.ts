@@ -1563,19 +1563,25 @@ async function invitationsForInvitee(
         if (current === undefined) continue;
         // The inviter is the actor of the grant ('pending') event —
         // found by state, not position, so a same-`at` tie cannot
-        // misattribute it. An absent name (erased PII) stays empty;
-        // the presenter then omits the "Invited by" line.
+        // misattribute it. An absent related row (erased PII,
+        // vanished org) omits its key — absence on the wire is
+        // the absent key, never a '' sentinel.
         const grant = eventsFor.get(inv.id)!
             .find(ev => ev.state === 'pending');
+        const name = orgName.get(inv.organization_id);
+        const inviter = grant === undefined
+            ? undefined
+            : personName.get(grant.member_id);
         out.push({
             id: inv.id,
             organization_id: inv.organization_id,
-            organization_name:
-                orgName.get(inv.organization_id) ?? '',
+            ...(name !== undefined
+                ? { organization_name: name }
+                : {}),
             identity_id: inv.identity_id,
-            invited_by_name: grant
-                ? personName.get(grant.member_id) ?? ''
-                : '',
+            ...(inviter !== undefined
+                ? { invited_by_name: inviter }
+                : {}),
             at: inv.at,
             state: assertInvitationState(
                 current.state, 'invitation ' + inv.id),
@@ -1619,11 +1625,16 @@ async function sentInvitations(
         const state = assertInvitationState(
             current.state, 'invitation ' + inv.id);
         if (state !== 'pending') continue;
+        // Erased invitee PII omits the key — absence on the
+        // wire is the absent key, never a '' sentinel.
+        const inviteeEmail = email.get(inv.identity_id);
         out.push({
             id: inv.id,
             organization_id: org,
             identity_id: inv.identity_id,
-            invitee_email: email.get(inv.identity_id) ?? '',
+            ...(inviteeEmail !== undefined
+                ? { invitee_email: inviteeEmail }
+                : {}),
             at: inv.at,
             state: 'pending',
         });
