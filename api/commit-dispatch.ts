@@ -1,9 +1,16 @@
 import { TABLE_NAMES } from './db.ts';
+import type { DbAdapter } from './db.ts';
 import { isPermitted } from './authorization.ts';
 import {
     ApiError,
     HTTP_BAD_REQUEST,
+    HTTP_NOT_FOUND,
 } from './http-errors.ts';
+import {
+    matchRoute,
+    route,
+    type Route,
+} from './routes.ts';
 
 // One unit of a batched commit: a put (full-state upsert)
 // or a delete, addressed by resource path. Validated at the
@@ -70,7 +77,7 @@ function validateCommitOp(
     );
 }
 
-export function validateCommitBody(
+function validateCommitBody(
     payload: Record<string, unknown>,
 ): CommitOp[] {
     const ops = payload['ops'];
@@ -158,4 +165,75 @@ export function commitOpsAuthzFailure(
         }
     }
     return null;
+}
+
+async function dispatchOpInTx(
+    view: DbAdapter,
+    op: CommitOp,
+    table: readonly Route[],
+): Promise<void> {
+    const segments =
+        op.resource.split('/').filter(Boolean);
+    const match = matchRoute(table, segments);
+    if (match === null) {
+        throw new ApiError(
+            'commit op resource not found: '
+            + op.resource,
+            HTTP_NOT_FOUND,
+        );
+    }
+    const { route: matched, params } = match;
+    if (op.method === 'put') {
+        if (matched.put === undefined) {
+            throw new ApiError(
+                'commit op put not allowed on '
+                + op.resource,
+                HTTP_BAD_REQUEST,
+            );
+        }
+        await matched.put(view, params, op.body);
+    } else {
+        if (matched.delete === undefined) {
+            throw new ApiError(
+                'commit op delete not allowed on '
+                + op.resource,
+                HTTP_BAD_REQUEST,
+            );
+        }
+        await matched.delete(view, params);
+    }
+}
+
+// The batch route's body handler. One authenticated request;
+// `effective` is already org-scoped, and its transaction
+// re-scopes the view — so each op dispatches without re-auth
+// or re-latency. Real rollback: any op throwing discards the
+// whole batch.
+async function applyCommit(
+    effective: DbAdapter,
+    payload: Record<string, unknown>,
+    table: readonly Route[],
+): Promise<void> {
+    const ops = validateCommitBody(payload);
+    const tables = unionTablesFor(ops);
+    await effective.transaction(tables, async (view) => {
+        for (const op of ops) {
+            await dispatchOpInTx(view, op, table);
+        }
+    });
+}
+
+// The batch route, bound at composition time to the table its
+// ops dispatch against — the same table that serves it,
+// commit included. Wired ONCE by the composition root, so the
+// dispatch reaches the route table with no module edge back
+// into it.
+export function commitRouteFor(
+    table: readonly Route[],
+): Route {
+    return route('commit', {
+        post: async (db, _p, body) => {
+            await applyCommit(db, body, table);
+        },
+    });
 }
