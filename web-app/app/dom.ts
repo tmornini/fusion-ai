@@ -75,6 +75,23 @@ export function $inputRequired(
     return el;
 }
 
+export function $textareaRequired(
+    selector: string,
+    parent: ParentNode,
+): HTMLTextAreaElement {
+    const el =
+        parent.querySelector<HTMLTextAreaElement>(
+            selector,
+        );
+    if (!el) {
+        throw new Error(
+            'Required textarea not'
+            + ' found: ' + selector,
+        );
+    }
+    return el;
+}
+
 export function isFormField(
     el: unknown,
 ): el is HTMLInputElement

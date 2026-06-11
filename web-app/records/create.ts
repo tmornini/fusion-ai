@@ -1,5 +1,6 @@
 import {
-    $, $input, $textarea, bindEnterToClick,
+    $, $inputRequired, $textareaRequired,
+    bindEnterToClick,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
 import { navigateTo } from '../app/core.ts';
@@ -34,15 +35,14 @@ export async function init(): Promise<void> {
 }
 
 async function handleSubmit(): Promise<void> {
-    const nameEl = $input(
+    const nameEl = $inputRequired(
         '#record-create-name', document,
     );
-    const descEl = $textarea(
+    const descEl = $textareaRequired(
         '#record-create-description', document,
     );
-    const name = (nameEl?.value ?? '').trim();
-    const description =
-        (descEl?.value ?? '').trim();
+    const name = nameEl.value.trim();
+    const description = descEl.value.trim();
     if (name === '') {
         showToast(
             'Record name is required',
