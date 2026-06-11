@@ -2,7 +2,6 @@ import {
     initState,
     initListeners,
 } from './state.ts';
-import { $ } from './dom.ts';
 import {
     getPageName,
 } from './navigation.ts';
@@ -324,7 +323,10 @@ document.addEventListener(
             }
         }
 
-        if ($('.sidebar-layout', document)) {
+        if (
+            PAGE_REGISTRY[pageName]?.layout
+                === 'sidebar'
+        ) {
             try {
                 await initSidebarLayout(
                     hasSchema,
