@@ -26,6 +26,8 @@ import type {
 } from '../adapters/index.ts';
 import {
     PROJECT_STATE_CONFIG,
+} from './state-display.ts';
+import {
     COST_DIVISOR,
     isProjectState,
 } from '../adapters/index.ts';

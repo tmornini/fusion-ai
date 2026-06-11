@@ -20,7 +20,7 @@ import type {
 } from '../adapters/index.ts';
 import {
     RECORD_STATE_CONFIG,
-} from '../adapters/index.ts';
+} from './state-display.ts';
 
 const STATE_ICONS: Record<
     RecordState,

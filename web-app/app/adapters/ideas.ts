@@ -54,7 +54,6 @@ export {
     type IdeaReadiness,
     isIdeaState,
     IDEA_STATES,
-    IDEA_STATE_CONFIG,
     IDEA_READINESS,
 } from '../../../api/types.ts';
 

@@ -15,9 +15,11 @@ import {
     type MemberState,
     isHumanMember,
     isAIMember,
-    MEMBER_STATE_CONFIG,
     MEMBER_WITHOUT_PII_NAME,
 } from '../adapters/index.ts';
+import {
+    MEMBER_STATE_CONFIG,
+} from './state-display.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
 import { buildPageUrl } from '../navigation.ts';
 import {

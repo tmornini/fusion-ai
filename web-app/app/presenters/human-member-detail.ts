@@ -19,8 +19,10 @@ import {
     iconCheckCircle2,
 } from '../icons.ts';
 import {
-    HumanMember,
     MEMBER_STATE_CONFIG,
+} from './state-display.ts';
+import {
+    HumanMember,
     type MemberState,
     type HumanMemberDraft,
     isMemberState,

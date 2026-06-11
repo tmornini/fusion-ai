@@ -48,7 +48,6 @@ export {
     type ProjectState,
     type ProjectEntity,
     isProjectState,
-    PROJECT_STATE_CONFIG,
     COST_DIVISOR,
 } from '../../../api/types.ts';
 

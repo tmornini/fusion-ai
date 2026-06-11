@@ -37,7 +37,7 @@ import type {
 } from '../adapters/index.ts';
 import {
     IDEA_STATE_CONFIG,
-} from '../adapters/index.ts';
+} from './state-display.ts';
 
 const STATE_ICONS: Record<
     IdeaState,

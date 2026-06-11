@@ -22,9 +22,11 @@ import {
     filteredSortedList,
 } from './list-choreography.ts';
 import {
+    PROJECT_STATE_CONFIG,
+} from './state-display.ts';
+import {
     type Project,
     type ProjectState,
-    PROJECT_STATE_CONFIG,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../adapters/index.ts';

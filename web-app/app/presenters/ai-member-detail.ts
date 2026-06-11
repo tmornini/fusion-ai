@@ -14,8 +14,10 @@ import {
     iconBrain,
 } from '../icons.ts';
 import {
-    AIMember,
     MEMBER_STATE_CONFIG,
+} from './state-display.ts';
+import {
+    AIMember,
     isMemberState,
     type AIMemberDraft,
     type MemberState,
