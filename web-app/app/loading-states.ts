@@ -254,24 +254,3 @@ export async function loadInto<T>(
     }
     await cfg.onData(data);
 }
-
-export async function withLoadingState<T>(
-    container: HTMLElement,
-    skeletonHtml: SafeHtml,
-    fetchFn: () => Promise<T>,
-    retryFn?: () => void,
-    emptyState?: EmptyStateConfig,
-): Promise<T | null> {
-    let result: T | null = null;
-    await loadInto({
-        container,
-        skeleton: skeletonHtml,
-        fetch: fetchFn,
-        ...(retryFn ? { retry: retryFn } : {}),
-        ...(emptyState ? { emptyState } : {}),
-        onData: data => {
-            result = data;
-        },
-    });
-    return result;
-}
