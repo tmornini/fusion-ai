@@ -10,24 +10,29 @@ const TOAST_DURATION_MS = 6000;
 const TOAST_REMOVAL_FALLBACK_MS = 2000;
 const TOAST_CONTAINER_ID = 'toast-container';
 
-function closeActiveToast(
+// The closer owns the closing fact in closure state —
+// the class on the element is presentation, not the
+// record of whether closing has begun.
+function makeToastCloser(
     toast: HTMLElement,
-): void {
-    if (toast.classList.contains('toast--closing')) {
-        return;
-    }
-    toast.classList.add('toast--closing');
-    const removeOnce = (): void => toast.remove();
-    toast.addEventListener(
-        'transitionend', removeOnce, { once: true },
-    );
-    toast.addEventListener(
-        'transitioncancel', removeOnce, { once: true },
-    );
-    setTimeout(
-        removeOnce,
-        TOAST_REMOVAL_FALLBACK_MS,
-    );
+): () => void {
+    let closing = false;
+    return (): void => {
+        if (closing) return;
+        closing = true;
+        toast.classList.add('toast--closing');
+        const removeOnce = (): void => toast.remove();
+        toast.addEventListener(
+            'transitionend', removeOnce, { once: true },
+        );
+        toast.addEventListener(
+            'transitioncancel', removeOnce, { once: true },
+        );
+        setTimeout(
+            removeOnce,
+            TOAST_REMOVAL_FALLBACK_MS,
+        );
+    };
 }
 
 function ensureContainer(): HTMLElement {
@@ -66,16 +71,15 @@ export function showToast(
     msgSpan.textContent = message;
     toast.appendChild(msgSpan);
 
+    const closeToast = makeToastCloser(toast);
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
     closeBtn.setAttribute('aria-label', 'Dismiss');
     closeBtn.textContent = '×';
-    closeBtn.addEventListener('click', () => closeActiveToast(toast));
+    closeBtn.addEventListener('click', closeToast);
     toast.appendChild(closeBtn);
 
     container.prepend(toast);
-    setTimeout(
-            () => closeActiveToast(toast),
-            TOAST_DURATION_MS,
-    );
+    setTimeout(closeToast, TOAST_DURATION_MS);
 }
