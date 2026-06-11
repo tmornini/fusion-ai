@@ -1,6 +1,7 @@
-import { EntityNotFoundError, guarded } from './db.ts';
+import { EntityNotFoundError } from './db.ts';
 import type {
     EntityStore,
+    GuardedEntityStore,
     EntityPut,
 } from './db.ts';
 import type { Id } from './types.ts';
@@ -31,12 +32,12 @@ export interface OrgScoped {
 export class OrgScopedEntityStore<T extends OrgScoped>
     implements EntityStore<T>
 {
-    readonly #inner: EntityStore<T>;
+    readonly #inner: GuardedEntityStore<T>;
     readonly #org: Id;
     readonly #table: string;
 
     constructor(
-        inner: EntityStore<T>,
+        inner: GuardedEntityStore<T>,
         org: Id,
         table: string,
     ) {
@@ -85,7 +86,7 @@ export class OrgScopedEntityStore<T extends OrgScoped>
         id: string,
         fields: Omit<T, 'id'>,
     ): Promise<T> {
-        return guarded(this.#inner).putGuarded(
+        return this.#inner.putGuarded(
             id,
             this.#stamp(fields),
             (existing, rowId) =>
@@ -101,7 +102,7 @@ export class OrgScopedEntityStore<T extends OrgScoped>
             id: entry.id,
             fields: this.#stamp(entry.fields),
         }));
-        await guarded(this.#inner).putManyGuarded(
+        await this.#inner.putManyGuarded(
             stamped,
             deleteIds,
             (existing, rowId) =>
@@ -111,7 +112,7 @@ export class OrgScopedEntityStore<T extends OrgScoped>
     }
 
     async delete(id: string): Promise<void> {
-        await guarded(this.#inner).deleteGuarded(
+        await this.#inner.deleteGuarded(
             id,
             existing => this.#ownsRow(existing),
         );

@@ -1,4 +1,4 @@
-import type { DbAdapter } from './db.ts';
+import type { DbAdapter, GuardedDbAdapter } from './db.ts';
 import type { Id } from './types.ts';
 import type { Principal } from './access-token.ts';
 import {
@@ -27,7 +27,10 @@ export interface IncomingContext {
     readonly requestId: string;
     readonly method: string;
     readonly pathname: string;
-    readonly base: DbAdapter;
+    // The unfenced tier, carried with its full honest face so
+    // the fence step can consume the guarded write capability
+    // without re-acquiring it by assertion.
+    readonly base: GuardedDbAdapter;
 }
 
 // Enriched by the authentication step (request-auth.ts) —
@@ -50,7 +53,7 @@ export interface RequestContext extends AuthenticatedContext {
 }
 
 export function incomingContext(
-    base: DbAdapter,
+    base: GuardedDbAdapter,
     request: Request,
 ): IncomingContext {
     return {

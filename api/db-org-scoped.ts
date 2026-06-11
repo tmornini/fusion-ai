@@ -1,7 +1,8 @@
 import { EntityNotFoundError } from './db.ts';
 import type {
     DbAdapter,
-    EntityStore,
+    GuardedDbAdapter,
+    GuardedEntityStore,
 } from './db.ts';
 import type {
     Id,
@@ -53,17 +54,17 @@ import {
 // Do not rely on tenant isolation in a networked / multi-user
 // context until the signing key lives server-side.
 export function orgScopedAdapter(
-    base: DbAdapter,
+    base: GuardedDbAdapter,
     org: Id,
 ): DbAdapter {
     const scope = <T extends OrgScoped>(
-        inner: EntityStore<T>,
+        inner: GuardedEntityStore<T>,
         table: string,
     ): OrgScopedEntityStore<T> =>
         new OrgScopedEntityStore(inner, org, table);
 
     const parentScope = <T extends { id: string }>(
-        inner: EntityStore<T>,
+        inner: GuardedEntityStore<T>,
         table: string,
         resolver: OwningOrgResolver<T>,
     ): ParentScopedEntityStore<T> =>

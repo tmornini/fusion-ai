@@ -1,4 +1,7 @@
-import type { DbAdapter } from './db.ts';
+import type {
+    DbAdapter,
+    GuardedDbAdapter,
+} from './db.ts';
 import {
     EntityNotFoundError,
     LedgerImmutabilityError,
@@ -128,7 +131,7 @@ async function facadeRequest(
 }
 
 export async function handleRequest(
-    adapter: DbAdapter,
+    adapter: GuardedDbAdapter,
     request: Request,
 ): Promise<Response> {
     const ctx = incomingContext(adapter, request);
@@ -457,12 +460,11 @@ export async function handleRequest(
 }
 
 // What the client verb facade requires of its adapter: the
-// storage contract plus the segregated demo latency shim it
-// awaits before each simulated network hop. Only the facade
-// names the shim — handleRequest and every layer below it
-// see DbAdapter alone.
+// unfenced tier's full contract (handleRequest's gate fences
+// it per request) plus the segregated demo latency shim the
+// facade awaits before each simulated network hop.
 export type ClientFacadeAdapter =
-    DbAdapter & LatencySimulation;
+    GuardedDbAdapter & LatencySimulation;
 
 async function unwrapResponse<T>(
     response: Response,
