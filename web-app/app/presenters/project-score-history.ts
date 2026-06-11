@@ -2,10 +2,10 @@ import { html, type SafeHtml } from '../safe-html.ts';
 import type {
     Id,
     ObjectiveId,
-    ObjectiveRevisionEntity,
 } from '../../../api/types.ts';
 import type {
     ObjectiveArchivalEvent,
+    ObjectiveRevision,
 } from '../adapters/objectives.ts';
 import type {
     ObjectiveScore,
@@ -39,7 +39,7 @@ type Event =
 export class ProjectScoreHistoryPresenter {
     readonly #baselines: ObjectiveScore[];
     readonly #actuals: ObjectiveScore[];
-    readonly #revisions: ObjectiveRevisionEntity[];
+    readonly #revisions: ObjectiveRevision[];
     readonly #archivals: ObjectiveArchivalEvent[];
     readonly #resolver: DefinitionResolver;
     readonly #memberName: MemberNameResolver;
@@ -47,7 +47,7 @@ export class ProjectScoreHistoryPresenter {
     constructor(
         baselines: ObjectiveScore[],
         actuals: ObjectiveScore[],
-        revisions: ObjectiveRevisionEntity[],
+        revisions: ObjectiveRevision[],
         archivals: ObjectiveArchivalEvent[],
         resolver: DefinitionResolver,
         memberName: MemberNameResolver,
@@ -107,8 +107,8 @@ export class ProjectScoreHistoryPresenter {
             events.push({
                 kind: 'revision',
                 at: r.at,
-                memberId: r.member_id,
-                objectiveId: r.objective_id,
+                memberId: r.memberId,
+                objectiveId: r.objectiveId,
                 name: r.name,
             });
         }

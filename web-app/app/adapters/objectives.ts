@@ -103,15 +103,44 @@ export async function getObjectiveArchivalEvents(
         }));
 }
 
+// The camelCase domain shape of an objective revision.
+// The adapter is the divorce point: storage rows
+// (snake_case) are mapped here so the score-history
+// presenter and the definition reducers speak one idiom.
+export interface ObjectiveRevision {
+    id: Id;
+    objectiveId: ObjectiveId;
+    name: string;
+    description: string;
+    memberId: Id;
+    at: string;
+}
+
+function toObjectiveRevision(
+    r: ObjectiveRevisionEntity,
+): ObjectiveRevision {
+    return {
+        id: r.id,
+        objectiveId: r.objective_id,
+        name: r.name,
+        description: r.description,
+        memberId: r.member_id,
+        at: r.at,
+    };
+}
+
 // Every objective's revisions in ONE table read, grouped.
 // Callers walking an objective LIST batch here.
 export async function getObjectiveRevisionsByObjective(
     ctx: RequestContext,
-): Promise<Map<ObjectiveId, ObjectiveRevisionEntity[]>> {
+): Promise<Map<ObjectiveId, ObjectiveRevision[]>> {
     const all = await ctx.GET<ObjectiveRevisionEntity[]>(
         'objective-revisions',
     );
-    return Map.groupBy(all, r => r.objective_id);
+    return Map.groupBy(
+        all.map(toObjectiveRevision),
+        r => r.objectiveId,
+    );
 }
 
 // The current definition of every requested objective in
