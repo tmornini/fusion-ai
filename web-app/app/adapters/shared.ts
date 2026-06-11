@@ -61,9 +61,8 @@ export function filterByField<T, K extends keyof T>(
 // a row by its resource path. The whole batch posts as
 // ONE request and commits in one transaction — it
 // applies entirely or not at all. On failure, commit()
-// throws CommitError(0, [], cause); `applied` is always
-// empty because real rollback leaves nothing partially
-// applied.
+// throws CommitError wrapping the cause; real rollback
+// leaves nothing partially applied.
 export type WriteOp =
     | {
         method: 'put';
@@ -80,22 +79,12 @@ export interface Transaction {
 }
 
 export class CommitError extends Error {
-    readonly failedAt: number;
-    readonly applied: readonly WriteOp[];
     readonly cause: Error;
-    constructor(
-        failedAt: number,
-        applied: readonly WriteOp[],
-        cause: Error,
-    ) {
+    constructor(cause: Error) {
         super(
-            'commit failed at op['
-            + failedAt + ']: '
-            + cause.message,
+            'commit failed: ' + cause.message,
         );
         this.name = 'CommitError';
-        this.failedAt = failedAt;
-        this.applied = applied;
         this.cause = cause;
     }
 }
@@ -164,7 +153,7 @@ export function createRequestContext(
             } catch (e) {
                 // Atomic batch: a failure applied nothing,
                 // so `applied` is always empty.
-                throw new CommitError(0, [], e as Error);
+                throw new CommitError(e as Error);
             }
         },
     };
