@@ -105,18 +105,33 @@ export interface RequestContext {
     commit(tx: Transaction): Promise<void>;
 }
 
+// The recovery-free context: each verb runs directly on its
+// captured token. The recovering sibling below is the
+// sessionContext path.
 export function createRequestContext(
     adapter: DbAdapter,
     token: string,
-    options: { recover?: boolean } = {},
 ): RequestContext {
-    const recover = options.recover === true;
+    return makeRequestContext(adapter, token, false);
+}
+
+// The recovery-enabled context: a 401 refreshes the session
+// via withAuthRecovery and retries against the live token
+// once.
+export function createRecoveringRequestContext(
+    adapter: DbAdapter,
+    token: string,
+): RequestContext {
+    return makeRequestContext(adapter, token, true);
+}
+
+function makeRequestContext(
+    adapter: DbAdapter,
+    token: string,
+    recover: boolean,
+): RequestContext {
     const identity = principalFromToken(token);
 
-    // A recovery-free context runs each verb directly on its
-    // captured token; a recovery-enabled one (sessionContext)
-    // routes through withAuthRecovery, which on a 401 refreshes
-    // the session and retries against the live token once.
     function run<T>(
         make: (tok: string) => Promise<T>,
     ): Promise<T> {
@@ -161,8 +176,8 @@ export function createRequestContext(
 }
 
 export function sessionContext(): RequestContext {
-    return createRequestContext(
-        getDbAdapter(), getSessionToken(), { recover: true },
+    return createRecoveringRequestContext(
+        getDbAdapter(), getSessionToken(),
     );
 }
 
