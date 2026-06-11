@@ -1,5 +1,5 @@
 import type { SafeHtml } from './safe-html.ts';
-import { trusted, html, escapeForHtml } from './safe-html.ts';
+import { trusted, escapeForHtml } from './safe-html.ts';
 import type {
     GraphNode, GraphEdge,
 } from './adapters/flows.ts';
@@ -448,13 +448,11 @@ function buildNode(
     node: GraphNode,
     edges: readonly GraphEdge[],
     isSelected: boolean,
-    isLocked: boolean,
     portPos: {
         x: number; y: number;
     } | null,
 ): SafeHtml {
     const { positionX, positionY } = node;
-    const halfH = NODE_HEIGHT / 2;
     const halfW = NODE_WIDTH / 2;
 
     let borderColor = BLUE;
@@ -1126,7 +1124,7 @@ export function buildGraphSvg(
         nodeMarkup +=
             buildNode(
                 node, edges, isSelected,
-                isLocked, portPos,
+                portPos,
             ).toString();
     }
 

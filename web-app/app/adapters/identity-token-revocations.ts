@@ -4,11 +4,7 @@ import {
 import {
     nowUtc,
     type Id,
-    type IdentityTokenRevocationEntity,
 } from '../../../api/types.ts';
-import {
-    latestRevocationAt,
-} from '../../../api/access-token.ts';
 import type { RequestContext } from './shared.ts';
 
 export async function postIdentityLogoutEverywhere(

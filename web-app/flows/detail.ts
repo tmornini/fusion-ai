@@ -1422,7 +1422,7 @@ export async function init(
         container, signal,
     );
     bindKeyboardShortcuts(
-        container, panelStateRef, signal,
+        panelStateRef, signal,
     );
     bindFlushOnLeave(signal);
     const initialWrap = container.querySelector(
@@ -1492,7 +1492,6 @@ function bindFlushOnLeave(
 }
 
 function bindKeyboardShortcuts(
-    container: HTMLElement,
     panelStateRef: PanelStateRef,
     signal: AbortSignal,
 ): void {

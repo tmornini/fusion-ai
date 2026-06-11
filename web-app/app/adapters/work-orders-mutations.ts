@@ -25,9 +25,6 @@ import type {
     RequestContext, WriteOp,
 } from './shared.ts';
 import {
-    getCurrentHumanMember,
-} from './members.ts';
-import {
     validateFlowForCreation,
     formatFlowProblem,
 } from './flow-publish.ts';

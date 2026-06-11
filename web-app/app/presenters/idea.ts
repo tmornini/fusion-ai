@@ -602,7 +602,6 @@ export class IdeaPresenter {
     }
 
     buildCard(
-        view: string,
         showGrip: boolean,
     ): SafeHtml {
         return html`
@@ -927,7 +926,7 @@ export class IdeaListPresenter {
                     a.positionSortKey()
                     - b.positionSortKey(),
             ),
-            idea => idea.buildCard('position', hasGrip),
+            idea => idea.buildCard(hasGrip),
         );
     }
 }

@@ -172,7 +172,7 @@ function bindActions(root: HTMLElement): void {
     );
     root.addEventListener(
         'input',
-        e => onInput(root, e),
+        e => onInput(e),
         { signal },
     );
     root.addEventListener(
@@ -373,9 +373,7 @@ function onChange(
     }
 }
 
-function onInput(
-    root: HTMLElement, e: Event,
-): void {
+function onInput(e: Event): void {
     if (pageState.kind !== 'editing') return;
     const target = e.target;
     if (

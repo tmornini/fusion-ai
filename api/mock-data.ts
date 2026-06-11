@@ -414,7 +414,6 @@ type SeedHumanMember = Omit<
 
 const MOCK_SEED_TIMESTAMP =
     '2026-01-01T00:00:00.000000Z';
-const ADMIN_USERNAME = 'demo@example.com';
 
 // The seed's root org id (Stark Industries). Local to the
 // seed — there is no global default org any more.

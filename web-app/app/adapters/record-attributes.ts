@@ -1,10 +1,8 @@
 import type {
     RecordAttribute,
     RecordAttributeEntity,
-    RecordAttributeId,
     RecordId,
 } from '../../../api/types.ts';
-import { jsonArrayField } from '../../../api/types.ts';
 import {
     validateConstraintArrayJson,
     validateStringArrayJson,
@@ -13,9 +11,6 @@ import {
     filterByField,
     type RequestContext,
 } from './shared.ts';
-import {
-    notifyRecordChange,
-} from './records.ts';
 
 export type {
     RecordAttribute,

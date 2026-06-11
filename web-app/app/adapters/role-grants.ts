@@ -5,13 +5,8 @@ import {
     nowUtc,
     type Id,
     type RoleGrantAction,
-    type RoleGrantEntity,
 } from '../../../api/types.ts';
 import {
-    currentRolesForInOrg,
-} from '../../../api/authorization.ts';
-import {
-    activeOrg,
     type RequestContext,
 } from './shared.ts';
 

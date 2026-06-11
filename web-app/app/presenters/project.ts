@@ -88,7 +88,6 @@ export class ProjectPresenter {
     }
 
     buildCard(
-        view: string,
         showGrip: boolean,
         score?: ScoreRow,
     ): SafeHtml {
@@ -441,7 +440,6 @@ export class ProjectListPresenter {
             (p, status) => p.stateGroup() === status,
             items => this.#sortProjects([...items]),
             p => p.buildCard(
-                'position',
                 hasGrip,
                 this.#scoreMap.get(p.idForLink()),
             ),

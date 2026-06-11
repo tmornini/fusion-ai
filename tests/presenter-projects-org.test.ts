@@ -160,7 +160,7 @@ test(
                 state: 'archived',
             }),
         );
-        const out = p.buildCard('position', false)
+        const out = p.buildCard(false)
             .toString();
         assert.match(out, /Gemini/);
         assert.match(out, /Archived/);
@@ -180,11 +180,11 @@ test(
             makeProject({}),
         );
         assert.match(
-            p.buildCard('position', true).toString(),
+            p.buildCard(true).toString(),
             /drag-handle/,
         );
         assert.equal(
-            p.buildCard('position', false)
+            p.buildCard(false)
                 .toString()
                 .includes('drag-handle'),
             false,

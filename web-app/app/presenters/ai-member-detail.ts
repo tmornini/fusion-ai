@@ -427,7 +427,6 @@ function buildReadonlyIdentityBody(
 }
 
 function buildEditableIdentityBody(
-    member: AIMember,
     draft: AIMemberDraftFields,
 ): SafeHtml {
     return html`
@@ -591,7 +590,6 @@ export class AIMemberDetailEditPresenter {
             '.member-cards-slot',
             buildIdentityCard(
                 buildEditableIdentityBody(
-                    this.#member,
                     this.#draft,
                 ),
             ),

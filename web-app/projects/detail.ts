@@ -29,7 +29,6 @@ import {
 import {
     getProject,
     getProjectRow,
-    getProjectState,
     ProjectView,
     putProject,
     postProjectStateChange,
@@ -719,10 +718,9 @@ async function renderActionBarAndObjectives(
     const pid = currentProjectId;
     if (!pid) return;
     const ctx = sessionContext();
-    const [project, entity, active, scoring] =
+    const [project, active, scoring] =
         await Promise.all([
             getProject(ctx, pid),
-            getProjectRow(ctx, pid),
             getActiveObjectives(ctx),
             getProjectScoring(ctx, pid),
         ]);
@@ -745,11 +743,11 @@ async function renderActionBarAndObjectives(
     );
 
     const approvalCheck = validateProjectForApproval(
-        entity, active, latestBaselines,
+        active, latestBaselines,
     );
     const archivalCheck =
         validateProjectForArchival(
-            entity, latestBaselines, latestActuals,
+            latestBaselines, latestActuals,
         );
 
     const objectiveNames = new Map(

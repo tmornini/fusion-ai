@@ -8,7 +8,6 @@ import {
     type IdentityCredentialKind,
     type IdentityCredentialStatus,
 } from '../../../api/types.ts';
-import { hashPassword } from '../../../api/password-hash.ts';
 import {
     latestByKey,
 } from '../../../api/ledger-reduction.ts';

@@ -15,7 +15,7 @@ import {
     postClipboardCopy,
 } from '../app/adapters/index.ts';
 import {
-    $, $button, $inputRequired, $required,
+    $, $inputRequired, $required,
     createElement,
 } from '../app/dom.ts';
 import {

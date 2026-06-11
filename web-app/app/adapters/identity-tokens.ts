@@ -1,20 +1,8 @@
 import {
-    generateCryptoSafeBase62,
-} from '../../../api/crypto-safe-base62.ts';
-import {
-    nowUtc,
     type Id,
     type IdentityTokenEntity,
 } from '../../../api/types.ts';
-import {
-    chainState,
-    chainIdForJti,
-    type TokenChainState,
-} from '../../../api/identity-tokens.ts';
-import { RequestError } from '../../../api/api.ts';
-import type { RequestContext, WriteOp } from './shared.ts';
-
-const HTTP_CONFLICT = 409;
+import type { RequestContext } from './shared.ts';
 
 // Presenting a refresh jti that is not live (already rotated
 // away, revoked, or never issued) is reuse — the chain is
@@ -26,17 +14,6 @@ export class TokenReuseError extends Error {
         this.name = 'TokenReuseError';
         this.jti = jti;
     }
-}
-
-function eventOp(
-    row: Omit<IdentityTokenEntity, 'id'>,
-): WriteOp {
-    return {
-        method: 'put',
-        resource:
-            `identity-tokens/${generateCryptoSafeBase62()}`,
-        body: row,
-    };
 }
 
 // One refresh-rotation event in the domain idiom: the

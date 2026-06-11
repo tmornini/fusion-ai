@@ -13,7 +13,6 @@ import {
     validateStoredGraphJson,
 } from '../../../api/validators.ts';
 import type { RequestContext } from './shared.ts';
-import { getFlowRows } from './flows.ts';
 import { withRenderableLayout } from '../flow-graph-layout.ts';
 
 export type {

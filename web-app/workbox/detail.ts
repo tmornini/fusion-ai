@@ -1,5 +1,5 @@
 import {
-    $, $required, getRequiredAttribute,
+    $, getRequiredAttribute,
 } from '../app/dom.ts';
 import {
     html, setHtml,
