@@ -1,0 +1,173 @@
+import type { DbAdapter } from './db.ts';
+import { keyed } from './db.ts';
+import {
+    nowEpochSeconds,
+    type Id,
+} from './types.ts';
+import {
+    verifyAccessToken,
+    principalFromToken,
+    ANONYMOUS_ID,
+    type Principal,
+} from './access-token.ts';
+import {
+    currentRolesForInOrg,
+    isPermitted,
+} from './authorization.ts';
+import { tokenRevocationReason } from './authentication.ts';
+
+// Authenticate in-tree requests at the one chokepoint. The
+// gate runs AFTER matchRoute (which already 404'd anything
+// OUTSIDE our URL tree — honest: no resource, nothing to
+// authenticate to) and BEFORE the handler — so an
+// unauthenticated caller never reaches an instance lookup,
+// and resource-instance existence is never disclosed to it.
+// A 401 states only "no valid credentials," never that a
+// resource exists. The authentication grant surface is
+// permanently exempt — a caller cannot hold a token before
+// minting one. Exempt-from-the-gate is NOT the same as
+// unauthenticated — it is a single audited surface; any
+// addition here is security-sensitive.
+export const AUTHENTICATION_ROUTES: ReadonlySet<string> =
+    new Set([
+        'authentication/token',
+        'authentication/authorize',
+    ]);
+
+// The snapshot/bootstrap plane is exempt ONLY while no schema
+// exists — infrastructure BELOW the auth tier (it installs
+// the datastore before any identity can exist). The moment a
+// schema exists, identities can exist, and the plane closes:
+// bearer plus the admin route policy, like any other route.
+export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
+    new Set([
+        'snapshots/schema',
+        'snapshots/mock-data',
+        'snapshots/bootstrap',
+        'snapshots/import',
+    ]);
+
+export async function authenticateRequest(
+    adapter: DbAdapter,
+    request: Request,
+): Promise<Principal | string> {
+    const header =
+        request.headers.get('authorization');
+    if (header === null
+        || !header.startsWith('Bearer ')) {
+        return 'missing bearer token';
+    }
+    const token = header.slice('Bearer '.length);
+    const now = nowEpochSeconds();
+    const result = await verifyAccessToken(token, now);
+    if (!result.valid) {
+        return result.reason;
+    }
+    if (result.claims.sub === ANONYMOUS_ID) {
+        return 'anonymous principal not authenticated';
+    }
+    const revoked = await tokenRevocationReason(
+        adapter, result.claims.sub,
+        result.claims.iat, result.claims.jti,
+    );
+    if (revoked !== null) {
+        return revoked;
+    }
+    return principalFromToken(token);
+}
+
+// Roles are per-org, but a grant is keyed by identity: read
+// this principal's grants through the identity_id index, then
+// currentRolesForInOrg filters to the org — identity is
+// global, roles are per-org. Derived ONCE per request at the
+// gate; every authorizer consumes the same derivation.
+export async function callerRolesInOrg(
+    adapter: DbAdapter,
+    principal: Principal,
+    org: Id,
+): Promise<string[]> {
+    const rows = await keyed(adapter.roleGrants)
+        .getAllWhere('identity_id', principal.id);
+    return currentRolesForInOrg(rows, principal.id, org);
+}
+
+export function authorizeRequest(
+    roles: readonly string[],
+    method: string,
+    pathname: string,
+): string | null {
+    if (isPermitted(method, pathname, roles)) {
+        return null;
+    }
+    return 'forbidden: ' + method + ' ' + pathname
+        + ' requires a role this principal lacks';
+}
+
+// The PII facet of an identity's subtree. A member reads ONLY
+// its own (GET self); writes are its own OR an admin's (member
+// management). Mirrors the tree-ownership check of
+// /identities/:id/default-org, widened to admin for writes.
+export function authorizeIdentityPii(
+    principal: Principal,
+    roles: readonly string[],
+    method: string,
+    targetId: string,
+): string | null {
+    if (principal.id === targetId) {
+        return null;
+    }
+    if (method === 'GET') {
+        return 'forbidden: an identity may read only its'
+            + ' own pii';
+    }
+    if (roles.includes('admin')) {
+        return null;
+    }
+    return "forbidden: writing another identity's pii"
+        + ' requires an admin role';
+}
+
+// The orgs a caller can reach, derived FRESH from the
+// membership ledger (never the token claim, so it cannot be
+// stale). Shared by GET /organizations and the
+// organizations/:id read fence in handleRequest.
+export async function callerOrgIds(
+    adapter: DbAdapter,
+    principal: Principal,
+): Promise<Set<Id>> {
+    const memberships = await keyed(adapter.memberships)
+        .getAllWhere('identity_id', principal.id);
+    return new Set(
+        memberships.map(m => m.organization_id),
+    );
+}
+
+// Parse a request body that must be a JSON OBJECT. Valid JSON
+// that is not an object (null, number, string, array) is the
+// same client fault as malformed JSON — both stop at the 400
+// gate, neither reaches the domain boundary.
+type ParsedBody =
+    | { ok: true; body: Record<string, unknown> }
+    | { ok: false };
+
+export async function parseObjectBody(
+    request: Request,
+): Promise<ParsedBody> {
+    let parsed: unknown;
+    try {
+        parsed = await request.json();
+    } catch {
+        return { ok: false };
+    }
+    if (
+        typeof parsed !== 'object'
+        || parsed === null
+        || Array.isArray(parsed)
+    ) {
+        return { ok: false };
+    }
+    return {
+        ok: true,
+        body: parsed as Record<string, unknown>,
+    };
+}
