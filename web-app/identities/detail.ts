@@ -13,6 +13,7 @@ import {
     getServiceFacet,
     deleteIdentityPii,
     getIdentityCredentialState,
+    subscribeIdentityChanges,
     Identity,
     type MemberPii,
     type ServiceFacet,
@@ -98,6 +99,16 @@ export async function init(
     new IdentityDetailPresenter(buildView(loaded))
         .renderShell(container);
     bindListeners(container);
+    subscribeIdentityChanges(
+        () => void refresh(),
+    );
+}
+
+async function refresh(): Promise<void> {
+    if (!currentId || !pageContainer) return;
+    const loaded = await loadIdentity(currentId);
+    new IdentityDetailPresenter(buildView(loaded))
+        .renderUpdate(pageContainer);
 }
 
 function bindListeners(container: HTMLElement): void {
@@ -163,7 +174,5 @@ async function handleErase(): Promise<void> {
         return;
     }
     showToast('Personal information erased', 'success');
-    const loaded = await loadIdentity(currentId);
-    new IdentityDetailPresenter(buildView(loaded))
-        .renderUpdate(pageContainer);
+    await refresh();
 }

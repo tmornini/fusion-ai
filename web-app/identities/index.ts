@@ -19,6 +19,7 @@ import {
     sessionContext,
     getIdentityRoster,
     postIdentityCreation,
+    subscribeIdentityChanges,
     generateCryptoSafeBase62,
     type IdentityRosterRow,
     type RequestContext,
@@ -57,6 +58,9 @@ export async function init(): Promise<void> {
     identityListEl.addEventListener(
         'click', onListClick,
         { signal },
+    );
+    subscribeIdentityChanges(
+        () => void refresh(sessionContext()),
     );
 }
 
