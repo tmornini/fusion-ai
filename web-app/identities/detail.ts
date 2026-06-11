@@ -5,7 +5,9 @@ import { log } from '../app/logger.ts';
 import {
     buildSkeleton, withLoadingState,
 } from '../app/loading-states.ts';
-import { navigateTo } from '../app/core.ts';
+import {
+    navigateTo, openDialog, closeDialog,
+} from '../app/core.ts';
 import {
     sessionContext,
     getIdentity,
@@ -116,6 +118,25 @@ function bindListeners(container: HTMLElement): void {
         'click', e => void onClick(e),
         { signal },
     );
+    $required(
+        '[data-action="cancel-confirm-erase"]',
+        document,
+    ).addEventListener(
+        'click',
+        () => closeDialog('confirm-erase'),
+        { signal },
+    );
+    $required(
+        '[data-action="confirm-erase"]',
+        document,
+    ).addEventListener(
+        'click',
+        () => {
+            closeDialog('confirm-erase');
+            void performErase();
+        },
+        { signal },
+    );
 }
 
 async function onClick(e: MouseEvent): Promise<void> {
@@ -150,17 +171,12 @@ async function onClick(e: MouseEvent): Promise<void> {
         return;
     }
     if (action === 'erase') {
-        await handleErase();
+        openDialog('confirm-erase');
     }
 }
 
-async function handleErase(): Promise<void> {
+async function performErase(): Promise<void> {
     if (!currentId || !pageContainer) return;
-    const confirmed = window.confirm(
-        'Erase this identity\'s personal information?'
-        + ' The identity itself survives.',
-    );
-    if (!confirmed) return;
     try {
         await deleteIdentityPii(
             sessionContext(), currentId,
