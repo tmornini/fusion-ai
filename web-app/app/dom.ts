@@ -41,16 +41,6 @@ export function $textarea(
         );
 }
 
-export function $button(
-    selector: string,
-    parent: ParentNode,
-): HTMLButtonElement | null {
-    return parent
-        .querySelector<HTMLButtonElement>(
-            selector,
-        );
-}
-
 export function $required(
     selector: string,
     parent: ParentNode,
