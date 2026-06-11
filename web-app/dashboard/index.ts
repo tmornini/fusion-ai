@@ -10,10 +10,10 @@ import {
 import {
     sessionContext,
     getDashboardGauges,
-    getObjectiveAggregates,
-    getObjectiveTrendlines,
+    getObjectiveScoringInputs,
+    buildObjectiveAggregates,
+    buildObjectiveTrendlines,
     subscribeProjectScoreChanges,
-    getActiveObjectives,
     getCurrentObjectiveDefinition,
     subscribeObjectiveChanges,
     subscribeProjectChanges,
@@ -26,12 +26,13 @@ import {
 async function renderObjectiveAggregates(
 ): Promise<void> {
     const ctx = sessionContext();
-    const [active, aggregates, trendlines] =
-        await Promise.all([
-            getActiveObjectives(ctx),
-            getObjectiveAggregates(ctx),
-            getObjectiveTrendlines(ctx),
-        ]);
+    const inputs =
+        await getObjectiveScoringInputs(ctx);
+    const active = inputs.activeObjectives;
+    const aggregates =
+        buildObjectiveAggregates(inputs);
+    const trendlines =
+        buildObjectiveTrendlines(inputs);
     const defs = new Map<string,
         { name: string; description: string }>();
     for (const o of active) {
