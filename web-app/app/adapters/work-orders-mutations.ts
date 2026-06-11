@@ -6,7 +6,7 @@ import type {
 } from '../../../api/types.ts';
 import {
     nowUtc,
-    jsonObjectField,
+    storedWorkOrderFlowGraphField,
 } from '../../../api/types.ts';
 import {
     validateStoredGraphJson,
@@ -149,11 +149,8 @@ export async function postWorkOrderCreation(
             edges: graph.edges,
         };
 
-    const flowGraphField = jsonObjectField(
-        flowGraph as unknown as Record<
-            string, unknown
-        >,
-    );
+    const flowGraphField =
+        storedWorkOrderFlowGraphField(flowGraph);
     await ctx.commit({
         ops: [
             {
@@ -317,11 +314,10 @@ export async function putWorkOrder(
     id: string,
     workOrder: Omit<WorkOrder, 'id' | 'organizationId'>,
 ): Promise<void> {
-    const graph = workOrder.flowGraph as unknown;
     await ctx.PUT(`work-orders/${id}`, {
         display_id: workOrder.displayId,
-        flow_graph: jsonObjectField(
-            graph as Record<string, unknown>,
+        flow_graph: storedWorkOrderFlowGraphField(
+            workOrder.flowGraph,
         ),
         position: workOrder.position,
     });

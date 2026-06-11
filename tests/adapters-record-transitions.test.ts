@@ -13,7 +13,7 @@ import {
 } from
 '../web-app/app/adapters/record-transitions.ts';
 import {
-    jsonObjectField,
+    storedWorkOrderFlowGraphField,
     jsonArrayField,
     SYSTEM_MEMBER_ID,
     DEFAULT_LOCK_TIMEOUT,
@@ -91,11 +91,8 @@ async function seedWorkOrder(
     await db.workOrders.put(id, {
         organization_id: '1',
         display_id: 'WO-1',
-        flow_graph: jsonObjectField(
-            flowGraph as unknown as Record<
-                string, unknown
-            >,
-        ),
+        flow_graph:
+            storedWorkOrderFlowGraphField(flowGraph),
         position: 0,
     });
     await db.states.put('t-create-' + id, {

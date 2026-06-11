@@ -1031,6 +1031,76 @@ export interface WorkOrderFlowGraph {
     edges: GraphEdge[];
 }
 
+// The graph storage seam, serialize half — the parse half
+// is asStoredGraph in validators.ts. The stored JSON shape
+// is a pinned contract (SCHEMA.md documents it; old rows
+// and exported backups carry it), so domain graphs cross
+// into rows ONLY through these mappers — a domain-type
+// change cannot silently rewrite storage.
+function storedNodeAttribute(
+    ref: NodeAttribute,
+): Record<string, unknown> {
+    return {
+        attribute_id: ref.attribute_id,
+        mode: ref.mode,
+        isRequired: ref.isRequired,
+    };
+}
+
+function storedGraphNode(
+    node: GraphNode,
+): Record<string, unknown> {
+    return {
+        id: node.id,
+        name: node.name,
+        positionX: node.positionX,
+        positionY: node.positionY,
+        isCreate: node.isCreate,
+        isArchive: node.isArchive,
+        memberIds: node.memberIds,
+        attributes:
+            node.attributes.map(storedNodeAttribute),
+        taskInstructions: node.taskInstructions,
+    };
+}
+
+function storedGraphEdge(
+    edge: GraphEdge,
+): Record<string, unknown> {
+    return {
+        id: edge.id,
+        name: edge.name,
+        fromNodeId: edge.fromNodeId,
+        toNodeId: edge.toNodeId,
+    };
+}
+
+export function storedGraph(
+    graph: StoredGraph,
+): Record<string, unknown> {
+    return {
+        nodes: graph.nodes.map(storedGraphNode),
+        edges: graph.edges.map(storedGraphEdge),
+    };
+}
+
+export function storedGraphField(
+    graph: StoredGraph,
+): JsonObjectField {
+    return jsonObjectField(storedGraph(graph));
+}
+
+export function storedWorkOrderFlowGraphField(
+    graph: WorkOrderFlowGraph,
+): JsonObjectField {
+    return jsonObjectField({
+        name: graph.name,
+        lockTimeout: graph.lockTimeout,
+        nodes: graph.nodes.map(storedGraphNode),
+        edges: graph.edges.map(storedGraphEdge),
+    });
+}
+
 export interface WorkOrderEntity {
     id: Id;
     organization_id: Id;
