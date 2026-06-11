@@ -11,12 +11,11 @@ import {
     navigateTo,
 } from '../app/core.ts';
 import {
-    createRequestContext,
     sessionContext,
     getRecord,
     getRecordState,
     getRecordAttributesByRecord,
-    getFlowsForRecord,
+    getFlowSummariesForRecord,
     getWorkOrdersForRecord,
     putRecord,
     postRecordChange,
@@ -34,7 +33,6 @@ import {
     type RecordDetailView,
 } from '../app/presenters/index.ts';
 import type {
-    FlowEntity,
     RecordEntity,
     RecordAttributeEntity,
     Constraint,
@@ -92,21 +90,18 @@ async function load(
         fetch: async () => {
             const ctx = sessionContext();
             const [record, state,
-                attributes, flowIds,
+                attributes, flows,
                 workOrders] = await Promise.all([
                 getRecord(ctx, id),
                 getRecordState(ctx, id),
                 getRecordAttributesByRecord(
                     ctx, id,
                 ),
-                getFlowsForRecord(ctx, id),
+                getFlowSummariesForRecord(
+                    ctx, id,
+                ),
                 getWorkOrdersForRecord(ctx, id),
             ]);
-            const flows = flowIds.length === 0
-                ? []
-                : await loadFlowSummaries(
-                    ctx, flowIds,
-                );
             return {
                 record, state,
                 attributes, flows, workOrders,
@@ -125,23 +120,6 @@ async function load(
             bindActions(root);
         },
     });
-}
-
-async function loadFlowSummaries(
-    ctx: ReturnType<
-        typeof createRequestContext
-    >,
-    flowIds: string[],
-): Promise<{ id: string; name: string }[]> {
-    const all = await ctx.GET<FlowEntity[]>(
-        'flows',
-    );
-    const wanted = new Set(flowIds);
-    return all
-        .filter(f => wanted.has(f.id))
-        .map(f => ({
-            id: f.id, name: f.name,
-        }));
 }
 
 function render(root: HTMLElement): void {

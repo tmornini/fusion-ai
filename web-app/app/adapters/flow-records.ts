@@ -1,4 +1,5 @@
 import type {
+    FlowEntity,
     FlowRecordEntity,
     FlowRecordId,
     Id,
@@ -81,13 +82,30 @@ export async function getRecordForWorkOrder(
     return found ? found.record_id : null;
 }
 
-export async function getFlowsForRecord(
+// The flows bound to a record, shaped for display:
+// the adapter owns the flow-records join AND the flow
+// name lookup, so the record-detail page never speaks
+// a table name or a raw wire row.
+export interface BoundFlowSummary {
+    readonly id: Id;
+    readonly name: string;
+}
+
+export async function getFlowSummariesForRecord(
     ctx: RequestContext,
     recordId: RecordId,
-): Promise<Id[]> {
-    const rows = await getFlowRecordEntities(ctx);
-    return filterByField(rows, 'record_id', recordId)
-        .map(r => r.flow_id);
+): Promise<BoundFlowSummary[]> {
+    const [rows, flows] = await Promise.all([
+        getFlowRecordEntities(ctx),
+        ctx.GET<FlowEntity[]>('flows'),
+    ]);
+    const wanted = new Set(
+        filterByField(rows, 'record_id', recordId)
+            .map(r => r.flow_id),
+    );
+    return flows
+        .filter(f => wanted.has(f.id))
+        .map(f => ({ id: f.id, name: f.name }));
 }
 
 export async function getWorkOrdersForRecord(
