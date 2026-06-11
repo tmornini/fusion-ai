@@ -28,7 +28,7 @@ import {
     sessionContext,
     generateCryptoSafeBase62,
     validateWorkOrderFlowGraph,
-    getRecordForFlow,
+    getRecordForWorkOrder,
     getRecordAttributesByRecord,
     RecordTransitionViolations,
 } from '../app/adapters/index.ts';
@@ -252,7 +252,7 @@ async function loadPresenter(
             ctx, workOrderId, fg.lockTimeout,
         ),
         getMemberMap(ctx),
-        getRecordForFlow(ctx, fg.flowId),
+        getRecordForWorkOrder(ctx, workOrderId),
     ]);
     const attributes: RecordAttribute[] =
         recordId === null
