@@ -117,12 +117,16 @@ function buildSidecar(
     }, null, 2);
 }
 
+// 'YYYY-MM-DDTHH:MM' — the ISO prefix through
+// minute precision.
+const ISO_MINUTE_WIDTH = 16;
+
 function fileStamp(
     timeSep: string,
 ): string {
     const iso = new Date()
         .toISOString()
-        .slice(0, 16) + 'Z';
+        .slice(0, ISO_MINUTE_WIDTH) + 'Z';
     return timeSep === ':'
         ? iso
         : iso.replaceAll(':', timeSep);

@@ -23,6 +23,9 @@ import type { GraphNode } from '../../api/types.ts';
 const EMPTY_W = 200;
 const EMPTY_H = 200;
 
+// Uniform whitespace around the stats canvas.
+const STATS_VIEW_PADDING_PX = 40;
+
 // Smallest enclosing box for all node rects
 // plus uniform padding on all sides.
 function boundingViewBox(
@@ -110,7 +113,8 @@ export async function init(
             const { model, graph } =
                 await getFlowStats(ctx, flowId);
             const viewBox = boundingViewBox(
-                graph.nodes, 40,
+                graph.nodes,
+                STATS_VIEW_PADDING_PX,
             );
             const presenter =
                 new FlowStatsPresenter(

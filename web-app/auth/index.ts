@@ -36,6 +36,10 @@ import type {
 import { decodeReturnTarget } from '../app/auth-redirect.ts';
 import { getUrlParam } from '../app/adapters/url-params.ts';
 
+// The design system's lg breakpoint (CLAUDE.md § Mobile
+// Responsiveness) — the one TypeScript viewport check.
+const LG_BREAKPOINT_PX = 1024;
+
 function validateEmail(
     email: string,
 ): string | null {
@@ -380,7 +384,7 @@ export async function init(): Promise<void> {
     const branding = $('#auth-branding', document);
     if (
         branding
-        && getViewportWidth() >= 1024
+        && getViewportWidth() >= LG_BREAKPOINT_PX
     ) {
         branding.classList.remove('hidden');
         branding.style.display = '';
@@ -388,7 +392,7 @@ export async function init(): Promise<void> {
     const mobileLogo = $('#mobile-logo', document);
     if (
         mobileLogo
-        && getViewportWidth() >= 1024
+        && getViewportWidth() >= LG_BREAKPOINT_PX
     ) {
         mobileLogo.classList.add('hidden');
     }
