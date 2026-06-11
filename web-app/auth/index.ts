@@ -210,6 +210,19 @@ export async function init(): Promise<void> {
                         }</p>
                     </div>
 
+                    <p class="${
+                        'auth-signup-notice'
+                        + ' hidden'
+                    }" id="signup-notice"
+                        role="status">${
+                        'Sign-up is not available'
+                        + ' yet in this demo.'
+                        + ' Sign in with the'
+                        + ' credentials revealed'
+                        + ' when the data was'
+                        + ' seeded.'
+                    }</p>
+
                     <form id="auth-form"
                         class="${
                             'flex flex-col '
@@ -386,6 +399,8 @@ export async function init(): Promise<void> {
     const authSubtitle =
         $('#auth-subtitle', document);
     const submitBtn = $('#submit-btn', document);
+    const signupNotice =
+        $('#signup-notice', document);
 
     const branding = $('#auth-branding', document);
     if (
@@ -415,6 +430,7 @@ export async function init(): Promise<void> {
         || !authTitle
         || !authSubtitle
         || !submitBtn
+        || !signupNotice
     ) {
         return;
     }
@@ -429,6 +445,10 @@ export async function init(): Promise<void> {
             : 'Create your account and'
                 + ' start your journey';
         companyField.classList.toggle(
+            'hidden',
+            isLogin,
+        );
+        signupNotice.classList.toggle(
             'hidden',
             isLogin,
         );
