@@ -94,56 +94,24 @@ import {
     rotateRefreshJti,
     revokeTokenChain,
 } from './authentication.ts';
+import {
+    ApiError,
+    UnauthorizedError,
+    RequestError,
+    HTTP_BAD_REQUEST,
+    HTTP_NOT_FOUND,
+    HTTP_INTERNAL_ERROR,
+    HTTP_UNAUTHORIZED,
+    HTTP_FORBIDDEN,
+    HTTP_CONFLICT,
+    errorJson,
+} from './http-errors.ts';
 
-export class ApiError {
-    readonly message: string;
-    readonly status: number;
-
-    constructor(
-        message: string,
-        status: number,
-    ) {
-        this.message = message;
-        this.status = status;
-    }
-}
-
-// A 401 from the Bearer gate, raised as a distinct type so the
-// web layer can tell "credentials are dead — try to refresh"
-// apart from every other failure. Extends Error (unlike
-// ApiError) so catch sites matching `instanceof Error` still
-// see it; `reason` carries the gate's message verbatim.
-export class UnauthorizedError extends Error {
-    readonly reason: string;
-
-    constructor(reason: string) {
-        super(reason);
-        this.name = 'UnauthorizedError';
-        this.reason = reason;
-    }
-}
-
-// Any non-401 non-ok response, raised with its HTTP status so the
-// web layer can branch on the status (e.g. 404 -> a clean "not
-// found" message) instead of string-matching server prose.
-// Extends Error (like UnauthorizedError) so catch sites matching
-// `instanceof Error` still see it; `status` carries the HTTP code.
-export class RequestError extends Error {
-    readonly status: number;
-
-    constructor(message: string, status: number) {
-        super(message);
-        this.name = 'RequestError';
-        this.status = status;
-    }
-}
-
-const HTTP_BAD_REQUEST = 400;
-const HTTP_NOT_FOUND = 404;
-const HTTP_INTERNAL_ERROR = 500;
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_FORBIDDEN = 403;
-const HTTP_CONFLICT = 409;
+export {
+    ApiError,
+    UnauthorizedError,
+    RequestError,
+} from './http-errors.ts';
 
 // Authenticate in-tree requests at the one chokepoint. The
 // gate runs AFTER matchRoute (which already 404'd anything
@@ -1421,12 +1389,6 @@ async function identityDefaultOrgRequest(
         },
         { status: 405 },
     );
-}
-
-// A JSON error response at one status — the shape every
-// invitation guard returns on rejection.
-function errorJson(message: string, status: number): Response {
-    return Response.json({ error: message }, { status });
 }
 
 // The active org of the caller: the verified token claim, else
