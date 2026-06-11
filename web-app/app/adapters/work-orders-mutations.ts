@@ -57,6 +57,12 @@ export function subscribeWorkOrderChanges(
     return workOrderChanges.subscribe(fn);
 }
 
+// Sibling work-order mutations outside this module ring
+// the same bell their in-module siblings ring.
+export function notifyWorkOrderChanges(): void {
+    workOrderChanges.notify();
+}
+
 async function generateDisplayId(
     uuid: string,
 ): Promise<string> {
