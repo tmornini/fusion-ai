@@ -55,6 +55,11 @@ import {
     identityDefaultOrgRequest,
     organizationsEnumerationRequest,
 } from './org-requests.ts';
+import {
+    incomingContext,
+    REQUEST_ID_HEADER,
+    type IncomingContext,
+} from './request-context.ts';
 
 export {
     ApiError,
@@ -82,7 +87,7 @@ const BASE_URL = 'http://localhost';
 // flat resource path (segments[2:]). A non-member's exchange
 // is a 403 — the tenant fence — and mints nothing.
 async function facadeRequest(
-    adapter: DbAdapter,
+    ctx: IncomingContext,
     request: Request,
     segments: readonly string[],
 ): Promise<Response> {
@@ -96,7 +101,7 @@ async function facadeRequest(
     }
     const bearer = header.slice('Bearer '.length);
     const exchanged = await exchangeBearerForOrg(
-        adapter, bearer, segments[1]!,
+        ctx.base, bearer, segments[1]!,
     );
     if (!exchanged.ok) {
         return Response.json(
@@ -111,22 +116,26 @@ async function facadeRequest(
         'authorization',
         'Bearer ' + exchanged.response.access_token,
     );
-    const hasBody = request.method === 'PUT'
-        || request.method === 'POST';
+    // The inner hop is the SAME user request — it keeps the
+    // outer vessel's id across the re-entry.
+    headers.set(REQUEST_ID_HEADER, ctx.requestId);
+    const hasBody = ctx.method === 'PUT'
+        || ctx.method === 'POST';
     const flatRequest = new Request(flatUrl.toString(), {
-        method: request.method,
+        method: ctx.method,
         headers,
         ...(hasBody
             ? { body: await request.text() } : {}),
     });
-    return handleRequest(adapter, flatRequest);
+    return handleRequest(ctx.base, flatRequest);
 }
 
 export async function handleRequest(
     adapter: DbAdapter,
     request: Request,
 ): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const ctx = incomingContext(adapter, request);
+    const { method, pathname } = ctx;
     const pathSegments = pathname
         .split('/')
         .filter(Boolean);
@@ -137,13 +146,13 @@ export async function handleRequest(
     // verified token, never the path.
     if (pathSegments[0] === 'organizations'
         && pathSegments.length >= 3) {
-        return facadeRequest(adapter, request, pathSegments);
+        return facadeRequest(ctx, request, pathSegments);
     }
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
         && pathSegments[2] === 'default-org') {
         return identityDefaultOrgRequest(
-            adapter, request, pathSegments,
+            ctx, request, pathSegments,
         );
     }
     // The invitation surface is identity/org-spanning, so it
@@ -151,7 +160,7 @@ export async function handleRequest(
     // the org-scoped route table — see invitationsRequest.
     if (pathSegments[0] === 'invitations') {
         return invitationsRequest(
-            adapter, request, pathSegments,
+            ctx, request, pathSegments,
         );
     }
     // Enumerating one's own orgs is identity-scoped, not
@@ -160,8 +169,8 @@ export async function handleRequest(
     // /organizations/:id keep the org-scoped route handling.
     if (pathSegments[0] === 'organizations'
         && pathSegments.length === 1
-        && request.method === 'GET') {
-        return organizationsEnumerationRequest(adapter, request);
+        && method === 'GET') {
+        return organizationsEnumerationRequest(ctx, request);
     }
     const match = matchRoute(routeTable, pathSegments);
 
@@ -176,7 +185,6 @@ export async function handleRequest(
     }
 
     const { route: matched, params } = match;
-    const method = request.method;
 
     const routePattern = matched.segments.join('/');
     // Every authenticated request runs org-scoped. The org is
@@ -465,8 +473,13 @@ export async function handleRequest(
             );
         }
         // The fault is server-side detail; the wire gets a
-        // fixed body, the console gets the evidence.
-        console.error(error);
+        // fixed body, the console gets the evidence — keyed
+        // by the request identity so the story correlates.
+        console.error('request failed', {
+            requestId: ctx.requestId,
+            method,
+            pathname,
+        }, error);
         return Response.json(
             { error: 'internal error' },
             { status: HTTP_INTERNAL_ERROR },

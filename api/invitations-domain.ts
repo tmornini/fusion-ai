@@ -32,6 +32,9 @@ import {
     authenticateRequest,
     parseObjectBody,
 } from './request-auth.ts';
+import {
+    type IncomingContext,
+} from './request-context.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
@@ -80,10 +83,11 @@ async function currentInvitationState(
 // the caller to BE the invitee. These never touch the
 // admin-only ROUTE_POLICY, so a non-admin invitee can accept.
 export async function invitationsRequest(
-    adapter: DbAdapter,
+    ctx: IncomingContext,
     request: Request,
     segments: readonly string[],
 ): Promise<Response> {
+    const adapter = ctx.base;
     const authResult =
         await authenticateRequest(adapter, request);
     if (typeof authResult === 'string') {

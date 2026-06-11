@@ -24,6 +24,9 @@ import {
     parseObjectBody,
     callerOrgIds,
 } from './request-auth.ts';
+import {
+    type IncomingContext,
+} from './request-context.ts';
 
 // GET /organizations — the caller's reachable orgs, derived
 // fresh from the membership ledger (never the token claim, so
@@ -47,10 +50,11 @@ async function enumerateMyOrgs(
 // changes (an idempotent repeat writes nothing), and only if the
 // org is one of the identity's memberships (no dangling default).
 export async function identityDefaultOrgRequest(
-    adapter: DbAdapter,
+    ctx: IncomingContext,
     request: Request,
     segments: readonly string[],
 ): Promise<Response> {
+    const adapter = ctx.base;
     const authResult =
         await authenticateRequest(adapter, request);
     if (typeof authResult === 'string') {
@@ -130,13 +134,13 @@ export async function identityDefaultOrgRequest(
 // the caller's memberships, so a roleless member sees only
 // their own orgs and can boot the shell.
 export async function organizationsEnumerationRequest(
-    adapter: DbAdapter,
+    ctx: IncomingContext,
     request: Request,
 ): Promise<Response> {
     const authResult =
-        await authenticateRequest(adapter, request);
+        await authenticateRequest(ctx.base, request);
     if (typeof authResult === 'string') {
         return errorJson(authResult, HTTP_UNAUTHORIZED);
     }
-    return enumerateMyOrgs(adapter, authResult);
+    return enumerateMyOrgs(ctx.base, authResult);
 }
