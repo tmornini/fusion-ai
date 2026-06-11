@@ -1,5 +1,6 @@
 import { EntityNotFoundError, keyed } from './db.ts';
 import type {
+    DbAdapter,
     EntityStore,
     EntityPut,
     StateStore,
@@ -179,6 +180,23 @@ export function viaMembership<T>(
             ? boundOrg
             : mine[0]!.organization_id;
     };
+}
+
+// The org-owned stores the ownership probe walks — ONE list,
+// shared by the states read fence (db-org-scoped) and the
+// entity-states route guard (api.ts), so a new org-owned
+// entity extends the system in exactly one place.
+// `invitations` is included (though global-spine) so an
+// invitation's lifecycle events resolve to the invitation's
+// org and stay out of every other tenant's /states read.
+export function orgOwnedProbes(
+    db: DbAdapter,
+): readonly OrgOwnedProbe[] {
+    return [
+        db.ideas, db.projects, db.flows,
+        db.records, db.objectives, db.workOrders,
+        db.invitations,
+    ];
 }
 
 // Resolve the org that owns the entity behind a

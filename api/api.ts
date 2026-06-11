@@ -76,6 +76,7 @@ import {
 import { orgScopedAdapter } from './db-org-scoped.ts';
 import {
     ownerOrgOfEntity,
+    orgOwnedProbes,
 } from './store-parent-scoped.ts';
 import {
     currentRolesForInOrg,
@@ -2063,12 +2064,7 @@ export async function handleRequest(
             // through the identity_id index, not a scan.
             const memberships = keyed(adapter.memberships);
             const owner = await ownerOrgOfEntity(
-                [
-                    adapter.ideas, adapter.projects,
-                    adapter.flows, adapter.records,
-                    adapter.objectives, adapter.workOrders,
-                    adapter.invitations,
-                ],
+                orgOwnedProbes(adapter),
                 memberships, org, param(params, 0),
             );
             if (owner !== null && owner !== org) {

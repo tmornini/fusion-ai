@@ -28,6 +28,7 @@ import {
     viaParent,
     viaMembership,
     ownerOrgOfEntity,
+    orgOwnedProbes,
     type OwningOrgResolver,
 } from './store-parent-scoped.ts';
 
@@ -88,15 +89,8 @@ export function orgScopedAdapter(
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
     // resolved through the UNFENCED stores so a foreign owner
-    // reports its real org and is hidden. `invitations` is here
-    // (though global-spine) so an invitation's lifecycle events
-    // resolve to the invitation's org and stay out of every
-    // other tenant's /states read.
-    const orgOwned = [
-        base.ideas, base.projects, base.flows,
-        base.records, base.objectives, base.workOrders,
-        base.invitations,
-    ];
+    // reports its real org and is hidden.
+    const orgOwned = orgOwnedProbes(base);
     const states = new ParentScopedStateStore(
         base.states, org, 'states',
         (row) => ownerOrgOfEntity(
