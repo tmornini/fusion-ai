@@ -40,10 +40,6 @@ import { getUrlParam } from '../app/adapters/url-params.ts';
 // Responsiveness) — the one TypeScript viewport check.
 const LG_BREAKPOINT_PX = 1024;
 
-// Spinner dwell before the submit continuation runs, so
-// the loading state is perceivable rather than a flicker.
-const SUBMIT_DWELL_MS = 800;
-
 function validateEmail(
     email: string,
 ): string | null {
@@ -479,7 +475,7 @@ export async function init(): Promise<void> {
         },
     );
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         emailError.classList.add('hidden');
         passwordError.classList.add(
@@ -540,79 +536,77 @@ export async function init(): Promise<void> {
             '',
         );
 
-        setTimeout(async () => {
-            if (isLogin) {
-                // A recovery-free context: login establishes a
-                // NEW session and must not refresh-recover the
-                // OLD one on a 401 (a wrong password).
-                let creds: SessionCredentials | null;
-                try {
-                    creds = await postPasswordLogin(
-                        createRequestContext(
-                            getDbAdapter(), getSessionToken()),
-                        email, password,
-                    );
-                } catch (err) {
-                    // A THROWN login is a fault (DB/crypto), not
-                    // a wrong password — which returns null. Do
-                    // not leave the button spinning: restore it
-                    // and surface the failure visibly.
-                    log.error('login failed', 'auth', err);
-                    setHtml(submitBtn, trusted(savedBtn));
-                    submitBtn.removeAttribute('disabled');
-                    showToast(
-                        'Something went wrong signing in.'
-                        + ' Please try again.',
-                        'error',
-                    );
-                    return;
-                }
-                if (creds === null) {
-                    setHtml(submitBtn, trusted(savedBtn));
-                    submitBtn.removeAttribute('disabled');
-                    passwordError.textContent =
-                        'Invalid email or password.';
-                    passwordError.classList.remove(
-                        'hidden',
-                    );
-                    passwordInput.classList.add(
-                        'input-error',
-                    );
-                    return;
-                }
-                // Persist BEFORE navigating: navigateTo hard-
-                // reloads, wiping the in-memory token holder —
-                // only the persisted blob survives to re-
-                // establish the session at boot.
-                putSessionCredentials(creds);
-                putSessionToken(creds.accessToken);
-                // A zero-membership identity reaches no org and
-                // would 403 every org-scoped route; land it on
-                // its pending invitations instead of the return
-                // target's dead end.
-                if (!sessionHasReachableOrg()) {
-                    navigateTo('invitations');
-                    return;
-                }
-                const dest = decodeReturnTarget(
-                    getUrlParam('return'),
+        if (isLogin) {
+            // A recovery-free context: login establishes a
+            // NEW session and must not refresh-recover the
+            // OLD one on a 401 (a wrong password).
+            let creds: SessionCredentials | null;
+            try {
+                creds = await postPasswordLogin(
+                    createRequestContext(
+                        getDbAdapter(), getSessionToken()),
+                    email, password,
                 );
-                navigateTo(dest.page, dest.params);
+            } catch (err) {
+                // A THROWN login is a fault (DB/crypto), not
+                // a wrong password — which returns null. Do
+                // not leave the button spinning: restore it
+                // and surface the failure visibly.
+                log.error('login failed', 'auth', err);
+                setHtml(submitBtn, trusted(savedBtn));
+                submitBtn.removeAttribute('disabled');
+                showToast(
+                    'Something went wrong signing in.'
+                    + ' Please try again.',
+                    'error',
+                );
                 return;
             }
-            // Real sign-up (identity + credential creation) is
-            // SP-6. Until then DO NOT mock-establish a session:
-            // a bare mock with no refresh token bounces on
-            // reload and would admit anyone to the seeded
-            // admin's data. Nudge to sign-in instead.
-            submitBtn.removeAttribute('disabled');
-            showToast(
-                'Sign-up is coming soon — sign in with a'
-                + ' seeded account.',
-                'info',
+            if (creds === null) {
+                setHtml(submitBtn, trusted(savedBtn));
+                submitBtn.removeAttribute('disabled');
+                passwordError.textContent =
+                    'Invalid email or password.';
+                passwordError.classList.remove(
+                    'hidden',
+                );
+                passwordInput.classList.add(
+                    'input-error',
+                );
+                return;
+            }
+            // Persist BEFORE navigating: navigateTo hard-
+            // reloads, wiping the in-memory token holder —
+            // only the persisted blob survives to re-
+            // establish the session at boot.
+            putSessionCredentials(creds);
+            putSessionToken(creds.accessToken);
+            // A zero-membership identity reaches no org and
+            // would 403 every org-scoped route; land it on
+            // its pending invitations instead of the return
+            // target's dead end.
+            if (!sessionHasReachableOrg()) {
+                navigateTo('invitations');
+                return;
+            }
+            const dest = decodeReturnTarget(
+                getUrlParam('return'),
             );
-            isLogin = true;
-            updateMode();
-        }, SUBMIT_DWELL_MS);
+            navigateTo(dest.page, dest.params);
+            return;
+        }
+        // Real sign-up (identity + credential creation) is
+        // SP-6. Until then DO NOT mock-establish a session:
+        // a bare mock with no refresh token bounces on
+        // reload and would admit anyone to the seeded
+        // admin's data. Nudge to sign-in instead.
+        submitBtn.removeAttribute('disabled');
+        showToast(
+            'Sign-up is coming soon — sign in with a'
+            + ' seeded account.',
+            'info',
+        );
+        isLogin = true;
+        updateMode();
     });
 }
