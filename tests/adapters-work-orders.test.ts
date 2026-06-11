@@ -394,6 +394,7 @@ test(
         assert.notEqual(
             fg.nodes[1].name, 'EDITED',
         );
+        assert.equal('flowId' in fg, false);
     },
 );
 

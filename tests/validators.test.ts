@@ -487,7 +487,6 @@ test(
 // --- WorkOrderEntity ---
 
 const minimalWoGraph = JSON.stringify({
-    flowId: 'f-1',
     name: 'WO Flow',
     lockTimeout: DEFAULT_LOCK_TIMEOUT,
     nodes: [],
@@ -523,20 +522,19 @@ test(
 });
 
 test(
-    'validateWorkOrderEntity rejects a graph missing'
-    + ' flowId',
+    'validateWorkOrderEntity tolerates legacy'
+    + ' graphs still carrying flowId',
     () => {
-    assert.throws(
-        () => validateWorkOrderEntity({
-            ...validWorkOrder,
-            flow_graph: JSON.stringify({
-                name: 'WO Flow',
-                lockTimeout: DEFAULT_LOCK_TIMEOUT,
-                nodes: [], edges: [],
-            }),
+    const result = validateWorkOrderEntity({
+        ...validWorkOrder,
+        flow_graph: JSON.stringify({
+            flowId: 'f-legacy',
+            name: 'WO Flow',
+            lockTimeout: DEFAULT_LOCK_TIMEOUT,
+            nodes: [], edges: [],
         }),
-        /WorkOrderEntity.flow_graph.flowId/,
-    );
+    });
+    assert.equal(result.display_id, 'WO-001');
 });
 
 // --- FlowWorkOrderEntity ---

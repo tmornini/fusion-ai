@@ -561,8 +561,10 @@ on write and filtered on read by the gate.
 
 The `flow_graph` column stores a snapshot of the flow
 definition at work order creation time. Same structure as
-`flows.graph` plus flow-level metadata (`flowId`, `name`,
-`lockTimeout`).
+`flows.graph` plus flow-level metadata (`name`,
+`lockTimeout`). The flow identity lives only in the
+`flow_work_orders` join row; legacy snapshots may still
+carry a `flowId` key, which the validator ignores.
 
 Transitions and claims are NOT separate tables — both
 families of events live in the unified `states` log

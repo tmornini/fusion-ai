@@ -140,7 +140,6 @@ export async function postWorkOrderCreation(
 
     const flowGraph: WorkOrderFlowGraph =
         {
-            flowId: flow.id,
             name: flow.name,
             lockTimeout: flow.lock_timeout,
             nodes: graph.nodes,

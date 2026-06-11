@@ -477,10 +477,6 @@ validateWorkOrderFlowGraphJson(
         label + '.edges',
     );
     return {
-        flowId: asString(
-            obj['flowId'],
-            label + '.flowId',
-        ),
         name: asString(
             obj['name'], label + '.name',
         ),

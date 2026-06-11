@@ -1057,7 +1057,6 @@ export interface FlowVersionEntity {
 }
 
 export interface WorkOrderFlowGraph {
-    flowId: Id;
     name: string;
     lockTimeout: number;
     nodes: GraphNode[];
