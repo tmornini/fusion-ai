@@ -3081,7 +3081,6 @@ async function populateMockDataIn(
         });
     }
 
-    // prc node id constants
     const prcNodeStart =
         'qfuFbfKwwlpKAewu3Uujb7';
     const prcNodeDraft =
