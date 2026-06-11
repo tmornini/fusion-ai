@@ -114,12 +114,19 @@ export class WorkboxInboxPresenter {
         const from = item.transitionerName
             ?? DISPLAY_ABSENT;
         const grip = this.#showGrip
-            ? html`<div class="${
-                'hidden-mobile text-muted'
-                + ' drag-handle'
-            }">${
+            ? html`<button
+                type="button"
+                class="${
+                    'hidden-mobile text-muted'
+                    + ' drag-handle'
+                }"
+                aria-label="${
+                    'Reorder '
+                    + item.flowName
+                    + ' #' + item.displayId
+                }">${
                 iconGripVertical(20, '')
-            }</div>`
+            }</button>`
             : html``;
         return html`
         <div

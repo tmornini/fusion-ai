@@ -165,9 +165,11 @@ function onCardClick(e: MouseEvent): void {
     if (
         !(e.target instanceof Element)
     ) return;
-    // Real links navigate themselves; the
-    // delegate must not double-fire.
-    if (e.target.closest('a[href]')) return;
+    // Real links navigate themselves, and
+    // the reorder handle is not navigation.
+    if (e.target.closest(
+        'a[href], .drag-handle',
+    )) return;
     const card = e.target.closest<HTMLElement>(
         '[data-record-card]',
     );

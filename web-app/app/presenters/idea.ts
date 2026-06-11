@@ -606,12 +606,18 @@ export class IdeaPresenter {
         <div class="${
             'flex items-center gap-4'
         }">
-            ${showGrip ? html`<div class="${
-                'hidden-mobile text-muted'
-                + ' drag-handle'
-            }">${
+            ${showGrip ? html`<button
+                type="button"
+                class="${
+                    'hidden-mobile text-muted'
+                    + ' drag-handle'
+                }"
+                aria-label="${
+                    'Reorder '
+                    + this.#idea.titleText()
+                }">${
                 iconGripVertical(20, '')
-            }</div>` : html``}
+            }</button>` : html``}
             <div class="flex-fill">
                 ${this.#buildHeading()}
             </div>

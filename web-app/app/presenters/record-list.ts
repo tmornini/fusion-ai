@@ -125,12 +125,18 @@ export class RecordPresenter {
         <div class="${
             'flex items-center gap-4'
         }">
-            ${showGrip ? html`<div class="${
-                'hidden-mobile text-muted'
-                + ' drag-handle'
-            }">${
+            ${showGrip ? html`<button
+                type="button"
+                class="${
+                    'hidden-mobile text-muted'
+                    + ' drag-handle'
+                }"
+                aria-label="${
+                    'Reorder '
+                    + this.#record.nameText()
+                }">${
                 iconGripVertical(20, '')
-            }</div>` : html``}
+            }</button>` : html``}
             <div class="flex-fill min-w-0">
                 ${this.#buildHeading()}
             </div>
