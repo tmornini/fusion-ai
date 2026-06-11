@@ -1213,20 +1213,6 @@ export const IDEA_STATE_CONFIG: Record<
     },
 };
 
-export const IDEA_READINESS_CONFIG: Record<
-    IdeaReadiness,
-    StatusDisplay
-> = {
-    'incomplete': {
-        label: 'Incomplete',
-        className: 'badge-warning',
-    },
-    'ready': {
-        label: 'Ready',
-        className: 'badge-success',
-    },
-};
-
 export const RECORD_STATE_CONFIG: Record<
     RecordState,
     StatusDisplay
