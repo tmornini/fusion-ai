@@ -35,7 +35,7 @@ import { handleRequest, UnauthorizedError } from '../api/api.ts';
 import {
     createRecoveringRequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { setSessionToken } from '../web-app/app/adapters/init.ts';
+import { putSessionToken } from '../web-app/app/adapters/init.ts';
 import {
     getSessionCredentials,
     putSessionCredentials,
@@ -88,7 +88,7 @@ async () => {
         accessToken: deadAccess,
         refreshToken: pair.refresh_token,
     });
-    setSessionToken(deadAccess);
+    putSessionToken(deadAccess);
     const ctx = createRecoveringRequestContext(
         db, deadAccess);
     // the 401 triggers refresh + org re-scope + one retry
@@ -106,7 +106,7 @@ async () => {
         accessToken: deadAccess,
         refreshToken: pair.refresh_token,
     });
-    setSessionToken(deadAccess);
+    putSessionToken(deadAccess);
     const ctx = createRecoveringRequestContext(
         db, deadAccess);
     // both reads 401 in parallel; a second refresh would be
@@ -140,7 +140,7 @@ async () => {
         refreshToken: pair.refresh_token,
     });
     const seed = await devToken(ANONYMOUS_ID);
-    setSessionToken(seed);
+    putSessionToken(seed);
     const ctx = createRecoveringRequestContext(
         db, seed);
     // recovery re-installs the live token, re-scopes, and retries
@@ -161,7 +161,7 @@ async () => {
     putSessionCredentials({
         accessToken: dead, refreshToken: dead,
     });
-    setSessionToken(dead);
+    putSessionToken(dead);
     const ctx = createRecoveringRequestContext(
         db, dead);
     // the 401 is unrecoverable: the original error propagates

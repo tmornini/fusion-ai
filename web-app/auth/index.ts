@@ -18,14 +18,14 @@ import { getViewportWidth } from '../app/adapters/index.ts';
 import {
     getDbAdapter,
     getSessionToken,
-    setSessionToken,
+    putSessionToken,
     sessionHasReachableOrg,
 } from '../app/adapters/init.ts';
 import {
     createRequestContext,
 } from '../app/adapters/shared.ts';
 import {
-    loginViaPassword,
+    postPasswordLogin,
 } from '../app/adapters/authentication.ts';
 import {
     putSessionCredentials,
@@ -539,7 +539,7 @@ export async function init(): Promise<void> {
                 // OLD one on a 401 (a wrong password).
                 let creds: SessionCredentials | null;
                 try {
-                    creds = await loginViaPassword(
+                    creds = await postPasswordLogin(
                         createRequestContext(
                             getDbAdapter(), getSessionToken()),
                         email, password,
@@ -577,7 +577,7 @@ export async function init(): Promise<void> {
                 // only the persisted blob survives to re-
                 // establish the session at boot.
                 putSessionCredentials(creds);
-                setSessionToken(creds.accessToken);
+                putSessionToken(creds.accessToken);
                 // A zero-membership identity reaches no org and
                 // would 403 every org-scoped route; land it on
                 // its pending invitations instead of the return

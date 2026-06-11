@@ -3,7 +3,7 @@ import {
     shouldShowOrgSwitcher,
     ACTIVE_ORG_KEY,
 } from './adapters/org-session.ts';
-import { writePreference } from './adapters/preferences.ts';
+import { putPreference } from './adapters/preferences.ts';
 import { showToast } from './toast.ts';
 
 interface OrgOption {
@@ -35,7 +35,7 @@ export function orgSwitcherHtml(
 // confirmed persist — a false return means the id never
 // landed, so a reload would silently keep the prior org.
 function switchToOrg(org: string): void {
-    if (!writePreference(ACTIVE_ORG_KEY, org)) {
+    if (!putPreference(ACTIVE_ORG_KEY, org)) {
         showToast(
             'Could not switch organization —'
             + ' please try again.',

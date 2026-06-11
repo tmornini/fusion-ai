@@ -23,7 +23,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
     getPreference,
-    writePreference,
+    putPreference,
 } from '../web-app/app/adapters/preferences.ts';
 
 test(
@@ -37,10 +37,10 @@ test(
 );
 
 test(
-    'writePreference then getPreference round-trips'
+    'putPreference then getPreference round-trips'
     + ' the value',
     () => {
-        writePreference('fusion-ai:demo', 'hello');
+        putPreference('fusion-ai:demo', 'hello');
         assert.equal(
             getPreference('fusion-ai:demo'),
             'hello',
@@ -49,11 +49,11 @@ test(
 );
 
 test(
-    'writePreference overwrites a prior value for'
+    'putPreference overwrites a prior value for'
     + ' the same key',
     () => {
-        writePreference('fusion-ai:color', 'blue');
-        writePreference('fusion-ai:color', 'green');
+        putPreference('fusion-ai:color', 'blue');
+        putPreference('fusion-ai:color', 'green');
         assert.equal(
             getPreference('fusion-ai:color'),
             'green',
@@ -64,17 +64,17 @@ test(
 test(
     'distinct keys hold independent values',
     () => {
-        writePreference('fusion-ai:a', 'one');
-        writePreference('fusion-ai:b', 'two');
+        putPreference('fusion-ai:a', 'one');
+        putPreference('fusion-ai:b', 'two');
         assert.equal(getPreference('fusion-ai:a'), 'one');
         assert.equal(getPreference('fusion-ai:b'), 'two');
     },
 );
 
 test(
-    'writePreference accepts an empty string value',
+    'putPreference accepts an empty string value',
     () => {
-        writePreference('fusion-ai:empty', '');
+        putPreference('fusion-ai:empty', '');
         assert.equal(
             getPreference('fusion-ai:empty'),
             '',
@@ -83,7 +83,7 @@ test(
 );
 
 test(
-    'writePreference rethrows non-quota storage'
+    'putPreference rethrows non-quota storage'
     + ' errors',
     () => {
         const original = globalThis.localStorage;
@@ -96,7 +96,7 @@ test(
                 },
             };
             assert.throws(
-                () => writePreference('k', 'v'),
+                () => putPreference('k', 'v'),
                 /disk on fire/,
             );
         } finally {
@@ -106,7 +106,7 @@ test(
 );
 
 test(
-    'writePreference returns false on a'
+    'putPreference returns false on a'
     + ' QuotaExceededError without throwing',
     () => {
         const original = globalThis.localStorage;
@@ -123,7 +123,7 @@ test(
                 },
             };
             assert.equal(
-                writePreference('k', 'v'),
+                putPreference('k', 'v'),
                 false,
             );
         } finally {
@@ -133,7 +133,7 @@ test(
 );
 
 test(
-    'writePreference returns true on success',
+    'putPreference returns true on success',
     () => {
         const original = globalThis.localStorage;
         try {
@@ -147,7 +147,7 @@ test(
                 },
             };
             assert.equal(
-                writePreference('k', 'v'),
+                putPreference('k', 'v'),
                 true,
             );
             assert.deepEqual(writes, [['k', 'v']]);

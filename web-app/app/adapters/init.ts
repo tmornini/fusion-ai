@@ -32,7 +32,7 @@ export function defaultAdapter(): DbAdapter {
 export async function initAdapter(
     makeAdapter: () => DbAdapter,
 ): Promise<boolean> {
-    await ensureSessionToken();
+    await postSessionSeed();
     adapter = makeAdapter();
     await adapter.initialize();
     // The composition root probes the datastore directly —
@@ -71,11 +71,11 @@ async function mintSessionToken(
     });
 }
 
-export function setSessionToken(token: string): void {
+export function putSessionToken(token: string): void {
     sessionToken = token;
 }
 
-export function clearSessionToken(): void {
+export function deleteSessionToken(): void {
     sessionToken = undefined;
 }
 
@@ -84,7 +84,7 @@ export function clearSessionToken(): void {
 // cannot mint lazily; the boot path awaits this before any
 // getSessionToken() call. Idempotent: a holder already set
 // (anonymous or an established subject) is left untouched.
-export async function ensureSessionToken(): Promise<void> {
+export async function postSessionSeed(): Promise<void> {
     if (sessionToken === undefined) {
         sessionToken = await mintSessionToken(
             ANONYMOUS_ID, 'Anonymous',
@@ -92,16 +92,16 @@ export async function ensureSessionToken(): Promise<void> {
     }
 }
 
-// Returns the already-minted per-tab token. ensureSessionToken
+// Returns the already-minted per-tab token. postSessionSeed
 // (boot) must have seeded it; the boot gate / login / recovery
-// then REPLACE it via setSessionToken. An unseeded holder is a
+// then REPLACE it via putSessionToken. An unseeded holder is a
 // boot-order bug, not a state to mask — crash with a clear
 // message rather than return a wrong token.
 export function getSessionToken(): string {
     if (sessionToken === undefined) {
         throw new Error(
             'session token uninitialized;'
-            + ' await ensureSessionToken() first',
+            + ' await postSessionSeed() first',
         );
     }
     return sessionToken;

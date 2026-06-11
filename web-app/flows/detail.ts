@@ -38,7 +38,7 @@ import type {
     RecordId,
 } from '../../api/types.ts';
 import {
-    downloadBlob,
+    postBlobDownload,
 } from '../app/adapters/blob-download.ts';
 import {
     bindInteractions,
@@ -981,7 +981,7 @@ async function handleExportZip(
             unknown as ArrayBuffer],
         { type: 'application/zip' },
     );
-    downloadBlob(blob, result.name);
+    postBlobDownload(blob, result.name);
     showToast(
         'Flow exported',
         'success',

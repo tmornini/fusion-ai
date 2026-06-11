@@ -18,7 +18,7 @@ import {
     iconLineChart,
     iconMessageSquare,
 } from '../app/icons.ts';
-import { setLocation } from '../app/adapters/index.ts';
+import { putLocation } from '../app/adapters/index.ts';
 
 const features = [
     {
@@ -561,13 +561,13 @@ export async function init(): Promise<void> {
             el.addEventListener(
                 'click',
                 () => {
-                    setLocation('../auth/index.html');
+                    putLocation('../auth/index.html');
                 },
             );
         });
 
     const AUTO_REDIRECT_MS = 2000;
     setTimeout(() => {
-        setLocation('../dashboard/index.html');
+        putLocation('../dashboard/index.html');
     }, AUTO_REDIRECT_MS);
 }

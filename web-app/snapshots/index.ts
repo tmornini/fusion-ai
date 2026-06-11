@@ -19,7 +19,7 @@ import {
     createElement,
 } from '../app/dom.ts';
 import {
-    downloadBlob,
+    postBlobDownload,
 } from '../app/adapters/blob-download.ts';
 import { log } from '../app/logger.ts';
 import {
@@ -480,7 +480,7 @@ export async function init(
             );
             const date = nowUtc()
                 .split('T')[0];
-            downloadBlob(
+            postBlobDownload(
                 blob,
                 'fusion-ai-snapshot-'
                 + date

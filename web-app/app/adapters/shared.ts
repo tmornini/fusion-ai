@@ -16,7 +16,7 @@ import {
 import {
     getDbAdapter,
     getSessionToken,
-    setSessionToken,
+    putSessionToken,
 } from './init.ts';
 import {
     type Principal,
@@ -44,7 +44,7 @@ import {
 } from './org-session.ts';
 import {
     getPreference,
-    writePreference,
+    putPreference,
 } from './preferences.ts';
 
 // Rows whose `field` equals `value` — the single-field
@@ -291,7 +291,7 @@ async function installAndScope(
     adapter: DbAdapter,
     flatToken: string,
 ): Promise<string | null> {
-    setSessionToken(flatToken);
+    putSessionToken(flatToken);
     try {
         await rescopeToActiveOrg(adapter, flatToken);
     } catch (err) {
@@ -344,9 +344,9 @@ async function rescopeToActiveOrg(
         getPreference(ACTIVE_ORG_KEY),
         await getIdentityDefaultOrg(ctx),
     );
-    setSessionToken(
+    putSessionToken(
         await postOrgSessionExchange(ctx, flatToken, active));
-    writePreference(ACTIVE_ORG_KEY, active);
+    putPreference(ACTIVE_ORG_KEY, active);
 }
 
 // The active org the session is scoped to. Post-boot the

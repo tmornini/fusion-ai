@@ -24,7 +24,7 @@ import {
 import {
     getDbAdapter,
     getSessionToken,
-    setSessionToken,
+    putSessionToken,
 } from './adapters/init.ts';
 import {
     sessionContext,
@@ -46,7 +46,7 @@ import {
 } from '../../api/types.ts';
 import {
     getPreference,
-    writePreference,
+    putPreference,
 } from './adapters/preferences.ts';
 import {
     type SessionCredentials,
@@ -151,10 +151,10 @@ async function scopeBootToActiveOrg(): Promise<boolean> {
         getPreference(ACTIVE_ORG_KEY),
         await getIdentityDefaultOrg(ctx),
     );
-    setSessionToken(
+    putSessionToken(
         await postOrgSessionExchange(
             ctx, getSessionToken(), active));
-    writePreference(ACTIVE_ORG_KEY, active);
+    putPreference(ACTIVE_ORG_KEY, active);
     return true;
 }
 
@@ -182,7 +182,7 @@ async function scopeBootIfCredentialed(): Promise<void> {
     }
     try {
         if (decision.kind === 'install') {
-            setSessionToken(decision.accessToken);
+            putSessionToken(decision.accessToken);
         } else if (
             !(await refreshAndInstall(decision.refreshToken))
         ) {
@@ -211,7 +211,7 @@ async function bootAuthGate(): Promise<boolean> {
     const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     if (decision.kind === 'install') {
-        setSessionToken(decision.accessToken);
+        putSessionToken(decision.accessToken);
         return true;
     }
     if (decision.kind === 'refresh') {
@@ -246,7 +246,7 @@ async function refreshAndInstall(
         const creds = await postSessionRefresh(
             ctx, refreshToken);
         putSessionCredentials(creds);
-        setSessionToken(creds.accessToken);
+        putSessionToken(creds.accessToken);
         return true;
     } catch (err) {
         if (err instanceof UnauthorizedError) {

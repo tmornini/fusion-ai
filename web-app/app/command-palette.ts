@@ -21,7 +21,7 @@ import {
     getHumanMembers,
     featuredHumanMembers,
     sessionContext,
-    setLocation,
+    putLocation,
     subscribeSchemaChanges,
     type IdeaWithSubmitter,
     Project,
@@ -519,7 +519,7 @@ posIndex === state.activeIndex
             state.filteredItems[index];
         if (!item) return;
         close();
-        setLocation(item.href);
+        putLocation(item.href);
     }
 
     function open(): void {
