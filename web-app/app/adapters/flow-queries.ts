@@ -53,7 +53,7 @@ export interface FlowListItem {
     edgeCount: number;
 }
 
-export async function getProjectFlowRows(
+export async function getProjectFlowEntities(
     ctx: RequestContext,
 ): Promise<ProjectFlowEntity[]> {
     return ctx.GET<ProjectFlowEntity[]>(
@@ -74,7 +74,7 @@ getFlowsWithProjectNames(
         flows, projectFlows, allProjects,
     ] = await Promise.all([
         ctx.GET<FlowEntity[]>('flows'),
-        getProjectFlowRows(ctx),
+        getProjectFlowEntities(ctx),
         ctx.GET<ProjectEntity[]>('projects'),
     ]);
     const projectNameById = new Map(

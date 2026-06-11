@@ -104,7 +104,7 @@ export async function getAIMember(
     return new AIMember(parent, detail, state);
 }
 
-export async function getAIMemberRow(
+export async function getAIMemberEntity(
     ctx: RequestContext,
     id: MemberId,
 ): Promise<AIMemberEntity> {

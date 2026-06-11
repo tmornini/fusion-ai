@@ -8,7 +8,7 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     sessionContext,
-    getIdeaRows,
+    getIdeaEntities,
     postIdeaCreation,
     putIdeaSubmission,
     generateCryptoSafeBase62,
@@ -135,7 +135,7 @@ export async function init():
                 const ideaId =
                     generateCryptoSafeBase62();
                 const existing =
-                    await getIdeaRows(ctx);
+                    await getIdeaEntities(ctx);
                 const position = nextPosition(
                     existing.map(r => r.position),
                 );

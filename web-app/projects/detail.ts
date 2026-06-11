@@ -28,7 +28,7 @@ import {
 } from '../app/core.ts';
 import {
     getProject,
-    getProjectRow,
+    getProjectEntity,
     ProjectView,
     putProject,
     postProjectStateChange,
@@ -130,7 +130,7 @@ async function loadProjectView(
         scoring,
     ] = await Promise.all([
         getProject(ctx, projectId),
-        getProjectRow(ctx, projectId),
+        getProjectEntity(ctx, projectId),
         getObjectives(ctx),
         getProjectScoring(ctx, projectId),
     ]);

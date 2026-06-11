@@ -6,7 +6,7 @@ import { showToast } from '../app/toast.ts';
 import { navigateTo } from '../app/core.ts';
 import {
     sessionContext,
-    getRecordRows,
+    getRecordEntities,
     postRecordChange,
     generateCryptoSafeBase62,
 } from '../app/adapters/index.ts';
@@ -51,7 +51,7 @@ async function handleSubmit(): Promise<void> {
         return;
     }
     const ctx = sessionContext();
-    const existing = await getRecordRows(ctx);
+    const existing = await getRecordEntities(ctx);
     const position = nextPosition(
         existing.map(r => r.position),
     );

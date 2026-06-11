@@ -16,7 +16,7 @@ import {
 import { navigateTo } from '../app/core.ts';
 import {
     getIdea,
-    getProjectRows,
+    getProjectEntities,
     postIdeaConversion,
     createRequestContext,
     sessionContext,
@@ -571,7 +571,7 @@ async function performConversion(
     activeObjectives: readonly Objective[],
 ): Promise<void> {
     const fields = draft.fields;
-    const projects = await getProjectRows(ctx);
+    const projects = await getProjectEntities(ctx);
     const position = nextPosition(
         projects.map(p => p.position),
     );

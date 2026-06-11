@@ -9,9 +9,9 @@ import {
 import { devToken } from './token-fixtures.ts';
 import { adminContext } from './context-fixtures.ts';
 import {
-    getProjectRows,
+    getProjectEntities,
     getProjects,
-    getProjectRow,
+    getProjectEntity,
     postProjectStateChange,
     putProject,
     ProjectView,
@@ -67,7 +67,7 @@ async function seedProject(
 }
 
 test(
-    'getProjectRow round-trips all fields',
+    'getProjectEntity round-trips all fields',
     async () => {
         const { db, ctx } = await adminContext();
         await db.projects.put('p1', buildProject(
@@ -76,7 +76,7 @@ test(
                 estimated_cost: 99000,
             },
         ));
-        const row = await getProjectRow(ctx, 'p1');
+        const row = await getProjectEntity(ctx, 'p1');
         assert.equal(row.id, 'p1');
         assert.equal(row.title, 'Alpha');
         assert.equal(row.description, 'desc for Alpha');
@@ -92,18 +92,18 @@ test(
 );
 
 test(
-    'getProjectRow rejects for missing id',
+    'getProjectEntity rejects for missing id',
     async () => {
         const { ctx } = await adminContext();
         await assert.rejects(
-            () => getProjectRow(ctx, 'nope'),
+            () => getProjectEntity(ctx, 'nope'),
             /Not found/,
         );
     },
 );
 
 test(
-    'getProjectRows returns persisted rows',
+    'getProjectEntities returns persisted rows',
     async () => {
         const { db, ctx } = await adminContext();
         await db.projects.put(
@@ -112,7 +112,7 @@ test(
         await db.projects.put(
             'p2', buildProject('p2', 'Beta'),
         );
-        const rows = await getProjectRows(ctx);
+        const rows = await getProjectEntities(ctx);
         assert.equal(rows.length, 2);
         const titles = rows
             .map(r => r.title)
@@ -122,10 +122,10 @@ test(
 );
 
 test(
-    'getProjectRows returns empty on empty db',
+    'getProjectEntities returns empty on empty db',
     async () => {
         const { ctx } = await adminContext();
-        const rows = await getProjectRows(ctx);
+        const rows = await getProjectEntities(ctx);
         assert.deepEqual(rows, []);
     },
 );
@@ -175,7 +175,7 @@ test(
         assert.equal(
             projects[0]?.titleText(), 'Keep',
         );
-        const rows = await getProjectRows(ctx);
+        const rows = await getProjectEntities(ctx);
         assert.equal(rows.length, 1);
     },
 );
@@ -212,7 +212,7 @@ test(
             'p1', 'Persisted',
         ));
         const fresh = createRequestContext(db, await devToken());
-        const row = await getProjectRow(fresh, 'p1');
+        const row = await getProjectEntity(fresh, 'p1');
         assert.equal(row.title, 'Persisted');
     },
 );

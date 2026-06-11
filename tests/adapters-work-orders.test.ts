@@ -600,15 +600,15 @@ test(
     },
 );
 
-// ── getFlowWorkOrderRows ──────────
+// ── getFlowWorkOrderEntities ──────────
 
 import {
-    getFlowWorkOrderRows,
+    getFlowWorkOrderEntities,
 } from
 '../web-app/app/adapters/work-orders-queries.ts';
 
 test(
-    'getFlowWorkOrderRows returns seeded '
+    'getFlowWorkOrderEntities returns seeded '
     + 'flow-work-order rows',
     async () => {
         const db = new MemoryDbAdapter();
@@ -633,7 +633,7 @@ test(
         );
         const ctx = createRequestContext(db, await devToken());
         const rows =
-            await getFlowWorkOrderRows(ctx);
+            await getFlowWorkOrderEntities(ctx);
         assert.equal(rows.length, 2);
         assert.ok(
             rows.some(

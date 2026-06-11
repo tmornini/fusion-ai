@@ -96,7 +96,7 @@ export async function getStateFieldValuesByEvent(
 
 /* ── Reads ───────────────── */
 
-export async function getWorkOrderRows(
+export async function getWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<WorkOrderEntity[]> {
     return ctx.GET<WorkOrderEntity[]>(
@@ -104,7 +104,7 @@ export async function getWorkOrderRows(
     );
 }
 
-export async function getFlowWorkOrderRows(
+export async function getFlowWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<FlowWorkOrderEntity[]> {
     return ctx.GET<

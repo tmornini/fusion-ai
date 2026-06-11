@@ -22,7 +22,7 @@ import {
     initDropdown,
 } from '../app/core.ts';
 import {
-    getWorkOrderRows,
+    getWorkOrderEntities,
     getTransitionEventsByWorkOrder,
     getActiveClaimsByWorkOrder,
     getMemberMap,
@@ -162,7 +162,7 @@ async function loadInboxItems(
     const [
         workOrders, transitionsByWo, memberMap,
     ] = await Promise.all([
-        getWorkOrderRows(ctx),
+        getWorkOrderEntities(ctx),
         getTransitionEventsByWorkOrder(ctx),
         getMemberMap(ctx),
     ]);

@@ -38,7 +38,7 @@ function toRecordAttribute(
     };
 }
 
-export async function getRecordAttributeRows(
+export async function getRecordAttributeEntities(
     ctx: RequestContext,
 ): Promise<RecordAttribute[]> {
     const rows = await ctx.GET<
@@ -51,7 +51,7 @@ export async function getRecordAttributesByRecord(
     ctx: RequestContext,
     recordId: RecordId,
 ): Promise<RecordAttribute[]> {
-    const rows = await getRecordAttributeRows(ctx);
+    const rows = await getRecordAttributeEntities(ctx);
     return filterByField(rows, 'record_id', recordId)
         .toSorted(
             (a, b) =>

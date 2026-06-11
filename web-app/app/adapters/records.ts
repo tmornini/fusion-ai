@@ -62,7 +62,7 @@ export function notifyRecordChange(): void {
     recordChanges.notify();
 }
 
-export async function getRecordRows(
+export async function getRecordEntities(
     ctx: RequestContext,
 ): Promise<RecordEntity[]> {
     return ctx.GET<RecordEntity[]>('records');
@@ -102,7 +102,7 @@ export async function getRecords(
     const [
         rows, attributes, flowRecords, stateMap,
     ] = await Promise.all([
-        getRecordRows(ctx),
+        getRecordEntities(ctx),
         ctx.GET<RecordAttributeEntity[]>(
             'record-attributes',
         ),

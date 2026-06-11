@@ -17,7 +17,7 @@ import {
     getFlowsByProject,
     getFlowGraph,
     getFlowsWithProjectNames,
-    getProjectFlowRows,
+    getProjectFlowEntities,
     type FlowGraph,
 } from
 '../web-app/app/adapters/flow-queries.ts';
@@ -362,14 +362,14 @@ test(
 );
 
 test(
-    'getProjectFlowRows returns the link rows',
+    'getProjectFlowEntities returns the link rows',
     async () => {
         const { db } = await setupMemDb();
         const c1 = createRequestContext(db, await devToken());
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p2');
         const rows: ProjectFlowEntity[] =
-            await getProjectFlowRows(
+            await getProjectFlowEntities(
                 createRequestContext(db, await devToken()),
             );
         assert.equal(rows.length, 2);
@@ -385,11 +385,11 @@ test(
 );
 
 test(
-    'getProjectFlowRows is empty when no'
+    'getProjectFlowEntities is empty when no'
     + ' flows have been created',
     async () => {
         const { db } = await setupMemDb();
-        const rows = await getProjectFlowRows(
+        const rows = await getProjectFlowEntities(
             createRequestContext(db, await devToken()),
         );
         assert.deepEqual(rows, []);

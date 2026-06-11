@@ -474,8 +474,11 @@ layer directly.
   `api/validators.ts` that take a raw value and return a typed
   value or throw. The `is*` type-guards remain for legitimate
   type-narrowing call sites.
-- Adapter functions use **domain nouns** (`getIdea`, not
-  `getIdeaEntity`) — return type already communicates shape.
+- Adapter reads are two-tier, named by what they return:
+  the **domain noun** read returns the domain object
+  (`getIdea` → `Idea`); where a raw stored-shape read also
+  exists it carries the **Entity** suffix (`getIdeaEntity`
+  → `IdeaEntity`). Never table vocabulary (`Row`/`Rows`).
 
 ## Adapter Conventions
 

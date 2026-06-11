@@ -182,7 +182,7 @@ export async function getHumanMember(
     );
 }
 
-export async function getHumanMemberRow(
+export async function getHumanMemberEntity(
     ctx: RequestContext,
     id: string,
 ): Promise<HumanMemberEntity> {
