@@ -892,9 +892,9 @@ async function openHistoryModal(
         baselineObjIds.add(a.objectiveId);
     }
     const revisions: ObjectiveRevision[] = [];
-    const allArchivations =
+    const allArchivals =
         await getObjectiveArchivalEvents(ctx);
-    const archivations = allArchivations.filter(
+    const archivals = allArchivals.filter(
         d => baselineObjIds.has(d.objectiveId),
     );
     for (const objId of baselineObjIds) {
@@ -937,7 +937,7 @@ async function openHistoryModal(
     const presenter =
         new ProjectScoreHistoryPresenter(
             scoring.baseline, scoring.actual,
-            revisions, archivations, resolver,
+            revisions, archivals, resolver,
             memberId => memberName(memberMap, memberId),
         );
     const bodyEl =
