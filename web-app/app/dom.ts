@@ -15,6 +15,14 @@ export function $$(
     return Array.from(parent.querySelectorAll(selector));
 }
 
+export function $button(
+    selector: string,
+    parent: ParentNode,
+): HTMLButtonElement | null {
+    return parent
+        .querySelector<HTMLButtonElement>(selector);
+}
+
 export function $input(
     selector: string,
     parent: ParentNode,

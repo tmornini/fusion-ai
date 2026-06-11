@@ -1,5 +1,6 @@
 import {
-    $, $inputRequired, $required,
+    $, $$, $button, $input,
+    $inputRequired, $required,
     isFormField,
 } from '../app/dom.ts';
 import { showToast } from '../app/toast.ts';
@@ -223,8 +224,7 @@ export async function init(
                 'Try Again',
             ),
         );
-        container
-            .querySelector('[data-retry-btn]')
+        $('[data-retry-btn]', container)
             ?.addEventListener(
                 'click',
                 () => init(params),
@@ -426,7 +426,8 @@ export async function init(
                 '.project-objective-slider',
             );
             const valueEl = sliderContainer
-                ?.querySelector('.slider-value');
+                ? $('.slider-value', sliderContainer)
+                : null;
             if (valueEl) {
                 const v = Number(
                     (target as HTMLInputElement)
@@ -441,8 +442,8 @@ export async function init(
                 document,
             );
             if (!section) return;
-            const sliders = section.querySelectorAll(
-                'input[type="range"]',
+            const sliders = $$(
+                'input[type="range"]', section,
             );
             let dirty = false;
             sliders.forEach(s => {
@@ -457,9 +458,10 @@ export async function init(
                     dirty = true;
                 }
             });
-            const saveBtn = section.querySelector(
+            const saveBtn = $button(
                 '[data-action="save-objectives"]',
-            ) as HTMLButtonElement | null;
+                section,
+            );
             if (saveBtn) {
                 saveBtn.disabled = !dirty;
             }
@@ -794,8 +796,8 @@ async function handleSaveObjectives(
         '#project-objectives-section', document,
     );
     if (!section) return;
-    const rows = section.querySelectorAll(
-        '.project-objective-row',
+    const rows = $$(
+        '.project-objective-row', section,
     );
     const baselineMoves: {
         objectiveId: string;
@@ -810,12 +812,12 @@ async function handleSaveObjectives(
             'data-objective-id',
         );
         if (!objectiveId) return;
-        const baseSlider = row.querySelector(
-            'input.baseline-slider',
-        ) as HTMLInputElement | null;
-        const actSlider = row.querySelector(
-            'input.actual-slider',
-        ) as HTMLInputElement | null;
+        const baseSlider = $input(
+            'input.baseline-slider', row,
+        );
+        const actSlider = $input(
+            'input.actual-slider', row,
+        );
         if (baseSlider && !baseSlider.disabled) {
             const initial = Number(
                 baseSlider.dataset['initialValue'],
