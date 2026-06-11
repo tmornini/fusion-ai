@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     mintAccessToken,
+    TOKEN_AUDIENCE,
     verifyAccessToken,
     principalFromToken,
     decodeAccessToken,
@@ -15,6 +16,7 @@ async function token(over: Partial<{
     org: string; orgs: readonly string[];
 }> = {}): Promise<string> {
     return mintAccessToken({
+        aud: TOKEN_AUDIENCE,
         sub: over.sub ?? 'current',
         roles: [],
         name: 'Demo',

@@ -5,6 +5,7 @@ import {
 } from './client-assertion.ts';
 import {
     mintAccessToken,
+    TOKEN_AUDIENCE,
     verifyAccessToken,
     revokedThroughSeconds,
 } from './access-token.ts';
@@ -156,6 +157,7 @@ async function mintPair(
 ): Promise<TokenResponse> {
     const iat = Math.floor(Date.now() / 1000);
     const accessToken = await mintAccessToken({
+        aud: TOKEN_AUDIENCE,
         sub: identityId, roles: [], name, iat,
         ttlSeconds: ACCESS_TTL_SECONDS,
         jti: generateCryptoSafeBase62(),
@@ -165,6 +167,7 @@ async function mintPair(
             ? { orgs: scope.orgs } : {}),
     });
     const refreshToken = await mintAccessToken({
+        aud: TOKEN_AUDIENCE,
         sub: identityId, roles: [], name, iat,
         ttlSeconds: REFRESH_TTL_SECONDS, jti: refreshJti,
     });

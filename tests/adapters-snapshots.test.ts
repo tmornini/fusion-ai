@@ -17,6 +17,7 @@ import { devToken } from './token-fixtures.ts';
 import { MissingTableError } from '../api/db.ts';
 import {
     mintAccessToken,
+    TOKEN_AUDIENCE,
     ANONYMOUS_ID,
 } from '../api/access-token.ts';
 import { seedHumanMember } from './member-fixtures.ts';
@@ -432,6 +433,7 @@ test(
 
 async function anonToken(): Promise<string> {
     return mintAccessToken({
+        aud: TOKEN_AUDIENCE,
         sub: ANONYMOUS_ID, roles: [], name: 'Anonymous',
         iat: 1_700_000_000, ttlSeconds: 10_000_000_000,
         jti: 'anon',

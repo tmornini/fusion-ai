@@ -7,6 +7,7 @@ import {
 import type { DbAdapter } from '../../../api/db.ts';
 import {
     mintAccessToken,
+    TOKEN_AUDIENCE,
     principalFromToken,
     ANONYMOUS_ID,
 } from '../../../api/access-token.ts';
@@ -61,6 +62,7 @@ async function mintSessionToken(
     name: string,
 ): Promise<string> {
     return mintAccessToken({
+        aud: TOKEN_AUDIENCE,
         sub,
         roles: [],
         name,
