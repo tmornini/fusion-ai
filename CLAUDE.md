@@ -425,7 +425,7 @@ cannot know:
 - **Commandments touched by the task.** Name them.
 - **Abominations the task specifically risks.** Name them.
 - **Existing codebase patterns to match.** RequestContext
-  as the only argument to adapter methods, SafeHtml from
+  as the first argument to adapter methods, SafeHtml from
   presenters, snake_case storage / camelCase domain,
   HTTP-verb adapter naming (`getNoun`/`putNoun`/`deleteNoun`/
   `postNounOperation`), validators at the gate not
