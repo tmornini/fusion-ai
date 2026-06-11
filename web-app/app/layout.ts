@@ -2,7 +2,7 @@ import {
     collapseSidebar
         as persistSidebarCollapsed,
 } from './state.ts';
-import { $required } from './dom.ts';
+import { $$, $required } from './dom.ts';
 import { log } from './logger.ts';
 import { showToast } from './toast.ts';
 import {
@@ -80,8 +80,7 @@ function initSignOut(): void {
             navigateTo('auth');
         }
     };
-    document
-        .querySelectorAll('[data-signout]')
+    $$('[data-signout]', document)
         .forEach(el =>
             el.addEventListener('click', signOut));
 }

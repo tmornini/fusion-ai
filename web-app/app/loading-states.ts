@@ -1,4 +1,5 @@
 import { iconAlertTriangle } from './icons.ts';
+import { $ } from './dom.ts';
 import {
     extractErrorMessage,
 } from './error-helpers.ts';
@@ -211,13 +212,9 @@ export async function withLoadingState<T>(
                 'Try Again',
             ),
         );
-        const retryBtn =
-            container
-                .querySelector<
-                    HTMLElement
-                >(
-                    '[data-retry-btn]',
-                );
+        const retryBtn = $(
+            '[data-retry-btn]', container,
+        );
         if (retryBtn && retryFn) {
             retryBtn.addEventListener(
                 'click',

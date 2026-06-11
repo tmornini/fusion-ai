@@ -1,4 +1,5 @@
 import { html, type SafeHtml } from './safe-html.ts';
+import { $, $$, $select } from './dom.ts';
 import {
     shouldShowOrgSwitcher,
     ACTIVE_ORG_KEY,
@@ -51,20 +52,15 @@ function switchToOrg(org: string): void {
 // EVERY `.org-switcher-group` rather than the first — both stay
 // live and in sync after a switch.
 export function wireOrgSwitcher(activeOrgId: string): void {
-    const groups = document.querySelectorAll<HTMLElement>(
-        '.org-switcher-group');
+    const groups = $$('.org-switcher-group', document);
     for (const group of groups) {
-        const select =
-            group.querySelector<HTMLSelectElement>(
-                '.org-switcher');
+        const select = $select('.org-switcher', group);
         if (select === null) continue;
         select.value = activeOrgId;
         select.addEventListener('change', () => {
             switchToOrg(select.value);
         });
-        const setDefault =
-            group.querySelector<HTMLButtonElement>(
-                '.org-set-default');
+        const setDefault = $('.org-set-default', group);
         setDefault?.addEventListener('click', () => {
             void setActiveOrgAsDefault(select.value);
         });
