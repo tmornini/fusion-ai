@@ -4,11 +4,7 @@ function icon(
     paths: string,
     size: number,
     cssClass: string,
-    ariaLabel?: string,
 ): SafeHtml {
-    const a11y = ariaLabel
-        ? `role="img" aria-label="${ariaLabel}"`
-        : 'aria-hidden="true"';
     return new SafeHtml(
         '<svg xmlns="http://www.w3.org/2000/svg"'
         + ` width="${size}" height="${size}"`
@@ -16,7 +12,7 @@ function icon(
         + ' stroke="currentColor" stroke-width="2"'
         + ' stroke-linecap="round"'
         + ' stroke-linejoin="round"'
-        + ` class="${cssClass}" ${a11y}>`
+        + ` class="${cssClass}" aria-hidden="true">`
         + paths + '</svg>',
     );
 }
