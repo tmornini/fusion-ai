@@ -251,7 +251,7 @@ ${aiCheckboxes}
 </fieldset>
 <div class="mb-2">
 <label class="text-xs text-muted"
-    >Name</label>
+    for="prop-node-name">Name</label>
 <input type="text"
     class="input input-sm"
     id="prop-node-name"
@@ -259,6 +259,7 @@ ${aiCheckboxes}
 </div>
 <div class="mb-2">
 <label class="text-xs text-muted"
+    for="prop-node-instructions"
     >Task Instructions</label>
 <textarea
     class="textarea"
@@ -342,7 +343,7 @@ class="flow-props-panel">
 </div>
 <div class="mb-2">
 <label class="text-xs text-muted"
-    >Name</label>
+    for="prop-edge-name">Name</label>
 <input type="text"
     class="input input-sm"
     id="prop-edge-name"

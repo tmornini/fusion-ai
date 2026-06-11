@@ -561,6 +561,7 @@ class="flow-designer">
 }"><button class="switch"
     role="switch"
     aria-checked="false"
+    aria-label="Locked"
     id="flow-lock-switch"
     ><span class="switch-thumb"
     ></span></button>
@@ -571,6 +572,7 @@ Locked</label>
 }"><button class="switch"
     role="switch"
     aria-checked="false"
+    aria-label="Auto Layout"
     id="flow-auto-layout-switch"
     ><span class="switch-thumb"
     ></span></button>
@@ -581,6 +583,7 @@ Auto Layout</label>
 }"><button class="switch"
     role="switch"
     aria-checked="false"
+    aria-label="Auto Fit"
     id="flow-auto-fit-switch"
     ><span class="switch-thumb"
     ></span></button>
