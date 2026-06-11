@@ -14,7 +14,6 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import {
-    getFlows,
     getFlowsByProject,
     getFlowGraph,
     getFlowsWithProjectNames,
@@ -207,62 +206,6 @@ test(
         assert.equal(g.isAutoLayout, true);
         assert.equal(g.isAutoFit, true);
         assert.equal(g.lockTimeout, 900);
-    },
-);
-
-test(
-    'getFlows summarizes every flow with'
-    + ' node and edge counts',
-    async () => {
-        const { db } = await setupMemDb();
-        const c1 = createRequestContext(db, await devToken());
-        await createBaseFlow(c1, 'flow-1', 'p1');
-        await createBaseFlow(c1, 'flow-2', 'p1');
-        await saveGraph(
-            createRequestContext(db, await devToken()), 'flow-1',
-            [
-                buildNode('a'), buildNode('b'),
-                buildNode('c'),
-            ],
-            [buildEdge('ab', 'a', 'b')],
-        );
-        await saveGraph(
-            createRequestContext(db, await devToken()), 'flow-2',
-            [buildNode('x')], [],
-        );
-        const flows = await getFlows(
-            createRequestContext(db, await devToken()),
-        );
-        assert.equal(flows.length, 2);
-        const f1 = flows.find(
-            f => f.id === 'flow-1',
-        )!;
-        const f2 = flows.find(
-            f => f.id === 'flow-2',
-        )!;
-        assert.equal(f1.name, 'Flow flow-1');
-        assert.equal(f1.nodeCount, 3);
-        assert.equal(f1.edgeCount, 1);
-        assert.equal(f2.nodeCount, 1);
-        assert.equal(f2.edgeCount, 0);
-    },
-);
-
-test(
-    'getFlows on a fresh flow reports the'
-    + ' default two nodes and no edges',
-    async () => {
-        const { db } = await setupMemDb();
-        await createBaseFlow(
-            createRequestContext(db, await devToken()),
-            'flow-1', 'p1',
-        );
-        const flows = await getFlows(
-            createRequestContext(db, await devToken()),
-        );
-        assert.equal(flows.length, 1);
-        assert.equal(flows[0]!.nodeCount, 2);
-        assert.equal(flows[0]!.edgeCount, 0);
     },
 );
 

@@ -5,8 +5,14 @@ import {
     type MemberState,
 } from '../api/types.ts';
 import {
-    getProviderModels,
+    getModelsByProvider,
 } from '../api/provider-models.ts';
+
+// The catalog's first model — the fixture default.
+export function firstProviderModel() {
+    return [...getModelsByProvider()
+        .values()][0]![0]!;
+}
 
 // Build/seed members in the post-normalization shape: a
 // parent row (type only) plus a kind-specific detail row,
@@ -27,7 +33,7 @@ function aiDetail() {
     return {
         description: '',
         skill_focus: '',
-        model: getProviderModels()[0]!.id,
+        model: firstProviderModel().id,
     };
 }
 

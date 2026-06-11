@@ -22,12 +22,3 @@ export async function postIdentityLogoutEverywhere(
     );
 }
 
-export async function getRevokedBefore(
-    ctx: RequestContext,
-    identityId: Id,
-): Promise<string | null> {
-    const all = await ctx.GET<
-        IdentityTokenRevocationEntity[]
-    >('identity-token-revocations');
-    return latestRevocationAt(all, identityId);
-}

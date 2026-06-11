@@ -53,16 +53,6 @@ export interface AccessTokenClaims {
 
 export const ANONYMOUS_ID: Id = 'anonymous';
 
-// The logged-out principal — a real, named first-class
-// subject, never null. The gate ACCEPTS it on public routes
-// and REJECTS it on protected routes (deny-by-default
-// authentication; role-based authorization is SP-4).
-export const ANONYMOUS_PRINCIPAL: Principal = {
-    id: ANONYMOUS_ID,
-    roles: [],
-    name: 'Anonymous',
-};
-
 const TOKEN_AUDIENCE = 'fusion-ai-web';
 const SIGNING_KEY_ID = 'dev-co-located';
 

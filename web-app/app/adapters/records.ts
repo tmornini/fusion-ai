@@ -163,14 +163,6 @@ export async function putRecord(
     recordChanges.notify();
 }
 
-export async function deleteRecord(
-    ctx: RequestContext,
-    id: RecordId,
-): Promise<void> {
-    await ctx.DELETE(`records/${id}`);
-    recordChanges.notify();
-}
-
 export interface RecordChangeCreate {
     readonly kind: 'create';
     readonly record:
@@ -249,11 +241,3 @@ export async function postRecordStateChange(
     recordChanges.notify();
 }
 
-export async function postRecordArchival(
-    ctx: RequestContext,
-    id: RecordId,
-): Promise<void> {
-    await postRecordStateChange(
-        ctx, id, 'archived',
-    );
-}

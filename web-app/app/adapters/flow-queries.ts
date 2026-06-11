@@ -54,21 +54,6 @@ export interface FlowListItem {
     edgeCount: number;
 }
 
-export async function getFlows(
-    ctx: RequestContext,
-): Promise<FlowSummary[]> {
-    const flows = await getFlowRows(ctx);
-    return flows.map(f => {
-        const g = parseGraph(f.graph);
-        return {
-            id: f.id,
-            name: f.name,
-            nodeCount: g.nodes.length,
-            edgeCount: g.edges.length,
-        };
-    });
-}
-
 export async function getProjectFlowRows(
     ctx: RequestContext,
 ): Promise<ProjectFlowEntity[]> {

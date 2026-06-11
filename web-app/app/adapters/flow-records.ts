@@ -27,15 +27,6 @@ async function getFlowRecordRows(
     );
 }
 
-export async function getFlowRecord(
-    ctx: RequestContext,
-    id: FlowRecordId,
-): Promise<FlowRecordEntity> {
-    return ctx.GET<FlowRecordEntity>(
-        `flow-records/${id}`,
-    );
-}
-
 export async function putFlowRecord(
     ctx: RequestContext,
     id: FlowRecordId,

@@ -36,30 +36,6 @@ async function appendCredentialEvent(
     });
 }
 
-export async function postIdentityCredentialSet(
-    ctx: RequestContext,
-    identityId: Id,
-    kind: IdentityCredentialKind,
-    secret: string,
-): Promise<void> {
-    await appendCredentialEvent(
-        ctx, identityId, kind, 'set',
-        await hashPassword(secret),
-    );
-}
-
-export async function postIdentityCredentialRotation(
-    ctx: RequestContext,
-    identityId: Id,
-    kind: IdentityCredentialKind,
-    secret: string,
-): Promise<void> {
-    await appendCredentialEvent(
-        ctx, identityId, kind, 'rotated',
-        await hashPassword(secret),
-    );
-}
-
 export async function
 postIdentityCredentialRevocation(
     ctx: RequestContext,

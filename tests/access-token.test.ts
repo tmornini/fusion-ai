@@ -7,7 +7,6 @@ import {
     decodeAccessToken,
     latestRevocationAt,
     revokedThroughSeconds,
-    ANONYMOUS_PRINCIPAL,
 } from '../api/access-token.ts';
 import { base64UrlEncode } from '../api/base64url.ts';
 
@@ -206,10 +205,6 @@ test('decodeAccessToken rejects non-string roles elements',
         () => decodeAccessToken('h.' + body + '.s'),
         /bad claim shape/,
     );
-});
-
-test('exposes a named anonymous principal', () => {
-    assert.equal(ANONYMOUS_PRINCIPAL.id, 'anonymous');
 });
 
 test('latestRevocationAt returns the most recent stamp', () => {

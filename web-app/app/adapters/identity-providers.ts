@@ -32,29 +32,6 @@ async function appendProviderEvent(
     });
 }
 
-export async function postProviderLink(
-    ctx: RequestContext,
-    identityId: Id,
-    provider: string,
-    providerSubject: string,
-): Promise<void> {
-    await appendProviderEvent(
-        ctx, identityId, provider, providerSubject, 'linked',
-    );
-}
-
-export async function postProviderUnlink(
-    ctx: RequestContext,
-    identityId: Id,
-    provider: string,
-    providerSubject: string,
-): Promise<void> {
-    await appendProviderEvent(
-        ctx, identityId, provider, providerSubject,
-        'unlinked',
-    );
-}
-
 // One provider link/unlink event in the domain idiom: the
 // presenter reads camelCase, never the snake_case row.
 export interface ProviderEvent {

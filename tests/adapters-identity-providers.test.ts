@@ -10,8 +10,6 @@ import {
 import { devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import {
-    postProviderLink,
-    postProviderUnlink,
     getProvidersFor,
 } from '../web-app/app/adapters/identity-providers.ts';
 
@@ -60,22 +58,6 @@ test('identity_providers store retains events', async () => {
     });
     assert.equal(
         (await db.identityProviders.getAll()).length, 2);
-});
-
-test('link then read reflects the provider', async () => {
-    const { ctx } = await adminCtx();
-    await postProviderLink(ctx, 'p2', 'google', 'g-1');
-    assert.deepEqual(
-        await getProvidersFor(ctx, 'p2'), ['google']);
-});
-
-test('unlink removes it; ledger retains all', async () => {
-    const { db, ctx } = await adminCtx();
-    await postProviderLink(ctx, 'p2', 'google', 'g-1');
-    await postProviderUnlink(ctx, 'p2', 'google', 'g-1');
-    assert.equal(
-        (await db.identityProviders.getAll()).length, 2);
-    assert.deepEqual(await getProvidersFor(ctx, 'p2'), []);
 });
 
 test('an anonymous principal cannot read providers',

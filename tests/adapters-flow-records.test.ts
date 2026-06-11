@@ -10,7 +10,6 @@ import {
 } from './test-fixtures.ts';
 import {
     putFlowRecord,
-    getFlowRecord,
     deleteFlowRecord,
     getRecordForFlow,
     getFlowsForRecord,
@@ -53,8 +52,8 @@ async function seedWorkOrder(
 }
 
 test(
-    'putFlowRecord then getFlowRecord round-trips'
-    + ' the binding row',
+    'putFlowRecord then getRecordForFlow round-trips'
+    + ' the binding',
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
@@ -64,12 +63,10 @@ test(
             record_id: 'rec-1',
             at: AT,
         });
-        const stored = await getFlowRecord(
-            ctx, 'fr-1',
+        assert.equal(
+            await getRecordForFlow(ctx, 'flow-1'),
+            'rec-1',
         );
-        assert.equal(stored.flow_id, 'flow-1');
-        assert.equal(stored.record_id, 'rec-1');
-        assert.equal(stored.at, AT);
     },
 );
 
@@ -201,9 +198,6 @@ test(
             at: AT,
         });
         await deleteFlowRecord(ctx, 'fr-1');
-        await assert.rejects(
-            () => getFlowRecord(ctx, 'fr-1'),
-        );
         assert.equal(
             await getRecordForFlow(ctx, 'flow-1'),
             null,

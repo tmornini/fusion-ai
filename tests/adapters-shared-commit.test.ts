@@ -10,15 +10,15 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import {
-    getProviderModels,
-} from '../api/provider-models.ts';
+    firstProviderModel,
+} from './member-fixtures.ts';
 
 function buildAIMemberBody(description: string) {
     return {
         name: 'AI ' + description,
         description,
         skill_focus: '',
-        model: getProviderModels()[0]!.id,
+        model: firstProviderModel().id,
     };
 }
 

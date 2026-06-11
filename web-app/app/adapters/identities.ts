@@ -32,18 +32,6 @@ export async function getIdentity(
     return new Identity(entity);
 }
 
-// The whole identity collection (global spine — no org
-// fence). Each row is wrapped so the caller speaks the
-// domain, not the storage shape.
-export async function getIdentities(
-    ctx: RequestContext,
-): Promise<Identity[]> {
-    const rows = await ctx.GET<IdentityEntity[]>(
-        'identities',
-    );
-    return rows.map(row => new Identity(row));
-}
-
 // The display name for a person identity whose PII is absent —
 // erased, or never recorded. An identity is NOT a member, so
 // this is distinct from the member-domain MEMBER_WITHOUT_PII_NAME:

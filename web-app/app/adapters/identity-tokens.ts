@@ -39,64 +39,6 @@ function eventOp(
     };
 }
 
-// Issue a token as a fresh chain root. Returns the jti so the
-// caller can mint an access/refresh token bound to it.
-export async function postTokenIssue(
-    ctx: RequestContext,
-    identityId: Id,
-): Promise<string> {
-    const jti = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [eventOp({
-            jti,
-            identity_id: identityId,
-            action: 'issued',
-            chain_id: generateCryptoSafeBase62(),
-            parent_jti: '',
-            at: nowUtc(),
-        })],
-    });
-    return jti;
-}
-
-// Rotate a live refresh jti: the rotation route retires it
-// and issues a successor in the same chain, deciding and
-// appending in ONE server-side transaction (a concurrent
-// reuse cannot double-rotate). A 409 is reuse — the route
-// has already revoked the whole chain — surfaced here as
-// TokenReuseError.
-export async function postTokenRotation(
-    ctx: RequestContext,
-    presentedJti: string,
-): Promise<string> {
-    try {
-        const { jti } = await ctx.POST<{ jti: string }>(
-            `identity-tokens/${presentedJti}/rotation`, {},
-        );
-        return jti;
-    } catch (err) {
-        if (
-            err instanceof RequestError
-            && err.status === HTTP_CONFLICT
-        ) {
-            throw new TokenReuseError(presentedJti);
-        }
-        throw err;
-    }
-}
-
-// Explicitly revoke the chain a jti belongs to (e.g. logging
-// out a single session) — one atomic server-side transaction.
-// A no-op for an unknown jti.
-export async function postTokenRevocation(
-    ctx: RequestContext,
-    jti: string,
-): Promise<void> {
-    await ctx.POST(
-        `identity-tokens/${jti}/revocation`, {},
-    );
-}
-
 // One refresh-rotation event in the domain idiom: the
 // presenter reads camelCase, never the snake_case row.
 export interface TokenEvent {
@@ -147,16 +89,3 @@ export async function getTokenChainsFor(
     return chains;
 }
 
-// The current state of the chain a jti belongs to (null if the
-// jti is unknown).
-export async function getTokenChainState(
-    ctx: RequestContext,
-    jti: string,
-): Promise<TokenChainState | null> {
-    const rows = await ctx.GET<IdentityTokenEntity[]>(
-        'identity-tokens',
-    );
-    const chainId = chainIdForJti(rows, jti);
-    if (chainId === null) return null;
-    return chainState(rows, chainId);
-}

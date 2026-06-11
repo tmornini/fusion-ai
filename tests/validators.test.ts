@@ -17,8 +17,8 @@ import {
     asStoredGraph,
 } from '../api/validators.ts';
 import {
-    getProviderModels,
-} from '../api/provider-models.ts';
+    firstProviderModel,
+} from './member-fixtures.ts';
 
 // --- HumanMemberEntity ---
 
@@ -129,7 +129,7 @@ const validAIMember = {
     name: 'Claude Opus 4.8',
     description: 'Long context, deep reasoning.',
     skill_focus: 'Deep reasoning over long docs.',
-    model: getProviderModels()[0]!.id,
+    model: firstProviderModel().id,
 };
 
 test(
@@ -148,7 +148,7 @@ test(
         );
         assert.equal(
             result.model,
-            getProviderModels()[0]!.id,
+            firstProviderModel().id,
         );
     },
 );
@@ -988,4 +988,64 @@ test(
         }),
         /RecordAttributeEntity.options\[0\]/,
     );
+});
+
+test(
+    'validateRecordAttributeEntity rejects a regex'
+    + ' constraint on a number attribute_type',
+    () => {
+    assert.throws(
+        () => validateRecordAttributeEntity({
+            ...validSelectAttribute,
+            attribute_type: 'number',
+            options: '[]',
+            constraints:
+                '[{"kind":"regex","pattern":"^\\\\d+$"}]',
+        }),
+        /regex/,
+    );
+});
+
+test(
+    'validateRecordAttributeEntity rejects range_min'
+    + ' on a text attribute_type',
+    () => {
+    assert.throws(
+        () => validateRecordAttributeEntity({
+            ...validSelectAttribute,
+            attribute_type: 'text',
+            options: '[]',
+            constraints:
+                '[{"kind":"range_min","min":"0"}]',
+        }),
+    );
+});
+
+test(
+    'validateRecordAttributeEntity accepts range_min'
+    + ' on a date attribute_type',
+    () => {
+    const result = validateRecordAttributeEntity({
+        ...validSelectAttribute,
+        attribute_type: 'date',
+        options: '[]',
+        constraints:
+            '[{"kind":"range_min","min":"2000-01-01"}]',
+    });
+    assert.equal(result.attribute_type, 'date');
+});
+
+test(
+    'validateRecordAttributeEntity accepts a regex'
+    + ' constraint on a text attribute_type',
+    () => {
+    const result = validateRecordAttributeEntity({
+        ...validSelectAttribute,
+        attribute_type: 'text',
+        options: '[]',
+        constraints:
+            '[{"kind":"regex",'
+            + '"pattern":"^[^@]+@[^@]+\\\\.[^@]+$"}]',
+    });
+    assert.equal(result.name, 'Priority');
 });
