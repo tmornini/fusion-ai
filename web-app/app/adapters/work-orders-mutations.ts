@@ -32,6 +32,7 @@ import {
 import {
     buildStateEventOp,
 } from './state-events.ts';
+import { sha256Bytes } from './digest.ts';
 import {
     nextPosition,
 } from '../drag-reorder-positions.ts';
@@ -66,11 +67,7 @@ export function notifyWorkOrderChanges(): void {
 async function generateDisplayId(
     uuid: string,
 ): Promise<string> {
-    const data = new TextEncoder()
-        .encode(uuid);
-    const hash = await crypto.subtle
-        .digest('SHA-256', data);
-    const bytes = new Uint8Array(hash);
+    const bytes = await sha256Bytes(uuid);
     let hex = '';
     const ID_LENGTH = 4;
     for (let i = 0; i < ID_LENGTH; i++) {
