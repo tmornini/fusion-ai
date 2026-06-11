@@ -9,12 +9,14 @@ in [SCHEMA.md](SCHEMA.md).
 
 Domain classes wrap entity + state: `Idea(entity, state)`,
 `Project(entity, state)`, `HumanMember(entity, state)`,
-`AIMember(entity, state)` all expose `stateValue()`,
-`stateLabel()`, and `stateClassName()` — the lifecycle
-stage is part of the domain object, not a separate fetch
-the presenter has to reconcile. `Idea` additionally
-exposes `readinessValue()`, `readinessLabel()`,
-`readinessClassName()`, and `isReady()` — readiness is
+`AIMember(entity, state)` all expose `stateValue()` — the
+lifecycle stage is part of the domain object, not a
+separate fetch the presenter has to reconcile. How a state
+is displayed (badge label and class) is presentation
+vocabulary, owned by the `*_STATE_CONFIG` maps in
+`web-app/app/presenters/state-display.ts` and keyed by the
+state alphabets in `api/types.ts`. `Idea` additionally
+exposes `readinessValue()` and `isReady()` — readiness is
 derived from required-field presence on every call.
 
 Readiness is a derived property of the `Idea` domain
