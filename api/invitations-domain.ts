@@ -13,9 +13,6 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
-    type Principal,
-} from './access-token.ts';
-import {
     currentRolesForInOrg,
 } from './authorization.ts';
 import { latestByKey } from './ledger-reduction.ts';
@@ -34,28 +31,30 @@ import {
 } from './request-auth.ts';
 import {
     type IncomingContext,
+    type AuthenticatedContext,
 } from './request-context.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
 // reach no org — the same denial the main gate raises.
 async function callerActiveOrg(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
 ): Promise<Id | null> {
-    return principal.organization
-        ?? await identityDefaultOrg(adapter, principal.id);
+    return ctx.principal.organization
+        ?? await identityDefaultOrg(
+            ctx.base, ctx.principal.id,
+        );
 }
 
 async function callerIsOrgAdmin(
-    adapter: DbAdapter,
-    identityId: Id,
+    ctx: AuthenticatedContext,
     org: Id,
 ): Promise<boolean> {
-    const rows = await keyed(adapter.roleGrants)
-        .getAllWhere('identity_id', identityId);
-    return currentRolesForInOrg(rows, identityId, org)
-        .includes('admin');
+    const rows = await keyed(ctx.base.roleGrants)
+        .getAllWhere('identity_id', ctx.principal.id);
+    return currentRolesForInOrg(
+        rows, ctx.principal.id, org,
+    ).includes('admin');
 }
 
 // An invitation's current state: the latest event on its id —
@@ -87,38 +86,36 @@ export async function invitationsRequest(
     request: Request,
     segments: readonly string[],
 ): Promise<Response> {
-    const adapter = ctx.base;
     const authed =
         await authenticateRequest(ctx, request);
     if (typeof authed === 'string') {
         return errorJson(authed, HTTP_UNAUTHORIZED);
     }
-    const { principal } = authed;
     const method = ctx.method;
     if (segments.length === 1) {
         if (method === 'GET') {
-            return invitationsForInvitee(adapter, principal);
+            return invitationsForInvitee(authed);
         }
         if (method === 'POST') {
-            return grantInvitation(adapter, request, principal);
+            return grantInvitation(authed, request);
         }
     }
     if (segments.length === 2 && segments[1] === 'sent') {
         if (method === 'GET') {
-            return sentInvitations(adapter, principal);
+            return sentInvitations(authed);
         }
     }
     if (segments.length === 3 && method === 'POST') {
         const id = segments[1]!;
         const op = segments[2]!;
         if (op === 'acceptance') {
-            return acceptInvitation(adapter, principal, id);
+            return acceptInvitation(authed, id);
         }
         if (op === 'decline') {
-            return declineInvitation(adapter, principal, id);
+            return declineInvitation(authed, id);
         }
         if (op === 'revocation') {
-            return revokeInvitation(adapter, principal, id);
+            return revokeInvitation(authed, id);
         }
     }
     return errorJson(
@@ -132,22 +129,22 @@ export async function invitationsRequest(
 // current state. The whole result is the caller's own — never
 // another identity's.
 async function invitationsForInvitee(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
 ): Promise<Response> {
-    const mine = (await adapter.invitations.getAll())
-        .filter(inv => inv.identity_id === principal.id);
+    const mine = (await ctx.base.invitations.getAll())
+        .filter(inv =>
+            inv.identity_id === ctx.principal.id);
     if (mine.length === 0) return Response.json([]);
     const orgName = new Map(
-        (await adapter.organizations.getAll())
+        (await ctx.base.organizations.getAll())
             .map(o => [o.id, o.name]));
     const personName = new Map(
-        (await adapter.identityPii.getAll())
+        (await ctx.base.identityPii.getAll())
             .map(p => [p.id, p.name]));
     // One states read serves every row — a per-invitation
     // getAllFor opened one transaction per invitation for the
     // same log.
-    const events = await adapter.states.getAll();
+    const events = await ctx.base.states.getAll();
     const latest = latestByKey(events, ev => ev.entity_id);
     const eventsFor = Map.groupBy(events, ev => ev.entity_id);
     const out = [];
@@ -187,30 +184,30 @@ async function invitationsForInvitee(
 // admin. The invitee email rides along because the admin
 // supplied it at grant time — need-to-know, not a PII leak.
 async function sentInvitations(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
 ): Promise<Response> {
-    const org = await callerActiveOrg(adapter, principal);
+    const org = await callerActiveOrg(ctx);
     if (org === null) {
         return errorJson(
             'forbidden: identity has no organization',
             HTTP_FORBIDDEN);
     }
-    if (!await callerIsOrgAdmin(adapter, principal.id, org)) {
+    if (!await callerIsOrgAdmin(ctx, org)) {
         return errorJson(
             'forbidden: listing sent invitations requires'
             + ' an admin role', HTTP_FORBIDDEN);
     }
-    const orgInvites = (await adapter.invitations.getAll())
-        .filter(inv => inv.organization_id === org);
+    const orgInvites =
+        (await ctx.base.invitations.getAll())
+            .filter(inv => inv.organization_id === org);
     if (orgInvites.length === 0) return Response.json([]);
     const email = new Map(
-        (await adapter.identityPii.getAll())
+        (await ctx.base.identityPii.getAll())
             .map(p => [p.id, p.email]));
     // One states read serves every row — getCurrentFor per
     // invitation opened one transaction each for the same log.
     const latest = latestByKey(
-        await adapter.states.getAll(), ev => ev.entity_id);
+        await ctx.base.states.getAll(), ev => ev.entity_id);
     const out = [];
     for (const inv of orgInvites) {
         const current = latest.get(inv.id);
@@ -240,17 +237,16 @@ async function sentInvitations(
 // outstanding pending invite for the (org, identity) pair.
 // New-identity creation and email delivery are deferred.
 async function grantInvitation(
-    adapter: DbAdapter,
+    ctx: AuthenticatedContext,
     request: Request,
-    principal: Principal,
 ): Promise<Response> {
-    const org = await callerActiveOrg(adapter, principal);
+    const org = await callerActiveOrg(ctx);
     if (org === null) {
         return errorJson(
             'forbidden: identity has no organization',
             HTTP_FORBIDDEN);
     }
-    if (!await callerIsOrgAdmin(adapter, principal.id, org)) {
+    if (!await callerIsOrgAdmin(ctx, org)) {
         return errorJson(
             'forbidden: granting an invitation requires an'
             + ' admin role', HTTP_FORBIDDEN);
@@ -273,7 +269,7 @@ async function grantInvitation(
     // plan defers new-identity creation — of the same demo grade as the
     // client-shipped HMAC key. A server tier would resolve emails
     // without reflecting existence through the status code.
-    const match = (await adapter.identityPii.getAll())
+    const match = (await ctx.base.identityPii.getAll())
         .find(p => p.email === email);
     if (match === undefined) {
         return errorJson(
@@ -287,7 +283,7 @@ async function grantInvitation(
     // two concurrent grants cannot both pass the check and each append a
     // pending invitation (Commandment VII). The tx RETURNS its outcome
     // (a closure-mutated outer var would not narrow), mapped below.
-    const result = await adapter.transaction(
+    const result = await ctx.base.transaction(
         ['invitations', 'states', 'memberships'],
         async (view): Promise<GrantOutcome> => {
             const member = (await view.memberships.getAll())
@@ -308,7 +304,7 @@ async function grantInvitation(
                 at,
             });
             await view.states.postEvent(
-                eventId, id, 'pending', principal.id);
+                eventId, id, 'pending', ctx.principal.id);
             return { kind: 'created' };
         },
     );
@@ -367,16 +363,15 @@ async function pendingInvitationFor(
 // the 'accepted' event. Idempotent: a re-accept is a no-op; a
 // non-pending invitation is a conflict.
 async function acceptInvitation(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
     id: Id,
 ): Promise<Response> {
-    const inv = await loadInvitation(adapter, id);
+    const inv = await loadInvitation(ctx.base, id);
     if (inv === null) {
         return errorJson('Not found: /invitations/' + id,
             HTTP_NOT_FOUND);
     }
-    if (inv.identity_id !== principal.id) {
+    if (inv.identity_id !== ctx.principal.id) {
         return errorJson(
             'forbidden: only the invitee may accept',
             HTTP_FORBIDDEN);
@@ -389,25 +384,26 @@ async function acceptInvitation(
     // membership write — a revoke must actually stop access (Commandment
     // X / II). Mirrors grantAuthorizationCode's in-tx state gate.
     let conflict = false;
-    await adapter.transaction(
+    await ctx.base.transaction(
         ['memberships', 'states'],
         async (view) => {
             const state = await currentInvitationState(view, id);
             if (state === 'accepted') return;   // idempotent no-op
             if (state !== 'pending') { conflict = true; return; }
             const already = (await view.memberships.getAll())
-                .some(m => m.identity_id === principal.id
+                .some(m =>
+                    m.identity_id === ctx.principal.id
                     && m.organization_id
                         === inv.organization_id);
             if (!already) {
                 await view.memberships.put(membershipId, {
                     organization_id: inv.organization_id,
-                    identity_id: principal.id,
+                    identity_id: ctx.principal.id,
                     at,
                 });
             }
             await view.states.postEvent(
-                eventId, id, 'accepted', principal.id);
+                eventId, id, 'accepted', ctx.principal.id);
         },
     );
     if (conflict) {
@@ -420,28 +416,27 @@ async function acceptInvitation(
 // Decline: the invitee appends 'declined'. No membership is
 // written. Idempotent on an already-declined invitation.
 async function declineInvitation(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
     id: Id,
 ): Promise<Response> {
-    const inv = await loadInvitation(adapter, id);
+    const inv = await loadInvitation(ctx.base, id);
     if (inv === null) {
         return errorJson('Not found: /invitations/' + id,
             HTTP_NOT_FOUND);
     }
-    if (inv.identity_id !== principal.id) {
+    if (inv.identity_id !== ctx.principal.id) {
         return errorJson(
             'forbidden: only the invitee may decline',
             HTTP_FORBIDDEN);
     }
     const eventId = generateCryptoSafeBase62();
     let conflict = false;
-    await adapter.transaction(['states'], async (view) => {
+    await ctx.base.transaction(['states'], async (view) => {
         const state = await currentInvitationState(view, id);
         if (state === 'declined') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
         await view.states.postEvent(
-            eventId, id, 'declined', principal.id);
+            eventId, id, 'declined', ctx.principal.id);
     });
     if (conflict) {
         return errorJson(
@@ -455,29 +450,28 @@ async function declineInvitation(
 // audit (mirrors postRoleRevocation). Idempotent on an
 // already-revoked invitation.
 async function revokeInvitation(
-    adapter: DbAdapter,
-    principal: Principal,
+    ctx: AuthenticatedContext,
     id: Id,
 ): Promise<Response> {
-    const inv = await loadInvitation(adapter, id);
+    const inv = await loadInvitation(ctx.base, id);
     if (inv === null) {
         return errorJson('Not found: /invitations/' + id,
             HTTP_NOT_FOUND);
     }
     if (!await callerIsOrgAdmin(
-        adapter, principal.id, inv.organization_id)) {
+        ctx, inv.organization_id)) {
         return errorJson(
             'forbidden: revoking an invitation requires an'
             + ' admin role', HTTP_FORBIDDEN);
     }
     const eventId = generateCryptoSafeBase62();
     let conflict = false;
-    await adapter.transaction(['states'], async (view) => {
+    await ctx.base.transaction(['states'], async (view) => {
         const state = await currentInvitationState(view, id);
         if (state === 'revoked') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
         await view.states.postEvent(
-            eventId, id, 'revoked', principal.id);
+            eventId, id, 'revoked', ctx.principal.id);
     });
     if (conflict) {
         return errorJson(
