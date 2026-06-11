@@ -158,6 +158,9 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .input-narrow-num {

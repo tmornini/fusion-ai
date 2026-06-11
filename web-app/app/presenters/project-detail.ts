@@ -735,8 +735,8 @@ function buildFlowCard(
     flow: FlowListItem,
 ): SafeHtml {
     return html`
-        <a
-            href="#"
+        <button
+            type="button"
             data-flow-id="${flow.id}"
             class="${
                 'card card-hover'
@@ -770,7 +770,7 @@ function buildFlowCard(
                     )} edges</span>
                 </div>
             </div>
-        </a>`;
+        </button>`;
 }
 
 function buildFlowsSection(
