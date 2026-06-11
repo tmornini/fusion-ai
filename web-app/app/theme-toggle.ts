@@ -1,8 +1,10 @@
 import {
     getThemeIcon,
-    isValidTheme,
     persistThemePreference,
 } from './state.ts';
+import {
+    isStoredTheme,
+} from './adapters/preferences.ts';
 import { $, $$ } from './dom.ts';
 import { setHtml } from './safe-html.ts';
 import { showToast } from './toast.ts';
@@ -108,7 +110,7 @@ export function initThemeAndDropdowns(
                                 'data-theme-set',
                             );
                     if (
-                        isValidTheme(theme)
+                        isStoredTheme(theme)
                     ) {
                         // persistThemePreference
                         // applies theme to memory
