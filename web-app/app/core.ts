@@ -61,6 +61,9 @@ import {
     postSessionRefresh,
 } from './adapters/session-refresh.ts';
 import { initErrorSurfacing } from './error-helpers.ts';
+import {
+    putSchemaPresent,
+} from './adapters/schema-marker.ts';
 import { redirectToLogin } from './auth-redirect.ts';
 import { navigateTo } from './navigation.ts';
 import { PAGE_REGISTRY } from './page-registry.ts';
@@ -295,6 +298,8 @@ document.addEventListener(
                 return;
             }
         }
+
+        putSchemaPresent(hasSchema);
 
         const pageName = getPageName();
 
