@@ -42,7 +42,6 @@ export type {
 
 export interface RecordWithCounts {
     readonly record: RecordModel;
-    readonly entity: RecordEntity;
     readonly attributeCount: number;
     readonly boundFlowCount: number;
 }
@@ -140,7 +139,6 @@ export async function getRecords(
         }
         return {
             record: new RecordModel(row, state),
-            entity: row,
             attributeCount:
                 attrCountByRecord.get(row.id)
                 ?? 0,
