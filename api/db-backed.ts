@@ -46,6 +46,7 @@ import type {
     ProjectObjectiveBaselineScore,
     ProjectObjectiveActualScore,
 } from './types.ts';
+import type { LatencySimulation } from './latency.ts';
 import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
@@ -97,7 +98,9 @@ import {
 // an open hook the async tiers (IndexedDB) use to connect
 // before any store op. Schema lifecycle delegates to the
 // backend, which signals "schema exists" its own way.
-export class BackedDbAdapter implements DbAdapter {
+export class BackedDbAdapter
+    implements DbAdapter, LatencySimulation
+{
     readonly #backend: StorageBackend;
     readonly #latency: () => Promise<void>;
     readonly #open: () => Promise<void>;
@@ -254,7 +257,6 @@ export class BackedDbAdapter implements DbAdapter {
             getSnapshot: () => this.getSnapshot(),
             putSnapshot: (json) =>
                 this.putSnapshot(json),
-            simulateLatency: () => this.simulateLatency(),
             transaction: () => {
                 throw new Error(
                     'Nested transaction is not supported.',

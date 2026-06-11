@@ -5,6 +5,7 @@ import {
     MissingTableError,
     keyed,
 } from './db.ts';
+import type { LatencySimulation } from './latency.ts';
 import {
     ValidationError,
 } from './types.ts';
@@ -458,6 +459,14 @@ export async function handleRequest(
     }
 }
 
+// What the client verb facade requires of its adapter: the
+// storage contract plus the segregated demo latency shim it
+// awaits before each simulated network hop. Only the facade
+// names the shim — handleRequest and every layer below it
+// see DbAdapter alone.
+export type ClientFacadeAdapter =
+    DbAdapter & LatencySimulation;
+
 async function unwrapResponse<T>(
     response: Response,
 ): Promise<T> {
@@ -480,7 +489,7 @@ async function unwrapResponse<T>(
 }
 
 export async function GET<T>(
-    adapter: DbAdapter,
+    adapter: ClientFacadeAdapter,
     resource: string,
     token: string,
 ): Promise<T> {
@@ -501,7 +510,7 @@ export async function GET<T>(
 }
 
 export async function PUT<T>(
-    adapter: DbAdapter,
+    adapter: ClientFacadeAdapter,
     resource: string,
     payload: Record<string, unknown>,
     token: string,
@@ -527,7 +536,7 @@ export async function PUT<T>(
 }
 
 export async function DELETE(
-    adapter: DbAdapter,
+    adapter: ClientFacadeAdapter,
     resource: string,
     token: string,
 ): Promise<void> {
@@ -549,7 +558,7 @@ export async function DELETE(
 }
 
 export async function POST<T>(
-    adapter: DbAdapter,
+    adapter: ClientFacadeAdapter,
     resource: string,
     payload: Record<string, unknown>,
     token: string,

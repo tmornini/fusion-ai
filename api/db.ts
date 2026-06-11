@@ -400,7 +400,6 @@ export interface DbAdapter extends DbStores {
     postSchemaCreation(): Promise<void>;
     getSnapshot(): Promise<string>;
     putSnapshot(json: string): Promise<void>;
-    simulateLatency(): Promise<void>;
     // Run `fn` inside one transaction. The view it receives
     // exposes the same stores bound to the open tx, so every
     // op joins it — GET-modify-PUT and multi-PUT commit
