@@ -43,6 +43,7 @@ import {
     zoomOut as zoomOutState,
     fitBoxToCanvas,
     nodeBoundsBox,
+    marqueeDrawRect,
 } from '../flow-interactions.ts';
 import type {
     InteractionState,
@@ -1134,25 +1135,9 @@ Auto Fit</label>
             this.#snapshot.interaction
                 .connect.kind
                 === 'connecting';
-        const m =
-            this.#snapshot.interaction.marquee;
-        const marqueeRect = m.kind
-            === 'selecting'
-            ? {
-                x: Math.min(
-                    m.startX, m.currentX,
-                ),
-                y: Math.min(
-                    m.startY, m.currentY,
-                ),
-                w: Math.abs(
-                    m.currentX - m.startX,
-                ),
-                h: Math.abs(
-                    m.currentY - m.startY,
-                ),
-            }
-            : null;
+        const marqueeRect = marqueeDrawRect(
+            this.#snapshot.interaction.marquee,
+        );
         return buildGraphSvg(
             nodes,
             this.#snapshot.edges,

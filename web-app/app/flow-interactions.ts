@@ -126,6 +126,37 @@ export type LastClick =
         time: number;
     };
 
+// The marquee's drawable rectangle, normalized from the
+// gesture's anchor and current corner. One computation
+// serves the full canvas rebuild and the narrow
+// in-gesture mutator.
+export function marqueeDrawRect(
+    marquee: MarqueeMode,
+): {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+} | null {
+    if (marquee.kind !== 'selecting') {
+        return null;
+    }
+    return {
+        x: Math.min(
+            marquee.startX, marquee.currentX,
+        ),
+        y: Math.min(
+            marquee.startY, marquee.currentY,
+        ),
+        w: Math.abs(
+            marquee.currentX - marquee.startX,
+        ),
+        h: Math.abs(
+            marquee.currentY - marquee.startY,
+        ),
+    };
+}
+
 export interface InteractionState {
     selection: Selection;
     lastClick: LastClick;
