@@ -211,7 +211,6 @@ function initListeners(): void {
 
 export type { AppState };
 export {
-    setState,
     computeTheme,
     getThemeIcon,
     applyResolvedTheme,
