@@ -153,9 +153,9 @@ function makeCreation(
     return {
         kind: 'creation',
         id: 't-1',
-        work_order_id: 'wo-1',
-        to_node_id: 'n-1',
-        member_id: 'p-1',
+        workOrderId: 'wo-1',
+        toNodeId: 'n-1',
+        memberId: 'p-1',
         at: '2026-04-01T12:00:00.000000Z',
         ...overrides,
     };
@@ -167,10 +167,10 @@ function makeStep(
     return {
         kind: 'step',
         id: 't-2',
-        work_order_id: 'wo-1',
-        from_node_id: 'n-1',
-        to_node_id: 'n-2',
-        member_id: 'p-1',
+        workOrderId: 'wo-1',
+        fromNodeId: 'n-1',
+        toNodeId: 'n-2',
+        memberId: 'p-1',
         at: '2026-04-01T12:00:00.000000Z',
         ...overrides,
     };
@@ -419,13 +419,13 @@ test(
             transitions: [
                 makeCreation({
                     id: 't-1',
-                    to_node_id: 'n-1',
+                    toNodeId: 'n-1',
                     at:
                         '2026-04-01T12:00:00.000000Z',
                 }),
                 makeStep({
-                    id: 't-2', from_node_id: 'n-1',
-                    to_node_id: 'n-2',
+                    id: 't-2', fromNodeId: 'n-1',
+                    toNodeId: 'n-2',
                     at:
                         '2026-04-02T09:00:00.000000Z',
                 }),
@@ -550,7 +550,7 @@ test(
             transitions: [
                 makeCreation({
                     id: 't-1',
-                    to_node_id: 'n-2',
+                    toNodeId: 'n-2',
                 }),
             ],
         });
@@ -618,15 +618,15 @@ test(
             transitions: [
                 makeCreation({
                     id: 't-1',
-                    to_node_id: 'n-1',
-                    member_id: 'p-1',
+                    toNodeId: 'n-1',
+                    memberId: 'p-1',
                     at:
                         '2026-04-01T12:00:00.000000Z',
                 }),
                 makeStep({
-                    id: 't-2', from_node_id: 'n-1',
-                    to_node_id: 'n-2',
-                    member_id: 'p-2',
+                    id: 't-2', fromNodeId: 'n-1',
+                    toNodeId: 'n-2',
+                    memberId: 'p-2',
                     at:
                         '2026-04-03T08:00:00.000000Z',
                 }),

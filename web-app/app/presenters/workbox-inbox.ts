@@ -214,7 +214,7 @@ export function buildInboxItems(
             );
         const lastTransition = sorted.at(-1)!;
         const lastToId =
-            lastTransition.to_node_id;
+            lastTransition.toNodeId;
         const curNode = fg.nodes.find(
             n => n.id === lastToId,
         );
@@ -243,7 +243,7 @@ export function buildInboxItems(
             flowName: fg.name,
             stateName: curNode.name,
             transitionerName: memberName(
-                memberMap, lastTransition.member_id,
+                memberMap, lastTransition.memberId,
             ),
             lastTransitionedAt:
                 lastTransition.at,

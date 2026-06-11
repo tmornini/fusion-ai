@@ -535,7 +535,7 @@ function findCurrentNode(
             + ' order has no transitions',
         );
     }
-    const lastToId = lastTransition.to_node_id;
+    const lastToId = lastTransition.toNodeId;
     const node = nodes.find(
         n => n.id === lastToId,
     );
@@ -604,13 +604,13 @@ function buildHistory(
                     ? 'Created'
                     : nodeNameById(
                         nodes,
-                        t.from_node_id,
+                        t.fromNodeId,
                     ),
             toNodeName: nodeNameById(
-                nodes, t.to_node_id,
+                nodes, t.toNodeId,
             ),
             memberName: memberName(
-                memberMap, t.member_id,
+                memberMap, t.memberId,
             ),
             transitionedAt:
                 t.at,
