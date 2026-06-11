@@ -116,7 +116,7 @@ const LABEL_MIN_WIDTH = 36;
 export const LABEL_HEIGHT = 20;
 const LABEL_RADIUS = 4;
 const LABEL_BG_OPACITY = 0.9;
-const LABEL_TEXT_OFFSET_Y = 4;
+export const LABEL_TEXT_OFFSET_Y = 4;
 const LABEL_FONT = 11;
 
 const NODE_ROLE = 'button';
@@ -632,18 +632,27 @@ function buildWaypointPath(
     return d;
 }
 
-function buildEdge(
-    edge: GraphEdge,
+// The drawable geometry of one edge: the routed path
+// and the label anchor along it. Pure math shared by
+// the full SVG rebuild (buildEdge) and the narrow
+// in-gesture mutator (flow-gesture-render.ts) — one
+// truth, so a dragged edge can never drift from its
+// rebuilt form.
+export interface EdgeGeometry {
+    pathD: string;
+    labelX: number;
+    labelY: number;
+}
+
+export function computeEdgeGeometry(
     fromNode: GraphNode,
     toNode: GraphNode,
-    isSelected: boolean,
     aimOffset: number,
-    isCycle: boolean,
     waypoints: readonly {
         x: number;
         y: number;
     }[],
-): SafeHtml {
+): EdgeGeometry {
     const fromCx =
         fromNode.positionX
         + NODE_WIDTH / 2;
@@ -658,9 +667,6 @@ function buildEdge(
         + NODE_HEIGHT / 2;
 
     let pathD: string;
-    let color: string;
-    let markerUrl: string;
-    let dashAttr: string;
 
     let aimFromX = toCx;
     let aimFromY = toCy;
@@ -750,6 +756,81 @@ function buildEdge(
             + String(endPt.y);
     }
 
+    const labelT = aimOffset === 0
+        ? BEZIER_MIDPOINT
+        : BIDI_LABEL_T;
+    // Base anchor on the routed path; the perpendicular offset
+    // below is the INTENTIONAL nudge that keeps two-way edge
+    // labels legible. A waypoint edge is a Q/T polyline, so
+    // anchor along it — bezierAt is for the cubic case only.
+    const mid = waypoints.length > 0
+        ? pointAlongPolyline(
+            [startPt, ...waypoints, endPt], labelT)
+        : bezierAt(pathD, labelT);
+    return {
+        pathD,
+        labelX: mid.x
+            + perpX * BIDI_LABEL_OFFSET,
+        labelY: mid.y
+            + perpY * BIDI_LABEL_OFFSET,
+    };
+}
+
+// aimOffset per edge id: 1 when the edge belongs to a
+// two-way pair (each direction bows to its own side),
+// else 0. One computation feeds both the full rebuild
+// and the narrow in-gesture mutator.
+export function computeEdgeAimOffsets(
+    edges: readonly GraphEdge[],
+): Map<string, number> {
+    const pairCounts =
+        new Map<string, number>();
+    for (const edge of edges) {
+        const k = canonicalEdgeKey(
+            edge.fromNodeId,
+            edge.toNodeId,
+        );
+        pairCounts.set(
+            k,
+            (pairCounts.get(k) ?? 0) + 1,
+        );
+    }
+    const offsets = new Map<string, number>();
+    for (const edge of edges) {
+        const k = canonicalEdgeKey(
+            edge.fromNodeId,
+            edge.toNodeId,
+        );
+        offsets.set(
+            edge.id,
+            (pairCounts.get(k) ?? 0) >= 2
+                ? 1 : 0,
+        );
+    }
+    return offsets;
+}
+
+function buildEdge(
+    edge: GraphEdge,
+    fromNode: GraphNode,
+    toNode: GraphNode,
+    isSelected: boolean,
+    aimOffset: number,
+    isCycle: boolean,
+    waypoints: readonly {
+        x: number;
+        y: number;
+    }[],
+): SafeHtml {
+    const geo = computeEdgeGeometry(
+        fromNode, toNode, aimOffset, waypoints,
+    );
+    const pathD = geo.pathD;
+
+    let color: string;
+    let markerUrl: string;
+    let dashAttr: string;
+
     if (isCycle) {
         color = WARN;
         markerUrl =
@@ -796,21 +877,8 @@ function buildEdge(
         + ` marker-end="${markerUrl}"`;
     const visClose = '/>';
 
-    const labelT = aimOffset === 0
-        ? BEZIER_MIDPOINT
-        : BIDI_LABEL_T;
-    // Base anchor on the routed path; the perpendicular offset
-    // below is the INTENTIONAL nudge that keeps two-way edge
-    // labels legible. A waypoint edge is a Q/T polyline, so
-    // anchor along it — bezierAt is for the cubic case only.
-    const mid = waypoints.length > 0
-        ? pointAlongPolyline(
-            [startPt, ...waypoints, endPt], labelT)
-        : bezierAt(pathD, labelT);
-    const midX = mid.x
-        + perpX * BIDI_LABEL_OFFSET;
-    const midY = mid.y
-        + perpY * BIDI_LABEL_OFFSET;
+    const midX = geo.labelX;
+    const midY = geo.labelY;
     const truncEdge =
         truncateEdgeLabel(edge.name);
     const labelEsc =
@@ -1051,22 +1119,8 @@ export function buildGraphSvg(
 
     const cycleEdgeIds = findCycleEdgeIds(nodes, edges);
 
-    const pairCounts =
-        new Map<string, number>();
-    for (const edge of edges) {
-        const k = canonicalEdgeKey(
-            edge.fromNodeId,
-            edge.toNodeId,
-        );
-        pairCounts.set(
-            k,
-            (pairCounts.get(k) ?? 0) + 1,
-        );
-    }
-    const bidi = new Set<string>();
-    for (const [k, c] of pairCounts) {
-        if (c >= 2) bidi.add(k);
-    }
+    const aimOffsets =
+        computeEdgeAimOffsets(edges);
 
     let edgeMarkup = '';
     for (const edge of edges) {
@@ -1075,14 +1129,8 @@ export function buildGraphSvg(
         const toNode =
             nodeMap.get(edge.toNodeId);
         if (!fromNode || !toNode) continue;
-        let aimOffset = 0;
-        const k = canonicalEdgeKey(
-            edge.fromNodeId,
-            edge.toNodeId,
-        );
-        if (bidi.has(k)) {
-            aimOffset = 1;
-        }
+        const aimOffset =
+            aimOffsets.get(edge.id)!;
         const isSelected =
             selection.kind === 'edge'
             && edge.id === selection.edgeId;
