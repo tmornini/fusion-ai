@@ -13,6 +13,7 @@ import {
     validateStoredGraphJson,
 } from '../../../api/validators.ts';
 import type { RequestContext } from './shared.ts';
+import { filterByField } from './shared.ts';
 import { withRenderableLayout } from '../flow-graph-layout.ts';
 
 export type {
@@ -127,13 +128,9 @@ export async function getFlowsByProject(
         ]);
 
     const flowIds = new Set(
-        projectFlows
-            .filter(
-                pw =>
-                    pw.project_id
-                        === projectId,
-            )
-            .map(pw => pw.flow_id),
+        filterByField(
+            projectFlows, 'project_id', projectId,
+        ).map(pw => pw.flow_id),
     );
 
     const flowMap = new Map(

@@ -24,6 +24,7 @@ import {
 import type {
     RequestContext, WriteOp,
 } from './shared.ts';
+import { filterByField } from './shared.ts';
 import {
     validateFlowForCreation,
     formatFlowProblem,
@@ -110,11 +111,9 @@ export async function postWorkOrderCreation(
         );
     }
 
-    const postStartEdges =
-        graph.edges.filter(
-            e => e.fromNodeId
-                === startNode.id,
-        );
+    const postStartEdges = filterByField(
+        graph.edges, 'fromNodeId', startNode.id,
+    );
     const [postStartEdge] = postStartEdges;
     if (
         postStartEdges.length !== 1
