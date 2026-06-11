@@ -131,6 +131,14 @@ export function populateIcons(entries: Array<[string, SafeHtml]>): void {
     }
 }
 
+export function mutateSlot(
+    container: HTMLElement,
+    cls: string,
+    markup: SafeHtml,
+): void {
+    setHtml($required(cls, container), markup);
+}
+
 export const FOCUSABLE_SELECTOR =
     'a[href], button, input,'
     + ' select, textarea,'
