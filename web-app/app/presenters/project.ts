@@ -15,6 +15,7 @@ import {
 import {
     toggleStatusFilter,
 } from './list-filter.ts';
+import { buildPageUrl } from '../navigation.ts';
 import { stateBadge } from './state-badge.ts';
 import {
     buildStateFilterBadges,
@@ -115,10 +116,19 @@ export class ProjectPresenter {
                 <h3 class="${
                     'font-display '
                     + 'font-semibold truncate'
+                }"><a href="${
+                    buildPageUrl(
+                        'project-detail',
+                        {
+                            projectId: this
+                                .#project
+                                .idForLink(),
+                        },
+                    )
                 }">${
                     this.#project
                         .titleText()
-                }</h3>
+                }</a></h3>
                 <span class="${
                     'badge '
                     + this.#project

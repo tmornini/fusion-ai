@@ -161,6 +161,9 @@ function onCardClick(e: MouseEvent): void {
     if (
         !(e.target instanceof Element)
     ) return;
+    // Real links navigate themselves; the
+    // delegate must not double-fire.
+    if (e.target.closest('a[href]')) return;
     const convertBtn = e.target
         .closest<HTMLElement>(
             '[data-idea-convert]',

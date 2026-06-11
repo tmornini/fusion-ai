@@ -13,6 +13,7 @@ import {
 import {
     displayText, formatDateTime,
 } from '../core.ts';
+import { buildPageUrl } from '../navigation.ts';
 import {
     iconGripVertical,
     iconClock,
@@ -631,7 +632,15 @@ export class IdeaPresenter {
             + ' font-semibold'
             + ' truncate'
         }">
-            ${this.#idea.titleText()}
+            <a href="${
+                buildPageUrl(
+                    'idea-detail',
+                    {
+                        ideaId: this.#idea
+                            .idForLink(),
+                    },
+                )
+            }">${this.#idea.titleText()}</a>
         </h3>
         <div class="${
             'flex items-center gap-2 mt-1'

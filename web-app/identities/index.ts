@@ -83,6 +83,9 @@ async function refresh(
 function onListClick(e: MouseEvent): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
+    // Real links navigate themselves; the
+    // delegate must not double-fire.
+    if (target.closest('a[href]')) return;
     const row = target.closest('[data-identity-id]');
     if (!row) return;
     const identityId = row.getAttribute(

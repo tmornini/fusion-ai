@@ -12,6 +12,7 @@ import {
     iconCheckCircle2,
     iconClock,
 } from '../icons.ts';
+import { buildPageUrl } from '../navigation.ts';
 import type {
     RecordModel,
     RecordState,
@@ -150,7 +151,15 @@ export class RecordPresenter {
             + ' font-semibold'
             + ' truncate'
         }">
-            ${this.#record.nameText()}
+            <a href="${
+                buildPageUrl(
+                    'record-detail',
+                    {
+                        id: this.#record
+                            .idForLink(),
+                    },
+                )
+            }">${this.#record.nameText()}</a>
         </h3>
         <p class="${
             'text-sm text-muted truncate'

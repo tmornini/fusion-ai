@@ -18,6 +18,7 @@ import {
     MEMBER_WITHOUT_PII_NAME,
 } from '../adapters/index.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
+import { buildPageUrl } from '../navigation.ts';
 import {
     findProviderModel,
 } from '../../../api/provider-models.ts';
@@ -91,7 +92,16 @@ export class HumanMemberRowPresenter {
                 <p class="${
                     'font-medium truncate'
                 }">
-                    ${name}
+                    <a href="${
+                        buildPageUrl(
+                            'member-detail',
+                            {
+                                memberId: this
+                                    .#member
+                                    .idForLink(),
+                            },
+                        )
+                    }">${name}</a>
                 </p>
                 <p class="${
                     'text-xs text-muted truncate'
@@ -180,7 +190,18 @@ export class AIMemberRowPresenter {
                 <p class="${
                     'font-medium truncate'
                 }">
-                    ${this.#member.nameText()}
+                    <a href="${
+                        buildPageUrl(
+                            'member-detail',
+                            {
+                                memberId: this
+                                    .#member
+                                    .idForLink(),
+                            },
+                        )
+                    }">${
+                        this.#member.nameText()
+                    }</a>
                 </p>
                 <p class="${
                     'text-xs text-muted truncate'

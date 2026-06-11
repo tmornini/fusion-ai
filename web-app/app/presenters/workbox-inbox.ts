@@ -4,6 +4,7 @@ import {
 } from '../safe-html.ts';
 import { iconGripVertical } from '../icons.ts';
 import { DISPLAY_ABSENT } from '../format.ts';
+import { buildPageUrl } from '../navigation.ts';
 import {
     memberName,
     validateWorkOrderFlowGraph,
@@ -130,7 +131,12 @@ export class WorkboxInboxPresenter {
             }">
                 ${grip}
                 <div class="flex-fill">
-                    <div class="${
+                    <a href="${
+                        buildPageUrl(
+                            'workbox-detail',
+                            { id: item.id },
+                        )
+                    }" class="${
                         'flex items-center'
                         + ' gap-2 mb-1'
                     }">
@@ -144,7 +150,7 @@ export class WorkboxInboxPresenter {
                         }">#${
                             item.displayId
                         }</span>
-                    </div>
+                    </a>
                     <div class="${
                         'flex items-center'
                         + ' gap-2 text-sm'
