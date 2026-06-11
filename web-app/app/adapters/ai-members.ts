@@ -31,10 +31,6 @@ export function subscribeAIMemberChanges(
     return aiMemberChanges.subscribe(fn);
 }
 
-export function notifyAIMemberChange(): void {
-    aiMemberChanges.notify();
-}
-
 export type AIMemberDraft =
     Omit<AIMemberEntity, 'id'>;
 

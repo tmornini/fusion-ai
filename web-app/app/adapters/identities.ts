@@ -186,14 +186,6 @@ export async function getServiceFacet(
     return serviceFacet(all.find(r => r.id === id));
 }
 
-export async function putMemberPii(
-    ctx: RequestContext,
-    id: Id,
-    pii: Omit<IdentityPiiEntity, 'id'>,
-): Promise<void> {
-    await ctx.PUT(`identities/${id}/pii`, { ...pii });
-}
-
 export async function deleteIdentityPii(
     ctx: RequestContext,
     id: Id,

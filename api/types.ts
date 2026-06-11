@@ -187,24 +187,6 @@ function includes<T extends string>(
         .includes(v);
 }
 
-const CONFIDENCE_LEVELS:
-    readonly ConfidenceLevel[]
-    = ['high', 'medium', 'low'];
-
-export function isConfidenceLevel(
-    v: string,
-): v is ConfidenceLevel {
-    return includes(
-        CONFIDENCE_LEVELS, v,
-    );
-}
-
-export function isAttributeType(
-    v: string,
-): v is AttributeType {
-    return includes(ATTRIBUTE_TYPES, v);
-}
-
 // A validation rejection is an EXPECTED failure: profane
 // input stopped at the gate. The api layer maps it to 400
 // with the message on the wire — unlike a bug, which gets
@@ -317,25 +299,6 @@ export function assertMemberState(
     return v;
 }
 
-export function isFlowState(
-    v: string,
-): v is FlowState {
-    return includes(FLOW_STATES, v);
-}
-
-export function assertFlowState(
-    v: string,
-    label: string,
-): FlowState {
-    if (!includes(FLOW_STATES, v)) {
-        throw new ValidationError(
-            'expected FlowState for '
-                + label + ', got ' + v,
-        );
-    }
-    return v;
-}
-
 export function isRecordState(
     v: string,
 ): v is RecordState {
@@ -349,25 +312,6 @@ export function assertRecordState(
     if (!includes(RECORD_STATES, v)) {
         throw new ValidationError(
             'expected RecordState for '
-                + label + ', got ' + v,
-        );
-    }
-    return v;
-}
-
-export function isObjectiveState(
-    v: string,
-): v is ObjectiveState {
-    return includes(OBJECTIVE_STATES, v);
-}
-
-export function assertObjectiveState(
-    v: string,
-    label: string,
-): ObjectiveState {
-    if (!includes(OBJECTIVE_STATES, v)) {
-        throw new ValidationError(
-            'expected ObjectiveState for '
                 + label + ', got ' + v,
         );
     }
@@ -1390,24 +1334,6 @@ export const INVITATION_STATE_CONFIG: Record<
     },
 };
 
-export const CONFIDENCE_CONFIG: Record<
-    ConfidenceLevel,
-    StatusDisplay
-> = {
-    high: {
-        label: 'High',
-        className: 'text-success',
-    },
-    medium: {
-        label: 'Medium',
-        className: 'text-warning',
-    },
-    low: {
-        label: 'Low',
-        className: 'text-error',
-    },
-};
-
 export class Idea {
     readonly #id: string;
     readonly #title: string;
@@ -1756,18 +1682,6 @@ export function projectStateIsNotDeleted(
 }
 
 export function projectStateIsApproved(
-    state: ProjectState,
-): boolean {
-    return state === 'approved';
-}
-
-export function projectStateIsScorable(
-    state: ProjectState,
-): boolean {
-    return state === 'under-review';
-}
-
-export function projectStateAllowsMeasurement(
     state: ProjectState,
 ): boolean {
     return state === 'approved';

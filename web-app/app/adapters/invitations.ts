@@ -23,10 +23,6 @@ export function subscribeInvitationChanges(
     return invitationChanges.subscribe(fn);
 }
 
-export function notifyInvitationChange(): void {
-    invitationChanges.notify();
-}
-
 // One invitation as the invitee sees it: the inviting org, who
 // invited them, when, and the current lifecycle state.
 export interface InvitationView {

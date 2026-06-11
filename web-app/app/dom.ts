@@ -129,21 +129,6 @@ export const FOCUSABLE_SELECTOR =
     + ' select, textarea,'
     + ' [tabindex]:not([tabindex="-1"])';
 
-export function initToggleGroup(
-    selector: string,
-    attrName: string,
-    onChange: (value: string) => void,
-): void {
-    const buttons = $$(selector, document);
-    for (const btn of buttons) {
-        btn.addEventListener('click', () => {
-            const value = getRequiredAttribute(btn, attrName);
-            for (const b of buttons) b.classList.toggle('active', b === btn);
-            onChange(value);
-        });
-    }
-}
-
 export function bindEnterToClick(
     inputSel: string,
     btnSel: string,

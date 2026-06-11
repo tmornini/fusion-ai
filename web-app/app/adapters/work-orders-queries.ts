@@ -129,20 +129,3 @@ export async function getWorkOrder(
     );
 }
 
-// Resolves every work order's transition history into
-// the shape the workbox inbox aggregation consumes —
-// the union of every per-entity event projection.
-export async function getAllTransitionEvents(
-    ctx: RequestContext,
-): Promise<TransitionEvent[]> {
-    const byWo = await getTransitionEventsByWorkOrder(
-        ctx,
-    );
-    const out: TransitionEvent[] = [];
-    for (const events of byWo.values()) {
-        for (const ev of events) {
-            out.push(ev);
-        }
-    }
-    return out;
-}
