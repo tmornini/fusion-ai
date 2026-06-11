@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db.ts';
+import type { Principal } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
@@ -26,6 +27,12 @@ export interface IncomingContext {
     readonly method: string;
     readonly pathname: string;
     readonly base: DbAdapter;
+}
+
+// Enriched by the authentication step (request-auth.ts) —
+// the one place the principal is resolved.
+export interface AuthenticatedContext extends IncomingContext {
+    readonly principal: Principal;
 }
 
 export function incomingContext(

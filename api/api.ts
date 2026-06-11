@@ -205,17 +205,18 @@ export async function handleRequest(
         || (BOOTSTRAP_ROUTES.has(routePattern)
             && !(await adapter.hasSchema()));
     if (!bearerExempt) {
-        const authResult =
-            await authenticateRequest(adapter, request);
-        if (typeof authResult === 'string') {
+        const authed =
+            await authenticateRequest(ctx, request);
+        if (typeof authed === 'string') {
             return Response.json(
-                { error: authResult },
+                { error: authed },
                 { status: HTTP_UNAUTHORIZED },
             );
         }
-        const org = authResult.organization
+        const { principal } = authed;
+        const org = principal.organization
             ?? await identityDefaultOrg(
-                adapter, authResult.id,
+                adapter, principal.id,
             );
         if (org === null) {
             return Response.json(
@@ -232,7 +233,7 @@ export async function handleRequest(
         // revoked membership stops access now — not when the
         // token expires (the 15-minute de-membership window).
         const memberOrgs =
-            await callerOrgIds(adapter, authResult);
+            await callerOrgIds(adapter, principal);
         if (!memberOrgs.has(org)) {
             return Response.json(
                 {
@@ -243,12 +244,12 @@ export async function handleRequest(
             );
         }
         roles = await callerRolesInOrg(
-            adapter, authResult, org,
+            adapter, principal, org,
         );
         const authzFailure =
             routePattern === 'identities/:id/pii'
                 ? authorizeIdentityPii(
-                    authResult, roles,
+                    principal, roles,
                     method, param(params, 0))
                 : authorizeRequest(
                     roles, method, pathname);

@@ -88,13 +88,13 @@ export async function invitationsRequest(
     segments: readonly string[],
 ): Promise<Response> {
     const adapter = ctx.base;
-    const authResult =
-        await authenticateRequest(adapter, request);
-    if (typeof authResult === 'string') {
-        return errorJson(authResult, HTTP_UNAUTHORIZED);
+    const authed =
+        await authenticateRequest(ctx, request);
+    if (typeof authed === 'string') {
+        return errorJson(authed, HTTP_UNAUTHORIZED);
     }
-    const principal = authResult;
-    const method = request.method;
+    const { principal } = authed;
+    const method = ctx.method;
     if (segments.length === 1) {
         if (method === 'GET') {
             return invitationsForInvitee(adapter, principal);

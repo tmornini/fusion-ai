@@ -55,16 +55,16 @@ export async function identityDefaultOrgRequest(
     segments: readonly string[],
 ): Promise<Response> {
     const adapter = ctx.base;
-    const authResult =
-        await authenticateRequest(adapter, request);
-    if (typeof authResult === 'string') {
+    const authed =
+        await authenticateRequest(ctx, request);
+    if (typeof authed === 'string') {
         return Response.json(
-            { error: authResult },
+            { error: authed },
             { status: HTTP_UNAUTHORIZED },
         );
     }
     const identityId = segments[1]!;
-    if (authResult.id !== identityId) {
+    if (authed.principal.id !== identityId) {
         return Response.json(
             {
                 error: 'forbidden: an identity may act only'
@@ -137,10 +137,10 @@ export async function organizationsEnumerationRequest(
     ctx: IncomingContext,
     request: Request,
 ): Promise<Response> {
-    const authResult =
-        await authenticateRequest(ctx.base, request);
-    if (typeof authResult === 'string') {
-        return errorJson(authResult, HTTP_UNAUTHORIZED);
+    const authed =
+        await authenticateRequest(ctx, request);
+    if (typeof authed === 'string') {
+        return errorJson(authed, HTTP_UNAUTHORIZED);
     }
-    return enumerateMyOrgs(ctx.base, authResult);
+    return enumerateMyOrgs(ctx.base, authed.principal);
 }

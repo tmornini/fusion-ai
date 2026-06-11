@@ -10,6 +10,10 @@ import {
     ANONYMOUS_ID,
     type Principal,
 } from './access-token.ts';
+import type {
+    IncomingContext,
+    AuthenticatedContext,
+} from './request-context.ts';
 import {
     currentRolesForInOrg,
     isPermitted,
@@ -48,9 +52,9 @@ export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     ]);
 
 export async function authenticateRequest(
-    adapter: DbAdapter,
+    ctx: IncomingContext,
     request: Request,
-): Promise<Principal | string> {
+): Promise<AuthenticatedContext | string> {
     const header =
         request.headers.get('authorization');
     if (header === null
@@ -67,13 +71,16 @@ export async function authenticateRequest(
         return 'anonymous principal not authenticated';
     }
     const revoked = await tokenRevocationReason(
-        adapter, result.claims.sub,
+        ctx.base, result.claims.sub,
         result.claims.iat, result.claims.jti,
     );
     if (revoked !== null) {
         return revoked;
     }
-    return principalFromClaims(result.claims);
+    return {
+        ...ctx,
+        principal: principalFromClaims(result.claims),
+    };
 }
 
 // Roles are per-org, but a grant is keyed by identity: read
