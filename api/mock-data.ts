@@ -9,7 +9,6 @@ import type {
     FlowWorkOrderEntity,
     StateEntity,
     StateFieldValueEntity,
-    RecordEntity,
     RecordAttributeEntity,
     FlowRecordEntity,
     Constraint,
@@ -55,6 +54,11 @@ import { buildIdeas } from './mock-data/ideas.ts';
 import {
     OBJECTIVE_SEEDS,
 } from './mock-data/objectives.ts';
+import {
+    customerProfileRecordId,
+    projectBriefRecordId,
+    buildRecords,
+} from './mock-data/records.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -1790,30 +1794,7 @@ async function postMockDataLoadIn(
     // Project Brief carries the idea-shape
     // attributes referenced by Fusion Flow's
     // Describe-problem and Solution nodes.
-    const customerProfileRecordId =
-        'rec01CustProfRec0rdAB1';
-    const projectBriefRecordId =
-        'rec02Pr0jBriefRec0rd02';
-
-    const mockRecords:
-        Omit<RecordEntity, 'organization_id'>[] = [
-        {
-            id: customerProfileRecordId,
-            name: 'Customer Profile',
-            description:
-                'Company-side facts captured during'
-                + ' onboarding and sales pursuits.',
-            position: 1,
-        },
-        {
-            id: projectBriefRecordId,
-            name: 'Project Brief',
-            description:
-                'Lightweight scoping shape used by'
-                + ' the Fusion Flow.',
-            position: 2,
-        },
-    ];
+    const mockRecords = buildRecords();
 
     // Constraint payloads. Three kinds in the toy:
     // 'regex' on text attributes, 'range_min' /
