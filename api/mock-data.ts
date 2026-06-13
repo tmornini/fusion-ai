@@ -52,6 +52,9 @@ import type {
 import { buildAiMembers } from './mock-data/ai-members.ts';
 import { buildMembers } from './mock-data/members.ts';
 import { buildIdeas } from './mock-data/ideas.ts';
+import {
+    OBJECTIVE_SEEDS,
+} from './mock-data/objectives.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -144,37 +147,7 @@ async function seedHumanCredentials(
     };
 }
 
-export const OBJECTIVE_SEEDS: Array<{
-    id: string;
-    position: number;
-    name: string;
-    description: string;
-}> = [
-    {
-        id: 'JkW7aEqFdX3nOiPtVhMrCy',
-        position: 1,
-        name: 'Lower expenses',
-        description: 'Reduce operational outlay across the business',
-    },
-    {
-        id: 'RgT2mNvKpQ8xLsYwBzHcUe',
-        position: 2,
-        name: 'Increase incomes',
-        description: 'Grow top-line through new and existing channels',
-    },
-    {
-        id: 'bDf6uStZlA9eGmYjIoNcWq',
-        position: 3,
-        name: 'Raise customer NPS',
-        description: 'Lift Net Promoter Score across the journey',
-    },
-    {
-        id: 'CvH4wRnXkU1pQsBgTyEzMo',
-        position: 4,
-        name: 'Improve employee morale',
-        description: 'Make daily work energizing and sustainable',
-    },
-];
+export { OBJECTIVE_SEEDS };
 
 export async function postMockDataLoad(
     adapter: DbAdapter,
