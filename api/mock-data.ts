@@ -40,7 +40,6 @@ import {
 } from './mock-data/flow-workload.ts';
 import type {
     FlowSeedSpec,
-    PathProfile,
     SojournProfile,
     MemberSkill,
 } from './mock-data/flow-workload.ts';
@@ -59,22 +58,11 @@ import {
 import {
     l2cFlowId,
     l2cProjectFlowId,
-    l2cCreateNodeId,
     l2cTriageNodeId,
     l2cDiscoveryNodeId,
     l2cQualifNodeId,
     l2cProposalNodeId,
     l2cNegotNodeId,
-    l2cArchiveNodeId,
-    l2cStartEdgeId,
-    l2cQualifyEdgeId,
-    l2cDisqualifyEdgeId,
-    l2cPromisingEdgeId,
-    l2cGoEdgeId,
-    l2cNeedsInfoEdgeId,
-    l2cSubmitEdgeId,
-    l2cWonEdgeId,
-    l2cReviseEdgeId,
     memberSarah,
     memberMarcus,
     memberJessica,
@@ -82,6 +70,7 @@ import {
     memberClaude,
     buildLeadToCloseNodes,
     buildLeadToCloseEdges,
+    buildLeadToClosePaths,
 } from './mock-data/lead-to-close-flow.ts';
 
 const TIER_SEATS_LIMIT = 200;
@@ -4295,107 +4284,7 @@ async function postMockDataLoadIn(
         },
     ];
 
-    const leadToClosePaths:
-        PathProfile[] = [
-        {
-            nodeIds: [
-                l2cCreateNodeId,
-                l2cTriageNodeId,
-                l2cDiscoveryNodeId,
-                l2cQualifNodeId,
-                l2cProposalNodeId,
-                l2cNegotNodeId,
-                l2cArchiveNodeId,
-            ],
-            edgeIds: [
-                l2cStartEdgeId,
-                l2cQualifyEdgeId,
-                l2cPromisingEdgeId,
-                l2cGoEdgeId,
-                l2cSubmitEdgeId,
-                l2cWonEdgeId,
-            ],
-            weight: 0.45,
-        },
-        {
-            nodeIds: [
-                l2cCreateNodeId,
-                l2cTriageNodeId,
-                l2cArchiveNodeId,
-            ],
-            edgeIds: [
-                l2cStartEdgeId,
-                l2cDisqualifyEdgeId,
-            ],
-            weight: 0.20,
-        },
-        {
-            nodeIds: [
-                l2cCreateNodeId,
-                l2cTriageNodeId,
-                l2cDiscoveryNodeId,
-                l2cQualifNodeId,
-                l2cDiscoveryNodeId,
-                l2cQualifNodeId,
-                l2cProposalNodeId,
-                l2cNegotNodeId,
-                l2cArchiveNodeId,
-            ],
-            edgeIds: [
-                l2cStartEdgeId,
-                l2cQualifyEdgeId,
-                l2cPromisingEdgeId,
-                l2cNeedsInfoEdgeId,
-                l2cPromisingEdgeId,
-                l2cGoEdgeId,
-                l2cSubmitEdgeId,
-                l2cWonEdgeId,
-            ],
-            weight: 0.15,
-        },
-        {
-            nodeIds: [
-                l2cCreateNodeId,
-                l2cTriageNodeId,
-                l2cDiscoveryNodeId,
-                l2cQualifNodeId,
-                l2cProposalNodeId,
-                l2cNegotNodeId,
-                l2cProposalNodeId,
-                l2cNegotNodeId,
-                l2cArchiveNodeId,
-            ],
-            edgeIds: [
-                l2cStartEdgeId,
-                l2cQualifyEdgeId,
-                l2cPromisingEdgeId,
-                l2cGoEdgeId,
-                l2cSubmitEdgeId,
-                l2cReviseEdgeId,
-                l2cSubmitEdgeId,
-                l2cWonEdgeId,
-            ],
-            weight: 0.12,
-        },
-        {
-            nodeIds: [
-                l2cCreateNodeId,
-                l2cTriageNodeId,
-                l2cDiscoveryNodeId,
-                l2cQualifNodeId,
-                l2cProposalNodeId,
-                l2cNegotNodeId,
-            ],
-            edgeIds: [
-                l2cStartEdgeId,
-                l2cQualifyEdgeId,
-                l2cPromisingEdgeId,
-                l2cGoEdgeId,
-                l2cSubmitEdgeId,
-            ],
-            weight: 0.08,
-        },
-    ];
+    const leadToClosePaths = buildLeadToClosePaths();
 
     const leadToCloseSojourn:
         SojournProfile = {

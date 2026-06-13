@@ -1,4 +1,5 @@
 import type { GraphNode, GraphEdge } from '../types.ts';
+import type { PathProfile } from './flow-workload.ts';
 
 // Stable ids for the seeded Lead-to-Close flow: its flow and
 // project-flow binding, its 7 graph nodes, and its 9 graph
@@ -198,6 +199,109 @@ export function buildLeadToCloseEdges(): GraphEdge[] {
             name: 'revise terms',
             fromNodeId: l2cNegotNodeId,
             toNodeId: l2cProposalNodeId,
+        },
+    ];
+}
+
+export function buildLeadToClosePaths(): PathProfile[] {
+    return [
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cArchiveNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.45,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cArchiveNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cDisqualifyEdgeId,
+            ],
+            weight: 0.20,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cArchiveNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cNeedsInfoEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.15,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+                l2cArchiveNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+                l2cReviseEdgeId,
+                l2cSubmitEdgeId,
+                l2cWonEdgeId,
+            ],
+            weight: 0.12,
+        },
+        {
+            nodeIds: [
+                l2cCreateNodeId,
+                l2cTriageNodeId,
+                l2cDiscoveryNodeId,
+                l2cQualifNodeId,
+                l2cProposalNodeId,
+                l2cNegotNodeId,
+            ],
+            edgeIds: [
+                l2cStartEdgeId,
+                l2cQualifyEdgeId,
+                l2cPromisingEdgeId,
+                l2cGoEdgeId,
+                l2cSubmitEdgeId,
+            ],
+            weight: 0.08,
         },
     ];
 }
