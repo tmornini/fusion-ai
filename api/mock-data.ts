@@ -46,6 +46,12 @@ import {
     b62Id,
     isoFromMs,
 } from './mock-data/seed-kit.ts';
+import {
+    MOCK_SEED_TIMESTAMP,
+    STARK_ORG,
+    ORG_TWO,
+    assignOrg,
+} from './mock-data/seed-constants.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -280,25 +286,6 @@ type SeedHumanMember = Omit<
     // carries no state column.
     state: MemberState;
 };
-
-const MOCK_SEED_TIMESTAMP =
-    '2026-01-01T00:00:00.000000Z';
-
-// The seed's root org id (Stark Industries). Local to the
-// seed — there is no global default org any more.
-const STARK_ORG = '1';
-
-// The demo's second organization. org '2' is a new ROW, not
-// a new table — generate-schema-svg derives FK targets from
-// *_id pluralization, so a new table would shift the schema.
-const ORG_TWO = '2';
-
-// Deterministic org partition for non-admin seeds: even
-// index → org '1', odd → org '2'. ~half/half; the seed test
-// pins per-org invariants, not the exact assignments.
-function assignOrg(index: number): string {
-    return index % 2 === 0 ? STARK_ORG : ORG_TWO;
-}
 
 // The seeded admin credential set, returned to the caller so a
 // one-time reveal can surface the plaintext password. The
