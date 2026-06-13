@@ -58,6 +58,26 @@ import {
     buildRecords,
     buildRecordAttributes,
 } from './mock-data/records.ts';
+import {
+    l2cFlowId,
+    l2cProjectFlowId,
+    l2cCreateNodeId,
+    l2cTriageNodeId,
+    l2cDiscoveryNodeId,
+    l2cQualifNodeId,
+    l2cProposalNodeId,
+    l2cNegotNodeId,
+    l2cArchiveNodeId,
+    l2cStartEdgeId,
+    l2cQualifyEdgeId,
+    l2cDisqualifyEdgeId,
+    l2cPromisingEdgeId,
+    l2cGoEdgeId,
+    l2cNeedsInfoEdgeId,
+    l2cSubmitEdgeId,
+    l2cWonEdgeId,
+    l2cReviseEdgeId,
+} from './mock-data/lead-to-close-flow.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -595,44 +615,6 @@ async function postMockDataLoadIn(
     ];
 
     const wfTimestamp = daysFromNow(-60, 9, 0);
-
-    const l2cFlowId = 'L2cfL3adt0Cl0s3FzMxR02';
-    const l2cProjectFlowId =
-        'L2cPF01Pr0jL3adt0Cl001';
-
-    const l2cCreateNodeId =
-        'L2cN01Cr3atL3adClsXY02';
-    const l2cTriageNodeId =
-        'L2cN02Tr1agL3adClsAB03';
-    const l2cDiscoveryNodeId =
-        'L2cN03D1scvL3adClsCD04';
-    const l2cQualifNodeId =
-        'L2cN04Qu41fL3adClsEF05';
-    const l2cProposalNodeId =
-        'L2cN05Pr0psL3adClsGH06';
-    const l2cNegotNodeId =
-        'L2cN06N3g0tL3adClsIJ07';
-    const l2cArchiveNodeId =
-        'L2cN07Cl0sdL3adClsKL08';
-
-    const l2cStartEdgeId =
-        'L2cE01CreatTr1agL2cZ01';
-    const l2cQualifyEdgeId =
-        'L2cE02Tr1agD1scvL2cY02';
-    const l2cDisqualifyEdgeId =
-        'L2cE03Tr1agCl0sdL2cX03';
-    const l2cPromisingEdgeId =
-        'L2cE04D1scvQu41fL2cW04';
-    const l2cGoEdgeId =
-        'L2cE05Qu41fPr0psL2cV05';
-    const l2cNeedsInfoEdgeId =
-        'L2cE06Qu41fD1scvL2cU06';
-    const l2cSubmitEdgeId =
-        'L2cE07Pr0psN3g0tL2cT07';
-    const l2cWonEdgeId =
-        'L2cE08N3g0tCl0sdL2cS08';
-    const l2cReviseEdgeId =
-        'L2cE09N3g0tPr0psL2cR09';
 
     const memberSarah = 'LhfaUUf4IumVsCSGB4xjdK';
     const memberMarcus =
