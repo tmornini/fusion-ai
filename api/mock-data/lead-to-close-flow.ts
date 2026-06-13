@@ -40,3 +40,13 @@ export const l2cWonEdgeId =
     'L2cE08N3g0tCl0sdL2cS08';
 export const l2cReviseEdgeId =
     'L2cE09N3g0tPr0psL2cR09';
+
+// The members participating in the Lead-to-Close flow,
+// referenced by the graph nodes' memberIds and the workload
+// skill matrix.
+export const memberSarah = 'LhfaUUf4IumVsCSGB4xjdK';
+export const memberMarcus =
+    'WxQn4LVWb76YkmqK5B0EPp';
+export const memberJessica = 'zyTbfbjcGEfbpCsNTP0XjX';
+export const memberLisa = 'Trf1Up2jMsPhEnjbW4Ji1n';
+export const memberClaude = 'LdoTR1fnyYpS1jPzEs57ek';

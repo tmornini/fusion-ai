@@ -77,6 +77,11 @@ import {
     l2cSubmitEdgeId,
     l2cWonEdgeId,
     l2cReviseEdgeId,
+    memberSarah,
+    memberMarcus,
+    memberJessica,
+    memberLisa,
+    memberClaude,
 } from './mock-data/lead-to-close-flow.ts';
 
 const TIER_SEATS_LIMIT = 200;
@@ -615,13 +620,6 @@ async function postMockDataLoadIn(
     ];
 
     const wfTimestamp = daysFromNow(-60, 9, 0);
-
-    const memberSarah = 'LhfaUUf4IumVsCSGB4xjdK';
-    const memberMarcus =
-        'WxQn4LVWb76YkmqK5B0EPp';
-    const memberJessica = 'zyTbfbjcGEfbpCsNTP0XjX';
-    const memberLisa = 'Trf1Up2jMsPhEnjbW4Ji1n';
-    const memberClaude = 'LdoTR1fnyYpS1jPzEs57ek';
 
     const leadToCloseNodes: GraphNode[] = [
         {
