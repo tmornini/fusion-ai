@@ -1,4 +1,8 @@
-import type { IdeaEntity } from '../types.ts';
+import type {
+    IdeaEntity,
+    IdeaSubmissionEntity,
+} from '../types.ts';
+import { daysFromNow } from './seed-kit.ts';
 
 // The seeded ideas. Fixed data; the composition root sets
 // organization_id at write time (the type omits it).
@@ -329,6 +333,79 @@ export function buildIdeas():
                 '99.5% inventory accuracy,'
                 + ' zero manual'
                 + ' reconciliation needed',
+        },
+    ];
+}
+
+// The idea-submission events: who submitted which idea, when.
+// Fixed data depending only on the deterministic date helper.
+export function buildIdeaSubmissions(): IdeaSubmissionEntity[] {
+    return [
+        {
+            id: 'k4dY2dPq90mQVwwCkhWIo3',
+            idea_id: 'eT5xdKjzLDmuRn3r7XMX4R',
+            member_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            at: daysFromNow(-75, 9, 30),
+        },
+        {
+            id: 'XC7hsfNJueKQ8q0UfCuC7o',
+            idea_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
+            member_id: 'bLP3X1hb1mSz8gY9neogU3',
+            at: daysFromNow(-70, 9, 0),
+        },
+        {
+            id: 'YmzT46BbGVFALpiXFDnlVd',
+            idea_id: 'wuCMQqo4IkEksx7MYmu8g2',
+            member_id: '53J8h9dr76XFqCjYcNVwIR',
+            at: daysFromNow(-65, 9, 0),
+        },
+        {
+            id: 'cmoTu4GRGmO8y5QrfPIHSm',
+            idea_id: 'ojOEXtdzdtTZtpM81TxVca',
+            member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            at: daysFromNow(-55, 9, 0),
+        },
+        {
+            id: 'kIUtvgTOLPjsSmAEVOhPb1',
+            idea_id: 'T2vAafLDcshDONlYxpzPLc',
+            member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            at: daysFromNow(-50, 9, 0),
+        },
+        {
+            id: 'r04u9qpJKSyNjP9Owxr5Be',
+            idea_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
+            member_id: '6xBfK5If82JKfThXb1wlzS',
+            at: daysFromNow(-45, 9, 0),
+        },
+        {
+            id: '2mPJTlujj1RF6gexFwbDqJ',
+            idea_id: 'MCxK0hzT9CPjJx1ZV5unfr',
+            member_id: 'LhfaUUf4IumVsCSGB4xjdK',
+            at: daysFromNow(-75, 10, 0),
+        },
+        {
+            id: 'caBSqTgzDnvP8joamAG9OG',
+            idea_id: 'SUb4gKXsZ1OsEauzqszg0t',
+            member_id: 'I5ntELi16X3N3JYCCnxMjZ',
+            at: daysFromNow(-35, 9, 0),
+        },
+        {
+            id: 'UfsCp7WYUybhwxD170okb4',
+            idea_id: 'gxa84W9KvEgD0wT1F4TOM9',
+            member_id: '53J8h9dr76XFqCjYcNVwIR',
+            at: daysFromNow(-30, 9, 0),
+        },
+        {
+            id: 'mbTZAQbC5cJSEIzhEEFpyq',
+            idea_id: '1Z68gROMrlTAfPEGiyJJAY',
+            member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+            at: daysFromNow(-25, 9, 0),
+        },
+        {
+            id: '0LjTHFflWNaDZkKDqxmwJi',
+            idea_id: 'Q2On2xwMpFdzOklBQJXrni',
+            member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+            at: daysFromNow(-20, 9, 0),
         },
     ];
 }
