@@ -798,15 +798,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Elevation &amp; ${''
-                    }Shadows</h2>
-                <p class="text-muted mt-1">${''
-                    }Shadow scale for depth${''
-                    } ${''
-                    }and hierarchy</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Elevation &amp; Shadows</h2>
+                <p class="text-muted mt-1">${
+                    'Shadow scale for depth and hierarchy'
+                    }</p>
             </div>
             <div class="ds-grid-5 stats-grid">
                 ${buildShadowBox(
@@ -836,20 +833,15 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Iconography</h2>
-                <p class="text-muted mt-1">${''
-                    }Lucide-compatible ${''
-                    }inline ${''
-                    }SVG icons at standard${''
-                    } ${''
-                    }sizes</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Iconography</h2>
+                <p class="text-muted mt-1">${
+                    'Lucide-compatible inline SVG icons at standard sizes'
+                    }</p>
             </div>
             <div class="card p-6">
-                <div class="${''
-                    }flex items-end gap-8">
+                <div class="flex items-end gap-8">
                     ${[16, 20, 24, 48].map(
                         size => html`
                     <div class="icon-size-col">
@@ -857,18 +849,15 @@ export function buildDesignSystemPage(): SafeHtml {
                             >${iconSparkles(
                                 size, '',
                             )}</div>
-                        <code class="${''
-                            }text-xs${''
-                            } text-muted">${''
-                            }${size}px</code>
+                        <code class="text-xs text-muted">${size}px</code>
                     </div>
                     `,
                     )}
                 </div>
-                <div class="${''
-                    }flex flex-wrap gap-4${''
-                    } mt-6 ${''
-                    }pt-4 section-divider-top">
+                <div class="${
+                    'flex flex-wrap gap-4 mt-6 '
+                    + 'pt-4 section-divider-top'
+                    }">
                     ${[
                       {
                           fn: iconHome,
@@ -916,11 +905,7 @@ export function buildDesignSystemPage(): SafeHtml {
                             'text-foreground'
                         }">${entry.fn(20, '')
                             }</div>
-                        <span class="${''
-                            }text-2xs${''
-                            } text-muted">${''
-                            }${entry.name
-                            }</span>
+                        <span class="text-2xs text-muted">${entry.name}</span>
                     </div>
                     `)}
                 </div>
@@ -931,14 +916,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Spacing System</h2>
-                <p class="text-muted mt-1">${''
-                    }8pt grid for ${''
-                    }consistent ${''
-                    }spacing</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Spacing System</h2>
+                <p class="text-muted mt-1">${
+                    '8pt grid for consistent spacing'
+                    }</p>
             </div>
             <div class="card p-6">
                 ${[
@@ -983,9 +966,7 @@ export function buildDesignSystemPage(): SafeHtml {
                       w: '4rem',
                   },
                 ].map(space => html`
-                <div class="${''
-                    }flex items-center gap-4 ${''
-                    }mb-3">
+                <div class="flex items-center gap-4 mb-3">
                     <code class="${
                         'text-xs text-muted'
                         + ' w-rem-5'
@@ -993,9 +974,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     <div class="ds-space-bar"
                         style="--space-w:${space.w}"
                     ></div>
-                    <span class="${''
-                        }text-sm text-muted">${''
-                        }${space.value}</span>
+                    <span class="text-sm text-muted">${space.value}</span>
                 </div>
                 `)}
             </div>
@@ -1005,14 +984,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">Toast</h2>
-                <p class="text-muted mt-1">${''
-                    }Transient ${''
-                    }notifications ${''
-                    }dispatched via ${''
-                    }showToast()</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Toast</h2>
+                <p class="text-muted mt-1">${
+                    'Transient notifications dispatched via showToast()'
+                    }</p>
             </div>
             <div class="card p-6">
                 <div class="ds-toast-col">
