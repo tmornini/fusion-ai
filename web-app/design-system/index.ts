@@ -294,12 +294,8 @@ function buildFlowPropPanel(): SafeHtml {
     </div>`;
 }
 
-export async function init(): Promise<void> {
-    const root = $required(
-        '#design-system-content', document,
-    );
-
-    setHtml(root, html`
+export function buildDesignSystemPage(): SafeHtml {
+    return html`
     <div class="ds-page">
         <div>
             <h1 class="${''
@@ -1714,5 +1710,13 @@ export async function init(): Promise<void> {
                 }Properties Panel</h3>
             ${buildFlowPropPanel()}
         </section>
-    </div>`);
+    </div>`;
+}
+
+export async function init(): Promise<void> {
+    const root = $required(
+        '#design-system-content', document,
+    );
+
+    setHtml(root, buildDesignSystemPage());
 }
