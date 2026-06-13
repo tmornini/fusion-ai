@@ -1,4 +1,4 @@
-import type { GraphNode } from '../types.ts';
+import type { GraphNode, GraphEdge } from '../types.ts';
 
 // Stable ids for the seeded Lead-to-Close flow: its flow and
 // project-flow binding, its 7 graph nodes, and its 9 graph
@@ -139,6 +139,65 @@ export function buildLeadToCloseNodes(): GraphNode[] {
             memberIds: [],
             attributes: [],
             taskInstructions: '',
+        },
+    ];
+}
+
+export function buildLeadToCloseEdges(): GraphEdge[] {
+    return [
+        {
+            id: l2cStartEdgeId,
+            name: 'start',
+            fromNodeId: l2cCreateNodeId,
+            toNodeId: l2cTriageNodeId,
+        },
+        {
+            id: l2cQualifyEdgeId,
+            name: 'qualify',
+            fromNodeId: l2cTriageNodeId,
+            toNodeId: l2cDiscoveryNodeId,
+        },
+        {
+            id: l2cDisqualifyEdgeId,
+            name: 'disqualify',
+            fromNodeId: l2cTriageNodeId,
+            toNodeId: l2cArchiveNodeId,
+        },
+        {
+            id: l2cPromisingEdgeId,
+            name: 'promising',
+            fromNodeId: l2cDiscoveryNodeId,
+            toNodeId: l2cQualifNodeId,
+        },
+        {
+            id: l2cGoEdgeId,
+            name: 'go',
+            fromNodeId: l2cQualifNodeId,
+            toNodeId: l2cProposalNodeId,
+        },
+        {
+            id: l2cNeedsInfoEdgeId,
+            name: 'needs info',
+            fromNodeId: l2cQualifNodeId,
+            toNodeId: l2cDiscoveryNodeId,
+        },
+        {
+            id: l2cSubmitEdgeId,
+            name: 'submit',
+            fromNodeId: l2cProposalNodeId,
+            toNodeId: l2cNegotNodeId,
+        },
+        {
+            id: l2cWonEdgeId,
+            name: 'won',
+            fromNodeId: l2cNegotNodeId,
+            toNodeId: l2cArchiveNodeId,
+        },
+        {
+            id: l2cReviseEdgeId,
+            name: 'revise terms',
+            fromNodeId: l2cNegotNodeId,
+            toNodeId: l2cProposalNodeId,
         },
     ];
 }

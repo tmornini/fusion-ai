@@ -12,7 +12,6 @@ import type {
     FlowRecordEntity,
     JsonObjectField,
     Id,
-    GraphEdge,
 } from './types.ts';
 import {
     jsonArrayField,
@@ -82,6 +81,7 @@ import {
     memberLisa,
     memberClaude,
     buildLeadToCloseNodes,
+    buildLeadToCloseEdges,
 } from './mock-data/lead-to-close-flow.ts';
 
 const TIER_SEATS_LIMIT = 200;
@@ -623,62 +623,7 @@ async function postMockDataLoadIn(
 
     const leadToCloseNodes = buildLeadToCloseNodes();
 
-    const leadToCloseEdges: GraphEdge[] = [
-        {
-            id: l2cStartEdgeId,
-            name: 'start',
-            fromNodeId: l2cCreateNodeId,
-            toNodeId: l2cTriageNodeId,
-        },
-        {
-            id: l2cQualifyEdgeId,
-            name: 'qualify',
-            fromNodeId: l2cTriageNodeId,
-            toNodeId: l2cDiscoveryNodeId,
-        },
-        {
-            id: l2cDisqualifyEdgeId,
-            name: 'disqualify',
-            fromNodeId: l2cTriageNodeId,
-            toNodeId: l2cArchiveNodeId,
-        },
-        {
-            id: l2cPromisingEdgeId,
-            name: 'promising',
-            fromNodeId: l2cDiscoveryNodeId,
-            toNodeId: l2cQualifNodeId,
-        },
-        {
-            id: l2cGoEdgeId,
-            name: 'go',
-            fromNodeId: l2cQualifNodeId,
-            toNodeId: l2cProposalNodeId,
-        },
-        {
-            id: l2cNeedsInfoEdgeId,
-            name: 'needs info',
-            fromNodeId: l2cQualifNodeId,
-            toNodeId: l2cDiscoveryNodeId,
-        },
-        {
-            id: l2cSubmitEdgeId,
-            name: 'submit',
-            fromNodeId: l2cProposalNodeId,
-            toNodeId: l2cNegotNodeId,
-        },
-        {
-            id: l2cWonEdgeId,
-            name: 'won',
-            fromNodeId: l2cNegotNodeId,
-            toNodeId: l2cArchiveNodeId,
-        },
-        {
-            id: l2cReviseEdgeId,
-            name: 'revise terms',
-            fromNodeId: l2cNegotNodeId,
-            toNodeId: l2cProposalNodeId,
-        },
-    ];
+    const leadToCloseEdges = buildLeadToCloseEdges();
 
     const mockFlows:
         Omit<FlowEntity, 'organization_id'>[] = [
