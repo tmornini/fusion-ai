@@ -65,9 +65,24 @@ function handleEscape(
     }
 }
 
+// openDialog / closeDialog bridge two worlds during the <dialog>
+// migration. A native <dialog> delegates to the platform —
+// showModal()/close() bring the top-layer focus trap, ::backdrop,
+// and Escape (the cancel event) for free, so the focus stack and
+// the handleEscape capture below serve only the legacy
+// backdrop-div dialogs that have not yet flipped. The legacy path
+// retires once every page is native.
 function openDialog(
     dialogId: string,
 ): void {
+    const dialog = $required(
+        '#' + dialogId + DIALOG_SUFFIX,
+        document,
+    );
+    if (dialog instanceof HTMLDialogElement) {
+        dialog.showModal();
+        return;
+    }
     if (
         document.activeElement
             instanceof HTMLElement
@@ -80,10 +95,6 @@ function openDialog(
         '#' + dialogId + BACKDROP_SUFFIX,
         document,
     ).classList.remove('hidden');
-    const dialog = $required(
-        '#' + dialogId + DIALOG_SUFFIX,
-        document,
-    );
     dialog.classList.remove('hidden');
     dialog.setAttribute(
         'aria-hidden', 'false',
@@ -105,14 +116,18 @@ function openDialog(
 function closeDialog(
     dialogId: string,
 ): void {
-    $required(
-        '#' + dialogId + BACKDROP_SUFFIX,
-        document,
-    ).classList.add('hidden');
     const dialog = $required(
         '#' + dialogId + DIALOG_SUFFIX,
         document,
     );
+    if (dialog instanceof HTMLDialogElement) {
+        dialog.close();
+        return;
+    }
+    $required(
+        '#' + dialogId + BACKDROP_SUFFIX,
+        document,
+    ).classList.add('hidden');
     dialog.classList.add('hidden');
     dialog.setAttribute(
         'aria-hidden', 'true',
@@ -204,6 +219,23 @@ function initTabs(
     });
 }
 
+// A native <dialog> shown with showModal() reports a click on its
+// ::backdrop as a click targeting the dialog element itself.
+// Distinguish a true backdrop click — outside the dialog's box —
+// from a click on the padding around the content, which must NOT
+// dismiss. The legacy backdrop div needed no such test: its click
+// fired only on the backdrop.
+function clickedOutside(
+    dialog: HTMLDialogElement,
+    e: MouseEvent,
+): boolean {
+    const r = dialog.getBoundingClientRect();
+    return e.clientX < r.left
+        || e.clientX > r.right
+        || e.clientY < r.top
+        || e.clientY > r.bottom;
+}
+
 function initDialog(
     dialogId: string,
     openBtnId: string,
@@ -211,6 +243,10 @@ function initDialog(
 ): void {
     const cancelId =
         dialogId + CANCEL_SUFFIX;
+    const dialog = $required(
+        '#' + dialogId + DIALOG_SUFFIX,
+        document,
+    );
 
     $required(
         '#' + openBtnId, document,
@@ -224,20 +260,31 @@ function initDialog(
         'click',
         () => closeDialog(dialogId),
     );
-    $required(
-        '#' + dialogId + BACKDROP_SUFFIX,
-        document,
-    ).addEventListener(
-        'click',
-        (e) => {
-            if (
-                e.target
-                === e.currentTarget
-            ) {
-                closeDialog(dialogId);
-            }
-        },
-    );
+    if (dialog instanceof HTMLDialogElement) {
+        dialog.addEventListener(
+            'click',
+            (e) => {
+                if (clickedOutside(dialog, e)) {
+                    closeDialog(dialogId);
+                }
+            },
+        );
+    } else {
+        $required(
+            '#' + dialogId + BACKDROP_SUFFIX,
+            document,
+        ).addEventListener(
+            'click',
+            (e) => {
+                if (
+                    e.target
+                    === e.currentTarget
+                ) {
+                    closeDialog(dialogId);
+                }
+            },
+        );
+    }
     if (onSubmit) {
         $required(
             '#' + dialogId + SUBMIT_SUFFIX,

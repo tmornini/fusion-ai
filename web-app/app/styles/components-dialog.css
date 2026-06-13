@@ -75,6 +75,19 @@
   animation: scale-in var(--duration-normal) var(--ease-out);
 }
 
+/* Native <dialog> shown via showModal(): the ::backdrop */
+/* pseudo-element replaces the legacy .dialog-backdrop div and */
+/* the top layer provides the focus trap. Reset the UA border; */
+/* the card styling above already applies by class. */
+dialog.dialog {
+  border: 0;
+}
+
+dialog.dialog::backdrop {
+  background-color: hsl(var(--backdrop) / 0.5);
+  animation: fade-in var(--duration-normal) var(--ease-out);
+}
+
 .dialog-narrow {
   width: min(90vw, 28rem);
 }
