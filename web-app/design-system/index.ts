@@ -466,14 +466,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Typography</h2>
-                <p class="text-muted mt-1">${''
-                    }IBM Plex Sans for ${''
-                    }display, ${''
-                    }Inter for body text</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Typography</h2>
+                <p class="text-muted mt-1">${
+                    'IBM Plex Sans for display, Inter for body text'
+                    }</p>
             </div>
             <div class="card p-6">
                 ${buildTypographyRow(
@@ -539,45 +537,25 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Buttons</h2>
-                <p class="text-muted mt-1">${''
-                    }All button variants ${''
-                    }and sizes</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Buttons</h2>
+                <p class="text-muted mt-1">${
+                    'All button variants and sizes'
+                    }</p>
             </div>
             <div class="card p-6">
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Variants</h3>
-                <div class="${''
-                    }flex flex-wrap gap-3 mb-4">
-                    <button class="${''
-                        }btn btn-primary">${''
-                        }Default</button>
-                    <button class="${''
-                        }btn btn-secondary">${''
-                        }Secondary</button>
-                    <button class="${''
-                        }btn btn-outline">${''
-                        }Outline</button>
-                    <button class="${''
-                        }btn btn-ghost">${''
-                        }Ghost</button>
-                    <button class="${''
-                        }btn btn-destructive">${''
-                        }Destructive</button>
-                    <button class="${''
-                        }btn btn-success">${''
-                        }Success</button>
-                    <button class="${''
-                        }btn btn-hero">${''
-                        }Hero</button>
+                <h3 class="font-semibold mb-4">Variants</h3>
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <button class="btn btn-primary">Default</button>
+                    <button class="btn btn-secondary">Secondary</button>
+                    <button class="btn btn-outline">Outline</button>
+                    <button class="btn btn-ghost">Ghost</button>
+                    <button class="btn btn-destructive">Destructive</button>
+                    <button class="btn btn-success">Success</button>
+                    <button class="btn btn-hero">Hero</button>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Soft Variants</h3>
+                <h3 class="font-semibold mb-4">Soft Variants</h3>
                 <div class="${''
                     }flex flex-wrap gap-3 mb-4">
                     <button class="${
@@ -601,79 +579,44 @@ export function buildDesignSystemPage(): SafeHtml {
                         'Soft Destructive'
                     }</button>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Disabled</h3>
-                <div class="${''
-                    }flex flex-wrap gap-3 mb-4">
-                    <button class="${''
-                        }btn btn-primary"
-                        disabled>${''
-                        }Disabled</button>
-                    <button class="${''
-                        }btn btn-outline"
-                        disabled>${''
-                        }Disabled Outline${''
-                        }</button>
+                <h3 class="font-semibold mb-4">Disabled</h3>
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <button class="btn btn-primary"
+                        disabled>Disabled</button>
+                    <button class="btn btn-outline"
+                        disabled>Disabled Outline</button>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Sizes</h3>
-                <div class="${''
-                    }flex flex-wrap ${''
-                    }items-center ${''
-                    }gap-3 mb-4">
-                    <button class="${''
-                        }btn btn-primary${''
-                        } btn-xs">${''
-                        }Extra Small</button>
-                    <button class="${''
-                        }btn btn-primary${''
-                        } btn-sm">${''
-                        }Small</button>
-                    <button class="${''
-                        }btn btn-primary">${''
-                        }Default</button>
-                    <button class="${''
-                        }btn btn-primary${''
-                        } btn-lg">${''
-                        }Large</button>
-                    <button class="${''
-                        }btn btn-primary${''
-                        } btn-xl">${''
-                        }Extra Large</button>
+                <h3 class="font-semibold mb-4">Sizes</h3>
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <button class="${
+                        'btn btn-primary btn-xs'
+                        }">Extra Small</button>
+                    <button class="btn btn-primary btn-sm">Small</button>
+                    <button class="btn btn-primary">Default</button>
+                    <button class="btn btn-primary btn-lg">Large</button>
+                    <button class="${
+                        'btn btn-primary btn-xl'
+                        }">Extra Large</button>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }With Icons</h3>
+                <h3 class="font-semibold mb-4">With Icons</h3>
                 <div class="${
                     'flex flex-wrap gap-3'
                 }">
-                    <button class="${''
-                        }btn btn-primary${''
-                        } gap-2">${''
-                        }${iconPlus(16, '')
-                        } Create</button>
-                    <button class="${''
-                        }btn btn-outline${''
-                        } gap-2">${''
-                        }${iconSearch(16, '')} ${''
-                        }Search</button>
-                    <button class="${''
-                        }btn btn-outline${''
-                        } gap-2">${''
-                        }Continue ${''
-                        }${iconArrowRight(16, '')
-                        }</button>
-                    <button class="${''
-                        }btn btn-destructive${''
-                        } gap-2">${''
-                        }${iconTrash(16, '')} ${''
-                        }Delete</button>
-                    <button class="${''
-                        }btn btn-primary${''
-                        } btn-icon">${''
-                        }${iconPlus(20, '')}</button>
+                    <button class="${
+                        'btn btn-primary gap-2'
+                        }">${iconPlus(16, '')} Create</button>
+                    <button class="${
+                        'btn btn-outline gap-2'
+                        }">${iconSearch(16, '')} Search</button>
+                    <button class="${
+                        'btn btn-outline gap-2'
+                        }">Continue ${iconArrowRight(16, '')}</button>
+                    <button class="${
+                        'btn btn-destructive gap-2'
+                        }">${iconTrash(16, '')} Delete</button>
+                    <button class="${
+                        'btn btn-primary btn-icon'
+                        }">${iconPlus(20, '')}</button>
                 </div>
             </div>
         </section>
