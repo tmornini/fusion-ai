@@ -1,146 +1,40 @@
 import {
-    $, $$, $required, FOCUSABLE_SELECTOR,
+    $$, $required,
 } from './dom.ts';
 
-const BACKDROP_SUFFIX = '-backdrop';
 const DIALOG_SUFFIX = '-dialog';
 const CANCEL_SUFFIX = '-cancel';
 const SUBMIT_SUFFIX = '-submit';
 const TAB_PANEL_PREFIX = 'tab-';
 const TAB_BUTTON_PREFIX = 'tab-btn-';
 
-class DialogStack {
-    readonly #focus: HTMLElement[] = [];
-    #ids: string[] = [];
-
-    topId(): string | undefined {
-        return this.#ids.at(-1);
-    }
-
-    isEmpty(): boolean {
-        return this.#ids.length === 0;
-    }
-
-    hasSingle(): boolean {
-        return this.#ids.length === 1;
-    }
-
-    pushFocus(el: HTMLElement): void {
-        this.#focus.push(el);
-    }
-
-    popFocus(): HTMLElement | undefined {
-        return this.#focus.pop();
-    }
-
-    pushId(id: string): void {
-        this.#ids = [...this.#ids, id];
-    }
-
-    removeId(id: string): void {
-        this.#ids = this.#ids.filter(
-            existing => existing !== id,
-        );
-    }
-}
-
-const stack = new DialogStack();
-
-function handleEscape(
-    e: KeyboardEvent,
-): void {
-    if (e.key !== 'Escape') return;
-    const topId = stack.topId();
-    if (!topId) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const cancelBtn =
-        document.getElementById(
-            topId + CANCEL_SUFFIX,
-        );
-    if (cancelBtn) {
-        cancelBtn.click();
-    } else {
-        closeDialog(topId);
-    }
-}
-
-// openDialog / closeDialog bridge two worlds during the <dialog>
-// migration. A native <dialog> delegates to the platform —
-// showModal()/close() bring the top-layer focus trap, ::backdrop,
-// and Escape (the cancel event) for free, so the focus stack and
-// the handleEscape capture below serve only the legacy
-// backdrop-div dialogs that have not yet flipped. The legacy path
-// retires once every page is native.
-function openDialog(
+// The dialog seam: every modal is a native <dialog>. showModal()
+// brings the top-layer focus trap, the ::backdrop, and Escape (the
+// cancel event), so this module owns only opening, closing, and
+// light dismiss. Validate the platform contract at this edge: the
+// '#{id}-dialog' element must be a <dialog>.
+function dialogElement(
     dialogId: string,
-): void {
-    const dialog = $required(
+): HTMLDialogElement {
+    const el = $required(
         '#' + dialogId + DIALOG_SUFFIX,
         document,
     );
-    if (dialog instanceof HTMLDialogElement) {
-        dialog.showModal();
-        return;
-    }
-    if (
-        document.activeElement
-            instanceof HTMLElement
-    ) {
-        stack.pushFocus(
-            document.activeElement,
+    if (!(el instanceof HTMLDialogElement)) {
+        throw new Error(
+            'Not a <dialog>: '
+            + dialogId + DIALOG_SUFFIX,
         );
     }
-    $required(
-        '#' + dialogId + BACKDROP_SUFFIX,
-        document,
-    ).classList.remove('hidden');
-    dialog.classList.remove('hidden');
-    dialog.setAttribute(
-        'aria-hidden', 'false',
-    );
-    stack.pushId(dialogId);
-    if (stack.hasSingle()) {
-        document.addEventListener(
-            'keydown',
-            handleEscape,
-            true,
-        );
-    }
-    const focusable = $(
-        FOCUSABLE_SELECTOR, dialog,
-    );
-    focusable?.focus();
+    return el;
 }
 
-function closeDialog(
-    dialogId: string,
-): void {
-    const dialog = $required(
-        '#' + dialogId + DIALOG_SUFFIX,
-        document,
-    );
-    if (dialog instanceof HTMLDialogElement) {
-        dialog.close();
-        return;
-    }
-    $required(
-        '#' + dialogId + BACKDROP_SUFFIX,
-        document,
-    ).classList.add('hidden');
-    dialog.classList.add('hidden');
-    dialog.setAttribute(
-        'aria-hidden', 'true',
-    );
-    stack.removeId(dialogId);
-    if (stack.isEmpty()) {
-        document.removeEventListener(
-            'keydown',
-            handleEscape,
-            true,
-        );
-    }
-    stack.popFocus()?.focus();
+function openDialog(dialogId: string): void {
+    dialogElement(dialogId).showModal();
+}
+
+function closeDialog(dialogId: string): void {
+    dialogElement(dialogId).close();
 }
 
 function initTabs(
@@ -219,12 +113,10 @@ function initTabs(
     });
 }
 
-// A native <dialog> shown with showModal() reports a click on its
-// ::backdrop as a click targeting the dialog element itself.
-// Distinguish a true backdrop click — outside the dialog's box —
-// from a click on the padding around the content, which must NOT
-// dismiss. The legacy backdrop div needed no such test: its click
-// fired only on the backdrop.
+// A native <dialog> reports a click on its ::backdrop as a click
+// targeting the dialog element itself. Distinguish a true backdrop
+// click — outside the dialog's box — from a click on the padding
+// around the content, which must NOT dismiss.
 function clickedOutside(
     dialog: HTMLElement,
     e: MouseEvent,
@@ -241,13 +133,7 @@ function initDialog(
     openBtnId: string,
     onSubmit?: () => void,
 ): void {
-    const cancelId =
-        dialogId + CANCEL_SUFFIX;
-    const dialog = $required(
-        '#' + dialogId + DIALOG_SUFFIX,
-        document,
-    );
-
+    const dialog = dialogElement(dialogId);
     $required(
         '#' + openBtnId, document,
     ).addEventListener(
@@ -255,36 +141,20 @@ function initDialog(
         () => openDialog(dialogId),
     );
     $required(
-        '#' + cancelId, document,
+        '#' + dialogId + CANCEL_SUFFIX,
+        document,
     ).addEventListener(
         'click',
         () => closeDialog(dialogId),
     );
-    if (dialog instanceof HTMLDialogElement) {
-        dialog.addEventListener(
-            'click',
-            (e) => {
-                if (clickedOutside(dialog, e)) {
-                    closeDialog(dialogId);
-                }
-            },
-        );
-    } else {
-        $required(
-            '#' + dialogId + BACKDROP_SUFFIX,
-            document,
-        ).addEventListener(
-            'click',
-            (e) => {
-                if (
-                    e.target
-                    === e.currentTarget
-                ) {
-                    closeDialog(dialogId);
-                }
-            },
-        );
-    }
+    dialog.addEventListener(
+        'click',
+        (e) => {
+            if (clickedOutside(dialog, e)) {
+                closeDialog(dialogId);
+            }
+        },
+    );
     if (onSubmit) {
         $required(
             '#' + dialogId + SUBMIT_SUFFIX,
@@ -297,10 +167,10 @@ function initDialog(
 }
 
 // A click's dialog intent, or null when the target is not a
-// dialog control. Pure: reads the target's dialog data
-// attributes and returns what to do; the caller drives
-// openDialog/closeDialog. The identical predicate the idea and
-// project detail pages otherwise hand-roll.
+// dialog control. Pure: reads the target's data attributes and
+// returns what to do; the caller drives openDialog/closeDialog.
+// The identical predicate the idea and project detail pages
+// otherwise hand-roll.
 export type DialogIntent =
     | { readonly kind: 'open'; readonly id: string }
     | { readonly kind: 'close'; readonly id: string };
@@ -308,10 +178,6 @@ export type DialogIntent =
 export function parseDialogClick(
     target: Element,
 ): DialogIntent | null {
-    if (target.classList.contains('dialog-backdrop')) {
-        const id = target.getAttribute('data-dialog-id');
-        return id ? { kind: 'close', id } : null;
-    }
     const openEl = target.closest('[data-dialog-open]');
     if (openEl) {
         const id = openEl.getAttribute('data-dialog-open');
