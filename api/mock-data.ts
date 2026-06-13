@@ -35,155 +35,25 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import { hashPassword } from './password-hash.ts';
-
-const now = new Date();
+import {
+    now,
+    daysFromNow,
+    dateOnly,
+    mulberry32,
+    sampleUniform,
+    sampleLogNormal,
+    pickWeighted,
+    b62Id,
+    isoFromMs,
+} from './mock-data/seed-kit.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
 const TIER_IDEAS_LIMIT = 1000;
 
-function pad(n: number): string {
-    return String(n).padStart(2, '0');
-}
-
-function daysFromNow(
-    days: number,
-    hour: number,
-    minute: number,
-): string {
-    const d = new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate() + days,
-        hour,
-        minute,
-    ));
-    const year = d.getUTCFullYear();
-    const month = pad(d.getUTCMonth() + 1);
-    const day = pad(d.getUTCDate());
-    const hours = pad(d.getUTCHours());
-    const minutes = pad(d.getUTCMinutes());
-    return `${year}-${month}-${day}`
-        + `T${hours}:${minutes}:00.000000Z`;
-}
-
-// A calendar DATE (YYYY-MM-DD, no instant) — the grammar
-// validateCalendarDateField gates for project start/target
-// dates. `days` counts forward from today (negative =
-// past), the same convention as daysFromNow.
-function dateOnly(days: number): string {
-    const d = new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate() + days,
-    ));
-    return d.getUTCFullYear() + '-'
-        + pad(d.getUTCMonth() + 1) + '-'
-        + pad(d.getUTCDate());
-}
-
 const MS_PER_HOUR =
     SECONDS_PER_HOUR * MS_PER_SECOND;
 const CREATE_DWELL_MS = 1000;
-
-function mulberry32(
-    seed: number,
-): () => number {
-    let s = seed >>> 0;
-    return () => {
-        s = (s + 0x6D2B79F5) >>> 0;
-        let t = s;
-        t = Math.imul(
-            t ^ (t >>> 15), t | 1,
-        );
-        t ^= t + Math.imul(
-            t ^ (t >>> 7), t | 61,
-        );
-        return (
-            (t ^ (t >>> 14)) >>> 0
-        ) / 4294967296;
-    };
-}
-
-function sampleUniform(
-    rng: () => number,
-    lo: number,
-    hi: number,
-): number {
-    return lo + (hi - lo) * rng();
-}
-
-function sampleNormal(
-    rng: () => number,
-    mean: number,
-    sigma: number,
-): number {
-    const u1 = rng();
-    const u2 = rng();
-    const z = Math.sqrt(-2 * Math.log(u1))
-        * Math.cos(2 * Math.PI * u2);
-    return mean + sigma * z;
-}
-
-function sampleLogNormal(
-    rng: () => number,
-    meanHours: number,
-    sigma: number,
-): number {
-    const z = sampleNormal(rng, 0, 1);
-    return Math.exp(
-        Math.log(meanHours) + sigma * z,
-    );
-}
-
-function pickWeighted<T>(
-    rng: () => number,
-    items: readonly T[],
-    weightOf: (t: T) => number,
-): T {
-    let total = 0;
-    for (const it of items) {
-        total += weightOf(it);
-    }
-    const r = rng() * total;
-    let cum = 0;
-    for (const it of items) {
-        cum += weightOf(it);
-        if (r <= cum) return it;
-    }
-    return items[items.length - 1]!;
-}
-
-const B62_ALPHABET =
-    'abcdefghijklmnopqrstuvwxyz'
-    + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    + '0123456789';
-
-function b62Id(
-    rng: () => number,
-    len: number,
-): string {
-    let s = '';
-    for (let i = 0; i < len; i++) {
-        const idx = Math.floor(
-            rng() * B62_ALPHABET.length,
-        );
-        s += B62_ALPHABET[idx];
-    }
-    return s;
-}
-
-function isoFromMs(ms: number): string {
-    const date = new Date(ms);
-    const year = date.getUTCFullYear();
-    const month = pad(date.getUTCMonth() + 1);
-    const day = pad(date.getUTCDate());
-    const hour = pad(date.getUTCHours());
-    const minute = pad(date.getUTCMinutes());
-    const second = pad(date.getUTCSeconds());
-    return `${year}-${month}-${day}`
-        + `T${hour}:${minute}:${second}.000000Z`;
-}
 
 interface FlowSeedSpec {
     readonly flowId: Id;
