@@ -12,7 +12,6 @@ import type {
     FlowRecordEntity,
     JsonObjectField,
     Id,
-    GraphNode,
     GraphEdge,
 } from './types.ts';
 import {
@@ -82,6 +81,7 @@ import {
     memberJessica,
     memberLisa,
     memberClaude,
+    buildLeadToCloseNodes,
 } from './mock-data/lead-to-close-flow.ts';
 
 const TIER_SEATS_LIMIT = 200;
@@ -621,93 +621,7 @@ async function postMockDataLoadIn(
 
     const wfTimestamp = daysFromNow(-60, 9, 0);
 
-    const leadToCloseNodes: GraphNode[] = [
-        {
-            id: l2cCreateNodeId,
-            name: 'Create',
-            positionX: 40,
-            positionY: 30,
-            isCreate: true,
-            isArchive: false,
-            memberIds: [],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cTriageNodeId,
-            name: 'Inbound Triage',
-            positionX: 220,
-            positionY: 100,
-            isCreate: false,
-            isArchive: false,
-            memberIds: [
-                memberLisa, memberClaude,
-            ],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cDiscoveryNodeId,
-            name: 'Discovery Call',
-            positionX: 400,
-            positionY: 180,
-            isCreate: false,
-            isArchive: false,
-            memberIds: [
-                memberSarah, memberMarcus,
-            ],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cQualifNodeId,
-            name: 'Qualification',
-            positionX: 580,
-            positionY: 260,
-            isCreate: false,
-            isArchive: false,
-            memberIds: [
-                memberSarah, memberMarcus,
-            ],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cProposalNodeId,
-            name: 'Proposal Drafting',
-            positionX: 760,
-            positionY: 340,
-            isCreate: false,
-            isArchive: false,
-            memberIds: [
-                memberJessica, memberSarah,
-            ],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cNegotNodeId,
-            name: 'Negotiation',
-            positionX: 940,
-            positionY: 420,
-            isCreate: false,
-            isArchive: false,
-            memberIds: [memberSarah],
-            attributes: [],
-            taskInstructions: '',
-        },
-        {
-            id: l2cArchiveNodeId,
-            name: 'Archive',
-            positionX: 1120,
-            positionY: 500,
-            isCreate: false,
-            isArchive: true,
-            memberIds: [],
-            attributes: [],
-            taskInstructions: '',
-        },
-    ];
+    const leadToCloseNodes = buildLeadToCloseNodes();
 
     const leadToCloseEdges: GraphEdge[] = [
         {

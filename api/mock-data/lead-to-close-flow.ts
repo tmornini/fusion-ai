@@ -1,3 +1,5 @@
+import type { GraphNode } from '../types.ts';
+
 // Stable ids for the seeded Lead-to-Close flow: its flow and
 // project-flow binding, its 7 graph nodes, and its 9 graph
 // edges. Shared across the graph, the workload
@@ -50,3 +52,93 @@ export const memberMarcus =
 export const memberJessica = 'zyTbfbjcGEfbpCsNTP0XjX';
 export const memberLisa = 'Trf1Up2jMsPhEnjbW4Ji1n';
 export const memberClaude = 'LdoTR1fnyYpS1jPzEs57ek';
+
+export function buildLeadToCloseNodes(): GraphNode[] {
+    return [
+        {
+            id: l2cCreateNodeId,
+            name: 'Create',
+            positionX: 40,
+            positionY: 30,
+            isCreate: true,
+            isArchive: false,
+            memberIds: [],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cTriageNodeId,
+            name: 'Inbound Triage',
+            positionX: 220,
+            positionY: 100,
+            isCreate: false,
+            isArchive: false,
+            memberIds: [
+                memberLisa, memberClaude,
+            ],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cDiscoveryNodeId,
+            name: 'Discovery Call',
+            positionX: 400,
+            positionY: 180,
+            isCreate: false,
+            isArchive: false,
+            memberIds: [
+                memberSarah, memberMarcus,
+            ],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cQualifNodeId,
+            name: 'Qualification',
+            positionX: 580,
+            positionY: 260,
+            isCreate: false,
+            isArchive: false,
+            memberIds: [
+                memberSarah, memberMarcus,
+            ],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cProposalNodeId,
+            name: 'Proposal Drafting',
+            positionX: 760,
+            positionY: 340,
+            isCreate: false,
+            isArchive: false,
+            memberIds: [
+                memberJessica, memberSarah,
+            ],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cNegotNodeId,
+            name: 'Negotiation',
+            positionX: 940,
+            positionY: 420,
+            isCreate: false,
+            isArchive: false,
+            memberIds: [memberSarah],
+            attributes: [],
+            taskInstructions: '',
+        },
+        {
+            id: l2cArchiveNodeId,
+            name: 'Archive',
+            positionX: 1120,
+            positionY: 500,
+            isCreate: false,
+            isArchive: true,
+            memberIds: [],
+            attributes: [],
+            taskInstructions: '',
+        },
+    ];
+}
