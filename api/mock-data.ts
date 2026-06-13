@@ -9,9 +9,7 @@ import type {
     FlowWorkOrderEntity,
     StateEntity,
     StateFieldValueEntity,
-    RecordAttributeEntity,
     FlowRecordEntity,
-    Constraint,
     JsonObjectField,
     Id,
     GraphNode,
@@ -58,6 +56,7 @@ import {
     customerProfileRecordId,
     projectBriefRecordId,
     buildRecords,
+    buildRecordAttributes,
 } from './mock-data/records.ts';
 
 const TIER_SEATS_LIMIT = 200;
@@ -1796,172 +1795,7 @@ async function postMockDataLoadIn(
     // Describe-problem and Solution nodes.
     const mockRecords = buildRecords();
 
-    // Constraint payloads. Three kinds in the toy:
-    // 'regex' on text attributes, 'range_min' /
-    // 'range_max' on number or date attributes.
-    // Applicability is asserted at the row writer
-    // (validators.ts) per defense-in-depth.
-    const emailRegexConstraint: Constraint[] = [{
-        kind: 'regex',
-        pattern: '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$',
-    }];
-    const revenueRangeMinConstraint:
-        Constraint[] = [{
-        kind: 'range_min',
-        min: '0',
-    }];
-    const foundedOnRangeMaxConstraint:
-        Constraint[] = [{
-        kind: 'range_max',
-        max: '2099-12-31',
-    }];
-
-    const mockRecordAttributes:
-        Omit<RecordAttributeEntity, 'organization_id'>[] = [
-        {
-            id: '5JZ0LeKdPCa4QMtg1RsF1M',
-            record_id: customerProfileRecordId,
-            name: 'Company Name',
-            attribute_type: 'text',
-            sort_order: 1,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'nplTIh0qXNtAyoWSwRaBYe',
-            record_id: customerProfileRecordId,
-            name: 'Contact Email',
-            attribute_type: 'text',
-            sort_order: 2,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField(
-                emailRegexConstraint,
-            ),
-        },
-        {
-            id: 'kzHpMw9f1thq79VoBYeIX3',
-            record_id: customerProfileRecordId,
-            name: 'Contact Phone',
-            attribute_type: 'text',
-            sort_order: 3,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'QsmqiOmPtoMLGpSjHOqdHA',
-            record_id: customerProfileRecordId,
-            name: 'Industry',
-            attribute_type: 'select',
-            sort_order: 4,
-            options: jsonArrayField([
-                'Technology',
-                'Finance',
-                'Healthcare',
-                'Retail',
-                'Manufacturing',
-            ]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: '0TyjQRcygn3DIyXTe6x1F6',
-            record_id: customerProfileRecordId,
-            name: 'Annual Revenue',
-            attribute_type: 'number',
-            sort_order: 5,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField(
-                revenueRangeMinConstraint,
-            ),
-        },
-        {
-            id: '8Z62tcRHBpwCRH1kBffx0G',
-            record_id: customerProfileRecordId,
-            name: 'Number of Employees',
-            attribute_type: 'number',
-            sort_order: 6,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'aR8nKpQ9wEzVxL3CmBdYTf',
-            record_id: customerProfileRecordId,
-            name: 'Founded On',
-            attribute_type: 'date',
-            sort_order: 7,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField(
-                foundedOnRangeMaxConstraint,
-            ),
-        },
-        {
-            id: 'mBrOOvQtZTTKb5TTnXvzXo',
-            record_id: customerProfileRecordId,
-            name: 'Company Logo',
-            attribute_type: 'text',
-            sort_order: 8,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'y9DiJ5QHNB5ho3K1n9myMc',
-            record_id: customerProfileRecordId,
-            name: 'Supporting Documents',
-            attribute_type: 'text',
-            sort_order: 9,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'AdQlKf43JV6yrhQbyskDkR',
-            record_id: customerProfileRecordId,
-            name: 'Reviewer Notes',
-            attribute_type: 'text',
-            sort_order: 10,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'pBA01Pr0j3ctBr13fNm3T1',
-            record_id: projectBriefRecordId,
-            name: 'Project Name',
-            attribute_type: 'text',
-            sort_order: 1,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'pBA02Pr0j3ctBr13fDsc02',
-            record_id: projectBriefRecordId,
-            name: 'Description',
-            attribute_type: 'text',
-            sort_order: 2,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'pBA03Pr0j3ctBr13fPry03',
-            record_id: projectBriefRecordId,
-            name: 'Priority',
-            attribute_type: 'select',
-            sort_order: 3,
-            options: jsonArrayField([
-                'Low',
-                'Medium',
-                'High',
-                'Critical',
-            ]),
-            constraints: jsonArrayField([]),
-        },
-        {
-            id: 'pBA04Pr0j3ctBr13fApr04',
-            record_id: projectBriefRecordId,
-            name: 'Approved',
-            attribute_type: 'checkbox',
-            sort_order: 4,
-            options: jsonArrayField([]),
-            constraints: jsonArrayField([]),
-        },
-    ];
+    const mockRecordAttributes = buildRecordAttributes();
 
     // Flow ↔ Record bindings. Customer Profile (org '1')
     // is bound to two flows (Customer Onboarding and
