@@ -226,7 +226,7 @@ function initTabs(
 // dismiss. The legacy backdrop div needed no such test: its click
 // fired only on the backdrop.
 function clickedOutside(
-    dialog: HTMLDialogElement,
+    dialog: HTMLElement,
     e: MouseEvent,
 ): boolean {
     const r = dialog.getBoundingClientRect();
@@ -330,6 +330,7 @@ export function parseDialogClick(
 export {
     openDialog,
     closeDialog,
+    clickedOutside,
     initDialog,
     initTabs,
 };
