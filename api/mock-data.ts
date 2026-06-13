@@ -8,7 +8,6 @@ import type {
     IdeaSubmissionEntity,
     FlowEntity,
     ProjectFlowEntity,
-    AIMemberEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     StateEntity,
@@ -53,6 +52,7 @@ import type {
     SojournProfile,
     MemberSkill,
 } from './mock-data/flow-workload.ts';
+import { buildAiMembers } from './mock-data/ai-members.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -5813,50 +5813,7 @@ async function postMockDataLoadIn(
         },
     ];
 
-    const aiMembers: AIMemberEntity[] = [
-        {
-            id: 'tuJwPxYtBur2KCLquScShB',
-            name: 'Claude Opus 4.8',
-            description:
-                'Anthropic flagship — long'
-                + ' context, deep reasoning.',
-            skill_focus:
-                'Long-context analysis and'
-                + ' multi-step reasoning.',
-            model: 'mnte677fU2G1V2B9vJp9z7',
-        },
-        {
-            id: 'LdoTR1fnyYpS1jPzEs57ek',
-            name: 'Claude Sonnet 4.6',
-            description:
-                'Anthropic mid-tier — fast'
-                + ' and capable.',
-            skill_focus:
-                'Fast drafting and everyday'
-                + ' task execution.',
-            model: 'VIdXPkkC1H1xjav2aTKW3u',
-        },
-        {
-            id: 'Xv89xOCXR6awwoXcPvEY9Y',
-            name: 'GPT-5.5',
-            description:
-                'OpenAI multimodal flagship.',
-            skill_focus:
-                'Multimodal synthesis across'
-                + ' text and images.',
-            model: 'B3yjKd4NnpGhVRrY6plL0o',
-        },
-        {
-            id: '42vHYDCvtkaO3sTnoqg7aJ',
-            name: 'Grok 4.3',
-            description:
-                'xAI heavy-compute model.',
-            skill_focus:
-                'High-compute exploration of'
-                + ' open-ended problems.',
-            model: 'GI19ucwHLOy7ecnQOtD27v',
-        },
-    ];
+    const aiMembers = buildAiMembers();
 
     // AI members start at 'active' on creation.
     // Same single-event seeding as humans.
