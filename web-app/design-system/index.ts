@@ -298,32 +298,27 @@ export function buildDesignSystemPage(): SafeHtml {
     return html`
     <div class="ds-page">
         <div>
-            <h1 class="${''
-                }text-3xl font-bold${''
-                } font-display">${''
-                }Fusion AI Design System</h1>
-            <p class="text-muted mt-2">${''
-                }A production-ready design ${''
-                }system ${''
-                }for enterprise ${''
-                }applications ${''
-                }prioritizing clarity, ${''
-                }trust, ${''
-                }focus, and calm ${''
-                }decision-making.</p>
+            <h1 class="${
+                'text-3xl font-bold font-display'
+                }">Fusion AI Design System</h1>
+            <p class="text-muted mt-2">${
+                'A production-ready design system '
+                + 'for enterprise applications '
+                + 'prioritizing clarity, trust, '
+                + 'focus, and calm decision-making.'
+                }</p>
         </div>
 
         <hr class="ds-hr"/>
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Brand Colors</h2>
-                <p class="text-muted mt-1">${''
-                    }Primary brand colors ${''
-                    }for Fusion AI</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Brand Colors</h2>
+                <p class="text-muted mt-1">${
+                    'Primary brand colors for Fusion AI'
+                    }</p>
             </div>
             <div class="ds-grid-4 stats-grid">
                 ${buildColorSwatch(
@@ -347,14 +342,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Blue Scale</h2>
-                <p class="text-muted mt-1">${''
-                    }Full blue color ramp ${''
-                    }for ${''
-                    }nuanced UI design</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Blue Scale</h2>
+                <p class="text-muted mt-1">${
+                    'Full blue color ramp for nuanced UI design'
+                    }</p>
             </div>
             <div class="ds-grid-5 stats-grid">
                 ${buildColorSwatch(
@@ -394,14 +387,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Semantic Colors</h2>
-                <p class="text-muted mt-1">${''
-                    }Status and feedback ${''
-                    }colors ${''
-                    }(WCAG AA compliant)</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Semantic Colors</h2>
+                <p class="text-muted mt-1">${
+                    'Status and feedback colors (WCAG AA compliant)'
+                    }</p>
             </div>
             <div class="ds-grid-4 stats-grid">
                 ${buildColorSwatch(
@@ -440,14 +431,12 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }UI Colors</h2>
-                <p class="text-muted mt-1">${''
-                    }Background, surface, ${''
-                    }and ${''
-                    }border colors</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">UI Colors</h2>
+                <p class="text-muted mt-1">${
+                    'Background, surface, and border colors'
+                    }</p>
             </div>
             <div class="ds-grid-6 stats-grid">
                 ${buildColorSwatch(
