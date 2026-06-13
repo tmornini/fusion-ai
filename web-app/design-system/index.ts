@@ -625,75 +625,44 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Badges</h2>
-                <p class="text-muted mt-1">${''
-                    }Status indicators ${''
-                    }and labels</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Badges</h2>
+                <p class="text-muted mt-1">${
+                    'Status indicators and labels'
+                    }</p>
             </div>
             <div class="card p-6">
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Standard</h3>
-                <div class="${''
-                    }flex flex-wrap gap-3 mb-4">
-                    <span class="${''
-                        }badge badge-default">${''
-                        }Default</span>
-                    <span class="${''
-                        }badge${''
-                        } badge-secondary">${''
-                        }Secondary</span>
-                    <span class="${''
-                        }badge${''
-                        } badge-outline">${''
-                        }Outline</span>
-                    <span class="${''
-                        }badge${''
-                        } badge-primary">${''
-                        }Primary</span>
-                    <span class="${''
-                        }badge${''
-                        } badge-destructive">${''
-                        }Destructive</span>
+                <h3 class="font-semibold mb-4">Standard</h3>
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <span class="badge badge-default">Default</span>
+                    <span class="badge badge-secondary">Secondary</span>
+                    <span class="badge badge-outline">Outline</span>
+                    <span class="badge badge-primary">Primary</span>
+                    <span class="badge badge-destructive">Destructive</span>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Status with Dot</h3>
-                <div class="${''
-                    }flex flex-wrap gap-3 mb-4">
-                    <span class="${''
-                        }badge${''
-                        } badge-success">${''
-                        }${iconCheck(12, '')} ${''
-                        }Approved</span>
-                    <span class="${''
-                        }badge${''
-                        } badge-warning">${''
-                        }${iconAlertTriangle(12, '')
-                        } ${''
-                        }Pending</span>
-                    <span class="${''
-                        }badge badge-error">${''
-                        }${iconX(12, '')} ${''
-                        }Rejected</span>
-                    <span class="${''
-                        }status-badge-info">${''
-                        }${iconInfo(12, '')
-                        } Info</span>
+                <h3 class="font-semibold mb-4">Status with Dot</h3>
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <span class="${
+                        'badge badge-success'
+                        }">${iconCheck(12, '')} Approved</span>
+                    <span class="${
+                        'badge badge-warning'
+                        }">${iconAlertTriangle(12, '')} Pending</span>
+                    <span class="${
+                        'badge badge-error'
+                        }">${iconX(12, '')} Rejected</span>
+                    <span class="${
+                        'status-badge-info'
+                        }">${iconInfo(12, '')} Info</span>
                 </div>
-                <h3 class="${''
-                    }font-semibold mb-4">${''
-                    }Soft Accent</h3>
+                <h3 class="font-semibold mb-4">Soft Accent</h3>
                 <div class="${
                     'flex flex-wrap gap-3'
                 }">
                     <span class="${
                         'ds-accent-badge'
-                    }">${''
-                        }Accent Badge</span>
+                    }">Accent Badge</span>
                 </div>
             </div>
         </section>
@@ -702,41 +671,27 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Form Elements</h2>
-                <p class="text-muted mt-1">${''
-                    }Input fields and ${''
-                    }text areas</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Form Elements</h2>
+                <p class="text-muted mt-1">${
+                    'Input fields and text areas'
+                    }</p>
             </div>
             <div class="ds-grid-2 convert-grid">
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-4">${''
-                        }Inputs</h3>
+                    <h3 class="font-semibold mb-4">Inputs</h3>
                     <div class="ds-stack">
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-input-default">${''
-                                }Default ${''
-                                }Input</label>
+                            <label class="label mb-1 text-sm"
+                                for="ds-input-default">Default Input</label>
                             <input class="input"
                                 id="ds-input-default"
-                                placeholder="${''
-                                }Enter text..."/>
+                                placeholder="Enter text..."/>
                         </div>
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-input-value">${''
-                                }With ${''
-                                }Value</label>
+                            <label class="label mb-1 text-sm"
+                                for="ds-input-value">With Value</label>
                             <input class="input"
                                 id="ds-input-value"
                                 value="${
@@ -745,16 +700,9 @@ export function buildDesignSystemPage(): SafeHtml {
                                 }"/>
                         </div>
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-input-error">${''
-                                }Error ${''
-                                }State</label>
-                            <input class="${''
-                                }input${''
-                                } input-error"
+                            <label class="label mb-1 text-sm"
+                                for="ds-input-error">Error State</label>
+                            <input class="input input-error"
                                 id="ds-input-error"
                                 value="${
                                     'Invalid'
@@ -763,72 +711,42 @@ export function buildDesignSystemPage(): SafeHtml {
                             <p class="${
                                     'text-xs mt-1'
                                     + ' text-error'
-                                }">${''
-                                }This field ${''
-                                }is ${''
-                                }required</p>
+                                }">This field is required</p>
                         </div>
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-input-disabled">${''
-                                }Disabled</label>
+                            <label class="label mb-1 text-sm"
+                                for="ds-input-disabled">Disabled</label>
                             <input class="input"
                                 id="ds-input-disabled"
                                 disabled
-                                placeholder="${''
-                                }Disabled${''
-                                } input"/>
+                                placeholder="Disabled input"/>
                         </div>
                     </div>
                 </div>
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-4">${''
-                        }Textareas</h3>
+                    <h3 class="font-semibold mb-4">Textareas</h3>
                     <div class="ds-stack">
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-textarea-default">${''
-                                }Default ${''
-                                }Textarea</label>
+                            <label class="label mb-1 text-sm"
+                                for="ds-textarea-default">${
+                                    'Default Textarea'
+                                    }</label>
                             <textarea
                                 class="textarea"
-                                id="${''
-                                }ds-textarea-default"
-                                placeholder="${''
-                                }Enter longer${''
-                                } text...">${''
-                                }</textarea>
+                                id="ds-textarea-default"
+                                placeholder="Enter longer text..."></textarea>
                         </div>
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-textarea-error">${''
-                                }Error ${''
-                                }State</label>
-                            <textarea class="${''
-                                }textarea${''
-                                } input-error"
-                                id="${''
-                                }ds-textarea-error">${''
-                                }Invalid${''
-                                } content${''
-                                }</textarea>
+                            <label class="label mb-1 text-sm"
+                                for="ds-textarea-error">Error State</label>
+                            <textarea class="textarea input-error"
+                                id="ds-textarea-error">${
+                                    'Invalid content'
+                                    }</textarea>
                             <p class="${
                                     'text-xs mt-1'
                                     + ' text-error'
-                                }">${''
-                                }Please provide${''
-                                } a valid ${''
-                                }description</p>
+                                }">Please provide a valid description</p>
                         </div>
                     </div>
                 </div>
@@ -839,65 +757,39 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Cards</h2>
-                <p class="text-muted mt-1">${''
-                    }Content containers ${''
-                    }with ${''
-                    }consistent styling</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Cards</h2>
+                <p class="text-muted mt-1">${
+                    'Content containers with consistent styling'
+                    }</p>
             </div>
             <div class="ds-grid-3 score-grid">
                 <div class="card card-hover p-6">
-                    <h3 class="${''
-                        }font-semibold mb-1">${''
-                        }Fusion Card</h3>
-                    <p class="${''
-                        }text-xs text-muted${''
-                        } mb-2">${''
-                        }With hover effect</p>
-                    <p class="${''
-                        }text-sm text-muted">${''
-                        }Hover over this ${''
-                        }card to ${''
-                        }see the subtle ${''
-                        }shadow ${''
-                        }effect.</p>
+                    <h3 class="font-semibold mb-1">Fusion Card</h3>
+                    <p class="text-xs text-muted mb-2">With hover effect</p>
+                    <p class="text-sm text-muted">${
+                        'Hover over this card to see the '
+                        + 'subtle shadow effect.'
+                        }</p>
                 </div>
                 <div class="card card-flat p-6">
-                    <h3 class="${''
-                        }font-semibold mb-1">${''
-                        }Flat Card</h3>
-                    <p class="${''
-                        }text-xs text-muted${''
-                        } mb-2">${''
-                        }No shadow or hover</p>
-                    <p class="${''
-                        }text-sm text-muted">${''
-                        }A minimal card with${''
-                        } just ${''
-                        }a border, suitable${''
-                        } for ${''
-                        }secondary ${''
-                        }content.</p>
+                    <h3 class="font-semibold mb-1">Flat Card</h3>
+                    <p class="text-xs text-muted mb-2">No shadow or hover</p>
+                    <p class="text-sm text-muted">${
+                        'A minimal card with just a '
+                        + 'border, suitable for secondary '
+                        + 'content.'
+                        }</p>
                 </div>
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-1">${''
-                        }Standard Card</h3>
-                    <p class="${''
-                        }text-xs text-muted${''
-                        } mb-2">${''
-                        }Default styling</p>
-                    <p class="${''
-                        }text-sm text-muted">${''
-                        }The standard card ${''
-                        }with ${''
-                        }subtle shadow, ${''
-                        }suitable ${''
-                        }for most ${''
-                        }content.</p>
+                    <h3 class="font-semibold mb-1">Standard Card</h3>
+                    <p class="text-xs text-muted mb-2">Default styling</p>
+                    <p class="text-sm text-muted">${
+                        'The standard card with subtle '
+                        + 'shadow, suitable for most '
+                        + 'content.'
+                        }</p>
                 </div>
             </div>
         </section>
