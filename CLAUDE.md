@@ -202,7 +202,7 @@ use `id="tab-{name}"`.
 
 See [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md). Key invariant: do
 not use raw hex colors in CSS; use `hsl(var(--token))`.
-Icons are ~100 inline SVG functions in
+Icons are ~70 inline SVG functions in
 `web-app/app/icons.ts`.
 
 **Heat ramp.** See [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) § Heat ramp.
