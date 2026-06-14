@@ -1,5 +1,24 @@
 import { SafeHtml } from './safe-html.ts';
 
+// Icon pixel sizes, named by the same tier scale as the
+// --text-* typography tokens (DESIGN-SYSTEM.md § 9). The
+// IconFn size argument is typed to these nine values, so an
+// off-vocabulary numeral fails the type-check at the call.
+export const ICON_SIZE = {
+    '2xs': 10,
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 28,
+    '4xl': 40,
+} as const;
+
+export type IconSize =
+    (typeof ICON_SIZE)[keyof typeof ICON_SIZE];
+
 function icon(
     paths: string,
     size: number,
