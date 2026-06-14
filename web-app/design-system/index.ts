@@ -835,7 +835,10 @@ export function buildDesignSystemPage(): SafeHtml {
             </div>
             <div class="card p-6">
                 <div class="flex items-end gap-8">
-                    ${[16, 20, 24, 48].map(
+                    ${[
+                        ICON_SIZE.base, ICON_SIZE.xl,
+                        ICON_SIZE['2xl'], ICON_SIZE['6xl'],
+                    ].map(
                         size => html`
                     <div class="icon-size-col">
                         <div class="text-primary"
@@ -1080,7 +1083,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     <h3 class="font-semibold mb-3">Upload Failed</h3>
                     <div class="ds-upload-fail">
                         ${iconUpload(
-                            32, 'text-error',
+                            ICON_SIZE['4xl'], 'text-error',
                         )}
                         <p class="${
                             'font-medium text-sm mt-2 '
@@ -1162,7 +1165,7 @@ export function buildDesignSystemPage(): SafeHtml {
                 <h3 class="font-semibold mb-3">Full Page Error</h3>
                 <div class="p-8">
                     ${iconAlertTriangle(
-                        48,
+                        ICON_SIZE['6xl'],
                         'text-error',
                     )}
                     <h3 class="${

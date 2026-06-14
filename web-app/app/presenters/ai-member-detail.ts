@@ -115,7 +115,7 @@ function buildShell(
 function buildAvatar(): SafeHtml {
     return html`
         <div class="member-avatar">
-            ${iconBrain(ICON_SIZE['4xl'], 'text-primary')}
+            ${iconBrain(ICON_SIZE['5xl'], 'text-primary')}
         </div>`;
 }
 

@@ -804,7 +804,7 @@ function buildFlowsSection(
                     'text-center py-8'
                 }">
                     ${iconGitBranch(
-                        48, 'text-muted',
+                        ICON_SIZE['6xl'], 'text-muted',
                     )}
                     <p class="${
                         'text-muted mt-4'
